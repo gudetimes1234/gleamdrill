@@ -1,13 +1,17 @@
+import algodrill/editor
 import algodrill/model.{
-  type Model, type Msg, type ProblemRef, UserClickedExitDrill, UserClickedNext,
-  UserPressedTab, UserToggledAnswer, UserTypedDraft,
+  type CaseResult, type Model, type Msg, type ProblemRef, type RunError, Cases,
+  EditorChanged, Errored, Ran, RunIdle, Running, RuntimeFailed, RuntimeLoading,
+  RuntimeNotLoaded, RuntimeReady, TimedOut, UserClickedExitDrill,
+  UserClickedNext, UserClickedRun, UserToggledAnswer,
 }
 import algodrill/problem.{type Problem}
 import algodrill/problems
-import gleam/dynamic/decode
 import gleam/int
 import gleam/list
+import gleam/option.{None, Some}
 import gleam/result
+import gleam/string
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -15,29 +19,27 @@ import lustre/element/keyed
 import lustre/event
 
 /// Errors when the drill position points at no problem; the caller falls back
-/// to the menu, matching the legacy renderDrill guard.
-pub fn view(model: Model) -> Result(Element(Msg), Nil) {
-  use ref <- result.try(
-    model.selected |> list.drop(model.problem_index) |> list.first,
-  )
+/// to the menu.
+pub fn view(m: Model) -> Result(Element(Msg), Nil) {
+  use ref <- result.try(model.current_ref(m))
   use current <- result.try(problems.find(
     ref.category,
     ref.subcategory,
     ref.title,
   ))
-  Ok(view_drill(model, ref, current))
+  Ok(view_drill(m, ref, current))
 }
 
-fn view_drill(model: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
+fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
   let progress =
     "Problem "
-    <> int.to_string(model.problem_index + 1)
+    <> int.to_string(m.problem_index + 1)
     <> "/"
-    <> int.to_string(list.length(model.selected))
-    <> " | Iteration "
-    <> int.to_string(model.current_iteration)
+    <> int.to_string(list.length(m.selected))
+    <> " \u{b7} Rep "
+    <> int.to_string(m.current_iteration)
     <> "/"
-    <> int.to_string(model.iteration_count)
+    <> int.to_string(m.iteration_count)
 
   let body_key =
     ref.category
@@ -46,116 +48,314 @@ fn view_drill(model: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
     <> "|"
     <> ref.title
     <> "|"
-    <> int.to_string(model.current_iteration)
+    <> int.to_string(m.current_iteration)
 
-  keyed.div([attribute.class("drill-container")], [
-    #(
-      "header",
-      html.div([attribute.class("drill-header")], [
-        html.button(
-          [
-            attribute.id("exitDrill"),
-            attribute.class("btn-secondary"),
-            event.on_click(UserClickedExitDrill),
-          ],
-          [html.text("Exit drill")],
-        ),
-        html.div([attribute.class("progress-text")], [html.text(progress)]),
+  html.div([attribute.class("drill-container")], [
+    html.div([attribute.class("drill-header")], [
+      html.button(
+        [
+          attribute.class("btn-secondary"),
+          event.on_click(UserClickedExitDrill),
+        ],
+        [html.text("\u{2190} Exit")],
+      ),
+      html.h2([attribute.class("drill-title")], [html.text(current.title)]),
+      html.div([attribute.class("progress-text")], [html.text(progress)]),
+    ]),
+    html.div([attribute.class("drill-grid")], [
+      html.div([attribute.class("drill-side")], side_panels(m, ref, current)),
+      html.div([attribute.class("drill-main")], [
+        keyed.div([attribute.class("editor-frame")], [
+          #(
+            body_key,
+            editor.view([
+              editor.doc(m.draft),
+              editor.on_change(EditorChanged),
+              editor.diagnostics(editor_diagnostics(m)),
+            ]),
+          ),
+        ]),
+        run_bar(m, current),
+        ..results_and_answer(m, current)
       ]),
-    ),
-    #(
-      body_key,
-      element.fragment([
-        html.div([attribute.class("problem-section")], [
-          html.h2([], [html.text(current.title)]),
-          html.div([attribute.class("problem-category")], [
-            html.text(
-              ref.category
-              <> " \u{203a} "
-              <> ref.subcategory
-              <> " \u{b7} "
-              <> problem.language_label(current.language),
-            ),
-          ]),
-          html.div([attribute.class("problem-prompt")], [
-            html.text(current.prompt),
-          ]),
-        ]),
-        html.div([attribute.class("code-section")], [
-          html.textarea(
-            [
-              attribute.id("codeEditor"),
-              attribute.placeholder("Write your solution here..."),
-              attribute.spellcheck(False),
-              attribute.value(model.draft),
-              event.on_input(UserTypedDraft),
-              on_tab_key(),
-            ],
-            model.draft,
-          ),
-        ]),
-        html.div([attribute.class("answer-section")], [
-          html.button(
-            [
-              attribute.id("toggleAnswer"),
-              attribute.class("btn-secondary"),
-              event.on_click(UserToggledAnswer),
-            ],
-            [
-              html.text(case model.answer_revealed {
-                True -> "Hide answer"
-                False -> "Show answer"
-              }),
-            ],
-          ),
-          html.div(
-            [
-              attribute.id("answerContent"),
-              attribute.classes([
-                #("answer-content", True),
-                #("hidden", !model.answer_revealed),
-              ]),
-            ],
-            [html.pre([], [html.code([], [html.text(current.solution)])])],
-          ),
-        ]),
-        html.div([attribute.class("drill-footer")], [
-          html.button(
-            [
-              attribute.id("nextProblem"),
-              attribute.class("btn-primary"),
-              event.on_click(UserClickedNext),
-            ],
-            [html.text("Next")],
-          ),
-        ]),
-      ]),
-    ),
+    ]),
   ])
 }
 
-fn on_tab_key() -> attribute.Attribute(Msg) {
-  event.advanced("keydown", {
-    use key <- decode.field("key", decode.string)
-    use value <- decode.subfield(["target", "value"], decode.string)
-    use start <- decode.subfield(["target", "selectionStart"], decode.int)
-    use end <- decode.subfield(["target", "selectionEnd"], decode.int)
-    case key {
-      "Tab" ->
-        decode.success(event.handler(
-          dispatch: UserPressedTab(value, start, end),
-          prevent_default: True,
-          stop_propagation: False,
-        ))
-      _ ->
-        decode.failure(
-          event.handler(
-            dispatch: UserPressedTab("", 0, 0),
-            prevent_default: False,
-            stop_propagation: False,
+fn side_panels(
+  m: Model,
+  ref: ProblemRef,
+  current: Problem,
+) -> List(Element(Msg)) {
+  let prompt =
+    panel("Prompt", [
+      html.div([attribute.class("problem-category")], [
+        html.text(
+          ref.category
+          <> " \u{203a} "
+          <> ref.subcategory
+          <> " \u{b7} "
+          <> problem.language_label(current.language),
+        ),
+      ]),
+      html.div([attribute.class("problem-prompt")], [html.text(current.prompt)]),
+    ])
+
+  case current.check {
+    Some(check) -> [
+      prompt,
+      panel("Signature", [
+        html.pre([attribute.class("signature")], [
+          html.code([], [html.text(check.signature)]),
+        ]),
+      ]),
+      panel("Tests", [tests_panel(m)]),
+    ]
+    None -> [prompt]
+  }
+}
+
+fn tests_panel(m: Model) -> Element(Msg) {
+  case m.run {
+    Ran(Cases(cases)) ->
+      html.ul(
+        [attribute.class("case-list")],
+        list.map(cases, fn(c: CaseResult) {
+          html.li(
+            [
+              attribute.classes([
+                #("case", True),
+                #("pass", c.passed),
+                #("fail", !c.passed),
+              ]),
+            ],
+            [
+              html.span([attribute.class("case-icon")], [
+                html.text(case c.passed {
+                  True -> "\u{2713}"
+                  False -> "\u{2717}"
+                }),
+              ]),
+              html.text(" " <> c.label),
+            ],
+          )
+        }),
+      )
+    _ ->
+      html.div([attribute.class("pane-empty")], [
+        html.text("Run the tests to see the cases."),
+      ])
+  }
+}
+
+fn run_bar(m: Model, current: Problem) -> Element(Msg) {
+  let run_control = case current.check {
+    None -> [
+      html.span([attribute.class("run-unavailable")], [
+        html.text(
+          "Checking isn't available for Python drills yet \u{2014} compare with the answer.",
+        ),
+      ]),
+    ]
+    Some(_) -> [
+      case m.runtime, m.run {
+        _, Running(_) -> run_button("Running\u{2026}", True)
+        RuntimeReady, _ -> run_button("\u{25b6} Run tests", False)
+        RuntimeLoading, _ -> run_button("Loading Gleam runtime\u{2026}", True)
+        RuntimeNotLoaded, _ -> run_button("Loading Gleam runtime\u{2026}", True)
+        RuntimeFailed(_), _ -> run_button("Runtime unavailable", True)
+      },
+    ]
+  }
+
+  html.div(
+    [attribute.class("run-bar")],
+    list.flatten([
+      run_control,
+      [
+        html.button(
+          [
+            attribute.class("btn-secondary"),
+            event.on_click(UserToggledAnswer),
+          ],
+          [
+            html.text(case m.answer_revealed {
+              True -> "Hide answer"
+              False -> "Show answer"
+            }),
+          ],
+        ),
+        html.button(
+          [
+            attribute.class("btn-primary next-button"),
+            event.on_click(UserClickedNext),
+          ],
+          [html.text("Next")],
+        ),
+      ],
+    ]),
+  )
+}
+
+fn run_button(label: String, disabled: Bool) -> Element(Msg) {
+  html.button(
+    [
+      attribute.class("btn-primary run-button"),
+      attribute.disabled(disabled),
+      event.on_click(UserClickedRun),
+    ],
+    [html.text(label)],
+  )
+}
+
+fn results_and_answer(m: Model, current: Problem) -> List(Element(Msg)) {
+  let results = case m.run {
+    RunIdle -> []
+    Running(_) -> [
+      html.div([attribute.class("results")], [
+        html.div([attribute.class("results-summary")], [
+          html.text("Compiling and running\u{2026}"),
+        ]),
+      ]),
+    ]
+    Ran(Cases(cases)) -> [case_results(cases)]
+    Ran(Errored(error)) -> [error_results(error, current)]
+    Ran(TimedOut) -> [
+      html.div([attribute.class("results")], [
+        html.div([attribute.class("results-summary fail")], [
+          html.text(
+            "Your solution didn't finish \u{2014} likely infinite recursion. The runtime was restarted.",
           ),
-          "key",
-        )
-    }
-  })
+        ]),
+      ]),
+    ]
+  }
+
+  let answer = [
+    html.div(
+      [
+        attribute.classes([
+          #("answer-content", True),
+          #("hidden", !m.answer_revealed),
+        ]),
+      ],
+      [html.pre([], [html.code([], [html.text(current.solution)])])],
+    ),
+  ]
+
+  list.append(results, answer)
+}
+
+fn case_results(cases: List(CaseResult)) -> Element(Msg) {
+  let total = list.length(cases)
+  let passed = list.count(cases, fn(c) { c.passed })
+  let all_passed = passed == total && total > 0
+
+  let summary =
+    html.div(
+      [
+        attribute.classes([
+          #("results-summary", True),
+          #("pass", all_passed),
+          #("fail", !all_passed),
+        ]),
+      ],
+      [
+        html.text(
+          case all_passed {
+            True -> "\u{2713} "
+            False -> "\u{2717} "
+          }
+          <> int.to_string(passed)
+          <> "/"
+          <> int.to_string(total)
+          <> " passed",
+        ),
+      ],
+    )
+
+  let failures =
+    cases
+    |> list.filter(fn(c: CaseResult) { !c.passed })
+    |> list.map(fn(c: CaseResult) {
+      html.div([attribute.class("case fail")], [
+        html.div([attribute.class("case-label")], [
+          html.text("\u{2717} " <> c.label),
+        ]),
+        html.div([attribute.class("case-diff")], [
+          html.div([], [
+            html.span([attribute.class("case-diff-tag")], [
+              html.text("expected "),
+            ]),
+            html.code([], [html.text(c.expected)]),
+          ]),
+          html.div([], [
+            html.span([attribute.class("case-diff-tag")], [html.text("got ")]),
+            html.code([], [html.text(c.actual)]),
+          ]),
+        ]),
+      ])
+    })
+
+  html.div([attribute.class("results")], [summary, ..failures])
+}
+
+fn error_results(error: RunError, current: Problem) -> Element(Msg) {
+  case error.file, current.check {
+    Some("check.gleam"), Some(check) ->
+      html.div([attribute.class("results")], [
+        html.div([attribute.class("results-summary fail")], [
+          html.text("Your solution doesn't match the required signature."),
+        ]),
+        html.pre([attribute.class("signature")], [
+          html.code([], [html.text(check.signature)]),
+        ]),
+        html.details([attribute.class("results-details")], [
+          html.summary([], [html.text("Compiler details")]),
+          html.pre([attribute.class("results-message")], [
+            html.text(error.message),
+          ]),
+        ]),
+      ])
+    _, _ ->
+      html.div([attribute.class("results")], [
+        html.div([attribute.class("results-summary fail")], [
+          html.text(case error.phase {
+            "compile" -> "Your code doesn't compile."
+            _ -> "Your code crashed while running."
+          }),
+        ]),
+        html.pre([attribute.class("results-message")], [
+          html.text(error.message),
+        ]),
+      ])
+  }
+}
+
+/// Compile errors inside the user's own module become inline underlines.
+fn editor_diagnostics(m: Model) -> List(editor.Diagnostic) {
+  case m.run {
+    Ran(Errored(error)) ->
+      case error.file, error.line, error.column {
+        Some("solution.gleam"), Some(line), Some(column) -> [
+          editor.Diagnostic(line, column, first_lines(error.message)),
+        ]
+        _, _, _ -> []
+      }
+    _ -> []
+  }
+}
+
+fn first_lines(message: String) -> String {
+  message
+  |> string.split("\n")
+  |> list.take(3)
+  |> string.join("\n")
+}
+
+fn panel(title: String, contents: List(Element(Msg))) -> Element(Msg) {
+  html.section([attribute.class("panel")], [
+    html.h3([attribute.class("panel-title")], [html.text(title)]),
+    ..contents
+  ])
 }

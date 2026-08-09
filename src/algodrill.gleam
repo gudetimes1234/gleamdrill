@@ -1,14 +1,18 @@
 import algodrill/browser
 import algodrill/editor
 import algodrill/model.{
-  type Model, type Msg, type ProblemRef, DrillRoute, ExitConfirmed, MenuRoute,
-  Model, ProblemRef, UserChangedIterations, UserClickedBreadcrumb,
-  UserClickedCategory, UserClickedClearSelection, UserClickedExitDrill,
-  UserClickedNext, UserClickedSelectAll, UserClickedStartDrill,
-  UserClickedSubcategory, UserPressedTab, UserToggledAnswer, UserToggledProblem,
-  UserTypedDraft,
+  type Model, type Msg, type ProblemRef, Cases, DraftSaveTicked, DrillRoute,
+  EditorChanged, Errored, ExitConfirmed, MenuRoute, Model, ProblemRef, Ran,
+  RunFinished, RunIdle, RunTimedOut, RunnerFailed, RunnerReady, Running,
+  RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady, TimedOut,
+  UserChangedIterations, UserClickedBreadcrumb, UserClickedCategory,
+  UserClickedClearSelection, UserClickedExitDrill, UserClickedNext,
+  UserClickedRun, UserClickedSelectAll, UserClickedStartDrill,
+  UserClickedSubcategory, UserSearched, UserToggledAnswer, UserToggledProblem,
 }
+import algodrill/problem
 import algodrill/problems
+import algodrill/runner
 import algodrill/storage
 import algodrill/view/drill
 import algodrill/view/menu
@@ -27,96 +31,135 @@ pub fn main() {
 }
 
 fn init(_flags) -> #(Model, Effect(Msg)) {
-  #(storage.load(), effect.none())
+  let loaded = storage.load()
+  let hydrated = case loaded.route, model.current_ref(loaded) {
+    DrillRoute, Ok(ref) -> Model(..loaded, draft: draft_for(loaded, ref))
+    _, _ -> loaded
+  }
+  with_prefetch(#(hydrated, effect.none()))
 }
 
-fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
-  let #(new_model, fx) = handle(model, msg)
+/// Opening a checkable drill starts the (4.7MB, lazy) runtime download so it
+/// is usually ready before the first Run click. Python drills never load it.
+fn with_prefetch(pair: #(Model, Effect(Msg))) -> #(Model, Effect(Msg)) {
+  let #(m, fx) = pair
+  let wants_runtime =
+    m.route == DrillRoute
+    && m.runtime == RuntimeNotLoaded
+    && current_check(m) != Error(Nil)
+  case wants_runtime {
+    True -> #(
+      Model(..m, runtime: RuntimeLoading),
+      effect.batch([fx, runner.ensure()]),
+    )
+    False -> pair
+  }
+}
+
+fn current_check(m: Model) -> Result(problem.Check, Nil) {
+  case model.current_ref(m) {
+    Ok(ref) ->
+      case problems.find(ref.category, ref.subcategory, ref.title) {
+        Ok(p) ->
+          case p.check {
+            Some(check) -> Ok(check)
+            None -> Error(Nil)
+          }
+        Error(Nil) -> Error(Nil)
+      }
+    Error(Nil) -> Error(Nil)
+  }
+}
+
+fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
+  let #(new_model, fx) = handle(m, msg)
   case should_persist(msg) {
     True -> #(new_model, effect.batch([storage.save(new_model), fx]))
     False -> #(new_model, fx)
   }
 }
 
-/// Mirrors the legacy app: state is written to localStorage after every
-/// mutation of persisted fields. Draft text and answer reveal are not saved.
+/// State is written to localStorage after every mutation of persisted fields.
+/// Editor keystrokes are debounced: EditorChanged schedules DraftSaveTicked,
+/// and only that write hits storage.
 fn should_persist(msg: Msg) -> Bool {
   case msg {
-    UserTypedDraft(_) | UserPressedTab(_, _, _) | UserToggledAnswer -> False
+    EditorChanged(_) | UserToggledAnswer -> False
     UserClickedExitDrill | ExitConfirmed(False) -> False
+    UserClickedRun | RunnerReady | RunnerFailed(_) -> False
     _ -> True
   }
 }
 
-fn handle(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
+fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     UserClickedCategory(name) -> #(
-      Model(..model, selected_category: Some(name), selected_subcategory: None),
+      Model(..m, selected_category: Some(name), selected_subcategory: None),
       effect.none(),
     )
 
     UserClickedSubcategory(name) -> #(
-      Model(..model, selected_subcategory: Some(name)),
+      Model(..m, selected_subcategory: Some(name)),
       effect.none(),
     )
 
     UserClickedBreadcrumb(level) ->
       case level {
         0 -> #(
-          Model(..model, selected_category: None, selected_subcategory: None),
+          Model(..m, selected_category: None, selected_subcategory: None),
           effect.none(),
         )
-        _ -> #(Model(..model, selected_subcategory: None), effect.none())
+        _ -> #(Model(..m, selected_subcategory: None), effect.none())
       }
 
     UserToggledProblem(ref) -> #(
-      Model(..model, selected: toggle_selection(model.selected, ref)),
+      Model(..m, selected: toggle_selection(m.selected, ref)),
       effect.none(),
     )
 
     UserClickedSelectAll ->
-      case model.selected_category, model.selected_subcategory {
+      case m.selected_category, m.selected_subcategory {
         Some(cat), Some(sub) -> {
           let refs =
             problems.problems_in(cat, sub)
             |> list.map(fn(p) { ProblemRef(cat, sub, p.title) })
-            |> list.filter(fn(ref) { !list.contains(model.selected, ref) })
-          #(
-            Model(..model, selected: list.append(model.selected, refs)),
-            effect.none(),
-          )
+            |> list.filter(fn(ref) { !list.contains(m.selected, ref) })
+          #(Model(..m, selected: list.append(m.selected, refs)), effect.none())
         }
-        _, _ -> #(model, effect.none())
+        _, _ -> #(m, effect.none())
       }
 
-    UserClickedClearSelection -> #(Model(..model, selected: []), effect.none())
+    UserClickedClearSelection -> #(Model(..m, selected: []), effect.none())
 
     UserChangedIterations(raw) -> {
       let count = case int.parse(raw) {
         Ok(value) if value > 0 -> value
         _ -> 1
       }
-      #(Model(..model, iteration_count: count), effect.none())
+      #(Model(..m, iteration_count: count), effect.none())
     }
 
     UserClickedStartDrill ->
-      case model.selected {
-        [] -> #(model, effect.none())
-        _ -> #(
-          Model(
-            ..model,
-            route: DrillRoute,
-            problem_index: 0,
-            current_iteration: 1,
-            draft: "",
-            answer_revealed: False,
-          ),
-          effect.none(),
-        )
+      case m.selected {
+        [] -> #(m, effect.none())
+        [first, ..] ->
+          with_prefetch(#(
+            Model(
+              ..m,
+              route: DrillRoute,
+              problem_index: 0,
+              current_iteration: 1,
+              draft: starter_for(first),
+              drafts: model.assoc_put(m.drafts, first, starter_for(first)),
+              answer_revealed: False,
+              run: RunIdle,
+            ),
+            effect.none(),
+          ))
       }
 
     UserClickedExitDrill -> #(
-      model,
+      m,
       effect.from(fn(dispatch) {
         dispatch(
           ExitConfirmed(browser.confirm(
@@ -126,58 +169,165 @@ fn handle(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }),
     )
 
-    ExitConfirmed(True) -> #(reset_to_menu(model), effect.none())
-    ExitConfirmed(False) -> #(model, effect.none())
+    ExitConfirmed(True) -> #(reset_to_menu(m), effect.none())
+    ExitConfirmed(False) -> #(m, effect.none())
 
     UserToggledAnswer -> #(
-      Model(..model, answer_revealed: !model.answer_revealed),
+      Model(..m, answer_revealed: !m.answer_revealed),
       effect.none(),
     )
 
     UserClickedNext -> {
-      let #(iteration, index) = case
-        model.current_iteration < model.iteration_count
-      {
-        True -> #(model.current_iteration + 1, model.problem_index)
-        False -> #(1, model.problem_index + 1)
+      let #(iteration, index) = case m.current_iteration < m.iteration_count {
+        True -> #(m.current_iteration + 1, m.problem_index)
+        False -> #(1, m.problem_index + 1)
       }
-      case index >= list.length(model.selected) {
+      case index >= list.length(m.selected) {
         True -> #(
-          reset_to_menu(model),
+          reset_to_menu(m),
           effect.from(fn(_dispatch) { browser.alert("Drill complete.") }),
         )
-        False -> #(
-          Model(
-            ..model,
-            current_iteration: iteration,
-            problem_index: index,
-            draft: "",
-            answer_revealed: False,
-          ),
-          effect.none(),
-        )
+        False -> {
+          let advanced =
+            Model(
+              ..m,
+              current_iteration: iteration,
+              problem_index: index,
+              answer_revealed: False,
+              run: RunIdle,
+            )
+          // Each repetition starts from the stub: retyping is the drill.
+          // The saved draft only survives reloads mid-repetition.
+          let advanced = case model.current_ref(advanced) {
+            Ok(ref) ->
+              Model(
+                ..advanced,
+                draft: starter_for(ref),
+                drafts: model.assoc_put(advanced.drafts, ref, starter_for(ref)),
+              )
+            Error(Nil) -> Model(..advanced, draft: "")
+          }
+          with_prefetch(#(advanced, effect.none()))
+        }
       }
     }
 
-    UserTypedDraft(text) -> #(Model(..model, draft: text), effect.none())
+    UserSearched(query) -> #(Model(..m, search: query), effect.none())
 
-    UserPressedTab(value, start, end) -> #(
-      Model(..model, draft: browser.splice_tab(value, start, end)),
-      effect.before_paint(fn(_dispatch, _root) {
-        browser.set_selection("codeEditor", start + 4)
-      }),
+    EditorChanged(text) -> {
+      let drafts = case model.current_ref(m) {
+        Ok(ref) -> model.assoc_put(m.drafts, ref, text)
+        Error(Nil) -> m.drafts
+      }
+      #(Model(..m, draft: text, drafts: drafts), schedule_draft_save())
+    }
+
+    DraftSaveTicked -> #(m, effect.none())
+
+    UserClickedRun ->
+      case m.runtime, current_check(m) {
+        RuntimeReady, Ok(check) -> {
+          let id = m.next_run_id
+          #(
+            Model(..m, run: Running(id), next_run_id: id + 1),
+            runner.run(id, m.draft, check.harness),
+          )
+        }
+        _, _ -> #(m, effect.none())
+      }
+
+    RunnerReady -> #(Model(..m, runtime: RuntimeReady), effect.none())
+    RunnerFailed(message) -> #(
+      Model(..m, runtime: RuntimeFailed(message)),
+      effect.none(),
     )
+
+    RunFinished(id, outcome) ->
+      case m.run {
+        Running(current) if current == id -> {
+          let passed = case outcome {
+            Cases(cases) -> cases != [] && list.all(cases, fn(c) { c.passed })
+            Errored(_) | TimedOut -> False
+          }
+          let attempts = case model.current_ref(m) {
+            Ok(ref) -> record_attempt(m.attempts, ref, passed)
+            Error(Nil) -> m.attempts
+          }
+          #(Model(..m, run: Ran(outcome), attempts: attempts), effect.none())
+        }
+        _ -> #(m, effect.none())
+      }
+
+    RunTimedOut(id) ->
+      case m.run {
+        Running(current) if current == id -> {
+          let attempts = case model.current_ref(m) {
+            Ok(ref) -> record_attempt(m.attempts, ref, False)
+            Error(Nil) -> m.attempts
+          }
+          // The worker cannot be interrupted, only replaced.
+          #(
+            Model(
+              ..m,
+              run: Ran(TimedOut),
+              attempts: attempts,
+              runtime: RuntimeLoading,
+            ),
+            runner.restart(),
+          )
+        }
+        _ -> #(m, effect.none())
+      }
   }
 }
 
-fn reset_to_menu(model: Model) -> Model {
+/// A pass is sticky: once a problem has been solved, a later failed rerun
+/// keeps the passed badge.
+fn record_attempt(
+  attempts: List(#(ProblemRef, model.Attempt)),
+  ref: ProblemRef,
+  passed: Bool,
+) -> List(#(ProblemRef, model.Attempt)) {
+  case passed, model.assoc_get(attempts, ref) {
+    True, _ -> model.assoc_put(attempts, ref, model.Passed)
+    False, Ok(model.Passed) -> attempts
+    False, _ -> model.assoc_put(attempts, ref, model.Failed)
+  }
+}
+
+fn draft_for(m: Model, ref: ProblemRef) -> String {
+  case model.assoc_get(m.drafts, ref) {
+    Ok(text) -> text
+    Error(Nil) -> starter_for(ref)
+  }
+}
+
+fn starter_for(ref: ProblemRef) -> String {
+  case problems.find(ref.category, ref.subcategory, ref.title) {
+    Ok(p) ->
+      case p.check {
+        Some(check) -> check.starter
+        None -> ""
+      }
+    Error(Nil) -> ""
+  }
+}
+
+fn schedule_draft_save() -> Effect(Msg) {
+  effect.from(fn(dispatch) {
+    browser.debounce("draft-save", 400, fn() { dispatch(DraftSaveTicked) })
+  })
+}
+
+fn reset_to_menu(m: Model) -> Model {
   Model(
-    ..model,
+    ..m,
     route: MenuRoute,
     problem_index: 0,
     current_iteration: 1,
     draft: "",
     answer_revealed: False,
+    run: RunIdle,
   )
 }
 
@@ -191,13 +341,13 @@ fn toggle_selection(
   }
 }
 
-fn view(model: Model) -> Element(Msg) {
-  case model.route {
+fn view(m: Model) -> Element(Msg) {
+  case m.route {
     DrillRoute ->
-      case drill.view(model) {
+      case drill.view(m) {
         Ok(el) -> el
-        Error(Nil) -> menu.view(model)
+        Error(Nil) -> menu.view(m)
       }
-    MenuRoute -> menu.view(model)
+    MenuRoute -> menu.view(m)
   }
 }

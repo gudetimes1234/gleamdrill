@@ -1,3 +1,4 @@
+import gleam/list
 import gleam/option.{type Option, None}
 
 pub type Route {
@@ -7,6 +8,47 @@ pub type Route {
 
 pub type ProblemRef {
   ProblemRef(category: String, subcategory: String, title: String)
+}
+
+/// The compile-and-run backend (worker + 4.7MB wasm), loaded lazily when a
+/// Gleam drill is opened.
+pub type RuntimeState {
+  RuntimeNotLoaded
+  RuntimeLoading
+  RuntimeReady
+  RuntimeFailed(String)
+}
+
+pub type CaseResult {
+  CaseResult(label: String, expected: String, actual: String, passed: Bool)
+}
+
+pub type RunError {
+  RunError(
+    phase: String,
+    file: Option(String),
+    line: Option(Int),
+    column: Option(Int),
+    message: String,
+  )
+}
+
+pub type RunOutcome {
+  Cases(List(CaseResult))
+  Errored(RunError)
+  TimedOut
+}
+
+pub type RunState {
+  RunIdle
+  Running(id: Int)
+  Ran(RunOutcome)
+}
+
+/// Best result so far for a problem; drives the status badges in the menu.
+pub type Attempt {
+  Passed
+  Failed
 }
 
 pub type Model {
@@ -20,6 +62,12 @@ pub type Model {
     current_iteration: Int,
     draft: String,
     answer_revealed: Bool,
+    runtime: RuntimeState,
+    run: RunState,
+    drafts: List(#(ProblemRef, String)),
+    attempts: List(#(ProblemRef, Attempt)),
+    search: String,
+    next_run_id: Int,
   )
 }
 
@@ -34,7 +82,40 @@ pub fn default() -> Model {
     current_iteration: 1,
     draft: "",
     answer_revealed: False,
+    runtime: RuntimeNotLoaded,
+    run: RunIdle,
+    drafts: [],
+    attempts: [],
+    search: "",
+    next_run_id: 1,
   )
+}
+
+pub fn assoc_get(
+  assoc: List(#(ProblemRef, a)),
+  ref: ProblemRef,
+) -> Result(a, Nil) {
+  list.find_map(assoc, fn(pair) {
+    case pair.0 == ref {
+      True -> Ok(pair.1)
+      False -> Error(Nil)
+    }
+  })
+}
+
+pub fn assoc_put(
+  assoc: List(#(ProblemRef, a)),
+  ref: ProblemRef,
+  value: a,
+) -> List(#(ProblemRef, a)) {
+  [#(ref, value), ..list.filter(assoc, fn(pair) { pair.0 != ref })]
+}
+
+/// The problem the drill is currently showing.
+pub fn current_ref(model: Model) -> Result(ProblemRef, Nil) {
+  model.selected
+  |> list.drop(model.problem_index)
+  |> list.first
 }
 
 pub type Msg {
@@ -50,6 +131,12 @@ pub type Msg {
   ExitConfirmed(Bool)
   UserToggledAnswer
   UserClickedNext
-  UserTypedDraft(String)
-  UserPressedTab(value: String, start: Int, end: Int)
+  UserSearched(String)
+  EditorChanged(String)
+  DraftSaveTicked
+  UserClickedRun
+  RunnerReady
+  RunnerFailed(String)
+  RunFinished(id: Int, outcome: RunOutcome)
+  RunTimedOut(id: Int)
 }
