@@ -1,66 +1,68 @@
 # AlgoDrill
 
-Spaced-repetition drilling for algorithm problems, with **live in-browser Gleam
-compilation**: pick problems, type each solution from memory, run it against
-real test cases, repeat.
+Spaced-repetition drilling for algorithm problems, with **live in-browser
+checking in three languages**: pick problems, type each solution from memory
+(vim or emacs keybindings if you like), run it against real test cases, repeat.
 
 Built in [Gleam](https://gleam.run) (JavaScript target) with
-[Lustre](https://lustre.build) and a CodeMirror 6 editor. The Gleam compiler
-itself runs in the page — the official wasm build, driven from a web worker the
-way tour.gleam.run does it. Ships as a static site.
+[Lustre](https://lustre.build) and a CodeMirror 6 editor. Everything runs
+client-side on a static site:
+
+- **Gleam** drills compile with the official Gleam compiler (wasm) in a worker
+- **Python** drills run under Brython in a worker
+- **TypeScript** drills transpile with Sucrase and execute in a worker
 
 ## Content
 
-| Category | Solutions in | Drills | Runnable tests |
+| Category | Language | Drills | Runnable tests |
 |---|---|---|---|
-| NeetCode 150 | Python | 21 | — |
+| NeetCode 150 | Python | 21 | yes |
 | NeetCode 150 (Gleam) | Gleam | 21 | yes |
-| Python Tips / Idioms | Python | 8 | — |
+| NeetCode 150 (TypeScript) | TypeScript | 6 | yes |
+| Python Tips / Idioms | Python | 8 | yes |
 | Gleam Tips / Idioms | Gleam | 10 | yes |
 
-Every Gleam drill carries a required signature, an editor starter stub, and a
-test harness. Solutions compile in a worker (~100 ms warm), execute against the
-harness, and report per-case pass/fail with expected-vs-actual diffs. Compile
-errors underline the offending line in the editor; runaway recursion is
-terminated by a timeout.
+Every drill carries a required signature, a starter stub, a collapsed
+**Approach** write-up ("this is a sliding-window problem…"), one or more
+reference **solutions** (alternate approaches where they genuinely differ,
+e.g. hash map vs brute force), and a test harness with per-case
+expected-vs-actual results. Compile errors underline the offending line;
+runaway code is terminated by a timeout.
 
 ## Layout
 
 ```
-src/                    the Lustre app (worker.gleam runs in the web worker;
-                        *_ffi.mjs files are the thin JS platform boundary)
-drills/                 a Gleam project: the 31 reference solutions (compiled
-                        and sample-tested), their test harnesses, and the
-                        build tooling (gleam run -m generate | bundle_stdlib)
-assets/gleam-runtime/   vendored wasm compiler + stdlib (make vendor)
+src/                    the Lustre app; worker.gleam / py_worker.gleam /
+                        ts_worker.gleam run in the per-language workers;
+                        *_ffi.mjs files are the thin JS platform boundary
+drills/                 a Gleam project: reference solutions + harnesses for
+                        all three languages, plus the build tooling
+                        (gleam run -m generate | bundle_stdlib | solutions)
+assets/gleam-runtime/   vendored wasm compiler + stdlib   (make vendor)
+assets/python-runtime/  vendored Brython                  (make vendor)
 dist/                   committed build output — what Vercel serves
 ```
 
-Drill content is data: `drills/src/<module>.gleam` (the reference solution) +
-`drills/harnesses/<module>.gleam` (its checks) are embedded into the app by
-`gleam run -m generate`, which also derives the signature and starter stub.
-`gleam run -m solutions` (in `drills/`) asserts every reference solution against
-sample inputs.
+Drill content is data: each drill is a real, runnable source file in
+`drills/{src,python/solutions,ts/solutions}` plus a harness next to it;
+`gleam run -m generate` embeds them into the app and derives signatures and
+starter stubs. Alternates live as `<module>__<variant>` files. Every solution
+— primaries and alternates — is verified against its harness natively
+(`gleam run -m solutions`, CPython, bun) and through the real browser workers.
 
-## Develop
-
-```sh
-make dev      # vendor + generate + worker bundle + dev server
-```
-
-## Build & deploy
+## Develop / ship
 
 ```sh
+make dev      # vendor + generate + worker bundles + dev server
 make build    # minified bundle -> dist/
 make deploy   # build + vercel deploy --prod
 ```
 
-`dist/` is committed so Vercel needs no toolchain. The wasm runtime (4.7 MB) is
-version-stamped under `/gleam-runtime/<version>/` and loads lazily — only when a
-Gleam drill opens.
+Runtimes are version-stamped and lazy: nothing language-specific downloads
+until a drill of that language opens.
 
 ## State
 
-Selection, per-problem drafts, pass/fail badges and drill position persist in
-localStorage under `algoDrillState.v3`; older `v2`/`v1` state migrates
-automatically.
+Selection, per-problem drafts, pass/fail badges, keymap choice and drill
+position persist in localStorage under `algoDrillState.v3` (older versions
+migrate automatically).
