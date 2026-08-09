@@ -234,8 +234,10 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn product_except_self(nums: List(Int)) -> List(Int) {
   let n = list.length(nums)
-  let prefixes =
-    [1, ..list.take(list.scan(nums, 1, fn(acc, x) { acc * x }), n - 1)]
+  let prefixes = [
+    1,
+    ..list.take(list.scan(nums, 1, fn(acc, x) { acc * x }), n - 1)
+  ]
   let suffixes =
     list.reverse(nums)
     |> list.scan(1, fn(acc, x) { acc * x })
@@ -450,7 +452,10 @@ fn outer(
   case nums {
     [] -> acc
     [first, ..rest] ->
-      outer(rest, inner(first, rest, list.reverse(rest), list.length(rest), acc))
+      outer(
+        rest,
+        inner(first, rest, list.reverse(rest), list.length(rest), acc),
+      )
   }
 }
 
@@ -669,7 +674,8 @@ fn shrink(
   k: Int,
 ) -> #(dict.Dict(String, Int), List(String)) {
   let size = list.length(window)
-  let max_count = dict.fold(counts, 0, fn(top, _, count) { int.max(top, count) })
+  let max_count =
+    dict.fold(counts, 0, fn(top, _, count) { int.max(top, count) })
   case size - max_count > k, window {
     True, [oldest, ..rest] ->
       shrink(

@@ -2,16 +2,28 @@ GLEAM_VERSION := 1.18.1
 RUNTIME_DIR   := assets/gleam-runtime/$(GLEAM_VERSION)
 TARBALL_URL   := https://github.com/gleam-lang/gleam/releases/download/v$(GLEAM_VERSION)/gleam-v$(GLEAM_VERSION)-browser.tar.gz
 
-.PHONY: dev build deploy vendor clean-vendor
+.PHONY: dev build deploy vendor content worker clean-vendor
 
-dev: vendor
+dev: vendor content worker
 	gleam run -m lustre/dev start
 
-build: vendor
+build: vendor content worker
 	gleam run -m lustre/dev build
 
 deploy: build
 	vercel deploy --prod
+
+# Regenerates src/algodrill/problems/embedded.gleam from the drill sources.
+content:
+	cd drills && gleam run -m generate
+
+# The worker is a separate JS entry point: its Gleam logic is compiled, then
+# bundled (with its FFI graph) into a single file the bootstrap imports. The
+# computed dynamic import()s inside worker_ffi.mjs stay runtime code.
+worker:
+	gleam build --target javascript
+	bun build build/dev/javascript/algodrill/algodrill/worker.mjs \
+		--format=esm --minify --outfile=assets/worker-main.js
 
 # Downloads the browser build of the Gleam compiler and assembles everything the
 # in-browser runner needs: the wasm compiler itself, the stdlib SOURCE (written into
