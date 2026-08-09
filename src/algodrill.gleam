@@ -1,11 +1,12 @@
 import algodrill/model.{
-  type Model, type Msg, type ProblemRef, DrillRoute, ExitConfirmed, Model, ProblemRef, UserChangedIterations, UserClickedBreadcrumb,
-  UserClickedCategory, UserClickedClearSelection, UserClickedExitDrill,
-  UserClickedNext, UserClickedSelectAll, UserClickedStartDrill,
-  UserClickedSubcategory, UserPressedTab, UserToggledAnswer, UserToggledProblem,
-  UserTypedDraft,
+  type Model, type Msg, type ProblemRef, DrillRoute, ExitConfirmed, Model,
+  ProblemRef, UserChangedIterations, UserClickedBreadcrumb, UserClickedCategory,
+  UserClickedClearSelection, UserClickedExitDrill, UserClickedNext,
+  UserClickedSelectAll, UserClickedStartDrill, UserClickedSubcategory,
+  UserPressedTab, UserToggledAnswer, UserToggledProblem, UserTypedDraft,
 }
 import algodrill/problems
+import algodrill/storage
 import algodrill/view/menu
 import gleam/int
 import gleam/list
@@ -22,10 +23,28 @@ pub fn main() {
 }
 
 fn init(_flags) -> #(Model, Effect(Msg)) {
-  #(model.default(), effect.none())
+  #(storage.load(), effect.none())
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
+  let #(new_model, fx) = handle(model, msg)
+  case should_persist(msg) {
+    True -> #(new_model, effect.batch([storage.save(new_model), fx]))
+    False -> #(new_model, fx)
+  }
+}
+
+/// Mirrors the legacy app: state is written to localStorage after every
+/// mutation of persisted fields. Draft text and answer reveal are not saved.
+fn should_persist(msg: Msg) -> Bool {
+  case msg {
+    UserTypedDraft(_) | UserPressedTab(_, _, _) | UserToggledAnswer -> False
+    UserClickedExitDrill | ExitConfirmed(False) -> False
+    _ -> True
+  }
+}
+
+fn handle(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     UserClickedCategory(name) -> #(
       Model(..model, selected_category: Some(name), selected_subcategory: None),
@@ -66,10 +85,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         _, _ -> #(model, effect.none())
       }
 
-    UserClickedClearSelection -> #(
-      Model(..model, selected: []),
-      effect.none(),
-    )
+    UserClickedClearSelection -> #(Model(..model, selected: []), effect.none())
 
     UserChangedIterations(raw) -> {
       let count = case int.parse(raw) {

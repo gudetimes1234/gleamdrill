@@ -1,8 +1,7 @@
 import algodrill/model.{
-  type Model, type Msg, ProblemRef, UserChangedIterations,
-  UserClickedBreadcrumb, UserClickedCategory, UserClickedClearSelection,
-  UserClickedSelectAll, UserClickedStartDrill, UserClickedSubcategory,
-  UserToggledProblem,
+  type Model, type Msg, ProblemRef, UserChangedIterations, UserClickedBreadcrumb,
+  UserClickedCategory, UserClickedClearSelection, UserClickedSelectAll,
+  UserClickedStartDrill, UserClickedSubcategory, UserToggledProblem,
 }
 import algodrill/problem.{type Problem}
 import algodrill/problems
@@ -17,7 +16,9 @@ import lustre/element/keyed
 import lustre/event
 
 pub fn view(model: Model) -> Element(Msg) {
-  let listed_problems = case model.selected_category, model.selected_subcategory
+  let listed_problems = case
+    model.selected_category,
+    model.selected_subcategory
   {
     Some(cat), Some(sub) -> problems.problems_in(cat, sub)
     _, _ -> []
