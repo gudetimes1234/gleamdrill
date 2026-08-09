@@ -1,7 +1,9 @@
 import algodrill/problem.{
-  type Category, type Problem, Category, Gleam, Problem, Subcategory,
+  type Category, type Problem, Category, Gleam, Problem, Solution, Subcategory,
 }
+import algodrill/problems/approaches
 import algodrill/problems/embedded
+import gleam/list
 import gleam/option.{Some}
 
 pub fn category() -> Category {
@@ -65,7 +67,8 @@ fn drill(title: String, prompt: String, e: embedded.Embedded) -> Problem {
   Problem(
     title: title,
     prompt: prompt,
-    solution: e.solution,
+    approach: approaches.for_title(title),
+    solutions: list.map(e.solutions, fn(s) { Solution(label: s.0, code: s.1) }),
     language: Gleam,
     check: Some(e.check),
   )

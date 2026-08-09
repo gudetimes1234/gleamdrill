@@ -128,6 +128,7 @@ fn encode(model: Model) -> String {
       }),
     ),
     #("search", json.string(model.search)),
+    #("editorKeymap", json.string(model.editor_keymap)),
   ])
   |> json.to_string
 }
@@ -158,8 +159,19 @@ fn v3_decoder() -> Decoder(Model) {
     decode.list(ref_extra_decoder("result", attempt_decoder())),
   )
   use search <- decode.optional_field("search", "", decode.string)
+  use editor_keymap <- decode.optional_field(
+    "editorKeymap",
+    "default",
+    decode.string,
+  )
   decode.success(
-    Model(..base, drafts: drafts, attempts: attempts, search: search),
+    Model(
+      ..base,
+      drafts: drafts,
+      attempts: attempts,
+      search: search,
+      editor_keymap: editor_keymap,
+    ),
   )
 }
 

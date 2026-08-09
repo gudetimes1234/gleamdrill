@@ -11,11 +11,18 @@ pub type Check {
   Check(signature: String, starter: String, harness: String)
 }
 
+/// One way of solving a problem. Every problem has at least one; some carry
+/// alternates ("Solution 2 · Brute force") showing a different approach.
+pub type Solution {
+  Solution(label: String, code: String)
+}
+
 pub type Problem {
   Problem(
     title: String,
     prompt: String,
-    solution: String,
+    approach: String,
+    solutions: List(Solution),
     language: Language,
     check: Option(Check),
   )
@@ -33,5 +40,13 @@ pub fn language_label(language: Language) -> String {
   case language {
     Python -> "Python"
     Gleam -> "Gleam"
+  }
+}
+
+/// Lowercase identifier used by the editor mode and the runner registry.
+pub fn language_slug(language: Language) -> String {
+  case language {
+    Python -> "python"
+    Gleam -> "gleam"
   }
 }

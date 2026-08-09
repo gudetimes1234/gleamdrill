@@ -9,7 +9,7 @@
 //   property "diagnostics"  — [{line, column, message}] (1-based), underlined
 //   event    "editor-change" — {detail: {value}} on every document change
 
-import { EditorState } from "@codemirror/state";
+import { EditorState, Compartment, Prec } from "@codemirror/state";
 import {
   EditorView,
   keymap,
@@ -32,6 +32,72 @@ import {
 } from "@codemirror/language";
 import { setDiagnostics } from "@codemirror/lint";
 import { tags } from "@lezer/highlight";
+import { vim } from "@replit/codemirror-vim";
+import {
+  cursorCharLeft,
+  cursorCharRight,
+  cursorGroupLeft,
+  cursorGroupRight,
+  cursorLineUp,
+  cursorLineDown,
+  cursorLineStart,
+  cursorLineEnd,
+  cursorDocStart,
+  cursorDocEnd,
+  cursorPageDown,
+  cursorPageUp,
+  deleteCharForward,
+  deleteGroupForward,
+} from "@codemirror/commands";
+import { python } from "@codemirror/legacy-modes/mode/python";
+import { typescript } from "@codemirror/legacy-modes/mode/javascript";
+
+// @replit/codemirror-emacs is broken against current @codemirror/view (its
+// keydown handler never engages; verified in an isolated editor), so the
+// classic movement/editing bindings are provided by hand, with a one-slot
+// kill buffer for C-k / C-y.
+let killBuffer = "";
+
+function killToLineEnd(view) {
+  const { state } = view;
+  const line = state.doc.lineAt(state.selection.main.head);
+  const from = state.selection.main.head;
+  const to = from === line.to ? Math.min(line.to + 1, state.doc.length) : line.to;
+  if (from === to) return false;
+  killBuffer = state.sliceDoc(from, to);
+  view.dispatch({ changes: { from, to }, userEvent: "delete" });
+  return true;
+}
+
+function yank(view) {
+  if (!killBuffer) return false;
+  const { from, to } = view.state.selection.main;
+  view.dispatch({
+    changes: { from, to, insert: killBuffer },
+    selection: { anchor: from + killBuffer.length },
+    userEvent: "input",
+  });
+  return true;
+}
+
+const emacsKeymap = keymap.of([
+  { key: "Ctrl-f", run: cursorCharRight },
+  { key: "Ctrl-b", run: cursorCharLeft },
+  { key: "Ctrl-n", run: cursorLineDown },
+  { key: "Ctrl-p", run: cursorLineUp },
+  { key: "Ctrl-a", run: cursorLineStart },
+  { key: "Ctrl-e", run: cursorLineEnd },
+  { key: "Alt-f", run: cursorGroupRight },
+  { key: "Alt-b", run: cursorGroupLeft },
+  { key: "Ctrl-d", run: deleteCharForward },
+  { key: "Alt-d", run: deleteGroupForward },
+  { key: "Ctrl-k", run: killToLineEnd },
+  { key: "Ctrl-y", run: yank },
+  { key: "Ctrl-v", run: cursorPageDown },
+  { key: "Alt-v", run: cursorPageUp },
+  { key: "Alt-Shift-,", run: cursorDocStart },
+  { key: "Alt-Shift-.", run: cursorDocEnd },
+]);
 
 const KEYWORDS = new Set([
   "as", "assert", "auto", "case", "const", "delegate", "derive", "echo",
@@ -128,10 +194,42 @@ const theme = EditorView.theme(
   { dark: true },
 );
 
+// vim/emacs grab keys via ViewPlugin event handlers, which race other handlers
+// by extension precedence — the compartment sits first in the extension list
+// AND is wrapped Prec.highest so the mode always wins the keydown race.
+function keymapExtension(mode) {
+  switch (mode) {
+    case "vim":
+      return Prec.highest(vim({ status: true }));
+    case "emacs":
+      return Prec.highest(emacsKeymap);
+    default:
+      return [];
+  }
+}
+
+function languageExtension(language) {
+  switch (language) {
+    case "python":
+      return StreamLanguage.define(python);
+    case "typescript":
+      return StreamLanguage.define(typescript);
+    default:
+      return gleam;
+  }
+}
+
 class GleamEditor extends HTMLElement {
+  // keymap and language ride on ATTRIBUTES, not properties: Lustre reliably
+  // diffs attributes on every (re)mount, while a property set on a remounted
+  // custom element has been observed not to arrive.
+  static observedAttributes = ["keymap", "language"];
+
   #view = null;
   #doc = "";
   #diagnostics = [];
+  #keymapCompartment = new Compartment();
+  #languageCompartment = new Compartment();
 
   set doc(value) {
     this.#doc = value ?? "";
@@ -155,6 +253,34 @@ class GleamEditor extends HTMLElement {
     if (this.#view) this.#applyDiagnostics();
   }
 
+  get #keymap() {
+    return this.getAttribute("keymap") ?? "default";
+  }
+
+  get #language() {
+    return this.getAttribute("language") ?? "gleam";
+  }
+
+  attributeChangedCallback(name, _previous, _value) {
+    if (!this.#view) return;
+    switch (name) {
+      case "keymap":
+        this.#view.dispatch({
+          effects: this.#keymapCompartment.reconfigure(
+            keymapExtension(this.#keymap),
+          ),
+        });
+        break;
+      case "language":
+        this.#view.dispatch({
+          effects: this.#languageCompartment.reconfigure(
+            languageExtension(this.#language),
+          ),
+        });
+        break;
+    }
+  }
+
   connectedCallback() {
     if (this.#view) return;
     const notify = EditorView.updateListener.of((update) => {
@@ -171,13 +297,14 @@ class GleamEditor extends HTMLElement {
       state: EditorState.create({
         doc: this.#doc,
         extensions: [
+          this.#keymapCompartment.of(keymapExtension(this.#keymap)),
           lineNumbers(),
           history(),
           drawSelection(),
           bracketMatching(),
           highlightActiveLine(),
           indentUnit.of("  "),
-          gleam,
+          this.#languageCompartment.of(languageExtension(this.#language)),
           syntaxHighlighting(highlight),
           theme,
           keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),

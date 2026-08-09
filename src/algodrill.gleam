@@ -5,10 +5,10 @@ import algodrill/model.{
   EditorChanged, Errored, ExitConfirmed, MenuRoute, Model, ProblemRef, Ran,
   RunFinished, RunIdle, RunTimedOut, RunnerFailed, RunnerReady, Running,
   RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady, TimedOut,
-  UserChangedIterations, UserClickedBreadcrumb, UserClickedCategory,
-  UserClickedClearSelection, UserClickedExitDrill, UserClickedNext,
-  UserClickedRun, UserClickedSelectAll, UserClickedStartDrill,
-  UserClickedSubcategory, UserSearched, UserToggledAnswer, UserToggledProblem,
+  UserChangedIterations, UserChangedKeymap, UserClickedBreadcrumb,
+  UserClickedCategory, UserClickedClearSelection, UserClickedExitDrill,
+  UserClickedNext, UserClickedRun, UserClickedSelectAll, UserClickedStartDrill,
+  UserClickedSubcategory, UserSearched, UserToggledProblem, UserToggledSolution,
 }
 import algodrill/problem
 import algodrill/problems
@@ -84,7 +84,7 @@ fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 /// and only that write hits storage.
 fn should_persist(msg: Msg) -> Bool {
   case msg {
-    EditorChanged(_) | UserToggledAnswer -> False
+    EditorChanged(_) | UserToggledSolution(_) -> False
     UserClickedExitDrill | ExitConfirmed(False) -> False
     UserClickedRun | RunnerReady | RunnerFailed(_) -> False
     _ -> True
@@ -151,7 +151,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               current_iteration: 1,
               draft: starter_for(first),
               drafts: model.assoc_put(m.drafts, first, starter_for(first)),
-              answer_revealed: False,
+              revealed_solution: None,
               run: RunIdle,
             ),
             effect.none(),
@@ -172,10 +172,13 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     ExitConfirmed(True) -> #(reset_to_menu(m), effect.none())
     ExitConfirmed(False) -> #(m, effect.none())
 
-    UserToggledAnswer -> #(
-      Model(..m, answer_revealed: !m.answer_revealed),
-      effect.none(),
-    )
+    UserToggledSolution(index) -> {
+      let revealed = case m.revealed_solution {
+        Some(current) if current == index -> None
+        _ -> Some(index)
+      }
+      #(Model(..m, revealed_solution: revealed), effect.none())
+    }
 
     UserClickedNext -> {
       let #(iteration, index) = case m.current_iteration < m.iteration_count {
@@ -193,7 +196,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               ..m,
               current_iteration: iteration,
               problem_index: index,
-              answer_revealed: False,
+              revealed_solution: None,
               run: RunIdle,
             )
           // Each repetition starts from the stub: retyping is the drill.
@@ -213,6 +216,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
 
     UserSearched(query) -> #(Model(..m, search: query), effect.none())
+
+    UserChangedKeymap(mode) -> #(Model(..m, editor_keymap: mode), effect.none())
 
     EditorChanged(text) -> {
       let drafts = case model.current_ref(m) {
@@ -326,7 +331,7 @@ fn reset_to_menu(m: Model) -> Model {
     problem_index: 0,
     current_iteration: 1,
     draft: "",
-    answer_revealed: False,
+    revealed_solution: None,
     run: RunIdle,
   )
 }

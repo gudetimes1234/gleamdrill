@@ -22,6 +22,16 @@ pub fn doc(text: String) -> Attribute(msg) {
   attribute.property("doc", json.string(text))
 }
 
+/// "default", "vim" or "emacs".
+pub fn keymap(mode: String) -> Attribute(msg) {
+  attribute.attribute("keymap", mode)
+}
+
+/// "gleam", "python" or "typescript" — picks the highlighting mode.
+pub fn language(name: String) -> Attribute(msg) {
+  attribute.attribute("language", name)
+}
+
 pub fn diagnostics(items: List(Diagnostic)) -> Attribute(msg) {
   attribute.property(
     "diagnostics",

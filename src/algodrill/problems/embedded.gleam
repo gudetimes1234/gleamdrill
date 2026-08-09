@@ -4,12 +4,13 @@
 import algodrill/problem.{type Check, Check}
 
 pub type Embedded {
-  Embedded(solution: String, check: Check)
+  Embedded(solutions: List(#(String, String)), check: Check)
 }
 
 pub fn nc01_contains_duplicate() -> Embedded {
   Embedded(
-    solution: "import gleam/set
+    solutions: [
+      #("Solution 1", "import gleam/set
 
 pub fn contains_duplicate(nums: List(Int)) -> Bool {
   check(nums, set.new())
@@ -24,7 +25,24 @@ fn check(nums: List(Int), seen: set.Set(Int)) -> Bool {
         False -> check(rest, set.insert(seen, n))
       }
   }
-}",
+}"),
+      #("Solution 2 · Sorting", "import gleam/int
+import gleam/list
+
+pub fn contains_duplicate(nums: List(Int)) -> Bool {
+  nums
+  |> list.sort(int.compare)
+  |> has_adjacent_pair
+}
+
+fn has_adjacent_pair(sorted: List(Int)) -> Bool {
+  case sorted {
+    [a, b, ..] if a == b -> True
+    [_, ..rest] -> has_adjacent_pair(rest)
+    [] -> False
+  }
+}"),
+    ],
     check: Check(
       signature: "pub fn contains_duplicate(nums: List(Int)) -> Bool",
       starter: "pub fn contains_duplicate(nums: List(Int)) -> Bool {
@@ -63,7 +81,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc02_valid_anagram() -> Embedded {
   Embedded(
-    solution: "import gleam/dict
+    solutions: [
+      #("Solution 1", "import gleam/dict
 import gleam/list
 import gleam/option
 import gleam/string
@@ -77,7 +96,8 @@ fn counts(word: String) -> dict.Dict(String, Int) {
   |> list.fold(dict.new(), fn(acc, g) {
     dict.upsert(acc, g, fn(n) { option.unwrap(n, 0) + 1 })
   })
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn is_anagram(s: String, t: String) -> Bool",
       starter: "pub fn is_anagram(s: String, t: String) -> Bool {
@@ -116,7 +136,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc03_two_sum() -> Embedded {
   Embedded(
-    solution: "import gleam/dict
+    solutions: [
+      #("Solution 1", "import gleam/dict
 
 pub fn two_sum(nums: List(Int), target: Int) -> Result(#(Int, Int), Nil) {
   find_pair(nums, target, 0, dict.new())
@@ -136,7 +157,33 @@ fn find_pair(
         Error(Nil) -> find_pair(rest, target, i + 1, dict.insert(seen, n, i))
       }
   }
-}",
+}"),
+      #("Solution 2 · Brute force", "import gleam/list
+
+pub fn two_sum(nums: List(Int), target: Int) -> Result(#(Int, Int), Nil) {
+  outer(nums, target, 0)
+}
+
+fn outer(nums: List(Int), target: Int, i: Int) -> Result(#(Int, Int), Nil) {
+  case nums {
+    [] -> Error(Nil)
+    [n, ..rest] ->
+      case inner(rest, target - n, i + 1) {
+        Ok(j) -> Ok(#(i, j))
+        Error(Nil) -> outer(rest, target, i + 1)
+      }
+  }
+}
+
+fn inner(nums: List(Int), needed: Int, j: Int) -> Result(Int, Nil) {
+  list.index_fold(nums, Error(Nil), fn(found, n, offset) {
+    case found, n == needed {
+      Error(Nil), True -> Ok(j + offset)
+      _, _ -> found
+    }
+  })
+}"),
+    ],
     check: Check(
       signature: "pub fn two_sum(nums: List(Int), target: Int) -> Result(#(Int, Int), Nil)",
       starter: "pub fn two_sum(nums: List(Int), target: Int) -> Result(#(Int, Int), Nil) {
@@ -175,7 +222,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc04_group_anagrams() -> Embedded {
   Embedded(
-    solution: "import gleam/dict
+    solutions: [
+      #("Solution 1", "import gleam/dict
 import gleam/list
 import gleam/option
 import gleam/string
@@ -196,7 +244,8 @@ pub fn group_anagrams(strs: List(String)) -> List(List(String)) {
   })
   |> dict.values
   |> list.map(list.reverse)
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn group_anagrams(strs: List(String)) -> List(List(String))",
       starter: "pub fn group_anagrams(strs: List(String)) -> List(List(String)) {
@@ -244,7 +293,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc05_top_k_frequent() -> Embedded {
   Embedded(
-    solution: "import gleam/dict
+    solutions: [
+      #("Solution 1", "import gleam/dict
 import gleam/int
 import gleam/list
 import gleam/option
@@ -258,7 +308,8 @@ pub fn top_k_frequent(nums: List(Int), k: Int) -> List(Int) {
   |> list.sort(fn(a, b) { int.compare(b.1, a.1) })
   |> list.take(k)
   |> list.map(fn(pair) { pair.0 })
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn top_k_frequent(nums: List(Int), k: Int) -> List(Int)",
       starter: "pub fn top_k_frequent(nums: List(Int), k: Int) -> List(Int) {
@@ -292,7 +343,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc06_product_except_self() -> Embedded {
   Embedded(
-    solution: "import gleam/list
+    solutions: [
+      #("Solution 1", "import gleam/list
 
 pub fn product_except_self(nums: List(Int)) -> List(Int) {
   let n = list.length(nums)
@@ -307,7 +359,8 @@ pub fn product_except_self(nums: List(Int)) -> List(Int) {
     |> fn(scanned) { [1, ..scanned] }
     |> list.reverse
   list.map2(prefixes, suffixes, fn(prefix, suffix) { prefix * suffix })
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn product_except_self(nums: List(Int)) -> List(Int)",
       starter: "pub fn product_except_self(nums: List(Int)) -> List(Int) {
@@ -341,7 +394,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc07_longest_consecutive() -> Embedded {
   Embedded(
-    solution: "import gleam/int
+    solutions: [
+      #("Solution 1", "import gleam/int
 import gleam/list
 import gleam/set
 
@@ -362,7 +416,8 @@ fn run_length(all: set.Set(Int), n: Int, count: Int) -> Int {
     True -> run_length(all, n + 1, count + 1)
     False -> count
   }
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn longest_consecutive(nums: List(Int)) -> Int",
       starter: "pub fn longest_consecutive(nums: List(Int)) -> Int {
@@ -398,7 +453,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc08_valid_palindrome() -> Embedded {
   Embedded(
-    solution: "import gleam/list
+    solutions: [
+      #("Solution 1", "import gleam/list
 import gleam/string
 
 pub fn is_palindrome(s: String) -> Bool {
@@ -425,7 +481,54 @@ fn is_digit(n: Int) -> Bool {
 
 fn is_lowercase_letter(n: Int) -> Bool {
   n >= 97 && n <= 122
-}",
+}"),
+      #("Solution 2 · Two pointers", "import gleam/list
+import gleam/string
+
+pub fn is_palindrome(s: String) -> Bool {
+  let cleaned =
+    string.lowercase(s)
+    |> string.to_graphemes
+    |> list.filter(is_alphanumeric)
+  converge(cleaned, list.reverse(cleaned), list.length(cleaned) / 2)
+}
+
+/// Walks the sequence and its reverse together — the closest a linked list
+/// gets to converging index pointers.
+fn converge(
+  from_front: List(String),
+  from_back: List(String),
+  remaining: Int,
+) -> Bool {
+  case remaining <= 0 {
+    True -> True
+    False ->
+      case from_front, from_back {
+        [a, ..front], [b, ..back] ->
+          a == b && converge(front, back, remaining - 1)
+        _, _ -> True
+      }
+  }
+}
+
+fn is_alphanumeric(g: String) -> Bool {
+  case string.to_utf_codepoints(g) {
+    [c] -> {
+      let n = string.utf_codepoint_to_int(c)
+      is_digit(n) || is_lowercase_letter(n)
+    }
+    _ -> False
+  }
+}
+
+fn is_digit(n: Int) -> Bool {
+  n >= 48 && n <= 57
+}
+
+fn is_lowercase_letter(n: Int) -> Bool {
+  n >= 97 && n <= 122
+}"),
+    ],
     check: Check(
       signature: "pub fn is_palindrome(s: String) -> Bool",
       starter: "pub fn is_palindrome(s: String) -> Bool {
@@ -464,7 +567,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc09_two_sum_sorted() -> Embedded {
   Embedded(
-    solution: "import gleam/int
+    solutions: [
+      #("Solution 1", "import gleam/int
 import gleam/list
 import gleam/order
 
@@ -495,7 +599,8 @@ fn search(
       }
     _, _ -> Error(Nil)
   }
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn two_sum_sorted(
   numbers: List(Int),
@@ -540,7 +645,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc10_three_sum() -> Embedded {
   Embedded(
-    solution: "import gleam/int
+    solutions: [
+      #("Solution 1", "import gleam/int
 import gleam/list
 import gleam/order
 import gleam/set
@@ -592,7 +698,8 @@ fn inner(
         _, _ -> acc
       }
   }
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn three_sum(nums: List(Int)) -> List(#(Int, Int, Int))",
       starter: "pub fn three_sum(nums: List(Int)) -> List(#(Int, Int, Int)) {
@@ -632,7 +739,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc11_container_water() -> Embedded {
   Embedded(
-    solution: "import gleam/int
+    solutions: [
+      #("Solution 1", "import gleam/int
 import gleam/list
 
 pub fn max_area(heights: List(Int)) -> Int {
@@ -660,7 +768,8 @@ fn converge(
         _, _ -> best
       }
   }
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn max_area(heights: List(Int)) -> Int",
       starter: "pub fn max_area(heights: List(Int)) -> Int {
@@ -694,7 +803,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc12_best_time_stock() -> Embedded {
   Embedded(
-    solution: "import gleam/int
+    solutions: [
+      #("Solution 1", "import gleam/int
 import gleam/list
 
 pub fn max_profit(prices: List(Int)) -> Int {
@@ -709,7 +819,21 @@ pub fn max_profit(prices: List(Int)) -> Int {
       best
     }
   }
-}",
+}"),
+      #("Solution 2 · Brute force", "import gleam/int
+import gleam/list
+
+pub fn max_profit(prices: List(Int)) -> Int {
+  case prices {
+    [] -> 0
+    [buy, ..later] -> int.max(best_sale(buy, later), max_profit(later))
+  }
+}
+
+fn best_sale(buy: Int, later: List(Int)) -> Int {
+  list.fold(later, 0, fn(best, sell) { int.max(best, sell - buy) })
+}"),
+    ],
     check: Check(
       signature: "pub fn max_profit(prices: List(Int)) -> Int",
       starter: "pub fn max_profit(prices: List(Int)) -> Int {
@@ -743,7 +867,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc13_longest_substring() -> Embedded {
   Embedded(
-    solution: "import gleam/dict
+    solutions: [
+      #("Solution 1", "import gleam/dict
 import gleam/int
 import gleam/list
 import gleam/string
@@ -760,7 +885,8 @@ pub fn length_of_longest_substring(s: String) -> Int {
       #(dict.insert(last_seen, g, i), start, int.max(best, i - start + 1))
     })
   best
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn length_of_longest_substring(s: String) -> Int",
       starter: "pub fn length_of_longest_substring(s: String) -> Int {
@@ -799,7 +925,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc14_character_replacement() -> Embedded {
   Embedded(
-    solution: "import gleam/dict
+    solutions: [
+      #("Solution 1", "import gleam/dict
 import gleam/int
 import gleam/list
 import gleam/option
@@ -835,7 +962,8 @@ fn shrink(
       )
     _, _ -> #(counts, window)
   }
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn character_replacement(s: String, k: Int) -> Int",
       starter: "pub fn character_replacement(s: String, k: Int) -> Int {
@@ -869,7 +997,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc15_permutation_in_string() -> Embedded {
   Embedded(
-    solution: "import gleam/dict
+    solutions: [
+      #("Solution 1", "import gleam/dict
 import gleam/list
 import gleam/option
 import gleam/string
@@ -925,7 +1054,8 @@ fn remove_one(
     Ok(n) -> dict.insert(window, g, n - 1)
     Error(Nil) -> window
   }
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn check_inclusion(s1: String, s2: String) -> Bool",
       starter: "pub fn check_inclusion(s1: String, s2: String) -> Bool {
@@ -959,7 +1089,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc16_valid_parentheses() -> Embedded {
   Embedded(
-    solution: "import gleam/string
+    solutions: [
+      #("Solution 1", "import gleam/string
 
 pub fn is_valid(s: String) -> Bool {
   check(string.to_graphemes(s), [])
@@ -976,7 +1107,8 @@ fn check(graphemes: List(String), stack: List(String)) -> Bool {
       close == expected && check(rest, stack_rest)
     _, _ -> False
   }
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn is_valid(s: String) -> Bool",
       starter: "pub fn is_valid(s: String) -> Bool {
@@ -1016,7 +1148,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc17_min_stack() -> Embedded {
   Embedded(
-    solution: "import gleam/int
+    solutions: [
+      #("Solution 1", "import gleam/int
 
 pub type MinStack {
   MinStack(entries: List(#(Int, Int)))
@@ -1053,7 +1186,8 @@ pub fn get_min(stack: MinStack) -> Result(Int, Nil) {
     [#(_, min), ..] -> Ok(min)
     [] -> Error(Nil)
   }
-}",
+}"),
+    ],
     check: Check(
       signature: "pub type MinStack {
   MinStack(entries: List(#(Int, Int)))
@@ -1127,7 +1261,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc18_daily_temperatures() -> Embedded {
   Embedded(
-    solution: "import gleam/dict
+    solutions: [
+      #("Solution 1", "import gleam/dict
 import gleam/list
 
 pub fn daily_temperatures(temps: List(Int)) -> List(Int) {
@@ -1157,7 +1292,8 @@ fn pop_colder(
       pop_colder(dict.insert(answers, j, i - j), rest, temp, i)
     _ -> #(answers, stack)
   }
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn daily_temperatures(temps: List(Int)) -> List(Int)",
       starter: "pub fn daily_temperatures(temps: List(Int)) -> List(Int) {
@@ -1193,7 +1329,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc19_binary_search() -> Embedded {
   Embedded(
-    solution: "import gleam/int
+    solutions: [
+      #("Solution 1", "import gleam/int
 import gleam/list
 import gleam/order
 
@@ -1218,7 +1355,20 @@ fn halve(nums: List(Int), target: Int, offset: Int) -> Result(Int, Nil) {
       }
     }
   }
-}",
+}"),
+      #("Solution 2 · First match scan", "import gleam/list
+
+/// The O(n) baseline the binary search beats: scan with an index. Worth
+/// contrasting with the halving version to see what the sortedness buys.
+pub fn search(nums: List(Int), target: Int) -> Result(Int, Nil) {
+  list.index_fold(nums, Error(Nil), fn(found, n, i) {
+    case found, n == target {
+      Error(Nil), True -> Ok(i)
+      _, _ -> found
+    }
+  })
+}"),
+    ],
     check: Check(
       signature: "pub fn search(nums: List(Int), target: Int) -> Result(Int, Nil)",
       starter: "pub fn search(nums: List(Int), target: Int) -> Result(Int, Nil) {
@@ -1255,7 +1405,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc20_find_min_rotated() -> Embedded {
   Embedded(
-    solution: "import gleam/int
+    solutions: [
+      #("Solution 1", "import gleam/int
 import gleam/list
 import gleam/result
 
@@ -1287,7 +1438,8 @@ pub fn find_min(nums: List(Int)) -> Result(Int, Nil) {
       }
     }
   }
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn find_min(nums: List(Int)) -> Result(Int, Nil)",
       starter: "pub fn find_min(nums: List(Int)) -> Result(Int, Nil) {
@@ -1322,7 +1474,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn nc21_search_rotated() -> Embedded {
   Embedded(
-    solution: "import gleam/list
+    solutions: [
+      #("Solution 1", "import gleam/list
 import gleam/result
 
 pub fn search_rotated(nums: List(Int), target: Int) -> Result(Int, Nil) {
@@ -1366,7 +1519,8 @@ fn halve(nums: List(Int), target: Int, offset: Int) -> Result(Int, Nil) {
       }
     }
   }
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn search_rotated(nums: List(Int), target: Int) -> Result(Int, Nil)",
       starter: "pub fn search_rotated(nums: List(Int), target: Int) -> Result(Int, Nil) {
@@ -1405,7 +1559,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn tip01_list_patterns() -> Embedded {
   Embedded(
-    solution: "pub fn length(items: List(a)) -> Int {
+    solutions: [
+      #("Solution 1", "pub fn length(items: List(a)) -> Int {
   case items {
     [] -> 0
     [_, ..rest] -> 1 + length(rest)
@@ -1418,7 +1573,8 @@ pub fn last(items: List(a)) -> Result(a, Nil) {
     [only] -> Ok(only)
     [_, ..rest] -> last(rest)
   }
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn length(items: List(a)) -> Int
 
@@ -1453,7 +1609,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn tip02_tail_recursion() -> Embedded {
   Embedded(
-    solution: "pub fn reverse(items: List(a)) -> List(a) {
+    solutions: [
+      #("Solution 1", "pub fn reverse(items: List(a)) -> List(a) {
   reverse_loop(items, [])
 }
 
@@ -1473,7 +1630,8 @@ fn sum_loop(numbers: List(Int), acc: Int) -> Int {
     [] -> acc
     [first, ..rest] -> sum_loop(rest, acc + first)
   }
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn reverse(items: List(a)) -> List(a)
 
@@ -1512,7 +1670,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn tip03_fold() -> Embedded {
   Embedded(
-    solution: "import gleam/int
+    solutions: [
+      #("Solution 1", "import gleam/int
 import gleam/list
 
 pub fn max(numbers: List(Int)) -> Result(Int, Nil) {
@@ -1533,7 +1692,8 @@ pub fn count_if(items: List(a), predicate: fn(a) -> Bool) -> Int {
 
 pub fn running_total(numbers: List(Int)) -> List(Int) {
   list.scan(numbers, 0, fn(acc, n) { acc + n })
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn max(numbers: List(Int)) -> Result(Int, Nil)
 
@@ -1578,7 +1738,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn tip04_frequency_maps() -> Embedded {
   Embedded(
-    solution: "import gleam/dict
+    solutions: [
+      #("Solution 1", "import gleam/dict
 import gleam/list
 import gleam/option
 import gleam/string
@@ -1591,7 +1752,8 @@ pub fn word_frequencies(text: String) -> dict.Dict(String, Int) {
   |> list.fold(dict.new(), fn(counts, word) {
     dict.upsert(counts, word, fn(n) { option.unwrap(n, 0) + 1 })
   })
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn word_frequencies(text: String) -> dict.Dict(String, Int)",
       starter: "pub fn word_frequencies(text: String) -> dict.Dict(String, Int) {
@@ -1634,7 +1796,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn tip05_result_chains() -> Embedded {
   Embedded(
-    solution: "import gleam/int
+    solutions: [
+      #("Solution 1", "import gleam/int
 import gleam/result
 
 pub type Config {
@@ -1652,7 +1815,8 @@ pub fn parse_config(
     \"\" -> Error(Nil)
     _ -> Ok(Config(host, port, timeout))
   }
-}",
+}"),
+    ],
     check: Check(
       signature: "pub type Config {
   Config(host: String, port: Int, timeout: Int)
@@ -1714,7 +1878,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn tip06_option() -> Embedded {
   Embedded(
-    solution: "import gleam/dict
+    solutions: [
+      #("Solution 1", "import gleam/dict
 import gleam/option
 
 pub fn port_description(config: dict.Dict(String, String)) -> String {
@@ -1724,7 +1889,8 @@ pub fn port_description(config: dict.Dict(String, String)) -> String {
     |> option.map(fn(raw) { raw <> \" (configured)\" })
     |> option.unwrap(\"8080 (default)\")
   \"port: \" <> port
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn port_description(config: dict.Dict(String, String)) -> String",
       starter: "pub fn port_description(config: dict.Dict(String, String)) -> String {
@@ -1756,7 +1922,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn tip07_string_patterns() -> Embedded {
   Embedded(
-    solution: "import gleam/list
+    solutions: [
+      #("Solution 1", "import gleam/list
 import gleam/string
 
 pub fn strip_comment(line: String) -> String {
@@ -1773,7 +1940,8 @@ pub fn initials(name: String) -> String {
   |> list.filter_map(fn(word) { list.first(string.to_graphemes(word)) })
   |> string.concat
   |> string.uppercase
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn strip_comment(line: String) -> String
 
@@ -1818,7 +1986,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn tip08_pipelines() -> Embedded {
   Embedded(
-    solution: "import gleam/list
+    solutions: [
+      #("Solution 1", "import gleam/list
 import gleam/string
 
 pub fn slug(title: String) -> String {
@@ -1828,7 +1997,8 @@ pub fn slug(title: String) -> String {
   |> string.split(\" \")
   |> list.filter(fn(word) { word != \"\" })
   |> string.join(\"-\")
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn slug(title: String) -> String",
       starter: "pub fn slug(title: String) -> String {
@@ -1854,7 +2024,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn tip09_records() -> Embedded {
   Embedded(
-    solution: "pub type Player {
+    solutions: [
+      #("Solution 1", "pub type Player {
   Player(name: String, score: Int, level: Int)
 }
 
@@ -1868,7 +2039,8 @@ pub fn add_points(player: Player, points: Int) -> Player {
 
 pub fn level_up(player: Player) -> Player {
   Player(..player, level: player.level + 1, score: 0)
-}",
+}"),
+    ],
     check: Check(
       signature: "pub type Player {
   Player(name: String, score: Int, level: Int)
@@ -1929,7 +2101,8 @@ pub fn run() -> List(#(String, String, String)) {
 
 pub fn tip10_set_dedupe() -> Embedded {
   Embedded(
-    solution: "import gleam/list
+    solutions: [
+      #("Solution 1", "import gleam/list
 import gleam/set
 
 pub fn dedupe(items: List(a)) -> List(a) {
@@ -1942,7 +2115,8 @@ pub fn dedupe(items: List(a)) -> List(a) {
       }
     })
   list.reverse(kept)
-}",
+}"),
+    ],
     check: Check(
       signature: "pub fn dedupe(items: List(a)) -> List(a)",
       starter: "pub fn dedupe(items: List(a)) -> List(a) {

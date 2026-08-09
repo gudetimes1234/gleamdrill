@@ -61,13 +61,14 @@ pub type Model {
     iteration_count: Int,
     current_iteration: Int,
     draft: String,
-    answer_revealed: Bool,
+    revealed_solution: Option(Int),
     runtime: RuntimeState,
     run: RunState,
     drafts: List(#(ProblemRef, String)),
     attempts: List(#(ProblemRef, Attempt)),
     search: String,
     next_run_id: Int,
+    editor_keymap: String,
   )
 }
 
@@ -81,13 +82,14 @@ pub fn default() -> Model {
     iteration_count: 3,
     current_iteration: 1,
     draft: "",
-    answer_revealed: False,
+    revealed_solution: None,
     runtime: RuntimeNotLoaded,
     run: RunIdle,
     drafts: [],
     attempts: [],
     search: "",
     next_run_id: 1,
+    editor_keymap: "default",
   )
 }
 
@@ -129,9 +131,10 @@ pub type Msg {
   UserClickedStartDrill
   UserClickedExitDrill
   ExitConfirmed(Bool)
-  UserToggledAnswer
+  UserToggledSolution(Int)
   UserClickedNext
   UserSearched(String)
+  UserChangedKeymap(String)
   EditorChanged(String)
   DraftSaveTicked
   UserClickedRun

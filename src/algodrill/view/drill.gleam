@@ -2,10 +2,10 @@ import algodrill/editor
 import algodrill/model.{
   type CaseResult, type Model, type Msg, type ProblemRef, type RunError, Cases,
   EditorChanged, Errored, Ran, RunIdle, Running, RuntimeFailed, RuntimeLoading,
-  RuntimeNotLoaded, RuntimeReady, TimedOut, UserClickedExitDrill,
-  UserClickedNext, UserClickedRun, UserToggledAnswer,
+  RuntimeNotLoaded, RuntimeReady, TimedOut, UserChangedKeymap,
+  UserClickedExitDrill, UserClickedNext, UserClickedRun, UserToggledSolution,
 }
-import algodrill/problem.{type Problem}
+import algodrill/problem.{type Problem, type Solution}
 import algodrill/problems
 import gleam/int
 import gleam/list
@@ -60,6 +60,7 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
         [html.text("\u{2190} Exit")],
       ),
       html.h2([attribute.class("drill-title")], [html.text(current.title)]),
+      keymap_picker(m),
       html.div([attribute.class("progress-text")], [html.text(progress)]),
     ]),
     html.div([attribute.class("drill-grid")], [
@@ -70,6 +71,8 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
             body_key,
             editor.view([
               editor.doc(m.draft),
+              editor.language(problem.language_slug(current.language)),
+              editor.keymap(m.editor_keymap),
               editor.on_change(EditorChanged),
               editor.diagnostics(editor_diagnostics(m)),
             ]),
@@ -80,6 +83,28 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
       ]),
     ]),
   ])
+}
+
+fn keymap_picker(m: Model) -> Element(Msg) {
+  html.div(
+    [attribute.class("keymap-picker")],
+    list.map(
+      [#("default", "Std"), #("vim", "Vim"), #("emacs", "Emacs")],
+      fn(mode) {
+        html.button(
+          [
+            attribute.classes([
+              #("keymap-option", True),
+              #("active", m.editor_keymap == mode.0),
+            ]),
+            attribute.attribute("title", mode.1 <> " keybindings"),
+            event.on_click(UserChangedKeymap(mode.0)),
+          ],
+          [html.text(mode.1)],
+        )
+      },
+    ),
+  )
 }
 
 fn side_panels(
@@ -101,9 +126,18 @@ fn side_panels(
       html.div([attribute.class("problem-prompt")], [html.text(current.prompt)]),
     ])
 
-  case current.check {
+  let approach = case current.approach {
+    "" -> []
+    text -> [
+      html.details([attribute.class("panel approach")], [
+        html.summary([attribute.class("panel-title")], [html.text("Approach")]),
+        html.div([attribute.class("approach-text")], [html.text(text)]),
+      ]),
+    ]
+  }
+
+  let checked = case current.check {
     Some(check) -> [
-      prompt,
       panel("Signature", [
         html.pre([attribute.class("signature")], [
           html.code([], [html.text(check.signature)]),
@@ -111,8 +145,10 @@ fn side_panels(
       ]),
       panel("Tests", [tests_panel(m)]),
     ]
-    None -> [prompt]
+    None -> []
   }
+
+  [prompt, ..list.append(approach, checked)]
 }
 
 fn tests_panel(m: Model) -> Element(Msg) {
@@ -153,7 +189,7 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
     None -> [
       html.span([attribute.class("run-unavailable")], [
         html.text(
-          "Checking isn't available for Python drills yet \u{2014} compare with the answer.",
+          "Checking isn't available for this drill \u{2014} compare with a solution.",
         ),
       ]),
     ]
@@ -161,8 +197,8 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
       case m.runtime, m.run {
         _, Running(_) -> run_button("Running\u{2026}", True)
         RuntimeReady, _ -> run_button("\u{25b6} Run tests", False)
-        RuntimeLoading, _ -> run_button("Loading Gleam runtime\u{2026}", True)
-        RuntimeNotLoaded, _ -> run_button("Loading Gleam runtime\u{2026}", True)
+        RuntimeLoading, _ -> run_button("Loading runtime\u{2026}", True)
+        RuntimeNotLoaded, _ -> run_button("Loading runtime\u{2026}", True)
         RuntimeFailed(_), _ -> run_button("Runtime unavailable", True)
       },
     ]
@@ -172,19 +208,8 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
     [attribute.class("run-bar")],
     list.flatten([
       run_control,
+      solution_buttons(m, current),
       [
-        html.button(
-          [
-            attribute.class("btn-secondary"),
-            event.on_click(UserToggledAnswer),
-          ],
-          [
-            html.text(case m.answer_revealed {
-              True -> "Hide answer"
-              False -> "Show answer"
-            }),
-          ],
-        ),
         html.button(
           [
             attribute.class("btn-primary next-button"),
@@ -195,6 +220,22 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
       ],
     ]),
   )
+}
+
+fn solution_buttons(m: Model, current: Problem) -> List(Element(Msg)) {
+  list.index_map(current.solutions, fn(solution: Solution, index) {
+    html.button(
+      [
+        attribute.classes([
+          #("btn-secondary", True),
+          #("solution-button", True),
+          #("revealed", m.revealed_solution == Some(index)),
+        ]),
+        event.on_click(UserToggledSolution(index)),
+      ],
+      [html.text(solution.label)],
+    )
+  })
 }
 
 fn run_button(label: String, disabled: Bool) -> Element(Msg) {
@@ -224,26 +265,36 @@ fn results_and_answer(m: Model, current: Problem) -> List(Element(Msg)) {
       html.div([attribute.class("results")], [
         html.div([attribute.class("results-summary fail")], [
           html.text(
-            "Your solution didn't finish \u{2014} likely infinite recursion. The runtime was restarted.",
+            "Your solution didn't finish \u{2014} likely an infinite loop. The runtime was restarted.",
           ),
         ]),
       ]),
     ]
   }
 
-  let answer = [
-    html.div(
-      [
-        attribute.classes([
-          #("answer-content", True),
-          #("hidden", !m.answer_revealed),
+  let answer = case revealed(m, current) {
+    Ok(solution) -> [
+      html.div([attribute.class("answer-content")], [
+        html.div([attribute.class("answer-label")], [
+          html.text(solution.label),
         ]),
-      ],
-      [html.pre([], [html.code([], [html.text(current.solution)])])],
-    ),
-  ]
+        html.pre([], [html.code([], [html.text(solution.code)])]),
+      ]),
+    ]
+    Error(Nil) -> []
+  }
 
   list.append(results, answer)
+}
+
+fn revealed(m: Model, current: Problem) -> Result(Solution, Nil) {
+  case m.revealed_solution {
+    Some(index) ->
+      current.solutions
+      |> list.drop(index)
+      |> list.first
+    None -> Error(Nil)
+  }
 }
 
 fn case_results(cases: List(CaseResult)) -> Element(Msg) {
@@ -301,8 +352,12 @@ fn case_results(cases: List(CaseResult)) -> Element(Msg) {
 }
 
 fn error_results(error: RunError, current: Problem) -> Element(Msg) {
-  case error.file, current.check {
-    Some("check.gleam"), Some(check) ->
+  let is_check_file = case error.file {
+    Some(file) -> string.starts_with(file, "check")
+    None -> False
+  }
+  case is_check_file, current.check {
+    True, Some(check) ->
       html.div([attribute.class("results")], [
         html.div([attribute.class("results-summary fail")], [
           html.text("Your solution doesn't match the required signature."),
@@ -311,7 +366,7 @@ fn error_results(error: RunError, current: Problem) -> Element(Msg) {
           html.code([], [html.text(check.signature)]),
         ]),
         html.details([attribute.class("results-details")], [
-          html.summary([], [html.text("Compiler details")]),
+          html.summary([], [html.text("Details")]),
           html.pre([attribute.class("results-message")], [
             html.text(error.message),
           ]),
@@ -338,6 +393,12 @@ fn editor_diagnostics(m: Model) -> List(editor.Diagnostic) {
     Ran(Errored(error)) ->
       case error.file, error.line, error.column {
         Some("solution.gleam"), Some(line), Some(column) -> [
+          editor.Diagnostic(line, column, first_lines(error.message)),
+        ]
+        Some("solution.py"), Some(line), Some(column) -> [
+          editor.Diagnostic(line, column, first_lines(error.message)),
+        ]
+        Some("solution.ts"), Some(line), Some(column) -> [
           editor.Diagnostic(line, column, first_lines(error.message)),
         ]
         _, _, _ -> []

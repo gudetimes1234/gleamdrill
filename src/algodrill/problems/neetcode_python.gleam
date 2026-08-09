@@ -1,4 +1,7 @@
-import algodrill/problem.{type Category, Category, Problem, Python, Subcategory}
+import algodrill/problem.{
+  type Category, Category, Problem, Python, Solution, Subcategory,
+}
+import algodrill/problems/approaches
 import gleam/option.{None}
 
 pub fn category() -> Category {
@@ -7,20 +10,30 @@ pub fn category() -> Category {
       Problem(
         title: "Contains Duplicate",
         prompt: "Given an integer array nums, return true if any value appears at least twice in the array, and return false if every element is distinct.",
-        solution: "def containsDuplicate(nums):
+        approach: approaches.for_title("Contains Duplicate"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "def containsDuplicate(nums):
     seen = set()
     for num in nums:
         if num in seen:
             return True
         seen.add(num)
     return False",
+          ),
+        ],
         language: Python,
         check: None,
       ),
       Problem(
         title: "Valid Anagram",
         prompt: "Given two strings s and t, return true if t is an anagram of s, and false otherwise.",
-        solution: "def isAnagram(s, t):
+        approach: approaches.for_title("Valid Anagram"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "def isAnagram(s, t):
     if len(s) != len(t):
         return False
 
@@ -36,13 +49,19 @@ pub fn category() -> Category {
             return False
 
     return True",
+          ),
+        ],
         language: Python,
         check: None,
       ),
       Problem(
         title: "Two Sum",
         prompt: "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
-        solution: "def twoSum(nums, target):
+        approach: approaches.for_title("Two Sum"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "def twoSum(nums, target):
     seen = {}
     for i, num in enumerate(nums):
         complement = target - num
@@ -50,13 +69,19 @@ pub fn category() -> Category {
             return [seen[complement], i]
         seen[num] = i
     return []",
+          ),
+        ],
         language: Python,
         check: None,
       ),
       Problem(
         title: "Group Anagrams",
         prompt: "Given an array of strings strs, group the anagrams together. You can return the answer in any order.",
-        solution: "from collections import defaultdict
+        approach: approaches.for_title("Group Anagrams"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "from collections import defaultdict
 
 def groupAnagrams(strs):
     groups = defaultdict(list)
@@ -66,13 +91,19 @@ def groupAnagrams(strs):
             key[ord(c) - ord('a')] += 1
         groups[tuple(key)].append(s)
     return list(groups.values())",
+          ),
+        ],
         language: Python,
         check: None,
       ),
       Problem(
         title: "Top K Frequent Elements",
         prompt: "Given an integer array nums and an integer k, return the k most frequent elements. You may return the answer in any order.",
-        solution: "from collections import Counter
+        approach: approaches.for_title("Top K Frequent Elements"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "from collections import Counter
 
 def topKFrequent(nums, k):
     counts = Counter(nums)
@@ -87,13 +118,19 @@ def topKFrequent(nums, k):
             if len(result) == k:
                 return result
     return result",
+          ),
+        ],
         language: Python,
         check: None,
       ),
       Problem(
         title: "Product of Array Except Self",
         prompt: "Given an integer array nums, return an array answer such that answer[i] is equal to the product of all the elements of nums except nums[i]. Solve without division and in O(n) time.",
-        solution: "def productExceptSelf(nums):
+        approach: approaches.for_title("Product of Array Except Self"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "def productExceptSelf(nums):
     n = len(nums)
     result = [1] * n
 
@@ -108,13 +145,19 @@ def topKFrequent(nums, k):
         suffix *= nums[i]
 
     return result",
+          ),
+        ],
         language: Python,
         check: None,
       ),
       Problem(
         title: "Longest Consecutive Sequence",
         prompt: "Given an unsorted array of integers nums, return the length of the longest consecutive elements sequence. You must write an algorithm that runs in O(n) time.",
-        solution: "def longestConsecutive(nums):
+        approach: approaches.for_title("Longest Consecutive Sequence"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "def longestConsecutive(nums):
     num_set = set(nums)
     longest = 0
 
@@ -127,6 +170,8 @@ def topKFrequent(nums, k):
             longest = max(longest, length)
 
     return longest",
+          ),
+        ],
         language: Python,
         check: None,
       ),
@@ -135,7 +180,11 @@ def topKFrequent(nums, k):
       Problem(
         title: "Valid Palindrome",
         prompt: "A phrase is a palindrome if, after converting all uppercase letters into lowercase letters and removing all non-alphanumeric characters, it reads the same forward and backward.",
-        solution: "def isPalindrome(s):
+        approach: approaches.for_title("Valid Palindrome"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "def isPalindrome(s):
     left, right = 0, len(s) - 1
 
     while left < right:
@@ -151,13 +200,19 @@ def topKFrequent(nums, k):
         right -= 1
 
     return True",
+          ),
+        ],
         language: Python,
         check: None,
       ),
       Problem(
         title: "Two Sum II - Input Array Is Sorted",
         prompt: "Given a 1-indexed array of integers numbers that is already sorted in non-decreasing order, find two numbers such that they add up to a specific target number. Return the two indices, 1-indexed.",
-        solution: "def twoSum(numbers, target):
+        approach: approaches.for_title("Two Sum II - Input Array Is Sorted"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "def twoSum(numbers, target):
     left, right = 0, len(numbers) - 1
 
     while left < right:
@@ -170,13 +225,19 @@ def topKFrequent(nums, k):
             right -= 1
 
     return []",
+          ),
+        ],
         language: Python,
         check: None,
       ),
       Problem(
         title: "3Sum",
         prompt: "Given an integer array nums, return all the triplets [nums[i], nums[j], nums[k]] such that i, j, and k are distinct and the sum is 0. The solution set must not contain duplicate triplets.",
-        solution: "def threeSum(nums):
+        approach: approaches.for_title("3Sum"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "def threeSum(nums):
     nums.sort()
     result = []
 
@@ -198,13 +259,19 @@ def topKFrequent(nums, k):
                     left += 1
 
     return result",
+          ),
+        ],
         language: Python,
         check: None,
       ),
       Problem(
         title: "Container With Most Water",
         prompt: "You are given an integer array height of length n. Find two lines that together with the x-axis form a container that holds the most water. Return the maximum amount of water a container can store.",
-        solution: "def maxArea(height):
+        approach: approaches.for_title("Container With Most Water"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "def maxArea(height):
     left, right = 0, len(height) - 1
     best = 0
 
@@ -218,6 +285,8 @@ def topKFrequent(nums, k):
             right -= 1
 
     return best",
+          ),
+        ],
         language: Python,
         check: None,
       ),
@@ -226,7 +295,11 @@ def topKFrequent(nums, k):
       Problem(
         title: "Best Time to Buy and Sell Stock",
         prompt: "You are given an array prices where prices[i] is the price of a given stock on the ith day. Maximize your profit by choosing a single day to buy and a different day in the future to sell.",
-        solution: "def maxProfit(prices):
+        approach: approaches.for_title("Best Time to Buy and Sell Stock"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "def maxProfit(prices):
     lowest = float('inf')
     profit = 0
 
@@ -235,13 +308,21 @@ def topKFrequent(nums, k):
         profit = max(profit, price - lowest)
 
     return profit",
+          ),
+        ],
         language: Python,
         check: None,
       ),
       Problem(
         title: "Longest Substring Without Repeating Characters",
         prompt: "Given a string s, find the length of the longest substring without repeating characters.",
-        solution: "def lengthOfLongestSubstring(s):
+        approach: approaches.for_title(
+          "Longest Substring Without Repeating Characters",
+        ),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "def lengthOfLongestSubstring(s):
     window = set()
     left = 0
     longest = 0
@@ -254,13 +335,21 @@ def topKFrequent(nums, k):
         longest = max(longest, right - left + 1)
 
     return longest",
+          ),
+        ],
         language: Python,
         check: None,
       ),
       Problem(
         title: "Longest Repeating Character Replacement",
         prompt: "You are given a string s and an integer k. You can change any character to any other uppercase English character at most k times. Return the length of the longest substring containing the same letter you can get.",
-        solution: "def characterReplacement(s, k):
+        approach: approaches.for_title(
+          "Longest Repeating Character Replacement",
+        ),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "def characterReplacement(s, k):
     count = {}
     left = 0
     max_count = 0
@@ -277,13 +366,19 @@ def topKFrequent(nums, k):
         longest = max(longest, right - left + 1)
 
     return longest",
+          ),
+        ],
         language: Python,
         check: None,
       ),
       Problem(
         title: "Permutation in String",
         prompt: "Given two strings s1 and s2, return true if s2 contains a permutation of s1. In other words, return true if one of s1's permutations is a substring of s2.",
-        solution: "from collections import Counter
+        approach: approaches.for_title("Permutation in String"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "from collections import Counter
 
 def checkInclusion(s1, s2):
     if len(s1) > len(s2):
@@ -305,6 +400,8 @@ def checkInclusion(s1, s2):
             return True
 
     return False",
+          ),
+        ],
         language: Python,
         check: None,
       ),
@@ -313,7 +410,11 @@ def checkInclusion(s1, s2):
       Problem(
         title: "Valid Parentheses",
         prompt: "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
-        solution: "def isValid(s):
+        approach: approaches.for_title("Valid Parentheses"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "def isValid(s):
     pairs = {')': '(', ']': '[', '}': '{'}
     stack = []
 
@@ -325,13 +426,19 @@ def checkInclusion(s1, s2):
             stack.append(char)
 
     return not stack",
+          ),
+        ],
         language: Python,
         check: None,
       ),
       Problem(
         title: "Min Stack",
         prompt: "Design a stack that supports push, pop, top, and retrieving the minimum element in constant time.",
-        solution: "class MinStack:
+        approach: approaches.for_title("Min Stack"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "class MinStack:
     def __init__(self):
         self.stack = []
         self.mins = []
@@ -350,13 +457,19 @@ def checkInclusion(s1, s2):
 
     def getMin(self):
         return self.mins[-1]",
+          ),
+        ],
         language: Python,
         check: None,
       ),
       Problem(
         title: "Daily Temperatures",
         prompt: "Given an array of integers temperatures, return an array answer such that answer[i] is the number of days you have to wait after the ith day to get a warmer temperature.",
-        solution: "def dailyTemperatures(temperatures):
+        approach: approaches.for_title("Daily Temperatures"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "def dailyTemperatures(temperatures):
     result = [0] * len(temperatures)
     stack = []  # (index, temp) — monotonically decreasing
 
@@ -367,6 +480,8 @@ def checkInclusion(s1, s2):
         stack.append((i, temp))
 
     return result",
+          ),
+        ],
         language: Python,
         check: None,
       ),
@@ -375,7 +490,11 @@ def checkInclusion(s1, s2):
       Problem(
         title: "Binary Search",
         prompt: "Given a sorted array of integers nums and an integer target, write a function to search target in nums. Return its index, or -1 if it does not exist. Must run in O(log n) time.",
-        solution: "def search(nums, target):
+        approach: approaches.for_title("Binary Search"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "def search(nums, target):
     left, right = 0, len(nums) - 1
 
     while left <= right:
@@ -388,13 +507,19 @@ def checkInclusion(s1, s2):
             right = mid - 1
 
     return -1",
+          ),
+        ],
         language: Python,
         check: None,
       ),
       Problem(
         title: "Find Minimum in Rotated Sorted Array",
         prompt: "Suppose an array of length n sorted in ascending order is rotated. Given the rotated array of unique elements, return the minimum element. Must run in O(log n) time.",
-        solution: "def findMin(nums):
+        approach: approaches.for_title("Find Minimum in Rotated Sorted Array"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "def findMin(nums):
     left, right = 0, len(nums) - 1
 
     while left < right:
@@ -405,13 +530,19 @@ def checkInclusion(s1, s2):
             right = mid
 
     return nums[left]",
+          ),
+        ],
         language: Python,
         check: None,
       ),
       Problem(
         title: "Search in Rotated Sorted Array",
         prompt: "Given a rotated sorted array of distinct integers nums and an integer target, return the index of target, or -1 if it is not present. Must run in O(log n) time.",
-        solution: "def search(nums, target):
+        approach: approaches.for_title("Search in Rotated Sorted Array"),
+        solutions: [
+          Solution(
+            label: "Solution 1",
+            code: "def search(nums, target):
     left, right = 0, len(nums) - 1
 
     while left <= right:
@@ -431,6 +562,8 @@ def checkInclusion(s1, s2):
                 right = mid - 1
 
     return -1",
+          ),
+        ],
         language: Python,
         check: None,
       ),
