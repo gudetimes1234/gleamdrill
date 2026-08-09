@@ -3,6 +3,7 @@ import gleam/option.{type Option}
 pub type Language {
   Python
   Gleam
+  TypeScript
 }
 
 /// Everything needed to compile and grade an attempt in the browser. Only Gleam
@@ -40,6 +41,7 @@ pub fn language_label(language: Language) -> String {
   case language {
     Python -> "Python"
     Gleam -> "Gleam"
+    TypeScript -> "TypeScript"
   }
 }
 
@@ -48,5 +50,6 @@ pub fn language_slug(language: Language) -> String {
   case language {
     Python -> "python"
     Gleam -> "gleam"
+    TypeScript -> "typescript"
   }
 }

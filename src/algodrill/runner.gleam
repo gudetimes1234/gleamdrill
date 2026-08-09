@@ -29,6 +29,7 @@ const run_timeout_ms = 8000
 fn worker_config(language: String) -> #(String, Bool) {
   case language {
     "python" -> #("/python-worker.js?v=" <> python_version, False)
+    "typescript" -> #("/ts-worker.js", True)
     _ -> #("/gleam-worker.js?v=" <> gleam_version, True)
   }
 }

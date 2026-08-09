@@ -31,6 +31,8 @@ worker:
 		> build/dev/javascript/algodrill/py-worker-entry.mjs
 	bun build build/dev/javascript/algodrill/py-worker-entry.mjs \
 		--format=iife --minify --outfile=assets/python-worker-main.js
+	bun build build/dev/javascript/algodrill/algodrill/ts_worker.mjs \
+		--format=esm --minify --outfile=assets/ts-worker-main.js
 
 # Downloads the browser build of the Gleam compiler and assembles everything the
 # in-browser runner needs: the wasm compiler itself, the stdlib SOURCE (written into

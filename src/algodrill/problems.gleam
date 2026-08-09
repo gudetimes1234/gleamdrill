@@ -2,6 +2,7 @@ import algodrill/problem.{type Category, type Problem}
 import algodrill/problems/gleam_idioms
 import algodrill/problems/neetcode_gleam
 import algodrill/problems/neetcode_python
+import algodrill/problems/neetcode_ts
 import algodrill/problems/python_tips
 import gleam/list
 
@@ -9,6 +10,7 @@ pub fn all() -> List(Category) {
   [
     neetcode_python.category(),
     neetcode_gleam.category(),
+    neetcode_ts.category(),
     python_tips.category(),
     gleam_idioms.category(),
   ]
