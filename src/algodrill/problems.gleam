@@ -1,10 +1,17 @@
 import algodrill/problem.{type Category, type Problem}
+import algodrill/problems/gleam_idioms
+import algodrill/problems/neetcode_gleam
 import algodrill/problems/neetcode_python
 import algodrill/problems/python_tips
 import gleam/list
 
 pub fn all() -> List(Category) {
-  [neetcode_python.category(), python_tips.category()]
+  [
+    neetcode_python.category(),
+    neetcode_gleam.category(),
+    python_tips.category(),
+    gleam_idioms.category(),
+  ]
 }
 
 pub fn category_names() -> List(String) {
