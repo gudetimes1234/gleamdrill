@@ -16,4 +16,5 @@ lustre_dev_tools = ">= 2.3.6 and < 3.0.0"
 minify = true
 
 [tools.lustre.html]
+title = "Algo Drill - NeetCode Practice"
 stylesheets = [{ href = "/style.css" }]
