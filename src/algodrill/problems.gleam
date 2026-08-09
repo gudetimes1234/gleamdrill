@@ -7,6 +7,33 @@ pub fn all() -> List(Category) {
   [neetcode_python.category(), python_tips.category()]
 }
 
+pub fn category_names() -> List(String) {
+  list.map(all(), fn(c: Category) { c.name })
+}
+
+pub fn subcategory_names(category: String) -> List(String) {
+  case list.find(all(), fn(c: Category) { c.name == category }) {
+    Ok(cat) ->
+      list.map(cat.subcategories, fn(s: problem.Subcategory) { s.name })
+    Error(Nil) -> []
+  }
+}
+
+pub fn problems_in(category: String, subcategory: String) -> List(Problem) {
+  case list.find(all(), fn(c: Category) { c.name == category }) {
+    Ok(cat) ->
+      case
+        list.find(cat.subcategories, fn(s: problem.Subcategory) {
+          s.name == subcategory
+        })
+      {
+        Ok(sub) -> sub.problems
+        Error(Nil) -> []
+      }
+    Error(Nil) -> []
+  }
+}
+
 pub fn find(
   category: String,
   subcategory: String,
