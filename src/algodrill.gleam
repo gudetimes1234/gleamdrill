@@ -1,4 +1,5 @@
 import algodrill/browser
+import algodrill/editor
 import algodrill/model.{
   type Model, type Msg, type ProblemRef, DrillRoute, ExitConfirmed, MenuRoute,
   Model, ProblemRef, UserChangedIterations, UserClickedBreadcrumb,
@@ -19,6 +20,7 @@ import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 
 pub fn main() {
+  editor.register()
   let app = lustre.application(init, update, view)
   let assert Ok(_) = lustre.start(app, "#app", Nil)
   Nil
