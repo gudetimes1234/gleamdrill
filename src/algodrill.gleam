@@ -1,12 +1,15 @@
+import algodrill/browser
 import algodrill/model.{
-  type Model, type Msg, type ProblemRef, DrillRoute, ExitConfirmed, Model,
-  ProblemRef, UserChangedIterations, UserClickedBreadcrumb, UserClickedCategory,
-  UserClickedClearSelection, UserClickedExitDrill, UserClickedNext,
-  UserClickedSelectAll, UserClickedStartDrill, UserClickedSubcategory,
-  UserPressedTab, UserToggledAnswer, UserToggledProblem, UserTypedDraft,
+  type Model, type Msg, type ProblemRef, DrillRoute, ExitConfirmed, MenuRoute,
+  Model, ProblemRef, UserChangedIterations, UserClickedBreadcrumb,
+  UserClickedCategory, UserClickedClearSelection, UserClickedExitDrill,
+  UserClickedNext, UserClickedSelectAll, UserClickedStartDrill,
+  UserClickedSubcategory, UserPressedTab, UserToggledAnswer, UserToggledProblem,
+  UserTypedDraft,
 }
 import algodrill/problems
 import algodrill/storage
+import algodrill/view/drill
 import algodrill/view/menu
 import gleam/int
 import gleam/list
@@ -14,7 +17,6 @@ import gleam/option.{None, Some}
 import lustre
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
-import lustre/element/html
 
 pub fn main() {
   let app = lustre.application(init, update, view)
@@ -111,14 +113,70 @@ fn handle(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
       }
 
-    // Drill messages wired in the drill-view step.
-    UserClickedExitDrill -> #(model, effect.none())
-    ExitConfirmed(_) -> #(model, effect.none())
-    UserToggledAnswer -> #(model, effect.none())
-    UserClickedNext -> #(model, effect.none())
+    UserClickedExitDrill -> #(
+      model,
+      effect.from(fn(dispatch) {
+        dispatch(
+          ExitConfirmed(browser.confirm(
+            "Exit the drill? Your typed code will be lost.",
+          )),
+        )
+      }),
+    )
+
+    ExitConfirmed(True) -> #(reset_to_menu(model), effect.none())
+    ExitConfirmed(False) -> #(model, effect.none())
+
+    UserToggledAnswer -> #(
+      Model(..model, answer_revealed: !model.answer_revealed),
+      effect.none(),
+    )
+
+    UserClickedNext -> {
+      let #(iteration, index) = case
+        model.current_iteration < model.iteration_count
+      {
+        True -> #(model.current_iteration + 1, model.problem_index)
+        False -> #(1, model.problem_index + 1)
+      }
+      case index >= list.length(model.selected) {
+        True -> #(
+          reset_to_menu(model),
+          effect.from(fn(_dispatch) { browser.alert("Drill complete.") }),
+        )
+        False -> #(
+          Model(
+            ..model,
+            current_iteration: iteration,
+            problem_index: index,
+            draft: "",
+            answer_revealed: False,
+          ),
+          effect.none(),
+        )
+      }
+    }
+
     UserTypedDraft(text) -> #(Model(..model, draft: text), effect.none())
-    UserPressedTab(_, _, _) -> #(model, effect.none())
+
+    UserPressedTab(value, start, end) -> #(
+      Model(..model, draft: browser.splice_tab(value, start, end)),
+      effect.before_paint(fn(_dispatch, _root) {
+        browser.set_selection("codeEditor", start + 4)
+      }),
+    )
   }
+}
+
+fn reset_to_menu(model: Model) -> Model {
+  Model(
+    ..model,
+    route: MenuRoute,
+    problem_index: 0,
+    current_iteration: 1,
+    draft: "",
+    answer_revealed: False,
+  )
 }
 
 fn toggle_selection(
@@ -132,16 +190,12 @@ fn toggle_selection(
 }
 
 fn view(model: Model) -> Element(Msg) {
-  case model.route, model.selected {
-    DrillRoute, [_, ..] -> view_drill_stub(model)
-    _, _ -> menu.view(model)
+  case model.route {
+    DrillRoute ->
+      case drill.view(model) {
+        Ok(el) -> el
+        Error(Nil) -> menu.view(model)
+      }
+    MenuRoute -> menu.view(model)
   }
-}
-
-fn view_drill_stub(model: Model) -> Element(Msg) {
-  html.div([], [
-    html.text(
-      "Drill: " <> int.to_string(list.length(model.selected)) <> " problems",
-    ),
-  ])
 }
