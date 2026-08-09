@@ -1,4 +1,5 @@
 import algodrill/problem.{type Category, Category, Problem, Python, Subcategory}
+import gleam/option.{None}
 
 pub fn category() -> Category {
   Category("NeetCode 150", [
@@ -14,6 +15,7 @@ pub fn category() -> Category {
         seen.add(num)
     return False",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Valid Anagram",
@@ -35,6 +37,7 @@ pub fn category() -> Category {
 
     return True",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Two Sum",
@@ -48,6 +51,7 @@ pub fn category() -> Category {
         seen[num] = i
     return []",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Group Anagrams",
@@ -63,6 +67,7 @@ def groupAnagrams(strs):
         groups[tuple(key)].append(s)
     return list(groups.values())",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Top K Frequent Elements",
@@ -83,6 +88,7 @@ def topKFrequent(nums, k):
                 return result
     return result",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Product of Array Except Self",
@@ -103,6 +109,7 @@ def topKFrequent(nums, k):
 
     return result",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Longest Consecutive Sequence",
@@ -121,6 +128,7 @@ def topKFrequent(nums, k):
 
     return longest",
         language: Python,
+        check: None,
       ),
     ]),
     Subcategory("Two Pointers", [
@@ -144,6 +152,7 @@ def topKFrequent(nums, k):
 
     return True",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Two Sum II - Input Array Is Sorted",
@@ -162,6 +171,7 @@ def topKFrequent(nums, k):
 
     return []",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "3Sum",
@@ -189,6 +199,7 @@ def topKFrequent(nums, k):
 
     return result",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Container With Most Water",
@@ -208,6 +219,7 @@ def topKFrequent(nums, k):
 
     return best",
         language: Python,
+        check: None,
       ),
     ]),
     Subcategory("Sliding Window", [
@@ -224,6 +236,7 @@ def topKFrequent(nums, k):
 
     return profit",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Longest Substring Without Repeating Characters",
@@ -242,6 +255,7 @@ def topKFrequent(nums, k):
 
     return longest",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Longest Repeating Character Replacement",
@@ -264,6 +278,7 @@ def topKFrequent(nums, k):
 
     return longest",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Permutation in String",
@@ -291,6 +306,7 @@ def checkInclusion(s1, s2):
 
     return False",
         language: Python,
+        check: None,
       ),
     ]),
     Subcategory("Stack", [
@@ -310,6 +326,7 @@ def checkInclusion(s1, s2):
 
     return not stack",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Min Stack",
@@ -334,6 +351,7 @@ def checkInclusion(s1, s2):
     def getMin(self):
         return self.mins[-1]",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Daily Temperatures",
@@ -350,6 +368,7 @@ def checkInclusion(s1, s2):
 
     return result",
         language: Python,
+        check: None,
       ),
     ]),
     Subcategory("Binary Search", [
@@ -370,6 +389,7 @@ def checkInclusion(s1, s2):
 
     return -1",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Find Minimum in Rotated Sorted Array",
@@ -386,6 +406,7 @@ def checkInclusion(s1, s2):
 
     return nums[left]",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Search in Rotated Sorted Array",
@@ -411,6 +432,7 @@ def checkInclusion(s1, s2):
 
     return -1",
         language: Python,
+        check: None,
       ),
     ]),
   ])

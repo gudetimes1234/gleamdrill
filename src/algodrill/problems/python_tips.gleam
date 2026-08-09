@@ -1,4 +1,5 @@
 import algodrill/problem.{type Category, Category, Problem, Python, Subcategory}
+import gleam/option.{None}
 
 pub fn category() -> Category {
   Category("Python Tips", [
@@ -12,6 +13,7 @@ counts = Counter(nums)
 counts.most_common(2)   # [(val, freq), (val, freq)]
 counts[some_key]        # 0 for missing keys, no KeyError",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "defaultdict for grouping",
@@ -25,6 +27,7 @@ for word in words:
 # defaultdict(int) for counters
 # defaultdict(set) for unique membership",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "deque for O(1) popleft",
@@ -37,6 +40,7 @@ while queue:
     for neighbor in graph[node]:
         queue.append(neighbor)",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "heapq for min/max heaps",
@@ -53,6 +57,7 @@ max_heap = [-x for x in nums]
 heapq.heapify(max_heap)
 largest = -heapq.heappop(max_heap)",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Enumerate, zip, and unpacking",
@@ -68,6 +73,7 @@ for i, val in enumerate(nums, start=1):  # 1-indexed
 
 left, right = right, left",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Slicing and reversal",
@@ -78,6 +84,7 @@ s[:]         # shallow copy
 s[-3:]       # last 3 elements
 s[1:-1]      # drop first and last",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Sorting with a key",
@@ -91,6 +98,7 @@ words.sort(key=len, reverse=True)
 # multiple fields: ascending name, descending age
 people.sort(key=lambda p: (p.name, -p.age))",
         language: Python,
+        check: None,
       ),
       Problem(
         title: "Building strings efficiently",
@@ -107,6 +115,7 @@ result = ''
 for c in chars:
     result += c",
         language: Python,
+        check: None,
       ),
     ]),
   ])
