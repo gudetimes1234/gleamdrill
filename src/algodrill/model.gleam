@@ -62,7 +62,7 @@ pub type Model {
     current_iteration: Int,
     draft: String,
     revealed_solution: Option(Int),
-    runtime: RuntimeState,
+    runtimes: List(#(String, RuntimeState)),
     run: RunState,
     drafts: List(#(ProblemRef, String)),
     attempts: List(#(ProblemRef, Attempt)),
@@ -83,7 +83,7 @@ pub fn default() -> Model {
     current_iteration: 1,
     draft: "",
     revealed_solution: None,
-    runtime: RuntimeNotLoaded,
+    runtimes: [],
     run: RunIdle,
     drafts: [],
     attempts: [],
@@ -93,24 +93,25 @@ pub fn default() -> Model {
   )
 }
 
-pub fn assoc_get(
-  assoc: List(#(ProblemRef, a)),
-  ref: ProblemRef,
-) -> Result(a, Nil) {
+pub fn assoc_get(assoc: List(#(k, a)), key: k) -> Result(a, Nil) {
   list.find_map(assoc, fn(pair) {
-    case pair.0 == ref {
+    case pair.0 == key {
       True -> Ok(pair.1)
       False -> Error(Nil)
     }
   })
 }
 
-pub fn assoc_put(
-  assoc: List(#(ProblemRef, a)),
-  ref: ProblemRef,
-  value: a,
-) -> List(#(ProblemRef, a)) {
-  [#(ref, value), ..list.filter(assoc, fn(pair) { pair.0 != ref })]
+/// Runtime state for one language's grading worker ("gleam"/"python"/...).
+pub fn runtime_for(model: Model, language: String) -> RuntimeState {
+  case assoc_get(model.runtimes, language) {
+    Ok(state) -> state
+    Error(Nil) -> RuntimeNotLoaded
+  }
+}
+
+pub fn assoc_put(assoc: List(#(k, a)), key: k, value: a) -> List(#(k, a)) {
+  [#(key, value), ..list.filter(assoc, fn(pair) { pair.0 != key })]
 }
 
 /// The problem the drill is currently showing.
@@ -138,8 +139,8 @@ pub type Msg {
   EditorChanged(String)
   DraftSaveTicked
   UserClickedRun
-  RunnerReady
-  RunnerFailed(String)
+  RunnerReady(language: String)
+  RunnerFailed(language: String, message: String)
   RunFinished(id: Int, outcome: RunOutcome)
   RunTimedOut(id: Int)
 }

@@ -39,20 +39,38 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
   with_prefetch(#(hydrated, effect.none()))
 }
 
-/// Opening a checkable drill starts the (4.7MB, lazy) runtime download so it
-/// is usually ready before the first Run click. Python drills never load it.
+/// Opening a checkable drill starts that language's (lazy) runtime download so
+/// it is usually ready before the first Run click. Drills without checks never
+/// load anything.
 fn with_prefetch(pair: #(Model, Effect(Msg))) -> #(Model, Effect(Msg)) {
   let #(m, fx) = pair
-  let wants_runtime =
-    m.route == DrillRoute
-    && m.runtime == RuntimeNotLoaded
-    && current_check(m) != Error(Nil)
-  case wants_runtime {
-    True -> #(
-      Model(..m, runtime: RuntimeLoading),
-      effect.batch([fx, runner.ensure()]),
-    )
-    False -> pair
+  case
+    m.route == DrillRoute && current_check(m) != Error(Nil),
+    current_language(m)
+  {
+    True, Ok(language) ->
+      case model.runtime_for(m, language) {
+        RuntimeNotLoaded -> #(
+          Model(
+            ..m,
+            runtimes: model.assoc_put(m.runtimes, language, RuntimeLoading),
+          ),
+          effect.batch([fx, runner.ensure(language)]),
+        )
+        _ -> pair
+      }
+    _, _ -> pair
+  }
+}
+
+fn current_language(m: Model) -> Result(String, Nil) {
+  case model.current_ref(m) {
+    Ok(ref) ->
+      case problems.find(ref.category, ref.subcategory, ref.title) {
+        Ok(p) -> Ok(problem.language_slug(p.language))
+        Error(Nil) -> Error(Nil)
+      }
+    Error(Nil) -> Error(Nil)
   }
 }
 
@@ -86,7 +104,7 @@ fn should_persist(msg: Msg) -> Bool {
   case msg {
     EditorChanged(_) | UserToggledSolution(_) -> False
     UserClickedExitDrill | ExitConfirmed(False) -> False
-    UserClickedRun | RunnerReady | RunnerFailed(_) -> False
+    UserClickedRun | RunnerReady(_) | RunnerFailed(_, _) -> False
     _ -> True
   }
 }
@@ -230,20 +248,30 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     DraftSaveTicked -> #(m, effect.none())
 
     UserClickedRun ->
-      case m.runtime, current_check(m) {
-        RuntimeReady, Ok(check) -> {
-          let id = m.next_run_id
-          #(
-            Model(..m, run: Running(id), next_run_id: id + 1),
-            runner.run(id, m.draft, check.harness),
-          )
-        }
+      case current_language(m), current_check(m) {
+        Ok(language), Ok(check) ->
+          case model.runtime_for(m, language) {
+            RuntimeReady -> {
+              let id = m.next_run_id
+              #(
+                Model(..m, run: Running(id), next_run_id: id + 1),
+                runner.run(language, id, m.draft, check.harness),
+              )
+            }
+            _ -> #(m, effect.none())
+          }
         _, _ -> #(m, effect.none())
       }
 
-    RunnerReady -> #(Model(..m, runtime: RuntimeReady), effect.none())
-    RunnerFailed(message) -> #(
-      Model(..m, runtime: RuntimeFailed(message)),
+    RunnerReady(language) -> #(
+      Model(..m, runtimes: model.assoc_put(m.runtimes, language, RuntimeReady)),
+      effect.none(),
+    )
+    RunnerFailed(language, message) -> #(
+      Model(
+        ..m,
+        runtimes: model.assoc_put(m.runtimes, language, RuntimeFailed(message)),
+      ),
       effect.none(),
     )
 
@@ -271,15 +299,21 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             Error(Nil) -> m.attempts
           }
           // The worker cannot be interrupted, only replaced.
-          #(
-            Model(
-              ..m,
-              run: Ran(TimedOut),
-              attempts: attempts,
-              runtime: RuntimeLoading,
-            ),
-            runner.restart(),
-          )
+          case current_language(m) {
+            Ok(language) -> #(
+              Model(
+                ..m,
+                run: Ran(TimedOut),
+                attempts: attempts,
+                runtimes: model.assoc_put(m.runtimes, language, RuntimeLoading),
+              ),
+              runner.restart(language),
+            )
+            Error(Nil) -> #(
+              Model(..m, run: Ran(TimedOut), attempts: attempts),
+              effect.none(),
+            )
+          }
         }
         _ -> #(m, effect.none())
       }

@@ -1,6 +1,8 @@
-GLEAM_VERSION := 1.18.1
-RUNTIME_DIR   := assets/gleam-runtime/$(GLEAM_VERSION)
-TARBALL_URL   := https://github.com/gleam-lang/gleam/releases/download/v$(GLEAM_VERSION)/gleam-v$(GLEAM_VERSION)-browser.tar.gz
+GLEAM_VERSION   := 1.18.1
+RUNTIME_DIR     := assets/gleam-runtime/$(GLEAM_VERSION)
+TARBALL_URL     := https://github.com/gleam-lang/gleam/releases/download/v$(GLEAM_VERSION)/gleam-v$(GLEAM_VERSION)-browser.tar.gz
+BRYTHON_VERSION := 3.14.3
+PY_RUNTIME_DIR  := assets/python-runtime/$(BRYTHON_VERSION)
 
 .PHONY: dev build deploy vendor content worker clean-vendor
 
@@ -17,13 +19,18 @@ deploy: build
 content:
 	cd drills && gleam run -m generate
 
-# The worker is a separate JS entry point: its Gleam logic is compiled, then
-# bundled (with its FFI graph) into a single file the bootstrap imports. The
-# computed dynamic import()s inside worker_ffi.mjs stay runtime code.
+# The workers are separate JS entry points: their Gleam logic is compiled,
+# then bundled (with the FFI graph) into single files the bootstraps load.
+# The Gleam worker is an ES module; the Python worker must be an IIFE because
+# it runs in a classic worker (Brython requires importScripts).
 worker:
 	gleam build --target javascript
 	bun build build/dev/javascript/algodrill/algodrill/worker.mjs \
 		--format=esm --minify --outfile=assets/worker-main.js
+	printf 'import { main } from "./algodrill/py_worker.mjs";\nmain();\n' \
+		> build/dev/javascript/algodrill/py-worker-entry.mjs
+	bun build build/dev/javascript/algodrill/py-worker-entry.mjs \
+		--format=iife --minify --outfile=assets/python-worker-main.js
 
 # Downloads the browser build of the Gleam compiler and assembles everything the
 # in-browser runner needs: the wasm compiler itself, the stdlib SOURCE (written into
@@ -32,7 +39,14 @@ worker:
 #
 # The directory is version-stamped rather than query-string cache-busted: the wasm
 # is located with new URL('...wasm', import.meta.url), which discards any query.
-vendor: $(RUNTIME_DIR)/gleam_wasm_bg.wasm $(RUNTIME_DIR)/stdlib.js $(RUNTIME_DIR)/precompiled/gleam.mjs
+vendor: $(RUNTIME_DIR)/gleam_wasm_bg.wasm $(RUNTIME_DIR)/stdlib.js $(RUNTIME_DIR)/precompiled/gleam.mjs $(PY_RUNTIME_DIR)/brython.min.js
+
+$(PY_RUNTIME_DIR)/brython.min.js: node_modules/brython/brython.min.js
+	mkdir -p $(PY_RUNTIME_DIR)
+	cp node_modules/brython/brython.min.js node_modules/brython/brython_stdlib.js $(PY_RUNTIME_DIR)/
+
+node_modules/brython/brython.min.js:
+	bun install
 
 $(RUNTIME_DIR)/gleam_wasm_bg.wasm:
 	mkdir -p $(RUNTIME_DIR)

@@ -194,7 +194,10 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
       ]),
     ]
     Some(_) -> [
-      case m.runtime, m.run {
+      case
+        model.runtime_for(m, problem.language_slug(current.language)),
+        m.run
+      {
         _, Running(_) -> run_button("Running\u{2026}", True)
         RuntimeReady, _ -> run_button("\u{25b6} Run tests", False)
         RuntimeLoading, _ -> run_button("Loading runtime\u{2026}", True)

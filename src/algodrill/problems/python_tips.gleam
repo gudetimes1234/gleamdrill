@@ -1,173 +1,66 @@
 import algodrill/problem.{
-  type Category, Category, Problem, Python, Solution, Subcategory,
+  type Category, type Problem, Category, Problem, Python, Solution, Subcategory,
 }
 import algodrill/problems/approaches
-import gleam/option.{None}
+import algodrill/problems/embedded.{type Embedded}
+import algodrill/problems/embedded_python
+import gleam/list
+import gleam/option.{Some}
 
 pub fn category() -> Category {
   Category("Python Tips", [
     Subcategory("Idioms", [
-      Problem(
-        title: "Counter for frequency maps",
-        prompt: "Write the idiomatic way to count element frequencies and get the n most common items.",
-        approach: approaches.for_title("Counter for frequency maps"),
-        solutions: [
-          Solution(
-            label: "Solution 1",
-            code: "from collections import Counter
-
-counts = Counter(nums)
-counts.most_common(2)   # [(val, freq), (val, freq)]
-counts[some_key]        # 0 for missing keys, no KeyError",
-          ),
-        ],
-        language: Python,
-        check: None,
+      drill(
+        "Counter for frequency maps",
+        "Write topTwo(nums) returning the two most common values as (value, count) pairs, and countOf(nums, value) returning how often value appears (0 if absent, no KeyError). Reach for collections.Counter.",
+        embedded_python.tip01_counter(),
       ),
-      Problem(
-        title: "defaultdict for grouping",
-        prompt: "Write the idiomatic way to group items into lists by a computed key, without checking whether the key exists.",
-        approach: approaches.for_title("defaultdict for grouping"),
-        solutions: [
-          Solution(
-            label: "Solution 1",
-            code: "from collections import defaultdict
-
-groups = defaultdict(list)
-for word in words:
-    groups[sorted(word)].append(word)
-
-# defaultdict(int) for counters
-# defaultdict(set) for unique membership",
-          ),
-        ],
-        language: Python,
-        check: None,
+      drill(
+        "defaultdict for grouping",
+        "Write groupByLength(words) returning a dict mapping each length to the list of words of that length, keeping input order. Use collections.defaultdict(list); convert to a plain dict at the end.",
+        embedded_python.tip02_defaultdict(),
       ),
-      Problem(
-        title: "deque for O(1) popleft",
-        prompt: "Write a BFS skeleton using the right data structure for a queue.",
-        approach: approaches.for_title("deque for O(1) popleft"),
-        solutions: [
-          Solution(
-            label: "Solution 1",
-            code: "from collections import deque
-
-queue = deque([start])
-while queue:
-    node = queue.popleft()   # O(1); list.pop(0) is O(n)
-    for neighbor in graph[node]:
-        queue.append(neighbor)",
-          ),
-        ],
-        language: Python,
-        check: None,
+      drill(
+        "deque for O(1) popleft",
+        "Write bfsOrder(graph, start): a breadth-first walk of graph (a dict of node to neighbour list) from start, returning nodes in visit order. Use collections.deque as the queue - list.pop(0) is O(n).",
+        embedded_python.tip03_deque(),
       ),
-      Problem(
-        title: "heapq for min/max heaps",
-        prompt: "Write how to build a min heap, push and pop, and how to fake a max heap.",
-        approach: approaches.for_title("heapq for min/max heaps"),
-        solutions: [
-          Solution(
-            label: "Solution 1",
-            code: "import heapq
-
-heap = [3, 1, 4]
-heapq.heapify(heap)      # O(n)
-heapq.heappush(heap, 2)
-smallest = heapq.heappop(heap)
-
-# max heap: negate the values
-max_heap = [-x for x in nums]
-heapq.heapify(max_heap)
-largest = -heapq.heappop(max_heap)",
-          ),
-        ],
-        language: Python,
-        check: None,
+      drill(
+        "heapq for min/max heaps",
+        "Write kSmallest(nums, k) and kLargest(nums, k) returning the k smallest / largest values in order using heapq. Python only has a min-heap: negate values on the way in and out for the max side.",
+        embedded_python.tip04_heapq(),
       ),
-      Problem(
-        title: "Enumerate, zip, and unpacking",
-        prompt: "Write the idiomatic ways to iterate with an index, iterate two sequences in parallel, and swap two variables.",
-        approach: approaches.for_title("Enumerate, zip, and unpacking"),
-        solutions: [
-          Solution(
-            label: "Solution 1",
-            code: "for i, val in enumerate(nums):
-    ...
-
-for a, b in zip(list_a, list_b):
-    ...
-
-for i, val in enumerate(nums, start=1):  # 1-indexed
-    ...
-
-left, right = right, left",
-          ),
-        ],
-        language: Python,
-        check: None,
+      drill(
+        "Enumerate, zip, and unpacking",
+        "Write firstIndexOf(nums, target) returning the index of the first match (-1 if none) with enumerate - no range(len(...)) - and dotProduct(a, b) summing pairwise products with zip.",
+        embedded_python.tip05_enumerate_zip(),
       ),
-      Problem(
-        title: "Slicing and reversal",
-        prompt: "Write how to reverse a sequence, take every nth element, and copy a list with slicing.",
-        approach: approaches.for_title("Slicing and reversal"),
-        solutions: [
-          Solution(
-            label: "Solution 1",
-            code: "s[::-1]      # reversed
-s[::2]       # every 2nd element
-s[:]         # shallow copy
-s[-3:]       # last 3 elements
-s[1:-1]      # drop first and last",
-          ),
-        ],
-        language: Python,
-        check: None,
+      drill(
+        "Slicing and reversal",
+        "Using only slicing: reversedString(s), everySecond(s) (characters at even indices), lastN(s, n) (last n characters, empty when n <= 0), and trimEnds(s) (drop the first and last character).",
+        embedded_python.tip06_slicing(),
       ),
-      Problem(
-        title: "Sorting with a key",
-        prompt: "Write how to sort by a custom key, sort descending, and sort by multiple fields.",
-        approach: approaches.for_title("Sorting with a key"),
-        solutions: [
-          Solution(
-            label: "Solution 1",
-            code: "nums.sort()                          # in place
-sorted_nums = sorted(nums)           # new list
-
-words.sort(key=len)
-words.sort(key=len, reverse=True)
-
-# multiple fields: ascending name, descending age
-people.sort(key=lambda p: (p.name, -p.age))",
-          ),
-        ],
-        language: Python,
-        check: None,
+      drill(
+        "Sorting with a key",
+        "Write sortByLength(words) sorting by word length, and sortPairs(pairs) sorting (name, score) tuples by name ascending then score descending - both as one sorted(...) call with a key.",
+        embedded_python.tip07_sort_key(),
       ),
-      Problem(
-        title: "Building strings efficiently",
-        prompt: "Write the O(n) way to build a string from many pieces, and explain what to avoid.",
-        approach: approaches.for_title("Building strings efficiently"),
-        solutions: [
-          Solution(
-            label: "Solution 1",
-            code: "# Good: O(n)
-parts = []
-for c in chars:
-    parts.append(c)
-result = ''.join(parts)
-
-# Bad: O(n^2) — strings are immutable,
-# every += allocates a new string
-result = ''
-for c in chars:
-    result += c",
-          ),
-        ],
-        language: Python,
-        check: None,
+      drill(
+        "Building strings efficiently",
+        "Write joinUpper(chars) returning the uppercased concatenation of a list of characters the O(n) way: append the pieces to a list and join once at the end - += in a loop re-copies the string every time.",
+        embedded_python.tip08_join(),
       ),
     ]),
   ])
+}
+
+fn drill(title: String, prompt: String, e: Embedded) -> Problem {
+  Problem(
+    title: title,
+    prompt: prompt,
+    approach: approaches.for_title(title),
+    solutions: list.map(e.solutions, fn(s) { Solution(label: s.0, code: s.1) }),
+    language: Python,
+    check: Some(e.check),
+  )
 }

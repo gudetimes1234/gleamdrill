@@ -1,5 +1,7 @@
-//// App-side driver for the compile-and-run worker: lazy spawn, run requests,
-//// timeout + restart, and decoding worker messages into Msgs.
+//// App-side driver for the per-language grading workers: lazy spawn, run
+//// requests, timeout + restart, and decoding worker messages into Msgs.
+//// Every worker speaks the same protocol; the language tag routes messages
+//// back to the right runtime state.
 
 import algodrill/model.{
   type Msg, type RunOutcome, CaseResult, Cases, Errored, RunError, RunFinished,
@@ -10,54 +12,82 @@ import gleam/json
 import gleam/option.{type Option, None}
 import lustre/effect.{type Effect}
 
-/// The vendored compiler version — must match GLEAM_VERSION in the Makefile.
-/// Passed to the worker as ?v= so the runtime directory has a single source
-/// of truth on this side.
-pub const version = "1.18.1"
+/// The vendored Gleam compiler version — must match GLEAM_VERSION in the
+/// Makefile. Passed to the worker as ?v= so the runtime directory has a single
+/// source of truth on this side.
+pub const gleam_version = "1.18.1"
 
-/// A run that exceeds this is presumed stuck in non-terminating recursion;
-/// the worker cannot be interrupted, only terminated. Generous because a cold
-/// worker's first compile also pays wasm init (~1s on slow hardware).
+/// The vendored Brython version — must match BRYTHON_VERSION in the Makefile.
+pub const python_version = "3.14.3"
+
+/// A run that exceeds this is presumed stuck in a non-terminating loop; the
+/// worker cannot be interrupted, only terminated.
 const run_timeout_ms = 8000
 
-/// Spawn the worker if it is not already running. Safe to dispatch repeatedly.
-pub fn ensure() -> Effect(Msg) {
+/// The Python worker is classic (Brython needs importScripts); the others are
+/// module workers.
+fn worker_config(language: String) -> #(String, Bool) {
+  case language {
+    "python" -> #("/python-worker.js?v=" <> python_version, False)
+    _ -> #("/gleam-worker.js?v=" <> gleam_version, True)
+  }
+}
+
+/// Spawn the language's worker if it is not already running. Safe to dispatch
+/// repeatedly.
+pub fn ensure(language: String) -> Effect(Msg) {
   effect.from(fn(dispatch) {
-    ffi_spawn(version, fn(raw) { dispatch(decode_message(raw)) }, fn(message) {
-      dispatch(RunnerFailed(message))
-    })
+    let #(url, is_module) = worker_config(language)
+    ffi_spawn(
+      language,
+      url,
+      is_module,
+      fn(raw) { dispatch(decode_message(language, raw)) },
+      fn(message) { dispatch(RunnerFailed(language, message)) },
+    )
   })
 }
 
 /// Terminate a hung worker and boot a fresh one.
-pub fn restart() -> Effect(Msg) {
+pub fn restart(language: String) -> Effect(Msg) {
   effect.from(fn(dispatch) {
-    ffi_restart(version, fn(raw) { dispatch(decode_message(raw)) }, fn(message) {
-      dispatch(RunnerFailed(message))
-    })
+    let #(url, is_module) = worker_config(language)
+    ffi_restart(
+      language,
+      url,
+      is_module,
+      fn(raw) { dispatch(decode_message(language, raw)) },
+      fn(message) { dispatch(RunnerFailed(language, message)) },
+    )
   })
 }
 
 /// Post a run request and arm its timeout. The timeout always fires; stale ids
 /// are ignored by the update loop, so it needs no cancellation.
-pub fn run(id: Int, solution: String, harness: String) -> Effect(Msg) {
+pub fn run(
+  language: String,
+  id: Int,
+  solution: String,
+  harness: String,
+) -> Effect(Msg) {
   effect.from(fn(dispatch) {
-    ffi_post_run(id, solution, harness)
+    ffi_post_run(language, id, solution, harness)
     ffi_after(run_timeout_ms, fn() { dispatch(RunTimedOut(id)) })
   })
 }
 
-fn decode_message(raw: String) -> Msg {
-  case json.parse(raw, message_decoder()) {
+fn decode_message(language: String, raw: String) -> Msg {
+  case json.parse(raw, message_decoder(language)) {
     Ok(msg) -> msg
-    Error(_) -> RunnerFailed("The Gleam runtime sent an unreadable message.")
+    Error(_) ->
+      RunnerFailed(language, "The runtime sent an unreadable message.")
   }
 }
 
-fn message_decoder() -> Decoder(Msg) {
+fn message_decoder(language: String) -> Decoder(Msg) {
   use kind <- decode.field("type", decode.string)
   case kind {
-    "ready" -> decode.success(RunnerReady)
+    "ready" -> decode.success(RunnerReady(language))
     "result" -> {
       use id <- decode.field("id", decode.int)
       use outcome <- result_decoder()
@@ -68,7 +98,7 @@ fn message_decoder() -> Decoder(Msg) {
       use outcome <- error_decoder()
       decode.success(RunFinished(id, outcome))
     }
-    _ -> decode.failure(RunnerReady, "Msg")
+    _ -> decode.failure(RunnerReady(language), "Msg")
   }
 }
 
@@ -103,20 +133,29 @@ fn nullable_field(
 
 @external(javascript, "./runner_ffi.mjs", "spawn")
 fn ffi_spawn(
-  version: String,
+  language: String,
+  url: String,
+  is_module: Bool,
   on_message: fn(String) -> Nil,
   on_error: fn(String) -> Nil,
 ) -> Nil
 
 @external(javascript, "./runner_ffi.mjs", "restart")
 fn ffi_restart(
-  version: String,
+  language: String,
+  url: String,
+  is_module: Bool,
   on_message: fn(String) -> Nil,
   on_error: fn(String) -> Nil,
 ) -> Nil
 
 @external(javascript, "./runner_ffi.mjs", "post_run")
-fn ffi_post_run(id: Int, solution: String, harness: String) -> Nil
+fn ffi_post_run(
+  language: String,
+  id: Int,
+  solution: String,
+  harness: String,
+) -> Nil
 
 @external(javascript, "./runner_ffi.mjs", "after")
 fn ffi_after(delay_ms: Int, callback: fn() -> Nil) -> Nil
