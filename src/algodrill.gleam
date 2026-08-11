@@ -199,11 +199,16 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
 
     UserClickedNext -> {
-      let #(iteration, index) = case m.current_iteration < m.iteration_count {
-        True -> #(m.current_iteration + 1, m.problem_index)
-        False -> #(1, m.problem_index + 1)
+      // Round-robin: walk the whole selection, then come back around for the
+      // next pass. Drilling one problem N times in a row before moving on is
+      // the thing this deliberately avoids.
+      let #(index, iteration) = case
+        m.problem_index + 1 < list.length(m.selected)
+      {
+        True -> #(m.problem_index + 1, m.current_iteration)
+        False -> #(0, m.current_iteration + 1)
       }
-      case index >= list.length(m.selected) {
+      case iteration > m.iteration_count {
         True -> #(
           reset_to_menu(m),
           effect.from(fn(_dispatch) { browser.alert("Drill complete.") }),

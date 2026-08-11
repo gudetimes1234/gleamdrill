@@ -699,6 +699,89 @@ const gleam = StreamLanguage.define({
   },
 });
 
+// @codemirror/legacy-modes ships no Elixir mode, and neither erlang nor ruby
+// parses it acceptably (atoms, sigils and do/end all go wrong), so it gets the
+// same hand-written treatment as Gleam above.
+const ELIXIR_KEYWORDS = new Set([
+  "after", "and", "case", "catch", "cond", "def", "defdelegate", "defexception",
+  "defguard", "defimpl", "defmacro", "defmodule", "defp", "defprotocol",
+  "defstruct", "do", "else", "end", "fn", "for", "if", "import", "in", "not",
+  "or", "quote", "raise", "receive", "require", "rescue", "try", "unless",
+  "unquote", "use", "when", "with",
+]);
+
+const ELIXIR_CONSTANTS = new Set(["true", "false", "nil"]);
+
+const elixir = StreamLanguage.define({
+  name: "elixir",
+  token(stream) {
+    if (stream.eatSpace()) return null;
+    if (stream.match("#")) {
+      stream.skipToEnd();
+      return "comment";
+    }
+    // Heredocs are highlighted a line at a time; treating the opener as a plain
+    // string is close enough for read-only drill code.
+    if (stream.match('"""') || stream.match("'''")) {
+      stream.skipToEnd();
+      return "string";
+    }
+    if (stream.peek() === '"' || stream.peek() === "'") {
+      const quote = stream.next();
+      let escaped = false;
+      while (!stream.eol()) {
+        const ch = stream.next();
+        if (escaped) escaped = false;
+        else if (ch === "\\") escaped = true;
+        else if (ch === quote) break;
+      }
+      return "string";
+    }
+    // Sigils: ~r/.../, ~s|...|, ~w[...] and friends.
+    if (stream.match(/^~[a-zA-Z]/)) {
+      const open = stream.next();
+      const close = { "(": ")", "[": "]", "{": "}", "<": ">" }[open] ?? open;
+      while (!stream.eol() && stream.next() !== close);
+      stream.match(/^[a-z]*/);
+      return "string";
+    }
+    // Module attributes (@moduledoc, @alphabet) and the pin operator.
+    if (stream.match(/^[@^][a-z_][A-Za-z0-9_]*/)) return "variableName";
+    if (stream.match(/^:"[^"]*"/) || stream.match(/^:[a-zA-Z_][A-Za-z0-9_]*[?!]?/)) {
+      return "atom";
+    }
+    if (/[0-9]/.test(stream.peek())) {
+      stream.match(/^0[box][0-9a-fA-F_]+/) ||
+        stream.match(/^[0-9][0-9_]*(\.[0-9_]+)?(e-?[0-9_]+)?/);
+      return "number";
+    }
+    if (stream.match(/^[A-Z][A-Za-z0-9_]*/)) return "typeName";
+    if (stream.match(/^[a-z_][A-Za-z0-9_]*[?!]?/)) {
+      const word = stream.current();
+      if (ELIXIR_KEYWORDS.has(word)) return "keyword";
+      if (ELIXIR_CONSTANTS.has(word)) return "atom";
+      return "variableName";
+    }
+    if (
+      stream.match("|>") || stream.match("<>") || stream.match("->") ||
+      stream.match("<-") || stream.match("=>") || stream.match("..") ||
+      stream.match("<=") || stream.match(">=") || stream.match("===") ||
+      stream.match("==") || stream.match("!=") || stream.match("&&") ||
+      stream.match("||")
+    ) {
+      return "operator";
+    }
+    const ch = stream.next();
+    if ("+-*/%=<>!&|".includes(ch)) return "operator";
+    if ("()[]{}".includes(ch)) return "bracket";
+    return null;
+  },
+  languageData: {
+    commentTokens: { line: "#" },
+    closeBrackets: { brackets: ["(", "[", "{", '"'] },
+  },
+});
+
 // Tokyo Night, matching the app stylesheet.
 const highlight = HighlightStyle.define([
   { tag: tags.keyword, color: "#bb9af7" },
@@ -761,6 +844,8 @@ function languageExtension(language) {
       return StreamLanguage.define(python);
     case "typescript":
       return StreamLanguage.define(typescript);
+    case "elixir":
+      return elixir;
     default:
       return gleam;
   }

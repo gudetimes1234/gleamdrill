@@ -4,7 +4,7 @@ TARBALL_URL     := https://github.com/gleam-lang/gleam/releases/download/v$(GLEA
 BRYTHON_VERSION := 3.14.3
 PY_RUNTIME_DIR  := assets/python-runtime/$(BRYTHON_VERSION)
 
-.PHONY: dev build deploy vendor content worker clean-vendor
+.PHONY: dev build deploy vendor content verify worker clean-vendor
 
 dev: vendor content worker
 	gleam run -m lustre/dev start
@@ -15,9 +15,18 @@ build: vendor content worker
 deploy: build
 	vercel deploy --prod
 
-# Regenerates src/algodrill/problems/embedded.gleam from the drill sources.
+# Regenerates src/algodrill/problems/embedded*.gleam from the drill sources,
+# plus the two generated verifiers `verify` runs.
 content:
 	cd drills && gleam run -m generate
+
+# Runs every solution variant — primaries and alternates, all three languages —
+# against its harness. A new alternate is not done until this passes.
+verify: content
+	cd drills && gleam run -m solutions
+	cd drills/python && python3 verify_all.py
+	cd drills/ts && bun verify_all.ts
+	cd drills/elixir && elixir verify_all.exs
 
 # The workers are separate JS entry points: their Gleam logic is compiled,
 # then bundled (with the FFI graph) into single files the bootstraps load.

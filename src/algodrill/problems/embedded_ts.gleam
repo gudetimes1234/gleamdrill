@@ -15,6 +15,15 @@ pub fn nc01_contains_duplicate() -> Embedded {
   }
   return false;
 }"),
+      #("Solution 2 · Sorting", "export function containsDuplicate(nums: number[]): boolean {
+  // Duplicates are adjacent once sorted, so one pass over the sorted copy
+  // answers it — O(n log n), but nothing has to hold every value at once.
+  const ordered = [...nums].sort((a, b) => a - b);
+  for (let i = 1; i < ordered.length; i++) {
+    if (ordered[i] === ordered[i - 1]) return true;
+  }
+  return false;
+}"),
     ],
     check: Check(
       signature: "export function containsDuplicate(nums: number[]): boolean",
@@ -37,6 +46,52 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc02_valid_anagram() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "export function isAnagram(s: string, t: string): boolean {
+  if (s.length !== t.length) return false;
+
+  const counts = new Map<string, number>();
+  for (const char of s) counts.set(char, (counts.get(char) ?? 0) + 1);
+
+  for (const char of t) {
+    const remaining = counts.get(char);
+    if (remaining === undefined || remaining === 0) return false;
+    counts.set(char, remaining - 1);
+  }
+
+  return true;
+}"),
+      #("Solution 2 · Sorting", "export function isAnagram(s: string, t: string): boolean {
+  // Two words are anagrams exactly when their sorted letters match. O(n log n),
+  // and there is no counting to get wrong.
+  const letters = (word: string) => [...word].sort().join(\"\");
+  return letters(s) === letters(t);
+}"),
+    ],
+    check: Check(
+      signature: "export function isAnagram(s: string, t: string): boolean",
+      starter: "export function isAnagram(s: string, t: string): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.isAnagram !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"isAnagram('anagram', 'nagaram')\", show(true), show(solution.isAnagram(\"anagram\", \"nagaram\"))],
+    [\"isAnagram('rat', 'car')\", show(false), show(solution.isAnagram(\"rat\", \"car\"))],
+    [\"isAnagram('', '')\", show(true), show(solution.isAnagram(\"\", \"\"))],
+    [\"isAnagram('a', 'ab')\", show(false), show(solution.isAnagram(\"a\", \"ab\"))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn nc03_two_sum() -> Embedded {
   Embedded(
     solutions: [
@@ -47,6 +102,29 @@ pub fn nc03_two_sum() -> Embedded {
     if (seen.has(complement)) return [seen.get(complement)!, i];
     seen.set(nums[i], i);
   }
+  return [];
+}"),
+      #("Solution 2 · Sorted two pointer", "export function twoSum(nums: number[], target: number): number[] {
+  // Sorting loses the original positions, so carry them along, then walk one
+  // pointer in from each end.
+  const ordered = nums
+    .map((num, index) => [num, index] as [number, number])
+    .sort((a, b) => a[0] - b[0]);
+
+  let left = 0;
+  let right = ordered.length - 1;
+  while (left < right) {
+    const total = ordered[left][0] + ordered[right][0];
+    if (total === target) {
+      return [ordered[left][1], ordered[right][1]].sort((a, b) => a - b);
+    }
+    if (total < target) {
+      left++;
+    } else {
+      right--;
+    }
+  }
+
   return [];
 }"),
     ],
@@ -72,6 +150,244 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc04_group_anagrams() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "export function groupAnagrams(strs: string[]): string[][] {
+  const groups = new Map<string, string[]>();
+
+  for (const s of strs) {
+    // A 26-slot tally is an anagram-invariant key that costs O(len) rather
+    // than O(len log len) to build.
+    const tally = new Array(26).fill(0);
+    for (const char of s) tally[char.charCodeAt(0) - 97]++;
+    const key = tally.join(\",\");
+
+    const group = groups.get(key);
+    if (group) {
+      group.push(s);
+    } else {
+      groups.set(key, [s]);
+    }
+  }
+
+  return [...groups.values()];
+}"),
+      #("Solution 2 · Sorted key", "export function groupAnagrams(strs: string[]): string[][] {
+  // The sorted word itself is an anagram-invariant key: shorter than tallying
+  // letters, and it works for any alphabet rather than just a-z.
+  const groups = new Map<string, string[]>();
+
+  for (const s of strs) {
+    const key = [...s].sort().join(\"\");
+    const group = groups.get(key);
+    if (group) {
+      group.push(s);
+    } else {
+      groups.set(key, [s]);
+    }
+  }
+
+  return [...groups.values()];
+}"),
+    ],
+    check: Check(
+      signature: "export function groupAnagrams(strs: string[]): string[][]",
+      starter: "export function groupAnagrams(strs: string[]): string[][] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+/** Groups may come back in any order, and so may their members. */
+const normalise = (groups: string[][]) =>
+  groups.map((group) => [...group].sort()).sort((a, b) => (a[0] < b[0] ? -1 : 1));
+
+export function run(): [string, string, string][] {
+  if (typeof solution.groupAnagrams !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [
+      \"groupAnagrams(['eat','tea','tan','ate','nat','bat'])\",
+      show([[\"ate\", \"eat\", \"tea\"], [\"bat\"], [\"nat\", \"tan\"]]),
+      show(normalise(solution.groupAnagrams([\"eat\", \"tea\", \"tan\", \"ate\", \"nat\", \"bat\"]))),
+    ],
+    [\"groupAnagrams([])\", show([]), show(normalise(solution.groupAnagrams([])))],
+    [\"groupAnagrams(['a'])\", show([[\"a\"]]), show(normalise(solution.groupAnagrams([\"a\"])))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc05_top_k_frequent() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "export function topKFrequent(nums: number[], k: number): number[] {
+  const counts = new Map<number, number>();
+  for (const num of nums) counts.set(num, (counts.get(num) ?? 0) + 1);
+
+  // A count can never exceed the input length, so one bucket per frequency
+  // covers everything and the answer falls out of a single downward walk.
+  const buckets: number[][] = Array.from({ length: nums.length + 1 }, () => []);
+  for (const [num, frequency] of counts) buckets[frequency].push(num);
+
+  const result: number[] = [];
+  for (let frequency = buckets.length - 1; frequency > 0; frequency--) {
+    for (const num of buckets[frequency]) {
+      result.push(num);
+      if (result.length === k) return result;
+    }
+  }
+  return result;
+}"),
+      #("Solution 2 · Sorting", "export function topKFrequent(nums: number[], k: number): number[] {
+  // Straight sort by frequency: O(n log n) rather than the bucket version's
+  // O(n), but it is the version you can write without thinking.
+  const counts = new Map<number, number>();
+  for (const num of nums) counts.set(num, (counts.get(num) ?? 0) + 1);
+
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, k)
+    .map(([num]) => num);
+}"),
+    ],
+    check: Check(
+      signature: "export function topKFrequent(nums: number[], k: number): number[]",
+      starter: "export function topKFrequent(nums: number[], k: number): number[] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.topKFrequent !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"topKFrequent([1, 1, 1, 2, 2, 3], 2)\", show([1, 2]), show(solution.topKFrequent([1, 1, 1, 2, 2, 3], 2))],
+    [\"topKFrequent([1], 1)\", show([1]), show(solution.topKFrequent([1], 1))],
+    [\"topKFrequent([5, 5, 4, 4, 4, 3], 1)\", show([4]), show(solution.topKFrequent([5, 5, 4, 4, 4, 3], 1))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc06_product_except_self() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "export function productExceptSelf(nums: number[]): number[] {
+  const result = new Array(nums.length).fill(1);
+
+  let prefix = 1;
+  for (let i = 0; i < nums.length; i++) {
+    result[i] = prefix;
+    prefix *= nums[i];
+  }
+
+  let suffix = 1;
+  for (let i = nums.length - 1; i >= 0; i--) {
+    result[i] *= suffix;
+    suffix *= nums[i];
+  }
+
+  return result;
+}"),
+      #("Solution 2 · Brute force", "export function productExceptSelf(nums: number[]): number[] {
+  // The obvious O(n^2) reading: for each slot, multiply everything that is not
+  // in it. Worth knowing as the thing prefix/suffix beats.
+  return nums.map((_, i) => {
+    let product = 1;
+    for (let j = 0; j < nums.length; j++) {
+      if (i !== j) product *= nums[j];
+    }
+    return product;
+  });
+}"),
+    ],
+    check: Check(
+      signature: "export function productExceptSelf(nums: number[]): number[]",
+      starter: "export function productExceptSelf(nums: number[]): number[] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.productExceptSelf !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"productExceptSelf([1, 2, 3, 4])\", show([24, 12, 8, 6]), show(solution.productExceptSelf([1, 2, 3, 4]))],
+    [\"productExceptSelf([-1, 1, 0, -3, 3])\", show([0, 0, 9, 0, 0]), show(solution.productExceptSelf([-1, 1, 0, -3, 3]))],
+    [\"productExceptSelf([2, 3])\", show([3, 2]), show(solution.productExceptSelf([2, 3]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc07_longest_consecutive() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "export function longestConsecutive(nums: number[]): number {
+  const all = new Set(nums);
+  let longest = 0;
+
+  for (const num of all) {
+    // Only count from the start of a run, so each run is walked once.
+    if (all.has(num - 1)) continue;
+    let length = 1;
+    while (all.has(num + length)) length++;
+    longest = Math.max(longest, length);
+  }
+
+  return longest;
+}"),
+      #("Solution 2 · Sorting", "export function longestConsecutive(nums: number[]): number {
+  // No set: sort, then walk once counting runs. O(n log n) rather than O(n),
+  // but it needs no extra structure and the run logic reads straight through.
+  if (nums.length === 0) return 0;
+
+  const ordered = [...nums].sort((a, b) => a - b);
+  let longest = 1;
+  let run = 1;
+
+  for (let i = 1; i < ordered.length; i++) {
+    const step = ordered[i] - ordered[i - 1];
+    if (step === 0) continue; // duplicates neither extend nor break a run
+    if (step === 1) {
+      run++;
+      longest = Math.max(longest, run);
+    } else {
+      run = 1;
+    }
+  }
+
+  return longest;
+}"),
+    ],
+    check: Check(
+      signature: "export function longestConsecutive(nums: number[]): number",
+      starter: "export function longestConsecutive(nums: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.longestConsecutive !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"longestConsecutive([100, 4, 200, 1, 3, 2])\", show(4), show(solution.longestConsecutive([100, 4, 200, 1, 3, 2]))],
+    [\"longestConsecutive([0, 3, 7, 2, 5, 8, 4, 6, 0, 1])\", show(9), show(solution.longestConsecutive([0, 3, 7, 2, 5, 8, 4, 6, 0, 1]))],
+    [\"longestConsecutive([])\", show(0), show(solution.longestConsecutive([]))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn nc08_valid_palindrome() -> Embedded {
   Embedded(
     solutions: [
@@ -85,6 +401,12 @@ pub fn nc08_valid_palindrome() -> Embedded {
     right--;
   }
   return true;
+}"),
+      #("Solution 2 · Cleaned reverse", "export function isPalindrome(s: string): boolean {
+  // Strip, then compare against the reverse. Allocates a second string instead
+  // of converging two pointers, but it is one line of intent.
+  const cleaned = s.toLowerCase().replace(/[^a-z0-9]/g, \"\");
+  return cleaned === [...cleaned].reverse().join(\"\");
 }"),
     ],
     check: Check(
@@ -109,6 +431,198 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc09_two_sum_sorted() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "export function twoSum(numbers: number[], target: number): number[] {
+  let left = 0;
+  let right = numbers.length - 1;
+
+  while (left < right) {
+    const total = numbers[left] + numbers[right];
+    if (total === target) return [left + 1, right + 1];
+    if (total < target) {
+      left++;
+    } else {
+      right--;
+    }
+  }
+
+  return [];
+}"),
+      #("Solution 2 · Binary search", "export function twoSum(numbers: number[], target: number): number[] {
+  // Fix each number and binary search the tail for its complement, rather than
+  // converging two pointers. O(n log n), reusing a search you already know.
+  for (let i = 0; i < numbers.length; i++) {
+    const wanted = target - numbers[i];
+    let lo = i + 1;
+    let hi = numbers.length - 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (numbers[mid] === wanted) return [i + 1, mid + 1];
+      if (numbers[mid] < wanted) {
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+  }
+  return [];
+}"),
+    ],
+    check: Check(
+      signature: "export function twoSum(numbers: number[], target: number): number[]",
+      starter: "export function twoSum(numbers: number[], target: number): number[] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.twoSum !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"twoSum([2, 7, 11, 15], 9)\", show([1, 2]), show(solution.twoSum([2, 7, 11, 15], 9))],
+    [\"twoSum([2, 3, 4], 6)\", show([1, 3]), show(solution.twoSum([2, 3, 4], 6))],
+    [\"twoSum([-1, 0], -1)\", show([1, 2]), show(solution.twoSum([-1, 0], -1))],
+    [\"twoSum([1, 2, 3], 100)\", show([]), show(solution.twoSum([1, 2, 3], 100))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc10_three_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "export function threeSum(nums: number[]): number[][] {
+  const ordered = [...nums].sort((a, b) => a - b);
+  const result: number[][] = [];
+
+  for (let i = 0; i < ordered.length; i++) {
+    if (i > 0 && ordered[i] === ordered[i - 1]) continue;
+
+    let left = i + 1;
+    let right = ordered.length - 1;
+    while (left < right) {
+      const total = ordered[i] + ordered[left] + ordered[right];
+      if (total < 0) {
+        left++;
+      } else if (total > 0) {
+        right--;
+      } else {
+        result.push([ordered[i], ordered[left], ordered[right]]);
+        left++;
+        while (left < right && ordered[left] === ordered[left - 1]) left++;
+      }
+    }
+  }
+
+  return result;
+}"),
+      #("Solution 2 · Brute force", "export function threeSum(nums: number[]): number[][] {
+  // Every triple, checked. Sorting first means each triple comes out in
+  // ascending order, so duplicates are plain string equality on the triple.
+  const ordered = [...nums].sort((a, b) => a - b);
+  const seen = new Set<string>();
+  const result: number[][] = [];
+
+  for (let i = 0; i < ordered.length; i++) {
+    for (let j = i + 1; j < ordered.length; j++) {
+      for (let k = j + 1; k < ordered.length; k++) {
+        if (ordered[i] + ordered[j] + ordered[k] !== 0) continue;
+        const triple = [ordered[i], ordered[j], ordered[k]];
+        const key = triple.join(\",\");
+        if (seen.has(key)) continue;
+        seen.add(key);
+        result.push(triple);
+      }
+    }
+  }
+
+  return result;
+}"),
+    ],
+    check: Check(
+      signature: "export function threeSum(nums: number[]): number[][]",
+      starter: "export function threeSum(nums: number[]): number[][] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+/** Triples are compared as a set: only their contents are meaningful. */
+const normalise = (triples: number[][]) => triples.map((t) => show(t)).sort();
+
+export function run(): [string, string, string][] {
+  if (typeof solution.threeSum !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [
+      \"threeSum([-1, 0, 1, 2, -1, -4])\",
+      show([\"[-1,-1,2]\", \"[-1,0,1]\"]),
+      show(normalise(solution.threeSum([-1, 0, 1, 2, -1, -4]))),
+    ],
+    [\"threeSum([0, 1, 1])\", show([]), show(normalise(solution.threeSum([0, 1, 1])))],
+    [\"threeSum([0, 0, 0])\", show([\"[0,0,0]\"]), show(normalise(solution.threeSum([0, 0, 0])))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc11_container_water() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "export function maxArea(height: number[]): number {
+  let left = 0;
+  let right = height.length - 1;
+  let best = 0;
+
+  while (left < right) {
+    best = Math.max(best, (right - left) * Math.min(height[left], height[right]));
+    // Moving the taller line in can never help: the shorter one caps the area.
+    if (height[left] < height[right]) {
+      left++;
+    } else {
+      right--;
+    }
+  }
+
+  return best;
+}"),
+      #("Solution 2 · Brute force", "export function maxArea(height: number[]): number {
+  // Every pair of lines, measured. O(n^2), but it makes what the two-pointer
+  // sweep is maximising explicit: shorter line times distance.
+  let best = 0;
+  for (let left = 0; left < height.length; left++) {
+    for (let right = left + 1; right < height.length; right++) {
+      best = Math.max(best, (right - left) * Math.min(height[left], height[right]));
+    }
+  }
+  return best;
+}"),
+    ],
+    check: Check(
+      signature: "export function maxArea(height: number[]): number",
+      starter: "export function maxArea(height: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.maxArea !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"maxArea([1, 8, 6, 2, 5, 4, 8, 3, 7])\", show(49), show(solution.maxArea([1, 8, 6, 2, 5, 4, 8, 3, 7]))],
+    [\"maxArea([1, 1])\", show(1), show(solution.maxArea([1, 1]))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn nc12_best_time_stock() -> Embedded {
   Embedded(
     solutions: [
@@ -118,6 +632,17 @@ pub fn nc12_best_time_stock() -> Embedded {
   for (const price of prices) {
     lowest = Math.min(lowest, price);
     profit = Math.max(profit, price - lowest);
+  }
+  return profit;
+}"),
+      #("Solution 2 · Brute force", "export function maxProfit(prices: number[]): number {
+  // Every buy day against every later sell day. O(n^2), and the definition of
+  // the problem written out — the single pass is the optimisation.
+  let profit = 0;
+  for (let buy = 0; buy < prices.length; buy++) {
+    for (let sell = buy + 1; sell < prices.length; sell++) {
+      profit = Math.max(profit, prices[sell] - prices[buy]);
+    }
   }
   return profit;
 }"),
@@ -143,6 +668,195 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc13_longest_substring() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "export function lengthOfLongestSubstring(s: string): number {
+  const window = new Set<string>();
+  let left = 0;
+  let longest = 0;
+
+  for (let right = 0; right < s.length; right++) {
+    while (window.has(s[right])) {
+      window.delete(s[left]);
+      left++;
+    }
+    window.add(s[right]);
+    longest = Math.max(longest, right - left + 1);
+  }
+
+  return longest;
+}"),
+      #("Solution 2 · Index scan", "export function lengthOfLongestSubstring(s: string): number {
+  // No set: ask the string itself whether this character already appeared
+  // inside the current window, and if so restart just past it.
+  let longest = 0;
+  let start = 0;
+
+  for (let right = 0; right < s.length; right++) {
+    const found = s.slice(start, right).indexOf(s[right]);
+    if (found !== -1) start = start + found + 1;
+    longest = Math.max(longest, right - start + 1);
+  }
+
+  return longest;
+}"),
+    ],
+    check: Check(
+      signature: "export function lengthOfLongestSubstring(s: string): number",
+      starter: "export function lengthOfLongestSubstring(s: string): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.lengthOfLongestSubstring !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"lengthOfLongestSubstring('abcabcbb')\", show(3), show(solution.lengthOfLongestSubstring(\"abcabcbb\"))],
+    [\"lengthOfLongestSubstring('bbbbb')\", show(1), show(solution.lengthOfLongestSubstring(\"bbbbb\"))],
+    [\"lengthOfLongestSubstring('pwwkew')\", show(3), show(solution.lengthOfLongestSubstring(\"pwwkew\"))],
+    [\"lengthOfLongestSubstring('')\", show(0), show(solution.lengthOfLongestSubstring(\"\"))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc14_character_replacement() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "export function characterReplacement(s: string, k: number): number {
+  const counts = new Map<string, number>();
+  let left = 0;
+  let maxCount = 0;
+  let longest = 0;
+
+  for (let right = 0; right < s.length; right++) {
+    const count = (counts.get(s[right]) ?? 0) + 1;
+    counts.set(s[right], count);
+    maxCount = Math.max(maxCount, count);
+
+    while (right - left + 1 - maxCount > k) {
+      counts.set(s[left], (counts.get(s[left]) ?? 1) - 1);
+      left++;
+    }
+
+    longest = Math.max(longest, right - left + 1);
+  }
+
+  return longest;
+}"),
+      #("Solution 2 · Per character", "const ALPHABET = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";
+
+export function characterReplacement(s: string, k: number): number {
+  // One sweep per letter, asking a much simpler question each time: how long a
+  // window can I hold if *this* is the letter I keep? No running frequency map
+  // and no max-count bookkeeping — 26 easy passes instead of one subtle one.
+  let longest = 0;
+
+  for (const target of ALPHABET) {
+    let left = 0;
+    let others = 0;
+    for (let right = 0; right < s.length; right++) {
+      if (s[right] !== target) others++;
+      while (others > k) {
+        if (s[left] !== target) others--;
+        left++;
+      }
+      longest = Math.max(longest, right - left + 1);
+    }
+  }
+
+  return longest;
+}"),
+    ],
+    check: Check(
+      signature: "export function characterReplacement(s: string, k: number): number",
+      starter: "export function characterReplacement(s: string, k: number): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.characterReplacement !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"characterReplacement('ABAB', 2)\", show(4), show(solution.characterReplacement(\"ABAB\", 2))],
+    [\"characterReplacement('AABABBA', 1)\", show(4), show(solution.characterReplacement(\"AABABBA\", 1))],
+    [\"characterReplacement('AAAA', 0)\", show(4), show(solution.characterReplacement(\"AAAA\", 0))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc15_permutation_in_string() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "export function checkInclusion(s1: string, s2: string): boolean {
+  if (s1.length > s2.length) return false;
+
+  // Fixed 26-slot tallies, compared slot by slot as the window slides.
+  const need = new Array(26).fill(0);
+  const window = new Array(26).fill(0);
+  const slot = (char: string) => char.charCodeAt(0) - 97;
+
+  for (let i = 0; i < s1.length; i++) {
+    need[slot(s1[i])]++;
+    window[slot(s2[i])]++;
+  }
+
+  const matches = () => need.every((count, i) => count === window[i]);
+  if (matches()) return true;
+
+  for (let i = s1.length; i < s2.length; i++) {
+    window[slot(s2[i])]++;
+    window[slot(s2[i - s1.length])]--;
+    if (matches()) return true;
+  }
+
+  return false;
+}"),
+      #("Solution 2 · Sorted windows", "export function checkInclusion(s1: string, s2: string): boolean {
+  // Every window of the right length, sorted and compared. Slower than sliding
+  // counts, but there is no incremental state to get wrong: the whole method is
+  // \"is this window an anagram?\".
+  if (s1.length > s2.length) return false;
+
+  const needle = [...s1].sort().join(\"\");
+  for (let start = 0; start + s1.length <= s2.length; start++) {
+    if ([...s2.slice(start, start + s1.length)].sort().join(\"\") === needle) {
+      return true;
+    }
+  }
+
+  return false;
+}"),
+    ],
+    check: Check(
+      signature: "export function checkInclusion(s1: string, s2: string): boolean",
+      starter: "export function checkInclusion(s1: string, s2: string): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.checkInclusion !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"checkInclusion('ab', 'eidbaooo')\", show(true), show(solution.checkInclusion(\"ab\", \"eidbaooo\"))],
+    [\"checkInclusion('ab', 'eidboaoo')\", show(false), show(solution.checkInclusion(\"ab\", \"eidboaoo\"))],
+    [\"checkInclusion('adc', 'dcda')\", show(true), show(solution.checkInclusion(\"adc\", \"dcda\"))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn nc16_valid_parentheses() -> Embedded {
   Embedded(
     solutions: [
@@ -157,6 +871,17 @@ pub fn nc16_valid_parentheses() -> Embedded {
     }
   }
   return stack.length === 0;
+}"),
+      #("Solution 2 · Reduction", "export function isValid(s: string): boolean {
+  // No stack: strip every matched pair, over and over, until nothing more can
+  // go. Whatever survives is unmatched. It is also why \"([)]\" fails — neither
+  // pair is ever adjacent.
+  let previous = \"\";
+  while (previous !== s) {
+    previous = s;
+    s = s.replaceAll(\"()\", \"\").replaceAll(\"[]\", \"\").replaceAll(\"{}\", \"\");
+  }
+  return s === \"\";
 }"),
     ],
     check: Check(
@@ -182,6 +907,155 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc17_min_stack() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "export class MinStack {
+  private values: number[] = [];
+  private minimums: number[] = [];
+
+  push(val: number): void {
+    this.values.push(val);
+    const smallest = this.minimums.length === 0
+      ? val
+      : Math.min(val, this.minimums[this.minimums.length - 1]);
+    this.minimums.push(smallest);
+  }
+
+  pop(): void {
+    this.values.pop();
+    this.minimums.pop();
+  }
+
+  top(): number {
+    return this.values[this.values.length - 1];
+  }
+
+  getMin(): number {
+    return this.minimums[this.minimums.length - 1];
+  }
+}"),
+      #("Solution 2 · Pair stack", "export class MinStack {
+  // Each entry carries the minimum of everything at or below it, so getMin is
+  // a peek. One array instead of two, at the cost of a second number per value.
+  private entries: [number, number][] = [];
+
+  push(val: number): void {
+    const smallest = this.entries.length === 0
+      ? val
+      : Math.min(val, this.entries[this.entries.length - 1][1]);
+    this.entries.push([val, smallest]);
+  }
+
+  pop(): void {
+    this.entries.pop();
+  }
+
+  top(): number {
+    return this.entries[this.entries.length - 1][0];
+  }
+
+  getMin(): number {
+    return this.entries[this.entries.length - 1][1];
+  }
+}"),
+    ],
+    check: Check(
+      signature: "export class MinStack
+  push(val: number): void
+  pop(): void
+  top(): number
+  getMin(): number",
+      starter: "export class MinStack {
+  push(val: number): void {
+    // todo
+  }
+  pop(): void {
+    // todo
+  }
+  top(): number {
+    // todo
+  }
+  getMin(): number {
+    // todo
+  }
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.MinStack !== \"function\") throw new Error(\"__signature_mismatch__\");
+  const stack = new solution.MinStack();
+  stack.push(-2);
+  stack.push(0);
+  stack.push(-3);
+  const minAfterPushes = stack.getMin();
+  stack.pop();
+  return [
+    [\"getMin() after push -2, 0, -3\", show(-3), show(minAfterPushes)],
+    [\"top() after pop()\", show(0), show(stack.top())],
+    [\"getMin() after pop()\", show(-2), show(stack.getMin())],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc18_daily_temperatures() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "export function dailyTemperatures(temperatures: number[]): number[] {
+  const result = new Array(temperatures.length).fill(0);
+  const stack: number[] = []; // indices, temperatures decreasing
+
+  for (let i = 0; i < temperatures.length; i++) {
+    while (stack.length > 0 && temperatures[i] > temperatures[stack[stack.length - 1]]) {
+      const earlier = stack.pop()!;
+      result[earlier] = i - earlier;
+    }
+    stack.push(i);
+  }
+
+  return result;
+}"),
+      #("Solution 2 · Brute force", "export function dailyTemperatures(temperatures: number[]): number[] {
+  // For each day, scan forward until it gets warmer. O(n^2), and the direct
+  // reading of the question — the monotonic stack exists only to avoid
+  // rescanning the same cold stretch once per day.
+  return temperatures.map((temp, i) => {
+    for (let j = i + 1; j < temperatures.length; j++) {
+      if (temperatures[j] > temp) return j - i;
+    }
+    return 0;
+  });
+}"),
+    ],
+    check: Check(
+      signature: "export function dailyTemperatures(temperatures: number[]): number[]",
+      starter: "export function dailyTemperatures(temperatures: number[]): number[] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.dailyTemperatures !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [
+      \"dailyTemperatures([73, 74, 75, 71, 69, 72, 76, 73])\",
+      show([1, 1, 4, 2, 1, 1, 0, 0]),
+      show(solution.dailyTemperatures([73, 74, 75, 71, 69, 72, 76, 73])),
+    ],
+    [\"dailyTemperatures([30, 40, 50, 60])\", show([1, 1, 1, 0]), show(solution.dailyTemperatures([30, 40, 50, 60]))],
+    [\"dailyTemperatures([30, 30, 30])\", show([0, 0, 0]), show(solution.dailyTemperatures([30, 30, 30]))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn nc19_binary_search() -> Embedded {
   Embedded(
     solutions: [
@@ -198,6 +1072,19 @@ pub fn nc19_binary_search() -> Embedded {
     }
   }
   return -1;
+}"),
+      #("Solution 2 · Recursive", "export function search(nums: number[], target: number): number {
+  // The same halving, written as recursion: the bounds are arguments rather
+  // than mutated locals, which makes each step's invariant easier to see.
+  return halve(nums, target, 0, nums.length - 1);
+}
+
+function halve(nums: number[], target: number, lo: number, hi: number): number {
+  if (lo > hi) return -1;
+  const mid = (lo + hi) >> 1;
+  if (nums[mid] === target) return mid;
+  if (nums[mid] < target) return halve(nums, target, mid + 1, hi);
+  return halve(nums, target, lo, mid - 1);
 }"),
     ],
     check: Check(
@@ -216,6 +1103,140 @@ export function run(): [string, string, string][] {
     [\"search([-1, 0, 3, 5, 9, 12], 2)\", show(-1), show(solution.search([-1, 0, 3, 5, 9, 12], 2))],
     [\"search([5], 5)\", show(0), show(solution.search([5], 5))],
     [\"search([], 1)\", show(-1), show(solution.search([], 1))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc20_find_min_rotated() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "export function findMin(nums: number[]): number {
+  let left = 0;
+  let right = nums.length - 1;
+
+  while (left < right) {
+    const mid = (left + right) >> 1;
+    // Anything past a value larger than the last element is still on the high
+    // side of the rotation.
+    if (nums[mid] > nums[right]) {
+      left = mid + 1;
+    } else {
+      right = mid;
+    }
+  }
+
+  return nums[left];
+}"),
+      #("Solution 2 · Linear scan", "export function findMin(nums: number[]): number {
+  // O(n) rather than O(log n), but it makes the shape of the problem obvious:
+  // a rotated sorted array drops in value exactly once, and that drop is the
+  // minimum. No drop means it was never rotated, so the head wins.
+  for (let i = 1; i < nums.length; i++) {
+    if (nums[i] < nums[i - 1]) return nums[i];
+  }
+  return nums[0];
+}"),
+    ],
+    check: Check(
+      signature: "export function findMin(nums: number[]): number",
+      starter: "export function findMin(nums: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.findMin !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"findMin([3, 4, 5, 1, 2])\", show(1), show(solution.findMin([3, 4, 5, 1, 2]))],
+    [\"findMin([4, 5, 6, 7, 0, 1, 2])\", show(0), show(solution.findMin([4, 5, 6, 7, 0, 1, 2]))],
+    [\"findMin([11, 13, 15, 17])\", show(11), show(solution.findMin([11, 13, 15, 17]))],
+    [\"findMin([2, 1])\", show(1), show(solution.findMin([2, 1]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc21_search_rotated() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "export function search(nums: number[], target: number): number {
+  let left = 0;
+  let right = nums.length - 1;
+
+  while (left <= right) {
+    const mid = (left + right) >> 1;
+    if (nums[mid] === target) return mid;
+
+    if (nums[left] <= nums[mid]) {
+      // Left half is sorted.
+      if (nums[left] <= target && target < nums[mid]) {
+        right = mid - 1;
+      } else {
+        left = mid + 1;
+      }
+    } else {
+      // Right half is sorted.
+      if (nums[mid] < target && target <= nums[right]) {
+        left = mid + 1;
+      } else {
+        right = mid - 1;
+      }
+    }
+  }
+
+  return -1;
+}"),
+      #("Solution 2 · Find pivot", "export function search(nums: number[], target: number): number {
+  // Two plain steps instead of one clever one: find where the rotation wrapped,
+  // which splits the input into two ordinary sorted arrays, then binary search
+  // each. Nothing has to reason mid-search about which half is sorted.
+  const pivot = rotationPoint(nums);
+  const found = binarySearch(nums, target, 0, pivot - 1);
+  if (found !== -1) return found;
+  return binarySearch(nums, target, pivot, nums.length - 1);
+}
+
+function rotationPoint(nums: number[]): number {
+  for (let i = 1; i < nums.length; i++) {
+    if (nums[i] < nums[i - 1]) return i;
+  }
+  return 0;
+}
+
+function binarySearch(nums: number[], target: number, lo: number, hi: number): number {
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (nums[mid] === target) return mid;
+    if (nums[mid] < target) {
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return -1;
+}"),
+    ],
+    check: Check(
+      signature: "export function search(nums: number[], target: number): number",
+      starter: "export function search(nums: number[], target: number): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.search !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"search([4, 5, 6, 7, 0, 1, 2], 0)\", show(4), show(solution.search([4, 5, 6, 7, 0, 1, 2], 0))],
+    [\"search([4, 5, 6, 7, 0, 1, 2], 3)\", show(-1), show(solution.search([4, 5, 6, 7, 0, 1, 2], 3))],
+    [\"search([1], 1)\", show(0), show(solution.search([1], 1))],
+    [\"search([4, 5, 6, 7, 0, 1, 2], 6)\", show(2), show(solution.search([4, 5, 6, 7, 0, 1, 2], 6))],
   ];
 }",
     ),

@@ -2,3 +2,7 @@ build/
 .vercel/
 /.lustre
 node_modules/
+
+# Scratch tree `gleam run -m generate` builds so each TypeScript variant gets
+# the sibling ./solution module its harness imports.
+drills/ts/.verify/

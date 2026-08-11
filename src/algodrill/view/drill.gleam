@@ -31,15 +31,17 @@ pub fn view(m: Model) -> Result(Element(Msg), Nil) {
 }
 
 fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
+  // An iteration is a pass over the whole selection, not a repeat of one
+  // problem, so it reads first.
   let progress =
-    "Problem "
-    <> int.to_string(m.problem_index + 1)
-    <> "/"
-    <> int.to_string(list.length(m.selected))
-    <> " \u{b7} Rep "
+    "Pass "
     <> int.to_string(m.current_iteration)
     <> "/"
     <> int.to_string(m.iteration_count)
+    <> " \u{b7} Problem "
+    <> int.to_string(m.problem_index + 1)
+    <> "/"
+    <> int.to_string(list.length(m.selected))
 
   let body_key =
     ref.category

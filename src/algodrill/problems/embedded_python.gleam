@@ -14,6 +14,14 @@ pub fn nc01_contains_duplicate() -> Embedded {
             return True
         seen.add(num)
     return False"),
+      #("Solution 2 · Sorting", "def containsDuplicate(nums):
+    # Duplicates are adjacent once sorted, so one pass over the sorted copy
+    # answers it — O(n log n) time but no extra structure to hold every value.
+    ordered = sorted(nums)
+    for i in range(1, len(ordered)):
+        if ordered[i] == ordered[i - 1]:
+            return True
+    return False"),
     ],
     check: Check(
       signature: "def containsDuplicate(nums):",
@@ -54,6 +62,10 @@ pub fn nc02_valid_anagram() -> Embedded {
             return False
 
     return True"),
+      #("Solution 2 · Sorting", "def isAnagram(s, t):
+    # Two words are anagrams exactly when their sorted letters match. One line,
+    # O(n log n), and nothing to get wrong in the counting.
+    return sorted(s) == sorted(t)"),
     ],
     check: Check(
       signature: "def isAnagram(s, t):",
@@ -93,6 +105,23 @@ pub fn nc03_two_sum() -> Embedded {
             if nums[i] + nums[j] == target:
                 return [i, j]
     return []"),
+      #("Solution 3 · Sorted two pointer", "def twoSum(nums, target):
+    # Sorting loses the original positions, so carry them along, then walk one
+    # pointer in from each end: too small lifts the low end, too large drops
+    # the high end.
+    ordered = sorted((num, i) for i, num in enumerate(nums))
+    left, right = 0, len(ordered) - 1
+
+    while left < right:
+        total = ordered[left][0] + ordered[right][0]
+        if total == target:
+            return sorted([ordered[left][1], ordered[right][1]])
+        if total < target:
+            left += 1
+        else:
+            right -= 1
+
+    return []"),
     ],
     check: Check(
       signature: "def twoSum(nums, target):",
@@ -127,6 +156,15 @@ def groupAnagrams(strs):
         for c in s:
             key[ord(c) - ord('a')] += 1
         groups[tuple(key)].append(s)
+    return list(groups.values())"),
+      #("Solution 2 · Sorted key", "from collections import defaultdict
+
+def groupAnagrams(strs):
+    # The sorted word itself is an anagram-invariant key. Shorter than tallying
+    # letters, and it works for any alphabet rather than just a-z.
+    groups = defaultdict(list)
+    for s in strs:
+        groups[\"\".join(sorted(s))].append(s)
     return list(groups.values())"),
     ],
     check: Check(
@@ -174,6 +212,15 @@ from collections import Counter
 def topKFrequent(nums, k):
     counts = Counter(nums)
     return heapq.nlargest(k, counts.keys(), key=counts.get)"),
+      #("Solution 3 · Sorting", "def topKFrequent(nums, k):
+    # Straight sort by frequency: O(n log n) rather than the bucket version's
+    # O(n), but it is the version you can write without thinking.
+    counts = {}
+    for num in nums:
+        counts[num] = counts.get(num, 0) + 1
+
+    ordered = sorted(counts.items(), key=lambda entry: entry[1], reverse=True)
+    return [num for num, _ in ordered[:k]]"),
     ],
     check: Check(
       signature: "def topKFrequent(nums, k):",
@@ -213,6 +260,18 @@ pub fn nc06_product_except_self() -> Embedded {
         suffix *= nums[i]
 
     return result"),
+      #("Solution 2 · Brute force", "def productExceptSelf(nums):
+    # The obvious O(n^2) reading of the problem: for each slot, multiply
+    # everything that is not in it. Worth knowing as the thing prefix/suffix
+    # beats.
+    result = []
+    for i in range(len(nums)):
+        product = 1
+        for j, num in enumerate(nums):
+            if i != j:
+                product *= num
+        result.append(product)
+    return result"),
     ],
     check: Check(
       signature: "def productExceptSelf(nums):",
@@ -248,6 +307,27 @@ pub fn nc07_longest_consecutive() -> Embedded {
             while num + length in num_set:
                 length += 1
             longest = max(longest, length)
+
+    return longest"),
+      #("Solution 2 · Sorting", "def longestConsecutive(nums):
+    # No set: sort, then walk once counting runs. O(n log n) rather than O(n),
+    # but it needs no extra structure and the run logic reads straight through.
+    if not nums:
+        return 0
+
+    ordered = sorted(nums)
+    longest = 1
+    run = 1
+
+    for i in range(1, len(ordered)):
+        step = ordered[i] - ordered[i - 1]
+        if step == 0:
+            continue  # duplicates neither extend nor break a run
+        if step == 1:
+            run += 1
+            longest = max(longest, run)
+        else:
+            run = 1
 
     return longest"),
     ],
@@ -331,6 +411,22 @@ pub fn nc09_two_sum_sorted() -> Embedded {
             right -= 1
 
     return []"),
+      #("Solution 2 · Binary search", "def twoSum(numbers, target):
+    # Instead of converging two pointers, fix each number and binary search the
+    # tail for its complement. O(n log n), and it reuses a search you already
+    # know rather than a second pointer discipline.
+    for i, number in enumerate(numbers):
+        wanted = target - number
+        lo, hi = i + 1, len(numbers) - 1
+        while lo <= hi:
+            mid = lo + (hi - lo) // 2
+            if numbers[mid] == wanted:
+                return [i + 1, mid + 1]
+            if numbers[mid] < wanted:
+                lo = mid + 1
+            else:
+                hi = mid - 1
+    return []"),
     ],
     check: Check(
       signature: "def twoSum(numbers, target):",
@@ -378,6 +474,20 @@ pub fn nc10_three_sum() -> Embedded {
                     left += 1
 
     return result"),
+      #("Solution 2 · Brute force", "def threeSum(nums):
+    # Every triple, checked. Sorting first means each triple comes out in
+    # ascending order, so duplicates are literal list equality.
+    ordered = sorted(nums)
+    result = []
+
+    for i in range(len(ordered)):
+        for j in range(i + 1, len(ordered)):
+            for k in range(j + 1, len(ordered)):
+                triple = [ordered[i], ordered[j], ordered[k]]
+                if sum(triple) == 0 and triple not in result:
+                    result.append(triple)
+
+    return result"),
     ],
     check: Check(
       signature: "def threeSum(nums):",
@@ -415,6 +525,14 @@ pub fn nc11_container_water() -> Embedded {
         else:
             right -= 1
 
+    return best"),
+      #("Solution 2 · Brute force", "def maxArea(height):
+    # Every pair of lines, measured. O(n^2), but it makes what the two-pointer
+    # sweep is maximising explicit: shorter line times distance.
+    best = 0
+    for left in range(len(height)):
+        for right in range(left + 1, len(height)):
+            best = max(best, (right - left) * min(height[left], height[right]))
     return best"),
     ],
     check: Check(
@@ -491,6 +609,19 @@ pub fn nc13_longest_substring() -> Embedded {
         longest = max(longest, right - left + 1)
 
     return longest"),
+      #("Solution 2 · Index scan", "def lengthOfLongestSubstring(s):
+    # No set, no dict: ask the string itself whether this character already
+    # appeared inside the current window, and if so start just past it.
+    longest = 0
+    start = 0
+
+    for right, char in enumerate(s):
+        found = s.find(char, start, right)
+        if found != -1:
+            start = found + 1
+        longest = max(longest, right - start + 1)
+
+    return longest"),
     ],
     check: Check(
       signature: "def lengthOfLongestSubstring(s):",
@@ -531,6 +662,28 @@ pub fn nc14_character_replacement() -> Embedded {
             left += 1
 
         longest = max(longest, right - left + 1)
+
+    return longest"),
+      #("Solution 2 · Per character", "ALPHABET = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\"
+
+def characterReplacement(s, k):
+    # One sweep per letter, asking a much simpler question each time: how long
+    # a window can I hold if *this* is the letter I keep? No running frequency
+    # map and no max-count bookkeeping — 26 easy passes instead of one subtle
+    # one.
+    longest = 0
+
+    for target in ALPHABET:
+        left = 0
+        others = 0
+        for right, char in enumerate(s):
+            if char != target:
+                others += 1
+            while others > k:
+                if s[left] != target:
+                    others -= 1
+                left += 1
+            longest = max(longest, right - left + 1)
 
     return longest"),
     ],
@@ -579,6 +732,21 @@ def checkInclusion(s1, s2):
             return True
 
     return False"),
+      #("Solution 2 · Sorted windows", "def checkInclusion(s1, s2):
+    # Every window of the right length, sorted and compared. Slower than
+    # sliding counts, but there is no incremental state to get wrong: the whole
+    # method is \"is this window an anagram?\".
+    if len(s1) > len(s2):
+        return False
+
+    needle = sorted(s1)
+    size = len(s1)
+
+    for start in range(len(s2) - size + 1):
+        if sorted(s2[start:start + size]) == needle:
+            return True
+
+    return False"),
     ],
     check: Check(
       signature: "def checkInclusion(s1, s2):",
@@ -615,6 +783,15 @@ pub fn nc16_valid_parentheses() -> Embedded {
             stack.append(char)
 
     return not stack"),
+      #("Solution 2 · Reduction", "def isValid(s):
+    # No stack: strip every matched pair, over and over, until nothing more can
+    # go. Whatever survives is unmatched. This is also why \"([)]\" fails —
+    # neither pair is ever adjacent.
+    previous = None
+    while previous != s:
+        previous = s
+        s = s.replace(\"()\", \"\").replace(\"[]\", \"\").replace(\"{}\", \"\")
+    return s == \"\""),
     ],
     check: Check(
       signature: "def isValid(s):",
@@ -660,6 +837,26 @@ pub fn nc17_min_stack() -> Embedded {
 
     def getMin(self):
         return self.mins[-1]"),
+      #("Solution 2 · Pair stack", "class MinStack:
+    # Each entry carries the minimum of everything at or below it, so getMin is
+    # a peek. One list instead of two, at the cost of storing a second int per
+    # value.
+
+    def __init__(self):
+        self.entries = []
+
+    def push(self, val):
+        current_min = val if not self.entries else min(val, self.entries[-1][1])
+        self.entries.append((val, current_min))
+
+    def pop(self):
+        self.entries.pop()
+
+    def top(self):
+        return self.entries[-1][0]
+
+    def getMin(self):
+        return self.entries[-1][1]"),
     ],
     check: Check(
       signature: "class MinStack:
@@ -714,6 +911,19 @@ pub fn nc18_daily_temperatures() -> Embedded {
         stack.append((i, temp))
 
     return result"),
+      #("Solution 2 · Brute force", "def dailyTemperatures(temperatures):
+    # For each day, scan forward until it gets warmer. O(n^2), and the direct
+    # reading of the question — the monotonic stack exists only to avoid
+    # rescanning the same cold stretch once per day.
+    result = []
+    for i, temp in enumerate(temperatures):
+        days = 0
+        for j in range(i + 1, len(temperatures)):
+            if temperatures[j] > temp:
+                days = j - i
+                break
+        result.append(days)
+    return result"),
     ],
     check: Check(
       signature: "def dailyTemperatures(temperatures):",
@@ -751,6 +961,21 @@ pub fn nc19_binary_search() -> Embedded {
             right = mid - 1
 
     return -1"),
+      #("Solution 2 · Recursive", "def search(nums, target):
+    # The same halving, written as recursion. The bounds are arguments rather
+    # than mutated locals, which makes each step's invariant easier to see.
+    return halve(nums, target, 0, len(nums) - 1)
+
+def halve(nums, target, lo, hi):
+    if lo > hi:
+        return -1
+
+    mid = lo + (hi - lo) // 2
+    if nums[mid] == target:
+        return mid
+    if nums[mid] < target:
+        return halve(nums, target, mid + 1, hi)
+    return halve(nums, target, lo, mid - 1)"),
     ],
     check: Check(
       signature: "def search(nums, target):",
@@ -787,6 +1012,14 @@ pub fn nc20_find_min_rotated() -> Embedded {
             right = mid
 
     return nums[left]"),
+      #("Solution 2 · Linear scan", "def findMin(nums):
+    # O(n) rather than O(log n), but it makes the shape of the problem obvious:
+    # a rotated sorted array drops in value exactly once, and that drop is the
+    # minimum. No drop means it was never rotated, so the head wins.
+    for i in range(1, len(nums)):
+        if nums[i] < nums[i - 1]:
+            return nums[i]
+    return nums[0]"),
     ],
     check: Check(
       signature: "def findMin(nums):",
@@ -832,6 +1065,33 @@ pub fn nc21_search_rotated() -> Embedded {
                 right = mid - 1
 
     return -1"),
+      #("Solution 2 · Find pivot", "def search(nums, target):
+    # Two plain steps instead of one clever one: find where the rotation
+    # wrapped, which splits the input into two ordinary sorted arrays, then
+    # binary search each. Nothing has to reason mid-search about which half is
+    # sorted.
+    pivot = rotationPoint(nums)
+    found = binarySearch(nums, target, 0, pivot - 1)
+    if found != -1:
+        return found
+    return binarySearch(nums, target, pivot, len(nums) - 1)
+
+def rotationPoint(nums):
+    for i in range(1, len(nums)):
+        if nums[i] < nums[i - 1]:
+            return i
+    return 0
+
+def binarySearch(nums, target, lo, hi):
+    while lo <= hi:
+        mid = lo + (hi - lo) // 2
+        if nums[mid] == target:
+            return mid
+        if nums[mid] < target:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return -1"),
     ],
     check: Check(
       signature: "def search(nums, target):",
@@ -864,6 +1124,17 @@ def topTwo(nums):
 
 def countOf(nums, value):
     return Counter(nums)[value]"),
+      #("Solution 2 · Plain dict", "def topTwo(nums):
+    # What Counter does underneath: a dict of counts, then a sort. Worth writing
+    # once so most_common stops being a black box.
+    counts = {}
+    for num in nums:
+        counts[num] = counts.get(num, 0) + 1
+    ordered = sorted(counts.items(), key=lambda entry: entry[1], reverse=True)
+    return ordered[:2]
+
+def countOf(nums, value):
+    return sum(1 for num in nums if num == value)"),
     ],
     check: Check(
       signature: "def topTwo(nums):
@@ -900,6 +1171,14 @@ def groupByLength(words):
     for word in words:
         groups[len(word)].append(word)
     return dict(groups)"),
+      #("Solution 2 · Setdefault", "def groupByLength(words):
+    # setdefault does the same job as defaultdict without changing the type of
+    # the dictionary — handy when the result is returned or serialised, since
+    # there is no default factory left attached to it.
+    groups = {}
+    for word in words:
+        groups.setdefault(len(word), []).append(word)
+    return groups"),
     ],
     check: Check(
       signature: "def groupByLength(words):",
@@ -937,6 +1216,24 @@ def bfsOrder(graph, start):
                 seen.add(neighbor)
                 queue.append(neighbor)
     return order"),
+      #("Solution 2 · List queue", "def bfsOrder(graph, start):
+    # A list plus a read cursor. The cursor is the point: list.pop(0) is O(n),
+    # so a plain list only stays a good queue if you never shift it.
+    queue = [start]
+    head = 0
+    seen = {start}
+    order = []
+
+    while head < len(queue):
+        node = queue[head]
+        head += 1
+        order.append(node)
+        for neighbor in graph.get(node, []):
+            if neighbor not in seen:
+                seen.add(neighbor)
+                queue.append(neighbor)
+
+    return order"),
     ],
     check: Check(
       signature: "def bfsOrder(graph, start):",
@@ -972,6 +1269,13 @@ def kLargest(nums, k):
     heap = [-n for n in nums]
     heapq.heapify(heap)
     return [-heapq.heappop(heap) for _ in range(min(k, len(heap)))]"),
+      #("Solution 2 · Sorting", "def kSmallest(nums, k):
+    # Sorting is O(n log n) against the heap's O(n + k log n). For small k the
+    # heap wins; for k near n they are the same, and this is far shorter.
+    return sorted(nums)[:k]
+
+def kLargest(nums, k):
+    return sorted(nums, reverse=True)[:k]"),
     ],
     check: Check(
       signature: "def kSmallest(nums, k):
@@ -1009,6 +1313,19 @@ pub fn tip05_enumerate_zip() -> Embedded {
 
 def dotProduct(a, b):
     return sum(x * y for x, y in zip(a, b))"),
+      #("Solution 2 · Index loop", "def firstIndexOf(nums, target):
+    # Indexing by hand. It works, and it is exactly what enumerate and zip save
+    # you from: the off-by-one risk and the second subscript in dotProduct.
+    for i in range(len(nums)):
+        if nums[i] == target:
+            return i
+    return -1
+
+def dotProduct(a, b):
+    total = 0
+    for i in range(min(len(a), len(b))):
+        total += a[i] * b[i]
+    return total"),
     ],
     check: Check(
       signature: "def firstIndexOf(nums, target):
@@ -1049,6 +1366,27 @@ def lastN(s, n):
 
 def trimEnds(s):
     return s[1:-1]"),
+      #("Solution 2 · Explicit loops", "def reversedString(s):
+    # Every slice spelled out as a loop. The slices are better in real code;
+    # writing them this way once makes the step and the negative bounds obvious.
+    out = \"\"
+    for char in s:
+        out = char + out
+    return out
+
+def everySecond(s):
+    out = \"\"
+    for i in range(0, len(s), 2):
+        out += s[i]
+    return out
+
+def lastN(s, n):
+    if n <= 0:
+        return \"\"
+    return \"\".join(s[i] for i in range(max(len(s) - n, 0), len(s)))
+
+def trimEnds(s):
+    return \"\".join(s[i] for i in range(1, len(s) - 1))"),
     ],
     check: Check(
       signature: "def reversedString(s):
@@ -1094,6 +1432,17 @@ pub fn tip07_sort_key() -> Embedded {
 
 def sortPairs(pairs):
     return sorted(pairs, key=lambda p: (p[0], -p[1]))"),
+      #("Solution 2 · Decorate sort undecorate", "def sortByLength(words):
+    # Decorate, sort, undecorate: attach the sort key to each item, sort the
+    # pairs, then strip it. `key=` is this pattern built into sorted().
+    decorated = [(len(word), word) for word in words]
+    decorated.sort(key=lambda pair: pair[0])
+    return [word for _, word in decorated]
+
+def sortPairs(pairs):
+    decorated = [((pair[0], -pair[1]), pair) for pair in pairs]
+    decorated.sort(key=lambda entry: entry[0])
+    return [pair for _, pair in decorated]"),
     ],
     check: Check(
       signature: "def sortByLength(words):
@@ -1127,6 +1476,14 @@ pub fn tip08_join() -> Embedded {
     for c in chars:
         parts.append(c.upper())
     return \"\".join(parts)"),
+      #("Solution 2 · Concatenation", "def joinUpper(chars):
+    # The version join exists to replace. Each `+=` builds a whole new string,
+    # so this is quadratic in the output length — fine for two characters,
+    # painful for a megabyte.
+    out = \"\"
+    for c in chars:
+        out += c.upper()
+    return out"),
     ],
     check: Check(
       signature: "def joinUpper(chars):",
