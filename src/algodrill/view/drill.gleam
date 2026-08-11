@@ -33,6 +33,7 @@ pub fn view(m: Model) -> Result(Element(Msg), Nil) {
 fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
   // An iteration is a pass over the whole selection, not a repeat of one
   // problem, so it reads first.
+  let count = list.length(m.selected)
   let progress =
     "Pass "
     <> int.to_string(m.current_iteration)
@@ -41,7 +42,17 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
     <> " \u{b7} Problem "
     <> int.to_string(m.problem_index + 1)
     <> "/"
-    <> int.to_string(list.length(m.selected))
+    <> int.to_string(count)
+
+  // Position through the whole session, not just this pass, as a percentage
+  // for the bar under the progress text. Guarded because an empty selection
+  // would divide by zero.
+  let total = count * m.iteration_count
+  let done = { m.current_iteration - 1 } * count + m.problem_index
+  let percent = case total {
+    0 -> 0
+    _ -> done * 100 / total
+  }
 
   let body_key =
     ref.category
@@ -63,7 +74,13 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
       ),
       html.h2([attribute.class("drill-title")], [html.text(current.title)]),
       keymap_picker(m),
-      html.div([attribute.class("progress-text")], [html.text(progress)]),
+      html.div(
+        [
+          attribute.class("progress-text"),
+          attribute.style("--progress", int.to_string(percent) <> "%"),
+        ],
+        [html.text(progress)],
+      ),
     ]),
     html.div([attribute.class("drill-grid")], [
       html.div([attribute.class("drill-side")], side_panels(m, ref, current)),

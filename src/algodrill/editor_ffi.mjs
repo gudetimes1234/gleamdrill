@@ -796,10 +796,13 @@ const highlight = HighlightStyle.define([
 
 const theme = EditorView.theme(
   {
+    // The size is a custom property so the stylesheet can raise it to 16px on
+    // phones — under 16px, iOS Safari zooms the page when the editor takes
+    // focus and never zooms back out.
     "&": {
       backgroundColor: "var(--bg-secondary)",
       color: "var(--text-primary)",
-      fontSize: "14px",
+      fontSize: "var(--editor-font-size, 14px)",
       height: "100%",
     },
     ".cm-content": {

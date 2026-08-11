@@ -12,6 +12,20 @@
     --success: #9ece6a;
     --error: #f7768e;
     --warning: #e0af68;
+
+    --radius: 6px;
+    --radius-sm: 4px;
+    --radius-pill: 999px;
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.3);
+    --shadow-2: 0 8px 24px -12px rgb(0 0 0 / 0.6);
+    --ease: 140ms cubic-bezier(0.2, 0, 0, 1);
+
+    --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    --font-ui: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    /* Overridden on narrow screens: anything under 16px makes iOS Safari zoom
+       the page when the control takes focus. */
+    --editor-font-size: 14px;
 }
 
 * {
@@ -20,16 +34,29 @@
     box-sizing: border-box;
 }
 
+html {
+    /* Stop iOS inflating text when the phone is turned to landscape. */
+    -webkit-text-size-adjust: 100%;
+}
+
 body {
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-family: var(--font-mono);
     background-color: var(--bg-primary);
     color: var(--text-primary);
     line-height: 1.6;
     font-size: 14px;
 }
 
+::selection {
+    background: var(--accent);
+    color: var(--bg-primary);
+}
+
+/* svh, not vh: on mobile browsers vh is the height *without* the address bar,
+   so 100vh is taller than what you can actually see. */
 #app {
     min-height: 100vh;
+    min-height: 100svh;
     padding: 20px;
 }
 
@@ -52,6 +79,7 @@ body {
     font-size: 20px;
     color: var(--accent);
     white-space: nowrap;
+    text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 .search {
@@ -61,15 +89,17 @@ body {
     padding: 9px 14px;
     background: var(--bg-secondary);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius);
     color: var(--text-primary);
     font-family: inherit;
     font-size: 14px;
+    transition: border-color var(--ease), box-shadow var(--ease);
 }
 
 .search:focus {
     outline: none;
     border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .search::placeholder {
@@ -82,7 +112,8 @@ body {
     padding: 10px 14px;
     background: var(--bg-secondary);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-1);
 }
 
 .breadcrumb {
@@ -111,11 +142,12 @@ body {
     min-width: 250px;
     background: var(--bg-secondary);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 15px;
     max-height: 460px;
     display: flex;
     flex-direction: column;
+    box-shadow: var(--shadow-1);
 }
 
 .pane h3 {
@@ -130,16 +162,28 @@ body {
     flex: 1;
 }
 
+/* Themed scrollbars everywhere something scrolls inside a panel — the default
+   light-grey ones read as a rendering glitch against Tokyo Night. */
+.pane-list,
+.drill-side,
+.search-results,
+gleam-editor .cm-scroller {
+    scrollbar-width: thin;
+    scrollbar-color: var(--bg-hover) transparent;
+}
+
 .pane-item {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 8px 10px;
     margin-bottom: 4px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     color: var(--text-secondary);
     border: 1px solid transparent;
+    transition: background var(--ease), border-color var(--ease),
+        color var(--ease);
 }
 
 .pane-item:hover {
@@ -179,28 +223,31 @@ body {
     font-size: 12px;
     line-height: 1;
     padding: 3px 6px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     flex-shrink: 0;
 }
 
 .badge-passed {
     color: var(--success);
     border: 1px solid var(--success);
+    background: color-mix(in srgb, var(--success) 14%, transparent);
 }
 
 .badge-failed {
     color: var(--error);
     border: 1px solid var(--error);
+    background: color-mix(in srgb, var(--error) 14%, transparent);
 }
 
 .search-results {
     background: var(--bg-secondary);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 10px;
     margin-bottom: 20px;
     max-height: 460px;
     overflow-y: auto;
+    box-shadow: var(--shadow-1);
 }
 
 .search-hit {
@@ -209,10 +256,12 @@ body {
     gap: 10px;
     padding: 8px 10px;
     margin-bottom: 4px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     color: var(--text-secondary);
     border: 1px solid transparent;
+    transition: background var(--ease), border-color var(--ease),
+        color var(--ease);
 }
 
 .search-hit:hover {
@@ -256,9 +305,10 @@ body {
     padding: 4px 10px;
     background: var(--bg-secondary);
     border: 1px solid var(--border);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     font-size: 12px;
     color: var(--text-secondary);
+    transition: border-color var(--ease), color var(--ease);
 }
 
 .chip-remove {
@@ -270,6 +320,7 @@ body {
     line-height: 1;
     padding: 0 2px;
     font-family: inherit;
+    transition: color var(--ease);
 }
 
 .chip-remove:hover {
@@ -292,7 +343,7 @@ body {
     padding: 8px;
     background: var(--bg-secondary);
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     color: var(--text-primary);
     font-family: inherit;
     font-size: 14px;
@@ -314,11 +365,18 @@ body {
 .btn-primary,
 .btn-secondary {
     padding: 10px 20px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     font-family: inherit;
     font-size: 14px;
     border: 1px solid var(--border);
+    transition: background var(--ease), border-color var(--ease),
+        color var(--ease), box-shadow var(--ease), transform var(--ease);
+}
+
+.btn-primary:active:not(:disabled),
+.btn-secondary:active {
+    transform: translateY(1px);
 }
 
 .btn-primary {
@@ -326,15 +384,18 @@ body {
     color: var(--bg-primary);
     border-color: var(--accent);
     font-weight: bold;
+    box-shadow: 0 6px 18px -12px var(--accent);
 }
 
 .btn-primary:hover:not(:disabled) {
     background: var(--accent-hover);
+    box-shadow: 0 8px 20px -10px var(--accent);
 }
 
 .btn-primary:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+    box-shadow: none;
 }
 
 .btn-secondary {
@@ -349,7 +410,13 @@ body {
 .btn-primary:focus-visible,
 .btn-secondary:focus-visible,
 .pane-item:focus-visible,
-.search-hit:focus-visible {
+.search-hit:focus-visible,
+.search:focus-visible,
+.keymap-option:focus-visible,
+.chip-remove:focus-visible,
+.solution-button:focus-visible,
+.results-details summary:focus-visible,
+details.approach summary:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
 }
@@ -373,8 +440,9 @@ body {
 .keymap-picker {
     display: flex;
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .keymap-option {
@@ -385,6 +453,7 @@ body {
     cursor: pointer;
     font-family: inherit;
     font-size: 12px;
+    transition: background var(--ease), color var(--ease);
 }
 
 .keymap-option + .keymap-option {
@@ -406,6 +475,38 @@ body {
     color: var(--text-secondary);
 }
 
+/* Scoped to the drill header: the menu reuses .progress-text for its "N
+   selected" line, which has nothing to fill a bar with. The text sits above a
+   hairline track whose filled width is --progress, set per-render by
+   view/drill.gleam. */
+.drill-header .progress-text {
+    white-space: nowrap;
+    padding-bottom: 6px;
+    position: relative;
+}
+
+.drill-header .progress-text::before,
+.drill-header .progress-text::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    border-radius: var(--radius-pill);
+}
+
+.drill-header .progress-text::before {
+    width: 100%;
+    background: var(--border);
+}
+
+.drill-header .progress-text::after {
+    width: var(--progress, 0%);
+    background: var(--accent);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent);
+    transition: width var(--ease);
+}
+
 .drill-grid {
     display: grid;
     grid-template-columns: minmax(280px, 380px) 1fr;
@@ -418,14 +519,17 @@ body {
     flex-direction: column;
     gap: 16px;
     max-height: calc(100vh - 140px);
+    max-height: calc(100svh - 140px);
     overflow-y: auto;
 }
+
 
 .panel {
     background: var(--bg-secondary);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 14px 16px;
+    box-shadow: var(--shadow-1);
 }
 
 .panel-title {
@@ -441,6 +545,14 @@ body {
     font-size: 12px;
     margin-bottom: 10px;
     opacity: 0.8;
+}
+
+/* Prose reads in the UI font; everything code-shaped stays monospace. Prompts
+   run several sentences and monospace costs real width on a phone. */
+.problem-prompt,
+.approach-text {
+    font-family: var(--font-ui);
+    font-size: 14px;
 }
 
 .problem-prompt {
@@ -501,7 +613,7 @@ details.approach[open] summary.panel-title {
 .signature {
     background: var(--bg-raised);
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     padding: 10px 12px;
     overflow-x: auto;
     white-space: pre;
@@ -538,8 +650,13 @@ details.approach[open] summary.panel-title {
 
 .editor-frame {
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius);
     overflow: hidden;
+    box-shadow: var(--shadow-2);
+}
+
+.editor-frame:focus-within {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
 }
 
 gleam-editor {
@@ -571,23 +688,37 @@ gleam-editor .cm-editor {
 .results {
     background: var(--bg-secondary);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 14px 16px;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    box-shadow: var(--shadow-1);
 }
 
+/* A pass should register before you have read a word of it, so the summary
+   line gets a tinted slab and a glow in its own colour rather than being one
+   more line of coloured text. */
 .results-summary {
     font-weight: bold;
+    margin: -14px -16px 0;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    border-radius: var(--radius) var(--radius) 0 0;
 }
 
 .results-summary.pass {
     color: var(--success);
+    background: color-mix(in srgb, var(--success) 12%, transparent);
+    border-bottom-color: color-mix(in srgb, var(--success) 35%, transparent);
+    box-shadow: inset 0 0 24px -12px var(--success);
 }
 
 .results-summary.fail {
     color: var(--error);
+    background: color-mix(in srgb, var(--error) 12%, transparent);
+    border-bottom-color: color-mix(in srgb, var(--error) 35%, transparent);
+    box-shadow: inset 0 0 24px -12px var(--error);
 }
 
 .results .case.fail {
@@ -620,7 +751,7 @@ gleam-editor .cm-editor {
 .results-message {
     background: var(--bg-raised);
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     padding: 10px 12px;
     overflow-x: auto;
     white-space: pre;
@@ -633,14 +764,16 @@ gleam-editor .cm-editor {
     cursor: pointer;
     color: var(--text-secondary);
     font-size: 13px;
+    font-family: var(--font-ui);
 }
 
 .answer-content {
     background: var(--bg-secondary);
     border: 1px solid var(--success);
-    border-radius: 6px;
+    border-radius: var(--radius);
     padding: 15px;
     overflow-x: auto;
+    box-shadow: 0 8px 24px -18px var(--success);
 }
 
 .answer-content pre {
@@ -653,7 +786,7 @@ gleam-editor .cm-editor {
     display: none;
 }
 
-/* ---------- Mobile ---------- */
+/* ---------- Tablet ---------- */
 
 @media (max-width: 900px) {
     #app {
@@ -684,6 +817,8 @@ gleam-editor .cm-editor {
         grid-template-columns: 1fr;
     }
 
+    /* There is still room here for the panels to run their natural height. The
+       phone block below deliberately takes this back. */
     .drill-side {
         max-height: none;
         overflow-y: visible;
@@ -707,6 +842,161 @@ gleam-editor .cm-editor {
     .menu-actions .btn-primary,
     .menu-actions .btn-secondary {
         width: 100%;
+    }
+}
+
+/* ---------- Phone ---------- */
+
+@media (max-width: 700px) {
+    /* Anything under 16px makes iOS Safari zoom the page on focus, and it does
+       not zoom back out. This is the whole reason the editor's size is a
+       custom property rather than a constant in editor_ffi.mjs. */
+    :root {
+        --editor-font-size: 16px;
+    }
+
+    #app {
+        padding: 10px;
+    }
+
+    .search,
+    .iteration-control input {
+        font-size: 16px;
+    }
+
+    .menu-title {
+        font-size: 18px;
+    }
+
+    .pane {
+        max-height: 240px;
+    }
+
+    /* Two rows, not four flex children fighting over a 390px line. Every row
+       costs editor space, so the keymap picker shares row two with the title
+       rather than taking a third. */
+    .drill-header {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-areas:
+            'exit progress'
+            'title keymap';
+        gap: 8px 12px;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .drill-header > .btn-secondary {
+        grid-area: exit;
+        justify-self: start;
+        padding: 10px 14px;
+    }
+
+    .drill-title {
+        grid-area: title;
+        width: auto;
+        font-size: 16px;
+        overflow-wrap: anywhere;
+    }
+
+    .keymap-picker {
+        grid-area: keymap;
+        justify-self: end;
+    }
+
+    .progress-text {
+        grid-area: progress;
+        justify-self: end;
+        font-size: 12px;
+        min-width: 150px;
+    }
+
+    /* Without this the prompt, approach, signature and test list stack to full
+       height and the editor starts below the fold on every single problem. */
+    .drill-side {
+        max-height: 34svh;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+    }
+
+    /* A panel clipped by the scroller reads as broken rendering rather than as
+       "there is more below". Sticky flex item, so the fade rides the bottom
+       edge while the panels scroll under it. Phone only: at this height the
+       panels always overflow, so the fade is never covering a short list. */
+    .drill-side::after {
+        content: '';
+        position: sticky;
+        bottom: -1px;
+        flex-shrink: 0;
+        height: 24px;
+        margin-top: -40px;
+        pointer-events: none;
+        background: linear-gradient(transparent, var(--bg-primary));
+    }
+
+    gleam-editor,
+    gleam-editor .cm-editor {
+        min-height: min(45svh, 300px);
+    }
+
+    /* Run and Next stay under the thumb no matter how long the results get. */
+    .run-bar {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        padding: 10px 0;
+        margin-bottom: -10px;
+        background: var(--bg-primary);
+        border-top: 1px solid var(--border);
+    }
+}
+
+/* ---------- Touch ---------- */
+
+/* Gated on the input device, not the width: a phone in landscape is 844px wide
+   and still has fingers, while a narrow desktop window does not. */
+@media (hover: none) {
+    button,
+    .pane-item,
+    .search-hit,
+    summary {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* 44px is the floor every touch guideline agrees on. Blanket rule so a new
+       button cannot be added below it by accident. */
+    button {
+        min-height: 44px;
+    }
+
+    .pane-item,
+    .search-hit {
+        padding: 12px;
+        min-height: 44px;
+    }
+
+    .keymap-option {
+        padding: 0 16px;
+        font-size: 13px;
+    }
+
+    /* Grows to 44px square, then pulls the overhang back with negative margins
+       so the chip itself keeps its size. */
+    .chip-remove {
+        min-width: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        margin: -9px -12px -9px 0;
+    }
+
+    /* Padding rather than flex centring: display:flex on a <summary> drops the
+       disclosure triangle. */
+    .results-details summary,
+    details.approach summary.panel-title {
+        min-height: 44px;
+        padding: 11px 0;
     }
 }
 

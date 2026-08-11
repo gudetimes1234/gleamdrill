@@ -1,0 +1,19 @@
+{
+  "name": "AlgoDrill",
+  "short_name": "AlgoDrill",
+  "description": "Spaced-repetition drilling for algorithm problems, with in-browser checking.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1a1b26",
+  "theme_color": "#1a1b26",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -19,3 +19,29 @@ minify = true
 [tools.lustre.html]
 title = "Algo Drill - NeetCode Practice"
 stylesheets = [{ href = "/style.css" }]
+
+# lustre_dev_tools folds each table here into <meta>/<link> attributes verbatim,
+# so the head is configured from here rather than from an HTML template.
+# Everything referenced lives in assets/, which is copied wholesale into dist/.
+
+[[tools.lustre.html.meta]]
+name = "description"
+content = "Spaced-repetition drilling for algorithm problems, with in-browser checking in Python, Gleam and TypeScript."
+
+# Tints the browser chrome on mobile to match the app background.
+[[tools.lustre.html.meta]]
+name = "theme-color"
+content = "#1a1b26"
+
+[[tools.lustre.html.meta]]
+name = "color-scheme"
+content = "dark"
+
+[[tools.lustre.html.links]]
+rel = "icon"
+type = "image/svg+xml"
+href = "/favicon.svg"
+
+[[tools.lustre.html.links]]
+rel = "manifest"
+href = "/manifest.webmanifest"

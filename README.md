@@ -20,6 +20,15 @@ client-side on a static site:
   hand a typed-in solution to. They are still verified natively in the repo, so
   the code you compare against is code that has been run.
 
+It works on a phone: the layout collapses to one column, the side panels scroll
+in place so the editor is always on the first screen, the run bar sticks to the
+bottom, touch targets are sized off `(hover: none)` rather than width, and every
+text control is 16px there so iOS does not zoom on focus. There is a web
+manifest, so Add to Home Screen gives a chromeless standalone app. Typing code
+on a touch keyboard is still typing code on a touch keyboard — there is no
+on-screen editing toolbar, and the vim/emacs keymaps are desktop-only in
+practice.
+
 ## Content
 
 | Category | Language | Drills | Solutions | Runnable tests |
