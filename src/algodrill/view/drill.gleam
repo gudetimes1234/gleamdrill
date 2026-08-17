@@ -3,9 +3,10 @@ import algodrill/model.{
   type CaseResult, type Model, type Msg, type ProblemRef, type RunError, Cases,
   EditorChanged, Errored, Ran, RunIdle, Running, RuntimeFailed, RuntimeLoading,
   RuntimeNotLoaded, RuntimeReady, TimedOut, UserChangedKeymap,
-  UserClickedExitDrill, UserClickedNext, UserClickedRun, UserToggledSolution,
+  UserClickedExitDrill, UserClickedNext, UserClickedRun, UserPickedChoice,
+  UserSubmittedAnswer, UserToggledSolution,
 }
-import algodrill/problem.{type Problem, type Solution}
+import algodrill/problem.{type Problem, type Quiz, type Solution}
 import algodrill/problems
 import gleam/int
 import gleam/list
@@ -34,15 +35,24 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
   // An iteration is a pass over the whole selection, not a repeat of one
   // problem, so it reads first.
   let count = list.length(m.selected)
-  let progress =
-    "Pass "
-    <> int.to_string(m.current_iteration)
-    <> "/"
-    <> int.to_string(m.iteration_count)
-    <> " \u{b7} Problem "
-    <> int.to_string(m.problem_index + 1)
-    <> "/"
-    <> int.to_string(count)
+  let progress = case current.quiz {
+    // An exam is a single pass, so the repetition counter would only ever read
+    // "Pass 1/1".
+    Some(_) ->
+      "Question "
+      <> int.to_string(m.problem_index + 1)
+      <> "/"
+      <> int.to_string(count)
+    None ->
+      "Pass "
+      <> int.to_string(m.current_iteration)
+      <> "/"
+      <> int.to_string(m.iteration_count)
+      <> " \u{b7} Problem "
+      <> int.to_string(m.problem_index + 1)
+      <> "/"
+      <> int.to_string(count)
+  }
 
   // Position through the whole session, not just this pass, as a percentage
   // for the bar under the progress text. Guarded because an empty selection
@@ -73,7 +83,11 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
         [html.text("\u{2190} Exit")],
       ),
       html.h2([attribute.class("drill-title")], [html.text(current.title)]),
-      keymap_picker(m),
+      // Nothing to type in a quiz, so the keybinding picker is noise.
+      case current.quiz {
+        Some(_) -> element.none()
+        None -> keymap_picker(m)
+      },
       html.div(
         [
           attribute.class("progress-text"),
@@ -84,24 +98,130 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
     ]),
     html.div([attribute.class("drill-grid")], [
       html.div([attribute.class("drill-side")], side_panels(m, ref, current)),
-      html.div([attribute.class("drill-main")], [
-        keyed.div([attribute.class("editor-frame")], [
-          #(
-            body_key,
-            editor.view([
-              editor.doc(m.draft),
-              editor.language(problem.language_slug(current.language)),
-              editor.keymap(m.editor_keymap),
-              editor.on_change(EditorChanged),
-              editor.diagnostics(editor_diagnostics(m)),
-            ]),
-          ),
-        ]),
-        run_bar(m, current),
-        ..results_and_answer(m, current)
-      ]),
+      html.div([attribute.class("drill-main")], case current.quiz {
+        Some(quiz) -> quiz_main(m, quiz)
+        None -> [
+          keyed.div([attribute.class("editor-frame")], [
+            #(
+              body_key,
+              editor.view([
+                editor.doc(m.draft),
+                editor.language(problem.language_slug(current.language)),
+                editor.keymap(m.editor_keymap),
+                editor.on_change(EditorChanged),
+                editor.diagnostics(editor_diagnostics(m)),
+              ]),
+            ),
+          ]),
+          run_bar(m, current),
+          ..results_and_answer(m, current)
+        ]
+      }),
     ]),
   ])
+}
+
+/// The quiz replaces the editor and the run bar entirely: there is nothing to
+/// type and nothing to execute. Options stay clickable until Submit, after
+/// which the grading and the explanation are shown and only Next remains.
+fn quiz_main(m: Model, quiz: Quiz) -> List(Element(Msg)) {
+  let options =
+    html.div(
+      [attribute.class("quiz-choices")],
+      list.index_map(quiz.choices, fn(text, index) {
+        let picked = m.choice == Some(index)
+        let is_answer = index == quiz.correct
+        html.button(
+          [
+            attribute.classes([
+              #("quiz-choice", True),
+              #("picked", picked),
+              // Only after grading does the styling say anything true about
+              // correctness, otherwise it would give the answer away.
+              #("correct", m.graded && is_answer),
+              #("wrong", m.graded && picked && !is_answer),
+            ]),
+            attribute.disabled(m.graded),
+            event.on_click(UserPickedChoice(index)),
+          ],
+          [
+            html.span([attribute.class("quiz-marker")], [
+              html.text(marker(index)),
+            ]),
+            html.span([attribute.class("quiz-choice-text")], [html.text(text)]),
+          ],
+        )
+      }),
+    )
+
+  let bar =
+    html.div([attribute.class("run-bar")], case m.graded {
+      False -> [
+        html.button(
+          [
+            attribute.class("btn-primary"),
+            attribute.disabled(m.choice == None),
+            event.on_click(UserSubmittedAnswer),
+          ],
+          [html.text("Submit answer")],
+        ),
+      ]
+      True -> [
+        html.button(
+          [
+            attribute.class("btn-primary next-button"),
+            event.on_click(UserClickedNext),
+          ],
+          [html.text("Next")],
+        ),
+      ]
+    })
+
+  [options, bar, ..quiz_verdict(m, quiz)]
+}
+
+fn quiz_verdict(m: Model, quiz: Quiz) -> List(Element(Msg)) {
+  case m.graded {
+    False -> []
+    True -> {
+      let right = m.choice == Some(quiz.correct)
+      [
+        html.div([attribute.class("results")], [
+          html.div(
+            [
+              attribute.classes([
+                #("results-summary", True),
+                #("pass", right),
+                #("fail", !right),
+              ]),
+            ],
+            [
+              html.text(case right {
+                True -> "\u{2713} Correct"
+                False -> "\u{2717} Not quite"
+              }),
+            ],
+          ),
+          html.div([attribute.class("quiz-explanation")], [
+            html.text(quiz.explanation),
+          ]),
+          html.div([attribute.class("quiz-page")], [
+            html.text("Book reference: " <> quiz.page),
+          ]),
+        ]),
+      ]
+    }
+  }
+}
+
+fn marker(index: Int) -> String {
+  case index {
+    0 -> "A"
+    1 -> "B"
+    2 -> "C"
+    3 -> "D"
+    _ -> int.to_string(index + 1)
+  }
 }
 
 fn keymap_picker(m: Model) -> Element(Msg) {

@@ -1,9 +1,14 @@
+import gleam/int
 import gleam/list
 import gleam/option.{type Option, None}
+import gleam/order
+import gleam/string
 
 pub type Route {
   MenuRoute
   DrillRoute
+  /// The scored breakdown shown after an exam finishes.
+  ReportRoute
 }
 
 pub type ProblemRef {
@@ -69,6 +74,14 @@ pub type Model {
     search: String,
     next_run_id: Int,
     editor_keymap: String,
+    /// Quiz option currently picked, before Submit is pressed.
+    choice: Option(Int),
+    /// Whether the current quiz question has been submitted and graded.
+    graded: Bool,
+    /// This sitting's answers, in the order given. The report is computed from
+    /// this rather than from `attempts`, because `attempts` is deliberately
+    /// sticky (a pass is never downgraded) and a score must not be.
+    exam_answers: List(#(ProblemRef, Bool)),
   )
 }
 
@@ -90,6 +103,9 @@ pub fn default() -> Model {
     search: "",
     next_run_id: 1,
     editor_keymap: "default",
+    choice: None,
+    graded: False,
+    exam_answers: [],
   )
 }
 
@@ -143,4 +159,52 @@ pub type Msg {
   RunnerFailed(language: String, message: String)
   RunFinished(id: Int, outcome: RunOutcome)
   RunTimedOut(id: Int)
+  UserPickedChoice(Int)
+  UserSubmittedAnswer
+  UserClickedStartExam
+  ExamSampled(List(ProblemRef))
+  UserClickedExitReport
 }
+
+/// One bucket of the exam report: how many of this section's questions were
+/// answered correctly.
+pub type SectionScore {
+  SectionScore(section: String, correct: Int, total: Int)
+}
+
+/// Group this sitting's answers by the subcategory each question belongs to,
+/// weakest section first. Ties break on the section name so the order is stable
+/// between renders.
+pub fn section_scores(
+  answers: List(#(ProblemRef, Bool)),
+  sections: List(String),
+) -> List(SectionScore) {
+  sections
+  |> list.map(fn(section) {
+    let in_section =
+      list.filter(answers, fn(pair) { { pair.0 }.subcategory == section })
+    SectionScore(
+      section: section,
+      correct: list.count(in_section, fn(pair) { pair.1 }),
+      total: list.length(in_section),
+    )
+  })
+  |> list.filter(fn(score) { score.total > 0 })
+  |> list.sort(fn(a, b) {
+    case int.compare(percent(a.correct, a.total), percent(b.correct, b.total)) {
+      order.Eq -> string.compare(a.section, b.section)
+      other -> other
+    }
+  })
+}
+
+/// Rounded down, so 27/40 reads 67% and never flatters the result.
+pub fn percent(correct: Int, total: Int) -> Int {
+  case total {
+    0 -> 0
+    _ -> correct * 100 / total
+  }
+}
+
+/// Sections at or below this are called out as worth studying.
+pub const weak_threshold = 70

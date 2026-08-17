@@ -143,5 +143,6 @@ fn drill(
     solutions: list.map(solutions, fn(s) { Solution(label: s.0, code: s.1) }),
     language: Elixir,
     check: None,
+    quiz: None,
   )
 }

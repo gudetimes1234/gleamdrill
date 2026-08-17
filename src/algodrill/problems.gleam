@@ -1,3 +1,4 @@
+import algodrill/model.{type ProblemRef, ProblemRef}
 import algodrill/problem.{type Category, type Problem}
 import algodrill/problems/gleam_idioms
 import algodrill/problems/neetcode_elixir
@@ -5,6 +6,7 @@ import algodrill/problems/neetcode_gleam
 import algodrill/problems/neetcode_python
 import algodrill/problems/neetcode_ts
 import algodrill/problems/python_tips
+import algodrill/problems/system_design
 import gleam/list
 
 pub fn all() -> List(Category) {
@@ -15,7 +17,26 @@ pub fn all() -> List(Category) {
     neetcode_elixir.category(),
     python_tips.category(),
     gleam_idioms.category(),
+    system_design.category(),
   ]
+}
+
+/// Refs for every quiz question in the System Design category, grouped by
+/// subcategory. The exam sampler takes a flat number from each group rather
+/// than sampling the flattened list, so a thin section still gets the same
+/// number of questions as a fat one — equal resolution per section is the
+/// whole point of scoring per section.
+pub fn quiz_pool() -> List(#(String, List(ProblemRef))) {
+  subcategory_names(system_design.name)
+  |> list.map(fn(sub) {
+    #(
+      sub,
+      problems_in(system_design.name, sub)
+        |> list.map(fn(p: Problem) {
+          ProblemRef(system_design.name, sub, p.title)
+        }),
+    )
+  })
 }
 
 pub fn category_names() -> List(String) {

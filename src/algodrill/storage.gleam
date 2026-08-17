@@ -1,6 +1,6 @@
 import algodrill/model.{
   type Attempt, type Model, type Msg, type ProblemRef, type Route, DrillRoute,
-  Failed, MenuRoute, Model, Passed, ProblemRef,
+  Failed, MenuRoute, Model, Passed, ProblemRef, ReportRoute,
 }
 import algodrill/problems
 import gleam/dynamic/decode.{type Decoder}
@@ -11,6 +11,8 @@ import gleam/result
 import lustre/effect.{type Effect}
 import plinth/javascript/storage
 
+const key_v4 = "algoDrillState.v4"
+
 const key_v3 = "algoDrillState.v3"
 
 const key_v2 = "algoDrillState.v2"
@@ -20,12 +22,12 @@ const key_v1 = "algoDrillState"
 pub fn load() -> Model {
   case storage.local() {
     Ok(local) ->
-      case storage.get_item(local, key_v3) {
+      case storage.get_item(local, key_v4) {
         Ok(raw) ->
-          json.parse(raw, v3_decoder())
+          json.parse(raw, v4_decoder())
           |> result.map(validate)
           |> result.unwrap(model.default())
-        Error(Nil) -> migrate_v2(local)
+        Error(Nil) -> migrate_v3(local)
       }
     Error(Nil) -> model.default()
   }
@@ -35,12 +37,22 @@ pub fn save(model: Model) -> Effect(Msg) {
   effect.from(fn(_dispatch) {
     case storage.local() {
       Ok(local) -> {
-        let _ = storage.set_item(local, key_v3, encode(model))
+        let _ = storage.set_item(local, key_v4, encode(model))
         Nil
       }
       Error(Nil) -> Nil
     }
   })
+}
+
+fn migrate_v3(local: storage.Storage) -> Model {
+  case storage.get_item(local, key_v3) {
+    Ok(raw) ->
+      json.parse(raw, v3_decoder())
+      |> result.map(validate)
+      |> result.unwrap(model.default())
+    Error(Nil) -> migrate_v2(local)
+  }
 }
 
 fn migrate_v2(local: storage.Storage) -> Model {
@@ -79,13 +91,21 @@ fn validate(loaded: Model) -> Model {
       selected: selected,
       drafts: list.filter(loaded.drafts, fn(pair) { exists(pair.0) }),
       attempts: list.filter(loaded.attempts, fn(pair) { exists(pair.0) }),
+      exam_answers: list.filter(loaded.exam_answers, fn(pair) {
+        exists(pair.0)
+      }),
     )
   case
     loaded.route == DrillRoute && loaded.problem_index >= list.length(selected)
   {
     True ->
       Model(..loaded, route: MenuRoute, problem_index: 0, current_iteration: 1)
-    False -> loaded
+    // A report whose questions were all reworded away has nothing to show.
+    False ->
+      case loaded.route == ReportRoute && loaded.exam_answers == [] {
+        True -> Model(..loaded, route: MenuRoute)
+        False -> loaded
+      }
   }
 }
 
@@ -96,6 +116,7 @@ fn encode(model: Model) -> String {
       json.string(case model.route {
         MenuRoute -> "menu"
         DrillRoute -> "drill"
+        ReportRoute -> "report"
       }),
     ),
     #("selectedCategory", json.nullable(model.selected_category, json.string)),
@@ -127,6 +148,12 @@ fn encode(model: Model) -> String {
         ])
       }),
     ),
+    #(
+      "examAnswers",
+      json.array(model.exam_answers, fn(pair) {
+        ref_object(pair.0, [#("correct", json.bool(pair.1))])
+      }),
+    ),
     #("search", json.string(model.search)),
     #("editorKeymap", json.string(model.editor_keymap)),
   ])
@@ -144,6 +171,18 @@ fn ref_object(ref: ProblemRef, extra: List(#(String, json.Json))) -> json.Json {
     #("title", json.string(ref.title)),
     ..extra
   ])
+}
+
+/// v4 is v3 plus the exam log. Everything else is unchanged, so v3's decoder
+/// does the work and only the new field is layered on.
+fn v4_decoder() -> Decoder(Model) {
+  use base <- decode.then(v3_decoder())
+  use exam_answers <- decode.optional_field(
+    "examAnswers",
+    [],
+    decode.list(ref_extra_decoder("correct", decode.bool)),
+  )
+  decode.success(Model(..base, exam_answers: exam_answers))
 }
 
 fn v3_decoder() -> Decoder(Model) {
@@ -256,6 +295,7 @@ fn route_decoder() -> Decoder(Route) {
   use raw <- decode.then(decode.string)
   case raw {
     "drill" -> decode.success(DrillRoute)
+    "report" -> decode.success(ReportRoute)
     _ -> decode.success(MenuRoute)
   }
 }

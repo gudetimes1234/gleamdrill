@@ -4,7 +4,7 @@ import algodrill/problem.{
 import algodrill/problems/approaches
 import algodrill/problems/embedded
 import gleam/list
-import gleam/option.{Some}
+import gleam/option.{None, Some}
 
 pub fn category() -> Category {
   Category("Gleam Tips", [
@@ -71,5 +71,6 @@ fn drill(title: String, prompt: String, e: embedded.Embedded) -> Problem {
     solutions: list.map(e.solutions, fn(s) { Solution(label: s.0, code: s.1) }),
     language: Gleam,
     check: Some(e.check),
+    quiz: None,
   )
 }

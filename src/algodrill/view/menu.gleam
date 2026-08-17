@@ -2,7 +2,7 @@ import algodrill/model.{
   type Model, type Msg, type ProblemRef, Failed, Passed, ProblemRef,
   UserChangedIterations, UserClickedBreadcrumb, UserClickedCategory,
   UserClickedClearSelection, UserClickedSelectAll, UserClickedStartDrill,
-  UserClickedSubcategory, UserSearched, UserToggledProblem,
+  UserClickedStartExam, UserClickedSubcategory, UserSearched, UserToggledProblem,
 }
 import algodrill/problem.{type Problem}
 import algodrill/problems
@@ -90,9 +90,26 @@ pub fn view(m: Model) -> Element(Msg) {
           ],
           [html.text("Clear selection")],
         ),
+        // Ignores the selection on purpose: an exam samples its own questions
+        // evenly across the sections, which is what makes the per-section
+        // score comparable.
+        html.button(
+          [
+            attribute.id("startExam"),
+            attribute.class("btn-secondary"),
+            attribute.disabled(exam_pool_size() == 0),
+            event.on_click(UserClickedStartExam),
+          ],
+          [html.text("System design exam")],
+        ),
       ]),
     ])
   ])
+}
+
+fn exam_pool_size() -> Int {
+  problems.quiz_pool()
+  |> list.fold(0, fn(total, entry) { total + list.length(entry.1) })
 }
 
 /// Flat list of every problem whose title matches, across all categories.

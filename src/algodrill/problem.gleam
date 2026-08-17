@@ -5,6 +5,10 @@ pub type Language {
   Gleam
   TypeScript
   Elixir
+  /// Not a programming language: a prose concept drill with nothing to compile.
+  /// Used by the system design quiz, whose problems carry a Quiz instead of a
+  /// Check.
+  Concept
 }
 
 /// Everything needed to compile and grade an attempt in the browser. Gleam,
@@ -23,6 +27,20 @@ pub type Solution {
   Solution(label: String, code: String)
 }
 
+/// A multiple-choice question. `correct` indexes into `choices`. The distractors
+/// are deliberately all plausible — every option is something the source
+/// material actually discusses, because an obviously-wrong option turns a 4-way
+/// question into a 2-way one and inflates the score.
+pub type Quiz {
+  Quiz(
+    choices: List(String),
+    correct: Int,
+    explanation: String,
+    /// Where to go read after getting it wrong, e.g. "p112-115".
+    page: String,
+  )
+}
+
 pub type Problem {
   Problem(
     title: String,
@@ -31,6 +49,7 @@ pub type Problem {
     solutions: List(Solution),
     language: Language,
     check: Option(Check),
+    quiz: Option(Quiz),
   )
 }
 
@@ -48,6 +67,7 @@ pub fn language_label(language: Language) -> String {
     Gleam -> "Gleam"
     TypeScript -> "TypeScript"
     Elixir -> "Elixir"
+    Concept -> "Concept"
   }
 }
 
@@ -58,5 +78,6 @@ pub fn language_slug(language: Language) -> String {
     Gleam -> "gleam"
     TypeScript -> "typescript"
     Elixir -> "elixir"
+    Concept -> "concept"
   }
 }

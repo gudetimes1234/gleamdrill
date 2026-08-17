@@ -2,13 +2,15 @@ import algodrill/browser
 import algodrill/editor
 import algodrill/model.{
   type Model, type Msg, type ProblemRef, Cases, DraftSaveTicked, DrillRoute,
-  EditorChanged, Errored, ExitConfirmed, MenuRoute, Model, ProblemRef, Ran,
-  RunFinished, RunIdle, RunTimedOut, RunnerFailed, RunnerReady, Running,
-  RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady, TimedOut,
-  UserChangedIterations, UserChangedKeymap, UserClickedBreadcrumb,
-  UserClickedCategory, UserClickedClearSelection, UserClickedExitDrill,
-  UserClickedNext, UserClickedRun, UserClickedSelectAll, UserClickedStartDrill,
-  UserClickedSubcategory, UserSearched, UserToggledProblem, UserToggledSolution,
+  EditorChanged, Errored, ExamSampled, ExitConfirmed, MenuRoute, Model,
+  ProblemRef, Ran, ReportRoute, RunFinished, RunIdle, RunTimedOut, RunnerFailed,
+  RunnerReady, Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded,
+  RuntimeReady, TimedOut, UserChangedIterations, UserChangedKeymap,
+  UserClickedBreadcrumb, UserClickedCategory, UserClickedClearSelection,
+  UserClickedExitDrill, UserClickedExitReport, UserClickedNext, UserClickedRun,
+  UserClickedSelectAll, UserClickedStartDrill, UserClickedStartExam,
+  UserClickedSubcategory, UserPickedChoice, UserSearched, UserSubmittedAnswer,
+  UserToggledProblem, UserToggledSolution,
 }
 import algodrill/problem
 import algodrill/problems
@@ -16,6 +18,7 @@ import algodrill/runner
 import algodrill/storage
 import algodrill/view/drill
 import algodrill/view/menu
+import algodrill/view/report
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
@@ -171,18 +174,83 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               drafts: model.assoc_put(m.drafts, first, starter_for(first)),
               revealed_solution: None,
               run: RunIdle,
+              // Clearing the log is what distinguishes a drill from an exam at
+              // the end of the run: a non-empty log means a report is owed.
+              exam_answers: [],
+              choice: None,
+              graded: False,
             ),
             effect.none(),
           ))
+      }
+
+    UserClickedStartExam -> #(
+      m,
+      effect.from(fn(dispatch) { dispatch(ExamSampled(sample_exam())) }),
+    )
+
+    ExamSampled(refs) ->
+      case refs {
+        [] -> #(m, effect.none())
+        _ -> #(
+          Model(
+            ..m,
+            route: DrillRoute,
+            selected: refs,
+            problem_index: 0,
+            // An exam is one pass over the questions; repeating it inside the
+            // sitting would score the same question twice.
+            iteration_count: 1,
+            current_iteration: 1,
+            exam_answers: [],
+            choice: None,
+            graded: False,
+            revealed_solution: None,
+            run: RunIdle,
+            draft: "",
+          ),
+          effect.none(),
+        )
+      }
+
+    UserClickedExitReport -> #(
+      Model(..m, route: MenuRoute),
+      effect.none(),
+    )
+
+    UserPickedChoice(index) ->
+      case m.graded {
+        True -> #(m, effect.none())
+        False -> #(Model(..m, choice: Some(index)), effect.none())
+      }
+
+    UserSubmittedAnswer ->
+      case m.graded, m.choice, current_quiz(m), model.current_ref(m) {
+        False, Some(picked), Ok(quiz), Ok(ref) -> {
+          let right = picked == quiz.correct
+          #(
+            Model(
+              ..m,
+              graded: True,
+              // Appended at the head; the report only groups and counts, so
+              // the order does not matter.
+              exam_answers: [#(ref, right), ..m.exam_answers],
+              attempts: record_attempt(m.attempts, ref, right),
+            ),
+            effect.none(),
+          )
+        }
+        _, _, _, _ -> #(m, effect.none())
       }
 
     UserClickedExitDrill -> #(
       m,
       effect.from(fn(dispatch) {
         dispatch(
-          ExitConfirmed(browser.confirm(
-            "Exit the drill? Your typed code will be lost.",
-          )),
+          ExitConfirmed(browser.confirm(case current_quiz(m) {
+            Ok(_) -> "Exit the exam? You will not get a score for it."
+            Error(Nil) -> "Exit the drill? Your typed code will be lost."
+          })),
         )
       }),
     )
@@ -208,12 +276,18 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         True -> #(m.problem_index + 1, m.current_iteration)
         False -> #(0, m.current_iteration + 1)
       }
-      case iteration > m.iteration_count {
-        True -> #(
+      case iteration > m.iteration_count, m.exam_answers {
+        // An exam ends in the report rather than an alert — the score is the
+        // entire reason the sitting happened.
+        True, [_, ..] -> #(
+          Model(..reset_to_menu(m), route: ReportRoute),
+          effect.none(),
+        )
+        True, [] -> #(
           reset_to_menu(m),
           effect.from(fn(_dispatch) { browser.alert("Drill complete.") }),
         )
-        False -> {
+        False, _ -> {
           let advanced =
             Model(
               ..m,
@@ -221,6 +295,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               problem_index: index,
               revealed_solution: None,
               run: RunIdle,
+              choice: None,
+              graded: False,
             )
           // Each repetition starts from the stub: retyping is the drill.
           // The saved draft only survives reloads mid-repetition.
@@ -372,7 +448,63 @@ fn reset_to_menu(m: Model) -> Model {
     draft: "",
     revealed_solution: None,
     run: RunIdle,
+    choice: None,
+    graded: False,
   )
+}
+
+/// Questions per sitting, spread flat across the sections rather than in
+/// proportion to how many questions each one has. Equal resolution per section
+/// is the point: a section sampled twice cannot tell you anything about
+/// whether you know it.
+const exam_size = 40
+
+/// Take an equal slice of each section, shuffled, then shuffle the result so
+/// the questions do not arrive grouped by section. Sections thinner than the
+/// slice contribute everything they have, so the exam is smaller than
+/// `exam_size` while the pool is still being written.
+fn sample_exam() -> List(ProblemRef) {
+  let pool = problems.quiz_pool()
+  let per_section = case list.length(pool) {
+    0 -> 0
+    sections -> int.max(1, exam_size / sections)
+  }
+  pool
+  |> list.flat_map(fn(entry) { list.take(shuffle(entry.1), per_section) })
+  |> shuffle
+}
+
+fn shuffle(items: List(a)) -> List(a) {
+  shuffle_loop(items, list.length(items), [])
+}
+
+fn shuffle_loop(remaining: List(a), count: Int, acc: List(a)) -> List(a) {
+  case count {
+    n if n <= 0 -> acc
+    _ -> {
+      let #(before, rest) = list.split(remaining, browser.random_int(count))
+      case rest {
+        [picked, ..after] ->
+          shuffle_loop(list.append(before, after), count - 1, [picked, ..acc])
+        [] -> list.append(acc, remaining)
+      }
+    }
+  }
+}
+
+fn current_quiz(m: Model) -> Result(problem.Quiz, Nil) {
+  case model.current_ref(m) {
+    Ok(ref) ->
+      case problems.find(ref.category, ref.subcategory, ref.title) {
+        Ok(p) ->
+          case p.quiz {
+            Some(quiz) -> Ok(quiz)
+            None -> Error(Nil)
+          }
+        Error(Nil) -> Error(Nil)
+      }
+    Error(Nil) -> Error(Nil)
+  }
 }
 
 fn toggle_selection(
@@ -392,6 +524,7 @@ fn view(m: Model) -> Element(Msg) {
         Ok(el) -> el
         Error(Nil) -> menu.view(m)
       }
+    ReportRoute -> report.view(m)
     MenuRoute -> menu.view(m)
   }
 }
