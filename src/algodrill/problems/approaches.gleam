@@ -19,8 +19,14 @@ pub fn for_title(title: String) -> String {
     "Top K Frequent Elements" ->
       "Count, then select. Build a value-to-frequency map first; then pick the k largest counts \u{2014} sorting the (value, count) pairs by count is the simple way, a heap of size k is the classic optimisation when k is much smaller than n."
 
+    "Encode and Decode Strings" ->
+      "A framing problem rather than a string problem. Any encoding is legal so long as decode undoes it, so the only real question is how the decoder knows where each string ends. Length-prefixing answers it outright \u{2014} read a number, take that many characters \u{2014} and needs no assumption about what the strings contain. A separator works too, but only with escaping. Either way the encoding has to tell an empty list apart from a list holding one empty string."
+
     "Product of Array Except Self" ->
       "A prefix/suffix problem. The answer at position i is (product of everything before i) \u{d7} (product of everything after i). Compute prefix products in one pass, suffix products in a reverse pass, and multiply them position-wise \u{2014} no division needed."
+
+    "Valid Sudoku" ->
+      "Three constraints, checked together. A digit is illegal if it repeats within its row, its column, or its 3\u{d7}3 box, so either carry one set of (value, unit) signatures and test all three as you walk, or gather the 27 units and check each for a repeat. Only filled cells matter: the board does not have to be solvable, only consistent."
 
     "Longest Consecutive Sequence" ->
       "A set problem with a pruning trick. Put every number in a set; then only start counting a run at numbers that have no predecessor (n-1 not in the set), walking forward while successors exist. Each number is visited at most twice, so it's O(n) despite the nested-looking walk."

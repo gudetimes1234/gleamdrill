@@ -55,9 +55,19 @@ pub fn groups() -> List(Group) {
         "nc05_top_k_frequent",
       ),
       Drill(
+        "Encode and Decode Strings",
+        "Design an algorithm to encode a list of strings to a single string, and another to decode that string back to the original list. The strings may contain any characters.",
+        "nc22_encode_decode",
+      ),
+      Drill(
         "Product of Array Except Self",
         "Given an integer array nums, return an array answer such that answer[i] is equal to the product of all the elements of nums except nums[i]. Solve without division and in O(n) time.",
         "nc06_product_except_self",
+      ),
+      Drill(
+        "Valid Sudoku",
+        "Determine if a 9 x 9 Sudoku board is valid. Only the filled cells need to be validated: each row, each column and each of the nine 3 x 3 sub-boxes must contain the digits 1-9 without repetition. Empty cells are written \".\".",
+        "nc23_valid_sudoku",
       ),
       Drill(
         "Longest Consecutive Sequence",

@@ -1109,6 +1109,170 @@ __case__(\"search([4, 5, 6, 7, 0, 1, 2], 6)\", 2, search([4, 5, 6, 7, 0, 1, 2], 
   )
 }
 
+pub fn nc22_encode_decode() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Length-prefix each string: its length, a delimiter, then the string itself. Decoding reads a number and then takes exactly that many characters, so nothing inside a payload can ever be mistaken for structure — the delimiter appearing in the data is harmless, because the decoder was never scanning for it.", "
+def encode(strs):
+    return \"\".join(\"%d#%s\" % (len(s), s) for s in strs)
+
+
+def decode(s):
+    out = []
+    i = 0
+    while i < len(s):
+        hash_at = s.index(\"#\", i)
+        length = int(s[i:hash_at])
+        start = hash_at + 1
+        out.append(s[start:start + length])
+        i = start + length
+    return out"),
+      #("Solution 2 · Escaping", "The other honest answer: pick a separator and make it safe by escaping it, and escaping the escape. Note the leading separator rather than a join — without it, [] and [\"\"] both encode to the empty string, which is the case that catches most first attempts.", "
+SEPARATOR = \"|\"
+ESCAPE = \"\\\\\"
+
+
+def encode(strs):
+    return \"\".join(
+        SEPARATOR + s.replace(ESCAPE, ESCAPE * 2).replace(SEPARATOR, ESCAPE + SEPARATOR)
+        for s in strs
+    )
+
+
+def decode(s):
+    # The leading separator is what tells [] and [\"\"] apart: one encodes to the
+    # empty string, the other to a lone separator.
+    if not s:
+        return []
+    out = []
+    current = []
+    i = 1
+    while i < len(s):
+        if s[i] == ESCAPE:
+            current.append(s[i + 1])
+            i += 2
+        elif s[i] == SEPARATOR:
+            out.append(\"\".join(current))
+            current = []
+            i += 1
+        else:
+            current.append(s[i])
+            i += 1
+    out.append(\"\".join(current))
+    return out"),
+    ],
+    check: Check(
+      signature: "def encode(strs):
+
+def decode(s):",
+      starter: "def encode(strs):
+    pass
+
+def decode(s):
+    pass",
+      harness: "
+try:
+    (encode, decode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+def __round_trip__(strs):
+    return decode(encode(strs))
+
+__case__(\"decode(encode(['neet', 'code', 'love', 'you']))\", [\"neet\", \"code\", \"love\", \"you\"], __round_trip__([\"neet\", \"code\", \"love\", \"you\"]))
+__case__(\"decode(encode([]))\", [], __round_trip__([]))
+__case__(\"decode(encode(['', '']))\", [\"\", \"\"], __round_trip__([\"\", \"\"]))
+__case__(\"decode(encode(['3#x', 'a|b']))\", [\"3#x\", \"a|b\"], __round_trip__([\"3#x\", \"a|b\"]))
+__case__(\"decode(encode(['\\\\\\\\', '|', '#']))\", [\"\\\\\", \"|\", \"#\"], __round_trip__([\"\\\\\", \"|\", \"#\"]))",
+    ),
+  )
+}
+
+pub fn nc23_valid_sudoku() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One pass, one set. Each filled cell contributes three signatures — this value in this row, in this column, in this box — and the first one already present is the duplicate. Nothing has to be gathered up first, and the scan stops the moment it fails.", "def isValidSudoku(board):
+    seen = set()
+    for r, row in enumerate(board):
+        for c, value in enumerate(row):
+            if value == \".\":
+                continue
+            keys = (
+                (value, \"row\", r),
+                (value, \"col\", c),
+                (value, \"box\", r // 3, c // 3),
+            )
+            if any(key in seen for key in keys):
+                return False
+            seen.update(keys)
+    return True"),
+      #("Solution 2 · By unit", "Turn the board into the 27 things being constrained — nine rows, nine columns, nine boxes — and the problem collapses to \"does any of these contain a repeat?\". More passes than the signature set, but the constraint is stated once and the box arithmetic is confined to building the units.", "def isValidSudoku(board):
+    return all(noDuplicates(unit) for unit in units(board))
+
+
+def units(board):
+    rows = [list(row) for row in board]
+    columns = [list(column) for column in zip(*board)]
+    boxes = [
+        [board[r][c] for r in range(br, br + 3) for c in range(bc, bc + 3)]
+        for br in range(0, 9, 3)
+        for bc in range(0, 9, 3)
+    ]
+    return rows + columns + boxes
+
+
+def noDuplicates(unit):
+    filled = [value for value in unit if value != \".\"]
+    return len(filled) == len(set(filled))"),
+    ],
+    check: Check(
+      signature: "def isValidSudoku(board):",
+      starter: "def isValidSudoku(board):
+    pass",
+      harness: "try:
+    (isValidSudoku)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# Nine row strings rather than a 9x9 literal: the board stays readable, and a
+# single changed cell is what each invalid case is.
+__rows__ = [
+    \"53..7....\",
+    \"6..195...\",
+    \".98....6.\",
+    \"8...6...3\",
+    \"4..8.3..1\",
+    \"7...2...6\",
+    \".6....28.\",
+    \"...419..5\",
+    \"....8..79\",
+]
+
+def __board__():
+    return [list(row) for row in __rows__]
+
+def __with_cell__(r, c, value):
+    board = __board__()
+    board[r][c] = value
+    return board
+
+__case__(\"isValidSudoku(valid board)\", True, isValidSudoku(__board__()))
+__case__(\"isValidSudoku(5 twice in row 0)\", False, isValidSudoku(__with_cell__(0, 2, \"5\")))
+__case__(\"isValidSudoku(5 twice in column 0, different boxes)\", False, isValidSudoku(__with_cell__(3, 0, \"5\")))
+__case__(\"isValidSudoku(3 twice in the top-left box only)\", False, isValidSudoku(__with_cell__(2, 0, \"3\")))
+__case__(\"isValidSudoku(empty board)\", True, isValidSudoku([[\".\"] * 9 for _ in range(9)]))",
+    ),
+  )
+}
+
 pub fn tip01_counter() -> Embedded {
   Embedded(
     solutions: [
@@ -1504,6 +1668,8 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc19_binary_search" -> Ok(nc19_binary_search())
     "nc20_find_min_rotated" -> Ok(nc20_find_min_rotated())
     "nc21_search_rotated" -> Ok(nc21_search_rotated())
+    "nc22_encode_decode" -> Ok(nc22_encode_decode())
+    "nc23_valid_sudoku" -> Ok(nc23_valid_sudoku())
     "tip01_counter" -> Ok(tip01_counter())
     "tip02_defaultdict" -> Ok(tip02_defaultdict())
     "tip03_deque" -> Ok(tip03_deque())

@@ -43,6 +43,10 @@ import * as v38 from "./.verify/nc20_find_min_rotated/harness";
 import * as v39 from "./.verify/nc20_find_min_rotated__linear_scan/harness";
 import * as v40 from "./.verify/nc21_search_rotated/harness";
 import * as v41 from "./.verify/nc21_search_rotated__find_pivot/harness";
+import * as v42 from "./.verify/nc22_encode_decode/harness";
+import * as v43 from "./.verify/nc22_encode_decode__escaping/harness";
+import * as v44 from "./.verify/nc23_valid_sudoku/harness";
+import * as v45 from "./.verify/nc23_valid_sudoku__by_unit/harness";
 
 type Case = [string, string, string];
 
@@ -89,6 +93,10 @@ const VARIANTS: [string, string, () => Case[]][] = [
   ["nc20_find_min_rotated", "Solution 2 · Linear scan", v39.run],
   ["nc21_search_rotated", "Solution 1", v40.run],
   ["nc21_search_rotated", "Solution 2 · Find pivot", v41.run],
+  ["nc22_encode_decode", "Solution 1", v42.run],
+  ["nc22_encode_decode", "Solution 2 · Escaping", v43.run],
+  ["nc23_valid_sudoku", "Solution 1", v44.run],
+  ["nc23_valid_sudoku", "Solution 2 · By unit", v45.run],
 ];
 
 const failures: string[] = [];

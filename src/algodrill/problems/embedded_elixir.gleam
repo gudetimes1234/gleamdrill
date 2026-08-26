@@ -822,6 +822,118 @@ end"),
   ]
 }
 
+pub fn nc22_encode_decode() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Length-prefix each string: its length, a delimiter, then the string itself. Decoding reads a number and then takes exactly that many characters, so nothing inside a payload can ever be mistaken for structure — the delimiter appearing in the data is harmless, because the decoder was never scanning for it.", "
+defmodule Solution do
+  def encode(strs) do
+    Enum.map_join(strs, fn s -> \"#{String.length(s)}##{s}\" end)
+  end
+
+  def decode(s), do: read(s, [])
+
+  defp read(\"\", acc), do: Enum.reverse(acc)
+
+  defp read(rest, acc) do
+    [digits, tail] = String.split(rest, \"#\", parts: 2)
+    length = String.to_integer(digits)
+    read(String.slice(tail, length..-1//1), [String.slice(tail, 0, length) | acc])
+  end
+end"),
+    #("Solution 2 · Escaping", "The other honest answer: pick a separator and make it safe by escaping it, and escaping the escape. Note the leading separator rather than a join — without it, [] and [\"\"] both encode to the empty string, which is the case that catches most first attempts.", "
+defmodule Solution do
+  @separator \"|\"
+  @escape \"\\\\\"
+
+  def encode(strs) do
+    Enum.map_join(strs, fn s ->
+      @separator <>
+        (s
+         |> String.replace(@escape, @escape <> @escape)
+         |> String.replace(@separator, @escape <> @separator))
+    end)
+  end
+
+  # The leading separator is what tells [] and [\"\"] apart: one encodes to the
+  # empty string, the other to a lone separator.
+  def decode(\"\"), do: []
+
+  def decode(@separator <> rest), do: unescape(String.graphemes(rest), \"\", [])
+
+  def decode(_), do: []
+
+  defp unescape([], current, acc), do: Enum.reverse([current | acc])
+
+  defp unescape([@escape, escaped | rest], current, acc),
+    do: unescape(rest, current <> escaped, acc)
+
+  defp unescape([@separator | rest], current, acc),
+    do: unescape(rest, \"\", [current | acc])
+
+  defp unescape([g | rest], current, acc), do: unescape(rest, current <> g, acc)
+end"),
+  ]
+}
+
+pub fn nc23_valid_sudoku() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "One pass, one set. Each filled cell contributes three signatures — this value in this row, in this column, in this box — and the first one already present is the duplicate. Nothing has to be gathered up first, and the scan stops the moment it fails.", "defmodule Solution do
+  def valid_sudoku?(board) do
+    board
+    |> filled_cells()
+    |> Enum.reduce_while(MapSet.new(), fn {r, c, value}, seen ->
+      keys = [
+        \"#{value} row #{r}\",
+        \"#{value} col #{c}\",
+        \"#{value} box #{div(r, 3) * 3 + div(c, 3)}\"
+      ]
+
+      if Enum.any?(keys, &MapSet.member?(seen, &1)) do
+        {:halt, false}
+      else
+        {:cont, Enum.into(keys, seen)}
+      end
+    end)
+    |> then(fn result -> result != false end)
+  end
+
+  defp filled_cells(board) do
+    board
+    |> Enum.with_index()
+    |> Enum.flat_map(fn {row, r} ->
+      row
+      |> Enum.with_index()
+      |> Enum.reject(fn {value, _c} -> value == \".\" end)
+      |> Enum.map(fn {value, c} -> {r, c, value} end)
+    end)
+  end
+end"),
+    #("Solution 2 · By unit", "Turn the board into the 27 things being constrained — nine rows, nine columns, nine boxes — and the problem collapses to \"does any of these contain a repeat?\". More passes than the signature set, but the constraint is stated once and the box arithmetic is confined to building the units.", "defmodule Solution do
+  def valid_sudoku?(board), do: Enum.all?(units(board), &no_duplicates?/1)
+
+  defp units(board), do: board ++ transpose(board) ++ boxes(board)
+
+  defp transpose(rows), do: Enum.zip_with(rows, & &1)
+
+  defp boxes(board) do
+    board
+    |> Enum.chunk_every(3)
+    |> Enum.flat_map(fn band ->
+      band
+      |> Enum.map(&Enum.chunk_every(&1, 3))
+      |> transpose()
+      |> Enum.map(&List.flatten/1)
+    end)
+  end
+
+  defp no_duplicates?(unit) do
+    filled = Enum.reject(unit, &(&1 == \".\"))
+    length(filled) == MapSet.size(MapSet.new(filled))
+  end
+end"),
+  ]
+}
+
 pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -845,6 +957,8 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
     "nc19_binary_search" -> Ok(nc19_binary_search())
     "nc20_find_min_rotated" -> Ok(nc20_find_min_rotated())
     "nc21_search_rotated" -> Ok(nc21_search_rotated())
+    "nc22_encode_decode" -> Ok(nc22_encode_decode())
+    "nc23_valid_sudoku" -> Ok(nc23_valid_sudoku())
     _ -> Error(Nil)
   }
 }

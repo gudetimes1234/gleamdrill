@@ -2104,6 +2104,276 @@ pub fn run() -> List(#(String, String, String)) {
   )
 }
 
+pub fn nc22_encode_decode() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Length-prefix each string: its length, a delimiter, then the string itself. Decoding reads a number and then takes exactly that many characters, so nothing inside a payload can ever be mistaken for structure — the delimiter appearing in the data is harmless, because the decoder was never scanning for it.", "import gleam/int
+import gleam/list
+import gleam/string
+
+pub fn encode(strs: List(String)) -> String {
+  strs
+  |> list.map(fn(s) { int.to_string(string.length(s)) <> \"#\" <> s })
+  |> string.concat
+}
+
+pub fn decode(s: String) -> List(String) {
+  read(s, [])
+}
+
+fn read(rest: String, acc: List(String)) -> List(String) {
+  case string.split_once(rest, \"#\") {
+    Error(Nil) -> list.reverse(acc)
+    Ok(#(digits, tail)) ->
+      case int.parse(digits) {
+        Error(Nil) -> list.reverse(acc)
+        Ok(length) ->
+          read(string.drop_start(tail, length), [
+            string.slice(tail, 0, length),
+            ..acc
+          ])
+      }
+  }
+}"),
+      #("Solution 2 · Escaping", "The other honest answer: pick a separator and make it safe by escaping it, and escaping the escape. Note the leading separator rather than a join — without it, [] and [\"\"] both encode to the empty string, which is the case that catches most first attempts.", "import gleam/list
+import gleam/string
+
+const separator = \"|\"
+
+const escape = \"\\\\\"
+
+pub fn encode(strs: List(String)) -> String {
+  strs
+  |> list.map(fn(s) {
+    separator
+    <> s
+    |> string.replace(escape, escape <> escape)
+    |> string.replace(separator, escape <> separator)
+  })
+  |> string.concat
+}
+
+pub fn decode(s: String) -> List(String) {
+  // The leading separator is what tells [] and [\"\"] apart: one encodes to the
+  // empty string, the other to a lone separator.
+  case string.to_graphemes(s) {
+    [] -> []
+    [first, ..rest] if first == separator -> unescape(rest, \"\", [])
+    _ -> []
+  }
+}
+
+fn unescape(
+  graphemes: List(String),
+  current: String,
+  acc: List(String),
+) -> List(String) {
+  case graphemes {
+    [] -> list.reverse([current, ..acc])
+    [first, escaped, ..rest] if first == escape ->
+      unescape(rest, current <> escaped, acc)
+    [first, ..rest] if first == separator -> unescape(rest, \"\", [current, ..acc])
+    [g, ..rest] -> unescape(rest, current <> g, acc)
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn encode(strs: List(String)) -> String
+
+pub fn decode(s: String) -> List(String)",
+      starter: "pub fn encode(strs: List(String)) -> String {
+  todo
+}
+
+pub fn decode(s: String) -> List(String) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+/// Only the round trip is specified: any encoding is fine as long as decode
+/// undoes it, so every case runs both directions.
+fn round_trip(strs: List(String)) -> List(String) {
+  solution.decode(solution.encode(strs))
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"decode(encode([\\\"neet\\\", \\\"code\\\", \\\"love\\\", \\\"you\\\"]))\",
+      string.inspect([\"neet\", \"code\", \"love\", \"you\"]),
+      string.inspect(round_trip([\"neet\", \"code\", \"love\", \"you\"])),
+    ),
+    #(\"decode(encode([]))\", string.inspect([]), string.inspect(round_trip([]))),
+    #(
+      \"decode(encode([\\\"\\\", \\\"\\\"]))\",
+      string.inspect([\"\", \"\"]),
+      string.inspect(round_trip([\"\", \"\"])),
+    ),
+    #(
+      \"decode(encode([\\\"3#x\\\", \\\"a|b\\\"]))\",
+      string.inspect([\"3#x\", \"a|b\"]),
+      string.inspect(round_trip([\"3#x\", \"a|b\"])),
+    ),
+    #(
+      \"decode(encode([\\\"\\\\\\\\\\\", \\\"|\\\", \\\"#\\\"]))\",
+      string.inspect([\"\\\\\", \"|\", \"#\"]),
+      string.inspect(round_trip([\"\\\\\", \"|\", \"#\"])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc23_valid_sudoku() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One pass, one set. Each filled cell contributes three signatures — this value in this row, in this column, in this box — and the first one already present is the duplicate. Nothing has to be gathered up first, and the scan stops the moment it fails.", "import gleam/int
+import gleam/list
+import gleam/set
+
+pub fn is_valid_sudoku(board: List(List(String))) -> Bool {
+  board
+  |> filled_cells
+  |> walk(set.new())
+}
+
+fn filled_cells(board: List(List(String))) -> List(#(Int, Int, String)) {
+  board
+  |> list.index_map(fn(row, r) {
+    row
+    |> list.index_map(fn(value, c) { #(r, c, value) })
+    |> list.filter(fn(cell) { cell.2 != \".\" })
+  })
+  |> list.flatten
+}
+
+fn walk(cells: List(#(Int, Int, String)), seen: set.Set(String)) -> Bool {
+  case cells {
+    [] -> True
+    [#(r, c, value), ..rest] -> {
+      let keys = [
+        value <> \" row \" <> int.to_string(r),
+        value <> \" col \" <> int.to_string(c),
+        value <> \" box \" <> int.to_string(r / 3 * 3 + c / 3),
+      ]
+      case list.any(keys, set.contains(seen, _)) {
+        True -> False
+        False -> walk(rest, list.fold(keys, seen, set.insert))
+      }
+    }
+  }
+}"),
+      #("Solution 2 · By unit", "Turn the board into the 27 things being constrained — nine rows, nine columns, nine boxes — and the problem collapses to \"does any of these contain a repeat?\". More passes than the signature set, but the constraint is stated once and the box arithmetic is confined to building the units.", "import gleam/list
+import gleam/set
+
+pub fn is_valid_sudoku(board: List(List(String))) -> Bool {
+  board
+  |> units
+  |> list.all(no_duplicates)
+}
+
+fn units(board: List(List(String))) -> List(List(String)) {
+  list.flatten([board, list.transpose(board), boxes(board)])
+}
+
+fn boxes(board: List(List(String))) -> List(List(String)) {
+  board
+  |> list.sized_chunk(3)
+  |> list.flat_map(fn(band) {
+    band
+    |> list.map(list.sized_chunk(_, 3))
+    |> list.transpose
+    |> list.map(list.flatten)
+  })
+}
+
+fn no_duplicates(unit: List(String)) -> Bool {
+  let filled = list.filter(unit, fn(value) { value != \".\" })
+  list.length(filled) == set.size(set.from_list(filled))
+}"),
+    ],
+    check: Check(
+      signature: "pub fn is_valid_sudoku(board: List(List(String))) -> Bool",
+      starter: "pub fn is_valid_sudoku(board: List(List(String))) -> Bool {
+  todo
+}",
+      harness: "import gleam/list
+import gleam/string
+import solution
+
+/// Nine row strings rather than a 9x9 literal: the board stays readable, and a
+/// single changed cell is what each invalid case is.
+const rows = [
+  \"53..7....\",
+  \"6..195...\",
+  \".98....6.\",
+  \"8...6...3\",
+  \"4..8.3..1\",
+  \"7...2...6\",
+  \".6....28.\",
+  \"...419..5\",
+  \"....8..79\",
+]
+
+fn board() -> List(List(String)) {
+  list.map(rows, string.to_graphemes)
+}
+
+fn with_cell(r: Int, c: Int, value: String) -> List(List(String)) {
+  board()
+  |> list.index_map(fn(row, i) {
+    case i == r {
+      False -> row
+      True ->
+        list.index_map(row, fn(cell, j) {
+          case j == c {
+            True -> value
+            False -> cell
+          }
+        })
+    }
+  })
+}
+
+fn empty() -> List(List(String)) {
+  list.repeat(list.repeat(\".\", 9), 9)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"is_valid_sudoku(valid board)\",
+      string.inspect(True),
+      string.inspect(solution.is_valid_sudoku(board())),
+    ),
+    #(
+      \"is_valid_sudoku(5 twice in row 0)\",
+      string.inspect(False),
+      string.inspect(solution.is_valid_sudoku(with_cell(0, 2, \"5\"))),
+    ),
+    #(
+      \"is_valid_sudoku(5 twice in column 0, different boxes)\",
+      string.inspect(False),
+      string.inspect(solution.is_valid_sudoku(with_cell(3, 0, \"5\"))),
+    ),
+    #(
+      \"is_valid_sudoku(3 twice in the top-left box only)\",
+      string.inspect(False),
+      string.inspect(solution.is_valid_sudoku(with_cell(2, 0, \"3\"))),
+    ),
+    #(
+      \"is_valid_sudoku(empty board)\",
+      string.inspect(True),
+      string.inspect(solution.is_valid_sudoku(empty())),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
 pub fn tip01_list_patterns() -> Embedded {
   Embedded(
     solutions: [
@@ -2892,6 +3162,8 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc19_binary_search" -> Ok(nc19_binary_search())
     "nc20_find_min_rotated" -> Ok(nc20_find_min_rotated())
     "nc21_search_rotated" -> Ok(nc21_search_rotated())
+    "nc22_encode_decode" -> Ok(nc22_encode_decode())
+    "nc23_valid_sudoku" -> Ok(nc23_valid_sudoku())
     "tip01_list_patterns" -> Ok(tip01_list_patterns())
     "tip02_tail_recursion" -> Ok(tip02_tail_recursion())
     "tip03_fold" -> Ok(tip03_fold())

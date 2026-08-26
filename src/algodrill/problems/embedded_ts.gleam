@@ -1235,6 +1235,189 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc22_encode_decode() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Length-prefix each string: its length, a delimiter, then the string itself. Decoding reads a number and then takes exactly that many characters, so nothing inside a payload can ever be mistaken for structure — the delimiter appearing in the data is harmless, because the decoder was never scanning for it.", "
+export function encode(strs: string[]): string {
+  return strs.map((s) => `${s.length}#${s}`).join(\"\");
+}
+
+export function decode(s: string): string[] {
+  const out: string[] = [];
+  let i = 0;
+  while (i < s.length) {
+    const hashAt = s.indexOf(\"#\", i);
+    const length = Number(s.slice(i, hashAt));
+    const start = hashAt + 1;
+    out.push(s.slice(start, start + length));
+    i = start + length;
+  }
+  return out;
+}"),
+      #("Solution 2 · Escaping", "The other honest answer: pick a separator and make it safe by escaping it, and escaping the escape. Note the leading separator rather than a join — without it, [] and [\"\"] both encode to the empty string, which is the case that catches most first attempts.", "
+const SEPARATOR = \"|\";
+const ESCAPE = \"\\\\\";
+
+export function encode(strs: string[]): string {
+  return strs
+    .map(
+      (s) =>
+        SEPARATOR +
+        s.split(ESCAPE).join(ESCAPE + ESCAPE).split(SEPARATOR).join(ESCAPE + SEPARATOR),
+    )
+    .join(\"\");
+}
+
+export function decode(s: string): string[] {
+  // The leading separator is what tells [] and [\"\"] apart: one encodes to the
+  // empty string, the other to a lone separator.
+  if (s === \"\") return [];
+  const out: string[] = [];
+  let current = \"\";
+  let i = 1;
+  while (i < s.length) {
+    if (s[i] === ESCAPE) {
+      current += s[i + 1];
+      i += 2;
+    } else if (s[i] === SEPARATOR) {
+      out.push(current);
+      current = \"\";
+      i += 1;
+    } else {
+      current += s[i];
+      i += 1;
+    }
+  }
+  out.push(current);
+  return out;
+}"),
+    ],
+    check: Check(
+      signature: "export function encode(strs: string[]): string
+
+export function decode(s: string): string[]",
+      starter: "export function encode(strs: string[]): string {
+  // todo
+}
+
+export function decode(s: string): string[] {
+  // todo
+}",
+      harness: "
+import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// Only the round trip is specified: any encoding is fine as long as decode
+// undoes it, so every case runs both directions.
+const roundTrip = (strs: string[]) => solution.decode(solution.encode(strs));
+
+export function run(): [string, string, string][] {
+  if (typeof solution.encode !== \"function\" || typeof solution.decode !== \"function\") {
+    throw new Error(\"__signature_mismatch__\");
+  }
+  return [
+    [\"decode(encode(['neet', 'code', 'love', 'you']))\", show([\"neet\", \"code\", \"love\", \"you\"]), show(roundTrip([\"neet\", \"code\", \"love\", \"you\"]))],
+    [\"decode(encode([]))\", show([]), show(roundTrip([]))],
+    [\"decode(encode(['', '']))\", show([\"\", \"\"]), show(roundTrip([\"\", \"\"]))],
+    [\"decode(encode(['3#x', 'a|b']))\", show([\"3#x\", \"a|b\"]), show(roundTrip([\"3#x\", \"a|b\"]))],
+    [\"decode(encode(['\\\\\\\\', '|', '#']))\", show([\"\\\\\", \"|\", \"#\"]), show(roundTrip([\"\\\\\", \"|\", \"#\"]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc23_valid_sudoku() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One pass, one set. Each filled cell contributes three signatures — this value in this row, in this column, in this box — and the first one already present is the duplicate. Nothing has to be gathered up first, and the scan stops the moment it fails.", "export function isValidSudoku(board: string[][]): boolean {
+  const seen = new Set<string>();
+  for (let r = 0; r < board.length; r++) {
+    for (let c = 0; c < board[r].length; c++) {
+      const value = board[r][c];
+      if (value === \".\") continue;
+      const keys = [
+        `${value} row ${r}`,
+        `${value} col ${c}`,
+        `${value} box ${Math.floor(r / 3) * 3 + Math.floor(c / 3)}`,
+      ];
+      if (keys.some((key) => seen.has(key))) return false;
+      for (const key of keys) seen.add(key);
+    }
+  }
+  return true;
+}"),
+      #("Solution 2 · By unit", "Turn the board into the 27 things being constrained — nine rows, nine columns, nine boxes — and the problem collapses to \"does any of these contain a repeat?\". More passes than the signature set, but the constraint is stated once and the box arithmetic is confined to building the units.", "export function isValidSudoku(board: string[][]): boolean {
+  return units(board).every(noDuplicates);
+}
+
+function units(board: string[][]): string[][] {
+  const columns = board[0].map((_, c) => board.map((row) => row[c]));
+  const boxes: string[][] = [];
+  for (let br = 0; br < 9; br += 3) {
+    for (let bc = 0; bc < 9; bc += 3) {
+      const box: string[] = [];
+      for (let r = br; r < br + 3; r++) {
+        for (let c = bc; c < bc + 3; c++) box.push(board[r][c]);
+      }
+      boxes.push(box);
+    }
+  }
+  return [...board, ...columns, ...boxes];
+}
+
+function noDuplicates(unit: string[]): boolean {
+  const filled = unit.filter((value) => value !== \".\");
+  return filled.length === new Set(filled).size;
+}"),
+    ],
+    check: Check(
+      signature: "export function isValidSudoku(board: string[][]): boolean",
+      starter: "export function isValidSudoku(board: string[][]): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// Nine row strings rather than a 9x9 literal: the board stays readable, and a
+// single changed cell is what each invalid case is.
+const ROWS = [
+  \"53..7....\",
+  \"6..195...\",
+  \".98....6.\",
+  \"8...6...3\",
+  \"4..8.3..1\",
+  \"7...2...6\",
+  \".6....28.\",
+  \"...419..5\",
+  \"....8..79\",
+];
+
+const board = () => ROWS.map((row) => row.split(\"\"));
+
+const withCell = (r: number, c: number, value: string) => {
+  const grid = board();
+  grid[r][c] = value;
+  return grid;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.isValidSudoku !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"isValidSudoku(valid board)\", show(true), show(solution.isValidSudoku(board()))],
+    [\"isValidSudoku(5 twice in row 0)\", show(false), show(solution.isValidSudoku(withCell(0, 2, \"5\")))],
+    [\"isValidSudoku(5 twice in column 0, different boxes)\", show(false), show(solution.isValidSudoku(withCell(3, 0, \"5\")))],
+    [\"isValidSudoku(3 twice in the top-left box only)\", show(false), show(solution.isValidSudoku(withCell(2, 0, \"3\")))],
+    [\"isValidSudoku(empty board)\", show(true), show(solution.isValidSudoku(Array.from({ length: 9 }, () => Array(9).fill(\".\"))))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -1258,6 +1441,8 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc19_binary_search" -> Ok(nc19_binary_search())
     "nc20_find_min_rotated" -> Ok(nc20_find_min_rotated())
     "nc21_search_rotated" -> Ok(nc21_search_rotated())
+    "nc22_encode_decode" -> Ok(nc22_encode_decode())
+    "nc23_valid_sudoku" -> Ok(nc23_valid_sudoku())
     _ -> Error(Nil)
   }
 }

@@ -46,6 +46,10 @@ variants = [
   {"nc20_find_min_rotated", "Solution 2 · Linear scan", "nc20_find_min_rotated__linear_scan"},
   {"nc21_search_rotated", "Solution 1", "nc21_search_rotated"},
   {"nc21_search_rotated", "Solution 2 · Find pivot", "nc21_search_rotated__find_pivot"},
+  {"nc22_encode_decode", "Solution 1", "nc22_encode_decode"},
+  {"nc22_encode_decode", "Solution 2 · Escaping", "nc22_encode_decode__escaping"},
+  {"nc23_valid_sudoku", "Solution 1", "nc23_valid_sudoku"},
+  {"nc23_valid_sudoku", "Solution 2 · By unit", "nc23_valid_sudoku__by_unit"},
 ]
 
 root = Path.dirname(__ENV__.file)

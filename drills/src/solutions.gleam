@@ -55,6 +55,10 @@ import nc20_find_min_rotated
 import nc20_find_min_rotated__linear_scan
 import nc21_search_rotated
 import nc21_search_rotated__find_pivot
+import nc22_encode_decode
+import nc22_encode_decode__escaping
+import nc23_valid_sudoku
+import nc23_valid_sudoku__by_unit
 import tip01_list_patterns
 import tip01_list_patterns__stdlib
 import tip02_tail_recursion
@@ -80,7 +84,9 @@ pub fn main() {
   let variants = [
     // NeetCode 150
     check_contains_duplicate(nc01_contains_duplicate.contains_duplicate),
-    check_contains_duplicate(nc01_contains_duplicate__sorting.contains_duplicate),
+    check_contains_duplicate(
+      nc01_contains_duplicate__sorting.contains_duplicate,
+    ),
     check_valid_anagram(nc02_valid_anagram.is_anagram),
     check_valid_anagram(nc02_valid_anagram__sorting.is_anagram),
     check_two_sum(nc03_two_sum.two_sum),
@@ -148,6 +154,13 @@ pub fn main() {
     check_find_min_rotated(nc20_find_min_rotated__linear_scan.find_min),
     check_search_rotated(nc21_search_rotated.search_rotated),
     check_search_rotated(nc21_search_rotated__find_pivot.search_rotated),
+    check_encode_decode(nc22_encode_decode.encode, nc22_encode_decode.decode),
+    check_encode_decode(
+      nc22_encode_decode__escaping.encode,
+      nc22_encode_decode__escaping.decode,
+    ),
+    check_valid_sudoku(nc23_valid_sudoku.is_valid_sudoku),
+    check_valid_sudoku(nc23_valid_sudoku__by_unit.is_valid_sudoku),
 
     // Gleam Tips
     check_list_patterns(tip01_list_patterns.length, tip01_list_patterns.last),
@@ -221,6 +234,57 @@ pub fn main() {
 }
 
 // --- NeetCode 150 ----------------------------------------------------------
+
+/// Only the round trip is specified — any encoding is legal as long as decode
+/// undoes it — so the check runs both directions and never looks at the wire
+/// format. The awkward inputs are the point: a string containing the encoding's
+/// own delimiter, and the pair ([] against [""]) that a naive join cannot tell
+/// apart.
+fn check_encode_decode(
+  encode: fn(List(String)) -> String,
+  decode: fn(String) -> List(String),
+) -> Nil {
+  let round_trip = fn(strs) { decode(encode(strs)) }
+  let assert True =
+    round_trip(["neet", "code", "love", "you"])
+    == ["neet", "code", "love", "you"]
+  let assert True = round_trip([]) == []
+  let assert True = round_trip(["", ""]) == ["", ""]
+  let assert True = round_trip(["3#x", "a|b"]) == ["3#x", "a|b"]
+  let assert True = round_trip(["\\", "|", "#"]) == ["\\", "|", "#"]
+  Nil
+}
+
+/// Nine row strings rather than a 9x9 literal, and one changed cell per case:
+/// a duplicate that is only in a row, only in a column, and only in a box, so a
+/// solution that forgets one of the three units cannot pass.
+fn check_valid_sudoku(f: fn(List(List(String))) -> Bool) -> Nil {
+  let rows = [
+    "53..7....", "6..195...", ".98....6.", "8...6...3", "4..8.3..1", "7...2...6",
+    ".6....28.", "...419..5", "....8..79",
+  ]
+  let board = list.map(rows, string.to_graphemes)
+  let with_cell = fn(r: Int, c: Int, value: String) {
+    list.index_map(board, fn(row, i) {
+      case i == r {
+        False -> row
+        True ->
+          list.index_map(row, fn(cell, j) {
+            case j == c {
+              True -> value
+              False -> cell
+            }
+          })
+      }
+    })
+  }
+  let assert True = f(board)
+  let assert False = f(with_cell(0, 2, "5"))
+  let assert False = f(with_cell(3, 0, "5"))
+  let assert False = f(with_cell(2, 0, "3"))
+  let assert True = f(list.repeat(list.repeat(".", 9), 9))
+  Nil
+}
 
 fn check_contains_duplicate(f: fn(List(Int)) -> Bool) -> Nil {
   let assert True = f([1, 2, 3, 1])
