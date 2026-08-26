@@ -1,0 +1,1 @@
+The same question with no memory at all. One pointer steps once per round, another twice, and they meet inside whatever cycle exists — meeting at 1 means the cycle is the fixed point, meeting anywhere else means it is not. Constant space, and the same trick that finds a cycle in a linked list.

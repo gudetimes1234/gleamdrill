@@ -3218,6 +3218,522 @@ __case__(\"reverse(1463847412)\", 2147483641, reverse(1463847412))",
   )
 }
 
+pub fn nc56_rotate_image() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A quarter turn is two reflections: through the main diagonal, then through the vertical centre line. Both are trivial to write and neither needs index arithmetic, which is why this beats memorising the four-way element cycle — and why it is easy to get the direction right by reasoning rather than recall.", "def rotate(matrix):
+    # A quarter turn is a reflection through the main diagonal followed by a
+    # reflection through the vertical centre line. Two easy operations instead
+    # of one four-way element cycle, and neither needs index arithmetic.
+    return [list(row)[::-1] for row in zip(*matrix)]"),
+      #("Solution 2 · By index", "Straight from where each element lands: after a clockwise quarter turn the entry at (row, column) came from (n − 1 − column, row). Deriving that mapping once, on paper, is the surest way to stop guessing which way round the rotation goes.", "def rotate(matrix):
+    # Straight from where each element lands: after a clockwise quarter turn the
+    # entry at (row, column) came from (n - 1 - column, row). Writing the mapping
+    # out once is the surest way not to get the direction backwards.
+    n = len(matrix)
+    return [[matrix[n - 1 - c][r] for c in range(n)] for r in range(n)]"),
+    ],
+    check: Check(
+      signature: "def rotate(matrix):",
+      starter: "def rotate(matrix):
+    pass",
+      harness: "try:
+    (rotate)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"rotate([[1, 2, 3], [4, 5, 6], [7, 8, 9]])\", [[7, 4, 1], [8, 5, 2], [9, 6, 3]], rotate([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+__case__(\"rotate([[1, 2], [3, 4]])\", [[3, 1], [4, 2]], rotate([[1, 2], [3, 4]]))
+__case__(\"rotate([[1]])\", [[1]], rotate([[1]]))
+__case__(\"rotate([])\", [], rotate([]))
+__case__(\"rotate(4x4)\", [[15, 13, 2, 5], [14, 3, 4, 1], [12, 6, 8, 9], [16, 7, 10, 11]], rotate([[5, 1, 9, 11], [2, 4, 8, 10], [13, 3, 6, 7], [15, 14, 12, 16]]))",
+    ),
+  )
+}
+
+pub fn nc57_spiral_matrix() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Take the top row, then turn the problem ninety degrees and do it again. Rotating what is left anticlockwise puts the column you would have walked down next along the top, so there is only ever one move to make and no boundary bookkeeping at all.", "def spiralOrder(matrix):
+    # Take the top row, then turn the problem ninety degrees and do it again.
+    # Rotating what is left anticlockwise puts the column you would have walked
+    # down next along the top, so there is only ever one move to make.
+    out = []
+    while matrix:
+        out.extend(matrix[0])
+        matrix = [list(row) for row in zip(*matrix[1:])][::-1]
+    return out"),
+      #("Solution 2 · Boundaries", "Four boundaries closing in, each side walked and then retired. The two guards are the whole difficulty: on a single remaining row the top and bottom edges are the same edge, and on a single column the left and right are, so walking both emits those cells twice.", "def spiralOrder(matrix):
+    if not matrix:
+        return []
+
+    # Four boundaries closing in. Each side is walked and then retired, and the
+    # two guards below are the ones everybody forgets: on a single remaining row
+    # or column the bottom and top edges are the same edge, so walking both
+    # would emit it twice.
+    top, bottom = 0, len(matrix) - 1
+    left, right = 0, len(matrix[0]) - 1
+    out = []
+
+    while top <= bottom and left <= right:
+        for c in range(left, right + 1):
+            out.append(matrix[top][c])
+        for r in range(top + 1, bottom + 1):
+            out.append(matrix[r][right])
+        if top < bottom:
+            for c in range(right - 1, left - 1, -1):
+                out.append(matrix[bottom][c])
+        if left < right:
+            for r in range(bottom - 1, top, -1):
+                out.append(matrix[r][left])
+        top, bottom, left, right = top + 1, bottom - 1, left + 1, right - 1
+
+    return out"),
+    ],
+    check: Check(
+      signature: "def spiralOrder(matrix):",
+      starter: "def spiralOrder(matrix):
+    pass",
+      harness: "try:
+    (spiralOrder)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"spiralOrder([[1, 2, 3], [4, 5, 6], [7, 8, 9]])\", [1, 2, 3, 6, 9, 8, 7, 4, 5], spiralOrder([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+__case__(\"spiralOrder([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])\", [1, 2, 3, 4, 8, 12, 11, 10, 9, 5, 6, 7], spiralOrder([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]))
+__case__(\"spiralOrder([[1]])\", [1], spiralOrder([[1]]))
+__case__(\"spiralOrder([])\", [], spiralOrder([]))
+__case__(\"spiralOrder([[1, 2, 3]])\", [1, 2, 3], spiralOrder([[1, 2, 3]]))
+__case__(\"spiralOrder([[1], [2], [3]])\", [1, 2, 3], spiralOrder([[1], [2], [3]]))",
+    ),
+  )
+}
+
+pub fn nc58_set_matrix_zeroes() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two passes, and they cannot be one: a zero written as you go is indistinguishable from a zero that was already there, so the grid would clear itself entirely. Record which rows and columns are doomed first, then apply. Recognising why one pass fails is the point of the problem.", "def setZeroes(matrix):
+    # Two passes, and they cannot be one: writing a zero as you find it would be
+    # indistinguishable from a zero that was already there, and the whole grid
+    # would clear. So record which rows and columns are doomed first, then apply.
+    rows = set()
+    columns = set()
+    for r, row in enumerate(matrix):
+        for c, value in enumerate(row):
+            if value == 0:
+                rows.add(r)
+                columns.add(c)
+
+    return [
+        [0 if r in rows or c in columns else value for c, value in enumerate(row)]
+        for r, row in enumerate(matrix)
+    ]"),
+      #("Solution 2 · By scanning", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+The condition stated outright: a cell clears exactly when its own row holds a zero or its own column does. Nothing recorded, nothing ordered, so the two-pass trap cannot arise — at the cost of rescanning a row and a column for every cell.", "def setZeroes(matrix):
+    # The condition stated outright: a cell is cleared exactly when its own row
+    # holds a zero or its own column does. Nothing is recorded and nothing is
+    # ordered, so the two-pass trap cannot arise -- at the cost of rescanning a
+    # row and a column for every single cell.
+    columns = [list(column) for column in zip(*matrix)]
+    return [
+        [0 if 0 in row or 0 in columns[c] else value for c, value in enumerate(row)]
+        for row in matrix
+    ]"),
+    ],
+    check: Check(
+      signature: "def setZeroes(matrix):",
+      starter: "def setZeroes(matrix):
+    pass",
+      harness: "try:
+    (setZeroes)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"setZeroes([[1, 1, 1], [1, 0, 1], [1, 1, 1]])\", [[1, 0, 1], [0, 0, 0], [1, 0, 1]], setZeroes([[1, 1, 1], [1, 0, 1], [1, 1, 1]]))
+__case__(\"setZeroes([[0, 1, 2, 0], [3, 4, 5, 2], [1, 3, 1, 5]])\", [[0, 0, 0, 0], [0, 4, 5, 0], [0, 3, 1, 0]], setZeroes([[0, 1, 2, 0], [3, 4, 5, 2], [1, 3, 1, 5]]))
+__case__(\"setZeroes([[1]])\", [[1]], setZeroes([[1]]))
+__case__(\"setZeroes([[0]])\", [[0]], setZeroes([[0]]))
+__case__(\"setZeroes([])\", [], setZeroes([]))
+__case__(\"setZeroes([[1, 2], [3, 4]])\", [[1, 2], [3, 4]], setZeroes([[1, 2], [3, 4]]))",
+    ),
+  )
+}
+
+pub fn nc59_happy_number() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The sequence must repeat: sums of squared digits are bounded, so only finitely many values are reachable and the walk has to revisit one. That turns \"does it loop?\" into a set lookup, and the answer is whether the value it settles on is 1.", "def isHappy(n):
+    # The sequence has to repeat eventually -- squares of digits are bounded, so
+    # there are only finitely many values it can reach. Remembering what has
+    # been seen turns \"does it loop?\" into a set lookup.
+    seen = set()
+    while n != 1 and n not in seen:
+        seen.add(n)
+        n = squareDigits(n)
+    return n == 1
+
+
+def squareDigits(n):
+    total = 0
+    while n:
+        digit = n % 10
+        total += digit * digit
+        n //= 10
+    return total"),
+      #("Solution 2 · Floyd cycle", "The same question with no memory at all. One pointer steps once per round, another twice, and they meet inside whatever cycle exists — meeting at 1 means the cycle is the fixed point, meeting anywhere else means it is not. Constant space, and the same trick that finds a cycle in a linked list.", "def isHappy(n):
+    # The same question with no memory at all: run one pointer at single speed
+    # and another at double, and they meet inside whatever cycle exists. Meeting
+    # at 1 means the cycle is the fixed point; meeting anywhere else means it is
+    # not. Constant space, which is the whole reason to know it.
+    slow = n
+    fast = squareDigits(n)
+    while slow != fast:
+        slow = squareDigits(slow)
+        fast = squareDigits(squareDigits(fast))
+    return slow == 1
+
+
+def squareDigits(n):
+    total = 0
+    while n:
+        digit = n % 10
+        total += digit * digit
+        n //= 10
+    return total"),
+    ],
+    check: Check(
+      signature: "def isHappy(n):
+
+def squareDigits(n):",
+      starter: "def isHappy(n):
+    pass
+
+def squareDigits(n):
+    pass",
+      harness: "try:
+    (isHappy)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"isHappy(19)\", True, isHappy(19))
+__case__(\"isHappy(2)\", False, isHappy(2))
+__case__(\"isHappy(1)\", True, isHappy(1))
+__case__(\"isHappy(7)\", True, isHappy(7))
+__case__(\"isHappy(4)\", False, isHappy(4))
+__case__(\"isHappy(100)\", True, isHappy(100))",
+    ),
+  )
+}
+
+pub fn nc60_plus_one() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Adding one is a carry that starts at 1 and dies as soon as a digit below nine absorbs it. The only case worth care is when it never does — all nines — and the number grows a digit at the front.", "def plusOne(digits):
+    # Adding one is a carry that starts at 1 and dies as soon as a digit below
+    # nine absorbs it. The only interesting case is when it never does, and the
+    # number grows a digit.
+    out = []
+    carry = 1
+    for digit in reversed(digits):
+        total = digit + carry
+        out.append(total % 10)
+        carry = total // 10
+
+    if carry:
+        out.append(carry)
+    return out[::-1]"),
+      #("Solution 2 · Via number", "Fold the digits into a number, add one, take it apart again. Shorter, and safe in a language with arbitrary-precision integers; in one without, this is exactly the version that breaks, and being handed digits rather than a number is the problem telling you so.", "def plusOne(digits):
+    # Fold the digits into a number, add one, take it apart again. Shorter, and
+    # in Python it is even safe -- integers are arbitrary precision. In a
+    # language where they are not, this is exactly the version that breaks, and
+    # handing you digits rather than a number is the problem saying so.
+    value = 0
+    for digit in digits:
+        value = value * 10 + digit
+    return [int(c) for c in str(value + 1)]"),
+    ],
+    check: Check(
+      signature: "def plusOne(digits):",
+      starter: "def plusOne(digits):
+    pass",
+      harness: "try:
+    (plusOne)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"plusOne([1, 2, 3])\", [1, 2, 4], plusOne([1, 2, 3]))
+__case__(\"plusOne([4, 3, 2, 1])\", [4, 3, 2, 2], plusOne([4, 3, 2, 1]))
+__case__(\"plusOne([9])\", [1, 0], plusOne([9]))
+__case__(\"plusOne([9, 9])\", [1, 0, 0], plusOne([9, 9]))
+__case__(\"plusOne([0])\", [1], plusOne([0]))
+__case__(\"plusOne([1, 9, 9])\", [2, 0, 0], plusOne([1, 9, 9]))",
+    ),
+  )
+}
+
+pub fn nc61_pow() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Halving the exponent halves the work: x^n is (x^(n/2))², with one extra multiplication when n is odd. O(log n) multiplications rather than n. A negative exponent is one reciprocal at the end, and the recursion bottoms out at n = 0 returning 1.", "def myPow(x, n):
+    if n < 0:
+        return 1 / power(x, -n)
+    return power(x, n)
+
+
+# Halving the exponent halves the work: x^n is (x^(n/2))^2, with one extra
+# multiplication when n is odd. O(log n) multiplications rather than n.
+def power(x, n):
+    if n == 0:
+        return 1.0
+    half = power(x, n // 2)
+    return half * half * x if n % 2 else half * half"),
+      #("Solution 2 · Repeated multiplication", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Multiply n times. Fine for small exponents, and it makes the saving obvious: the fast version does about log₂(n) multiplications where this one does n — thirty against a billion.", "def myPow(x, n):
+    magnitude = 1.0
+    for _ in range(abs(n)):
+        magnitude *= x
+    return 1 / magnitude if n < 0 else magnitude"),
+    ],
+    check: Check(
+      signature: "def myPow(x, n):
+
+def power(x, n):",
+      starter: "def myPow(x, n):
+    pass
+
+def power(x, n):
+    pass",
+      harness: "try:
+    (myPow)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"myPow(2.0, 10)\", 1024.0, myPow(2.0, 10))
+__case__(\"myPow(2.0, -2)\", 0.25, myPow(2.0, -2))
+__case__(\"myPow(2.0, 0)\", 1.0, myPow(2.0, 0))
+__case__(\"myPow(0.5, 3)\", 0.125, myPow(0.5, 3))
+__case__(\"myPow(-2.0, 3)\", -8.0, myPow(-2.0, 3))
+__case__(\"myPow(2.0, 1)\", 2.0, myPow(2.0, 1))
+__case__(\"myPow(0.0, 5)\", 0.0, myPow(0.0, 5))",
+    ),
+  )
+}
+
+pub fn nc62_multiply_strings() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Long multiplication with the carrying postponed. Digit i of one number times digit j of the other always lands at position i + j, so every product drops straight into its slot and the carries are settled in one sweep at the end. Deferring the carry is what keeps the inner loop free of bookkeeping.", "def multiply(num1, num2):
+    if num1 == \"0\" or num2 == \"0\":
+        return \"0\"
+
+    a = [int(c) for c in reversed(num1)]
+    b = [int(c) for c in reversed(num2)]
+
+    # Long multiplication with the carrying postponed. Digit i of one number
+    # times digit j of the other always lands at position i + j, so every
+    # product can be dropped straight into its slot and the carries settled in
+    # one sweep at the end.
+    slots = [0] * (len(a) + len(b))
+    for i, x in enumerate(a):
+        for j, y in enumerate(b):
+            slots[i + j] += x * y
+
+    carry = 0
+    digits = []
+    for slot in slots:
+        total = slot + carry
+        digits.append(total % 10)
+        carry = total // 10
+
+    return \"\".join(str(d) for d in reversed(digits)).lstrip(\"0\") or \"0\""),
+      #("Solution 2 · Partial sums", "Long multiplication exactly as taught: one partial product per digit of the second number, each shifted left by its position, all added up. It needs string addition as well as string multiplication — which is why the accumulating version exists, and why writing add once is worth it anyway.", "def multiply(num1, num2):
+    if num1 == \"0\" or num2 == \"0\":
+        return \"0\"
+
+    # Long multiplication exactly as taught: one partial product per digit of
+    # the second number, each shifted left by its position, all added up. It
+    # needs string addition as well as string multiplication, which is why the
+    # accumulating version exists -- but writing add once is worth it.
+    total = \"0\"
+    for shift, digit in enumerate(reversed(num2)):
+        total = add(total, timesDigit(num1, int(digit)) + \"0\" * shift)
+    return total
+
+
+def timesDigit(number, digit):
+    out = []
+    carry = 0
+    for c in reversed(number):
+        product = int(c) * digit + carry
+        out.append(product % 10)
+        carry = product // 10
+    if carry:
+        out.append(carry)
+    return \"\".join(str(d) for d in reversed(out)).lstrip(\"0\") or \"0\"
+
+
+def add(left, right):
+    out = []
+    carry = 0
+    i, j = len(left) - 1, len(right) - 1
+    while i >= 0 or j >= 0 or carry:
+        total = carry
+        if i >= 0:
+            total += int(left[i])
+            i -= 1
+        if j >= 0:
+            total += int(right[j])
+            j -= 1
+        out.append(total % 10)
+        carry = total // 10
+    return \"\".join(str(d) for d in reversed(out)).lstrip(\"0\") or \"0\""),
+    ],
+    check: Check(
+      signature: "def multiply(num1, num2):",
+      starter: "def multiply(num1, num2):
+    pass",
+      harness: "try:
+    (multiply)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"multiply('2', '3')\", '6', multiply('2', '3'))
+__case__(\"multiply('123', '456')\", '56088', multiply('123', '456'))
+__case__(\"multiply('0', '52')\", '0', multiply('0', '52'))
+__case__(\"multiply('9', '9')\", '81', multiply('9', '9'))
+__case__(\"multiply('999', '999')\", '998001', multiply('999', '999'))
+__case__(\"multiply('123456789', '987654321')\", '121932631112635269', multiply('123456789', '987654321'))",
+    ),
+  )
+}
+
+pub fn nc63_detect_squares() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Choosing the corner diagonally opposite fixes the entire square: the other two corners can only be at (x, py) and (px, y). So the scan is over stored points that share neither coordinate and sit on a true diagonal, and the three corner counts multiply — a repeated point genuinely forms a separate square.", "class DetectSquares:
+    def __init__(self):
+        self.counts = {}
+
+    def add(self, point):
+        key = (point[0], point[1])
+        self.counts[key] = self.counts.get(key, 0) + 1
+
+    def count(self, point):
+        x, y = point
+        total = 0
+
+        # Pick the corner diagonally opposite: that one choice fixes the whole
+        # square, because the other two corners must be at (x, py) and (px, y).
+        # A valid diagonal partner shares neither coordinate and sits on a true
+        # diagonal, and duplicates multiply rather than repeat.
+        for (px, py), copies in self.counts.items():
+            if px == x or py == y or abs(px - x) != abs(py - y):
+                continue
+            total += copies * self.counts.get((x, py), 0) * self.counts.get((px, y), 0)
+
+        return total"),
+      #("Solution 2 · By side length", "Choose the corner directly above or below instead. That fixes the side length rather than the square, so there are two candidates to check per partner — the remaining corners can be to the left or to the right. Same complexity, and a useful reminder that which corner you pivot on changes how much is determined.", "class DetectSquares:
+    def __init__(self):
+        self.counts = {}
+
+    def add(self, point):
+        key = (point[0], point[1])
+        self.counts[key] = self.counts.get(key, 0) + 1
+
+    def count(self, point):
+        x, y = point
+        total = 0
+
+        # Pick the corner directly above or below instead. That fixes the side
+        # length, which leaves two squares to check rather than one -- the
+        # remaining corners can be to the left or to the right.
+        for (px, py), copies in self.counts.items():
+            if px != x or py == y:
+                continue
+            side = abs(py - y)
+            for column in (x + side, x - side):
+                total += (
+                    copies
+                    * self.counts.get((column, y), 0)
+                    * self.counts.get((column, py), 0)
+                )
+
+        return total"),
+    ],
+    check: Check(
+      signature: "class DetectSquares:
+    def __init__(self):
+    def add(self, point):
+    def count(self, point):",
+      starter: "class DetectSquares:
+    def __init__(self):
+        pass
+    def add(self, point):
+        pass
+    def count(self, point):
+        pass",
+      harness: "try:
+    (DetectSquares)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__store__ = DetectSquares()
+__store__.add([3, 10])
+__store__.add([11, 2])
+__store__.add([3, 2])
+
+__case__(\"count([11, 10]) with one of each corner\", 1, __store__.count([11, 10]))
+__case__(\"count([14, 8]) -- no square\", 0, __store__.count([14, 8]))
+
+__store__.add([11, 2])
+
+__case__(\"count([11, 10]) after adding [11, 2] twice\", 2, __store__.count([11, 10]))
+__case__(\"count on an empty store\", 0, DetectSquares().count([0, 0]))
+
+__unit__ = DetectSquares()
+__unit__.add([0, 1])
+__unit__.add([1, 0])
+__unit__.add([1, 1])
+
+__case__(\"count([0, 0]) on the unit square\", 1, __unit__.count([0, 0]))",
+    ),
+  )
+}
+
 pub fn tip01_counter() -> Embedded {
   Embedded(
     solutions: [
@@ -3647,6 +4163,14 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc53_missing_number" -> Ok(nc53_missing_number())
     "nc54_sum_of_two_integers" -> Ok(nc54_sum_of_two_integers())
     "nc55_reverse_integer" -> Ok(nc55_reverse_integer())
+    "nc56_rotate_image" -> Ok(nc56_rotate_image())
+    "nc57_spiral_matrix" -> Ok(nc57_spiral_matrix())
+    "nc58_set_matrix_zeroes" -> Ok(nc58_set_matrix_zeroes())
+    "nc59_happy_number" -> Ok(nc59_happy_number())
+    "nc60_plus_one" -> Ok(nc60_plus_one())
+    "nc61_pow" -> Ok(nc61_pow())
+    "nc62_multiply_strings" -> Ok(nc62_multiply_strings())
+    "nc63_detect_squares" -> Ok(nc63_detect_squares())
     "tip01_counter" -> Ok(tip01_counter())
     "tip02_defaultdict" -> Ok(tip02_defaultdict())
     "tip03_deque" -> Ok(tip03_deque())

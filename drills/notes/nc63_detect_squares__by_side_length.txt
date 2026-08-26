@@ -1,0 +1,1 @@
+Choose the corner directly above or below instead. That fixes the side length rather than the square, so there are two candidates to check per partner — the remaining corners can be to the left or to the right. Same complexity, and a useful reminder that which corner you pivot on changes how much is determined.

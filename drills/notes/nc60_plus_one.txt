@@ -1,0 +1,1 @@
+Adding one is a carry that starts at 1 and dies as soon as a digit below nine absorbs it. The only case worth care is when it never does — all nines — and the number grows a digit at the front.

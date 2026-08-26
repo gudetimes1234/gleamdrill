@@ -1,0 +1,2 @@
+@shared/brute-force-baseline
+The condition stated outright: a cell clears exactly when its own row holds a zero or its own column does. Nothing recorded, nothing ordered, so the two-pass trap cannot arise — at the cost of rescanning a row and a column for every cell.

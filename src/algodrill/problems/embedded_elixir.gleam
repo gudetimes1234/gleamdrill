@@ -2467,6 +2467,405 @@ end"),
   ]
 }
 
+pub fn nc56_rotate_image() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "A quarter turn is two reflections: through the main diagonal, then through the vertical centre line. Both are trivial to write and neither needs index arithmetic, which is why this beats memorising the four-way element cycle — and why it is easy to get the direction right by reasoning rather than recall.", "defmodule Solution do
+  # A quarter turn is a reflection through the main diagonal followed by a
+  # reflection through the vertical centre line. Two easy operations instead of
+  # one four-way element cycle, and neither needs index arithmetic.
+  def rotate([]), do: []
+
+  def rotate(matrix) do
+    matrix
+    |> Enum.zip_with(& &1)
+    |> Enum.map(&Enum.reverse/1)
+  end
+end"),
+    #("Solution 2 · By index", "Straight from where each element lands: after a clockwise quarter turn the entry at (row, column) came from (n − 1 − column, row). Deriving that mapping once, on paper, is the surest way to stop guessing which way round the rotation goes.", "defmodule Solution do
+  # Straight from where each element lands: after a clockwise quarter turn the
+  # entry at (row, column) came from (n - 1 - column, row). Writing the mapping
+  # out once is the surest way not to get the direction backwards.
+  def rotate([]), do: []
+
+  def rotate(matrix) do
+    n = length(matrix)
+    rows = List.to_tuple(Enum.map(matrix, &List.to_tuple/1))
+
+    for r <- 0..(n - 1)//1 do
+      for c <- 0..(n - 1)//1, do: rows |> elem(n - 1 - c) |> elem(r)
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc57_spiral_matrix() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Take the top row, then turn the problem ninety degrees and do it again. Rotating what is left anticlockwise puts the column you would have walked down next along the top, so there is only ever one move to make and no boundary bookkeeping at all.", "defmodule Solution do
+  # Take the top row, then turn the problem ninety degrees and do it again.
+  # Rotating what is left anticlockwise puts the column you would have walked
+  # down next along the top, so there is only ever one move to make.
+  def spiral_order([]), do: []
+  def spiral_order([[] | _]), do: []
+
+  def spiral_order([top | rest]), do: top ++ spiral_order(rotate_anticlockwise(rest))
+
+  defp rotate_anticlockwise([]), do: []
+
+  defp rotate_anticlockwise(matrix) do
+    matrix
+    |> Enum.zip_with(& &1)
+    |> Enum.reverse()
+  end
+end"),
+    #("Solution 2 · Boundaries", "Four boundaries closing in, each side walked and then retired. The two guards are the whole difficulty: on a single remaining row the top and bottom edges are the same edge, and on a single column the left and right are, so walking both emits those cells twice.", "defmodule Solution do
+  def spiral_order([]), do: []
+
+  # Four boundaries closing in. Each side is walked and then retired, and the
+  # two guards below are the ones everybody forgets: on a single remaining row
+  # or column the bottom and top edges are the same edge, so walking both would
+  # emit it twice.
+  def spiral_order(matrix) do
+    rows = List.to_tuple(Enum.map(matrix, &List.to_tuple/1))
+    walk(rows, 0, length(matrix) - 1, 0, length(hd(matrix)) - 1, [])
+  end
+
+  defp walk(_rows, top, bottom, left, right, acc) when top > bottom or left > right,
+    do: Enum.reverse(acc)
+
+  defp walk(rows, top, bottom, left, right, acc) do
+    acc = Enum.reduce(left..right//1, acc, fn c, acc -> [at(rows, top, c) | acc] end)
+
+    acc =
+      if top + 1 <= bottom,
+        do: Enum.reduce((top + 1)..bottom//1, acc, fn r, acc -> [at(rows, r, right) | acc] end),
+        else: acc
+
+    acc =
+      if top < bottom and left <= right - 1,
+        do:
+          Enum.reduce((right - 1)..left//-1, acc, fn c, acc -> [at(rows, bottom, c) | acc] end),
+        else: acc
+
+    acc =
+      if left < right and top + 1 <= bottom - 1,
+        do:
+          Enum.reduce((bottom - 1)..(top + 1)//-1, acc, fn r, acc -> [at(rows, r, left) | acc] end),
+        else: acc
+
+    walk(rows, top + 1, bottom - 1, left + 1, right - 1, acc)
+  end
+
+  defp at(rows, r, c), do: rows |> elem(r) |> elem(c)
+end"),
+  ]
+}
+
+pub fn nc58_set_matrix_zeroes() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Two passes, and they cannot be one: a zero written as you go is indistinguishable from a zero that was already there, so the grid would clear itself entirely. Record which rows and columns are doomed first, then apply. Recognising why one pass fails is the point of the problem.", "defmodule Solution do
+  # Two passes, and they cannot be one: writing a zero as you find it would be
+  # indistinguishable from a zero that was already there, and the whole grid
+  # would clear. So record which rows and columns are doomed first, then apply.
+  def set_zeroes(matrix) do
+    doomed =
+      matrix
+      |> Enum.with_index()
+      |> Enum.flat_map(fn {row, r} ->
+        row
+        |> Enum.with_index()
+        |> Enum.filter(fn {value, _c} -> value == 0 end)
+        |> Enum.map(fn {_value, c} -> {r, c} end)
+      end)
+
+    rows = MapSet.new(doomed, fn {r, _c} -> r end)
+    columns = MapSet.new(doomed, fn {_r, c} -> c end)
+
+    matrix
+    |> Enum.with_index()
+    |> Enum.map(fn {row, r} ->
+      row
+      |> Enum.with_index()
+      |> Enum.map(fn {value, c} ->
+        if MapSet.member?(rows, r) or MapSet.member?(columns, c), do: 0, else: value
+      end)
+    end)
+  end
+end"),
+    #("Solution 2 · By scanning", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+The condition stated outright: a cell clears exactly when its own row holds a zero or its own column does. Nothing recorded, nothing ordered, so the two-pass trap cannot arise — at the cost of rescanning a row and a column for every cell.", "defmodule Solution do
+  def set_zeroes([]), do: []
+
+  # The condition stated outright: a cell is cleared exactly when its own row
+  # holds a zero or its own column does. Nothing is recorded and nothing is
+  # ordered, so the two-pass trap cannot arise -- at the cost of rescanning a
+  # row and a column for every single cell.
+  def set_zeroes(matrix) do
+    columns = matrix |> Enum.zip_with(& &1) |> List.to_tuple()
+
+    Enum.map(matrix, fn row ->
+      row
+      |> Enum.with_index()
+      |> Enum.map(fn {value, c} ->
+        if 0 in row or 0 in elem(columns, c), do: 0, else: value
+      end)
+    end)
+  end
+end"),
+  ]
+}
+
+pub fn nc59_happy_number() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The sequence must repeat: sums of squared digits are bounded, so only finitely many values are reachable and the walk has to revisit one. That turns \"does it loop?\" into a set lookup, and the answer is whether the value it settles on is 1.", "defmodule Solution do
+  # The sequence has to repeat eventually -- squares of digits are bounded, so
+  # there are only finitely many values it can reach. Remembering what has been
+  # seen turns \"does it loop?\" into a set lookup.
+  def is_happy(n), do: walk(n, MapSet.new())
+
+  defp walk(1, _seen), do: true
+
+  defp walk(n, seen) do
+    if MapSet.member?(seen, n),
+      do: false,
+      else: walk(square_digits(n), MapSet.put(seen, n))
+  end
+
+  defp square_digits(0), do: 0
+  defp square_digits(n), do: rem(n, 10) * rem(n, 10) + square_digits(div(n, 10))
+end"),
+    #("Solution 2 · Floyd cycle", "The same question with no memory at all. One pointer steps once per round, another twice, and they meet inside whatever cycle exists — meeting at 1 means the cycle is the fixed point, meeting anywhere else means it is not. Constant space, and the same trick that finds a cycle in a linked list.", "defmodule Solution do
+  # The same question with no memory at all: run one pointer at single speed and
+  # another at double, and they meet inside whatever cycle exists. Meeting at 1
+  # means the cycle is the fixed point; meeting anywhere else means it is not.
+  # Constant space, which is the whole reason to know it.
+  def is_happy(n), do: chase(n, square_digits(n))
+
+  defp chase(same, same), do: same == 1
+
+  defp chase(slow, fast),
+    do: chase(square_digits(slow), fast |> square_digits() |> square_digits())
+
+  defp square_digits(0), do: 0
+  defp square_digits(n), do: rem(n, 10) * rem(n, 10) + square_digits(div(n, 10))
+end"),
+  ]
+}
+
+pub fn nc60_plus_one() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Adding one is a carry that starts at 1 and dies as soon as a digit below nine absorbs it. The only case worth care is when it never does — all nines — and the number grows a digit at the front.", "defmodule Solution do
+  # Adding one is a carry that starts at 1 and dies as soon as a digit below
+  # nine absorbs it. The only interesting case is when it never does, and the
+  # number grows a digit.
+  def plus_one(digits) do
+    {carry, out} =
+      digits
+      |> Enum.reverse()
+      |> Enum.reduce({1, []}, fn digit, {carry, acc} ->
+        total = digit + carry
+        {div(total, 10), [rem(total, 10) | acc]}
+      end)
+
+    if carry == 0, do: out, else: [carry | out]
+  end
+end"),
+    #("Solution 2 · Via number", "Fold the digits into a number, add one, take it apart again. Shorter, and safe in a language with arbitrary-precision integers; in one without, this is exactly the version that breaks, and being handed digits rather than a number is the problem telling you so.", "defmodule Solution do
+  # Fold the digits into a number, add one, take it apart again. Shorter, and in
+  # Elixir it is even safe -- integers are arbitrary precision. In a language
+  # where they are not, this is exactly the version that breaks, and handing you
+  # digits rather than a number is the problem saying so.
+  def plus_one(digits) do
+    value = Enum.reduce(digits, 0, fn digit, acc -> acc * 10 + digit end)
+    Integer.digits(value + 1)
+  end
+end"),
+  ]
+}
+
+pub fn nc61_pow() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Halving the exponent halves the work: x^n is (x^(n/2))², with one extra multiplication when n is odd. O(log n) multiplications rather than n. A negative exponent is one reciprocal at the end, and the recursion bottoms out at n = 0 returning 1.", "defmodule Solution do
+  def my_pow(x, n) when n < 0, do: 1 / power(x, -n)
+  def my_pow(x, n), do: power(x, n)
+
+  # Halving the exponent halves the work: x^n is (x^(n/2))^2, with one extra
+  # multiplication when n is odd. O(log n) multiplications rather than n.
+  defp power(_x, 0), do: 1.0
+
+  defp power(x, n) do
+    half = power(x, div(n, 2))
+    if rem(n, 2) == 0, do: half * half, else: half * half * x
+  end
+end"),
+    #("Solution 2 · Repeated multiplication", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Multiply n times. Fine for small exponents, and it makes the saving obvious: the fast version does about log₂(n) multiplications where this one does n — thirty against a billion.", "defmodule Solution do
+  def my_pow(x, n) do
+    magnitude = Enum.reduce(1..abs(n)//1, 1.0, fn _, acc -> acc * x end)
+    if n < 0, do: 1 / magnitude, else: magnitude
+  end
+end"),
+  ]
+}
+
+pub fn nc62_multiply_strings() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Long multiplication with the carrying postponed. Digit i of one number times digit j of the other always lands at position i + j, so every product drops straight into its slot and the carries are settled in one sweep at the end. Deferring the carry is what keeps the inner loop free of bookkeeping.", "defmodule Solution do
+  def multiply(\"0\", _num2), do: \"0\"
+  def multiply(_num1, \"0\"), do: \"0\"
+
+  def multiply(num1, num2) do
+    a = reversed_digits(num1)
+    b = reversed_digits(num2)
+
+    # Long multiplication with the carrying postponed. Digit i of one number
+    # times digit j of the other always lands at position i + j, so every
+    # product can be dropped straight into its slot and the carries settled in
+    # one sweep at the end.
+    slots =
+      for {x, i} <- Enum.with_index(a), {y, j} <- Enum.with_index(b), reduce: %{} do
+        acc -> Map.update(acc, i + j, x * y, &(&1 + x * y))
+      end
+
+    {digits, _carry} =
+      Enum.map_reduce(0..(length(a) + length(b) - 1)//1, 0, fn i, carry ->
+        total = Map.get(slots, i, 0) + carry
+        {rem(total, 10), div(total, 10)}
+      end)
+
+    digits
+    |> Enum.reverse()
+    |> Enum.drop_while(&(&1 == 0))
+    |> Enum.join()
+    |> case do
+      \"\" -> \"0\"
+      text -> text
+    end
+  end
+
+  defp reversed_digits(text) do
+    text |> String.graphemes() |> Enum.reverse() |> Enum.map(&String.to_integer/1)
+  end
+end"),
+    #("Solution 2 · Partial sums", "Long multiplication exactly as taught: one partial product per digit of the second number, each shifted left by its position, all added up. It needs string addition as well as string multiplication — which is why the accumulating version exists, and why writing add once is worth it anyway.", "defmodule Solution do
+  def multiply(\"0\", _num2), do: \"0\"
+  def multiply(_num1, \"0\"), do: \"0\"
+
+  # Long multiplication exactly as taught: one partial product per digit of the
+  # second number, each shifted left by its position, all added up. It needs
+  # string addition as well as string multiplication, which is why the
+  # accumulating version exists -- but writing add once is worth it.
+  def multiply(num1, num2) do
+    num2
+    |> String.graphemes()
+    |> Enum.reverse()
+    |> Enum.with_index()
+    |> Enum.map(fn {digit, shift} ->
+      times_digit(num1, String.to_integer(digit)) <> String.duplicate(\"0\", shift)
+    end)
+    |> Enum.reduce(\"0\", &add/2)
+  end
+
+  defp times_digit(number, digit) do
+    {carry, digits} =
+      number
+      |> String.graphemes()
+      |> Enum.reverse()
+      |> Enum.map(&String.to_integer/1)
+      |> Enum.reduce({0, []}, fn d, {carry, acc} ->
+        product = d * digit + carry
+        {div(product, 10), [rem(product, 10) | acc]}
+      end)
+
+    trim(if carry == 0, do: digits, else: [carry | digits])
+  end
+
+  defp add(left, right) do
+    a = padded(left, right)
+    b = padded(right, left)
+
+    {carry, digits} =
+      Enum.zip(Enum.reverse(a), Enum.reverse(b))
+      |> Enum.reduce({0, []}, fn {x, y}, {carry, acc} ->
+        total = x + y + carry
+        {div(total, 10), [rem(total, 10) | acc]}
+      end)
+
+    trim(if carry == 0, do: digits, else: [carry | digits])
+  end
+
+  defp padded(text, other) do
+    width = max(String.length(text), String.length(other))
+
+    text
+    |> String.pad_leading(width, \"0\")
+    |> String.graphemes()
+    |> Enum.map(&String.to_integer/1)
+  end
+
+  defp trim(digits) do
+    case digits |> Enum.drop_while(&(&1 == 0)) |> Enum.join() do
+      \"\" -> \"0\"
+      text -> text
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc63_detect_squares() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Choosing the corner diagonally opposite fixes the entire square: the other two corners can only be at (x, py) and (px, y). So the scan is over stored points that share neither coordinate and sit on a true diagonal, and the three corner counts multiply — a repeated point genuinely forms a separate square.", "defmodule Solution do
+  # Immutable, so the store is a value that add returns a new version of.
+  def new, do: %{}
+
+  def add(counts, {x, y}), do: Map.update(counts, {x, y}, 1, &(&1 + 1))
+
+  # Pick the corner diagonally opposite: that one choice fixes the whole square,
+  # because the other two corners must be at (x, py) and (px, y). A valid
+  # diagonal partner shares neither coordinate and sits on a true diagonal, and
+  # duplicates multiply rather than repeat.
+  def count(counts, {x, y}) do
+    Enum.reduce(counts, 0, fn {{px, py}, copies}, total ->
+      if px != x and py != y and abs(px - x) == abs(py - y) do
+        total + copies * Map.get(counts, {x, py}, 0) * Map.get(counts, {px, y}, 0)
+      else
+        total
+      end
+    end)
+  end
+end"),
+    #("Solution 2 · By side length", "Choose the corner directly above or below instead. That fixes the side length rather than the square, so there are two candidates to check per partner — the remaining corners can be to the left or to the right. Same complexity, and a useful reminder that which corner you pivot on changes how much is determined.", "defmodule Solution do
+  def new, do: %{}
+
+  def add(counts, {x, y}), do: Map.update(counts, {x, y}, 1, &(&1 + 1))
+
+  # Pick the corner directly above or below instead. That fixes the side length,
+  # which leaves two squares to check rather than one -- the remaining corners
+  # can be to the left or to the right.
+  def count(counts, {x, y}) do
+    Enum.reduce(counts, 0, fn {{px, py}, copies}, total ->
+      if px == x and py != y do
+        side = abs(py - y)
+
+        total +
+          copies *
+            (pair(counts, x + side, y, py) + pair(counts, x - side, y, py))
+      else
+        total
+      end
+    end)
+  end
+
+  defp pair(counts, column, low, high) do
+    Map.get(counts, {column, low}, 0) * Map.get(counts, {column, high}, 0)
+  end
+end"),
+  ]
+}
+
 pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -2524,6 +2923,14 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
     "nc53_missing_number" -> Ok(nc53_missing_number())
     "nc54_sum_of_two_integers" -> Ok(nc54_sum_of_two_integers())
     "nc55_reverse_integer" -> Ok(nc55_reverse_integer())
+    "nc56_rotate_image" -> Ok(nc56_rotate_image())
+    "nc57_spiral_matrix" -> Ok(nc57_spiral_matrix())
+    "nc58_set_matrix_zeroes" -> Ok(nc58_set_matrix_zeroes())
+    "nc59_happy_number" -> Ok(nc59_happy_number())
+    "nc60_plus_one" -> Ok(nc60_plus_one())
+    "nc61_pow" -> Ok(nc61_pow())
+    "nc62_multiply_strings" -> Ok(nc62_multiply_strings())
+    "nc63_detect_squares" -> Ok(nc63_detect_squares())
     _ -> Error(Nil)
   }
 }

@@ -1,0 +1,1 @@
+A quarter turn is two reflections: through the main diagonal, then through the vertical centre line. Both are trivial to write and neither needs index arithmetic, which is why this beats memorising the four-way element cycle — and why it is easy to get the direction right by reasoning rather than recall.

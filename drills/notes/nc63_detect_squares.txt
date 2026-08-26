@@ -1,0 +1,1 @@
+Choosing the corner diagonally opposite fixes the entire square: the other two corners can only be at (x, py) and (px, y). So the scan is over stored points that share neither coordinate and sit on a true diagonal, and the three corner counts multiply — a repeated point genuinely forms a separate square.

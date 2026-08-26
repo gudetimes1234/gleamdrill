@@ -1,0 +1,1 @@
+Four boundaries closing in, each side walked and then retired. The two guards are the whole difficulty: on a single remaining row the top and bottom edges are the same edge, and on a single column the left and right are, so walking both emits those cells twice.

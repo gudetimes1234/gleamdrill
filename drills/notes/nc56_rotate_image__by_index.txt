@@ -1,0 +1,1 @@
+Straight from where each element lands: after a clockwise quarter turn the entry at (row, column) came from (n − 1 − column, row). Deriving that mapping once, on paper, is the surest way to stop guessing which way round the rotation goes.

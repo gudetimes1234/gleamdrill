@@ -116,6 +116,22 @@ variants = [
   {"nc54_sum_of_two_integers", "Solution 2 · Full adder", "nc54_sum_of_two_integers__full_adder"},
   {"nc55_reverse_integer", "Solution 1", "nc55_reverse_integer"},
   {"nc55_reverse_integer", "Solution 2 · Via string", "nc55_reverse_integer__via_string"},
+  {"nc56_rotate_image", "Solution 1", "nc56_rotate_image"},
+  {"nc56_rotate_image", "Solution 2 · By index", "nc56_rotate_image__by_index"},
+  {"nc57_spiral_matrix", "Solution 1", "nc57_spiral_matrix"},
+  {"nc57_spiral_matrix", "Solution 2 · Boundaries", "nc57_spiral_matrix__boundaries"},
+  {"nc58_set_matrix_zeroes", "Solution 1", "nc58_set_matrix_zeroes"},
+  {"nc58_set_matrix_zeroes", "Solution 2 · By scanning", "nc58_set_matrix_zeroes__by_scanning"},
+  {"nc59_happy_number", "Solution 1", "nc59_happy_number"},
+  {"nc59_happy_number", "Solution 2 · Floyd cycle", "nc59_happy_number__floyd_cycle"},
+  {"nc60_plus_one", "Solution 1", "nc60_plus_one"},
+  {"nc60_plus_one", "Solution 2 · Via number", "nc60_plus_one__via_number"},
+  {"nc61_pow", "Solution 1", "nc61_pow"},
+  {"nc61_pow", "Solution 2 · Repeated multiplication", "nc61_pow__repeated_multiplication"},
+  {"nc62_multiply_strings", "Solution 1", "nc62_multiply_strings"},
+  {"nc62_multiply_strings", "Solution 2 · Partial sums", "nc62_multiply_strings__partial_sums"},
+  {"nc63_detect_squares", "Solution 1", "nc63_detect_squares"},
+  {"nc63_detect_squares", "Solution 2 · By side length", "nc63_detect_squares__by_side_length"},
 ]
 
 root = Path.dirname(__ENV__.file)

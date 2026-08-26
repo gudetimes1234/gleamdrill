@@ -1,0 +1,1 @@
+Long multiplication exactly as taught: one partial product per digit of the second number, each shifted left by its position, all added up. It needs string addition as well as string multiplication — which is why the accumulating version exists, and why writing add once is worth it anyway.

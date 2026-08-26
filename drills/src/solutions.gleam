@@ -123,6 +123,22 @@ import nc54_sum_of_two_integers
 import nc54_sum_of_two_integers__full_adder
 import nc55_reverse_integer
 import nc55_reverse_integer__via_string
+import nc56_rotate_image
+import nc56_rotate_image__by_index
+import nc57_spiral_matrix
+import nc57_spiral_matrix__boundaries
+import nc58_set_matrix_zeroes
+import nc58_set_matrix_zeroes__by_scanning
+import nc59_happy_number
+import nc59_happy_number__floyd_cycle
+import nc60_plus_one
+import nc60_plus_one__via_number
+import nc61_pow
+import nc61_pow__repeated_multiplication
+import nc62_multiply_strings
+import nc62_multiply_strings__partial_sums
+import nc63_detect_squares
+import nc63_detect_squares__by_side_length
 import tip01_list_patterns
 import tip01_list_patterns__stdlib
 import tip02_tail_recursion
@@ -311,6 +327,30 @@ pub fn main() {
     check_get_sum(nc54_sum_of_two_integers__full_adder.get_sum),
     check_reverse_integer(nc55_reverse_integer.reverse),
     check_reverse_integer(nc55_reverse_integer__via_string.reverse),
+    check_rotate_image(nc56_rotate_image.rotate),
+    check_rotate_image(nc56_rotate_image__by_index.rotate),
+    check_spiral_matrix(nc57_spiral_matrix.spiral_order),
+    check_spiral_matrix(nc57_spiral_matrix__boundaries.spiral_order),
+    check_set_matrix_zeroes(nc58_set_matrix_zeroes.set_zeroes),
+    check_set_matrix_zeroes(nc58_set_matrix_zeroes__by_scanning.set_zeroes),
+    check_happy_number(nc59_happy_number.is_happy),
+    check_happy_number(nc59_happy_number__floyd_cycle.is_happy),
+    check_plus_one(nc60_plus_one.plus_one),
+    check_plus_one(nc60_plus_one__via_number.plus_one),
+    check_pow(nc61_pow.my_pow),
+    check_pow(nc61_pow__repeated_multiplication.my_pow),
+    check_multiply_strings(nc62_multiply_strings.multiply),
+    check_multiply_strings(nc62_multiply_strings__partial_sums.multiply),
+    check_detect_squares(
+      nc63_detect_squares.new,
+      nc63_detect_squares.add,
+      nc63_detect_squares.count,
+    ),
+    check_detect_squares(
+      nc63_detect_squares__by_side_length.new,
+      nc63_detect_squares__by_side_length.add,
+      nc63_detect_squares__by_side_length.count,
+    ),
 
     // Gleam Tips
     check_list_patterns(tip01_list_patterns.length, tip01_list_patterns.last),
@@ -805,6 +845,126 @@ fn check_reverse_integer(f: fn(Int) -> Int) -> Nil {
   let assert True = f(-2_147_483_648) == 0
   // Reverses to exactly six below the maximum: the nearest legal case.
   let assert True = f(1_463_847_412) == 2_147_483_641
+  Nil
+}
+
+fn check_rotate_image(f: fn(List(List(Int))) -> List(List(Int))) -> Nil {
+  let assert True =
+    f([[1, 2, 3], [4, 5, 6], [7, 8, 9]]) == [[7, 4, 1], [8, 5, 2], [9, 6, 3]]
+  let assert True = f([[1, 2], [3, 4]]) == [[3, 1], [4, 2]]
+  let assert True = f([[1]]) == [[1]]
+  let assert True = f([]) == []
+  // Even size, so nothing sits still: a wrong direction shows up immediately.
+  let assert True =
+    f([[5, 1, 9, 11], [2, 4, 8, 10], [13, 3, 6, 7], [15, 14, 12, 16]])
+    == [[15, 13, 2, 5], [14, 3, 4, 1], [12, 6, 8, 9], [16, 7, 10, 11]]
+  Nil
+}
+
+fn check_spiral_matrix(f: fn(List(List(Int))) -> List(Int)) -> Nil {
+  let assert True =
+    f([[1, 2, 3], [4, 5, 6], [7, 8, 9]]) == [1, 2, 3, 6, 9, 8, 7, 4, 5]
+  let assert True =
+    f([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+    == [1, 2, 3, 4, 8, 12, 11, 10, 9, 5, 6, 7]
+  let assert True = f([[1]]) == [1]
+  let assert True = f([]) == []
+  // A single row and a single column: the cases where a boundary walk emits
+  // the same cells twice if it forgets to check.
+  let assert True = f([[1, 2, 3]]) == [1, 2, 3]
+  let assert True = f([[1], [2], [3]]) == [1, 2, 3]
+  Nil
+}
+
+fn check_set_matrix_zeroes(f: fn(List(List(Int))) -> List(List(Int))) -> Nil {
+  let assert True =
+    f([[1, 1, 1], [1, 0, 1], [1, 1, 1]]) == [[1, 0, 1], [0, 0, 0], [1, 0, 1]]
+  // Zeros in the first row and first column, which is what breaks a solution
+  // that uses them as its own scratch space without reading them first.
+  let assert True =
+    f([[0, 1, 2, 0], [3, 4, 5, 2], [1, 3, 1, 5]])
+    == [[0, 0, 0, 0], [0, 4, 5, 0], [0, 3, 1, 0]]
+  let assert True = f([[1]]) == [[1]]
+  let assert True = f([[0]]) == [[0]]
+  let assert True = f([]) == []
+  let assert True = f([[1, 2], [3, 4]]) == [[1, 2], [3, 4]]
+  Nil
+}
+
+fn check_happy_number(f: fn(Int) -> Bool) -> Nil {
+  let assert True = f(19)
+  let assert False = f(2)
+  let assert True = f(1)
+  let assert True = f(7)
+  // 4 is on the one cycle every unhappy number falls into.
+  let assert False = f(4)
+  let assert True = f(100)
+  Nil
+}
+
+fn check_plus_one(f: fn(List(Int)) -> List(Int)) -> Nil {
+  let assert True = f([1, 2, 3]) == [1, 2, 4]
+  let assert True = f([4, 3, 2, 1]) == [4, 3, 2, 2]
+  // All nines: the carry runs off the end and the number grows a digit.
+  let assert True = f([9]) == [1, 0]
+  let assert True = f([9, 9]) == [1, 0, 0]
+  let assert True = f([0]) == [1]
+  let assert True = f([1, 9, 9]) == [2, 0, 0]
+  Nil
+}
+
+fn check_pow(f: fn(Float, Int) -> Float) -> Nil {
+  let assert True = f(2.0, 10) == 1024.0
+  // Negative exponent, and zero, which the halving recursion bottoms out on.
+  let assert True = f(2.0, -2) == 0.25
+  let assert True = f(2.0, 0) == 1.0
+  let assert True = f(0.5, 3) == 0.125
+  let assert True = f(-2.0, 3) == -8.0
+  let assert True = f(2.0, 1) == 2.0
+  let assert True = f(0.0, 5) == 0.0
+  Nil
+}
+
+fn check_multiply_strings(f: fn(String, String) -> String) -> Nil {
+  let assert True = f("2", "3") == "6"
+  let assert True = f("123", "456") == "56088"
+  // Zero has to come back as "0" and not as a string of zeros.
+  let assert True = f("0", "52") == "0"
+  let assert True = f("9", "9") == "81"
+  let assert True = f("999", "999") == "998001"
+  // Longer than a 64-bit integer, which is the reason the input is a string.
+  let assert True = f("123456789", "987654321") == "121932631112635269"
+  Nil
+}
+
+/// Generic over the store type, so both variants can carry their own.
+fn check_detect_squares(
+  new: fn() -> store,
+  add: fn(store, #(Int, Int)) -> store,
+  count: fn(store, #(Int, Int)) -> Int,
+) -> Nil {
+  let store =
+    new()
+    |> add(#(3, 10))
+    |> add(#(11, 2))
+    |> add(#(3, 2))
+
+  let assert True = count(store, #(11, 10)) == 1
+  let assert True = count(store, #(14, 8)) == 0
+
+  // A repeated point counts as a separate corner, so the same square is found
+  // twice \u{2014} which is why the counts multiply rather than being a set.
+  let doubled = add(store, #(11, 2))
+  let assert True = count(doubled, #(11, 10)) == 2
+
+  let assert True = count(new(), #(0, 0)) == 0
+  let assert True =
+    new()
+    |> add(#(0, 1))
+    |> add(#(1, 0))
+    |> add(#(1, 1))
+    |> count(#(0, 0))
+    == 1
   Nil
 }
 

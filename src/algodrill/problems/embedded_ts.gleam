@@ -3445,6 +3445,552 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc56_rotate_image() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A quarter turn is two reflections: through the main diagonal, then through the vertical centre line. Both are trivial to write and neither needs index arithmetic, which is why this beats memorising the four-way element cycle — and why it is easy to get the direction right by reasoning rather than recall.", "export function rotate(matrix: number[][]): number[][] {
+  // A quarter turn is a reflection through the main diagonal followed by a
+  // reflection through the vertical centre line. Two easy operations instead of
+  // one four-way element cycle, and neither needs index arithmetic.
+  if (matrix.length === 0) return [];
+  const transposed = matrix[0].map((_, c) => matrix.map((row) => row[c]));
+  return transposed.map((row) => row.reverse());
+}"),
+      #("Solution 2 · By index", "Straight from where each element lands: after a clockwise quarter turn the entry at (row, column) came from (n − 1 − column, row). Deriving that mapping once, on paper, is the surest way to stop guessing which way round the rotation goes.", "export function rotate(matrix: number[][]): number[][] {
+  // Straight from where each element lands: after a clockwise quarter turn the
+  // entry at (row, column) came from (n - 1 - column, row). Writing the mapping
+  // out once is the surest way not to get the direction backwards.
+  const n = matrix.length;
+  return Array.from({ length: n }, (_, r) =>
+    Array.from({ length: n }, (_, c) => matrix[n - 1 - c][r]),
+  );
+}"),
+    ],
+    check: Check(
+      signature: "export function rotate(matrix: number[][]): number[][]",
+      starter: "export function rotate(matrix: number[][]): number[][] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.rotate !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"rotate([[1, 2, 3], [4, 5, 6], [7, 8, 9]])\", show([[7, 4, 1], [8, 5, 2], [9, 6, 3]]), show(solution.rotate([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))],
+    [\"rotate([[1, 2], [3, 4]])\", show([[3, 1], [4, 2]]), show(solution.rotate([[1, 2], [3, 4]]))],
+    [\"rotate([[1]])\", show([[1]]), show(solution.rotate([[1]]))],
+    [\"rotate([])\", show([]), show(solution.rotate([]))],
+    [\"rotate(4x4)\", show([[15, 13, 2, 5], [14, 3, 4, 1], [12, 6, 8, 9], [16, 7, 10, 11]]), show(solution.rotate([[5, 1, 9, 11], [2, 4, 8, 10], [13, 3, 6, 7], [15, 14, 12, 16]]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc57_spiral_matrix() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Take the top row, then turn the problem ninety degrees and do it again. Rotating what is left anticlockwise puts the column you would have walked down next along the top, so there is only ever one move to make and no boundary bookkeeping at all.", "export function spiralOrder(matrix: number[][]): number[] {
+  // Take the top row, then turn the problem ninety degrees and do it again.
+  // Rotating what is left anticlockwise puts the column you would have walked
+  // down next along the top, so there is only ever one move to make.
+  const out: number[] = [];
+  let grid = matrix;
+  while (grid.length > 0 && grid[0].length > 0) {
+    out.push(...grid[0]);
+    const rest = grid.slice(1);
+    grid = rest.length === 0 ? [] : rest[0].map((_, c) => rest.map((row) => row[c])).reverse();
+  }
+  return out;
+}"),
+      #("Solution 2 · Boundaries", "Four boundaries closing in, each side walked and then retired. The two guards are the whole difficulty: on a single remaining row the top and bottom edges are the same edge, and on a single column the left and right are, so walking both emits those cells twice.", "export function spiralOrder(matrix: number[][]): number[] {
+  if (matrix.length === 0) return [];
+
+  // Four boundaries closing in. Each side is walked and then retired, and the
+  // two guards below are the ones everybody forgets: on a single remaining row
+  // or column the bottom and top edges are the same edge, so walking both would
+  // emit it twice.
+  let top = 0;
+  let bottom = matrix.length - 1;
+  let left = 0;
+  let right = matrix[0].length - 1;
+  const out: number[] = [];
+
+  while (top <= bottom && left <= right) {
+    for (let c = left; c <= right; c++) out.push(matrix[top][c]);
+    for (let r = top + 1; r <= bottom; r++) out.push(matrix[r][right]);
+    if (top < bottom) for (let c = right - 1; c >= left; c--) out.push(matrix[bottom][c]);
+    if (left < right) for (let r = bottom - 1; r > top; r--) out.push(matrix[r][left]);
+    top++;
+    bottom--;
+    left++;
+    right--;
+  }
+
+  return out;
+}"),
+    ],
+    check: Check(
+      signature: "export function spiralOrder(matrix: number[][]): number[]",
+      starter: "export function spiralOrder(matrix: number[][]): number[] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.spiralOrder !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"spiralOrder([[1, 2, 3], [4, 5, 6], [7, 8, 9]])\", show([1, 2, 3, 6, 9, 8, 7, 4, 5]), show(solution.spiralOrder([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))],
+    [\"spiralOrder([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])\", show([1, 2, 3, 4, 8, 12, 11, 10, 9, 5, 6, 7]), show(solution.spiralOrder([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]))],
+    [\"spiralOrder([[1]])\", show([1]), show(solution.spiralOrder([[1]]))],
+    [\"spiralOrder([])\", show([]), show(solution.spiralOrder([]))],
+    [\"spiralOrder([[1, 2, 3]])\", show([1, 2, 3]), show(solution.spiralOrder([[1, 2, 3]]))],
+    [\"spiralOrder([[1], [2], [3]])\", show([1, 2, 3]), show(solution.spiralOrder([[1], [2], [3]]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc58_set_matrix_zeroes() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two passes, and they cannot be one: a zero written as you go is indistinguishable from a zero that was already there, so the grid would clear itself entirely. Record which rows and columns are doomed first, then apply. Recognising why one pass fails is the point of the problem.", "export function setZeroes(matrix: number[][]): number[][] {
+  // Two passes, and they cannot be one: writing a zero as you find it would be
+  // indistinguishable from a zero that was already there, and the whole grid
+  // would clear. So record which rows and columns are doomed first, then apply.
+  const rows = new Set<number>();
+  const columns = new Set<number>();
+  matrix.forEach((row, r) =>
+    row.forEach((value, c) => {
+      if (value === 0) {
+        rows.add(r);
+        columns.add(c);
+      }
+    }),
+  );
+
+  return matrix.map((row, r) =>
+    row.map((value, c) => (rows.has(r) || columns.has(c) ? 0 : value)),
+  );
+}"),
+      #("Solution 2 · By scanning", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+The condition stated outright: a cell clears exactly when its own row holds a zero or its own column does. Nothing recorded, nothing ordered, so the two-pass trap cannot arise — at the cost of rescanning a row and a column for every cell.", "export function setZeroes(matrix: number[][]): number[][] {
+  if (matrix.length === 0) return [];
+
+  // The condition stated outright: a cell is cleared exactly when its own row
+  // holds a zero or its own column does. Nothing is recorded and nothing is
+  // ordered, so the two-pass trap cannot arise -- at the cost of rescanning a
+  // row and a column for every single cell.
+  const columns = matrix[0].map((_, c) => matrix.map((row) => row[c]));
+  return matrix.map((row) =>
+    row.map((value, c) => (row.includes(0) || columns[c].includes(0) ? 0 : value)),
+  );
+}"),
+    ],
+    check: Check(
+      signature: "export function setZeroes(matrix: number[][]): number[][]",
+      starter: "export function setZeroes(matrix: number[][]): number[][] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.setZeroes !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"setZeroes([[1, 1, 1], [1, 0, 1], [1, 1, 1]])\", show([[1, 0, 1], [0, 0, 0], [1, 0, 1]]), show(solution.setZeroes([[1, 1, 1], [1, 0, 1], [1, 1, 1]]))],
+    [\"setZeroes([[0, 1, 2, 0], [3, 4, 5, 2], [1, 3, 1, 5]])\", show([[0, 0, 0, 0], [0, 4, 5, 0], [0, 3, 1, 0]]), show(solution.setZeroes([[0, 1, 2, 0], [3, 4, 5, 2], [1, 3, 1, 5]]))],
+    [\"setZeroes([[1]])\", show([[1]]), show(solution.setZeroes([[1]]))],
+    [\"setZeroes([[0]])\", show([[0]]), show(solution.setZeroes([[0]]))],
+    [\"setZeroes([])\", show([]), show(solution.setZeroes([]))],
+    [\"setZeroes([[1, 2], [3, 4]])\", show([[1, 2], [3, 4]]), show(solution.setZeroes([[1, 2], [3, 4]]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc59_happy_number() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The sequence must repeat: sums of squared digits are bounded, so only finitely many values are reachable and the walk has to revisit one. That turns \"does it loop?\" into a set lookup, and the answer is whether the value it settles on is 1.", "export function isHappy(n: number): boolean {
+  // The sequence has to repeat eventually -- squares of digits are bounded, so
+  // there are only finitely many values it can reach. Remembering what has been
+  // seen turns \"does it loop?\" into a set lookup.
+  const seen = new Set<number>();
+  while (n !== 1 && !seen.has(n)) {
+    seen.add(n);
+    n = squareDigits(n);
+  }
+  return n === 1;
+}
+
+function squareDigits(n: number): number {
+  let total = 0;
+  while (n > 0) {
+    const digit = n % 10;
+    total += digit * digit;
+    n = Math.floor(n / 10);
+  }
+  return total;
+}"),
+      #("Solution 2 · Floyd cycle", "The same question with no memory at all. One pointer steps once per round, another twice, and they meet inside whatever cycle exists — meeting at 1 means the cycle is the fixed point, meeting anywhere else means it is not. Constant space, and the same trick that finds a cycle in a linked list.", "export function isHappy(n: number): boolean {
+  // The same question with no memory at all: run one pointer at single speed
+  // and another at double, and they meet inside whatever cycle exists. Meeting
+  // at 1 means the cycle is the fixed point; meeting anywhere else means it is
+  // not. Constant space, which is the whole reason to know it.
+  let slow = n;
+  let fast = squareDigits(n);
+  while (slow !== fast) {
+    slow = squareDigits(slow);
+    fast = squareDigits(squareDigits(fast));
+  }
+  return slow === 1;
+}
+
+function squareDigits(n: number): number {
+  let total = 0;
+  while (n > 0) {
+    const digit = n % 10;
+    total += digit * digit;
+    n = Math.floor(n / 10);
+  }
+  return total;
+}"),
+    ],
+    check: Check(
+      signature: "export function isHappy(n: number): boolean",
+      starter: "export function isHappy(n: number): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.isHappy !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"isHappy(19)\", show(true), show(solution.isHappy(19))],
+    [\"isHappy(2)\", show(false), show(solution.isHappy(2))],
+    [\"isHappy(1)\", show(true), show(solution.isHappy(1))],
+    [\"isHappy(7)\", show(true), show(solution.isHappy(7))],
+    [\"isHappy(4)\", show(false), show(solution.isHappy(4))],
+    [\"isHappy(100)\", show(true), show(solution.isHappy(100))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc60_plus_one() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Adding one is a carry that starts at 1 and dies as soon as a digit below nine absorbs it. The only case worth care is when it never does — all nines — and the number grows a digit at the front.", "export function plusOne(digits: number[]): number[] {
+  // Adding one is a carry that starts at 1 and dies as soon as a digit below
+  // nine absorbs it. The only interesting case is when it never does, and the
+  // number grows a digit.
+  const out: number[] = [];
+  let carry = 1;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    const total = digits[i] + carry;
+    out.push(total % 10);
+    carry = Math.floor(total / 10);
+  }
+  if (carry) out.push(carry);
+  return out.reverse();
+}"),
+      #("Solution 2 · Via number", "Fold the digits into a number, add one, take it apart again. Shorter, and safe in a language with arbitrary-precision integers; in one without, this is exactly the version that breaks, and being handed digits rather than a number is the problem telling you so.", "export function plusOne(digits: number[]): number[] {
+  // Fold the digits into a number, add one, take it apart again. Shorter, and
+  // it works right up until the number is longer than the language's integers
+  // -- which is exactly why the problem hands you digits in the first place.
+  const value = digits.reduce((acc, digit) => acc * 10 + digit, 0) + 1;
+  return [...String(value)].map(Number);
+}"),
+    ],
+    check: Check(
+      signature: "export function plusOne(digits: number[]): number[]",
+      starter: "export function plusOne(digits: number[]): number[] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.plusOne !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"plusOne([1, 2, 3])\", show([1, 2, 4]), show(solution.plusOne([1, 2, 3]))],
+    [\"plusOne([4, 3, 2, 1])\", show([4, 3, 2, 2]), show(solution.plusOne([4, 3, 2, 1]))],
+    [\"plusOne([9])\", show([1, 0]), show(solution.plusOne([9]))],
+    [\"plusOne([9, 9])\", show([1, 0, 0]), show(solution.plusOne([9, 9]))],
+    [\"plusOne([0])\", show([1]), show(solution.plusOne([0]))],
+    [\"plusOne([1, 9, 9])\", show([2, 0, 0]), show(solution.plusOne([1, 9, 9]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc61_pow() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Halving the exponent halves the work: x^n is (x^(n/2))², with one extra multiplication when n is odd. O(log n) multiplications rather than n. A negative exponent is one reciprocal at the end, and the recursion bottoms out at n = 0 returning 1.", "export function myPow(x: number, n: number): number {
+  return n < 0 ? 1 / power(x, -n) : power(x, n);
+}
+
+// Halving the exponent halves the work: x^n is (x^(n/2))^2, with one extra
+// multiplication when n is odd. O(log n) multiplications rather than n.
+function power(x: number, n: number): number {
+  if (n === 0) return 1;
+  const half = power(x, Math.floor(n / 2));
+  return n % 2 === 0 ? half * half : half * half * x;
+}"),
+      #("Solution 2 · Repeated multiplication", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Multiply n times. Fine for small exponents, and it makes the saving obvious: the fast version does about log₂(n) multiplications where this one does n — thirty against a billion.", "export function myPow(x: number, n: number): number {
+  let magnitude = 1;
+  for (let i = 0; i < Math.abs(n); i++) magnitude *= x;
+  return n < 0 ? 1 / magnitude : magnitude;
+}"),
+    ],
+    check: Check(
+      signature: "export function myPow(x: number, n: number): number",
+      starter: "export function myPow(x: number, n: number): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.myPow !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"myPow(2.0, 10)\", show(1024), show(solution.myPow(2.0, 10))],
+    [\"myPow(2.0, -2)\", show(0.25), show(solution.myPow(2.0, -2))],
+    [\"myPow(2.0, 0)\", show(1), show(solution.myPow(2.0, 0))],
+    [\"myPow(0.5, 3)\", show(0.125), show(solution.myPow(0.5, 3))],
+    [\"myPow(-2.0, 3)\", show(-8), show(solution.myPow(-2.0, 3))],
+    [\"myPow(2.0, 1)\", show(2), show(solution.myPow(2.0, 1))],
+    [\"myPow(0.0, 5)\", show(0), show(solution.myPow(0.0, 5))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc62_multiply_strings() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Long multiplication with the carrying postponed. Digit i of one number times digit j of the other always lands at position i + j, so every product drops straight into its slot and the carries are settled in one sweep at the end. Deferring the carry is what keeps the inner loop free of bookkeeping.", "export function multiply(num1: string, num2: string): string {
+  if (num1 === \"0\" || num2 === \"0\") return \"0\";
+
+  const a = [...num1].reverse().map(Number);
+  const b = [...num2].reverse().map(Number);
+
+  // Long multiplication with the carrying postponed. Digit i of one number
+  // times digit j of the other always lands at position i + j, so every product
+  // can be dropped straight into its slot and the carries settled in one sweep
+  // at the end.
+  const slots = new Array<number>(a.length + b.length).fill(0);
+  for (let i = 0; i < a.length; i++) {
+    for (let j = 0; j < b.length; j++) slots[i + j] += a[i] * b[j];
+  }
+
+  let carry = 0;
+  const digits: number[] = [];
+  for (const slot of slots) {
+    const total = slot + carry;
+    digits.push(total % 10);
+    carry = Math.floor(total / 10);
+  }
+
+  return digits.reverse().join(\"\").replace(/^0+/, \"\") || \"0\";
+}"),
+      #("Solution 2 · Partial sums", "Long multiplication exactly as taught: one partial product per digit of the second number, each shifted left by its position, all added up. It needs string addition as well as string multiplication — which is why the accumulating version exists, and why writing add once is worth it anyway.", "export function multiply(num1: string, num2: string): string {
+  if (num1 === \"0\" || num2 === \"0\") return \"0\";
+
+  // Long multiplication exactly as taught: one partial product per digit of the
+  // second number, each shifted left by its position, all added up. It needs
+  // string addition as well as string multiplication, which is why the
+  // accumulating version exists -- but writing add once is worth it.
+  let total = \"0\";
+  [...num2].reverse().forEach((digit, shift) => {
+    total = add(total, timesDigit(num1, Number(digit)) + \"0\".repeat(shift));
+  });
+  return total;
+}
+
+function timesDigit(number: string, digit: number): string {
+  const out: number[] = [];
+  let carry = 0;
+  for (let i = number.length - 1; i >= 0; i--) {
+    const product = Number(number[i]) * digit + carry;
+    out.push(product % 10);
+    carry = Math.floor(product / 10);
+  }
+  if (carry) out.push(carry);
+  return out.reverse().join(\"\").replace(/^0+/, \"\") || \"0\";
+}
+
+function add(left: string, right: string): string {
+  const out: number[] = [];
+  let carry = 0;
+  let i = left.length - 1;
+  let j = right.length - 1;
+  while (i >= 0 || j >= 0 || carry) {
+    let total = carry;
+    if (i >= 0) total += Number(left[i--]);
+    if (j >= 0) total += Number(right[j--]);
+    out.push(total % 10);
+    carry = Math.floor(total / 10);
+  }
+  return out.reverse().join(\"\").replace(/^0+/, \"\") || \"0\";
+}"),
+    ],
+    check: Check(
+      signature: "export function multiply(num1: string, num2: string): string",
+      starter: "export function multiply(num1: string, num2: string): string {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.multiply !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"multiply('2', '3')\", show('6'), show(solution.multiply('2', '3'))],
+    [\"multiply('123', '456')\", show('56088'), show(solution.multiply('123', '456'))],
+    [\"multiply('0', '52')\", show('0'), show(solution.multiply('0', '52'))],
+    [\"multiply('9', '9')\", show('81'), show(solution.multiply('9', '9'))],
+    [\"multiply('999', '999')\", show('998001'), show(solution.multiply('999', '999'))],
+    [\"multiply('123456789', '987654321')\", show('121932631112635269'), show(solution.multiply('123456789', '987654321'))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc63_detect_squares() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Choosing the corner diagonally opposite fixes the entire square: the other two corners can only be at (x, py) and (px, y). So the scan is over stored points that share neither coordinate and sit on a true diagonal, and the three corner counts multiply — a repeated point genuinely forms a separate square.", "export class DetectSquares {
+  private counts = new Map<string, number>();
+
+  add(point: number[]): void {
+    const key = `${point[0]},${point[1]}`;
+    this.counts.set(key, (this.counts.get(key) ?? 0) + 1);
+  }
+
+  count(point: number[]): number {
+    const [x, y] = point;
+    let total = 0;
+
+    // Pick the corner diagonally opposite: that one choice fixes the whole
+    // square, because the other two corners must be at (x, py) and (px, y). A
+    // valid diagonal partner shares neither coordinate and sits on a true
+    // diagonal, and duplicates multiply rather than repeat.
+    for (const [key, copies] of this.counts) {
+      const [px, py] = key.split(\",\").map(Number);
+      if (px === x || py === y || Math.abs(px - x) !== Math.abs(py - y)) continue;
+      total += copies * this.at(x, py) * this.at(px, y);
+    }
+
+    return total;
+  }
+
+  private at(x: number, y: number): number {
+    return this.counts.get(`${x},${y}`) ?? 0;
+  }
+}"),
+      #("Solution 2 · By side length", "Choose the corner directly above or below instead. That fixes the side length rather than the square, so there are two candidates to check per partner — the remaining corners can be to the left or to the right. Same complexity, and a useful reminder that which corner you pivot on changes how much is determined.", "export class DetectSquares {
+  private counts = new Map<string, number>();
+
+  add(point: number[]): void {
+    const key = `${point[0]},${point[1]}`;
+    this.counts.set(key, (this.counts.get(key) ?? 0) + 1);
+  }
+
+  count(point: number[]): number {
+    const [x, y] = point;
+    let total = 0;
+
+    // Pick the corner directly above or below instead. That fixes the side
+    // length, which leaves two squares to check rather than one -- the
+    // remaining corners can be to the left or to the right.
+    for (const [key, copies] of this.counts) {
+      const [px, py] = key.split(\",\").map(Number);
+      if (px !== x || py === y) continue;
+      const side = Math.abs(py - y);
+      for (const column of [x + side, x - side]) {
+        total += copies * this.at(column, y) * this.at(column, py);
+      }
+    }
+
+    return total;
+  }
+
+  private at(x: number, y: number): number {
+    return this.counts.get(`${x},${y}`) ?? 0;
+  }
+}"),
+    ],
+    check: Check(
+      signature: "export class DetectSquares
+  add(point: number[]): void
+  count(point: number[]): number
+  private at(x: number, y: number): number",
+      starter: "export class DetectSquares {
+  add(point: number[]): void {
+    // todo
+  }
+  count(point: number[]): number {
+    // todo
+  }
+  private at(x: number, y: number): number {
+    // todo
+  }
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.DetectSquares !== \"function\") throw new Error(\"__signature_mismatch__\");
+
+  const store = new solution.DetectSquares();
+  store.add([3, 10]);
+  store.add([11, 2]);
+  store.add([3, 2]);
+
+  const cases: [string, string, string][] = [
+    [\"count([11, 10]) with one of each corner\", show(1), show(store.count([11, 10]))],
+    [\"count([14, 8]) -- no square\", show(0), show(store.count([14, 8]))],
+  ];
+
+  store.add([11, 2]);
+  cases.push([\"count([11, 10]) after adding [11, 2] twice\", show(2), show(store.count([11, 10]))]);
+  cases.push([\"count on an empty store\", show(0), show(new solution.DetectSquares().count([0, 0]))]);
+
+  const unit = new solution.DetectSquares();
+  unit.add([0, 1]);
+  unit.add([1, 0]);
+  unit.add([1, 1]);
+  cases.push([\"count([0, 0]) on the unit square\", show(1), show(unit.count([0, 0]))]);
+
+  return cases;
+}",
+    ),
+  )
+}
+
 pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -3502,6 +4048,14 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc53_missing_number" -> Ok(nc53_missing_number())
     "nc54_sum_of_two_integers" -> Ok(nc54_sum_of_two_integers())
     "nc55_reverse_integer" -> Ok(nc55_reverse_integer())
+    "nc56_rotate_image" -> Ok(nc56_rotate_image())
+    "nc57_spiral_matrix" -> Ok(nc57_spiral_matrix())
+    "nc58_set_matrix_zeroes" -> Ok(nc58_set_matrix_zeroes())
+    "nc59_happy_number" -> Ok(nc59_happy_number())
+    "nc60_plus_one" -> Ok(nc60_plus_one())
+    "nc61_pow" -> Ok(nc61_pow())
+    "nc62_multiply_strings" -> Ok(nc62_multiply_strings())
+    "nc63_detect_squares" -> Ok(nc63_detect_squares())
     _ -> Error(Nil)
   }
 }

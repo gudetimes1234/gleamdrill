@@ -134,6 +134,48 @@ pub fn groups() -> List(Group) {
         "nc26_sliding_window_maximum",
       ),
     ]),
+    Group("Math & Geometry", [
+      Drill(
+        "Rotate Image",
+        "Given an n x n matrix representing an image, rotate it by 90 degrees clockwise and return the result.",
+        "nc56_rotate_image",
+      ),
+      Drill(
+        "Spiral Matrix",
+        "Given an m x n matrix, return all its elements in spiral order: left to right along the top, down the right side, back along the bottom, up the left, and inwards.",
+        "nc57_spiral_matrix",
+      ),
+      Drill(
+        "Set Matrix Zeroes",
+        "Given an m x n matrix, if any element is 0 set its entire row and column to 0, and return the result.",
+        "nc58_set_matrix_zeroes",
+      ),
+      Drill(
+        "Happy Number",
+        "A number is happy if repeatedly replacing it with the sum of the squares of its digits eventually reaches 1. Return true if the given number is happy.",
+        "nc59_happy_number",
+      ),
+      Drill(
+        "Plus One",
+        "You are given a large integer as an array of its digits, most significant first. Increment it by one and return the resulting digits.",
+        "nc60_plus_one",
+      ),
+      Drill(
+        "Pow(x, n)",
+        "Implement pow(x, n), which raises x to the power n, where n may be negative.",
+        "nc61_pow",
+      ),
+      Drill(
+        "Multiply Strings",
+        "Given two non-negative integers represented as strings, return their product as a string. You may not convert the inputs to integers directly.",
+        "nc62_multiply_strings",
+      ),
+      Drill(
+        "Detect Squares",
+        "Design a structure that accepts points on a plane and, given a query point, counts the axis-aligned squares having that point as one corner and three previously added points as the others.",
+        "nc63_detect_squares",
+      ),
+    ]),
     Group("Bit Manipulation", [
       Drill(
         "Single Number",

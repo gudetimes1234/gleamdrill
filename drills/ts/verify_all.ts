@@ -113,6 +113,22 @@ import * as v108 from "./.verify/nc54_sum_of_two_integers/harness";
 import * as v109 from "./.verify/nc54_sum_of_two_integers__full_adder/harness";
 import * as v110 from "./.verify/nc55_reverse_integer/harness";
 import * as v111 from "./.verify/nc55_reverse_integer__via_string/harness";
+import * as v112 from "./.verify/nc56_rotate_image/harness";
+import * as v113 from "./.verify/nc56_rotate_image__by_index/harness";
+import * as v114 from "./.verify/nc57_spiral_matrix/harness";
+import * as v115 from "./.verify/nc57_spiral_matrix__boundaries/harness";
+import * as v116 from "./.verify/nc58_set_matrix_zeroes/harness";
+import * as v117 from "./.verify/nc58_set_matrix_zeroes__by_scanning/harness";
+import * as v118 from "./.verify/nc59_happy_number/harness";
+import * as v119 from "./.verify/nc59_happy_number__floyd_cycle/harness";
+import * as v120 from "./.verify/nc60_plus_one/harness";
+import * as v121 from "./.verify/nc60_plus_one__via_number/harness";
+import * as v122 from "./.verify/nc61_pow/harness";
+import * as v123 from "./.verify/nc61_pow__repeated_multiplication/harness";
+import * as v124 from "./.verify/nc62_multiply_strings/harness";
+import * as v125 from "./.verify/nc62_multiply_strings__partial_sums/harness";
+import * as v126 from "./.verify/nc63_detect_squares/harness";
+import * as v127 from "./.verify/nc63_detect_squares__by_side_length/harness";
 
 type Case = [string, string, string];
 
@@ -229,6 +245,22 @@ const VARIANTS: [string, string, () => Case[]][] = [
   ["nc54_sum_of_two_integers", "Solution 2 · Full adder", v109.run],
   ["nc55_reverse_integer", "Solution 1", v110.run],
   ["nc55_reverse_integer", "Solution 2 · Via string", v111.run],
+  ["nc56_rotate_image", "Solution 1", v112.run],
+  ["nc56_rotate_image", "Solution 2 · By index", v113.run],
+  ["nc57_spiral_matrix", "Solution 1", v114.run],
+  ["nc57_spiral_matrix", "Solution 2 · Boundaries", v115.run],
+  ["nc58_set_matrix_zeroes", "Solution 1", v116.run],
+  ["nc58_set_matrix_zeroes", "Solution 2 · By scanning", v117.run],
+  ["nc59_happy_number", "Solution 1", v118.run],
+  ["nc59_happy_number", "Solution 2 · Floyd cycle", v119.run],
+  ["nc60_plus_one", "Solution 1", v120.run],
+  ["nc60_plus_one", "Solution 2 · Via number", v121.run],
+  ["nc61_pow", "Solution 1", v122.run],
+  ["nc61_pow", "Solution 2 · Repeated multiplication", v123.run],
+  ["nc62_multiply_strings", "Solution 1", v124.run],
+  ["nc62_multiply_strings", "Solution 2 · Partial sums", v125.run],
+  ["nc63_detect_squares", "Solution 1", v126.run],
+  ["nc63_detect_squares", "Solution 2 · By side length", v127.run],
 ];
 
 const failures: string[] = [];

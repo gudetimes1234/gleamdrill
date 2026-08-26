@@ -1,0 +1,1 @@
+Halving the exponent halves the work: x^n is (x^(n/2))², with one extra multiplication when n is odd. O(log n) multiplications rather than n. A negative exponent is one reciprocal at the end, and the recursion bottoms out at n = 0 returning 1.

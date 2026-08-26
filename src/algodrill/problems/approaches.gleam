@@ -106,6 +106,31 @@ pub fn for_title(title: String) -> String {
     "Search in Rotated Sorted Array" ->
       "Binary search with a twist: after the rotation, one half around the midpoint is always sorted. Check which half is sorted, then use its endpoints to decide whether the target lies inside it \u{2014} recurse into that half or the other."
 
+    // Math & Geometry
+    "Rotate Image" ->
+      "A quarter turn is two reflections: through the main diagonal, then through the vertical centre line. Both are easy to write and neither needs index arithmetic, which beats memorising the four-way element cycle. If you would rather derive it, the entry at (row, column) after a clockwise turn came from (n \u{2212} 1 \u{2212} column, row)."
+
+    "Spiral Matrix" ->
+      "Two ways in. Peel the top row off and rotate what is left anticlockwise \u{2014} the column you would have walked down is now the top row, so there is only ever one move to make. Or track four boundaries closing in, in which case the traps are the single remaining row and column, where the top and bottom edges are the same edge and walking both emits it twice."
+
+    "Set Matrix Zeroes" ->
+      "The whole problem is why one pass fails: a zero written as you go is indistinguishable from a zero that was already there, so the grid clears itself. Record which rows and columns are doomed, then apply. Storing those marks in the grid's own first row and column is what gets it to constant extra space."
+
+    "Happy Number" ->
+      "Sums of squared digits are bounded, so only finitely many values are reachable and the walk must eventually repeat \u{2014} which makes this a cycle-detection problem wearing a numeric costume. A set of seen values answers it directly; Floyd's slow and fast pointers answer it in constant space, meeting at 1 for a happy number and inside the other cycle otherwise."
+
+    "Plus One" ->
+      "A carry that starts at 1 and dies at the first digit below nine. The only case worth care is all nines, where it runs off the end and the number grows a digit. Folding the digits into an integer works too \u{2014} until the number is longer than the language's integers, which is precisely why the input is a list of digits."
+
+    "Pow(x, n)" ->
+      "Halving the exponent halves the work: x^n is (x^(n/2))\u{b2}, with one extra multiplication when n is odd, so O(log n) multiplications instead of n. Handle the negative exponent with one reciprocal at the end, and bottom the recursion out at n = 0 returning 1."
+
+    "Multiply Strings" ->
+      "Long multiplication, with the carrying postponed. Digit i of one number times digit j of the other always lands at position i + j, so every product can be dropped straight into its slot and the carries settled in a single sweep afterwards. Deferring the carry is what keeps the inner loop free of bookkeeping."
+
+    "Detect Squares" ->
+      "Fix a corner and the rest follows. Choosing the corner diagonally opposite the query determines the whole square \u{2014} the other two must be at (x, py) and (px, y) \u{2014} so the count is the product of the three corner counts, summed over valid diagonals. Duplicated points multiply rather than repeat, because two points at the same place really do make two squares."
+
     // Bit Manipulation
     "Single Number" ->
       "XOR is its own inverse and ignores order, so every value that appears twice cancels itself out wherever the copies sit and the lone one survives. One pass, constant space, and nothing assumed about the size or sign of the values. The arithmetic alternative \u{2014} twice the sum of the distinct values minus the real total \u{2014} says the same thing but depends on every other value appearing exactly twice."

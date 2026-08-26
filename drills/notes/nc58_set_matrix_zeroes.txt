@@ -1,0 +1,1 @@
+Two passes, and they cannot be one: a zero written as you go is indistinguishable from a zero that was already there, so the grid would clear itself entirely. Record which rows and columns are doomed first, then apply. Recognising why one pass fails is the point of the problem.

@@ -1,0 +1,1 @@
+Long multiplication with the carrying postponed. Digit i of one number times digit j of the other always lands at position i + j, so every product drops straight into its slot and the carries are settled in one sweep at the end. Deferring the carry is what keeps the inner loop free of bookkeeping.
