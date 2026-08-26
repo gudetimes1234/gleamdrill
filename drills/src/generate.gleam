@@ -70,7 +70,15 @@ fn generate_elixir() {
   let assert Ok(Nil) =
     simplifile.write(
       "../src/algodrill/problems/embedded_elixir.gleam",
-      string.join([header, ..functions], "\n"),
+      string.join(
+        [
+          header,
+          ..list.append(functions, [
+            by_stem_function(modules, "List(#(String, String, String))"),
+          ])
+        ],
+        "\n",
+      ),
     )
   io.println(
     "embedded_elixir.gleam: "
@@ -162,7 +170,13 @@ fn generate_typescript() {
   let assert Ok(Nil) =
     simplifile.write(
       "../src/algodrill/problems/embedded_ts.gleam",
-      string.join([header, ..functions], "\n"),
+      string.join(
+        [
+          header,
+          ..list.append(functions, [by_stem_function(modules, "Embedded")])
+        ],
+        "\n",
+      ),
     )
   io.println(
     "embedded_ts.gleam: " <> int.to_string(list.length(modules)) <> " drills",
@@ -376,7 +390,16 @@ fn generate_gleam() {
     })
 
   let assert Ok(Nil) =
-    simplifile.write(out_path, string.join([header, ..functions], "\n"))
+    simplifile.write(
+      out_path,
+      string.join(
+        [
+          header,
+          ..list.append(functions, [by_stem_function(modules, "Embedded")])
+        ],
+        "\n",
+      ),
+    )
   io.println(
     "embedded.gleam: "
     <> int.to_string(list.length(modules))
@@ -407,7 +430,16 @@ fn generate_python() {
     })
 
   let assert Ok(Nil) =
-    simplifile.write(python_out_path, string.join([header, ..functions], "\n"))
+    simplifile.write(
+      python_out_path,
+      string.join(
+        [
+          header,
+          ..list.append(functions, [by_stem_function(modules, "Embedded")])
+        ],
+        "\n",
+      ),
+    )
   io.println(
     "embedded_python.gleam: "
     <> int.to_string(list.length(modules))
@@ -476,6 +508,25 @@ fn generate_python_verifier(rows: List(#(String, String, String))) -> Nil {
   io.println(
     "verify_all.py: " <> int.to_string(list.length(rows)) <> " Python variants",
   )
+}
+
+/// The `case` that lets the hand-written catalogue address a drill by its file
+/// stem. Generated rather than written, because Gleam has no reflection: this
+/// is the only way a string becomes a call, and at 150 problems it is not a
+/// thing anyone should be maintaining by hand.
+fn by_stem_function(modules: List(String), returns: String) -> String {
+  let arms =
+    modules
+    |> list.map(fn(module) {
+      "    \"" <> module <> "\" -> Ok(" <> module <> "())\n"
+    })
+    |> string.concat
+
+  "pub fn by_stem(stem: String) -> Result("
+  <> returns
+  <> ", Nil) {\n  case stem {\n"
+  <> arms
+  <> "    _ -> Error(Nil)\n  }\n}\n"
 }
 
 fn module_names(entries: List(String), extension: String) -> List(String) {

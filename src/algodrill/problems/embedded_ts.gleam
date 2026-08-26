@@ -1234,3 +1234,30 @@ export function run(): [string, string, string][] {
     ),
   )
 }
+
+pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
+  case stem {
+    "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
+    "nc02_valid_anagram" -> Ok(nc02_valid_anagram())
+    "nc03_two_sum" -> Ok(nc03_two_sum())
+    "nc04_group_anagrams" -> Ok(nc04_group_anagrams())
+    "nc05_top_k_frequent" -> Ok(nc05_top_k_frequent())
+    "nc06_product_except_self" -> Ok(nc06_product_except_self())
+    "nc07_longest_consecutive" -> Ok(nc07_longest_consecutive())
+    "nc08_valid_palindrome" -> Ok(nc08_valid_palindrome())
+    "nc09_two_sum_sorted" -> Ok(nc09_two_sum_sorted())
+    "nc10_three_sum" -> Ok(nc10_three_sum())
+    "nc11_container_water" -> Ok(nc11_container_water())
+    "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
+    "nc13_longest_substring" -> Ok(nc13_longest_substring())
+    "nc14_character_replacement" -> Ok(nc14_character_replacement())
+    "nc15_permutation_in_string" -> Ok(nc15_permutation_in_string())
+    "nc16_valid_parentheses" -> Ok(nc16_valid_parentheses())
+    "nc17_min_stack" -> Ok(nc17_min_stack())
+    "nc18_daily_temperatures" -> Ok(nc18_daily_temperatures())
+    "nc19_binary_search" -> Ok(nc19_binary_search())
+    "nc20_find_min_rotated" -> Ok(nc20_find_min_rotated())
+    "nc21_search_rotated" -> Ok(nc21_search_rotated())
+    _ -> Error(Nil)
+  }
+}
