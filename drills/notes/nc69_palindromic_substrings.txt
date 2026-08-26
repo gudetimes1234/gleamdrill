@@ -1,0 +1,1 @@
+The same 2n centres as finding the longest one, except that here every successful widening is itself an answer. So the count is how many times the expansion succeeded rather than how far it got — one line different, same scan.

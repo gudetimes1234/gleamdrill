@@ -129,6 +129,30 @@ import * as v124 from "./.verify/nc62_multiply_strings/harness";
 import * as v125 from "./.verify/nc62_multiply_strings__partial_sums/harness";
 import * as v126 from "./.verify/nc63_detect_squares/harness";
 import * as v127 from "./.verify/nc63_detect_squares__by_side_length/harness";
+import * as v128 from "./.verify/nc64_climbing_stairs/harness";
+import * as v129 from "./.verify/nc64_climbing_stairs__memoised/harness";
+import * as v130 from "./.verify/nc65_min_cost_climbing_stairs/harness";
+import * as v131 from "./.verify/nc65_min_cost_climbing_stairs__from_the_top/harness";
+import * as v132 from "./.verify/nc66_house_robber/harness";
+import * as v133 from "./.verify/nc66_house_robber__memoised/harness";
+import * as v134 from "./.verify/nc67_house_robber_ii/harness";
+import * as v135 from "./.verify/nc67_house_robber_ii__both_at_once/harness";
+import * as v136 from "./.verify/nc68_longest_palindrome/harness";
+import * as v137 from "./.verify/nc68_longest_palindrome__brute_force/harness";
+import * as v138 from "./.verify/nc69_palindromic_substrings/harness";
+import * as v139 from "./.verify/nc69_palindromic_substrings__dp_table/harness";
+import * as v140 from "./.verify/nc70_decode_ways/harness";
+import * as v141 from "./.verify/nc70_decode_ways__memoised/harness";
+import * as v142 from "./.verify/nc71_coin_change/harness";
+import * as v143 from "./.verify/nc71_coin_change__breadth_first/harness";
+import * as v144 from "./.verify/nc72_maximum_product_subarray/harness";
+import * as v145 from "./.verify/nc72_maximum_product_subarray__prefix_and_suffix/harness";
+import * as v146 from "./.verify/nc73_word_break/harness";
+import * as v147 from "./.verify/nc73_word_break__memoised/harness";
+import * as v148 from "./.verify/nc74_longest_increasing_subsequence/harness";
+import * as v149 from "./.verify/nc74_longest_increasing_subsequence__patience/harness";
+import * as v150 from "./.verify/nc75_partition_equal_subset/harness";
+import * as v151 from "./.verify/nc75_partition_equal_subset__memoised/harness";
 
 type Case = [string, string, string];
 
@@ -261,6 +285,30 @@ const VARIANTS: [string, string, () => Case[]][] = [
   ["nc62_multiply_strings", "Solution 2 · Partial sums", v125.run],
   ["nc63_detect_squares", "Solution 1", v126.run],
   ["nc63_detect_squares", "Solution 2 · By side length", v127.run],
+  ["nc64_climbing_stairs", "Solution 1", v128.run],
+  ["nc64_climbing_stairs", "Solution 2 · Memoised", v129.run],
+  ["nc65_min_cost_climbing_stairs", "Solution 1", v130.run],
+  ["nc65_min_cost_climbing_stairs", "Solution 2 · From the top", v131.run],
+  ["nc66_house_robber", "Solution 1", v132.run],
+  ["nc66_house_robber", "Solution 2 · Memoised", v133.run],
+  ["nc67_house_robber_ii", "Solution 1", v134.run],
+  ["nc67_house_robber_ii", "Solution 2 · Both at once", v135.run],
+  ["nc68_longest_palindrome", "Solution 1", v136.run],
+  ["nc68_longest_palindrome", "Solution 2 · Brute force", v137.run],
+  ["nc69_palindromic_substrings", "Solution 1", v138.run],
+  ["nc69_palindromic_substrings", "Solution 2 · Dp table", v139.run],
+  ["nc70_decode_ways", "Solution 1", v140.run],
+  ["nc70_decode_ways", "Solution 2 · Memoised", v141.run],
+  ["nc71_coin_change", "Solution 1", v142.run],
+  ["nc71_coin_change", "Solution 2 · Breadth first", v143.run],
+  ["nc72_maximum_product_subarray", "Solution 1", v144.run],
+  ["nc72_maximum_product_subarray", "Solution 2 · Prefix and suffix", v145.run],
+  ["nc73_word_break", "Solution 1", v146.run],
+  ["nc73_word_break", "Solution 2 · Memoised", v147.run],
+  ["nc74_longest_increasing_subsequence", "Solution 1", v148.run],
+  ["nc74_longest_increasing_subsequence", "Solution 2 · Patience", v149.run],
+  ["nc75_partition_equal_subset", "Solution 1", v150.run],
+  ["nc75_partition_equal_subset", "Solution 2 · Memoised", v151.run],
 ];
 
 const failures: string[] = [];

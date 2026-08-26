@@ -1,0 +1,1 @@
+Take this number or leave it, keyed by how much is still owed and how far along the list you are. As a recursion it is obviously a search over subsets, which the reachable-sums version hides — and the cache is what stops it enumerating all 2ⁿ of them.

@@ -3734,6 +3734,725 @@ __case__(\"count([0, 0]) on the unit square\", 1, __unit__.count([0, 0]))",
   )
 }
 
+pub fn nc64_climbing_stairs() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The last move was either one step or two, so the ways to reach step n are the ways to reach n−1 plus the ways to reach n−2 — Fibonacci with a staircase painted on it. Only the last two values ever matter, so two variables replace the whole table.", "def climbStairs(n):
+    # The last move was either one step or two, so the ways to reach step n are
+    # the ways to reach n-1 plus the ways to reach n-2 -- Fibonacci with a
+    # staircase painted on it. Only the last two values matter.
+    previous, current = 0, 1
+    for _ in range(n):
+        previous, current = current, previous + current
+    return current"),
+      #("Solution 2 · Memoised", "The same recurrence from the top down, with a cache. Heavier than the rolling pair, but it is the shape you reach for first when the recurrence is not obviously a straight line — and the memo is the entire difference between O(n) and O(2ⁿ).", "def climbStairs(n):
+    memo = {}
+
+    # The same recurrence from the top down, with a cache. Slower and heavier
+    # than the rolling pair, but it is the shape you reach for first when the
+    # recurrence is not obviously a straight line -- and the memo is the whole
+    # difference between O(n) and O(2^n).
+    def ways(k):
+        if k <= 1:
+            return 1
+        if k not in memo:
+            memo[k] = ways(k - 1) + ways(k - 2)
+        return memo[k]
+
+    return ways(n)"),
+    ],
+    check: Check(
+      signature: "def climbStairs(n):",
+      starter: "def climbStairs(n):
+    pass",
+      harness: "try:
+    (climbStairs)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"climbStairs(2)\", 2, climbStairs(2))
+__case__(\"climbStairs(3)\", 3, climbStairs(3))
+__case__(\"climbStairs(1)\", 1, climbStairs(1))
+__case__(\"climbStairs(0)\", 1, climbStairs(0))
+__case__(\"climbStairs(10)\", 89, climbStairs(10))
+__case__(\"climbStairs(45)\", 1836311903, climbStairs(45))",
+    ),
+  )
+}
+
+pub fn nc65_min_cost_climbing_stairs() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Cost to stand on each step, carried forward: getting here means having paid for one of the two steps below, whichever was cheaper. Two variables again, because nothing older than two steps back can matter. Either of the first two steps is a legal start, which is what the final min covers.", "def minCostClimbingStairs(cost):
+    # Cost to stand on each step, carried forward: getting here means having
+    # paid for one of the two steps below, whichever was cheaper. Two variables
+    # again, because nothing older than two steps back can matter.
+    one_back, two_back = 0, 0
+    for price in cost:
+        one_back, two_back = price + min(one_back, two_back), one_back
+    return min(one_back, two_back)"),
+      #("Solution 2 · From the top", "The same recurrence read the other way: not \"what did it cost to get here\" but \"what will it cost to finish from here\". Walking backwards, each step's answer is its own price plus the cheaper of the two ahead. Worth writing both — one direction is usually far easier to state than the other, and which one varies by problem.", "def minCostClimbingStairs(cost):
+    # The same recurrence read the other way: instead of \"what did it cost to
+    # get here\", ask \"what will it cost to finish from here\". Walking backwards,
+    # the answer at each step is its own price plus the cheaper of the two
+    # ahead, and the start is the better of the first two.
+    one_ahead, two_ahead = 0, 0
+    for price in reversed(cost):
+        one_ahead, two_ahead = price + min(one_ahead, two_ahead), one_ahead
+    return min(one_ahead, two_ahead)"),
+    ],
+    check: Check(
+      signature: "def minCostClimbingStairs(cost):",
+      starter: "def minCostClimbingStairs(cost):
+    pass",
+      harness: "try:
+    (minCostClimbingStairs)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"minCostClimbingStairs([10, 15, 20])\", 15, minCostClimbingStairs([10, 15, 20]))
+__case__(\"minCostClimbingStairs([1, 100, 1, 1, 1, 100, 1, 1, 100, 1])\", 6, minCostClimbingStairs([1, 100, 1, 1, 1, 100, 1, 1, 100, 1]))
+__case__(\"minCostClimbingStairs([0, 0])\", 0, minCostClimbingStairs([0, 0]))
+__case__(\"minCostClimbingStairs([1, 2])\", 1, minCostClimbingStairs([1, 2]))
+__case__(\"minCostClimbingStairs([0, 1, 1, 0])\", 1, minCostClimbingStairs([0, 1, 1, 0]))
+__case__(\"minCostClimbingStairs([])\", 0, minCostClimbingStairs([]))",
+    ),
+  )
+}
+
+pub fn nc66_house_robber() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "At each house the choice is take it and add what was safe two houses back, or skip it and keep the best so far. Both of those are one number, so the whole table collapses to a pair of running values.", "def rob(nums):
+    # At each house the choice is take it and add what was safe two houses back,
+    # or skip it and keep the best so far. Both answers are one number, so the
+    # whole table collapses to a pair.
+    best, previous = 0, 0
+    for value in nums:
+        best, previous = max(best, previous + value), best
+    return best"),
+      #("Solution 2 · Memoised", "The same choice written as a recursion from the front: rob this house and skip the next, or skip this one. Exponential without the cache and linear with it — which is the lesson, because the rolling pair hides that the problem ever had a tree of choices at all.", "def rob(nums):
+    memo = {}
+
+    # The same choice written as a recursion from the front: rob this house and
+    # skip the next, or skip this one. Exponential without the cache and linear
+    # with it -- which is the lesson, since the rolling pair hides that the
+    # problem ever had a tree of choices at all.
+    def best(index):
+        if index >= len(nums):
+            return 0
+        if index not in memo:
+            memo[index] = max(nums[index] + best(index + 2), best(index + 1))
+        return memo[index]
+
+    return best(0)"),
+    ],
+    check: Check(
+      signature: "def rob(nums):",
+      starter: "def rob(nums):
+    pass",
+      harness: "try:
+    (rob)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"rob([1, 2, 3, 1])\", 4, rob([1, 2, 3, 1]))
+__case__(\"rob([2, 7, 9, 3, 1])\", 12, rob([2, 7, 9, 3, 1]))
+__case__(\"rob([5])\", 5, rob([5]))
+__case__(\"rob([])\", 0, rob([]))
+__case__(\"rob([2, 1, 1, 2])\", 4, rob([2, 1, 1, 2]))
+__case__(\"rob([1, 2])\", 2, rob([1, 2]))",
+    ),
+  )
+}
+
+pub fn nc67_house_robber_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The circle matters through exactly one constraint: the first and last houses are neighbours, so at most one of them is robbed. Ruling each out in turn leaves two ordinary straight-line problems, and the answer is the better of the two — reusing a solved problem rather than inventing a circular recurrence.", "def rob(nums):
+    # The circle only matters through one constraint: the first and last houses
+    # are neighbours, so at most one of them is robbed. Ruling each out in turn
+    # leaves two ordinary straight-line problems, and the answer is the better.
+    if not nums:
+        return 0
+    if len(nums) == 1:
+        return nums[0]
+    return max(straight(nums[1:]), straight(nums[:-1]))
+
+
+def straight(nums):
+    best, previous = 0, 0
+    for value in nums:
+        best, previous = max(best, previous + value), best
+    return best"),
+      #("Solution 2 · Both at once", "One pass carrying both stories at the same time: the run allowed to take the first house, and the run that is not. Neither ever consults the other, so this is exactly the two-pass version interleaved — worth knowing when the input can only be walked once.", "def rob(nums):
+    if not nums:
+        return 0
+    if len(nums) == 1:
+        return nums[0]
+
+    # One pass carrying both stories at the same time: the run that is allowed
+    # to take the first house, and the run that is not. Neither ever looks at
+    # the other, so this is the two-pass version interleaved -- useful when the
+    # input can only be walked once.
+    with_first = (0, 0)
+    without_first = (0, 0)
+
+    for i, value in enumerate(nums):
+        if i != len(nums) - 1:
+            with_first = step(with_first, value)
+        if i != 0:
+            without_first = step(without_first, value)
+
+    return max(with_first[0], without_first[0])
+
+
+def step(state, value):
+    best, previous = state
+    return max(best, previous + value), best"),
+    ],
+    check: Check(
+      signature: "def rob(nums):
+
+def straight(nums):",
+      starter: "def rob(nums):
+    pass
+
+def straight(nums):
+    pass",
+      harness: "try:
+    (rob)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"rob([2, 3, 2])\", 3, rob([2, 3, 2]))
+__case__(\"rob([1, 2, 3, 1])\", 4, rob([1, 2, 3, 1]))
+__case__(\"rob([1, 2, 3])\", 3, rob([1, 2, 3]))
+__case__(\"rob([1])\", 1, rob([1]))
+__case__(\"rob([])\", 0, rob([]))
+__case__(\"rob([1, 2])\", 2, rob([1, 2]))",
+    ),
+  )
+}
+
+pub fn nc68_longest_palindrome() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Every palindrome has a centre, and there are only 2n of them — n characters and n gaps between them. Growing outwards from each is O(n²) with no table at all. The gaps are what people forget: without them, every even-length palindrome is invisible.", "def longestPalindrome(s):
+    # Every palindrome has a centre, and there are only 2n of them -- n single
+    # characters and n gaps between them. Growing outwards from each is O(n^2)
+    # total and needs no table.
+    best_start, best_length = 0, 0
+
+    for i in range(len(s)):
+        for left, right in ((i, i), (i, i + 1)):
+            start, length = expand(s, left, right)
+            if length > best_length:
+                best_start, best_length = start, length
+
+    return s[best_start:best_start + best_length]
+
+
+# Widens while the ends match, then reports where it stopped as a start and a
+# length. The two pointers have gone one step too far by then, which is where
+# the +1 and the -1 come from.
+def expand(s, left, right):
+    while left >= 0 and right < len(s) and s[left] == s[right]:
+        left -= 1
+        right += 1
+    return left + 1, right - left - 1"),
+      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every start with every length, each checked against its own reverse. O(n³), and the thing centre expansion optimises: it never re-checks the inside of a palindrome it has already grown through.", "def longestPalindrome(s):
+    # Every start with every length. O(n^3) once the palindrome check is counted
+    # -- the definition, and what centre expansion is an optimisation of.
+    best = \"\"
+    for start in range(len(s)):
+        for end in range(start + 1, len(s) + 1):
+            candidate = s[start:end]
+            if len(candidate) > len(best) and candidate == candidate[::-1]:
+                best = candidate
+    return best"),
+    ],
+    check: Check(
+      signature: "def longestPalindrome(s):
+
+def expand(s, left, right):",
+      starter: "def longestPalindrome(s):
+    pass
+
+def expand(s, left, right):
+    pass",
+      harness: "try:
+    (longestPalindrome)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"longestPalindrome('cbbd')\", 'bb', longestPalindrome('cbbd'))
+__case__(\"longestPalindrome('a')\", 'a', longestPalindrome('a'))
+__case__(\"longestPalindrome('')\", '', longestPalindrome(''))
+__case__(\"longestPalindrome('forgeeksskeegfor')\", 'geeksskeeg', longestPalindrome('forgeeksskeegfor'))
+__case__(\"longestPalindrome('aaaa')\", 'aaaa', longestPalindrome('aaaa'))
+__case__(\"longestPalindrome('racecar')\", 'racecar', longestPalindrome('racecar'))
+__case__(\"longestPalindrome('abb')\", 'bb', longestPalindrome('abb'))",
+    ),
+  )
+}
+
+pub fn nc69_palindromic_substrings() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The same 2n centres as finding the longest one, except that here every successful widening is itself an answer. So the count is how many times the expansion succeeded rather than how far it got — one line different, same scan.", "def countSubstrings(s):
+    # Same 2n centres as finding the longest one, except that here every
+    # successful widening is itself an answer, so the count is how many times
+    # the expansion succeeded rather than how far it got.
+    total = 0
+    for i in range(len(s)):
+        total += grow(s, i, i) + grow(s, i, i + 1)
+    return total
+
+
+def grow(s, left, right):
+    count = 0
+    while left >= 0 and right < len(s) and s[left] == s[right]:
+        count += 1
+        left -= 1
+        right += 1
+    return count"),
+      #("Solution 2 · Dp table", "A table over spans: s[i..j] is a palindrome when its ends match and the span inside already was. That dependency forces the fill order — shortest spans first — which is the only real content of the outer loop and the thing to get right.", "def countSubstrings(s):
+    # The table says whether s[i..j] is a palindrome. It is when its ends match
+    # and whatever is between them already was -- so the spans have to be filled
+    # shortest first, which is the whole reason for the outer loop over length.
+    n = len(s)
+    table = {}
+    total = 0
+
+    for length in range(n):
+        for i in range(n - length):
+            j = i + length
+            inside = True if j - i < 2 else table[(i + 1, j - 1)]
+            table[(i, j)] = s[i] == s[j] and inside
+            if table[(i, j)]:
+                total += 1
+
+    return total"),
+    ],
+    check: Check(
+      signature: "def countSubstrings(s):
+
+def grow(s, left, right):",
+      starter: "def countSubstrings(s):
+    pass
+
+def grow(s, left, right):
+    pass",
+      harness: "try:
+    (countSubstrings)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"countSubstrings('abc')\", 3, countSubstrings('abc'))
+__case__(\"countSubstrings('aaa')\", 6, countSubstrings('aaa'))
+__case__(\"countSubstrings('')\", 0, countSubstrings(''))
+__case__(\"countSubstrings('a')\", 1, countSubstrings('a'))
+__case__(\"countSubstrings('aba')\", 4, countSubstrings('aba'))
+__case__(\"countSubstrings('abccba')\", 9, countSubstrings('abccba'))",
+    ),
+  )
+}
+
+pub fn nc70_decode_ways() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two rolling counts. The ways to decode up to here are the ways up to the previous character, if this one can stand alone, plus the ways up to the one before that, if this one and its predecessor read as 10 to 26. A leading zero kills the first branch; anything outside that range kills the second.", "def numDecodings(s):
+    if not s:
+        return 0
+
+    # Two rolling counts. The ways to decode up to here are the ways up to the
+    # previous character (if this one can stand alone) plus the ways up to the
+    # one before that (if this one and its predecessor form a legal pair). A
+    # leading zero kills the first branch; anything outside 10..26 the second.
+    two_back, one_back = 1, 1
+    for i, c in enumerate(s):
+        alone = 0 if c == \"0\" else one_back
+        paired = two_back if i > 0 and 10 <= int(s[i - 1:i + 1]) <= 26 else 0
+        two_back, one_back = one_back, alone + paired
+
+    return one_back"),
+      #("Solution 2 · Memoised", "The same two choices as a recursion from the front: take one character, or take two if they form a legal pair. Reaching the end is one complete decoding, which is why the base case returns 1 and not 0 — the single most common place to get this problem wrong.", "def numDecodings(s):
+    if not s:
+        return 0
+
+    memo = {}
+
+    # The same two choices as a recursion from the front: take one character, or
+    # take two if they read as 10 to 26. Reaching the end is one complete
+    # decoding, which is why the base case returns 1 rather than 0.
+    def ways(i):
+        if i >= len(s):
+            return 1
+        if s[i] == \"0\":
+            return 0
+        if i not in memo:
+            total = ways(i + 1)
+            if i + 1 < len(s) and 10 <= int(s[i:i + 2]) <= 26:
+                total += ways(i + 2)
+            memo[i] = total
+        return memo[i]
+
+    return ways(0)"),
+    ],
+    check: Check(
+      signature: "def numDecodings(s):",
+      starter: "def numDecodings(s):
+    pass",
+      harness: "try:
+    (numDecodings)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"numDecodings('12')\", 2, numDecodings('12'))
+__case__(\"numDecodings('226')\", 3, numDecodings('226'))
+__case__(\"numDecodings('06')\", 0, numDecodings('06'))
+__case__(\"numDecodings('0')\", 0, numDecodings('0'))
+__case__(\"numDecodings('')\", 0, numDecodings(''))
+__case__(\"numDecodings('10')\", 1, numDecodings('10'))
+__case__(\"numDecodings('2101')\", 1, numDecodings('2101'))
+__case__(\"numDecodings('11106')\", 2, numDecodings('11106'))",
+    ),
+  )
+}
+
+pub fn nc71_coin_change() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Build up from zero: the cheapest way to make a target is one coin more than the cheapest way to make what is left after removing some coin. Leaving unreachable amounts simply absent from the table saves inventing a sentinel for infinity and the comparisons that go with it.", "def coinChange(coins, amount):
+    # Build up from zero: the cheapest way to make a target is one coin more
+    # than the cheapest way to make what is left after removing some coin. An
+    # amount with no entry is simply unreachable, which saves inventing a
+    # sentinel for infinity.
+    table = {0: 0}
+
+    for target in range(1, amount + 1):
+        options = [table[target - coin] for coin in coins if coin <= target and target - coin in table]
+        if options:
+            table[target] = min(options) + 1
+
+    return table.get(amount, -1)"),
+      #("Solution 2 · Breadth first", "The amounts reachable with k coins are one level of a breadth-first search from zero, so the first level containing the target is the answer. Same bound as the table, but it stops the moment it arrives rather than filling in every amount below the target — and it makes clear why the answer is a shortest path.", "def coinChange(coins, amount):
+    if amount == 0:
+        return 0
+
+    # The amounts reachable with k coins form one level of a breadth-first
+    # search from zero, so the first level containing the target is the answer.
+    # Same bound as the table, but it stops the moment it arrives rather than
+    # filling in every amount below the target.
+    frontier = [0]
+    seen = {0}
+    used = 0
+
+    while frontier:
+        used += 1
+        following = []
+        for total in frontier:
+            for coin in coins:
+                nxt = total + coin
+                if nxt == amount:
+                    return used
+                if nxt < amount and nxt not in seen:
+                    seen.add(nxt)
+                    following.append(nxt)
+        frontier = following
+
+    return -1"),
+    ],
+    check: Check(
+      signature: "def coinChange(coins, amount):",
+      starter: "def coinChange(coins, amount):
+    pass",
+      harness: "try:
+    (coinChange)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"coinChange([1, 2, 5], 11)\", 3, coinChange([1, 2, 5], 11))
+__case__(\"coinChange([2], 3)\", -1, coinChange([2], 3))
+__case__(\"coinChange([1], 0)\", 0, coinChange([1], 0))
+__case__(\"coinChange([], 5)\", -1, coinChange([], 5))
+__case__(\"coinChange([1, 3, 4], 6)\", 2, coinChange([1, 3, 4], 6))
+__case__(\"coinChange([2, 5, 10, 1], 27)\", 4, coinChange([2, 5, 10, 1], 27))",
+    ),
+  )
+}
+
+pub fn nc72_maximum_product_subarray() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A negative number turns the best running product into the worst and the worst into the best, so both have to be carried. Zero resets them, which falls out for free from taking the element itself as one of the candidates rather than special-casing it.", "def maxProduct(nums):
+    if not nums:
+        return 0
+
+    # A negative number turns the best running product into the worst and the
+    # worst into the best, so both have to be carried. Zero resets them both,
+    # which falls out of taking the element itself as an option.
+    high = low = best = nums[0]
+    for n in nums[1:]:
+        candidates = (n, high * n, low * n)
+        high, low = max(candidates), min(candidates)
+        best = max(best, high)
+
+    return best"),
+      #("Solution 2 · Prefix and suffix", "A different argument entirely: the best subarray always runs to one end of the zero-free block it sits in, so running products swept from both directions — reset at each zero — cover every candidate. No min to track, and the reason it works is worth being able to state.", "def maxProduct(nums):
+    if not nums:
+        return 0
+    # A different argument entirely: the best subarray always runs to one end of
+    # the block it sits in, so sweeping running products from both directions --
+    # resetting at every zero -- is enough.
+    return max(sweep(nums), sweep(nums[::-1]))
+
+
+def sweep(nums):
+    running = 1
+    best = float(\"-inf\")
+    for n in nums:
+        running = n if running == 0 else running * n
+        best = max(best, running)
+    return best"),
+    ],
+    check: Check(
+      signature: "def maxProduct(nums):",
+      starter: "def maxProduct(nums):
+    pass",
+      harness: "try:
+    (maxProduct)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"maxProduct([2, 3, -2, 4])\", 6, maxProduct([2, 3, -2, 4]))
+__case__(\"maxProduct([-2, 0, -1])\", 0, maxProduct([-2, 0, -1]))
+__case__(\"maxProduct([-2, 3, -4])\", 24, maxProduct([-2, 3, -4]))
+__case__(\"maxProduct([0])\", 0, maxProduct([0]))
+__case__(\"maxProduct([-2])\", -2, maxProduct([-2]))
+__case__(\"maxProduct([2, -5, -2, -4, 3])\", 24, maxProduct([2, -5, -2, -4, 3]))
+__case__(\"maxProduct([])\", 0, maxProduct([]))",
+    ),
+  )
+}
+
+pub fn nc73_word_break() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Reachable positions rather than a table of booleans: position 0 is reachable, and a position becomes reachable when some dictionary word bridges the gap from one already reached. The answer is whether the end is reachable.", "def wordBreak(s, wordDict):
+    words = set(wordDict)
+
+    # Reachable positions rather than a table of booleans: start at 0, and a
+    # position is reachable when some word in the dictionary bridges the gap
+    # from a position already reached.
+    reached = {0}
+    for end in range(1, len(s) + 1):
+        if any(start in reached and s[start:end] in words for start in range(end)):
+            reached.add(end)
+
+    return len(s) in reached"),
+      #("Solution 2 · Memoised", "Top-down: from this position, does a dictionary word start here and leave a suffix that also breaks? Without the cache the same suffix is asked about once per way of reaching it, which is where the exponential blow-up on inputs like \"aaaa…b\" comes from.", "def wordBreak(s, wordDict):
+    words = set(wordDict)
+    memo = {}
+
+    # Top-down: from this position, does any dictionary word start here and
+    # leave a suffix that also breaks? Without the cache the same suffix is
+    # asked about once per way of reaching it, which is where the exponential
+    # blow-up on inputs like \"aaaa...b\" comes from.
+    def breaks(start):
+        if start >= len(s):
+            return True
+        if start not in memo:
+            memo[start] = any(
+                s[start:end] in words and breaks(end)
+                for end in range(start + 1, len(s) + 1)
+            )
+        return memo[start]
+
+    return breaks(0)"),
+    ],
+    check: Check(
+      signature: "def wordBreak(s, wordDict):",
+      starter: "def wordBreak(s, wordDict):
+    pass",
+      harness: "try:
+    (wordBreak)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"wordBreak('leetcode', ['leet', 'code'])\", True, wordBreak('leetcode', ['leet', 'code']))
+__case__(\"wordBreak('applepenapple', ['apple', 'pen'])\", True, wordBreak('applepenapple', ['apple', 'pen']))
+__case__(\"wordBreak('catsandog', ['cats', 'dog', 'sand', 'and', 'cat'])\", False, wordBreak('catsandog', ['cats', 'dog', 'sand', 'and', 'cat']))
+__case__(\"wordBreak('', ['a'])\", True, wordBreak('', ['a']))
+__case__(\"wordBreak('a', [])\", False, wordBreak('a', []))
+__case__(\"wordBreak('aaaaaaa', ['aaa', 'aaaa'])\", True, wordBreak('aaaaaaa', ['aaa', 'aaaa']))",
+    ),
+  )
+}
+
+pub fn nc74_longest_increasing_subsequence() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The longest subsequence ending at each position: one plus the best of every earlier position holding a smaller value. O(n²), and the version to reach for first because the recurrence is stated directly rather than encoded.", "def lengthOfLIS(nums):
+    # The longest subsequence ending at each position: one plus the best of
+    # every earlier position holding a smaller value. Building the answers in
+    # order means every \"earlier position\" is already known.
+    endings = []
+    best = 0
+
+    for n in nums:
+        here = 1 + max((length for value, length in endings if value < n), default=0)
+        endings.append((n, here))
+        best = max(best, here)
+
+    return best"),
+      #("Solution 2 · Patience", "Patience sorting. Keep the smallest value that a subsequence of each length can end with; that list stays sorted, so each number either extends it or replaces the first entry it is no bigger than — a halving search, giving O(n log n). Note what the list is not: it is not the answer subsequence, only its length is meaningful.", "from bisect import bisect_left
+
+
+def lengthOfLIS(nums):
+    # Patience sorting. Keep the smallest value that any subsequence of each
+    # length ends with; that list is always sorted, so each number either
+    # extends it or replaces the first entry it is no bigger than. The list is
+    # not the answer subsequence -- only its length is meaningful.
+    tails = []
+    for n in nums:
+        at = bisect_left(tails, n)
+        if at == len(tails):
+            tails.append(n)
+        else:
+            tails[at] = n
+    return len(tails)"),
+    ],
+    check: Check(
+      signature: "def lengthOfLIS(nums):",
+      starter: "def lengthOfLIS(nums):
+    pass",
+      harness: "try:
+    (lengthOfLIS)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"lengthOfLIS([10, 9, 2, 5, 3, 7, 101, 18])\", 4, lengthOfLIS([10, 9, 2, 5, 3, 7, 101, 18]))
+__case__(\"lengthOfLIS([0, 1, 0, 3, 2, 3])\", 4, lengthOfLIS([0, 1, 0, 3, 2, 3]))
+__case__(\"lengthOfLIS([7, 7, 7, 7, 7, 7, 7])\", 1, lengthOfLIS([7, 7, 7, 7, 7, 7, 7]))
+__case__(\"lengthOfLIS([])\", 0, lengthOfLIS([]))
+__case__(\"lengthOfLIS([1])\", 1, lengthOfLIS([1]))
+__case__(\"lengthOfLIS([4, 10, 4, 3, 8, 9])\", 3, lengthOfLIS([4, 10, 4, 3, 8, 9]))",
+    ),
+  )
+}
+
+pub fn nc75_partition_equal_subset() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Subset sum in disguise: an equal split exists exactly when some subset adds to half the total, and an odd total rules it out before any work. Carrying the set of reachable sums needs no ordering and no table, and duplicates cost nothing because a set collapses them.", "def canPartition(nums):
+    total = sum(nums)
+    if total % 2:
+        return False
+
+    # Subset sum in disguise: an equal split exists exactly when some subset
+    # adds up to half the total. Carry the set of sums reachable so far and
+    # widen it by each number -- no ordering, no table, and duplicates cost
+    # nothing because a set collapses them.
+    half = total // 2
+    reachable = {0}
+    for n in nums:
+        reachable |= {reached + n for reached in reachable if reached + n <= half}
+
+    return half in reachable"),
+      #("Solution 2 · Memoised", "Take this number or leave it, keyed by how much is still owed and how far along the list you are. As a recursion it is obviously a search over subsets, which the reachable-sums version hides — and the cache is what stops it enumerating all 2ⁿ of them.", "def canPartition(nums):
+    total = sum(nums)
+    if total % 2:
+        return False
+
+    memo = {}
+
+    # Take this number or leave it, keyed by how much is still owed and how much
+    # of the list is left. Written as a recursion it is obviously a search over
+    # subsets; the cache is what stops it enumerating all 2^n of them.
+    def reachable(index, owed):
+        if owed == 0:
+            return True
+        if index >= len(nums) or owed < 0:
+            return False
+        if (index, owed) not in memo:
+            memo[(index, owed)] = reachable(index + 1, owed - nums[index]) or reachable(
+                index + 1, owed
+            )
+        return memo[(index, owed)]
+
+    return reachable(0, total // 2)"),
+    ],
+    check: Check(
+      signature: "def canPartition(nums):",
+      starter: "def canPartition(nums):
+    pass",
+      harness: "try:
+    (canPartition)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"canPartition([1, 5, 11, 5])\", True, canPartition([1, 5, 11, 5]))
+__case__(\"canPartition([1, 2, 3, 5])\", False, canPartition([1, 2, 3, 5]))
+__case__(\"canPartition([2, 2])\", True, canPartition([2, 2]))
+__case__(\"canPartition([1])\", False, canPartition([1]))
+__case__(\"canPartition([1, 1])\", True, canPartition([1, 1]))
+__case__(\"canPartition([3, 3, 3, 4, 5])\", True, canPartition([3, 3, 3, 4, 5]))",
+    ),
+  )
+}
+
 pub fn tip01_counter() -> Embedded {
   Embedded(
     solutions: [
@@ -4171,6 +4890,18 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc61_pow" -> Ok(nc61_pow())
     "nc62_multiply_strings" -> Ok(nc62_multiply_strings())
     "nc63_detect_squares" -> Ok(nc63_detect_squares())
+    "nc64_climbing_stairs" -> Ok(nc64_climbing_stairs())
+    "nc65_min_cost_climbing_stairs" -> Ok(nc65_min_cost_climbing_stairs())
+    "nc66_house_robber" -> Ok(nc66_house_robber())
+    "nc67_house_robber_ii" -> Ok(nc67_house_robber_ii())
+    "nc68_longest_palindrome" -> Ok(nc68_longest_palindrome())
+    "nc69_palindromic_substrings" -> Ok(nc69_palindromic_substrings())
+    "nc70_decode_ways" -> Ok(nc70_decode_ways())
+    "nc71_coin_change" -> Ok(nc71_coin_change())
+    "nc72_maximum_product_subarray" -> Ok(nc72_maximum_product_subarray())
+    "nc73_word_break" -> Ok(nc73_word_break())
+    "nc74_longest_increasing_subsequence" -> Ok(nc74_longest_increasing_subsequence())
+    "nc75_partition_equal_subset" -> Ok(nc75_partition_equal_subset())
     "tip01_counter" -> Ok(tip01_counter())
     "tip02_defaultdict" -> Ok(tip02_defaultdict())
     "tip03_deque" -> Ok(tip03_deque())

@@ -134,6 +134,68 @@ pub fn groups() -> List(Group) {
         "nc26_sliding_window_maximum",
       ),
     ]),
+    Group("1-D Dynamic Programming", [
+      Drill(
+        "Climbing Stairs",
+        "You are climbing a staircase of n steps, taking either one or two steps at a time. In how many distinct ways can you reach the top?",
+        "nc64_climbing_stairs",
+      ),
+      Drill(
+        "Min Cost Climbing Stairs",
+        "You are given an array cost where cost[i] is what it costs to step off step i. You may start at step 0 or step 1, and may climb one or two steps. Return the minimum cost to reach the top.",
+        "nc65_min_cost_climbing_stairs",
+      ),
+      Drill(
+        "House Robber",
+        "Given an array of amounts of money in a row of houses, return the most you can rob without ever robbing two adjacent houses.",
+        "nc66_house_robber",
+      ),
+      Drill(
+        "House Robber II",
+        "The same as House Robber, except the houses are arranged in a circle, so the first and last are adjacent.",
+        "nc67_house_robber_ii",
+      ),
+      Drill(
+        "Longest Palindromic Substring",
+        "Given a string s, return the longest palindromic substring in s.",
+        "nc68_longest_palindrome",
+      ),
+      Drill(
+        "Palindromic Substrings",
+        "Given a string s, return the number of palindromic substrings in it. Substrings at different positions count separately even if they read the same.",
+        "nc69_palindromic_substrings",
+      ),
+      Drill(
+        "Decode Ways",
+        "A message of digits was encoded with A as 1 through Z as 26. Given the digit string, return the number of ways to decode it. A leading zero is never a valid encoding.",
+        "nc70_decode_ways",
+      ),
+      Drill(
+        "Coin Change",
+        "Given coin denominations and a target amount, return the fewest coins that make up that amount, or -1 if no combination does. You have an unlimited supply of each coin.",
+        "nc71_coin_change",
+      ),
+      Drill(
+        "Maximum Product Subarray",
+        "Given an integer array nums, find the contiguous subarray with the largest product and return that product.",
+        "nc72_maximum_product_subarray",
+      ),
+      Drill(
+        "Word Break",
+        "Given a string s and a dictionary of words, return true if s can be segmented into a sequence of one or more dictionary words. Words may be reused.",
+        "nc73_word_break",
+      ),
+      Drill(
+        "Longest Increasing Subsequence",
+        "Given an integer array nums, return the length of the longest strictly increasing subsequence.",
+        "nc74_longest_increasing_subsequence",
+      ),
+      Drill(
+        "Partition Equal Subset Sum",
+        "Given an integer array nums, return true if it can be split into two subsets with equal sums.",
+        "nc75_partition_equal_subset",
+      ),
+    ]),
     Group("Math & Geometry", [
       Drill(
         "Rotate Image",

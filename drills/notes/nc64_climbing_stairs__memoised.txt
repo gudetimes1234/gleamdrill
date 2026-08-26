@@ -1,0 +1,1 @@
+The same recurrence from the top down, with a cache. Heavier than the rolling pair, but it is the shape you reach for first when the recurrence is not obviously a straight line — and the memo is the entire difference between O(n) and O(2ⁿ).

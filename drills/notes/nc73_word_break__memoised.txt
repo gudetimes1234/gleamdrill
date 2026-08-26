@@ -1,0 +1,1 @@
+Top-down: from this position, does a dictionary word start here and leave a suffix that also breaks? Without the cache the same suffix is asked about once per way of reaching it, which is where the exponential blow-up on inputs like "aaaa…b" comes from.

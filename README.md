@@ -33,16 +33,17 @@ practice.
 
 | Category | Language | Drills | Solutions | Runnable tests |
 |---|---|---|---|---|
-| NeetCode 150 | Python | 63 | 131 | yes |
-| NeetCode 150 (Gleam) | Gleam | 63 | 127 | yes |
-| NeetCode 150 (TypeScript) | TypeScript | 63 | 128 | yes |
-| NeetCode 150 (Elixir) | Elixir | 63 | 128 | no — reveal-only |
+| NeetCode 150 | Python | 75 | 155 | yes |
+| NeetCode 150 (Gleam) | Gleam | 75 | 151 | yes |
+| NeetCode 150 (TypeScript) | TypeScript | 75 | 152 | yes |
+| NeetCode 150 (Elixir) | Elixir | 75 | 152 | no — reveal-only |
 | Python Tips / Idioms | Python | 8 | 16 | yes |
 | Gleam Tips / Idioms | Gleam | 10 | 20 | yes |
 
-Nine NeetCode categories are complete — Arrays & Hashing, Two Pointers, Sliding
-Window, Stack, Binary Search, Intervals, Greedy, Bit Manipulation and Math &
-Geometry. The rest of the 150 lands category by category;
+Ten NeetCode categories are complete — Arrays & Hashing, Two Pointers, Sliding
+Window, Stack, Binary Search, Intervals, Greedy, Bit Manipulation, Math &
+Geometry and 1-D Dynamic Programming. Half the 150 is in. The rest lands
+category by category;
 `src/algodrill/problems/catalog.gleam` is the one ordered listing, and every
 language builds its view of it.
 

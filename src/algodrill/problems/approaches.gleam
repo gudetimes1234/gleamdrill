@@ -106,6 +106,43 @@ pub fn for_title(title: String) -> String {
     "Search in Rotated Sorted Array" ->
       "Binary search with a twist: after the rotation, one half around the midpoint is always sorted. Check which half is sorted, then use its endpoints to decide whether the target lies inside it \u{2014} recurse into that half or the other."
 
+    // 1-D Dynamic Programming
+    "Climbing Stairs" ->
+      "The last move was either one step or two, so the ways to reach step n are the ways to reach n\u{2212}1 plus the ways to reach n\u{2212}2 \u{2014} Fibonacci with a staircase painted on it. Only the last two values matter, so two variables replace the table. The top-down version with a cache is the same recurrence and worth writing once: the memo is the whole difference between O(n) and O(2\u{207f})."
+
+    "Min Cost Climbing Stairs" ->
+      "Cost to stand on each step, carried forward: getting here meant paying for one of the two steps below, whichever was cheaper. Either of the first two is a legal start, which is what the final min covers. Reading the recurrence backwards \u{2014} what it costs to *finish* from each step \u{2014} gives the same answer and is often the easier direction to state."
+
+    "House Robber" ->
+      "At each house: take it and add what was safe two houses back, or skip it and keep the best so far. Both are single numbers, so the table collapses to a pair. Writing it as a recursion instead makes visible what the rolling pair hides \u{2014} that the problem is a tree of choices, and the cache is what flattens it."
+
+    "House Robber II" ->
+      "The circle matters through one constraint only: the first and last houses are neighbours, so at most one is robbed. Rule each out in turn and what is left is the straight-line problem you already solved, twice. Reusing a solved problem beats inventing a circular recurrence."
+
+    "Longest Palindromic Substring" ->
+      "Every palindrome has a centre, and there are only 2n of them \u{2014} n characters and n gaps between them. Growing outwards from each is O(n\u{b2}) and needs no table. The gaps are the part people forget: without them every even-length palindrome is invisible."
+
+    "Palindromic Substrings" ->
+      "The same 2n centres as the longest-palindrome problem, except that here every successful widening is itself an answer, so you count expansions rather than measuring the biggest. The table version says s[i..j] is a palindrome when its ends match and the inside already was, which forces the spans to be filled shortest first."
+
+    "Decode Ways" ->
+      "Two rolling counts: the ways up to here are the ways up to the previous character, if this one stands alone, plus the ways up to the one before that, if the pair reads as 10 to 26. Zeros are the whole difficulty \u{2014} one can never stand alone, and only 10 and 20 can carry one. Note the base case is 1, not 0: reaching the end is one complete decoding."
+
+    "Coin Change" ->
+      "Build up from zero: the cheapest way to make a target is one coin more than the cheapest way to make what is left after some coin. Leaving unreachable amounts out of the table entirely avoids inventing a sentinel for infinity. The same thing as breadth-first search from zero \u{2014} which makes clear the answer is a shortest path."
+
+    "Maximum Product Subarray" ->
+      "A negative number turns the best running product into the worst and the worst into the best, so both have to be carried. Zero resets them, which falls out for free from including the element itself among the candidates rather than special-casing it."
+
+    "Word Break" ->
+      "Positions, not substrings. Position 0 is reachable, and a position becomes reachable when some dictionary word bridges the gap from one already reached; the answer is whether the end is. Top-down asks the same question of suffixes, where the cache is essential \u{2014} inputs like \"aaaa\u{2026}b\" reach the same suffix exponentially many ways."
+
+    "Longest Increasing Subsequence" ->
+      "The direct recurrence is O(n\u{b2}): the longest subsequence ending here is one plus the best ending at any earlier smaller value. Patience sorting gets O(n log n) by keeping the smallest value a subsequence of each length can end with \u{2014} that list stays sorted, so each number is placed by halving. It is not the answer subsequence, only its length is."
+
+    "Partition Equal Subset Sum" ->
+      "Subset sum in disguise: an equal split exists exactly when some subset adds to half the total, and an odd total rules it out before any work at all. Carrying the set of reachable sums needs no ordering and no table; writing it as take-it-or-leave-it recursion makes the underlying 2\u{207f} search visible."
+
     // Math & Geometry
     "Rotate Image" ->
       "A quarter turn is two reflections: through the main diagonal, then through the vertical centre line. Both are easy to write and neither needs index arithmetic, which beats memorising the four-way element cycle. If you would rather derive it, the entry at (row, column) after a clockwise turn came from (n \u{2212} 1 \u{2212} column, row)."

@@ -1,0 +1,1 @@
+Patience sorting. Keep the smallest value that a subsequence of each length can end with; that list stays sorted, so each number either extends it or replaces the first entry it is no bigger than — a halving search, giving O(n log n). Note what the list is not: it is not the answer subsequence, only its length is meaningful.

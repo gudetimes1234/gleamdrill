@@ -1,0 +1,1 @@
+Cost to stand on each step, carried forward: getting here means having paid for one of the two steps below, whichever was cheaper. Two variables again, because nothing older than two steps back can matter. Either of the first two steps is a legal start, which is what the final min covers.

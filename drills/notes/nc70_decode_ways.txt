@@ -1,0 +1,1 @@
+Two rolling counts. The ways to decode up to here are the ways up to the previous character, if this one can stand alone, plus the ways up to the one before that, if this one and its predecessor read as 10 to 26. A leading zero kills the first branch; anything outside that range kills the second.

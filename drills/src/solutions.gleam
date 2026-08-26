@@ -139,6 +139,30 @@ import nc62_multiply_strings
 import nc62_multiply_strings__partial_sums
 import nc63_detect_squares
 import nc63_detect_squares__by_side_length
+import nc64_climbing_stairs
+import nc64_climbing_stairs__memoised
+import nc65_min_cost_climbing_stairs
+import nc65_min_cost_climbing_stairs__from_the_top
+import nc66_house_robber
+import nc66_house_robber__memoised
+import nc67_house_robber_ii
+import nc67_house_robber_ii__both_at_once
+import nc68_longest_palindrome
+import nc68_longest_palindrome__brute_force
+import nc69_palindromic_substrings
+import nc69_palindromic_substrings__dp_table
+import nc70_decode_ways
+import nc70_decode_ways__memoised
+import nc71_coin_change
+import nc71_coin_change__breadth_first
+import nc72_maximum_product_subarray
+import nc72_maximum_product_subarray__prefix_and_suffix
+import nc73_word_break
+import nc73_word_break__memoised
+import nc74_longest_increasing_subsequence
+import nc74_longest_increasing_subsequence__patience
+import nc75_partition_equal_subset
+import nc75_partition_equal_subset__memoised
 import tip01_list_patterns
 import tip01_list_patterns__stdlib
 import tip02_tail_recursion
@@ -351,6 +375,40 @@ pub fn main() {
       nc63_detect_squares__by_side_length.add,
       nc63_detect_squares__by_side_length.count,
     ),
+    check_climbing_stairs(nc64_climbing_stairs.climb_stairs),
+    check_climbing_stairs(nc64_climbing_stairs__memoised.climb_stairs),
+    check_min_cost_climbing(
+      nc65_min_cost_climbing_stairs.min_cost_climbing_stairs,
+    ),
+    check_min_cost_climbing(
+      nc65_min_cost_climbing_stairs__from_the_top.min_cost_climbing_stairs,
+    ),
+    check_house_robber(nc66_house_robber.rob),
+    check_house_robber(nc66_house_robber__memoised.rob),
+    check_house_robber_ii(nc67_house_robber_ii.rob),
+    check_house_robber_ii(nc67_house_robber_ii__both_at_once.rob),
+    check_longest_palindrome(nc68_longest_palindrome.longest_palindrome),
+    check_longest_palindrome(
+      nc68_longest_palindrome__brute_force.longest_palindrome,
+    ),
+    check_palindromic_substrings(nc69_palindromic_substrings.count_substrings),
+    check_palindromic_substrings(
+      nc69_palindromic_substrings__dp_table.count_substrings,
+    ),
+    check_decode_ways(nc70_decode_ways.num_decodings),
+    check_decode_ways(nc70_decode_ways__memoised.num_decodings),
+    check_coin_change(nc71_coin_change.coin_change),
+    check_coin_change(nc71_coin_change__breadth_first.coin_change),
+    check_maximum_product(nc72_maximum_product_subarray.max_product),
+    check_maximum_product(
+      nc72_maximum_product_subarray__prefix_and_suffix.max_product,
+    ),
+    check_word_break(nc73_word_break.word_break),
+    check_word_break(nc73_word_break__memoised.word_break),
+    check_lis(nc74_longest_increasing_subsequence.length_of_lis),
+    check_lis(nc74_longest_increasing_subsequence__patience.length_of_lis),
+    check_partition_equal(nc75_partition_equal_subset.can_partition),
+    check_partition_equal(nc75_partition_equal_subset__memoised.can_partition),
 
     // Gleam Tips
     check_list_patterns(tip01_list_patterns.length, tip01_list_patterns.last),
@@ -965,6 +1023,147 @@ fn check_detect_squares(
     |> add(#(1, 1))
     |> count(#(0, 0))
     == 1
+  Nil
+}
+
+fn check_climbing_stairs(f: fn(Int) -> Int) -> Nil {
+  let assert True = f(2) == 2
+  let assert True = f(3) == 3
+  let assert True = f(1) == 1
+  // Zero steps is one way \u{2014} stand still \u{2014} which is what makes the base case
+  // of the recurrence work out.
+  let assert True = f(0) == 1
+  let assert True = f(10) == 89
+  // Large enough that an unmemoised recursion would take longer than a life.
+  let assert True = f(45) == 1_836_311_903
+  Nil
+}
+
+fn check_min_cost_climbing(f: fn(List(Int)) -> Int) -> Nil {
+  let assert True = f([10, 15, 20]) == 15
+  let assert True = f([1, 100, 1, 1, 1, 100, 1, 1, 100, 1]) == 6
+  let assert True = f([0, 0]) == 0
+  // Either step may be the starting point, so the cheaper of the first two is
+  // free.
+  let assert True = f([1, 2]) == 1
+  let assert True = f([0, 1, 1, 0]) == 1
+  let assert True = f([]) == 0
+  Nil
+}
+
+fn check_house_robber(f: fn(List(Int)) -> Int) -> Nil {
+  let assert True = f([1, 2, 3, 1]) == 4
+  let assert True = f([2, 7, 9, 3, 1]) == 12
+  let assert True = f([5]) == 5
+  let assert True = f([]) == 0
+  // Taking both ends beats taking the middle, which a greedy pass gets wrong.
+  let assert True = f([2, 1, 1, 2]) == 4
+  let assert True = f([1, 2]) == 2
+  Nil
+}
+
+fn check_house_robber_ii(f: fn(List(Int)) -> Int) -> Nil {
+  // First and last are neighbours, so 2 + 2 is not available.
+  let assert True = f([2, 3, 2]) == 3
+  let assert True = f([1, 2, 3, 1]) == 4
+  let assert True = f([1, 2, 3]) == 3
+  let assert True = f([1]) == 1
+  let assert True = f([]) == 0
+  let assert True = f([1, 2]) == 2
+  Nil
+}
+
+/// Only inputs with a single longest palindrome, since the problem allows any
+/// of them and the two variants would otherwise disagree legitimately.
+fn check_longest_palindrome(f: fn(String) -> String) -> Nil {
+  let assert True = f("cbbd") == "bb"
+  let assert True = f("a") == "a"
+  let assert True = f("") == ""
+  let assert True = f("forgeeksskeegfor") == "geeksskeeg"
+  // Even and odd centres: "aaaa" needs a gap centre, "racecar" a character one.
+  let assert True = f("aaaa") == "aaaa"
+  let assert True = f("racecar") == "racecar"
+  let assert True = f("abb") == "bb"
+  Nil
+}
+
+fn check_palindromic_substrings(f: fn(String) -> Int) -> Nil {
+  let assert True = f("abc") == 3
+  let assert True = f("aaa") == 6
+  let assert True = f("") == 0
+  let assert True = f("a") == 1
+  let assert True = f("aba") == 4
+  let assert True = f("abccba") == 9
+  Nil
+}
+
+fn check_decode_ways(f: fn(String) -> Int) -> Nil {
+  let assert True = f("12") == 2
+  let assert True = f("226") == 3
+  // A zero can never stand alone, and only 10 and 20 can carry one.
+  let assert True = f("06") == 0
+  let assert True = f("0") == 0
+  let assert True = f("") == 0
+  let assert True = f("10") == 1
+  let assert True = f("2101") == 1
+  let assert True = f("11106") == 2
+  Nil
+}
+
+fn check_coin_change(f: fn(List(Int), Int) -> Int) -> Nil {
+  let assert True = f([1, 2, 5], 11) == 3
+  let assert True = f([2], 3) == -1
+  let assert True = f([1], 0) == 0
+  let assert True = f([], 5) == -1
+  // Greedy takes 4 + 1 + 1; the answer is 3 + 3.
+  let assert True = f([1, 3, 4], 6) == 2
+  let assert True = f([2, 5, 10, 1], 27) == 4
+  Nil
+}
+
+fn check_maximum_product(f: fn(List(Int)) -> Int) -> Nil {
+  let assert True = f([2, 3, -2, 4]) == 6
+  // A zero, which resets the running product rather than poisoning it.
+  let assert True = f([-2, 0, -1]) == 0
+  // Two negatives make a positive, so the best answer spans the whole array.
+  let assert True = f([-2, 3, -4]) == 24
+  let assert True = f([0]) == 0
+  let assert True = f([-2]) == -2
+  let assert True = f([2, -5, -2, -4, 3]) == 24
+  let assert True = f([]) == 0
+  Nil
+}
+
+fn check_word_break(f: fn(String, List(String)) -> Bool) -> Nil {
+  let assert True = f("leetcode", ["leet", "code"])
+  let assert True = f("applepenapple", ["apple", "pen"])
+  // "cats" and "and" leave "og"; "cat" and "sand" leave "og" too.
+  let assert False = f("catsandog", ["cats", "dog", "sand", "and", "cat"])
+  let assert True = f("", ["a"])
+  let assert False = f("a", [])
+  let assert True = f("aaaaaaa", ["aaa", "aaaa"])
+  Nil
+}
+
+fn check_lis(f: fn(List(Int)) -> Int) -> Nil {
+  let assert True = f([10, 9, 2, 5, 3, 7, 101, 18]) == 4
+  let assert True = f([0, 1, 0, 3, 2, 3]) == 4
+  // Strictly increasing, so equal values do not extend anything.
+  let assert True = f([7, 7, 7, 7, 7, 7, 7]) == 1
+  let assert True = f([]) == 0
+  let assert True = f([1]) == 1
+  let assert True = f([4, 10, 4, 3, 8, 9]) == 3
+  Nil
+}
+
+fn check_partition_equal(f: fn(List(Int)) -> Bool) -> Nil {
+  let assert True = f([1, 5, 11, 5])
+  // Sums to 11, which is odd, so it cannot split however the values fall.
+  let assert False = f([1, 2, 3, 5])
+  let assert True = f([2, 2])
+  let assert False = f([1])
+  let assert True = f([1, 1])
+  let assert True = f([3, 3, 3, 4, 5])
   Nil
 }
 

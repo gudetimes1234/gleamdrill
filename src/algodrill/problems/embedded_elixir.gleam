@@ -2866,6 +2866,620 @@ end"),
   ]
 }
 
+pub fn nc64_climbing_stairs() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The last move was either one step or two, so the ways to reach step n are the ways to reach n−1 plus the ways to reach n−2 — Fibonacci with a staircase painted on it. Only the last two values ever matter, so two variables replace the whole table.", "defmodule Solution do
+  # The last move was either one step or two, so the ways to reach step n are
+  # the ways to reach n-1 plus the ways to reach n-2 -- Fibonacci with a
+  # staircase painted on it. Only the last two values matter.
+  def climb_stairs(n) do
+    {_previous, current} =
+      Enum.reduce(1..n//1, {0, 1}, fn _, {previous, current} ->
+        {current, previous + current}
+      end)
+
+    current
+  end
+end"),
+    #("Solution 2 · Memoised", "The same recurrence from the top down, with a cache. Heavier than the rolling pair, but it is the shape you reach for first when the recurrence is not obviously a straight line — and the memo is the entire difference between O(n) and O(2ⁿ).", "defmodule Solution do
+  def climb_stairs(n) do
+    {answer, _memo} = ways(n, %{})
+    answer
+  end
+
+  # The same recurrence from the top down, with a cache carried through the
+  # recursion. Slower and heavier than the rolling pair, but it is the shape you
+  # reach for first when the recurrence is not obviously a straight line -- and
+  # the memo is the whole difference between O(n) and O(2^n).
+  defp ways(n, memo) when n <= 1, do: {1, memo}
+
+  defp ways(n, memo) do
+    case Map.fetch(memo, n) do
+      {:ok, cached} ->
+        {cached, memo}
+
+      :error ->
+        {a, memo} = ways(n - 1, memo)
+        {b, memo} = ways(n - 2, memo)
+        {a + b, Map.put(memo, n, a + b)}
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc65_min_cost_climbing_stairs() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Cost to stand on each step, carried forward: getting here means having paid for one of the two steps below, whichever was cheaper. Two variables again, because nothing older than two steps back can matter. Either of the first two steps is a legal start, which is what the final min covers.", "defmodule Solution do
+  # Cost to stand on each step, carried forward: getting here means having paid
+  # for one of the two steps below, whichever was cheaper. Two variables again,
+  # because nothing older than two steps back can matter.
+  def min_cost_climbing_stairs(cost) do
+    {one_back, two_back} =
+      Enum.reduce(cost, {0, 0}, fn price, {one_back, two_back} ->
+        {price + min(one_back, two_back), one_back}
+      end)
+
+    min(one_back, two_back)
+  end
+end"),
+    #("Solution 2 · From the top", "The same recurrence read the other way: not \"what did it cost to get here\" but \"what will it cost to finish from here\". Walking backwards, each step's answer is its own price plus the cheaper of the two ahead. Worth writing both — one direction is usually far easier to state than the other, and which one varies by problem.", "defmodule Solution do
+  # The same recurrence read the other way: instead of \"what did it cost to get
+  # here\", ask \"what will it cost to finish from here\". Walking backwards, the
+  # answer at each step is its own price plus the cheaper of the two ahead, and
+  # the start is the better of the first two.
+  def min_cost_climbing_stairs(cost) do
+    {one_ahead, two_ahead} =
+      cost
+      |> Enum.reverse()
+      |> Enum.reduce({0, 0}, fn price, {one_ahead, two_ahead} ->
+        {price + min(one_ahead, two_ahead), one_ahead}
+      end)
+
+    min(one_ahead, two_ahead)
+  end
+end"),
+  ]
+}
+
+pub fn nc66_house_robber() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "At each house the choice is take it and add what was safe two houses back, or skip it and keep the best so far. Both of those are one number, so the whole table collapses to a pair of running values.", "defmodule Solution do
+  # At each house the choice is take it and add what was safe two houses back,
+  # or skip it and keep the best so far. Both answers are one number, so the
+  # whole table collapses to a pair.
+  def rob(nums) do
+    {best, _previous} =
+      Enum.reduce(nums, {0, 0}, fn value, {best, previous} ->
+        {max(best, previous + value), best}
+      end)
+
+    best
+  end
+end"),
+    #("Solution 2 · Memoised", "The same choice written as a recursion from the front: rob this house and skip the next, or skip this one. Exponential without the cache and linear with it — which is the lesson, because the rolling pair hides that the problem ever had a tree of choices at all.", "defmodule Solution do
+  def rob(nums) do
+    {best, _memo} = from(0, List.to_tuple(nums), length(nums), %{})
+    best
+  end
+
+  # The same choice written as a recursion from the front: rob this house and
+  # skip the next, or skip this one. Exponential without the cache and linear
+  # with it -- which is the lesson, since the rolling pair hides that the
+  # problem ever had a tree of choices at all.
+  defp from(index, _houses, count, memo) when index >= count, do: {0, memo}
+
+  defp from(index, houses, count, memo) do
+    case Map.fetch(memo, index) do
+      {:ok, cached} ->
+        {cached, memo}
+
+      :error ->
+        {taken, memo} = from(index + 2, houses, count, memo)
+        {skipped, memo} = from(index + 1, houses, count, memo)
+        best = max(elem(houses, index) + taken, skipped)
+        {best, Map.put(memo, index, best)}
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc67_house_robber_ii() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The circle matters through exactly one constraint: the first and last houses are neighbours, so at most one of them is robbed. Ruling each out in turn leaves two ordinary straight-line problems, and the answer is the better of the two — reusing a solved problem rather than inventing a circular recurrence.", "defmodule Solution do
+  def rob([]), do: 0
+  def rob([only]), do: only
+
+  # The circle only matters through one constraint: the first and last houses
+  # are neighbours, so at most one of them is robbed. Ruling each out in turn
+  # leaves two ordinary straight-line problems, and the answer is the better.
+  def rob(nums) do
+    max(straight(tl(nums)), straight(Enum.drop(nums, -1)))
+  end
+
+  defp straight(nums) do
+    {best, _previous} =
+      Enum.reduce(nums, {0, 0}, fn value, {best, previous} ->
+        {max(best, previous + value), best}
+      end)
+
+    best
+  end
+end"),
+    #("Solution 2 · Both at once", "One pass carrying both stories at the same time: the run allowed to take the first house, and the run that is not. Neither ever consults the other, so this is exactly the two-pass version interleaved — worth knowing when the input can only be walked once.", "defmodule Solution do
+  def rob([]), do: 0
+  def rob([only]), do: only
+
+  # One pass carrying both stories at the same time: the run that is allowed to
+  # take the first house, and the run that is not. Neither ever looks at the
+  # other, so this is the two-pass version interleaved -- useful when the input
+  # can only be walked once.
+  def rob(nums) do
+    last = length(nums) - 1
+
+    {{with_first, _}, {without_first, _}} =
+      nums
+      |> Enum.with_index()
+      |> Enum.reduce({{0, 0}, {0, 0}}, fn {value, i}, {with_first, without_first} ->
+        {
+          if(i == last, do: with_first, else: step(with_first, value)),
+          if(i == 0, do: without_first, else: step(without_first, value))
+        }
+      end)
+
+    max(with_first, without_first)
+  end
+
+  defp step({best, previous}, value), do: {max(best, previous + value), best}
+end"),
+  ]
+}
+
+pub fn nc68_longest_palindrome() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Every palindrome has a centre, and there are only 2n of them — n characters and n gaps between them. Growing outwards from each is O(n²) with no table at all. The gaps are what people forget: without them, every even-length palindrome is invisible.", "defmodule Solution do
+  def longest_palindrome(\"\"), do: \"\"
+
+  # Every palindrome has a centre, and there are only 2n of them -- n single
+  # characters and n gaps between them. Growing outwards from each is O(n^2)
+  # total and needs no table.
+  def longest_palindrome(s) do
+    chars = s |> String.graphemes() |> List.to_tuple()
+    n = tuple_size(chars)
+
+    {start, length} =
+      Enum.reduce(0..(n - 1)//1, {0, 0}, fn i, best ->
+        Enum.reduce([{i, i}, {i, i + 1}], best, fn {left, right}, best ->
+          found = expand(chars, n, left, right)
+          if elem(found, 1) > elem(best, 1), do: found, else: best
+        end)
+      end)
+
+    String.slice(s, start, length)
+  end
+
+  # Widens while the ends match, then reports where it stopped as a start and a
+  # length. The two pointers have gone one step too far by then, which is where
+  # the +1 and the -1 come from.
+  defp expand(chars, n, left, right) do
+    if left >= 0 and right < n and elem(chars, left) == elem(chars, right) do
+      expand(chars, n, left - 1, right + 1)
+    else
+      {left + 1, right - left - 1}
+    end
+  end
+end"),
+    #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every start with every length, each checked against its own reverse. O(n³), and the thing centre expansion optimises: it never re-checks the inside of a palindrome it has already grown through.", "defmodule Solution do
+  # Every start with every length. O(n^3) once the palindrome check is counted
+  # -- the definition, and what centre expansion is an optimisation of.
+  def longest_palindrome(\"\"), do: \"\"
+
+  def longest_palindrome(s) do
+    n = String.length(s)
+
+    for start <- 0..(n - 1)//1, length <- 1..(n - start)//1, reduce: \"\" do
+      best ->
+        candidate = String.slice(s, start, length)
+
+        if String.length(candidate) > String.length(best) and
+             candidate == String.reverse(candidate),
+           do: candidate,
+           else: best
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc69_palindromic_substrings() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The same 2n centres as finding the longest one, except that here every successful widening is itself an answer. So the count is how many times the expansion succeeded rather than how far it got — one line different, same scan.", "defmodule Solution do
+  def count_substrings(\"\"), do: 0
+
+  # Same 2n centres as finding the longest one, except that here every
+  # successful widening is itself an answer, so the count is how many times the
+  # expansion succeeded rather than how far it got.
+  def count_substrings(s) do
+    chars = s |> String.graphemes() |> List.to_tuple()
+    n = tuple_size(chars)
+
+    Enum.reduce(0..(n - 1)//1, 0, fn i, total ->
+      total + grow(chars, n, i, i) + grow(chars, n, i, i + 1)
+    end)
+  end
+
+  defp grow(chars, n, left, right) do
+    if left >= 0 and right < n and elem(chars, left) == elem(chars, right),
+      do: 1 + grow(chars, n, left - 1, right + 1),
+      else: 0
+  end
+end"),
+    #("Solution 2 · Dp table", "A table over spans: s[i..j] is a palindrome when its ends match and the span inside already was. That dependency forces the fill order — shortest spans first — which is the only real content of the outer loop and the thing to get right.", "defmodule Solution do
+  def count_substrings(\"\"), do: 0
+
+  # The table says whether s[i..j] is a palindrome. It is when its ends match
+  # and whatever is between them already was -- so the spans have to be filled
+  # shortest first, which is the whole reason for the outer loop over length.
+  def count_substrings(s) do
+    chars = s |> String.graphemes() |> List.to_tuple()
+    n = tuple_size(chars)
+
+    {_table, total} =
+      for length <- 0..(n - 1)//1, i <- 0..(n - 1)//1, i + length < n, reduce: {%{}, 0} do
+        {table, total} ->
+          j = i + length
+          inside = if j - i < 2, do: true, else: Map.fetch!(table, {i + 1, j - 1})
+          palindrome = elem(chars, i) == elem(chars, j) and inside
+          {Map.put(table, {i, j}, palindrome), if(palindrome, do: total + 1, else: total)}
+      end
+
+    total
+  end
+end"),
+  ]
+}
+
+pub fn nc70_decode_ways() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Two rolling counts. The ways to decode up to here are the ways up to the previous character, if this one can stand alone, plus the ways up to the one before that, if this one and its predecessor read as 10 to 26. A leading zero kills the first branch; anything outside that range kills the second.", "defmodule Solution do
+  def num_decodings(\"\"), do: 0
+
+  # Two rolling counts. The ways to decode up to here are the ways up to the
+  # previous character (if this one can stand alone) plus the ways up to the one
+  # before that (if this one and its predecessor form a legal pair). A leading
+  # zero kills the first branch; anything outside 10..26 kills the second.
+  def num_decodings(s) do
+    {_two_back, ways, _previous} =
+      s
+      |> String.graphemes()
+      |> Enum.with_index()
+      |> Enum.reduce({1, 1, \"\"}, fn {c, i}, {two_back, one_back, previous} ->
+        alone = if c == \"0\", do: 0, else: one_back
+        paired = if i > 0 and legal_pair?(previous, c), do: two_back, else: 0
+        {one_back, alone + paired, c}
+      end)
+
+    ways
+  end
+
+  defp legal_pair?(first, second) do
+    value = String.to_integer(first <> second)
+    value >= 10 and value <= 26
+  end
+end"),
+    #("Solution 2 · Memoised", "The same two choices as a recursion from the front: take one character, or take two if they form a legal pair. Reaching the end is one complete decoding, which is why the base case returns 1 and not 0 — the single most common place to get this problem wrong.", "defmodule Solution do
+  def num_decodings(\"\"), do: 0
+
+  def num_decodings(s) do
+    chars = s |> String.graphemes() |> List.to_tuple()
+    {ways, _memo} = from(0, tuple_size(chars), chars, %{})
+    ways
+  end
+
+  # The same two choices as a recursion from the front: take one character, or
+  # take two if they read as 10 to 26. Reaching the end is one complete
+  # decoding, which is why the base case returns 1 rather than 0.
+  defp from(index, n, _chars, memo) when index >= n, do: {1, memo}
+
+  defp from(index, n, chars, memo) do
+    case Map.fetch(memo, index) do
+      {:ok, cached} ->
+        {cached, memo}
+
+      :error ->
+        here = elem(chars, index)
+
+        if here == \"0\" do
+          {0, Map.put(memo, index, 0)}
+        else
+          {alone, memo} = from(index + 1, n, chars, memo)
+
+          {paired, memo} =
+            if index + 1 < n and legal_pair?(here, elem(chars, index + 1)),
+              do: from(index + 2, n, chars, memo),
+              else: {0, memo}
+
+          {alone + paired, Map.put(memo, index, alone + paired)}
+        end
+    end
+  end
+
+  defp legal_pair?(first, second) do
+    value = String.to_integer(first <> second)
+    value >= 10 and value <= 26
+  end
+end"),
+  ]
+}
+
+pub fn nc71_coin_change() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Build up from zero: the cheapest way to make a target is one coin more than the cheapest way to make what is left after removing some coin. Leaving unreachable amounts simply absent from the table saves inventing a sentinel for infinity and the comparisons that go with it.", "defmodule Solution do
+  # Build up from zero: the cheapest way to make a target is one coin more than
+  # the cheapest way to make what is left after removing some coin. An amount
+  # with no entry is simply unreachable, which saves inventing a sentinel for
+  # infinity.
+  def coin_change(coins, amount) do
+    table =
+      Enum.reduce(1..amount//1, %{0 => 0}, fn target, acc ->
+        options =
+          coins
+          |> Enum.filter(&(&1 <= target))
+          |> Enum.flat_map(fn coin ->
+            case Map.fetch(acc, target - coin) do
+              {:ok, fewest} -> [fewest]
+              :error -> []
+            end
+          end)
+
+        if options == [], do: acc, else: Map.put(acc, target, Enum.min(options) + 1)
+      end)
+
+    Map.get(table, amount, -1)
+  end
+end"),
+    #("Solution 2 · Breadth first", "The amounts reachable with k coins are one level of a breadth-first search from zero, so the first level containing the target is the answer. Same bound as the table, but it stops the moment it arrives rather than filling in every amount below the target — and it makes clear why the answer is a shortest path.", "defmodule Solution do
+  def coin_change(_coins, 0), do: 0
+
+  # The amounts reachable with k coins form one level of a breadth-first search
+  # from zero, so the first level containing the target is the answer. Same
+  # bound as the table, but it stops the moment it arrives rather than filling
+  # in every amount below the target.
+  def coin_change(coins, amount), do: walk(coins, amount, [0], MapSet.new([0]), 0)
+
+  defp walk(_coins, _amount, [], _seen, _used), do: -1
+
+  defp walk(coins, amount, frontier, seen, used) do
+    next =
+      for total <- frontier, coin <- coins, total + coin <= amount, uniq: true do
+        total + coin
+      end
+
+    if amount in next do
+      used + 1
+    else
+      fresh = Enum.reject(next, &MapSet.member?(seen, &1))
+      walk(coins, amount, fresh, MapSet.union(seen, MapSet.new(fresh)), used + 1)
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc72_maximum_product_subarray() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "A negative number turns the best running product into the worst and the worst into the best, so both have to be carried. Zero resets them, which falls out for free from taking the element itself as one of the candidates rather than special-casing it.", "defmodule Solution do
+  def max_product([]), do: 0
+
+  # A negative number turns the best running product into the worst and the
+  # worst into the best, so both have to be carried. Zero resets them both,
+  # which falls out of taking the element itself as an option.
+  def max_product([first | rest]) do
+    {_high, _low, best} =
+      Enum.reduce(rest, {first, first, first}, fn n, {high, low, best} ->
+        candidates = [n, high * n, low * n]
+        high = Enum.max(candidates)
+        {high, Enum.min(candidates), max(best, high)}
+      end)
+
+    best
+  end
+end"),
+    #("Solution 2 · Prefix and suffix", "A different argument entirely: the best subarray always runs to one end of the zero-free block it sits in, so running products swept from both directions — reset at each zero — cover every candidate. No min to track, and the reason it works is worth being able to state.", "defmodule Solution do
+  def max_product([]), do: 0
+
+  # A different argument entirely: the best subarray always runs to one end of
+  # the block it sits in, so sweeping running products from both directions --
+  # resetting at every zero -- is enough.
+  def max_product(nums), do: max(sweep(nums), sweep(Enum.reverse(nums)))
+
+  defp sweep(nums) do
+    {_running, best} =
+      Enum.reduce(nums, {1, :none}, fn n, {running, best} ->
+        running = if running == 0, do: n, else: running * n
+        {running, if(best == :none, do: running, else: max(best, running))}
+      end)
+
+    best
+  end
+end"),
+  ]
+}
+
+pub fn nc73_word_break() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Reachable positions rather than a table of booleans: position 0 is reachable, and a position becomes reachable when some dictionary word bridges the gap from one already reached. The answer is whether the end is reachable.", "defmodule Solution do
+  # Reachable positions rather than a table of booleans: start at 0, and a
+  # position is reachable when some word in the dictionary bridges the gap from
+  # a position already reached.
+  def word_break(s, word_dict) do
+    words = MapSet.new(word_dict)
+    n = String.length(s)
+
+    reached =
+      Enum.reduce(1..n//1, MapSet.new([0]), fn finish, reached ->
+        bridged =
+          Enum.any?(0..(finish - 1)//1, fn start ->
+            MapSet.member?(reached, start) and
+              MapSet.member?(words, String.slice(s, start, finish - start))
+          end)
+
+        if bridged, do: MapSet.put(reached, finish), else: reached
+      end)
+
+    MapSet.member?(reached, n)
+  end
+end"),
+    #("Solution 2 · Memoised", "Top-down: from this position, does a dictionary word start here and leave a suffix that also breaks? Without the cache the same suffix is asked about once per way of reaching it, which is where the exponential blow-up on inputs like \"aaaa…b\" comes from.", "defmodule Solution do
+  def word_break(s, word_dict) do
+    {answer, _memo} = from(0, String.length(s), s, MapSet.new(word_dict), %{})
+    answer
+  end
+
+  # Top-down: from this position, does any dictionary word start here and leave
+  # a suffix that also breaks? Without the cache the same suffix is asked about
+  # once per way of reaching it, which is where the exponential blow-up on
+  # inputs like \"aaaa...b\" comes from.
+  defp from(start, n, _s, _words, memo) when start >= n, do: {true, memo}
+
+  defp from(start, n, s, words, memo) do
+    case Map.fetch(memo, start) do
+      {:ok, cached} ->
+        {cached, memo}
+
+      :error ->
+        {found, memo} =
+          Enum.reduce_while((start + 1)..n//1, {false, memo}, fn finish, {_found, memo} ->
+            if MapSet.member?(words, String.slice(s, start, finish - start)) do
+              case from(finish, n, s, words, memo) do
+                {true, memo} -> {:halt, {true, memo}}
+                {false, memo} -> {:cont, {false, memo}}
+              end
+            else
+              {:cont, {false, memo}}
+            end
+          end)
+
+        {found, Map.put(memo, start, found)}
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc74_longest_increasing_subsequence() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The longest subsequence ending at each position: one plus the best of every earlier position holding a smaller value. O(n²), and the version to reach for first because the recurrence is stated directly rather than encoded.", "defmodule Solution do
+  # The longest subsequence ending at each position: one plus the best of every
+  # earlier position holding a smaller value. Building the answers in order
+  # means every \"earlier position\" is already known.
+  def length_of_lis(nums) do
+    {_endings, best} =
+      Enum.reduce(nums, {[], 0}, fn n, {endings, best} ->
+        here =
+          endings
+          |> Enum.filter(fn {value, _length} -> value < n end)
+          |> Enum.map(fn {_value, length} -> length end)
+          |> Enum.max(fn -> 0 end)
+          |> Kernel.+(1)
+
+        {[{n, here} | endings], max(best, here)}
+      end)
+
+    best
+  end
+end"),
+    #("Solution 2 · Patience", "Patience sorting. Keep the smallest value that a subsequence of each length can end with; that list stays sorted, so each number either extends it or replaces the first entry it is no bigger than — a halving search, giving O(n log n). Note what the list is not: it is not the answer subsequence, only its length is meaningful.", "defmodule Solution do
+  # Patience sorting. Keep the smallest value that any subsequence of each
+  # length ends with; that list is always sorted, so each number either extends
+  # it or replaces the first entry it is no bigger than. The list is not the
+  # answer subsequence -- only its length is meaningful.
+  def length_of_lis(nums) do
+    nums
+    |> Enum.reduce([], &place(&2, &1, []))
+    |> length()
+  end
+
+  defp place([], n, seen), do: Enum.reverse([n | seen])
+
+  defp place([first | rest], n, seen) do
+    if first >= n,
+      do: Enum.reverse([n | seen]) ++ rest,
+      else: place(rest, n, [first | seen])
+  end
+end"),
+  ]
+}
+
+pub fn nc75_partition_equal_subset() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Subset sum in disguise: an equal split exists exactly when some subset adds to half the total, and an odd total rules it out before any work. Carrying the set of reachable sums needs no ordering and no table, and duplicates cost nothing because a set collapses them.", "defmodule Solution do
+  # Subset sum in disguise: an equal split exists exactly when some subset adds
+  # up to half the total. Carry the set of sums reachable so far and widen it by
+  # each number -- no ordering, no table, and duplicates cost nothing because a
+  # set collapses them.
+  def can_partition(nums) do
+    total = Enum.sum(nums)
+
+    if rem(total, 2) != 0 do
+      false
+    else
+      half = div(total, 2)
+
+      reachable =
+        Enum.reduce(nums, MapSet.new([0]), fn n, sums ->
+          sums
+          |> Enum.map(&(&1 + n))
+          |> Enum.filter(&(&1 <= half))
+          |> MapSet.new()
+          |> MapSet.union(sums)
+        end)
+
+      MapSet.member?(reachable, half)
+    end
+  end
+end"),
+    #("Solution 2 · Memoised", "Take this number or leave it, keyed by how much is still owed and how far along the list you are. As a recursion it is obviously a search over subsets, which the reachable-sums version hides — and the cache is what stops it enumerating all 2ⁿ of them.", "defmodule Solution do
+  def can_partition(nums) do
+    total = Enum.sum(nums)
+
+    if rem(total, 2) != 0 do
+      false
+    else
+      {answer, _memo} = reachable(List.to_tuple(nums), 0, div(total, 2), %{})
+      answer
+    end
+  end
+
+  # Take this number or leave it, keyed by how much is still owed and how far
+  # along the list we are. Written as a recursion it is obviously a search over
+  # subsets; the cache is what stops it enumerating all 2^n of them.
+  defp reachable(_nums, _index, 0, memo), do: {true, memo}
+
+  defp reachable(nums, index, owed, memo) when index >= tuple_size(nums) or owed < 0,
+    do: {false, memo}
+
+  defp reachable(nums, index, owed, memo) do
+    case Map.fetch(memo, {index, owed}) do
+      {:ok, cached} ->
+        {cached, memo}
+
+      :error ->
+        {taken, memo} = reachable(nums, index + 1, owed - elem(nums, index), memo)
+
+        {answer, memo} =
+          if taken, do: {true, memo}, else: reachable(nums, index + 1, owed, memo)
+
+        {answer, Map.put(memo, {index, owed}, answer)}
+    end
+  end
+end"),
+  ]
+}
+
 pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -2931,6 +3545,18 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
     "nc61_pow" -> Ok(nc61_pow())
     "nc62_multiply_strings" -> Ok(nc62_multiply_strings())
     "nc63_detect_squares" -> Ok(nc63_detect_squares())
+    "nc64_climbing_stairs" -> Ok(nc64_climbing_stairs())
+    "nc65_min_cost_climbing_stairs" -> Ok(nc65_min_cost_climbing_stairs())
+    "nc66_house_robber" -> Ok(nc66_house_robber())
+    "nc67_house_robber_ii" -> Ok(nc67_house_robber_ii())
+    "nc68_longest_palindrome" -> Ok(nc68_longest_palindrome())
+    "nc69_palindromic_substrings" -> Ok(nc69_palindromic_substrings())
+    "nc70_decode_ways" -> Ok(nc70_decode_ways())
+    "nc71_coin_change" -> Ok(nc71_coin_change())
+    "nc72_maximum_product_subarray" -> Ok(nc72_maximum_product_subarray())
+    "nc73_word_break" -> Ok(nc73_word_break())
+    "nc74_longest_increasing_subsequence" -> Ok(nc74_longest_increasing_subsequence())
+    "nc75_partition_equal_subset" -> Ok(nc75_partition_equal_subset())
     _ -> Error(Nil)
   }
 }

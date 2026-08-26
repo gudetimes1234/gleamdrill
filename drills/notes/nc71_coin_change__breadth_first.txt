@@ -1,0 +1,1 @@
+The amounts reachable with k coins are one level of a breadth-first search from zero, so the first level containing the target is the answer. Same bound as the table, but it stops the moment it arrives rather than filling in every amount below the target — and it makes clear why the answer is a shortest path.

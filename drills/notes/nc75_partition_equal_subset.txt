@@ -1,0 +1,1 @@
+Subset sum in disguise: an equal split exists exactly when some subset adds to half the total, and an odd total rules it out before any work. Carrying the set of reachable sums needs no ordering and no table, and duplicates cost nothing because a set collapses them.

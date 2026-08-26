@@ -1,0 +1,1 @@
+The same recurrence read the other way: not "what did it cost to get here" but "what will it cost to finish from here". Walking backwards, each step's answer is its own price plus the cheaper of the two ahead. Worth writing both — one direction is usually far easier to state than the other, and which one varies by problem.

@@ -3991,6 +3991,779 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc64_climbing_stairs() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The last move was either one step or two, so the ways to reach step n are the ways to reach n−1 plus the ways to reach n−2 — Fibonacci with a staircase painted on it. Only the last two values ever matter, so two variables replace the whole table.", "export function climbStairs(n: number): number {
+  // The last move was either one step or two, so the ways to reach step n are
+  // the ways to reach n-1 plus the ways to reach n-2 -- Fibonacci with a
+  // staircase painted on it. Only the last two values matter.
+  let previous = 0;
+  let current = 1;
+  for (let i = 0; i < n; i++) [previous, current] = [current, previous + current];
+  return current;
+}"),
+      #("Solution 2 · Memoised", "The same recurrence from the top down, with a cache. Heavier than the rolling pair, but it is the shape you reach for first when the recurrence is not obviously a straight line — and the memo is the entire difference between O(n) and O(2ⁿ).", "export function climbStairs(n: number): number {
+  const memo = new Map<number, number>();
+
+  // The same recurrence from the top down, with a cache. Slower and heavier
+  // than the rolling pair, but it is the shape you reach for first when the
+  // recurrence is not obviously a straight line -- and the memo is the whole
+  // difference between O(n) and O(2^n).
+  const ways = (k: number): number => {
+    if (k <= 1) return 1;
+    if (!memo.has(k)) memo.set(k, ways(k - 1) + ways(k - 2));
+    return memo.get(k)!;
+  };
+
+  return ways(n);
+}"),
+    ],
+    check: Check(
+      signature: "export function climbStairs(n: number): number",
+      starter: "export function climbStairs(n: number): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.climbStairs !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"climbStairs(2)\", show(2), show(solution.climbStairs(2))],
+    [\"climbStairs(3)\", show(3), show(solution.climbStairs(3))],
+    [\"climbStairs(1)\", show(1), show(solution.climbStairs(1))],
+    [\"climbStairs(0)\", show(1), show(solution.climbStairs(0))],
+    [\"climbStairs(10)\", show(89), show(solution.climbStairs(10))],
+    [\"climbStairs(45)\", show(1836311903), show(solution.climbStairs(45))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc65_min_cost_climbing_stairs() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Cost to stand on each step, carried forward: getting here means having paid for one of the two steps below, whichever was cheaper. Two variables again, because nothing older than two steps back can matter. Either of the first two steps is a legal start, which is what the final min covers.", "export function minCostClimbingStairs(cost: number[]): number {
+  // Cost to stand on each step, carried forward: getting here means having paid
+  // for one of the two steps below, whichever was cheaper. Two variables again,
+  // because nothing older than two steps back can matter.
+  let oneBack = 0;
+  let twoBack = 0;
+  for (const price of cost) [oneBack, twoBack] = [price + Math.min(oneBack, twoBack), oneBack];
+  return Math.min(oneBack, twoBack);
+}"),
+      #("Solution 2 · From the top", "The same recurrence read the other way: not \"what did it cost to get here\" but \"what will it cost to finish from here\". Walking backwards, each step's answer is its own price plus the cheaper of the two ahead. Worth writing both — one direction is usually far easier to state than the other, and which one varies by problem.", "export function minCostClimbingStairs(cost: number[]): number {
+  // The same recurrence read the other way: instead of \"what did it cost to get
+  // here\", ask \"what will it cost to finish from here\". Walking backwards, the
+  // answer at each step is its own price plus the cheaper of the two ahead, and
+  // the start is the better of the first two.
+  let oneAhead = 0;
+  let twoAhead = 0;
+  for (let i = cost.length - 1; i >= 0; i--) {
+    [oneAhead, twoAhead] = [cost[i] + Math.min(oneAhead, twoAhead), oneAhead];
+  }
+  return Math.min(oneAhead, twoAhead);
+}"),
+    ],
+    check: Check(
+      signature: "export function minCostClimbingStairs(cost: number[]): number",
+      starter: "export function minCostClimbingStairs(cost: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.minCostClimbingStairs !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"minCostClimbingStairs([10, 15, 20])\", show(15), show(solution.minCostClimbingStairs([10, 15, 20]))],
+    [\"minCostClimbingStairs([1, 100, 1, 1, 1, 100, 1, 1, 100, 1])\", show(6), show(solution.minCostClimbingStairs([1, 100, 1, 1, 1, 100, 1, 1, 100, 1]))],
+    [\"minCostClimbingStairs([0, 0])\", show(0), show(solution.minCostClimbingStairs([0, 0]))],
+    [\"minCostClimbingStairs([1, 2])\", show(1), show(solution.minCostClimbingStairs([1, 2]))],
+    [\"minCostClimbingStairs([0, 1, 1, 0])\", show(1), show(solution.minCostClimbingStairs([0, 1, 1, 0]))],
+    [\"minCostClimbingStairs([])\", show(0), show(solution.minCostClimbingStairs([]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc66_house_robber() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "At each house the choice is take it and add what was safe two houses back, or skip it and keep the best so far. Both of those are one number, so the whole table collapses to a pair of running values.", "export function rob(nums: number[]): number {
+  // At each house the choice is take it and add what was safe two houses back,
+  // or skip it and keep the best so far. Both answers are one number, so the
+  // whole table collapses to a pair.
+  let best = 0;
+  let previous = 0;
+  for (const value of nums) [best, previous] = [Math.max(best, previous + value), best];
+  return best;
+}"),
+      #("Solution 2 · Memoised", "The same choice written as a recursion from the front: rob this house and skip the next, or skip this one. Exponential without the cache and linear with it — which is the lesson, because the rolling pair hides that the problem ever had a tree of choices at all.", "export function rob(nums: number[]): number {
+  const memo = new Map<number, number>();
+
+  // The same choice written as a recursion from the front: rob this house and
+  // skip the next, or skip this one. Exponential without the cache and linear
+  // with it -- which is the lesson, since the rolling pair hides that the
+  // problem ever had a tree of choices at all.
+  const best = (index: number): number => {
+    if (index >= nums.length) return 0;
+    if (!memo.has(index)) {
+      memo.set(index, Math.max(nums[index] + best(index + 2), best(index + 1)));
+    }
+    return memo.get(index)!;
+  };
+
+  return best(0);
+}"),
+    ],
+    check: Check(
+      signature: "export function rob(nums: number[]): number",
+      starter: "export function rob(nums: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.rob !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"rob([1, 2, 3, 1])\", show(4), show(solution.rob([1, 2, 3, 1]))],
+    [\"rob([2, 7, 9, 3, 1])\", show(12), show(solution.rob([2, 7, 9, 3, 1]))],
+    [\"rob([5])\", show(5), show(solution.rob([5]))],
+    [\"rob([])\", show(0), show(solution.rob([]))],
+    [\"rob([2, 1, 1, 2])\", show(4), show(solution.rob([2, 1, 1, 2]))],
+    [\"rob([1, 2])\", show(2), show(solution.rob([1, 2]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc67_house_robber_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The circle matters through exactly one constraint: the first and last houses are neighbours, so at most one of them is robbed. Ruling each out in turn leaves two ordinary straight-line problems, and the answer is the better of the two — reusing a solved problem rather than inventing a circular recurrence.", "export function rob(nums: number[]): number {
+  // The circle only matters through one constraint: the first and last houses
+  // are neighbours, so at most one of them is robbed. Ruling each out in turn
+  // leaves two ordinary straight-line problems, and the answer is the better.
+  if (nums.length === 0) return 0;
+  if (nums.length === 1) return nums[0];
+  return Math.max(straight(nums.slice(1)), straight(nums.slice(0, -1)));
+}
+
+function straight(nums: number[]): number {
+  let best = 0;
+  let previous = 0;
+  for (const value of nums) [best, previous] = [Math.max(best, previous + value), best];
+  return best;
+}"),
+      #("Solution 2 · Both at once", "One pass carrying both stories at the same time: the run allowed to take the first house, and the run that is not. Neither ever consults the other, so this is exactly the two-pass version interleaved — worth knowing when the input can only be walked once.", "export function rob(nums: number[]): number {
+  if (nums.length === 0) return 0;
+  if (nums.length === 1) return nums[0];
+
+  // One pass carrying both stories at the same time: the run that is allowed to
+  // take the first house, and the run that is not. Neither ever looks at the
+  // other, so this is the two-pass version interleaved -- useful when the input
+  // can only be walked once.
+  let withFirst: [number, number] = [0, 0];
+  let withoutFirst: [number, number] = [0, 0];
+
+  nums.forEach((value, i) => {
+    if (i !== nums.length - 1) withFirst = step(withFirst, value);
+    if (i !== 0) withoutFirst = step(withoutFirst, value);
+  });
+
+  return Math.max(withFirst[0], withoutFirst[0]);
+}
+
+function step(state: [number, number], value: number): [number, number] {
+  const [best, previous] = state;
+  return [Math.max(best, previous + value), best];
+}"),
+    ],
+    check: Check(
+      signature: "export function rob(nums: number[]): number",
+      starter: "export function rob(nums: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.rob !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"rob([2, 3, 2])\", show(3), show(solution.rob([2, 3, 2]))],
+    [\"rob([1, 2, 3, 1])\", show(4), show(solution.rob([1, 2, 3, 1]))],
+    [\"rob([1, 2, 3])\", show(3), show(solution.rob([1, 2, 3]))],
+    [\"rob([1])\", show(1), show(solution.rob([1]))],
+    [\"rob([])\", show(0), show(solution.rob([]))],
+    [\"rob([1, 2])\", show(2), show(solution.rob([1, 2]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc68_longest_palindrome() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Every palindrome has a centre, and there are only 2n of them — n characters and n gaps between them. Growing outwards from each is O(n²) with no table at all. The gaps are what people forget: without them, every even-length palindrome is invisible.", "export function longestPalindrome(s: string): string {
+  // Every palindrome has a centre, and there are only 2n of them -- n single
+  // characters and n gaps between them. Growing outwards from each is O(n^2)
+  // total and needs no table.
+  let bestStart = 0;
+  let bestLength = 0;
+
+  for (let i = 0; i < s.length; i++) {
+    for (const [left, right] of [[i, i], [i, i + 1]]) {
+      const [start, length] = expand(s, left, right);
+      if (length > bestLength) {
+        bestStart = start;
+        bestLength = length;
+      }
+    }
+  }
+
+  return s.slice(bestStart, bestStart + bestLength);
+}
+
+// Widens while the ends match, then reports where it stopped as a start and a
+// length. The two pointers have gone one step too far by then, which is where
+// the +1 and the -1 come from.
+function expand(s: string, left: number, right: number): [number, number] {
+  while (left >= 0 && right < s.length && s[left] === s[right]) {
+    left--;
+    right++;
+  }
+  return [left + 1, right - left - 1];
+}"),
+      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every start with every length, each checked against its own reverse. O(n³), and the thing centre expansion optimises: it never re-checks the inside of a palindrome it has already grown through.", "export function longestPalindrome(s: string): string {
+  // Every start with every length. O(n^3) once the palindrome check is counted
+  // -- the definition, and what centre expansion is an optimisation of.
+  let best = \"\";
+  for (let start = 0; start < s.length; start++) {
+    for (let end = start + 1; end <= s.length; end++) {
+      const candidate = s.slice(start, end);
+      if (candidate.length > best.length && candidate === [...candidate].reverse().join(\"\")) {
+        best = candidate;
+      }
+    }
+  }
+  return best;
+}"),
+    ],
+    check: Check(
+      signature: "export function longestPalindrome(s: string): string",
+      starter: "export function longestPalindrome(s: string): string {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.longestPalindrome !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"longestPalindrome('cbbd')\", show('bb'), show(solution.longestPalindrome('cbbd'))],
+    [\"longestPalindrome('a')\", show('a'), show(solution.longestPalindrome('a'))],
+    [\"longestPalindrome('')\", show(''), show(solution.longestPalindrome(''))],
+    [\"longestPalindrome('forgeeksskeegfor')\", show('geeksskeeg'), show(solution.longestPalindrome('forgeeksskeegfor'))],
+    [\"longestPalindrome('aaaa')\", show('aaaa'), show(solution.longestPalindrome('aaaa'))],
+    [\"longestPalindrome('racecar')\", show('racecar'), show(solution.longestPalindrome('racecar'))],
+    [\"longestPalindrome('abb')\", show('bb'), show(solution.longestPalindrome('abb'))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc69_palindromic_substrings() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The same 2n centres as finding the longest one, except that here every successful widening is itself an answer. So the count is how many times the expansion succeeded rather than how far it got — one line different, same scan.", "export function countSubstrings(s: string): number {
+  // Same 2n centres as finding the longest one, except that here every
+  // successful widening is itself an answer, so the count is how many times the
+  // expansion succeeded rather than how far it got.
+  let total = 0;
+  for (let i = 0; i < s.length; i++) total += grow(s, i, i) + grow(s, i, i + 1);
+  return total;
+}
+
+function grow(s: string, left: number, right: number): number {
+  let count = 0;
+  while (left >= 0 && right < s.length && s[left] === s[right]) {
+    count++;
+    left--;
+    right++;
+  }
+  return count;
+}"),
+      #("Solution 2 · Dp table", "A table over spans: s[i..j] is a palindrome when its ends match and the span inside already was. That dependency forces the fill order — shortest spans first — which is the only real content of the outer loop and the thing to get right.", "export function countSubstrings(s: string): number {
+  // The table says whether s[i..j] is a palindrome. It is when its ends match
+  // and whatever is between them already was -- so the spans have to be filled
+  // shortest first, which is the whole reason for the outer loop over length.
+  const n = s.length;
+  const table = new Map<string, boolean>();
+  let total = 0;
+
+  for (let length = 0; length < n; length++) {
+    for (let i = 0; i + length < n; i++) {
+      const j = i + length;
+      const inside = j - i < 2 ? true : (table.get(`${i + 1},${j - 1}`) ?? false);
+      const palindrome = s[i] === s[j] && inside;
+      table.set(`${i},${j}`, palindrome);
+      if (palindrome) total++;
+    }
+  }
+
+  return total;
+}"),
+    ],
+    check: Check(
+      signature: "export function countSubstrings(s: string): number",
+      starter: "export function countSubstrings(s: string): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.countSubstrings !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"countSubstrings('abc')\", show(3), show(solution.countSubstrings('abc'))],
+    [\"countSubstrings('aaa')\", show(6), show(solution.countSubstrings('aaa'))],
+    [\"countSubstrings('')\", show(0), show(solution.countSubstrings(''))],
+    [\"countSubstrings('a')\", show(1), show(solution.countSubstrings('a'))],
+    [\"countSubstrings('aba')\", show(4), show(solution.countSubstrings('aba'))],
+    [\"countSubstrings('abccba')\", show(9), show(solution.countSubstrings('abccba'))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc70_decode_ways() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two rolling counts. The ways to decode up to here are the ways up to the previous character, if this one can stand alone, plus the ways up to the one before that, if this one and its predecessor read as 10 to 26. A leading zero kills the first branch; anything outside that range kills the second.", "export function numDecodings(s: string): number {
+  if (s.length === 0) return 0;
+
+  // Two rolling counts. The ways to decode up to here are the ways up to the
+  // previous character (if this one can stand alone) plus the ways up to the
+  // one before that (if this one and its predecessor form a legal pair). A
+  // leading zero kills the first branch; anything outside 10..26 the second.
+  let twoBack = 1;
+  let oneBack = 1;
+
+  for (let i = 0; i < s.length; i++) {
+    const alone = s[i] === \"0\" ? 0 : oneBack;
+    const pair = i > 0 ? Number(s.slice(i - 1, i + 1)) : 0;
+    const paired = i > 0 && pair >= 10 && pair <= 26 ? twoBack : 0;
+    [twoBack, oneBack] = [oneBack, alone + paired];
+  }
+
+  return oneBack;
+}"),
+      #("Solution 2 · Memoised", "The same two choices as a recursion from the front: take one character, or take two if they form a legal pair. Reaching the end is one complete decoding, which is why the base case returns 1 and not 0 — the single most common place to get this problem wrong.", "export function numDecodings(s: string): number {
+  if (s.length === 0) return 0;
+
+  const memo = new Map<number, number>();
+
+  // The same two choices as a recursion from the front: take one character, or
+  // take two if they read as 10 to 26. Reaching the end is one complete
+  // decoding, which is why the base case returns 1 rather than 0.
+  const ways = (i: number): number => {
+    if (i >= s.length) return 1;
+    if (s[i] === \"0\") return 0;
+    if (!memo.has(i)) {
+      let total = ways(i + 1);
+      const pair = Number(s.slice(i, i + 2));
+      if (i + 1 < s.length && pair >= 10 && pair <= 26) total += ways(i + 2);
+      memo.set(i, total);
+    }
+    return memo.get(i)!;
+  };
+
+  return ways(0);
+}"),
+    ],
+    check: Check(
+      signature: "export function numDecodings(s: string): number",
+      starter: "export function numDecodings(s: string): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.numDecodings !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"numDecodings('12')\", show(2), show(solution.numDecodings('12'))],
+    [\"numDecodings('226')\", show(3), show(solution.numDecodings('226'))],
+    [\"numDecodings('06')\", show(0), show(solution.numDecodings('06'))],
+    [\"numDecodings('0')\", show(0), show(solution.numDecodings('0'))],
+    [\"numDecodings('')\", show(0), show(solution.numDecodings(''))],
+    [\"numDecodings('10')\", show(1), show(solution.numDecodings('10'))],
+    [\"numDecodings('2101')\", show(1), show(solution.numDecodings('2101'))],
+    [\"numDecodings('11106')\", show(2), show(solution.numDecodings('11106'))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc71_coin_change() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Build up from zero: the cheapest way to make a target is one coin more than the cheapest way to make what is left after removing some coin. Leaving unreachable amounts simply absent from the table saves inventing a sentinel for infinity and the comparisons that go with it.", "export function coinChange(coins: number[], amount: number): number {
+  // Build up from zero: the cheapest way to make a target is one coin more than
+  // the cheapest way to make what is left after removing some coin. An amount
+  // with no entry is simply unreachable, which saves inventing a sentinel for
+  // infinity.
+  const table = new Map<number, number>([[0, 0]]);
+
+  for (let target = 1; target <= amount; target++) {
+    const options = coins
+      .filter((coin) => coin <= target && table.has(target - coin))
+      .map((coin) => table.get(target - coin)!);
+    if (options.length) table.set(target, Math.min(...options) + 1);
+  }
+
+  return table.get(amount) ?? -1;
+}"),
+      #("Solution 2 · Breadth first", "The amounts reachable with k coins are one level of a breadth-first search from zero, so the first level containing the target is the answer. Same bound as the table, but it stops the moment it arrives rather than filling in every amount below the target — and it makes clear why the answer is a shortest path.", "export function coinChange(coins: number[], amount: number): number {
+  if (amount === 0) return 0;
+
+  // The amounts reachable with k coins form one level of a breadth-first search
+  // from zero, so the first level containing the target is the answer. Same
+  // bound as the table, but it stops the moment it arrives rather than filling
+  // in every amount below the target.
+  let frontier = [0];
+  const seen = new Set([0]);
+  let used = 0;
+
+  while (frontier.length) {
+    used++;
+    const following: number[] = [];
+    for (const total of frontier) {
+      for (const coin of coins) {
+        const next = total + coin;
+        if (next === amount) return used;
+        if (next < amount && !seen.has(next)) {
+          seen.add(next);
+          following.push(next);
+        }
+      }
+    }
+    frontier = following;
+  }
+
+  return -1;
+}"),
+    ],
+    check: Check(
+      signature: "export function coinChange(coins: number[], amount: number): number",
+      starter: "export function coinChange(coins: number[], amount: number): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.coinChange !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"coinChange([1, 2, 5], 11)\", show(3), show(solution.coinChange([1, 2, 5], 11))],
+    [\"coinChange([2], 3)\", show(-1), show(solution.coinChange([2], 3))],
+    [\"coinChange([1], 0)\", show(0), show(solution.coinChange([1], 0))],
+    [\"coinChange([], 5)\", show(-1), show(solution.coinChange([], 5))],
+    [\"coinChange([1, 3, 4], 6)\", show(2), show(solution.coinChange([1, 3, 4], 6))],
+    [\"coinChange([2, 5, 10, 1], 27)\", show(4), show(solution.coinChange([2, 5, 10, 1], 27))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc72_maximum_product_subarray() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A negative number turns the best running product into the worst and the worst into the best, so both have to be carried. Zero resets them, which falls out for free from taking the element itself as one of the candidates rather than special-casing it.", "export function maxProduct(nums: number[]): number {
+  if (nums.length === 0) return 0;
+
+  // A negative number turns the best running product into the worst and the
+  // worst into the best, so both have to be carried. Zero resets them both,
+  // which falls out of taking the element itself as an option.
+  let high = nums[0];
+  let low = nums[0];
+  let best = nums[0];
+
+  for (const n of nums.slice(1)) {
+    const candidates = [n, high * n, low * n];
+    high = Math.max(...candidates);
+    low = Math.min(...candidates);
+    best = Math.max(best, high);
+  }
+
+  return best;
+}"),
+      #("Solution 2 · Prefix and suffix", "A different argument entirely: the best subarray always runs to one end of the zero-free block it sits in, so running products swept from both directions — reset at each zero — cover every candidate. No min to track, and the reason it works is worth being able to state.", "export function maxProduct(nums: number[]): number {
+  if (nums.length === 0) return 0;
+  // A different argument entirely: the best subarray always runs to one end of
+  // the block it sits in, so sweeping running products from both directions --
+  // resetting at every zero -- is enough.
+  return Math.max(sweep(nums), sweep([...nums].reverse()));
+}
+
+function sweep(nums: number[]): number {
+  let running = 1;
+  let best = -Infinity;
+  for (const n of nums) {
+    running = running === 0 ? n : running * n;
+    best = Math.max(best, running);
+  }
+  return best;
+}"),
+    ],
+    check: Check(
+      signature: "export function maxProduct(nums: number[]): number",
+      starter: "export function maxProduct(nums: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.maxProduct !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"maxProduct([2, 3, -2, 4])\", show(6), show(solution.maxProduct([2, 3, -2, 4]))],
+    [\"maxProduct([-2, 0, -1])\", show(0), show(solution.maxProduct([-2, 0, -1]))],
+    [\"maxProduct([-2, 3, -4])\", show(24), show(solution.maxProduct([-2, 3, -4]))],
+    [\"maxProduct([0])\", show(0), show(solution.maxProduct([0]))],
+    [\"maxProduct([-2])\", show(-2), show(solution.maxProduct([-2]))],
+    [\"maxProduct([2, -5, -2, -4, 3])\", show(24), show(solution.maxProduct([2, -5, -2, -4, 3]))],
+    [\"maxProduct([])\", show(0), show(solution.maxProduct([]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc73_word_break() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Reachable positions rather than a table of booleans: position 0 is reachable, and a position becomes reachable when some dictionary word bridges the gap from one already reached. The answer is whether the end is reachable.", "export function wordBreak(s: string, wordDict: string[]): boolean {
+  const words = new Set(wordDict);
+
+  // Reachable positions rather than a table of booleans: start at 0, and a
+  // position is reachable when some word in the dictionary bridges the gap from
+  // a position already reached.
+  const reached = new Set([0]);
+  for (let end = 1; end <= s.length; end++) {
+    for (let start = 0; start < end; start++) {
+      if (reached.has(start) && words.has(s.slice(start, end))) {
+        reached.add(end);
+        break;
+      }
+    }
+  }
+
+  return reached.has(s.length);
+}"),
+      #("Solution 2 · Memoised", "Top-down: from this position, does a dictionary word start here and leave a suffix that also breaks? Without the cache the same suffix is asked about once per way of reaching it, which is where the exponential blow-up on inputs like \"aaaa…b\" comes from.", "export function wordBreak(s: string, wordDict: string[]): boolean {
+  const words = new Set(wordDict);
+  const memo = new Map<number, boolean>();
+
+  // Top-down: from this position, does any dictionary word start here and leave
+  // a suffix that also breaks? Without the cache the same suffix is asked about
+  // once per way of reaching it, which is where the exponential blow-up on
+  // inputs like \"aaaa...b\" comes from.
+  const breaks = (start: number): boolean => {
+    if (start >= s.length) return true;
+    if (!memo.has(start)) {
+      let found = false;
+      for (let end = start + 1; end <= s.length && !found; end++) {
+        if (words.has(s.slice(start, end)) && breaks(end)) found = true;
+      }
+      memo.set(start, found);
+    }
+    return memo.get(start)!;
+  };
+
+  return breaks(0);
+}"),
+    ],
+    check: Check(
+      signature: "export function wordBreak(s: string, wordDict: string[]): boolean",
+      starter: "export function wordBreak(s: string, wordDict: string[]): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.wordBreak !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"wordBreak('leetcode', ['leet', 'code'])\", show(true), show(solution.wordBreak('leetcode', ['leet', 'code']))],
+    [\"wordBreak('applepenapple', ['apple', 'pen'])\", show(true), show(solution.wordBreak('applepenapple', ['apple', 'pen']))],
+    [\"wordBreak('catsandog', ['cats', 'dog', 'sand', 'and', 'cat'])\", show(false), show(solution.wordBreak('catsandog', ['cats', 'dog', 'sand', 'and', 'cat']))],
+    [\"wordBreak('', ['a'])\", show(true), show(solution.wordBreak('', ['a']))],
+    [\"wordBreak('a', [])\", show(false), show(solution.wordBreak('a', []))],
+    [\"wordBreak('aaaaaaa', ['aaa', 'aaaa'])\", show(true), show(solution.wordBreak('aaaaaaa', ['aaa', 'aaaa']))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc74_longest_increasing_subsequence() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The longest subsequence ending at each position: one plus the best of every earlier position holding a smaller value. O(n²), and the version to reach for first because the recurrence is stated directly rather than encoded.", "export function lengthOfLIS(nums: number[]): number {
+  // The longest subsequence ending at each position: one plus the best of every
+  // earlier position holding a smaller value. Building the answers in order
+  // means every \"earlier position\" is already known.
+  const endings: [number, number][] = [];
+  let best = 0;
+
+  for (const n of nums) {
+    const reachable = endings.filter(([value]) => value < n).map(([, length]) => length);
+    const here = 1 + (reachable.length ? Math.max(...reachable) : 0);
+    endings.push([n, here]);
+    best = Math.max(best, here);
+  }
+
+  return best;
+}"),
+      #("Solution 2 · Patience", "Patience sorting. Keep the smallest value that a subsequence of each length can end with; that list stays sorted, so each number either extends it or replaces the first entry it is no bigger than — a halving search, giving O(n log n). Note what the list is not: it is not the answer subsequence, only its length is meaningful.", "export function lengthOfLIS(nums: number[]): number {
+  // Patience sorting. Keep the smallest value that any subsequence of each
+  // length ends with; that list is always sorted, so each number either extends
+  // it or replaces the first entry it is no bigger than -- found by halving.
+  // The list is not the answer subsequence, only its length is meaningful.
+  const tails: number[] = [];
+
+  for (const n of nums) {
+    let low = 0;
+    let high = tails.length;
+    while (low < high) {
+      const mid = (low + high) >> 1;
+      if (tails[mid] < n) low = mid + 1;
+      else high = mid;
+    }
+    if (low === tails.length) tails.push(n);
+    else tails[low] = n;
+  }
+
+  return tails.length;
+}"),
+    ],
+    check: Check(
+      signature: "export function lengthOfLIS(nums: number[]): number",
+      starter: "export function lengthOfLIS(nums: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.lengthOfLIS !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"lengthOfLIS([10, 9, 2, 5, 3, 7, 101, 18])\", show(4), show(solution.lengthOfLIS([10, 9, 2, 5, 3, 7, 101, 18]))],
+    [\"lengthOfLIS([0, 1, 0, 3, 2, 3])\", show(4), show(solution.lengthOfLIS([0, 1, 0, 3, 2, 3]))],
+    [\"lengthOfLIS([7, 7, 7, 7, 7, 7, 7])\", show(1), show(solution.lengthOfLIS([7, 7, 7, 7, 7, 7, 7]))],
+    [\"lengthOfLIS([])\", show(0), show(solution.lengthOfLIS([]))],
+    [\"lengthOfLIS([1])\", show(1), show(solution.lengthOfLIS([1]))],
+    [\"lengthOfLIS([4, 10, 4, 3, 8, 9])\", show(3), show(solution.lengthOfLIS([4, 10, 4, 3, 8, 9]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc75_partition_equal_subset() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Subset sum in disguise: an equal split exists exactly when some subset adds to half the total, and an odd total rules it out before any work. Carrying the set of reachable sums needs no ordering and no table, and duplicates cost nothing because a set collapses them.", "export function canPartition(nums: number[]): boolean {
+  const total = nums.reduce((a, b) => a + b, 0);
+  if (total % 2 !== 0) return false;
+
+  // Subset sum in disguise: an equal split exists exactly when some subset adds
+  // up to half the total. Carry the set of sums reachable so far and widen it by
+  // each number -- no ordering, no table, and duplicates cost nothing because a
+  // set collapses them.
+  const half = total / 2;
+  let reachable = new Set([0]);
+  for (const n of nums) {
+    const widened = new Set(reachable);
+    for (const reached of reachable) {
+      if (reached + n <= half) widened.add(reached + n);
+    }
+    reachable = widened;
+  }
+
+  return reachable.has(half);
+}"),
+      #("Solution 2 · Memoised", "Take this number or leave it, keyed by how much is still owed and how far along the list you are. As a recursion it is obviously a search over subsets, which the reachable-sums version hides — and the cache is what stops it enumerating all 2ⁿ of them.", "export function canPartition(nums: number[]): boolean {
+  const total = nums.reduce((a, b) => a + b, 0);
+  if (total % 2 !== 0) return false;
+
+  const memo = new Map<string, boolean>();
+
+  // Take this number or leave it, keyed by how much is still owed and how much
+  // of the list is left. Written as a recursion it is obviously a search over
+  // subsets; the cache is what stops it enumerating all 2^n of them.
+  const reachable = (index: number, owed: number): boolean => {
+    if (owed === 0) return true;
+    if (index >= nums.length || owed < 0) return false;
+    const key = `${index},${owed}`;
+    if (!memo.has(key)) {
+      memo.set(key, reachable(index + 1, owed - nums[index]) || reachable(index + 1, owed));
+    }
+    return memo.get(key)!;
+  };
+
+  return reachable(0, total / 2);
+}"),
+    ],
+    check: Check(
+      signature: "export function canPartition(nums: number[]): boolean",
+      starter: "export function canPartition(nums: number[]): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.canPartition !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"canPartition([1, 5, 11, 5])\", show(true), show(solution.canPartition([1, 5, 11, 5]))],
+    [\"canPartition([1, 2, 3, 5])\", show(false), show(solution.canPartition([1, 2, 3, 5]))],
+    [\"canPartition([2, 2])\", show(true), show(solution.canPartition([2, 2]))],
+    [\"canPartition([1])\", show(false), show(solution.canPartition([1]))],
+    [\"canPartition([1, 1])\", show(true), show(solution.canPartition([1, 1]))],
+    [\"canPartition([3, 3, 3, 4, 5])\", show(true), show(solution.canPartition([3, 3, 3, 4, 5]))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -4056,6 +4829,18 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc61_pow" -> Ok(nc61_pow())
     "nc62_multiply_strings" -> Ok(nc62_multiply_strings())
     "nc63_detect_squares" -> Ok(nc63_detect_squares())
+    "nc64_climbing_stairs" -> Ok(nc64_climbing_stairs())
+    "nc65_min_cost_climbing_stairs" -> Ok(nc65_min_cost_climbing_stairs())
+    "nc66_house_robber" -> Ok(nc66_house_robber())
+    "nc67_house_robber_ii" -> Ok(nc67_house_robber_ii())
+    "nc68_longest_palindrome" -> Ok(nc68_longest_palindrome())
+    "nc69_palindromic_substrings" -> Ok(nc69_palindromic_substrings())
+    "nc70_decode_ways" -> Ok(nc70_decode_ways())
+    "nc71_coin_change" -> Ok(nc71_coin_change())
+    "nc72_maximum_product_subarray" -> Ok(nc72_maximum_product_subarray())
+    "nc73_word_break" -> Ok(nc73_word_break())
+    "nc74_longest_increasing_subsequence" -> Ok(nc74_longest_increasing_subsequence())
+    "nc75_partition_equal_subset" -> Ok(nc75_partition_equal_subset())
     _ -> Error(Nil)
   }
 }
