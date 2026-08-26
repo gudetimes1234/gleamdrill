@@ -81,6 +81,18 @@ import nc33_time_map
 import nc33_time_map__linear_scan
 import nc34_median_two_sorted
 import nc34_median_two_sorted__concat_sort
+import nc35_insert_interval
+import nc35_insert_interval__merge_after_append
+import nc36_merge_intervals
+import nc36_merge_intervals__sweep_counts
+import nc37_non_overlapping
+import nc37_non_overlapping__by_start
+import nc38_meeting_rooms
+import nc38_meeting_rooms__pairwise
+import nc39_meeting_rooms_ii
+import nc39_meeting_rooms_ii__count_at_each_start
+import nc40_min_interval
+import nc40_min_interval__offline_by_length
 import tip01_list_patterns
 import tip01_list_patterns__stdlib
 import tip02_tail_recursion
@@ -217,6 +229,22 @@ pub fn main() {
     check_median_two_sorted(
       nc34_median_two_sorted__concat_sort.find_median_sorted_arrays,
     ),
+    check_insert_interval(nc35_insert_interval.insert),
+    check_insert_interval(nc35_insert_interval__merge_after_append.insert),
+    check_merge_intervals(nc36_merge_intervals.merge),
+    check_merge_intervals(nc36_merge_intervals__sweep_counts.merge),
+    check_non_overlapping(nc37_non_overlapping.erase_overlap_intervals),
+    check_non_overlapping(
+      nc37_non_overlapping__by_start.erase_overlap_intervals,
+    ),
+    check_meeting_rooms(nc38_meeting_rooms.can_attend_meetings),
+    check_meeting_rooms(nc38_meeting_rooms__pairwise.can_attend_meetings),
+    check_meeting_rooms_ii(nc39_meeting_rooms_ii.min_meeting_rooms),
+    check_meeting_rooms_ii(
+      nc39_meeting_rooms_ii__count_at_each_start.min_meeting_rooms,
+    ),
+    check_min_interval(nc40_min_interval.min_interval),
+    check_min_interval(nc40_min_interval__offline_by_length.min_interval),
 
     // Gleam Tips
     check_list_patterns(tip01_list_patterns.length, tip01_list_patterns.last),
@@ -472,6 +500,78 @@ fn check_median_two_sorted(f: fn(List(Int), List(Int)) -> Float) -> Nil {
   let assert True = f([], []) == 0.0
   let assert True = f([1, 2], []) == 1.5
   let assert True = f([1, 3, 5, 7], [2, 4, 6]) == 4.0
+  Nil
+}
+
+fn check_insert_interval(
+  f: fn(List(#(Int, Int)), #(Int, Int)) -> List(#(Int, Int)),
+) -> Nil {
+  let assert True = f([#(1, 3), #(6, 9)], #(2, 5)) == [#(1, 5), #(6, 9)]
+  let assert True =
+    f([#(1, 2), #(3, 5), #(6, 7), #(8, 10), #(12, 16)], #(4, 8))
+    == [#(1, 2), #(3, 10), #(12, 16)]
+  let assert True = f([], #(5, 7)) == [#(5, 7)]
+  // Swallowed whole by an existing interval, and sitting past the end.
+  let assert True = f([#(1, 5)], #(2, 3)) == [#(1, 5)]
+  let assert True = f([#(1, 5)], #(6, 8)) == [#(1, 5), #(6, 8)]
+  let assert True = f([#(3, 5)], #(1, 2)) == [#(1, 2), #(3, 5)]
+  Nil
+}
+
+fn check_merge_intervals(f: fn(List(#(Int, Int))) -> List(#(Int, Int))) -> Nil {
+  let assert True =
+    f([#(1, 3), #(2, 6), #(8, 10), #(15, 18)]) == [#(1, 6), #(8, 10), #(15, 18)]
+  // Touching at a point counts as overlapping.
+  let assert True = f([#(1, 4), #(4, 5)]) == [#(1, 5)]
+  let assert True = f([]) == []
+  let assert True = f([#(1, 4), #(0, 4)]) == [#(0, 4)]
+  let assert True = f([#(1, 4), #(2, 3)]) == [#(1, 4)]
+  Nil
+}
+
+fn check_non_overlapping(f: fn(List(#(Int, Int))) -> Int) -> Nil {
+  let assert True = f([#(1, 2), #(2, 3), #(3, 4), #(1, 3)]) == 1
+  let assert True = f([#(1, 2), #(1, 2), #(1, 2)]) == 2
+  // Touching is not overlapping, so nothing has to go.
+  let assert True = f([#(1, 2), #(2, 3)]) == 0
+  let assert True = f([]) == 0
+  // The greedy trap: keeping [1, 100] because it came first costs three.
+  let assert True = f([#(1, 100), #(11, 22), #(1, 11), #(2, 12)]) == 2
+  Nil
+}
+
+fn check_meeting_rooms(f: fn(List(#(Int, Int))) -> Bool) -> Nil {
+  let assert False = f([#(0, 30), #(5, 10), #(15, 20)])
+  // Out of order: sorting is part of the answer, not an assumption.
+  let assert True = f([#(7, 10), #(2, 4)])
+  let assert True = f([])
+  let assert True = f([#(1, 5)])
+  // Touching is not clashing: one ends exactly as the next begins.
+  let assert True = f([#(1, 5), #(5, 10)])
+  let assert False = f([#(5, 10), #(1, 6)])
+  Nil
+}
+
+fn check_meeting_rooms_ii(f: fn(List(#(Int, Int))) -> Int) -> Nil {
+  let assert True = f([#(0, 30), #(5, 10), #(15, 20)]) == 2
+  let assert True = f([#(7, 10), #(2, 4)]) == 1
+  let assert True = f([]) == 0
+  // A room freed at the same moment can be reused, so this needs only one.
+  let assert True = f([#(1, 5), #(5, 10)]) == 1
+  let assert True =
+    f([#(1, 10), #(2, 7), #(3, 19), #(8, 12), #(10, 20), #(11, 30)]) == 4
+  Nil
+}
+
+fn check_min_interval(f: fn(List(#(Int, Int)), List(Int)) -> List(Int)) -> Nil {
+  let assert True =
+    f([#(1, 4), #(2, 4), #(3, 6), #(4, 4)], [2, 3, 4, 5]) == [3, 3, 1, 4]
+  let assert True =
+    f([#(2, 3), #(2, 5), #(1, 8), #(20, 25)], [2, 19, 5, 22]) == [2, -1, 4, 6]
+  let assert True = f([], [1, 2]) == [-1, -1]
+  let assert True = f([#(1, 10)], []) == []
+  // Both queries fall outside, one either side.
+  let assert True = f([#(1, 3)], [0, 4]) == [-1, -1]
   Nil
 }
 

@@ -71,6 +71,18 @@ import * as v66 from "./.verify/nc33_time_map__linear_scan/harness";
 import * as v67 from "./.verify/nc34_median_two_sorted/harness";
 import * as v68 from "./.verify/nc34_median_two_sorted__concat_sort/harness";
 import * as v69 from "./.verify/nc34_median_two_sorted__partition_search/harness";
+import * as v70 from "./.verify/nc35_insert_interval/harness";
+import * as v71 from "./.verify/nc35_insert_interval__merge_after_append/harness";
+import * as v72 from "./.verify/nc36_merge_intervals/harness";
+import * as v73 from "./.verify/nc36_merge_intervals__sweep_counts/harness";
+import * as v74 from "./.verify/nc37_non_overlapping/harness";
+import * as v75 from "./.verify/nc37_non_overlapping__by_start/harness";
+import * as v76 from "./.verify/nc38_meeting_rooms/harness";
+import * as v77 from "./.verify/nc38_meeting_rooms__pairwise/harness";
+import * as v78 from "./.verify/nc39_meeting_rooms_ii/harness";
+import * as v79 from "./.verify/nc39_meeting_rooms_ii__count_at_each_start/harness";
+import * as v80 from "./.verify/nc40_min_interval/harness";
+import * as v81 from "./.verify/nc40_min_interval__offline_by_length/harness";
 
 type Case = [string, string, string];
 
@@ -145,6 +157,18 @@ const VARIANTS: [string, string, () => Case[]][] = [
   ["nc34_median_two_sorted", "Solution 1", v67.run],
   ["nc34_median_two_sorted", "Solution 2 · Concat sort", v68.run],
   ["nc34_median_two_sorted", "Solution 3 · Partition search", v69.run],
+  ["nc35_insert_interval", "Solution 1", v70.run],
+  ["nc35_insert_interval", "Solution 2 · Merge after append", v71.run],
+  ["nc36_merge_intervals", "Solution 1", v72.run],
+  ["nc36_merge_intervals", "Solution 2 · Sweep counts", v73.run],
+  ["nc37_non_overlapping", "Solution 1", v74.run],
+  ["nc37_non_overlapping", "Solution 2 · By start", v75.run],
+  ["nc38_meeting_rooms", "Solution 1", v76.run],
+  ["nc38_meeting_rooms", "Solution 2 · Pairwise", v77.run],
+  ["nc39_meeting_rooms_ii", "Solution 1", v78.run],
+  ["nc39_meeting_rooms_ii", "Solution 2 · Count at each start", v79.run],
+  ["nc40_min_interval", "Solution 1", v80.run],
+  ["nc40_min_interval", "Solution 2 · Offline by length", v81.run],
 ];
 
 const failures: string[] = [];

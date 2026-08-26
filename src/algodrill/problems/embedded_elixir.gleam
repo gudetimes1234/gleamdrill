@@ -1633,6 +1633,242 @@ end"),
   ]
 }
 
+pub fn nc35_insert_interval() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The input is already sorted, which turns the problem into a three-way split: everything that finishes before the new interval starts passes through untouched, everything that touches it collapses into one, and everything after it passes through too. One pass, no sorting.", "defmodule Solution do
+  def insert(intervals, {start, finish}) do
+    # The input is already sorted, so the list falls into three runs: everything
+    # that finishes before the new one starts, everything that touches it, and
+    # everything that starts after it ends.
+    {before, rest} = Enum.split_while(intervals, fn {_s, e} -> e < start end)
+    {overlapping, later} = Enum.split_while(rest, fn {s, _e} -> s <= finish end)
+
+    merged =
+      Enum.reduce(overlapping, {start, finish}, fn {s, e}, {acc_s, acc_e} ->
+        {min(acc_s, s), max(acc_e, e)}
+      end)
+
+    before ++ [merged] ++ later
+  end
+end"),
+    #("Solution 2 · Merge after append", "Drop the new interval on the end and run the general merge. It throws away the sortedness — O(n log n) rather than O(n) — but it is a solution you already have rather than a three-way split to get right, and that trade is often the correct one under time pressure.", "defmodule Solution do
+  # Drop the new interval on the end and run the general merge. Throws away the
+  # fact that the input was sorted -- O(n log n) rather than O(n) -- but it
+  # reuses a solution you already have rather than a three-way split.
+  def insert(intervals, new_interval) do
+    [new_interval | intervals]
+    |> Enum.sort_by(fn {s, _e} -> s end)
+    |> Enum.reduce([], fn
+      {s, e}, [{start, finish} | rest] when s <= finish -> [{start, max(finish, e)} | rest]
+      interval, acc -> [interval | acc]
+    end)
+    |> Enum.reverse()
+  end
+end"),
+  ]
+}
+
+pub fn nc36_merge_intervals() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Sort by start and the problem collapses: an interval can only ever overlap the one currently being built, because anything it could have overlapped earlier was already absorbed into that. So a single pass either extends the interval in hand or begins a new one.", "defmodule Solution do
+  # Sorted by start, an interval can only ever overlap the one being built, so a
+  # single reduce is enough: extend it, or begin a new one.
+  def merge(intervals) do
+    intervals
+    |> Enum.sort_by(fn {s, _e} -> s end)
+    |> Enum.reduce([], fn
+      {s, e}, [{start, finish} | rest] when s <= finish -> [{start, max(finish, e)} | rest]
+      interval, acc -> [interval | acc]
+    end)
+    |> Enum.reverse()
+  end
+end"),
+    #("Solution 2 · Sweep counts", "Forget the intervals and keep only their edges: +1 where one opens, −1 where one closes. A merged interval runs from the edge that lifts the running count off zero to the edge that drops it back. Ordering opens before closes at the same coordinate is what makes touching intervals join.", "defmodule Solution do
+  # Forget the intervals and keep only their edges: +1 where one opens, -1 where
+  # one closes. A merged interval runs from the edge that lifts the running
+  # count off zero to the edge that drops it back.
+  def merge(intervals) do
+    {done, _depth, _start} =
+      intervals
+      |> Enum.flat_map(fn {s, e} -> [{s, 1}, {e, -1}] end)
+      # Opens before closes at the same coordinate, so touching intervals join.
+      |> Enum.sort_by(fn {position, delta} -> {position, -delta} end)
+      |> Enum.reduce({[], 0, 0}, fn {position, delta}, {done, depth, start} ->
+        start = if depth == 0, do: position, else: start
+
+        case depth + delta do
+          0 -> {[{start, position} | done], 0, start}
+          deeper -> {done, deeper, start}
+        end
+      end)
+
+    Enum.reverse(done)
+  end
+end"),
+  ]
+}
+
+pub fn nc37_non_overlapping() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Greedy on the end time. Among intervals competing for the same space, keeping the one that finishes earliest leaves the most room for whatever comes next and can never be worse — which is the exchange argument that makes the greedy correct, and the reason sorting by start is the classic wrong first answer.", "defmodule Solution do
+  # Greedy on the end: among any set of intervals competing for the same space,
+  # keeping the one that finishes earliest leaves the most room for whatever
+  # comes next, and can never be worse.
+  def erase_overlap_intervals(intervals) do
+    {removed, _last_end} =
+      intervals
+      |> Enum.sort_by(fn {_s, e} -> e end)
+      |> Enum.reduce({0, :none}, fn {s, e}, {removed, last_end} ->
+        if last_end == :none or s >= last_end,
+          do: {removed, e},
+          else: {removed + 1, last_end}
+      end)
+
+    removed
+  end
+end"),
+    #("Solution 2 · By start", "Sorted by start instead. On an overlap one of the two has to go, and dropping whichever ends later is always at least as good — so the greedy choice is made at the moment of the clash rather than baked into the sort order. Same answer, and it needs the running end to be lowered rather than replaced.", "defmodule Solution do
+  # Sorted by start instead: on an overlap you must drop one of the two, and
+  # dropping whichever ends later is always at least as good. Same greedy
+  # argument, made at the moment of the clash rather than in the sort order.
+  def erase_overlap_intervals(intervals) do
+    {removed, _last_end} =
+      intervals
+      |> Enum.sort_by(fn {s, _e} -> s end)
+      |> Enum.reduce({0, :none}, fn {s, e}, {removed, last_end} ->
+        cond do
+          last_end == :none -> {removed, e}
+          s >= last_end -> {removed, e}
+          true -> {removed + 1, min(last_end, e)}
+        end
+      end)
+
+    removed
+  end
+end"),
+  ]
+}
+
+pub fn nc38_meeting_rooms() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Sorted by start, the only meeting a given one can clash with is the one immediately before it: anything earlier started earlier still, so it would have clashed with that one first. The whole check is then adjacent pairs.", "defmodule Solution do
+  # Sorted by start, the only meeting a given one can clash with is the one
+  # immediately before it -- anything earlier started earlier still and would
+  # have clashed with that one first.
+  def can_attend_meetings?(intervals) do
+    intervals
+    |> Enum.sort_by(fn {s, _e} -> s end)
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.all?(fn [{_s1, e1}, {s2, _e2}] -> e1 <= s2 end)
+  end
+end"),
+    #("Solution 2 · Pairwise", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every pair, checked. Worth writing once for the overlap test itself: two intervals overlap when each starts before the other ends, which is far easier to get right than trying to enumerate the ways they miss.", "defmodule Solution do
+  # Every pair, checked. Two intervals overlap when each starts before the other
+  # ends -- the condition worth being able to write from memory, since it is
+  # easier to get right than its negation.
+  def can_attend_meetings?(intervals) do
+    pairs =
+      for {a, i} <- Enum.with_index(intervals),
+          {b, j} <- Enum.with_index(intervals),
+          i < j,
+          do: {a, b}
+
+    Enum.all?(pairs, fn {{s1, e1}, {s2, e2}} -> not (s1 < e2 and s2 < e1) end)
+  end
+end"),
+  ]
+}
+
+pub fn nc39_meeting_rooms_ii() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Rooms needed is the most meetings ever running at once, so the meetings stop mattering and only their edges do: +1 at a start, −1 at an end, and the answer is how high the running count gets. Closes come before opens at the same time here — a room freed at that moment can be reused — which is the opposite of what merging intervals wants.", "defmodule Solution do
+  # Rooms needed is the most meetings ever running at once, so the meetings
+  # themselves stop mattering -- only their edges do. Walk the edges in time
+  # order and watch how high the count gets.
+  def min_meeting_rooms(intervals) do
+    {_depth, best} =
+      intervals
+      |> Enum.flat_map(fn {s, e} -> [{s, 1}, {e, -1}] end)
+      # A room freed at the same moment another meeting starts can be reused, so
+      # closes come before opens here -- the opposite of merging intervals.
+      |> Enum.sort()
+      |> Enum.reduce({0, 0}, fn {_position, delta}, {depth, best} ->
+        depth = depth + delta
+        {depth, max(best, depth)}
+      end)
+
+    best
+  end
+end"),
+    #("Solution 2 · Count at each start", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+The busiest moment is always the start of some meeting, so only n moments are worth testing at all. Count how many meetings cover each and take the largest: no sort, no edge bookkeeping, and it makes clear what the sweep is measuring.", "defmodule Solution do
+  # The busiest moment is always the start of some meeting, so there are only n
+  # moments worth testing. Count how many meetings cover each one and take the
+  # largest -- O(n^2), and it needs no sort and no edge bookkeeping.
+  def min_meeting_rooms(intervals) do
+    Enum.reduce(intervals, 0, fn {start, _end}, best ->
+      running = Enum.count(intervals, fn {s, e} -> s <= start and start < e end)
+      max(best, running)
+    end)
+  end
+end"),
+  ]
+}
+
+pub fn nc40_min_interval() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+For each query, the smallest interval containing it. O(q·n), and the definition — worth having before the clever version, because it is what you check the clever version against.", "defmodule Solution do
+  def min_interval(intervals, queries) do
+    Enum.map(queries, fn query ->
+      intervals
+      |> Enum.filter(fn {s, e} -> s <= query and query <= e end)
+      |> Enum.map(fn {s, e} -> e - s + 1 end)
+      |> case do
+        [] -> -1
+        lengths -> Enum.min(lengths)
+      end
+    end)
+  end
+end"),
+    #("Solution 2 · Offline by length", "Answer each query once and never revisit it. Taking the intervals shortest first means the first interval to cover a query is already its answer, so a query leaves the pool the moment it is settled and the pool only shrinks. Reordering the work so each answer is final is the technique here, and it generalises well beyond this problem.", "defmodule Solution do
+  # Answer each query once, and never revisit it. Taking the intervals shortest
+  # first means the first interval to cover a query is already its answer, so
+  # every query leaves the pool the moment it is settled and the pool only ever
+  # shrinks.
+  def min_interval(intervals, queries) do
+    numbered = Enum.with_index(queries)
+
+    {answered, unanswered} =
+      intervals
+      |> Enum.sort_by(fn {s, e} -> e - s end)
+      |> Enum.reduce({%{}, numbered}, fn {s, e}, {answers, waiting} ->
+        {covered, still_waiting} =
+          Enum.split_with(waiting, fn {query, _index} -> s <= query and query <= e end)
+
+        answers =
+          Enum.reduce(covered, answers, fn {_query, index}, acc ->
+            Map.put(acc, index, e - s + 1)
+          end)
+
+        {answers, still_waiting}
+      end)
+
+    answers =
+      Enum.reduce(unanswered, answered, fn {_query, index}, acc ->
+        Map.put(acc, index, -1)
+      end)
+
+    Enum.map(0..(length(queries) - 1)//1, &Map.fetch!(answers, &1))
+  end
+end"),
+  ]
+}
+
 pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -1669,6 +1905,12 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
     "nc32_koko_bananas" -> Ok(nc32_koko_bananas())
     "nc33_time_map" -> Ok(nc33_time_map())
     "nc34_median_two_sorted" -> Ok(nc34_median_two_sorted())
+    "nc35_insert_interval" -> Ok(nc35_insert_interval())
+    "nc36_merge_intervals" -> Ok(nc36_merge_intervals())
+    "nc37_non_overlapping" -> Ok(nc37_non_overlapping())
+    "nc38_meeting_rooms" -> Ok(nc38_meeting_rooms())
+    "nc39_meeting_rooms_ii" -> Ok(nc39_meeting_rooms_ii())
+    "nc40_min_interval" -> Ok(nc40_min_interval())
     _ -> Error(Nil)
   }
 }

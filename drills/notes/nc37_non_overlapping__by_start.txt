@@ -1,0 +1,1 @@
+Sorted by start instead. On an overlap one of the two has to go, and dropping whichever ends later is always at least as good — so the greedy choice is made at the moment of the clash rather than baked into the sort order. Same answer, and it needs the running end to be lowered rather than replaced.

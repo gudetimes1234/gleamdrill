@@ -1,0 +1,2 @@
+@shared/brute-force-baseline
+The busiest moment is always the start of some meeting, so only n moments are worth testing at all. Count how many meetings cover each and take the largest: no sort, no edge bookkeeping, and it makes clear what the sweep is measuring.

@@ -134,6 +134,38 @@ pub fn groups() -> List(Group) {
         "nc26_sliding_window_maximum",
       ),
     ]),
+    Group("Intervals", [
+      Drill(
+        "Insert Interval",
+        "You are given a list of non-overlapping intervals sorted by start, and one new interval. Insert it so the list stays sorted and non-overlapping, merging where necessary.",
+        "nc35_insert_interval",
+      ),
+      Drill(
+        "Merge Intervals",
+        "Given an array of intervals, merge all overlapping intervals and return an array of the non-overlapping intervals that cover all the input intervals.",
+        "nc36_merge_intervals",
+      ),
+      Drill(
+        "Non-overlapping Intervals",
+        "Given an array of intervals, return the minimum number of intervals you need to remove to make the rest non-overlapping. Intervals that only touch at a point do not overlap.",
+        "nc37_non_overlapping",
+      ),
+      Drill(
+        "Meeting Rooms",
+        "Given an array of meeting time intervals, determine whether a person could attend all of them. A meeting ending exactly as another begins is fine.",
+        "nc38_meeting_rooms",
+      ),
+      Drill(
+        "Meeting Rooms II",
+        "Given an array of meeting time intervals, return the minimum number of rooms required to hold them all. A room freed exactly as another meeting begins can be reused.",
+        "nc39_meeting_rooms_ii",
+      ),
+      Drill(
+        "Minimum Interval to Include Each Query",
+        "You are given intervals and an array of queries. For each query, return the length of the smallest interval containing it, or -1 if no interval does. An interval's length is end minus start plus one.",
+        "nc40_min_interval",
+      ),
+    ]),
     Group("Stack", [
       Drill(
         "Valid Parentheses",

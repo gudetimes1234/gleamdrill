@@ -3793,6 +3793,607 @@ pub fn run() -> List(#(String, String, String)) {
   )
 }
 
+pub fn nc35_insert_interval() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The input is already sorted, which turns the problem into a three-way split: everything that finishes before the new interval starts passes through untouched, everything that touches it collapses into one, and everything after it passes through too. One pass, no sorting.", "import gleam/int
+import gleam/list
+
+pub fn insert(
+  intervals: List(#(Int, Int)),
+  new_interval: #(Int, Int),
+) -> List(#(Int, Int)) {
+  // The input is already sorted, so the list falls into three runs: everything
+  // that finishes before the new one starts, everything that touches it, and
+  // everything that starts after it ends.
+  let #(before, rest) =
+    list.split_while(intervals, fn(i) { i.1 < new_interval.0 })
+  let #(overlapping, after) =
+    list.split_while(rest, fn(i) { i.0 <= new_interval.1 })
+
+  let merged =
+    list.fold(overlapping, new_interval, fn(acc, i) {
+      #(int.min(acc.0, i.0), int.max(acc.1, i.1))
+    })
+
+  list.flatten([before, [merged], after])
+}"),
+      #("Solution 2 · Merge after append", "Drop the new interval on the end and run the general merge. It throws away the sortedness — O(n log n) rather than O(n) — but it is a solution you already have rather than a three-way split to get right, and that trade is often the correct one under time pressure.", "import gleam/int
+import gleam/list
+
+pub fn insert(
+  intervals: List(#(Int, Int)),
+  new_interval: #(Int, Int),
+) -> List(#(Int, Int)) {
+  // Drop the new interval on the end and run the general merge. Throws away the
+  // fact that the input was sorted \\u{2014} O(n log n) rather than O(n) \\u{2014} but it
+  // reuses a solution you already have rather than inventing a three-way split.
+  [new_interval, ..intervals]
+  |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
+  |> list.fold([], fn(acc, interval) {
+    case acc {
+      [#(start, end), ..rest] if interval.0 <= end -> [
+        #(start, int.max(end, interval.1)),
+        ..rest
+      ]
+      _ -> [interval, ..acc]
+    }
+  })
+  |> list.reverse
+}"),
+    ],
+    check: Check(
+      signature: "pub fn insert(
+  intervals: List(#(Int, Int)),
+  new_interval: #(Int, Int),
+) -> List(#(Int, Int))",
+      starter: "pub fn insert(
+  intervals: List(#(Int, Int)),
+  new_interval: #(Int, Int),
+) -> List(#(Int, Int)) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"insert([#(1, 3), #(6, 9)], #(2, 5))\",
+      string.inspect([#(1, 5), #(6, 9)]),
+      string.inspect(solution.insert([#(1, 3), #(6, 9)], #(2, 5))),
+    ),
+    #(
+      \"insert([#(1, 2), #(3, 5), #(6, 7), #(8, 10), #(12, 16)], #(4, 8))\",
+      string.inspect([#(1, 2), #(3, 10), #(12, 16)]),
+      string.inspect(
+        solution.insert([#(1, 2), #(3, 5), #(6, 7), #(8, 10), #(12, 16)], #(
+          4,
+          8,
+        )),
+      ),
+    ),
+    #(
+      \"insert([], #(5, 7))\",
+      string.inspect([#(5, 7)]),
+      string.inspect(solution.insert([], #(5, 7))),
+    ),
+    #(
+      \"insert([#(1, 5)], #(2, 3))\",
+      string.inspect([#(1, 5)]),
+      string.inspect(solution.insert([#(1, 5)], #(2, 3))),
+    ),
+    #(
+      \"insert([#(1, 5)], #(6, 8))\",
+      string.inspect([#(1, 5), #(6, 8)]),
+      string.inspect(solution.insert([#(1, 5)], #(6, 8))),
+    ),
+    #(
+      \"insert([#(3, 5)], #(1, 2))\",
+      string.inspect([#(1, 2), #(3, 5)]),
+      string.inspect(solution.insert([#(3, 5)], #(1, 2))),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc36_merge_intervals() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Sort by start and the problem collapses: an interval can only ever overlap the one currently being built, because anything it could have overlapped earlier was already absorbed into that. So a single pass either extends the interval in hand or begins a new one.", "import gleam/int
+import gleam/list
+
+pub fn merge(intervals: List(#(Int, Int))) -> List(#(Int, Int)) {
+  // Sorted by start, an interval can only ever overlap the one being built, so
+  // a single fold is enough: extend it, or begin a new one.
+  intervals
+  |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
+  |> list.fold([], fn(acc, interval) {
+    case acc {
+      [#(start, end), ..rest] if interval.0 <= end -> [
+        #(start, int.max(end, interval.1)),
+        ..rest
+      ]
+      _ -> [interval, ..acc]
+    }
+  })
+  |> list.reverse
+}"),
+      #("Solution 2 · Sweep counts", "Forget the intervals and keep only their edges: +1 where one opens, −1 where one closes. A merged interval runs from the edge that lifts the running count off zero to the edge that drops it back. Ordering opens before closes at the same coordinate is what makes touching intervals join.", "import gleam/int
+import gleam/list
+import gleam/order
+
+pub fn merge(intervals: List(#(Int, Int))) -> List(#(Int, Int)) {
+  // Forget the intervals and keep only their edges: +1 where one opens, -1
+  // where one closes. A merged interval runs from the edge that lifts the
+  // running count off zero to the edge that drops it back.
+  intervals
+  |> list.flat_map(fn(i) { [#(i.0, 1), #(i.1, -1)] })
+  |> list.sort(fn(a, b) {
+    // Opens before closes at the same coordinate, so touching intervals join.
+    case int.compare(a.0, b.0) {
+      order.Eq -> int.compare(b.1, a.1)
+      other -> other
+    }
+  })
+  |> list.fold(#([], 0, 0), fn(state, edge) {
+    let #(done, depth, start) = state
+    let depth_after = depth + edge.1
+    case depth, depth_after {
+      0, _ -> #(done, depth_after, edge.0)
+      _, 0 -> #([#(start, edge.0), ..done], 0, start)
+      _, _ -> #(done, depth_after, start)
+    }
+  })
+  |> fn(state) { list.reverse(state.0) }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn merge(intervals: List(#(Int, Int))) -> List(#(Int, Int))",
+      starter: "pub fn merge(intervals: List(#(Int, Int))) -> List(#(Int, Int)) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"merge([#(1, 3), #(2, 6), #(8, 10), #(15, 18)])\",
+      string.inspect([#(1, 6), #(8, 10), #(15, 18)]),
+      string.inspect(solution.merge([#(1, 3), #(2, 6), #(8, 10), #(15, 18)])),
+    ),
+    #(
+      \"merge([#(1, 4), #(4, 5)])\",
+      string.inspect([#(1, 5)]),
+      string.inspect(solution.merge([#(1, 4), #(4, 5)])),
+    ),
+    #(\"merge([])\", string.inspect([]), string.inspect(solution.merge([]))),
+    #(
+      \"merge([#(1, 4), #(0, 4)])\",
+      string.inspect([#(0, 4)]),
+      string.inspect(solution.merge([#(1, 4), #(0, 4)])),
+    ),
+    #(
+      \"merge([#(1, 4), #(2, 3)])\",
+      string.inspect([#(1, 4)]),
+      string.inspect(solution.merge([#(1, 4), #(2, 3)])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc37_non_overlapping() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Greedy on the end time. Among intervals competing for the same space, keeping the one that finishes earliest leaves the most room for whatever comes next and can never be worse — which is the exchange argument that makes the greedy correct, and the reason sorting by start is the classic wrong first answer.", "import gleam/int
+import gleam/list
+
+pub fn erase_overlap_intervals(intervals: List(#(Int, Int))) -> Int {
+  // Greedy on the end: among any set of intervals competing for the same space,
+  // keeping the one that finishes earliest leaves the most room for whatever
+  // comes next, and can never be worse.
+  intervals
+  |> list.sort(fn(a, b) { int.compare(a.1, b.1) })
+  |> list.fold(#(0, -2_147_483_648), fn(state, interval) {
+    let #(removed, last_end) = state
+    case interval.0 >= last_end {
+      True -> #(removed, interval.1)
+      False -> #(removed + 1, last_end)
+    }
+  })
+  |> fn(state) { state.0 }
+}"),
+      #("Solution 2 · By start", "Sorted by start instead. On an overlap one of the two has to go, and dropping whichever ends later is always at least as good — so the greedy choice is made at the moment of the clash rather than baked into the sort order. Same answer, and it needs the running end to be lowered rather than replaced.", "import gleam/int
+import gleam/list
+
+pub fn erase_overlap_intervals(intervals: List(#(Int, Int))) -> Int {
+  // Sorted by start instead: on an overlap you must drop one of the two, and
+  // dropping whichever ends later is always at least as good. Same greedy
+  // argument, made at the moment of the clash rather than in the sort order.
+  intervals
+  |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
+  |> list.fold(#(0, -2_147_483_648), fn(state, interval) {
+    let #(removed, last_end) = state
+    case interval.0 >= last_end {
+      True -> #(removed, interval.1)
+      False -> #(removed + 1, int.min(last_end, interval.1))
+    }
+  })
+  |> fn(state) { state.0 }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn erase_overlap_intervals(intervals: List(#(Int, Int))) -> Int",
+      starter: "pub fn erase_overlap_intervals(intervals: List(#(Int, Int))) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"erase_overlap_intervals([#(1, 2), #(2, 3), #(3, 4), #(1, 3)])\",
+      string.inspect(1),
+      string.inspect(
+        solution.erase_overlap_intervals([
+          #(1, 2),
+          #(2, 3),
+          #(3, 4),
+          #(1, 3),
+        ]),
+      ),
+    ),
+    #(
+      \"erase_overlap_intervals([#(1, 2), #(1, 2), #(1, 2)])\",
+      string.inspect(2),
+      string.inspect(
+        solution.erase_overlap_intervals([
+          #(1, 2),
+          #(1, 2),
+          #(1, 2),
+        ]),
+      ),
+    ),
+    #(
+      \"erase_overlap_intervals([#(1, 2), #(2, 3)])\",
+      string.inspect(0),
+      string.inspect(solution.erase_overlap_intervals([#(1, 2), #(2, 3)])),
+    ),
+    #(
+      \"erase_overlap_intervals([])\",
+      string.inspect(0),
+      string.inspect(solution.erase_overlap_intervals([])),
+    ),
+    #(
+      \"erase_overlap_intervals([#(1, 100), #(11, 22), #(1, 11), #(2, 12)])\",
+      string.inspect(2),
+      string.inspect(
+        solution.erase_overlap_intervals([
+          #(1, 100),
+          #(11, 22),
+          #(1, 11),
+          #(2, 12),
+        ]),
+      ),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc38_meeting_rooms() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Sorted by start, the only meeting a given one can clash with is the one immediately before it: anything earlier started earlier still, so it would have clashed with that one first. The whole check is then adjacent pairs.", "import gleam/int
+import gleam/list
+
+pub fn can_attend_meetings(intervals: List(#(Int, Int))) -> Bool {
+  // Sorted by start, the only meeting a given one can clash with is the one
+  // immediately before it \\u{2014} anything earlier started earlier still and would
+  // have clashed with that one first.
+  intervals
+  |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
+  |> list.window_by_2
+  |> list.all(fn(pair) { pair.0.1 <= pair.1.0 })
+}"),
+      #("Solution 2 · Pairwise", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every pair, checked. Worth writing once for the overlap test itself: two intervals overlap when each starts before the other ends, which is far easier to get right than trying to enumerate the ways they miss.", "import gleam/list
+
+pub fn can_attend_meetings(intervals: List(#(Int, Int))) -> Bool {
+  // Every pair, checked. Two intervals overlap when each starts before the
+  // other ends \\u{2014} the condition worth being able to write from memory, since
+  // it is easier to get right than its negation.
+  list.combination_pairs(intervals)
+  |> list.all(fn(pair) {
+    let #(a, b) = pair
+    !{ a.0 < b.1 && b.0 < a.1 }
+  })
+}"),
+    ],
+    check: Check(
+      signature: "pub fn can_attend_meetings(intervals: List(#(Int, Int))) -> Bool",
+      starter: "pub fn can_attend_meetings(intervals: List(#(Int, Int))) -> Bool {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"can_attend_meetings([#(0, 30), #(5, 10), #(15, 20)])\",
+      string.inspect(False),
+      string.inspect(
+        solution.can_attend_meetings([
+          #(0, 30),
+          #(5, 10),
+          #(15, 20),
+        ]),
+      ),
+    ),
+    #(
+      \"can_attend_meetings([#(7, 10), #(2, 4)])\",
+      string.inspect(True),
+      string.inspect(solution.can_attend_meetings([#(7, 10), #(2, 4)])),
+    ),
+    #(
+      \"can_attend_meetings([])\",
+      string.inspect(True),
+      string.inspect(solution.can_attend_meetings([])),
+    ),
+    #(
+      \"can_attend_meetings([#(1, 5)])\",
+      string.inspect(True),
+      string.inspect(solution.can_attend_meetings([#(1, 5)])),
+    ),
+    #(
+      \"can_attend_meetings([#(1, 5), #(5, 10)])\",
+      string.inspect(True),
+      string.inspect(solution.can_attend_meetings([#(1, 5), #(5, 10)])),
+    ),
+    #(
+      \"can_attend_meetings([#(5, 10), #(1, 6)])\",
+      string.inspect(False),
+      string.inspect(solution.can_attend_meetings([#(5, 10), #(1, 6)])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc39_meeting_rooms_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Rooms needed is the most meetings ever running at once, so the meetings stop mattering and only their edges do: +1 at a start, −1 at an end, and the answer is how high the running count gets. Closes come before opens at the same time here — a room freed at that moment can be reused — which is the opposite of what merging intervals wants.", "import gleam/int
+import gleam/list
+import gleam/order
+
+pub fn min_meeting_rooms(intervals: List(#(Int, Int))) -> Int {
+  // Rooms needed is the most meetings ever running at once, so the meetings
+  // themselves stop mattering \\u{2014} only their edges do. Walk the edges in time
+  // order and watch how high the count gets.
+  intervals
+  |> list.flat_map(fn(i) { [#(i.0, 1), #(i.1, -1)] })
+  |> list.sort(fn(a, b) {
+    // A room freed at the same moment another meeting starts can be reused, so
+    // closes come before opens here \\u{2014} the opposite of merging intervals.
+    case int.compare(a.0, b.0) {
+      order.Eq -> int.compare(a.1, b.1)
+      other -> other
+    }
+  })
+  |> list.fold(#(0, 0), fn(state, edge) {
+    let depth = state.0 + edge.1
+    #(depth, int.max(state.1, depth))
+  })
+  |> fn(state) { state.1 }
+}"),
+      #("Solution 2 · Count at each start", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+The busiest moment is always the start of some meeting, so only n moments are worth testing at all. Count how many meetings cover each and take the largest: no sort, no edge bookkeeping, and it makes clear what the sweep is measuring.", "import gleam/list
+
+pub fn min_meeting_rooms(intervals: List(#(Int, Int))) -> Int {
+  // The busiest moment is always the start of some meeting, so there are only
+  // n moments worth testing. Count how many meetings cover each one and take
+  // the largest \\u{2014} O(n\\u{b2}), and it needs no sort and no edge bookkeeping.
+  list.fold(intervals, 0, fn(best, meeting) {
+    let running =
+      list.count(intervals, fn(other) {
+        other.0 <= meeting.0 && meeting.0 < other.1
+      })
+    case running > best {
+      True -> running
+      False -> best
+    }
+  })
+}"),
+    ],
+    check: Check(
+      signature: "pub fn min_meeting_rooms(intervals: List(#(Int, Int))) -> Int",
+      starter: "pub fn min_meeting_rooms(intervals: List(#(Int, Int))) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"min_meeting_rooms([#(0, 30), #(5, 10), #(15, 20)])\",
+      string.inspect(2),
+      string.inspect(
+        solution.min_meeting_rooms([
+          #(0, 30),
+          #(5, 10),
+          #(15, 20),
+        ]),
+      ),
+    ),
+    #(
+      \"min_meeting_rooms([#(7, 10), #(2, 4)])\",
+      string.inspect(1),
+      string.inspect(solution.min_meeting_rooms([#(7, 10), #(2, 4)])),
+    ),
+    #(
+      \"min_meeting_rooms([])\",
+      string.inspect(0),
+      string.inspect(solution.min_meeting_rooms([])),
+    ),
+    #(
+      \"min_meeting_rooms([#(1, 5), #(5, 10)])\",
+      string.inspect(1),
+      string.inspect(solution.min_meeting_rooms([#(1, 5), #(5, 10)])),
+    ),
+    #(
+      \"min_meeting_rooms(six overlapping meetings)\",
+      string.inspect(4),
+      string.inspect(
+        solution.min_meeting_rooms([
+          #(1, 10),
+          #(2, 7),
+          #(3, 19),
+          #(8, 12),
+          #(10, 20),
+          #(11, 30),
+        ]),
+      ),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc40_min_interval() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+For each query, the smallest interval containing it. O(q·n), and the definition — worth having before the clever version, because it is what you check the clever version against.", "import gleam/int
+import gleam/list
+
+pub fn min_interval(
+  intervals: List(#(Int, Int)),
+  queries: List(Int),
+) -> List(Int) {
+  list.map(queries, fn(query) {
+    intervals
+    |> list.filter(fn(i) { i.0 <= query && query <= i.1 })
+    |> list.map(fn(i) { i.1 - i.0 + 1 })
+    |> list.reduce(int.min)
+    |> fn(smallest) {
+      case smallest {
+        Ok(length) -> length
+        Error(Nil) -> -1
+      }
+    }
+  })
+}"),
+      #("Solution 2 · Offline by length", "Answer each query once and never revisit it. Taking the intervals shortest first means the first interval to cover a query is already its answer, so a query leaves the pool the moment it is settled and the pool only shrinks. Reordering the work so each answer is final is the technique here, and it generalises well beyond this problem.", "import gleam/int
+import gleam/list
+
+pub fn min_interval(
+  intervals: List(#(Int, Int)),
+  queries: List(Int),
+) -> List(Int) {
+  // Answer each query once, and never revisit it. Taking the intervals shortest
+  // first means the first interval to cover a query is already its answer, so
+  // every query leaves the pool the moment it is settled and the pool only ever
+  // shrinks.
+  let numbered = list.index_map(queries, fn(query, index) { #(index, query) })
+
+  let #(answered, unanswered) =
+    intervals
+    |> list.sort(fn(a, b) { int.compare(a.1 - a.0, b.1 - b.0) })
+    |> list.fold(#([], numbered), fn(state, interval) {
+      let #(answered, waiting) = state
+      let #(covered, still_waiting) =
+        list.partition(waiting, fn(entry) {
+          interval.0 <= entry.1 && entry.1 <= interval.1
+        })
+      let length = interval.1 - interval.0 + 1
+      #(
+        list.append(
+          answered,
+          list.map(covered, fn(entry) { #(entry.0, length) }),
+        ),
+        still_waiting,
+      )
+    })
+
+  let settled =
+    list.append(answered, list.map(unanswered, fn(entry) { #(entry.0, -1) }))
+
+  settled
+  |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
+  |> list.map(fn(entry) { entry.1 })
+}"),
+    ],
+    check: Check(
+      signature: "pub fn min_interval(
+  intervals: List(#(Int, Int)),
+  queries: List(Int),
+) -> List(Int)",
+      starter: "pub fn min_interval(
+  intervals: List(#(Int, Int)),
+  queries: List(Int),
+) -> List(Int) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"min_interval([#(1, 4), #(2, 4), #(3, 6), #(4, 4)], [2, 3, 4, 5])\",
+      string.inspect([3, 3, 1, 4]),
+      string.inspect(
+        solution.min_interval([#(1, 4), #(2, 4), #(3, 6), #(4, 4)], [2, 3, 4, 5]),
+      ),
+    ),
+    #(
+      \"min_interval([#(2, 3), #(2, 5), #(1, 8), #(20, 25)], [2, 19, 5, 22])\",
+      string.inspect([2, -1, 4, 6]),
+      string.inspect(
+        solution.min_interval([#(2, 3), #(2, 5), #(1, 8), #(20, 25)], [
+          2,
+          19,
+          5,
+          22,
+        ]),
+      ),
+    ),
+    #(
+      \"min_interval([], [1, 2])\",
+      string.inspect([-1, -1]),
+      string.inspect(solution.min_interval([], [1, 2])),
+    ),
+    #(
+      \"min_interval([#(1, 10)], [])\",
+      string.inspect([]),
+      string.inspect(solution.min_interval([#(1, 10)], [])),
+    ),
+    #(
+      \"min_interval([#(1, 3)], [0, 4])\",
+      string.inspect([-1, -1]),
+      string.inspect(solution.min_interval([#(1, 3)], [0, 4])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
 pub fn tip01_list_patterns() -> Embedded {
   Embedded(
     solutions: [
@@ -4594,6 +5195,12 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc32_koko_bananas" -> Ok(nc32_koko_bananas())
     "nc33_time_map" -> Ok(nc33_time_map())
     "nc34_median_two_sorted" -> Ok(nc34_median_two_sorted())
+    "nc35_insert_interval" -> Ok(nc35_insert_interval())
+    "nc36_merge_intervals" -> Ok(nc36_merge_intervals())
+    "nc37_non_overlapping" -> Ok(nc37_non_overlapping())
+    "nc38_meeting_rooms" -> Ok(nc38_meeting_rooms())
+    "nc39_meeting_rooms_ii" -> Ok(nc39_meeting_rooms_ii())
+    "nc40_min_interval" -> Ok(nc40_min_interval())
     "tip01_list_patterns" -> Ok(tip01_list_patterns())
     "tip02_tail_recursion" -> Ok(tip02_tail_recursion())
     "tip03_fold" -> Ok(tip03_fold())

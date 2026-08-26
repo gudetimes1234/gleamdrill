@@ -1,0 +1,1 @@
+Sort by start and the problem collapses: an interval can only ever overlap the one currently being built, because anything it could have overlapped earlier was already absorbed into that. So a single pass either extends the interval in hand or begins a new one.

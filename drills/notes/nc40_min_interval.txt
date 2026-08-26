@@ -1,0 +1,2 @@
+@shared/brute-force-baseline
+For each query, the smallest interval containing it. O(q·n), and the definition — worth having before the clever version, because it is what you check the clever version against.

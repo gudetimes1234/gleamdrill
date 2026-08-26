@@ -2077,6 +2077,354 @@ __case__(\"findMedianSortedArrays([1, 3, 5, 7], [2, 4, 6])\", 4.0, findMedianSor
   )
 }
 
+pub fn nc35_insert_interval() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The input is already sorted, which turns the problem into a three-way split: everything that finishes before the new interval starts passes through untouched, everything that touches it collapses into one, and everything after it passes through too. One pass, no sorting.", "def insert(intervals, newInterval):
+    start, end = newInterval
+    out = []
+    i = 0
+
+    # The input is already sorted, so the list falls into three runs: everything
+    # that finishes before the new one starts, everything that touches it, and
+    # everything that starts after it ends.
+    while i < len(intervals) and intervals[i][1] < start:
+        out.append(intervals[i])
+        i += 1
+
+    while i < len(intervals) and intervals[i][0] <= end:
+        start = min(start, intervals[i][0])
+        end = max(end, intervals[i][1])
+        i += 1
+
+    out.append([start, end])
+    return out + intervals[i:]"),
+      #("Solution 2 · Merge after append", "Drop the new interval on the end and run the general merge. It throws away the sortedness — O(n log n) rather than O(n) — but it is a solution you already have rather than a three-way split to get right, and that trade is often the correct one under time pressure.", "def insert(intervals, newInterval):
+    # Drop the new interval on the end and run the general merge. Throws away
+    # the fact that the input was sorted -- O(n log n) rather than O(n) -- but
+    # it reuses a solution you already have rather than a three-way split.
+    out = []
+    for start, end in sorted(intervals + [newInterval]):
+        if out and start <= out[-1][1]:
+            out[-1][1] = max(out[-1][1], end)
+        else:
+            out.append([start, end])
+    return out"),
+    ],
+    check: Check(
+      signature: "def insert(intervals, newInterval):",
+      starter: "def insert(intervals, newInterval):
+    pass",
+      harness: "try:
+    (insert)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"insert([[1, 3], [6, 9]], [2, 5])\", [[1, 5], [6, 9]], insert([[1, 3], [6, 9]], [2, 5]))
+__case__(\"insert([[1, 2], [3, 5], [6, 7], [8, 10], [12, 16]], [4, 8])\", [[1, 2], [3, 10], [12, 16]], insert([[1, 2], [3, 5], [6, 7], [8, 10], [12, 16]], [4, 8]))
+__case__(\"insert([], [5, 7])\", [[5, 7]], insert([], [5, 7]))
+__case__(\"insert([[1, 5]], [2, 3])\", [[1, 5]], insert([[1, 5]], [2, 3]))
+__case__(\"insert([[1, 5]], [6, 8])\", [[1, 5], [6, 8]], insert([[1, 5]], [6, 8]))
+__case__(\"insert([[3, 5]], [1, 2])\", [[1, 2], [3, 5]], insert([[3, 5]], [1, 2]))",
+    ),
+  )
+}
+
+pub fn nc36_merge_intervals() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Sort by start and the problem collapses: an interval can only ever overlap the one currently being built, because anything it could have overlapped earlier was already absorbed into that. So a single pass either extends the interval in hand or begins a new one.", "def merge(intervals):
+    # Sorted by start, an interval can only ever overlap the one being built, so
+    # a single pass is enough: extend it, or begin a new one.
+    out = []
+    for start, end in sorted(intervals):
+        if out and start <= out[-1][1]:
+            out[-1][1] = max(out[-1][1], end)
+        else:
+            out.append([start, end])
+    return out"),
+      #("Solution 2 · Sweep counts", "Forget the intervals and keep only their edges: +1 where one opens, −1 where one closes. A merged interval runs from the edge that lifts the running count off zero to the edge that drops it back. Ordering opens before closes at the same coordinate is what makes touching intervals join.", "def merge(intervals):
+    # Forget the intervals and keep only their edges: +1 where one opens, -1
+    # where one closes. A merged interval runs from the edge that lifts the
+    # running count off zero to the edge that drops it back.
+    #
+    # Sorting -delta ascending puts opens before closes at the same coordinate,
+    # so touching intervals join.
+    edges = []
+    for start, end in intervals:
+        edges.append((start, 1))
+        edges.append((end, -1))
+    edges.sort(key=lambda edge: (edge[0], -edge[1]))
+
+    out = []
+    depth = 0
+    start = 0
+    for position, delta in edges:
+        if depth == 0:
+            start = position
+        depth += delta
+        if depth == 0:
+            out.append([start, position])
+    return out"),
+    ],
+    check: Check(
+      signature: "def merge(intervals):",
+      starter: "def merge(intervals):
+    pass",
+      harness: "try:
+    (merge)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"merge([[1, 3], [2, 6], [8, 10], [15, 18]])\", [[1, 6], [8, 10], [15, 18]], merge([[1, 3], [2, 6], [8, 10], [15, 18]]))
+__case__(\"merge([[1, 4], [4, 5]])\", [[1, 5]], merge([[1, 4], [4, 5]]))
+__case__(\"merge([])\", [], merge([]))
+__case__(\"merge([[1, 4], [0, 4]])\", [[0, 4]], merge([[1, 4], [0, 4]]))
+__case__(\"merge([[1, 4], [2, 3]])\", [[1, 4]], merge([[1, 4], [2, 3]]))",
+    ),
+  )
+}
+
+pub fn nc37_non_overlapping() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Greedy on the end time. Among intervals competing for the same space, keeping the one that finishes earliest leaves the most room for whatever comes next and can never be worse — which is the exchange argument that makes the greedy correct, and the reason sorting by start is the classic wrong first answer.", "def eraseOverlapIntervals(intervals):
+    # Greedy on the end: among any set of intervals competing for the same
+    # space, keeping the one that finishes earliest leaves the most room for
+    # whatever comes next, and can never be worse.
+    removed = 0
+    last_end = float(\"-inf\")
+
+    for start, end in sorted(intervals, key=lambda interval: interval[1]):
+        if start >= last_end:
+            last_end = end
+        else:
+            removed += 1
+
+    return removed"),
+      #("Solution 2 · By start", "Sorted by start instead. On an overlap one of the two has to go, and dropping whichever ends later is always at least as good — so the greedy choice is made at the moment of the clash rather than baked into the sort order. Same answer, and it needs the running end to be lowered rather than replaced.", "def eraseOverlapIntervals(intervals):
+    # Sorted by start instead: on an overlap you must drop one of the two, and
+    # dropping whichever ends later is always at least as good. Same greedy
+    # argument, made at the moment of the clash rather than in the sort order.
+    removed = 0
+    last_end = float(\"-inf\")
+
+    for start, end in sorted(intervals):
+        if start >= last_end:
+            last_end = end
+        else:
+            removed += 1
+            last_end = min(last_end, end)
+
+    return removed"),
+    ],
+    check: Check(
+      signature: "def eraseOverlapIntervals(intervals):",
+      starter: "def eraseOverlapIntervals(intervals):
+    pass",
+      harness: "try:
+    (eraseOverlapIntervals)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"eraseOverlapIntervals([[1, 2], [2, 3], [3, 4], [1, 3]])\", 1, eraseOverlapIntervals([[1, 2], [2, 3], [3, 4], [1, 3]]))
+__case__(\"eraseOverlapIntervals([[1, 2], [1, 2], [1, 2]])\", 2, eraseOverlapIntervals([[1, 2], [1, 2], [1, 2]]))
+__case__(\"eraseOverlapIntervals([[1, 2], [2, 3]])\", 0, eraseOverlapIntervals([[1, 2], [2, 3]]))
+__case__(\"eraseOverlapIntervals([])\", 0, eraseOverlapIntervals([]))
+__case__(\"eraseOverlapIntervals([[1, 100], [11, 22], [1, 11], [2, 12]])\", 2, eraseOverlapIntervals([[1, 100], [11, 22], [1, 11], [2, 12]]))",
+    ),
+  )
+}
+
+pub fn nc38_meeting_rooms() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Sorted by start, the only meeting a given one can clash with is the one immediately before it: anything earlier started earlier still, so it would have clashed with that one first. The whole check is then adjacent pairs.", "def canAttendMeetings(intervals):
+    # Sorted by start, the only meeting a given one can clash with is the one
+    # immediately before it -- anything earlier started earlier still and would
+    # have clashed with that one first.
+    ordered = sorted(intervals)
+    return all(ordered[i - 1][1] <= ordered[i][0] for i in range(1, len(ordered)))"),
+      #("Solution 2 · Pairwise", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every pair, checked. Worth writing once for the overlap test itself: two intervals overlap when each starts before the other ends, which is far easier to get right than trying to enumerate the ways they miss.", "def canAttendMeetings(intervals):
+    # Every pair, checked. Two intervals overlap when each starts before the
+    # other ends -- the condition worth being able to write from memory, since
+    # it is easier to get right than its negation.
+    for i in range(len(intervals)):
+        for j in range(i + 1, len(intervals)):
+            a, b = intervals[i], intervals[j]
+            if a[0] < b[1] and b[0] < a[1]:
+                return False
+    return True"),
+    ],
+    check: Check(
+      signature: "def canAttendMeetings(intervals):",
+      starter: "def canAttendMeetings(intervals):
+    pass",
+      harness: "try:
+    (canAttendMeetings)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"canAttendMeetings([[0, 30], [5, 10], [15, 20]])\", False, canAttendMeetings([[0, 30], [5, 10], [15, 20]]))
+__case__(\"canAttendMeetings([[7, 10], [2, 4]])\", True, canAttendMeetings([[7, 10], [2, 4]]))
+__case__(\"canAttendMeetings([])\", True, canAttendMeetings([]))
+__case__(\"canAttendMeetings([[1, 5]])\", True, canAttendMeetings([[1, 5]]))
+__case__(\"canAttendMeetings([[1, 5], [5, 10]])\", True, canAttendMeetings([[1, 5], [5, 10]]))
+__case__(\"canAttendMeetings([[5, 10], [1, 6]])\", False, canAttendMeetings([[5, 10], [1, 6]]))",
+    ),
+  )
+}
+
+pub fn nc39_meeting_rooms_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Rooms needed is the most meetings ever running at once, so the meetings stop mattering and only their edges do: +1 at a start, −1 at an end, and the answer is how high the running count gets. Closes come before opens at the same time here — a room freed at that moment can be reused — which is the opposite of what merging intervals wants.", "def minMeetingRooms(intervals):
+    # Rooms needed is the most meetings ever running at once, so the meetings
+    # themselves stop mattering -- only their edges do. Walk the edges in time
+    # order and watch how high the count gets.
+    edges = []
+    for start, end in intervals:
+        edges.append((start, 1))
+        edges.append((end, -1))
+
+    # A room freed at the same moment another meeting starts can be reused, so
+    # closes come before opens here -- the opposite of merging intervals.
+    edges.sort()
+
+    depth = 0
+    best = 0
+    for _position, delta in edges:
+        depth += delta
+        best = max(best, depth)
+    return best"),
+      #("Solution 2 · Count at each start", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+The busiest moment is always the start of some meeting, so only n moments are worth testing at all. Count how many meetings cover each and take the largest: no sort, no edge bookkeeping, and it makes clear what the sweep is measuring.", "def minMeetingRooms(intervals):
+    # The busiest moment is always the start of some meeting, so there are only
+    # n moments worth testing. Count how many meetings cover each one and take
+    # the largest -- O(n^2), and it needs no sort and no edge bookkeeping.
+    best = 0
+    for start, _end in intervals:
+        running = sum(1 for s, e in intervals if s <= start < e)
+        best = max(best, running)
+    return best"),
+    ],
+    check: Check(
+      signature: "def minMeetingRooms(intervals):",
+      starter: "def minMeetingRooms(intervals):
+    pass",
+      harness: "try:
+    (minMeetingRooms)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"minMeetingRooms([[0, 30], [5, 10], [15, 20]])\", 2, minMeetingRooms([[0, 30], [5, 10], [15, 20]]))
+__case__(\"minMeetingRooms([[7, 10], [2, 4]])\", 1, minMeetingRooms([[7, 10], [2, 4]]))
+__case__(\"minMeetingRooms([])\", 0, minMeetingRooms([]))
+__case__(\"minMeetingRooms([[1, 5], [5, 10]])\", 1, minMeetingRooms([[1, 5], [5, 10]]))
+__case__(\"minMeetingRooms(six overlapping meetings)\", 4, minMeetingRooms([[1, 10], [2, 7], [3, 19], [8, 12], [10, 20], [11, 30]]))",
+    ),
+  )
+}
+
+pub fn nc40_min_interval() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+For each query, the smallest interval containing it. O(q·n), and the definition — worth having before the clever version, because it is what you check the clever version against.", "def minInterval(intervals, queries):
+    out = []
+    for query in queries:
+        lengths = [end - start + 1 for start, end in intervals if start <= query <= end]
+        out.append(min(lengths) if lengths else -1)
+    return out"),
+      #("Solution 2 · Min heap", "The O((n + q) log n) answer. Walk the queries in time order, letting in every interval that has started by now, and keep the live ones in a heap ordered by length. The shortest on top is the answer once anything already ended has been discarded — and an interval ends only once, so that discarding is amortised free.", "import heapq
+
+
+def minInterval(intervals, queries):
+    # The O((n + q) log n) answer. Walk the queries in time order, letting in
+    # every interval that has started by now, and keep the live ones in a heap
+    # by length. The shortest one on top is the answer once anything that has
+    # already ended is discarded -- and an interval only ever ends once, so the
+    # discarding is amortised free.
+    ordered = sorted(intervals)
+    answers = {}
+    heap = []
+    i = 0
+
+    for query in sorted(queries):
+        while i < len(ordered) and ordered[i][0] <= query:
+            start, end = ordered[i]
+            heapq.heappush(heap, (end - start + 1, end))
+            i += 1
+        while heap and heap[0][1] < query:
+            heapq.heappop(heap)
+        answers[query] = heap[0][0] if heap else -1
+
+    return [answers[query] for query in queries]"),
+      #("Solution 3 · Offline by length", "Answer each query once and never revisit it. Taking the intervals shortest first means the first interval to cover a query is already its answer, so a query leaves the pool the moment it is settled and the pool only shrinks. Reordering the work so each answer is final is the technique here, and it generalises well beyond this problem.", "def minInterval(intervals, queries):
+    # Answer each query once, and never revisit it. Taking the intervals
+    # shortest first means the first interval to cover a query is already its
+    # answer, so every query leaves the pool the moment it is settled and the
+    # pool only ever shrinks.
+    answers = [-1] * len(queries)
+    waiting = list(enumerate(queries))
+
+    for start, end in sorted(intervals, key=lambda i: i[1] - i[0]):
+        still_waiting = []
+        for index, query in waiting:
+            if start <= query <= end:
+                answers[index] = end - start + 1
+            else:
+                still_waiting.append((index, query))
+        waiting = still_waiting
+
+    return answers"),
+    ],
+    check: Check(
+      signature: "def minInterval(intervals, queries):",
+      starter: "def minInterval(intervals, queries):
+    pass",
+      harness: "try:
+    (minInterval)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"minInterval([[1, 4], [2, 4], [3, 6], [4, 4]], [2, 3, 4, 5])\", [3, 3, 1, 4], minInterval([[1, 4], [2, 4], [3, 6], [4, 4]], [2, 3, 4, 5]))
+__case__(\"minInterval([[2, 3], [2, 5], [1, 8], [20, 25]], [2, 19, 5, 22])\", [2, -1, 4, 6], minInterval([[2, 3], [2, 5], [1, 8], [20, 25]], [2, 19, 5, 22]))
+__case__(\"minInterval([], [1, 2])\", [-1, -1], minInterval([], [1, 2]))
+__case__(\"minInterval([[1, 10]], [])\", [], minInterval([[1, 10]], []))
+__case__(\"minInterval([[1, 3]], [0, 4])\", [-1, -1], minInterval([[1, 3]], [0, 4]))",
+    ),
+  )
+}
+
 pub fn tip01_counter() -> Embedded {
   Embedded(
     solutions: [
@@ -2485,6 +2833,12 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc32_koko_bananas" -> Ok(nc32_koko_bananas())
     "nc33_time_map" -> Ok(nc33_time_map())
     "nc34_median_two_sorted" -> Ok(nc34_median_two_sorted())
+    "nc35_insert_interval" -> Ok(nc35_insert_interval())
+    "nc36_merge_intervals" -> Ok(nc36_merge_intervals())
+    "nc37_non_overlapping" -> Ok(nc37_non_overlapping())
+    "nc38_meeting_rooms" -> Ok(nc38_meeting_rooms())
+    "nc39_meeting_rooms_ii" -> Ok(nc39_meeting_rooms_ii())
+    "nc40_min_interval" -> Ok(nc40_min_interval())
     "tip01_counter" -> Ok(tip01_counter())
     "tip02_defaultdict" -> Ok(tip02_defaultdict())
     "tip03_deque" -> Ok(tip03_deque())

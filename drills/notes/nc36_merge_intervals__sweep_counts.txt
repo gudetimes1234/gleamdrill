@@ -1,0 +1,1 @@
+Forget the intervals and keep only their edges: +1 where one opens, −1 where one closes. A merged interval runs from the edge that lifts the running count off zero to the edge that drops it back. Ordering opens before closes at the same coordinate is what makes touching intervals join.

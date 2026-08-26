@@ -1,0 +1,1 @@
+Drop the new interval on the end and run the general merge. It throws away the sortedness — O(n log n) rather than O(n) — but it is a solution you already have rather than a three-way split to get right, and that trade is often the correct one under time pressure.

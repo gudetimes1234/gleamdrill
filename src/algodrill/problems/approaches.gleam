@@ -106,6 +106,25 @@ pub fn for_title(title: String) -> String {
     "Search in Rotated Sorted Array" ->
       "Binary search with a twist: after the rotation, one half around the midpoint is always sorted. Check which half is sorted, then use its endpoints to decide whether the target lies inside it \u{2014} recurse into that half or the other."
 
+    // Intervals
+    "Insert Interval" ->
+      "The input is already sorted, and that is the whole gift: the list falls into everything that finishes before the new interval starts, everything that touches it, and everything after. Only the middle run collapses \u{2014} into a single interval spanning the lot \u{2014} so one pass does it with no sorting at all."
+
+    "Merge Intervals" ->
+      "Sort by start and the problem collapses: an interval can only ever overlap the one currently being built, because anything it could have overlapped earlier was already absorbed into that one. A single pass then either extends the interval in hand or begins a new one. The other framing is to keep only the edges, +1 and \u{2212}1, and cut wherever the running count returns to zero."
+
+    "Non-overlapping Intervals" ->
+      "Removing the fewest is keeping the most, which is the classic activity-selection greedy: sort by *end* time and keep every interval that starts after the last one kept. The exchange argument is that finishing earliest leaves the most room for everything after, so it can never be worse. Sorting by start is the natural wrong answer \u{2014} it keeps whichever came first, which may be a very long one."
+
+    "Meeting Rooms" ->
+      "Sorted by start, the only meeting a given one can clash with is the one immediately before it: anything earlier began earlier still, so it would have clashed with that one first. The check is then adjacent pairs. Worth having the overlap condition itself by heart \u{2014} two intervals overlap when each starts before the other ends."
+
+    "Meeting Rooms II" ->
+      "Rooms needed is the most meetings ever running at once, so the meetings themselves stop mattering and only their edges do: +1 at a start, \u{2212}1 at an end, and the answer is the high-water mark of the running count. Note the tie-break \u{2014} a room freed exactly as another meeting starts can be reused, so closes come before opens, the opposite of what merging wants."
+
+    "Minimum Interval to Include Each Query" ->
+      "Both good answers give up on answering queries in the order they arrive. Sort them by time, let intervals in as they start, keep the live ones in a heap by length and discard whatever has already ended \u{2014} or go the other way and take intervals shortest first, so the first one to cover a query is already its final answer and that query never needs looking at again."
+
     // Gleam Tips
     "Pattern matching on lists" ->
       "In Gleam a list is either [] or [head, ..tail] \u{2014} every list function is a case expression over those two shapes (plus [only] when the last element matters). Recursion replaces loops: handle the empty case, then recurse on the tail."

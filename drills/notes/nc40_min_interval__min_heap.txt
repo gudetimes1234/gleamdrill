@@ -1,0 +1,1 @@
+The O((n + q) log n) answer. Walk the queries in time order, letting in every interval that has started by now, and keep the live ones in a heap ordered by length. The shortest on top is the answer once anything already ended has been discarded — and an interval ends only once, so that discarding is amortised free.

@@ -1,0 +1,1 @@
+Rooms needed is the most meetings ever running at once, so the meetings stop mattering and only their edges do: +1 at a start, −1 at an end, and the answer is how high the running count gets. Closes come before opens at the same time here — a room freed at that moment can be reused — which is the opposite of what merging intervals wants.
