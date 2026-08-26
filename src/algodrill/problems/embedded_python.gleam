@@ -452,6 +452,199 @@ __case__(\"twoSum([1, 2, 3], 100)\", [], twoSum([1, 2, 3], 100))",
   )
 }
 
+pub fn nc100_edit_distance() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Three edits, three neighbours in the table: replace from the diagonal, delete from above, insert from the left. Equal characters cost nothing and take the diagonal outright. The first row and column are the cost of building a string from nothing, which is simply its length.", "def minDistance(word1, word2):
+    # Three edits, three neighbours in the table: replace comes from the
+    # diagonal, delete from above, insert from the left. Equal characters cost
+    # nothing and take the diagonal outright -- the whole algorithm is those
+    # four lines. The first row and column are the cost of building a string
+    # from nothing, which is its length.
+    previous = list(range(len(word2) + 1))
+
+    for i, a in enumerate(word1, start=1):
+        row = [i] + [0] * len(word2)
+        for j, b in enumerate(word2, start=1):
+            row[j] = previous[j - 1] if a == b else 1 + min(previous[j - 1], previous[j], row[j - 1])
+        previous = row
+
+    return previous[len(word2)]"),
+      #("Solution 2 · Memoised", "The same three edits as an explicit choice from the front. Running out of one word costs whatever remains of the other, since every leftover character must be inserted or deleted — the base case that the table encodes in its first row and column.", "def minDistance(word1, word2):
+    memo = {}
+
+    # The same three edits as an explicit choice from the front. Running out of
+    # one word costs whatever is left of the other, since every remaining
+    # character has to be inserted or deleted.
+    def cost(i, j):
+        if i >= len(word1):
+            return len(word2) - j
+        if j >= len(word2):
+            return len(word1) - i
+        if (i, j) not in memo:
+            if word1[i] == word2[j]:
+                memo[(i, j)] = cost(i + 1, j + 1)
+            else:
+                memo[(i, j)] = 1 + min(cost(i + 1, j + 1), cost(i + 1, j), cost(i, j + 1))
+        return memo[(i, j)]
+
+    return cost(0, 0)"),
+    ],
+    check: Check(
+      signature: "def minDistance(word1, word2):",
+      starter: "def minDistance(word1, word2):
+    pass",
+      harness: "try:
+    (minDistance)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"minDistance('horse', 'ros')\", 3, minDistance('horse', 'ros'))
+__case__(\"minDistance('intention', 'execution')\", 5, minDistance('intention', 'execution'))
+__case__(\"minDistance('', 'abc')\", 3, minDistance('', 'abc'))
+__case__(\"minDistance('abc', '')\", 3, minDistance('abc', ''))
+__case__(\"minDistance('abc', 'abc')\", 0, minDistance('abc', 'abc'))
+__case__(\"minDistance('kitten', 'sitting')\", 3, minDistance('kitten', 'sitting'))",
+    ),
+  )
+}
+
+pub fn nc101_burst_balloons() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Ask which balloon is burst *last* in a span, not first. The last one still has both span boundaries as neighbours — they are untouched by definition — so its value is known and the two sides become independent subproblems. Asking \"first\" leaves neighbours that depend on the other side and the recursion never closes. Padding with a 1 at each end removes the edge cases.", "def maxCoins(nums):
+    # Padding with a 1 at each end removes the edge cases: every balloon then
+    # has a neighbour on both sides whatever happens.
+    balloons = [1] + list(nums) + [1]
+    memo = {}
+
+    # The trick is to ask which balloon is burst *last* in a span rather than
+    # first. The last one still has both span boundaries as neighbours -- they
+    # are untouched by definition -- so its value is known, and the two sides
+    # become independent subproblems. Asking \"first\" leaves neighbours that
+    # depend on the other side, and the recursion does not close.
+    def best(left, right):
+        if right - left < 2:
+            return 0
+        if (left, right) not in memo:
+            memo[(left, right)] = max(
+                balloons[left] * balloons[last] * balloons[right]
+                + best(left, last)
+                + best(last, right)
+                for last in range(left + 1, right)
+            )
+        return memo[(left, right)]
+
+    return best(0, len(balloons) - 1)"),
+      #("Solution 2 · Bottom up", "The same recurrence filled by hand, shortest spans first — because a span needs both of the shorter spans a chosen last balloon splits it into. Writing the loop order out makes that dependency visible where the recursion leaves it implicit.", "def maxCoins(nums):
+    balloons = [1] + list(nums) + [1]
+    n = len(balloons)
+    table = [[0] * n for _ in range(n)]
+
+    # The same \"which balloon goes last\" recurrence filled by hand, shortest
+    # spans first -- because a span's answer needs both of the shorter spans
+    # that a chosen last balloon splits it into. Writing the loop order out
+    # makes that dependency visible where the recursion leaves it implicit.
+    for width in range(2, n):
+        for left in range(n - width):
+            right = left + width
+            table[left][right] = max(
+                balloons[left] * balloons[last] * balloons[right]
+                + table[left][last]
+                + table[last][right]
+                for last in range(left + 1, right)
+            )
+
+    return table[0][n - 1]"),
+    ],
+    check: Check(
+      signature: "def maxCoins(nums):",
+      starter: "def maxCoins(nums):
+    pass",
+      harness: "try:
+    (maxCoins)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"maxCoins([3, 1, 5, 8])\", 167, maxCoins([3, 1, 5, 8]))
+__case__(\"maxCoins([1, 5])\", 10, maxCoins([1, 5]))
+__case__(\"maxCoins([])\", 0, maxCoins([]))
+__case__(\"maxCoins([5])\", 5, maxCoins([5]))
+__case__(\"maxCoins([1, 2, 3, 4])\", 40, maxCoins([1, 2, 3, 4]))",
+    ),
+  )
+}
+
+pub fn nc102_regular_expression_matching() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A star binds to the character *before* it, so the pattern is read two symbols at a time. Given \"x*\": either skip the pair entirely — zero copies — or, if x matches here, consume one character of the text and stay on the same pair. Everything else is a single-character match. Getting the zero-copies branch right is most of the problem.", "def isMatch(s, p):
+    memo = {}
+
+    # A star binds to the character *before* it, so the pattern has to be read
+    # two symbols at a time. Given \"x*\", either skip the pair entirely -- zero
+    # copies -- or, if x matches here, consume one character of the text and
+    # stay on the same pair. Everything else is a single-character match.
+    def works(i, j):
+        if j >= len(p):
+            return i >= len(s)
+        if (i, j) not in memo:
+            here = i < len(s) and p[j] in (s[i], \".\")
+            if j + 1 < len(p) and p[j + 1] == \"*\":
+                memo[(i, j)] = works(i, j + 2) or (here and works(i + 1, j))
+            else:
+                memo[(i, j)] = here and works(i + 1, j + 1)
+        return memo[(i, j)]
+
+    return works(0, 0)"),
+      #("Solution 2 · No cache", "The same rules with no table at all, which is shorter and far easier to trust. It is exponential on patterns like \"a*a*a*a*b\", where the same suffix is reached along many different splits — so write this first, get it right, and add the cache afterwards.", "def isMatch(s, p):
+    # The same rules with no table at all. Shorter and easier to trust, and
+    # exponential on patterns like \"a*a*a*a*b\" where the same suffix is reached
+    # along many different splits. Worth writing first, then adding the cache
+    # once it is right.
+    if not p:
+        return not s
+
+    here = bool(s) and p[0] in (s[0], \".\")
+
+    if len(p) >= 2 and p[1] == \"*\":
+        return isMatch(s, p[2:]) or (here and isMatch(s[1:], p))
+
+    return here and isMatch(s[1:], p[1:])"),
+    ],
+    check: Check(
+      signature: "def isMatch(s, p):",
+      starter: "def isMatch(s, p):
+    pass",
+      harness: "try:
+    (isMatch)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"isMatch('aa', 'a')\", False, isMatch('aa', 'a'))
+__case__(\"isMatch('aa', 'a*')\", True, isMatch('aa', 'a*'))
+__case__(\"isMatch('ab', '.*')\", True, isMatch('ab', '.*'))
+__case__(\"isMatch('aab', 'c*a*b')\", True, isMatch('aab', 'c*a*b'))
+__case__(\"isMatch('mississippi', 'mis*is*p*.')\", False, isMatch('mississippi', 'mis*is*p*.'))
+__case__(\"isMatch('', '.*')\", True, isMatch('', '.*'))
+__case__(\"isMatch('', '')\", True, isMatch('', ''))
+__case__(\"isMatch('abc', 'abc')\", True, isMatch('abc', 'abc'))",
+    ),
+  )
+}
+
 pub fn nc10_three_sum() -> Embedded {
   Embedded(
     solutions: [
@@ -5580,6 +5773,498 @@ __case__(\"solveNQueens(6) count\", 4, len(solveNQueens(6)))",
   )
 }
 
+pub fn nc92_unique_paths() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Only right and down moves, so the ways to reach a square are the ways to reach the one above plus the one to its left. Rows fill top to bottom and only the previous row is ever needed, so one row of counters does for the whole grid.", "def uniquePaths(m, n):
+    if m <= 0 or n <= 0:
+        return 0
+
+    # Only right and down moves, so the ways to reach a square are the ways to
+    # reach the one above plus the one to its left. Rows are filled top to
+    # bottom, and only the row above is ever needed -- so one row of counters
+    # does for the whole grid.
+    row = [1] * n
+    for _ in range(m - 1):
+        for c in range(1, n):
+            row[c] += row[c - 1]
+
+    return row[-1]"),
+      #("Solution 2 · Pascal", "There is no grid at all. Every path is exactly m−1 downs and n−1 rights in some order, so the count is the number of ways to choose which of the m+n−2 moves are downs — a binomial coefficient. Multiplying and dividing in step keeps every intermediate an exact integer, which is what makes it safe without big numbers.", "def uniquePaths(m, n):
+    if m <= 0 or n <= 0:
+        return 0
+
+    # Every path is exactly m-1 downs and n-1 rights in some order, so the count
+    # is the number of ways to choose which of the m+n-2 moves are downs -- a
+    # binomial coefficient, and no grid at all. Multiplying and dividing in step
+    # keeps every intermediate an exact integer.
+    downs = m - 1
+    total = m + n - 2
+    result = 1
+    for i in range(1, downs + 1):
+        result = result * (total - downs + i) // i
+
+    return result"),
+    ],
+    check: Check(
+      signature: "def uniquePaths(m, n):",
+      starter: "def uniquePaths(m, n):
+    pass",
+      harness: "try:
+    (uniquePaths)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"uniquePaths(3, 7)\", 28, uniquePaths(3, 7))
+__case__(\"uniquePaths(3, 2)\", 3, uniquePaths(3, 2))
+__case__(\"uniquePaths(7, 3)\", 28, uniquePaths(7, 3))
+__case__(\"uniquePaths(1, 5)\", 1, uniquePaths(1, 5))
+__case__(\"uniquePaths(0, 5)\", 0, uniquePaths(0, 5))
+__case__(\"uniquePaths(10, 10)\", 48620, uniquePaths(10, 10))",
+    ),
+  )
+}
+
+pub fn nc93_longest_common_subsequence() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Compare the two current characters: equal means both are used and the answer is one more than the rest; different means the best of dropping one or the other. Filled row by row, only the previous row is ever needed. This recurrence is the backbone of edit distance and distinct subsequences too.", "def longestCommonSubsequence(text1, text2):
+    # Compare the last characters: equal means both are used and the answer is
+    # one more than the rest, different means the best of dropping one or the
+    # other. Filled row by row, only the previous row is ever needed.
+    previous = [0] * (len(text2) + 1)
+
+    for a in text1:
+        row = [0] * (len(text2) + 1)
+        for j, b in enumerate(text2, start=1):
+            row[j] = previous[j - 1] + 1 if a == b else max(previous[j], row[j - 1])
+        previous = row
+
+    return previous[-1]"),
+      #("Solution 2 · Memoised", "The same recurrence from the front with a cache. Written this way the choice is explicit — match and advance both, or give up one character from one side — which the rolling row hides behind its indices. Usually the version to write first, then flatten.", "def longestCommonSubsequence(text1, text2):
+    memo = {}
+
+    # The same recurrence from the front, with a cache. Written this way the
+    # choice is explicit -- match and advance both, or give up one character
+    # from one side -- which the rolling row hides behind its indices.
+    def best(i, j):
+        if i >= len(text1) or j >= len(text2):
+            return 0
+        if (i, j) not in memo:
+            if text1[i] == text2[j]:
+                memo[(i, j)] = best(i + 1, j + 1) + 1
+            else:
+                memo[(i, j)] = max(best(i + 1, j), best(i, j + 1))
+        return memo[(i, j)]
+
+    return best(0, 0)"),
+    ],
+    check: Check(
+      signature: "def longestCommonSubsequence(text1, text2):",
+      starter: "def longestCommonSubsequence(text1, text2):
+    pass",
+      harness: "try:
+    (longestCommonSubsequence)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"longestCommonSubsequence('abcde', 'ace')\", 3, longestCommonSubsequence('abcde', 'ace'))
+__case__(\"longestCommonSubsequence('abc', 'abc')\", 3, longestCommonSubsequence('abc', 'abc'))
+__case__(\"longestCommonSubsequence('abc', 'def')\", 0, longestCommonSubsequence('abc', 'def'))
+__case__(\"longestCommonSubsequence('', 'abc')\", 0, longestCommonSubsequence('', 'abc'))
+__case__(\"longestCommonSubsequence('bsbininm', 'jmjkbkjkv')\", 1, longestCommonSubsequence('bsbininm', 'jmjkbkjkv'))
+__case__(\"longestCommonSubsequence('ezupkr', 'ubmrapg')\", 2, longestCommonSubsequence('ezupkr', 'ubmrapg'))",
+    ),
+  )
+}
+
+pub fn nc94_coin_change_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Combinations, not permutations, and that is decided entirely by the loop order. Coins on the outside means each coin is considered once and for all before the next is looked at, so 1+2 and 2+1 can never both be counted. Swapping the two loops silently counts orderings instead — the single most instructive bug in this problem.", "def change(amount, coins):
+    # Combinations, not permutations -- which is entirely decided by the loop
+    # order. Coins on the outside means each coin is considered once and for all
+    # before the next is looked at, so 1+2 and 2+1 can never both be counted.
+    # Swapping the loops would count orderings instead.
+    ways = [0] * (amount + 1)
+    ways[0] = 1
+
+    for coin in coins:
+        if coin <= 0:
+            continue
+        for target in range(coin, amount + 1):
+            ways[target] += ways[target - coin]
+
+    return ways[amount]"),
+      #("Solution 2 · By coin recursion", "The same rule stated as a choice rather than a loop order: use this coin again, or set it aside for good. Setting it aside permanently is what fixes one order per combination — the identical constraint the outer loop encodes, made visible.", "def change(amount, coins):
+    usable = [coin for coin in coins if coin > 0]
+    memo = {}
+
+    # The same \"combinations not permutations\" rule stated as a choice instead
+    # of a loop order: either use this coin again, or set it aside for good.
+    # Setting it aside permanently is what fixes one order per combination.
+    def ways(index, remaining):
+        if remaining == 0:
+            return 1
+        if index >= len(usable):
+            return 0
+        if (index, remaining) not in memo:
+            using = ways(index, remaining - usable[index]) if usable[index] <= remaining else 0
+            memo[(index, remaining)] = using + ways(index + 1, remaining)
+        return memo[(index, remaining)]
+
+    return ways(0, amount)"),
+    ],
+    check: Check(
+      signature: "def change(amount, coins):",
+      starter: "def change(amount, coins):
+    pass",
+      harness: "try:
+    (change)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"change(5, [1, 2, 5])\", 4, change(5, [1, 2, 5]))
+__case__(\"change(3, [2])\", 0, change(3, [2]))
+__case__(\"change(10, [10])\", 1, change(10, [10]))
+__case__(\"change(0, [1])\", 1, change(0, [1]))
+__case__(\"change(5, [])\", 0, change(5, []))
+__case__(\"change(11, [1, 2, 5])\", 11, change(11, [1, 2, 5]))",
+    ),
+  )
+}
+
+pub fn nc95_target_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The only state that matters is the running total, not which signs produced it. Carrying a map from reachable total to how many ways reach it means different sign choices landing on the same total merge — which is exactly what turns an exponential search into a polynomial one.", "def findTargetSumWays(nums, target):
+    # The state that matters is only the running total, not which signs produced
+    # it -- so carry a map from reachable total to how many ways reach it, and
+    # widen it by each number twice, once added and once subtracted. Different
+    # sign choices landing on the same total merge, which is what stops the
+    # count being exponential in work.
+    totals = {0: 1}
+
+    for n in nums:
+        following = {}
+        for total, count in totals.items():
+            following[total + n] = following.get(total + n, 0) + count
+            following[total - n] = following.get(total - n, 0) + count
+        totals = following
+
+    return totals.get(target, 0)"),
+      #("Solution 2 · As subset sum", "Rewrite the problem. If P is the set given a plus and N the set given a minus then P − N = target and P + N = total, so P = (total + target)/2. A sign-assignment question becomes \"how many subsets sum to a fixed value\" — a knapsack, with no negative totals to track at all. Reformulating rather than optimising is the move.", "def findTargetSumWays(nums, target):
+    # Rewrite the problem. If P is the set given a plus and N the set given a
+    # minus, then P - N = target and P + N = total, so P = (total + target) / 2.
+    # That turns a sign-assignment question into \"how many subsets sum to a
+    # fixed value\" -- a knapsack, with no negative totals to track at all.
+    total = sum(nums)
+    wanted = total + target
+    if wanted < 0 or wanted % 2 or total < abs(target):
+        return 0
+
+    goal = wanted // 2
+    counts = {0: 1}
+    for n in nums:
+        following = dict(counts)
+        for reached, ways in counts.items():
+            if reached + n <= goal:
+                following[reached + n] = following.get(reached + n, 0) + ways
+        counts = following
+
+    return counts.get(goal, 0)"),
+    ],
+    check: Check(
+      signature: "def findTargetSumWays(nums, target):",
+      starter: "def findTargetSumWays(nums, target):
+    pass",
+      harness: "try:
+    (findTargetSumWays)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"findTargetSumWays([1, 1, 1, 1, 1], 3)\", 5, findTargetSumWays([1, 1, 1, 1, 1], 3))
+__case__(\"findTargetSumWays([1], 1)\", 1, findTargetSumWays([1], 1))
+__case__(\"findTargetSumWays([1], 2)\", 0, findTargetSumWays([1], 2))
+__case__(\"findTargetSumWays([0, 0, 0, 0, 0], 0)\", 32, findTargetSumWays([0, 0, 0, 0, 0], 0))
+__case__(\"findTargetSumWays([], 0)\", 1, findTargetSumWays([], 0))
+__case__(\"findTargetSumWays([1, 2, 3, 4, 5], 3)\", 3, findTargetSumWays([1, 2, 3, 4, 5], 3))",
+    ),
+  )
+}
+
+pub fn nc96_stock_with_cooldown() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Three states rather than one number: holding, just sold (so today is the cooldown), and free to act. Each day depends only on yesterday, so it is three rolling values — and the cooldown is expressed simply by \"free\" never reading \"sold\" from the same day. Naming the states is most of the work.", "def maxProfit(prices):
+    # Three states rather than one number: holding a share, having just sold (so
+    # today is the cooldown), and free to act. Each day's states depend only on
+    # yesterday's, so the whole thing is three rolling values -- and the
+    # cooldown is expressed simply by \"free\" never reading \"sold\" from the same
+    # day.
+    hold, sold, rest = float(\"-inf\"), float(\"-inf\"), 0
+
+    for price in prices:
+        hold, sold, rest = max(hold, rest - price), hold + price, max(rest, sold)
+
+    return max(sold, rest, 0)"),
+      #("Solution 2 · Memoised", "The same three states as an explicit choice each day: buy, sell, or do nothing. After selling the recursion skips a day, which puts the cooldown where it actually happens rather than encoding it in which value gets read.", "def maxProfit(prices):
+    memo = {}
+
+    # The same three states as an explicit choice at each day: buy, sell, or do
+    # nothing. After selling the recursion skips a day, which is the cooldown
+    # stated where it happens rather than encoded in which value is read.
+    def best(day, holding):
+        if day >= len(prices):
+            return 0
+        if (day, holding) not in memo:
+            waiting = best(day + 1, holding)
+            if holding:
+                acting = prices[day] + best(day + 2, False)
+            else:
+                acting = best(day + 1, True) - prices[day]
+            memo[(day, holding)] = max(waiting, acting)
+        return memo[(day, holding)]
+
+    return best(0, False)"),
+    ],
+    check: Check(
+      signature: "def maxProfit(prices):",
+      starter: "def maxProfit(prices):
+    pass",
+      harness: "try:
+    (maxProfit)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"maxProfit([1, 2, 3, 0, 2])\", 3, maxProfit([1, 2, 3, 0, 2]))
+__case__(\"maxProfit([1])\", 0, maxProfit([1]))
+__case__(\"maxProfit([])\", 0, maxProfit([]))
+__case__(\"maxProfit([2, 1])\", 0, maxProfit([2, 1]))
+__case__(\"maxProfit([1, 2, 3, 4, 5])\", 4, maxProfit([1, 2, 3, 4, 5]))
+__case__(\"maxProfit([6, 1, 3, 2, 4, 7])\", 6, maxProfit([6, 1, 3, 2, 4, 7]))",
+    ),
+  )
+}
+
+pub fn nc97_interleaving_string() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "How much of each source has been used is the entire state — the position in the target is their sum, so it never has to be tracked. That collapse from three indices to two is what makes the table two-dimensional, and spotting it is the problem.", "def isInterleave(s1, s2, s3):
+    if len(s1) + len(s2) != len(s3):
+        return False
+
+    memo = {}
+
+    # How much of each source has been used is the entire state -- the position
+    # in the target is their sum, so it never has to be tracked. That collapse
+    # from three indices to two is what makes the table two-dimensional.
+    def works(i, j):
+        if i == len(s1) and j == len(s2):
+            return True
+        if (i, j) not in memo:
+            target = s3[i + j]
+            memo[(i, j)] = (i < len(s1) and s1[i] == target and works(i + 1, j)) or (
+                j < len(s2) and s2[j] == target and works(i, j + 1)
+            )
+        return memo[(i, j)]
+
+    return works(0, 0)"),
+      #("Solution 2 · Rolling row", "Bottom-up over the same two-index state. Row i says which prefixes of s2 pair with the first i characters of s1, and each row depends only on the one above and itself to the left, so a single row suffices. Note the length check first: without it the recursion can succeed on a target that is too short.", "def isInterleave(s1, s2, s3):
+    if len(s1) + len(s2) != len(s3):
+        return False
+
+    # Bottom-up over the same two-index state. Row i says which prefixes of s2
+    # can pair with the first i characters of s1; each row depends only on the
+    # one above and on itself to the left, so one row suffices.
+    row = [True] + [False] * len(s2)
+    for j in range(1, len(s2) + 1):
+        row[j] = row[j - 1] and s2[j - 1] == s3[j - 1]
+
+    for i in range(1, len(s1) + 1):
+        row[0] = row[0] and s1[i - 1] == s3[i - 1]
+        for j in range(1, len(s2) + 1):
+            target = s3[i + j - 1]
+            row[j] = (row[j] and s1[i - 1] == target) or (row[j - 1] and s2[j - 1] == target)
+
+    return row[len(s2)]"),
+    ],
+    check: Check(
+      signature: "def isInterleave(s1, s2, s3):",
+      starter: "def isInterleave(s1, s2, s3):
+    pass",
+      harness: "try:
+    (isInterleave)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"isInterleave('aabcc', 'dbbca', 'aadbbcbcac')\", True, isInterleave('aabcc', 'dbbca', 'aadbbcbcac'))
+__case__(\"isInterleave('aabcc', 'dbbca', 'aadbbbaccc')\", False, isInterleave('aabcc', 'dbbca', 'aadbbbaccc'))
+__case__(\"isInterleave('', '', '')\", True, isInterleave('', '', ''))
+__case__(\"isInterleave('a', '', 'a')\", True, isInterleave('a', '', 'a'))
+__case__(\"isInterleave('', 'b', 'b')\", True, isInterleave('', 'b', 'b'))
+__case__(\"isInterleave('abc', 'def', 'adbecf')\", True, isInterleave('abc', 'def', 'adbecf'))",
+    ),
+  )
+}
+
+pub fn nc98_longest_increasing_path() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Strictly increasing means the moves can never form a cycle, so the grid is a directed acyclic graph and the longest path from each square is well-defined. That is what makes caching sound — with cycles, a memo on an in-progress square would be reading an answer that does not exist yet.", "def longestIncreasingPath(matrix):
+    if not matrix or not matrix[0]:
+        return 0
+
+    memo = {}
+
+    # Strictly increasing means the moves can never form a cycle -- the grid is
+    # a directed acyclic graph -- so the longest path from each square is
+    # well-defined and can simply be cached. Without that guarantee memoisation
+    # would be unsound, which is the fact the problem is really testing.
+    def longest(r, c):
+        if (r, c) not in memo:
+            best = 1
+            for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < len(matrix) and 0 <= nc < len(matrix[0]):
+                    if matrix[nr][nc] > matrix[r][c]:
+                        best = max(best, 1 + longest(nr, nc))
+            memo[(r, c)] = best
+        return memo[(r, c)]
+
+    return max(longest(r, c) for r in range(len(matrix)) for c in range(len(matrix[0])))"),
+      #("Solution 2 · By value order", "The same acyclicity used the other way round: walk the squares from largest value to smallest and everything a square can move to is already settled. Sorting by value *is* a topological order, so the graph never has to be built.", "def longestIncreasingPath(matrix):
+    if not matrix or not matrix[0]:
+        return 0
+
+    # The same acyclicity used the other way round: process the squares from
+    # largest value to smallest, and by the time a square is reached every
+    # square it can move to has already been settled. A topological order
+    # without ever building the graph -- sorting by value *is* the order.
+    cells = [
+        (matrix[r][c], r, c) for r in range(len(matrix)) for c in range(len(matrix[0]))
+    ]
+    lengths = {}
+
+    for value, r, c in sorted(cells, reverse=True):
+        best = 1
+        for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < len(matrix) and 0 <= nc < len(matrix[0]):
+                if matrix[nr][nc] > value:
+                    best = max(best, 1 + lengths[(nr, nc)])
+        lengths[(r, c)] = best
+
+    return max(lengths.values())"),
+    ],
+    check: Check(
+      signature: "def longestIncreasingPath(matrix):",
+      starter: "def longestIncreasingPath(matrix):
+    pass",
+      harness: "try:
+    (longestIncreasingPath)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"longestIncreasingPath([[9, 9, 4], [6, 6, 8], [2, 1, 1]])\", 4, longestIncreasingPath([[9, 9, 4], [6, 6, 8], [2, 1, 1]]))
+__case__(\"longestIncreasingPath([[3, 4, 5], [3, 2, 6], [2, 2, 1]])\", 4, longestIncreasingPath([[3, 4, 5], [3, 2, 6], [2, 2, 1]]))
+__case__(\"longestIncreasingPath([[1]])\", 1, longestIncreasingPath([[1]]))
+__case__(\"longestIncreasingPath([])\", 0, longestIncreasingPath([]))
+__case__(\"longestIncreasingPath([[1, 2], [3, 4]])\", 3, longestIncreasingPath([[1, 2], [3, 4]]))",
+    ),
+  )
+}
+
+pub fn nc99_distinct_subsequences() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Row j counts the ways to build the first j characters of the target from the source seen so far, and a new source character extends a count at j−1 into one at j when it matches. In a mutable array the row must be swept right to left, or one source character gets used twice; building a fresh row removes the hazard entirely.", "def numDistinct(s, t):
+    # Row j counts the ways to build the first j characters of t out of the
+    # source seen so far. A new source character can extend a count at j-1 into
+    # one at j, but only if it matches t[j-1].
+    #
+    # The row must be swept right to left: left to right, an update at j-1 feeds
+    # straight into j and the same source character gets used twice.
+    row = [1] + [0] * len(t)
+
+    for c in s:
+        for j in range(len(t), 0, -1):
+            if c == t[j - 1]:
+                row[j] += row[j - 1]
+
+    return row[len(t)]"),
+      #("Solution 2 · Memoised", "The choice written out: on a match, use this source character or skip it; otherwise skip. Running out of target is one complete subsequence, which is why the base case returns 1 and not 0 — the usual place this one goes wrong.", "def numDistinct(s, t):
+    memo = {}
+
+    # The choice written out: when the characters match, either use this source
+    # character for this target character or skip it; when they do not, skipping
+    # is the only option. Running out of target is one complete subsequence,
+    # which is why the base case is 1 rather than 0.
+    def ways(i, j):
+        if j >= len(t):
+            return 1
+        if i >= len(s):
+            return 0
+        if (i, j) not in memo:
+            total = ways(i + 1, j)
+            if s[i] == t[j]:
+                total += ways(i + 1, j + 1)
+            memo[(i, j)] = total
+        return memo[(i, j)]
+
+    return ways(0, 0)"),
+    ],
+    check: Check(
+      signature: "def numDistinct(s, t):",
+      starter: "def numDistinct(s, t):
+    pass",
+      harness: "try:
+    (numDistinct)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"numDistinct('rabbbit', 'rabbit')\", 3, numDistinct('rabbbit', 'rabbit'))
+__case__(\"numDistinct('babgbag', 'bag')\", 5, numDistinct('babgbag', 'bag'))
+__case__(\"numDistinct('', 'a')\", 0, numDistinct('', 'a'))
+__case__(\"numDistinct('a', '')\", 1, numDistinct('a', ''))
+__case__(\"numDistinct('abc', 'abc')\", 1, numDistinct('abc', 'abc'))
+__case__(\"numDistinct('aaa', 'aa')\", 3, numDistinct('aaa', 'aa'))",
+    ),
+  )
+}
+
 pub fn tip01_counter() -> Embedded {
   Embedded(
     solutions: [
@@ -5963,6 +6648,9 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc07_longest_consecutive" -> Ok(nc07_longest_consecutive())
     "nc08_valid_palindrome" -> Ok(nc08_valid_palindrome())
     "nc09_two_sum_sorted" -> Ok(nc09_two_sum_sorted())
+    "nc100_edit_distance" -> Ok(nc100_edit_distance())
+    "nc101_burst_balloons" -> Ok(nc101_burst_balloons())
+    "nc102_regular_expression_matching" -> Ok(nc102_regular_expression_matching())
     "nc10_three_sum" -> Ok(nc10_three_sum())
     "nc11_container_water" -> Ok(nc11_container_water())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
@@ -6045,6 +6733,14 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc89_palindrome_partitioning" -> Ok(nc89_palindrome_partitioning())
     "nc90_letter_combinations" -> Ok(nc90_letter_combinations())
     "nc91_n_queens" -> Ok(nc91_n_queens())
+    "nc92_unique_paths" -> Ok(nc92_unique_paths())
+    "nc93_longest_common_subsequence" -> Ok(nc93_longest_common_subsequence())
+    "nc94_coin_change_ii" -> Ok(nc94_coin_change_ii())
+    "nc95_target_sum" -> Ok(nc95_target_sum())
+    "nc96_stock_with_cooldown" -> Ok(nc96_stock_with_cooldown())
+    "nc97_interleaving_string" -> Ok(nc97_interleaving_string())
+    "nc98_longest_increasing_path" -> Ok(nc98_longest_increasing_path())
+    "nc99_distinct_subsequences" -> Ok(nc99_distinct_subsequences())
     "tip01_counter" -> Ok(tip01_counter())
     "tip02_defaultdict" -> Ok(tip02_defaultdict())
     "tip03_deque" -> Ok(tip03_deque())

@@ -1,0 +1,1 @@
+Three edits, three neighbours in the table: replace from the diagonal, delete from above, insert from the left. Equal characters cost nothing and take the diagonal outright. The first row and column are the cost of building a string from nothing, which is simply its length.

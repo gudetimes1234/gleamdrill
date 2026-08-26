@@ -1,0 +1,1 @@
+The same recurrence from the front with a cache. Written this way the choice is explicit — match and advance both, or give up one character from one side — which the rolling row hides behind its indices. Usually the version to write first, then flatten.

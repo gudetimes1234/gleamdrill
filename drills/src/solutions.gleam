@@ -32,6 +32,12 @@ import nc08_valid_palindrome
 import nc08_valid_palindrome__two_pointers
 import nc09_two_sum_sorted
 import nc09_two_sum_sorted__binary_search
+import nc100_edit_distance
+import nc100_edit_distance__memoised
+import nc101_burst_balloons
+import nc101_burst_balloons__bottom_up
+import nc102_regular_expression_matching
+import nc102_regular_expression_matching__no_cache
 import nc10_three_sum
 import nc10_three_sum__brute_force
 import nc11_container_water
@@ -196,6 +202,22 @@ import nc90_letter_combinations
 import nc90_letter_combinations__iterative_product
 import nc91_n_queens
 import nc91_n_queens__filter_permutations
+import nc92_unique_paths
+import nc92_unique_paths__pascal
+import nc93_longest_common_subsequence
+import nc93_longest_common_subsequence__memoised
+import nc94_coin_change_ii
+import nc94_coin_change_ii__by_coin_recursion
+import nc95_target_sum
+import nc95_target_sum__as_subset_sum
+import nc96_stock_with_cooldown
+import nc96_stock_with_cooldown__memoised
+import nc97_interleaving_string
+import nc97_interleaving_string__rolling_row
+import nc98_longest_increasing_path
+import nc98_longest_increasing_path__by_value_order
+import nc99_distinct_subsequences
+import nc99_distinct_subsequences__memoised
 import tip01_list_patterns
 import tip01_list_patterns__stdlib
 import tip02_tail_recursion
@@ -512,6 +534,38 @@ pub fn main() {
     ),
     check_n_queens(nc91_n_queens.solve_n_queens),
     check_n_queens(nc91_n_queens__filter_permutations.solve_n_queens),
+    check_unique_paths(nc92_unique_paths.unique_paths),
+    check_unique_paths(nc92_unique_paths__pascal.unique_paths),
+    check_lcs_strings(
+      nc93_longest_common_subsequence.longest_common_subsequence,
+    ),
+    check_lcs_strings(
+      nc93_longest_common_subsequence__memoised.longest_common_subsequence,
+    ),
+    check_coin_change_ii(nc94_coin_change_ii.change),
+    check_coin_change_ii(nc94_coin_change_ii__by_coin_recursion.change),
+    check_target_sum(nc95_target_sum.find_target_sum_ways),
+    check_target_sum(nc95_target_sum__as_subset_sum.find_target_sum_ways),
+    check_stock_cooldown(nc96_stock_with_cooldown.max_profit),
+    check_stock_cooldown(nc96_stock_with_cooldown__memoised.max_profit),
+    check_interleaving(nc97_interleaving_string.is_interleave),
+    check_interleaving(nc97_interleaving_string__rolling_row.is_interleave),
+    check_longest_increasing_path(
+      nc98_longest_increasing_path.longest_increasing_path,
+    ),
+    check_longest_increasing_path(
+      nc98_longest_increasing_path__by_value_order.longest_increasing_path,
+    ),
+    check_distinct_subsequences(nc99_distinct_subsequences.num_distinct),
+    check_distinct_subsequences(
+      nc99_distinct_subsequences__memoised.num_distinct,
+    ),
+    check_edit_distance(nc100_edit_distance.min_distance),
+    check_edit_distance(nc100_edit_distance__memoised.min_distance),
+    check_burst_balloons(nc101_burst_balloons.max_coins),
+    check_burst_balloons(nc101_burst_balloons__bottom_up.max_coins),
+    check_regex_matching(nc102_regular_expression_matching.is_match),
+    check_regex_matching(nc102_regular_expression_matching__no_cache.is_match),
 
     // Gleam Tips
     check_list_patterns(tip01_list_patterns.length, tip01_list_patterns.last),
@@ -1539,6 +1593,127 @@ fn check_n_queens(f: fn(Int) -> List(List(String))) -> Nil {
   let assert True = sorted(2) == []
   let assert True = sorted(3) == []
   let assert True = list.length(f(6)) == 4
+  Nil
+}
+
+fn check_unique_paths(f: fn(Int, Int) -> Int) -> Nil {
+  let assert True = f(3, 7) == 28
+  let assert True = f(3, 2) == 3
+  // Symmetric: swapping the sides cannot change the count.
+  let assert True = f(7, 3) == 28
+  let assert True = f(1, 5) == 1
+  let assert True = f(0, 5) == 0
+  let assert True = f(10, 10) == 48_620
+  Nil
+}
+
+fn check_lcs_strings(f: fn(String, String) -> Int) -> Nil {
+  let assert True = f("abcde", "ace") == 3
+  let assert True = f("abc", "abc") == 3
+  let assert True = f("abc", "def") == 0
+  let assert True = f("", "abc") == 0
+  let assert True = f("bsbininm", "jmjkbkjkv") == 1
+  let assert True = f("ezupkr", "ubmrapg") == 2
+  Nil
+}
+
+fn check_coin_change_ii(f: fn(Int, List(Int)) -> Int) -> Nil {
+  let assert True = f(5, [1, 2, 5]) == 4
+  let assert True = f(3, [2]) == 0
+  let assert True = f(10, [10]) == 1
+  // One way to make nothing: take no coins.
+  let assert True = f(0, [1]) == 1
+  let assert True = f(5, []) == 0
+  // 11 combinations, not the 32 orderings a wrong loop order would count.
+  let assert True = f(11, [1, 2, 5]) == 11
+  Nil
+}
+
+fn check_target_sum(f: fn(List(Int), Int) -> Int) -> Nil {
+  let assert True = f([1, 1, 1, 1, 1], 3) == 5
+  let assert True = f([1], 1) == 1
+  let assert True = f([1], 2) == 0
+  // Zeros can take either sign, so each one doubles the count.
+  let assert True = f([0, 0, 0, 0, 0], 0) == 32
+  let assert True = f([], 0) == 1
+  let assert True = f([1, 2, 3, 4, 5], 3) == 3
+  Nil
+}
+
+fn check_stock_cooldown(f: fn(List(Int)) -> Int) -> Nil {
+  let assert True = f([1, 2, 3, 0, 2]) == 3
+  let assert True = f([1]) == 0
+  let assert True = f([]) == 0
+  // Falling prices, so the best trade is no trade.
+  let assert True = f([2, 1]) == 0
+  // Rising every day: without a cooldown this would be 4 either way, and with
+  // one the single buy-and-hold still wins.
+  let assert True = f([1, 2, 3, 4, 5]) == 4
+  let assert True = f([6, 1, 3, 2, 4, 7]) == 6
+  Nil
+}
+
+fn check_interleaving(f: fn(String, String, String) -> Bool) -> Nil {
+  let assert True = f("aabcc", "dbbca", "aadbbcbcac")
+  let assert False = f("aabcc", "dbbca", "aadbbbaccc")
+  let assert True = f("", "", "")
+  let assert True = f("a", "", "a")
+  let assert True = f("", "b", "b")
+  let assert True = f("abc", "def", "adbecf")
+  Nil
+}
+
+fn check_longest_increasing_path(f: fn(List(List(Int))) -> Int) -> Nil {
+  let assert True = f([[9, 9, 4], [6, 6, 8], [2, 1, 1]]) == 4
+  let assert True = f([[3, 4, 5], [3, 2, 6], [2, 2, 1]]) == 4
+  let assert True = f([[1]]) == 1
+  let assert True = f([]) == 0
+  let assert True = f([[1, 2], [3, 4]]) == 3
+  Nil
+}
+
+fn check_distinct_subsequences(f: fn(String, String) -> Int) -> Nil {
+  let assert True = f("rabbbit", "rabbit") == 3
+  let assert True = f("babgbag", "bag") == 5
+  let assert True = f("", "a") == 0
+  // One way to build the empty target from anything: take nothing.
+  let assert True = f("a", "") == 1
+  let assert True = f("abc", "abc") == 1
+  let assert True = f("aaa", "aa") == 3
+  Nil
+}
+
+fn check_edit_distance(f: fn(String, String) -> Int) -> Nil {
+  let assert True = f("horse", "ros") == 3
+  let assert True = f("intention", "execution") == 5
+  // From nothing, every character has to be inserted.
+  let assert True = f("", "abc") == 3
+  let assert True = f("abc", "") == 3
+  let assert True = f("abc", "abc") == 0
+  let assert True = f("kitten", "sitting") == 3
+  Nil
+}
+
+fn check_burst_balloons(f: fn(List(Int)) -> Int) -> Nil {
+  let assert True = f([3, 1, 5, 8]) == 167
+  let assert True = f([1, 5]) == 10
+  let assert True = f([]) == 0
+  // A lone balloon has 1 on both sides, from the padding.
+  let assert True = f([5]) == 5
+  let assert True = f([1, 2, 3, 4]) == 40
+  Nil
+}
+
+fn check_regex_matching(f: fn(String, String) -> Bool) -> Nil {
+  let assert False = f("aa", "a")
+  let assert True = f("aa", "a*")
+  let assert True = f("ab", ".*")
+  // c* matching zero copies is what makes this one work.
+  let assert True = f("aab", "c*a*b")
+  let assert False = f("mississippi", "mis*is*p*.")
+  let assert True = f("", ".*")
+  let assert True = f("", "")
+  let assert True = f("abc", "abc")
   Nil
 }
 

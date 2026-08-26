@@ -106,6 +106,40 @@ pub fn for_title(title: String) -> String {
     "Search in Rotated Sorted Array" ->
       "Binary search with a twist: after the rotation, one half around the midpoint is always sorted. Check which half is sorted, then use its endpoints to decide whether the target lies inside it \u{2014} recurse into that half or the other."
 
+    // 2-D Dynamic Programming
+    "Unique Paths" ->
+      "Only right and down moves, so the ways to reach a square are the ways to reach the one above plus the one to its left \u{2014} and only the previous row is ever needed, so one row of counters does. There is also no grid at all: every path is m\u{2212}1 downs and n\u{2212}1 rights in some order, so the count is a binomial coefficient."
+
+    "Longest Common Subsequence" ->
+      "Compare the two current characters: equal means both are used and the answer is one more than the rest; different means the best of dropping one or the other. This is the backbone recurrence of the category \u{2014} edit distance and distinct subsequences are the same table with different costs."
+
+    "Best Time to Buy and Sell Stock with Cooldown" ->
+      "Name the states and the recurrence writes itself: holding a share, having just sold (so today is the cooldown), and free to act. Each day depends only on yesterday, so three rolling values suffice \u{2014} and the cooldown is expressed simply by \"free\" never reading \"sold\" from the same day."
+
+    "Coin Change II" ->
+      "Combinations, not permutations \u{2014} and that is decided entirely by the loop order. Coins on the outside means each coin is settled before the next is looked at, so 1+2 and 2+1 cannot both be counted; swapping the loops silently counts orderings instead. As a recursion the same rule reads \"use this coin again, or set it aside for good\"."
+
+    "Target Sum" ->
+      "The only state that matters is the running total, not which signs produced it, so different sign choices landing on the same total merge \u{2014} that merging is what makes it polynomial. Better still, rewrite it: if P gets the pluses then P \u{2212} N = target and P + N = total, so P = (total + target)/2 and the whole thing is a subset-sum."
+
+    "Interleaving String" ->
+      "How much of each source has been used is the entire state, because the position in the target is their sum and never has to be tracked separately. Spotting that collapse from three indices to two is the problem; after it, the table is ordinary."
+
+    "Longest Increasing Path in a Matrix" ->
+      "Strictly increasing means the moves cannot form a cycle, so the grid is a directed acyclic graph and the longest path from each square is well-defined \u{2014} which is precisely what makes caching sound here and unsound in general. Sorting the squares by value gives a topological order without building the graph at all."
+
+    "Distinct Subsequences" ->
+      "Count the ways to build each prefix of the target out of the source seen so far; a matching source character carries the count at j\u{2212}1 forward to j. In a mutable array the row must be swept right to left, or a single source character gets used twice in the same subsequence."
+
+    "Edit Distance" ->
+      "Three edits, three neighbours: replace from the diagonal, delete from above, insert from the left, and equal characters take the diagonal for free. The first row and column are the cost of building a string out of nothing, which is its length."
+
+    "Burst Balloons" ->
+      "Ask which balloon goes *last* in a span, not first. The last one still has both span boundaries as neighbours \u{2014} untouched by definition \u{2014} so its value is known and the two sides become independent. Asking \"first\" leaves neighbours that depend on the other side and the recursion never closes. Pad with a 1 at each end to kill the edge cases."
+
+    "Regular Expression Matching" ->
+      "A star binds to the character before it, so the pattern is read two symbols at a time: given \"x*\", either skip the pair for zero copies, or \u{2014} if x matches here \u{2014} consume one character and stay on the same pair. The zero-copies branch is where this is usually got wrong, and it is what makes \"c*a*b\" match \"aab\"."
+
     // Backtracking
     "Subsets" ->
       "Every element is in or out, independently, so the subsets of a list are the subsets of its tail twice over \u{2014} once with the head added and once without. Those in-or-out choices are also the bits of a number, so counting from 0 to 2\u{207f}\u{2212}1 enumerates the same thing with no recursion at all."

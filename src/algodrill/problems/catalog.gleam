@@ -134,6 +134,63 @@ pub fn groups() -> List(Group) {
         "nc26_sliding_window_maximum",
       ),
     ]),
+    Group("2-D Dynamic Programming", [
+      Drill(
+        "Unique Paths",
+        "A robot starts at the top-left of an m x n grid and may only move right or down. Return how many distinct paths it can take to the bottom-right corner.",
+        "nc92_unique_paths",
+      ),
+      Drill(
+        "Longest Common Subsequence",
+        "Given two strings, return the length of their longest common subsequence. A subsequence keeps the relative order of characters but need not be contiguous.",
+        "nc93_longest_common_subsequence",
+      ),
+      Drill(
+        "Best Time to Buy and Sell Stock with Cooldown",
+        "You may buy and sell a stock any number of times, but after selling you must wait one day before buying again. Return the maximum profit.",
+        "nc96_stock_with_cooldown",
+      ),
+      Drill(
+        "Coin Change II",
+        "Given an amount and coin denominations of which you have an unlimited supply, return how many distinct combinations of coins make up that amount. Order does not distinguish combinations.",
+        "nc94_coin_change_ii",
+      ),
+      Drill(
+        "Target Sum",
+        "Give every number in nums either a plus or a minus sign and concatenate them into an expression. Return how many assignments of signs evaluate to the target.",
+        "nc95_target_sum",
+      ),
+      Drill(
+        "Interleaving String",
+        "Given strings s1, s2 and s3, return true if s3 can be formed by interleaving s1 and s2 while preserving the order of each.",
+        "nc97_interleaving_string",
+      ),
+      Drill(
+        "Longest Increasing Path in a Matrix",
+        "Given an m x n matrix, return the length of the longest strictly increasing path. From a cell you may move up, down, left or right, but not diagonally or outside the grid.",
+        "nc98_longest_increasing_path",
+      ),
+      Drill(
+        "Distinct Subsequences",
+        "Given strings s and t, return the number of distinct subsequences of s that equal t.",
+        "nc99_distinct_subsequences",
+      ),
+      Drill(
+        "Edit Distance",
+        "Given two words, return the minimum number of single-character insertions, deletions or replacements needed to turn the first into the second.",
+        "nc100_edit_distance",
+      ),
+      Drill(
+        "Burst Balloons",
+        "Balloons carry numbers. Bursting one earns the product of it and its two current neighbours, with a missing neighbour counting as 1. Return the most coins obtainable by bursting them all.",
+        "nc101_burst_balloons",
+      ),
+      Drill(
+        "Regular Expression Matching",
+        "Implement matching for '.' which matches any single character and '*' which matches zero or more of the preceding element. The match must cover the whole input string.",
+        "nc102_regular_expression_matching",
+      ),
+    ]),
     Group("Backtracking", [
       Drill(
         "Subsets",

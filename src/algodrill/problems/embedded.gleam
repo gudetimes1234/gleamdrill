@@ -864,6 +864,474 @@ pub fn run() -> List(#(String, String, String)) {
   )
 }
 
+pub fn nc100_edit_distance() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Three edits, three neighbours in the table: replace from the diagonal, delete from above, insert from the left. Equal characters cost nothing and take the diagonal outright. The first row and column are the cost of building a string from nothing, which is simply its length.", "import gleam/int
+import gleam/list
+import gleam/result
+import gleam/string
+
+pub fn min_distance(word1: String, word2: String) -> Int {
+  let b = string.to_graphemes(word2)
+
+  // Three edits, three neighbours in the table: replace comes from the
+  // diagonal, delete from above, insert from the left. Equal characters cost
+  // nothing and take the diagonal outright \\u{2014} the whole algorithm is those
+  // four lines. The first row and column are the cost of building a string from
+  // nothing, which is its length.
+  string.to_graphemes(word1)
+  |> list.index_fold(first_row(list.length(b)), fn(previous, from_a, i) {
+    row(previous, b, from_a, i + 1)
+  })
+  |> list.last
+  |> result.unwrap(0)
+}
+
+fn first_row(width: Int) -> List(Int) {
+  list.index_map(list.repeat(Nil, width + 1), fn(_, j) { j })
+}
+
+fn row(
+  previous: List(Int),
+  b: List(String),
+  from_a: String,
+  cost_so_far: Int,
+) -> List(Int) {
+  let #(_, built) =
+    list.index_fold(b, #(cost_so_far, [cost_so_far]), fn(state, from_b, j) {
+      let #(left, built) = state
+      let diagonal = nth(previous, j)
+      let above = nth(previous, j + 1)
+      let here = case from_a == from_b {
+        True -> diagonal
+        False -> 1 + int.min(diagonal, int.min(above, left))
+      }
+      #(here, [here, ..built])
+    })
+  list.reverse(built)
+}
+
+fn nth(values: List(Int), index: Int) -> Int {
+  values |> list.drop(index) |> list.first |> result.unwrap(0)
+}"),
+      #("Solution 2 · Memoised", "The same three edits as an explicit choice from the front. Running out of one word costs whatever remains of the other, since every leftover character must be inserted or deleted — the base case that the table encodes in its first row and column.", "import gleam/dict.{type Dict}
+import gleam/int
+import gleam/list
+import gleam/result
+import gleam/string
+
+pub fn min_distance(word1: String, word2: String) -> Int {
+  let a = index(word1)
+  let b = index(word2)
+  let #(cost, _) =
+    from(0, 0, string.length(word1), string.length(word2), a, b, dict.new())
+  cost
+}
+
+/// The same three edits as an explicit choice from the front. Running out of
+/// one word costs whatever is left of the other, since every remaining
+/// character has to be inserted or deleted.
+fn from(
+  i: Int,
+  j: Int,
+  n: Int,
+  m: Int,
+  a: Dict(Int, String),
+  b: Dict(Int, String),
+  memo: Dict(#(Int, Int), Int),
+) -> #(Int, Dict(#(Int, Int), Int)) {
+  case i >= n, j >= m {
+    True, _ -> #(m - j, memo)
+    _, True -> #(n - i, memo)
+    _, _ ->
+      case dict.get(memo, #(i, j)) {
+        Ok(cached) -> #(cached, memo)
+        Error(Nil) ->
+          case at(a, i) == at(b, j) {
+            True -> from(i + 1, j + 1, n, m, a, b, memo)
+            False -> {
+              let #(replace, memo) = from(i + 1, j + 1, n, m, a, b, memo)
+              let #(delete, memo) = from(i + 1, j, n, m, a, b, memo)
+              let #(insert, memo) = from(i, j + 1, n, m, a, b, memo)
+              let best = 1 + int.min(replace, int.min(delete, insert))
+              #(best, dict.insert(memo, #(i, j), best))
+            }
+          }
+      }
+  }
+}
+
+fn index(text: String) -> Dict(Int, String) {
+  text
+  |> string.to_graphemes
+  |> list.index_map(fn(c, i) { #(i, c) })
+  |> dict.from_list
+}
+
+fn at(lookup: Dict(Int, String), index: Int) -> String {
+  result.unwrap(dict.get(lookup, index), \"\")
+}"),
+    ],
+    check: Check(
+      signature: "pub fn min_distance(word1: String, word2: String) -> Int",
+      starter: "pub fn min_distance(word1: String, word2: String) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"min_distance(\\\"horse\\\", \\\"ros\\\")\",
+      string.inspect(3),
+      string.inspect(solution.min_distance(\"horse\", \"ros\")),
+    ),
+    #(
+      \"min_distance(\\\"intention\\\", \\\"execution\\\")\",
+      string.inspect(5),
+      string.inspect(solution.min_distance(\"intention\", \"execution\")),
+    ),
+    #(
+      \"min_distance(\\\"\\\", \\\"abc\\\")\",
+      string.inspect(3),
+      string.inspect(solution.min_distance(\"\", \"abc\")),
+    ),
+    #(
+      \"min_distance(\\\"abc\\\", \\\"\\\")\",
+      string.inspect(3),
+      string.inspect(solution.min_distance(\"abc\", \"\")),
+    ),
+    #(
+      \"min_distance(\\\"abc\\\", \\\"abc\\\")\",
+      string.inspect(0),
+      string.inspect(solution.min_distance(\"abc\", \"abc\")),
+    ),
+    #(
+      \"min_distance(\\\"kitten\\\", \\\"sitting\\\")\",
+      string.inspect(3),
+      string.inspect(solution.min_distance(\"kitten\", \"sitting\")),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc101_burst_balloons() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Ask which balloon is burst *last* in a span, not first. The last one still has both span boundaries as neighbours — they are untouched by definition — so its value is known and the two sides become independent subproblems. Asking \"first\" leaves neighbours that depend on the other side and the recursion never closes. Padding with a 1 at each end removes the edge cases.", "import gleam/dict.{type Dict}
+import gleam/int
+import gleam/list
+import gleam/result
+
+pub fn max_coins(nums: List(Int)) -> Int {
+  // Padding with a 1 at each end removes the edge cases: every balloon then has
+  // a neighbour on both sides whatever happens.
+  let balloons =
+    [1, ..list.append(nums, [1])]
+    |> list.index_map(fn(v, i) { #(i, v) })
+    |> dict.from_list
+  let n = list.length(nums) + 2
+
+  // The trick is to ask which balloon is burst *last* in a span rather than
+  // first. The last one still has both span boundaries as neighbours \\u{2014} they
+  // are untouched by definition \\u{2014} so its value is known, and the two sides
+  // become independent subproblems. Asking \"first\" leaves neighbours that
+  // depend on the other side, and the recursion does not close.
+  let #(best, _) = span(0, n - 1, balloons, dict.new())
+  best
+}
+
+fn span(
+  left: Int,
+  right: Int,
+  balloons: Dict(Int, Int),
+  memo: Dict(#(Int, Int), Int),
+) -> #(Int, Dict(#(Int, Int), Int)) {
+  case right - left < 2 {
+    True -> #(0, memo)
+    False ->
+      case dict.get(memo, #(left, right)) {
+        Ok(cached) -> #(cached, memo)
+        Error(Nil) -> {
+          let #(best, memo) =
+            list.index_map(list.repeat(Nil, right - left - 1), fn(_, i) {
+              left + 1 + i
+            })
+            |> list.fold(#(0, memo), fn(state, last) {
+              let #(best, memo) = state
+              let #(before, memo) = span(left, last, balloons, memo)
+              let #(after, memo) = span(last, right, balloons, memo)
+              let value =
+                at(balloons, left) * at(balloons, last) * at(balloons, right)
+              #(int.max(best, value + before + after), memo)
+            })
+          #(best, dict.insert(memo, #(left, right), best))
+        }
+      }
+  }
+}
+
+fn at(balloons: Dict(Int, Int), index: Int) -> Int {
+  result.unwrap(dict.get(balloons, index), 1)
+}"),
+      #("Solution 2 · Bottom up", "The same recurrence filled by hand, shortest spans first — because a span needs both of the shorter spans a chosen last balloon splits it into. Writing the loop order out makes that dependency visible where the recursion leaves it implicit.", "import gleam/dict.{type Dict}
+import gleam/int
+import gleam/list
+import gleam/result
+
+pub fn max_coins(nums: List(Int)) -> Int {
+  let balloons =
+    [1, ..list.append(nums, [1])]
+    |> list.index_map(fn(v, i) { #(i, v) })
+    |> dict.from_list
+  let n = list.length(nums) + 2
+
+  // The same \"which balloon goes last\" recurrence filled by hand, shortest
+  // spans first \\u{2014} because a span's answer needs both of the shorter spans
+  // that a chosen last balloon splits it into. Writing the loop order out makes
+  // that dependency visible where the recursion leaves it implicit.
+  let table =
+    widths(n)
+    |> list.flat_map(fn(width) {
+      list.index_map(list.repeat(Nil, n - width), fn(_, left) {
+        #(left, left + width)
+      })
+    })
+    |> list.fold(dict.new(), fn(table, bounds) {
+      let #(left, right) = bounds
+      let best =
+        list.index_map(list.repeat(Nil, right - left - 1), fn(_, i) {
+          left + 1 + i
+        })
+        |> list.fold(0, fn(best, last) {
+          let value =
+            at(balloons, left) * at(balloons, last) * at(balloons, right)
+          int.max(
+            best,
+            value + score(table, left, last) + score(table, last, right),
+          )
+        })
+      dict.insert(table, bounds, best)
+    })
+
+  score(table, 0, n - 1)
+}
+
+/// Spans of width two upwards: anything narrower encloses no balloon.
+fn widths(n: Int) -> List(Int) {
+  case n < 2 {
+    True -> []
+    False -> list.index_map(list.repeat(Nil, n - 1), fn(_, i) { i + 2 })
+  }
+}
+
+fn score(table: Dict(#(Int, Int), Int), left: Int, right: Int) -> Int {
+  result.unwrap(dict.get(table, #(left, right)), 0)
+}
+
+fn at(balloons: Dict(Int, Int), index: Int) -> Int {
+  result.unwrap(dict.get(balloons, index), 1)
+}"),
+    ],
+    check: Check(
+      signature: "pub fn max_coins(nums: List(Int)) -> Int",
+      starter: "pub fn max_coins(nums: List(Int)) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"max_coins([3, 1, 5, 8])\",
+      string.inspect(167),
+      string.inspect(solution.max_coins([3, 1, 5, 8])),
+    ),
+    #(
+      \"max_coins([1, 5])\",
+      string.inspect(10),
+      string.inspect(solution.max_coins([1, 5])),
+    ),
+    #(
+      \"max_coins([])\",
+      string.inspect(0),
+      string.inspect(solution.max_coins([])),
+    ),
+    #(
+      \"max_coins([5])\",
+      string.inspect(5),
+      string.inspect(solution.max_coins([5])),
+    ),
+    #(
+      \"max_coins([1, 2, 3, 4])\",
+      string.inspect(40),
+      string.inspect(solution.max_coins([1, 2, 3, 4])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc102_regular_expression_matching() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A star binds to the character *before* it, so the pattern is read two symbols at a time. Given \"x*\": either skip the pair entirely — zero copies — or, if x matches here, consume one character of the text and stay on the same pair. Everything else is a single-character match. Getting the zero-copies branch right is most of the problem.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/string
+
+pub fn is_match(s: String, p: String) -> Bool {
+  let text = index(s)
+  let pattern = index(p)
+  let #(answer, _) =
+    from(0, 0, string.length(s), string.length(p), text, pattern, dict.new())
+  answer
+}
+
+/// A star binds to the character *before* it, so the pattern has to be read two
+/// symbols at a time. Given \"x*\", either skip the pair entirely \\u{2014} zero copies
+/// \\u{2014} or, if x matches here, consume one character of the text and stay on the
+/// same pair. Everything else is a single-character match.
+fn from(
+  i: Int,
+  j: Int,
+  n: Int,
+  m: Int,
+  text: Dict(Int, String),
+  pattern: Dict(Int, String),
+  memo: Dict(#(Int, Int), Bool),
+) -> #(Bool, Dict(#(Int, Int), Bool)) {
+  case j >= m {
+    True -> #(i >= n, memo)
+    False ->
+      case dict.get(memo, #(i, j)) {
+        Ok(cached) -> #(cached, memo)
+        Error(Nil) -> {
+          let here =
+            i < n && { at(pattern, j) == at(text, i) || at(pattern, j) == \".\" }
+
+          let #(answer, memo) = case at(pattern, j + 1) == \"*\" {
+            True -> {
+              let #(skipping, memo) = from(i, j + 2, n, m, text, pattern, memo)
+              case skipping, here {
+                True, _ -> #(True, memo)
+                False, True -> from(i + 1, j, n, m, text, pattern, memo)
+                False, False -> #(False, memo)
+              }
+            }
+            False ->
+              case here {
+                True -> from(i + 1, j + 1, n, m, text, pattern, memo)
+                False -> #(False, memo)
+              }
+          }
+          #(answer, dict.insert(memo, #(i, j), answer))
+        }
+      }
+  }
+}
+
+fn index(text: String) -> Dict(Int, String) {
+  text
+  |> string.to_graphemes
+  |> list.index_map(fn(c, i) { #(i, c) })
+  |> dict.from_list
+}
+
+fn at(lookup: Dict(Int, String), index: Int) -> String {
+  result.unwrap(dict.get(lookup, index), \"\")
+}"),
+      #("Solution 2 · No cache", "The same rules with no table at all, which is shorter and far easier to trust. It is exponential on patterns like \"a*a*a*a*b\", where the same suffix is reached along many different splits — so write this first, get it right, and add the cache afterwards.", "import gleam/string
+
+pub fn is_match(s: String, p: String) -> Bool {
+  matches(string.to_graphemes(s), string.to_graphemes(p))
+}
+
+/// The same rules with no table at all \\u{2014} just pattern matching on the two
+/// lists. Shorter and easier to trust, and exponential on patterns like
+/// \"a*a*a*a*b\" where the same suffix is reached along many different splits.
+/// Worth writing first, then adding the cache once it is right.
+fn matches(text: List(String), pattern: List(String)) -> Bool {
+  case pattern {
+    [] -> text == []
+    [symbol, \"*\", ..rest] ->
+      matches(text, rest)
+      || case text {
+        [first, ..tail] if first == symbol || symbol == \".\" ->
+          matches(tail, pattern)
+        _ -> False
+      }
+    [symbol, ..rest] ->
+      case text {
+        [first, ..tail] if first == symbol || symbol == \".\" ->
+          matches(tail, rest)
+        _ -> False
+      }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn is_match(s: String, p: String) -> Bool",
+      starter: "pub fn is_match(s: String, p: String) -> Bool {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"is_match(\\\"aa\\\", \\\"a\\\")\",
+      string.inspect(False),
+      string.inspect(solution.is_match(\"aa\", \"a\")),
+    ),
+    #(
+      \"is_match(\\\"aa\\\", \\\"a*\\\")\",
+      string.inspect(True),
+      string.inspect(solution.is_match(\"aa\", \"a*\")),
+    ),
+    #(
+      \"is_match(\\\"ab\\\", \\\".*\\\")\",
+      string.inspect(True),
+      string.inspect(solution.is_match(\"ab\", \".*\")),
+    ),
+    #(
+      \"is_match(\\\"aab\\\", \\\"c*a*b\\\")\",
+      string.inspect(True),
+      string.inspect(solution.is_match(\"aab\", \"c*a*b\")),
+    ),
+    #(
+      \"is_match(\\\"mississippi\\\", \\\"mis*is*p*.\\\")\",
+      string.inspect(False),
+      string.inspect(solution.is_match(\"mississippi\", \"mis*is*p*.\")),
+    ),
+    #(
+      \"is_match(\\\"\\\", \\\".*\\\")\",
+      string.inspect(True),
+      string.inspect(solution.is_match(\"\", \".*\")),
+    ),
+    #(
+      \"is_match(\\\"\\\", \\\"\\\")\",
+      string.inspect(True),
+      string.inspect(solution.is_match(\"\", \"\")),
+    ),
+    #(
+      \"is_match(\\\"abc\\\", \\\"abc\\\")\",
+      string.inspect(True),
+      string.inspect(solution.is_match(\"abc\", \"abc\")),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
 pub fn nc10_three_sum() -> Embedded {
   Embedded(
     solutions: [
@@ -10459,6 +10927,1071 @@ pub fn run() -> List(#(String, String, String)) {
   )
 }
 
+pub fn nc92_unique_paths() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Only right and down moves, so the ways to reach a square are the ways to reach the one above plus the one to its left. Rows fill top to bottom and only the previous row is ever needed, so one row of counters does for the whole grid.", "import gleam/list
+
+pub fn unique_paths(m: Int, n: Int) -> Int {
+  case m <= 0 || n <= 0 {
+    True -> 0
+    False ->
+      // Only right and down moves, so the ways to reach a square are the ways
+      // to reach the one above plus the one to its left. Rows are filled top to
+      // bottom, and only the row above is ever needed \\u{2014} so one row of counters
+      // does for the whole grid.
+      list.repeat(Nil, m - 1)
+      |> list.fold(list.repeat(1, n), fn(row, _) { running_sums(row) })
+      |> list.last
+      |> fn(final) {
+        case final {
+          Ok(count) -> count
+          Error(Nil) -> 0
+        }
+      }
+  }
+}
+
+/// Each entry gains everything to its left, which is the left-hand neighbour
+/// term of the recurrence applied across the row.
+fn running_sums(row: List(Int)) -> List(Int) {
+  let #(_, out) =
+    list.fold(row, #(0, []), fn(state, value) {
+      let #(running, out) = state
+      let running = running + value
+      #(running, [running, ..out])
+    })
+  list.reverse(out)
+}"),
+      #("Solution 2 · Pascal", "There is no grid at all. Every path is exactly m−1 downs and n−1 rights in some order, so the count is the number of ways to choose which of the m+n−2 moves are downs — a binomial coefficient. Multiplying and dividing in step keeps every intermediate an exact integer, which is what makes it safe without big numbers.", "import gleam/list
+
+pub fn unique_paths(m: Int, n: Int) -> Int {
+  case m <= 0 || n <= 0 {
+    True -> 0
+    False -> {
+      // Every path is exactly m\\u{2212}1 downs and n\\u{2212}1 rights in some order, so the
+      // count is the number of ways to choose which of the m+n\\u{2212}2 moves are
+      // downs \\u{2014} a binomial coefficient, and no grid at all. Multiplying and
+      // dividing in step keeps every intermediate an exact integer.
+      let downs = m - 1
+      let total = m + n - 2
+      list.index_map(list.repeat(Nil, downs), fn(_, i) { i + 1 })
+      |> list.fold(1, fn(acc, i) { acc * { total - downs + i } / i })
+    }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn unique_paths(m: Int, n: Int) -> Int",
+      starter: "pub fn unique_paths(m: Int, n: Int) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"unique_paths(3, 7)\",
+      string.inspect(28),
+      string.inspect(solution.unique_paths(3, 7)),
+    ),
+    #(
+      \"unique_paths(3, 2)\",
+      string.inspect(3),
+      string.inspect(solution.unique_paths(3, 2)),
+    ),
+    #(
+      \"unique_paths(7, 3)\",
+      string.inspect(28),
+      string.inspect(solution.unique_paths(7, 3)),
+    ),
+    #(
+      \"unique_paths(1, 5)\",
+      string.inspect(1),
+      string.inspect(solution.unique_paths(1, 5)),
+    ),
+    #(
+      \"unique_paths(0, 5)\",
+      string.inspect(0),
+      string.inspect(solution.unique_paths(0, 5)),
+    ),
+    #(
+      \"unique_paths(10, 10)\",
+      string.inspect(48_620),
+      string.inspect(solution.unique_paths(10, 10)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc93_longest_common_subsequence() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Compare the two current characters: equal means both are used and the answer is one more than the rest; different means the best of dropping one or the other. Filled row by row, only the previous row is ever needed. This recurrence is the backbone of edit distance and distinct subsequences too.", "import gleam/int
+import gleam/list
+import gleam/string
+
+pub fn longest_common_subsequence(text1: String, text2: String) -> Int {
+  let a = string.to_graphemes(text1)
+  let b = string.to_graphemes(text2)
+
+  // Compare the last characters: equal means both are used and the answer is
+  // one more than the rest, different means the best of dropping one or the
+  // other. Filled row by row, only the previous row is ever needed.
+  a
+  |> list.fold(list.repeat(0, list.length(b) + 1), fn(previous, from_a) {
+    row(previous, b, from_a)
+  })
+  |> list.last
+  |> fn(final) {
+    case final {
+      Ok(length) -> length
+      Error(Nil) -> 0
+    }
+  }
+}
+
+fn row(previous: List(Int), b: List(String), from_a: String) -> List(Int) {
+  let #(_, _, built) =
+    list.fold(b, #(previous, 0, [0]), fn(state, from_b) {
+      let #(remaining, left, built) = state
+      let #(diagonal, above) = case remaining {
+        [d, a, ..] -> #(d, a)
+        [d] -> #(d, 0)
+        [] -> #(0, 0)
+      }
+      let here = case from_a == from_b {
+        True -> diagonal + 1
+        False -> int.max(above, left)
+      }
+      #(list.drop(remaining, 1), here, [here, ..built])
+    })
+  list.reverse(built)
+}"),
+      #("Solution 2 · Memoised", "The same recurrence from the front with a cache. Written this way the choice is explicit — match and advance both, or give up one character from one side — which the rolling row hides behind its indices. Usually the version to write first, then flatten.", "import gleam/dict.{type Dict}
+import gleam/int
+import gleam/list
+import gleam/result
+import gleam/string
+
+pub fn longest_common_subsequence(text1: String, text2: String) -> Int {
+  let a =
+    string.to_graphemes(text1)
+    |> list.index_map(fn(c, i) { #(i, c) })
+    |> dict.from_list
+  let b =
+    string.to_graphemes(text2)
+    |> list.index_map(fn(c, i) { #(i, c) })
+    |> dict.from_list
+  let #(answer, _) =
+    from(0, 0, string.length(text1), string.length(text2), a, b, dict.new())
+  answer
+}
+
+/// The same recurrence from the front, with a cache. Written this way the
+/// choice is explicit \\u{2014} match and advance both, or give up one character from
+/// one side \\u{2014} which the rolling row hides behind its indices.
+fn from(
+  i: Int,
+  j: Int,
+  n: Int,
+  m: Int,
+  a: Dict(Int, String),
+  b: Dict(Int, String),
+  memo: Dict(#(Int, Int), Int),
+) -> #(Int, Dict(#(Int, Int), Int)) {
+  case i >= n || j >= m {
+    True -> #(0, memo)
+    False ->
+      case dict.get(memo, #(i, j)) {
+        Ok(cached) -> #(cached, memo)
+        Error(Nil) -> {
+          let #(best, memo) = case
+            result.unwrap(dict.get(a, i), \"\")
+            == result.unwrap(dict.get(b, j), \"\")
+          {
+            True -> {
+              let #(rest, memo) = from(i + 1, j + 1, n, m, a, b, memo)
+              #(rest + 1, memo)
+            }
+            False -> {
+              let #(drop_a, memo) = from(i + 1, j, n, m, a, b, memo)
+              let #(drop_b, memo) = from(i, j + 1, n, m, a, b, memo)
+              #(int.max(drop_a, drop_b), memo)
+            }
+          }
+          #(best, dict.insert(memo, #(i, j), best))
+        }
+      }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn longest_common_subsequence(text1: String, text2: String) -> Int",
+      starter: "pub fn longest_common_subsequence(text1: String, text2: String) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"longest_common_subsequence(\\\"abcde\\\", \\\"ace\\\")\",
+      string.inspect(3),
+      string.inspect(solution.longest_common_subsequence(\"abcde\", \"ace\")),
+    ),
+    #(
+      \"longest_common_subsequence(\\\"abc\\\", \\\"abc\\\")\",
+      string.inspect(3),
+      string.inspect(solution.longest_common_subsequence(\"abc\", \"abc\")),
+    ),
+    #(
+      \"longest_common_subsequence(\\\"abc\\\", \\\"def\\\")\",
+      string.inspect(0),
+      string.inspect(solution.longest_common_subsequence(\"abc\", \"def\")),
+    ),
+    #(
+      \"longest_common_subsequence(\\\"\\\", \\\"abc\\\")\",
+      string.inspect(0),
+      string.inspect(solution.longest_common_subsequence(\"\", \"abc\")),
+    ),
+    #(
+      \"longest_common_subsequence(\\\"bsbininm\\\", \\\"jmjkbkjkv\\\")\",
+      string.inspect(1),
+      string.inspect(solution.longest_common_subsequence(
+        \"bsbininm\",
+        \"jmjkbkjkv\",
+      )),
+    ),
+    #(
+      \"longest_common_subsequence(\\\"ezupkr\\\", \\\"ubmrapg\\\")\",
+      string.inspect(2),
+      string.inspect(solution.longest_common_subsequence(\"ezupkr\", \"ubmrapg\")),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc94_coin_change_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Combinations, not permutations, and that is decided entirely by the loop order. Coins on the outside means each coin is considered once and for all before the next is looked at, so 1+2 and 2+1 can never both be counted. Swapping the two loops silently counts orderings instead — the single most instructive bug in this problem.", "import gleam/dict
+import gleam/list
+import gleam/result
+
+pub fn change(amount: Int, coins: List(Int)) -> Int {
+  // Combinations, not permutations \\u{2014} which is entirely decided by the loop
+  // order. Coins on the outside means each coin is considered once and for all
+  // before the next is looked at, so 1+2 and 2+1 can never both be counted.
+  // Swapping the loops would count orderings instead.
+  coins
+  |> list.filter(fn(coin) { coin > 0 })
+  |> list.fold(dict.from_list([#(0, 1)]), fn(ways, coin) {
+    list.fold(targets(coin, amount), ways, fn(ways, target) {
+      dict.insert(ways, target, at(ways, target) + at(ways, target - coin))
+    })
+  })
+  |> at(amount)
+}
+
+fn targets(from: Int, to: Int) -> List(Int) {
+  case to < from {
+    True -> []
+    False ->
+      list.index_map(list.repeat(Nil, to - from + 1), fn(_, i) { from + i })
+  }
+}
+
+fn at(ways: dict.Dict(Int, Int), target: Int) -> Int {
+  result.unwrap(dict.get(ways, target), 0)
+}"),
+      #("Solution 2 · By coin recursion", "The same rule stated as a choice rather than a loop order: use this coin again, or set it aside for good. Setting it aside permanently is what fixes one order per combination — the identical constraint the outer loop encodes, made visible.", "import gleam/dict.{type Dict}
+import gleam/list
+
+pub fn change(amount: Int, coins: List(Int)) -> Int {
+  let usable = list.filter(coins, fn(coin) { coin > 0 })
+  let #(ways, _) = from(usable, amount, dict.new())
+  ways
+}
+
+/// The same \"combinations not permutations\" rule stated as a choice instead of
+/// a loop order: either use this coin again, or set it aside for good. Setting
+/// it aside permanently is what fixes one order per combination.
+fn from(
+  coins: List(Int),
+  amount: Int,
+  memo: Dict(#(Int, Int), Int),
+) -> #(Int, Dict(#(Int, Int), Int)) {
+  case amount, coins {
+    0, _ -> #(1, memo)
+    _, [] -> #(0, memo)
+    _, [coin, ..rest] -> {
+      let key = #(amount, list.length(coins))
+      case dict.get(memo, key) {
+        Ok(cached) -> #(cached, memo)
+        Error(Nil) -> {
+          let #(using, memo) = case coin > amount {
+            True -> #(0, memo)
+            False -> from(coins, amount - coin, memo)
+          }
+          let #(skipping, memo) = from(rest, amount, memo)
+          #(using + skipping, dict.insert(memo, key, using + skipping))
+        }
+      }
+    }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn change(amount: Int, coins: List(Int)) -> Int",
+      starter: "pub fn change(amount: Int, coins: List(Int)) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"change(5, [1, 2, 5])\",
+      string.inspect(4),
+      string.inspect(solution.change(5, [1, 2, 5])),
+    ),
+    #(
+      \"change(3, [2])\",
+      string.inspect(0),
+      string.inspect(solution.change(3, [2])),
+    ),
+    #(
+      \"change(10, [10])\",
+      string.inspect(1),
+      string.inspect(solution.change(10, [10])),
+    ),
+    #(
+      \"change(0, [1])\",
+      string.inspect(1),
+      string.inspect(solution.change(0, [1])),
+    ),
+    #(
+      \"change(5, [])\",
+      string.inspect(0),
+      string.inspect(solution.change(5, [])),
+    ),
+    #(
+      \"change(11, [1, 2, 5])\",
+      string.inspect(11),
+      string.inspect(solution.change(11, [1, 2, 5])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc95_target_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The only state that matters is the running total, not which signs produced it. Carrying a map from reachable total to how many ways reach it means different sign choices landing on the same total merge — which is exactly what turns an exponential search into a polynomial one.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+
+pub fn find_target_sum_ways(nums: List(Int), target: Int) -> Int {
+  // The state that matters is only the running total, not which signs produced
+  // it \\u{2014} so carry a map from reachable total to how many ways reach it, and
+  // widen it by each number twice, once added and once subtracted. Different
+  // sign choices landing on the same total merge, which is what stops the
+  // count being exponential in work.
+  nums
+  |> list.fold(dict.from_list([#(0, 1)]), fn(totals, n) {
+    dict.fold(totals, dict.new(), fn(next, total, count) {
+      next
+      |> bump(total + n, count)
+      |> bump(total - n, count)
+    })
+  })
+  |> at(target)
+}
+
+fn bump(totals: Dict(Int, Int), total: Int, by: Int) -> Dict(Int, Int) {
+  dict.insert(totals, total, at(totals, total) + by)
+}
+
+fn at(totals: Dict(Int, Int), total: Int) -> Int {
+  result.unwrap(dict.get(totals, total), 0)
+}"),
+      #("Solution 2 · As subset sum", "Rewrite the problem. If P is the set given a plus and N the set given a minus then P − N = target and P + N = total, so P = (total + target)/2. A sign-assignment question becomes \"how many subsets sum to a fixed value\" — a knapsack, with no negative totals to track at all. Reformulating rather than optimising is the move.", "import gleam/dict.{type Dict}
+import gleam/int
+import gleam/list
+import gleam/result
+
+pub fn find_target_sum_ways(nums: List(Int), target: Int) -> Int {
+  // Rewrite the problem. If P is the set given a plus and N the set given a
+  // minus, then P \\u{2212} N = target and P + N = total, so P = (total + target) / 2.
+  // That turns a sign-assignment question into \"how many subsets sum to a
+  // fixed value\" \\u{2014} a knapsack, with no negative totals to track at all.
+  let total = int.sum(nums)
+  let wanted = total + target
+
+  case wanted < 0 || wanted % 2 != 0 || total < int.absolute_value(target) {
+    True -> 0
+    False -> {
+      let goal = wanted / 2
+      nums
+      |> list.fold(dict.from_list([#(0, 1)]), fn(counts, n) {
+        dict.fold(counts, counts, fn(next, sum, ways) {
+          case sum + n <= goal {
+            True -> dict.insert(next, sum + n, at(next, sum + n) + ways)
+            False -> next
+          }
+        })
+      })
+      |> at(goal)
+    }
+  }
+}
+
+fn at(counts: Dict(Int, Int), sum: Int) -> Int {
+  result.unwrap(dict.get(counts, sum), 0)
+}"),
+    ],
+    check: Check(
+      signature: "pub fn find_target_sum_ways(nums: List(Int), target: Int) -> Int",
+      starter: "pub fn find_target_sum_ways(nums: List(Int), target: Int) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"find_target_sum_ways([1, 1, 1, 1, 1], 3)\",
+      string.inspect(5),
+      string.inspect(solution.find_target_sum_ways([1, 1, 1, 1, 1], 3)),
+    ),
+    #(
+      \"find_target_sum_ways([1], 1)\",
+      string.inspect(1),
+      string.inspect(solution.find_target_sum_ways([1], 1)),
+    ),
+    #(
+      \"find_target_sum_ways([1], 2)\",
+      string.inspect(0),
+      string.inspect(solution.find_target_sum_ways([1], 2)),
+    ),
+    #(
+      \"find_target_sum_ways([0, 0, 0, 0, 0], 0)\",
+      string.inspect(32),
+      string.inspect(solution.find_target_sum_ways([0, 0, 0, 0, 0], 0)),
+    ),
+    #(
+      \"find_target_sum_ways([], 0)\",
+      string.inspect(1),
+      string.inspect(solution.find_target_sum_ways([], 0)),
+    ),
+    #(
+      \"find_target_sum_ways([1, 2, 3, 4, 5], 3)\",
+      string.inspect(3),
+      string.inspect(solution.find_target_sum_ways([1, 2, 3, 4, 5], 3)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc96_stock_with_cooldown() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Three states rather than one number: holding, just sold (so today is the cooldown), and free to act. Each day depends only on yesterday, so it is three rolling values — and the cooldown is expressed simply by \"free\" never reading \"sold\" from the same day. Naming the states is most of the work.", "import gleam/int
+import gleam/list
+
+const impossible = -1_000_000_000
+
+pub fn max_profit(prices: List(Int)) -> Int {
+  // Three states rather than one number: holding a share, having just sold
+  // (so today is the cooldown), and free to act. Each day's states depend only
+  // on yesterday's, so the whole thing is three rolling values \\u{2014} and the
+  // cooldown is expressed simply by \"free\" never reading \"sold\" from the same
+  // day.
+  let #(_, sold, rest) =
+    list.fold(prices, #(impossible, impossible, 0), fn(state, price) {
+      let #(hold, sold, rest) = state
+      #(int.max(hold, rest - price), hold + price, int.max(rest, sold))
+    })
+
+  int.max(int.max(sold, rest), 0)
+}"),
+      #("Solution 2 · Memoised", "The same three states as an explicit choice each day: buy, sell, or do nothing. After selling the recursion skips a day, which puts the cooldown where it actually happens rather than encoding it in which value gets read.", "import gleam/dict.{type Dict}
+import gleam/int
+import gleam/list
+import gleam/result
+
+pub fn max_profit(prices: List(Int)) -> Int {
+  let lookup = prices |> list.index_map(fn(p, i) { #(i, p) }) |> dict.from_list
+  let #(best, _) = from(0, list.length(prices), False, lookup, dict.new())
+  best
+}
+
+/// The same three states as an explicit choice at each day: buy, sell, or do
+/// nothing. After selling the recursion skips a day, which is the cooldown
+/// stated where it happens rather than encoded in which value is read.
+fn from(
+  day: Int,
+  n: Int,
+  holding: Bool,
+  prices: Dict(Int, Int),
+  memo: Dict(#(Int, Bool), Int),
+) -> #(Int, Dict(#(Int, Bool), Int)) {
+  case day >= n {
+    True -> #(0, memo)
+    False ->
+      case dict.get(memo, #(day, holding)) {
+        Ok(cached) -> #(cached, memo)
+        Error(Nil) -> {
+          let price = result.unwrap(dict.get(prices, day), 0)
+          let #(waiting, memo) = from(day + 1, n, holding, prices, memo)
+          let #(acting, memo) = case holding {
+            True -> {
+              let #(after, memo) = from(day + 2, n, False, prices, memo)
+              #(price + after, memo)
+            }
+            False -> {
+              let #(after, memo) = from(day + 1, n, True, prices, memo)
+              #(after - price, memo)
+            }
+          }
+          let best = int.max(waiting, acting)
+          #(best, dict.insert(memo, #(day, holding), best))
+        }
+      }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn max_profit(prices: List(Int)) -> Int",
+      starter: "pub fn max_profit(prices: List(Int)) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"max_profit([1, 2, 3, 0, 2])\",
+      string.inspect(3),
+      string.inspect(solution.max_profit([1, 2, 3, 0, 2])),
+    ),
+    #(
+      \"max_profit([1])\",
+      string.inspect(0),
+      string.inspect(solution.max_profit([1])),
+    ),
+    #(
+      \"max_profit([])\",
+      string.inspect(0),
+      string.inspect(solution.max_profit([])),
+    ),
+    #(
+      \"max_profit([2, 1])\",
+      string.inspect(0),
+      string.inspect(solution.max_profit([2, 1])),
+    ),
+    #(
+      \"max_profit([1, 2, 3, 4, 5])\",
+      string.inspect(4),
+      string.inspect(solution.max_profit([1, 2, 3, 4, 5])),
+    ),
+    #(
+      \"max_profit([6, 1, 3, 2, 4, 7])\",
+      string.inspect(6),
+      string.inspect(solution.max_profit([6, 1, 3, 2, 4, 7])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc97_interleaving_string() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "How much of each source has been used is the entire state — the position in the target is their sum, so it never has to be tracked. That collapse from three indices to two is what makes the table two-dimensional, and spotting it is the problem.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/string
+
+pub fn is_interleave(s1: String, s2: String, s3: String) -> Bool {
+  case string.length(s1) + string.length(s2) == string.length(s3) {
+    False -> False
+    True -> {
+      let a = index(s1)
+      let b = index(s2)
+      let c = index(s3)
+      let #(answer, _) =
+        from(0, 0, string.length(s1), string.length(s2), a, b, c, dict.new())
+      answer
+    }
+  }
+}
+
+/// How much of each source has been used is the entire state \\u{2014} the position
+/// in the target is their sum, so it never has to be tracked. That collapse
+/// from three indices to two is what makes the table two-dimensional.
+fn from(
+  i: Int,
+  j: Int,
+  n: Int,
+  m: Int,
+  a: Dict(Int, String),
+  b: Dict(Int, String),
+  c: Dict(Int, String),
+  memo: Dict(#(Int, Int), Bool),
+) -> #(Bool, Dict(#(Int, Int), Bool)) {
+  case i >= n && j >= m {
+    True -> #(True, memo)
+    False ->
+      case dict.get(memo, #(i, j)) {
+        Ok(cached) -> #(cached, memo)
+        Error(Nil) -> {
+          let target = at(c, i + j)
+          let #(from_a, memo) = case i < n && at(a, i) == target {
+            True -> from(i + 1, j, n, m, a, b, c, memo)
+            False -> #(False, memo)
+          }
+          let #(answer, memo) = case from_a {
+            True -> #(True, memo)
+            False ->
+              case j < m && at(b, j) == target {
+                True -> from(i, j + 1, n, m, a, b, c, memo)
+                False -> #(False, memo)
+              }
+          }
+          #(answer, dict.insert(memo, #(i, j), answer))
+        }
+      }
+  }
+}
+
+fn index(text: String) -> Dict(Int, String) {
+  text
+  |> string.to_graphemes
+  |> list.index_map(fn(c, i) { #(i, c) })
+  |> dict.from_list
+}
+
+fn at(lookup: Dict(Int, String), index: Int) -> String {
+  result.unwrap(dict.get(lookup, index), \"\")
+}"),
+      #("Solution 2 · Rolling row", "Bottom-up over the same two-index state. Row i says which prefixes of s2 pair with the first i characters of s1, and each row depends only on the one above and itself to the left, so a single row suffices. Note the length check first: without it the recursion can succeed on a target that is too short.", "import gleam/list
+import gleam/result
+import gleam/string
+
+pub fn is_interleave(s1: String, s2: String, s3: String) -> Bool {
+  case string.length(s1) + string.length(s2) == string.length(s3) {
+    False -> False
+    True -> {
+      let a = string.to_graphemes(s1)
+      let b = string.to_graphemes(s2)
+      let c = string.to_graphemes(s3)
+
+      // Bottom-up over the same two-index state. Row i says which prefixes of
+      // s2 can pair with the first i characters of s1; each row depends only on
+      // the one above and on itself to the left, so one row suffices.
+      let start = first_row(b, c)
+      let final =
+        list.index_fold(a, start, fn(previous, from_a, i) {
+          next_row(previous, b, c, from_a, i)
+        })
+
+      result.unwrap(list.last(final), False)
+    }
+  }
+}
+
+/// Nothing taken from s1 yet, so s2 has to match the target outright.
+fn first_row(b: List(String), c: List(String)) -> List(Bool) {
+  let #(_, row) =
+    list.fold(b, #(True, [True]), fn(state, from_b) {
+      let #(ok, row) = state
+      let ok = ok && from_b == nth(c, list.length(row) - 1)
+      #(ok, [ok, ..row])
+    })
+  list.reverse(row)
+}
+
+fn next_row(
+  previous: List(Bool),
+  b: List(String),
+  c: List(String),
+  from_a: String,
+  i: Int,
+) -> List(Bool) {
+  let head = flag(previous, 0) && from_a == nth(c, i)
+  let #(_, row) =
+    list.index_fold(b, #(head, [head]), fn(state, from_b, j) {
+      let #(left, row) = state
+      let target = nth(c, i + j + 1)
+      let here =
+        { flag(previous, j + 1) && from_a == target }
+        || { left && from_b == target }
+      #(here, [here, ..row])
+    })
+  list.reverse(row)
+}
+
+fn nth(values: List(String), index: Int) -> String {
+  values |> list.drop(index) |> list.first |> result.unwrap(\"\")
+}
+
+fn flag(values: List(Bool), index: Int) -> Bool {
+  values |> list.drop(index) |> list.first |> result.unwrap(False)
+}"),
+    ],
+    check: Check(
+      signature: "pub fn is_interleave(s1: String, s2: String, s3: String) -> Bool",
+      starter: "pub fn is_interleave(s1: String, s2: String, s3: String) -> Bool {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"is_interleave(\\\"aabcc\\\", \\\"dbbca\\\", \\\"aadbbcbcac\\\")\",
+      string.inspect(True),
+      string.inspect(solution.is_interleave(\"aabcc\", \"dbbca\", \"aadbbcbcac\")),
+    ),
+    #(
+      \"is_interleave(\\\"aabcc\\\", \\\"dbbca\\\", \\\"aadbbbaccc\\\")\",
+      string.inspect(False),
+      string.inspect(solution.is_interleave(\"aabcc\", \"dbbca\", \"aadbbbaccc\")),
+    ),
+    #(
+      \"is_interleave(\\\"\\\", \\\"\\\", \\\"\\\")\",
+      string.inspect(True),
+      string.inspect(solution.is_interleave(\"\", \"\", \"\")),
+    ),
+    #(
+      \"is_interleave(\\\"a\\\", \\\"\\\", \\\"a\\\")\",
+      string.inspect(True),
+      string.inspect(solution.is_interleave(\"a\", \"\", \"a\")),
+    ),
+    #(
+      \"is_interleave(\\\"\\\", \\\"b\\\", \\\"b\\\")\",
+      string.inspect(True),
+      string.inspect(solution.is_interleave(\"\", \"b\", \"b\")),
+    ),
+    #(
+      \"is_interleave(\\\"abc\\\", \\\"def\\\", \\\"adbecf\\\")\",
+      string.inspect(True),
+      string.inspect(solution.is_interleave(\"abc\", \"def\", \"adbecf\")),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc98_longest_increasing_path() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Strictly increasing means the moves can never form a cycle, so the grid is a directed acyclic graph and the longest path from each square is well-defined. That is what makes caching sound — with cycles, a memo on an in-progress square would be reading an answer that does not exist yet.", "import gleam/dict.{type Dict}
+import gleam/int
+import gleam/list
+import gleam/result
+
+pub fn longest_increasing_path(matrix: List(List(Int))) -> Int {
+  let grid =
+    matrix
+    |> list.index_map(fn(row, r) {
+      list.index_map(row, fn(value, c) { #(#(r, c), value) })
+    })
+    |> list.flatten
+    |> dict.from_list
+
+  // Strictly increasing means the moves can never form a cycle \\u{2014} the grid is
+  // a directed acyclic graph \\u{2014} so the longest path from each square is
+  // well-defined and can simply be cached. Without that guarantee memoisation
+  // would be unsound, which is the fact the problem is really testing.
+  let #(best, _) =
+    list.fold(dict.keys(grid), #(0, dict.new()), fn(state, at) {
+      let #(best, memo) = state
+      let #(length, memo) = from(at, grid, memo)
+      #(int.max(best, length), memo)
+    })
+  best
+}
+
+fn from(
+  at: #(Int, Int),
+  grid: Dict(#(Int, Int), Int),
+  memo: Dict(#(Int, Int), Int),
+) -> #(Int, Dict(#(Int, Int), Int)) {
+  case dict.get(memo, at) {
+    Ok(cached) -> #(cached, memo)
+    Error(Nil) -> {
+      let here = result.unwrap(dict.get(grid, at), 0)
+      let #(best, memo) =
+        list.fold(neighbours(at), #(1, memo), fn(state, next) {
+          let #(best, memo) = state
+          case dict.get(grid, next) {
+            Ok(value) if value > here -> {
+              let #(length, memo) = from(next, grid, memo)
+              #(int.max(best, length + 1), memo)
+            }
+            _ -> #(best, memo)
+          }
+        })
+      #(best, dict.insert(memo, at, best))
+    }
+  }
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  let #(r, c) = at
+  [#(r - 1, c), #(r + 1, c), #(r, c - 1), #(r, c + 1)]
+}"),
+      #("Solution 2 · By value order", "The same acyclicity used the other way round: walk the squares from largest value to smallest and everything a square can move to is already settled. Sorting by value *is* a topological order, so the graph never has to be built.", "import gleam/dict
+import gleam/int
+import gleam/list
+import gleam/result
+
+pub fn longest_increasing_path(matrix: List(List(Int))) -> Int {
+  let cells =
+    matrix
+    |> list.index_map(fn(row, r) {
+      list.index_map(row, fn(value, c) { #(#(r, c), value) })
+    })
+    |> list.flatten
+  let grid = dict.from_list(cells)
+
+  // The same acyclicity used the other way round: process the squares from
+  // largest value to smallest, and by the time a square is reached every square
+  // it can move to has already been settled. A topological order without ever
+  // building the graph \\u{2014} sorting by value *is* the order.
+  let lengths =
+    cells
+    |> list.sort(fn(a: #(#(Int, Int), Int), b: #(#(Int, Int), Int)) {
+      int.compare(b.1, a.1)
+    })
+    |> list.fold(dict.new(), fn(lengths, cell) {
+      let #(at, here) = cell
+      let best =
+        list.fold(neighbours(at), 1, fn(best, next) {
+          case dict.get(grid, next) {
+            Ok(value) if value > here ->
+              int.max(best, result.unwrap(dict.get(lengths, next), 1) + 1)
+            _ -> best
+          }
+        })
+      dict.insert(lengths, at, best)
+    })
+
+  list.fold(dict.values(lengths), 0, int.max)
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  let #(r, c) = at
+  [#(r - 1, c), #(r + 1, c), #(r, c - 1), #(r, c + 1)]
+}"),
+    ],
+    check: Check(
+      signature: "pub fn longest_increasing_path(matrix: List(List(Int))) -> Int",
+      starter: "pub fn longest_increasing_path(matrix: List(List(Int))) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"longest_increasing_path([[9, 9, 4], [6, 6, 8], [2, 1, 1]])\",
+      string.inspect(4),
+      string.inspect(
+        solution.longest_increasing_path([[9, 9, 4], [6, 6, 8], [2, 1, 1]]),
+      ),
+    ),
+    #(
+      \"longest_increasing_path([[3, 4, 5], [3, 2, 6], [2, 2, 1]])\",
+      string.inspect(4),
+      string.inspect(
+        solution.longest_increasing_path([[3, 4, 5], [3, 2, 6], [2, 2, 1]]),
+      ),
+    ),
+    #(
+      \"longest_increasing_path([[1]])\",
+      string.inspect(1),
+      string.inspect(solution.longest_increasing_path([[1]])),
+    ),
+    #(
+      \"longest_increasing_path([])\",
+      string.inspect(0),
+      string.inspect(solution.longest_increasing_path([])),
+    ),
+    #(
+      \"longest_increasing_path([[1, 2], [3, 4]])\",
+      string.inspect(3),
+      string.inspect(solution.longest_increasing_path([[1, 2], [3, 4]])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc99_distinct_subsequences() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Row j counts the ways to build the first j characters of the target from the source seen so far, and a new source character extends a count at j−1 into one at j when it matches. In a mutable array the row must be swept right to left, or one source character gets used twice; building a fresh row removes the hazard entirely.", "import gleam/list
+import gleam/result
+import gleam/string
+
+pub fn num_distinct(s: String, t: String) -> Int {
+  let target = string.to_graphemes(t)
+
+  // Row j counts the ways to build the first j characters of t out of the
+  // source seen so far. A new source character can extend a count at j-1 into
+  // one at j, but only if it matches t[j-1].
+  //
+  // In an array version this row has to be swept right to left, or an update at
+  // j-1 feeds straight into j and the same source character gets used twice.
+  // Building a fresh row from the old one removes the hazard entirely, which is
+  // worth noticing: the direction was never part of the recurrence.
+  s
+  |> string.to_graphemes
+  |> list.fold([1, ..list.repeat(0, list.length(target))], fn(row, from_s) {
+    extend(row, target, from_s)
+  })
+  |> list.last
+  |> result.unwrap(0)
+}
+
+fn extend(row: List(Int), target: List(String), from_s: String) -> List(Int) {
+  [
+    1,
+    ..list.index_map(target, fn(from_t, j) {
+      case from_s == from_t {
+        True -> nth(row, j + 1) + nth(row, j)
+        False -> nth(row, j + 1)
+      }
+    })
+  ]
+}
+
+fn nth(values: List(Int), index: Int) -> Int {
+  values |> list.drop(index) |> list.first |> result.unwrap(0)
+}"),
+      #("Solution 2 · Memoised", "The choice written out: on a match, use this source character or skip it; otherwise skip. Running out of target is one complete subsequence, which is why the base case returns 1 and not 0 — the usual place this one goes wrong.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/string
+
+pub fn num_distinct(s: String, t: String) -> Int {
+  let source = index(s)
+  let target = index(t)
+  let #(count, _) =
+    from(0, 0, string.length(s), string.length(t), source, target, dict.new())
+  count
+}
+
+/// The choice written out: when the characters match, either use this source
+/// character for this target character or skip it; when they do not, skipping
+/// is the only option. Running out of target is one complete subsequence, which
+/// is why the base case is 1 rather than 0.
+fn from(
+  i: Int,
+  j: Int,
+  n: Int,
+  m: Int,
+  source: Dict(Int, String),
+  target: Dict(Int, String),
+  memo: Dict(#(Int, Int), Int),
+) -> #(Int, Dict(#(Int, Int), Int)) {
+  case j >= m, i >= n {
+    True, _ -> #(1, memo)
+    _, True -> #(0, memo)
+    _, _ ->
+      case dict.get(memo, #(i, j)) {
+        Ok(cached) -> #(cached, memo)
+        Error(Nil) -> {
+          let #(skipping, memo) = from(i + 1, j, n, m, source, target, memo)
+          let #(using, memo) = case at(source, i) == at(target, j) {
+            True -> from(i + 1, j + 1, n, m, source, target, memo)
+            False -> #(0, memo)
+          }
+          #(skipping + using, dict.insert(memo, #(i, j), skipping + using))
+        }
+      }
+  }
+}
+
+fn index(text: String) -> Dict(Int, String) {
+  text
+  |> string.to_graphemes
+  |> list.index_map(fn(c, i) { #(i, c) })
+  |> dict.from_list
+}
+
+fn at(lookup: Dict(Int, String), index: Int) -> String {
+  result.unwrap(dict.get(lookup, index), \"\")
+}"),
+    ],
+    check: Check(
+      signature: "pub fn num_distinct(s: String, t: String) -> Int",
+      starter: "pub fn num_distinct(s: String, t: String) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"num_distinct(\\\"rabbbit\\\", \\\"rabbit\\\")\",
+      string.inspect(3),
+      string.inspect(solution.num_distinct(\"rabbbit\", \"rabbit\")),
+    ),
+    #(
+      \"num_distinct(\\\"babgbag\\\", \\\"bag\\\")\",
+      string.inspect(5),
+      string.inspect(solution.num_distinct(\"babgbag\", \"bag\")),
+    ),
+    #(
+      \"num_distinct(\\\"\\\", \\\"a\\\")\",
+      string.inspect(0),
+      string.inspect(solution.num_distinct(\"\", \"a\")),
+    ),
+    #(
+      \"num_distinct(\\\"a\\\", \\\"\\\")\",
+      string.inspect(1),
+      string.inspect(solution.num_distinct(\"a\", \"\")),
+    ),
+    #(
+      \"num_distinct(\\\"abc\\\", \\\"abc\\\")\",
+      string.inspect(1),
+      string.inspect(solution.num_distinct(\"abc\", \"abc\")),
+    ),
+    #(
+      \"num_distinct(\\\"aaa\\\", \\\"aa\\\")\",
+      string.inspect(3),
+      string.inspect(solution.num_distinct(\"aaa\", \"aa\")),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
 pub fn tip01_list_patterns() -> Embedded {
   Embedded(
     solutions: [
@@ -11235,6 +12768,9 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc07_longest_consecutive" -> Ok(nc07_longest_consecutive())
     "nc08_valid_palindrome" -> Ok(nc08_valid_palindrome())
     "nc09_two_sum_sorted" -> Ok(nc09_two_sum_sorted())
+    "nc100_edit_distance" -> Ok(nc100_edit_distance())
+    "nc101_burst_balloons" -> Ok(nc101_burst_balloons())
+    "nc102_regular_expression_matching" -> Ok(nc102_regular_expression_matching())
     "nc10_three_sum" -> Ok(nc10_three_sum())
     "nc11_container_water" -> Ok(nc11_container_water())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
@@ -11317,6 +12853,14 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc89_palindrome_partitioning" -> Ok(nc89_palindrome_partitioning())
     "nc90_letter_combinations" -> Ok(nc90_letter_combinations())
     "nc91_n_queens" -> Ok(nc91_n_queens())
+    "nc92_unique_paths" -> Ok(nc92_unique_paths())
+    "nc93_longest_common_subsequence" -> Ok(nc93_longest_common_subsequence())
+    "nc94_coin_change_ii" -> Ok(nc94_coin_change_ii())
+    "nc95_target_sum" -> Ok(nc95_target_sum())
+    "nc96_stock_with_cooldown" -> Ok(nc96_stock_with_cooldown())
+    "nc97_interleaving_string" -> Ok(nc97_interleaving_string())
+    "nc98_longest_increasing_path" -> Ok(nc98_longest_increasing_path())
+    "nc99_distinct_subsequences" -> Ok(nc99_distinct_subsequences())
     "tip01_list_patterns" -> Ok(tip01_list_patterns())
     "tip02_tail_recursion" -> Ok(tip02_tail_recursion())
     "tip03_fold" -> Ok(tip03_fold())

@@ -1,0 +1,1 @@
+There is no grid at all. Every path is exactly m−1 downs and n−1 rights in some order, so the count is the number of ways to choose which of the m+n−2 moves are downs — a binomial coefficient. Multiplying and dividing in step keeps every intermediate an exact integer, which is what makes it safe without big numbers.

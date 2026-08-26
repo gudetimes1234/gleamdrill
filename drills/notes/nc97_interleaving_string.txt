@@ -1,0 +1,1 @@
+How much of each source has been used is the entire state — the position in the target is their sum, so it never has to be tracked. That collapse from three indices to two is what makes the table two-dimensional, and spotting it is the problem.

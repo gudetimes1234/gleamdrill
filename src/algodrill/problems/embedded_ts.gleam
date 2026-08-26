@@ -494,6 +494,229 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc100_edit_distance() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Three edits, three neighbours in the table: replace from the diagonal, delete from above, insert from the left. Equal characters cost nothing and take the diagonal outright. The first row and column are the cost of building a string from nothing, which is simply its length.", "export function minDistance(word1: string, word2: string): number {
+  // Three edits, three neighbours in the table: replace comes from the
+  // diagonal, delete from above, insert from the left. Equal characters cost
+  // nothing and take the diagonal outright -- the whole algorithm is those four
+  // lines. The first row and column are the cost of building a string from
+  // nothing, which is its length.
+  let previous = Array.from({ length: word2.length + 1 }, (_, j) => j);
+
+  for (let i = 1; i <= word1.length; i++) {
+    const row = new Array<number>(word2.length + 1).fill(0);
+    row[0] = i;
+    for (let j = 1; j <= word2.length; j++) {
+      row[j] =
+        word1[i - 1] === word2[j - 1]
+          ? previous[j - 1]
+          : 1 + Math.min(previous[j - 1], previous[j], row[j - 1]);
+    }
+    previous = row;
+  }
+
+  return previous[word2.length];
+}"),
+      #("Solution 2 · Memoised", "The same three edits as an explicit choice from the front. Running out of one word costs whatever remains of the other, since every leftover character must be inserted or deleted — the base case that the table encodes in its first row and column.", "export function minDistance(word1: string, word2: string): number {
+  const memo = new Map<string, number>();
+
+  // The same three edits as an explicit choice from the front. Running out of
+  // one word costs whatever is left of the other, since every remaining
+  // character has to be inserted or deleted.
+  const cost = (i: number, j: number): number => {
+    if (i >= word1.length) return word2.length - j;
+    if (j >= word2.length) return word1.length - i;
+    const key = `${i},${j}`;
+    if (!memo.has(key)) {
+      memo.set(
+        key,
+        word1[i] === word2[j]
+          ? cost(i + 1, j + 1)
+          : 1 + Math.min(cost(i + 1, j + 1), cost(i + 1, j), cost(i, j + 1)),
+      );
+    }
+    return memo.get(key)!;
+  };
+
+  return cost(0, 0);
+}"),
+    ],
+    check: Check(
+      signature: "export function minDistance(word1: string, word2: string): number",
+      starter: "export function minDistance(word1: string, word2: string): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.minDistance !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"minDistance('horse', 'ros')\", show(3), show(solution.minDistance('horse', 'ros'))],
+    [\"minDistance('intention', 'execution')\", show(5), show(solution.minDistance('intention', 'execution'))],
+    [\"minDistance('', 'abc')\", show(3), show(solution.minDistance('', 'abc'))],
+    [\"minDistance('abc', '')\", show(3), show(solution.minDistance('abc', ''))],
+    [\"minDistance('abc', 'abc')\", show(0), show(solution.minDistance('abc', 'abc'))],
+    [\"minDistance('kitten', 'sitting')\", show(3), show(solution.minDistance('kitten', 'sitting'))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc101_burst_balloons() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Ask which balloon is burst *last* in a span, not first. The last one still has both span boundaries as neighbours — they are untouched by definition — so its value is known and the two sides become independent subproblems. Asking \"first\" leaves neighbours that depend on the other side and the recursion never closes. Padding with a 1 at each end removes the edge cases.", "export function maxCoins(nums: number[]): number {
+  // Padding with a 1 at each end removes the edge cases: every balloon then has
+  // a neighbour on both sides whatever happens.
+  const balloons = [1, ...nums, 1];
+  const memo = new Map<string, number>();
+
+  // The trick is to ask which balloon is burst *last* in a span rather than
+  // first. The last one still has both span boundaries as neighbours -- they
+  // are untouched by definition -- so its value is known, and the two sides
+  // become independent subproblems. Asking \"first\" leaves neighbours that
+  // depend on the other side, and the recursion does not close.
+  const best = (left: number, right: number): number => {
+    if (right - left < 2) return 0;
+    const key = `${left},${right}`;
+    if (!memo.has(key)) {
+      let found = 0;
+      for (let last = left + 1; last < right; last++) {
+        found = Math.max(
+          found,
+          balloons[left] * balloons[last] * balloons[right] + best(left, last) + best(last, right),
+        );
+      }
+      memo.set(key, found);
+    }
+    return memo.get(key)!;
+  };
+
+  return best(0, balloons.length - 1);
+}"),
+      #("Solution 2 · Bottom up", "The same recurrence filled by hand, shortest spans first — because a span needs both of the shorter spans a chosen last balloon splits it into. Writing the loop order out makes that dependency visible where the recursion leaves it implicit.", "export function maxCoins(nums: number[]): number {
+  const balloons = [1, ...nums, 1];
+  const n = balloons.length;
+  const table = Array.from({ length: n }, () => new Array<number>(n).fill(0));
+
+  // The same \"which balloon goes last\" recurrence filled by hand, shortest
+  // spans first -- because a span's answer needs both of the shorter spans that
+  // a chosen last balloon splits it into. Writing the loop order out makes that
+  // dependency visible where the recursion leaves it implicit.
+  for (let width = 2; width < n; width++) {
+    for (let left = 0; left + width < n; left++) {
+      const right = left + width;
+      for (let last = left + 1; last < right; last++) {
+        table[left][right] = Math.max(
+          table[left][right],
+          balloons[left] * balloons[last] * balloons[right] +
+            table[left][last] +
+            table[last][right],
+        );
+      }
+    }
+  }
+
+  return table[0][n - 1];
+}"),
+    ],
+    check: Check(
+      signature: "export function maxCoins(nums: number[]): number",
+      starter: "export function maxCoins(nums: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.maxCoins !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"maxCoins([3, 1, 5, 8])\", show(167), show(solution.maxCoins([3, 1, 5, 8]))],
+    [\"maxCoins([1, 5])\", show(10), show(solution.maxCoins([1, 5]))],
+    [\"maxCoins([])\", show(0), show(solution.maxCoins([]))],
+    [\"maxCoins([5])\", show(5), show(solution.maxCoins([5]))],
+    [\"maxCoins([1, 2, 3, 4])\", show(40), show(solution.maxCoins([1, 2, 3, 4]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc102_regular_expression_matching() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A star binds to the character *before* it, so the pattern is read two symbols at a time. Given \"x*\": either skip the pair entirely — zero copies — or, if x matches here, consume one character of the text and stay on the same pair. Everything else is a single-character match. Getting the zero-copies branch right is most of the problem.", "export function isMatch(s: string, p: string): boolean {
+  const memo = new Map<string, boolean>();
+
+  // A star binds to the character *before* it, so the pattern has to be read
+  // two symbols at a time. Given \"x*\", either skip the pair entirely -- zero
+  // copies -- or, if x matches here, consume one character of the text and stay
+  // on the same pair. Everything else is a single-character match.
+  const works = (i: number, j: number): boolean => {
+    if (j >= p.length) return i >= s.length;
+    const key = `${i},${j}`;
+    if (!memo.has(key)) {
+      const here = i < s.length && (p[j] === s[i] || p[j] === \".\");
+      memo.set(
+        key,
+        j + 1 < p.length && p[j + 1] === \"*\"
+          ? works(i, j + 2) || (here && works(i + 1, j))
+          : here && works(i + 1, j + 1),
+      );
+    }
+    return memo.get(key)!;
+  };
+
+  return works(0, 0);
+}"),
+      #("Solution 2 · No cache", "The same rules with no table at all, which is shorter and far easier to trust. It is exponential on patterns like \"a*a*a*a*b\", where the same suffix is reached along many different splits — so write this first, get it right, and add the cache afterwards.", "export function isMatch(s: string, p: string): boolean {
+  // The same rules with no table at all. Shorter and easier to trust, and
+  // exponential on patterns like \"a*a*a*a*b\" where the same suffix is reached
+  // along many different splits. Worth writing first, then adding the cache
+  // once it is right.
+  if (p === \"\") return s === \"\";
+
+  const here = s !== \"\" && (p[0] === s[0] || p[0] === \".\");
+
+  if (p.length >= 2 && p[1] === \"*\") {
+    return isMatch(s, p.slice(2)) || (here && isMatch(s.slice(1), p));
+  }
+
+  return here && isMatch(s.slice(1), p.slice(1));
+}"),
+    ],
+    check: Check(
+      signature: "export function isMatch(s: string, p: string): boolean",
+      starter: "export function isMatch(s: string, p: string): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.isMatch !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"isMatch('aa', 'a')\", show(false), show(solution.isMatch('aa', 'a'))],
+    [\"isMatch('aa', 'a*')\", show(true), show(solution.isMatch('aa', 'a*'))],
+    [\"isMatch('ab', '.*')\", show(true), show(solution.isMatch('ab', '.*'))],
+    [\"isMatch('aab', 'c*a*b')\", show(true), show(solution.isMatch('aab', 'c*a*b'))],
+    [\"isMatch('mississippi', 'mis*is*p*.')\", show(false), show(solution.isMatch('mississippi', 'mis*is*p*.'))],
+    [\"isMatch('', '.*')\", show(true), show(solution.isMatch('', '.*'))],
+    [\"isMatch('', '')\", show(true), show(solution.isMatch('', ''))],
+    [\"isMatch('abc', 'abc')\", show(true), show(solution.isMatch('abc', 'abc'))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn nc10_three_sum() -> Embedded {
   Embedded(
     solutions: [
@@ -6003,6 +6226,554 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc92_unique_paths() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Only right and down moves, so the ways to reach a square are the ways to reach the one above plus the one to its left. Rows fill top to bottom and only the previous row is ever needed, so one row of counters does for the whole grid.", "export function uniquePaths(m: number, n: number): number {
+  if (m <= 0 || n <= 0) return 0;
+
+  // Only right and down moves, so the ways to reach a square are the ways to
+  // reach the one above plus the one to its left. Rows are filled top to
+  // bottom, and only the row above is ever needed -- so one row of counters
+  // does for the whole grid.
+  const row = new Array<number>(n).fill(1);
+  for (let r = 1; r < m; r++) {
+    for (let c = 1; c < n; c++) row[c] += row[c - 1];
+  }
+
+  return row[n - 1];
+}"),
+      #("Solution 2 · Pascal", "There is no grid at all. Every path is exactly m−1 downs and n−1 rights in some order, so the count is the number of ways to choose which of the m+n−2 moves are downs — a binomial coefficient. Multiplying and dividing in step keeps every intermediate an exact integer, which is what makes it safe without big numbers.", "export function uniquePaths(m: number, n: number): number {
+  if (m <= 0 || n <= 0) return 0;
+
+  // Every path is exactly m-1 downs and n-1 rights in some order, so the count
+  // is the number of ways to choose which of the m+n-2 moves are downs -- a
+  // binomial coefficient, and no grid at all. Multiplying and dividing in step
+  // keeps every intermediate an exact integer.
+  const downs = m - 1;
+  const total = m + n - 2;
+  let result = 1;
+  for (let i = 1; i <= downs; i++) result = (result * (total - downs + i)) / i;
+
+  return result;
+}"),
+    ],
+    check: Check(
+      signature: "export function uniquePaths(m: number, n: number): number",
+      starter: "export function uniquePaths(m: number, n: number): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.uniquePaths !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"uniquePaths(3, 7)\", show(28), show(solution.uniquePaths(3, 7))],
+    [\"uniquePaths(3, 2)\", show(3), show(solution.uniquePaths(3, 2))],
+    [\"uniquePaths(7, 3)\", show(28), show(solution.uniquePaths(7, 3))],
+    [\"uniquePaths(1, 5)\", show(1), show(solution.uniquePaths(1, 5))],
+    [\"uniquePaths(0, 5)\", show(0), show(solution.uniquePaths(0, 5))],
+    [\"uniquePaths(10, 10)\", show(48620), show(solution.uniquePaths(10, 10))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc93_longest_common_subsequence() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Compare the two current characters: equal means both are used and the answer is one more than the rest; different means the best of dropping one or the other. Filled row by row, only the previous row is ever needed. This recurrence is the backbone of edit distance and distinct subsequences too.", "export function longestCommonSubsequence(text1: string, text2: string): number {
+  // Compare the last characters: equal means both are used and the answer is
+  // one more than the rest, different means the best of dropping one or the
+  // other. Filled row by row, only the previous row is ever needed.
+  let previous = new Array<number>(text2.length + 1).fill(0);
+
+  for (const a of text1) {
+    const row = new Array<number>(text2.length + 1).fill(0);
+    for (let j = 1; j <= text2.length; j++) {
+      row[j] = a === text2[j - 1] ? previous[j - 1] + 1 : Math.max(previous[j], row[j - 1]);
+    }
+    previous = row;
+  }
+
+  return previous[text2.length];
+}"),
+      #("Solution 2 · Memoised", "The same recurrence from the front with a cache. Written this way the choice is explicit — match and advance both, or give up one character from one side — which the rolling row hides behind its indices. Usually the version to write first, then flatten.", "export function longestCommonSubsequence(text1: string, text2: string): number {
+  const memo = new Map<string, number>();
+
+  // The same recurrence from the front, with a cache. Written this way the
+  // choice is explicit -- match and advance both, or give up one character from
+  // one side -- which the rolling row hides behind its indices.
+  const best = (i: number, j: number): number => {
+    if (i >= text1.length || j >= text2.length) return 0;
+    const key = `${i},${j}`;
+    if (!memo.has(key)) {
+      memo.set(
+        key,
+        text1[i] === text2[j]
+          ? best(i + 1, j + 1) + 1
+          : Math.max(best(i + 1, j), best(i, j + 1)),
+      );
+    }
+    return memo.get(key)!;
+  };
+
+  return best(0, 0);
+}"),
+    ],
+    check: Check(
+      signature: "export function longestCommonSubsequence(text1: string, text2: string): number",
+      starter: "export function longestCommonSubsequence(text1: string, text2: string): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.longestCommonSubsequence !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"longestCommonSubsequence('abcde', 'ace')\", show(3), show(solution.longestCommonSubsequence('abcde', 'ace'))],
+    [\"longestCommonSubsequence('abc', 'abc')\", show(3), show(solution.longestCommonSubsequence('abc', 'abc'))],
+    [\"longestCommonSubsequence('abc', 'def')\", show(0), show(solution.longestCommonSubsequence('abc', 'def'))],
+    [\"longestCommonSubsequence('', 'abc')\", show(0), show(solution.longestCommonSubsequence('', 'abc'))],
+    [\"longestCommonSubsequence('bsbininm', 'jmjkbkjkv')\", show(1), show(solution.longestCommonSubsequence('bsbininm', 'jmjkbkjkv'))],
+    [\"longestCommonSubsequence('ezupkr', 'ubmrapg')\", show(2), show(solution.longestCommonSubsequence('ezupkr', 'ubmrapg'))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc94_coin_change_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Combinations, not permutations, and that is decided entirely by the loop order. Coins on the outside means each coin is considered once and for all before the next is looked at, so 1+2 and 2+1 can never both be counted. Swapping the two loops silently counts orderings instead — the single most instructive bug in this problem.", "export function change(amount: number, coins: number[]): number {
+  // Combinations, not permutations -- which is entirely decided by the loop
+  // order. Coins on the outside means each coin is considered once and for all
+  // before the next is looked at, so 1+2 and 2+1 can never both be counted.
+  // Swapping the loops would count orderings instead.
+  const ways = new Array<number>(amount + 1).fill(0);
+  ways[0] = 1;
+
+  for (const coin of coins) {
+    if (coin <= 0) continue;
+    for (let target = coin; target <= amount; target++) ways[target] += ways[target - coin];
+  }
+
+  return ways[amount];
+}"),
+      #("Solution 2 · By coin recursion", "The same rule stated as a choice rather than a loop order: use this coin again, or set it aside for good. Setting it aside permanently is what fixes one order per combination — the identical constraint the outer loop encodes, made visible.", "export function change(amount: number, coins: number[]): number {
+  const usable = coins.filter((coin) => coin > 0);
+  const memo = new Map<string, number>();
+
+  // The same \"combinations not permutations\" rule stated as a choice instead of
+  // a loop order: either use this coin again, or set it aside for good. Setting
+  // it aside permanently is what fixes one order per combination.
+  const ways = (index: number, remaining: number): number => {
+    if (remaining === 0) return 1;
+    if (index >= usable.length) return 0;
+    const key = `${index},${remaining}`;
+    if (!memo.has(key)) {
+      const using = usable[index] <= remaining ? ways(index, remaining - usable[index]) : 0;
+      memo.set(key, using + ways(index + 1, remaining));
+    }
+    return memo.get(key)!;
+  };
+
+  return ways(0, amount);
+}"),
+    ],
+    check: Check(
+      signature: "export function change(amount: number, coins: number[]): number",
+      starter: "export function change(amount: number, coins: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.change !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"change(5, [1, 2, 5])\", show(4), show(solution.change(5, [1, 2, 5]))],
+    [\"change(3, [2])\", show(0), show(solution.change(3, [2]))],
+    [\"change(10, [10])\", show(1), show(solution.change(10, [10]))],
+    [\"change(0, [1])\", show(1), show(solution.change(0, [1]))],
+    [\"change(5, [])\", show(0), show(solution.change(5, []))],
+    [\"change(11, [1, 2, 5])\", show(11), show(solution.change(11, [1, 2, 5]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc95_target_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The only state that matters is the running total, not which signs produced it. Carrying a map from reachable total to how many ways reach it means different sign choices landing on the same total merge — which is exactly what turns an exponential search into a polynomial one.", "export function findTargetSumWays(nums: number[], target: number): number {
+  // The state that matters is only the running total, not which signs produced
+  // it -- so carry a map from reachable total to how many ways reach it, and
+  // widen it by each number twice, once added and once subtracted. Different
+  // sign choices landing on the same total merge, which is what stops the count
+  // being exponential in work.
+  let totals = new Map<number, number>([[0, 1]]);
+
+  for (const n of nums) {
+    const following = new Map<number, number>();
+    for (const [total, count] of totals) {
+      following.set(total + n, (following.get(total + n) ?? 0) + count);
+      following.set(total - n, (following.get(total - n) ?? 0) + count);
+    }
+    totals = following;
+  }
+
+  return totals.get(target) ?? 0;
+}"),
+      #("Solution 2 · As subset sum", "Rewrite the problem. If P is the set given a plus and N the set given a minus then P − N = target and P + N = total, so P = (total + target)/2. A sign-assignment question becomes \"how many subsets sum to a fixed value\" — a knapsack, with no negative totals to track at all. Reformulating rather than optimising is the move.", "export function findTargetSumWays(nums: number[], target: number): number {
+  // Rewrite the problem. If P is the set given a plus and N the set given a
+  // minus, then P - N = target and P + N = total, so P = (total + target) / 2.
+  // That turns a sign-assignment question into \"how many subsets sum to a fixed
+  // value\" -- a knapsack, with no negative totals to track at all.
+  const total = nums.reduce((a, b) => a + b, 0);
+  const wanted = total + target;
+  if (wanted < 0 || wanted % 2 !== 0 || total < Math.abs(target)) return 0;
+
+  const goal = wanted / 2;
+  let counts = new Map<number, number>([[0, 1]]);
+
+  for (const n of nums) {
+    const following = new Map(counts);
+    for (const [reached, ways] of counts) {
+      if (reached + n <= goal) {
+        following.set(reached + n, (following.get(reached + n) ?? 0) + ways);
+      }
+    }
+    counts = following;
+  }
+
+  return counts.get(goal) ?? 0;
+}"),
+    ],
+    check: Check(
+      signature: "export function findTargetSumWays(nums: number[], target: number): number",
+      starter: "export function findTargetSumWays(nums: number[], target: number): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.findTargetSumWays !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"findTargetSumWays([1, 1, 1, 1, 1], 3)\", show(5), show(solution.findTargetSumWays([1, 1, 1, 1, 1], 3))],
+    [\"findTargetSumWays([1], 1)\", show(1), show(solution.findTargetSumWays([1], 1))],
+    [\"findTargetSumWays([1], 2)\", show(0), show(solution.findTargetSumWays([1], 2))],
+    [\"findTargetSumWays([0, 0, 0, 0, 0], 0)\", show(32), show(solution.findTargetSumWays([0, 0, 0, 0, 0], 0))],
+    [\"findTargetSumWays([], 0)\", show(1), show(solution.findTargetSumWays([], 0))],
+    [\"findTargetSumWays([1, 2, 3, 4, 5], 3)\", show(3), show(solution.findTargetSumWays([1, 2, 3, 4, 5], 3))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc96_stock_with_cooldown() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Three states rather than one number: holding, just sold (so today is the cooldown), and free to act. Each day depends only on yesterday, so it is three rolling values — and the cooldown is expressed simply by \"free\" never reading \"sold\" from the same day. Naming the states is most of the work.", "export function maxProfit(prices: number[]): number {
+  // Three states rather than one number: holding a share, having just sold (so
+  // today is the cooldown), and free to act. Each day's states depend only on
+  // yesterday's, so the whole thing is three rolling values -- and the cooldown
+  // is expressed simply by \"free\" never reading \"sold\" from the same day.
+  let hold = -Infinity;
+  let sold = -Infinity;
+  let rest = 0;
+
+  for (const price of prices) {
+    [hold, sold, rest] = [Math.max(hold, rest - price), hold + price, Math.max(rest, sold)];
+  }
+
+  return Math.max(sold, rest, 0);
+}"),
+      #("Solution 2 · Memoised", "The same three states as an explicit choice each day: buy, sell, or do nothing. After selling the recursion skips a day, which puts the cooldown where it actually happens rather than encoding it in which value gets read.", "export function maxProfit(prices: number[]): number {
+  const memo = new Map<string, number>();
+
+  // The same three states as an explicit choice at each day: buy, sell, or do
+  // nothing. After selling the recursion skips a day, which is the cooldown
+  // stated where it happens rather than encoded in which value is read.
+  const best = (day: number, holding: boolean): number => {
+    if (day >= prices.length) return 0;
+    const key = `${day},${holding}`;
+    if (!memo.has(key)) {
+      const waiting = best(day + 1, holding);
+      const acting = holding
+        ? prices[day] + best(day + 2, false)
+        : best(day + 1, true) - prices[day];
+      memo.set(key, Math.max(waiting, acting));
+    }
+    return memo.get(key)!;
+  };
+
+  return best(0, false);
+}"),
+    ],
+    check: Check(
+      signature: "export function maxProfit(prices: number[]): number",
+      starter: "export function maxProfit(prices: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.maxProfit !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"maxProfit([1, 2, 3, 0, 2])\", show(3), show(solution.maxProfit([1, 2, 3, 0, 2]))],
+    [\"maxProfit([1])\", show(0), show(solution.maxProfit([1]))],
+    [\"maxProfit([])\", show(0), show(solution.maxProfit([]))],
+    [\"maxProfit([2, 1])\", show(0), show(solution.maxProfit([2, 1]))],
+    [\"maxProfit([1, 2, 3, 4, 5])\", show(4), show(solution.maxProfit([1, 2, 3, 4, 5]))],
+    [\"maxProfit([6, 1, 3, 2, 4, 7])\", show(6), show(solution.maxProfit([6, 1, 3, 2, 4, 7]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc97_interleaving_string() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "How much of each source has been used is the entire state — the position in the target is their sum, so it never has to be tracked. That collapse from three indices to two is what makes the table two-dimensional, and spotting it is the problem.", "export function isInterleave(s1: string, s2: string, s3: string): boolean {
+  if (s1.length + s2.length !== s3.length) return false;
+
+  const memo = new Map<string, boolean>();
+
+  // How much of each source has been used is the entire state -- the position
+  // in the target is their sum, so it never has to be tracked. That collapse
+  // from three indices to two is what makes the table two-dimensional.
+  const works = (i: number, j: number): boolean => {
+    if (i === s1.length && j === s2.length) return true;
+    const key = `${i},${j}`;
+    if (!memo.has(key)) {
+      const target = s3[i + j];
+      memo.set(
+        key,
+        (i < s1.length && s1[i] === target && works(i + 1, j)) ||
+          (j < s2.length && s2[j] === target && works(i, j + 1)),
+      );
+    }
+    return memo.get(key)!;
+  };
+
+  return works(0, 0);
+}"),
+      #("Solution 2 · Rolling row", "Bottom-up over the same two-index state. Row i says which prefixes of s2 pair with the first i characters of s1, and each row depends only on the one above and itself to the left, so a single row suffices. Note the length check first: without it the recursion can succeed on a target that is too short.", "export function isInterleave(s1: string, s2: string, s3: string): boolean {
+  if (s1.length + s2.length !== s3.length) return false;
+
+  // Bottom-up over the same two-index state. Row i says which prefixes of s2
+  // can pair with the first i characters of s1; each row depends only on the
+  // one above and on itself to the left, so one row suffices.
+  const row = new Array<boolean>(s2.length + 1).fill(false);
+  row[0] = true;
+  for (let j = 1; j <= s2.length; j++) row[j] = row[j - 1] && s2[j - 1] === s3[j - 1];
+
+  for (let i = 1; i <= s1.length; i++) {
+    row[0] = row[0] && s1[i - 1] === s3[i - 1];
+    for (let j = 1; j <= s2.length; j++) {
+      const target = s3[i + j - 1];
+      row[j] = (row[j] && s1[i - 1] === target) || (row[j - 1] && s2[j - 1] === target);
+    }
+  }
+
+  return row[s2.length];
+}"),
+    ],
+    check: Check(
+      signature: "export function isInterleave(s1: string, s2: string, s3: string): boolean",
+      starter: "export function isInterleave(s1: string, s2: string, s3: string): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.isInterleave !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"isInterleave('aabcc', 'dbbca', 'aadbbcbcac')\", show(true), show(solution.isInterleave('aabcc', 'dbbca', 'aadbbcbcac'))],
+    [\"isInterleave('aabcc', 'dbbca', 'aadbbbaccc')\", show(false), show(solution.isInterleave('aabcc', 'dbbca', 'aadbbbaccc'))],
+    [\"isInterleave('', '', '')\", show(true), show(solution.isInterleave('', '', ''))],
+    [\"isInterleave('a', '', 'a')\", show(true), show(solution.isInterleave('a', '', 'a'))],
+    [\"isInterleave('', 'b', 'b')\", show(true), show(solution.isInterleave('', 'b', 'b'))],
+    [\"isInterleave('abc', 'def', 'adbecf')\", show(true), show(solution.isInterleave('abc', 'def', 'adbecf'))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc98_longest_increasing_path() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Strictly increasing means the moves can never form a cycle, so the grid is a directed acyclic graph and the longest path from each square is well-defined. That is what makes caching sound — with cycles, a memo on an in-progress square would be reading an answer that does not exist yet.", "export function longestIncreasingPath(matrix: number[][]): number {
+  if (matrix.length === 0 || matrix[0].length === 0) return 0;
+
+  const memo = new Map<string, number>();
+
+  // Strictly increasing means the moves can never form a cycle -- the grid is a
+  // directed acyclic graph -- so the longest path from each square is
+  // well-defined and can simply be cached. Without that guarantee memoisation
+  // would be unsound, which is the fact the problem is really testing.
+  const longest = (r: number, c: number): number => {
+    const key = `${r},${c}`;
+    if (!memo.has(key)) {
+      let best = 1;
+      for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nr = r + dr;
+        const nc = c + dc;
+        if (nr >= 0 && nr < matrix.length && nc >= 0 && nc < matrix[0].length) {
+          if (matrix[nr][nc] > matrix[r][c]) best = Math.max(best, 1 + longest(nr, nc));
+        }
+      }
+      memo.set(key, best);
+    }
+    return memo.get(key)!;
+  };
+
+  let best = 0;
+  for (let r = 0; r < matrix.length; r++) {
+    for (let c = 0; c < matrix[0].length; c++) best = Math.max(best, longest(r, c));
+  }
+  return best;
+}"),
+      #("Solution 2 · By value order", "The same acyclicity used the other way round: walk the squares from largest value to smallest and everything a square can move to is already settled. Sorting by value *is* a topological order, so the graph never has to be built.", "export function longestIncreasingPath(matrix: number[][]): number {
+  if (matrix.length === 0 || matrix[0].length === 0) return 0;
+
+  // The same acyclicity used the other way round: process the squares from
+  // largest value to smallest, and by the time a square is reached every square
+  // it can move to has already been settled. A topological order without ever
+  // building the graph -- sorting by value *is* the order.
+  const cells: [number, number, number][] = [];
+  for (let r = 0; r < matrix.length; r++) {
+    for (let c = 0; c < matrix[0].length; c++) cells.push([matrix[r][c], r, c]);
+  }
+  cells.sort((a, b) => b[0] - a[0]);
+
+  const lengths = new Map<string, number>();
+  let best = 0;
+
+  for (const [value, r, c] of cells) {
+    let here = 1;
+    for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nr = r + dr;
+      const nc = c + dc;
+      if (nr >= 0 && nr < matrix.length && nc >= 0 && nc < matrix[0].length) {
+        if (matrix[nr][nc] > value) here = Math.max(here, 1 + lengths.get(`${nr},${nc}`)!);
+      }
+    }
+    lengths.set(`${r},${c}`, here);
+    best = Math.max(best, here);
+  }
+
+  return best;
+}"),
+    ],
+    check: Check(
+      signature: "export function longestIncreasingPath(matrix: number[][]): number",
+      starter: "export function longestIncreasingPath(matrix: number[][]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.longestIncreasingPath !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"longestIncreasingPath([[9, 9, 4], [6, 6, 8], [2, 1, 1]])\", show(4), show(solution.longestIncreasingPath([[9, 9, 4], [6, 6, 8], [2, 1, 1]]))],
+    [\"longestIncreasingPath([[3, 4, 5], [3, 2, 6], [2, 2, 1]])\", show(4), show(solution.longestIncreasingPath([[3, 4, 5], [3, 2, 6], [2, 2, 1]]))],
+    [\"longestIncreasingPath([[1]])\", show(1), show(solution.longestIncreasingPath([[1]]))],
+    [\"longestIncreasingPath([])\", show(0), show(solution.longestIncreasingPath([]))],
+    [\"longestIncreasingPath([[1, 2], [3, 4]])\", show(3), show(solution.longestIncreasingPath([[1, 2], [3, 4]]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc99_distinct_subsequences() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Row j counts the ways to build the first j characters of the target from the source seen so far, and a new source character extends a count at j−1 into one at j when it matches. In a mutable array the row must be swept right to left, or one source character gets used twice; building a fresh row removes the hazard entirely.", "export function numDistinct(s: string, t: string): number {
+  // Row j counts the ways to build the first j characters of t out of the
+  // source seen so far. A new source character can extend a count at j-1 into
+  // one at j, but only if it matches t[j-1].
+  //
+  // The row must be swept right to left: left to right, an update at j-1 feeds
+  // straight into j and the same source character gets used twice.
+  const row = new Array<number>(t.length + 1).fill(0);
+  row[0] = 1;
+
+  for (const c of s) {
+    for (let j = t.length; j >= 1; j--) {
+      if (c === t[j - 1]) row[j] += row[j - 1];
+    }
+  }
+
+  return row[t.length];
+}"),
+      #("Solution 2 · Memoised", "The choice written out: on a match, use this source character or skip it; otherwise skip. Running out of target is one complete subsequence, which is why the base case returns 1 and not 0 — the usual place this one goes wrong.", "export function numDistinct(s: string, t: string): number {
+  const memo = new Map<string, number>();
+
+  // The choice written out: when the characters match, either use this source
+  // character for this target character or skip it; when they do not, skipping
+  // is the only option. Running out of target is one complete subsequence,
+  // which is why the base case is 1 rather than 0.
+  const ways = (i: number, j: number): number => {
+    if (j >= t.length) return 1;
+    if (i >= s.length) return 0;
+    const key = `${i},${j}`;
+    if (!memo.has(key)) {
+      let total = ways(i + 1, j);
+      if (s[i] === t[j]) total += ways(i + 1, j + 1);
+      memo.set(key, total);
+    }
+    return memo.get(key)!;
+  };
+
+  return ways(0, 0);
+}"),
+    ],
+    check: Check(
+      signature: "export function numDistinct(s: string, t: string): number",
+      starter: "export function numDistinct(s: string, t: string): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.numDistinct !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"numDistinct('rabbbit', 'rabbit')\", show(3), show(solution.numDistinct('rabbbit', 'rabbit'))],
+    [\"numDistinct('babgbag', 'bag')\", show(5), show(solution.numDistinct('babgbag', 'bag'))],
+    [\"numDistinct('', 'a')\", show(0), show(solution.numDistinct('', 'a'))],
+    [\"numDistinct('a', '')\", show(1), show(solution.numDistinct('a', ''))],
+    [\"numDistinct('abc', 'abc')\", show(1), show(solution.numDistinct('abc', 'abc'))],
+    [\"numDistinct('aaa', 'aa')\", show(3), show(solution.numDistinct('aaa', 'aa'))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -6014,6 +6785,9 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc07_longest_consecutive" -> Ok(nc07_longest_consecutive())
     "nc08_valid_palindrome" -> Ok(nc08_valid_palindrome())
     "nc09_two_sum_sorted" -> Ok(nc09_two_sum_sorted())
+    "nc100_edit_distance" -> Ok(nc100_edit_distance())
+    "nc101_burst_balloons" -> Ok(nc101_burst_balloons())
+    "nc102_regular_expression_matching" -> Ok(nc102_regular_expression_matching())
     "nc10_three_sum" -> Ok(nc10_three_sum())
     "nc11_container_water" -> Ok(nc11_container_water())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
@@ -6096,6 +6870,14 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc89_palindrome_partitioning" -> Ok(nc89_palindrome_partitioning())
     "nc90_letter_combinations" -> Ok(nc90_letter_combinations())
     "nc91_n_queens" -> Ok(nc91_n_queens())
+    "nc92_unique_paths" -> Ok(nc92_unique_paths())
+    "nc93_longest_common_subsequence" -> Ok(nc93_longest_common_subsequence())
+    "nc94_coin_change_ii" -> Ok(nc94_coin_change_ii())
+    "nc95_target_sum" -> Ok(nc95_target_sum())
+    "nc96_stock_with_cooldown" -> Ok(nc96_stock_with_cooldown())
+    "nc97_interleaving_string" -> Ok(nc97_interleaving_string())
+    "nc98_longest_increasing_path" -> Ok(nc98_longest_increasing_path())
+    "nc99_distinct_subsequences" -> Ok(nc99_distinct_subsequences())
     _ -> Error(Nil)
   }
 }

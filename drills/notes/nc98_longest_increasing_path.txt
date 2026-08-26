@@ -1,0 +1,1 @@
+Strictly increasing means the moves can never form a cycle, so the grid is a directed acyclic graph and the longest path from each square is well-defined. That is what makes caching sound — with cycles, a memo on an in-progress square would be reading an answer that does not exist yet.

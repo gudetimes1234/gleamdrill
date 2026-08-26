@@ -1,0 +1,1 @@
+The only state that matters is the running total, not which signs produced it. Carrying a map from reachable total to how many ways reach it means different sign choices landing on the same total merge — which is exactly what turns an exponential search into a polynomial one.
