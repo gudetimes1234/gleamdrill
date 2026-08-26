@@ -1332,6 +1332,565 @@ pub fn run() -> List(#(String, String, String)) {
   )
 }
 
+pub fn nc103_implement_trie() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One node per prefix, with a flag marking which prefixes are whole words. That flag is the entire difference between search and startsWith — without it, \"app\" and \"apple\" are indistinguishable once both are stored. The other detail worth keeping: the empty prefix always exists, because the root does.", "import gleam/dict.{type Dict}
+import gleam/result
+import gleam/string
+
+pub type Trie {
+  /// One node per prefix; `terminal` marks the prefixes that are whole words.
+  /// Without that flag \"app\" and \"apple\" are indistinguishable once both are
+  /// stored, which is the entire difference between search and starts_with.
+  Trie(children: Dict(String, Trie), terminal: Bool)
+}
+
+pub fn new() -> Trie {
+  Trie(dict.new(), False)
+}
+
+pub fn insert(trie: Trie, word: String) -> Trie {
+  add(trie, string.to_graphemes(word))
+}
+
+pub fn search(trie: Trie, word: String) -> Bool {
+  case walk(trie, string.to_graphemes(word)) {
+    Ok(node) -> node.terminal
+    Error(Nil) -> False
+  }
+}
+
+pub fn starts_with(trie: Trie, prefix: String) -> Bool {
+  case walk(trie, string.to_graphemes(prefix)) {
+    Ok(_) -> True
+    Error(Nil) -> False
+  }
+}
+
+fn add(trie: Trie, letters: List(String)) -> Trie {
+  case letters {
+    [] -> Trie(trie.children, True)
+    [first, ..rest] -> {
+      let child = result.unwrap(dict.get(trie.children, first), new())
+      Trie(dict.insert(trie.children, first, add(child, rest)), trie.terminal)
+    }
+  }
+}
+
+fn walk(trie: Trie, letters: List(String)) -> Result(Trie, Nil) {
+  case letters {
+    [] -> Ok(trie)
+    [first, ..rest] ->
+      case dict.get(trie.children, first) {
+        Ok(child) -> walk(child, rest)
+        Error(Nil) -> Error(Nil)
+      }
+  }
+}"),
+      #("Solution 2 · Prefix set", "Two sets — the whole words, and every prefix of every word — and both questions answer in one lookup. Correct and shorter, at the cost of storing O(total letters) strings rather than sharing them. That shared storage is precisely what a trie is for, so this is the version that shows what is being bought.", "import gleam/list
+import gleam/set.{type Set}
+import gleam/string
+
+pub type Trie {
+  /// Two sets: the whole words, and every prefix of every word. Both questions
+  /// then answer in one lookup, at the cost of storing O(total letters) strings
+  /// rather than sharing them \\u{2014} which is precisely the memory a trie exists
+  /// to save.
+  Trie(words: Set(String), prefixes: Set(String))
+}
+
+/// The empty prefix is present from the start: it is the root, which a real
+/// trie has whether or not anything has been inserted.
+pub fn new() -> Trie {
+  Trie(set.new(), set.from_list([\"\"]))
+}
+
+pub fn insert(trie: Trie, word: String) -> Trie {
+  Trie(
+    set.insert(trie.words, word),
+    list.fold(prefixes(word), trie.prefixes, set.insert),
+  )
+}
+
+pub fn search(trie: Trie, word: String) -> Bool {
+  set.contains(trie.words, word)
+}
+
+pub fn starts_with(trie: Trie, prefix: String) -> Bool {
+  set.contains(trie.prefixes, prefix)
+}
+
+fn prefixes(word: String) -> List(String) {
+  list.repeat(Nil, string.length(word) + 1)
+  |> list.index_map(fn(_, size) { string.slice(word, 0, size) })
+}"),
+    ],
+    check: Check(
+      signature: "pub type Trie {
+  /// One node per prefix; `terminal` marks the prefixes that are whole words.
+  /// Without that flag \"app\" and \"apple\" are indistinguishable once both are
+  /// stored, which is the entire difference between search and starts_with.
+  Trie(children: Dict(String, Trie), terminal: Bool)
+}
+
+pub fn new() -> Trie
+
+pub fn insert(trie: Trie, word: String) -> Trie
+
+pub fn search(trie: Trie, word: String) -> Bool
+
+pub fn starts_with(trie: Trie, prefix: String) -> Bool",
+      starter: "pub type Trie {
+  /// One node per prefix; `terminal` marks the prefixes that are whole words.
+  /// Without that flag \"app\" and \"apple\" are indistinguishable once both are
+  /// stored, which is the entire difference between search and starts_with.
+  Trie(children: Dict(String, Trie), terminal: Bool)
+}
+
+pub fn new() -> Trie {
+  todo
+}
+
+pub fn insert(trie: Trie, word: String) -> Trie {
+  todo
+}
+
+pub fn search(trie: Trie, word: String) -> Bool {
+  todo
+}
+
+pub fn starts_with(trie: Trie, prefix: String) -> Bool {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  let one = solution.insert(solution.new(), \"apple\")
+  let two = solution.insert(one, \"app\")
+
+  [
+    #(
+      \"search(\\\"apple\\\") after inserting it\",
+      string.inspect(True),
+      string.inspect(solution.search(one, \"apple\")),
+    ),
+    #(
+      \"search(\\\"app\\\") \\u{2014} a prefix, not a word\",
+      string.inspect(False),
+      string.inspect(solution.search(one, \"app\")),
+    ),
+    #(
+      \"starts_with(\\\"app\\\")\",
+      string.inspect(True),
+      string.inspect(solution.starts_with(one, \"app\")),
+    ),
+    #(
+      \"search(\\\"app\\\") after inserting it too\",
+      string.inspect(True),
+      string.inspect(solution.search(two, \"app\")),
+    ),
+    #(
+      \"search(\\\"\\\") on an empty trie\",
+      string.inspect(False),
+      string.inspect(solution.search(solution.new(), \"\")),
+    ),
+    #(
+      \"starts_with(\\\"\\\") on an empty trie\",
+      string.inspect(True),
+      string.inspect(solution.starts_with(solution.new(), \"\")),
+    ),
+    #(
+      \"starts_with(\\\"apz\\\")\",
+      string.inspect(False),
+      string.inspect(solution.starts_with(two, \"apz\")),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc104_word_dictionary() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A dot has to try every child, which turns the lookup from a walk into a search. The trie is what keeps that search from being over the whole dictionary: a branch that cannot match is abandoned at the first letter, so shared prefixes are explored once rather than once per word.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/string
+
+pub type WordDictionary {
+  WordDictionary(children: Dict(String, WordDictionary), terminal: Bool)
+}
+
+pub fn new() -> WordDictionary {
+  WordDictionary(dict.new(), False)
+}
+
+pub fn add_word(store: WordDictionary, word: String) -> WordDictionary {
+  add(store, string.to_graphemes(word))
+}
+
+/// A dot has to try every child, which turns the lookup from a walk into a
+/// search \\u{2014} the trie is what keeps that search from being over every word,
+/// because a branch that cannot match is abandoned at the first letter.
+pub fn search(store: WordDictionary, word: String) -> Bool {
+  matches(store, string.to_graphemes(word))
+}
+
+fn add(store: WordDictionary, letters: List(String)) -> WordDictionary {
+  case letters {
+    [] -> WordDictionary(store.children, True)
+    [first, ..rest] -> {
+      let child = result.unwrap(dict.get(store.children, first), new())
+      WordDictionary(
+        dict.insert(store.children, first, add(child, rest)),
+        store.terminal,
+      )
+    }
+  }
+}
+
+fn matches(store: WordDictionary, letters: List(String)) -> Bool {
+  case letters {
+    [] -> store.terminal
+    [\".\", ..rest] ->
+      list.any(dict.values(store.children), fn(child) { matches(child, rest) })
+    [first, ..rest] ->
+      case dict.get(store.children, first) {
+        Ok(child) -> matches(child, rest)
+        Error(Nil) -> False
+      }
+  }
+}"),
+      #("Solution 2 · By length", "Bucket the words by length and compare position by position. A pattern can only match words of its own length, so that one check throws away most of the collection before any character is compared — often enough on its own, and it needs no tree at all.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/string
+
+pub type WordDictionary {
+  /// Words bucketed by length. A pattern can only match words of its own
+  /// length, so that one check throws away most of the collection before any
+  /// character is compared.
+  WordDictionary(by_length: Dict(Int, List(String)))
+}
+
+pub fn new() -> WordDictionary {
+  WordDictionary(dict.new())
+}
+
+pub fn add_word(store: WordDictionary, word: String) -> WordDictionary {
+  let size = string.length(word)
+  let bucket = result.unwrap(dict.get(store.by_length, size), [])
+  WordDictionary(dict.insert(store.by_length, size, [word, ..bucket]))
+}
+
+/// No shared prefixes, so every candidate of the right length is compared
+/// position by position. Slower than the trie on a large dictionary, and it
+/// needs no tree \\u{2014} which is the trade the trie is making.
+pub fn search(store: WordDictionary, word: String) -> Bool {
+  let pattern = string.to_graphemes(word)
+
+  store.by_length
+  |> dict.get(string.length(word))
+  |> result.unwrap([])
+  |> list.any(fn(candidate) {
+    list.zip(pattern, string.to_graphemes(candidate))
+    |> list.all(fn(pair: #(String, String)) {
+      pair.0 == \".\" || pair.0 == pair.1
+    })
+  })
+}"),
+    ],
+    check: Check(
+      signature: "pub type WordDictionary {
+  WordDictionary(children: Dict(String, WordDictionary), terminal: Bool)
+}
+
+pub fn new() -> WordDictionary
+
+pub fn add_word(store: WordDictionary, word: String) -> WordDictionary
+
+pub fn search(store: WordDictionary, word: String) -> Bool",
+      starter: "pub type WordDictionary {
+  WordDictionary(children: Dict(String, WordDictionary), terminal: Bool)
+}
+
+pub fn new() -> WordDictionary {
+  todo
+}
+
+pub fn add_word(store: WordDictionary, word: String) -> WordDictionary {
+  todo
+}
+
+pub fn search(store: WordDictionary, word: String) -> Bool {
+  todo
+}",
+      harness: "import gleam/list
+import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  let store =
+    list.fold([\"bad\", \"dad\", \"mad\"], solution.new(), solution.add_word)
+
+  [
+    #(
+      \"search(\\\"pad\\\")\",
+      string.inspect(False),
+      string.inspect(solution.search(store, \"pad\")),
+    ),
+    #(
+      \"search(\\\"bad\\\")\",
+      string.inspect(True),
+      string.inspect(solution.search(store, \"bad\")),
+    ),
+    #(
+      \"search(\\\".ad\\\")\",
+      string.inspect(True),
+      string.inspect(solution.search(store, \".ad\")),
+    ),
+    #(
+      \"search(\\\"b..\\\")\",
+      string.inspect(True),
+      string.inspect(solution.search(store, \"b..\")),
+    ),
+    #(
+      \"search(\\\"...\\\")\",
+      string.inspect(True),
+      string.inspect(solution.search(store, \"...\")),
+    ),
+    #(
+      \"search(\\\"b\\\") \\u{2014} too short\",
+      string.inspect(False),
+      string.inspect(solution.search(store, \"b\")),
+    ),
+    #(
+      \"search(\\\"....\\\") \\u{2014} too long\",
+      string.inspect(False),
+      string.inspect(solution.search(store, \"....\")),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc105_word_search_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Build one trie of all the words and walk it *alongside* the board. Searching for each word separately re-walks every shared prefix once per word; the trie walks each prefix once and abandons a square the moment no word continues that way. That is where nearly all the saving is, and it is the reason this problem exists rather than being Word Search in a loop.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/set.{type Set}
+import gleam/string
+
+type Trie {
+  Trie(children: Dict(String, Trie), word: String)
+}
+
+pub fn find_words(
+  board: List(List(String)),
+  words: List(String),
+) -> List(String) {
+  let grid =
+    board
+    |> list.index_map(fn(row, r) {
+      list.index_map(row, fn(value, c) { #(#(r, c), value) })
+    })
+    |> list.flatten
+    |> dict.from_list
+
+  // One trie of all the words, walked *alongside* the board. Searching for each
+  // word separately re-walks every shared prefix once per word; the trie walks
+  // each prefix once and abandons a square the moment no word continues that
+  // way, which is where nearly all the saving is.
+  let trie = list.fold(words, Trie(dict.new(), \"\"), add)
+
+  dict.keys(grid)
+  |> list.fold(set.new(), fn(found, at) {
+    walk(grid, at, trie, set.new(), found)
+  })
+  |> set.to_list
+}
+
+fn add(trie: Trie, word: String) -> Trie {
+  insert(trie, string.to_graphemes(word), word)
+}
+
+fn insert(trie: Trie, letters: List(String), word: String) -> Trie {
+  case letters {
+    [] -> Trie(trie.children, word)
+    [first, ..rest] -> {
+      let child =
+        result.unwrap(dict.get(trie.children, first), Trie(dict.new(), \"\"))
+      Trie(
+        dict.insert(trie.children, first, insert(child, rest, word)),
+        trie.word,
+      )
+    }
+  }
+}
+
+fn walk(
+  grid: Dict(#(Int, Int), String),
+  at: #(Int, Int),
+  trie: Trie,
+  used: Set(#(Int, Int)),
+  found: Set(String),
+) -> Set(String) {
+  case set.contains(used, at), dict.get(grid, at) {
+    True, _ -> found
+    _, Error(Nil) -> found
+    _, Ok(letter) ->
+      case dict.get(trie.children, letter) {
+        Error(Nil) -> found
+        Ok(child) -> {
+          let found = case child.word {
+            \"\" -> found
+            word -> set.insert(found, word)
+          }
+          let used = set.insert(used, at)
+          list.fold(neighbours(at), found, fn(found, next) {
+            walk(grid, next, child, used, found)
+          })
+        }
+      }
+  }
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  let #(r, c) = at
+  [#(r - 1, c), #(r + 1, c), #(r, c - 1), #(r, c + 1)]
+}"),
+      #("Solution 2 · Each word", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Word Search, once per word. Correct, and it redoes the search for every shared prefix — a hundred words beginning \"ab\" each re-walk that \"ab\" from every square. Worth writing to feel the repetition the trie removes.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/set.{type Set}
+import gleam/string
+
+pub fn find_words(
+  board: List(List(String)),
+  words: List(String),
+) -> List(String) {
+  let grid =
+    board
+    |> list.index_map(fn(row, r) {
+      list.index_map(row, fn(value, c) { #(#(r, c), value) })
+    })
+    |> list.flatten
+    |> dict.from_list
+
+  // Word Search, once per word. Correct, and it redoes the search for every
+  // shared prefix: a hundred words beginning \"ab\" each re-walk that \"ab\" from
+  // every square. That repetition is exactly what the trie removes.
+  list.filter(words, fn(word) {
+    case string.to_graphemes(word) {
+      [] -> False
+      letters ->
+        list.any(dict.keys(grid), fn(at) {
+          exists(grid, at, letters, set.new())
+        })
+    }
+  })
+}
+
+fn exists(
+  grid: Dict(#(Int, Int), String),
+  at: #(Int, Int),
+  remaining: List(String),
+  used: Set(#(Int, Int)),
+) -> Bool {
+  case remaining {
+    [] -> True
+    [letter, ..rest] ->
+      case set.contains(used, at), dict.get(grid, at) {
+        True, _ -> False
+        _, Error(Nil) -> False
+        _, Ok(value) ->
+          case value == letter {
+            False -> False
+            True ->
+              case rest {
+                [] -> True
+                _ -> {
+                  let used = set.insert(used, at)
+                  list.any(neighbours(at), fn(next) {
+                    exists(grid, next, rest, used)
+                  })
+                }
+              }
+          }
+      }
+  }
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  let #(r, c) = at
+  [#(r - 1, c), #(r + 1, c), #(r, c - 1), #(r, c + 1)]
+}"),
+    ],
+    check: Check(
+      signature: "pub fn find_words(
+  board: List(List(String)),
+  words: List(String),
+) -> List(String)",
+      starter: "pub fn find_words(
+  board: List(List(String)),
+  words: List(String),
+) -> List(String) {
+  todo
+}",
+      harness: "import gleam/list
+import gleam/string
+import solution
+
+const rows = [\"oaan\", \"etae\", \"ihkr\", \"iflv\"]
+
+fn board() -> List(List(String)) {
+  list.map(rows, string.to_graphemes)
+}
+
+fn sorted(board: List(List(String)), words: List(String)) -> List(String) {
+  list.sort(solution.find_words(board, words), string.compare)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"find_words(board, [oath, pea, eat, rain])\",
+      string.inspect([\"eat\", \"oath\"]),
+      string.inspect(sorted(board(), [\"oath\", \"pea\", \"eat\", \"rain\"])),
+    ),
+    #(
+      \"find_words([[a, b], [c, d]], [abcb])\",
+      string.inspect([]),
+      string.inspect(sorted([[\"a\", \"b\"], [\"c\", \"d\"]], [\"abcb\"])),
+    ),
+    #(
+      \"find_words([[a]], [a])\",
+      string.inspect([\"a\"]),
+      string.inspect(sorted([[\"a\"]], [\"a\"])),
+    ),
+    #(
+      \"find_words(board, [])\",
+      string.inspect([]),
+      string.inspect(sorted(board(), [])),
+    ),
+    #(
+      \"find_words([], [a])\",
+      string.inspect([]),
+      string.inspect(sorted([], [\"a\"])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
 pub fn nc10_three_sum() -> Embedded {
   Embedded(
     solutions: [
@@ -12771,6 +13330,9 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc100_edit_distance" -> Ok(nc100_edit_distance())
     "nc101_burst_balloons" -> Ok(nc101_burst_balloons())
     "nc102_regular_expression_matching" -> Ok(nc102_regular_expression_matching())
+    "nc103_implement_trie" -> Ok(nc103_implement_trie())
+    "nc104_word_dictionary" -> Ok(nc104_word_dictionary())
+    "nc105_word_search_ii" -> Ok(nc105_word_search_ii())
     "nc10_three_sum" -> Ok(nc10_three_sum())
     "nc11_container_water" -> Ok(nc11_container_water())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())

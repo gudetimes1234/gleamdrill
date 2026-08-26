@@ -38,6 +38,12 @@ import nc101_burst_balloons
 import nc101_burst_balloons__bottom_up
 import nc102_regular_expression_matching
 import nc102_regular_expression_matching__no_cache
+import nc103_implement_trie
+import nc103_implement_trie__prefix_set
+import nc104_word_dictionary
+import nc104_word_dictionary__by_length
+import nc105_word_search_ii
+import nc105_word_search_ii__each_word
 import nc10_three_sum
 import nc10_three_sum__brute_force
 import nc11_container_water
@@ -566,6 +572,30 @@ pub fn main() {
     check_burst_balloons(nc101_burst_balloons__bottom_up.max_coins),
     check_regex_matching(nc102_regular_expression_matching.is_match),
     check_regex_matching(nc102_regular_expression_matching__no_cache.is_match),
+    check_trie(
+      nc103_implement_trie.new,
+      nc103_implement_trie.insert,
+      nc103_implement_trie.search,
+      nc103_implement_trie.starts_with,
+    ),
+    check_trie(
+      nc103_implement_trie__prefix_set.new,
+      nc103_implement_trie__prefix_set.insert,
+      nc103_implement_trie__prefix_set.search,
+      nc103_implement_trie__prefix_set.starts_with,
+    ),
+    check_word_dictionary(
+      nc104_word_dictionary.new,
+      nc104_word_dictionary.add_word,
+      nc104_word_dictionary.search,
+    ),
+    check_word_dictionary(
+      nc104_word_dictionary__by_length.new,
+      nc104_word_dictionary__by_length.add_word,
+      nc104_word_dictionary__by_length.search,
+    ),
+    check_word_search_ii(nc105_word_search_ii.find_words),
+    check_word_search_ii(nc105_word_search_ii__each_word.find_words),
 
     // Gleam Tips
     check_list_patterns(tip01_list_patterns.length, tip01_list_patterns.last),
@@ -1714,6 +1744,64 @@ fn check_regex_matching(f: fn(String, String) -> Bool) -> Nil {
   let assert True = f("", ".*")
   let assert True = f("", "")
   let assert True = f("abc", "abc")
+  Nil
+}
+
+/// Generic over the store type, so both variants can carry their own.
+fn check_trie(
+  new: fn() -> store,
+  insert: fn(store, String) -> store,
+  search: fn(store, String) -> Bool,
+  starts_with: fn(store, String) -> Bool,
+) -> Nil {
+  let one = insert(new(), "apple")
+  let assert True = search(one, "apple")
+  // A stored prefix is not a stored word until it is inserted in its own right
+  // \u{2014} which is the whole reason a node needs a terminal flag.
+  let assert False = search(one, "app")
+  let assert True = starts_with(one, "app")
+
+  let two = insert(one, "app")
+  let assert True = search(two, "app")
+  let assert False = starts_with(two, "apz")
+
+  let assert False = search(new(), "")
+  // Every trie starts with the empty prefix.
+  let assert True = starts_with(new(), "")
+  Nil
+}
+
+fn check_word_dictionary(
+  new: fn() -> store,
+  add: fn(store, String) -> store,
+  search: fn(store, String) -> Bool,
+) -> Nil {
+  let store = list.fold(["bad", "dad", "mad"], new(), add)
+
+  let assert False = search(store, "pad")
+  let assert True = search(store, "bad")
+  let assert True = search(store, ".ad")
+  let assert True = search(store, "b..")
+  let assert True = search(store, "...")
+  // Length has to match exactly: a dot stands for one character, not any run.
+  let assert False = search(store, "b")
+  let assert False = search(store, "....")
+  Nil
+}
+
+fn check_word_search_ii(
+  f: fn(List(List(String)), List(String)) -> List(String),
+) -> Nil {
+  let board = list.map(["oaan", "etae", "ihkr", "iflv"], string.to_graphemes)
+  let sorted = fn(board, words) { list.sort(f(board, words), string.compare) }
+
+  let assert True =
+    sorted(board, ["oath", "pea", "eat", "rain"]) == ["eat", "oath"]
+  // Would need to reuse the "b", so it is not found.
+  let assert True = sorted([["a", "b"], ["c", "d"]], ["abcb"]) == []
+  let assert True = sorted([["a"]], ["a"]) == ["a"]
+  let assert True = sorted(board, []) == []
+  let assert True = sorted([], ["a"]) == []
   Nil
 }
 

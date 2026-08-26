@@ -1,0 +1,2 @@
+@shared/brute-force-baseline
+Word Search, once per word. Correct, and it redoes the search for every shared prefix — a hundred words beginning "ab" each re-walk that "ab" from every square. Worth writing to feel the repetition the trie removes.

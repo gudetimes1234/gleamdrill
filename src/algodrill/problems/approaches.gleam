@@ -106,6 +106,16 @@ pub fn for_title(title: String) -> String {
     "Search in Rotated Sorted Array" ->
       "Binary search with a twist: after the rotation, one half around the midpoint is always sorted. Check which half is sorted, then use its endpoints to decide whether the target lies inside it \u{2014} recurse into that half or the other."
 
+    // Tries
+    "Implement Trie (Prefix Tree)" ->
+      "One node per prefix, with a flag marking which prefixes are whole words \u{2014} and that flag is the entire difference between search and startsWith. Storing every prefix in a set answers both questions too, in one lookup each, but stores O(total letters) of text rather than sharing it, which is exactly what the tree is for."
+
+    "Design Add and Search Words Data Structure" ->
+      "The dot is what makes this more than a trie lookup: it has to try every child, so the walk becomes a search. The trie earns its keep by abandoning a branch at the first letter that cannot match, so shared prefixes are explored once instead of once per word. Bucketing words by length is the cheap alternative \u{2014} a pattern can only match its own length."
+
+    "Word Search II" ->
+      "Do not run Word Search once per word: build one trie of all of them and walk it alongside the board. Every shared prefix is then explored once rather than once per word, and a square is abandoned the moment no word continues that way. That saving is the whole reason this problem is separate from Word Search."
+
     // 2-D Dynamic Programming
     "Unique Paths" ->
       "Only right and down moves, so the ways to reach a square are the ways to reach the one above plus the one to its left \u{2014} and only the previous row is ever needed, so one row of counters does. There is also no grid at all: every path is m\u{2212}1 downs and n\u{2212}1 rights in some order, so the count is a binomial coefficient."

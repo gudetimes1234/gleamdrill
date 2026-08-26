@@ -495,6 +495,217 @@ end"),
   ]
 }
 
+pub fn nc103_implement_trie() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "One node per prefix, with a flag marking which prefixes are whole words. That flag is the entire difference between search and startsWith — without it, \"app\" and \"apple\" are indistinguishable once both are stored. The other detail worth keeping: the empty prefix always exists, because the root does.", "defmodule Solution do
+  # One node per prefix; `terminal` marks the prefixes that are whole words.
+  # Without that flag \"app\" and \"apple\" are indistinguishable once both are
+  # stored, which is the entire difference between search and starts_with.
+  def new, do: %{children: %{}, terminal: false}
+
+  def insert(trie, word), do: add(trie, String.graphemes(word))
+
+  def search(trie, word) do
+    case walk(trie, String.graphemes(word)) do
+      nil -> false
+      node -> node.terminal
+    end
+  end
+
+  def starts_with(trie, prefix), do: walk(trie, String.graphemes(prefix)) != nil
+
+  defp add(trie, []), do: %{trie | terminal: true}
+
+  defp add(trie, [first | rest]) do
+    child = Map.get(trie.children, first, new())
+    %{trie | children: Map.put(trie.children, first, add(child, rest))}
+  end
+
+  defp walk(trie, []), do: trie
+
+  defp walk(trie, [first | rest]) do
+    case Map.fetch(trie.children, first) do
+      {:ok, child} -> walk(child, rest)
+      :error -> nil
+    end
+  end
+end"),
+    #("Solution 2 · Prefix set", "Two sets — the whole words, and every prefix of every word — and both questions answer in one lookup. Correct and shorter, at the cost of storing O(total letters) strings rather than sharing them. That shared storage is precisely what a trie is for, so this is the version that shows what is being bought.", "defmodule Solution do
+  # Two sets: the whole words, and every prefix of every word. Both questions
+  # then answer in one lookup, at the cost of storing O(total letters) strings
+  # rather than sharing them -- which is precisely the memory a trie exists to
+  # save. The empty prefix is present from the start: it is the root.
+  def new, do: %{words: MapSet.new(), prefixes: MapSet.new([\"\"])}
+
+  def insert(trie, word) do
+    prefixes =
+      Enum.reduce(0..String.length(word)//1, trie.prefixes, fn size, acc ->
+        MapSet.put(acc, String.slice(word, 0, size))
+      end)
+
+    %{words: MapSet.put(trie.words, word), prefixes: prefixes}
+  end
+
+  def search(trie, word), do: MapSet.member?(trie.words, word)
+
+  def starts_with(trie, prefix), do: MapSet.member?(trie.prefixes, prefix)
+end"),
+  ]
+}
+
+pub fn nc104_word_dictionary() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "A dot has to try every child, which turns the lookup from a walk into a search. The trie is what keeps that search from being over the whole dictionary: a branch that cannot match is abandoned at the first letter, so shared prefixes are explored once rather than once per word.", "defmodule Solution do
+  def new, do: %{children: %{}, terminal: false}
+
+  def add_word(store, word), do: add(store, String.graphemes(word))
+
+  # A dot has to try every child, which turns the lookup from a walk into a
+  # search -- the trie is what keeps that search from being over every word,
+  # because a branch that cannot match is abandoned at the first letter.
+  def search(store, word), do: matches(store, String.graphemes(word))
+
+  defp add(store, []), do: %{store | terminal: true}
+
+  defp add(store, [first | rest]) do
+    child = Map.get(store.children, first, new())
+    %{store | children: Map.put(store.children, first, add(child, rest))}
+  end
+
+  defp matches(store, []), do: store.terminal
+
+  defp matches(store, [\".\" | rest]) do
+    Enum.any?(Map.values(store.children), &matches(&1, rest))
+  end
+
+  defp matches(store, [first | rest]) do
+    case Map.fetch(store.children, first) do
+      {:ok, child} -> matches(child, rest)
+      :error -> false
+    end
+  end
+end"),
+    #("Solution 2 · By length", "Bucket the words by length and compare position by position. A pattern can only match words of its own length, so that one check throws away most of the collection before any character is compared — often enough on its own, and it needs no tree at all.", "defmodule Solution do
+  # Words bucketed by length. A pattern can only match words of its own length,
+  # so that one check throws away most of the collection before any character is
+  # compared.
+  def new, do: %{}
+
+  def add_word(store, word) do
+    Map.update(store, String.length(word), [word], &[word | &1])
+  end
+
+  # No shared prefixes, so every candidate of the right length is compared
+  # position by position. Slower than the trie on a large dictionary, and it
+  # needs no tree -- which is the trade the trie is making.
+  def search(store, word) do
+    pattern = String.graphemes(word)
+
+    store
+    |> Map.get(String.length(word), [])
+    |> Enum.any?(fn candidate ->
+      pattern
+      |> Enum.zip(String.graphemes(candidate))
+      |> Enum.all?(fn {p, c} -> p == \".\" or p == c end)
+    end)
+  end
+end"),
+  ]
+}
+
+pub fn nc105_word_search_ii() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Build one trie of all the words and walk it *alongside* the board. Searching for each word separately re-walks every shared prefix once per word; the trie walks each prefix once and abandons a square the moment no word continues that way. That is where nearly all the saving is, and it is the reason this problem exists rather than being Word Search in a loop.", "defmodule Solution do
+  def find_words([], _words), do: []
+  def find_words([[] | _], _words), do: []
+
+  # One trie of all the words, walked *alongside* the board. Searching for each
+  # word separately re-walks every shared prefix once per word; the trie walks
+  # each prefix once and abandons a square the moment no word continues that
+  # way, which is where nearly all the saving is.
+  def find_words(board, words) do
+    grid =
+      for {row, r} <- Enum.with_index(board),
+          {value, c} <- Enum.with_index(row),
+          into: %{},
+          do: {{r, c}, value}
+
+    trie = Enum.reduce(words, %{}, &insert(&2, String.graphemes(&1), &1))
+
+    grid
+    |> Map.keys()
+    |> Enum.reduce(MapSet.new(), fn at, found ->
+      walk(grid, at, trie, MapSet.new(), found)
+    end)
+    |> MapSet.to_list()
+  end
+
+  defp insert(node, [], word), do: Map.put(node, :word, word)
+
+  defp insert(node, [first | rest], word) do
+    Map.put(node, first, insert(Map.get(node, first, %{}), rest, word))
+  end
+
+  defp walk(grid, at, node, used, found) do
+    letter = Map.get(grid, at)
+
+    cond do
+      MapSet.member?(used, at) or letter == nil ->
+        found
+
+      not Map.has_key?(node, letter) ->
+        found
+
+      true ->
+        child = Map.fetch!(node, letter)
+        found = if Map.has_key?(child, :word), do: MapSet.put(found, child.word), else: found
+        used = MapSet.put(used, at)
+        Enum.reduce(neighbours(at), found, &walk(grid, &1, child, used, &2))
+    end
+  end
+
+  defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+end"),
+    #("Solution 2 · Each word", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Word Search, once per word. Correct, and it redoes the search for every shared prefix — a hundred words beginning \"ab\" each re-walk that \"ab\" from every square. Worth writing to feel the repetition the trie removes.", "defmodule Solution do
+  def find_words([], _words), do: []
+  def find_words([[] | _], _words), do: []
+
+  # Word Search, once per word. Correct, and it redoes the search for every
+  # shared prefix: a hundred words beginning \"ab\" each re-walk that \"ab\" from
+  # every square. That repetition is exactly what the trie removes.
+  def find_words(board, words) do
+    grid =
+      for {row, r} <- Enum.with_index(board),
+          {value, c} <- Enum.with_index(row),
+          into: %{},
+          do: {{r, c}, value}
+
+    Enum.filter(words, fn word ->
+      case String.graphemes(word) do
+        [] -> false
+        letters -> Enum.any?(Map.keys(grid), &exists?(grid, &1, letters, MapSet.new()))
+      end
+    end)
+  end
+
+  defp exists?(_grid, _at, [], _used), do: true
+
+  defp exists?(grid, at, [letter | rest], used) do
+    cond do
+      MapSet.member?(used, at) -> false
+      Map.get(grid, at) != letter -> false
+      rest == [] -> true
+      true -> Enum.any?(neighbours(at), &exists?(grid, &1, rest, MapSet.put(used, at)))
+    end
+  end
+
+  defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+end"),
+  ]
+}
+
 pub fn nc10_three_sum() -> List(#(String, String, String)) {
   [
     #("Solution 1", "Sort, fix one number, then run the two-pointer scan on the remainder looking for its negation. Sorting is what makes the duplicate triples skippable: equal values are adjacent, so stepping past them is a while loop, not a set.", "defmodule Solution do
@@ -5013,6 +5224,9 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
     "nc100_edit_distance" -> Ok(nc100_edit_distance())
     "nc101_burst_balloons" -> Ok(nc101_burst_balloons())
     "nc102_regular_expression_matching" -> Ok(nc102_regular_expression_matching())
+    "nc103_implement_trie" -> Ok(nc103_implement_trie())
+    "nc104_word_dictionary" -> Ok(nc104_word_dictionary())
+    "nc105_word_search_ii" -> Ok(nc105_word_search_ii())
     "nc10_three_sum" -> Ok(nc10_three_sum())
     "nc11_container_water" -> Ok(nc11_container_water())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())

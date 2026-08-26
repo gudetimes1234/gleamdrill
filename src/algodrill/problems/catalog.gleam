@@ -134,6 +134,23 @@ pub fn groups() -> List(Group) {
         "nc26_sliding_window_maximum",
       ),
     ]),
+    Group("Tries", [
+      Drill(
+        "Implement Trie (Prefix Tree)",
+        "Implement a prefix tree with insert, search for a whole word, and a test for whether any stored word starts with a given prefix.",
+        "nc103_implement_trie",
+      ),
+      Drill(
+        "Design Add and Search Words Data Structure",
+        "Design a structure that stores words and answers searches, where a '.' in the query matches any single character.",
+        "nc104_word_dictionary",
+      ),
+      Drill(
+        "Word Search II",
+        "Given a grid of letters and a list of words, return every word that can be traced through horizontally or vertically neighbouring cells, using no cell twice within one word.",
+        "nc105_word_search_ii",
+      ),
+    ]),
     Group("2-D Dynamic Programming", [
       Drill(
         "Unique Paths",

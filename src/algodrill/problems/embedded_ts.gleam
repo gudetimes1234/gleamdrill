@@ -717,6 +717,299 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc103_implement_trie() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One node per prefix, with a flag marking which prefixes are whole words. That flag is the entire difference between search and startsWith — without it, \"app\" and \"apple\" are indistinguishable once both are stored. The other detail worth keeping: the empty prefix always exists, because the root does.", "export class Trie {
+  // One node per prefix; `terminal` marks the prefixes that are whole words.
+  // Without that flag \"app\" and \"apple\" are indistinguishable once both are
+  // stored, which is the entire difference between search and startsWith.
+  private children = new Map<string, Trie>();
+  private terminal = false;
+
+  insert(word: string): void {
+    let node: Trie = this;
+    for (const letter of word) {
+      if (!node.children.has(letter)) node.children.set(letter, new Trie());
+      node = node.children.get(letter)!;
+    }
+    node.terminal = true;
+  }
+
+  search(word: string): boolean {
+    const node = this.walk(word);
+    return node !== null && node.terminal;
+  }
+
+  startsWith(prefix: string): boolean {
+    return this.walk(prefix) !== null;
+  }
+
+  private walk(letters: string): Trie | null {
+    let node: Trie = this;
+    for (const letter of letters) {
+      const child = node.children.get(letter);
+      if (!child) return null;
+      node = child;
+    }
+    return node;
+  }
+}"),
+      #("Solution 2 · Prefix set", "Two sets — the whole words, and every prefix of every word — and both questions answer in one lookup. Correct and shorter, at the cost of storing O(total letters) strings rather than sharing them. That shared storage is precisely what a trie is for, so this is the version that shows what is being bought.", "export class Trie {
+  // Two sets: the whole words, and every prefix of every word. Both questions
+  // then answer in one lookup, at the cost of storing O(total letters) strings
+  // rather than sharing them -- which is precisely the memory a trie exists to
+  // save. The empty prefix is present from the start: it is the root.
+  private words = new Set<string>();
+  private prefixes = new Set<string>([\"\"]);
+
+  insert(word: string): void {
+    this.words.add(word);
+    for (let size = 0; size <= word.length; size++) this.prefixes.add(word.slice(0, size));
+  }
+
+  search(word: string): boolean {
+    return this.words.has(word);
+  }
+
+  startsWith(prefix: string): boolean {
+    return this.prefixes.has(prefix);
+  }
+}"),
+    ],
+    check: Check(
+      signature: "export class Trie
+  insert(word: string): void
+  search(word: string): boolean
+  startsWith(prefix: string): boolean
+  private walk(letters: string): Trie | null",
+      starter: "export class Trie {
+  insert(word: string): void {
+    // todo
+  }
+  search(word: string): boolean {
+    // todo
+  }
+  startsWith(prefix: string): boolean {
+    // todo
+  }
+  private walk(letters: string): Trie | null {
+    // todo
+  }
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.Trie !== \"function\") throw new Error(\"__signature_mismatch__\");
+
+  const t = new solution.Trie();
+  t.insert(\"apple\");
+
+  const cases: [string, string, string][] = [
+    [\"search('apple') after inserting it\", show(true), show(t.search(\"apple\"))],
+    [\"search('app') -- a prefix, not a word\", show(false), show(t.search(\"app\"))],
+    [\"startsWith('app')\", show(true), show(t.startsWith(\"app\"))],
+  ];
+
+  t.insert(\"app\");
+  cases.push([\"search('app') after inserting it too\", show(true), show(t.search(\"app\"))]);
+  cases.push([\"startsWith('apz')\", show(false), show(t.startsWith(\"apz\"))]);
+  cases.push([\"search('') on an empty trie\", show(false), show(new solution.Trie().search(\"\"))]);
+  cases.push([\"startsWith('') on an empty trie\", show(true), show(new solution.Trie().startsWith(\"\"))]);
+
+  return cases;
+}",
+    ),
+  )
+}
+
+pub fn nc104_word_dictionary() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A dot has to try every child, which turns the lookup from a walk into a search. The trie is what keeps that search from being over the whole dictionary: a branch that cannot match is abandoned at the first letter, so shared prefixes are explored once rather than once per word.", "export class WordDictionary {
+  private children = new Map<string, WordDictionary>();
+  private terminal = false;
+
+  addWord(word: string): void {
+    let node: WordDictionary = this;
+    for (const letter of word) {
+      if (!node.children.has(letter)) node.children.set(letter, new WordDictionary());
+      node = node.children.get(letter)!;
+    }
+    node.terminal = true;
+  }
+
+  // A dot has to try every child, which turns the lookup from a walk into a
+  // search -- the trie is what keeps that search from being over every word,
+  // because a branch that cannot match is abandoned at the first letter.
+  search(word: string): boolean {
+    if (word === \"\") return this.terminal;
+    const [letter, rest] = [word[0], word.slice(1)];
+    if (letter === \".\") {
+      return [...this.children.values()].some((child) => child.search(rest));
+    }
+    return this.children.get(letter)?.search(rest) ?? false;
+  }
+}"),
+      #("Solution 2 · By length", "Bucket the words by length and compare position by position. A pattern can only match words of its own length, so that one check throws away most of the collection before any character is compared — often enough on its own, and it needs no tree at all.", "export class WordDictionary {
+  // Words bucketed by length. A pattern can only match words of its own length,
+  // so that one check throws away most of the collection before any character
+  // is compared.
+  private byLength = new Map<number, string[]>();
+
+  addWord(word: string): void {
+    if (!this.byLength.has(word.length)) this.byLength.set(word.length, []);
+    this.byLength.get(word.length)!.push(word);
+  }
+
+  // No shared prefixes, so every candidate of the right length is compared
+  // position by position. Slower than the trie on a large dictionary, and it
+  // needs no tree -- which is the trade the trie is making.
+  search(word: string): boolean {
+    return (this.byLength.get(word.length) ?? []).some((candidate) =>
+      [...word].every((p, i) => p === \".\" || p === candidate[i]),
+    );
+  }
+}"),
+    ],
+    check: Check(
+      signature: "export class WordDictionary
+  addWord(word: string): void
+  search(word: string): boolean",
+      starter: "export class WordDictionary {
+  addWord(word: string): void {
+    // todo
+  }
+  search(word: string): boolean {
+    // todo
+  }
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.WordDictionary !== \"function\") throw new Error(\"__signature_mismatch__\");
+
+  const d = new solution.WordDictionary();
+  for (const word of [\"bad\", \"dad\", \"mad\"]) d.addWord(word);
+
+  return [
+    [\"search('pad')\", show(false), show(d.search(\"pad\"))],
+    [\"search('bad')\", show(true), show(d.search(\"bad\"))],
+    [\"search('.ad')\", show(true), show(d.search(\".ad\"))],
+    [\"search('b..')\", show(true), show(d.search(\"b..\"))],
+    [\"search('...')\", show(true), show(d.search(\"...\"))],
+    [\"search('b') -- too short\", show(false), show(d.search(\"b\"))],
+    [\"search('....') -- too long\", show(false), show(d.search(\"....\"))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc105_word_search_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Build one trie of all the words and walk it *alongside* the board. Searching for each word separately re-walks every shared prefix once per word; the trie walks each prefix once and abandons a square the moment no word continues that way. That is where nearly all the saving is, and it is the reason this problem exists rather than being Word Search in a loop.", "type Node = { children: Map<string, Node>; word: string | null };
+
+export function findWords(board: string[][], words: string[]): string[] {
+  if (board.length === 0 || board[0].length === 0) return [];
+
+  // One trie of all the words, walked *alongside* the board. Searching for each
+  // word separately re-walks every shared prefix once per word; the trie walks
+  // each prefix once and abandons a square the moment no word continues that
+  // way, which is where nearly all the saving is.
+  const root: Node = { children: new Map(), word: null };
+  for (const word of words) {
+    let node = root;
+    for (const letter of word) {
+      if (!node.children.has(letter)) node.children.set(letter, { children: new Map(), word: null });
+      node = node.children.get(letter)!;
+    }
+    node.word = word;
+  }
+
+  const found = new Set<string>();
+
+  const walk = (r: number, c: number, node: Node, used: Set<string>) => {
+    if (r < 0 || r >= board.length || c < 0 || c >= board[0].length) return;
+    if (used.has(`${r},${c}`)) return;
+    const child = node.children.get(board[r][c]);
+    if (!child) return;
+    if (child.word !== null) found.add(child.word);
+    const next = new Set(used);
+    next.add(`${r},${c}`);
+    for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) walk(r + dr, c + dc, child, next);
+  };
+
+  for (let r = 0; r < board.length; r++) {
+    for (let c = 0; c < board[0].length; c++) walk(r, c, root, new Set());
+  }
+
+  return [...found];
+}"),
+      #("Solution 2 · Each word", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Word Search, once per word. Correct, and it redoes the search for every shared prefix — a hundred words beginning \"ab\" each re-walk that \"ab\" from every square. Worth writing to feel the repetition the trie removes.", "export function findWords(board: string[][], words: string[]): string[] {
+  if (board.length === 0 || board[0].length === 0) return [];
+
+  // Word Search, once per word. Correct, and it redoes the search for every
+  // shared prefix: a hundred words beginning \"ab\" each re-walk that \"ab\" from
+  // every square. That repetition is exactly what the trie removes.
+  const exists = (word: string): boolean => {
+    if (word === \"\") return false;
+
+    const walk = (r: number, c: number, at: number, used: Set<string>): boolean => {
+      if (r < 0 || r >= board.length || c < 0 || c >= board[0].length) return false;
+      if (used.has(`${r},${c}`) || board[r][c] !== word[at]) return false;
+      if (at === word.length - 1) return true;
+      const next = new Set(used);
+      next.add(`${r},${c}`);
+      return [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dr, dc]) =>
+        walk(r + dr, c + dc, at + 1, next),
+      );
+    };
+
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[0].length; c++) {
+        if (walk(r, c, 0, new Set())) return true;
+      }
+    }
+    return false;
+  };
+
+  return words.filter(exists);
+}"),
+    ],
+    check: Check(
+      signature: "export function findWords(board: string[][], words: string[]): string[]",
+      starter: "export function findWords(board: string[][], words: string[]): string[] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const board = () => [\"oaan\", \"etae\", \"ihkr\", \"iflv\"].map((row) => row.split(\"\"));
+const sorted = (b: string[][], words: string[]) => solution.findWords(b, words).sort();
+
+export function run(): [string, string, string][] {
+  if (typeof solution.findWords !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"findWords(board, ['oath','pea','eat','rain'])\", show([\"eat\", \"oath\"]), show(sorted(board(), [\"oath\", \"pea\", \"eat\", \"rain\"]))],
+    [\"findWords([['a','b'],['c','d']], ['abcb'])\", show([]), show(sorted([[\"a\", \"b\"], [\"c\", \"d\"]], [\"abcb\"]))],
+    [\"findWords([['a']], ['a'])\", show([\"a\"]), show(sorted([[\"a\"]], [\"a\"]))],
+    [\"findWords(board, [])\", show([]), show(sorted(board(), []))],
+    [\"findWords([], ['a'])\", show([]), show(sorted([], [\"a\"]))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn nc10_three_sum() -> Embedded {
   Embedded(
     solutions: [
@@ -6788,6 +7081,9 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc100_edit_distance" -> Ok(nc100_edit_distance())
     "nc101_burst_balloons" -> Ok(nc101_burst_balloons())
     "nc102_regular_expression_matching" -> Ok(nc102_regular_expression_matching())
+    "nc103_implement_trie" -> Ok(nc103_implement_trie())
+    "nc104_word_dictionary" -> Ok(nc104_word_dictionary())
+    "nc105_word_search_ii" -> Ok(nc105_word_search_ii())
     "nc10_three_sum" -> Ok(nc10_three_sum())
     "nc11_container_water" -> Ok(nc11_container_water())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())

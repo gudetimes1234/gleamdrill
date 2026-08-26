@@ -645,6 +645,274 @@ __case__(\"isMatch('abc', 'abc')\", True, isMatch('abc', 'abc'))",
   )
 }
 
+pub fn nc103_implement_trie() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One node per prefix, with a flag marking which prefixes are whole words. That flag is the entire difference between search and startsWith — without it, \"app\" and \"apple\" are indistinguishable once both are stored. The other detail worth keeping: the empty prefix always exists, because the root does.", "class Trie:
+    def __init__(self):
+        # One node per prefix; `terminal` marks the prefixes that are whole
+        # words. Without that flag \"app\" and \"apple\" are indistinguishable once
+        # both are stored, which is the entire difference between search and
+        # startsWith.
+        self.children = {}
+        self.terminal = False
+
+    def insert(self, word):
+        node = self
+        for letter in word:
+            node = node.children.setdefault(letter, Trie())
+        node.terminal = True
+
+    def search(self, word):
+        node = self.walk(word)
+        return node is not None and node.terminal
+
+    def startsWith(self, prefix):
+        return self.walk(prefix) is not None
+
+    def walk(self, letters):
+        node = self
+        for letter in letters:
+            if letter not in node.children:
+                return None
+            node = node.children[letter]
+        return node"),
+      #("Solution 2 · Prefix set", "Two sets — the whole words, and every prefix of every word — and both questions answer in one lookup. Correct and shorter, at the cost of storing O(total letters) strings rather than sharing them. That shared storage is precisely what a trie is for, so this is the version that shows what is being bought.", "class Trie:
+    def __init__(self):
+        # Two sets: the whole words, and every prefix of every word. Both
+        # questions then answer in one lookup, at the cost of storing O(total
+        # letters) strings rather than sharing them -- which is precisely the
+        # memory a trie exists to save. The empty prefix is present from the
+        # start: it is the root.
+        self.words = set()
+        self.prefixes = {\"\"}
+
+    def insert(self, word):
+        self.words.add(word)
+        for size in range(len(word) + 1):
+            self.prefixes.add(word[:size])
+
+    def search(self, word):
+        return word in self.words
+
+    def startsWith(self, prefix):
+        return prefix in self.prefixes"),
+    ],
+    check: Check(
+      signature: "class Trie:
+    def __init__(self):
+    def insert(self, word):
+    def search(self, word):
+    def startsWith(self, prefix):
+    def walk(self, letters):",
+      starter: "class Trie:
+    def __init__(self):
+        pass
+    def insert(self, word):
+        pass
+    def search(self, word):
+        pass
+    def startsWith(self, prefix):
+        pass
+    def walk(self, letters):
+        pass",
+      harness: "try:
+    (Trie)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__t__ = Trie()
+__t__.insert(\"apple\")
+
+__case__(\"search('apple') after inserting it\", True, __t__.search(\"apple\"))
+__case__(\"search('app') -- a prefix, not a word\", False, __t__.search(\"app\"))
+__case__(\"startsWith('app')\", True, __t__.startsWith(\"app\"))
+
+__t__.insert(\"app\")
+
+__case__(\"search('app') after inserting it too\", True, __t__.search(\"app\"))
+__case__(\"startsWith('apz')\", False, __t__.startsWith(\"apz\"))
+__case__(\"search('') on an empty trie\", False, Trie().search(\"\"))
+__case__(\"startsWith('') on an empty trie\", True, Trie().startsWith(\"\"))",
+    ),
+  )
+}
+
+pub fn nc104_word_dictionary() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A dot has to try every child, which turns the lookup from a walk into a search. The trie is what keeps that search from being over the whole dictionary: a branch that cannot match is abandoned at the first letter, so shared prefixes are explored once rather than once per word.", "class WordDictionary:
+    def __init__(self):
+        self.children = {}
+        self.terminal = False
+
+    def addWord(self, word):
+        node = self
+        for letter in word:
+            node = node.children.setdefault(letter, WordDictionary())
+        node.terminal = True
+
+    # A dot has to try every child, which turns the lookup from a walk into a
+    # search -- the trie is what keeps that search from being over every word,
+    # because a branch that cannot match is abandoned at the first letter.
+    def search(self, word):
+        if not word:
+            return self.terminal
+        letter, rest = word[0], word[1:]
+        if letter == \".\":
+            return any(child.search(rest) for child in self.children.values())
+        return letter in self.children and self.children[letter].search(rest)"),
+      #("Solution 2 · By length", "Bucket the words by length and compare position by position. A pattern can only match words of its own length, so that one check throws away most of the collection before any character is compared — often enough on its own, and it needs no tree at all.", "class WordDictionary:
+    def __init__(self):
+        # Words bucketed by length. A pattern can only match words of its own
+        # length, so that one check throws away most of the collection before
+        # any character is compared.
+        self.byLength = {}
+
+    def addWord(self, word):
+        self.byLength.setdefault(len(word), []).append(word)
+
+    # No shared prefixes, so every candidate of the right length is compared
+    # position by position. Slower than the trie on a large dictionary, and it
+    # needs no tree -- which is the trade the trie is making.
+    def search(self, word):
+        return any(
+            all(p == \".\" or p == c for p, c in zip(word, candidate))
+            for candidate in self.byLength.get(len(word), [])
+        )"),
+    ],
+    check: Check(
+      signature: "class WordDictionary:
+    def __init__(self):
+    def addWord(self, word):
+    def search(self, word):",
+      starter: "class WordDictionary:
+    def __init__(self):
+        pass
+    def addWord(self, word):
+        pass
+    def search(self, word):
+        pass",
+      harness: "try:
+    (WordDictionary)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__d__ = WordDictionary()
+for __w__ in [\"bad\", \"dad\", \"mad\"]:
+    __d__.addWord(__w__)
+
+__case__(\"search('pad')\", False, __d__.search(\"pad\"))
+__case__(\"search('bad')\", True, __d__.search(\"bad\"))
+__case__(\"search('.ad')\", True, __d__.search(\".ad\"))
+__case__(\"search('b..')\", True, __d__.search(\"b..\"))
+__case__(\"search('...')\", True, __d__.search(\"...\"))
+__case__(\"search('b') -- too short\", False, __d__.search(\"b\"))
+__case__(\"search('....') -- too long\", False, __d__.search(\"....\"))",
+    ),
+  )
+}
+
+pub fn nc105_word_search_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Build one trie of all the words and walk it *alongside* the board. Searching for each word separately re-walks every shared prefix once per word; the trie walks each prefix once and abandons a square the moment no word continues that way. That is where nearly all the saving is, and it is the reason this problem exists rather than being Word Search in a loop.", "def findWords(board, words):
+    if not board or not board[0]:
+        return []
+
+    # One trie of all the words, walked *alongside* the board. Searching for
+    # each word separately re-walks every shared prefix once per word; the trie
+    # walks each prefix once and abandons a square the moment no word continues
+    # that way, which is where nearly all the saving is.
+    trie = {}
+    for word in words:
+        node = trie
+        for letter in word:
+            node = node.setdefault(letter, {})
+        node[\"$\"] = word
+
+    found = set()
+
+    def walk(r, c, node, used):
+        if not (0 <= r < len(board) and 0 <= c < len(board[0])):
+            return
+        if (r, c) in used or board[r][c] not in node:
+            return
+        child = node[board[r][c]]
+        if \"$\" in child:
+            found.add(child[\"$\"])
+        used = used | {(r, c)}
+        for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            walk(r + dr, c + dc, child, used)
+
+    for r in range(len(board)):
+        for c in range(len(board[0])):
+            walk(r, c, trie, set())
+
+    return list(found)"),
+      #("Solution 2 · Each word", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Word Search, once per word. Correct, and it redoes the search for every shared prefix — a hundred words beginning \"ab\" each re-walk that \"ab\" from every square. Worth writing to feel the repetition the trie removes.", "def findWords(board, words):
+    if not board or not board[0]:
+        return []
+
+    # Word Search, once per word. Correct, and it redoes the search for every
+    # shared prefix: a hundred words beginning \"ab\" each re-walk that \"ab\" from
+    # every square. That repetition is exactly what the trie removes.
+    def exists(word):
+        def walk(r, c, at, used):
+            if not (0 <= r < len(board) and 0 <= c < len(board[0])):
+                return False
+            if (r, c) in used or board[r][c] != word[at]:
+                return False
+            if at == len(word) - 1:
+                return True
+            used = used | {(r, c)}
+            return any(
+                walk(r + dr, c + dc, at + 1, used)
+                for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1))
+            )
+
+        return bool(word) and any(
+            walk(r, c, 0, set())
+            for r in range(len(board))
+            for c in range(len(board[0]))
+        )
+
+    return [word for word in words if exists(word)]"),
+    ],
+    check: Check(
+      signature: "def findWords(board, words):",
+      starter: "def findWords(board, words):
+    pass",
+      harness: "try:
+    (findWords)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__board__ = [list(row) for row in [\"oaan\", \"etae\", \"ihkr\", \"iflv\"]]
+
+__case__(\"findWords(board, ['oath','pea','eat','rain'])\", [\"eat\", \"oath\"], sorted(findWords(__board__, [\"oath\", \"pea\", \"eat\", \"rain\"])))
+__case__(\"findWords([['a','b'],['c','d']], ['abcb'])\", [], sorted(findWords([[\"a\", \"b\"], [\"c\", \"d\"]], [\"abcb\"])))
+__case__(\"findWords([['a']], ['a'])\", [\"a\"], sorted(findWords([[\"a\"]], [\"a\"])))
+__case__(\"findWords(board, [])\", [], sorted(findWords(__board__, [])))
+__case__(\"findWords([], ['a'])\", [], sorted(findWords([], [\"a\"])))",
+    ),
+  )
+}
+
 pub fn nc10_three_sum() -> Embedded {
   Embedded(
     solutions: [
@@ -6651,6 +6919,9 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc100_edit_distance" -> Ok(nc100_edit_distance())
     "nc101_burst_balloons" -> Ok(nc101_burst_balloons())
     "nc102_regular_expression_matching" -> Ok(nc102_regular_expression_matching())
+    "nc103_implement_trie" -> Ok(nc103_implement_trie())
+    "nc104_word_dictionary" -> Ok(nc104_word_dictionary())
+    "nc105_word_search_ii" -> Ok(nc105_word_search_ii())
     "nc10_three_sum" -> Ok(nc10_three_sum())
     "nc11_container_water" -> Ok(nc11_container_water())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
