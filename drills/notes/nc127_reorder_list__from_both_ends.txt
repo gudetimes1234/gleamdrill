@@ -1,0 +1,1 @@
+Take from the front, then from the back, until they meet. Reads exactly like the specification and needs no midpoint and no reversal — but reaching the back is a full walk of what is left each time, so it is O(n²) where the split-and-reverse version is O(n).

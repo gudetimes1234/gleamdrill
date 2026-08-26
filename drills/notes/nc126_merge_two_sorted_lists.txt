@@ -1,0 +1,1 @@
+Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.

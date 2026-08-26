@@ -387,6 +387,40 @@ pub fn for_title(title: String) -> String {
     "Cheapest Flights Within K Stops" ->
       "The stop limit is what stops this being plain Dijkstra: cheapest-so-far is no longer enough to settle a city, because a costlier route with fewer stops may still be the one that gets through. Bellman-Ford handles it by construction \u{2014} one round is one flight, so stopping after k+1 rounds is the limit \u{2014} provided each round reads a snapshot of the last, or two flights leak into one round."
 
+    // Linked List
+    "Reverse Linked List" ->
+      "One pass, three references: where you came from, where you are, and where you were going. The look-ahead is what makes it work \u{2014} overwrite the link first and the rest of the list is unreachable. In a language with cons lists the same thing is an accumulator you prepend to, which is the identical rewiring written as a value rather than a mutation."
+
+    "Merge Two Sorted Lists" ->
+      "Take the smaller head and move on. Both inputs being sorted is what makes that safe: whichever head is smaller is smaller than everything still to come, so nothing beyond the two fronts is ever compared. The dummy head earns its place by removing the special case \u{2014} without it the first node has to be chosen separately, since there is nothing yet to attach it to."
+
+    "Reorder List" ->
+      "Three problems, not one: find the middle, reverse the back half, weave the halves together. Each is a drill in its own right and none needs to know about the others, which is exactly why the decomposition is the answer. Collecting the nodes into an array does it too \u{2014} at O(n) space, which is what the in-place version is protecting."
+
+    "Remove Nth Node From End of List" ->
+      "Two pointers held n apart, so that when the leading one falls off the end the trailing one is where the change has to happen. That gap is what replaces knowing the length, and it is the difference between one pass and two. Starting the gap from a dummy rather than the head is what makes removing the *first* node need no special case."
+
+    "Copy List with Random Pointer" ->
+      "The map from original node to copy is the whole problem: a random pointer may name a node not yet copied, so links cannot be resolved on first sight. Same idea as Clone Graph. The O(1)-space trick is to splice each copy in directly after its original, so the map is the list itself \u{2014} at the cost of a third pass to unweave them."
+
+    "Add Two Numbers" ->
+      "The digits arrive least significant first, which is the order addition already wants \u{2014} no reversing and no length matching. Two details carry it: the loop has to keep going while *either* list has digits, and the carry can outlive both, since 5 + 5 needs a node neither input has."
+
+    "Linked List Cycle" ->
+      "Floyd's tortoise and hare. Inside a loop the fast pointer gains one place per step on the slow one, so it must land on it; outside one, it runs off the end first. A set of visited nodes answers it too, at O(n) memory \u{2014} and that contrast is the reason the two-pointer version is worth knowing. Note it is nodes that repeat, not values."
+
+    "Find the Duplicate Number" ->
+      "Read the array as a linked list: position i points at position nums[i]. Every value is a valid position and one repeats, so two positions point at the same place \u{2014} the list has a cycle and the duplicate is its entrance, which is Floyd's algorithm twice over. Binary searching the values works too: the count of numbers at most v exceeds v exactly when the repeat is at or below it."
+
+    "LRU Cache" ->
+      "Two O(1) requirements at once: find a key, and know which key is oldest. A map gives the first, a list gives the second, and the answer is whatever supplies both \u{2014} classically a hash map into the nodes of a doubly linked list. Where the language's map already preserves insertion order, deleting a key and re-inserting it *is* the recency list."
+
+    "Merge k Sorted Lists" ->
+      "Merging them in one at a time re-walks the growing result every time, O(k\u{b7}n). Pairing them up instead halves the list count each round for the same merges: O(n log k). A heap of the k heads reaches the same bound from the other direction \u{2014} and is the one that still works when the lists arrive one at a time."
+
+    "Reverse Nodes in k-Group" ->
+      "The reversal is ordinary; knowing whether to do it is not. Once the rewiring starts there is no way to tell how far it got, so the k nodes have to be confirmed present *before* any link changes \u{2014} otherwise a short final group gets reversed too. Counting the length up front answers the same question in one pass instead of one look-ahead per group."
+
     // Gleam Tips
     "Pattern matching on lists" ->
       "In Gleam a list is either [] or [head, ..tail] \u{2014} every list function is a case expression over those two shapes (plus [only] when the last element matters). Recursion replaces loops: handle the empty case, then recurse on the tail."

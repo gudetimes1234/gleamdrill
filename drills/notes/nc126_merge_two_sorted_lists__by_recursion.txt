@@ -1,0 +1,1 @@
+The same merge with the return value doing the joining: no dummy, no tail reference. One frame per node is the cost, and it is exactly what the loop trades away.

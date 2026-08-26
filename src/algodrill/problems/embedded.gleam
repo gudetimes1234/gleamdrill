@@ -4891,9 +4891,11 @@ pub fn run() -> List(#(String, String, String)) {
     #(
       \"network_delay_time([#(2,1,1), #(2,3,1), #(3,4,1)], 4, 2)\",
       string.inspect(2),
-      string.inspect(
-        solution.network_delay_time([#(2, 1, 1), #(2, 3, 1), #(3, 4, 1)], 4, 2),
-      ),
+      string.inspect(solution.network_delay_time(
+        [#(2, 1, 1), #(2, 3, 1), #(3, 4, 1)],
+        4,
+        2,
+      )),
     ),
     #(
       \"network_delay_time([#(1,2,1)], 2, 1)\",
@@ -4913,9 +4915,11 @@ pub fn run() -> List(#(String, String, String)) {
     #(
       \"network_delay_time(the long way round is shorter, 3, 1)\",
       string.inspect(3),
-      string.inspect(
-        solution.network_delay_time([#(1, 2, 1), #(2, 3, 2), #(1, 3, 4)], 3, 1),
-      ),
+      string.inspect(solution.network_delay_time(
+        [#(1, 2, 1), #(2, 3, 2), #(1, 3, 4)],
+        3,
+        1,
+      )),
     ),
   ]
 }",
@@ -5524,47 +5528,41 @@ pub fn run() -> List(#(String, String, String)) {
     #(
       \"find_cheapest_price(4, the loop example, 0, 3, 1)\",
       string.inspect(700),
-      string.inspect(
-        solution.find_cheapest_price(
-          4,
-          [
-            #(0, 1, 100),
-            #(1, 2, 100),
-            #(2, 0, 100),
-            #(1, 3, 600),
-            #(2, 3, 200),
-          ],
-          0,
-          3,
-          1,
-        ),
-      ),
+      string.inspect(solution.find_cheapest_price(
+        4,
+        [
+          #(0, 1, 100),
+          #(1, 2, 100),
+          #(2, 0, 100),
+          #(1, 3, 600),
+          #(2, 3, 200),
+        ],
+        0,
+        3,
+        1,
+      )),
     ),
     #(
       \"find_cheapest_price(3, two hops allowed, 0, 2, 1)\",
       string.inspect(200),
-      string.inspect(
-        solution.find_cheapest_price(
-          3,
-          [#(0, 1, 100), #(1, 2, 100), #(0, 2, 500)],
-          0,
-          2,
-          1,
-        ),
-      ),
+      string.inspect(solution.find_cheapest_price(
+        3,
+        [#(0, 1, 100), #(1, 2, 100), #(0, 2, 500)],
+        0,
+        2,
+        1,
+      )),
     ),
     #(
       \"find_cheapest_price(3, no stop allowed, 0, 2, 0)\",
       string.inspect(500),
-      string.inspect(
-        solution.find_cheapest_price(
-          3,
-          [#(0, 1, 100), #(1, 2, 100), #(0, 2, 500)],
-          0,
-          2,
-          0,
-        ),
-      ),
+      string.inspect(solution.find_cheapest_price(
+        3,
+        [#(0, 1, 100), #(1, 2, 100), #(0, 2, 500)],
+        0,
+        2,
+        0,
+      )),
     ),
     #(
       \"find_cheapest_price(2, no flights at all, 0, 1, 5)\",
@@ -5579,22 +5577,421 @@ pub fn run() -> List(#(String, String, String)) {
     #(
       \"find_cheapest_price(5, cheapest route needs the third hop, 0, 2, 2)\",
       string.inspect(7),
+      string.inspect(solution.find_cheapest_price(
+        5,
+        [
+          #(0, 1, 5),
+          #(1, 2, 5),
+          #(0, 3, 2),
+          #(3, 1, 2),
+          #(1, 4, 1),
+          #(4, 2, 1),
+        ],
+        0,
+        2,
+        2,
+      )),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc125_reverse_linked_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One pass, three references: where you came from, where you are, and where you were going. Losing the look-ahead is the classic bug — once the link has been overwritten, the rest of the list is unreachable. In a language with cons lists the same thing is an accumulator you prepend to, which is the *same* rewiring written as a value.", "pub fn reverse_list(values: List(Int)) -> List(Int) {
+  walk(values, [])
+}
+
+// The accumulator *is* the reversed list being built, and prepending to it is
+// exactly the pointer rewiring the imperative version does one node at a time.
+// Nothing is ever traversed twice, so it is one pass and no extra memory beyond
+// the result.
+fn walk(remaining: List(Int), reversed: List(Int)) -> List(Int) {
+  case remaining {
+    [] -> reversed
+    [head, ..tail] -> walk(tail, [head, ..reversed])
+  }
+}"),
+      #("Solution 2 · By folding", "The accumulator, named by the standard library instead of written out. Worth putting next to the hand-written loop: a left fold that prepends is the definition of reversing, which is why the built-in exists at all.", "import gleam/list
+
+pub fn reverse_list(values: List(Int)) -> List(Int) {
+  // The same accumulator, named by the standard library instead of written out.
+  // Worth putting next to the hand-written loop: a left fold that prepends is
+  // the definition of reversing, which is why list.reverse exists at all.
+  list.fold(values, [], fn(reversed, value) { [value, ..reversed] })
+}"),
+    ],
+    check: Check(
+      signature: "pub fn reverse_list(values: List(Int)) -> List(Int)",
+      starter: "pub fn reverse_list(values: List(Int)) -> List(Int) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"reverse_list([1, 2, 3, 4, 5])\",
+      string.inspect([5, 4, 3, 2, 1]),
+      string.inspect(solution.reverse_list([1, 2, 3, 4, 5])),
+    ),
+    #(
+      \"reverse_list([1, 2])\",
+      string.inspect([2, 1]),
+      string.inspect(solution.reverse_list([1, 2])),
+    ),
+    #(
+      \"reverse_list([])\",
+      string.inspect([]),
+      string.inspect(solution.reverse_list([])),
+    ),
+    #(
+      \"reverse_list([7])\",
+      string.inspect([7]),
+      string.inspect(solution.reverse_list([7])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc126_merge_two_sorted_lists() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.", "pub fn merge_two_lists(first: List(Int), second: List(Int)) -> List(Int) {
+  // Take the smaller head and recurse on the rest. Because both inputs are
+  // already sorted, whichever head is smaller is smaller than everything still
+  // to come — no comparison beyond the two fronts is ever needed.
+  case first, second {
+    [], rest -> rest
+    rest, [] -> rest
+    [a, ..a_rest], [b, ..b_rest] ->
+      case a <= b {
+        True -> [a, ..merge_two_lists(a_rest, second)]
+        False -> [b, ..merge_two_lists(first, b_rest)]
+      }
+  }
+}"),
+      #("Solution 2 · Iterative", "The same merge with the recursion turned into a loop: build the answer backwards in an accumulator and reverse once at the end. That accumulator is the functional twin of the dummy head, and the reversal costs one extra pass rather than one extra frame per node.", "import gleam/list
+
+pub fn merge_two_lists(first: List(Int), second: List(Int)) -> List(Int) {
+  // The same merge with the recursion turned into a loop: build the answer
+  // backwards in an accumulator and reverse once at the end. That accumulator
+  // is the functional equivalent of the dummy head the imperative version
+  // keeps, and reversing costs one extra pass rather than one extra frame per
+  // node.
+  list.reverse(step(first, second, []))
+}
+
+fn step(first: List(Int), second: List(Int), merged: List(Int)) -> List(Int) {
+  case first, second {
+    [], rest -> list.fold(rest, merged, fn(acc, value) { [value, ..acc] })
+    rest, [] -> list.fold(rest, merged, fn(acc, value) { [value, ..acc] })
+    [a, ..a_rest], [b, ..b_rest] ->
+      case a <= b {
+        True -> step(a_rest, second, [a, ..merged])
+        False -> step(first, b_rest, [b, ..merged])
+      }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn merge_two_lists(first: List(Int), second: List(Int)) -> List(Int)",
+      starter: "pub fn merge_two_lists(first: List(Int), second: List(Int)) -> List(Int) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"merge_two_lists([1, 2, 4], [1, 3, 4])\",
+      string.inspect([1, 1, 2, 3, 4, 4]),
+      string.inspect(solution.merge_two_lists([1, 2, 4], [1, 3, 4])),
+    ),
+    #(
+      \"merge_two_lists([], [])\",
+      string.inspect([]),
+      string.inspect(solution.merge_two_lists([], [])),
+    ),
+    #(
+      \"merge_two_lists([], [0])\",
+      string.inspect([0]),
+      string.inspect(solution.merge_two_lists([], [0])),
+    ),
+    #(
+      \"merge_two_lists([5], [1, 2, 3])\",
+      string.inspect([1, 2, 3, 5]),
+      string.inspect(solution.merge_two_lists([5], [1, 2, 3])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc127_reorder_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.", "import gleam/list
+
+pub fn reorder_list(values: List(Int)) -> List(Int) {
+  // Three separate steps, each of which is its own drill: find the middle,
+  // reverse the back half, then interleave. That decomposition is the whole
+  // trick — none of the three needs to know about the others.
+  let half = { list.length(values) + 1 } / 2
+  let front = list.take(values, half)
+  let back = list.reverse(list.drop(values, half))
+  interleave(front, back)
+}
+
+fn interleave(front: List(Int), back: List(Int)) -> List(Int) {
+  case front, back {
+    [], rest -> rest
+    rest, [] -> rest
+    [a, ..a_rest], [b, ..b_rest] -> [a, b, ..interleave(a_rest, b_rest)]
+  }
+}"),
+      #("Solution 2 · From both ends", "Take from the front, then from the back, until they meet. Reads exactly like the specification and needs no midpoint and no reversal — but reaching the back is a full walk of what is left each time, so it is O(n²) where the split-and-reverse version is O(n).", "import gleam/list
+
+pub fn reorder_list(values: List(Int)) -> List(Int) {
+  // Take from the front, then from the back, until they meet. Reads exactly
+  // like the specification and needs no midpoint and no reversal — but each
+  // \"take from the back\" is a full walk of what is left, so it is O(n²) where
+  // the split-and-reverse version is O(n).
+  take_ends(values, [])
+}
+
+fn take_ends(remaining: List(Int), out: List(Int)) -> List(Int) {
+  case remaining {
+    [] -> list.reverse(out)
+    [only] -> list.reverse([only, ..out])
+    [first, ..rest] -> {
+      let assert Ok(last) = list.last(rest)
+      let middle = list.take(rest, list.length(rest) - 1)
+      take_ends(middle, [last, first, ..out])
+    }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn reorder_list(values: List(Int)) -> List(Int)",
+      starter: "pub fn reorder_list(values: List(Int)) -> List(Int) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"reorder_list([1, 2, 3, 4])\",
+      string.inspect([1, 4, 2, 3]),
+      string.inspect(solution.reorder_list([1, 2, 3, 4])),
+    ),
+    #(
+      \"reorder_list([1, 2, 3, 4, 5])\",
+      string.inspect([1, 5, 2, 4, 3]),
+      string.inspect(solution.reorder_list([1, 2, 3, 4, 5])),
+    ),
+    #(
+      \"reorder_list([1, 2])\",
+      string.inspect([1, 2]),
+      string.inspect(solution.reorder_list([1, 2])),
+    ),
+    #(
+      \"reorder_list([1])\",
+      string.inspect([1]),
+      string.inspect(solution.reorder_list([1])),
+    ),
+    #(
+      \"reorder_list([])\",
+      string.inspect([]),
+      string.inspect(solution.reorder_list([])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc128_remove_nth_from_end() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two walkers n apart. When the leading one runs off the end, the trailing one is on the node to change — the length is never computed, which is the point: one pass instead of two. Opening the gap can fail, and that failure is exactly the \"n is longer than the list\" case.", "import gleam/list
+
+pub fn remove_nth_from_end(values: List(Int), n: Int) -> List(Int) {
+  // Two walkers n apart. When the leading one runs off the end, the trailing
+  // one is sitting on the node to drop — the length is never computed, which is
+  // the point: one pass instead of two. Opening the gap can fail, and that
+  // failure is exactly the \"n is longer than the list\" case.
+  case skip(values, n) {
+    Error(Nil) -> values
+    Ok(ahead) -> advance(values, ahead, [])
+  }
+}
+
+fn skip(values: List(Int), n: Int) -> Result(List(Int), Nil) {
+  case n, values {
+    0, rest -> Ok(rest)
+    _, [] -> Error(Nil)
+    _, [_, ..rest] -> skip(rest, n - 1)
+  }
+}
+
+fn advance(behind: List(Int), ahead: List(Int), kept: List(Int)) -> List(Int) {
+  case ahead, behind {
+    [_, ..ahead_rest], [value, ..behind_rest] ->
+      advance(behind_rest, ahead_rest, [value, ..kept])
+    // The leading walker is spent, so the trailing one is on the doomed node.
+    [], [_dropped, ..rest] -> list.append(list.reverse(kept), rest)
+    _, [] -> list.reverse(kept)
+  }
+}"),
+      #("Solution 2 · By length", "Count first, then remove by position. Two passes rather than one, and it says outright what the gap encodes: nth from the end is length minus n from the front. Where a list cannot be walked twice — a stream, say — that is the assumption that fails.", "import gleam/list
+
+pub fn remove_nth_from_end(values: List(Int), n: Int) -> List(Int) {
+  // Count first, then drop by position. Two passes rather than one, and it says
+  // outright what the two-walker version encodes in a gap: nth from the end is
+  // length minus n from the front. Where a list cannot be walked twice — a
+  // stream, say — that is exactly the assumption that fails.
+  let index = list.length(values) - n
+  case index < 0 {
+    True -> values
+    False -> list.append(list.take(values, index), list.drop(values, index + 1))
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn remove_nth_from_end(values: List(Int), n: Int) -> List(Int)",
+      starter: "pub fn remove_nth_from_end(values: List(Int), n: Int) -> List(Int) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"remove_nth_from_end([1, 2, 3, 4, 5], 2)\",
+      string.inspect([1, 2, 3, 5]),
+      string.inspect(solution.remove_nth_from_end([1, 2, 3, 4, 5], 2)),
+    ),
+    #(
+      \"remove_nth_from_end([1], 1)\",
+      string.inspect([]),
+      string.inspect(solution.remove_nth_from_end([1], 1)),
+    ),
+    #(
+      \"remove_nth_from_end([1, 2], 1)\",
+      string.inspect([1]),
+      string.inspect(solution.remove_nth_from_end([1, 2], 1)),
+    ),
+    #(
+      \"remove_nth_from_end([1, 2], 2) — the head goes\",
+      string.inspect([2]),
+      string.inspect(solution.remove_nth_from_end([1, 2], 2)),
+    ),
+    #(
+      \"remove_nth_from_end([1, 2, 3], 5) — nothing to remove\",
+      string.inspect([1, 2, 3]),
+      string.inspect(solution.remove_nth_from_end([1, 2, 3], 5)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc129_copy_random_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.", "import gleam/dict
+import gleam/list
+import gleam/result
+
+/// Nodes arrive as #(id, value, random_id), where the ids are arbitrary and a
+/// random_id of -1 means no link. The copy is returned as #(value, random) with
+/// random naming a *position* in the copy, or -1 — so producing it means
+/// translating every id into the place the copied node ended up.
+pub fn copy_random_list(nodes: List(#(Int, Int, Int))) -> List(#(Int, Int)) {
+  // One pass to learn where each original node lands, a second to resolve the
+  // links. Trying to resolve a link on first sight cannot work: it may point at
+  // a node not yet seen, which is the whole difficulty of the problem, and a
+  // map from old node to new is what removes it.
+  let places =
+    list.index_fold(nodes, dict.new(), fn(acc, node: #(Int, Int, Int), i) {
+      dict.insert(acc, node.0, i)
+    })
+
+  list.map(nodes, fn(node: #(Int, Int, Int)) {
+    #(node.1, result.unwrap(dict.get(places, node.2), -1))
+  })
+}"),
+      #("Solution 2 · By searching", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+The same translation without the map: for each link, search for the node it names. O(n²) against O(n), and the contrast is the lesson — the map is not an optimisation bolted on afterwards, it is the same lookup, paid for once instead of once per node.", "import gleam/list
+
+pub fn copy_random_list(nodes: List(#(Int, Int, Int))) -> List(#(Int, Int)) {
+  // The same translation without the map: for each link, search the list for
+  // the node it names. O(n²) against O(n), and the contrast is the lesson —
+  // the map is not an optimisation bolted on afterwards, it is the same lookup
+  // the search does, paid for once instead of once per node.
+  list.map(nodes, fn(node: #(Int, Int, Int)) {
+    #(node.1, position_of(nodes, node.2, 0))
+  })
+}
+
+fn position_of(nodes: List(#(Int, Int, Int)), id: Int, at: Int) -> Int {
+  case nodes {
+    [] -> -1
+    [node, ..rest] ->
+      case node.0 == id {
+        True -> at
+        False -> position_of(rest, id, at + 1)
+      }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn copy_random_list(nodes: List(#(Int, Int, Int))) -> List(#(Int, Int))",
+      starter: "pub fn copy_random_list(nodes: List(#(Int, Int, Int))) -> List(#(Int, Int)) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"copy_random_list(each node points at the next)\",
+      string.inspect([#(7, 1), #(13, -1)]),
       string.inspect(
-        solution.find_cheapest_price(
-          5,
-          [
-            #(0, 1, 5),
-            #(1, 2, 5),
-            #(0, 3, 2),
-            #(3, 1, 2),
-            #(1, 4, 1),
-            #(4, 2, 1),
-          ],
-          0,
-          2,
-          2,
-        ),
+        solution.copy_random_list([#(100, 7, 200), #(200, 13, -1)]),
       ),
+    ),
+    #(
+      \"copy_random_list(a node pointing at itself)\",
+      string.inspect([#(1, 0)]),
+      string.inspect(solution.copy_random_list([#(9, 1, 9)])),
+    ),
+    #(
+      \"copy_random_list(a forward link to a node not yet seen)\",
+      string.inspect([#(1, 2), #(2, -1), #(3, 0)]),
+      string.inspect(
+        solution.copy_random_list([#(5, 1, 7), #(6, 2, -1), #(7, 3, 5)]),
+      ),
+    ),
+    #(
+      \"copy_random_list([])\",
+      string.inspect([]),
+      string.inspect(solution.copy_random_list([])),
     ),
   ]
 }",
@@ -5661,6 +6058,750 @@ pub fn run() -> List(#(String, String, String)) {
       \"max_profit([])\",
       string.inspect(0),
       string.inspect(solution.max_profit([])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc130_add_two_numbers() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The digits arrive least significant first, which is exactly the order addition wants — no reversing and no length matching. The case worth writing down is the carry outliving both numbers: 5 + 5 produces a digit neither input has a node for.", "pub fn add_two_numbers(first: List(Int), second: List(Int)) -> List(Int) {
+  // Both numbers arrive least significant digit first, which is exactly the
+  // order addition wants — no reversing, no length matching, just carry along.
+  // The carry outliving both lists is the case worth writing down: 5 + 5 is two
+  // digits from two one-digit numbers.
+  add(first, second, 0)
+}
+
+fn add(first: List(Int), second: List(Int), carry: Int) -> List(Int) {
+  case first, second, carry {
+    [], [], 0 -> []
+    [], [], _ -> [carry]
+    _, _, _ -> {
+      let #(a, a_rest) = split(first)
+      let #(b, b_rest) = split(second)
+      let total = a + b + carry
+      [total % 10, ..add(a_rest, b_rest, total / 10)]
+    }
+  }
+}
+
+fn split(digits: List(Int)) -> #(Int, List(Int)) {
+  case digits {
+    [] -> #(0, [])
+    [head, ..tail] -> #(head, tail)
+  }
+}"),
+      #("Solution 2 · Via integers", "Turn both lists into whole numbers, add, take the sum apart again. It reads well, and it is safe here only because this language's integers are arbitrary precision — which is precisely why the problem is posed as a list of digits in languages where they are not.", "import gleam/list
+
+pub fn add_two_numbers(first: List(Int), second: List(Int)) -> List(Int) {
+  // Turn both lists into whole numbers, add, and take the sum apart again. It
+  // reads well and is fine in Gleam, whose integers are arbitrary precision —
+  // but it is the version that breaks the moment the language has a fixed-width
+  // integer, which is precisely why the problem is posed as a list of digits.
+  to_digits(value(first) + value(second))
+}
+
+fn value(digits: List(Int)) -> Int {
+  list.index_fold(digits, 0, fn(total, digit, i) {
+    total + digit * power_of_ten(i)
+  })
+}
+
+fn power_of_ten(n: Int) -> Int {
+  case n <= 0 {
+    True -> 1
+    False -> 10 * power_of_ten(n - 1)
+  }
+}
+
+fn to_digits(number: Int) -> List(Int) {
+  case number < 10 {
+    True -> [number]
+    False -> [number % 10, ..to_digits(number / 10)]
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn add_two_numbers(first: List(Int), second: List(Int)) -> List(Int)",
+      starter: "pub fn add_two_numbers(first: List(Int), second: List(Int)) -> List(Int) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"add_two_numbers([2, 4, 3], [5, 6, 4]) — 342 + 465\",
+      string.inspect([7, 0, 8]),
+      string.inspect(solution.add_two_numbers([2, 4, 3], [5, 6, 4])),
+    ),
+    #(
+      \"add_two_numbers([0], [0])\",
+      string.inspect([0]),
+      string.inspect(solution.add_two_numbers([0], [0])),
+    ),
+    #(
+      \"add_two_numbers([9, 9, 9], [1]) — the carry runs all the way\",
+      string.inspect([0, 0, 0, 1]),
+      string.inspect(solution.add_two_numbers([9, 9, 9], [1])),
+    ),
+    #(
+      \"add_two_numbers([5], [5]) — the carry outlives both\",
+      string.inspect([0, 1]),
+      string.inspect(solution.add_two_numbers([5], [5])),
+    ),
+    #(
+      \"add_two_numbers([1, 2], [3, 4, 5]) — different lengths\",
+      string.inspect([4, 6, 5]),
+      string.inspect(solution.add_two_numbers([1, 2], [3, 4, 5])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc131_linked_list_cycle() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Floyd's tortoise and hare. One walker takes single steps, the other double; inside a loop the fast one gains a place per step on the slow one, so it must land on it. Outside one, it runs off the end first. Constant memory and nothing is marked — that is the whole result.", "import gleam/list
+import gleam/result
+
+/// The list arrives as its links rather than its values: `next` holds, for each
+/// node, the index of the one after it, or -1 for the end. A cons list cannot
+/// point back at itself, so this is how a cycle is expressed at all in a
+/// language without mutable references.
+pub fn has_cycle(next: List(Int)) -> Bool {
+  case next {
+    [] -> False
+    _ -> chase(next, 0, 0)
+  }
+}
+
+// Floyd's tortoise and hare. One walker takes single steps, the other double;
+// if there is a loop the fast one is going around it and gains one place per
+// step on the slow one, so it must eventually land on it. If there is no loop
+// the fast one runs off the end first. No memory of where either has been.
+fn chase(next: List(Int), slow: Int, fast: Int) -> Bool {
+  case step(next, fast) {
+    -1 -> False
+    once ->
+      case step(next, once) {
+        -1 -> False
+        twice -> {
+          let slow = step(next, slow)
+          case slow == twice {
+            True -> True
+            False -> chase(next, slow, twice)
+          }
+        }
+      }
+  }
+}
+
+fn step(next: List(Int), from: Int) -> Int {
+  case from < 0 {
+    True -> -1
+    False -> result.unwrap(list.first(list.drop(next, from)), -1)
+  }
+}"),
+      #("Solution 2 · Seen set", "Remember every node visited and stop when one repeats. Obvious and correct, at O(n) memory — which is exactly what the two-walker version removes. Note that it is the *nodes* that go in the set, not their values: repeated values are ordinary, repeated nodes are the cycle.", "import gleam/list
+import gleam/result
+import gleam/set.{type Set}
+
+pub fn has_cycle(next: List(Int)) -> Bool {
+  case next {
+    [] -> False
+    _ -> walk(next, 0, set.new())
+  }
+}
+
+// Remember every node visited and stop when one repeats. Obvious, correct, and
+// O(n) memory — which is the whole cost the two-walker version removes. Worth
+// writing once so that \"constant space\" means something specific afterwards.
+fn walk(next: List(Int), at: Int, seen: Set(Int)) -> Bool {
+  case at < 0 {
+    True -> False
+    False ->
+      case set.contains(seen, at) {
+        True -> True
+        False ->
+          walk(
+            next,
+            result.unwrap(list.first(list.drop(next, at)), -1),
+            set.insert(seen, at),
+          )
+      }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn has_cycle(next: List(Int)) -> Bool",
+      starter: "pub fn has_cycle(next: List(Int)) -> Bool {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"has_cycle([1, 2, 3, 1]) — the tail loops back\",
+      string.inspect(True),
+      string.inspect(solution.has_cycle([1, 2, 3, 1])),
+    ),
+    #(
+      \"has_cycle([1, 2, -1])\",
+      string.inspect(False),
+      string.inspect(solution.has_cycle([1, 2, -1])),
+    ),
+    #(
+      \"has_cycle([-1]) — one node, no link\",
+      string.inspect(False),
+      string.inspect(solution.has_cycle([-1])),
+    ),
+    #(
+      \"has_cycle([0]) — one node pointing at itself\",
+      string.inspect(True),
+      string.inspect(solution.has_cycle([0])),
+    ),
+    #(
+      \"has_cycle([])\",
+      string.inspect(False),
+      string.inspect(solution.has_cycle([])),
+    ),
+    #(
+      \"has_cycle([1, 0]) — two nodes pointing at each other\",
+      string.inspect(True),
+      string.inspect(solution.has_cycle([1, 0])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc132_find_the_duplicate() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Read the array as a linked list: position i points at position nums[i]. Every value is a valid position and one repeats, so two positions point at the same place — the list has a cycle, and the duplicate is its entrance. Then it is Floyd's twice: once to meet inside the loop, once to find where it begins.", "import gleam/list
+import gleam/result
+
+pub fn find_duplicate(nums: List(Int)) -> Int {
+  // Read the array as a linked list: position i points at position nums[i].
+  // Because every value is a valid position and one value repeats, two
+  // positions point at the same place — so the list has a cycle, and the
+  // duplicate is its entrance. Then it is Floyd's, twice: once to meet inside
+  // the loop, once to walk from the start and the meeting point together until
+  // they agree on where it begins.
+  let meeting = meet(nums, at(nums, 0), at(nums, at(nums, 0)))
+  entrance(nums, 0, meeting)
+}
+
+fn meet(nums: List(Int), slow: Int, fast: Int) -> Int {
+  case slow == fast {
+    True -> slow
+    False -> meet(nums, at(nums, slow), at(nums, at(nums, fast)))
+  }
+}
+
+fn entrance(nums: List(Int), from_start: Int, from_meeting: Int) -> Int {
+  case from_start == from_meeting {
+    True -> from_start
+    False -> entrance(nums, at(nums, from_start), at(nums, from_meeting))
+  }
+}
+
+fn at(nums: List(Int), index: Int) -> Int {
+  result.unwrap(list.first(list.drop(nums, index)), 0)
+}"),
+      #("Solution 2 · Counting", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Binary search over the *values*, not the positions. For a candidate v, count how many numbers are at most v: with no duplicate that count is exactly v, so a count running ahead says the repeat is at or below v. O(n log n), but it needs no insight about cycles.", "import gleam/list
+
+pub fn find_duplicate(nums: List(Int)) -> Int {
+  // Binary search over the *values*, not the positions. For a candidate v,
+  // count how many numbers are at most v: with no duplicate that count is
+  // exactly v, so a count that runs ahead says the repeat is at or below v.
+  // O(n log n) against Floyd's O(n), but it needs no insight about cycles —
+  // only that the pigeonhole is what makes the count informative.
+  search(nums, 1, list.length(nums) - 1)
+}
+
+fn search(nums: List(Int), low: Int, high: Int) -> Int {
+  case low >= high {
+    True -> low
+    False -> {
+      let middle = { low + high } / 2
+      let seen = list.count(nums, fn(value) { value <= middle })
+      case seen > middle {
+        True -> search(nums, low, middle)
+        False -> search(nums, middle + 1, high)
+      }
+    }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn find_duplicate(nums: List(Int)) -> Int",
+      starter: "pub fn find_duplicate(nums: List(Int)) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"find_duplicate([1, 3, 4, 2, 2])\",
+      string.inspect(2),
+      string.inspect(solution.find_duplicate([1, 3, 4, 2, 2])),
+    ),
+    #(
+      \"find_duplicate([3, 1, 3, 4, 2])\",
+      string.inspect(3),
+      string.inspect(solution.find_duplicate([3, 1, 3, 4, 2])),
+    ),
+    #(
+      \"find_duplicate([1, 1])\",
+      string.inspect(1),
+      string.inspect(solution.find_duplicate([1, 1])),
+    ),
+    #(
+      \"find_duplicate([2, 2, 2, 2, 2])\",
+      string.inspect(2),
+      string.inspect(solution.find_duplicate([2, 2, 2, 2, 2])),
+    ),
+    #(
+      \"find_duplicate([1, 4, 4, 2, 4])\",
+      string.inspect(4),
+      string.inspect(solution.find_duplicate([1, 4, 4, 2, 4])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc133_lru_cache() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A map alone gives the first and a list alone gives the second — the structure is whatever supplies both. Where the language's map already remembers insertion order, deleting a key and putting it back *is* the recency list.", "import gleam/dict.{type Dict}
+import gleam/list
+
+pub type LruCache {
+  LruCache(capacity: Int, entries: Dict(Int, Int), recent: List(Int))
+}
+
+pub fn new(capacity: Int) -> LruCache {
+  LruCache(capacity, dict.new(), [])
+}
+
+/// Missing keys answer -1. Reading counts as use, so the cache comes back
+/// changed — which is the part that makes an LRU cache awkward to express with
+/// immutable values, and the reason the signature has to return both.
+pub fn get(cache: LruCache, key: Int) -> #(Int, LruCache) {
+  case dict.get(cache.entries, key) {
+    Error(Nil) -> #(-1, cache)
+    Ok(value) -> #(value, LruCache(..cache, recent: touch(cache.recent, key)))
+  }
+}
+
+pub fn put(cache: LruCache, key: Int, value: Int) -> LruCache {
+  let recent = touch(cache.recent, key)
+  let entries = dict.insert(cache.entries, key, value)
+  // Over capacity by exactly one, so exactly one key goes: the last in the
+  // recency order, which is what \"least recently used\" names.
+  case list.length(recent) > cache.capacity {
+    False -> LruCache(..cache, entries: entries, recent: recent)
+    True -> {
+      let keep = list.take(recent, cache.capacity)
+      let dropped = list.drop(recent, cache.capacity)
+      LruCache(
+        ..cache,
+        entries: list.fold(dropped, entries, fn(acc, stale) {
+          dict.delete(acc, stale)
+        }),
+        recent: keep,
+      )
+    }
+  }
+}
+
+/// The recency order, most recently used first. Moving a key to the front is
+/// what a real implementation does by unlinking and relinking a node; here it
+/// costs a walk, which is the price of having no back-pointers.
+fn touch(recent: List(Int), key: Int) -> List(Int) {
+  [key, ..list.filter(recent, fn(other) { other != key })]
+}"),
+      #("Solution 2 · Timestamps", "No recency order at all — just a counter, bumped on every use. Eviction becomes a scan for the smallest stamp, trading the reordering walk for a search. Worth seeing because it makes plain that \"least recently used\" is a minimum, not a position.", "import gleam/dict.{type Dict}
+import gleam/list
+
+pub type LruCache {
+  LruCache(capacity: Int, clock: Int, entries: Dict(Int, #(Int, Int)))
+}
+
+pub fn new(capacity: Int) -> LruCache {
+  LruCache(capacity, 0, dict.new())
+}
+
+pub fn get(cache: LruCache, key: Int) -> #(Int, LruCache) {
+  case dict.get(cache.entries, key) {
+    Error(Nil) -> #(-1, cache)
+    Ok(#(value, _stamp)) -> #(value, stamp(cache, key, value))
+  }
+}
+
+pub fn put(cache: LruCache, key: Int, value: Int) -> LruCache {
+  let cache = stamp(cache, key, value)
+  case dict.size(cache.entries) > cache.capacity {
+    False -> cache
+    True ->
+      LruCache(..cache, entries: dict.delete(cache.entries, oldest(cache)))
+  }
+}
+
+/// No recency *order* at all — just a counter, bumped on every use. Eviction
+/// then means scanning for the smallest stamp, so this trades the reordering
+/// walk for a scan. It is the version to reach for when there is no linked list
+/// to relink, and it makes plain that \"least recently used\" is a minimum, not a
+/// position.
+fn stamp(cache: LruCache, key: Int, value: Int) -> LruCache {
+  LruCache(
+    ..cache,
+    clock: cache.clock + 1,
+    entries: dict.insert(cache.entries, key, #(value, cache.clock)),
+  )
+}
+
+fn oldest(cache: LruCache) -> Int {
+  let entries = dict.to_list(cache.entries)
+  let assert Ok(first) = list.first(entries)
+  let found =
+    list.fold(entries, first, fn(best: #(Int, #(Int, Int)), entry) {
+      case entry.1.1 < best.1.1 {
+        True -> entry
+        False -> best
+      }
+    })
+  found.0
+}"),
+    ],
+    check: Check(
+      signature: "pub type LruCache {
+  LruCache(capacity: Int, entries: Dict(Int, Int), recent: List(Int))
+}
+
+pub fn new(capacity: Int) -> LruCache
+
+pub fn get(cache: LruCache, key: Int) -> #(Int, LruCache)
+
+pub fn put(cache: LruCache, key: Int, value: Int) -> LruCache",
+      starter: "pub type LruCache {
+  LruCache(capacity: Int, entries: Dict(Int, Int), recent: List(Int))
+}
+
+pub fn new(capacity: Int) -> LruCache {
+  todo
+}
+
+pub fn get(cache: LruCache, key: Int) -> #(Int, LruCache) {
+  todo
+}
+
+pub fn put(cache: LruCache, key: Int, value: Int) -> LruCache {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  // The LeetCode example, threaded through: capacity 2, then put(1,1),
+  // put(2,2), get(1), put(3,3) — which must evict key 2, not key 1.
+  let cache =
+    solution.new(2)
+    |> solution.put(1, 1)
+    |> solution.put(2, 2)
+  let #(first, cache) = solution.get(cache, 1)
+  let cache = solution.put(cache, 3, 3)
+  let #(evicted, cache) = solution.get(cache, 2)
+  let #(kept, cache) = solution.get(cache, 3)
+  let cache = solution.put(cache, 4, 4)
+  let #(gone, cache) = solution.get(cache, 1)
+  let #(still_there, cache) = solution.get(cache, 3)
+  let #(newest, cache) = solution.get(cache, 4)
+
+  let overwritten =
+    solution.new(1)
+    |> solution.put(5, 5)
+    |> solution.put(5, 9)
+  let #(updated, _) = solution.get(overwritten, 5)
+
+  [
+    #(
+      \"get(1) after put(1,1), put(2,2)\",
+      string.inspect(1),
+      string.inspect(first),
+    ),
+    #(
+      \"get(2) after put(3,3) — 2 was least recently used\",
+      string.inspect(-1),
+      string.inspect(evicted),
+    ),
+    #(\"get(3) after put(3,3)\", string.inspect(3), string.inspect(kept)),
+    #(
+      \"get(1) after put(4,4) — reading 3 saved it, so 1 went\",
+      string.inspect(-1),
+      string.inspect(gone),
+    ),
+    #(\"get(3) after put(4,4)\", string.inspect(3), string.inspect(still_there)),
+    #(\"get(4) after put(4,4)\", string.inspect(4), string.inspect(newest)),
+    #(
+      \"get(5) after put(5,5) then put(5,9) — an update, not an insert\",
+      string.inspect(9),
+      string.inspect(updated),
+    ),
+    #(
+      \"get(99) on a key never stored\",
+      string.inspect(-1),
+      string.inspect({ solution.get(cache, 99) }.0),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc134_merge_k_sorted_lists() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.", "pub fn merge_k_lists(lists: List(List(Int))) -> List(Int) {
+  // Merge in pairs, halving the number of lists each round. Folding them in one
+  // at a time re-walks the growing result every time — O(k·n) — while pairing
+  // gives O(n log k) for the same merges, because each element is copied only
+  // once per round and there are log k rounds.
+  case lists {
+    [] -> []
+    [only] -> only
+    _ -> merge_k_lists(pair_up(lists))
+  }
+}
+
+fn pair_up(lists: List(List(Int))) -> List(List(Int)) {
+  case lists {
+    [first, second, ..rest] -> [merge(first, second), ..pair_up(rest)]
+    rest -> rest
+  }
+}
+
+fn merge(first: List(Int), second: List(Int)) -> List(Int) {
+  case first, second {
+    [], rest -> rest
+    rest, [] -> rest
+    [a, ..a_rest], [b, ..b_rest] ->
+      case a <= b {
+        True -> [a, ..merge(a_rest, second)]
+        False -> [b, ..merge(first, b_rest)]
+      }
+  }
+}"),
+      #("Solution 2 · Smallest head", "The heap solution with the heap spelled out as a scan, for languages that have no priority queue: O(k) per element rather than O(log k), which is the entire difference the heap makes. What it does not need is any pairing structure — it works on lists arriving one at a time.", "import gleam/list
+
+pub fn merge_k_lists(lists: List(List(Int))) -> List(Int) {
+  // Take the smallest head across all the lists, over and over. This is the
+  // heap solution with the heap spelled out as a scan, since Gleam has no
+  // priority queue: O(k) per element rather than O(log k), which is the entire
+  // difference the heap makes. What it does not need is any pairing structure —
+  // it works just as well on lists arriving one at a time.
+  list.reverse(take_smallest(list.filter(lists, fn(l) { l != [] }), []))
+}
+
+fn take_smallest(lists: List(List(Int)), out: List(Int)) -> List(Int) {
+  case lists {
+    [] -> out
+    [head, ..tail] -> {
+      let smallest =
+        list.fold(tail, head, fn(best: List(Int), candidate: List(Int)) {
+          case first_of(candidate) < first_of(best) {
+            True -> candidate
+            False -> best
+          }
+        })
+      let taken = first_of(smallest)
+      let rest =
+        remove_once(lists, smallest, [])
+        |> list.filter(fn(l) { l != [] })
+      // The emptied list is dropped rather than kept: an empty list has no head
+      // to compare, so leaving it in would make it win every round from then on.
+      case list.drop(smallest, 1) {
+        [] -> take_smallest(rest, [taken, ..out])
+        remainder -> take_smallest([remainder, ..rest], [taken, ..out])
+      }
+    }
+  }
+}
+
+fn remove_once(
+  lists: List(List(Int)),
+  target: List(Int),
+  kept: List(List(Int)),
+) -> List(List(Int)) {
+  case lists {
+    [] -> list.reverse(kept)
+    [head, ..tail] ->
+      case head == target {
+        True -> list.append(list.reverse(kept), tail)
+        False -> remove_once(tail, target, [head, ..kept])
+      }
+  }
+}
+
+fn first_of(values: List(Int)) -> Int {
+  case values {
+    [head, ..] -> head
+    [] -> 0
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn merge_k_lists(lists: List(List(Int))) -> List(Int)",
+      starter: "pub fn merge_k_lists(lists: List(List(Int))) -> List(Int) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"merge_k_lists([[1, 4, 5], [1, 3, 4], [2, 6]])\",
+      string.inspect([1, 1, 2, 3, 4, 4, 5, 6]),
+      string.inspect(solution.merge_k_lists([[1, 4, 5], [1, 3, 4], [2, 6]])),
+    ),
+    #(
+      \"merge_k_lists([])\",
+      string.inspect([]),
+      string.inspect(solution.merge_k_lists([])),
+    ),
+    #(
+      \"merge_k_lists([[]])\",
+      string.inspect([]),
+      string.inspect(solution.merge_k_lists([[]])),
+    ),
+    #(
+      \"merge_k_lists([[1], [], [0]])\",
+      string.inspect([0, 1]),
+      string.inspect(solution.merge_k_lists([[1], [], [0]])),
+    ),
+    #(
+      \"merge_k_lists([[2, 2], [2]])\",
+      string.inspect([2, 2, 2]),
+      string.inspect(solution.merge_k_lists([[2, 2], [2]])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc135_reverse_k_group() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Look ahead k nodes *before* reversing anything. That check is the whole difficulty: once the rewiring starts there is no way to tell how far it got, so a short final group would be reversed by mistake.", "import gleam/list
+
+pub fn reverse_k_group(values: List(Int), k: Int) -> List(Int) {
+  // Reverse each full run of k and leave a short tail alone. Checking that k
+  // nodes are actually there *before* reversing is the whole difficulty — the
+  // imperative version has to walk ahead and come back, because once it starts
+  // rewiring it cannot tell how far it got.
+  case k <= 1 {
+    True -> values
+    False -> in_groups(values, k)
+  }
+}
+
+fn in_groups(values: List(Int), k: Int) -> List(Int) {
+  let group = list.take(values, k)
+  case list.length(group) < k {
+    True -> values
+    False ->
+      list.append(list.reverse(group), in_groups(list.drop(values, k), k))
+  }
+}"),
+      #("Solution 2 · Count first", "Count once, then reverse exactly length / k groups. One length calculation instead of a look-ahead per group — and it makes the boundary explicit: everything past the last whole group is untouched, however long it is.", "import gleam/list
+
+pub fn reverse_k_group(values: List(Int), k: Int) -> List(Int) {
+  case k <= 1 {
+    True -> values
+    False -> {
+      // Count once, then reverse the first (length / k) × k values and leave
+      // the rest. One length calculation instead of a look-ahead per group —
+      // and it makes the boundary explicit: everything past the last whole
+      // group is untouched, however long it is.
+      let whole = list.length(values) / k * k
+      list.append(
+        reverse_runs(list.take(values, whole), k),
+        list.drop(values, whole),
+      )
+    }
+  }
+}
+
+fn reverse_runs(values: List(Int), k: Int) -> List(Int) {
+  case values {
+    [] -> []
+    _ ->
+      list.append(
+        list.reverse(list.take(values, k)),
+        reverse_runs(list.drop(values, k), k),
+      )
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn reverse_k_group(values: List(Int), k: Int) -> List(Int)",
+      starter: "pub fn reverse_k_group(values: List(Int), k: Int) -> List(Int) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"reverse_k_group([1, 2, 3, 4, 5], 2)\",
+      string.inspect([2, 1, 4, 3, 5]),
+      string.inspect(solution.reverse_k_group([1, 2, 3, 4, 5], 2)),
+    ),
+    #(
+      \"reverse_k_group([1, 2, 3, 4, 5], 3)\",
+      string.inspect([3, 2, 1, 4, 5]),
+      string.inspect(solution.reverse_k_group([1, 2, 3, 4, 5], 3)),
+    ),
+    #(
+      \"reverse_k_group([1, 2, 3, 4], 4)\",
+      string.inspect([4, 3, 2, 1]),
+      string.inspect(solution.reverse_k_group([1, 2, 3, 4], 4)),
+    ),
+    #(
+      \"reverse_k_group([1, 2, 3], 1) — nothing changes\",
+      string.inspect([1, 2, 3]),
+      string.inspect(solution.reverse_k_group([1, 2, 3], 1)),
+    ),
+    #(
+      \"reverse_k_group([1, 2], 5) — the group never fills\",
+      string.inspect([1, 2]),
+      string.inspect(solution.reverse_k_group([1, 2], 5)),
+    ),
+    #(
+      \"reverse_k_group([], 2)\",
+      string.inspect([]),
+      string.inspect(solution.reverse_k_group([], 2)),
     ),
   ]
 }",
@@ -16849,7 +17990,18 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc122_swim_in_water" -> Ok(nc122_swim_in_water())
     "nc123_alien_dictionary" -> Ok(nc123_alien_dictionary())
     "nc124_cheapest_flights" -> Ok(nc124_cheapest_flights())
+    "nc125_reverse_linked_list" -> Ok(nc125_reverse_linked_list())
+    "nc126_merge_two_sorted_lists" -> Ok(nc126_merge_two_sorted_lists())
+    "nc127_reorder_list" -> Ok(nc127_reorder_list())
+    "nc128_remove_nth_from_end" -> Ok(nc128_remove_nth_from_end())
+    "nc129_copy_random_list" -> Ok(nc129_copy_random_list())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
+    "nc130_add_two_numbers" -> Ok(nc130_add_two_numbers())
+    "nc131_linked_list_cycle" -> Ok(nc131_linked_list_cycle())
+    "nc132_find_the_duplicate" -> Ok(nc132_find_the_duplicate())
+    "nc133_lru_cache" -> Ok(nc133_lru_cache())
+    "nc134_merge_k_sorted_lists" -> Ok(nc134_merge_k_sorted_lists())
+    "nc135_reverse_k_group" -> Ok(nc135_reverse_k_group())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())
     "nc14_character_replacement" -> Ok(nc14_character_replacement())
     "nc15_permutation_in_string" -> Ok(nc15_permutation_in_string())

@@ -2425,6 +2425,181 @@ end"),
   ]
 }
 
+pub fn nc125_reverse_linked_list() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "One pass, three references: where you came from, where you are, and where you were going. Losing the look-ahead is the classic bug — once the link has been overwritten, the rest of the list is unreachable. In a language with cons lists the same thing is an accumulator you prepend to, which is the *same* rewiring written as a value.", "defmodule Solution do
+  # The accumulator *is* the reversed list being built, and prepending to it is
+  # exactly the pointer rewiring the imperative version does one node at a time.
+  # Nothing is ever traversed twice, so it is one pass and no extra memory
+  # beyond the result.
+  def reverse_list(values), do: walk(values, [])
+
+  defp walk([], reversed), do: reversed
+  defp walk([head | tail], reversed), do: walk(tail, [head | reversed])
+end"),
+    #("Solution 2 · By folding", "The accumulator, named by the standard library instead of written out. Worth putting next to the hand-written loop: a left fold that prepends is the definition of reversing, which is why the built-in exists at all.", "defmodule Solution do
+  # The same accumulator, named by the standard library instead of written out.
+  # Worth putting next to the hand-written loop: a left fold that prepends is
+  # the definition of reversing, which is why Enum.reverse exists at all.
+  def reverse_list(values), do: Enum.reduce(values, [], &[&1 | &2])
+end"),
+  ]
+}
+
+pub fn nc126_merge_two_sorted_lists() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.", "defmodule Solution do
+  # Take the smaller head and recurse on the rest. Because both inputs are
+  # already sorted, whichever head is smaller is smaller than everything still
+  # to come -- no comparison beyond the two fronts is ever needed.
+  def merge_two_lists([], rest), do: rest
+  def merge_two_lists(rest, []), do: rest
+
+  def merge_two_lists([a | a_rest] = first, [b | b_rest] = second) do
+    if a <= b,
+      do: [a | merge_two_lists(a_rest, second)],
+      else: [b | merge_two_lists(first, b_rest)]
+  end
+end"),
+    #("Solution 2 · Iterative", "The same merge with the recursion turned into a loop: build the answer backwards in an accumulator and reverse once at the end. That accumulator is the functional twin of the dummy head, and the reversal costs one extra pass rather than one extra frame per node.", "defmodule Solution do
+  # The same merge with the recursion turned into a loop: build the answer
+  # backwards in an accumulator and reverse once at the end. That accumulator is
+  # the functional equivalent of the dummy head the imperative version keeps,
+  # and reversing costs one extra pass rather than one extra frame per node.
+  def merge_two_lists(first, second), do: Enum.reverse(step(first, second, []))
+
+  defp step([], rest, merged), do: Enum.reduce(rest, merged, &[&1 | &2])
+  defp step(rest, [], merged), do: Enum.reduce(rest, merged, &[&1 | &2])
+
+  defp step([a | a_rest] = first, [b | b_rest] = second, merged) do
+    if a <= b,
+      do: step(a_rest, second, [a | merged]),
+      else: step(first, b_rest, [b | merged])
+  end
+end"),
+  ]
+}
+
+pub fn nc127_reorder_list() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.", "defmodule Solution do
+  # Three separate steps, each of which is its own drill: find the middle,
+  # reverse the back half, then interleave. That decomposition is the whole
+  # trick -- none of the three needs to know about the others.
+  def reorder_list(values) do
+    half = div(length(values) + 1, 2)
+    {front, back} = Enum.split(values, half)
+    interleave(front, Enum.reverse(back))
+  end
+
+  defp interleave([], rest), do: rest
+  defp interleave(rest, []), do: rest
+  defp interleave([a | a_rest], [b | b_rest]), do: [a, b | interleave(a_rest, b_rest)]
+end"),
+    #("Solution 2 · From both ends", "Take from the front, then from the back, until they meet. Reads exactly like the specification and needs no midpoint and no reversal — but reaching the back is a full walk of what is left each time, so it is O(n²) where the split-and-reverse version is O(n).", "defmodule Solution do
+  # Take from the front, then from the back, until they meet. Reads exactly like
+  # the specification and needs no midpoint and no reversal -- but each \"take
+  # from the back\" is a full walk of what is left, so it is O(n^2) where the
+  # split-and-reverse version is O(n).
+  def reorder_list(values), do: take_ends(values, [])
+
+  defp take_ends([], out), do: Enum.reverse(out)
+  defp take_ends([only], out), do: Enum.reverse([only | out])
+
+  defp take_ends([first | rest], out) do
+    {middle, [last]} = Enum.split(rest, length(rest) - 1)
+    take_ends(middle, [last, first | out])
+  end
+end"),
+  ]
+}
+
+pub fn nc128_remove_nth_from_end() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Two walkers n apart. When the leading one runs off the end, the trailing one is on the node to change — the length is never computed, which is the point: one pass instead of two. Opening the gap can fail, and that failure is exactly the \"n is longer than the list\" case.", "defmodule Solution do
+  # Two walkers n apart. When the leading one runs off the end, the trailing one
+  # is sitting on the node to drop -- the length is never computed, which is the
+  # point: one pass instead of two. Opening the gap can fail, and that failure
+  # is exactly the \"n is longer than the list\" case.
+  def remove_nth_from_end(values, n) do
+    case skip(values, n) do
+      :too_short -> values
+      ahead -> advance(values, ahead, [])
+    end
+  end
+
+  defp skip(rest, 0), do: rest
+  defp skip([], _n), do: :too_short
+  defp skip([_ | rest], n), do: skip(rest, n - 1)
+
+  defp advance([value | behind], [_ | ahead], kept), do: advance(behind, ahead, [value | kept])
+  # The leading walker is spent, so the trailing one is on the doomed node.
+  defp advance([_dropped | rest], [], kept), do: Enum.reverse(kept) ++ rest
+  defp advance([], _ahead, kept), do: Enum.reverse(kept)
+end"),
+    #("Solution 2 · By length", "Count first, then remove by position. Two passes rather than one, and it says outright what the gap encodes: nth from the end is length minus n from the front. Where a list cannot be walked twice — a stream, say — that is the assumption that fails.", "defmodule Solution do
+  # Count first, then drop by position. Two passes rather than one, and it says
+  # outright what the two-walker version encodes in a gap: nth from the end is
+  # length minus n from the front. Where a list cannot be walked twice -- a
+  # stream, say -- that is exactly the assumption that fails.
+  def remove_nth_from_end(values, n) do
+    index = length(values) - n
+
+    if index < 0,
+      do: values,
+      else: List.delete_at(values, index)
+  end
+end"),
+  ]
+}
+
+pub fn nc129_copy_random_list() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.", "defmodule Solution do
+  @moduledoc \"\"\"
+  Nodes arrive as {id, value, random_id}, where the ids are arbitrary and a
+  random_id of -1 means no link. The copy is returned as {value, random} with
+  random naming a *position* in the copy, or -1 -- so producing it means
+  translating every id into the place the copied node ended up.
+  \"\"\"
+
+  # One pass to learn where each original node lands, a second to resolve the
+  # links. Trying to resolve a link on first sight cannot work: it may point at
+  # a node not yet seen, which is the whole difficulty of the problem, and a map
+  # from old node to new is what removes it.
+  def copy_random_list(nodes) do
+    places =
+      nodes
+      |> Enum.with_index()
+      |> Map.new(fn {{id, _value, _random}, i} -> {id, i} end)
+
+    Enum.map(nodes, fn {_id, value, random} ->
+      {value, Map.get(places, random, -1)}
+    end)
+  end
+end"),
+    #("Solution 2 · By searching", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+The same translation without the map: for each link, search for the node it names. O(n²) against O(n), and the contrast is the lesson — the map is not an optimisation bolted on afterwards, it is the same lookup, paid for once instead of once per node.", "defmodule Solution do
+  # The same translation without the map: for each link, search the list for the
+  # node it names. O(n^2) against O(n), and the contrast is the lesson -- the
+  # map is not an optimisation bolted on afterwards, it is the same lookup the
+  # search does, paid for once instead of once per node.
+  def copy_random_list(nodes) do
+    Enum.map(nodes, fn {_id, value, random} ->
+      {value, position_of(nodes, random, 0)}
+    end)
+  end
+
+  defp position_of([], _id, _at), do: -1
+
+  defp position_of([{id, _value, _random} | _rest], id, at), do: at
+
+  defp position_of([_node | rest], id, at), do: position_of(rest, id, at + 1)
+end"),
+  ]
+}
+
 pub fn nc12_best_time_stock() -> List(#(String, String, String)) {
   [
     #("Solution 1", "Carry the cheapest price seen so far; today's best sale is today's price against that minimum. One pass, two variables.", "defmodule Solution do
@@ -2451,6 +2626,329 @@ Every buy day against every later sell day. O(n^2), and the problem statement wr
           do: sell - buy
 
     Enum.max([0 | profits])
+  end
+end"),
+  ]
+}
+
+pub fn nc130_add_two_numbers() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The digits arrive least significant first, which is exactly the order addition wants — no reversing and no length matching. The case worth writing down is the carry outliving both numbers: 5 + 5 produces a digit neither input has a node for.", "defmodule Solution do
+  # Both numbers arrive least significant digit first, which is exactly the
+  # order addition wants -- no reversing, no length matching, just carry along.
+  # The carry outliving both lists is the case worth writing down: 5 + 5 is two
+  # digits from two one-digit numbers.
+  def add_two_numbers(first, second), do: add(first, second, 0)
+
+  defp add([], [], 0), do: []
+  defp add([], [], carry), do: [carry]
+
+  defp add(first, second, carry) do
+    {a, a_rest} = split(first)
+    {b, b_rest} = split(second)
+    total = a + b + carry
+    [rem(total, 10) | add(a_rest, b_rest, div(total, 10))]
+  end
+
+  defp split([]), do: {0, []}
+  defp split([head | tail]), do: {head, tail}
+end"),
+    #("Solution 2 · Via integers", "Turn both lists into whole numbers, add, take the sum apart again. It reads well, and it is safe here only because this language's integers are arbitrary precision — which is precisely why the problem is posed as a list of digits in languages where they are not.", "defmodule Solution do
+  # Turn both lists into whole numbers, add, and take the sum apart again. It
+  # reads well and is fine in Elixir, whose integers are arbitrary precision --
+  # but it is the version that breaks the moment the language has a fixed-width
+  # integer, which is precisely why the problem is posed as a list of digits.
+  def add_two_numbers(first, second), do: to_digits(value(first) + value(second))
+
+  defp value(digits) do
+    digits
+    |> Enum.with_index()
+    |> Enum.reduce(0, fn {digit, i}, total -> total + digit * 10 ** i end)
+  end
+
+  defp to_digits(number) when number < 10, do: [number]
+  defp to_digits(number), do: [rem(number, 10) | to_digits(div(number, 10))]
+end"),
+  ]
+}
+
+pub fn nc131_linked_list_cycle() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Floyd's tortoise and hare. One walker takes single steps, the other double; inside a loop the fast one gains a place per step on the slow one, so it must land on it. Outside one, it runs off the end first. Constant memory and nothing is marked — that is the whole result.", "defmodule Solution do
+  @moduledoc \"\"\"
+  The list arrives as its links rather than its values: `next` holds, for each
+  node, the index of the one after it, or -1 for the end. An immutable list
+  cannot point back at itself, so this is how a cycle is expressed at all in a
+  language without mutable references.
+  \"\"\"
+
+  def has_cycle([]), do: false
+  def has_cycle(next), do: chase(List.to_tuple(next), 0, 0)
+
+  # Floyd's tortoise and hare. One walker takes single steps, the other double;
+  # if there is a loop the fast one is going around it and gains one place per
+  # step on the slow one, so it must eventually land on it. If there is no loop
+  # the fast one runs off the end first. No memory of where either has been.
+  defp chase(links, slow, fast) do
+    case step(links, fast) do
+      -1 ->
+        false
+
+      once ->
+        case step(links, once) do
+          -1 ->
+            false
+
+          twice ->
+            slow = step(links, slow)
+            slow == twice or chase(links, slow, twice)
+        end
+    end
+  end
+
+  defp step(_links, from) when from < 0, do: -1
+  defp step(links, from), do: elem(links, from)
+end"),
+    #("Solution 2 · Seen set", "Remember every node visited and stop when one repeats. Obvious and correct, at O(n) memory — which is exactly what the two-walker version removes. Note that it is the *nodes* that go in the set, not their values: repeated values are ordinary, repeated nodes are the cycle.", "defmodule Solution do
+  def has_cycle([]), do: false
+  def has_cycle(next), do: walk(List.to_tuple(next), 0, MapSet.new())
+
+  # Remember every node visited and stop when one repeats. Obvious, correct, and
+  # O(n) memory -- which is the whole cost the two-walker version removes. Worth
+  # writing once so that \"constant space\" means something specific afterwards.
+  defp walk(_links, at, _seen) when at < 0, do: false
+
+  defp walk(links, at, seen) do
+    if MapSet.member?(seen, at),
+      do: true,
+      else: walk(links, elem(links, at), MapSet.put(seen, at))
+  end
+end"),
+  ]
+}
+
+pub fn nc132_find_the_duplicate() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Read the array as a linked list: position i points at position nums[i]. Every value is a valid position and one repeats, so two positions point at the same place — the list has a cycle, and the duplicate is its entrance. Then it is Floyd's twice: once to meet inside the loop, once to find where it begins.", "defmodule Solution do
+  # Read the list as a linked list: position i points at position nums[i].
+  # Because every value is a valid position and one value repeats, two positions
+  # point at the same place -- so the list has a cycle, and the duplicate is its
+  # entrance. Then it is Floyd's, twice: once to meet inside the loop, once to
+  # walk from the start and the meeting point together until they agree on where
+  # it begins.
+  def find_duplicate(nums) do
+    values = List.to_tuple(nums)
+    first = elem(values, 0)
+    meeting = meet(values, first, elem(values, first))
+    entrance(values, 0, meeting)
+  end
+
+  defp meet(_values, same, same), do: same
+
+  defp meet(values, slow, fast) do
+    meet(values, elem(values, slow), elem(values, elem(values, fast)))
+  end
+
+  defp entrance(_values, same, same), do: same
+
+  defp entrance(values, from_start, from_meeting) do
+    entrance(values, elem(values, from_start), elem(values, from_meeting))
+  end
+end"),
+    #("Solution 2 · Counting", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Binary search over the *values*, not the positions. For a candidate v, count how many numbers are at most v: with no duplicate that count is exactly v, so a count running ahead says the repeat is at or below v. O(n log n), but it needs no insight about cycles.", "defmodule Solution do
+  # Binary search over the *values*, not the positions. For a candidate v, count
+  # how many numbers are at most v: with no duplicate that count is exactly v,
+  # so a count that runs ahead says the repeat is at or below v. O(n log n)
+  # against Floyd's O(n), but it needs no insight about cycles -- only that the
+  # pigeonhole is what makes the count informative.
+  def find_duplicate(nums), do: search(nums, 1, length(nums) - 1)
+
+  defp search(_nums, low, high) when low >= high, do: low
+
+  defp search(nums, low, high) do
+    middle = div(low + high, 2)
+    seen = Enum.count(nums, &(&1 <= middle))
+
+    if seen > middle,
+      do: search(nums, low, middle),
+      else: search(nums, middle + 1, high)
+  end
+end"),
+  ]
+}
+
+pub fn nc133_lru_cache() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A map alone gives the first and a list alone gives the second — the structure is whatever supplies both. Where the language's map already remembers insertion order, deleting a key and putting it back *is* the recency list.", "defmodule Solution do
+  def new(capacity), do: %{capacity: capacity, entries: %{}, recent: []}
+
+  @doc \"\"\"
+  Missing keys answer -1. Reading counts as use, so the cache comes back changed
+  -- which is the part that makes an LRU cache awkward to express with immutable
+  values, and the reason the return is a pair.
+  \"\"\"
+  def get(cache, key) do
+    case Map.fetch(cache.entries, key) do
+      :error -> {-1, cache}
+      {:ok, value} -> {value, %{cache | recent: touch(cache.recent, key)}}
+    end
+  end
+
+  def put(cache, key, value) do
+    recent = touch(cache.recent, key)
+    entries = Map.put(cache.entries, key, value)
+
+    # Over capacity by exactly one, so exactly one key goes: the last in the
+    # recency order, which is what \"least recently used\" names.
+    if length(recent) > cache.capacity do
+      {keep, dropped} = Enum.split(recent, cache.capacity)
+      %{cache | entries: Map.drop(entries, dropped), recent: keep}
+    else
+      %{cache | entries: entries, recent: recent}
+    end
+  end
+
+  # The recency order, most recently used first. Moving a key to the front is
+  # what a real implementation does by unlinking and relinking a node; here it
+  # costs a walk, which is the price of having no back-pointers.
+  defp touch(recent, key), do: [key | Enum.reject(recent, &(&1 == key))]
+end"),
+    #("Solution 2 · Timestamps", "No recency order at all — just a counter, bumped on every use. Eviction becomes a scan for the smallest stamp, trading the reordering walk for a search. Worth seeing because it makes plain that \"least recently used\" is a minimum, not a position.", "defmodule Solution do
+  def new(capacity), do: %{capacity: capacity, clock: 0, entries: %{}}
+
+  def get(cache, key) do
+    case Map.fetch(cache.entries, key) do
+      :error -> {-1, cache}
+      {:ok, {value, _stamp}} -> {value, stamp(cache, key, value)}
+    end
+  end
+
+  def put(cache, key, value) do
+    cache = stamp(cache, key, value)
+
+    if map_size(cache.entries) > cache.capacity,
+      do: %{cache | entries: Map.delete(cache.entries, oldest(cache))},
+      else: cache
+  end
+
+  # No recency *order* at all -- just a counter, bumped on every use. Eviction
+  # then means scanning for the smallest stamp, so this trades the reordering
+  # walk for a scan. It is the version to reach for when there is no linked list
+  # to relink, and it makes plain that \"least recently used\" is a minimum, not a
+  # position.
+  defp stamp(cache, key, value) do
+    %{
+      cache
+      | clock: cache.clock + 1,
+        entries: Map.put(cache.entries, key, {value, cache.clock})
+    }
+  end
+
+  defp oldest(cache) do
+    {key, _entry} =
+      Enum.min_by(cache.entries, fn {_key, {_value, stamp}} -> stamp end)
+
+    key
+  end
+end"),
+  ]
+}
+
+pub fn nc134_merge_k_sorted_lists() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.", "defmodule Solution do
+  # Merge in pairs, halving the number of lists each round. Folding them in one
+  # at a time re-walks the growing result every time -- O(k*n) -- while pairing
+  # gives O(n log k) for the same merges, because each element is copied only
+  # once per round and there are log k rounds.
+  def merge_k_lists([]), do: []
+  def merge_k_lists([only]), do: only
+  def merge_k_lists(lists), do: merge_k_lists(pair_up(lists))
+
+  defp pair_up([first, second | rest]), do: [merge(first, second) | pair_up(rest)]
+  defp pair_up(rest), do: rest
+
+  defp merge([], rest), do: rest
+  defp merge(rest, []), do: rest
+
+  defp merge([a | a_rest] = first, [b | b_rest] = second) do
+    if a <= b,
+      do: [a | merge(a_rest, second)],
+      else: [b | merge(first, b_rest)]
+  end
+end"),
+    #("Solution 2 · Smallest head", "The heap solution with the heap spelled out as a scan, for languages that have no priority queue: O(k) per element rather than O(log k), which is the entire difference the heap makes. What it does not need is any pairing structure — it works on lists arriving one at a time.", "defmodule Solution do
+  # Take the smallest head across all the lists, over and over. This is the heap
+  # solution with the heap spelled out as a scan, since Elixir has no priority
+  # queue: O(k) per element rather than O(log k), which is the entire difference
+  # the heap makes. What it does not need is any pairing structure -- it works
+  # just as well on lists arriving one at a time.
+  def merge_k_lists(lists) do
+    lists
+    |> Enum.reject(&(&1 == []))
+    |> take_smallest([])
+    |> Enum.reverse()
+  end
+
+  defp take_smallest([], out), do: out
+
+  defp take_smallest(lists, out) do
+    {[taken | remainder], index} =
+      lists
+      |> Enum.with_index()
+      |> Enum.min_by(fn {[head | _rest], _i} -> head end)
+
+    rest = List.delete_at(lists, index)
+
+    # The emptied list is dropped rather than kept: an empty list has no head to
+    # compare, so leaving it in would break the very next round.
+    case remainder do
+      [] -> take_smallest(rest, [taken | out])
+      _ -> take_smallest([remainder | rest], [taken | out])
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc135_reverse_k_group() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Look ahead k nodes *before* reversing anything. That check is the whole difficulty: once the rewiring starts there is no way to tell how far it got, so a short final group would be reversed by mistake.", "defmodule Solution do
+  # Reverse each full run of k and leave a short tail alone. Checking that k
+  # nodes are actually there *before* reversing is the whole difficulty -- the
+  # imperative version has to walk ahead and come back, because once it starts
+  # rewiring it cannot tell how far it got.
+  def reverse_k_group(values, k) when k <= 1, do: values
+  def reverse_k_group(values, k), do: in_groups(values, k)
+
+  defp in_groups(values, k) do
+    {group, rest} = Enum.split(values, k)
+
+    if length(group) < k,
+      do: values,
+      else: Enum.reverse(group) ++ in_groups(rest, k)
+  end
+end"),
+    #("Solution 2 · Count first", "Count once, then reverse exactly length / k groups. One length calculation instead of a look-ahead per group — and it makes the boundary explicit: everything past the last whole group is untouched, however long it is.", "defmodule Solution do
+  def reverse_k_group(values, k) when k <= 1, do: values
+
+  def reverse_k_group(values, k) do
+    # Count once, then reverse the first (length / k) * k values and leave the
+    # rest. One length calculation instead of a look-ahead per group -- and it
+    # makes the boundary explicit: everything past the last whole group is
+    # untouched, however long it is.
+    whole = div(length(values), k) * k
+    {full, tail} = Enum.split(values, whole)
+    reverse_runs(full, k) ++ tail
+  end
+
+  defp reverse_runs([], _k), do: []
+
+  defp reverse_runs(values, k) do
+    {group, rest} = Enum.split(values, k)
+    Enum.reverse(group) ++ reverse_runs(rest, k)
   end
 end"),
   ]
@@ -6877,7 +7375,18 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
     "nc122_swim_in_water" -> Ok(nc122_swim_in_water())
     "nc123_alien_dictionary" -> Ok(nc123_alien_dictionary())
     "nc124_cheapest_flights" -> Ok(nc124_cheapest_flights())
+    "nc125_reverse_linked_list" -> Ok(nc125_reverse_linked_list())
+    "nc126_merge_two_sorted_lists" -> Ok(nc126_merge_two_sorted_lists())
+    "nc127_reorder_list" -> Ok(nc127_reorder_list())
+    "nc128_remove_nth_from_end" -> Ok(nc128_remove_nth_from_end())
+    "nc129_copy_random_list" -> Ok(nc129_copy_random_list())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
+    "nc130_add_two_numbers" -> Ok(nc130_add_two_numbers())
+    "nc131_linked_list_cycle" -> Ok(nc131_linked_list_cycle())
+    "nc132_find_the_duplicate" -> Ok(nc132_find_the_duplicate())
+    "nc133_lru_cache" -> Ok(nc133_lru_cache())
+    "nc134_merge_k_sorted_lists" -> Ok(nc134_merge_k_sorted_lists())
+    "nc135_reverse_k_group" -> Ok(nc135_reverse_k_group())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())
     "nc14_character_replacement" -> Ok(nc14_character_replacement())
     "nc15_permutation_in_string" -> Ok(nc15_permutation_in_string())

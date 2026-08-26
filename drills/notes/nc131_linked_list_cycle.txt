@@ -1,0 +1,1 @@
+Floyd's tortoise and hare. One walker takes single steps, the other double; inside a loop the fast one gains a place per step on the slow one, so it must land on it. Outside one, it runs off the end first. Constant memory and nothing is marked — that is the whole result.

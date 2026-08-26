@@ -1,0 +1,1 @@
+Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.

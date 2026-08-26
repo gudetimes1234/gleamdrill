@@ -680,6 +680,63 @@ pub fn groups() -> List(Group) {
         "nc124_cheapest_flights",
       ),
     ]),
+    Group("Linked List", [
+      Drill(
+        "Reverse Linked List",
+        "Given the head of a singly linked list, reverse it and return the new head.",
+        "nc125_reverse_linked_list",
+      ),
+      Drill(
+        "Merge Two Sorted Lists",
+        "Given the heads of two sorted linked lists, splice them into one sorted list and return its head.",
+        "nc126_merge_two_sorted_lists",
+      ),
+      Drill(
+        "Reorder List",
+        "Given a linked list L0 to Ln, reorder it to L0, Ln, L1, Ln-1, L2, Ln-2 and so on, changing only the links.",
+        "nc127_reorder_list",
+      ),
+      Drill(
+        "Remove Nth Node From End of List",
+        "Given the head of a linked list, remove the nth node counting from the end and return the head.",
+        "nc128_remove_nth_from_end",
+      ),
+      Drill(
+        "Copy List with Random Pointer",
+        "Each node of a linked list carries an extra link to any node in the list, or to nothing at all. Return a deep copy: new nodes throughout, with the same values and the same shape of links.",
+        "nc129_copy_random_list",
+      ),
+      Drill(
+        "Add Two Numbers",
+        "Two numbers are given as linked lists of digits, least significant digit first. Return their sum in the same form.",
+        "nc130_add_two_numbers",
+      ),
+      Drill(
+        "Linked List Cycle",
+        "Given a linked list, return true if following the links ever revisits a node, and false if the list ends.",
+        "nc131_linked_list_cycle",
+      ),
+      Drill(
+        "Find the Duplicate Number",
+        "Given n + 1 integers each between 1 and n, exactly one value repeats. Return it without modifying the array and using only constant extra space.",
+        "nc132_find_the_duplicate",
+      ),
+      Drill(
+        "LRU Cache",
+        "Design a cache of fixed capacity: get(key) returns the stored value or -1, put(key, value) stores one, and when the cache is full the least recently used key is dropped. Reading counts as use.",
+        "nc133_lru_cache",
+      ),
+      Drill(
+        "Merge k Sorted Lists",
+        "Given k sorted linked lists, merge them into one sorted list and return its head.",
+        "nc134_merge_k_sorted_lists",
+      ),
+      Drill(
+        "Reverse Nodes in k-Group",
+        "Given a linked list, reverse every consecutive group of k nodes. A final group of fewer than k nodes is left as it is.",
+        "nc135_reverse_k_group",
+      ),
+    ]),
   ]
 }
 

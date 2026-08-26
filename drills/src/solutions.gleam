@@ -86,8 +86,30 @@ import nc123_alien_dictionary
 import nc123_alien_dictionary__dfs_postorder
 import nc124_cheapest_flights
 import nc124_cheapest_flights__breadth_first
+import nc125_reverse_linked_list
+import nc125_reverse_linked_list__by_folding
+import nc126_merge_two_sorted_lists
+import nc126_merge_two_sorted_lists__iterative
+import nc127_reorder_list
+import nc127_reorder_list__from_both_ends
+import nc128_remove_nth_from_end
+import nc128_remove_nth_from_end__by_length
+import nc129_copy_random_list
+import nc129_copy_random_list__by_searching
 import nc12_best_time_stock
 import nc12_best_time_stock__brute_force
+import nc130_add_two_numbers
+import nc130_add_two_numbers__via_integers
+import nc131_linked_list_cycle
+import nc131_linked_list_cycle__seen_set
+import nc132_find_the_duplicate
+import nc132_find_the_duplicate__counting
+import nc133_lru_cache
+import nc133_lru_cache__timestamps
+import nc134_merge_k_sorted_lists
+import nc134_merge_k_sorted_lists__smallest_head
+import nc135_reverse_k_group
+import nc135_reverse_k_group__count_first
 import nc13_longest_substring
 import nc13_longest_substring__shrinking_window
 import nc14_character_replacement
@@ -694,6 +716,42 @@ pub fn main() {
     check_cheapest_flights(
       nc124_cheapest_flights__breadth_first.find_cheapest_price,
     ),
+    check_reverse_list(nc125_reverse_linked_list.reverse_list),
+    check_reverse_list(nc125_reverse_linked_list__by_folding.reverse_list),
+    check_merge_two_lists(nc126_merge_two_sorted_lists.merge_two_lists),
+    check_merge_two_lists(
+      nc126_merge_two_sorted_lists__iterative.merge_two_lists,
+    ),
+    check_reorder_list(nc127_reorder_list.reorder_list),
+    check_reorder_list(nc127_reorder_list__from_both_ends.reorder_list),
+    check_remove_nth_from_end(nc128_remove_nth_from_end.remove_nth_from_end),
+    check_remove_nth_from_end(
+      nc128_remove_nth_from_end__by_length.remove_nth_from_end,
+    ),
+    check_copy_random_list(nc129_copy_random_list.copy_random_list),
+    check_copy_random_list(
+      nc129_copy_random_list__by_searching.copy_random_list,
+    ),
+    check_add_two_numbers(nc130_add_two_numbers.add_two_numbers),
+    check_add_two_numbers(nc130_add_two_numbers__via_integers.add_two_numbers),
+    check_has_cycle(nc131_linked_list_cycle.has_cycle),
+    check_has_cycle(nc131_linked_list_cycle__seen_set.has_cycle),
+    check_find_duplicate(nc132_find_the_duplicate.find_duplicate),
+    check_find_duplicate(nc132_find_the_duplicate__counting.find_duplicate),
+    check_lru_cache(
+      nc133_lru_cache.new,
+      nc133_lru_cache.get,
+      nc133_lru_cache.put,
+    ),
+    check_lru_cache(
+      nc133_lru_cache__timestamps.new,
+      nc133_lru_cache__timestamps.get,
+      nc133_lru_cache__timestamps.put,
+    ),
+    check_merge_k_lists(nc134_merge_k_sorted_lists.merge_k_lists),
+    check_merge_k_lists(nc134_merge_k_sorted_lists__smallest_head.merge_k_lists),
+    check_reverse_k_group(nc135_reverse_k_group.reverse_k_group),
+    check_reverse_k_group(nc135_reverse_k_group__count_first.reverse_k_group),
 
     // Gleam Tips
     check_list_patterns(tip01_list_patterns.length, tip01_list_patterns.last),
@@ -2198,6 +2256,127 @@ fn check_cheapest_flights(
       2,
     )
     == 7
+  Nil
+}
+
+fn check_reverse_list(f: fn(List(Int)) -> List(Int)) -> Nil {
+  let assert [5, 4, 3, 2, 1] = f([1, 2, 3, 4, 5])
+  let assert [2, 1] = f([1, 2])
+  let assert [] = f([])
+  let assert [7] = f([7])
+  Nil
+}
+
+fn check_merge_two_lists(f: fn(List(Int), List(Int)) -> List(Int)) -> Nil {
+  let assert [1, 1, 2, 3, 4, 4] = f([1, 2, 4], [1, 3, 4])
+  let assert [] = f([], [])
+  let assert [0] = f([], [0])
+  let assert [1, 2, 3, 5] = f([5], [1, 2, 3])
+  Nil
+}
+
+fn check_reorder_list(f: fn(List(Int)) -> List(Int)) -> Nil {
+  let assert [1, 4, 2, 3] = f([1, 2, 3, 4])
+  // An odd length leaves the middle element alone at the end.
+  let assert [1, 5, 2, 4, 3] = f([1, 2, 3, 4, 5])
+  let assert [1, 2] = f([1, 2])
+  let assert [1] = f([1])
+  let assert [] = f([])
+  Nil
+}
+
+fn check_remove_nth_from_end(f: fn(List(Int), Int) -> List(Int)) -> Nil {
+  let assert [1, 2, 3, 5] = f([1, 2, 3, 4, 5], 2)
+  let assert [] = f([1], 1)
+  let assert [1] = f([1, 2], 1)
+  // Removing the last from the end means removing the head.
+  let assert [2] = f([1, 2], 2)
+  let assert [1, 2, 3] = f([1, 2, 3], 5)
+  Nil
+}
+
+fn check_copy_random_list(
+  f: fn(List(#(Int, Int, Int))) -> List(#(Int, Int)),
+) -> Nil {
+  let assert [#(7, 1), #(13, -1)] = f([#(100, 7, 200), #(200, 13, -1)])
+  let assert [#(1, 0)] = f([#(9, 1, 9)])
+  // The first node points at one that has not been seen yet, which is what
+  // rules out resolving links on the way past.
+  let assert [#(1, 2), #(2, -1), #(3, 0)] =
+    f([#(5, 1, 7), #(6, 2, -1), #(7, 3, 5)])
+  let assert [] = f([])
+  Nil
+}
+
+fn check_add_two_numbers(f: fn(List(Int), List(Int)) -> List(Int)) -> Nil {
+  let assert [7, 0, 8] = f([2, 4, 3], [5, 6, 4])
+  let assert [0] = f([0], [0])
+  let assert [0, 0, 0, 1] = f([9, 9, 9], [1])
+  // The carry outlives both numbers.
+  let assert [0, 1] = f([5], [5])
+  let assert [4, 6, 5] = f([1, 2], [3, 4, 5])
+  Nil
+}
+
+fn check_has_cycle(f: fn(List(Int)) -> Bool) -> Nil {
+  let assert True = f([1, 2, 3, 1])
+  let assert False = f([1, 2, -1])
+  let assert False = f([-1])
+  // One node linking to itself is the shortest cycle there is.
+  let assert True = f([0])
+  let assert False = f([])
+  let assert True = f([1, 0])
+  Nil
+}
+
+fn check_find_duplicate(f: fn(List(Int)) -> Int) -> Nil {
+  let assert 2 = f([1, 3, 4, 2, 2])
+  let assert 3 = f([3, 1, 3, 4, 2])
+  let assert 1 = f([1, 1])
+  // The repeat can appear any number of times, not just twice.
+  let assert 2 = f([2, 2, 2, 2, 2])
+  let assert 4 = f([1, 4, 4, 2, 4])
+  Nil
+}
+
+fn check_lru_cache(
+  new: fn(Int) -> cache,
+  get: fn(cache, Int) -> #(Int, cache),
+  put: fn(cache, Int, Int) -> cache,
+) -> Nil {
+  let cache = new(2) |> put(1, 1) |> put(2, 2)
+  let assert #(1, cache) = get(cache, 1)
+  // Reading key 1 made key 2 the least recently used, so key 2 goes.
+  let cache = put(cache, 3, 3)
+  let assert #(-1, cache) = get(cache, 2)
+  let assert #(3, cache) = get(cache, 3)
+  let cache = put(cache, 4, 4)
+  let assert #(-1, cache) = get(cache, 1)
+  let assert #(3, cache) = get(cache, 3)
+  let assert #(4, cache) = get(cache, 4)
+  let assert #(-1, _) = get(cache, 99)
+  // Storing an existing key updates it rather than filling another slot.
+  let assert #(9, _) = get(new(1) |> put(5, 5) |> put(5, 9), 5)
+  Nil
+}
+
+fn check_merge_k_lists(f: fn(List(List(Int))) -> List(Int)) -> Nil {
+  let assert [1, 1, 2, 3, 4, 4, 5, 6] = f([[1, 4, 5], [1, 3, 4], [2, 6]])
+  let assert [] = f([])
+  let assert [] = f([[]])
+  let assert [0, 1] = f([[1], [], [0]])
+  let assert [2, 2, 2] = f([[2, 2], [2]])
+  Nil
+}
+
+fn check_reverse_k_group(f: fn(List(Int), Int) -> List(Int)) -> Nil {
+  let assert [2, 1, 4, 3, 5] = f([1, 2, 3, 4, 5], 2)
+  // Five is not a multiple of three, so the last two are left as they are.
+  let assert [3, 2, 1, 4, 5] = f([1, 2, 3, 4, 5], 3)
+  let assert [4, 3, 2, 1] = f([1, 2, 3, 4], 4)
+  let assert [1, 2, 3] = f([1, 2, 3], 1)
+  let assert [1, 2] = f([1, 2], 5)
+  let assert [] = f([], 2)
   Nil
 }
 

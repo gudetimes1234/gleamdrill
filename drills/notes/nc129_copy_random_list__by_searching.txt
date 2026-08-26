@@ -1,0 +1,2 @@
+@shared/brute-force-baseline
+The same translation without the map: for each link, search for the node it names. O(n²) against O(n), and the contrast is the lesson — the map is not an optimisation bolted on afterwards, it is the same lookup, paid for once instead of once per node.

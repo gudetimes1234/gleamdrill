@@ -1,0 +1,1 @@
+Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A map alone gives the first and a list alone gives the second — the structure is whatever supplies both. Where the language's map already remembers insertion order, deleting a key and putting it back *is* the recency list.

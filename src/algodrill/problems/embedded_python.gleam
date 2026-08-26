@@ -2645,6 +2645,508 @@ __case__(\"findCheapestPrice(5, cheapest route needs the third hop, 0, 2, 2)\", 
   )
 }
 
+pub fn nc125_reverse_linked_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One pass, three references: where you came from, where you are, and where you were going. Losing the look-ahead is the classic bug — once the link has been overwritten, the rest of the list is unreachable. In a language with cons lists the same thing is an accumulator you prepend to, which is the *same* rewiring written as a value.", "class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+
+def reverseList(head):
+    # Three pointers and no new nodes: remember where you came from, look ahead
+    # before rewriting the link, then step on. Losing the look-ahead is the
+    # classic bug -- once head.next has been overwritten, the rest of the list
+    # is unreachable.
+    previous = None
+    while head is not None:
+        following = head.next
+        head.next = previous
+        previous = head
+        head = following
+    return previous"),
+      #("Solution 2 · By recursion", "Reverse the rest, then hook the current node onto its end. The new head comes back unchanged through every frame, which is why it is returned rather than tracked — and `head.next.next = head` is the whole rewiring, done on the way back out. O(n) stack against the loop's O(1).", "class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+
+def reverseList(head):
+    # Reverse the rest, then hook the current node onto its end. The new head
+    # comes back unchanged through every frame, which is why it is returned
+    # rather than tracked -- and head.next.next = head is the whole rewiring,
+    # done on the way back out. O(n) stack, against the loop's O(1).
+    if head is None or head.next is None:
+        return head
+    reversed_rest = reverseList(head.next)
+    head.next.next = head
+    head.next = None
+    return reversed_rest"),
+    ],
+    check: Check(
+      signature: "class ListNode:
+    def __init__(self, val=0, next=None):
+
+def reverseList(head):",
+      starter: "class ListNode:
+    def __init__(self, val=0, next=None):
+        pass
+
+def reverseList(head):
+    pass",
+      harness: "try:
+    (reverseList, ListNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+def __chain__(values):
+    head = None
+    for value in reversed(values):
+        head = ListNode(value, head)
+    return head
+
+def __values__(node):
+    out = []
+    while node is not None and len(out) < 1000:
+        out.append(node.val)
+        node = node.next
+    return out
+
+__case__(\"reverseList([1,2,3,4,5])\", [5, 4, 3, 2, 1], __values__(reverseList(__chain__([1, 2, 3, 4, 5]))))
+__case__(\"reverseList([1,2])\", [2, 1], __values__(reverseList(__chain__([1, 2]))))
+__case__(\"reverseList([]) -- an empty list\", [], __values__(reverseList(__chain__([]))))
+__case__(\"reverseList([7])\", [7], __values__(reverseList(__chain__([7]))))",
+    ),
+  )
+}
+
+pub fn nc126_merge_two_sorted_lists() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.", "class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+
+def mergeTwoLists(list1, list2):
+    # The dummy head is what removes the special case: without it, the first
+    # node has to be chosen separately from all the others because there is
+    # nothing to attach it to. No new nodes beyond it -- the existing ones are
+    # spliced.
+    dummy = ListNode()
+    tail = dummy
+
+    while list1 is not None and list2 is not None:
+        if list1.val <= list2.val:
+            tail.next, list1 = list1, list1.next
+        else:
+            tail.next, list2 = list2, list2.next
+        tail = tail.next
+
+    # Whichever list is left is already sorted and already linked.
+    tail.next = list1 if list1 is not None else list2
+    return dummy.next"),
+      #("Solution 2 · By recursion", "The same merge with the return value doing the joining: no dummy, no tail reference. One frame per node is the cost, and it is exactly what the loop trades away.", "class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+
+def mergeTwoLists(list1, list2):
+    # Take the smaller head and let the recursion produce the rest. No dummy and
+    # no tail pointer -- the return value is the join -- at the cost of a frame
+    # per node.
+    if list1 is None:
+        return list2
+    if list2 is None:
+        return list1
+    if list1.val <= list2.val:
+        list1.next = mergeTwoLists(list1.next, list2)
+        return list1
+    list2.next = mergeTwoLists(list1, list2.next)
+    return list2"),
+    ],
+    check: Check(
+      signature: "class ListNode:
+    def __init__(self, val=0, next=None):
+
+def mergeTwoLists(list1, list2):",
+      starter: "class ListNode:
+    def __init__(self, val=0, next=None):
+        pass
+
+def mergeTwoLists(list1, list2):
+    pass",
+      harness: "try:
+    (mergeTwoLists, ListNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+def __chain__(values):
+    head = None
+    for value in reversed(values):
+        head = ListNode(value, head)
+    return head
+
+def __values__(node):
+    out = []
+    while node is not None and len(out) < 1000:
+        out.append(node.val)
+        node = node.next
+    return out
+
+__case__(\"mergeTwoLists([1,2,4], [1,3,4])\", [1, 1, 2, 3, 4, 4], __values__(mergeTwoLists(__chain__([1, 2, 4]), __chain__([1, 3, 4]))))
+__case__(\"mergeTwoLists([], [])\", [], __values__(mergeTwoLists(__chain__([]), __chain__([]))))
+__case__(\"mergeTwoLists([], [0])\", [0], __values__(mergeTwoLists(__chain__([]), __chain__([0]))))
+__case__(\"mergeTwoLists([5], [1,2,3])\", [1, 2, 3, 5], __values__(mergeTwoLists(__chain__([5]), __chain__([1, 2, 3]))))",
+    ),
+  )
+}
+
+pub fn nc127_reorder_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.", "class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+
+def reorderList(head):
+    # Three separate steps, each of which is its own drill: find the middle with
+    # a slow and a fast pointer, reverse the back half, then weave the two
+    # together. That decomposition is the whole trick -- none of the three needs
+    # to know about the others.
+    if head is None or head.next is None:
+        return head
+
+    slow, fast = head, head.next
+    while fast is not None and fast.next is not None:
+        slow, fast = slow.next, fast.next.next
+
+    second = slow.next
+    slow.next = None
+
+    previous = None
+    while second is not None:
+        following = second.next
+        second.next = previous
+        previous, second = second, following
+
+    first, second = head, previous
+    while second is not None:
+        first_next, second_next = first.next, second.next
+        first.next = second
+        second.next = first_next
+        first, second = first_next, second_next
+
+    return head"),
+      #("Solution 2 · Via array", "Collect the nodes into an array, then relink them by index from both ends. O(n) extra space against the in-place version's O(1) — but random access is precisely what a linked list lacks, so this makes visible what the midpoint-and-reverse dance is buying.", "class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+
+def reorderList(head):
+    # Collect the nodes into an array first, then relink them by index from both
+    # ends. O(n) extra space against the in-place version's O(1) -- but random
+    # access is exactly what a linked list lacks, so this makes visible what the
+    # midpoint-and-reverse dance is buying.
+    nodes = []
+    node = head
+    while node is not None:
+        nodes.append(node)
+        node = node.next
+
+    low, high = 0, len(nodes) - 1
+    while low < high:
+        nodes[low].next = nodes[high]
+        low += 1
+        if low == high:
+            break
+        nodes[high].next = nodes[low]
+        high -= 1
+
+    if nodes:
+        nodes[low].next = None
+    return head"),
+    ],
+    check: Check(
+      signature: "class ListNode:
+    def __init__(self, val=0, next=None):
+
+def reorderList(head):",
+      starter: "class ListNode:
+    def __init__(self, val=0, next=None):
+        pass
+
+def reorderList(head):
+    pass",
+      harness: "try:
+    (reorderList, ListNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+def __chain__(values):
+    head = None
+    for value in reversed(values):
+        head = ListNode(value, head)
+    return head
+
+def __values__(node):
+    out = []
+    while node is not None and len(out) < 1000:
+        out.append(node.val)
+        node = node.next
+    return out
+
+# reorderList rewrites the list in place, so the head it was given is the answer
+# whether or not it also returns one.
+def __reordered__(values):
+    head = __chain__(values)
+    returned = reorderList(head)
+    return __values__(head if head is not None else returned)
+
+__case__(\"reorderList([1,2,3,4])\", [1, 4, 2, 3], __reordered__([1, 2, 3, 4]))
+__case__(\"reorderList([1,2,3,4,5]) -- the middle stays last\", [1, 5, 2, 4, 3], __reordered__([1, 2, 3, 4, 5]))
+__case__(\"reorderList([1,2])\", [1, 2], __reordered__([1, 2]))
+__case__(\"reorderList([1])\", [1], __reordered__([1]))
+__case__(\"reorderList([])\", [], __reordered__([]))",
+    ),
+  )
+}
+
+pub fn nc128_remove_nth_from_end() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two walkers n apart. When the leading one runs off the end, the trailing one is on the node to change — the length is never computed, which is the point: one pass instead of two. Opening the gap can fail, and that failure is exactly the \"n is longer than the list\" case.", "class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+
+def removeNthFromEnd(head, n):
+    # Two pointers n apart. When the leading one runs off the end, the trailing
+    # one is on the node *before* the doomed one -- which is the node that has
+    # to be rewritten, and the reason the gap is opened from a dummy rather than
+    # from the head.
+    dummy = ListNode(0, head)
+    behind = ahead = dummy
+
+    for _ in range(n):
+        if ahead.next is None:
+            return head
+        ahead = ahead.next
+
+    while ahead.next is not None:
+        behind, ahead = behind.next, ahead.next
+
+    behind.next = behind.next.next
+    return dummy.next"),
+      #("Solution 2 · By length", "Count first, then remove by position. Two passes rather than one, and it says outright what the gap encodes: nth from the end is length minus n from the front. Where a list cannot be walked twice — a stream, say — that is the assumption that fails.", "class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+
+def removeNthFromEnd(head, n):
+    # Count first, then walk to the position. Two passes rather than one, and it
+    # says outright what the two-pointer version encodes in a gap: nth from the
+    # end is length minus n from the front. Where a list cannot be walked twice
+    # -- a stream, say -- that is exactly the assumption that fails.
+    length = 0
+    node = head
+    while node is not None:
+        length, node = length + 1, node.next
+
+    index = length - n
+    if index < 0:
+        return head
+
+    dummy = ListNode(0, head)
+    before = dummy
+    for _ in range(index):
+        before = before.next
+    before.next = before.next.next
+    return dummy.next"),
+    ],
+    check: Check(
+      signature: "class ListNode:
+    def __init__(self, val=0, next=None):
+
+def removeNthFromEnd(head, n):",
+      starter: "class ListNode:
+    def __init__(self, val=0, next=None):
+        pass
+
+def removeNthFromEnd(head, n):
+    pass",
+      harness: "try:
+    (removeNthFromEnd, ListNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+def __chain__(values):
+    head = None
+    for value in reversed(values):
+        head = ListNode(value, head)
+    return head
+
+def __values__(node):
+    out = []
+    while node is not None and len(out) < 1000:
+        out.append(node.val)
+        node = node.next
+    return out
+
+__case__(\"removeNthFromEnd([1,2,3,4,5], 2)\", [1, 2, 3, 5], __values__(removeNthFromEnd(__chain__([1, 2, 3, 4, 5]), 2)))
+__case__(\"removeNthFromEnd([1], 1)\", [], __values__(removeNthFromEnd(__chain__([1]), 1)))
+__case__(\"removeNthFromEnd([1,2], 1)\", [1], __values__(removeNthFromEnd(__chain__([1, 2]), 1)))
+__case__(\"removeNthFromEnd([1,2], 2) -- the head goes\", [2], __values__(removeNthFromEnd(__chain__([1, 2]), 2)))
+__case__(\"removeNthFromEnd([1,2,3], 5) -- nothing to remove\", [1, 2, 3], __values__(removeNthFromEnd(__chain__([1, 2, 3]), 5)))",
+    ),
+  )
+}
+
+pub fn nc129_copy_random_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.", "class Node:
+    def __init__(self, val=0, next=None, random=None):
+        self.val = val
+        self.next = next
+        self.random = random
+
+
+def copyRandomList(head):
+    # One pass to create every copy, a second to wire them up. Resolving a link
+    # on first sight cannot work: it may point at a node not yet copied, which
+    # is the whole difficulty of the problem -- and a map from original node to
+    # copy is what removes it.
+    copies = {None: None}
+
+    node = head
+    while node is not None:
+        copies[node] = Node(node.val)
+        node = node.next
+
+    node = head
+    while node is not None:
+        copies[node].next = copies[node.next]
+        copies[node].random = copies[node.random]
+        node = node.next
+
+    return copies[head]"),
+      #("Solution 2 · Interleaved", "The list itself replaces the map: each copy is spliced in directly after its original, so \"the copy of X\" is always X.next — no lookup and no O(n) table. Three passes instead of two, and the last one has to unweave the lists again, restoring the original exactly as it was.", "class Node:
+    def __init__(self, val=0, next=None, random=None):
+        self.val = val
+        self.next = next
+        self.random = random
+
+
+def copyRandomList(head):
+    # The list itself replaces the map: each copy is spliced in directly after
+    # its original, so \"the copy of node X\" is always X.next -- no lookup and no
+    # O(n) table. Three passes instead of two, and the last one has to unweave
+    # the two lists again, restoring the original exactly as it was.
+    node = head
+    while node is not None:
+        node.next = Node(node.val, node.next)
+        node = node.next.next
+
+    node = head
+    while node is not None:
+        if node.random is not None:
+            node.next.random = node.random.next
+        node = node.next.next
+
+    copy = head.next if head is not None else None
+    node = head
+    while node is not None:
+        original_next = node.next.next
+        if original_next is not None:
+            node.next.next = original_next.next
+        node.next = original_next
+        node = original_next
+
+    return copy"),
+    ],
+    check: Check(
+      signature: "class Node:
+    def __init__(self, val=0, next=None, random=None):
+
+def copyRandomList(head):",
+      starter: "class Node:
+    def __init__(self, val=0, next=None, random=None):
+        pass
+
+def copyRandomList(head):
+    pass",
+      harness: "try:
+    (copyRandomList, Node)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# Builds a list from [value, randomIndex] pairs, where randomIndex is None for
+# no link.
+def __build__(pairs):
+    nodes = [Node(value) for value, _random in pairs]
+    for i, node in enumerate(nodes):
+        node.next = nodes[i + 1] if i + 1 < len(nodes) else None
+        node.random = nodes[pairs[i][1]] if pairs[i][1] is not None else None
+    return nodes[0] if nodes else None
+
+# Serialises back to [value, randomIndex] pairs, and asserts along the way that
+# every node is a *new* one -- a copy that reuses the originals would otherwise
+# pass every value comparison.
+def __serialise__(head, originals):
+    nodes, node = [], head
+    while node is not None and len(nodes) < 1000:
+        nodes.append(node)
+        node = node.next
+    places = {id(node): i for i, node in enumerate(nodes)}
+    if any(id(node) in originals for node in nodes):
+        return \"reused an original node\"
+    return [[node.val, places.get(id(node.random))] for node in nodes]
+
+def __copied__(pairs):
+    head = __build__(pairs)
+    originals, node = set(), head
+    while node is not None:
+        originals.add(id(node))
+        node = node.next
+    return __serialise__(copyRandomList(head), originals)
+
+__case__(\"copyRandomList([[7,None],[13,0]])\", [[7, None], [13, 0]], __copied__([[7, None], [13, 0]]))
+__case__(\"copyRandomList([[1,0]]) -- a node pointing at itself\", [[1, 0]], __copied__([[1, 0]]))
+__case__(\"copyRandomList(a forward link to a node not yet copied)\", [[1, 2], [2, None], [3, 0]], __copied__([[1, 2], [2, None], [3, 0]]))
+__case__(\"copyRandomList([])\", [], __copied__([]))",
+    ),
+  )
+}
+
 pub fn nc12_best_time_stock() -> Embedded {
   Embedded(
     solutions: [
@@ -2682,6 +3184,584 @@ def __case__(label, expected, actual):
 __case__(\"maxProfit([7, 1, 5, 3, 6, 4])\", 5, maxProfit([7, 1, 5, 3, 6, 4]))
 __case__(\"maxProfit([7, 6, 4, 3, 1])\", 0, maxProfit([7, 6, 4, 3, 1]))
 __case__(\"maxProfit([])\", 0, maxProfit([]))",
+    ),
+  )
+}
+
+pub fn nc130_add_two_numbers() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The digits arrive least significant first, which is exactly the order addition wants — no reversing and no length matching. The case worth writing down is the carry outliving both numbers: 5 + 5 produces a digit neither input has a node for.", "class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+
+def addTwoNumbers(l1, l2):
+    # Both numbers arrive least significant digit first, which is exactly the
+    # order addition wants -- no reversing and no length matching. The loop
+    # condition includes the carry, because 5 + 5 produces a digit that neither
+    # input has a node for.
+    dummy = ListNode()
+    tail = dummy
+    carry = 0
+
+    while l1 is not None or l2 is not None or carry:
+        total = carry
+        if l1 is not None:
+            total, l1 = total + l1.val, l1.next
+        if l2 is not None:
+            total, l2 = total + l2.val, l2.next
+        carry, digit = divmod(total, 10)
+        tail.next = ListNode(digit)
+        tail = tail.next
+
+    return dummy.next"),
+      #("Solution 2 · Via integers", "Turn both lists into whole numbers, add, take the sum apart again. It reads well, and it is safe here only because this language's integers are arbitrary precision — which is precisely why the problem is posed as a list of digits in languages where they are not.", "class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+
+def addTwoNumbers(l1, l2):
+    # Turn both lists into whole numbers, add, and take the sum apart again. It
+    # reads well and is fine in Python, whose integers are arbitrary precision
+    # -- but it is the version that breaks the moment the language has a
+    # fixed-width integer, which is precisely why the problem is posed as a list
+    # of digits.
+    total = value(l1) + value(l2)
+
+    dummy = ListNode()
+    tail = dummy
+    while True:
+        total, digit = divmod(total, 10)
+        tail.next = ListNode(digit)
+        tail = tail.next
+        if total == 0:
+            return dummy.next
+
+
+def value(node):
+    total, place = 0, 1
+    while node is not None:
+        total += node.val * place
+        place *= 10
+        node = node.next
+    return total"),
+    ],
+    check: Check(
+      signature: "class ListNode:
+    def __init__(self, val=0, next=None):
+
+def addTwoNumbers(l1, l2):",
+      starter: "class ListNode:
+    def __init__(self, val=0, next=None):
+        pass
+
+def addTwoNumbers(l1, l2):
+    pass",
+      harness: "try:
+    (addTwoNumbers, ListNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+def __chain__(values):
+    head = None
+    for value in reversed(values):
+        head = ListNode(value, head)
+    return head
+
+def __values__(node):
+    out = []
+    while node is not None and len(out) < 1000:
+        out.append(node.val)
+        node = node.next
+    return out
+
+__case__(\"addTwoNumbers([2,4,3], [5,6,4]) -- 342 + 465\", [7, 0, 8], __values__(addTwoNumbers(__chain__([2, 4, 3]), __chain__([5, 6, 4]))))
+__case__(\"addTwoNumbers([0], [0])\", [0], __values__(addTwoNumbers(__chain__([0]), __chain__([0]))))
+__case__(\"addTwoNumbers([9,9,9], [1]) -- the carry runs all the way\", [0, 0, 0, 1], __values__(addTwoNumbers(__chain__([9, 9, 9]), __chain__([1]))))
+__case__(\"addTwoNumbers([5], [5]) -- the carry outlives both\", [0, 1], __values__(addTwoNumbers(__chain__([5]), __chain__([5]))))
+__case__(\"addTwoNumbers([1,2], [3,4,5]) -- different lengths\", [4, 6, 5], __values__(addTwoNumbers(__chain__([1, 2]), __chain__([3, 4, 5]))))",
+    ),
+  )
+}
+
+pub fn nc131_linked_list_cycle() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Floyd's tortoise and hare. One walker takes single steps, the other double; inside a loop the fast one gains a place per step on the slow one, so it must land on it. Outside one, it runs off the end first. Constant memory and nothing is marked — that is the whole result.", "class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+
+def hasCycle(head):
+    # Floyd's tortoise and hare. One pointer takes single steps, the other
+    # double; if there is a loop the fast one is going round it and gains one
+    # place per step on the slow one, so it must eventually land on it. If there
+    # is no loop the fast one runs off the end first. Constant memory, and no
+    # node is ever marked.
+    slow = fast = head
+    while fast is not None and fast.next is not None:
+        slow, fast = slow.next, fast.next.next
+        if slow is fast:
+            return True
+    return False"),
+      #("Solution 2 · Seen set", "Remember every node visited and stop when one repeats. Obvious and correct, at O(n) memory — which is exactly what the two-walker version removes. Note that it is the *nodes* that go in the set, not their values: repeated values are ordinary, repeated nodes are the cycle.", "class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+
+def hasCycle(head):
+    # Remember every node visited and stop when one repeats. Obvious, correct,
+    # and O(n) memory -- which is the whole cost the two-pointer version
+    # removes. Note that it is the *nodes* that go in the set, not their values:
+    # repeated values are ordinary, repeated nodes are the cycle.
+    seen = set()
+    while head is not None:
+        if id(head) in seen:
+            return True
+        seen.add(id(head))
+        head = head.next
+    return False"),
+    ],
+    check: Check(
+      signature: "class ListNode:
+    def __init__(self, val=0, next=None):
+
+def hasCycle(head):",
+      starter: "class ListNode:
+    def __init__(self, val=0, next=None):
+        pass
+
+def hasCycle(head):
+    pass",
+      harness: "try:
+    (hasCycle, ListNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# pos is the index the tail links back to, or None for a list that ends.
+def __chain__(values, pos):
+    nodes = [ListNode(value) for value in values]
+    for i, node in enumerate(nodes):
+        node.next = nodes[i + 1] if i + 1 < len(nodes) else None
+    if nodes and pos is not None:
+        nodes[-1].next = nodes[pos]
+    return nodes[0] if nodes else None
+
+__case__(\"hasCycle([3,2,0,-4], tail -> index 1)\", True, hasCycle(__chain__([3, 2, 0, -4], 1)))
+__case__(\"hasCycle([1,2], no cycle)\", False, hasCycle(__chain__([1, 2], None)))
+__case__(\"hasCycle([1], no cycle)\", False, hasCycle(__chain__([1], None)))
+__case__(\"hasCycle([1], tail -> index 0)\", True, hasCycle(__chain__([1], 0)))
+__case__(\"hasCycle([])\", False, hasCycle(__chain__([], None)))
+__case__(\"hasCycle([1,2], tail -> index 0)\", True, hasCycle(__chain__([1, 2], 0)))",
+    ),
+  )
+}
+
+pub fn nc132_find_the_duplicate() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Read the array as a linked list: position i points at position nums[i]. Every value is a valid position and one repeats, so two positions point at the same place — the list has a cycle, and the duplicate is its entrance. Then it is Floyd's twice: once to meet inside the loop, once to find where it begins.", "def findDuplicate(nums):
+    # Read the array as a linked list: position i points at position nums[i].
+    # Every value is a valid position and one value repeats, so two positions
+    # point at the same place -- the list has a cycle, and the duplicate is its
+    # entrance. Then it is Floyd's twice: once to meet inside the loop, once to
+    # walk from the start and from the meeting point together until they agree
+    # on where it begins.
+    slow, fast = nums[0], nums[nums[0]]
+    while slow != fast:
+        slow, fast = nums[slow], nums[nums[fast]]
+
+    slow = 0
+    while slow != fast:
+        slow, fast = nums[slow], nums[fast]
+    return slow"),
+      #("Solution 2 · Counting", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Binary search over the *values*, not the positions. For a candidate v, count how many numbers are at most v: with no duplicate that count is exactly v, so a count running ahead says the repeat is at or below v. O(n log n), but it needs no insight about cycles.", "def findDuplicate(nums):
+    # Binary search over the *values*, not the positions. For a candidate v,
+    # count how many numbers are at most v: with no duplicate that count is
+    # exactly v, so a count that runs ahead says the repeat is at or below v.
+    # O(n log n) against Floyd's O(n), but it needs no insight about cycles --
+    # only that the pigeonhole is what makes the count informative.
+    low, high = 1, len(nums) - 1
+    while low < high:
+        middle = (low + high) // 2
+        if sum(1 for value in nums if value <= middle) > middle:
+            high = middle
+        else:
+            low = middle + 1
+    return low"),
+    ],
+    check: Check(
+      signature: "def findDuplicate(nums):",
+      starter: "def findDuplicate(nums):
+    pass",
+      harness: "try:
+    (findDuplicate)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"findDuplicate([1,3,4,2,2])\", 2, findDuplicate([1, 3, 4, 2, 2]))
+__case__(\"findDuplicate([3,1,3,4,2])\", 3, findDuplicate([3, 1, 3, 4, 2]))
+__case__(\"findDuplicate([1,1])\", 1, findDuplicate([1, 1]))
+__case__(\"findDuplicate([2,2,2,2,2]) -- repeated more than twice\", 2, findDuplicate([2, 2, 2, 2, 2]))
+__case__(\"findDuplicate([1,4,4,2,4])\", 4, findDuplicate([1, 4, 4, 2, 4]))",
+    ),
+  )
+}
+
+pub fn nc133_lru_cache() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A map alone gives the first and a list alone gives the second — the structure is whatever supplies both. Where the language's map already remembers insertion order, deleting a key and putting it back *is* the recency list.", "class LRUCache:
+    def __init__(self, capacity):
+        # A plain dict, leaning on the fact that Python dicts remember insertion
+        # order: deleting a key and putting it back makes it the newest, so the
+        # oldest is simply the first key. That is the recency list, free.
+        self.capacity = capacity
+        self.entries = {}
+
+    def get(self, key):
+        if key not in self.entries:
+            return -1
+        # Reading counts as use, so the key moves to the newest position.
+        value = self.entries.pop(key)
+        self.entries[key] = value
+        return value
+
+    def put(self, key, value):
+        if key in self.entries:
+            del self.entries[key]
+        self.entries[key] = value
+        if len(self.entries) > self.capacity:
+            oldest = next(iter(self.entries))
+            del self.entries[oldest]"),
+      #("Solution 2 · Linked nodes", "The structure the problem is really about: a doubly linked list of keys, newest first, plus a map from key to its node. The map makes finding a node O(1) and the back-pointers make unlinking it O(1) — neither alone is enough, which is the entire point.", "class LRUCache:
+    def __init__(self, capacity):
+        # A doubly linked list of keys, newest at the head, plus a map from key
+        # to its node. The map makes finding a node O(1) and the back-pointers
+        # make unlinking it O(1) -- neither alone is enough, which is why this
+        # is the structure the problem is really about.
+        self.capacity = capacity
+        self.nodes = {}
+        self.head = {\"key\": None, \"value\": None}
+        self.tail = {\"key\": None, \"value\": None}
+        self.head[\"next\"], self.head[\"prev\"] = self.tail, None
+        self.tail[\"prev\"], self.tail[\"next\"] = self.head, None
+
+    def get(self, key):
+        if key not in self.nodes:
+            return -1
+        node = self.nodes[key]
+        self.unlink(node)
+        self.push(node)
+        return node[\"value\"]
+
+    def put(self, key, value):
+        if key in self.nodes:
+            self.unlink(self.nodes.pop(key))
+        node = {\"key\": key, \"value\": value, \"prev\": None, \"next\": None}
+        self.nodes[key] = node
+        self.push(node)
+        if len(self.nodes) > self.capacity:
+            oldest = self.tail[\"prev\"]
+            self.unlink(oldest)
+            del self.nodes[oldest[\"key\"]]
+
+    def push(self, node):
+        node[\"prev\"], node[\"next\"] = self.head, self.head[\"next\"]
+        self.head[\"next\"][\"prev\"] = node
+        self.head[\"next\"] = node
+
+    def unlink(self, node):
+        node[\"prev\"][\"next\"] = node[\"next\"]
+        node[\"next\"][\"prev\"] = node[\"prev\"]"),
+    ],
+    check: Check(
+      signature: "class LRUCache:
+    def __init__(self, capacity):
+    def get(self, key):
+    def put(self, key, value):",
+      starter: "class LRUCache:
+    def __init__(self, capacity):
+        pass
+    def get(self, key):
+        pass
+    def put(self, key, value):
+        pass",
+      harness: "try:
+    (LRUCache)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__c__ = LRUCache(2)
+__c__.put(1, 1)
+__c__.put(2, 2)
+__case__(\"get(1) after put(1,1), put(2,2)\", 1, __c__.get(1))
+__c__.put(3, 3)
+__case__(\"get(2) after put(3,3) -- 2 was least recently used\", -1, __c__.get(2))
+__case__(\"get(3) after put(3,3)\", 3, __c__.get(3))
+__c__.put(4, 4)
+__case__(\"get(1) after put(4,4) -- reading 3 saved it, so 1 went\", -1, __c__.get(1))
+__case__(\"get(3) after put(4,4)\", 3, __c__.get(3))
+__case__(\"get(4) after put(4,4)\", 4, __c__.get(4))
+__case__(\"get(99) on a key never stored\", -1, __c__.get(99))
+
+__u__ = LRUCache(1)
+__u__.put(5, 5)
+__u__.put(5, 9)
+__case__(\"get(5) after put(5,5) then put(5,9) -- an update, not an insert\", 9, __u__.get(5))",
+    ),
+  )
+}
+
+pub fn nc134_merge_k_sorted_lists() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.", "class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+
+def mergeKLists(lists):
+    # Merge in pairs, halving the number of lists each round. Folding them in
+    # one at a time re-walks the growing result every time -- O(k*n) -- while
+    # pairing gives O(n log k) for the same merges, because each element is
+    # copied once per round and there are log k rounds.
+    lists = [head for head in lists if head is not None]
+    if not lists:
+        return None
+
+    while len(lists) > 1:
+        merged = []
+        for i in range(0, len(lists), 2):
+            if i + 1 < len(lists):
+                merged.append(merge(lists[i], lists[i + 1]))
+            else:
+                merged.append(lists[i])
+        lists = merged
+
+    return lists[0]
+
+
+def merge(first, second):
+    dummy = ListNode()
+    tail = dummy
+    while first is not None and second is not None:
+        if first.val <= second.val:
+            tail.next, first = first, first.next
+        else:
+            tail.next, second = second, second.next
+        tail = tail.next
+    tail.next = first if first is not None else second
+    return dummy.next"),
+      #("Solution 2 · Min heap", "Take the smallest head across all the lists, over and over — the heap is what makes \"smallest of k\" cost O(log k) instead of a scan of k. The tie-break in the heap entry matters: two equal values would otherwise send the comparison on to the nodes themselves, which have no ordering.", "import heapq
+
+
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+
+def mergeKLists(lists):
+    # Take the smallest head across all the lists, over and over -- the heap is
+    # what makes \"smallest of k\" cost O(log k) instead of a scan of k. The index
+    # in the tuple is a tie-break, because two equal values would otherwise send
+    # heapq on to compare the nodes themselves, which have no ordering.
+    frontier = [(head.val, i, head) for i, head in enumerate(lists) if head is not None]
+    heapq.heapify(frontier)
+
+    dummy = ListNode()
+    tail = dummy
+    while frontier:
+        _value, i, node = heapq.heappop(frontier)
+        tail.next = node
+        tail = node
+        if node.next is not None:
+            heapq.heappush(frontier, (node.next.val, i, node.next))
+
+    tail.next = None
+    return dummy.next"),
+    ],
+    check: Check(
+      signature: "class ListNode:
+    def __init__(self, val=0, next=None):
+
+def mergeKLists(lists):
+
+def merge(first, second):",
+      starter: "class ListNode:
+    def __init__(self, val=0, next=None):
+        pass
+
+def mergeKLists(lists):
+    pass
+
+def merge(first, second):
+    pass",
+      harness: "try:
+    (mergeKLists, ListNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+def __chain__(values):
+    head = None
+    for value in reversed(values):
+        head = ListNode(value, head)
+    return head
+
+def __values__(node):
+    out = []
+    while node is not None and len(out) < 1000:
+        out.append(node.val)
+        node = node.next
+    return out
+
+def __merged__(lists):
+    return __values__(mergeKLists([__chain__(values) for values in lists]))
+
+__case__(\"mergeKLists([[1,4,5],[1,3,4],[2,6]])\", [1, 1, 2, 3, 4, 4, 5, 6], __merged__([[1, 4, 5], [1, 3, 4], [2, 6]]))
+__case__(\"mergeKLists([]) -- no lists at all\", [], __merged__([]))
+__case__(\"mergeKLists([[]]) -- one empty list\", [], __merged__([[]]))
+__case__(\"mergeKLists([[1],[],[0]])\", [0, 1], __merged__([[1], [], [0]]))
+__case__(\"mergeKLists([[2,2],[2]]) -- ties everywhere\", [2, 2, 2], __merged__([[2, 2], [2]]))",
+    ),
+  )
+}
+
+pub fn nc135_reverse_k_group() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Look ahead k nodes *before* reversing anything. That check is the whole difficulty: once the rewiring starts there is no way to tell how far it got, so a short final group would be reversed by mistake.", "class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+
+def reverseKGroup(head, k):
+    # Look ahead k nodes *before* reversing anything. That check is the whole
+    # difficulty: once the rewiring starts there is no way to tell how far it
+    # got, so a short final group would be reversed by mistake.
+    dummy = ListNode(0, head)
+    before = dummy
+
+    while True:
+        after = before
+        for _ in range(k):
+            after = after.next
+            if after is None:
+                return dummy.next
+
+        node, previous = before.next, after.next
+        first = node
+        for _ in range(k):
+            following = node.next
+            node.next = previous
+            previous, node = node, following
+
+        before.next = previous
+        before = first"),
+      #("Solution 2 · Count first", "Count once, then reverse exactly length / k groups. One length calculation instead of a look-ahead per group — and it makes the boundary explicit: everything past the last whole group is untouched, however long it is.", "class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+
+def reverseKGroup(head, k):
+    # Count once, then reverse exactly length // k groups. One length
+    # calculation instead of a look-ahead per group -- and it makes the boundary
+    # explicit: everything past the last whole group is untouched, however long
+    # it is.
+    length = 0
+    node = head
+    while node is not None:
+        length, node = length + 1, node.next
+
+    dummy = ListNode(0, head)
+    before = dummy
+    node = head
+
+    for _ in range(length // k):
+        first, previous = node, None
+        for _ in range(k):
+            following = node.next
+            node.next = previous
+            previous, node = node, following
+        before.next = previous
+        first.next = node
+        before = first
+
+    return dummy.next"),
+    ],
+    check: Check(
+      signature: "class ListNode:
+    def __init__(self, val=0, next=None):
+
+def reverseKGroup(head, k):",
+      starter: "class ListNode:
+    def __init__(self, val=0, next=None):
+        pass
+
+def reverseKGroup(head, k):
+    pass",
+      harness: "try:
+    (reverseKGroup, ListNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+def __chain__(values):
+    head = None
+    for value in reversed(values):
+        head = ListNode(value, head)
+    return head
+
+def __values__(node):
+    out = []
+    while node is not None and len(out) < 1000:
+        out.append(node.val)
+        node = node.next
+    return out
+
+def __grouped__(values, k):
+    return __values__(reverseKGroup(__chain__(values), k))
+
+__case__(\"reverseKGroup([1,2,3,4,5], 2)\", [2, 1, 4, 3, 5], __grouped__([1, 2, 3, 4, 5], 2))
+__case__(\"reverseKGroup([1,2,3,4,5], 3) -- the last two are left alone\", [3, 2, 1, 4, 5], __grouped__([1, 2, 3, 4, 5], 3))
+__case__(\"reverseKGroup([1,2,3,4], 4)\", [4, 3, 2, 1], __grouped__([1, 2, 3, 4], 4))
+__case__(\"reverseKGroup([1,2,3], 1) -- nothing changes\", [1, 2, 3], __grouped__([1, 2, 3], 1))
+__case__(\"reverseKGroup([1,2], 5) -- the group never fills\", [1, 2], __grouped__([1, 2], 5))
+__case__(\"reverseKGroup([], 2)\", [], __grouped__([], 2))",
     ),
   )
 }
@@ -8570,7 +9650,18 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc122_swim_in_water" -> Ok(nc122_swim_in_water())
     "nc123_alien_dictionary" -> Ok(nc123_alien_dictionary())
     "nc124_cheapest_flights" -> Ok(nc124_cheapest_flights())
+    "nc125_reverse_linked_list" -> Ok(nc125_reverse_linked_list())
+    "nc126_merge_two_sorted_lists" -> Ok(nc126_merge_two_sorted_lists())
+    "nc127_reorder_list" -> Ok(nc127_reorder_list())
+    "nc128_remove_nth_from_end" -> Ok(nc128_remove_nth_from_end())
+    "nc129_copy_random_list" -> Ok(nc129_copy_random_list())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
+    "nc130_add_two_numbers" -> Ok(nc130_add_two_numbers())
+    "nc131_linked_list_cycle" -> Ok(nc131_linked_list_cycle())
+    "nc132_find_the_duplicate" -> Ok(nc132_find_the_duplicate())
+    "nc133_lru_cache" -> Ok(nc133_lru_cache())
+    "nc134_merge_k_sorted_lists" -> Ok(nc134_merge_k_sorted_lists())
+    "nc135_reverse_k_group" -> Ok(nc135_reverse_k_group())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())
     "nc14_character_replacement" -> Ok(nc14_character_replacement())
     "nc15_permutation_in_string" -> Ok(nc15_permutation_in_string())

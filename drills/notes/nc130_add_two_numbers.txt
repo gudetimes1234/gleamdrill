@@ -1,0 +1,1 @@
+The digits arrive least significant first, which is exactly the order addition wants — no reversing and no length matching. The case worth writing down is the carry outliving both numbers: 5 + 5 produces a digit neither input has a node for.

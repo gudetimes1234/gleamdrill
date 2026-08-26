@@ -1,0 +1,1 @@
+One pass, three references: where you came from, where you are, and where you were going. Losing the look-ahead is the classic bug — once the link has been overwritten, the rest of the list is unreachable. In a language with cons lists the same thing is an accumulator you prepend to, which is the *same* rewiring written as a value.

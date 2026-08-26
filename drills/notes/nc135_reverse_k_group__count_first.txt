@@ -1,0 +1,1 @@
+Count once, then reverse exactly length / k groups. One length calculation instead of a look-ahead per group — and it makes the boundary explicit: everything past the last whole group is untouched, however long it is.

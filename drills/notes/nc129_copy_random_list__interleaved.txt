@@ -1,0 +1,1 @@
+The list itself replaces the map: each copy is spliced in directly after its original, so "the copy of X" is always X.next — no lookup and no O(n) table. Three passes instead of two, and the last one has to unweave the lists again, restoring the original exactly as it was.

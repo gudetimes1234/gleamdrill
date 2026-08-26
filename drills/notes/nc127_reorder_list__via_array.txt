@@ -1,0 +1,1 @@
+Collect the nodes into an array, then relink them by index from both ends. O(n) extra space against the in-place version's O(1) — but random access is precisely what a linked list lacks, so this makes visible what the midpoint-and-reverse dance is buying.

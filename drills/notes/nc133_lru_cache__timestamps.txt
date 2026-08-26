@@ -1,0 +1,1 @@
+No recency order at all — just a counter, bumped on every use. Eviction becomes a scan for the smallest stamp, trading the reordering walk for a search. Worth seeing because it makes plain that "least recently used" is a minimum, not a position.

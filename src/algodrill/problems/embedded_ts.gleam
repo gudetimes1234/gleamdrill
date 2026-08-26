@@ -2876,6 +2876,586 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc125_reverse_linked_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One pass, three references: where you came from, where you are, and where you were going. Losing the look-ahead is the classic bug — once the link has been overwritten, the rest of the list is unreachable. In a language with cons lists the same thing is an accumulator you prepend to, which is the *same* rewiring written as a value.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function reverseList(head: ListNode | null): ListNode | null {
+  // Three pointers and no new nodes: remember where you came from, look ahead
+  // before rewriting the link, then step on. Losing the look-ahead is the
+  // classic bug -- once head.next has been overwritten, the rest of the list is
+  // unreachable.
+  let previous: ListNode | null = null;
+  while (head !== null) {
+    const following = head.next;
+    head.next = previous;
+    previous = head;
+    head = following;
+  }
+  return previous;
+}"),
+      #("Solution 2 · By recursion", "Reverse the rest, then hook the current node onto its end. The new head comes back unchanged through every frame, which is why it is returned rather than tracked — and `head.next.next = head` is the whole rewiring, done on the way back out. O(n) stack against the loop's O(1).", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function reverseList(head: ListNode | null): ListNode | null {
+  // Reverse the rest, then hook the current node onto its end. The new head
+  // comes back unchanged through every frame, which is why it is returned
+  // rather than tracked -- and head.next.next = head is the whole rewiring,
+  // done on the way back out. O(n) stack, against the loop's O(1).
+  if (head === null || head.next === null) return head;
+  const reversedRest = reverseList(head.next);
+  head.next.next = head;
+  head.next = null;
+  return reversedRest;
+}"),
+    ],
+    check: Check(
+      signature: "export class ListNode
+  constructor(val = 0, next: ListNode | null = null)
+
+export function reverseList(head: ListNode | null): ListNode | null",
+      starter: "export class ListNode {
+  constructor(val = 0, next: ListNode | null = null) {
+    // todo
+  }
+}
+
+export function reverseList(head: ListNode | null): ListNode | null {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const chain = (values: number[]) => {
+  let head: any = null;
+  for (let i = values.length - 1; i >= 0; i--) head = new solution.ListNode(values[i], head);
+  return head;
+};
+
+const listValues = (node: any) => {
+  const out: number[] = [];
+  while (node !== null && node !== undefined && out.length < 1000) {
+    out.push(node.val);
+    node = node.next;
+  }
+  return out;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.reverseList !== \"function\" || typeof solution.ListNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"reverseList([1,2,3,4,5])\", show([5, 4, 3, 2, 1]), show(listValues(solution.reverseList(chain([1, 2, 3, 4, 5]))))],
+    [\"reverseList([1,2])\", show([2, 1]), show(listValues(solution.reverseList(chain([1, 2]))))],
+    [\"reverseList([]) -- an empty list\", show([]), show(listValues(solution.reverseList(chain([]))))],
+    [\"reverseList([7])\", show([7]), show(listValues(solution.reverseList(chain([7]))))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc126_merge_two_sorted_lists() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function mergeTwoLists(list1: ListNode | null, list2: ListNode | null): ListNode | null {
+  // The dummy head is what removes the special case: without it, the first node
+  // has to be chosen separately from all the others because there is nothing to
+  // attach it to. No new nodes beyond it -- the existing ones are spliced.
+  const dummy = new ListNode();
+  let tail = dummy;
+
+  while (list1 !== null && list2 !== null) {
+    if (list1.val <= list2.val) {
+      tail.next = list1;
+      list1 = list1.next;
+    } else {
+      tail.next = list2;
+      list2 = list2.next;
+    }
+    tail = tail.next;
+  }
+
+  // Whichever list is left is already sorted and already linked.
+  tail.next = list1 !== null ? list1 : list2;
+  return dummy.next;
+}"),
+      #("Solution 2 · By recursion", "The same merge with the return value doing the joining: no dummy, no tail reference. One frame per node is the cost, and it is exactly what the loop trades away.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function mergeTwoLists(list1: ListNode | null, list2: ListNode | null): ListNode | null {
+  // Take the smaller head and let the recursion produce the rest. No dummy and
+  // no tail pointer -- the return value is the join -- at the cost of a frame
+  // per node.
+  if (list1 === null) return list2;
+  if (list2 === null) return list1;
+  if (list1.val <= list2.val) {
+    list1.next = mergeTwoLists(list1.next, list2);
+    return list1;
+  }
+  list2.next = mergeTwoLists(list1, list2.next);
+  return list2;
+}"),
+    ],
+    check: Check(
+      signature: "export class ListNode
+  constructor(val = 0, next: ListNode | null = null)
+
+export function mergeTwoLists(list1: ListNode | null, list2: ListNode | null): ListNode | null",
+      starter: "export class ListNode {
+  constructor(val = 0, next: ListNode | null = null) {
+    // todo
+  }
+}
+
+export function mergeTwoLists(list1: ListNode | null, list2: ListNode | null): ListNode | null {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const chain = (values: number[]) => {
+  let head: any = null;
+  for (let i = values.length - 1; i >= 0; i--) head = new solution.ListNode(values[i], head);
+  return head;
+};
+
+const listValues = (node: any) => {
+  const out: number[] = [];
+  while (node !== null && node !== undefined && out.length < 1000) {
+    out.push(node.val);
+    node = node.next;
+  }
+  return out;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.mergeTwoLists !== \"function\" || typeof solution.ListNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"mergeTwoLists([1,2,4], [1,3,4])\", show([1, 1, 2, 3, 4, 4]), show(listValues(solution.mergeTwoLists(chain([1, 2, 4]), chain([1, 3, 4]))))],
+    [\"mergeTwoLists([], [])\", show([]), show(listValues(solution.mergeTwoLists(chain([]), chain([]))))],
+    [\"mergeTwoLists([], [0])\", show([0]), show(listValues(solution.mergeTwoLists(chain([]), chain([0]))))],
+    [\"mergeTwoLists([5], [1,2,3])\", show([1, 2, 3, 5]), show(listValues(solution.mergeTwoLists(chain([5]), chain([1, 2, 3]))))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc127_reorder_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function reorderList(head: ListNode | null): ListNode | null {
+  // Three separate steps, each of which is its own drill: find the middle with
+  // a slow and a fast pointer, reverse the back half, then weave the two
+  // together. That decomposition is the whole trick -- none of the three needs
+  // to know about the others.
+  if (head === null || head.next === null) return head;
+
+  let slow: ListNode = head;
+  let fast: ListNode | null = head.next;
+  while (fast !== null && fast.next !== null) {
+    slow = slow.next!;
+    fast = fast.next.next;
+  }
+
+  let second = slow.next;
+  slow.next = null;
+
+  let previous: ListNode | null = null;
+  while (second !== null) {
+    const following: ListNode | null = second.next;
+    second.next = previous;
+    previous = second;
+    second = following;
+  }
+
+  let first: ListNode | null = head;
+  second = previous;
+  while (second !== null) {
+    const firstNext: ListNode | null = first!.next;
+    const secondNext: ListNode | null = second.next;
+    first!.next = second;
+    second.next = firstNext;
+    first = firstNext;
+    second = secondNext;
+  }
+
+  return head;
+}"),
+      #("Solution 2 · Via array", "Collect the nodes into an array, then relink them by index from both ends. O(n) extra space against the in-place version's O(1) — but random access is precisely what a linked list lacks, so this makes visible what the midpoint-and-reverse dance is buying.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function reorderList(head: ListNode | null): ListNode | null {
+  // Collect the nodes into an array first, then relink them by index from both
+  // ends. O(n) extra space against the in-place version's O(1) -- but random
+  // access is exactly what a linked list lacks, so this makes visible what the
+  // midpoint-and-reverse dance is buying.
+  const nodes: ListNode[] = [];
+  for (let node = head; node !== null; node = node.next) nodes.push(node);
+  if (nodes.length === 0) return head;
+
+  let low = 0;
+  let high = nodes.length - 1;
+  while (low < high) {
+    nodes[low].next = nodes[high];
+    low++;
+    if (low === high) break;
+    nodes[high].next = nodes[low];
+    high--;
+  }
+  nodes[low].next = null;
+
+  return head;
+}"),
+    ],
+    check: Check(
+      signature: "export class ListNode
+  constructor(val = 0, next: ListNode | null = null)
+
+export function reorderList(head: ListNode | null): ListNode | null",
+      starter: "export class ListNode {
+  constructor(val = 0, next: ListNode | null = null) {
+    // todo
+  }
+}
+
+export function reorderList(head: ListNode | null): ListNode | null {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const chain = (values: number[]) => {
+  let head: any = null;
+  for (let i = values.length - 1; i >= 0; i--) head = new solution.ListNode(values[i], head);
+  return head;
+};
+
+const listValues = (node: any) => {
+  const out: number[] = [];
+  while (node !== null && node !== undefined && out.length < 1000) {
+    out.push(node.val);
+    node = node.next;
+  }
+  return out;
+};
+
+// reorderList rewrites the list in place, so the head it was given is the
+// answer whether or not it also returns one.
+const reordered = (values: number[]) => {
+  const head = chain(values);
+  const returned = solution.reorderList(head);
+  return listValues(head !== null ? head : returned);
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.reorderList !== \"function\" || typeof solution.ListNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"reorderList([1,2,3,4])\", show([1, 4, 2, 3]), show(reordered([1, 2, 3, 4]))],
+    [\"reorderList([1,2,3,4,5]) -- the middle stays last\", show([1, 5, 2, 4, 3]), show(reordered([1, 2, 3, 4, 5]))],
+    [\"reorderList([1,2])\", show([1, 2]), show(reordered([1, 2]))],
+    [\"reorderList([1])\", show([1]), show(reordered([1]))],
+    [\"reorderList([])\", show([]), show(reordered([]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc128_remove_nth_from_end() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two walkers n apart. When the leading one runs off the end, the trailing one is on the node to change — the length is never computed, which is the point: one pass instead of two. Opening the gap can fail, and that failure is exactly the \"n is longer than the list\" case.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function removeNthFromEnd(head: ListNode | null, n: number): ListNode | null {
+  // Two pointers n apart. When the leading one runs off the end, the trailing
+  // one is on the node *before* the doomed one -- which is the node that has to
+  // be rewritten, and the reason the gap is opened from a dummy rather than
+  // from the head.
+  const dummy = new ListNode(0, head);
+  let behind = dummy;
+  let ahead = dummy;
+
+  for (let i = 0; i < n; i++) {
+    if (ahead.next === null) return head;
+    ahead = ahead.next;
+  }
+
+  while (ahead.next !== null) {
+    behind = behind.next!;
+    ahead = ahead.next;
+  }
+
+  behind.next = behind.next!.next;
+  return dummy.next;
+}"),
+      #("Solution 2 · By length", "Count first, then remove by position. Two passes rather than one, and it says outright what the gap encodes: nth from the end is length minus n from the front. Where a list cannot be walked twice — a stream, say — that is the assumption that fails.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function removeNthFromEnd(head: ListNode | null, n: number): ListNode | null {
+  // Count first, then walk to the position. Two passes rather than one, and it
+  // says outright what the two-pointer version encodes in a gap: nth from the
+  // end is length minus n from the front. Where a list cannot be walked twice
+  // -- a stream, say -- that is exactly the assumption that fails.
+  let length = 0;
+  for (let node = head; node !== null; node = node.next) length++;
+
+  const index = length - n;
+  if (index < 0) return head;
+
+  const dummy = new ListNode(0, head);
+  let before = dummy;
+  for (let i = 0; i < index; i++) before = before.next!;
+  before.next = before.next!.next;
+  return dummy.next;
+}"),
+    ],
+    check: Check(
+      signature: "export class ListNode
+  constructor(val = 0, next: ListNode | null = null)
+
+export function removeNthFromEnd(head: ListNode | null, n: number): ListNode | null",
+      starter: "export class ListNode {
+  constructor(val = 0, next: ListNode | null = null) {
+    // todo
+  }
+}
+
+export function removeNthFromEnd(head: ListNode | null, n: number): ListNode | null {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const chain = (values: number[]) => {
+  let head: any = null;
+  for (let i = values.length - 1; i >= 0; i--) head = new solution.ListNode(values[i], head);
+  return head;
+};
+
+const listValues = (node: any) => {
+  const out: number[] = [];
+  while (node !== null && node !== undefined && out.length < 1000) {
+    out.push(node.val);
+    node = node.next;
+  }
+  return out;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.removeNthFromEnd !== \"function\" || typeof solution.ListNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"removeNthFromEnd([1,2,3,4,5], 2)\", show([1, 2, 3, 5]), show(listValues(solution.removeNthFromEnd(chain([1, 2, 3, 4, 5]), 2)))],
+    [\"removeNthFromEnd([1], 1)\", show([]), show(listValues(solution.removeNthFromEnd(chain([1]), 1)))],
+    [\"removeNthFromEnd([1,2], 1)\", show([1]), show(listValues(solution.removeNthFromEnd(chain([1, 2]), 1)))],
+    [\"removeNthFromEnd([1,2], 2) -- the head goes\", show([2]), show(listValues(solution.removeNthFromEnd(chain([1, 2]), 2)))],
+    [\"removeNthFromEnd([1,2,3], 5) -- nothing to remove\", show([1, 2, 3]), show(listValues(solution.removeNthFromEnd(chain([1, 2, 3]), 5)))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc129_copy_random_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.", "export class Node {
+  val: number;
+  next: Node | null;
+  random: Node | null;
+
+  constructor(val = 0, next: Node | null = null, random: Node | null = null) {
+    this.val = val;
+    this.next = next;
+    this.random = random;
+  }
+}
+
+export function copyRandomList(head: Node | null): Node | null {
+  // One pass to create every copy, a second to wire them up. Resolving a link
+  // on first sight cannot work: it may point at a node not yet copied, which is
+  // the whole difficulty of the problem -- and a map from original node to copy
+  // is what removes it.
+  const copies = new Map<Node, Node>();
+
+  for (let node = head; node !== null; node = node.next) {
+    copies.set(node, new Node(node.val));
+  }
+
+  for (let node = head; node !== null; node = node.next) {
+    const copy = copies.get(node)!;
+    copy.next = node.next === null ? null : copies.get(node.next)!;
+    copy.random = node.random === null ? null : copies.get(node.random)!;
+  }
+
+  return head === null ? null : copies.get(head)!;
+}"),
+      #("Solution 2 · Interleaved", "The list itself replaces the map: each copy is spliced in directly after its original, so \"the copy of X\" is always X.next — no lookup and no O(n) table. Three passes instead of two, and the last one has to unweave the lists again, restoring the original exactly as it was.", "export class Node {
+  val: number;
+  next: Node | null;
+  random: Node | null;
+
+  constructor(val = 0, next: Node | null = null, random: Node | null = null) {
+    this.val = val;
+    this.next = next;
+    this.random = random;
+  }
+}
+
+export function copyRandomList(head: Node | null): Node | null {
+  // The list itself replaces the map: each copy is spliced in directly after
+  // its original, so \"the copy of node X\" is always X.next -- no lookup and no
+  // O(n) table. Three passes instead of two, and the last one has to unweave
+  // the two lists again, restoring the original exactly as it was.
+  for (let node = head; node !== null; node = node.next!.next) {
+    node.next = new Node(node.val, node.next);
+  }
+
+  for (let node = head; node !== null; node = node.next!.next) {
+    if (node.random !== null) node.next!.random = node.random.next;
+  }
+
+  const copy = head === null ? null : head.next;
+  let node = head;
+  while (node !== null) {
+    const originalNext = node.next!.next;
+    if (originalNext !== null) node.next!.next = originalNext.next;
+    node.next = originalNext;
+    node = originalNext;
+  }
+
+  return copy;
+}"),
+    ],
+    check: Check(
+      signature: "export class Node
+  constructor(val = 0, next: Node | null = null, random: Node | null = null)
+
+export function copyRandomList(head: Node | null): Node | null",
+      starter: "export class Node {
+  constructor(val = 0, next: Node | null = null, random: Node | null = null) {
+    // todo
+  }
+}
+
+export function copyRandomList(head: Node | null): Node | null {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// Builds a list from [value, randomIndex] pairs, where randomIndex is null for
+// no link.
+const build = (pairs: [number, number | null][]) => {
+  const nodes = pairs.map(([value]) => new solution.Node(value));
+  nodes.forEach((node: any, i: number) => {
+    node.next = i + 1 < nodes.length ? nodes[i + 1] : null;
+    const random = pairs[i][1];
+    node.random = random === null ? null : nodes[random];
+  });
+  return nodes.length > 0 ? nodes[0] : null;
+};
+
+// Serialises back to [value, randomIndex] pairs, and asserts along the way that
+// every node is a *new* one -- a copy that reuses the originals would otherwise
+// pass every value comparison.
+const copied = (pairs: [number, number | null][]) => {
+  const head = build(pairs);
+  const originals = new Set<any>();
+  for (let node: any = head; node !== null; node = node.next) originals.add(node);
+
+  const nodes: any[] = [];
+  for (let node: any = solution.copyRandomList(head); node !== null && node !== undefined && nodes.length < 1000; node = node.next) {
+    nodes.push(node);
+  }
+  if (nodes.some((node) => originals.has(node))) return \"reused an original node\";
+  const places = new Map<any, number>(nodes.map((node, i) => [node, i]));
+  return nodes.map((node) => [node.val, node.random === null ? null : places.get(node.random) ?? null]);
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.copyRandomList !== \"function\" || typeof solution.Node !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"copyRandomList([[7,null],[13,0]])\", show([[7, null], [13, 0]]), show(copied([[7, null], [13, 0]]))],
+    [\"copyRandomList([[1,0]]) -- a node pointing at itself\", show([[1, 0]]), show(copied([[1, 0]]))],
+    [\"copyRandomList(a forward link to a node not yet copied)\", show([[1, 2], [2, null], [3, 0]]), show(copied([[1, 2], [2, null], [3, 0]]))],
+    [\"copyRandomList([])\", show([]), show(copied([]))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn nc12_best_time_stock() -> Embedded {
   Embedded(
     solutions: [
@@ -2915,6 +3495,694 @@ export function run(): [string, string, string][] {
     [\"maxProfit([7, 1, 5, 3, 6, 4])\", show(5), show(solution.maxProfit([7, 1, 5, 3, 6, 4]))],
     [\"maxProfit([7, 6, 4, 3, 1])\", show(0), show(solution.maxProfit([7, 6, 4, 3, 1]))],
     [\"maxProfit([])\", show(0), show(solution.maxProfit([]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc130_add_two_numbers() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The digits arrive least significant first, which is exactly the order addition wants — no reversing and no length matching. The case worth writing down is the carry outliving both numbers: 5 + 5 produces a digit neither input has a node for.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function addTwoNumbers(l1: ListNode | null, l2: ListNode | null): ListNode | null {
+  // Both numbers arrive least significant digit first, which is exactly the
+  // order addition wants -- no reversing and no length matching. The loop
+  // condition includes the carry, because 5 + 5 produces a digit that neither
+  // input has a node for.
+  const dummy = new ListNode();
+  let tail = dummy;
+  let carry = 0;
+
+  while (l1 !== null || l2 !== null || carry !== 0) {
+    let total = carry;
+    if (l1 !== null) {
+      total += l1.val;
+      l1 = l1.next;
+    }
+    if (l2 !== null) {
+      total += l2.val;
+      l2 = l2.next;
+    }
+    carry = Math.floor(total / 10);
+    tail.next = new ListNode(total % 10);
+    tail = tail.next;
+  }
+
+  return dummy.next;
+}"),
+      #("Solution 2 · Via digits array", "Read both lists into arrays, add positionally, then rebuild. The same arithmetic with the carry handled after the fact rather than during the walk — which is what makes clear that the single-pass version is doing two things at once. Converting to whole numbers instead would be simpler and quietly wrong: a long list overflows a double.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function addTwoNumbers(l1: ListNode | null, l2: ListNode | null): ListNode | null {
+  // Read both lists into arrays first, add positionally, then build the answer.
+  // The same arithmetic, but the carry is handled after the fact rather than
+  // during the walk -- which is what makes it clear that the single-pass
+  // version is doing two things at once. Converting to whole numbers instead
+  // would be simpler still and quietly wrong: a long list overflows a double.
+  const first = digits(l1);
+  const second = digits(l2);
+  const sum: number[] = [];
+
+  let carry = 0;
+  for (let i = 0; i < Math.max(first.length, second.length); i++) {
+    const total = (first[i] ?? 0) + (second[i] ?? 0) + carry;
+    sum.push(total % 10);
+    carry = Math.floor(total / 10);
+  }
+  if (carry !== 0) sum.push(carry);
+  if (sum.length === 0) sum.push(0);
+
+  let head: ListNode | null = null;
+  for (let i = sum.length - 1; i >= 0; i--) head = new ListNode(sum[i], head);
+  return head;
+}
+
+function digits(node: ListNode | null): number[] {
+  const out: number[] = [];
+  for (; node !== null; node = node.next) out.push(node.val);
+  return out;
+}"),
+    ],
+    check: Check(
+      signature: "export class ListNode
+  constructor(val = 0, next: ListNode | null = null)
+
+export function addTwoNumbers(l1: ListNode | null, l2: ListNode | null): ListNode | null",
+      starter: "export class ListNode {
+  constructor(val = 0, next: ListNode | null = null) {
+    // todo
+  }
+}
+
+export function addTwoNumbers(l1: ListNode | null, l2: ListNode | null): ListNode | null {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const chain = (values: number[]) => {
+  let head: any = null;
+  for (let i = values.length - 1; i >= 0; i--) head = new solution.ListNode(values[i], head);
+  return head;
+};
+
+const listValues = (node: any) => {
+  const out: number[] = [];
+  while (node !== null && node !== undefined && out.length < 1000) {
+    out.push(node.val);
+    node = node.next;
+  }
+  return out;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.addTwoNumbers !== \"function\" || typeof solution.ListNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"addTwoNumbers([2,4,3], [5,6,4]) -- 342 + 465\", show([7, 0, 8]), show(listValues(solution.addTwoNumbers(chain([2, 4, 3]), chain([5, 6, 4]))))],
+    [\"addTwoNumbers([0], [0])\", show([0]), show(listValues(solution.addTwoNumbers(chain([0]), chain([0]))))],
+    [\"addTwoNumbers([9,9,9], [1]) -- the carry runs all the way\", show([0, 0, 0, 1]), show(listValues(solution.addTwoNumbers(chain([9, 9, 9]), chain([1]))))],
+    [\"addTwoNumbers([5], [5]) -- the carry outlives both\", show([0, 1]), show(listValues(solution.addTwoNumbers(chain([5]), chain([5]))))],
+    [\"addTwoNumbers([1,2], [3,4,5]) -- different lengths\", show([4, 6, 5]), show(listValues(solution.addTwoNumbers(chain([1, 2]), chain([3, 4, 5]))))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc131_linked_list_cycle() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Floyd's tortoise and hare. One walker takes single steps, the other double; inside a loop the fast one gains a place per step on the slow one, so it must land on it. Outside one, it runs off the end first. Constant memory and nothing is marked — that is the whole result.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function hasCycle(head: ListNode | null): boolean {
+  // Floyd's tortoise and hare. One pointer takes single steps, the other
+  // double; if there is a loop the fast one is going round it and gains one
+  // place per step on the slow one, so it must eventually land on it. If there
+  // is no loop the fast one runs off the end first. Constant memory, and no
+  // node is ever marked.
+  let slow = head;
+  let fast = head;
+  while (fast !== null && fast.next !== null) {
+    slow = slow!.next;
+    fast = fast.next.next;
+    if (slow === fast) return true;
+  }
+  return false;
+}"),
+      #("Solution 2 · Seen set", "Remember every node visited and stop when one repeats. Obvious and correct, at O(n) memory — which is exactly what the two-walker version removes. Note that it is the *nodes* that go in the set, not their values: repeated values are ordinary, repeated nodes are the cycle.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function hasCycle(head: ListNode | null): boolean {
+  // Remember every node visited and stop when one repeats. Obvious, correct,
+  // and O(n) memory -- which is the whole cost the two-pointer version removes.
+  // Note that it is the *nodes* that go in the set, not their values: repeated
+  // values are ordinary, repeated nodes are the cycle.
+  const seen = new Set<ListNode>();
+  for (let node = head; node !== null; node = node.next) {
+    if (seen.has(node)) return true;
+    seen.add(node);
+  }
+  return false;
+}"),
+    ],
+    check: Check(
+      signature: "export class ListNode
+  constructor(val = 0, next: ListNode | null = null)
+
+export function hasCycle(head: ListNode | null): boolean",
+      starter: "export class ListNode {
+  constructor(val = 0, next: ListNode | null = null) {
+    // todo
+  }
+}
+
+export function hasCycle(head: ListNode | null): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// pos is the index the tail links back to, or null for a list that ends.
+const chain = (values: number[], pos: number | null) => {
+  const nodes = values.map((value) => new solution.ListNode(value));
+  nodes.forEach((node: any, i: number) => {
+    node.next = i + 1 < nodes.length ? nodes[i + 1] : null;
+  });
+  if (nodes.length > 0 && pos !== null) (nodes[nodes.length - 1] as any).next = nodes[pos];
+  return nodes.length > 0 ? nodes[0] : null;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.hasCycle !== \"function\" || typeof solution.ListNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"hasCycle([3,2,0,-4], tail -> index 1)\", show(true), show(solution.hasCycle(chain([3, 2, 0, -4], 1)))],
+    [\"hasCycle([1,2], no cycle)\", show(false), show(solution.hasCycle(chain([1, 2], null)))],
+    [\"hasCycle([1], no cycle)\", show(false), show(solution.hasCycle(chain([1], null)))],
+    [\"hasCycle([1], tail -> index 0)\", show(true), show(solution.hasCycle(chain([1], 0)))],
+    [\"hasCycle([])\", show(false), show(solution.hasCycle(chain([], null)))],
+    [\"hasCycle([1,2], tail -> index 0)\", show(true), show(solution.hasCycle(chain([1, 2], 0)))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc132_find_the_duplicate() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Read the array as a linked list: position i points at position nums[i]. Every value is a valid position and one repeats, so two positions point at the same place — the list has a cycle, and the duplicate is its entrance. Then it is Floyd's twice: once to meet inside the loop, once to find where it begins.", "export function findDuplicate(nums: number[]): number {
+  // Read the array as a linked list: position i points at position nums[i].
+  // Every value is a valid position and one value repeats, so two positions
+  // point at the same place -- the list has a cycle, and the duplicate is its
+  // entrance. Then it is Floyd's twice: once to meet inside the loop, once to
+  // walk from the start and from the meeting point together until they agree on
+  // where it begins.
+  let slow = nums[0];
+  let fast = nums[nums[0]];
+  while (slow !== fast) {
+    slow = nums[slow];
+    fast = nums[nums[fast]];
+  }
+
+  slow = 0;
+  while (slow !== fast) {
+    slow = nums[slow];
+    fast = nums[fast];
+  }
+  return slow;
+}"),
+      #("Solution 2 · Counting", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Binary search over the *values*, not the positions. For a candidate v, count how many numbers are at most v: with no duplicate that count is exactly v, so a count running ahead says the repeat is at or below v. O(n log n), but it needs no insight about cycles.", "export function findDuplicate(nums: number[]): number {
+  // Binary search over the *values*, not the positions. For a candidate v,
+  // count how many numbers are at most v: with no duplicate that count is
+  // exactly v, so a count that runs ahead says the repeat is at or below v.
+  // O(n log n) against Floyd's O(n), but it needs no insight about cycles --
+  // only that the pigeonhole is what makes the count informative.
+  let low = 1;
+  let high = nums.length - 1;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    const seen = nums.filter((value) => value <= middle).length;
+    if (seen > middle) high = middle;
+    else low = middle + 1;
+  }
+  return low;
+}"),
+    ],
+    check: Check(
+      signature: "export function findDuplicate(nums: number[]): number",
+      starter: "export function findDuplicate(nums: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.findDuplicate !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"findDuplicate([1,3,4,2,2])\", show(2), show(solution.findDuplicate([1, 3, 4, 2, 2]))],
+    [\"findDuplicate([3,1,3,4,2])\", show(3), show(solution.findDuplicate([3, 1, 3, 4, 2]))],
+    [\"findDuplicate([1,1])\", show(1), show(solution.findDuplicate([1, 1]))],
+    [\"findDuplicate([2,2,2,2,2]) -- repeated more than twice\", show(2), show(solution.findDuplicate([2, 2, 2, 2, 2]))],
+    [\"findDuplicate([1,4,4,2,4])\", show(4), show(solution.findDuplicate([1, 4, 4, 2, 4]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc133_lru_cache() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A map alone gives the first and a list alone gives the second — the structure is whatever supplies both. Where the language's map already remembers insertion order, deleting a key and putting it back *is* the recency list.", "export class LRUCache {
+  capacity: number;
+  entries: Map<number, number>;
+
+  constructor(capacity: number) {
+    // A Map, leaning on the fact that it remembers insertion order: deleting a
+    // key and putting it back makes it the newest, so the oldest is simply the
+    // first key the iterator yields. That is the recency list, free.
+    this.capacity = capacity;
+    this.entries = new Map();
+  }
+
+  get(key: number): number {
+    if (!this.entries.has(key)) return -1;
+    // Reading counts as use, so the key moves to the newest position.
+    const value = this.entries.get(key)!;
+    this.entries.delete(key);
+    this.entries.set(key, value);
+    return value;
+  }
+
+  put(key: number, value: number): void {
+    this.entries.delete(key);
+    this.entries.set(key, value);
+    if (this.entries.size > this.capacity) {
+      this.entries.delete(this.entries.keys().next().value!);
+    }
+  }
+}"),
+      #("Solution 2 · Linked nodes", "The structure the problem is really about: a doubly linked list of keys, newest first, plus a map from key to its node. The map makes finding a node O(1) and the back-pointers make unlinking it O(1) — neither alone is enough, which is the entire point.", "type Entry = { key: number; value: number; prev: Entry | null; next: Entry | null };
+
+export class LRUCache {
+  capacity: number;
+  nodes: Map<number, Entry>;
+  head: Entry;
+  tail: Entry;
+
+  constructor(capacity: number) {
+    // A doubly linked list of keys, newest at the head, plus a map from key to
+    // its node. The map makes finding a node O(1) and the back-pointers make
+    // unlinking it O(1) -- neither alone is enough, which is why this is the
+    // structure the problem is really about.
+    this.capacity = capacity;
+    this.nodes = new Map();
+    this.head = { key: 0, value: 0, prev: null, next: null };
+    this.tail = { key: 0, value: 0, prev: this.head, next: null };
+    this.head.next = this.tail;
+  }
+
+  get(key: number): number {
+    const node = this.nodes.get(key);
+    if (node === undefined) return -1;
+    this.unlink(node);
+    this.push(node);
+    return node.value;
+  }
+
+  put(key: number, value: number): void {
+    const existing = this.nodes.get(key);
+    if (existing !== undefined) {
+      this.unlink(existing);
+      this.nodes.delete(key);
+    }
+    const node: Entry = { key, value, prev: null, next: null };
+    this.nodes.set(key, node);
+    this.push(node);
+    if (this.nodes.size > this.capacity) {
+      const oldest = this.tail.prev!;
+      this.unlink(oldest);
+      this.nodes.delete(oldest.key);
+    }
+  }
+
+  push(node: Entry): void {
+    node.prev = this.head;
+    node.next = this.head.next;
+    this.head.next!.prev = node;
+    this.head.next = node;
+  }
+
+  unlink(node: Entry): void {
+    node.prev!.next = node.next;
+    node.next!.prev = node.prev;
+  }
+}"),
+    ],
+    check: Check(
+      signature: "export class LRUCache
+  constructor(capacity: number)
+  get(key: number): number
+  put(key: number, value: number): void",
+      starter: "export class LRUCache {
+  constructor(capacity: number) {
+    // todo
+  }
+  get(key: number): number {
+    // todo
+  }
+  put(key: number, value: number): void {
+    // todo
+  }
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.LRUCache !== \"function\") throw new Error(\"__signature_mismatch__\");
+
+  const cache = new solution.LRUCache(2);
+  cache.put(1, 1);
+  cache.put(2, 2);
+  const first = cache.get(1);
+  cache.put(3, 3);
+  const evicted = cache.get(2);
+  const kept = cache.get(3);
+  cache.put(4, 4);
+
+  const updated = new solution.LRUCache(1);
+  updated.put(5, 5);
+  updated.put(5, 9);
+
+  return [
+    [\"get(1) after put(1,1), put(2,2)\", show(1), show(first)],
+    [\"get(2) after put(3,3) -- 2 was least recently used\", show(-1), show(evicted)],
+    [\"get(3) after put(3,3)\", show(3), show(kept)],
+    [\"get(1) after put(4,4) -- reading 3 saved it, so 1 went\", show(-1), show(cache.get(1))],
+    [\"get(3) after put(4,4)\", show(3), show(cache.get(3))],
+    [\"get(4) after put(4,4)\", show(4), show(cache.get(4))],
+    [\"get(99) on a key never stored\", show(-1), show(cache.get(99))],
+    [\"get(5) after put(5,5) then put(5,9) -- an update, not an insert\", show(9), show(updated.get(5))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc134_merge_k_sorted_lists() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function mergeKLists(lists: (ListNode | null)[]): ListNode | null {
+  // Merge in pairs, halving the number of lists each round. Folding them in one
+  // at a time re-walks the growing result every time -- O(k*n) -- while pairing
+  // gives O(n log k) for the same merges, because each element is copied once
+  // per round and there are log k rounds.
+  let remaining = lists.filter((head) => head !== null);
+  if (remaining.length === 0) return null;
+
+  while (remaining.length > 1) {
+    const merged: (ListNode | null)[] = [];
+    for (let i = 0; i < remaining.length; i += 2) {
+      merged.push(i + 1 < remaining.length ? merge(remaining[i], remaining[i + 1]) : remaining[i]);
+    }
+    remaining = merged;
+  }
+
+  return remaining[0];
+}
+
+function merge(first: ListNode | null, second: ListNode | null): ListNode | null {
+  const dummy = new ListNode();
+  let tail = dummy;
+  while (first !== null && second !== null) {
+    if (first.val <= second.val) {
+      tail.next = first;
+      first = first.next;
+    } else {
+      tail.next = second;
+      second = second.next;
+    }
+    tail = tail.next;
+  }
+  tail.next = first !== null ? first : second;
+  return dummy.next;
+}"),
+      #("Solution 2 · Smallest head", "The heap solution with the heap spelled out as a scan, for languages that have no priority queue: O(k) per element rather than O(log k), which is the entire difference the heap makes. What it does not need is any pairing structure — it works on lists arriving one at a time.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function mergeKLists(lists: (ListNode | null)[]): ListNode | null {
+  // Take the smallest head across all the lists, over and over. This is the
+  // heap solution with the heap spelled out as a scan, since JavaScript has no
+  // priority queue: O(k) per element rather than O(log k), which is the entire
+  // difference the heap makes. What it does not need is any pairing structure
+  // -- it works just as well on lists arriving one at a time.
+  const heads = lists.filter((head): head is ListNode => head !== null);
+  const dummy = new ListNode();
+  let tail = dummy;
+
+  while (heads.length > 0) {
+    let best = 0;
+    for (let i = 1; i < heads.length; i++) if (heads[i].val < heads[best].val) best = i;
+    const node = heads[best];
+    tail.next = node;
+    tail = node;
+    if (node.next !== null) heads[best] = node.next;
+    else heads.splice(best, 1);
+  }
+
+  tail.next = null;
+  return dummy.next;
+}"),
+    ],
+    check: Check(
+      signature: "export class ListNode
+  constructor(val = 0, next: ListNode | null = null)
+
+export function mergeKLists(lists: (ListNode | null)[]): ListNode | null",
+      starter: "export class ListNode {
+  constructor(val = 0, next: ListNode | null = null) {
+    // todo
+  }
+}
+
+export function mergeKLists(lists: (ListNode | null)[]): ListNode | null {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const chain = (values: number[]) => {
+  let head: any = null;
+  for (let i = values.length - 1; i >= 0; i--) head = new solution.ListNode(values[i], head);
+  return head;
+};
+
+const listValues = (node: any) => {
+  const out: number[] = [];
+  while (node !== null && node !== undefined && out.length < 1000) {
+    out.push(node.val);
+    node = node.next;
+  }
+  return out;
+};
+
+const merged = (lists: number[][]) =>
+  listValues(solution.mergeKLists(lists.map((values) => chain(values))));
+
+export function run(): [string, string, string][] {
+  if (typeof solution.mergeKLists !== \"function\" || typeof solution.ListNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"mergeKLists([[1,4,5],[1,3,4],[2,6]])\", show([1, 1, 2, 3, 4, 4, 5, 6]), show(merged([[1, 4, 5], [1, 3, 4], [2, 6]]))],
+    [\"mergeKLists([]) -- no lists at all\", show([]), show(merged([]))],
+    [\"mergeKLists([[]]) -- one empty list\", show([]), show(merged([[]]))],
+    [\"mergeKLists([[1],[],[0]])\", show([0, 1]), show(merged([[1], [], [0]]))],
+    [\"mergeKLists([[2,2],[2]]) -- ties everywhere\", show([2, 2, 2]), show(merged([[2, 2], [2]]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc135_reverse_k_group() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Look ahead k nodes *before* reversing anything. That check is the whole difficulty: once the rewiring starts there is no way to tell how far it got, so a short final group would be reversed by mistake.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function reverseKGroup(head: ListNode | null, k: number): ListNode | null {
+  // Look ahead k nodes *before* reversing anything. That check is the whole
+  // difficulty: once the rewiring starts there is no way to tell how far it
+  // got, so a short final group would be reversed by mistake.
+  const dummy = new ListNode(0, head);
+  let before = dummy;
+
+  for (;;) {
+    let after: ListNode | null = before;
+    for (let i = 0; i < k; i++) {
+      after = after!.next;
+      if (after === null) return dummy.next;
+    }
+
+    let node = before.next;
+    let previous: ListNode | null = after!.next;
+    const first = node!;
+    for (let i = 0; i < k; i++) {
+      const following: ListNode | null = node!.next;
+      node!.next = previous;
+      previous = node;
+      node = following;
+    }
+
+    before.next = previous;
+    before = first;
+  }
+}"),
+      #("Solution 2 · Count first", "Count once, then reverse exactly length / k groups. One length calculation instead of a look-ahead per group — and it makes the boundary explicit: everything past the last whole group is untouched, however long it is.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function reverseKGroup(head: ListNode | null, k: number): ListNode | null {
+  // Count once, then reverse exactly length / k groups. One length calculation
+  // instead of a look-ahead per group -- and it makes the boundary explicit:
+  // everything past the last whole group is untouched, however long it is.
+  let length = 0;
+  for (let n = head; n !== null; n = n.next) length++;
+
+  const dummy = new ListNode(0, head);
+  let before = dummy;
+  let node = head;
+
+  for (let group = 0; group < Math.floor(length / k); group++) {
+    const first = node!;
+    let previous: ListNode | null = null;
+    for (let i = 0; i < k; i++) {
+      const following: ListNode | null = node!.next;
+      node!.next = previous;
+      previous = node;
+      node = following;
+    }
+    before.next = previous;
+    first.next = node;
+    before = first;
+  }
+
+  return dummy.next;
+}"),
+    ],
+    check: Check(
+      signature: "export class ListNode
+  constructor(val = 0, next: ListNode | null = null)
+
+export function reverseKGroup(head: ListNode | null, k: number): ListNode | null",
+      starter: "export class ListNode {
+  constructor(val = 0, next: ListNode | null = null) {
+    // todo
+  }
+}
+
+export function reverseKGroup(head: ListNode | null, k: number): ListNode | null {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const chain = (values: number[]) => {
+  let head: any = null;
+  for (let i = values.length - 1; i >= 0; i--) head = new solution.ListNode(values[i], head);
+  return head;
+};
+
+const listValues = (node: any) => {
+  const out: number[] = [];
+  while (node !== null && node !== undefined && out.length < 1000) {
+    out.push(node.val);
+    node = node.next;
+  }
+  return out;
+};
+
+const grouped = (values: number[], k: number) =>
+  listValues(solution.reverseKGroup(chain(values), k));
+
+export function run(): [string, string, string][] {
+  if (typeof solution.reverseKGroup !== \"function\" || typeof solution.ListNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"reverseKGroup([1,2,3,4,5], 2)\", show([2, 1, 4, 3, 5]), show(grouped([1, 2, 3, 4, 5], 2))],
+    [\"reverseKGroup([1,2,3,4,5], 3) -- the last two are left alone\", show([3, 2, 1, 4, 5]), show(grouped([1, 2, 3, 4, 5], 3))],
+    [\"reverseKGroup([1,2,3,4], 4)\", show([4, 3, 2, 1]), show(grouped([1, 2, 3, 4], 4))],
+    [\"reverseKGroup([1,2,3], 1) -- nothing changes\", show([1, 2, 3]), show(grouped([1, 2, 3], 1))],
+    [\"reverseKGroup([1,2], 5) -- the group never fills\", show([1, 2]), show(grouped([1, 2], 5))],
+    [\"reverseKGroup([], 2)\", show([]), show(grouped([], 2))],
   ];
 }",
     ),
@@ -8840,7 +10108,18 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc122_swim_in_water" -> Ok(nc122_swim_in_water())
     "nc123_alien_dictionary" -> Ok(nc123_alien_dictionary())
     "nc124_cheapest_flights" -> Ok(nc124_cheapest_flights())
+    "nc125_reverse_linked_list" -> Ok(nc125_reverse_linked_list())
+    "nc126_merge_two_sorted_lists" -> Ok(nc126_merge_two_sorted_lists())
+    "nc127_reorder_list" -> Ok(nc127_reorder_list())
+    "nc128_remove_nth_from_end" -> Ok(nc128_remove_nth_from_end())
+    "nc129_copy_random_list" -> Ok(nc129_copy_random_list())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
+    "nc130_add_two_numbers" -> Ok(nc130_add_two_numbers())
+    "nc131_linked_list_cycle" -> Ok(nc131_linked_list_cycle())
+    "nc132_find_the_duplicate" -> Ok(nc132_find_the_duplicate())
+    "nc133_lru_cache" -> Ok(nc133_lru_cache())
+    "nc134_merge_k_sorted_lists" -> Ok(nc134_merge_k_sorted_lists())
+    "nc135_reverse_k_group" -> Ok(nc135_reverse_k_group())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())
     "nc14_character_replacement" -> Ok(nc14_character_replacement())
     "nc15_permutation_in_string" -> Ok(nc15_permutation_in_string())

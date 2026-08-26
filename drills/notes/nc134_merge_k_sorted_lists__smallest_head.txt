@@ -1,0 +1,1 @@
+The heap solution with the heap spelled out as a scan, for languages that have no priority queue: O(k) per element rather than O(log k), which is the entire difference the heap makes. What it does not need is any pairing structure — it works on lists arriving one at a time.

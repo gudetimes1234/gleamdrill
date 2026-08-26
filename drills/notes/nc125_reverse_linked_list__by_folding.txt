@@ -1,0 +1,1 @@
+The accumulator, named by the standard library instead of written out. Worth putting next to the hand-written loop: a left fold that prepends is the definition of reversing, which is why the built-in exists at all.
