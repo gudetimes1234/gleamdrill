@@ -65,6 +65,14 @@ import nc25_min_window_substring
 import nc25_min_window_substring__filtered_positions
 import nc26_sliding_window_maximum
 import nc26_sliding_window_maximum__brute_force
+import nc27_eval_rpn
+import nc27_eval_rpn__recursive
+import nc28_generate_parentheses
+import nc28_generate_parentheses__by_composition
+import nc29_car_fleet
+import nc29_car_fleet__pairwise
+import nc30_largest_rectangle
+import nc30_largest_rectangle__expand_from_each_bar
 import tip01_list_patterns
 import tip01_list_patterns__stdlib
 import tip02_tail_recursion
@@ -174,6 +182,18 @@ pub fn main() {
     check_sliding_window_maximum(nc26_sliding_window_maximum.max_sliding_window),
     check_sliding_window_maximum(
       nc26_sliding_window_maximum__brute_force.max_sliding_window,
+    ),
+    check_eval_rpn(nc27_eval_rpn.eval_rpn),
+    check_eval_rpn(nc27_eval_rpn__recursive.eval_rpn),
+    check_generate_parentheses(nc28_generate_parentheses.generate_parenthesis),
+    check_generate_parentheses(
+      nc28_generate_parentheses__by_composition.generate_parenthesis,
+    ),
+    check_car_fleet(nc29_car_fleet.car_fleet),
+    check_car_fleet(nc29_car_fleet__pairwise.car_fleet),
+    check_largest_rectangle(nc30_largest_rectangle.largest_rectangle_area),
+    check_largest_rectangle(
+      nc30_largest_rectangle__expand_from_each_bar.largest_rectangle_area,
     ),
 
     // Gleam Tips
@@ -331,6 +351,51 @@ fn check_sliding_window_maximum(f: fn(List(Int), Int) -> List(Int)) -> Nil {
   // All negative, k = 1: a running maximum seeded with zero fails here.
   let assert True = f([1, -1], 1) == [1, -1]
   let assert True = f([-7, -8, 7, 5, 7, 1, 6, 0], 4) == [7, 7, 7, 7, 7]
+  Nil
+}
+
+fn check_eval_rpn(f: fn(List(String)) -> Int) -> Nil {
+  let assert True = f(["2", "1", "+", "3", "*"]) == 9
+  let assert True = f(["4", "13", "5", "/", "+"]) == 6
+  // Division truncates towards zero, so this is -1 and not -2.
+  let assert True = f(["-3", "2", "/"]) == -1
+  let assert True = f(["5"]) == 5
+  let assert True =
+    f(["10", "6", "9", "3", "+", "-11", "*", "/", "*", "17", "+", "5", "+"])
+    == 22
+  Nil
+}
+
+fn check_generate_parentheses(f: fn(Int) -> List(String)) -> Nil {
+  let sorted = fn(n) { list.sort(f(n), string.compare) }
+  let assert True = sorted(1) == ["()"]
+  let assert True = sorted(2) == ["(())", "()()"]
+  let assert True =
+    sorted(3) == ["((()))", "(()())", "(())()", "()(())", "()()()"]
+  // The Catalan numbers: 14 is the count that catches a missed branch.
+  let assert True = list.length(f(4)) == 14
+  Nil
+}
+
+fn check_car_fleet(f: fn(Int, List(Int), List(Int)) -> Int) -> Nil {
+  let assert True = f(12, [10, 8, 0, 5, 3], [2, 4, 1, 1, 3]) == 3
+  let assert True = f(10, [3], [3]) == 1
+  let assert True = f(100, [0, 2, 4], [4, 2, 1]) == 1
+  let assert True = f(10, [6, 8], [3, 2]) == 2
+  let assert True = f(10, [], []) == 0
+  // Arrival times of 5, 6 and 8/3: a solution that rounds them loses this one.
+  let assert True = f(10, [0, 4, 2], [2, 1, 3]) == 1
+  Nil
+}
+
+fn check_largest_rectangle(f: fn(List(Int)) -> Int) -> Nil {
+  let assert True = f([2, 1, 5, 6, 2, 3]) == 10
+  let assert True = f([2, 4]) == 4
+  let assert True = f([]) == 0
+  let assert True = f([1, 1, 1]) == 3
+  let assert True = f([5]) == 5
+  // A zero splits the histogram in two; the best rectangle is on the right.
+  let assert True = f([4, 2, 0, 3, 2, 5]) == 6
   Nil
 }
 

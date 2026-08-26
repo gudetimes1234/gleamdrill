@@ -146,9 +146,29 @@ pub fn groups() -> List(Group) {
         "nc17_min_stack",
       ),
       Drill(
+        "Evaluate Reverse Polish Notation",
+        "You are given an array of strings tokens representing an arithmetic expression in Reverse Polish Notation. Evaluate it and return an integer. Division between two integers truncates towards zero.",
+        "nc27_eval_rpn",
+      ),
+      Drill(
+        "Generate Parentheses",
+        "Given n pairs of parentheses, generate all combinations of well-formed parentheses. The answer may be returned in any order.",
+        "nc28_generate_parentheses",
+      ),
+      Drill(
         "Daily Temperatures",
         "Given an array of integers temperatures, return an array answer such that answer[i] is the number of days you have to wait after the ith day to get a warmer temperature.",
         "nc18_daily_temperatures",
+      ),
+      Drill(
+        "Car Fleet",
+        "Cars head to the same destination at target. Car i starts at position[i] with speed[i], and a faster car catching a slower one joins it, moving at the slower speed. Return the number of fleets that arrive.",
+        "nc29_car_fleet",
+      ),
+      Drill(
+        "Largest Rectangle in Histogram",
+        "Given an array of integers heights representing a histogram's bar heights, where each bar has width 1, return the area of the largest rectangle in the histogram.",
+        "nc30_largest_rectangle",
       ),
     ]),
     Group("Binary Search", [

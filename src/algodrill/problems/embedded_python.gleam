@@ -1485,6 +1485,282 @@ __case__(\"maxSlidingWindow([-7, -8, 7, 5, 7, 1, 6, 0], 4)\", [7, 7, 7, 7, 7], m
   )
 }
 
+pub fn nc27_eval_rpn() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A stack is the whole evaluator. Numbers go on; an operator takes the top two off and puts its result back. The one detail worth remembering is the order — the value popped first is the right operand — and that the division truncates towards zero, which is not what a flooring division does for negatives.", "OPERATORS = \"+-*/\"
+
+
+def evalRPN(tokens):
+    stack = []
+    for token in tokens:
+        if token in OPERATORS and len(stack) >= 2:
+            b = stack.pop()
+            a = stack.pop()
+            stack.append(apply(token, a, b))
+        else:
+            stack.append(int(token))
+    return stack[-1] if stack else 0
+
+
+def apply(operator, a, b):
+    if operator == \"+\":
+        return a + b
+    if operator == \"-\":
+        return a - b
+    if operator == \"*\":
+        return a * b
+    # // floors, so -3 // 2 is -2; the problem wants truncation towards zero.
+    quotient = abs(a) // abs(b)
+    return -quotient if (a < 0) != (b < 0) else quotient"),
+      #("Solution 2 · Recursive", "The same grammar, read as a recursive descent instead of a loop. The last token is the outermost operator; each operator asks for its right operand first, because that is what sits nearer the end. What the stack version stores in a list, this one stores in the call stack.", "OPERATORS = \"+-*/\"
+
+
+def evalRPN(tokens):
+    value, _ = take(tokens, len(tokens) - 1)
+    return value
+
+
+# Read right to left: the last token is the outermost operator, and each
+# operator takes its right operand first because that is what sits nearer the
+# end. Returns the value and the index still to be read.
+def take(tokens, i):
+    token = tokens[i]
+    if token not in OPERATORS:
+        return int(token), i - 1
+    right, i = take(tokens, i - 1)
+    left, i = take(tokens, i)
+    return apply(token, left, right), i
+
+
+def apply(operator, a, b):
+    if operator == \"+\":
+        return a + b
+    if operator == \"-\":
+        return a - b
+    if operator == \"*\":
+        return a * b
+    quotient = abs(a) // abs(b)
+    return -quotient if (a < 0) != (b < 0) else quotient"),
+    ],
+    check: Check(
+      signature: "def evalRPN(tokens):
+
+def apply(operator, a, b):",
+      starter: "def evalRPN(tokens):
+    pass
+
+def apply(operator, a, b):
+    pass",
+      harness: "try:
+    (evalRPN)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"evalRPN(['2', '1', '+', '3', '*'])\", 9, evalRPN([\"2\", \"1\", \"+\", \"3\", \"*\"]))
+__case__(\"evalRPN(['4', '13', '5', '/', '+'])\", 6, evalRPN([\"4\", \"13\", \"5\", \"/\", \"+\"]))
+__case__(\"evalRPN(['-3', '2', '/'])\", -1, evalRPN([\"-3\", \"2\", \"/\"]))
+__case__(\"evalRPN(['5'])\", 5, evalRPN([\"5\"]))
+__case__(\"evalRPN(the long one)\", 22, evalRPN([\"10\", \"6\", \"9\", \"3\", \"+\", \"-11\", \"*\", \"/\", \"*\", \"17\", \"+\", \"5\", \"+\"]))",
+    ),
+  )
+}
+
+pub fn nc28_generate_parentheses() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Backtracking with two counters and one rule each: an opener is legal while any are left, a closer only while more are outstanding than openers. Nothing invalid is ever built, so there is no filtering step — every leaf reached with both counters at zero is an answer.", "def generateParenthesis(n):
+    out = []
+
+    # Two counters, one rule each: an opener is legal while any are left, and a
+    # closer is legal only while more are outstanding than openers. Everything
+    # reached with both at zero is valid by construction.
+    def build(open_left, close_left, current):
+        if open_left == 0 and close_left == 0:
+            out.append(\"\".join(current))
+            return
+        if open_left > 0:
+            current.append(\"(\")
+            build(open_left - 1, close_left, current)
+            current.pop()
+        if close_left > open_left:
+            current.append(\")\")
+            build(open_left, close_left - 1, current)
+            current.pop()
+
+    build(n, n, [])
+    return out"),
+      #("Solution 2 · By composition", "Structure instead of search. Every non-empty balanced string is \"(\" + A + \")\" + B for exactly one split: A is what the first bracket encloses, B is what follows it. Enumerating the splits enumerates the strings, and there is no validity rule anywhere — the shape of the recursion is the rule.", "def generateParenthesis(n):
+    return compose(n)
+
+
+# Every non-empty balanced string is \"(\" + A + \")\" + B for exactly one split: A
+# is whatever the first bracket encloses, B is whatever follows it. Enumerating
+# the splits enumerates the strings, with no validity rule to check at all.
+def compose(n):
+    if n <= 0:
+        return [\"\"]
+    return [
+        \"(\" + a + \")\" + b
+        for inner in range(n)
+        for a in compose(inner)
+        for b in compose(n - 1 - inner)
+    ]"),
+    ],
+    check: Check(
+      signature: "def generateParenthesis(n):",
+      starter: "def generateParenthesis(n):
+    pass",
+      harness: "try:
+    (generateParenthesis)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# Any order is acceptable, so every case compares sorted.
+def __sorted__(n):
+    return sorted(generateParenthesis(n))
+
+__case__(\"generateParenthesis(1)\", [\"()\"], __sorted__(1))
+__case__(\"generateParenthesis(2)\", [\"(())\", \"()()\"], __sorted__(2))
+__case__(\"generateParenthesis(3)\", [\"((()))\", \"(()())\", \"(())()\", \"()(())\", \"()()()\"], __sorted__(3))
+__case__(\"generateParenthesis(4) count\", 14, len(__sorted__(4)))",
+    ),
+  )
+}
+
+pub fn nc29_car_fleet() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Sort from the front backwards and carry the arrival time of the fleet ahead. A car that would arrive later than that fleet can never catch it, so it starts a new one and becomes the time to beat; anything else merges. Comparing times as distance × speed cross-multiplied keeps the whole thing in integers.", "def carFleet(target, position, speed):
+    cars = sorted(zip(position, speed), reverse=True)
+
+    fleets = 0
+    lead_distance, lead_speed = 0, 1
+
+    for pos, spd in cars:
+        distance = target - pos
+        # distance/spd > lead_distance/lead_speed, cross-multiplied so the
+        # arrival times never have to become fractions.
+        if distance * lead_speed > lead_distance * spd:
+            fleets += 1
+            lead_distance, lead_speed = distance, spd
+
+    return fleets"),
+      #("Solution 2 · Pairwise", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+A car leads a fleet exactly when it arrives strictly later than every car ahead of it. Checking that directly needs no sort and no running state — O(n²), and it is the definition the sorted scan is a consequence of.", "def carFleet(target, position, speed):
+    cars = list(zip(position, speed))
+    return sum(1 for car in cars if leads(car, cars, target))
+
+
+# A car leads a fleet exactly when it arrives strictly later than every car
+# ahead of it; anything else means it catches one of them and merges. No
+# sorting, no running state -- O(n^2), and the definition rather than a
+# consequence of it.
+def leads(car, cars, target):
+    pos, spd = car
+    return all(
+        (target - pos) * other_speed > (target - other_pos) * spd
+        for other_pos, other_speed in cars
+        if other_pos > pos
+    )"),
+    ],
+    check: Check(
+      signature: "def carFleet(target, position, speed):",
+      starter: "def carFleet(target, position, speed):
+    pass",
+      harness: "try:
+    (carFleet)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"carFleet(12, [10, 8, 0, 5, 3], [2, 4, 1, 1, 3])\", 3, carFleet(12, [10, 8, 0, 5, 3], [2, 4, 1, 1, 3]))
+__case__(\"carFleet(10, [3], [3])\", 1, carFleet(10, [3], [3]))
+__case__(\"carFleet(100, [0, 2, 4], [4, 2, 1])\", 1, carFleet(100, [0, 2, 4], [4, 2, 1]))
+__case__(\"carFleet(10, [6, 8], [3, 2])\", 2, carFleet(10, [6, 8], [3, 2]))
+__case__(\"carFleet(10, [], [])\", 0, carFleet(10, [], []))
+__case__(\"carFleet(10, [0, 4, 2], [2, 1, 3])\", 1, carFleet(10, [0, 4, 2], [2, 1, 3]))",
+    ),
+  )
+}
+
+pub fn nc30_largest_rectangle() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A monotonic stack of (starting index, height), heights increasing. A shorter bar arriving means every taller entry can never extend further, so each is closed off and measured — and the earliest position they reached back to becomes the new bar's own start, because it can extend back over all of them. Whatever is left at the end was never cut off, so it runs to the far edge.", "def largestRectangleArea(heights):
+    stack = []
+    best = 0
+
+    for i, h in enumerate(heights):
+        start = i
+        # Anything taller than the new bar can never extend past it, so its
+        # rectangle is finished here. Whatever it reached back to becomes this
+        # bar's own starting point.
+        while stack and stack[-1][1] > h:
+            from_index, tall = stack.pop()
+            best = max(best, tall * (i - from_index))
+            start = from_index
+        stack.append((start, h))
+
+    # Whatever survives was never cut off, so it runs to the far end.
+    for from_index, tall in stack:
+        best = max(best, tall * (len(heights) - from_index))
+
+    return best"),
+      #("Solution 2 · Expand from each bar", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every rectangle is some bar taken as far as it will go, so take each bar and walk outwards while the neighbours are at least as tall. O(n²), and it makes plain what the stack is actually computing: the two boundaries where a bar stops fitting.", "def largestRectangleArea(heights):
+    best = 0
+
+    for i, h in enumerate(heights):
+        # How far this bar's own height can spread in each direction. O(n^2),
+        # and the definition of the answer: every rectangle is some bar taken
+        # as far as it will go.
+        left = i
+        while left > 0 and heights[left - 1] >= h:
+            left -= 1
+        right = i
+        while right + 1 < len(heights) and heights[right + 1] >= h:
+            right += 1
+        best = max(best, h * (right - left + 1))
+
+    return best"),
+    ],
+    check: Check(
+      signature: "def largestRectangleArea(heights):",
+      starter: "def largestRectangleArea(heights):
+    pass",
+      harness: "try:
+    (largestRectangleArea)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"largestRectangleArea([2, 1, 5, 6, 2, 3])\", 10, largestRectangleArea([2, 1, 5, 6, 2, 3]))
+__case__(\"largestRectangleArea([2, 4])\", 4, largestRectangleArea([2, 4]))
+__case__(\"largestRectangleArea([])\", 0, largestRectangleArea([]))
+__case__(\"largestRectangleArea([1, 1, 1])\", 3, largestRectangleArea([1, 1, 1]))
+__case__(\"largestRectangleArea([5])\", 5, largestRectangleArea([5]))
+__case__(\"largestRectangleArea([4, 2, 0, 3, 2, 5])\", 6, largestRectangleArea([4, 2, 0, 3, 2, 5]))",
+    ),
+  )
+}
+
 pub fn tip01_counter() -> Embedded {
   Embedded(
     solutions: [
@@ -1885,6 +2161,10 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc24_trapping_rain_water" -> Ok(nc24_trapping_rain_water())
     "nc25_min_window_substring" -> Ok(nc25_min_window_substring())
     "nc26_sliding_window_maximum" -> Ok(nc26_sliding_window_maximum())
+    "nc27_eval_rpn" -> Ok(nc27_eval_rpn())
+    "nc28_generate_parentheses" -> Ok(nc28_generate_parentheses())
+    "nc29_car_fleet" -> Ok(nc29_car_fleet())
+    "nc30_largest_rectangle" -> Ok(nc30_largest_rectangle())
     "tip01_counter" -> Ok(tip01_counter())
     "tip02_defaultdict" -> Ok(tip02_defaultdict())
     "tip03_deque" -> Ok(tip03_deque())

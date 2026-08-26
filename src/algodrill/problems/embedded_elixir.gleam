@@ -1184,6 +1184,188 @@ end"),
   ]
 }
 
+pub fn nc27_eval_rpn() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "A stack is the whole evaluator. Numbers go on; an operator takes the top two off and puts its result back. The one detail worth remembering is the order — the value popped first is the right operand — and that the division truncates towards zero, which is not what a flooring division does for negatives.", "defmodule Solution do
+  def eval_rpn(tokens) do
+    case Enum.reduce(tokens, [], &step/2) do
+      [answer | _] -> answer
+      [] -> 0
+    end
+  end
+
+  # Erlang's div already truncates towards zero, which is what the problem asks
+  # for and what a flooring division does not do for negatives.
+  defp step(\"+\", [b, a | rest]), do: [a + b | rest]
+  defp step(\"-\", [b, a | rest]), do: [a - b | rest]
+  defp step(\"*\", [b, a | rest]), do: [a * b | rest]
+  defp step(\"/\", [b, a | rest]), do: [div(a, b) | rest]
+  defp step(token, stack), do: [String.to_integer(token) | stack]
+end"),
+    #("Solution 2 · Recursive", "The same grammar, read as a recursive descent instead of a loop. The last token is the outermost operator; each operator asks for its right operand first, because that is what sits nearer the end. What the stack version stores in a list, this one stores in the call stack.", "defmodule Solution do
+  def eval_rpn(tokens) do
+    {value, _rest} = take(Enum.reverse(tokens))
+    value
+  end
+
+  # Read right to left: the last token is the outermost operator, and each
+  # operator takes its right operand first because that is what sits nearer the
+  # end. Returns the value and whatever is left to read.
+  defp take([token | tail]) when token in [\"+\", \"-\", \"*\", \"/\"] do
+    {right, tail} = take(tail)
+    {left, tail} = take(tail)
+    {apply_operator(token, left, right), tail}
+  end
+
+  defp take([token | tail]), do: {String.to_integer(token), tail}
+
+  defp take([]), do: {0, []}
+
+  defp apply_operator(\"+\", a, b), do: a + b
+  defp apply_operator(\"-\", a, b), do: a - b
+  defp apply_operator(\"*\", a, b), do: a * b
+  defp apply_operator(\"/\", a, b), do: div(a, b)
+end"),
+  ]
+}
+
+pub fn nc28_generate_parentheses() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Backtracking with two counters and one rule each: an opener is legal while any are left, a closer only while more are outstanding than openers. Nothing invalid is ever built, so there is no filtering step — every leaf reached with both counters at zero is an answer.", "defmodule Solution do
+  def generate_parenthesis(n), do: Enum.reverse(build(n, n, \"\", []))
+
+  # Two counters, one rule each: an opener is legal while any are left, and a
+  # closer is legal only while more are outstanding than openers. Everything
+  # reached with both at zero is valid by construction.
+  defp build(0, 0, current, acc), do: [current | acc]
+
+  defp build(open, close, current, acc) do
+    acc = if open > 0, do: build(open - 1, close, current <> \"(\", acc), else: acc
+    if close > open, do: build(open, close - 1, current <> \")\", acc), else: acc
+  end
+end"),
+    #("Solution 2 · By composition", "Structure instead of search. Every non-empty balanced string is \"(\" + A + \")\" + B for exactly one split: A is what the first bracket encloses, B is what follows it. Enumerating the splits enumerates the strings, and there is no validity rule anywhere — the shape of the recursion is the rule.", "defmodule Solution do
+  def generate_parenthesis(n), do: compose(n)
+
+  # Every non-empty balanced string is \"(\" <> a <> \")\" <> b for exactly one
+  # split: a is whatever the first bracket encloses, b is whatever follows it.
+  # Enumerating the splits enumerates the strings, with no validity rule to
+  # check at all.
+  defp compose(n) when n <= 0, do: [\"\"]
+
+  defp compose(n) do
+    for inner <- 0..(n - 1),
+        a <- compose(inner),
+        b <- compose(n - 1 - inner),
+        do: \"(\" <> a <> \")\" <> b
+  end
+end"),
+  ]
+}
+
+pub fn nc29_car_fleet() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Sort from the front backwards and carry the arrival time of the fleet ahead. A car that would arrive later than that fleet can never catch it, so it starts a new one and becomes the time to beat; anything else merges. Comparing times as distance × speed cross-multiplied keeps the whole thing in integers.", "defmodule Solution do
+  def car_fleet(target, position, speed) do
+    {fleets, _lead_distance, _lead_speed} =
+      position
+      |> Enum.zip(speed)
+      |> Enum.sort_by(fn {pos, _spd} -> pos end, :desc)
+      |> Enum.reduce({0, 0, 1}, fn {pos, spd}, {fleets, lead_distance, lead_speed} ->
+        distance = target - pos
+
+        # distance/spd > lead_distance/lead_speed, cross-multiplied so the
+        # arrival times never have to become fractions.
+        if distance * lead_speed > lead_distance * spd do
+          {fleets + 1, distance, spd}
+        else
+          {fleets, lead_distance, lead_speed}
+        end
+      end)
+
+    fleets
+  end
+end"),
+    #("Solution 2 · Pairwise", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+A car leads a fleet exactly when it arrives strictly later than every car ahead of it. Checking that directly needs no sort and no running state — O(n²), and it is the definition the sorted scan is a consequence of.", "defmodule Solution do
+  def car_fleet(target, position, speed) do
+    cars = Enum.zip(position, speed)
+    Enum.count(cars, &leads?(&1, cars, target))
+  end
+
+  # A car leads a fleet exactly when it arrives strictly later than every car
+  # ahead of it; anything else means it catches one of them and merges. No
+  # sorting, no running state -- O(n^2), and the definition rather than a
+  # consequence of it.
+  defp leads?({pos, spd}, cars, target) do
+    cars
+    |> Enum.filter(fn {other_pos, _} -> other_pos > pos end)
+    |> Enum.all?(fn {other_pos, other_speed} ->
+      (target - pos) * other_speed > (target - other_pos) * spd
+    end)
+  end
+end"),
+  ]
+}
+
+pub fn nc30_largest_rectangle() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "A monotonic stack of (starting index, height), heights increasing. A shorter bar arriving means every taller entry can never extend further, so each is closed off and measured — and the earliest position they reached back to becomes the new bar's own start, because it can extend back over all of them. Whatever is left at the end was never cut off, so it runs to the far edge.", "defmodule Solution do
+  def largest_rectangle_area(heights) do
+    n = length(heights)
+
+    {stack, best} =
+      heights
+      |> Enum.with_index()
+      |> Enum.reduce({[], 0}, fn {h, i}, {stack, best} ->
+        # Anything taller than the new bar can never extend past it, so its
+        # rectangle is finished here. Whatever it reached back to becomes this
+        # bar's own starting point.
+        {stack, best, start} = close_taller(stack, h, i, best, i)
+        {[{start, h} | stack], best}
+      end)
+
+    # Whatever survives was never cut off, so it runs to the far end.
+    Enum.reduce(stack, best, fn {from, tall}, best -> max(best, tall * (n - from)) end)
+  end
+
+  defp close_taller([{from, tall} | rest], height, index, best, _start) when tall > height do
+    close_taller(rest, height, index, max(best, tall * (index - from)), from)
+  end
+
+  defp close_taller(stack, _height, _index, best, start), do: {stack, best, start}
+end"),
+    #("Solution 2 · Expand from each bar", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every rectangle is some bar taken as far as it will go, so take each bar and walk outwards while the neighbours are at least as tall. O(n²), and it makes plain what the stack is actually computing: the two boundaries where a bar stops fitting.", "defmodule Solution do
+  def largest_rectangle_area(heights) do
+    indexed = Enum.with_index(heights)
+
+    Enum.reduce(indexed, 0, fn {h, i}, best ->
+      # How far this bar's own height can spread in each direction. O(n^2), and
+      # the definition of the answer: every rectangle is some bar taken as far
+      # as it will go.
+      left =
+        indexed
+        |> Enum.take(i)
+        |> Enum.reverse()
+        |> Enum.take_while(fn {other, _} -> other >= h end)
+        |> length()
+
+      right =
+        indexed
+        |> Enum.drop(i + 1)
+        |> Enum.take_while(fn {other, _} -> other >= h end)
+        |> length()
+
+      max(best, h * (left + right + 1))
+    end)
+  end
+end"),
+  ]
+}
+
 pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -1212,6 +1394,10 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
     "nc24_trapping_rain_water" -> Ok(nc24_trapping_rain_water())
     "nc25_min_window_substring" -> Ok(nc25_min_window_substring())
     "nc26_sliding_window_maximum" -> Ok(nc26_sliding_window_maximum())
+    "nc27_eval_rpn" -> Ok(nc27_eval_rpn())
+    "nc28_generate_parentheses" -> Ok(nc28_generate_parentheses())
+    "nc29_car_fleet" -> Ok(nc29_car_fleet())
+    "nc30_largest_rectangle" -> Ok(nc30_largest_rectangle())
     _ -> Error(Nil)
   }
 }

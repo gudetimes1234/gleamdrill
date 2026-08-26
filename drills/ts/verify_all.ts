@@ -54,6 +54,14 @@ import * as v49 from "./.verify/nc25_min_window_substring__filtered_positions/ha
 import * as v50 from "./.verify/nc26_sliding_window_maximum/harness";
 import * as v51 from "./.verify/nc26_sliding_window_maximum__brute_force/harness";
 import * as v52 from "./.verify/nc26_sliding_window_maximum__monotonic_deque/harness";
+import * as v53 from "./.verify/nc27_eval_rpn/harness";
+import * as v54 from "./.verify/nc27_eval_rpn__recursive/harness";
+import * as v55 from "./.verify/nc28_generate_parentheses/harness";
+import * as v56 from "./.verify/nc28_generate_parentheses__by_composition/harness";
+import * as v57 from "./.verify/nc29_car_fleet/harness";
+import * as v58 from "./.verify/nc29_car_fleet__pairwise/harness";
+import * as v59 from "./.verify/nc30_largest_rectangle/harness";
+import * as v60 from "./.verify/nc30_largest_rectangle__expand_from_each_bar/harness";
 
 type Case = [string, string, string];
 
@@ -111,6 +119,14 @@ const VARIANTS: [string, string, () => Case[]][] = [
   ["nc26_sliding_window_maximum", "Solution 1", v50.run],
   ["nc26_sliding_window_maximum", "Solution 2 · Brute force", v51.run],
   ["nc26_sliding_window_maximum", "Solution 3 · Monotonic deque", v52.run],
+  ["nc27_eval_rpn", "Solution 1", v53.run],
+  ["nc27_eval_rpn", "Solution 2 · Recursive", v54.run],
+  ["nc28_generate_parentheses", "Solution 1", v55.run],
+  ["nc28_generate_parentheses", "Solution 2 · By composition", v56.run],
+  ["nc29_car_fleet", "Solution 1", v57.run],
+  ["nc29_car_fleet", "Solution 2 · Pairwise", v58.run],
+  ["nc30_largest_rectangle", "Solution 1", v59.run],
+  ["nc30_largest_rectangle", "Solution 2 · Expand from each bar", v60.run],
 ];
 
 const failures: string[] = [];

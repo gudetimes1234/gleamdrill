@@ -73,6 +73,18 @@ pub fn for_title(title: String) -> String {
     "Daily Temperatures" ->
       "A monotonic-stack problem. Keep a stack of indices whose answer is still unknown, always in decreasing temperature order. Each new day pops every colder entry \u{2014} the popped days just found their warmer day \u{2014} then pushes itself."
 
+    "Evaluate Reverse Polish Notation" ->
+      "Postfix notation exists so that a stack can evaluate it without any parsing. Push numbers; on an operator, pop two, apply, push the result. Two things to get right: the value popped first is the *right* operand, and the division truncates towards zero rather than flooring, which matters as soon as a negative appears."
+
+    "Generate Parentheses" ->
+      "Build only what is valid rather than filtering afterwards. Backtracking with two counters gets there \u{2014} an opener is legal while any are left, a closer only while more are outstanding than openers \u{2014} and so does composition: every balanced string is \"(\" A \")\" B for one split, so enumerating splits enumerates the answers. The count is the nth Catalan number."
+
+    "Car Fleet" ->
+      "Order by position, then think about time. A car catches the one ahead exactly when it would arrive no later, and a fleet moves at the speed of its slowest member, so walking from the front and carrying the arrival time of the fleet ahead is enough: anything slower to arrive starts a new fleet. Compare times cross-multiplied to stay in integers."
+
+    "Largest Rectangle in Histogram" ->
+      "Every rectangle is some bar taken as far left and right as it will go, so the question is where each bar stops fitting. A monotonic stack answers both boundaries in one pass: a shorter bar arriving closes off every taller entry \u{2014} that is its right edge \u{2014} and the position the closed entries reached back to becomes the new bar's left edge."
+
     "Binary Search" ->
       "The classic halving. Compare the target with the middle element and discard the half that can't contain it; repeat until found or empty. O(log n) because the search space halves every step."
 

@@ -1654,6 +1654,279 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc27_eval_rpn() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A stack is the whole evaluator. Numbers go on; an operator takes the top two off and puts its result back. The one detail worth remembering is the order — the value popped first is the right operand — and that the division truncates towards zero, which is not what a flooring division does for negatives.", "const OPERATORS = new Set([\"+\", \"-\", \"*\", \"/\"]);
+
+export function evalRPN(tokens: string[]): number {
+  const stack: number[] = [];
+  for (const token of tokens) {
+    if (OPERATORS.has(token) && stack.length >= 2) {
+      const b = stack.pop()!;
+      const a = stack.pop()!;
+      stack.push(apply(token, a, b));
+    } else {
+      stack.push(Number(token));
+    }
+  }
+  return stack.length ? stack[stack.length - 1] : 0;
+}
+
+function apply(operator: string, a: number, b: number): number {
+  if (operator === \"+\") return a + b;
+  if (operator === \"-\") return a - b;
+  if (operator === \"*\") return a * b;
+  // trunc, not floor: the problem wants -3 / 2 to be -1.
+  return Math.trunc(a / b);
+}"),
+      #("Solution 2 · Recursive", "The same grammar, read as a recursive descent instead of a loop. The last token is the outermost operator; each operator asks for its right operand first, because that is what sits nearer the end. What the stack version stores in a list, this one stores in the call stack.", "const OPERATORS = new Set([\"+\", \"-\", \"*\", \"/\"]);
+
+export function evalRPN(tokens: string[]): number {
+  return take(tokens, tokens.length - 1)[0];
+}
+
+// Read right to left: the last token is the outermost operator, and each
+// operator takes its right operand first because that is what sits nearer the
+// end. Returns the value and the index still to be read.
+function take(tokens: string[], i: number): [number, number] {
+  const token = tokens[i];
+  if (!OPERATORS.has(token)) return [Number(token), i - 1];
+  const [right, afterRight] = take(tokens, i - 1);
+  const [left, afterLeft] = take(tokens, afterRight);
+  return [apply(token, left, right), afterLeft];
+}
+
+function apply(operator: string, a: number, b: number): number {
+  if (operator === \"+\") return a + b;
+  if (operator === \"-\") return a - b;
+  if (operator === \"*\") return a * b;
+  return Math.trunc(a / b);
+}"),
+    ],
+    check: Check(
+      signature: "export function evalRPN(tokens: string[]): number",
+      starter: "export function evalRPN(tokens: string[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.evalRPN !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"evalRPN(['2', '1', '+', '3', '*'])\", show(9), show(solution.evalRPN([\"2\", \"1\", \"+\", \"3\", \"*\"]))],
+    [\"evalRPN(['4', '13', '5', '/', '+'])\", show(6), show(solution.evalRPN([\"4\", \"13\", \"5\", \"/\", \"+\"]))],
+    [\"evalRPN(['-3', '2', '/'])\", show(-1), show(solution.evalRPN([\"-3\", \"2\", \"/\"]))],
+    [\"evalRPN(['5'])\", show(5), show(solution.evalRPN([\"5\"]))],
+    [\"evalRPN(the long one)\", show(22), show(solution.evalRPN([\"10\", \"6\", \"9\", \"3\", \"+\", \"-11\", \"*\", \"/\", \"*\", \"17\", \"+\", \"5\", \"+\"]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc28_generate_parentheses() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Backtracking with two counters and one rule each: an opener is legal while any are left, a closer only while more are outstanding than openers. Nothing invalid is ever built, so there is no filtering step — every leaf reached with both counters at zero is an answer.", "export function generateParenthesis(n: number): string[] {
+  const out: string[] = [];
+
+  // Two counters, one rule each: an opener is legal while any are left, and a
+  // closer is legal only while more are outstanding than openers. Everything
+  // reached with both at zero is valid by construction.
+  const build = (openLeft: number, closeLeft: number, current: string) => {
+    if (openLeft === 0 && closeLeft === 0) {
+      out.push(current);
+      return;
+    }
+    if (openLeft > 0) build(openLeft - 1, closeLeft, current + \"(\");
+    if (closeLeft > openLeft) build(openLeft, closeLeft - 1, current + \")\");
+  };
+
+  build(n, n, \"\");
+  return out;
+}"),
+      #("Solution 2 · By composition", "Structure instead of search. Every non-empty balanced string is \"(\" + A + \")\" + B for exactly one split: A is what the first bracket encloses, B is what follows it. Enumerating the splits enumerates the strings, and there is no validity rule anywhere — the shape of the recursion is the rule.", "export function generateParenthesis(n: number): string[] {
+  return compose(n);
+}
+
+// Every non-empty balanced string is \"(\" + A + \")\" + B for exactly one split: A
+// is whatever the first bracket encloses, B is whatever follows it. Enumerating
+// the splits enumerates the strings, with no validity rule to check at all.
+function compose(n: number): string[] {
+  if (n <= 0) return [\"\"];
+  const out: string[] = [];
+  for (let inner = 0; inner < n; inner++) {
+    for (const a of compose(inner)) {
+      for (const b of compose(n - 1 - inner)) out.push(`(${a})${b}`);
+    }
+  }
+  return out;
+}"),
+    ],
+    check: Check(
+      signature: "export function generateParenthesis(n: number): string[]",
+      starter: "export function generateParenthesis(n: number): string[] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// Any order is acceptable, so every case compares sorted.
+const sorted = (n: number) => [...solution.generateParenthesis(n)].sort();
+
+export function run(): [string, string, string][] {
+  if (typeof solution.generateParenthesis !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"generateParenthesis(1)\", show([\"()\"]), show(sorted(1))],
+    [\"generateParenthesis(2)\", show([\"(())\", \"()()\"]), show(sorted(2))],
+    [\"generateParenthesis(3)\", show([\"((()))\", \"(()())\", \"(())()\", \"()(())\", \"()()()\"]), show(sorted(3))],
+    [\"generateParenthesis(4) count\", show(14), show(sorted(4).length)],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc29_car_fleet() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Sort from the front backwards and carry the arrival time of the fleet ahead. A car that would arrive later than that fleet can never catch it, so it starts a new one and becomes the time to beat; anything else merges. Comparing times as distance × speed cross-multiplied keeps the whole thing in integers.", "export function carFleet(target: number, position: number[], speed: number[]): number {
+  const cars = position.map((pos, i) => [pos, speed[i]] as [number, number]);
+  cars.sort((a, b) => b[0] - a[0]);
+
+  let fleets = 0;
+  let leadDistance = 0;
+  let leadSpeed = 1;
+
+  for (const [pos, spd] of cars) {
+    const distance = target - pos;
+    // distance/spd > leadDistance/leadSpeed, cross-multiplied so the arrival
+    // times never have to become fractions.
+    if (distance * leadSpeed > leadDistance * spd) {
+      fleets++;
+      leadDistance = distance;
+      leadSpeed = spd;
+    }
+  }
+
+  return fleets;
+}"),
+      #("Solution 2 · Pairwise", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+A car leads a fleet exactly when it arrives strictly later than every car ahead of it. Checking that directly needs no sort and no running state — O(n²), and it is the definition the sorted scan is a consequence of.", "export function carFleet(target: number, position: number[], speed: number[]): number {
+  const cars = position.map((pos, i) => [pos, speed[i]] as [number, number]);
+  return cars.filter((car) => leads(car, cars, target)).length;
+}
+
+// A car leads a fleet exactly when it arrives strictly later than every car
+// ahead of it; anything else means it catches one of them and merges. No
+// sorting, no running state -- O(n^2), and the definition rather than a
+// consequence of it.
+function leads(car: [number, number], cars: [number, number][], target: number): boolean {
+  const [pos, spd] = car;
+  return cars
+    .filter(([otherPos]) => otherPos > pos)
+    .every(([otherPos, otherSpeed]) => (target - pos) * otherSpeed > (target - otherPos) * spd);
+}"),
+    ],
+    check: Check(
+      signature: "export function carFleet(target: number, position: number[], speed: number[]): number",
+      starter: "export function carFleet(target: number, position: number[], speed: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.carFleet !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"carFleet(12, [10, 8, 0, 5, 3], [2, 4, 1, 1, 3])\", show(3), show(solution.carFleet(12, [10, 8, 0, 5, 3], [2, 4, 1, 1, 3]))],
+    [\"carFleet(10, [3], [3])\", show(1), show(solution.carFleet(10, [3], [3]))],
+    [\"carFleet(100, [0, 2, 4], [4, 2, 1])\", show(1), show(solution.carFleet(100, [0, 2, 4], [4, 2, 1]))],
+    [\"carFleet(10, [6, 8], [3, 2])\", show(2), show(solution.carFleet(10, [6, 8], [3, 2]))],
+    [\"carFleet(10, [], [])\", show(0), show(solution.carFleet(10, [], []))],
+    [\"carFleet(10, [0, 4, 2], [2, 1, 3])\", show(1), show(solution.carFleet(10, [0, 4, 2], [2, 1, 3]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc30_largest_rectangle() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A monotonic stack of (starting index, height), heights increasing. A shorter bar arriving means every taller entry can never extend further, so each is closed off and measured — and the earliest position they reached back to becomes the new bar's own start, because it can extend back over all of them. Whatever is left at the end was never cut off, so it runs to the far edge.", "export function largestRectangleArea(heights: number[]): number {
+  const stack: [number, number][] = [];
+  let best = 0;
+
+  for (let i = 0; i < heights.length; i++) {
+    let start = i;
+    // Anything taller than the new bar can never extend past it, so its
+    // rectangle is finished here. Whatever it reached back to becomes this
+    // bar's own starting point.
+    while (stack.length && stack[stack.length - 1][1] > heights[i]) {
+      const [from, tall] = stack.pop()!;
+      best = Math.max(best, tall * (i - from));
+      start = from;
+    }
+    stack.push([start, heights[i]]);
+  }
+
+  // Whatever survives was never cut off, so it runs to the far end.
+  for (const [from, tall] of stack) {
+    best = Math.max(best, tall * (heights.length - from));
+  }
+
+  return best;
+}"),
+      #("Solution 2 · Expand from each bar", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every rectangle is some bar taken as far as it will go, so take each bar and walk outwards while the neighbours are at least as tall. O(n²), and it makes plain what the stack is actually computing: the two boundaries where a bar stops fitting.", "export function largestRectangleArea(heights: number[]): number {
+  let best = 0;
+
+  for (let i = 0; i < heights.length; i++) {
+    // How far this bar's own height can spread in each direction. O(n^2), and
+    // the definition of the answer: every rectangle is some bar taken as far as
+    // it will go.
+    let left = i;
+    while (left > 0 && heights[left - 1] >= heights[i]) left--;
+    let right = i;
+    while (right + 1 < heights.length && heights[right + 1] >= heights[i]) right++;
+    best = Math.max(best, heights[i] * (right - left + 1));
+  }
+
+  return best;
+}"),
+    ],
+    check: Check(
+      signature: "export function largestRectangleArea(heights: number[]): number",
+      starter: "export function largestRectangleArea(heights: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.largestRectangleArea !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"largestRectangleArea([2, 1, 5, 6, 2, 3])\", show(10), show(solution.largestRectangleArea([2, 1, 5, 6, 2, 3]))],
+    [\"largestRectangleArea([2, 4])\", show(4), show(solution.largestRectangleArea([2, 4]))],
+    [\"largestRectangleArea([])\", show(0), show(solution.largestRectangleArea([]))],
+    [\"largestRectangleArea([1, 1, 1])\", show(3), show(solution.largestRectangleArea([1, 1, 1]))],
+    [\"largestRectangleArea([5])\", show(5), show(solution.largestRectangleArea([5]))],
+    [\"largestRectangleArea([4, 2, 0, 3, 2, 5])\", show(6), show(solution.largestRectangleArea([4, 2, 0, 3, 2, 5]))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -1682,6 +1955,10 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc24_trapping_rain_water" -> Ok(nc24_trapping_rain_water())
     "nc25_min_window_substring" -> Ok(nc25_min_window_substring())
     "nc26_sliding_window_maximum" -> Ok(nc26_sliding_window_maximum())
+    "nc27_eval_rpn" -> Ok(nc27_eval_rpn())
+    "nc28_generate_parentheses" -> Ok(nc28_generate_parentheses())
+    "nc29_car_fleet" -> Ok(nc29_car_fleet())
+    "nc30_largest_rectangle" -> Ok(nc30_largest_rectangle())
     _ -> Error(Nil)
   }
 }

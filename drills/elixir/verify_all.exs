@@ -57,6 +57,14 @@ variants = [
   {"nc26_sliding_window_maximum", "Solution 1", "nc26_sliding_window_maximum"},
   {"nc26_sliding_window_maximum", "Solution 2 · Brute force", "nc26_sliding_window_maximum__brute_force"},
   {"nc26_sliding_window_maximum", "Solution 3 · Monotonic deque", "nc26_sliding_window_maximum__monotonic_deque"},
+  {"nc27_eval_rpn", "Solution 1", "nc27_eval_rpn"},
+  {"nc27_eval_rpn", "Solution 2 · Recursive", "nc27_eval_rpn__recursive"},
+  {"nc28_generate_parentheses", "Solution 1", "nc28_generate_parentheses"},
+  {"nc28_generate_parentheses", "Solution 2 · By composition", "nc28_generate_parentheses__by_composition"},
+  {"nc29_car_fleet", "Solution 1", "nc29_car_fleet"},
+  {"nc29_car_fleet", "Solution 2 · Pairwise", "nc29_car_fleet__pairwise"},
+  {"nc30_largest_rectangle", "Solution 1", "nc30_largest_rectangle"},
+  {"nc30_largest_rectangle", "Solution 2 · Expand from each bar", "nc30_largest_rectangle__expand_from_each_bar"},
 ]
 
 root = Path.dirname(__ENV__.file)

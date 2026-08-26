@@ -1,0 +1,1 @@
+Structure instead of search. Every non-empty balanced string is "(" + A + ")" + B for exactly one split: A is what the first bracket encloses, B is what follows it. Enumerating the splits enumerates the strings, and there is no validity rule anywhere — the shape of the recursion is the rule.

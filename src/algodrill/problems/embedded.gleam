@@ -2833,6 +2833,427 @@ pub fn run() -> List(#(String, String, String)) {
   )
 }
 
+pub fn nc27_eval_rpn() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A stack is the whole evaluator. Numbers go on; an operator takes the top two off and puts its result back. The one detail worth remembering is the order — the value popped first is the right operand — and that the division truncates towards zero, which is not what a flooring division does for negatives.", "import gleam/int
+import gleam/list
+
+pub fn eval_rpn(tokens: List(String)) -> Int {
+  case list.fold(tokens, [], step) {
+    [answer, ..] -> answer
+    [] -> 0
+  }
+}
+
+/// Gleam's integer division already truncates towards zero, which is what the
+/// problem asks for and what most languages' `//` does not do for negatives.
+fn step(stack: List(Int), token: String) -> List(Int) {
+  case token, stack {
+    \"+\", [b, a, ..rest] -> [a + b, ..rest]
+    \"-\", [b, a, ..rest] -> [a - b, ..rest]
+    \"*\", [b, a, ..rest] -> [a * b, ..rest]
+    \"/\", [b, a, ..rest] -> [a / b, ..rest]
+    _, _ ->
+      case int.parse(token) {
+        Ok(n) -> [n, ..stack]
+        Error(Nil) -> stack
+      }
+  }
+}"),
+      #("Solution 2 · Recursive", "The same grammar, read as a recursive descent instead of a loop. The last token is the outermost operator; each operator asks for its right operand first, because that is what sits nearer the end. What the stack version stores in a list, this one stores in the call stack.", "import gleam/int
+import gleam/list
+import gleam/result
+
+pub fn eval_rpn(tokens: List(String)) -> Int {
+  let #(value, _) = take(list.reverse(tokens))
+  value
+}
+
+/// Read right to left: the last token is the outermost operator, and each
+/// operator takes its right operand first because that is what sits nearer the
+/// end. Returns the value and whatever is left to read.
+fn take(rest: List(String)) -> #(Int, List(String)) {
+  case rest {
+    [] -> #(0, [])
+    [token, ..tail] ->
+      case token {
+        \"+\" | \"-\" | \"*\" | \"/\" -> {
+          let #(right, tail) = take(tail)
+          let #(left, tail) = take(tail)
+          #(apply(token, left, right), tail)
+        }
+        _ -> #(result.unwrap(int.parse(token), 0), tail)
+      }
+  }
+}
+
+fn apply(operator: String, left: Int, right: Int) -> Int {
+  case operator {
+    \"+\" -> left + right
+    \"-\" -> left - right
+    \"*\" -> left * right
+    _ -> left / right
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn eval_rpn(tokens: List(String)) -> Int",
+      starter: "pub fn eval_rpn(tokens: List(String)) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"eval_rpn([\\\"2\\\", \\\"1\\\", \\\"+\\\", \\\"3\\\", \\\"*\\\"])\",
+      string.inspect(9),
+      string.inspect(solution.eval_rpn([\"2\", \"1\", \"+\", \"3\", \"*\"])),
+    ),
+    #(
+      \"eval_rpn([\\\"4\\\", \\\"13\\\", \\\"5\\\", \\\"/\\\", \\\"+\\\"])\",
+      string.inspect(6),
+      string.inspect(solution.eval_rpn([\"4\", \"13\", \"5\", \"/\", \"+\"])),
+    ),
+    #(
+      \"eval_rpn([\\\"-3\\\", \\\"2\\\", \\\"/\\\"])\",
+      string.inspect(-1),
+      string.inspect(solution.eval_rpn([\"-3\", \"2\", \"/\"])),
+    ),
+    #(
+      \"eval_rpn([\\\"5\\\"])\",
+      string.inspect(5),
+      string.inspect(solution.eval_rpn([\"5\"])),
+    ),
+    #(
+      \"eval_rpn(the long one)\",
+      string.inspect(22),
+      string.inspect(
+        solution.eval_rpn([
+          \"10\", \"6\", \"9\", \"3\", \"+\", \"-11\", \"*\", \"/\", \"*\", \"17\", \"+\", \"5\", \"+\",
+        ]),
+      ),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc28_generate_parentheses() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Backtracking with two counters and one rule each: an opener is legal while any are left, a closer only while more are outstanding than openers. Nothing invalid is ever built, so there is no filtering step — every leaf reached with both counters at zero is an answer.", "import gleam/list
+
+pub fn generate_parenthesis(n: Int) -> List(String) {
+  list.reverse(build(n, n, \"\", []))
+}
+
+/// Two counters, one rule each: an opener is legal while any are left, and a
+/// closer is legal only while more are outstanding than openers. Every string
+/// reached with both counters at zero is valid by construction, so nothing is
+/// ever generated and then thrown away.
+fn build(
+  open: Int,
+  close: Int,
+  current: String,
+  acc: List(String),
+) -> List(String) {
+  case open, close {
+    0, 0 -> [current, ..acc]
+    _, _ -> {
+      let acc = case open > 0 {
+        True -> build(open - 1, close, current <> \"(\", acc)
+        False -> acc
+      }
+      case close > open {
+        True -> build(open, close - 1, current <> \")\", acc)
+        False -> acc
+      }
+    }
+  }
+}"),
+      #("Solution 2 · By composition", "Structure instead of search. Every non-empty balanced string is \"(\" + A + \")\" + B for exactly one split: A is what the first bracket encloses, B is what follows it. Enumerating the splits enumerates the strings, and there is no validity rule anywhere — the shape of the recursion is the rule.", "import gleam/list
+
+pub fn generate_parenthesis(n: Int) -> List(String) {
+  compose(n)
+}
+
+/// Every non-empty balanced string is \"(\" <> A <> \")\" <> B for exactly one
+/// split: A is whatever the first bracket encloses, B is whatever follows it.
+/// Enumerating the splits enumerates the strings, with no validity rule to
+/// check at all \\u{2014} the shape of the recursion is the rule.
+fn compose(n: Int) -> List(String) {
+  case n <= 0 {
+    True -> [\"\"]
+    False ->
+      indices(n)
+      |> list.flat_map(fn(inner_pairs) {
+        let inner = compose(inner_pairs)
+        let rest = compose(n - 1 - inner_pairs)
+        list.flat_map(inner, fn(a) {
+          list.map(rest, fn(b) { \"(\" <> a <> \")\" <> b })
+        })
+      })
+  }
+}
+
+fn indices(n: Int) -> List(Int) {
+  list.index_map(list.repeat(Nil, n), fn(_, i) { i })
+}"),
+    ],
+    check: Check(
+      signature: "pub fn generate_parenthesis(n: Int) -> List(String)",
+      starter: "pub fn generate_parenthesis(n: Int) -> List(String) {
+  todo
+}",
+      harness: "import gleam/list
+import gleam/string
+import solution
+
+/// Any order is acceptable, so every case compares sorted.
+fn sorted(n: Int) -> List(String) {
+  list.sort(solution.generate_parenthesis(n), string.compare)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"generate_parenthesis(1)\",
+      string.inspect([\"()\"]),
+      string.inspect(sorted(1)),
+    ),
+    #(
+      \"generate_parenthesis(2)\",
+      string.inspect([\"(())\", \"()()\"]),
+      string.inspect(sorted(2)),
+    ),
+    #(
+      \"generate_parenthesis(3)\",
+      string.inspect([\"((()))\", \"(()())\", \"(())()\", \"()(())\", \"()()()\"]),
+      string.inspect(sorted(3)),
+    ),
+    #(
+      \"generate_parenthesis(4) count\",
+      string.inspect(14),
+      string.inspect(list.length(sorted(4))),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc29_car_fleet() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Sort from the front backwards and carry the arrival time of the fleet ahead. A car that would arrive later than that fleet can never catch it, so it starts a new one and becomes the time to beat; anything else merges. Comparing times as distance × speed cross-multiplied keeps the whole thing in integers.", "import gleam/int
+import gleam/list
+
+pub fn car_fleet(target: Int, position: List(Int), speed: List(Int)) -> Int {
+  list.zip(position, speed)
+  |> list.sort(fn(a, b) { int.compare(b.0, a.0) })
+  |> list.fold(#(0, 0, 1), fn(state, car) {
+    let #(fleets, lead_distance, lead_speed) = state
+    let distance = target - car.0
+    // distance/speed > lead_distance/lead_speed, cross-multiplied so the
+    // arrival times never have to become fractions.
+    case distance * lead_speed > lead_distance * car.1 {
+      True -> #(fleets + 1, distance, car.1)
+      False -> #(fleets, lead_distance, lead_speed)
+    }
+  })
+  |> fn(state) { state.0 }
+}"),
+      #("Solution 2 · Pairwise", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+A car leads a fleet exactly when it arrives strictly later than every car ahead of it. Checking that directly needs no sort and no running state — O(n²), and it is the definition the sorted scan is a consequence of.", "import gleam/list
+
+pub fn car_fleet(target: Int, position: List(Int), speed: List(Int)) -> Int {
+  let cars = list.zip(position, speed)
+  list.count(cars, fn(car) { leads(car, cars, target) })
+}
+
+/// A car leads a fleet exactly when it arrives strictly later than every car
+/// ahead of it; anything else means it catches one of them and merges. No
+/// sorting, no running state \\u{2014} O(n\\u{b2}), and the definition rather than a
+/// consequence of it.
+fn leads(car: #(Int, Int), cars: List(#(Int, Int)), target: Int) -> Bool {
+  cars
+  |> list.filter(fn(other) { other.0 > car.0 })
+  |> list.all(fn(other) {
+    { target - car.0 } * other.1 > { target - other.0 } * car.1
+  })
+}"),
+    ],
+    check: Check(
+      signature: "pub fn car_fleet(target: Int, position: List(Int), speed: List(Int)) -> Int",
+      starter: "pub fn car_fleet(target: Int, position: List(Int), speed: List(Int)) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"car_fleet(12, [10, 8, 0, 5, 3], [2, 4, 1, 1, 3])\",
+      string.inspect(3),
+      string.inspect(solution.car_fleet(12, [10, 8, 0, 5, 3], [2, 4, 1, 1, 3])),
+    ),
+    #(
+      \"car_fleet(10, [3], [3])\",
+      string.inspect(1),
+      string.inspect(solution.car_fleet(10, [3], [3])),
+    ),
+    #(
+      \"car_fleet(100, [0, 2, 4], [4, 2, 1])\",
+      string.inspect(1),
+      string.inspect(solution.car_fleet(100, [0, 2, 4], [4, 2, 1])),
+    ),
+    #(
+      \"car_fleet(10, [6, 8], [3, 2])\",
+      string.inspect(2),
+      string.inspect(solution.car_fleet(10, [6, 8], [3, 2])),
+    ),
+    #(
+      \"car_fleet(10, [], [])\",
+      string.inspect(0),
+      string.inspect(solution.car_fleet(10, [], [])),
+    ),
+    #(
+      \"car_fleet(10, [0, 4, 2], [2, 1, 3])\",
+      string.inspect(1),
+      string.inspect(solution.car_fleet(10, [0, 4, 2], [2, 1, 3])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc30_largest_rectangle() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A monotonic stack of (starting index, height), heights increasing. A shorter bar arriving means every taller entry can never extend further, so each is closed off and measured — and the earliest position they reached back to becomes the new bar's own start, because it can extend back over all of them. Whatever is left at the end was never cut off, so it runs to the far edge.", "import gleam/int
+import gleam/list
+
+pub fn largest_rectangle_area(heights: List(Int)) -> Int {
+  let n = list.length(heights)
+  let #(stack, best) =
+    heights
+    |> list.index_map(fn(h, i) { #(i, h) })
+    |> list.fold(#([], 0), fn(state, cell) {
+      let #(stack, best) = state
+      let #(i, h) = cell
+      // Anything taller than the new bar can never extend past it, so its
+      // rectangle is finished here. Whatever it reached back to becomes this
+      // bar's own starting point.
+      let #(stack, best, start) = close_taller(stack, h, i, best, i)
+      #([#(start, h), ..stack], best)
+    })
+
+  // Whatever survives was never cut off, so it runs to the far end.
+  list.fold(stack, best, fn(best, entry) {
+    int.max(best, entry.1 * { n - entry.0 })
+  })
+}
+
+fn close_taller(
+  stack: List(#(Int, Int)),
+  height: Int,
+  index: Int,
+  best: Int,
+  start: Int,
+) -> #(List(#(Int, Int)), Int, Int) {
+  case stack {
+    [#(from, tall), ..rest] if tall > height ->
+      close_taller(
+        rest,
+        height,
+        index,
+        int.max(best, tall * { index - from }),
+        from,
+      )
+    _ -> #(stack, best, start)
+  }
+}"),
+      #("Solution 2 · Expand from each bar", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every rectangle is some bar taken as far as it will go, so take each bar and walk outwards while the neighbours are at least as tall. O(n²), and it makes plain what the stack is actually computing: the two boundaries where a bar stops fitting.", "import gleam/int
+import gleam/list
+
+pub fn largest_rectangle_area(heights: List(Int)) -> Int {
+  let indexed = list.index_map(heights, fn(h, i) { #(i, h) })
+
+  list.fold(indexed, 0, fn(best, cell) {
+    let #(i, h) = cell
+    // How far this bar's own height can spread in each direction. O(n\\u{b2}), and
+    // the definition of the answer: every rectangle is some bar taken as far
+    // as it will go.
+    let left =
+      indexed
+      |> list.take(i)
+      |> list.reverse
+      |> list.take_while(fn(other) { other.1 >= h })
+      |> list.length
+    let right =
+      indexed
+      |> list.drop(i + 1)
+      |> list.take_while(fn(other) { other.1 >= h })
+      |> list.length
+    int.max(best, h * { left + right + 1 })
+  })
+}"),
+    ],
+    check: Check(
+      signature: "pub fn largest_rectangle_area(heights: List(Int)) -> Int",
+      starter: "pub fn largest_rectangle_area(heights: List(Int)) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"largest_rectangle_area([2, 1, 5, 6, 2, 3])\",
+      string.inspect(10),
+      string.inspect(solution.largest_rectangle_area([2, 1, 5, 6, 2, 3])),
+    ),
+    #(
+      \"largest_rectangle_area([2, 4])\",
+      string.inspect(4),
+      string.inspect(solution.largest_rectangle_area([2, 4])),
+    ),
+    #(
+      \"largest_rectangle_area([])\",
+      string.inspect(0),
+      string.inspect(solution.largest_rectangle_area([])),
+    ),
+    #(
+      \"largest_rectangle_area([1, 1, 1])\",
+      string.inspect(3),
+      string.inspect(solution.largest_rectangle_area([1, 1, 1])),
+    ),
+    #(
+      \"largest_rectangle_area([5])\",
+      string.inspect(5),
+      string.inspect(solution.largest_rectangle_area([5])),
+    ),
+    #(
+      \"largest_rectangle_area([4, 2, 0, 3, 2, 5])\",
+      string.inspect(6),
+      string.inspect(solution.largest_rectangle_area([4, 2, 0, 3, 2, 5])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
 pub fn tip01_list_patterns() -> Embedded {
   Embedded(
     solutions: [
@@ -3626,6 +4047,10 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc24_trapping_rain_water" -> Ok(nc24_trapping_rain_water())
     "nc25_min_window_substring" -> Ok(nc25_min_window_substring())
     "nc26_sliding_window_maximum" -> Ok(nc26_sliding_window_maximum())
+    "nc27_eval_rpn" -> Ok(nc27_eval_rpn())
+    "nc28_generate_parentheses" -> Ok(nc28_generate_parentheses())
+    "nc29_car_fleet" -> Ok(nc29_car_fleet())
+    "nc30_largest_rectangle" -> Ok(nc30_largest_rectangle())
     "tip01_list_patterns" -> Ok(tip01_list_patterns())
     "tip02_tail_recursion" -> Ok(tip02_tail_recursion())
     "tip03_fold" -> Ok(tip03_fold())
