@@ -11,6 +11,7 @@ import gleam/dict
 import gleam/int
 import gleam/io
 import gleam/list
+import gleam/order
 import gleam/string
 import nc01_contains_duplicate
 import nc01_contains_duplicate__sorting
@@ -163,6 +164,20 @@ import nc74_longest_increasing_subsequence
 import nc74_longest_increasing_subsequence__patience
 import nc75_partition_equal_subset
 import nc75_partition_equal_subset__memoised
+import nc76_kth_largest_stream
+import nc76_kth_largest_stream__keep_everything
+import nc77_last_stone_weight
+import nc77_last_stone_weight__find_max_each_round
+import nc78_k_closest_points
+import nc78_k_closest_points__select_k_times
+import nc79_kth_largest_array
+import nc79_kth_largest_array__quickselect
+import nc80_task_scheduler
+import nc80_task_scheduler__simulate
+import nc81_design_twitter
+import nc81_design_twitter__merge_per_user
+import nc82_find_median_stream
+import nc82_find_median_stream__sorted_list
 import tip01_list_patterns
 import tip01_list_patterns__stdlib
 import tip02_tail_recursion
@@ -409,6 +424,52 @@ pub fn main() {
     check_lis(nc74_longest_increasing_subsequence__patience.length_of_lis),
     check_partition_equal(nc75_partition_equal_subset.can_partition),
     check_partition_equal(nc75_partition_equal_subset__memoised.can_partition),
+    check_kth_largest_stream(
+      nc76_kth_largest_stream.new,
+      nc76_kth_largest_stream.add,
+      nc76_kth_largest_stream.kth,
+    ),
+    check_kth_largest_stream(
+      nc76_kth_largest_stream__keep_everything.new,
+      nc76_kth_largest_stream__keep_everything.add,
+      nc76_kth_largest_stream__keep_everything.kth,
+    ),
+    check_last_stone_weight(nc77_last_stone_weight.last_stone_weight),
+    check_last_stone_weight(
+      nc77_last_stone_weight__find_max_each_round.last_stone_weight,
+    ),
+    check_k_closest(nc78_k_closest_points.k_closest),
+    check_k_closest(nc78_k_closest_points__select_k_times.k_closest),
+    check_kth_largest_array(nc79_kth_largest_array.find_kth_largest),
+    check_kth_largest_array(
+      nc79_kth_largest_array__quickselect.find_kth_largest,
+    ),
+    check_task_scheduler(nc80_task_scheduler.least_interval),
+    check_task_scheduler(nc80_task_scheduler__simulate.least_interval),
+    check_twitter(
+      nc81_design_twitter.new,
+      nc81_design_twitter.post_tweet,
+      nc81_design_twitter.follow,
+      nc81_design_twitter.unfollow,
+      nc81_design_twitter.news_feed,
+    ),
+    check_twitter(
+      nc81_design_twitter__merge_per_user.new,
+      nc81_design_twitter__merge_per_user.post_tweet,
+      nc81_design_twitter__merge_per_user.follow,
+      nc81_design_twitter__merge_per_user.unfollow,
+      nc81_design_twitter__merge_per_user.news_feed,
+    ),
+    check_median_finder(
+      nc82_find_median_stream.new,
+      nc82_find_median_stream.add_num,
+      nc82_find_median_stream.find_median,
+    ),
+    check_median_finder(
+      nc82_find_median_stream__sorted_list.new,
+      nc82_find_median_stream__sorted_list.add_num,
+      nc82_find_median_stream__sorted_list.find_median,
+    ),
 
     // Gleam Tips
     check_list_patterns(tip01_list_patterns.length, tip01_list_patterns.last),
@@ -1164,6 +1225,135 @@ fn check_partition_equal(f: fn(List(Int)) -> Bool) -> Nil {
   let assert False = f([1])
   let assert True = f([1, 1])
   let assert True = f([3, 3, 3, 4, 5])
+  Nil
+}
+
+/// Generic over the store type, so both variants can carry their own.
+fn check_kth_largest_stream(
+  new: fn(Int, List(Int)) -> store,
+  add: fn(store, Int) -> store,
+  kth: fn(store) -> Result(Int, Nil),
+) -> Nil {
+  let feed = fn(k, initial, values) {
+    let #(_, answers) =
+      list.fold(values, #(new(k, initial), []), fn(state, value) {
+        let #(store, answers) = state
+        let store = add(store, value)
+        #(store, [kth(store), ..answers])
+      })
+    list.reverse(answers)
+  }
+
+  let assert True =
+    feed(3, [4, 5, 8, 2], [3, 5, 10, 9, 4])
+    == [Ok(4), Ok(5), Ok(5), Ok(8), Ok(8)]
+  let assert True = feed(1, [], [1, 2, 0]) == [Ok(1), Ok(2), Ok(2)]
+  // Duplicates are separate entries, so two fives make a second-largest of 5.
+  let assert True = feed(2, [], [5, 5]) == [Error(Nil), Ok(5)]
+  let assert True = kth(new(2, [])) == Error(Nil)
+  Nil
+}
+
+fn check_last_stone_weight(f: fn(List(Int)) -> Int) -> Nil {
+  let assert True = f([2, 7, 4, 1, 8, 1]) == 1
+  let assert True = f([1]) == 1
+  let assert True = f([]) == 0
+  // Equal stones destroy each other and leave nothing behind.
+  let assert True = f([2, 2]) == 0
+  let assert True = f([3, 7, 2]) == 2
+  let assert True = f([10, 4, 2, 10]) == 2
+  Nil
+}
+
+fn check_k_closest(f: fn(List(#(Int, Int)), Int) -> List(#(Int, Int))) -> Nil {
+  let sorted = fn(points, k) {
+    list.sort(f(points, k), fn(a: #(Int, Int), b: #(Int, Int)) {
+      case int.compare(a.0, b.0) {
+        order.Eq -> int.compare(a.1, b.1)
+        other -> other
+      }
+    })
+  }
+  let assert True = sorted([#(1, 3), #(-2, 2)], 1) == [#(-2, 2)]
+  let assert True =
+    sorted([#(3, 3), #(5, -1), #(-2, 4)], 2) == [#(-2, 4), #(3, 3)]
+  let assert True = sorted([], 0) == []
+  let assert True = sorted([#(0, 0)], 1) == [#(0, 0)]
+  let assert True = sorted([#(1, 1), #(2, 2), #(3, 3)], 2) == [#(1, 1), #(2, 2)]
+  Nil
+}
+
+fn check_kth_largest_array(f: fn(List(Int), Int) -> Result(Int, Nil)) -> Nil {
+  let assert True = f([3, 2, 1, 5, 6, 4], 2) == Ok(5)
+  // Duplicates count separately: the 4th largest here is 4, not 3.
+  let assert True = f([3, 2, 3, 1, 2, 4, 5, 5, 6], 4) == Ok(4)
+  let assert True = f([1], 1) == Ok(1)
+  let assert True = f([2, 1], 2) == Ok(1)
+  let assert True = f([7, 6, 5, 4, 3, 2, 1], 3) == Ok(5)
+  let assert True = f([], 1) == Error(Nil)
+  Nil
+}
+
+fn check_task_scheduler(f: fn(List(String), Int) -> Int) -> Nil {
+  let assert True = f(["A", "A", "A", "B", "B", "B"], 2) == 8
+  // No cooldown at all, so the answer is just the number of tasks.
+  let assert True = f(["A", "A", "A", "B", "B", "B"], 0) == 6
+  let assert True = f(["A", "A", "A", "B", "B", "B"], 3) == 10
+  let assert True = f([], 2) == 0
+  let assert True = f(["A"], 5) == 1
+  // Enough other tasks to fill every idle slot, so nothing waits.
+  let assert True =
+    f(["A", "A", "A", "A", "B", "C", "D", "E", "F", "G"], 2) == 10
+  Nil
+}
+
+/// Generic over the store type, so both variants can carry their own.
+fn check_twitter(
+  new: fn() -> store,
+  post: fn(store, Int, Int) -> store,
+  follow: fn(store, Int, Int) -> store,
+  unfollow: fn(store, Int, Int) -> store,
+  feed: fn(store, Int) -> List(Int),
+) -> Nil {
+  let base = post(new(), 1, 5)
+  let assert True = feed(base, 1) == [5]
+
+  let followed = post(follow(base, 1, 2), 2, 6)
+  let assert True = feed(followed, 1) == [6, 5]
+  let assert True = feed(followed, 2) == [6]
+  let assert True = feed(followed, 3) == []
+  let assert True = feed(unfollow(followed, 1, 2), 1) == [5]
+
+  // Eleven tweets, so the feed has to cap at ten and drop the oldest.
+  let eleven =
+    list.fold([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], new(), fn(store, tweet) {
+      post(store, 1, tweet)
+    })
+  let assert True = feed(eleven, 1) == [11, 10, 9, 8, 7, 6, 5, 4, 3, 2]
+  Nil
+}
+
+fn check_median_finder(
+  new: fn() -> store,
+  add: fn(store, Int) -> store,
+  median: fn(store) -> Float,
+) -> Nil {
+  let medians = fn(values) {
+    let #(_, answers) =
+      list.fold(values, #(new(), []), fn(state, value) {
+        let #(finder, answers) = state
+        let finder = add(finder, value)
+        #(finder, [median(finder), ..answers])
+      })
+    list.reverse(answers)
+  }
+
+  let assert True = medians([1, 2, 3]) == [1.0, 1.5, 2.0]
+  let assert True = medians([1, 2, 3, 4, 5]) == [1.0, 1.5, 2.0, 2.5, 3.0]
+  // Arriving out of order, which is what the two halves have to survive.
+  let assert True = medians([5, 1, 2, 3]) == [5.0, 3.0, 2.0, 2.5]
+  let assert True = medians([-1, -2]) == [-1.0, -1.5]
+  let assert True = median(new()) == 0.0
   Nil
 }
 

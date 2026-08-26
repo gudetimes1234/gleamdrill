@@ -4764,6 +4764,566 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc76_kth_largest_stream() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Only the k largest values can ever be the answer, so everything else is discarded on arrival and the store never grows past k. That is exactly the shape a bounded min-heap gives you: the smallest thing in it is the answer, and anything smaller than that never gets in. The other thing to get right is that there is no answer at all until k values have arrived.", "export class KthLargest {
+  private k: number;
+  // Only the k largest values can ever be the answer, so everything else is
+  // discarded on arrival. A real min-heap makes that O(log k); JavaScript has
+  // no heap in the standard library, so this keeps a sorted array instead --
+  // same idea, worse constant.
+  private largest: number[];
+
+  constructor(k: number, nums: number[]) {
+    this.k = k;
+    this.largest = [...nums].sort((a, b) => b - a).slice(0, k).sort((a, b) => a - b);
+  }
+
+  add(value: number): number | null {
+    this.largest = [...this.largest, value]
+      .sort((a, b) => b - a)
+      .slice(0, this.k)
+      .sort((a, b) => a - b);
+    return this.largest.length === this.k ? this.largest[0] : null;
+  }
+}"),
+      #("Solution 2 · Keep everything", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Keep the whole stream and sort on demand. Wrong for a real stream — memory grows without bound and every query costs a sort — but it is the definition, and it is what the bounded version has to be checked against.", "export class KthLargest {
+  private k: number;
+  private seen: number[];
+
+  constructor(k: number, nums: number[]) {
+    this.k = k;
+    this.seen = [...nums];
+  }
+
+  // Keep the whole stream and sort on demand. Wrong for a real stream -- memory
+  // grows without bound and every query costs a sort -- but it is the
+  // definition, and it is what the bounded structure has to be checked against.
+  add(value: number): number | null {
+    this.seen.push(value);
+    if (this.seen.length < this.k) return null;
+    return [...this.seen].sort((a, b) => b - a)[this.k - 1];
+  }
+}"),
+    ],
+    check: Check(
+      signature: "export class KthLargest
+  constructor(k: number, nums: number[])
+  add(value: number): number | null",
+      starter: "export class KthLargest {
+  constructor(k: number, nums: number[]) {
+    // todo
+  }
+  add(value: number): number | null {
+    // todo
+  }
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const stream = (k: number, initial: number[], added: number[]) => {
+  const store = new solution.KthLargest(k, initial);
+  return added.map((value) => store.add(value));
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.KthLargest !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"k = 3 over [4, 5, 8, 2] then 3, 5, 10, 9, 4\", show([4, 5, 5, 8, 8]), show(stream(3, [4, 5, 8, 2], [3, 5, 10, 9, 4]))],
+    [\"k = 1 over [] then 1, 2, 0\", show([1, 2, 2]), show(stream(1, [], [1, 2, 0]))],
+    [\"k = 2 over [] then 5, 5\", show([null, 5]), show(stream(2, [], [5, 5]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc77_last_stone_weight() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Always the two heaviest, so the collection has to give up its maximum over and over — which is exactly what a heap is for, and why this problem exists. Keeping the stones sorted is the same idea at a worse constant; the operation being asked for is what matters.", "export function lastStoneWeight(stones: number[]): number {
+  // Always the two heaviest, so the collection has to give up its maximum over
+  // and over -- which is what a heap is for. Kept sorted descending here, since
+  // JavaScript has no heap in the standard library.
+  const remaining = [...stones].sort((a, b) => b - a);
+
+  while (remaining.length > 1) {
+    const heaviest = remaining.shift()!;
+    const following = remaining.shift()!;
+    if (heaviest !== following) {
+      const left = heaviest - following;
+      let at = remaining.findIndex((stone) => stone < left);
+      if (at === -1) at = remaining.length;
+      remaining.splice(at, 0, left);
+    }
+  }
+
+  return remaining.length ? remaining[0] : 0;
+}"),
+      #("Solution 2 · Find max each round", "No ordering kept at all: scan for the heaviest, remove it, scan again. O(n) per round rather than O(log n), and worth writing precisely because it makes the interface obvious — the only thing the problem ever asks of the collection is \"give me the largest\".", "export function lastStoneWeight(stones: number[]): number {
+  // No ordering kept at all: scan for the heaviest, remove it, scan again. O(n)
+  // per round against a heap's O(log n) -- worse, but it makes clear that the
+  // only operation the problem needs is \"give me the largest\", which is exactly
+  // the interface a heap provides.
+  const remaining = [...stones];
+
+  while (remaining.length > 1) {
+    const heaviest = takeMax(remaining);
+    const following = takeMax(remaining);
+    if (heaviest !== following) remaining.push(heaviest - following);
+  }
+
+  return remaining.length ? remaining[0] : 0;
+}
+
+function takeMax(stones: number[]): number {
+  const largest = Math.max(...stones);
+  stones.splice(stones.indexOf(largest), 1);
+  return largest;
+}"),
+    ],
+    check: Check(
+      signature: "export function lastStoneWeight(stones: number[]): number",
+      starter: "export function lastStoneWeight(stones: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.lastStoneWeight !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"lastStoneWeight([2, 7, 4, 1, 8, 1])\", show(1), show(solution.lastStoneWeight([2, 7, 4, 1, 8, 1]))],
+    [\"lastStoneWeight([1])\", show(1), show(solution.lastStoneWeight([1]))],
+    [\"lastStoneWeight([])\", show(0), show(solution.lastStoneWeight([]))],
+    [\"lastStoneWeight([2, 2])\", show(0), show(solution.lastStoneWeight([2, 2]))],
+    [\"lastStoneWeight([3, 7, 2])\", show(2), show(solution.lastStoneWeight([3, 7, 2]))],
+    [\"lastStoneWeight([10, 4, 2, 10])\", show(2), show(solution.lastStoneWeight([10, 4, 2, 10]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc78_k_closest_points() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Sort by *squared* distance, not distance: the square root is monotonic so it cannot change the order, and skipping it keeps everything in integers with no rounding to argue about. Recognising that a monotonic transform can be dropped is worth more than the sort itself.", "export function kClosest(points: number[][], k: number): number[][] {
+  // Sorting by *squared* distance rather than distance: the square root is
+  // monotonic, so it cannot change the order, and skipping it keeps everything
+  // in integers with no rounding to argue about.
+  return [...points].sort((a, b) => squared(a) - squared(b)).slice(0, k);
+}
+
+function squared(point: number[]): number {
+  return point[0] * point[0] + point[1] * point[1];
+}"),
+      #("Solution 2 · Select k times", "Pull the nearest point out k times rather than ordering everything. O(n·k) against a full sort's O(n log n), so it wins exactly when k is small — the same argument that makes a bounded heap of size k the textbook answer here.", "export function kClosest(points: number[][], k: number): number[][] {
+  // Pull the nearest point out k times rather than ordering everything. O(n·k)
+  // against a full sort's O(n log n), so it wins exactly when k is small --
+  // which is the same reason a bounded heap beats a sort on this problem.
+  const remaining = [...points];
+  const taken: number[][] = [];
+
+  while (taken.length < k && remaining.length) {
+    let best = 0;
+    for (let i = 1; i < remaining.length; i++) {
+      if (squared(remaining[i]) < squared(remaining[best])) best = i;
+    }
+    taken.push(remaining.splice(best, 1)[0]);
+  }
+
+  return taken;
+}
+
+function squared(point: number[]): number {
+  return point[0] * point[0] + point[1] * point[1];
+}"),
+    ],
+    check: Check(
+      signature: "export function kClosest(points: number[][], k: number): number[][]",
+      starter: "export function kClosest(points: number[][], k: number): number[][] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// Any order is acceptable, so every case compares sorted.
+const sorted = (points: number[][], k: number) =>
+  solution.kClosest(points, k).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+
+export function run(): [string, string, string][] {
+  if (typeof solution.kClosest !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"kClosest([[1, 3], [-2, 2]], 1)\", show([[-2, 2]]), show(sorted([[1, 3], [-2, 2]], 1))],
+    [\"kClosest([[3, 3], [5, -1], [-2, 4]], 2)\", show([[-2, 4], [3, 3]]), show(sorted([[3, 3], [5, -1], [-2, 4]], 2))],
+    [\"kClosest([], 0)\", show([]), show(sorted([], 0))],
+    [\"kClosest([[0, 0]], 1)\", show([[0, 0]]), show(sorted([[0, 0]], 1))],
+    [\"kClosest([[1, 1], [2, 2], [3, 3]], 2)\", show([[1, 1], [2, 2]]), show(sorted([[1, 1], [2, 2], [3, 3]], 2))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc79_kth_largest_array() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Sorting answers every k at once, which is more than was asked but is the version nobody gets wrong. O(n log n), and usually the right thing to write first before offering anything cleverer.", "export function findKthLargest(nums: number[], k: number): number | null {
+  // Sorting answers every k at once, which is more than asked for but is the
+  // version nobody gets wrong. O(n log n).
+  if (k < 1 || k > nums.length) return null;
+  return [...nums].sort((a, b) => b - a)[k - 1];
+}"),
+      #("Solution 2 · Quickselect", "Partition around a pivot, then recurse only into the side that must contain the answer. Expected O(n), because the work halves each time instead of being done on both halves — the same saving binary search makes over a scan. Worst case is still O(n²) on adversarial pivots, which is worth saying out loud.", "export function findKthLargest(nums: number[], k: number): number | null {
+  if (k < 1 || k > nums.length) return null;
+  return select(nums, k);
+}
+
+// Quickselect: partition around a pivot, then recurse into the side that must
+// contain the answer rather than sorting both. Expected O(n), because the work
+// halves each time instead of being repeated -- the same saving binary search
+// makes over a scan.
+function select(nums: number[], k: number): number {
+  const pivot = nums[0];
+  const rest = nums.slice(1);
+  const bigger = rest.filter((n) => n > pivot);
+  const equal = rest.filter((n) => n === pivot);
+  const smaller = rest.filter((n) => n < pivot);
+
+  if (k <= bigger.length) return select(bigger, k);
+  if (k <= bigger.length + 1 + equal.length) return pivot;
+  return select(smaller, k - bigger.length - 1 - equal.length);
+}"),
+    ],
+    check: Check(
+      signature: "export function findKthLargest(nums: number[], k: number): number | null",
+      starter: "export function findKthLargest(nums: number[], k: number): number | null {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.findKthLargest !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"findKthLargest([3, 2, 1, 5, 6, 4], 2)\", show(5), show(solution.findKthLargest([3, 2, 1, 5, 6, 4], 2))],
+    [\"findKthLargest([3, 2, 3, 1, 2, 4, 5, 5, 6], 4)\", show(4), show(solution.findKthLargest([3, 2, 3, 1, 2, 4, 5, 5, 6], 4))],
+    [\"findKthLargest([1], 1)\", show(1), show(solution.findKthLargest([1], 1))],
+    [\"findKthLargest([2, 1], 2)\", show(1), show(solution.findKthLargest([2, 1], 2))],
+    [\"findKthLargest([7, 6, 5, 4, 3, 2, 1], 3)\", show(5), show(solution.findKthLargest([7, 6, 5, 4, 3, 2, 1], 3))],
+    [\"findKthLargest([], 1)\", show(null), show(solution.findKthLargest([], 1))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc80_task_scheduler() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Lay the most frequent task out first with gaps of n between its copies. That skeleton is (busiest − 1) frames of n+1 slots plus a final row of every task tied for busiest — and everything else either drops into an idle slot or has already pushed the total past the skeleton, in which case nothing idles and the answer is simply the number of tasks. Hence the max of the two.", "export function leastInterval(tasks: string[], n: number): number {
+  if (tasks.length === 0) return 0;
+
+  const counts = new Map<string, number>();
+  for (const task of tasks) counts.set(task, (counts.get(task) ?? 0) + 1);
+
+  const frequencies = [...counts.values()];
+  const busiest = Math.max(...frequencies);
+  const ties = frequencies.filter((count) => count === busiest).length;
+
+  // Lay the most frequent task out first with gaps of n between its copies.
+  // That skeleton is (busiest - 1) full frames of n + 1 slots, plus the final
+  // row of every task tied for busiest. Everything else either fits into an
+  // idle slot or has already pushed the total past the skeleton -- in which
+  // case no idling happens and the answer is just the number of tasks.
+  return Math.max(tasks.length, (busiest - 1) * (n + 1) + ties);
+}"),
+      #("Solution 2 · Simulate", "Run the schedule instead of computing it: each round runs the n+1 most frequent tasks still outstanding, which is the greedy choice and needs the collection to give up its largest values over and over. The trap is the finished tasks — a task at zero is not an idle slot, and counting it as one inflates the answer.", "export function leastInterval(tasks: string[], n: number): number {
+  // Run the schedule instead of computing it. Each round runs the n + 1 most
+  // frequent tasks still outstanding -- the greedy choice, and it needs the
+  // collection to hand back its largest values over and over, exactly the
+  // heap's job. Note the zeros are dropped before each round: a finished task
+  // is not an idle slot, and counting it as one is the easy mistake here.
+  const counts = new Map<string, number>();
+  for (const task of tasks) counts.set(task, (counts.get(task) ?? 0) + 1);
+
+  let remaining = [...counts.values()];
+  let elapsed = 0;
+
+  for (;;) {
+    const outstanding = remaining.filter((count) => count > 0).sort((a, b) => b - a);
+    if (outstanding.length === 0) return elapsed;
+
+    const running = outstanding.slice(0, n + 1);
+    remaining = running.map((count) => count - 1).concat(outstanding.slice(n + 1));
+
+    // The last round costs only as many ticks as it actually uses.
+    elapsed += remaining.some((count) => count > 0) ? n + 1 : running.length;
+  }
+}"),
+    ],
+    check: Check(
+      signature: "export function leastInterval(tasks: string[], n: number): number",
+      starter: "export function leastInterval(tasks: string[], n: number): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.leastInterval !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"leastInterval(['A','A','A','B','B','B'], 2)\", show(8), show(solution.leastInterval([\"A\", \"A\", \"A\", \"B\", \"B\", \"B\"], 2))],
+    [\"leastInterval(['A','A','A','B','B','B'], 0)\", show(6), show(solution.leastInterval([\"A\", \"A\", \"A\", \"B\", \"B\", \"B\"], 0))],
+    [\"leastInterval(['A','A','A','B','B','B'], 3)\", show(10), show(solution.leastInterval([\"A\", \"A\", \"A\", \"B\", \"B\", \"B\"], 3))],
+    [\"leastInterval([], 2)\", show(0), show(solution.leastInterval([], 2))],
+    [\"leastInterval(['A'], 5)\", show(1), show(solution.leastInterval([\"A\"], 5))],
+    [\"leastInterval(four As and six singles, 2)\", show(10), show(solution.leastInterval([\"A\", \"A\", \"A\", \"A\", \"B\", \"C\", \"D\", \"E\", \"F\", \"G\"], 2))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc81_design_twitter() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A counter standing in for time is the whole design: it orders tweets across every user without any real timestamps. Then the feed is a filter over one global timeline — simple, correct, and the wrong shape at scale, since it walks every tweet ever posted to produce ten.", "export class Twitter {
+  // The clock only ever increases, so it orders tweets across every user
+  // without any real timestamps being involved.
+  private clock = 0;
+  private tweets: [number, number, number][] = [];
+  private following = new Map<number, Set<number>>();
+
+  postTweet(userId: number, tweetId: number): void {
+    this.tweets.push([this.clock++, userId, tweetId]);
+  }
+
+  follow(followerId: number, followeeId: number): void {
+    this.followees(followerId).add(followeeId);
+  }
+
+  unfollow(followerId: number, followeeId: number): void {
+    this.followees(followerId).delete(followeeId);
+  }
+
+  // One global timeline, filtered. Simple, and the wrong shape at scale -- it
+  // walks every tweet ever posted for one user's ten.
+  getNewsFeed(userId: number): number[] {
+    const visible = new Set(this.followees(userId));
+    visible.add(userId);
+    return [...this.tweets]
+      .reverse()
+      .filter(([, author]) => visible.has(author))
+      .slice(0, 10)
+      .map(([, , tweetId]) => tweetId);
+  }
+
+  private followees(userId: number): Set<number> {
+    if (!this.following.has(userId)) this.following.set(userId, new Set());
+    return this.following.get(userId)!;
+  }
+}"),
+      #("Solution 2 · Merge per user", "Store tweets per author and the feed becomes a k-way merge over the timelines being followed — and since only the ten newest are wanted, a heap over the heads of those k lists produces them without touching the rest. This is the version that survives a follow-up about scale.", "export class Twitter {
+  private clock = 0;
+  private tweets = new Map<number, [number, number][]>();
+  private following = new Map<number, Set<number>>();
+
+  // Tweets stored per author rather than in one global list, newest last.
+  postTweet(userId: number, tweetId: number): void {
+    if (!this.tweets.has(userId)) this.tweets.set(userId, []);
+    this.tweets.get(userId)!.push([this.clock++, tweetId]);
+  }
+
+  follow(followerId: number, followeeId: number): void {
+    this.followees(followerId).add(followeeId);
+  }
+
+  unfollow(followerId: number, followeeId: number): void {
+    this.followees(followerId).delete(followeeId);
+  }
+
+  // A k-way merge over the timelines of the people being followed, which only
+  // ever needs the ten newest -- so a heap over the tails of the k lists does
+  // it without touching every tweet.
+  getNewsFeed(userId: number): number[] {
+    const visible = new Set(this.followees(userId));
+    visible.add(userId);
+
+    const candidates: [number, number][] = [];
+    for (const author of visible) candidates.push(...(this.tweets.get(author) ?? []).slice(-10));
+
+    return candidates
+      .sort((a, b) => b[0] - a[0])
+      .slice(0, 10)
+      .map(([, tweetId]) => tweetId);
+  }
+
+  private followees(userId: number): Set<number> {
+    if (!this.following.has(userId)) this.following.set(userId, new Set());
+    return this.following.get(userId)!;
+  }
+}"),
+    ],
+    check: Check(
+      signature: "export class Twitter
+  postTweet(userId: number, tweetId: number): void
+  follow(followerId: number, followeeId: number): void
+  unfollow(followerId: number, followeeId: number): void
+  getNewsFeed(userId: number): number[]
+  private followees(userId: number): Set<number>",
+      starter: "export class Twitter {
+  postTweet(userId: number, tweetId: number): void {
+    // todo
+  }
+  follow(followerId: number, followeeId: number): void {
+    // todo
+  }
+  unfollow(followerId: number, followeeId: number): void {
+    // todo
+  }
+  getNewsFeed(userId: number): number[] {
+    // todo
+  }
+  private followees(userId: number): Set<number> {
+    // todo
+  }
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.Twitter !== \"function\") throw new Error(\"__signature_mismatch__\");
+
+  const t = new solution.Twitter();
+  t.postTweet(1, 5);
+  const cases: [string, string, string][] = [
+    [\"getNewsFeed(1) after posting 5\", show([5]), show(t.getNewsFeed(1))],
+  ];
+
+  t.follow(1, 2);
+  t.postTweet(2, 6);
+  cases.push([\"getNewsFeed(1) after following 2 who posted 6\", show([6, 5]), show(t.getNewsFeed(1))]);
+  cases.push([\"getNewsFeed(2) sees only its own\", show([6]), show(t.getNewsFeed(2))]);
+  cases.push([\"getNewsFeed(3) for a user with nothing\", show([]), show(t.getNewsFeed(3))]);
+
+  t.unfollow(1, 2);
+  cases.push([\"getNewsFeed(1) after unfollowing 2\", show([5]), show(t.getNewsFeed(1))]);
+
+  const eleven = new solution.Twitter();
+  for (let i = 1; i <= 11; i++) eleven.postTweet(1, i);
+  cases.push([\"getNewsFeed caps at ten, newest first\", show([11, 10, 9, 8, 7, 6, 5, 4, 3, 2]), show(eleven.getNewsFeed(1))]);
+
+  return cases;
+}",
+    ),
+  )
+}
+
+pub fn nc82_find_median_stream() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Split the values into a smaller half and a larger half, and the median is always sitting at one or both of the two inner ends. Each half only ever has to surrender its extreme value, which is exactly a heap — a max-heap below, a min-heap above. The whole difficulty is the rebalancing rule: sizes within one, and nothing below bigger than anything above.", "export class MedianFinder {
+  // `lower` is the smaller half, largest first; `upper` is the larger half,
+  // smallest first. The median is always at one or both of those two heads.
+  // A real pair of heaps makes each insert O(log n); JavaScript has no heap in
+  // the standard library, so these are sorted arrays -- same invariant.
+  private lower: number[] = [];
+  private upper: number[] = [];
+
+  addNum(value: number): void {
+    this.lower.push(value);
+    this.lower.sort((a, b) => b - a);
+
+    // Nothing in the smaller half may exceed the larger half's smallest, and
+    // the smaller half may hold at most one more element than the larger.
+    while (this.upper.length && this.lower[0] > this.upper[0]) {
+      this.upper.push(this.lower.shift()!);
+      this.upper.sort((a, b) => a - b);
+    }
+    while (this.lower.length > this.upper.length + 1) {
+      this.upper.push(this.lower.shift()!);
+      this.upper.sort((a, b) => a - b);
+    }
+    while (this.upper.length > this.lower.length) {
+      this.lower.push(this.upper.shift()!);
+      this.lower.sort((a, b) => b - a);
+    }
+  }
+
+  findMedian(): number {
+    if (this.lower.length === 0) return 0;
+    if (this.lower.length > this.upper.length) return this.lower[0];
+    return (this.lower[0] + this.upper[0]) / 2;
+  }
+}"),
+      #("Solution 2 · Sorted list", "One sorted list, kept in order on insertion, and the median is a lookup. Easier to believe and easier to write, at the cost of an O(n) insert where two heaps pay O(log n) — the trade that decides which one belongs in a streaming answer.", "export class MedianFinder {
+  private values: number[] = [];
+
+  // One sorted array, kept in order on insertion. Simpler to believe than two
+  // halves, and the median is then just a lookup -- at the cost of an O(n)
+  // insert where the two-heap version pays O(log n).
+  addNum(value: number): void {
+    let at = this.values.findIndex((existing) => existing > value);
+    if (at === -1) at = this.values.length;
+    this.values.splice(at, 0, value);
+  }
+
+  findMedian(): number {
+    const n = this.values.length;
+    if (n === 0) return 0;
+    return (this.values[Math.floor(n / 2)] + this.values[Math.floor((n - 1) / 2)]) / 2;
+  }
+}"),
+    ],
+    check: Check(
+      signature: "export class MedianFinder
+  addNum(value: number): void
+  findMedian(): number",
+      starter: "export class MedianFinder {
+  addNum(value: number): void {
+    // todo
+  }
+  findMedian(): number {
+    // todo
+  }
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const medians = (values: number[]) => {
+  const finder = new solution.MedianFinder();
+  return values.map((value) => {
+    finder.addNum(value);
+    return finder.findMedian();
+  });
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.MedianFinder !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"medians of 1, 2, 3\", show([1, 1.5, 2]), show(medians([1, 2, 3]))],
+    [\"medians of 1, 2, 3, 4, 5\", show([1, 1.5, 2, 2.5, 3]), show(medians([1, 2, 3, 4, 5]))],
+    [\"medians arriving out of order\", show([5, 3, 2, 2.5]), show(medians([5, 1, 2, 3]))],
+    [\"medians of negatives\", show([-1, -1.5]), show(medians([-1, -2]))],
+    [\"median before anything is added\", show(0), show(new solution.MedianFinder().findMedian())],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -4841,6 +5401,13 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc73_word_break" -> Ok(nc73_word_break())
     "nc74_longest_increasing_subsequence" -> Ok(nc74_longest_increasing_subsequence())
     "nc75_partition_equal_subset" -> Ok(nc75_partition_equal_subset())
+    "nc76_kth_largest_stream" -> Ok(nc76_kth_largest_stream())
+    "nc77_last_stone_weight" -> Ok(nc77_last_stone_weight())
+    "nc78_k_closest_points" -> Ok(nc78_k_closest_points())
+    "nc79_kth_largest_array" -> Ok(nc79_kth_largest_array())
+    "nc80_task_scheduler" -> Ok(nc80_task_scheduler())
+    "nc81_design_twitter" -> Ok(nc81_design_twitter())
+    "nc82_find_median_stream" -> Ok(nc82_find_median_stream())
     _ -> Error(Nil)
   }
 }

@@ -1,0 +1,1 @@
+Always the two heaviest, so the collection has to give up its maximum over and over — which is exactly what a heap is for, and why this problem exists. Keeping the stones sorted is the same idea at a worse constant; the operation being asked for is what matters.

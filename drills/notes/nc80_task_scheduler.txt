@@ -1,0 +1,1 @@
+Lay the most frequent task out first with gaps of n between its copies. That skeleton is (busiest − 1) frames of n+1 slots plus a final row of every task tied for busiest — and everything else either drops into an idle slot or has already pushed the total past the skeleton, in which case nothing idles and the answer is simply the number of tasks. Hence the max of the two.

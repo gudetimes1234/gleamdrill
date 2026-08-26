@@ -1,0 +1,1 @@
+One sorted list, kept in order on insertion, and the median is a lookup. Easier to believe and easier to write, at the cost of an O(n) insert where two heaps pay O(log n) — the trade that decides which one belongs in a streaming answer.

@@ -134,6 +134,43 @@ pub fn groups() -> List(Group) {
         "nc26_sliding_window_maximum",
       ),
     ]),
+    Group("Heap / Priority Queue", [
+      Drill(
+        "Kth Largest Element in a Stream",
+        "Design a structure that tracks the kth largest value in a stream. It is built from k and an initial list, and each value added reports the kth largest so far.",
+        "nc76_kth_largest_stream",
+      ),
+      Drill(
+        "Last Stone Weight",
+        "Each turn, smash the two heaviest stones together: equal stones destroy each other, otherwise the heavier is left with the difference. Return the weight of the last stone, or 0 if none remains.",
+        "nc77_last_stone_weight",
+      ),
+      Drill(
+        "K Closest Points to Origin",
+        "Given points on a plane and an integer k, return the k points closest to the origin. The answer may be in any order.",
+        "nc78_k_closest_points",
+      ),
+      Drill(
+        "Kth Largest Element in an Array",
+        "Given an integer array nums and an integer k, return the kth largest element. Duplicates count separately, so this is position in sorted order and not the kth distinct value.",
+        "nc79_kth_largest_array",
+      ),
+      Drill(
+        "Task Scheduler",
+        "Given tasks labelled by letter and a cooldown n, where two runs of the same task must be at least n intervals apart, return the fewest intervals needed to run them all.",
+        "nc80_task_scheduler",
+      ),
+      Drill(
+        "Design Twitter",
+        "Design a simplified Twitter: post a tweet, follow and unfollow a user, and fetch the ten most recent tweet ids in a user's feed, from themselves and everyone they follow, most recent first.",
+        "nc81_design_twitter",
+      ),
+      Drill(
+        "Find Median from Data Stream",
+        "Design a structure that takes integers one at a time and can report the median of everything seen so far.",
+        "nc82_find_median_stream",
+      ),
+    ]),
     Group("1-D Dynamic Programming", [
       Drill(
         "Climbing Stairs",

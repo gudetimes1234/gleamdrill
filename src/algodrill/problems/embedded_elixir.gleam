@@ -3480,6 +3480,331 @@ end"),
   ]
 }
 
+pub fn nc76_kth_largest_stream() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Only the k largest values can ever be the answer, so everything else is discarded on arrival and the store never grows past k. That is exactly the shape a bounded min-heap gives you: the smallest thing in it is the answer, and anything smaller than that never gets in. The other thing to get right is that there is no answer at all until k values have arrived.", "defmodule Solution do
+  # Immutable, so the store is a value that add returns a new version of.
+  def new(k, nums), do: {k, keep_top(nums, k)}
+
+  # Only the k largest values can ever be the answer, so everything else is
+  # thrown away on arrival. With a heap the discard is O(log k); a sorted list
+  # is the same idea with a worse constant.
+  def add({k, largest}, value), do: {k, keep_top([value | largest], k)}
+
+  # The smallest of the k kept values is the kth largest -- but only once k of
+  # them exist, which is why the count is checked rather than assumed.
+  def kth({k, largest}) when length(largest) < k, do: nil
+  def kth({_k, [smallest | _]}), do: smallest
+
+  defp keep_top(values, k) do
+    values |> Enum.sort(:desc) |> Enum.take(k) |> Enum.sort()
+  end
+end"),
+    #("Solution 2 · Keep everything", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Keep the whole stream and sort on demand. Wrong for a real stream — memory grows without bound and every query costs a sort — but it is the definition, and it is what the bounded version has to be checked against.", "defmodule Solution do
+  def new(k, nums), do: {k, nums}
+
+  def add({k, seen}, value), do: {k, [value | seen]}
+
+  # Keep the whole stream and sort on demand. Wrong for a real stream -- memory
+  # grows without bound and every query costs a sort -- but it is the
+  # definition, and it is what the bounded structure has to be checked against.
+  def kth({k, seen}) when length(seen) < k, do: nil
+  def kth({k, seen}), do: seen |> Enum.sort(:desc) |> Enum.at(k - 1)
+end"),
+  ]
+}
+
+pub fn nc77_last_stone_weight() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Always the two heaviest, so the collection has to give up its maximum over and over — which is exactly what a heap is for, and why this problem exists. Keeping the stones sorted is the same idea at a worse constant; the operation being asked for is what matters.", "defmodule Solution do
+  # Always the two heaviest, so the collection has to give up its maximum over
+  # and over -- which is what a heap is for. Kept sorted descending here, so the
+  # two heaviest are the first two and the remainder goes back in order.
+  def last_stone_weight(stones), do: smash(Enum.sort(stones, :desc))
+
+  defp smash([]), do: 0
+  defp smash([only]), do: only
+
+  defp smash([heaviest, next | rest]) do
+    case heaviest - next do
+      0 -> smash(rest)
+      remainder -> smash(Enum.sort([remainder | rest], :desc))
+    end
+  end
+end"),
+    #("Solution 2 · Find max each round", "No ordering kept at all: scan for the heaviest, remove it, scan again. O(n) per round rather than O(log n), and worth writing precisely because it makes the interface obvious — the only thing the problem ever asks of the collection is \"give me the largest\".", "defmodule Solution do
+  # No ordering kept at all: scan for the heaviest, remove it, scan again. O(n)
+  # per round against the sorted version's O(n log n) once -- worse overall, but
+  # it makes clear that the only operation the problem needs is \"give me the
+  # largest\", which is exactly the interface a heap provides.
+  def last_stone_weight(stones), do: smash(stones)
+
+  defp smash([]), do: 0
+  defp smash([only]), do: only
+
+  defp smash(stones) do
+    heaviest = Enum.max(stones)
+    rest = List.delete(stones, heaviest)
+    next = Enum.max(rest)
+    remaining = List.delete(rest, next)
+
+    case heaviest - next do
+      0 -> smash(remaining)
+      remainder -> smash([remainder | remaining])
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc78_k_closest_points() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Sort by *squared* distance, not distance: the square root is monotonic so it cannot change the order, and skipping it keeps everything in integers with no rounding to argue about. Recognising that a monotonic transform can be dropped is worth more than the sort itself.", "defmodule Solution do
+  # Sorting by *squared* distance rather than distance: the square root is
+  # monotonic, so it cannot change the order, and skipping it keeps everything
+  # in integers with no rounding to argue about.
+  def k_closest(points, k) do
+    points
+    |> Enum.sort_by(fn {x, y} -> x * x + y * y end)
+    |> Enum.take(k)
+  end
+end"),
+    #("Solution 2 · Select k times", "Pull the nearest point out k times rather than ordering everything. O(n·k) against a full sort's O(n log n), so it wins exactly when k is small — the same argument that makes a bounded heap of size k the textbook answer here.", "defmodule Solution do
+  # Pull the nearest point out k times rather than ordering everything. O(n*k)
+  # against a full sort's O(n log n), so it wins exactly when k is small --
+  # which is the same reason a bounded heap beats a sort on this problem.
+  def k_closest(points, k), do: take(points, k, [])
+
+  defp take(_points, remaining, taken) when remaining <= 0, do: Enum.reverse(taken)
+  defp take([], _remaining, taken), do: Enum.reverse(taken)
+
+  defp take(points, remaining, taken) do
+    nearest = Enum.min_by(points, fn {x, y} -> x * x + y * y end)
+    take(List.delete(points, nearest), remaining - 1, [nearest | taken])
+  end
+end"),
+  ]
+}
+
+pub fn nc79_kth_largest_array() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Sorting answers every k at once, which is more than was asked but is the version nobody gets wrong. O(n log n), and usually the right thing to write first before offering anything cleverer.", "defmodule Solution do
+  # Sorting answers every k at once, which is more than asked for but is the
+  # version nobody gets wrong. O(n log n).
+  def find_kth_largest(nums, k) when k < 1 or k > length(nums), do: nil
+
+  def find_kth_largest(nums, k), do: nums |> Enum.sort(:desc) |> Enum.at(k - 1)
+end"),
+    #("Solution 2 · Quickselect", "Partition around a pivot, then recurse only into the side that must contain the answer. Expected O(n), because the work halves each time instead of being done on both halves — the same saving binary search makes over a scan. Worst case is still O(n²) on adversarial pivots, which is worth saying out loud.", "defmodule Solution do
+  def find_kth_largest(nums, k) when k < 1 or k > length(nums), do: nil
+
+  def find_kth_largest(nums, k), do: select(nums, k)
+
+  # Quickselect: partition around a pivot, then recurse into the side that must
+  # contain the answer rather than sorting both. Expected O(n), because the work
+  # halves each time instead of being repeated -- the same saving binary search
+  # makes over a scan.
+  defp select([pivot | rest], k) do
+    bigger = Enum.filter(rest, &(&1 > pivot))
+    equal = Enum.filter(rest, &(&1 == pivot))
+    smaller = Enum.filter(rest, &(&1 < pivot))
+    above = length(bigger)
+
+    cond do
+      k <= above -> select(bigger, k)
+      k <= above + 1 + length(equal) -> pivot
+      true -> select(smaller, k - above - 1 - length(equal))
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc80_task_scheduler() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Lay the most frequent task out first with gaps of n between its copies. That skeleton is (busiest − 1) frames of n+1 slots plus a final row of every task tied for busiest — and everything else either drops into an idle slot or has already pushed the total past the skeleton, in which case nothing idles and the answer is simply the number of tasks. Hence the max of the two.", "defmodule Solution do
+  def least_interval([], _n), do: 0
+
+  def least_interval(tasks, n) do
+    frequencies = tasks |> Enum.frequencies() |> Map.values()
+    busiest = Enum.max(frequencies)
+    ties = Enum.count(frequencies, &(&1 == busiest))
+
+    # Lay the most frequent task out first with gaps of n between its copies.
+    # That skeleton is (busiest - 1) full frames of n + 1 slots, plus the final
+    # row of every task tied for busiest. Everything else either fits into an
+    # idle slot or has already pushed the total past the skeleton -- in which
+    # case no idling happens and the answer is just the number of tasks.
+    max(length(tasks), (busiest - 1) * (n + 1) + ties)
+  end
+end"),
+    #("Solution 2 · Simulate", "Run the schedule instead of computing it: each round runs the n+1 most frequent tasks still outstanding, which is the greedy choice and needs the collection to give up its largest values over and over. The trap is the finished tasks — a task at zero is not an idle slot, and counting it as one inflates the answer.", "defmodule Solution do
+  # Run the schedule instead of computing it. Each round runs the n + 1 most
+  # frequent tasks still outstanding -- the greedy choice, and it needs the
+  # collection to hand back its largest values over and over, exactly the heap's
+  # job. Note the zeros are dropped before each round: a finished task is not an
+  # idle slot, and counting it as one is the easy mistake here.
+  def least_interval(tasks, n) do
+    tasks |> Enum.frequencies() |> Map.values() |> run_rounds(n, 0)
+  end
+
+  defp run_rounds(remaining, n, elapsed) do
+    case remaining |> Enum.filter(&(&1 > 0)) |> Enum.sort(:desc) do
+      [] ->
+        elapsed
+
+      outstanding ->
+        running = Enum.take(outstanding, n + 1)
+        remaining = Enum.map(running, &(&1 - 1)) ++ Enum.drop(outstanding, n + 1)
+
+        # The last round costs only as many ticks as it actually uses.
+        if Enum.any?(remaining, &(&1 > 0)),
+          do: run_rounds(remaining, n, elapsed + n + 1),
+          else: elapsed + length(running)
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc81_design_twitter() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "A counter standing in for time is the whole design: it orders tweets across every user without any real timestamps. Then the feed is a filter over one global timeline — simple, correct, and the wrong shape at scale, since it walks every tweet ever posted to produce ten.", "defmodule Solution do
+  # The clock only ever increases, so it orders tweets across every user without
+  # any real timestamps being involved.
+  def new, do: %{clock: 0, tweets: [], following: %{}}
+
+  def post_tweet(twitter, user, tweet) do
+    %{
+      twitter
+      | clock: twitter.clock + 1,
+        tweets: [{twitter.clock, user, tweet} | twitter.tweets]
+    }
+  end
+
+  def follow(twitter, follower, followee) do
+    put_in(twitter.following[follower], MapSet.put(followees(twitter, follower), followee))
+  end
+
+  def unfollow(twitter, follower, followee) do
+    put_in(twitter.following[follower], MapSet.delete(followees(twitter, follower), followee))
+  end
+
+  # Every tweet is already newest-first, so the feed is a filter and a take.
+  # Simple, and the wrong shape at scale -- it walks the whole global timeline
+  # for one user's ten tweets.
+  def news_feed(twitter, user) do
+    visible = MapSet.put(followees(twitter, user), user)
+
+    twitter.tweets
+    |> Enum.filter(fn {_clock, author, _tweet} -> MapSet.member?(visible, author) end)
+    |> Enum.take(10)
+    |> Enum.map(fn {_clock, _author, tweet} -> tweet end)
+  end
+
+  defp followees(twitter, user), do: Map.get(twitter.following, user, MapSet.new())
+end"),
+    #("Solution 2 · Merge per user", "Store tweets per author and the feed becomes a k-way merge over the timelines being followed — and since only the ten newest are wanted, a heap over the heads of those k lists produces them without touching the rest. This is the version that survives a follow-up about scale.", "defmodule Solution do
+  def new, do: %{clock: 0, tweets: %{}, following: %{}}
+
+  # Tweets stored per author rather than in one global list, newest first.
+  def post_tweet(twitter, user, tweet) do
+    %{
+      twitter
+      | clock: twitter.clock + 1,
+        tweets: Map.update(twitter.tweets, user, [{twitter.clock, tweet}], &[{twitter.clock, tweet} | &1])
+    }
+  end
+
+  def follow(twitter, follower, followee) do
+    put_in(twitter.following[follower], MapSet.put(followees(twitter, follower), followee))
+  end
+
+  def unfollow(twitter, follower, followee) do
+    put_in(twitter.following[follower], MapSet.delete(followees(twitter, follower), followee))
+  end
+
+  # A k-way merge over the timelines of the people being followed, which only
+  # ever needs the ten newest -- so at scale a heap over the heads of the k
+  # lists does it without touching every tweet. Written as a sort here, but the
+  # shape is the point.
+  def news_feed(twitter, user) do
+    twitter
+    |> followees(user)
+    |> MapSet.put(user)
+    |> Enum.flat_map(fn author -> twitter.tweets |> Map.get(author, []) |> Enum.take(10) end)
+    |> Enum.sort_by(fn {clock, _tweet} -> clock end, :desc)
+    |> Enum.take(10)
+    |> Enum.map(fn {_clock, tweet} -> tweet end)
+  end
+
+  defp followees(twitter, user), do: Map.get(twitter.following, user, MapSet.new())
+end"),
+  ]
+}
+
+pub fn nc82_find_median_stream() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Split the values into a smaller half and a larger half, and the median is always sitting at one or both of the two inner ends. Each half only ever has to surrender its extreme value, which is exactly a heap — a max-heap below, a min-heap above. The whole difficulty is the rebalancing rule: sizes within one, and nothing below bigger than anything above.", "defmodule Solution do
+  # `lower` is the smaller half, largest first; `upper` is the larger half,
+  # smallest first. The median is always at one or both of those two heads --
+  # each half only ever has to give up its extreme value, which is exactly what
+  # a pair of heaps provides. Sorted lists here: same invariant, worse insert.
+  def new, do: {[], []}
+
+  def add_num({lower, upper}, value) do
+    rebalance({Enum.sort([value | lower], :desc), upper})
+  end
+
+  def find_median({[], []}), do: 0.0
+  def find_median({[low | _], []}), do: low / 1
+  def find_median({[], [high | _]}), do: high / 1
+
+  def find_median({[low | _] = lower, [high | _] = upper}) do
+    if length(lower) == length(upper), do: (low + high) / 2, else: low / 1
+  end
+
+  # The smaller half may hold one more than the larger half, never fewer, and
+  # its largest must not exceed the larger half's smallest.
+  defp rebalance({[low | lower_rest], [high | _] = upper}) when low > high do
+    rebalance({lower_rest, Enum.sort([low | upper])})
+  end
+
+  defp rebalance({lower, upper}) do
+    cond do
+      length(lower) - length(upper) > 1 ->
+        [low | rest] = lower
+        rebalance({rest, Enum.sort([low | upper])})
+
+      length(upper) > length(lower) ->
+        [high | rest] = upper
+        rebalance({Enum.sort([high | lower], :desc), rest})
+
+      true ->
+        {lower, upper}
+    end
+  end
+end"),
+    #("Solution 2 · Sorted list", "One sorted list, kept in order on insertion, and the median is a lookup. Easier to believe and easier to write, at the cost of an O(n) insert where two heaps pay O(log n) — the trade that decides which one belongs in a streaming answer.", "defmodule Solution do
+  def new, do: []
+
+  # One sorted list, kept in order on insertion. Simpler to believe than two
+  # halves, and the median is then just a lookup -- at the cost of an O(n)
+  # insert where the two-heap version pays O(log n).
+  def add_num(values, value), do: Enum.sort([value | values])
+
+  def find_median([]), do: 0.0
+
+  def find_median(values) do
+    n = length(values)
+    (Enum.at(values, div(n, 2)) + Enum.at(values, div(n - 1, 2))) / 2
+  end
+end"),
+  ]
+}
+
 pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -3557,6 +3882,13 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
     "nc73_word_break" -> Ok(nc73_word_break())
     "nc74_longest_increasing_subsequence" -> Ok(nc74_longest_increasing_subsequence())
     "nc75_partition_equal_subset" -> Ok(nc75_partition_equal_subset())
+    "nc76_kth_largest_stream" -> Ok(nc76_kth_largest_stream())
+    "nc77_last_stone_weight" -> Ok(nc77_last_stone_weight())
+    "nc78_k_closest_points" -> Ok(nc78_k_closest_points())
+    "nc79_kth_largest_array" -> Ok(nc79_kth_largest_array())
+    "nc80_task_scheduler" -> Ok(nc80_task_scheduler())
+    "nc81_design_twitter" -> Ok(nc81_design_twitter())
+    "nc82_find_median_stream" -> Ok(nc82_find_median_stream())
     _ -> Error(Nil)
   }
 }

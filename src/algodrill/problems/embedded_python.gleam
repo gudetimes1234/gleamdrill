@@ -4453,6 +4453,494 @@ __case__(\"canPartition([3, 3, 3, 4, 5])\", True, canPartition([3, 3, 3, 4, 5]))
   )
 }
 
+pub fn nc76_kth_largest_stream() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Only the k largest values can ever be the answer, so everything else is discarded on arrival and the store never grows past k. That is exactly the shape a bounded min-heap gives you: the smallest thing in it is the answer, and anything smaller than that never gets in. The other thing to get right is that there is no answer at all until k values have arrived.", "import heapq
+
+
+class KthLargest:
+    def __init__(self, k, nums):
+        self.k = k
+        # Only the k largest values can ever be the answer, so a min-heap of
+        # size k is enough: the smallest thing in it is the answer, and anything
+        # smaller than that is discarded on arrival in O(log k).
+        self.heap = list(nums)
+        heapq.heapify(self.heap)
+        while len(self.heap) > k:
+            heapq.heappop(self.heap)
+
+    def add(self, value):
+        heapq.heappush(self.heap, value)
+        if len(self.heap) > self.k:
+            heapq.heappop(self.heap)
+        return self.heap[0] if len(self.heap) == self.k else None"),
+      #("Solution 2 · Keep everything", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Keep the whole stream and sort on demand. Wrong for a real stream — memory grows without bound and every query costs a sort — but it is the definition, and it is what the bounded version has to be checked against.", "class KthLargest:
+    def __init__(self, k, nums):
+        self.k = k
+        self.seen = list(nums)
+
+    # Keep the whole stream and sort on demand. Wrong for a real stream --
+    # memory grows without bound and every query costs a sort -- but it is the
+    # definition, and it is what the bounded heap has to be checked against.
+    def add(self, value):
+        self.seen.append(value)
+        if len(self.seen) < self.k:
+            return None
+        return sorted(self.seen, reverse=True)[self.k - 1]"),
+    ],
+    check: Check(
+      signature: "class KthLargest:
+    def __init__(self, k, nums):
+    def add(self, value):",
+      starter: "class KthLargest:
+    def __init__(self, k, nums):
+        pass
+    def add(self, value):
+        pass",
+      harness: "try:
+    (KthLargest)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+def __stream__(k, initial, added):
+    store = KthLargest(k, initial)
+    return [store.add(value) for value in added]
+
+__case__(\"k = 3 over [4, 5, 8, 2] then 3, 5, 10, 9, 4\", [4, 5, 5, 8, 8], __stream__(3, [4, 5, 8, 2], [3, 5, 10, 9, 4]))
+__case__(\"k = 1 over [] then 1, 2, 0\", [1, 2, 2], __stream__(1, [], [1, 2, 0]))
+__case__(\"k = 2 over [] then 5, 5\", [None, 5], __stream__(2, [], [5, 5]))",
+    ),
+  )
+}
+
+pub fn nc77_last_stone_weight() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Always the two heaviest, so the collection has to give up its maximum over and over — which is exactly what a heap is for, and why this problem exists. Keeping the stones sorted is the same idea at a worse constant; the operation being asked for is what matters.", "import heapq
+
+
+def lastStoneWeight(stones):
+    # Always the two heaviest, so the collection has to give up its maximum over
+    # and over -- which is exactly what a heap is for. heapq is a min-heap, so
+    # the values go in negated and come back out the same way.
+    heap = [-stone for stone in stones]
+    heapq.heapify(heap)
+
+    while len(heap) > 1:
+        heaviest = -heapq.heappop(heap)
+        following = -heapq.heappop(heap)
+        if heaviest != following:
+            heapq.heappush(heap, -(heaviest - following))
+
+    return -heap[0] if heap else 0"),
+      #("Solution 2 · Find max each round", "No ordering kept at all: scan for the heaviest, remove it, scan again. O(n) per round rather than O(log n), and worth writing precisely because it makes the interface obvious — the only thing the problem ever asks of the collection is \"give me the largest\".", "def lastStoneWeight(stones):
+    # No ordering kept at all: scan for the heaviest, remove it, scan again.
+    # O(n) per round against a heap's O(log n) -- worse, but it makes clear that
+    # the only operation the problem needs is \"give me the largest\", which is
+    # exactly the interface a heap provides.
+    stones = list(stones)
+
+    while len(stones) > 1:
+        heaviest = max(stones)
+        stones.remove(heaviest)
+        following = max(stones)
+        stones.remove(following)
+        if heaviest != following:
+            stones.append(heaviest - following)
+
+    return stones[0] if stones else 0"),
+    ],
+    check: Check(
+      signature: "def lastStoneWeight(stones):",
+      starter: "def lastStoneWeight(stones):
+    pass",
+      harness: "try:
+    (lastStoneWeight)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"lastStoneWeight([2, 7, 4, 1, 8, 1])\", 1, lastStoneWeight([2, 7, 4, 1, 8, 1]))
+__case__(\"lastStoneWeight([1])\", 1, lastStoneWeight([1]))
+__case__(\"lastStoneWeight([])\", 0, lastStoneWeight([]))
+__case__(\"lastStoneWeight([2, 2])\", 0, lastStoneWeight([2, 2]))
+__case__(\"lastStoneWeight([3, 7, 2])\", 2, lastStoneWeight([3, 7, 2]))
+__case__(\"lastStoneWeight([10, 4, 2, 10])\", 2, lastStoneWeight([10, 4, 2, 10]))",
+    ),
+  )
+}
+
+pub fn nc78_k_closest_points() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Sort by *squared* distance, not distance: the square root is monotonic so it cannot change the order, and skipping it keeps everything in integers with no rounding to argue about. Recognising that a monotonic transform can be dropped is worth more than the sort itself.", "def kClosest(points, k):
+    # Sorting by *squared* distance rather than distance: the square root is
+    # monotonic, so it cannot change the order, and skipping it keeps everything
+    # in integers with no rounding to argue about.
+    return sorted(points, key=lambda point: point[0] ** 2 + point[1] ** 2)[:k]"),
+      #("Solution 2 · Select k times", "Pull the nearest point out k times rather than ordering everything. O(n·k) against a full sort's O(n log n), so it wins exactly when k is small — the same argument that makes a bounded heap of size k the textbook answer here.", "import heapq
+
+
+def kClosest(points, k):
+    # A heap of size k rather than a full sort: every point is pushed and the
+    # farthest discarded, so the memory is O(k) and the time O(n log k). Worth
+    # it exactly when k is small relative to n.
+    heap = []
+    for point in points:
+        heapq.heappush(heap, (-(point[0] ** 2 + point[1] ** 2), point))
+        if len(heap) > k:
+            heapq.heappop(heap)
+    return [point for _distance, point in heap]"),
+    ],
+    check: Check(
+      signature: "def kClosest(points, k):",
+      starter: "def kClosest(points, k):
+    pass",
+      harness: "try:
+    (kClosest)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# Any order is acceptable, so every case compares sorted.
+def __sorted__(points, k):
+    return sorted([list(p) for p in kClosest(points, k)])
+
+__case__(\"kClosest([[1, 3], [-2, 2]], 1)\", [[-2, 2]], __sorted__([[1, 3], [-2, 2]], 1))
+__case__(\"kClosest([[3, 3], [5, -1], [-2, 4]], 2)\", [[-2, 4], [3, 3]], __sorted__([[3, 3], [5, -1], [-2, 4]], 2))
+__case__(\"kClosest([], 0)\", [], __sorted__([], 0))
+__case__(\"kClosest([[0, 0]], 1)\", [[0, 0]], __sorted__([[0, 0]], 1))
+__case__(\"kClosest([[1, 1], [2, 2], [3, 3]], 2)\", [[1, 1], [2, 2]], __sorted__([[1, 1], [2, 2], [3, 3]], 2))",
+    ),
+  )
+}
+
+pub fn nc79_kth_largest_array() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Sorting answers every k at once, which is more than was asked but is the version nobody gets wrong. O(n log n), and usually the right thing to write first before offering anything cleverer.", "def findKthLargest(nums, k):
+    # Sorting answers every k at once, which is more than asked for but is the
+    # version nobody gets wrong. O(n log n).
+    if k < 1 or k > len(nums):
+        return None
+    return sorted(nums, reverse=True)[k - 1]"),
+      #("Solution 2 · Quickselect", "Partition around a pivot, then recurse only into the side that must contain the answer. Expected O(n), because the work halves each time instead of being done on both halves — the same saving binary search makes over a scan. Worst case is still O(n²) on adversarial pivots, which is worth saying out loud.", "def findKthLargest(nums, k):
+    if k < 1 or k > len(nums):
+        return None
+    return select(nums, k)
+
+
+# Quickselect: partition around a pivot, then recurse into the side that must
+# contain the answer rather than sorting both. Expected O(n), because the work
+# halves each time instead of being repeated -- the same saving binary search
+# makes over a scan.
+def select(nums, k):
+    pivot = nums[0]
+    bigger = [n for n in nums[1:] if n > pivot]
+    equal = [n for n in nums[1:] if n == pivot]
+    smaller = [n for n in nums[1:] if n < pivot]
+
+    if k <= len(bigger):
+        return select(bigger, k)
+    if k <= len(bigger) + 1 + len(equal):
+        return pivot
+    return select(smaller, k - len(bigger) - 1 - len(equal))"),
+    ],
+    check: Check(
+      signature: "def findKthLargest(nums, k):",
+      starter: "def findKthLargest(nums, k):
+    pass",
+      harness: "try:
+    (findKthLargest)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"findKthLargest([3, 2, 1, 5, 6, 4], 2)\", 5, findKthLargest([3, 2, 1, 5, 6, 4], 2))
+__case__(\"findKthLargest([3, 2, 3, 1, 2, 4, 5, 5, 6], 4)\", 4, findKthLargest([3, 2, 3, 1, 2, 4, 5, 5, 6], 4))
+__case__(\"findKthLargest([1], 1)\", 1, findKthLargest([1], 1))
+__case__(\"findKthLargest([2, 1], 2)\", 1, findKthLargest([2, 1], 2))
+__case__(\"findKthLargest([7, 6, 5, 4, 3, 2, 1], 3)\", 5, findKthLargest([7, 6, 5, 4, 3, 2, 1], 3))
+__case__(\"findKthLargest([], 1)\", None, findKthLargest([], 1))",
+    ),
+  )
+}
+
+pub fn nc80_task_scheduler() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Lay the most frequent task out first with gaps of n between its copies. That skeleton is (busiest − 1) frames of n+1 slots plus a final row of every task tied for busiest — and everything else either drops into an idle slot or has already pushed the total past the skeleton, in which case nothing idles and the answer is simply the number of tasks. Hence the max of the two.", "from collections import Counter
+
+
+def leastInterval(tasks, n):
+    if not tasks:
+        return 0
+
+    counts = Counter(tasks)
+    busiest = max(counts.values())
+    ties = sum(1 for count in counts.values() if count == busiest)
+
+    # Lay the most frequent task out first with gaps of n between its copies.
+    # That skeleton is (busiest - 1) full frames of n + 1 slots, plus the final
+    # row of every task tied for busiest. Everything else either fits into an
+    # idle slot or has already pushed the total past the skeleton -- in which
+    # case no idling happens and the answer is just the number of tasks.
+    return max(len(tasks), (busiest - 1) * (n + 1) + ties)"),
+      #("Solution 2 · Simulate", "Run the schedule instead of computing it: each round runs the n+1 most frequent tasks still outstanding, which is the greedy choice and needs the collection to give up its largest values over and over. The trap is the finished tasks — a task at zero is not an idle slot, and counting it as one inflates the answer.", "from collections import Counter
+
+
+def leastInterval(tasks, n):
+    # Run the schedule instead of computing it. Each round runs the n + 1 most
+    # frequent tasks still outstanding -- which is the greedy choice, and needs
+    # the collection to hand back its largest values over and over, exactly the
+    # heap's job. Note the zeros are dropped before each round: a finished task
+    # is not an idle slot, and counting it as one is the easy mistake here.
+    remaining = list(Counter(tasks).values())
+    elapsed = 0
+
+    while True:
+        outstanding = sorted((count for count in remaining if count > 0), reverse=True)
+        if not outstanding:
+            return elapsed
+
+        running = outstanding[: n + 1]
+        remaining = [count - 1 for count in running] + outstanding[n + 1:]
+
+        # The last round costs only as many ticks as it actually uses.
+        elapsed += n + 1 if any(count > 0 for count in remaining) else len(running)"),
+    ],
+    check: Check(
+      signature: "def leastInterval(tasks, n):",
+      starter: "def leastInterval(tasks, n):
+    pass",
+      harness: "try:
+    (leastInterval)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"leastInterval(['A','A','A','B','B','B'], 2)\", 8, leastInterval([\"A\", \"A\", \"A\", \"B\", \"B\", \"B\"], 2))
+__case__(\"leastInterval(['A','A','A','B','B','B'], 0)\", 6, leastInterval([\"A\", \"A\", \"A\", \"B\", \"B\", \"B\"], 0))
+__case__(\"leastInterval(['A','A','A','B','B','B'], 3)\", 10, leastInterval([\"A\", \"A\", \"A\", \"B\", \"B\", \"B\"], 3))
+__case__(\"leastInterval([], 2)\", 0, leastInterval([], 2))
+__case__(\"leastInterval(['A'], 5)\", 1, leastInterval([\"A\"], 5))
+__case__(\"leastInterval(four As and six singles, 2)\", 10, leastInterval([\"A\", \"A\", \"A\", \"A\", \"B\", \"C\", \"D\", \"E\", \"F\", \"G\"], 2))",
+    ),
+  )
+}
+
+pub fn nc81_design_twitter() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A counter standing in for time is the whole design: it orders tweets across every user without any real timestamps. Then the feed is a filter over one global timeline — simple, correct, and the wrong shape at scale, since it walks every tweet ever posted to produce ten.", "class Twitter:
+    def __init__(self):
+        # The clock only ever increases, so it orders tweets across every user
+        # without any real timestamps being involved.
+        self.clock = 0
+        self.tweets = []
+        self.following = {}
+
+    def postTweet(self, userId, tweetId):
+        self.tweets.append((self.clock, userId, tweetId))
+        self.clock += 1
+
+    def follow(self, followerId, followeeId):
+        self.following.setdefault(followerId, set()).add(followeeId)
+
+    def unfollow(self, followerId, followeeId):
+        self.following.setdefault(followerId, set()).discard(followeeId)
+
+    # One global timeline, filtered. Simple, and the wrong shape at scale -- it
+    # walks every tweet ever posted for one user's ten.
+    def getNewsFeed(self, userId):
+        visible = self.following.get(userId, set()) | {userId}
+        return [
+            tweetId
+            for _clock, author, tweetId in reversed(self.tweets)
+            if author in visible
+        ][:10]"),
+      #("Solution 2 · Merge per user", "Store tweets per author and the feed becomes a k-way merge over the timelines being followed — and since only the ten newest are wanted, a heap over the heads of those k lists produces them without touching the rest. This is the version that survives a follow-up about scale.", "import heapq
+
+
+class Twitter:
+    def __init__(self):
+        self.clock = 0
+        self.tweets = {}
+        self.following = {}
+
+    # Tweets stored per author rather than in one global list, newest last.
+    def postTweet(self, userId, tweetId):
+        self.tweets.setdefault(userId, []).append((self.clock, tweetId))
+        self.clock += 1
+
+    def follow(self, followerId, followeeId):
+        self.following.setdefault(followerId, set()).add(followeeId)
+
+    def unfollow(self, followerId, followeeId):
+        self.following.setdefault(followerId, set()).discard(followeeId)
+
+    # A k-way merge over the timelines of the people being followed, which only
+    # ever needs the ten newest -- so a heap over the tails of the k lists does
+    # it without touching every tweet.
+    def getNewsFeed(self, userId):
+        visible = self.following.get(userId, set()) | {userId}
+        candidates = []
+        for author in visible:
+            candidates.extend(self.tweets.get(author, [])[-10:])
+        return [tweetId for _clock, tweetId in heapq.nlargest(10, candidates)]"),
+    ],
+    check: Check(
+      signature: "class Twitter:
+    def __init__(self):
+    def postTweet(self, userId, tweetId):
+    def follow(self, followerId, followeeId):
+    def unfollow(self, followerId, followeeId):
+    def getNewsFeed(self, userId):",
+      starter: "class Twitter:
+    def __init__(self):
+        pass
+    def postTweet(self, userId, tweetId):
+        pass
+    def follow(self, followerId, followeeId):
+        pass
+    def unfollow(self, followerId, followeeId):
+        pass
+    def getNewsFeed(self, userId):
+        pass",
+      harness: "try:
+    (Twitter)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__t__ = Twitter()
+__t__.postTweet(1, 5)
+__case__(\"getNewsFeed(1) after posting 5\", [5], __t__.getNewsFeed(1))
+
+__t__.follow(1, 2)
+__t__.postTweet(2, 6)
+__case__(\"getNewsFeed(1) after following 2 who posted 6\", [6, 5], __t__.getNewsFeed(1))
+__case__(\"getNewsFeed(2) sees only its own\", [6], __t__.getNewsFeed(2))
+__case__(\"getNewsFeed(3) for a user with nothing\", [], __t__.getNewsFeed(3))
+
+__t__.unfollow(1, 2)
+__case__(\"getNewsFeed(1) after unfollowing 2\", [5], __t__.getNewsFeed(1))
+
+__eleven__ = Twitter()
+for __i__ in range(1, 12):
+    __eleven__.postTweet(1, __i__)
+__case__(\"getNewsFeed caps at ten, newest first\", [11, 10, 9, 8, 7, 6, 5, 4, 3, 2], __eleven__.getNewsFeed(1))",
+    ),
+  )
+}
+
+pub fn nc82_find_median_stream() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Split the values into a smaller half and a larger half, and the median is always sitting at one or both of the two inner ends. Each half only ever has to surrender its extreme value, which is exactly a heap — a max-heap below, a min-heap above. The whole difficulty is the rebalancing rule: sizes within one, and nothing below bigger than anything above.", "import heapq
+
+
+class MedianFinder:
+    def __init__(self):
+        # `lower` is the smaller half as a max-heap (negated, since heapq is a
+        # min-heap); `upper` is the larger half as a min-heap. The median is
+        # always at one or both of those two roots.
+        self.lower = []
+        self.upper = []
+
+    def addNum(self, value):
+        heapq.heappush(self.lower, -value)
+        # The smaller half must not hold anything bigger than the larger half's
+        # smallest, and may hold at most one more element than it.
+        heapq.heappush(self.upper, -heapq.heappop(self.lower))
+        if len(self.upper) > len(self.lower):
+            heapq.heappush(self.lower, -heapq.heappop(self.upper))
+
+    def findMedian(self):
+        if not self.lower:
+            return 0.0
+        if len(self.lower) > len(self.upper):
+            return float(-self.lower[0])
+        return (-self.lower[0] + self.upper[0]) / 2"),
+      #("Solution 2 · Sorted list", "One sorted list, kept in order on insertion, and the median is a lookup. Easier to believe and easier to write, at the cost of an O(n) insert where two heaps pay O(log n) — the trade that decides which one belongs in a streaming answer.", "from bisect import insort
+
+
+class MedianFinder:
+    def __init__(self):
+        self.values = []
+
+    # One sorted list, kept in order on insertion. Simpler to believe than two
+    # halves, and the median is then just a lookup -- at the cost of an O(n)
+    # insert where the two-heap version pays O(log n).
+    def addNum(self, value):
+        insort(self.values, value)
+
+    def findMedian(self):
+        n = len(self.values)
+        if n == 0:
+            return 0.0
+        return (self.values[n // 2] + self.values[(n - 1) // 2]) / 2"),
+    ],
+    check: Check(
+      signature: "class MedianFinder:
+    def __init__(self):
+    def addNum(self, value):
+    def findMedian(self):",
+      starter: "class MedianFinder:
+    def __init__(self):
+        pass
+    def addNum(self, value):
+        pass
+    def findMedian(self):
+        pass",
+      harness: "try:
+    (MedianFinder)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+def __medians__(values):
+    finder = MedianFinder()
+    out = []
+    for value in values:
+        finder.addNum(value)
+        out.append(finder.findMedian())
+    return out
+
+__case__(\"medians of 1, 2, 3\", [1.0, 1.5, 2.0], __medians__([1, 2, 3]))
+__case__(\"medians of 1, 2, 3, 4, 5\", [1.0, 1.5, 2.0, 2.5, 3.0], __medians__([1, 2, 3, 4, 5]))
+__case__(\"medians arriving out of order\", [5.0, 3.0, 2.0, 2.5], __medians__([5, 1, 2, 3]))
+__case__(\"medians of negatives\", [-1.0, -1.5], __medians__([-1, -2]))
+__case__(\"median before anything is added\", 0.0, MedianFinder().findMedian())",
+    ),
+  )
+}
+
 pub fn tip01_counter() -> Embedded {
   Embedded(
     solutions: [
@@ -4902,6 +5390,13 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc73_word_break" -> Ok(nc73_word_break())
     "nc74_longest_increasing_subsequence" -> Ok(nc74_longest_increasing_subsequence())
     "nc75_partition_equal_subset" -> Ok(nc75_partition_equal_subset())
+    "nc76_kth_largest_stream" -> Ok(nc76_kth_largest_stream())
+    "nc77_last_stone_weight" -> Ok(nc77_last_stone_weight())
+    "nc78_k_closest_points" -> Ok(nc78_k_closest_points())
+    "nc79_kth_largest_array" -> Ok(nc79_kth_largest_array())
+    "nc80_task_scheduler" -> Ok(nc80_task_scheduler())
+    "nc81_design_twitter" -> Ok(nc81_design_twitter())
+    "nc82_find_median_stream" -> Ok(nc82_find_median_stream())
     "tip01_counter" -> Ok(tip01_counter())
     "tip02_defaultdict" -> Ok(tip02_defaultdict())
     "tip03_deque" -> Ok(tip03_deque())

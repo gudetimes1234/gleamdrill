@@ -156,6 +156,20 @@ variants = [
   {"nc74_longest_increasing_subsequence", "Solution 2 · Patience", "nc74_longest_increasing_subsequence__patience"},
   {"nc75_partition_equal_subset", "Solution 1", "nc75_partition_equal_subset"},
   {"nc75_partition_equal_subset", "Solution 2 · Memoised", "nc75_partition_equal_subset__memoised"},
+  {"nc76_kth_largest_stream", "Solution 1", "nc76_kth_largest_stream"},
+  {"nc76_kth_largest_stream", "Solution 2 · Keep everything", "nc76_kth_largest_stream__keep_everything"},
+  {"nc77_last_stone_weight", "Solution 1", "nc77_last_stone_weight"},
+  {"nc77_last_stone_weight", "Solution 2 · Find max each round", "nc77_last_stone_weight__find_max_each_round"},
+  {"nc78_k_closest_points", "Solution 1", "nc78_k_closest_points"},
+  {"nc78_k_closest_points", "Solution 2 · Select k times", "nc78_k_closest_points__select_k_times"},
+  {"nc79_kth_largest_array", "Solution 1", "nc79_kth_largest_array"},
+  {"nc79_kth_largest_array", "Solution 2 · Quickselect", "nc79_kth_largest_array__quickselect"},
+  {"nc80_task_scheduler", "Solution 1", "nc80_task_scheduler"},
+  {"nc80_task_scheduler", "Solution 2 · Simulate", "nc80_task_scheduler__simulate"},
+  {"nc81_design_twitter", "Solution 1", "nc81_design_twitter"},
+  {"nc81_design_twitter", "Solution 2 · Merge per user", "nc81_design_twitter__merge_per_user"},
+  {"nc82_find_median_stream", "Solution 1", "nc82_find_median_stream"},
+  {"nc82_find_median_stream", "Solution 2 · Sorted list", "nc82_find_median_stream__sorted_list"},
 ]
 
 root = Path.dirname(__ENV__.file)

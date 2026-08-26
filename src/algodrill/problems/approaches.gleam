@@ -106,6 +106,28 @@ pub fn for_title(title: String) -> String {
     "Search in Rotated Sorted Array" ->
       "Binary search with a twist: after the rotation, one half around the midpoint is always sorted. Check which half is sorted, then use its endpoints to decide whether the target lies inside it \u{2014} recurse into that half or the other."
 
+    // Heap / Priority Queue
+    "Kth Largest Element in a Stream" ->
+      "Only the k largest values can ever be the answer, so everything else is discarded on arrival and the store never grows past k \u{2014} which is exactly a bounded min-heap: its smallest element is the answer, and anything smaller never gets in. Note there is no answer at all until k values have arrived."
+
+    "Last Stone Weight" ->
+      "The collection has to give up its maximum over and over, which is the whole reason this problem exists: it is a heap in a costume. Keeping the stones sorted is the same idea at a worse constant, and scanning for the largest each round is worse still \u{2014} but all three make the same point about what operation is actually being asked for."
+
+    "K Closest Points to Origin" ->
+      "Sort by *squared* distance rather than distance: the square root is monotonic, so it cannot change the order, and dropping it keeps everything in integers with nothing to round. A bounded heap of size k beats the sort when k is small, which is the same trade as everywhere else in this category."
+
+    "Kth Largest Element in an Array" ->
+      "Sorting answers every k at once and is the version nobody gets wrong. Quickselect does better by partitioning around a pivot and recursing only into the side that must hold the answer \u{2014} expected O(n) because the work halves rather than being done twice, though the worst case is still quadratic."
+
+    "Task Scheduler" ->
+      "Lay the most frequent task out first with gaps of n between its copies. That skeleton is (busiest \u{2212} 1) frames of n+1 slots plus a final row of every task tied for busiest \u{2014} and everything else either drops into an idle slot or has already pushed the total past the skeleton, in which case nothing idles at all and the answer is just the number of tasks."
+
+    "Design Twitter" ->
+      "A counter standing in for time is the design: it orders tweets across every user with no real timestamps. Storing one global timeline makes the feed a filter, which is simple and walks every tweet ever posted; storing tweets per author makes it a k-way merge over the people followed, which a heap resolves in the ten steps the answer actually needs."
+
+    "Find Median from Data Stream" ->
+      "Split the values into a smaller half and a larger half and the median sits at the two inner ends. Each half only ever surrenders its extreme value \u{2014} a max-heap below, a min-heap above \u{2014} and the entire difficulty is the rebalancing rule: sizes within one of each other, and nothing below larger than anything above."
+
     // 1-D Dynamic Programming
     "Climbing Stairs" ->
       "The last move was either one step or two, so the ways to reach step n are the ways to reach n\u{2212}1 plus the ways to reach n\u{2212}2 \u{2014} Fibonacci with a staircase painted on it. Only the last two values matter, so two variables replace the table. The top-down version with a cache is the same recurrence and worth writing once: the memo is the whole difference between O(n) and O(2\u{207f})."

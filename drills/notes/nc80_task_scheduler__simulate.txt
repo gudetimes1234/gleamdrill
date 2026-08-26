@@ -1,0 +1,1 @@
+Run the schedule instead of computing it: each round runs the n+1 most frequent tasks still outstanding, which is the greedy choice and needs the collection to give up its largest values over and over. The trap is the finished tasks — a task at zero is not an idle slot, and counting it as one inflates the answer.

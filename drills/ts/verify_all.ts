@@ -153,6 +153,20 @@ import * as v148 from "./.verify/nc74_longest_increasing_subsequence/harness";
 import * as v149 from "./.verify/nc74_longest_increasing_subsequence__patience/harness";
 import * as v150 from "./.verify/nc75_partition_equal_subset/harness";
 import * as v151 from "./.verify/nc75_partition_equal_subset__memoised/harness";
+import * as v152 from "./.verify/nc76_kth_largest_stream/harness";
+import * as v153 from "./.verify/nc76_kth_largest_stream__keep_everything/harness";
+import * as v154 from "./.verify/nc77_last_stone_weight/harness";
+import * as v155 from "./.verify/nc77_last_stone_weight__find_max_each_round/harness";
+import * as v156 from "./.verify/nc78_k_closest_points/harness";
+import * as v157 from "./.verify/nc78_k_closest_points__select_k_times/harness";
+import * as v158 from "./.verify/nc79_kth_largest_array/harness";
+import * as v159 from "./.verify/nc79_kth_largest_array__quickselect/harness";
+import * as v160 from "./.verify/nc80_task_scheduler/harness";
+import * as v161 from "./.verify/nc80_task_scheduler__simulate/harness";
+import * as v162 from "./.verify/nc81_design_twitter/harness";
+import * as v163 from "./.verify/nc81_design_twitter__merge_per_user/harness";
+import * as v164 from "./.verify/nc82_find_median_stream/harness";
+import * as v165 from "./.verify/nc82_find_median_stream__sorted_list/harness";
 
 type Case = [string, string, string];
 
@@ -309,6 +323,20 @@ const VARIANTS: [string, string, () => Case[]][] = [
   ["nc74_longest_increasing_subsequence", "Solution 2 · Patience", v149.run],
   ["nc75_partition_equal_subset", "Solution 1", v150.run],
   ["nc75_partition_equal_subset", "Solution 2 · Memoised", v151.run],
+  ["nc76_kth_largest_stream", "Solution 1", v152.run],
+  ["nc76_kth_largest_stream", "Solution 2 · Keep everything", v153.run],
+  ["nc77_last_stone_weight", "Solution 1", v154.run],
+  ["nc77_last_stone_weight", "Solution 2 · Find max each round", v155.run],
+  ["nc78_k_closest_points", "Solution 1", v156.run],
+  ["nc78_k_closest_points", "Solution 2 · Select k times", v157.run],
+  ["nc79_kth_largest_array", "Solution 1", v158.run],
+  ["nc79_kth_largest_array", "Solution 2 · Quickselect", v159.run],
+  ["nc80_task_scheduler", "Solution 1", v160.run],
+  ["nc80_task_scheduler", "Solution 2 · Simulate", v161.run],
+  ["nc81_design_twitter", "Solution 1", v162.run],
+  ["nc81_design_twitter", "Solution 2 · Merge per user", v163.run],
+  ["nc82_find_median_stream", "Solution 1", v164.run],
+  ["nc82_find_median_stream", "Solution 2 · Sorted list", v165.run],
 ];
 
 const failures: string[] = [];

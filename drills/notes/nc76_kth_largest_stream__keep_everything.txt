@@ -1,0 +1,2 @@
+@shared/brute-force-baseline
+Keep the whole stream and sort on demand. Wrong for a real stream — memory grows without bound and every query costs a sort — but it is the definition, and it is what the bounded version has to be checked against.

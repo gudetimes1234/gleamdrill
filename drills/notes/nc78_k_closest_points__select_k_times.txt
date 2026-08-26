@@ -1,0 +1,1 @@
+Pull the nearest point out k times rather than ordering everything. O(n·k) against a full sort's O(n log n), so it wins exactly when k is small — the same argument that makes a bounded heap of size k the textbook answer here.

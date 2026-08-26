@@ -1,0 +1,1 @@
+Only the k largest values can ever be the answer, so everything else is discarded on arrival and the store never grows past k. That is exactly the shape a bounded min-heap gives you: the smallest thing in it is the answer, and anything smaller than that never gets in. The other thing to get right is that there is no answer at all until k values have arrived.

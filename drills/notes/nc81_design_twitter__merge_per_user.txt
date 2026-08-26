@@ -1,0 +1,1 @@
+Store tweets per author and the feed becomes a k-way merge over the timelines being followed — and since only the ten newest are wanted, a heap over the heads of those k lists produces them without touching the rest. This is the version that survives a follow-up about scale.

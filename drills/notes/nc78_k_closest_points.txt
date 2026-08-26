@@ -1,0 +1,1 @@
+Sort by *squared* distance, not distance: the square root is monotonic so it cannot change the order, and skipping it keeps everything in integers with no rounding to argue about. Recognising that a monotonic transform can be dropped is worth more than the sort itself.

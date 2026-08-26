@@ -8253,6 +8253,1037 @@ pub fn run() -> List(#(String, String, String)) {
   )
 }
 
+pub fn nc76_kth_largest_stream() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Only the k largest values can ever be the answer, so everything else is discarded on arrival and the store never grows past k. That is exactly the shape a bounded min-heap gives you: the smallest thing in it is the answer, and anything smaller than that never gets in. The other thing to get right is that there is no answer at all until k values have arrived.", "import gleam/int
+import gleam/list
+
+pub type KthLargest {
+  KthLargest(k: Int, largest: List(Int))
+}
+
+pub fn new(k: Int, nums: List(Int)) -> KthLargest {
+  KthLargest(k, keep_top(nums, k))
+}
+
+/// Only the k largest values can ever be the answer, so everything else is
+/// thrown away on arrival. With a min-heap the discard is O(log k); Gleam's
+/// standard library has no heap, so this keeps a sorted list instead \\u{2014} same
+/// idea, worse constant.
+pub fn add(state: KthLargest, value: Int) -> KthLargest {
+  KthLargest(state.k, keep_top([value, ..state.largest], state.k))
+}
+
+/// The smallest of the k kept values is the kth largest \\u{2014} but only once k of
+/// them exist, which is why the count is checked rather than assumed.
+pub fn kth(state: KthLargest) -> Result(Int, Nil) {
+  case list.length(state.largest) < state.k {
+    True -> Error(Nil)
+    False -> list.first(state.largest)
+  }
+}
+
+fn keep_top(values: List(Int), k: Int) -> List(Int) {
+  values
+  |> list.sort(fn(a, b) { int.compare(b, a) })
+  |> list.take(k)
+  |> list.sort(int.compare)
+}"),
+      #("Solution 2 · Keep everything", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Keep the whole stream and sort on demand. Wrong for a real stream — memory grows without bound and every query costs a sort — but it is the definition, and it is what the bounded version has to be checked against.", "import gleam/int
+import gleam/list
+
+pub type KthLargest {
+  KthLargest(k: Int, seen: List(Int))
+}
+
+pub fn new(k: Int, nums: List(Int)) -> KthLargest {
+  KthLargest(k, nums)
+}
+
+/// Keep the whole stream and sort on demand. Wrong for a real stream \\u{2014} memory
+/// grows without bound and every query costs a sort \\u{2014} but it is the definition,
+/// and it is what the bounded structure has to be checked against.
+pub fn add(state: KthLargest, value: Int) -> KthLargest {
+  KthLargest(state.k, [value, ..state.seen])
+}
+
+pub fn kth(state: KthLargest) -> Result(Int, Nil) {
+  state.seen
+  |> list.sort(fn(a, b) { int.compare(b, a) })
+  |> list.drop(state.k - 1)
+  |> list.first
+}"),
+    ],
+    check: Check(
+      signature: "pub type KthLargest {
+  KthLargest(k: Int, largest: List(Int))
+}
+
+pub fn new(k: Int, nums: List(Int)) -> KthLargest
+
+pub fn add(state: KthLargest, value: Int) -> KthLargest
+
+pub fn kth(state: KthLargest) -> Result(Int, Nil)",
+      starter: "pub type KthLargest {
+  KthLargest(k: Int, largest: List(Int))
+}
+
+pub fn new(k: Int, nums: List(Int)) -> KthLargest {
+  todo
+}
+
+pub fn add(state: KthLargest, value: Int) -> KthLargest {
+  todo
+}
+
+pub fn kth(state: KthLargest) -> Result(Int, Nil) {
+  todo
+}",
+      harness: "import gleam/list
+import gleam/string
+import solution
+
+/// Feeds a stream in and reports the kth largest after each value, which is
+/// what the original interface returns from add.
+fn stream(
+  k: Int,
+  initial: List(Int),
+  added: List(Int),
+) -> List(Result(Int, Nil)) {
+  let #(_, answers) =
+    list.fold(added, #(solution.new(k, initial), []), fn(state, value) {
+      let #(store, answers) = state
+      let store = solution.add(store, value)
+      #(store, [solution.kth(store), ..answers])
+    })
+  list.reverse(answers)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"k = 3 over [4, 5, 8, 2] then 3, 5, 10, 9, 4\",
+      string.inspect([Ok(4), Ok(5), Ok(5), Ok(8), Ok(8)]),
+      string.inspect(stream(3, [4, 5, 8, 2], [3, 5, 10, 9, 4])),
+    ),
+    #(
+      \"k = 1 over [] then 1, 2, 0\",
+      string.inspect([Ok(1), Ok(2), Ok(2)]),
+      string.inspect(stream(1, [], [1, 2, 0])),
+    ),
+    #(
+      \"k = 2 over [] then 5, 5\",
+      string.inspect([Error(Nil), Ok(5)]),
+      string.inspect(stream(2, [], [5, 5])),
+    ),
+    #(
+      \"kth before anything is added\",
+      string.inspect(Error(Nil)),
+      string.inspect(solution.kth(solution.new(2, []))),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc77_last_stone_weight() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Always the two heaviest, so the collection has to give up its maximum over and over — which is exactly what a heap is for, and why this problem exists. Keeping the stones sorted is the same idea at a worse constant; the operation being asked for is what matters.", "import gleam/int
+import gleam/list
+
+pub fn last_stone_weight(stones: List(Int)) -> Int {
+  smash(list.sort(stones, fn(a, b) { int.compare(b, a) }))
+}
+
+/// Always the two heaviest, so the collection has to give up its maximum over
+/// and over \\u{2014} which is what a heap is for. Kept sorted descending here, so the
+/// two heaviest are the first two and the remainder goes back in order.
+fn smash(descending: List(Int)) -> Int {
+  case descending {
+    [] -> 0
+    [only] -> only
+    [heaviest, next, ..rest] ->
+      case heaviest - next {
+        0 -> smash(rest)
+        remainder ->
+          smash(list.sort([remainder, ..rest], fn(a, b) { int.compare(b, a) }))
+      }
+  }
+}"),
+      #("Solution 2 · Find max each round", "No ordering kept at all: scan for the heaviest, remove it, scan again. O(n) per round rather than O(log n), and worth writing precisely because it makes the interface obvious — the only thing the problem ever asks of the collection is \"give me the largest\".", "import gleam/int
+import gleam/list
+
+pub fn last_stone_weight(stones: List(Int)) -> Int {
+  smash(stones)
+}
+
+/// No ordering kept at all: scan for the heaviest, remove it, scan again. O(n)
+/// per round against the sorted version's O(n log n) once \\u{2014} worse overall, but
+/// it makes clear that the only operation the problem needs is \"give me the
+/// largest\", which is exactly the interface a heap provides.
+fn smash(stones: List(Int)) -> Int {
+  case take_max(stones) {
+    Error(Nil) -> 0
+    Ok(#(heaviest, rest)) ->
+      case take_max(rest) {
+        Error(Nil) -> heaviest
+        Ok(#(next, remaining)) ->
+          case heaviest - next {
+            0 -> smash(remaining)
+            remainder -> smash([remainder, ..remaining])
+          }
+      }
+  }
+}
+
+fn take_max(stones: List(Int)) -> Result(#(Int, List(Int)), Nil) {
+  case list.reduce(stones, int.max) {
+    Error(Nil) -> Error(Nil)
+    Ok(heaviest) -> Ok(#(heaviest, remove_first(stones, heaviest, [])))
+  }
+}
+
+fn remove_first(stones: List(Int), wanted: Int, seen: List(Int)) -> List(Int) {
+  case stones {
+    [] -> list.reverse(seen)
+    [first, ..rest] ->
+      case first == wanted {
+        True -> list.append(list.reverse(seen), rest)
+        False -> remove_first(rest, wanted, [first, ..seen])
+      }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn last_stone_weight(stones: List(Int)) -> Int",
+      starter: "pub fn last_stone_weight(stones: List(Int)) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"last_stone_weight([2, 7, 4, 1, 8, 1])\",
+      string.inspect(1),
+      string.inspect(solution.last_stone_weight([2, 7, 4, 1, 8, 1])),
+    ),
+    #(
+      \"last_stone_weight([1])\",
+      string.inspect(1),
+      string.inspect(solution.last_stone_weight([1])),
+    ),
+    #(
+      \"last_stone_weight([])\",
+      string.inspect(0),
+      string.inspect(solution.last_stone_weight([])),
+    ),
+    #(
+      \"last_stone_weight([2, 2])\",
+      string.inspect(0),
+      string.inspect(solution.last_stone_weight([2, 2])),
+    ),
+    #(
+      \"last_stone_weight([3, 7, 2])\",
+      string.inspect(2),
+      string.inspect(solution.last_stone_weight([3, 7, 2])),
+    ),
+    #(
+      \"last_stone_weight([10, 4, 2, 10])\",
+      string.inspect(2),
+      string.inspect(solution.last_stone_weight([10, 4, 2, 10])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc78_k_closest_points() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Sort by *squared* distance, not distance: the square root is monotonic so it cannot change the order, and skipping it keeps everything in integers with no rounding to argue about. Recognising that a monotonic transform can be dropped is worth more than the sort itself.", "import gleam/int
+import gleam/list
+
+pub fn k_closest(points: List(#(Int, Int)), k: Int) -> List(#(Int, Int)) {
+  // Sorting by *squared* distance rather than distance: the square root is
+  // monotonic, so it cannot change the order, and skipping it keeps everything
+  // in integers with no rounding to argue about.
+  points
+  |> list.sort(fn(a, b) { int.compare(squared(a), squared(b)) })
+  |> list.take(k)
+}
+
+fn squared(point: #(Int, Int)) -> Int {
+  point.0 * point.0 + point.1 * point.1
+}"),
+      #("Solution 2 · Select k times", "Pull the nearest point out k times rather than ordering everything. O(n·k) against a full sort's O(n log n), so it wins exactly when k is small — the same argument that makes a bounded heap of size k the textbook answer here.", "import gleam/list
+
+pub fn k_closest(points: List(#(Int, Int)), k: Int) -> List(#(Int, Int)) {
+  take(points, k, [])
+}
+
+/// Pull the nearest point out k times rather than ordering everything. O(n\\u{b7}k)
+/// against a full sort's O(n log n), so it wins exactly when k is small \\u{2014} which
+/// is the same reason a bounded heap beats a sort on this problem.
+fn take(
+  points: List(#(Int, Int)),
+  remaining: Int,
+  taken: List(#(Int, Int)),
+) -> List(#(Int, Int)) {
+  case remaining <= 0, points {
+    True, _ -> list.reverse(taken)
+    _, [] -> list.reverse(taken)
+    _, [first, ..] -> {
+      let nearest =
+        list.fold(points, first, fn(best, point) {
+          case squared(point) < squared(best) {
+            True -> point
+            False -> best
+          }
+        })
+      take(remove_first(points, nearest, []), remaining - 1, [nearest, ..taken])
+    }
+  }
+}
+
+fn squared(point: #(Int, Int)) -> Int {
+  point.0 * point.0 + point.1 * point.1
+}
+
+fn remove_first(
+  points: List(#(Int, Int)),
+  wanted: #(Int, Int),
+  seen: List(#(Int, Int)),
+) -> List(#(Int, Int)) {
+  case points {
+    [] -> list.reverse(seen)
+    [first, ..rest] ->
+      case first == wanted {
+        True -> list.append(list.reverse(seen), rest)
+        False -> remove_first(rest, wanted, [first, ..seen])
+      }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn k_closest(points: List(#(Int, Int)), k: Int) -> List(#(Int, Int))",
+      starter: "pub fn k_closest(points: List(#(Int, Int)), k: Int) -> List(#(Int, Int)) {
+  todo
+}",
+      harness: "import gleam/int
+import gleam/list
+import gleam/order
+import gleam/string
+import solution
+
+/// Any order is acceptable, so every case compares sorted.
+fn sorted(points: List(#(Int, Int)), k: Int) -> List(#(Int, Int)) {
+  solution.k_closest(points, k)
+  |> list.sort(fn(a: #(Int, Int), b: #(Int, Int)) {
+    case int.compare(a.0, b.0) {
+      order.Eq -> int.compare(a.1, b.1)
+      other -> other
+    }
+  })
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"k_closest([#(1, 3), #(-2, 2)], 1)\",
+      string.inspect([#(-2, 2)]),
+      string.inspect(sorted([#(1, 3), #(-2, 2)], 1)),
+    ),
+    #(
+      \"k_closest([#(3, 3), #(5, -1), #(-2, 4)], 2)\",
+      string.inspect([#(-2, 4), #(3, 3)]),
+      string.inspect(sorted([#(3, 3), #(5, -1), #(-2, 4)], 2)),
+    ),
+    #(\"k_closest([], 0)\", string.inspect([]), string.inspect(sorted([], 0))),
+    #(
+      \"k_closest([#(0, 0)], 1)\",
+      string.inspect([#(0, 0)]),
+      string.inspect(sorted([#(0, 0)], 1)),
+    ),
+    #(
+      \"k_closest([#(1, 1), #(2, 2), #(3, 3)], 2)\",
+      string.inspect([#(1, 1), #(2, 2)]),
+      string.inspect(sorted([#(1, 1), #(2, 2), #(3, 3)], 2)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc79_kth_largest_array() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Sorting answers every k at once, which is more than was asked but is the version nobody gets wrong. O(n log n), and usually the right thing to write first before offering anything cleverer.", "import gleam/int
+import gleam/list
+
+pub fn find_kth_largest(nums: List(Int), k: Int) -> Result(Int, Nil) {
+  // Sorting answers every k at once, which is more than asked for but is the
+  // version nobody gets wrong. O(n log n).
+  nums
+  |> list.sort(fn(a, b) { int.compare(b, a) })
+  |> list.drop(k - 1)
+  |> list.first
+}"),
+      #("Solution 2 · Quickselect", "Partition around a pivot, then recurse only into the side that must contain the answer. Expected O(n), because the work halves each time instead of being done on both halves — the same saving binary search makes over a scan. Worst case is still O(n²) on adversarial pivots, which is worth saying out loud.", "import gleam/list
+
+pub fn find_kth_largest(nums: List(Int), k: Int) -> Result(Int, Nil) {
+  case k < 1 || k > list.length(nums) {
+    True -> Error(Nil)
+    False -> Ok(select(nums, k))
+  }
+}
+
+/// Quickselect: partition around a pivot, then recurse into the side that must
+/// contain the answer rather than sorting both. Expected O(n), because the work
+/// halves each time instead of being repeated \\u{2014} the same saving binary search
+/// makes over a scan.
+fn select(nums: List(Int), k: Int) -> Int {
+  case nums {
+    [] -> 0
+    [pivot, ..rest] -> {
+      let bigger = list.filter(rest, fn(n) { n > pivot })
+      let equal = list.filter(rest, fn(n) { n == pivot })
+      let smaller = list.filter(rest, fn(n) { n < pivot })
+      let above = list.length(bigger)
+
+      case k <= above, k <= above + 1 + list.length(equal) {
+        True, _ -> select(bigger, k)
+        False, True -> pivot
+        False, False -> select(smaller, k - above - 1 - list.length(equal))
+      }
+    }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn find_kth_largest(nums: List(Int), k: Int) -> Result(Int, Nil)",
+      starter: "pub fn find_kth_largest(nums: List(Int), k: Int) -> Result(Int, Nil) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"find_kth_largest([3, 2, 1, 5, 6, 4], 2)\",
+      string.inspect(Ok(5)),
+      string.inspect(solution.find_kth_largest([3, 2, 1, 5, 6, 4], 2)),
+    ),
+    #(
+      \"find_kth_largest([3, 2, 3, 1, 2, 4, 5, 5, 6], 4)\",
+      string.inspect(Ok(4)),
+      string.inspect(solution.find_kth_largest([3, 2, 3, 1, 2, 4, 5, 5, 6], 4)),
+    ),
+    #(
+      \"find_kth_largest([1], 1)\",
+      string.inspect(Ok(1)),
+      string.inspect(solution.find_kth_largest([1], 1)),
+    ),
+    #(
+      \"find_kth_largest([2, 1], 2)\",
+      string.inspect(Ok(1)),
+      string.inspect(solution.find_kth_largest([2, 1], 2)),
+    ),
+    #(
+      \"find_kth_largest([7, 6, 5, 4, 3, 2, 1], 3)\",
+      string.inspect(Ok(5)),
+      string.inspect(solution.find_kth_largest([7, 6, 5, 4, 3, 2, 1], 3)),
+    ),
+    #(
+      \"find_kth_largest([], 1)\",
+      string.inspect(Error(Nil)),
+      string.inspect(solution.find_kth_largest([], 1)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc80_task_scheduler() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Lay the most frequent task out first with gaps of n between its copies. That skeleton is (busiest − 1) frames of n+1 slots plus a final row of every task tied for busiest — and everything else either drops into an idle slot or has already pushed the total past the skeleton, in which case nothing idles and the answer is simply the number of tasks. Hence the max of the two.", "import gleam/dict
+import gleam/int
+import gleam/list
+
+pub fn least_interval(tasks: List(String), n: Int) -> Int {
+  case tasks {
+    [] -> 0
+    _ -> {
+      let counts =
+        list.fold(tasks, dict.new(), fn(acc, task) {
+          dict.insert(acc, task, tally(acc, task) + 1)
+        })
+      let frequencies = dict.values(counts)
+      let busiest = list.fold(frequencies, 0, int.max)
+      let ties = list.count(frequencies, fn(count) { count == busiest })
+
+      // Lay the most frequent task out first with gaps of n between its copies.
+      // That skeleton is (busiest - 1) full frames of n + 1 slots, plus the
+      // final row of every task tied for busiest. Everything else either fits
+      // into an idle slot or, if there is not room, has already pushed the
+      // total past the skeleton \\u{2014} in which case no idling happens at all and
+      // the answer is simply the number of tasks.
+      int.max(list.length(tasks), { busiest - 1 } * { n + 1 } + ties)
+    }
+  }
+}
+
+fn tally(counts: dict.Dict(String, Int), key: String) -> Int {
+  case dict.get(counts, key) {
+    Ok(n) -> n
+    Error(Nil) -> 0
+  }
+}"),
+      #("Solution 2 · Simulate", "Run the schedule instead of computing it: each round runs the n+1 most frequent tasks still outstanding, which is the greedy choice and needs the collection to give up its largest values over and over. The trap is the finished tasks — a task at zero is not an idle slot, and counting it as one inflates the answer.", "import gleam/dict
+import gleam/int
+import gleam/list
+
+pub fn least_interval(tasks: List(String), n: Int) -> Int {
+  let counts =
+    list.fold(tasks, dict.new(), fn(acc, task) {
+      dict.insert(acc, task, tally(acc, task) + 1)
+    })
+
+  run_rounds(dict.values(counts), n, 0)
+}
+
+/// Run the schedule instead of computing it. Each round runs the n + 1 most
+/// frequent tasks still outstanding \\u{2014} which is the greedy choice, and needs
+/// the collection to hand back its largest values over and over, exactly the
+/// heap's job. The last round costs only as many ticks as it actually uses.
+fn run_rounds(remaining: List(Int), n: Int, elapsed: Int) -> Int {
+  let outstanding = list.filter(remaining, fn(count) { count > 0 })
+  case outstanding {
+    [] -> elapsed
+    _ -> {
+      let ordered = list.sort(outstanding, fn(a, b) { int.compare(b, a) })
+      let running = list.take(ordered, n + 1)
+      let idle = list.drop(ordered, n + 1)
+      let next = list.append(list.map(running, fn(count) { count - 1 }), idle)
+
+      case list.any(next, fn(count) { count > 0 }) {
+        True -> run_rounds(next, n, elapsed + n + 1)
+        False -> elapsed + list.length(running)
+      }
+    }
+  }
+}
+
+fn tally(counts: dict.Dict(String, Int), key: String) -> Int {
+  case dict.get(counts, key) {
+    Ok(n) -> n
+    Error(Nil) -> 0
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn least_interval(tasks: List(String), n: Int) -> Int",
+      starter: "pub fn least_interval(tasks: List(String), n: Int) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"least_interval([A, A, A, B, B, B], 2)\",
+      string.inspect(8),
+      string.inspect(solution.least_interval([\"A\", \"A\", \"A\", \"B\", \"B\", \"B\"], 2)),
+    ),
+    #(
+      \"least_interval([A, A, A, B, B, B], 0)\",
+      string.inspect(6),
+      string.inspect(solution.least_interval([\"A\", \"A\", \"A\", \"B\", \"B\", \"B\"], 0)),
+    ),
+    #(
+      \"least_interval([A, A, A, B, B, B], 3)\",
+      string.inspect(10),
+      string.inspect(solution.least_interval([\"A\", \"A\", \"A\", \"B\", \"B\", \"B\"], 3)),
+    ),
+    #(
+      \"least_interval([], 2)\",
+      string.inspect(0),
+      string.inspect(solution.least_interval([], 2)),
+    ),
+    #(
+      \"least_interval([A], 5)\",
+      string.inspect(1),
+      string.inspect(solution.least_interval([\"A\"], 5)),
+    ),
+    #(
+      \"least_interval(four As and six singles, 2)\",
+      string.inspect(10),
+      string.inspect(solution.least_interval(
+        [\"A\", \"A\", \"A\", \"A\", \"B\", \"C\", \"D\", \"E\", \"F\", \"G\"],
+        2,
+      )),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc81_design_twitter() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A counter standing in for time is the whole design: it orders tweets across every user without any real timestamps. Then the feed is a filter over one global timeline — simple, correct, and the wrong shape at scale, since it walks every tweet ever posted to produce ten.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/set.{type Set}
+
+pub type Twitter {
+  /// `clock` only ever increases, so it orders tweets across every user without
+  /// any real timestamps being involved.
+  Twitter(
+    clock: Int,
+    tweets: List(#(Int, Int, Int)),
+    following: Dict(Int, Set(Int)),
+  )
+}
+
+pub fn new() -> Twitter {
+  Twitter(0, [], dict.new())
+}
+
+pub fn post_tweet(twitter: Twitter, user: Int, tweet: Int) -> Twitter {
+  Twitter(
+    twitter.clock + 1,
+    [#(twitter.clock, user, tweet), ..twitter.tweets],
+    twitter.following,
+  )
+}
+
+pub fn follow(twitter: Twitter, follower: Int, followee: Int) -> Twitter {
+  Twitter(
+    twitter.clock,
+    twitter.tweets,
+    dict.insert(
+      twitter.following,
+      follower,
+      set.insert(followees(twitter, follower), followee),
+    ),
+  )
+}
+
+pub fn unfollow(twitter: Twitter, follower: Int, followee: Int) -> Twitter {
+  Twitter(
+    twitter.clock,
+    twitter.tweets,
+    dict.insert(
+      twitter.following,
+      follower,
+      set.delete(followees(twitter, follower), followee),
+    ),
+  )
+}
+
+/// Every tweet is already newest-first, so the feed is a filter and a take.
+/// Simple, and the wrong shape at scale \\u{2014} it walks the whole global timeline
+/// for one user's ten tweets.
+pub fn news_feed(twitter: Twitter, user: Int) -> List(Int) {
+  let visible = set.insert(followees(twitter, user), user)
+
+  twitter.tweets
+  |> list.filter(fn(entry) { set.contains(visible, entry.1) })
+  |> list.take(10)
+  |> list.map(fn(entry) { entry.2 })
+}
+
+fn followees(twitter: Twitter, user: Int) -> Set(Int) {
+  result.unwrap(dict.get(twitter.following, user), set.new())
+}"),
+      #("Solution 2 · Merge per user", "Store tweets per author and the feed becomes a k-way merge over the timelines being followed — and since only the ten newest are wanted, a heap over the heads of those k lists produces them without touching the rest. This is the version that survives a follow-up about scale.", "import gleam/dict.{type Dict}
+import gleam/int
+import gleam/list
+import gleam/result
+import gleam/set.{type Set}
+
+pub type Twitter {
+  Twitter(
+    clock: Int,
+    tweets: Dict(Int, List(#(Int, Int))),
+    following: Dict(Int, Set(Int)),
+  )
+}
+
+pub fn new() -> Twitter {
+  Twitter(0, dict.new(), dict.new())
+}
+
+/// Tweets stored per author rather than in one global list, newest first.
+pub fn post_tweet(twitter: Twitter, user: Int, tweet: Int) -> Twitter {
+  Twitter(
+    twitter.clock + 1,
+    dict.insert(twitter.tweets, user, [
+      #(twitter.clock, tweet),
+      ..timeline(twitter, user)
+    ]),
+    twitter.following,
+  )
+}
+
+pub fn follow(twitter: Twitter, follower: Int, followee: Int) -> Twitter {
+  Twitter(
+    twitter.clock,
+    twitter.tweets,
+    dict.insert(
+      twitter.following,
+      follower,
+      set.insert(followees(twitter, follower), followee),
+    ),
+  )
+}
+
+pub fn unfollow(twitter: Twitter, follower: Int, followee: Int) -> Twitter {
+  Twitter(
+    twitter.clock,
+    twitter.tweets,
+    dict.insert(
+      twitter.following,
+      follower,
+      set.delete(followees(twitter, follower), followee),
+    ),
+  )
+}
+
+/// A k-way merge over the timelines of the people being followed, which only
+/// ever needs the ten newest \\u{2014} so at scale a heap over the heads of the k
+/// lists does it in O(10 log k) rather than touching every tweet. The merge is
+/// written as a sort here, but the shape is the point.
+pub fn news_feed(twitter: Twitter, user: Int) -> List(Int) {
+  set.insert(followees(twitter, user), user)
+  |> set.to_list
+  |> list.flat_map(fn(author) { list.take(timeline(twitter, author), 10) })
+  |> list.sort(fn(a: #(Int, Int), b: #(Int, Int)) { int.compare(b.0, a.0) })
+  |> list.take(10)
+  |> list.map(fn(entry) { entry.1 })
+}
+
+fn timeline(twitter: Twitter, user: Int) -> List(#(Int, Int)) {
+  result.unwrap(dict.get(twitter.tweets, user), [])
+}
+
+fn followees(twitter: Twitter, user: Int) -> Set(Int) {
+  result.unwrap(dict.get(twitter.following, user), set.new())
+}"),
+    ],
+    check: Check(
+      signature: "pub type Twitter {
+  /// `clock` only ever increases, so it orders tweets across every user without
+  /// any real timestamps being involved.
+  Twitter(
+    clock: Int,
+    tweets: List(#(Int, Int, Int)),
+    following: Dict(Int, Set(Int)),
+  )
+}
+
+pub fn new() -> Twitter
+
+pub fn post_tweet(twitter: Twitter, user: Int, tweet: Int) -> Twitter
+
+pub fn follow(twitter: Twitter, follower: Int, followee: Int) -> Twitter
+
+pub fn unfollow(twitter: Twitter, follower: Int, followee: Int) -> Twitter
+
+pub fn news_feed(twitter: Twitter, user: Int) -> List(Int)",
+      starter: "pub type Twitter {
+  /// `clock` only ever increases, so it orders tweets across every user without
+  /// any real timestamps being involved.
+  Twitter(
+    clock: Int,
+    tweets: List(#(Int, Int, Int)),
+    following: Dict(Int, Set(Int)),
+  )
+}
+
+pub fn new() -> Twitter {
+  todo
+}
+
+pub fn post_tweet(twitter: Twitter, user: Int, tweet: Int) -> Twitter {
+  todo
+}
+
+pub fn follow(twitter: Twitter, follower: Int, followee: Int) -> Twitter {
+  todo
+}
+
+pub fn unfollow(twitter: Twitter, follower: Int, followee: Int) -> Twitter {
+  todo
+}
+
+pub fn news_feed(twitter: Twitter, user: Int) -> List(Int) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  let base =
+    solution.new()
+    |> solution.post_tweet(1, 5)
+
+  let followed =
+    base
+    |> solution.follow(1, 2)
+    |> solution.post_tweet(2, 6)
+
+  let unfollowed = solution.unfollow(followed, 1, 2)
+
+  let eleven =
+    solution.new()
+    |> solution.post_tweet(1, 1)
+    |> solution.post_tweet(1, 2)
+    |> solution.post_tweet(1, 3)
+    |> solution.post_tweet(1, 4)
+    |> solution.post_tweet(1, 5)
+    |> solution.post_tweet(1, 6)
+    |> solution.post_tweet(1, 7)
+    |> solution.post_tweet(1, 8)
+    |> solution.post_tweet(1, 9)
+    |> solution.post_tweet(1, 10)
+    |> solution.post_tweet(1, 11)
+
+  [
+    #(
+      \"news_feed(1) after posting 5\",
+      string.inspect([5]),
+      string.inspect(solution.news_feed(base, 1)),
+    ),
+    #(
+      \"news_feed(1) after following 2 who posted 6\",
+      string.inspect([6, 5]),
+      string.inspect(solution.news_feed(followed, 1)),
+    ),
+    #(
+      \"news_feed(1) after unfollowing 2\",
+      string.inspect([5]),
+      string.inspect(solution.news_feed(unfollowed, 1)),
+    ),
+    #(
+      \"news_feed(2) sees only its own\",
+      string.inspect([6]),
+      string.inspect(solution.news_feed(followed, 2)),
+    ),
+    #(
+      \"news_feed(3) for a user with nothing\",
+      string.inspect([]),
+      string.inspect(solution.news_feed(followed, 3)),
+    ),
+    #(
+      \"news_feed caps at ten, newest first\",
+      string.inspect([11, 10, 9, 8, 7, 6, 5, 4, 3, 2]),
+      string.inspect(solution.news_feed(eleven, 1)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc82_find_median_stream() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Split the values into a smaller half and a larger half, and the median is always sitting at one or both of the two inner ends. Each half only ever has to surrender its extreme value, which is exactly a heap — a max-heap below, a min-heap above. The whole difficulty is the rebalancing rule: sizes within one, and nothing below bigger than anything above.", "import gleam/int
+import gleam/list
+
+pub type MedianFinder {
+  /// `lower` is the smaller half, largest first; `upper` is the larger half,
+  /// smallest first. The median is always at one or both of those two heads.
+  MedianFinder(lower: List(Int), upper: List(Int))
+}
+
+pub fn new() -> MedianFinder {
+  MedianFinder([], [])
+}
+
+/// Two halves, each of which only ever has to give up its extreme value \\u{2014}
+/// which is exactly what a pair of heaps provides. Gleam has no heap, so these
+/// are sorted lists: same invariant, worse insertion cost.
+pub fn add_num(finder: MedianFinder, value: Int) -> MedianFinder {
+  let lower = insert_desc(finder.lower, value)
+  rebalance(MedianFinder(lower, finder.upper))
+}
+
+pub fn find_median(finder: MedianFinder) -> Float {
+  case finder.lower, finder.upper {
+    [], [] -> 0.0
+    [low, ..], [high, ..] ->
+      case list.length(finder.lower) == list.length(finder.upper) {
+        True -> int.to_float(low + high) /. 2.0
+        False -> int.to_float(low)
+      }
+    [low, ..], [] -> int.to_float(low)
+    [], [high, ..] -> int.to_float(high)
+  }
+}
+
+/// The smaller half may hold one more than the larger half, never fewer, and
+/// its largest must not exceed the larger half's smallest.
+fn rebalance(finder: MedianFinder) -> MedianFinder {
+  case finder.lower, finder.upper {
+    [low, ..lower_rest], [high, ..] if low > high ->
+      rebalance(MedianFinder(lower_rest, insert_asc(finder.upper, low)))
+    _, _ ->
+      case
+        list.length(finder.lower) - list.length(finder.upper) > 1,
+        list.length(finder.upper) > list.length(finder.lower)
+      {
+        True, _ ->
+          case finder.lower {
+            [low, ..rest] -> MedianFinder(rest, insert_asc(finder.upper, low))
+            [] -> finder
+          }
+        _, True ->
+          case finder.upper {
+            [high, ..rest] ->
+              MedianFinder(insert_desc(finder.lower, high), rest)
+            [] -> finder
+          }
+        _, _ -> finder
+      }
+  }
+}
+
+fn insert_desc(values: List(Int), value: Int) -> List(Int) {
+  list.sort([value, ..values], fn(a, b) { int.compare(b, a) })
+}
+
+fn insert_asc(values: List(Int), value: Int) -> List(Int) {
+  list.sort([value, ..values], int.compare)
+}"),
+      #("Solution 2 · Sorted list", "One sorted list, kept in order on insertion, and the median is a lookup. Easier to believe and easier to write, at the cost of an O(n) insert where two heaps pay O(log n) — the trade that decides which one belongs in a streaming answer.", "import gleam/int
+import gleam/list
+import gleam/result
+
+pub type MedianFinder {
+  MedianFinder(values: List(Int))
+}
+
+pub fn new() -> MedianFinder {
+  MedianFinder([])
+}
+
+/// One sorted list, kept in order on insertion. Simpler to believe than two
+/// halves, and the median is then just a lookup \\u{2014} at the cost of an O(n)
+/// insert where the two-heap version pays O(log n).
+pub fn add_num(finder: MedianFinder, value: Int) -> MedianFinder {
+  MedianFinder(list.sort([value, ..finder.values], int.compare))
+}
+
+pub fn find_median(finder: MedianFinder) -> Float {
+  let n = list.length(finder.values)
+  case n {
+    0 -> 0.0
+    _ -> {
+      let high = at(finder.values, n / 2)
+      let low = at(finder.values, { n - 1 } / 2)
+      int.to_float(low + high) /. 2.0
+    }
+  }
+}
+
+fn at(values: List(Int), index: Int) -> Int {
+  values |> list.drop(index) |> list.first |> result.unwrap(0)
+}"),
+    ],
+    check: Check(
+      signature: "pub type MedianFinder {
+  /// `lower` is the smaller half, largest first; `upper` is the larger half,
+  /// smallest first. The median is always at one or both of those two heads.
+  MedianFinder(lower: List(Int), upper: List(Int))
+}
+
+pub fn new() -> MedianFinder
+
+pub fn add_num(finder: MedianFinder, value: Int) -> MedianFinder
+
+pub fn find_median(finder: MedianFinder) -> Float",
+      starter: "pub type MedianFinder {
+  /// `lower` is the smaller half, largest first; `upper` is the larger half,
+  /// smallest first. The median is always at one or both of those two heads.
+  MedianFinder(lower: List(Int), upper: List(Int))
+}
+
+pub fn new() -> MedianFinder {
+  todo
+}
+
+pub fn add_num(finder: MedianFinder, value: Int) -> MedianFinder {
+  todo
+}
+
+pub fn find_median(finder: MedianFinder) -> Float {
+  todo
+}",
+      harness: "import gleam/list
+import gleam/string
+import solution
+
+/// Feeds values in and reports the median after each, which is the sequence the
+/// original interface produces.
+fn medians(values: List(Int)) -> List(Float) {
+  let #(_, answers) =
+    list.fold(values, #(solution.new(), []), fn(state, value) {
+      let #(finder, answers) = state
+      let finder = solution.add_num(finder, value)
+      #(finder, [solution.find_median(finder), ..answers])
+    })
+  list.reverse(answers)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"medians of 1, 2, 3\",
+      string.inspect([1.0, 1.5, 2.0]),
+      string.inspect(medians([1, 2, 3])),
+    ),
+    #(
+      \"medians of 1, 2, 3, 4, 5\",
+      string.inspect([1.0, 1.5, 2.0, 2.5, 3.0]),
+      string.inspect(medians([1, 2, 3, 4, 5])),
+    ),
+    #(
+      \"medians arriving out of order\",
+      string.inspect([5.0, 3.0, 2.0, 2.5]),
+      string.inspect(medians([5, 1, 2, 3])),
+    ),
+    #(
+      \"medians of negatives\",
+      string.inspect([-1.0, -1.5]),
+      string.inspect(medians([-1, -2])),
+    ),
+    #(
+      \"median before anything is added\",
+      string.inspect(0.0),
+      string.inspect(solution.find_median(solution.new())),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
 pub fn tip01_list_patterns() -> Embedded {
   Embedded(
     solutions: [
@@ -9095,6 +10126,13 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc73_word_break" -> Ok(nc73_word_break())
     "nc74_longest_increasing_subsequence" -> Ok(nc74_longest_increasing_subsequence())
     "nc75_partition_equal_subset" -> Ok(nc75_partition_equal_subset())
+    "nc76_kth_largest_stream" -> Ok(nc76_kth_largest_stream())
+    "nc77_last_stone_weight" -> Ok(nc77_last_stone_weight())
+    "nc78_k_closest_points" -> Ok(nc78_k_closest_points())
+    "nc79_kth_largest_array" -> Ok(nc79_kth_largest_array())
+    "nc80_task_scheduler" -> Ok(nc80_task_scheduler())
+    "nc81_design_twitter" -> Ok(nc81_design_twitter())
+    "nc82_find_median_stream" -> Ok(nc82_find_median_stream())
     "tip01_list_patterns" -> Ok(tip01_list_patterns())
     "tip02_tail_recursion" -> Ok(tip02_tail_recursion())
     "tip03_fold" -> Ok(tip03_fold())
