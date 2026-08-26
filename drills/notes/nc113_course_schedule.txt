@@ -1,0 +1,1 @@
+"Can every course be finished" is "is this graph acyclic". Kahn's algorithm takes whatever has no outstanding prerequisites, releases what depended on it, and stalls exactly when a cycle remains — so the cycle check is the algorithm running out of work early, not a separate test.

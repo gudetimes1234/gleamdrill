@@ -913,6 +913,361 @@ __case__(\"findWords([], ['a'])\", [], sorted(findWords([], [\"a\"])))",
   )
 }
 
+pub fn nc106_number_of_islands() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The grid is the graph: cells are nodes, the four neighbours are the edges, and nothing is ever built. Walk out from each unvisited land cell, mark everything it reaches, and add one — the traversal itself does the counting, which is why the answer needs no extra bookkeeping.", "def numIslands(grid):
+    land = {
+        (r, c)
+        for r, row in enumerate(grid)
+        for c, value in enumerate(row)
+        if value == \"1\"
+    }
+
+    # Counting connected components: start a search at every piece of land not
+    # already reached, and each search that has to be started is one more
+    # island. Marking as you go is what stops a component being counted once per
+    # square.
+    seen = set()
+    count = 0
+
+    for at in land:
+        if at in seen:
+            continue
+        count += 1
+        stack = [at]
+        while stack:
+            r, c = stack.pop()
+            if (r, c) not in land or (r, c) in seen:
+                continue
+            seen.add((r, c))
+            stack.extend([(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)])
+
+    return count"),
+      #("Solution 2 · Union find", "The same count without recursing: join each land cell to the land above and to its left, and the answer is the number of land cells minus the number of joins that actually merged two components. Worth having because a deep enough grid overflows the recursive walk, and because union-find can take cells as they arrive rather than needing the whole grid first.", "def numIslands(grid):
+    land = {
+        (r, c)
+        for r, row in enumerate(grid)
+        for c, value in enumerate(row)
+        if value == \"1\"
+    }
+
+    # Union-find instead of flood fill: every square starts as its own island
+    # and each adjacency merges two. Only right and down are needed -- every
+    # pair of neighbours is reached once that way -- and the answer is how many
+    # roots are left. This is the version that keeps working when the grid
+    # arrives one square at a time and the count has to be reported after each.
+    parents = {at: at for at in land}
+
+    def find(at):
+        while parents[at] != at:
+            parents[at] = parents[parents[at]]
+            at = parents[at]
+        return at
+
+    for r, c in land:
+        for other in ((r + 1, c), (r, c + 1)):
+            if other in land:
+                a, b = find((r, c)), find(other)
+                if a != b:
+                    parents[a] = b
+
+    return len({find(at) for at in land})"),
+    ],
+    check: Check(
+      signature: "def numIslands(grid):",
+      starter: "def numIslands(grid):
+    pass",
+      harness: "try:
+    (numIslands)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+def __board__(rows):
+    return [list(row) for row in rows]
+
+__case__(\"numIslands(one big island)\", 1, numIslands(__board__([\"11110\", \"11010\", \"11000\", \"00000\"])))
+__case__(\"numIslands(three islands)\", 3, numIslands(__board__([\"11000\", \"11000\", \"00100\", \"00011\"])))
+__case__(\"numIslands(all water)\", 0, numIslands(__board__([\"000\", \"000\"])))
+__case__(\"numIslands([])\", 0, numIslands([]))
+__case__(\"numIslands(diagonal squares are separate)\", 2, numIslands(__board__([\"10\", \"01\"])))",
+    ),
+  )
+}
+
+pub fn nc107_clone_graph() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The map from original node to its copy is the whole problem. Consulting it before copying anything is what makes a cycle terminate: a node already in the map is returned rather than copied again. Without that check any cycle recurses forever.", "def cloneGraph(adjacency, start):
+    if not (0 <= start < len(adjacency)):
+        return []
+
+    # The set of nodes already dealt with is the whole problem. Without it a
+    # cycle sends the traversal round forever; with it, a node already reached
+    # is simply skipped. Only the component containing the start is copied,
+    # which is what the reachable set also decides.
+    reached = set()
+    frontier = [start]
+    while frontier:
+        node = frontier.pop(0)
+        if node in reached or not (0 <= node < len(adjacency)):
+            continue
+        reached.add(node)
+        frontier.extend(adjacency[node])
+
+    return renumber(adjacency, reached)
+
+
+# Reachable nodes renumbered by their original index, ascending. Numbering by
+# *discovery* order would make the answer depend on whether the traversal was
+# breadth- or depth-first, which is not part of the problem.
+def renumber(adjacency, reached):
+    ordered = sorted(reached)
+    numbering = {node: i for i, node in enumerate(ordered)}
+    return [
+        [numbering[n] for n in adjacency[node] if n in numbering] for node in ordered
+    ]"),
+      #("Solution 2 · Depth first", "Same map, depth-first instead of breadth-first — proof that the traversal order is irrelevant here. The copy is created and registered *before* its neighbours are visited, which is the ordering that makes a cycle find the half-built copy instead of recursing into it.", "def cloneGraph(adjacency, start):
+    if not (0 <= start < len(adjacency)):
+        return []
+
+    reached = set()
+
+    # Depth-first. The node is marked *before* recursing into its neighbours,
+    # which is what makes a cycle terminate -- marking afterwards would let the
+    # traversal reach the same node again while it was still being visited.
+    def visit(node):
+        if node in reached or not (0 <= node < len(adjacency)):
+            return
+        reached.add(node)
+        for neighbour in adjacency[node]:
+            visit(neighbour)
+
+    visit(start)
+    return renumber(adjacency, reached)
+
+
+def renumber(adjacency, reached):
+    ordered = sorted(reached)
+    numbering = {node: i for i, node in enumerate(ordered)}
+    return [
+        [numbering[n] for n in adjacency[node] if n in numbering] for node in ordered
+    ]"),
+    ],
+    check: Check(
+      signature: "def cloneGraph(adjacency, start):
+
+def renumber(adjacency, reached):",
+      starter: "def cloneGraph(adjacency, start):
+    pass
+
+def renumber(adjacency, reached):
+    pass",
+      harness: "try:
+    (cloneGraph)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"cloneGraph([[1,3],[0,2],[1,3],[0,2]], 0)\", [[1, 3], [0, 2], [1, 3], [0, 2]], cloneGraph([[1, 3], [0, 2], [1, 3], [0, 2]], 0))
+__case__(\"cloneGraph([[1],[0]], 0)\", [[1], [0]], cloneGraph([[1], [0]], 0))
+__case__(\"cloneGraph([[]], 0)\", [[]], cloneGraph([[]], 0))
+__case__(\"cloneGraph([], 0)\", [], cloneGraph([], 0))
+__case__(\"cloneGraph([[1],[0],[3],[2]], 2) -- renumbered\", [[1], [0]], cloneGraph([[1], [0], [3], [2]], 2))
+__case__(\"cloneGraph([[],[]], 1) -- only the reachable part\", [[]], cloneGraph([[], []], 1))",
+    ),
+  )
+}
+
+pub fn nc108_max_area_of_island() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Number of Islands with the count replaced by a size. Depth-first suits it because the size falls out of the return value — one for this cell plus whatever the four neighbours return — rather than needing a counter threaded through the walk.", "def maxAreaOfIsland(grid):
+    land = {
+        (r, c)
+        for r, row in enumerate(grid)
+        for c, value in enumerate(row)
+        if value == 1
+    }
+
+    # The same component search as counting islands, except each search reports
+    # how much it covered rather than just that it happened.
+    seen = set()
+    best = 0
+
+    for at in land:
+        if at in seen:
+            continue
+        area = 0
+        stack = [at]
+        while stack:
+            r, c = stack.pop()
+            if (r, c) not in land or (r, c) in seen:
+                continue
+            seen.add((r, c))
+            area += 1
+            stack.extend([(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)])
+        best = max(best, area)
+
+    return best"),
+      #("Solution 2 · Breadth first", "The same areas found wave by wave. Nothing is gained over the depth-first version here, but the frontier is explicit rather than living on the call stack, which is what a grid deep enough to overflow the stack needs.", "from collections import deque
+
+
+def maxAreaOfIsland(grid):
+    land = {
+        (r, c)
+        for r, row in enumerate(grid)
+        for c, value in enumerate(row)
+        if value == 1
+    }
+
+    # Breadth-first instead. For a component's *size* the traversal order does
+    # not matter at all -- either visits every square exactly once -- so the
+    # choice is about the machine: a queue keeps the memory proportional to the
+    # frontier rather than to the deepest path, which is what saves a long thin
+    # island from overflowing the stack.
+    seen = set()
+    best = 0
+
+    for at in land:
+        if at in seen:
+            continue
+        area = 0
+        frontier = deque([at])
+        while frontier:
+            r, c = frontier.popleft()
+            if (r, c) not in land or (r, c) in seen:
+                continue
+            seen.add((r, c))
+            area += 1
+            frontier.extend([(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)])
+        best = max(best, area)
+
+    return best"),
+    ],
+    check: Check(
+      signature: "def maxAreaOfIsland(grid):",
+      starter: "def maxAreaOfIsland(grid):
+    pass",
+      harness: "try:
+    (maxAreaOfIsland)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"maxAreaOfIsland([[1,1,0],[1,0,0],[0,0,1]])\", 3, maxAreaOfIsland([[1, 1, 0], [1, 0, 0], [0, 0, 1]]))
+__case__(\"maxAreaOfIsland([[0,0],[0,0]])\", 0, maxAreaOfIsland([[0, 0], [0, 0]]))
+__case__(\"maxAreaOfIsland([])\", 0, maxAreaOfIsland([]))
+__case__(\"maxAreaOfIsland([[1]])\", 1, maxAreaOfIsland([[1]]))
+__case__(\"maxAreaOfIsland([[1,1,1],[1,1,1]])\", 6, maxAreaOfIsland([[1, 1, 1], [1, 1, 1]]))",
+    ),
+  )
+}
+
+pub fn nc109_pacific_atlantic() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Reverse the question. Asking of each cell whether water can get from there to both oceans repeats the same searches over and over; asking instead which cells an ocean could reach if water flowed uphill is two searches from the borders, and the answer is where the two sets meet. Flipping a search to start from the goal is the idea worth taking away.", "from collections import deque
+
+
+def pacificAtlantic(heights):
+    if not heights or not heights[0]:
+        return []
+
+    rows, columns = len(heights), len(heights[0])
+
+    # Search *from* each ocean rather than from each cell. Asking \"can this
+    # square reach the sea?\" means a fresh downhill search per square; asking
+    # \"which squares can the sea reach?\" is two uphill searches in total, and
+    # the answer is where they overlap.
+    def uphill(starts):
+        reached = set()
+        frontier = deque(starts)
+        while frontier:
+            r, c = frontier.popleft()
+            if (r, c) in reached:
+                continue
+            reached.add((r, c))
+            for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
+                if 0 <= nr < rows and 0 <= nc < columns:
+                    if heights[nr][nc] >= heights[r][c]:
+                        frontier.append((nr, nc))
+        return reached
+
+    pacific = [(0, c) for c in range(columns)] + [(r, 0) for r in range(rows)]
+    atlantic = [(rows - 1, c) for c in range(columns)] + [(r, columns - 1) for r in range(rows)]
+
+    return sorted(uphill(pacific) & uphill(atlantic))"),
+      #("Solution 2 · From each cell", "The literal reading: from every cell, search downhill and see which oceans it reaches. O(cells) searches over O(cells) each, against two searches total — and the two are answering the same question, which is what makes the reversal legitimate rather than a trick.", "from collections import deque
+
+
+def pacificAtlantic(heights):
+    if not heights or not heights[0]:
+        return []
+
+    rows, columns = len(heights), len(heights[0])
+
+    # The direct reading: from each square, flow downhill and see which edges
+    # are reachable. Correct, and it repeats nearly all of its work -- every
+    # square on a shared downhill path re-explores the same route. Reversing the
+    # question is what removes the repetition.
+    def downhill(start):
+        reached = set()
+        frontier = deque([start])
+        while frontier:
+            r, c = frontier.popleft()
+            if (r, c) in reached:
+                continue
+            reached.add((r, c))
+            for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
+                if 0 <= nr < rows and 0 <= nc < columns:
+                    if heights[nr][nc] <= heights[r][c]:
+                        frontier.append((nr, nc))
+        return reached
+
+    out = []
+    for r in range(rows):
+        for c in range(columns):
+            reached = downhill((r, c))
+            if any(rr == 0 or cc == 0 for rr, cc in reached):
+                if any(rr == rows - 1 or cc == columns - 1 for rr, cc in reached):
+                    out.append((r, c))
+
+    return sorted(out)"),
+    ],
+    check: Check(
+      signature: "def pacificAtlantic(heights):",
+      starter: "def pacificAtlantic(heights):
+    pass",
+      harness: "try:
+    (pacificAtlantic)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__grid__ = [[1, 2, 2, 3, 5], [3, 2, 3, 4, 4], [2, 4, 5, 3, 1], [6, 7, 1, 4, 5], [5, 1, 1, 2, 4]]
+
+__case__(\"pacificAtlantic(the 5x5 example)\", [(0, 4), (1, 3), (1, 4), (2, 2), (3, 0), (3, 1), (4, 0)], sorted(tuple(p) for p in pacificAtlantic(__grid__)))
+__case__(\"pacificAtlantic([[1]])\", [(0, 0)], sorted(tuple(p) for p in pacificAtlantic([[1]])))
+__case__(\"pacificAtlantic([])\", [], sorted(tuple(p) for p in pacificAtlantic([])))
+__case__(\"pacificAtlantic([[1,1],[1,1]])\", [(0, 0), (0, 1), (1, 0), (1, 1)], sorted(tuple(p) for p in pacificAtlantic([[1, 1], [1, 1]])))",
+    ),
+  )
+}
+
 pub fn nc10_three_sum() -> Embedded {
   Embedded(
     solutions: [
@@ -969,6 +1324,789 @@ def __case__(label, expected, actual):
 __case__(\"threeSum([-1, 0, 1, 2, -1, -4])\", [[-1, -1, 2], [-1, 0, 1]], threeSum([-1, 0, 1, 2, -1, -4]))
 __case__(\"threeSum([0, 1, 1])\", [], threeSum([0, 1, 1]))
 __case__(\"threeSum([0, 0, 0])\", [[0, 0, 0]], threeSum([0, 0, 0]))",
+    ),
+  )
+}
+
+pub fn nc110_surrounded_regions() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Easier backwards. Rather than finding the surrounded regions, mark the ones that are not — everything reachable from a border O — and flip whatever is left. That side-steps having to notice mid-traversal that a region touches the edge, and costs one pass from the border rather than one per region.", "def solve(board):
+    if not board or not board[0]:
+        return board
+
+    rows, columns = len(board), len(board[0])
+
+    # Invert the question. \"Which regions are surrounded?\" needs a search per
+    # region and a rule for what counts as escaping; \"which regions touch an
+    # edge?\" is one search from the border, and everything it does not reach is
+    # surrounded by definition.
+    safe = set()
+    stack = [
+        (r, c)
+        for r in range(rows)
+        for c in range(columns)
+        if (r in (0, rows - 1) or c in (0, columns - 1)) and board[r][c] == \"O\"
+    ]
+
+    while stack:
+        r, c = stack.pop()
+        if not (0 <= r < rows and 0 <= c < columns):
+            continue
+        if (r, c) in safe or board[r][c] != \"O\":
+            continue
+        safe.add((r, c))
+        stack.extend([(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)])
+
+    return [
+        [\"X\" if value == \"O\" and (r, c) not in safe else value for c, value in enumerate(row)]
+        for r, row in enumerate(board)
+    ]"),
+      #("Solution 2 · Per region", "The direct reading: gather each region, then flip it only if no cell in it sits on the border. Honest, and it makes explicit what the border-first version is exploiting — but it has to collect the whole region before it can decide anything about it.", "def solve(board):
+    if not board or not board[0]:
+        return board
+
+    rows, columns = len(board), len(board[0])
+
+    # The direct reading: find each region, then decide whether it escapes. It
+    # works, and it needs a second idea the border search does not -- the whole
+    # region has to be collected before any verdict can be given, so the search
+    # cannot stop early and the escape test is over the component rather than a
+    # single square.
+    seen = set()
+    doomed = set()
+
+    for r in range(rows):
+        for c in range(columns):
+            if board[r][c] != \"O\" or (r, c) in seen:
+                continue
+            region = set()
+            stack = [(r, c)]
+            while stack:
+                rr, cc = stack.pop()
+                if not (0 <= rr < rows and 0 <= cc < columns):
+                    continue
+                if (rr, cc) in region or board[rr][cc] != \"O\":
+                    continue
+                region.add((rr, cc))
+                stack.extend([(rr - 1, cc), (rr + 1, cc), (rr, cc - 1), (rr, cc + 1)])
+            seen |= region
+            if not any(
+                rr in (0, rows - 1) or cc in (0, columns - 1) for rr, cc in region
+            ):
+                doomed |= region
+
+    return [
+        [\"X\" if (r, c) in doomed else value for c, value in enumerate(row)]
+        for r, row in enumerate(board)
+    ]"),
+    ],
+    check: Check(
+      signature: "def solve(board):",
+      starter: "def solve(board):
+    pass",
+      harness: "try:
+    (solve)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+def __shown__(rows):
+    return [\"\".join(row) for row in solve([list(row) for row in rows])]
+
+__case__(\"solve(the classic 4x4)\", [\"XXXX\", \"XXXX\", \"XXXX\", \"XOXX\"], __shown__([\"XXXX\", \"XOOX\", \"XXOX\", \"XOXX\"]))
+__case__(\"solve([['X']])\", [\"X\"], __shown__([\"X\"]))
+__case__(\"solve([['O']]) -- on the border, so it survives\", [\"O\"], __shown__([\"O\"]))
+__case__(\"solve([])\", [], __shown__([]))
+__case__(\"solve(a region reaching the border)\", [\"XOX\", \"XOX\", \"XXX\"], __shown__([\"XOX\", \"XOX\", \"XXX\"]))",
+    ),
+  )
+}
+
+pub fn nc111_rotting_oranges() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Multi-source breadth-first search: every rotten orange is on the frontier at minute zero, so each wave of the search *is* one minute and the number of waves is the answer. A separate search per source would give distances from each and then still need combining. Any fresh orange left unreached is what makes the answer -1.", "from collections import deque
+
+
+def orangesRotting(grid):
+    rotten = deque()
+    fresh = 0
+
+    for r, row in enumerate(grid):
+        for c, value in enumerate(row):
+            if value == 2:
+                rotten.append((r, c))
+            elif value == 1:
+                fresh += 1
+
+    # Breadth-first from *every* rotten orange at once, which is what makes the
+    # level count a time: all the sources start at minute zero together, so each
+    # wave of the search is one minute. A separate search per source would give
+    # distances from each, and then need combining.
+    seen = set(rotten)
+    minutes = 0
+
+    while rotten and fresh:
+        following = deque()
+        for r, c in rotten:
+            for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
+                if 0 <= nr < len(grid) and 0 <= nc < len(grid[0]):
+                    if grid[nr][nc] == 1 and (nr, nc) not in seen:
+                        seen.add((nr, nc))
+                        fresh -= 1
+                        following.append((nr, nc))
+        if not following:
+            break
+        rotten = following
+        minutes += 1
+
+    return minutes if fresh == 0 else -1"),
+      #("Solution 2 · Simulate minutes", "Rebuild the grid one minute at a time, exactly as described. The same complexity as the wave search, and it makes the equivalence visible: a round of simulation and a level of breadth-first search are the same step written two ways.", "def orangesRotting(grid):
+    board = [list(row) for row in grid]
+    minutes = 0
+
+    # Rewrite the whole grid once per minute rather than tracking a frontier.
+    # Much more work -- every square is examined every minute, not just the ones
+    # next to the rot -- but it is the problem statement executed literally, and
+    # it makes plain that the answer counts *rounds*, not distances.
+    while True:
+        following = [
+            [
+                2
+                if value == 1
+                and any(
+                    0 <= nr < len(board) and 0 <= nc < len(board[0]) and board[nr][nc] == 2
+                    for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1))
+                )
+                else value
+                for c, value in enumerate(row)
+            ]
+            for r, row in enumerate(board)
+        ]
+        if following == board:
+            # Nothing changed: either everything has rotted or what is left
+            # never will.
+            return -1 if any(1 in row for row in board) else minutes
+        board = following
+        minutes += 1"),
+    ],
+    check: Check(
+      signature: "def orangesRotting(grid):",
+      starter: "def orangesRotting(grid):
+    pass",
+      harness: "try:
+    (orangesRotting)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"orangesRotting([[2,1,1],[1,1,0],[0,1,1]])\", 4, orangesRotting([[2, 1, 1], [1, 1, 0], [0, 1, 1]]))
+__case__(\"orangesRotting([[2,1,1],[0,1,1],[1,0,1]])\", -1, orangesRotting([[2, 1, 1], [0, 1, 1], [1, 0, 1]]))
+__case__(\"orangesRotting([[0,2]])\", 0, orangesRotting([[0, 2]]))
+__case__(\"orangesRotting([])\", 0, orangesRotting([]))
+__case__(\"orangesRotting([[1]])\", -1, orangesRotting([[1]]))
+__case__(\"orangesRotting([[0]])\", 0, orangesRotting([[0]]))",
+    ),
+  )
+}
+
+pub fn nc112_walls_and_gates() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The same multi-source wave as rotting oranges, writing the wave number into the cell instead of counting waves. Starting from every gate at once is what makes the first arrival at a room its nearest gate — no comparison between gates is ever needed.", "from collections import deque
+
+INFINITY = 2147483647
+
+
+def wallsAndGates(rooms):
+    if not rooms or not rooms[0]:
+        return rooms
+
+    board = [list(row) for row in rooms]
+    rows, columns = len(board), len(board[0])
+
+    # One breadth-first search starting from *all* the gates at once, rather
+    # than one search per empty room. Because every source begins at distance
+    # zero together, the first time a room is reached is by its nearest gate --
+    # the multi-source search does the whole grid in one pass.
+    frontier = deque(
+        (r, c) for r in range(rows) for c in range(columns) if board[r][c] == 0
+    )
+
+    while frontier:
+        r, c = frontier.popleft()
+        for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
+            if 0 <= nr < rows and 0 <= nc < columns and board[nr][nc] == INFINITY:
+                board[nr][nc] = board[r][c] + 1
+                frontier.append((nr, nc))
+
+    return board"),
+      #("Solution 2 · From each room", "A search outward from each empty room until it meets a gate. One full search per room for an answer the single multi-source pass already has, which is the cost the wave avoids — but it is the version that says the problem statement outright.", "from collections import deque
+
+INFINITY = 2147483647
+
+
+def wallsAndGates(rooms):
+    if not rooms or not rooms[0]:
+        return rooms
+
+    rows, columns = len(rooms), len(rooms[0])
+
+    # One search per empty room, looking for the nearest gate. The answer is the
+    # same and the cost is not: every room re-explores the same corridors. Worth
+    # writing once to see why starting from the gates instead -- the sources,
+    # not the questions -- collapses all of it into a single pass.
+    def nearest(start):
+        seen = {start}
+        frontier = deque([start])
+        steps = 0
+        while frontier:
+            following = deque()
+            for r, c in frontier:
+                if rooms[r][c] == 0:
+                    return steps
+                for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
+                    if 0 <= nr < rows and 0 <= nc < columns:
+                        if rooms[nr][nc] != -1 and (nr, nc) not in seen:
+                            seen.add((nr, nc))
+                            following.append((nr, nc))
+            frontier = following
+            steps += 1
+        return INFINITY
+
+    return [
+        [nearest((r, c)) if value == INFINITY else value for c, value in enumerate(row)]
+        for r, row in enumerate(rooms)
+    ]"),
+    ],
+    check: Check(
+      signature: "def wallsAndGates(rooms):",
+      starter: "def wallsAndGates(rooms):
+    pass",
+      harness: "try:
+    (wallsAndGates)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__inf__ = 2147483647
+
+__case__(\"wallsAndGates(the classic 4x4)\", [[3, -1, 0, 1], [2, 2, 1, -1], [1, -1, 2, -1], [0, -1, 3, 4]], wallsAndGates([[__inf__, -1, 0, __inf__], [__inf__, __inf__, __inf__, -1], [__inf__, -1, __inf__, -1], [0, -1, __inf__, __inf__]]))
+__case__(\"wallsAndGates([[0]])\", [[0]], wallsAndGates([[0]]))
+__case__(\"wallsAndGates([[-1]])\", [[-1]], wallsAndGates([[-1]]))
+__case__(\"wallsAndGates([])\", [], wallsAndGates([]))
+__case__(\"wallsAndGates(no gate at all)\", [[__inf__, __inf__]], wallsAndGates([[__inf__, __inf__]]))",
+    ),
+  )
+}
+
+pub fn nc113_course_schedule() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "\"Can every course be finished\" is \"is this graph acyclic\". Kahn's algorithm takes whatever has no outstanding prerequisites, releases what depended on it, and stalls exactly when a cycle remains — so the cycle check is the algorithm running out of work early, not a separate test.", "from collections import deque
+
+
+def canFinish(numCourses, prerequisites):
+    # Kahn's algorithm. Courses with nothing outstanding can be taken now;
+    # taking one releases whatever depended on it. If the process stalls with
+    # courses left, those courses depend on each other in a circle -- a cycle is
+    # exactly what \"cannot be finished\" means.
+    waiting = {c: 0 for c in range(numCourses)}
+    unlocks = {c: [] for c in range(numCourses)}
+
+    for course, prereq in prerequisites:
+        waiting[course] += 1
+        unlocks[prereq].append(course)
+
+    ready = deque(c for c in range(numCourses) if waiting[c] == 0)
+    taken = 0
+
+    while ready:
+        course = ready.popleft()
+        taken += 1
+        for following in unlocks[course]:
+            waiting[following] -= 1
+            if waiting[following] == 0:
+                ready.append(following)
+
+    return taken == numCourses"),
+      #("Solution 2 · Dfs colours", "Depth-first needs three states, not two. \"Seen\" is not enough: a node reached again down a *different* branch is fine, while one reached again while still on the current path is a cycle. The in-progress set is exactly what tells those apart.", "def canFinish(numCourses, prerequisites):
+    needs = {c: [] for c in range(numCourses)}
+    for course, prereq in prerequisites:
+        needs[course].append(prereq)
+
+    onPath = set()
+    done = set()
+
+    # Depth-first with three states rather than two. \"Seen\" is not enough: a
+    # node reached twice down *different* branches is fine, while a node reached
+    # again while still on the current path is a cycle. The in-progress set is
+    # what tells those apart.
+    def visit(course):
+        if course in onPath:
+            return False
+        if course in done:
+            return True
+        onPath.add(course)
+        for prereq in needs[course]:
+            if not visit(prereq):
+                return False
+        onPath.discard(course)
+        done.add(course)
+        return True
+
+    return all(visit(course) for course in range(numCourses))"),
+    ],
+    check: Check(
+      signature: "def canFinish(numCourses, prerequisites):",
+      starter: "def canFinish(numCourses, prerequisites):
+    pass",
+      harness: "try:
+    (canFinish)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"canFinish(2, [[1,0]])\", True, canFinish(2, [[1, 0]]))
+__case__(\"canFinish(2, [[1,0],[0,1]])\", False, canFinish(2, [[1, 0], [0, 1]]))
+__case__(\"canFinish(1, [])\", True, canFinish(1, []))
+__case__(\"canFinish(0, [])\", True, canFinish(0, []))
+__case__(\"canFinish(4, [[1,0],[2,1],[3,2]])\", True, canFinish(4, [[1, 0], [2, 1], [3, 2]]))
+__case__(\"canFinish(3, [[0,1],[1,2],[2,0]])\", False, canFinish(3, [[0, 1], [1, 2], [2, 0]]))",
+    ),
+  )
+}
+
+pub fn nc114_course_schedule_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The same computation as deciding whether it is possible — the order courses come off the ready list is the answer. Detecting the cycle and producing the schedule are not two passes.", "from collections import deque
+
+
+def findOrder(numCourses, prerequisites):
+    # The same Kahn's algorithm as deciding whether it is possible -- except the
+    # order courses come off the ready list *is* the answer. Detecting the cycle
+    # and producing the schedule are the same computation.
+    waiting = {c: 0 for c in range(numCourses)}
+    unlocks = {c: [] for c in range(numCourses)}
+
+    for course, prereq in prerequisites:
+        waiting[course] += 1
+        unlocks[prereq].append(course)
+
+    ready = deque(c for c in range(numCourses) if waiting[c] == 0)
+    order = []
+
+    while ready:
+        course = ready.popleft()
+        order.append(course)
+        for following in unlocks[course]:
+            waiting[following] -= 1
+            if waiting[following] == 0:
+                ready.append(following)
+
+    # Stalled with courses left, so no order exists at all.
+    return order if len(order) == numCourses else []"),
+      #("Solution 2 · Dfs postorder", "Record a course only after everything it depends on has been recorded. That post-order is a valid schedule by construction, with no indegrees to maintain — and it comes out reversed, which is the tell that it was built from the dependencies up.", "def findOrder(numCourses, prerequisites):
+    needs = {c: [] for c in range(numCourses)}
+    for course, prereq in prerequisites:
+        needs[course].append(prereq)
+
+    onPath = set()
+    done = set()
+    order = []
+
+    # Depth-first, recording a course only *after* everything it depends on has
+    # been recorded. That post-order is a valid schedule by construction -- no
+    # indegrees to maintain -- and the in-progress set doubles as the cycle
+    # check, which is what makes the impossible case fall out of the same walk.
+    def visit(course):
+        if course in onPath:
+            return False
+        if course in done:
+            return True
+        onPath.add(course)
+        for prereq in needs[course]:
+            if not visit(prereq):
+                return False
+        onPath.discard(course)
+        done.add(course)
+        order.append(course)
+        return True
+
+    if not all(visit(course) for course in range(numCourses)):
+        return []
+    return order"),
+    ],
+    check: Check(
+      signature: "def findOrder(numCourses, prerequisites):",
+      starter: "def findOrder(numCourses, prerequisites):
+    pass",
+      harness: "try:
+    (findOrder)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# Any valid order is acceptable, so the harness checks the order rather than
+# comparing it: every course appears exactly once, and every prerequisite comes
+# before the course that needs it.
+def __valid__(numCourses, prerequisites):
+    order = findOrder(numCourses, prerequisites)
+    if len(order) != numCourses or len(set(order)) != numCourses:
+        return False
+    at = {course: i for i, course in enumerate(order)}
+    return all(at[prereq] < at[course] for course, prereq in prerequisites)
+
+__case__(\"findOrder(2, [[1,0]]) is a valid order\", True, __valid__(2, [[1, 0]]))
+__case__(\"findOrder(4, [[1,0],[2,0],[3,1],[3,2]]) is a valid order\", True, __valid__(4, [[1, 0], [2, 0], [3, 1], [3, 2]]))
+__case__(\"findOrder(1, []) is a valid order\", True, __valid__(1, []))
+__case__(\"findOrder(3, []) is a valid order\", True, __valid__(3, []))
+__case__(\"findOrder(2, [[0,1],[1,0]]) -- a cycle, so no order\", [], findOrder(2, [[0, 1], [1, 0]]))
+__case__(\"findOrder(0, [])\", [], findOrder(0, []))",
+    ),
+  )
+}
+
+pub fn nc115_redundant_connection() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "n nodes and n edges means exactly one cycle, and union-find finds it the moment an edge joins two nodes already connected. Processing the edges in the order given is what makes the first such edge the *last* removable one, which is what the problem asks for.", "def findRedundantConnection(edges):
+    # n nodes and n edges means exactly one cycle. Union-find spots it the
+    # moment an edge joins two nodes already connected -- and because the edges
+    # are processed in order, the first such edge is the last one that could be
+    # removed, which is what the problem asks for.
+    parents = {}
+
+    def find(node):
+        while parents.get(node, node) != node:
+            node = parents[node]
+        return node
+
+    found = None
+    for a, b in edges:
+        rootA, rootB = find(a), find(b)
+        if rootA == rootB:
+            found = (a, b)
+        else:
+            parents[rootA] = rootB
+
+    return list(found) if found else []"),
+      #("Solution 2 · By removal", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Try removing each edge, latest first, and keep the first removal that leaves a tree. O(n^2) against near-linear, but it needs no new structure and it is the specification read literally.", "def findRedundantConnection(edges):
+    # Try removing each edge, latest first, and keep the first removal that
+    # leaves a tree. O(n^2) against union-find's near-linear, but it needs no
+    # new structure -- and it says the specification outright: the answer is the
+    # last edge whose absence would make the graph a tree.
+    nodes = {node for edge in edges for node in edge}
+
+    for candidate in reversed(edges):
+        remaining = [edge for edge in edges if edge != candidate]
+        if isTree(remaining, nodes):
+            return list(candidate)
+
+    return []
+
+
+def isTree(edges, nodes):
+    if not nodes:
+        return True
+    if len(edges) != len(nodes) - 1:
+        return False
+
+    adjacency = {node: [] for node in nodes}
+    for a, b in edges:
+        adjacency[a].append(b)
+        adjacency[b].append(a)
+
+    start = next(iter(nodes))
+    seen = set()
+    stack = [start]
+    while stack:
+        node = stack.pop()
+        if node in seen:
+            continue
+        seen.add(node)
+        stack.extend(adjacency[node])
+
+    return len(seen) == len(nodes)"),
+    ],
+    check: Check(
+      signature: "def findRedundantConnection(edges):",
+      starter: "def findRedundantConnection(edges):
+    pass",
+      harness: "try:
+    (findRedundantConnection)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"findRedundantConnection([[1,2],[1,3],[2,3]])\", [2, 3], list(findRedundantConnection([(1, 2), (1, 3), (2, 3)])))
+__case__(\"findRedundantConnection([[1,2],[2,3],[3,4],[1,4],[1,5]])\", [1, 4], list(findRedundantConnection([(1, 2), (2, 3), (3, 4), (1, 4), (1, 5)])))
+__case__(\"findRedundantConnection([[1,2],[2,1]])\", [2, 1], list(findRedundantConnection([(1, 2), (2, 1)])))",
+    ),
+  )
+}
+
+pub fn nc116_connected_components() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Start at n components and subtract a merge for every edge that actually joins two different ones. No adjacency list, no traversal — the count falls straight out of how many merges happened.", "def countComponents(n, edges):
+    # Start with n components and merge: every edge whose ends are not already
+    # together removes one. No traversal, no adjacency list -- the count falls
+    # straight out of how many merges actually happened.
+    parents = {}
+
+    def find(node):
+        while parents.get(node, node) != node:
+            node = parents[node]
+        return node
+
+    merges = 0
+    for a, b in edges:
+        rootA, rootB = find(a), find(b)
+        if rootA != rootB:
+            parents[rootA] = rootB
+            merges += 1
+
+    return n - merges"),
+      #("Solution 2 · By traversal", "One search per unvisited node, exactly as with islands on a grid — the same counting idea with an adjacency list instead of coordinates. The contrast with union-find is the point: this needs the whole graph up front, the other can take edges as they arrive.", "def countComponents(n, edges):
+    adjacency = {node: [] for node in range(n)}
+    for a, b in edges:
+        adjacency[a].append(b)
+        adjacency[b].append(a)
+
+    # One search per unvisited node, exactly as with islands on a grid -- the
+    # same counting-components idea with an adjacency list instead of
+    # coordinates. Worth seeing side by side with union-find: this one needs the
+    # whole graph up front, the other can take edges as they arrive.
+    seen = set()
+    count = 0
+
+    for node in range(n):
+        if node in seen:
+            continue
+        count += 1
+        stack = [node]
+        while stack:
+            current = stack.pop()
+            if current in seen:
+                continue
+            seen.add(current)
+            stack.extend(adjacency[current])
+
+    return count"),
+    ],
+    check: Check(
+      signature: "def countComponents(n, edges):",
+      starter: "def countComponents(n, edges):
+    pass",
+      harness: "try:
+    (countComponents)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"countComponents(5, [[0,1],[1,2],[3,4]])\", 2, countComponents(5, [[0, 1], [1, 2], [3, 4]]))
+__case__(\"countComponents(5, [[0,1],[1,2],[2,3],[3,4]])\", 1, countComponents(5, [[0, 1], [1, 2], [2, 3], [3, 4]]))
+__case__(\"countComponents(3, [])\", 3, countComponents(3, []))
+__case__(\"countComponents(0, [])\", 0, countComponents(0, []))
+__case__(\"countComponents(1, [])\", 1, countComponents(1, []))
+__case__(\"countComponents(4, [[0,1],[1,0]])\", 3, countComponents(4, [[0, 1], [1, 0]]))",
+    ),
+  )
+}
+
+pub fn nc117_graph_valid_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A tree is connected *and* acyclic, but with exactly n-1 edges either condition implies the other, so the edge count plus one of them is enough. Here it is the count plus reachability. The n = 0 case has to be stated separately, since the n-1 count says otherwise.", "def validTree(n, edges):
+    # A graph with no nodes at all is vacuously a tree, provided it has no edges
+    # either -- worth stating, because the n-1 edge count says otherwise.
+    if n <= 0:
+        return not edges
+
+    # A tree is two conditions at once: connected, and no cycles. Checking both
+    # separately is unnecessary -- with exactly n-1 edges, connected implies
+    # acyclic and acyclic implies connected, so testing the edge count plus
+    # either one is enough. Here it is the count plus reachability.
+    if len(edges) != n - 1:
+        return False
+
+    adjacency = {node: [] for node in range(n)}
+    for a, b in edges:
+        adjacency[a].append(b)
+        adjacency[b].append(a)
+
+    seen = set()
+    stack = [0]
+    while stack:
+        node = stack.pop()
+        if node in seen:
+            continue
+        seen.add(node)
+        stack.extend(adjacency[node])
+
+    return len(seen) == n"),
+      #("Solution 2 · Union find", "Both conditions from one pass. An edge inside a component is a cycle, so if none is, the graph is a forest — and a forest with n-1 merges is a single tree. No adjacency list and no traversal.", "def validTree(n, edges):
+    if n <= 0:
+        return not edges
+
+    # Both conditions from one pass. An edge joining two nodes already connected
+    # is a cycle, so if none does, the graph is a forest -- and a forest with
+    # n-1 merges is a single tree. No adjacency list and no traversal.
+    parents = {}
+
+    def find(node):
+        while parents.get(node, node) != node:
+            node = parents[node]
+        return node
+
+    merges = 0
+    for a, b in edges:
+        rootA, rootB = find(a), find(b)
+        if rootA == rootB:
+            return False
+        parents[rootA] = rootB
+        merges += 1
+
+    return merges == n - 1"),
+    ],
+    check: Check(
+      signature: "def validTree(n, edges):",
+      starter: "def validTree(n, edges):
+    pass",
+      harness: "try:
+    (validTree)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"validTree(5, [[0,1],[0,2],[0,3],[1,4]])\", True, validTree(5, [[0, 1], [0, 2], [0, 3], [1, 4]]))
+__case__(\"validTree(5, [[0,1],[1,2],[2,3],[1,3],[1,4]])\", False, validTree(5, [[0, 1], [1, 2], [2, 3], [1, 3], [1, 4]]))
+__case__(\"validTree(1, [])\", True, validTree(1, []))
+__case__(\"validTree(0, [])\", True, validTree(0, []))
+__case__(\"validTree(2, []) -- disconnected\", False, validTree(2, []))
+__case__(\"validTree(4, [[0,1],[2,3]]) -- two trees\", False, validTree(4, [[0, 1], [2, 3]]))",
+    ),
+  )
+}
+
+pub fn nc118_word_ladder() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Shortest path on an unweighted graph, so breadth-first — but the graph is never built. Two words are neighbours when they share a wildcard pattern like \"*ot\", so bucketing every word under each of its patterns gives the adjacency in linear time.", "from collections import defaultdict, deque
+
+
+def ladderLength(beginWord, endWord, wordList):
+    words = set(wordList)
+    if endWord not in words:
+        return 0
+
+    # The graph is never built: \"hot\" and \"dot\" are neighbours because they
+    # share the pattern \"*ot\", so bucketing every word under each of its
+    # wildcard patterns gives the adjacency for free. Comparing every pair
+    # instead costs O(n^2) comparisons before the search even starts.
+    buckets = defaultdict(list)
+    for word in words:
+        for i in range(len(word)):
+            buckets[word[:i] + \"*\" + word[i + 1:]].append(word)
+
+    seen = {beginWord}
+    frontier = deque([beginWord])
+    steps = 1
+
+    while frontier:
+        for _ in range(len(frontier)):
+            word = frontier.popleft()
+            if word == endWord:
+                return steps
+            for i in range(len(word)):
+                for neighbour in buckets[word[:i] + \"*\" + word[i + 1:]]:
+                    if neighbour not in seen:
+                        seen.add(neighbour)
+                        frontier.append(neighbour)
+        steps += 1
+
+    return 0"),
+      #("Solution 2 · Compare pairs", "Neighbours found by comparing against every remaining word. Simpler to state, and O(n) comparisons per expansion instead of a constant number of lookups — which is exactly the cost the wildcard buckets remove.", "from collections import deque
+
+
+def ladderLength(beginWord, endWord, wordList):
+    words = set(wordList)
+    if endWord not in words:
+        return 0
+
+    # Neighbours found by comparing against every remaining word. Simpler to
+    # state and O(n) comparisons per expansion rather than a constant number of
+    # lookups -- which is the cost the wildcard buckets remove.
+    seen = {beginWord}
+    frontier = deque([beginWord])
+    steps = 1
+
+    while frontier:
+        for _ in range(len(frontier)):
+            word = frontier.popleft()
+            if word == endWord:
+                return steps
+            for candidate in words:
+                if candidate in seen:
+                    continue
+                if differsByOne(word, candidate):
+                    seen.add(candidate)
+                    frontier.append(candidate)
+        steps += 1
+
+    return 0
+
+
+def differsByOne(a, b):
+    return len(a) == len(b) and sum(x != y for x, y in zip(a, b)) == 1"),
+    ],
+    check: Check(
+      signature: "def ladderLength(beginWord, endWord, wordList):",
+      starter: "def ladderLength(beginWord, endWord, wordList):
+    pass",
+      harness: "try:
+    (ladderLength)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"ladderLength('hit','cog', full list)\", 5, ladderLength(\"hit\", \"cog\", [\"hot\", \"dot\", \"dog\", \"lot\", \"log\", \"cog\"]))
+__case__(\"ladderLength('hit','cog', without cog)\", 0, ladderLength(\"hit\", \"cog\", [\"hot\", \"dot\", \"dog\", \"lot\", \"log\"]))
+__case__(\"ladderLength('a','c', ['a','b','c'])\", 2, ladderLength(\"a\", \"c\", [\"a\", \"b\", \"c\"]))
+__case__(\"ladderLength('hit','hit', ['hit'])\", 1, ladderLength(\"hit\", \"hit\", [\"hit\"]))
+__case__(\"ladderLength('hot','dog', ['hot','dog']) -- no bridge\", 0, ladderLength(\"hot\", \"dog\", [\"hot\", \"dog\"]))",
     ),
   )
 }
@@ -6922,7 +8060,20 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc103_implement_trie" -> Ok(nc103_implement_trie())
     "nc104_word_dictionary" -> Ok(nc104_word_dictionary())
     "nc105_word_search_ii" -> Ok(nc105_word_search_ii())
+    "nc106_number_of_islands" -> Ok(nc106_number_of_islands())
+    "nc107_clone_graph" -> Ok(nc107_clone_graph())
+    "nc108_max_area_of_island" -> Ok(nc108_max_area_of_island())
+    "nc109_pacific_atlantic" -> Ok(nc109_pacific_atlantic())
     "nc10_three_sum" -> Ok(nc10_three_sum())
+    "nc110_surrounded_regions" -> Ok(nc110_surrounded_regions())
+    "nc111_rotting_oranges" -> Ok(nc111_rotting_oranges())
+    "nc112_walls_and_gates" -> Ok(nc112_walls_and_gates())
+    "nc113_course_schedule" -> Ok(nc113_course_schedule())
+    "nc114_course_schedule_ii" -> Ok(nc114_course_schedule_ii())
+    "nc115_redundant_connection" -> Ok(nc115_redundant_connection())
+    "nc116_connected_components" -> Ok(nc116_connected_components())
+    "nc117_graph_valid_tree" -> Ok(nc117_graph_valid_tree())
+    "nc118_word_ladder" -> Ok(nc118_word_ladder())
     "nc11_container_water" -> Ok(nc11_container_water())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())

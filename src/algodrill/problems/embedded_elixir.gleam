@@ -706,6 +706,358 @@ end"),
   ]
 }
 
+pub fn nc106_number_of_islands() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The grid is the graph: cells are nodes, the four neighbours are the edges, and nothing is ever built. Walk out from each unvisited land cell, mark everything it reaches, and add one — the traversal itself does the counting, which is why the answer needs no extra bookkeeping.", "defmodule Solution do
+  # Counting connected components: start a search at every piece of land not
+  # already reached, and each search that has to be started is one more island.
+  # Marking as you go is what stops a component being counted once per square.
+  def num_islands(grid) do
+    land =
+      for {row, r} <- Enum.with_index(grid),
+          {value, c} <- Enum.with_index(row),
+          value == \"1\",
+          into: MapSet.new(),
+          do: {r, c}
+
+    {count, _seen} =
+      Enum.reduce(land, {0, MapSet.new()}, fn at, {count, seen} ->
+        if MapSet.member?(seen, at),
+          do: {count, seen},
+          else: {count + 1, flood(land, [at], seen)}
+      end)
+
+    count
+  end
+
+  defp flood(_land, [], seen), do: seen
+
+  defp flood(land, [at | rest], seen) do
+    if MapSet.member?(land, at) and not MapSet.member?(seen, at),
+      do: flood(land, neighbours(at) ++ rest, MapSet.put(seen, at)),
+      else: flood(land, rest, seen)
+  end
+
+  defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+end"),
+    #("Solution 2 · Union find", "The same count without recursing: join each land cell to the land above and to its left, and the answer is the number of land cells minus the number of joins that actually merged two components. Worth having because a deep enough grid overflows the recursive walk, and because union-find can take cells as they arrive rather than needing the whole grid first.", "defmodule Solution do
+  # Union-find instead of flood fill: every square starts as its own island and
+  # each adjacency merges two. Only right and down are needed -- every pair of
+  # neighbours is reached once that way -- and the answer is how many roots are
+  # left. This is the version that keeps working when the grid arrives one
+  # square at a time and the count has to be reported after each.
+  def num_islands(grid) do
+    land =
+      for {row, r} <- Enum.with_index(grid),
+          {value, c} <- Enum.with_index(row),
+          value == \"1\",
+          do: {r, c}
+
+    known = MapSet.new(land)
+    parents = Map.new(land, &{&1, &1})
+
+    parents =
+      Enum.reduce(land, parents, fn {r, c}, parents ->
+        Enum.reduce([{r + 1, c}, {r, c + 1}], parents, fn other, parents ->
+          if MapSet.member?(known, other), do: union(parents, {r, c}, other), else: parents
+        end)
+      end)
+
+    land |> Enum.map(&find(parents, &1)) |> MapSet.new() |> MapSet.size()
+  end
+
+  defp find(parents, at) do
+    parent = Map.fetch!(parents, at)
+    if parent == at, do: at, else: find(parents, parent)
+  end
+
+  defp union(parents, a, b) do
+    root_a = find(parents, a)
+    root_b = find(parents, b)
+    if root_a == root_b, do: parents, else: Map.put(parents, root_a, root_b)
+  end
+end"),
+  ]
+}
+
+pub fn nc107_clone_graph() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The map from original node to its copy is the whole problem. Consulting it before copying anything is what makes a cycle terminate: a node already in the map is returned rather than copied again. Without that check any cycle recurses forever.", "defmodule Solution do
+  def clone_graph(_adjacency, start) when start < 0, do: []
+
+  def clone_graph(adjacency, start) do
+    if start >= length(adjacency) do
+      []
+    else
+      graph = adjacency |> Enum.with_index() |> Map.new(fn {edges, i} -> {i, edges} end)
+
+      # The set of nodes already dealt with is the whole problem. Without it a
+      # cycle sends the traversal round forever; with it, a node already reached
+      # is simply skipped. Only the component containing the start is copied,
+      # which is what the reachable set also decides.
+      renumber(graph, discover(graph, [start], MapSet.new()))
+    end
+  end
+
+  defp discover(_graph, [], reached), do: reached
+
+  defp discover(graph, [node | rest], reached) do
+    if MapSet.member?(reached, node) or not Map.has_key?(graph, node) do
+      discover(graph, rest, reached)
+    else
+      discover(graph, rest ++ Map.fetch!(graph, node), MapSet.put(reached, node))
+    end
+  end
+
+  # Reachable nodes renumbered by their original index, ascending. Numbering by
+  # *discovery* order would make the answer depend on whether the traversal was
+  # breadth- or depth-first, which is not part of the problem.
+  defp renumber(graph, reached) do
+    ordered = reached |> MapSet.to_list() |> Enum.sort()
+    numbering = ordered |> Enum.with_index() |> Map.new()
+
+    Enum.map(ordered, fn node ->
+      graph
+      |> Map.fetch!(node)
+      |> Enum.filter(&Map.has_key?(numbering, &1))
+      |> Enum.map(&Map.fetch!(numbering, &1))
+    end)
+  end
+end"),
+    #("Solution 2 · Depth first", "Same map, depth-first instead of breadth-first — proof that the traversal order is irrelevant here. The copy is created and registered *before* its neighbours are visited, which is the ordering that makes a cycle find the half-built copy instead of recursing into it.", "defmodule Solution do
+  def clone_graph(_adjacency, start) when start < 0, do: []
+
+  def clone_graph(adjacency, start) do
+    if start >= length(adjacency) do
+      []
+    else
+      graph = adjacency |> Enum.with_index() |> Map.new(fn {edges, i} -> {i, edges} end)
+      renumber(graph, visit(graph, start, MapSet.new()))
+    end
+  end
+
+  # Depth-first. The node is marked *before* recursing into its neighbours,
+  # which is what makes a cycle terminate -- marking afterwards would let the
+  # traversal reach the same node again while it was still being visited.
+  defp visit(graph, node, reached) do
+    if MapSet.member?(reached, node) or not Map.has_key?(graph, node) do
+      reached
+    else
+      graph
+      |> Map.fetch!(node)
+      |> Enum.reduce(MapSet.put(reached, node), &visit(graph, &1, &2))
+    end
+  end
+
+  defp renumber(graph, reached) do
+    ordered = reached |> MapSet.to_list() |> Enum.sort()
+    numbering = ordered |> Enum.with_index() |> Map.new()
+
+    Enum.map(ordered, fn node ->
+      graph
+      |> Map.fetch!(node)
+      |> Enum.filter(&Map.has_key?(numbering, &1))
+      |> Enum.map(&Map.fetch!(numbering, &1))
+    end)
+  end
+end"),
+  ]
+}
+
+pub fn nc108_max_area_of_island() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Number of Islands with the count replaced by a size. Depth-first suits it because the size falls out of the return value — one for this cell plus whatever the four neighbours return — rather than needing a counter threaded through the walk.", "defmodule Solution do
+  # The same component search as counting islands, except each search reports
+  # how much it covered rather than just that it happened.
+  def max_area_of_island(grid) do
+    land =
+      for {row, r} <- Enum.with_index(grid),
+          {value, c} <- Enum.with_index(row),
+          value == 1,
+          into: MapSet.new(),
+          do: {r, c}
+
+    {best, _seen} =
+      Enum.reduce(land, {0, MapSet.new()}, fn at, {best, seen} ->
+        if MapSet.member?(seen, at) do
+          {best, seen}
+        else
+          {area, seen} = flood(land, [at], seen, 0)
+          {max(best, area), seen}
+        end
+      end)
+
+    best
+  end
+
+  defp flood(_land, [], seen, area), do: {area, seen}
+
+  defp flood(land, [at | rest], seen, area) do
+    if MapSet.member?(land, at) and not MapSet.member?(seen, at),
+      do: flood(land, neighbours(at) ++ rest, MapSet.put(seen, at), area + 1),
+      else: flood(land, rest, seen, area)
+  end
+
+  defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+end"),
+    #("Solution 2 · Breadth first", "The same areas found wave by wave. Nothing is gained over the depth-first version here, but the frontier is explicit rather than living on the call stack, which is what a grid deep enough to overflow the stack needs.", "defmodule Solution do
+  # Breadth-first instead. For a component's *size* the traversal order does not
+  # matter at all -- either visits every square exactly once -- so the choice is
+  # about the machine: a queue keeps the memory proportional to the frontier
+  # rather than to the deepest path, which is what saves a long thin island from
+  # overflowing the stack.
+  def max_area_of_island(grid) do
+    land =
+      for {row, r} <- Enum.with_index(grid),
+          {value, c} <- Enum.with_index(row),
+          value == 1,
+          into: MapSet.new(),
+          do: {r, c}
+
+    {best, _seen} =
+      Enum.reduce(land, {0, MapSet.new()}, fn at, {best, seen} ->
+        if MapSet.member?(seen, at) do
+          {best, seen}
+        else
+          {area, seen} = spread(land, :queue.from_list([at]), seen, 0)
+          {max(best, area), seen}
+        end
+      end)
+
+    best
+  end
+
+  defp spread(land, frontier, seen, area) do
+    case :queue.out(frontier) do
+      {:empty, _} ->
+        {area, seen}
+
+      {{:value, at}, rest} ->
+        if MapSet.member?(land, at) and not MapSet.member?(seen, at) do
+          rest = Enum.reduce(neighbours(at), rest, &:queue.in(&1, &2))
+          spread(land, rest, MapSet.put(seen, at), area + 1)
+        else
+          spread(land, rest, seen, area)
+        end
+    end
+  end
+
+  defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+end"),
+  ]
+}
+
+pub fn nc109_pacific_atlantic() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Reverse the question. Asking of each cell whether water can get from there to both oceans repeats the same searches over and over; asking instead which cells an ocean could reach if water flowed uphill is two searches from the borders, and the answer is where the two sets meet. Flipping a search to start from the goal is the idea worth taking away.", "defmodule Solution do
+  def pacific_atlantic([]), do: []
+  def pacific_atlantic([[] | _]), do: []
+
+  # Search *from* each ocean rather than from each cell. Asking \"can this square
+  # reach the sea?\" means a fresh downhill search per square; asking \"which
+  # squares can the sea reach?\" is two uphill searches in total, and the answer
+  # is where they overlap.
+  def pacific_atlantic(heights) do
+    grid =
+      for {row, r} <- Enum.with_index(heights),
+          {value, c} <- Enum.with_index(row),
+          into: %{},
+          do: {{r, c}, value}
+
+    rows = length(heights)
+    columns = length(hd(heights))
+
+    pacific =
+      Enum.map(0..(columns - 1)//1, &{0, &1}) ++ Enum.map(0..(rows - 1)//1, &{&1, 0})
+
+    atlantic =
+      Enum.map(0..(columns - 1)//1, &{rows - 1, &1}) ++
+        Enum.map(0..(rows - 1)//1, &{&1, columns - 1})
+
+    grid
+    |> uphill(pacific, MapSet.new())
+    |> MapSet.intersection(uphill(grid, atlantic, MapSet.new()))
+    |> MapSet.to_list()
+    |> Enum.sort()
+  end
+
+  defp uphill(_grid, [], reached), do: reached
+
+  defp uphill(grid, [at | rest], reached) do
+    case Map.fetch(grid, at) do
+      :error ->
+        uphill(grid, rest, reached)
+
+      {:ok, height} ->
+        if MapSet.member?(reached, at) do
+          uphill(grid, rest, reached)
+        else
+          climbable = Enum.filter(neighbours(at), &(Map.get(grid, &1, -1) >= height))
+          uphill(grid, rest ++ climbable, MapSet.put(reached, at))
+        end
+    end
+  end
+
+  defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+end"),
+    #("Solution 2 · From each cell", "The literal reading: from every cell, search downhill and see which oceans it reaches. O(cells) searches over O(cells) each, against two searches total — and the two are answering the same question, which is what makes the reversal legitimate rather than a trick.", "defmodule Solution do
+  def pacific_atlantic([]), do: []
+  def pacific_atlantic([[] | _]), do: []
+
+  # The direct reading: from each square, flow downhill and see which edges are
+  # reachable. Correct, and it repeats nearly all of its work -- every square on
+  # a shared downhill path re-explores the same route. Reversing the question is
+  # what removes the repetition.
+  def pacific_atlantic(heights) do
+    grid =
+      for {row, r} <- Enum.with_index(heights),
+          {value, c} <- Enum.with_index(row),
+          into: %{},
+          do: {{r, c}, value}
+
+    rows = length(heights)
+    columns = length(hd(heights))
+
+    grid
+    |> Map.keys()
+    |> Enum.filter(fn at ->
+      reached = downhill(grid, [at], MapSet.new())
+
+      Enum.any?(reached, fn {r, c} -> r == 0 or c == 0 end) and
+        Enum.any?(reached, fn {r, c} -> r == rows - 1 or c == columns - 1 end)
+    end)
+    |> Enum.sort()
+  end
+
+  defp downhill(_grid, [], reached), do: reached
+
+  defp downhill(grid, [at | rest], reached) do
+    case Map.fetch(grid, at) do
+      :error ->
+        downhill(grid, rest, reached)
+
+      {:ok, height} ->
+        if MapSet.member?(reached, at) do
+          downhill(grid, rest, reached)
+        else
+          lower =
+            Enum.filter(neighbours(at), fn next ->
+              case Map.fetch(grid, next) do
+                {:ok, value} -> value <= height
+                :error -> false
+              end
+            end)
+
+          downhill(grid, rest ++ lower, MapSet.put(reached, at))
+        end
+    end
+  end
+
+  defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+end"),
+  ]
+}
+
 pub fn nc10_three_sum() -> List(#(String, String, String)) {
   [
     #("Solution 1", "Sort, fix one number, then run the two-pointer scan on the remainder looking for its negation. Sorting is what makes the duplicate triples skippable: equal values are adjacent, so stepping past them is a while loop, not a set.", "defmodule Solution do
@@ -753,6 +1105,750 @@ Every triple, checked. Sorting first means each triple comes out in ascending or
           do: {a, b, c}
 
     Enum.uniq(triples)
+  end
+end"),
+  ]
+}
+
+pub fn nc110_surrounded_regions() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Easier backwards. Rather than finding the surrounded regions, mark the ones that are not — everything reachable from a border O — and flip whatever is left. That side-steps having to notice mid-traversal that a region touches the edge, and costs one pass from the border rather than one per region.", "defmodule Solution do
+  def solve([]), do: []
+  def solve([[] | _] = board), do: board
+
+  # Invert the question. \"Which regions are surrounded?\" needs a search per
+  # region and a rule for what counts as escaping; \"which regions touch an
+  # edge?\" is one search from the border, and everything it does not reach is
+  # surrounded by definition.
+  def solve(board) do
+    rows = length(board)
+    columns = length(hd(board))
+
+    open =
+      for {row, r} <- Enum.with_index(board),
+          {value, c} <- Enum.with_index(row),
+          value == \"O\",
+          into: MapSet.new(),
+          do: {r, c}
+
+    border =
+      Enum.filter(open, fn {r, c} ->
+        r == 0 or c == 0 or r == rows - 1 or c == columns - 1
+      end)
+
+    safe = Enum.reduce(border, MapSet.new(), &flood(open, [&1], &2))
+
+    for {row, r} <- Enum.with_index(board) do
+      for {value, c} <- Enum.with_index(row) do
+        if value == \"O\" and not MapSet.member?(safe, {r, c}), do: \"X\", else: value
+      end
+    end
+  end
+
+  defp flood(_open, [], seen), do: seen
+
+  defp flood(open, [at | rest], seen) do
+    if MapSet.member?(open, at) and not MapSet.member?(seen, at),
+      do: flood(open, neighbours(at) ++ rest, MapSet.put(seen, at)),
+      else: flood(open, rest, seen)
+  end
+
+  defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+end"),
+    #("Solution 2 · Per region", "The direct reading: gather each region, then flip it only if no cell in it sits on the border. Honest, and it makes explicit what the border-first version is exploiting — but it has to collect the whole region before it can decide anything about it.", "defmodule Solution do
+  def solve([]), do: []
+  def solve([[] | _] = board), do: board
+
+  # The direct reading: find each region, then decide whether it escapes. It
+  # works, and it needs a second idea the border search does not -- the whole
+  # region has to be collected before any verdict can be given, so the search
+  # cannot stop early and the escape test is over the component rather than a
+  # single square.
+  def solve(board) do
+    rows = length(board)
+    columns = length(hd(board))
+
+    open =
+      for {row, r} <- Enum.with_index(board),
+          {value, c} <- Enum.with_index(row),
+          value == \"O\",
+          into: MapSet.new(),
+          do: {r, c}
+
+    {doomed, _seen} =
+      Enum.reduce(open, {MapSet.new(), MapSet.new()}, fn at, {doomed, seen} ->
+        if MapSet.member?(seen, at) do
+          {doomed, seen}
+        else
+          region = flood(open, [at], MapSet.new())
+
+          escapes =
+            Enum.any?(region, fn {r, c} ->
+              r == 0 or c == 0 or r == rows - 1 or c == columns - 1
+            end)
+
+          {if(escapes, do: doomed, else: MapSet.union(doomed, region)),
+           MapSet.union(seen, region)}
+        end
+      end)
+
+    for {row, r} <- Enum.with_index(board) do
+      for {value, c} <- Enum.with_index(row) do
+        if MapSet.member?(doomed, {r, c}), do: \"X\", else: value
+      end
+    end
+  end
+
+  defp flood(_open, [], seen), do: seen
+
+  defp flood(open, [at | rest], seen) do
+    if MapSet.member?(open, at) and not MapSet.member?(seen, at),
+      do: flood(open, neighbours(at) ++ rest, MapSet.put(seen, at)),
+      else: flood(open, rest, seen)
+  end
+
+  defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+end"),
+  ]
+}
+
+pub fn nc111_rotting_oranges() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Multi-source breadth-first search: every rotten orange is on the frontier at minute zero, so each wave of the search *is* one minute and the number of waves is the answer. A separate search per source would give distances from each and then still need combining. Any fresh orange left unreached is what makes the answer -1.", "defmodule Solution do
+  # Breadth-first from *every* rotten orange at once, which is what makes the
+  # level count a time: all the sources start at minute zero together, so each
+  # wave of the search is one minute. A separate search per source would give
+  # distances from each, and then need combining.
+  def oranges_rotting(grid) do
+    board =
+      for {row, r} <- Enum.with_index(grid),
+          {value, c} <- Enum.with_index(row),
+          into: %{},
+          do: {{r, c}, value}
+
+    rotten = for {at, 2} <- board, do: at
+    fresh = for {at, 1} <- board, into: MapSet.new(), do: at
+
+    {minutes, reached} = spread(board, rotten, MapSet.new(rotten), 0)
+
+    if MapSet.size(MapSet.difference(fresh, reached)) == 0, do: minutes, else: -1
+  end
+
+  defp spread(board, frontier, reached, minutes) do
+    next =
+      frontier
+      |> Enum.flat_map(&neighbours/1)
+      |> Enum.filter(&(Map.get(board, &1) == 1 and not MapSet.member?(reached, &1)))
+      |> Enum.uniq()
+
+    if next == [] do
+      {minutes, reached}
+    else
+      spread(board, next, MapSet.union(reached, MapSet.new(next)), minutes + 1)
+    end
+  end
+
+  defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+end"),
+    #("Solution 2 · Simulate minutes", "Rebuild the grid one minute at a time, exactly as described. The same complexity as the wave search, and it makes the equivalence visible: a round of simulation and a level of breadth-first search are the same step written two ways.", "defmodule Solution do
+  def oranges_rotting(grid) do
+    board =
+      for {row, r} <- Enum.with_index(grid),
+          {value, c} <- Enum.with_index(row),
+          into: %{},
+          do: {{r, c}, value}
+
+    tick(board, 0)
+  end
+
+  # Rewrite the whole grid once per minute rather than tracking a frontier. Much
+  # more work -- every square is examined every minute, not just the ones next
+  # to the rot -- but it is the problem statement executed literally, and it
+  # makes plain that the answer counts *rounds*, not distances.
+  defp tick(board, minutes) do
+    next =
+      Map.new(board, fn {at, value} ->
+        if value == 1 and Enum.any?(neighbours(at), &(Map.get(board, &1) == 2)),
+          do: {at, 2},
+          else: {at, value}
+      end)
+
+    cond do
+      next != board -> tick(next, minutes + 1)
+      # Nothing changed: either everything has rotted or what is left never will.
+      Enum.any?(Map.values(board), &(&1 == 1)) -> -1
+      true -> minutes
+    end
+  end
+
+  defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+end"),
+  ]
+}
+
+pub fn nc112_walls_and_gates() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The same multi-source wave as rotting oranges, writing the wave number into the cell instead of counting waves. Starting from every gate at once is what makes the first arrival at a room its nearest gate — no comparison between gates is ever needed.", "defmodule Solution do
+  @infinity 2_147_483_647
+
+  # One breadth-first search starting from *all* the gates at once, rather than
+  # one search per empty room. Because every source begins at distance zero
+  # together, the first time a room is reached is by its nearest gate -- the
+  # multi-source search does the whole grid in one pass.
+  def walls_and_gates(rooms) do
+    board =
+      for {row, r} <- Enum.with_index(rooms),
+          {value, c} <- Enum.with_index(row),
+          into: %{},
+          do: {{r, c}, value}
+
+    gates = for {at, 0} <- board, do: at
+    distances = spread(board, gates, Map.new(gates, &{&1, 0}), 1)
+
+    for {row, r} <- Enum.with_index(rooms) do
+      for {value, c} <- Enum.with_index(row) do
+        if value == @infinity, do: Map.get(distances, {r, c}, @infinity), else: value
+      end
+    end
+  end
+
+  defp spread(board, frontier, distances, steps) do
+    next =
+      frontier
+      |> Enum.flat_map(&neighbours/1)
+      |> Enum.filter(&(Map.get(board, &1) == @infinity and not Map.has_key?(distances, &1)))
+      |> Enum.uniq()
+
+    if next == [] do
+      distances
+    else
+      spread(board, next, Enum.reduce(next, distances, &Map.put(&2, &1, steps)), steps + 1)
+    end
+  end
+
+  defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+end"),
+    #("Solution 2 · From each room", "A search outward from each empty room until it meets a gate. One full search per room for an answer the single multi-source pass already has, which is the cost the wave avoids — but it is the version that says the problem statement outright.", "defmodule Solution do
+  @infinity 2_147_483_647
+
+  # One search per empty room, looking for the nearest gate. The answer is the
+  # same and the cost is not: every room re-explores the same corridors. Worth
+  # writing once to see why starting from the gates instead -- the sources, not
+  # the questions -- collapses all of it into a single pass.
+  def walls_and_gates(rooms) do
+    board =
+      for {row, r} <- Enum.with_index(rooms),
+          {value, c} <- Enum.with_index(row),
+          into: %{},
+          do: {{r, c}, value}
+
+    for {row, r} <- Enum.with_index(rooms) do
+      for {value, c} <- Enum.with_index(row) do
+        if value == @infinity,
+          do: nearest_gate(board, [{r, c}], MapSet.new([{r, c}]), 0),
+          else: value
+      end
+    end
+  end
+
+  defp nearest_gate(board, frontier, seen, steps) do
+    if Enum.any?(frontier, &(Map.get(board, &1) == 0)) do
+      steps
+    else
+      next =
+        frontier
+        |> Enum.flat_map(&neighbours/1)
+        |> Enum.filter(fn at ->
+          not MapSet.member?(seen, at) and Map.get(board, at, -1) != -1
+        end)
+        |> Enum.uniq()
+
+      if next == [],
+        do: @infinity,
+        else: nearest_gate(board, next, MapSet.union(seen, MapSet.new(next)), steps + 1)
+    end
+  end
+
+  defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+end"),
+  ]
+}
+
+pub fn nc113_course_schedule() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "\"Can every course be finished\" is \"is this graph acyclic\". Kahn's algorithm takes whatever has no outstanding prerequisites, releases what depended on it, and stalls exactly when a cycle remains — so the cycle check is the algorithm running out of work early, not a separate test.", "defmodule Solution do
+  # Kahn's algorithm. Courses with nothing outstanding can be taken now; taking
+  # one releases whatever depended on it. If the process stalls with courses
+  # left, those courses depend on each other in a circle -- a cycle is exactly
+  # what \"cannot be finished\" means.
+  def can_finish(num_courses, prerequisites) do
+    waiting =
+      Enum.reduce(prerequisites, %{}, fn [course, _prereq], acc ->
+        Map.update(acc, course, 1, &(&1 + 1))
+      end)
+
+    unlocks =
+      Enum.reduce(prerequisites, %{}, fn [course, prereq], acc ->
+        Map.update(acc, prereq, [course], &[course | &1])
+      end)
+
+    ready = for c <- 0..(num_courses - 1)//1, Map.get(waiting, c, 0) == 0, do: c
+
+    take(ready, waiting, unlocks, 0) == num_courses
+  end
+
+  defp take([], _waiting, _unlocks, taken), do: taken
+
+  defp take([course | rest], waiting, unlocks, taken) do
+    {waiting, freed} =
+      Enum.reduce(Map.get(unlocks, course, []), {waiting, []}, fn following, {waiting, freed} ->
+        left = Map.get(waiting, following, 0) - 1
+        waiting = Map.put(waiting, following, left)
+        if left == 0, do: {waiting, [following | freed]}, else: {waiting, freed}
+      end)
+
+    take(rest ++ freed, waiting, unlocks, taken + 1)
+  end
+end"),
+    #("Solution 2 · Dfs colours", "Depth-first needs three states, not two. \"Seen\" is not enough: a node reached again down a *different* branch is fine, while one reached again while still on the current path is a cycle. The in-progress set is exactly what tells those apart.", "defmodule Solution do
+  def can_finish(num_courses, prerequisites) do
+    needs =
+      Enum.reduce(prerequisites, %{}, fn [course, prereq], acc ->
+        Map.update(acc, course, [prereq], &[prereq | &1])
+      end)
+
+    0..(num_courses - 1)//1
+    |> Enum.reduce_while(MapSet.new(), fn course, done ->
+      case visit(course, needs, MapSet.new(), done) do
+        {:ok, done} -> {:cont, done}
+        :cycle -> {:halt, :cycle}
+      end
+    end)
+    |> Kernel.!=(:cycle)
+  end
+
+  # Depth-first with three states rather than two. \"Seen\" is not enough: a node
+  # reached twice down *different* branches is fine, while a node reached again
+  # while still on the current path is a cycle. The in-progress set is what
+  # tells those apart.
+  defp visit(course, needs, on_path, done) do
+    cond do
+      MapSet.member?(on_path, course) ->
+        :cycle
+
+      MapSet.member?(done, course) ->
+        {:ok, done}
+
+      true ->
+        on_path = MapSet.put(on_path, course)
+
+        Map.get(needs, course, [])
+        |> Enum.reduce_while({:ok, done}, fn prereq, {:ok, done} ->
+          case visit(prereq, needs, on_path, done) do
+            {:ok, done} -> {:cont, {:ok, done}}
+            :cycle -> {:halt, :cycle}
+          end
+        end)
+        |> case do
+          :cycle -> :cycle
+          {:ok, done} -> {:ok, MapSet.put(done, course)}
+        end
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc114_course_schedule_ii() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The same computation as deciding whether it is possible — the order courses come off the ready list is the answer. Detecting the cycle and producing the schedule are not two passes.", "defmodule Solution do
+  # The same Kahn's algorithm as deciding whether it is possible -- except the
+  # order courses come off the ready list *is* the answer. Detecting the cycle
+  # and producing the schedule are the same computation.
+  def find_order(num_courses, prerequisites) do
+    waiting =
+      Enum.reduce(prerequisites, %{}, fn [course, _prereq], acc ->
+        Map.update(acc, course, 1, &(&1 + 1))
+      end)
+
+    unlocks =
+      Enum.reduce(prerequisites, %{}, fn [course, prereq], acc ->
+        Map.update(acc, prereq, [course], &[course | &1])
+      end)
+
+    ready = for c <- 0..(num_courses - 1)//1, Map.get(waiting, c, 0) == 0, do: c
+    order = take(ready, waiting, unlocks, [])
+
+    # Stalled with courses left, so no order exists at all.
+    if length(order) == num_courses, do: order, else: []
+  end
+
+  defp take([], _waiting, _unlocks, order), do: Enum.reverse(order)
+
+  defp take([course | rest], waiting, unlocks, order) do
+    {waiting, freed} =
+      Enum.reduce(Map.get(unlocks, course, []), {waiting, []}, fn following, {waiting, freed} ->
+        left = Map.get(waiting, following, 0) - 1
+        waiting = Map.put(waiting, following, left)
+        if left == 0, do: {waiting, [following | freed]}, else: {waiting, freed}
+      end)
+
+    take(rest ++ freed, waiting, unlocks, [course | order])
+  end
+end"),
+    #("Solution 2 · Dfs postorder", "Record a course only after everything it depends on has been recorded. That post-order is a valid schedule by construction, with no indegrees to maintain — and it comes out reversed, which is the tell that it was built from the dependencies up.", "defmodule Solution do
+  def find_order(num_courses, prerequisites) do
+    needs =
+      Enum.reduce(prerequisites, %{}, fn [course, prereq], acc ->
+        Map.update(acc, course, [prereq], &[prereq | &1])
+      end)
+
+    0..(num_courses - 1)//1
+    |> Enum.reduce_while({MapSet.new(), []}, fn course, {done, order} ->
+      case visit(course, needs, MapSet.new(), done, order) do
+        {:ok, done, order} -> {:cont, {done, order}}
+        :cycle -> {:halt, :cycle}
+      end
+    end)
+    |> case do
+      :cycle -> []
+      {_done, order} -> Enum.reverse(order)
+    end
+  end
+
+  # Depth-first, recording a course only *after* everything it depends on has
+  # been recorded. That post-order is a valid schedule by construction -- no
+  # indegrees to maintain -- and the in-progress set doubles as the cycle check,
+  # which is what makes the impossible case fall out of the same walk.
+  defp visit(course, needs, on_path, done, order) do
+    cond do
+      MapSet.member?(on_path, course) ->
+        :cycle
+
+      MapSet.member?(done, course) ->
+        {:ok, done, order}
+
+      true ->
+        on_path = MapSet.put(on_path, course)
+
+        Map.get(needs, course, [])
+        |> Enum.reduce_while({:ok, done, order}, fn prereq, {:ok, done, order} ->
+          case visit(prereq, needs, on_path, done, order) do
+            {:ok, done, order} -> {:cont, {:ok, done, order}}
+            :cycle -> {:halt, :cycle}
+          end
+        end)
+        |> case do
+          :cycle -> :cycle
+          {:ok, done, order} -> {:ok, MapSet.put(done, course), [course | order]}
+        end
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc115_redundant_connection() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "n nodes and n edges means exactly one cycle, and union-find finds it the moment an edge joins two nodes already connected. Processing the edges in the order given is what makes the first such edge the *last* removable one, which is what the problem asks for.", "defmodule Solution do
+  # n nodes and n edges means exactly one cycle. Union-find spots it the moment
+  # an edge joins two nodes already connected -- and because the edges are
+  # processed in order, the first such edge is the last one that could be
+  # removed, which is what the problem asks for.
+  def find_redundant_connection(edges) do
+    edges
+    |> Enum.reduce({%{}, []}, fn [a, b], {parents, found} ->
+      root_a = find(parents, a)
+      root_b = find(parents, b)
+
+      if root_a == root_b,
+        do: {parents, [a, b]},
+        else: {Map.put(parents, root_a, root_b), found}
+    end)
+    |> elem(1)
+  end
+
+  defp find(parents, node) do
+    case Map.get(parents, node, node) do
+      ^node -> node
+      parent -> find(parents, parent)
+    end
+  end
+end"),
+    #("Solution 2 · By removal", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Try removing each edge, latest first, and keep the first removal that leaves a tree. O(n^2) against near-linear, but it needs no new structure and it is the specification read literally.", "defmodule Solution do
+  # Try removing each edge, latest first, and keep the first removal that leaves
+  # a tree. O(n^2) against union-find's near-linear, but it needs no new
+  # structure -- and it says the specification outright: the answer is the last
+  # edge whose absence would make the graph a tree.
+  def find_redundant_connection(edges) do
+    nodes = edges |> List.flatten() |> MapSet.new()
+    indexed = Enum.with_index(edges)
+
+    indexed
+    |> Enum.reverse()
+    |> Enum.find_value([], fn {edge, i} ->
+      remaining = for {other, j} <- indexed, j != i, do: other
+      if tree?(remaining, nodes), do: edge, else: nil
+    end)
+  end
+
+  defp tree?(edges, nodes) do
+    cond do
+      MapSet.size(nodes) == 0 ->
+        true
+
+      length(edges) != MapSet.size(nodes) - 1 ->
+        false
+
+      true ->
+        adjacency =
+          Enum.reduce(edges, %{}, fn [a, b], acc ->
+            acc |> Map.update(a, [b], &[b | &1]) |> Map.update(b, [a], &[a | &1])
+          end)
+
+        seen = walk([Enum.min(nodes)], adjacency, MapSet.new())
+        MapSet.size(seen) == MapSet.size(nodes)
+    end
+  end
+
+  defp walk([], _adjacency, seen), do: seen
+
+  defp walk([node | rest], adjacency, seen) do
+    if MapSet.member?(seen, node) do
+      walk(rest, adjacency, seen)
+    else
+      walk(Map.get(adjacency, node, []) ++ rest, adjacency, MapSet.put(seen, node))
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc116_connected_components() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Start at n components and subtract a merge for every edge that actually joins two different ones. No adjacency list, no traversal — the count falls straight out of how many merges happened.", "defmodule Solution do
+  # Start with n components and merge: every edge whose ends are not already
+  # together removes one. No traversal, no adjacency list -- the count falls
+  # straight out of how many merges actually happened.
+  def count_components(n, edges) do
+    {_parents, merges} =
+      Enum.reduce(edges, {%{}, 0}, fn [a, b], {parents, merges} ->
+        root_a = find(parents, a)
+        root_b = find(parents, b)
+
+        if root_a == root_b,
+          do: {parents, merges},
+          else: {Map.put(parents, root_a, root_b), merges + 1}
+      end)
+
+    n - merges
+  end
+
+  defp find(parents, node) do
+    case Map.get(parents, node, node) do
+      ^node -> node
+      parent -> find(parents, parent)
+    end
+  end
+end"),
+    #("Solution 2 · By traversal", "One search per unvisited node, exactly as with islands on a grid — the same counting idea with an adjacency list instead of coordinates. The contrast with union-find is the point: this needs the whole graph up front, the other can take edges as they arrive.", "defmodule Solution do
+  # One search per unvisited node, exactly as with islands on a grid -- the same
+  # counting-components idea with an adjacency list instead of coordinates.
+  # Worth seeing side by side with union-find: this one needs the whole graph up
+  # front, the other can take edges as they arrive.
+  def count_components(n, edges) do
+    adjacency =
+      Enum.reduce(edges, %{}, fn [a, b], acc ->
+        acc |> Map.update(a, [b], &[b | &1]) |> Map.update(b, [a], &[a | &1])
+      end)
+
+    {_seen, count} =
+      Enum.reduce(0..(n - 1)//1, {MapSet.new(), 0}, fn node, {seen, count} ->
+        if MapSet.member?(seen, node),
+          do: {seen, count},
+          else: {walk([node], adjacency, seen), count + 1}
+      end)
+
+    count
+  end
+
+  defp walk([], _adjacency, seen), do: seen
+
+  defp walk([node | rest], adjacency, seen) do
+    if MapSet.member?(seen, node) do
+      walk(rest, adjacency, seen)
+    else
+      walk(Map.get(adjacency, node, []) ++ rest, adjacency, MapSet.put(seen, node))
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc117_graph_valid_tree() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "A tree is connected *and* acyclic, but with exactly n-1 edges either condition implies the other, so the edge count plus one of them is enough. Here it is the count plus reachability. The n = 0 case has to be stated separately, since the n-1 count says otherwise.", "defmodule Solution do
+  def valid_tree(n, edges) do
+    cond do
+      # A graph with no nodes at all is vacuously a tree, provided it has no
+      # edges either -- worth stating, because the n-1 edge count says otherwise.
+      n <= 0 ->
+        edges == []
+
+      # A tree is two conditions at once: connected, and no cycles. Checking both
+      # separately is unnecessary -- with exactly n-1 edges, connected implies
+      # acyclic and acyclic implies connected, so testing the edge count plus
+      # either one is enough. Here it is the count plus reachability.
+      length(edges) != n - 1 ->
+        false
+
+      true ->
+        adjacency =
+          Enum.reduce(edges, %{}, fn [a, b], acc ->
+            acc |> Map.update(a, [b], &[b | &1]) |> Map.update(b, [a], &[a | &1])
+          end)
+
+        MapSet.size(walk([0], adjacency, MapSet.new())) == n
+    end
+  end
+
+  defp walk([], _adjacency, seen), do: seen
+
+  defp walk([node | rest], adjacency, seen) do
+    if MapSet.member?(seen, node) do
+      walk(rest, adjacency, seen)
+    else
+      walk(Map.get(adjacency, node, []) ++ rest, adjacency, MapSet.put(seen, node))
+    end
+  end
+end"),
+    #("Solution 2 · Union find", "Both conditions from one pass. An edge inside a component is a cycle, so if none is, the graph is a forest — and a forest with n-1 merges is a single tree. No adjacency list and no traversal.", "defmodule Solution do
+  def valid_tree(n, edges) do
+    if n <= 0 do
+      edges == []
+    else
+      # Both conditions from one pass. An edge joining two nodes already
+      # connected is a cycle, so if none does, the graph is a forest -- and a
+      # forest with n-1 merges is a single tree. No adjacency list and no
+      # traversal.
+      edges
+      |> Enum.reduce_while({%{}, 0}, fn [a, b], {parents, merges} ->
+        root_a = find(parents, a)
+        root_b = find(parents, b)
+
+        if root_a == root_b,
+          do: {:halt, :cycle},
+          else: {:cont, {Map.put(parents, root_a, root_b), merges + 1}}
+      end)
+      |> case do
+        :cycle -> false
+        {_parents, merges} -> merges == n - 1
+      end
+    end
+  end
+
+  defp find(parents, node) do
+    case Map.get(parents, node, node) do
+      ^node -> node
+      parent -> find(parents, parent)
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc118_word_ladder() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Shortest path on an unweighted graph, so breadth-first — but the graph is never built. Two words are neighbours when they share a wildcard pattern like \"*ot\", so bucketing every word under each of its patterns gives the adjacency in linear time.", "defmodule Solution do
+  def ladder_length(begin_word, end_word, word_list) do
+    words = MapSet.new(word_list)
+
+    if not MapSet.member?(words, end_word) do
+      0
+    else
+      # The graph is never built: \"hot\" and \"dot\" are neighbours because they
+      # share the pattern \"*ot\", so bucketing every word under each of its
+      # wildcard patterns gives the adjacency for free. Comparing every pair
+      # instead costs O(n^2) comparisons before the search even starts.
+      buckets =
+        Enum.reduce(words, %{}, fn word, acc ->
+          Enum.reduce(patterns(word), acc, fn pattern, acc ->
+            Map.update(acc, pattern, [word], &[word | &1])
+          end)
+        end)
+
+      search([begin_word], MapSet.new([begin_word]), buckets, end_word, 1)
+    end
+  end
+
+  defp patterns(word) do
+    letters = String.graphemes(word)
+
+    for i <- 0..(length(letters) - 1)//1 do
+      letters |> List.replace_at(i, \"*\") |> Enum.join()
+    end
+  end
+
+  defp search([], _seen, _buckets, _end_word, _steps), do: 0
+
+  defp search(frontier, seen, buckets, end_word, steps) do
+    if end_word in frontier do
+      steps
+    else
+      {next, seen} =
+        Enum.reduce(frontier, {[], seen}, fn word, acc ->
+          word
+          |> patterns()
+          |> Enum.flat_map(&Map.get(buckets, &1, []))
+          |> Enum.reduce(acc, fn neighbour, {next, seen} ->
+            if MapSet.member?(seen, neighbour),
+              do: {next, seen},
+              else: {[neighbour | next], MapSet.put(seen, neighbour)}
+          end)
+        end)
+
+      search(next, seen, buckets, end_word, steps + 1)
+    end
+  end
+end"),
+    #("Solution 2 · Compare pairs", "Neighbours found by comparing against every remaining word. Simpler to state, and O(n) comparisons per expansion instead of a constant number of lookups — which is exactly the cost the wildcard buckets remove.", "defmodule Solution do
+  def ladder_length(begin_word, end_word, word_list) do
+    words = MapSet.new(word_list)
+
+    if not MapSet.member?(words, end_word) do
+      0
+    else
+      search([begin_word], MapSet.new([begin_word]), words, end_word, 1)
+    end
+  end
+
+  # Neighbours found by comparing against every remaining word. Simpler to state
+  # and O(n) comparisons per expansion rather than a constant number of lookups
+  # -- which is the cost the wildcard buckets remove.
+  defp search([], _seen, _words, _end_word, _steps), do: 0
+
+  defp search(frontier, seen, words, end_word, steps) do
+    if end_word in frontier do
+      steps
+    else
+      next =
+        Enum.filter(words, fn candidate ->
+          not MapSet.member?(seen, candidate) and
+            Enum.any?(frontier, &differs_by_one?(&1, candidate))
+        end)
+
+      search(next, Enum.reduce(next, seen, &MapSet.put(&2, &1)), words, end_word, steps + 1)
+    end
+  end
+
+  defp differs_by_one?(a, b) do
+    a = String.graphemes(a)
+    b = String.graphemes(b)
+
+    length(a) == length(b) and
+      Enum.count(Enum.zip(a, b), fn {x, y} -> x != y end) == 1
   end
 end"),
   ]
@@ -5227,7 +6323,20 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
     "nc103_implement_trie" -> Ok(nc103_implement_trie())
     "nc104_word_dictionary" -> Ok(nc104_word_dictionary())
     "nc105_word_search_ii" -> Ok(nc105_word_search_ii())
+    "nc106_number_of_islands" -> Ok(nc106_number_of_islands())
+    "nc107_clone_graph" -> Ok(nc107_clone_graph())
+    "nc108_max_area_of_island" -> Ok(nc108_max_area_of_island())
+    "nc109_pacific_atlantic" -> Ok(nc109_pacific_atlantic())
     "nc10_three_sum" -> Ok(nc10_three_sum())
+    "nc110_surrounded_regions" -> Ok(nc110_surrounded_regions())
+    "nc111_rotting_oranges" -> Ok(nc111_rotting_oranges())
+    "nc112_walls_and_gates" -> Ok(nc112_walls_and_gates())
+    "nc113_course_schedule" -> Ok(nc113_course_schedule())
+    "nc114_course_schedule_ii" -> Ok(nc114_course_schedule_ii())
+    "nc115_redundant_connection" -> Ok(nc115_redundant_connection())
+    "nc116_connected_components" -> Ok(nc116_connected_components())
+    "nc117_graph_valid_tree" -> Ok(nc117_graph_valid_tree())
+    "nc118_word_ladder" -> Ok(nc118_word_ladder())
     "nc11_container_water" -> Ok(nc11_container_water())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())

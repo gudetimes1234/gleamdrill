@@ -1010,6 +1010,370 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc106_number_of_islands() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The grid is the graph: cells are nodes, the four neighbours are the edges, and nothing is ever built. Walk out from each unvisited land cell, mark everything it reaches, and add one — the traversal itself does the counting, which is why the answer needs no extra bookkeeping.", "export function numIslands(grid: string[][]): number {
+  const land = new Set<string>();
+  grid.forEach((row, r) => row.forEach((value, c) => value === \"1\" && land.add(`${r},${c}`)));
+
+  // Counting connected components: start a search at every piece of land not
+  // already reached, and each search that has to be started is one more island.
+  // Marking as you go is what stops a component being counted once per square.
+  const seen = new Set<string>();
+  let count = 0;
+
+  for (const at of land) {
+    if (seen.has(at)) continue;
+    count++;
+    const stack = [at];
+    while (stack.length) {
+      const key = stack.pop()!;
+      if (!land.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      const [r, c] = key.split(\",\").map(Number);
+      stack.push(`${r - 1},${c}`, `${r + 1},${c}`, `${r},${c - 1}`, `${r},${c + 1}`);
+    }
+  }
+
+  return count;
+}"),
+      #("Solution 2 · Union find", "The same count without recursing: join each land cell to the land above and to its left, and the answer is the number of land cells minus the number of joins that actually merged two components. Worth having because a deep enough grid overflows the recursive walk, and because union-find can take cells as they arrive rather than needing the whole grid first.", "export function numIslands(grid: string[][]): number {
+  const land = new Set<string>();
+  grid.forEach((row, r) => row.forEach((value, c) => value === \"1\" && land.add(`${r},${c}`)));
+
+  // Union-find instead of flood fill: every square starts as its own island and
+  // each adjacency merges two. Only right and down are needed -- every pair of
+  // neighbours is reached once that way -- and the answer is how many roots are
+  // left. This is the version that keeps working when the grid arrives one
+  // square at a time and the count has to be reported after each.
+  const parents = new Map<string, string>();
+  for (const at of land) parents.set(at, at);
+
+  const find = (at: string): string => {
+    while (parents.get(at) !== at) {
+      parents.set(at, parents.get(parents.get(at)!)!);
+      at = parents.get(at)!;
+    }
+    return at;
+  };
+
+  for (const at of land) {
+    const [r, c] = at.split(\",\").map(Number);
+    for (const other of [`${r + 1},${c}`, `${r},${c + 1}`]) {
+      if (!land.has(other)) continue;
+      const a = find(at);
+      const b = find(other);
+      if (a !== b) parents.set(a, b);
+    }
+  }
+
+  return new Set([...land].map(find)).size;
+}"),
+    ],
+    check: Check(
+      signature: "export function numIslands(grid: string[][]): number",
+      starter: "export function numIslands(grid: string[][]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+const board = (rows: string[]) => rows.map((row) => row.split(\"\"));
+
+export function run(): [string, string, string][] {
+  if (typeof solution.numIslands !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"numIslands(one big island)\", show(1), show(solution.numIslands(board([\"11110\", \"11010\", \"11000\", \"00000\"])))],
+    [\"numIslands(three islands)\", show(3), show(solution.numIslands(board([\"11000\", \"11000\", \"00100\", \"00011\"])))],
+    [\"numIslands(all water)\", show(0), show(solution.numIslands(board([\"000\", \"000\"])))],
+    [\"numIslands([])\", show(0), show(solution.numIslands([]))],
+    [\"numIslands(diagonal squares are separate)\", show(2), show(solution.numIslands(board([\"10\", \"01\"])))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc107_clone_graph() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The map from original node to its copy is the whole problem. Consulting it before copying anything is what makes a cycle terminate: a node already in the map is returned rather than copied again. Without that check any cycle recurses forever.", "export function cloneGraph(adjacency: number[][], start: number): number[][] {
+  if (start < 0 || start >= adjacency.length) return [];
+
+  // The set of nodes already dealt with is the whole problem. Without it a
+  // cycle sends the traversal round forever; with it, a node already reached is
+  // simply skipped. Only the component containing the start is copied, which is
+  // what the reachable set also decides.
+  const reached = new Set<number>();
+  const frontier = [start];
+  while (frontier.length) {
+    const node = frontier.shift()!;
+    if (reached.has(node) || node < 0 || node >= adjacency.length) continue;
+    reached.add(node);
+    frontier.push(...adjacency[node]);
+  }
+
+  return renumber(adjacency, reached);
+}
+
+// Reachable nodes renumbered by their original index, ascending. Numbering by
+// *discovery* order would make the answer depend on whether the traversal was
+// breadth- or depth-first, which is not part of the problem.
+function renumber(adjacency: number[][], reached: Set<number>): number[][] {
+  const ordered = [...reached].sort((a, b) => a - b);
+  const numbering = new Map(ordered.map((node, i) => [node, i]));
+  return ordered.map((node) =>
+    adjacency[node].filter((n) => numbering.has(n)).map((n) => numbering.get(n)!),
+  );
+}"),
+      #("Solution 2 · Depth first", "Same map, depth-first instead of breadth-first — proof that the traversal order is irrelevant here. The copy is created and registered *before* its neighbours are visited, which is the ordering that makes a cycle find the half-built copy instead of recursing into it.", "export function cloneGraph(adjacency: number[][], start: number): number[][] {
+  if (start < 0 || start >= adjacency.length) return [];
+
+  const reached = new Set<number>();
+
+  // Depth-first. The node is marked *before* recursing into its neighbours,
+  // which is what makes a cycle terminate -- marking afterwards would let the
+  // traversal reach the same node again while it was still being visited.
+  const visit = (node: number) => {
+    if (reached.has(node) || node < 0 || node >= adjacency.length) return;
+    reached.add(node);
+    for (const neighbour of adjacency[node]) visit(neighbour);
+  };
+
+  visit(start);
+  return renumber(adjacency, reached);
+}
+
+function renumber(adjacency: number[][], reached: Set<number>): number[][] {
+  const ordered = [...reached].sort((a, b) => a - b);
+  const numbering = new Map(ordered.map((node, i) => [node, i]));
+  return ordered.map((node) =>
+    adjacency[node].filter((n) => numbering.has(n)).map((n) => numbering.get(n)!),
+  );
+}"),
+    ],
+    check: Check(
+      signature: "export function cloneGraph(adjacency: number[][], start: number): number[][]",
+      starter: "export function cloneGraph(adjacency: number[][], start: number): number[][] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.cloneGraph !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"cloneGraph([[1,3],[0,2],[1,3],[0,2]], 0)\", show([[1, 3], [0, 2], [1, 3], [0, 2]]), show(solution.cloneGraph([[1, 3], [0, 2], [1, 3], [0, 2]], 0))],
+    [\"cloneGraph([[1],[0]], 0)\", show([[1], [0]]), show(solution.cloneGraph([[1], [0]], 0))],
+    [\"cloneGraph([[]], 0)\", show([[]]), show(solution.cloneGraph([[]], 0))],
+    [\"cloneGraph([], 0)\", show([]), show(solution.cloneGraph([], 0))],
+    [\"cloneGraph([[1],[0],[3],[2]], 2) -- renumbered\", show([[1], [0]]), show(solution.cloneGraph([[1], [0], [3], [2]], 2))],
+    [\"cloneGraph([[],[]], 1) -- only the reachable part\", show([[]]), show(solution.cloneGraph([[], []], 1))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc108_max_area_of_island() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Number of Islands with the count replaced by a size. Depth-first suits it because the size falls out of the return value — one for this cell plus whatever the four neighbours return — rather than needing a counter threaded through the walk.", "export function maxAreaOfIsland(grid: number[][]): number {
+  const land = new Set<string>();
+  grid.forEach((row, r) => row.forEach((value, c) => value === 1 && land.add(`${r},${c}`)));
+
+  // The same component search as counting islands, except each search reports
+  // how much it covered rather than just that it happened.
+  const seen = new Set<string>();
+  let best = 0;
+
+  for (const at of land) {
+    if (seen.has(at)) continue;
+    let area = 0;
+    const stack = [at];
+    while (stack.length) {
+      const key = stack.pop()!;
+      if (!land.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      area++;
+      const [r, c] = key.split(\",\").map(Number);
+      stack.push(`${r - 1},${c}`, `${r + 1},${c}`, `${r},${c - 1}`, `${r},${c + 1}`);
+    }
+    best = Math.max(best, area);
+  }
+
+  return best;
+}"),
+      #("Solution 2 · Breadth first", "The same areas found wave by wave. Nothing is gained over the depth-first version here, but the frontier is explicit rather than living on the call stack, which is what a grid deep enough to overflow the stack needs.", "export function maxAreaOfIsland(grid: number[][]): number {
+  const land = new Set<string>();
+  grid.forEach((row, r) => row.forEach((value, c) => value === 1 && land.add(`${r},${c}`)));
+
+  // Breadth-first instead. For a component's *size* the traversal order does
+  // not matter at all -- either visits every square exactly once -- so the
+  // choice is about the machine: a queue keeps the memory proportional to the
+  // frontier rather than to the deepest path, which is what saves a long thin
+  // island from overflowing the stack.
+  const seen = new Set<string>();
+  let best = 0;
+
+  for (const at of land) {
+    if (seen.has(at)) continue;
+    let area = 0;
+    const frontier = [at];
+    let head = 0;
+    while (head < frontier.length) {
+      const key = frontier[head++];
+      if (!land.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      area++;
+      const [r, c] = key.split(\",\").map(Number);
+      frontier.push(`${r - 1},${c}`, `${r + 1},${c}`, `${r},${c - 1}`, `${r},${c + 1}`);
+    }
+    best = Math.max(best, area);
+  }
+
+  return best;
+}"),
+    ],
+    check: Check(
+      signature: "export function maxAreaOfIsland(grid: number[][]): number",
+      starter: "export function maxAreaOfIsland(grid: number[][]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.maxAreaOfIsland !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"maxAreaOfIsland([[1,1,0],[1,0,0],[0,0,1]])\", show(3), show(solution.maxAreaOfIsland([[1, 1, 0], [1, 0, 0], [0, 0, 1]]))],
+    [\"maxAreaOfIsland([[0,0],[0,0]])\", show(0), show(solution.maxAreaOfIsland([[0, 0], [0, 0]]))],
+    [\"maxAreaOfIsland([])\", show(0), show(solution.maxAreaOfIsland([]))],
+    [\"maxAreaOfIsland([[1]])\", show(1), show(solution.maxAreaOfIsland([[1]]))],
+    [\"maxAreaOfIsland([[1,1,1],[1,1,1]])\", show(6), show(solution.maxAreaOfIsland([[1, 1, 1], [1, 1, 1]]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc109_pacific_atlantic() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Reverse the question. Asking of each cell whether water can get from there to both oceans repeats the same searches over and over; asking instead which cells an ocean could reach if water flowed uphill is two searches from the borders, and the answer is where the two sets meet. Flipping a search to start from the goal is the idea worth taking away.", "export function pacificAtlantic(heights: number[][]): number[][] {
+  if (heights.length === 0 || heights[0].length === 0) return [];
+
+  const rows = heights.length;
+  const columns = heights[0].length;
+
+  // Search *from* each ocean rather than from each cell. Asking \"can this
+  // square reach the sea?\" means a fresh downhill search per square; asking
+  // \"which squares can the sea reach?\" is two uphill searches in total, and the
+  // answer is where they overlap.
+  const uphill = (starts: [number, number][]): Set<string> => {
+    const reached = new Set<string>();
+    const frontier = [...starts];
+    let head = 0;
+    while (head < frontier.length) {
+      const [r, c] = frontier[head++];
+      if (reached.has(`${r},${c}`)) continue;
+      reached.add(`${r},${c}`);
+      for (const [nr, nc] of [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]) {
+        if (nr >= 0 && nr < rows && nc >= 0 && nc < columns && heights[nr][nc] >= heights[r][c]) {
+          frontier.push([nr, nc]);
+        }
+      }
+    }
+    return reached;
+  };
+
+  const pacific: [number, number][] = [];
+  const atlantic: [number, number][] = [];
+  for (let c = 0; c < columns; c++) {
+    pacific.push([0, c]);
+    atlantic.push([rows - 1, c]);
+  }
+  for (let r = 0; r < rows; r++) {
+    pacific.push([r, 0]);
+    atlantic.push([r, columns - 1]);
+  }
+
+  const fromPacific = uphill(pacific);
+  const fromAtlantic = uphill(atlantic);
+
+  return [...fromPacific]
+    .filter((key) => fromAtlantic.has(key))
+    .map((key) => key.split(\",\").map(Number))
+    .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+}"),
+      #("Solution 2 · From each cell", "The literal reading: from every cell, search downhill and see which oceans it reaches. O(cells) searches over O(cells) each, against two searches total — and the two are answering the same question, which is what makes the reversal legitimate rather than a trick.", "export function pacificAtlantic(heights: number[][]): number[][] {
+  if (heights.length === 0 || heights[0].length === 0) return [];
+
+  const rows = heights.length;
+  const columns = heights[0].length;
+
+  // The direct reading: from each square, flow downhill and see which edges are
+  // reachable. Correct, and it repeats nearly all of its work -- every square
+  // on a shared downhill path re-explores the same route. Reversing the
+  // question is what removes the repetition.
+  const downhill = (start: [number, number]): [number, number][] => {
+    const reached = new Set<string>();
+    const frontier = [start];
+    let head = 0;
+    while (head < frontier.length) {
+      const [r, c] = frontier[head++];
+      if (reached.has(`${r},${c}`)) continue;
+      reached.add(`${r},${c}`);
+      for (const [nr, nc] of [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]) {
+        if (nr >= 0 && nr < rows && nc >= 0 && nc < columns && heights[nr][nc] <= heights[r][c]) {
+          frontier.push([nr, nc]);
+        }
+      }
+    }
+    return [...reached].map((key) => key.split(\",\").map(Number) as [number, number]);
+  };
+
+  const out: number[][] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < columns; c++) {
+      const reached = downhill([r, c]);
+      const touchesPacific = reached.some(([rr, cc]) => rr === 0 || cc === 0);
+      const touchesAtlantic = reached.some(([rr, cc]) => rr === rows - 1 || cc === columns - 1);
+      if (touchesPacific && touchesAtlantic) out.push([r, c]);
+    }
+  }
+
+  return out.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+}"),
+    ],
+    check: Check(
+      signature: "export function pacificAtlantic(heights: number[][]): number[][]",
+      starter: "export function pacificAtlantic(heights: number[][]): number[][] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const GRID = [[1, 2, 2, 3, 5], [3, 2, 3, 4, 4], [2, 4, 5, 3, 1], [6, 7, 1, 4, 5], [5, 1, 1, 2, 4]];
+const sorted = (g: number[][]) => solution.pacificAtlantic(g).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+
+export function run(): [string, string, string][] {
+  if (typeof solution.pacificAtlantic !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"pacificAtlantic(the 5x5 example)\", show([[0, 4], [1, 3], [1, 4], [2, 2], [3, 0], [3, 1], [4, 0]]), show(sorted(GRID))],
+    [\"pacificAtlantic([[1]])\", show([[0, 0]]), show(sorted([[1]]))],
+    [\"pacificAtlantic([])\", show([]), show(sorted([]))],
+    [\"pacificAtlantic([[1,1],[1,1]])\", show([[0, 0], [0, 1], [1, 0], [1, 1]]), show(sorted([[1, 1], [1, 1]]))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn nc10_three_sum() -> Embedded {
   Embedded(
     solutions: [
@@ -1083,6 +1447,817 @@ export function run(): [string, string, string][] {
     ],
     [\"threeSum([0, 1, 1])\", show([]), show(normalise(solution.threeSum([0, 1, 1])))],
     [\"threeSum([0, 0, 0])\", show([\"[0,0,0]\"]), show(normalise(solution.threeSum([0, 0, 0])))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc110_surrounded_regions() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Easier backwards. Rather than finding the surrounded regions, mark the ones that are not — everything reachable from a border O — and flip whatever is left. That side-steps having to notice mid-traversal that a region touches the edge, and costs one pass from the border rather than one per region.", "export function solve(board: string[][]): string[][] {
+  if (board.length === 0 || board[0].length === 0) return board;
+
+  const rows = board.length;
+  const columns = board[0].length;
+
+  // Invert the question. \"Which regions are surrounded?\" needs a search per
+  // region and a rule for what counts as escaping; \"which regions touch an
+  // edge?\" is one search from the border, and everything it does not reach is
+  // surrounded by definition.
+  const safe = new Set<string>();
+  const stack: [number, number][] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < columns; c++) {
+      const onBorder = r === 0 || c === 0 || r === rows - 1 || c === columns - 1;
+      if (onBorder && board[r][c] === \"O\") stack.push([r, c]);
+    }
+  }
+
+  while (stack.length) {
+    const [r, c] = stack.pop()!;
+    if (r < 0 || r >= rows || c < 0 || c >= columns) continue;
+    if (safe.has(`${r},${c}`) || board[r][c] !== \"O\") continue;
+    safe.add(`${r},${c}`);
+    stack.push([r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]);
+  }
+
+  return board.map((row, r) =>
+    row.map((value, c) => (value === \"O\" && !safe.has(`${r},${c}`) ? \"X\" : value)),
+  );
+}"),
+      #("Solution 2 · Per region", "The direct reading: gather each region, then flip it only if no cell in it sits on the border. Honest, and it makes explicit what the border-first version is exploiting — but it has to collect the whole region before it can decide anything about it.", "export function solve(board: string[][]): string[][] {
+  if (board.length === 0 || board[0].length === 0) return board;
+
+  const rows = board.length;
+  const columns = board[0].length;
+
+  // The direct reading: find each region, then decide whether it escapes. It
+  // works, and it needs a second idea the border search does not -- the whole
+  // region has to be collected before any verdict can be given, so the search
+  // cannot stop early and the escape test is over the component rather than a
+  // single square.
+  const seen = new Set<string>();
+  const doomed = new Set<string>();
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < columns; c++) {
+      if (board[r][c] !== \"O\" || seen.has(`${r},${c}`)) continue;
+      const region: [number, number][] = [];
+      const stack: [number, number][] = [[r, c]];
+      const inRegion = new Set<string>();
+      while (stack.length) {
+        const [rr, cc] = stack.pop()!;
+        if (rr < 0 || rr >= rows || cc < 0 || cc >= columns) continue;
+        if (inRegion.has(`${rr},${cc}`) || board[rr][cc] !== \"O\") continue;
+        inRegion.add(`${rr},${cc}`);
+        region.push([rr, cc]);
+        stack.push([rr - 1, cc], [rr + 1, cc], [rr, cc - 1], [rr, cc + 1]);
+      }
+      for (const key of inRegion) seen.add(key);
+      const escapes = region.some(
+        ([rr, cc]) => rr === 0 || cc === 0 || rr === rows - 1 || cc === columns - 1,
+      );
+      if (!escapes) for (const key of inRegion) doomed.add(key);
+    }
+  }
+
+  return board.map((row, r) => row.map((value, c) => (doomed.has(`${r},${c}`) ? \"X\" : value)));
+}"),
+    ],
+    check: Check(
+      signature: "export function solve(board: string[][]): string[][]",
+      starter: "export function solve(board: string[][]): string[][] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+const shown = (rows: string[]) =>
+  solution.solve(rows.map((row) => row.split(\"\"))).map((row) => row.join(\"\"));
+
+export function run(): [string, string, string][] {
+  if (typeof solution.solve !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"solve(the classic 4x4)\", show([\"XXXX\", \"XXXX\", \"XXXX\", \"XOXX\"]), show(shown([\"XXXX\", \"XOOX\", \"XXOX\", \"XOXX\"]))],
+    [\"solve([['X']])\", show([\"X\"]), show(shown([\"X\"]))],
+    [\"solve([['O']]) -- on the border, so it survives\", show([\"O\"]), show(shown([\"O\"]))],
+    [\"solve([])\", show([]), show(shown([]))],
+    [\"solve(a region reaching the border)\", show([\"XOX\", \"XOX\", \"XXX\"]), show(shown([\"XOX\", \"XOX\", \"XXX\"]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc111_rotting_oranges() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Multi-source breadth-first search: every rotten orange is on the frontier at minute zero, so each wave of the search *is* one minute and the number of waves is the answer. A separate search per source would give distances from each and then still need combining. Any fresh orange left unreached is what makes the answer -1.", "export function orangesRotting(grid: number[][]): number {
+  let rotten: [number, number][] = [];
+  let fresh = 0;
+
+  grid.forEach((row, r) =>
+    row.forEach((value, c) => {
+      if (value === 2) rotten.push([r, c]);
+      else if (value === 1) fresh++;
+    }),
+  );
+
+  // Breadth-first from *every* rotten orange at once, which is what makes the
+  // level count a time: all the sources start at minute zero together, so each
+  // wave of the search is one minute. A separate search per source would give
+  // distances from each, and then need combining.
+  const seen = new Set(rotten.map(([r, c]) => `${r},${c}`));
+  let minutes = 0;
+
+  while (rotten.length && fresh) {
+    const following: [number, number][] = [];
+    for (const [r, c] of rotten) {
+      for (const [nr, nc] of [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]) {
+        if (nr < 0 || nr >= grid.length || nc < 0 || nc >= grid[0].length) continue;
+        if (grid[nr][nc] !== 1 || seen.has(`${nr},${nc}`)) continue;
+        seen.add(`${nr},${nc}`);
+        fresh--;
+        following.push([nr, nc]);
+      }
+    }
+    if (following.length === 0) break;
+    rotten = following;
+    minutes++;
+  }
+
+  return fresh === 0 ? minutes : -1;
+}"),
+      #("Solution 2 · Simulate minutes", "Rebuild the grid one minute at a time, exactly as described. The same complexity as the wave search, and it makes the equivalence visible: a round of simulation and a level of breadth-first search are the same step written two ways.", "export function orangesRotting(grid: number[][]): number {
+  let board = grid.map((row) => [...row]);
+  let minutes = 0;
+
+  // Rewrite the whole grid once per minute rather than tracking a frontier.
+  // Much more work -- every square is examined every minute, not just the ones
+  // next to the rot -- but it is the problem statement executed literally, and
+  // it makes plain that the answer counts *rounds*, not distances.
+  for (;;) {
+    const following = board.map((row, r) =>
+      row.map((value, c) => {
+        if (value !== 1) return value;
+        const touched = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].some(
+          ([nr, nc]) =>
+            nr >= 0 && nr < board.length && nc >= 0 && nc < board[0].length && board[nr][nc] === 2,
+        );
+        return touched ? 2 : value;
+      }),
+    );
+
+    if (JSON.stringify(following) === JSON.stringify(board)) {
+      // Nothing changed: either everything has rotted or what is left never
+      // will.
+      return board.some((row) => row.includes(1)) ? -1 : minutes;
+    }
+    board = following;
+    minutes++;
+  }
+}"),
+    ],
+    check: Check(
+      signature: "export function orangesRotting(grid: number[][]): number",
+      starter: "export function orangesRotting(grid: number[][]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.orangesRotting !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"orangesRotting([[2,1,1],[1,1,0],[0,1,1]])\", show(4), show(solution.orangesRotting([[2, 1, 1], [1, 1, 0], [0, 1, 1]]))],
+    [\"orangesRotting([[2,1,1],[0,1,1],[1,0,1]])\", show(-1), show(solution.orangesRotting([[2, 1, 1], [0, 1, 1], [1, 0, 1]]))],
+    [\"orangesRotting([[0,2]])\", show(0), show(solution.orangesRotting([[0, 2]]))],
+    [\"orangesRotting([])\", show(0), show(solution.orangesRotting([]))],
+    [\"orangesRotting([[1]])\", show(-1), show(solution.orangesRotting([[1]]))],
+    [\"orangesRotting([[0]])\", show(0), show(solution.orangesRotting([[0]]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc112_walls_and_gates() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The same multi-source wave as rotting oranges, writing the wave number into the cell instead of counting waves. Starting from every gate at once is what makes the first arrival at a room its nearest gate — no comparison between gates is ever needed.", "const INFINITY = 2147483647;
+
+export function wallsAndGates(rooms: number[][]): number[][] {
+  if (rooms.length === 0 || rooms[0].length === 0) return rooms;
+
+  const board = rooms.map((row) => [...row]);
+  const rows = board.length;
+  const columns = board[0].length;
+
+  // One breadth-first search starting from *all* the gates at once, rather than
+  // one search per empty room. Because every source begins at distance zero
+  // together, the first time a room is reached is by its nearest gate -- the
+  // multi-source search does the whole grid in one pass.
+  const frontier: [number, number][] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < columns; c++) if (board[r][c] === 0) frontier.push([r, c]);
+  }
+
+  let head = 0;
+  while (head < frontier.length) {
+    const [r, c] = frontier[head++];
+    for (const [nr, nc] of [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]) {
+      if (nr < 0 || nr >= rows || nc < 0 || nc >= columns) continue;
+      if (board[nr][nc] !== INFINITY) continue;
+      board[nr][nc] = board[r][c] + 1;
+      frontier.push([nr, nc]);
+    }
+  }
+
+  return board;
+}"),
+      #("Solution 2 · From each room", "A search outward from each empty room until it meets a gate. One full search per room for an answer the single multi-source pass already has, which is the cost the wave avoids — but it is the version that says the problem statement outright.", "const INFINITY = 2147483647;
+
+export function wallsAndGates(rooms: number[][]): number[][] {
+  if (rooms.length === 0 || rooms[0].length === 0) return rooms;
+
+  const rows = rooms.length;
+  const columns = rooms[0].length;
+
+  // One search per empty room, looking for the nearest gate. The answer is the
+  // same and the cost is not: every room re-explores the same corridors. Worth
+  // writing once to see why starting from the gates instead -- the sources, not
+  // the questions -- collapses all of it into a single pass.
+  const nearest = (start: [number, number]): number => {
+    const seen = new Set([`${start[0]},${start[1]}`]);
+    let frontier = [start];
+    let steps = 0;
+    while (frontier.length) {
+      const following: [number, number][] = [];
+      for (const [r, c] of frontier) {
+        if (rooms[r][c] === 0) return steps;
+        for (const [nr, nc] of [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]) {
+          if (nr < 0 || nr >= rows || nc < 0 || nc >= columns) continue;
+          if (rooms[nr][nc] === -1 || seen.has(`${nr},${nc}`)) continue;
+          seen.add(`${nr},${nc}`);
+          following.push([nr, nc]);
+        }
+      }
+      frontier = following;
+      steps++;
+    }
+    return INFINITY;
+  };
+
+  return rooms.map((row, r) =>
+    row.map((value, c) => (value === INFINITY ? nearest([r, c]) : value)),
+  );
+}"),
+    ],
+    check: Check(
+      signature: "export function wallsAndGates(rooms: number[][]): number[][]",
+      starter: "export function wallsAndGates(rooms: number[][]): number[][] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+const INF = 2147483647;
+
+export function run(): [string, string, string][] {
+  if (typeof solution.wallsAndGates !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"wallsAndGates(the classic 4x4)\", show([[3, -1, 0, 1], [2, 2, 1, -1], [1, -1, 2, -1], [0, -1, 3, 4]]), show(solution.wallsAndGates([[INF, -1, 0, INF], [INF, INF, INF, -1], [INF, -1, INF, -1], [0, -1, INF, INF]]))],
+    [\"wallsAndGates([[0]])\", show([[0]]), show(solution.wallsAndGates([[0]]))],
+    [\"wallsAndGates([[-1]])\", show([[-1]]), show(solution.wallsAndGates([[-1]]))],
+    [\"wallsAndGates([])\", show([]), show(solution.wallsAndGates([]))],
+    [\"wallsAndGates(no gate at all)\", show([[INF, INF]]), show(solution.wallsAndGates([[INF, INF]]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc113_course_schedule() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "\"Can every course be finished\" is \"is this graph acyclic\". Kahn's algorithm takes whatever has no outstanding prerequisites, releases what depended on it, and stalls exactly when a cycle remains — so the cycle check is the algorithm running out of work early, not a separate test.", "export function canFinish(numCourses: number, prerequisites: number[][]): boolean {
+  // Kahn's algorithm. Courses with nothing outstanding can be taken now; taking
+  // one releases whatever depended on it. If the process stalls with courses
+  // left, those courses depend on each other in a circle -- a cycle is exactly
+  // what \"cannot be finished\" means.
+  const waiting = new Array<number>(numCourses).fill(0);
+  const unlocks: number[][] = Array.from({ length: numCourses }, () => []);
+
+  for (const [course, prereq] of prerequisites) {
+    waiting[course]++;
+    unlocks[prereq].push(course);
+  }
+
+  const ready: number[] = [];
+  for (let c = 0; c < numCourses; c++) if (waiting[c] === 0) ready.push(c);
+
+  let head = 0;
+  let taken = 0;
+  while (head < ready.length) {
+    const course = ready[head++];
+    taken++;
+    for (const following of unlocks[course]) {
+      if (--waiting[following] === 0) ready.push(following);
+    }
+  }
+
+  return taken === numCourses;
+}"),
+      #("Solution 2 · Dfs colours", "Depth-first needs three states, not two. \"Seen\" is not enough: a node reached again down a *different* branch is fine, while one reached again while still on the current path is a cycle. The in-progress set is exactly what tells those apart.", "export function canFinish(numCourses: number, prerequisites: number[][]): boolean {
+  const needs: number[][] = Array.from({ length: numCourses }, () => []);
+  for (const [course, prereq] of prerequisites) needs[course].push(prereq);
+
+  const onPath = new Set<number>();
+  const done = new Set<number>();
+
+  // Depth-first with three states rather than two. \"Seen\" is not enough: a node
+  // reached twice down *different* branches is fine, while a node reached again
+  // while still on the current path is a cycle. The in-progress set is what
+  // tells those apart.
+  const visit = (course: number): boolean => {
+    if (onPath.has(course)) return false;
+    if (done.has(course)) return true;
+    onPath.add(course);
+    for (const prereq of needs[course]) {
+      if (!visit(prereq)) return false;
+    }
+    onPath.delete(course);
+    done.add(course);
+    return true;
+  };
+
+  for (let course = 0; course < numCourses; course++) {
+    if (!visit(course)) return false;
+  }
+  return true;
+}"),
+    ],
+    check: Check(
+      signature: "export function canFinish(numCourses: number, prerequisites: number[][]): boolean",
+      starter: "export function canFinish(numCourses: number, prerequisites: number[][]): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.canFinish !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"canFinish(2, [[1,0]])\", show(true), show(solution.canFinish(2, [[1, 0]]))],
+    [\"canFinish(2, [[1,0],[0,1]])\", show(false), show(solution.canFinish(2, [[1, 0], [0, 1]]))],
+    [\"canFinish(1, [])\", show(true), show(solution.canFinish(1, []))],
+    [\"canFinish(0, [])\", show(true), show(solution.canFinish(0, []))],
+    [\"canFinish(4, [[1,0],[2,1],[3,2]])\", show(true), show(solution.canFinish(4, [[1, 0], [2, 1], [3, 2]]))],
+    [\"canFinish(3, [[0,1],[1,2],[2,0]])\", show(false), show(solution.canFinish(3, [[0, 1], [1, 2], [2, 0]]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc114_course_schedule_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The same computation as deciding whether it is possible — the order courses come off the ready list is the answer. Detecting the cycle and producing the schedule are not two passes.", "export function findOrder(numCourses: number, prerequisites: number[][]): number[] {
+  // The same Kahn's algorithm as deciding whether it is possible -- except the
+  // order courses come off the ready list *is* the answer. Detecting the cycle
+  // and producing the schedule are the same computation.
+  const waiting = new Array<number>(numCourses).fill(0);
+  const unlocks: number[][] = Array.from({ length: numCourses }, () => []);
+
+  for (const [course, prereq] of prerequisites) {
+    waiting[course]++;
+    unlocks[prereq].push(course);
+  }
+
+  const order: number[] = [];
+  for (let c = 0; c < numCourses; c++) if (waiting[c] === 0) order.push(c);
+
+  let head = 0;
+  while (head < order.length) {
+    const course = order[head++];
+    for (const following of unlocks[course]) {
+      if (--waiting[following] === 0) order.push(following);
+    }
+  }
+
+  // Stalled with courses left, so no order exists at all.
+  return order.length === numCourses ? order : [];
+}"),
+      #("Solution 2 · Dfs postorder", "Record a course only after everything it depends on has been recorded. That post-order is a valid schedule by construction, with no indegrees to maintain — and it comes out reversed, which is the tell that it was built from the dependencies up.", "export function findOrder(numCourses: number, prerequisites: number[][]): number[] {
+  const needs: number[][] = Array.from({ length: numCourses }, () => []);
+  for (const [course, prereq] of prerequisites) needs[course].push(prereq);
+
+  const onPath = new Set<number>();
+  const done = new Set<number>();
+  const order: number[] = [];
+
+  // Depth-first, recording a course only *after* everything it depends on has
+  // been recorded. That post-order is a valid schedule by construction -- no
+  // indegrees to maintain -- and the in-progress set doubles as the cycle
+  // check, which is what makes the impossible case fall out of the same walk.
+  const visit = (course: number): boolean => {
+    if (onPath.has(course)) return false;
+    if (done.has(course)) return true;
+    onPath.add(course);
+    for (const prereq of needs[course]) {
+      if (!visit(prereq)) return false;
+    }
+    onPath.delete(course);
+    done.add(course);
+    order.push(course);
+    return true;
+  };
+
+  for (let course = 0; course < numCourses; course++) {
+    if (!visit(course)) return [];
+  }
+  return order;
+}"),
+    ],
+    check: Check(
+      signature: "export function findOrder(numCourses: number, prerequisites: number[][]): number[]",
+      starter: "export function findOrder(numCourses: number, prerequisites: number[][]): number[] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// Any valid order is acceptable, so the harness checks the order rather than
+// comparing it: every course appears exactly once, and every prerequisite comes
+// before the course that needs it.
+const valid = (numCourses: number, prerequisites: number[][]) => {
+  const order = solution.findOrder(numCourses, prerequisites);
+  if (order.length !== numCourses || new Set(order).size !== numCourses) return false;
+  const at = new Map(order.map((course, i) => [course, i]));
+  return prerequisites.every(([course, prereq]) => at.get(prereq)! < at.get(course)!);
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.findOrder !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"findOrder(2, [[1,0]]) is a valid order\", show(true), show(valid(2, [[1, 0]]))],
+    [\"findOrder(4, [[1,0],[2,0],[3,1],[3,2]]) is a valid order\", show(true), show(valid(4, [[1, 0], [2, 0], [3, 1], [3, 2]]))],
+    [\"findOrder(1, []) is a valid order\", show(true), show(valid(1, []))],
+    [\"findOrder(3, []) is a valid order\", show(true), show(valid(3, []))],
+    [\"findOrder(2, [[0,1],[1,0]]) -- a cycle, so no order\", show([]), show(solution.findOrder(2, [[0, 1], [1, 0]]))],
+    [\"findOrder(0, [])\", show([]), show(solution.findOrder(0, []))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc115_redundant_connection() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "n nodes and n edges means exactly one cycle, and union-find finds it the moment an edge joins two nodes already connected. Processing the edges in the order given is what makes the first such edge the *last* removable one, which is what the problem asks for.", "export function findRedundantConnection(edges: number[][]): number[] {
+  // n nodes and n edges means exactly one cycle. Union-find spots it the moment
+  // an edge joins two nodes already connected -- and because the edges are
+  // processed in order, the first such edge is the last one that could be
+  // removed, which is what the problem asks for.
+  const parents = new Map<number, number>();
+
+  const find = (node: number): number => {
+    while ((parents.get(node) ?? node) !== node) node = parents.get(node)!;
+    return node;
+  };
+
+  let found: number[] = [];
+  for (const [a, b] of edges) {
+    const rootA = find(a);
+    const rootB = find(b);
+    if (rootA === rootB) found = [a, b];
+    else parents.set(rootA, rootB);
+  }
+
+  return found;
+}"),
+      #("Solution 2 · By removal", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Try removing each edge, latest first, and keep the first removal that leaves a tree. O(n^2) against near-linear, but it needs no new structure and it is the specification read literally.", "export function findRedundantConnection(edges: number[][]): number[] {
+  // Try removing each edge, latest first, and keep the first removal that
+  // leaves a tree. O(n^2) against union-find's near-linear, but it needs no new
+  // structure -- and it says the specification outright: the answer is the last
+  // edge whose absence would make the graph a tree.
+  const nodes = new Set(edges.flat());
+
+  for (let i = edges.length - 1; i >= 0; i--) {
+    const remaining = edges.filter((_edge, j) => j !== i);
+    if (isTree(remaining, nodes)) return edges[i];
+  }
+
+  return [];
+}
+
+function isTree(edges: number[][], nodes: Set<number>): boolean {
+  if (nodes.size === 0) return true;
+  if (edges.length !== nodes.size - 1) return false;
+
+  const adjacency = new Map<number, number[]>();
+  for (const node of nodes) adjacency.set(node, []);
+  for (const [a, b] of edges) {
+    adjacency.get(a)!.push(b);
+    adjacency.get(b)!.push(a);
+  }
+
+  const seen = new Set<number>();
+  const stack = [[...nodes][0]];
+  while (stack.length) {
+    const node = stack.pop()!;
+    if (seen.has(node)) continue;
+    seen.add(node);
+    stack.push(...(adjacency.get(node) ?? []));
+  }
+
+  return seen.size === nodes.size;
+}"),
+    ],
+    check: Check(
+      signature: "export function findRedundantConnection(edges: number[][]): number[]",
+      starter: "export function findRedundantConnection(edges: number[][]): number[] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.findRedundantConnection !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"findRedundantConnection([[1,2],[1,3],[2,3]])\", show([2, 3]), show(solution.findRedundantConnection([[1, 2], [1, 3], [2, 3]]))],
+    [\"findRedundantConnection([[1,2],[2,3],[3,4],[1,4],[1,5]])\", show([1, 4]), show(solution.findRedundantConnection([[1, 2], [2, 3], [3, 4], [1, 4], [1, 5]]))],
+    [\"findRedundantConnection([[1,2],[2,1]])\", show([2, 1]), show(solution.findRedundantConnection([[1, 2], [2, 1]]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc116_connected_components() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Start at n components and subtract a merge for every edge that actually joins two different ones. No adjacency list, no traversal — the count falls straight out of how many merges happened.", "export function countComponents(n: number, edges: number[][]): number {
+  // Start with n components and merge: every edge whose ends are not already
+  // together removes one. No traversal, no adjacency list -- the count falls
+  // straight out of how many merges actually happened.
+  const parents = new Map<number, number>();
+
+  const find = (node: number): number => {
+    while ((parents.get(node) ?? node) !== node) node = parents.get(node)!;
+    return node;
+  };
+
+  let merges = 0;
+  for (const [a, b] of edges) {
+    const rootA = find(a);
+    const rootB = find(b);
+    if (rootA !== rootB) {
+      parents.set(rootA, rootB);
+      merges++;
+    }
+  }
+
+  return n - merges;
+}"),
+      #("Solution 2 · By traversal", "One search per unvisited node, exactly as with islands on a grid — the same counting idea with an adjacency list instead of coordinates. The contrast with union-find is the point: this needs the whole graph up front, the other can take edges as they arrive.", "export function countComponents(n: number, edges: number[][]): number {
+  const adjacency: number[][] = Array.from({ length: n }, () => []);
+  for (const [a, b] of edges) {
+    adjacency[a].push(b);
+    adjacency[b].push(a);
+  }
+
+  // One search per unvisited node, exactly as with islands on a grid -- the
+  // same counting-components idea with an adjacency list instead of
+  // coordinates. Worth seeing side by side with union-find: this one needs the
+  // whole graph up front, the other can take edges as they arrive.
+  const seen = new Set<number>();
+  let count = 0;
+
+  for (let node = 0; node < n; node++) {
+    if (seen.has(node)) continue;
+    count++;
+    const stack = [node];
+    while (stack.length) {
+      const current = stack.pop()!;
+      if (seen.has(current)) continue;
+      seen.add(current);
+      stack.push(...adjacency[current]);
+    }
+  }
+
+  return count;
+}"),
+    ],
+    check: Check(
+      signature: "export function countComponents(n: number, edges: number[][]): number",
+      starter: "export function countComponents(n: number, edges: number[][]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.countComponents !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"countComponents(5, [[0,1],[1,2],[3,4]])\", show(2), show(solution.countComponents(5, [[0, 1], [1, 2], [3, 4]]))],
+    [\"countComponents(5, [[0,1],[1,2],[2,3],[3,4]])\", show(1), show(solution.countComponents(5, [[0, 1], [1, 2], [2, 3], [3, 4]]))],
+    [\"countComponents(3, [])\", show(3), show(solution.countComponents(3, []))],
+    [\"countComponents(0, [])\", show(0), show(solution.countComponents(0, []))],
+    [\"countComponents(1, [])\", show(1), show(solution.countComponents(1, []))],
+    [\"countComponents(4, [[0,1],[1,0]])\", show(3), show(solution.countComponents(4, [[0, 1], [1, 0]]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc117_graph_valid_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A tree is connected *and* acyclic, but with exactly n-1 edges either condition implies the other, so the edge count plus one of them is enough. Here it is the count plus reachability. The n = 0 case has to be stated separately, since the n-1 count says otherwise.", "export function validTree(n: number, edges: number[][]): boolean {
+  // A graph with no nodes at all is vacuously a tree, provided it has no edges
+  // either -- worth stating, because the n-1 edge count says otherwise.
+  if (n <= 0) return edges.length === 0;
+
+  // A tree is two conditions at once: connected, and no cycles. Checking both
+  // separately is unnecessary -- with exactly n-1 edges, connected implies
+  // acyclic and acyclic implies connected, so testing the edge count plus
+  // either one is enough. Here it is the count plus reachability.
+  if (edges.length !== n - 1) return false;
+
+  const adjacency: number[][] = Array.from({ length: n }, () => []);
+  for (const [a, b] of edges) {
+    adjacency[a].push(b);
+    adjacency[b].push(a);
+  }
+
+  const seen = new Set<number>();
+  const stack = [0];
+  while (stack.length) {
+    const node = stack.pop()!;
+    if (seen.has(node)) continue;
+    seen.add(node);
+    stack.push(...adjacency[node]);
+  }
+
+  return seen.size === n;
+}"),
+      #("Solution 2 · Union find", "Both conditions from one pass. An edge inside a component is a cycle, so if none is, the graph is a forest — and a forest with n-1 merges is a single tree. No adjacency list and no traversal.", "export function validTree(n: number, edges: number[][]): boolean {
+  if (n <= 0) return edges.length === 0;
+
+  // Both conditions from one pass. An edge joining two nodes already connected
+  // is a cycle, so if none does, the graph is a forest -- and a forest with n-1
+  // merges is a single tree. No adjacency list and no traversal.
+  const parents = new Map<number, number>();
+
+  const find = (node: number): number => {
+    while ((parents.get(node) ?? node) !== node) node = parents.get(node)!;
+    return node;
+  };
+
+  let merges = 0;
+  for (const [a, b] of edges) {
+    const rootA = find(a);
+    const rootB = find(b);
+    if (rootA === rootB) return false;
+    parents.set(rootA, rootB);
+    merges++;
+  }
+
+  return merges === n - 1;
+}"),
+    ],
+    check: Check(
+      signature: "export function validTree(n: number, edges: number[][]): boolean",
+      starter: "export function validTree(n: number, edges: number[][]): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.validTree !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"validTree(5, [[0,1],[0,2],[0,3],[1,4]])\", show(true), show(solution.validTree(5, [[0, 1], [0, 2], [0, 3], [1, 4]]))],
+    [\"validTree(5, [[0,1],[1,2],[2,3],[1,3],[1,4]])\", show(false), show(solution.validTree(5, [[0, 1], [1, 2], [2, 3], [1, 3], [1, 4]]))],
+    [\"validTree(1, [])\", show(true), show(solution.validTree(1, []))],
+    [\"validTree(0, [])\", show(true), show(solution.validTree(0, []))],
+    [\"validTree(2, []) -- disconnected\", show(false), show(solution.validTree(2, []))],
+    [\"validTree(4, [[0,1],[2,3]]) -- two trees\", show(false), show(solution.validTree(4, [[0, 1], [2, 3]]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc118_word_ladder() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Shortest path on an unweighted graph, so breadth-first — but the graph is never built. Two words are neighbours when they share a wildcard pattern like \"*ot\", so bucketing every word under each of its patterns gives the adjacency in linear time.", "export function ladderLength(beginWord: string, endWord: string, wordList: string[]): number {
+  const words = new Set(wordList);
+  if (!words.has(endWord)) return 0;
+
+  // The graph is never built: \"hot\" and \"dot\" are neighbours because they share
+  // the pattern \"*ot\", so bucketing every word under each of its wildcard
+  // patterns gives the adjacency for free. Comparing every pair instead costs
+  // O(n^2) comparisons before the search even starts.
+  const buckets = new Map<string, string[]>();
+  for (const word of words) {
+    for (let i = 0; i < word.length; i++) {
+      const pattern = word.slice(0, i) + \"*\" + word.slice(i + 1);
+      if (!buckets.has(pattern)) buckets.set(pattern, []);
+      buckets.get(pattern)!.push(word);
+    }
+  }
+
+  const seen = new Set([beginWord]);
+  let frontier = [beginWord];
+  let steps = 1;
+
+  while (frontier.length) {
+    if (frontier.includes(endWord)) return steps;
+    const following: string[] = [];
+    for (const word of frontier) {
+      for (let i = 0; i < word.length; i++) {
+        const pattern = word.slice(0, i) + \"*\" + word.slice(i + 1);
+        for (const neighbour of buckets.get(pattern) ?? []) {
+          if (seen.has(neighbour)) continue;
+          seen.add(neighbour);
+          following.push(neighbour);
+        }
+      }
+    }
+    frontier = following;
+    steps++;
+  }
+
+  return 0;
+}"),
+      #("Solution 2 · Compare pairs", "Neighbours found by comparing against every remaining word. Simpler to state, and O(n) comparisons per expansion instead of a constant number of lookups — which is exactly the cost the wildcard buckets remove.", "export function ladderLength(beginWord: string, endWord: string, wordList: string[]): number {
+  const words = new Set(wordList);
+  if (!words.has(endWord)) return 0;
+
+  // Neighbours found by comparing against every remaining word. Simpler to
+  // state and O(n) comparisons per expansion rather than a constant number of
+  // lookups -- which is the cost the wildcard buckets remove.
+  const seen = new Set([beginWord]);
+  let frontier = [beginWord];
+  let steps = 1;
+
+  while (frontier.length) {
+    if (frontier.includes(endWord)) return steps;
+    const following: string[] = [];
+    for (const candidate of words) {
+      if (seen.has(candidate)) continue;
+      if (frontier.some((word) => differsByOne(word, candidate))) {
+        seen.add(candidate);
+        following.push(candidate);
+      }
+    }
+    frontier = following;
+    steps++;
+  }
+
+  return 0;
+}
+
+function differsByOne(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let differences = 0;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) differences++;
+  return differences === 1;
+}"),
+    ],
+    check: Check(
+      signature: "export function ladderLength(beginWord: string, endWord: string, wordList: string[]): number",
+      starter: "export function ladderLength(beginWord: string, endWord: string, wordList: string[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.ladderLength !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"ladderLength('hit','cog', full list)\", show(5), show(solution.ladderLength('hit', 'cog', ['hot', 'dot', 'dog', 'lot', 'log', 'cog']))],
+    [\"ladderLength('hit','cog', without cog)\", show(0), show(solution.ladderLength('hit', 'cog', ['hot', 'dot', 'dog', 'lot', 'log']))],
+    [\"ladderLength('a','c', ['a','b','c'])\", show(2), show(solution.ladderLength('a', 'c', ['a', 'b', 'c']))],
+    [\"ladderLength('hit','hit', ['hit'])\", show(1), show(solution.ladderLength('hit', 'hit', ['hit']))],
+    [\"ladderLength('hot','dog', ['hot','dog']) -- no bridge\", show(0), show(solution.ladderLength('hot', 'dog', ['hot', 'dog']))],
   ];
 }",
     ),
@@ -7084,7 +8259,20 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc103_implement_trie" -> Ok(nc103_implement_trie())
     "nc104_word_dictionary" -> Ok(nc104_word_dictionary())
     "nc105_word_search_ii" -> Ok(nc105_word_search_ii())
+    "nc106_number_of_islands" -> Ok(nc106_number_of_islands())
+    "nc107_clone_graph" -> Ok(nc107_clone_graph())
+    "nc108_max_area_of_island" -> Ok(nc108_max_area_of_island())
+    "nc109_pacific_atlantic" -> Ok(nc109_pacific_atlantic())
     "nc10_three_sum" -> Ok(nc10_three_sum())
+    "nc110_surrounded_regions" -> Ok(nc110_surrounded_regions())
+    "nc111_rotting_oranges" -> Ok(nc111_rotting_oranges())
+    "nc112_walls_and_gates" -> Ok(nc112_walls_and_gates())
+    "nc113_course_schedule" -> Ok(nc113_course_schedule())
+    "nc114_course_schedule_ii" -> Ok(nc114_course_schedule_ii())
+    "nc115_redundant_connection" -> Ok(nc115_redundant_connection())
+    "nc116_connected_components" -> Ok(nc116_connected_components())
+    "nc117_graph_valid_tree" -> Ok(nc117_graph_valid_tree())
+    "nc118_word_ladder" -> Ok(nc118_word_ladder())
     "nc11_container_water" -> Ok(nc11_container_water())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())

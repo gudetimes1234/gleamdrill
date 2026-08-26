@@ -44,8 +44,34 @@ import nc104_word_dictionary
 import nc104_word_dictionary__by_length
 import nc105_word_search_ii
 import nc105_word_search_ii__each_word
+import nc106_number_of_islands
+import nc106_number_of_islands__union_find
+import nc107_clone_graph
+import nc107_clone_graph__depth_first
+import nc108_max_area_of_island
+import nc108_max_area_of_island__breadth_first
+import nc109_pacific_atlantic
+import nc109_pacific_atlantic__from_each_cell
 import nc10_three_sum
 import nc10_three_sum__brute_force
+import nc110_surrounded_regions
+import nc110_surrounded_regions__per_region
+import nc111_rotting_oranges
+import nc111_rotting_oranges__simulate_minutes
+import nc112_walls_and_gates
+import nc112_walls_and_gates__from_each_room
+import nc113_course_schedule
+import nc113_course_schedule__dfs_colours
+import nc114_course_schedule_ii
+import nc114_course_schedule_ii__dfs_postorder
+import nc115_redundant_connection
+import nc115_redundant_connection__by_removal
+import nc116_connected_components
+import nc116_connected_components__by_traversal
+import nc117_graph_valid_tree
+import nc117_graph_valid_tree__union_find
+import nc118_word_ladder
+import nc118_word_ladder__compare_pairs
 import nc11_container_water
 import nc11_container_water__brute_force
 import nc12_best_time_stock
@@ -596,6 +622,44 @@ pub fn main() {
     ),
     check_word_search_ii(nc105_word_search_ii.find_words),
     check_word_search_ii(nc105_word_search_ii__each_word.find_words),
+    check_number_of_islands(nc106_number_of_islands.num_islands),
+    check_number_of_islands(nc106_number_of_islands__union_find.num_islands),
+    check_clone_graph(nc107_clone_graph.clone_graph),
+    check_clone_graph(nc107_clone_graph__depth_first.clone_graph),
+    check_max_area_of_island(nc108_max_area_of_island.max_area_of_island),
+    check_max_area_of_island(
+      nc108_max_area_of_island__breadth_first.max_area_of_island,
+    ),
+    check_pacific_atlantic(nc109_pacific_atlantic.pacific_atlantic),
+    check_pacific_atlantic(
+      nc109_pacific_atlantic__from_each_cell.pacific_atlantic,
+    ),
+    check_surrounded_regions(nc110_surrounded_regions.solve),
+    check_surrounded_regions(nc110_surrounded_regions__per_region.solve),
+    check_rotting_oranges(nc111_rotting_oranges.oranges_rotting),
+    check_rotting_oranges(
+      nc111_rotting_oranges__simulate_minutes.oranges_rotting,
+    ),
+    check_walls_and_gates(nc112_walls_and_gates.walls_and_gates),
+    check_walls_and_gates(nc112_walls_and_gates__from_each_room.walls_and_gates),
+    check_course_schedule(nc113_course_schedule.can_finish),
+    check_course_schedule(nc113_course_schedule__dfs_colours.can_finish),
+    check_course_schedule_ii(nc114_course_schedule_ii.find_order),
+    check_course_schedule_ii(nc114_course_schedule_ii__dfs_postorder.find_order),
+    check_redundant_connection(
+      nc115_redundant_connection.find_redundant_connection,
+    ),
+    check_redundant_connection(
+      nc115_redundant_connection__by_removal.find_redundant_connection,
+    ),
+    check_connected_components(nc116_connected_components.count_components),
+    check_connected_components(
+      nc116_connected_components__by_traversal.count_components,
+    ),
+    check_graph_valid_tree(nc117_graph_valid_tree.valid_tree),
+    check_graph_valid_tree(nc117_graph_valid_tree__union_find.valid_tree),
+    check_word_ladder(nc118_word_ladder.ladder_length),
+    check_word_ladder(nc118_word_ladder__compare_pairs.ladder_length),
 
     // Gleam Tips
     check_list_patterns(tip01_list_patterns.length, tip01_list_patterns.last),
@@ -1802,6 +1866,196 @@ fn check_word_search_ii(
   let assert True = sorted([["a"]], ["a"]) == ["a"]
   let assert True = sorted(board, []) == []
   let assert True = sorted([], ["a"]) == []
+  Nil
+}
+
+fn check_number_of_islands(f: fn(List(List(String))) -> Int) -> Nil {
+  let board = fn(rows) { list.map(rows, string.to_graphemes) }
+
+  let assert True = f(board(["11110", "11010", "11000", "00000"])) == 1
+  let assert True = f(board(["11000", "11000", "00100", "00011"])) == 3
+  let assert True = f(board(["000", "000"])) == 0
+  let assert True = f([]) == 0
+  // Diagonals do not connect: these are two islands, not one.
+  let assert True = f(board(["10", "01"])) == 2
+  Nil
+}
+
+fn check_clone_graph(f: fn(List(List(Int)), Int) -> List(List(Int))) -> Nil {
+  let assert True =
+    f([[1, 3], [0, 2], [1, 3], [0, 2]], 0) == [[1, 3], [0, 2], [1, 3], [0, 2]]
+  let assert True = f([[1], [0]], 0) == [[1], [0]]
+  let assert True = f([[]], 0) == [[]]
+  let assert True = f([], 0) == []
+  // Only the component containing the start is copied \u{2014} and renumbered, so
+  // nodes 2 and 3 come back as 0 and 1.
+  let assert True = f([[1], [0], [3], [2]], 2) == [[1], [0]]
+  let assert True = f([[], []], 1) == [[]]
+  Nil
+}
+
+fn check_max_area_of_island(f: fn(List(List(Int))) -> Int) -> Nil {
+  let assert True = f([[1, 1, 0], [1, 0, 0], [0, 0, 1]]) == 3
+  let assert True = f([[0, 0], [0, 0]]) == 0
+  let assert True = f([]) == 0
+  let assert True = f([[1]]) == 1
+  let assert True = f([[1, 1, 1], [1, 1, 1]]) == 6
+  Nil
+}
+
+fn check_pacific_atlantic(f: fn(List(List(Int))) -> List(#(Int, Int))) -> Nil {
+  let assert True =
+    f([
+      [1, 2, 2, 3, 5],
+      [3, 2, 3, 4, 4],
+      [2, 4, 5, 3, 1],
+      [6, 7, 1, 4, 5],
+      [5, 1, 1, 2, 4],
+    ])
+    == [#(0, 4), #(1, 3), #(1, 4), #(2, 2), #(3, 0), #(3, 1), #(4, 0)]
+  // A single square touches both oceans at once.
+  let assert True = f([[1]]) == [#(0, 0)]
+  let assert True = f([]) == []
+  // All equal heights, so water flows anywhere and every square qualifies.
+  let assert True = f([[1, 1], [1, 1]]) == [#(0, 0), #(0, 1), #(1, 0), #(1, 1)]
+  Nil
+}
+
+fn check_surrounded_regions(
+  f: fn(List(List(String))) -> List(List(String)),
+) -> Nil {
+  let shown = fn(rows) {
+    rows
+    |> list.map(string.to_graphemes)
+    |> f
+    |> list.map(string.concat)
+  }
+
+  let assert True =
+    shown(["XXXX", "XOOX", "XXOX", "XOXX"]) == ["XXXX", "XXXX", "XXXX", "XOXX"]
+  let assert True = shown(["X"]) == ["X"]
+  // A lone O on the border escapes.
+  let assert True = shown(["O"]) == ["O"]
+  let assert True = shown([]) == []
+  // Both Os reach the top edge, so neither is captured.
+  let assert True = shown(["XOX", "XOX", "XXX"]) == ["XOX", "XOX", "XXX"]
+  Nil
+}
+
+fn check_rotting_oranges(f: fn(List(List(Int))) -> Int) -> Nil {
+  let assert True = f([[2, 1, 1], [1, 1, 0], [0, 1, 1]]) == 4
+  // The bottom-left orange is walled off, so it never rots.
+  let assert True = f([[2, 1, 1], [0, 1, 1], [1, 0, 1]]) == -1
+  // Nothing fresh to begin with, so no time passes.
+  let assert True = f([[0, 2]]) == 0
+  let assert True = f([]) == 0
+  let assert True = f([[1]]) == -1
+  let assert True = f([[0]]) == 0
+  Nil
+}
+
+fn check_walls_and_gates(f: fn(List(List(Int))) -> List(List(Int))) -> Nil {
+  let infinity = 2_147_483_647
+
+  let assert True =
+    f([
+      [infinity, -1, 0, infinity],
+      [infinity, infinity, infinity, -1],
+      [infinity, -1, infinity, -1],
+      [0, -1, infinity, infinity],
+    ])
+    == [[3, -1, 0, 1], [2, 2, 1, -1], [1, -1, 2, -1], [0, -1, 3, 4]]
+  let assert True = f([[0]]) == [[0]]
+  let assert True = f([[-1]]) == [[-1]]
+  let assert True = f([]) == []
+  // No gate anywhere, so every room stays unreachable.
+  let assert True = f([[infinity, infinity]]) == [[infinity, infinity]]
+  Nil
+}
+
+fn check_course_schedule(f: fn(Int, List(#(Int, Int))) -> Bool) -> Nil {
+  let assert True = f(2, [#(1, 0)])
+  let assert False = f(2, [#(1, 0), #(0, 1)])
+  let assert True = f(1, [])
+  let assert True = f(0, [])
+  let assert True = f(4, [#(1, 0), #(2, 1), #(3, 2)])
+  // A three-course cycle, which a "seen" set alone would not catch.
+  let assert False = f(3, [#(0, 1), #(1, 2), #(2, 0)])
+  Nil
+}
+
+/// Any valid order is acceptable, so this checks the order rather than
+/// comparing it: every course once, and every prerequisite before its course.
+fn check_course_schedule_ii(f: fn(Int, List(#(Int, Int))) -> List(Int)) -> Nil {
+  let valid = fn(count, prerequisites) {
+    let order = f(count, prerequisites)
+    let positions = list.index_map(order, fn(course, i) { #(course, i) })
+    let at = fn(course) {
+      case list.find(positions, fn(pair: #(Int, Int)) { pair.0 == course }) {
+        Ok(#(_, i)) -> Ok(i)
+        Error(Nil) -> Error(Nil)
+      }
+    }
+
+    list.length(order) == count
+    && list.length(list.unique(order)) == count
+    && list.all(prerequisites, fn(pair: #(Int, Int)) {
+      case at(pair.1), at(pair.0) {
+        Ok(before), Ok(after) -> before < after
+        _, _ -> False
+      }
+    })
+  }
+
+  let assert True = valid(2, [#(1, 0)])
+  let assert True = valid(4, [#(1, 0), #(2, 0), #(3, 1), #(3, 2)])
+  let assert True = valid(1, [])
+  let assert True = valid(3, [])
+  // A cycle, so there is no order at all.
+  let assert True = f(2, [#(0, 1), #(1, 0)]) == []
+  let assert True = f(0, []) == []
+  Nil
+}
+
+fn check_redundant_connection(f: fn(List(#(Int, Int))) -> #(Int, Int)) -> Nil {
+  let assert True = f([#(1, 2), #(1, 3), #(2, 3)]) == #(2, 3)
+  // The answer is the *last* edge that closes a cycle, not the first.
+  let assert True = f([#(1, 2), #(2, 3), #(3, 4), #(1, 4), #(1, 5)]) == #(1, 4)
+  let assert True = f([#(1, 2), #(2, 1)]) == #(2, 1)
+  Nil
+}
+
+fn check_connected_components(f: fn(Int, List(#(Int, Int))) -> Int) -> Nil {
+  let assert True = f(5, [#(0, 1), #(1, 2), #(3, 4)]) == 2
+  let assert True = f(5, [#(0, 1), #(1, 2), #(2, 3), #(3, 4)]) == 1
+  let assert True = f(3, []) == 3
+  let assert True = f(0, []) == 0
+  let assert True = f(1, []) == 1
+  // The same edge twice must only merge once.
+  let assert True = f(4, [#(0, 1), #(1, 0)]) == 3
+  Nil
+}
+
+fn check_graph_valid_tree(f: fn(Int, List(#(Int, Int))) -> Bool) -> Nil {
+  let assert True = f(5, [#(0, 1), #(0, 2), #(0, 3), #(1, 4)])
+  let assert False = f(5, [#(0, 1), #(1, 2), #(2, 3), #(1, 3), #(1, 4)])
+  let assert True = f(1, [])
+  let assert True = f(0, [])
+  // Acyclic but not connected, which the edge count alone would let through.
+  let assert False = f(2, [])
+  let assert False = f(4, [#(0, 1), #(2, 3)])
+  Nil
+}
+
+fn check_word_ladder(f: fn(String, String, List(String)) -> Int) -> Nil {
+  let assert True =
+    f("hit", "cog", ["hot", "dot", "dog", "lot", "log", "cog"]) == 5
+  // The target is not in the list, so no ladder can end there.
+  let assert True = f("hit", "cog", ["hot", "dot", "dog", "lot", "log"]) == 0
+  let assert True = f("a", "c", ["a", "b", "c"]) == 2
+  // Start and end are the same word, which is a ladder of length one.
+  let assert True = f("hit", "hit", ["hit"]) == 1
+  let assert True = f("hot", "dog", ["hot", "dog"]) == 0
   Nil
 }
 

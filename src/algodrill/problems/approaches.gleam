@@ -328,6 +328,46 @@ pub fn for_title(title: String) -> String {
     "Minimum Interval to Include Each Query" ->
       "Both good answers give up on answering queries in the order they arrive. Sort them by time, let intervals in as they start, keep the live ones in a heap by length and discard whatever has already ended \u{2014} or go the other way and take intervals shortest first, so the first one to cover a query is already its final answer and that query never needs looking at again."
 
+    // Graphs
+    "Number of Islands" ->
+      "Counting connected components on an implicit graph: the cells are the nodes and adjacency is the four neighbours, so no graph is ever built. Walk from each unvisited land cell, sink everything it reaches, and add one \u{2014} the traversal does the counting. Union-find does the same job without recursion, which matters when the grid is deep enough to overflow the stack."
+
+    "Clone Graph" ->
+      "The whole problem is the map from original node to its copy. Consult it before copying anything, and a cycle terminates by itself \u{2014} a node already in the map is returned rather than re-copied. Without it, any cycle recurses forever. Whether the walk is breadth-first or depth-first makes no difference."
+
+    "Max Area of Island" ->
+      "Number of Islands with the count replaced by a size: each traversal returns how many cells it reached, and the answer is the largest. The reason to prefer depth-first here is that the size falls out of the return value \u{2014} 1 plus the four neighbours \u{2014} rather than needing a counter."
+
+    "Pacific Atlantic Water Flow" ->
+      "Reverse the question. Asking of each cell \"can water get from here to both oceans\" repeats the same searches over and over; asking instead \"which cells can the ocean reach if water flowed uphill\" is two searches from the borders, and the answer is their intersection. Flipping the direction of a search to start from the goal is the transferable idea."
+
+    "Surrounded Regions" ->
+      "Also easier backwards. Rather than finding surrounded regions, mark the ones that are not \u{2014} everything reachable from a border O \u{2014} and flip whatever is left. That side-steps having to notice mid-traversal that a region touches the edge, and needs one pass from the border rather than one per region."
+
+    "Rotting Oranges" ->
+      "Multi-source breadth-first search: every rotten orange starts on the frontier at minute zero, so each wave of the search is one minute and the number of waves is the answer. One search per source would give distances from each source, then still need combining. Any fresh orange left unreached at the end is what makes the answer \u{2212}1."
+
+    "Walls and Gates" ->
+      "The same multi-source wave as rotting oranges, writing the wave number into the cell instead of counting waves. Starting from every gate at once is what makes the first arrival at a room the nearest gate; searching outward from each room instead costs a full search per room for the same answer."
+
+    "Course Schedule" ->
+      "\"Can every course be finished\" is \"is this graph acyclic\". Kahn\u{2019}s algorithm takes courses whose prerequisites are all met, releases what depended on them, and stalls exactly when a cycle remains. Depth-first answers it too, but needs three states rather than two \u{2014} a node seen again on the current path is a cycle, while one seen down a different branch is fine."
+
+    "Course Schedule II" ->
+      "The same computation as deciding whether it is possible, keeping the order rather than the count: the sequence courses come off the ready list is a topological order. Depth-first gives one too, by recording a course only after everything it depends on \u{2014} post-order \u{2014} which is why the answer comes out reversed."
+
+    "Redundant Connection" ->
+      "n nodes and n edges means exactly one cycle, and union-find finds it the moment an edge joins two nodes already connected. Processing edges in the given order is what makes the first such edge the last removable one, which is what the problem asks for. Testing each edge for removal is the honest O(n\u{b2}) reading of the specification."
+
+    "Number of Connected Components in an Undirected Graph" ->
+      "Start at n components and subtract a merge for every edge that actually joins two different ones \u{2014} no adjacency list and no traversal. The traversal version is the same idea as counting islands, and the contrast is the point: union-find can take edges as they arrive, the traversal needs the whole graph first."
+
+    "Graph Valid Tree" ->
+      "A tree is connected and acyclic, but with exactly n\u{2212}1 edges either condition implies the other, so checking the edge count plus one of them is enough. Union-find gets both from one pass \u{2014} an edge inside a component is a cycle, and n\u{2212}1 successful merges means one component."
+
+    "Word Ladder" ->
+      "Shortest path on an unweighted graph, so breadth-first \u{2014} but the graph is never built. Two words are neighbours when they share a wildcard pattern like \"*ot\", so bucketing every word under each of its patterns gives adjacency in linear time; comparing every pair costs O(n\u{b2}) before the search even starts."
+
     // Gleam Tips
     "Pattern matching on lists" ->
       "In Gleam a list is either [] or [head, ..tail] \u{2014} every list function is a case expression over those two shapes (plus [only] when the last element matters). Recursion replaces loops: handle the empty case, then recurse on the tail."

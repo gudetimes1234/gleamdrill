@@ -581,6 +581,73 @@ pub fn groups() -> List(Group) {
         "nc34_median_two_sorted",
       ),
     ]),
+    Group("Graphs", [
+      Drill(
+        "Number of Islands",
+        "Given a grid of \"1\" (land) and \"0\" (water), return the number of islands. An island is land connected horizontally or vertically, surrounded by water.",
+        "nc106_number_of_islands",
+      ),
+      Drill(
+        "Clone Graph",
+        "Given a connected undirected graph as an adjacency list and the index of a starting node, return a deep copy of it, again as an adjacency list. Nodes in the copy are numbered by ascending original index.",
+        "nc107_clone_graph",
+      ),
+      Drill(
+        "Max Area of Island",
+        "Given a grid of 1s (land) and 0s (water), return the area of the largest island, counting cells connected horizontally or vertically. Return 0 if there is no island.",
+        "nc108_max_area_of_island",
+      ),
+      Drill(
+        "Pacific Atlantic Water Flow",
+        "Given a grid of heights, water flows from a cell to a neighbour of equal or lower height. The Pacific touches the top and left edges, the Atlantic the bottom and right. Return every cell from which water can reach both oceans, as (row, column) pairs in row-major order.",
+        "nc109_pacific_atlantic",
+      ),
+      Drill(
+        "Surrounded Regions",
+        "Given a board of \"X\" and \"O\", flip to \"X\" every region of \"O\" that is entirely surrounded — that is, every region not connected to the border. Return the resulting board.",
+        "nc110_surrounded_regions",
+      ),
+      Drill(
+        "Rotting Oranges",
+        "In a grid, 0 is empty, 1 is a fresh orange and 2 is a rotten one. Each minute, a fresh orange adjacent to a rotten one rots. Return the number of minutes until no fresh orange remains, or -1 if that never happens.",
+        "nc111_rotting_oranges",
+      ),
+      Drill(
+        "Walls and Gates",
+        "Given a grid where -1 is a wall, 0 is a gate and 2147483647 is an empty room, fill each empty room with its distance to the nearest gate, leaving rooms no gate can reach untouched. Return the filled grid.",
+        "nc112_walls_and_gates",
+      ),
+      Drill(
+        "Course Schedule",
+        "Given numCourses and a list of [course, prerequisite] pairs, return true if every course can be finished and false otherwise.",
+        "nc113_course_schedule",
+      ),
+      Drill(
+        "Course Schedule II",
+        "Given numCourses and a list of [course, prerequisite] pairs, return an order in which every course can be taken. Return the empty list if no such order exists; any valid order is accepted.",
+        "nc114_course_schedule_ii",
+      ),
+      Drill(
+        "Redundant Connection",
+        "A tree of n nodes has had one extra edge added, leaving n nodes and n edges. Given the edges in the order they were added, return the one that can be removed to leave a tree — the last such edge if there is a choice.",
+        "nc115_redundant_connection",
+      ),
+      Drill(
+        "Number of Connected Components in an Undirected Graph",
+        "Given n nodes numbered 0 to n - 1 and a list of undirected edges, return the number of connected components.",
+        "nc116_connected_components",
+      ),
+      Drill(
+        "Graph Valid Tree",
+        "Given n nodes numbered 0 to n - 1 and a list of undirected edges, return true if they form a valid tree — connected and free of cycles.",
+        "nc117_graph_valid_tree",
+      ),
+      Drill(
+        "Word Ladder",
+        "Given beginWord, endWord and a word list, return the number of words in the shortest transformation sequence from beginWord to endWord, changing one letter at a time and passing only through words in the list. Return 0 if there is no such sequence.",
+        "nc118_word_ladder",
+      ),
+    ]),
   ]
 }
 

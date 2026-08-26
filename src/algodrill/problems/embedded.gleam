@@ -1891,6 +1891,720 @@ pub fn run() -> List(#(String, String, String)) {
   )
 }
 
+pub fn nc106_number_of_islands() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The grid is the graph: cells are nodes, the four neighbours are the edges, and nothing is ever built. Walk out from each unvisited land cell, mark everything it reaches, and add one — the traversal itself does the counting, which is why the answer needs no extra bookkeeping.", "import gleam/list
+import gleam/set.{type Set}
+
+pub fn num_islands(grid: List(List(String))) -> Int {
+  let cells = coordinates(grid)
+  let land =
+    cells
+    |> list.filter(fn(cell: #(#(Int, Int), String)) { cell.1 == \"1\" })
+    |> list.map(fn(cell: #(#(Int, Int), String)) { cell.0 })
+    |> set.from_list
+
+  // Counting connected components: start a search at every piece of land not
+  // already reached, and each search that has to be started is one more island.
+  // Marking as you go is what stops a component being counted once per square.
+  let #(count, _) =
+    list.fold(set.to_list(land), #(0, set.new()), fn(state, at) {
+      let #(count, seen) = state
+      case set.contains(seen, at) {
+        True -> #(count, seen)
+        False -> #(count + 1, flood(land, at, seen))
+      }
+    })
+  count
+}
+
+fn flood(
+  land: Set(#(Int, Int)),
+  at: #(Int, Int),
+  seen: Set(#(Int, Int)),
+) -> Set(#(Int, Int)) {
+  case set.contains(land, at) && !set.contains(seen, at) {
+    False -> seen
+    True ->
+      list.fold(neighbours(at), set.insert(seen, at), fn(seen, next) {
+        flood(land, next, seen)
+      })
+  }
+}
+
+fn coordinates(grid: List(List(String))) -> List(#(#(Int, Int), String)) {
+  grid
+  |> list.index_map(fn(row, r) {
+    list.index_map(row, fn(value, c) { #(#(r, c), value) })
+  })
+  |> list.flatten
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  let #(r, c) = at
+  [#(r - 1, c), #(r + 1, c), #(r, c - 1), #(r, c + 1)]
+}"),
+      #("Solution 2 · Union find", "The same count without recursing: join each land cell to the land above and to its left, and the answer is the number of land cells minus the number of joins that actually merged two components. Worth having because a deep enough grid overflows the recursive walk, and because union-find can take cells as they arrive rather than needing the whole grid first.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/set
+
+pub fn num_islands(grid: List(List(String))) -> Int {
+  let land =
+    grid
+    |> list.index_map(fn(row, r) {
+      list.index_map(row, fn(value, c) { #(#(r, c), value) })
+    })
+    |> list.flatten
+    |> list.filter(fn(cell: #(#(Int, Int), String)) { cell.1 == \"1\" })
+    |> list.map(fn(cell: #(#(Int, Int), String)) { cell.0 })
+
+  let known = set.from_list(land)
+
+  // Union-find instead of flood fill: every square starts as its own island and
+  // each adjacency merges two. Only right and down are needed \\u{2014} every pair of
+  // neighbours is reached once that way \\u{2014} and the answer is how many roots
+  // are left. This is the version that keeps working when the grid arrives one
+  // square at a time and the count has to be reported after each.
+  let parents =
+    list.fold(
+      land,
+      dict.from_list(list.map(land, fn(at) { #(at, at) })),
+      fn(parents, at) {
+        let #(r, c) = at
+        list.fold([#(r + 1, c), #(r, c + 1)], parents, fn(parents, next) {
+          case set.contains(known, next) {
+            True -> union(parents, at, next)
+            False -> parents
+          }
+        })
+      },
+    )
+
+  land
+  |> list.map(fn(at) { find(parents, at) })
+  |> set.from_list
+  |> set.size
+}
+
+fn find(
+  parents: Dict(#(Int, Int), #(Int, Int)),
+  at: #(Int, Int),
+) -> #(Int, Int) {
+  let parent = result.unwrap(dict.get(parents, at), at)
+  case parent == at {
+    True -> at
+    False -> find(parents, parent)
+  }
+}
+
+fn union(
+  parents: Dict(#(Int, Int), #(Int, Int)),
+  a: #(Int, Int),
+  b: #(Int, Int),
+) -> Dict(#(Int, Int), #(Int, Int)) {
+  let root_a = find(parents, a)
+  let root_b = find(parents, b)
+  case root_a == root_b {
+    True -> parents
+    False -> dict.insert(parents, root_a, root_b)
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn num_islands(grid: List(List(String))) -> Int",
+      starter: "pub fn num_islands(grid: List(List(String))) -> Int {
+  todo
+}",
+      harness: "import gleam/list
+import gleam/string
+import solution
+
+fn board(rows: List(String)) -> List(List(String)) {
+  list.map(rows, string.to_graphemes)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"num_islands(one big island)\",
+      string.inspect(1),
+      string.inspect(
+        solution.num_islands(board([\"11110\", \"11010\", \"11000\", \"00000\"])),
+      ),
+    ),
+    #(
+      \"num_islands(three islands)\",
+      string.inspect(3),
+      string.inspect(
+        solution.num_islands(board([\"11000\", \"11000\", \"00100\", \"00011\"])),
+      ),
+    ),
+    #(
+      \"num_islands(all water)\",
+      string.inspect(0),
+      string.inspect(solution.num_islands(board([\"000\", \"000\"]))),
+    ),
+    #(
+      \"num_islands([])\",
+      string.inspect(0),
+      string.inspect(solution.num_islands([])),
+    ),
+    #(
+      \"num_islands(diagonal squares are separate)\",
+      string.inspect(2),
+      string.inspect(solution.num_islands(board([\"10\", \"01\"]))),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc107_clone_graph() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The map from original node to its copy is the whole problem. Consulting it before copying anything is what makes a cycle terminate: a node already in the map is returned rather than copied again. Without that check any cycle recurses forever.", "import gleam/dict.{type Dict}
+import gleam/int
+import gleam/list
+import gleam/result
+import gleam/set.{type Set}
+
+pub fn clone_graph(adjacency: List(List(Int)), start: Int) -> List(List(Int)) {
+  let graph =
+    dict.from_list(list.index_map(adjacency, fn(edges, i) { #(i, edges) }))
+
+  case dict.has_key(graph, start) {
+    False -> []
+    True -> {
+      // The set of nodes already dealt with is the whole problem. Without it a
+      // cycle sends the traversal round forever; with it, a node already
+      // reached is simply skipped. Only the component containing the start is
+      // copied, which is what the reachable set also decides.
+      renumber(graph, set.to_list(discover(graph, [start], set.new())))
+    }
+  }
+}
+
+/// Breadth-first from the start.
+fn discover(
+  graph: Dict(Int, List(Int)),
+  frontier: List(Int),
+  reached: Set(Int),
+) -> Set(Int) {
+  case frontier {
+    [] -> reached
+    [node, ..rest] ->
+      case set.contains(reached, node) || !dict.has_key(graph, node) {
+        True -> discover(graph, rest, reached)
+        False ->
+          discover(
+            graph,
+            list.append(rest, result.unwrap(dict.get(graph, node), [])),
+            set.insert(reached, node),
+          )
+      }
+  }
+}
+
+/// Reachable nodes renumbered by their original index, ascending. Numbering by
+/// *discovery* order would make the answer depend on whether the traversal was
+/// breadth- or depth-first, which is not part of the problem.
+fn renumber(
+  graph: Dict(Int, List(Int)),
+  reached: List(Int),
+) -> List(List(Int)) {
+  let ordered = list.sort(reached, int.compare)
+  let numbering =
+    dict.from_list(list.index_map(ordered, fn(node, i) { #(node, i) }))
+
+  list.map(ordered, fn(original) {
+    graph
+    |> dict.get(original)
+    |> result.unwrap([])
+    |> list.filter_map(fn(neighbour) { dict.get(numbering, neighbour) })
+  })
+}"),
+      #("Solution 2 · Depth first", "Same map, depth-first instead of breadth-first — proof that the traversal order is irrelevant here. The copy is created and registered *before* its neighbours are visited, which is the ordering that makes a cycle find the half-built copy instead of recursing into it.", "import gleam/dict.{type Dict}
+import gleam/int
+import gleam/list
+import gleam/result
+import gleam/set.{type Set}
+
+pub fn clone_graph(adjacency: List(List(Int)), start: Int) -> List(List(Int)) {
+  let graph =
+    dict.from_list(list.index_map(adjacency, fn(edges, i) { #(i, edges) }))
+
+  case dict.has_key(graph, start) {
+    False -> []
+    True -> renumber(graph, set.to_list(visit(graph, start, set.new())))
+  }
+}
+
+/// Depth-first. The node is marked *before* recursing into its neighbours,
+/// which is what makes a cycle terminate \\u{2014} marking afterwards would let the
+/// traversal reach the same node again while it was still being visited.
+fn visit(
+  graph: Dict(Int, List(Int)),
+  node: Int,
+  reached: Set(Int),
+) -> Set(Int) {
+  case set.contains(reached, node) || !dict.has_key(graph, node) {
+    True -> reached
+    False ->
+      graph
+      |> dict.get(node)
+      |> result.unwrap([])
+      |> list.fold(set.insert(reached, node), fn(reached, neighbour) {
+        visit(graph, neighbour, reached)
+      })
+  }
+}
+
+/// Reachable nodes renumbered by their original index, ascending. Numbering by
+/// *discovery* order would make the answer depend on whether the traversal was
+/// breadth- or depth-first, which is not part of the problem.
+fn renumber(
+  graph: Dict(Int, List(Int)),
+  reached: List(Int),
+) -> List(List(Int)) {
+  let ordered = list.sort(reached, int.compare)
+  let numbering =
+    dict.from_list(list.index_map(ordered, fn(node, i) { #(node, i) }))
+
+  list.map(ordered, fn(original) {
+    graph
+    |> dict.get(original)
+    |> result.unwrap([])
+    |> list.filter_map(fn(neighbour) { dict.get(numbering, neighbour) })
+  })
+}"),
+    ],
+    check: Check(
+      signature: "pub fn clone_graph(adjacency: List(List(Int)), start: Int) -> List(List(Int))",
+      starter: "pub fn clone_graph(adjacency: List(List(Int)), start: Int) -> List(List(Int)) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"clone_graph([[1,3],[0,2],[1,3],[0,2]], 0)\",
+      string.inspect([[1, 3], [0, 2], [1, 3], [0, 2]]),
+      string.inspect(solution.clone_graph([[1, 3], [0, 2], [1, 3], [0, 2]], 0)),
+    ),
+    #(
+      \"clone_graph([[1],[0]], 0)\",
+      string.inspect([[1], [0]]),
+      string.inspect(solution.clone_graph([[1], [0]], 0)),
+    ),
+    #(
+      \"clone_graph([[]], 0)\",
+      string.inspect([[]]),
+      string.inspect(solution.clone_graph([[]], 0)),
+    ),
+    #(
+      \"clone_graph([], 0)\",
+      string.inspect([]),
+      string.inspect(solution.clone_graph([], 0)),
+    ),
+    #(
+      \"clone_graph([[], []], 1) — only the reachable part\",
+      string.inspect([[]]),
+      string.inspect(solution.clone_graph([[], []], 1)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc108_max_area_of_island() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Number of Islands with the count replaced by a size. Depth-first suits it because the size falls out of the return value — one for this cell plus whatever the four neighbours return — rather than needing a counter threaded through the walk.", "import gleam/int
+import gleam/list
+import gleam/set.{type Set}
+
+pub fn max_area_of_island(grid: List(List(Int))) -> Int {
+  let land =
+    grid
+    |> list.index_map(fn(row, r) {
+      list.index_map(row, fn(value, c) { #(#(r, c), value) })
+    })
+    |> list.flatten
+    |> list.filter(fn(cell: #(#(Int, Int), Int)) { cell.1 == 1 })
+    |> list.map(fn(cell: #(#(Int, Int), Int)) { cell.0 })
+    |> set.from_list
+
+  // The same component search as counting islands, except each search reports
+  // how much it covered rather than just that it happened. Growing the seen set
+  // and measuring how much it grew is the tidiest way to say that without
+  // threading a counter through the recursion.
+  let #(best, _) =
+    list.fold(set.to_list(land), #(0, set.new()), fn(state, at) {
+      let #(best, seen) = state
+      case set.contains(seen, at) {
+        True -> #(best, seen)
+        False -> {
+          let grown = flood(land, at, seen)
+          #(int.max(best, set.size(grown) - set.size(seen)), grown)
+        }
+      }
+    })
+  best
+}
+
+fn flood(
+  land: Set(#(Int, Int)),
+  at: #(Int, Int),
+  seen: Set(#(Int, Int)),
+) -> Set(#(Int, Int)) {
+  case set.contains(land, at) && !set.contains(seen, at) {
+    False -> seen
+    True ->
+      list.fold(neighbours(at), set.insert(seen, at), fn(seen, next) {
+        flood(land, next, seen)
+      })
+  }
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  let #(r, c) = at
+  [#(r - 1, c), #(r + 1, c), #(r, c - 1), #(r, c + 1)]
+}"),
+      #("Solution 2 · Breadth first", "The same areas found wave by wave. Nothing is gained over the depth-first version here, but the frontier is explicit rather than living on the call stack, which is what a grid deep enough to overflow the stack needs.", "import gleam/int
+import gleam/list
+import gleam/set.{type Set}
+
+pub fn max_area_of_island(grid: List(List(Int))) -> Int {
+  let land =
+    grid
+    |> list.index_map(fn(row, r) {
+      list.index_map(row, fn(value, c) { #(#(r, c), value) })
+    })
+    |> list.flatten
+    |> list.filter(fn(cell: #(#(Int, Int), Int)) { cell.1 == 1 })
+    |> list.map(fn(cell: #(#(Int, Int), Int)) { cell.0 })
+    |> set.from_list
+
+  // Breadth-first instead. For a component's *size* the traversal order does
+  // not matter at all \\u{2014} either visits every square exactly once \\u{2014} so the
+  // choice is about the machine: a queue keeps the memory proportional to the
+  // frontier rather than to the deepest path, which is what saves a long thin
+  // island from overflowing the stack.
+  let #(best, _) =
+    list.fold(set.to_list(land), #(0, set.new()), fn(state, at) {
+      let #(best, seen) = state
+      case set.contains(seen, at) {
+        True -> #(best, seen)
+        False -> {
+          let #(area, seen) = spread(land, [at], seen, 0)
+          #(int.max(best, area), seen)
+        }
+      }
+    })
+  best
+}
+
+fn spread(
+  land: Set(#(Int, Int)),
+  frontier: List(#(Int, Int)),
+  seen: Set(#(Int, Int)),
+  area: Int,
+) -> #(Int, Set(#(Int, Int))) {
+  case frontier {
+    [] -> #(area, seen)
+    [at, ..rest] ->
+      case set.contains(land, at) && !set.contains(seen, at) {
+        False -> spread(land, rest, seen, area)
+        True ->
+          spread(
+            land,
+            list.append(rest, neighbours(at)),
+            set.insert(seen, at),
+            area + 1,
+          )
+      }
+  }
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  let #(r, c) = at
+  [#(r - 1, c), #(r + 1, c), #(r, c - 1), #(r, c + 1)]
+}"),
+    ],
+    check: Check(
+      signature: "pub fn max_area_of_island(grid: List(List(Int))) -> Int",
+      starter: "pub fn max_area_of_island(grid: List(List(Int))) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"max_area_of_island([[1,1,0],[1,0,0],[0,0,1]])\",
+      string.inspect(3),
+      string.inspect(
+        solution.max_area_of_island([[1, 1, 0], [1, 0, 0], [0, 0, 1]]),
+      ),
+    ),
+    #(
+      \"max_area_of_island([[0,0],[0,0]])\",
+      string.inspect(0),
+      string.inspect(solution.max_area_of_island([[0, 0], [0, 0]])),
+    ),
+    #(
+      \"max_area_of_island([])\",
+      string.inspect(0),
+      string.inspect(solution.max_area_of_island([])),
+    ),
+    #(
+      \"max_area_of_island([[1]])\",
+      string.inspect(1),
+      string.inspect(solution.max_area_of_island([[1]])),
+    ),
+    #(
+      \"max_area_of_island([[1,1,1],[1,1,1]])\",
+      string.inspect(6),
+      string.inspect(solution.max_area_of_island([[1, 1, 1], [1, 1, 1]])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc109_pacific_atlantic() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Reverse the question. Asking of each cell whether water can get from there to both oceans repeats the same searches over and over; asking instead which cells an ocean could reach if water flowed uphill is two searches from the borders, and the answer is where the two sets meet. Flipping a search to start from the goal is the idea worth taking away.", "import gleam/dict.{type Dict}
+import gleam/int
+import gleam/list
+import gleam/order
+import gleam/result
+import gleam/set.{type Set}
+
+pub fn pacific_atlantic(heights: List(List(Int))) -> List(#(Int, Int)) {
+  let grid =
+    heights
+    |> list.index_map(fn(row, r) {
+      list.index_map(row, fn(value, c) { #(#(r, c), value) })
+    })
+    |> list.flatten
+    |> dict.from_list
+
+  case dict.size(grid) {
+    0 -> []
+    _ -> {
+      let rows = list.length(heights)
+      let columns = case heights {
+        [first, ..] -> list.length(first)
+        [] -> 0
+      }
+
+      // Search *from* each ocean rather than from each cell. Asking \"can this
+      // square reach the sea?\" means a fresh downhill search per square; asking
+      // \"which squares can the sea reach?\" is two uphill searches in total, and
+      // the answer is where they overlap.
+      let pacific =
+        list.append(
+          list.map(indices(columns), fn(c) { #(0, c) }),
+          list.map(indices(rows), fn(r) { #(r, 0) }),
+        )
+      let atlantic =
+        list.append(
+          list.map(indices(columns), fn(c) { #(rows - 1, c) }),
+          list.map(indices(rows), fn(r) { #(r, columns - 1) }),
+        )
+
+      set.intersection(
+        uphill(grid, pacific, set.new()),
+        uphill(grid, atlantic, set.new()),
+      )
+      |> set.to_list
+      |> list.sort(fn(a: #(Int, Int), b: #(Int, Int)) {
+        case int.compare(a.0, b.0) {
+          order.Eq -> int.compare(a.1, b.1)
+          other -> other
+        }
+      })
+    }
+  }
+}
+
+fn uphill(
+  grid: Dict(#(Int, Int), Int),
+  frontier: List(#(Int, Int)),
+  reached: Set(#(Int, Int)),
+) -> Set(#(Int, Int)) {
+  case frontier {
+    [] -> reached
+    [at, ..rest] ->
+      case dict.get(grid, at) {
+        Error(Nil) -> uphill(grid, rest, reached)
+        Ok(height) ->
+          case set.contains(reached, at) {
+            True -> uphill(grid, rest, reached)
+            False -> {
+              let climbable =
+                list.filter(neighbours(at), fn(next) {
+                  result.unwrap(dict.get(grid, next), -1) >= height
+                })
+              uphill(
+                grid,
+                list.append(rest, climbable),
+                set.insert(reached, at),
+              )
+            }
+          }
+      }
+  }
+}
+
+fn indices(n: Int) -> List(Int) {
+  list.index_map(list.repeat(Nil, n), fn(_, i) { i })
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  let #(r, c) = at
+  [#(r - 1, c), #(r + 1, c), #(r, c - 1), #(r, c + 1)]
+}"),
+      #("Solution 2 · From each cell", "The literal reading: from every cell, search downhill and see which oceans it reaches. O(cells) searches over O(cells) each, against two searches total — and the two are answering the same question, which is what makes the reversal legitimate rather than a trick.", "import gleam/dict.{type Dict}
+import gleam/int
+import gleam/list
+import gleam/order
+import gleam/set.{type Set}
+
+pub fn pacific_atlantic(heights: List(List(Int))) -> List(#(Int, Int)) {
+  let grid =
+    heights
+    |> list.index_map(fn(row, r) {
+      list.index_map(row, fn(value, c) { #(#(r, c), value) })
+    })
+    |> list.flatten
+    |> dict.from_list
+
+  let rows = list.length(heights)
+  let columns = case heights {
+    [first, ..] -> list.length(first)
+    [] -> 0
+  }
+
+  // The direct reading: from each square, flow downhill and see which edges are
+  // reachable. Correct, and it repeats nearly all of its work \\u{2014} every square
+  // on a shared downhill path re-explores the same route. Reversing the
+  // question is what removes the repetition.
+  dict.keys(grid)
+  |> list.filter(fn(at) {
+    let reached = downhill(grid, [at], set.new())
+    touches(reached, fn(cell: #(Int, Int)) { cell.0 == 0 || cell.1 == 0 })
+    && touches(reached, fn(cell: #(Int, Int)) {
+      cell.0 == rows - 1 || cell.1 == columns - 1
+    })
+  })
+  |> list.sort(fn(a: #(Int, Int), b: #(Int, Int)) {
+    case int.compare(a.0, b.0) {
+      order.Eq -> int.compare(a.1, b.1)
+      other -> other
+    }
+  })
+}
+
+fn downhill(
+  grid: Dict(#(Int, Int), Int),
+  frontier: List(#(Int, Int)),
+  reached: Set(#(Int, Int)),
+) -> Set(#(Int, Int)) {
+  case frontier {
+    [] -> reached
+    [at, ..rest] ->
+      case dict.get(grid, at) {
+        Error(Nil) -> downhill(grid, rest, reached)
+        Ok(height) ->
+          case set.contains(reached, at) {
+            True -> downhill(grid, rest, reached)
+            False -> {
+              let lower =
+                list.filter(neighbours(at), fn(next) {
+                  case dict.get(grid, next) {
+                    Ok(value) -> value <= height
+                    Error(Nil) -> False
+                  }
+                })
+              downhill(grid, list.append(rest, lower), set.insert(reached, at))
+            }
+          }
+      }
+  }
+}
+
+fn touches(reached: Set(#(Int, Int)), edge: fn(#(Int, Int)) -> Bool) -> Bool {
+  list.any(set.to_list(reached), edge)
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  let #(r, c) = at
+  [#(r - 1, c), #(r + 1, c), #(r, c - 1), #(r, c + 1)]
+}"),
+    ],
+    check: Check(
+      signature: "pub fn pacific_atlantic(heights: List(List(Int))) -> List(#(Int, Int))",
+      starter: "pub fn pacific_atlantic(heights: List(List(Int))) -> List(#(Int, Int)) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"pacific_atlantic(the 5x5 example)\",
+      string.inspect([
+        #(0, 4),
+        #(1, 3),
+        #(1, 4),
+        #(2, 2),
+        #(3, 0),
+        #(3, 1),
+        #(4, 0),
+      ]),
+      string.inspect(
+        solution.pacific_atlantic([
+          [1, 2, 2, 3, 5],
+          [3, 2, 3, 4, 4],
+          [2, 4, 5, 3, 1],
+          [6, 7, 1, 4, 5],
+          [5, 1, 1, 2, 4],
+        ]),
+      ),
+    ),
+    #(
+      \"pacific_atlantic([[1]])\",
+      string.inspect([#(0, 0)]),
+      string.inspect(solution.pacific_atlantic([[1]])),
+    ),
+    #(
+      \"pacific_atlantic([])\",
+      string.inspect([]),
+      string.inspect(solution.pacific_atlantic([])),
+    ),
+    #(
+      \"pacific_atlantic([[1,1],[1,1]])\",
+      string.inspect([#(0, 0), #(0, 1), #(1, 0), #(1, 1)]),
+      string.inspect(solution.pacific_atlantic([[1, 1], [1, 1]])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
 pub fn nc10_three_sum() -> Embedded {
   Embedded(
     solutions: [
@@ -2020,6 +2734,1593 @@ pub fn run() -> List(#(String, String, String)) {
       \"three_sum([0, 0, 0])\",
       string.inspect([\"#(0, 0, 0)\"]),
       string.inspect(normalise(solution.three_sum([0, 0, 0]))),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc110_surrounded_regions() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Easier backwards. Rather than finding the surrounded regions, mark the ones that are not — everything reachable from a border O — and flip whatever is left. That side-steps having to notice mid-traversal that a region touches the edge, and costs one pass from the border rather than one per region.", "import gleam/list
+import gleam/set.{type Set}
+
+pub fn solve(board: List(List(String))) -> List(List(String)) {
+  let rows = list.length(board)
+  let columns = case board {
+    [first, ..] -> list.length(first)
+    [] -> 0
+  }
+
+  let open =
+    board
+    |> list.index_map(fn(row, r) {
+      list.index_map(row, fn(value, c) { #(#(r, c), value) })
+    })
+    |> list.flatten
+    |> list.filter(fn(cell: #(#(Int, Int), String)) { cell.1 == \"O\" })
+    |> list.map(fn(cell: #(#(Int, Int), String)) { cell.0 })
+    |> set.from_list
+
+  // Invert the question. \"Which regions are surrounded?\" needs a search per
+  // region and a rule for what counts as escaping; \"which regions touch an
+  // edge?\" is one search from the border, and everything it does not reach is
+  // surrounded by definition.
+  let border =
+    set.to_list(open)
+    |> list.filter(fn(at: #(Int, Int)) {
+      at.0 == 0 || at.1 == 0 || at.0 == rows - 1 || at.1 == columns - 1
+    })
+
+  let safe =
+    list.fold(border, set.new(), fn(safe, at) { flood(open, at, safe) })
+
+  board
+  |> list.index_map(fn(row, r) {
+    list.index_map(row, fn(value, c) {
+      case value == \"O\" && !set.contains(safe, #(r, c)) {
+        True -> \"X\"
+        False -> value
+      }
+    })
+  })
+}
+
+fn flood(
+  open: Set(#(Int, Int)),
+  at: #(Int, Int),
+  seen: Set(#(Int, Int)),
+) -> Set(#(Int, Int)) {
+  case set.contains(open, at) && !set.contains(seen, at) {
+    False -> seen
+    True ->
+      list.fold(neighbours(at), set.insert(seen, at), fn(seen, next) {
+        flood(open, next, seen)
+      })
+  }
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  let #(r, c) = at
+  [#(r - 1, c), #(r + 1, c), #(r, c - 1), #(r, c + 1)]
+}"),
+      #("Solution 2 · Per region", "The direct reading: gather each region, then flip it only if no cell in it sits on the border. Honest, and it makes explicit what the border-first version is exploiting — but it has to collect the whole region before it can decide anything about it.", "import gleam/list
+import gleam/set.{type Set}
+
+pub fn solve(board: List(List(String))) -> List(List(String)) {
+  let rows = list.length(board)
+  let columns = case board {
+    [first, ..] -> list.length(first)
+    [] -> 0
+  }
+
+  let open =
+    board
+    |> list.index_map(fn(row, r) {
+      list.index_map(row, fn(value, c) { #(#(r, c), value) })
+    })
+    |> list.flatten
+    |> list.filter(fn(cell: #(#(Int, Int), String)) { cell.1 == \"O\" })
+    |> list.map(fn(cell: #(#(Int, Int), String)) { cell.0 })
+    |> set.from_list
+
+  // The direct reading: find each region, then decide whether it escapes. It
+  // works, and it needs a second idea the border search does not \\u{2014} the whole
+  // region has to be collected before any verdict can be given, so the search
+  // cannot stop early and the escape test is over the component rather than a
+  // single square.
+  let #(doomed, _) =
+    list.fold(set.to_list(open), #(set.new(), set.new()), fn(state, at) {
+      let #(doomed, seen) = state
+      case set.contains(seen, at) {
+        True -> #(doomed, seen)
+        False -> {
+          let region = flood(open, at, set.new())
+          let escapes =
+            list.any(set.to_list(region), fn(cell: #(Int, Int)) {
+              cell.0 == 0
+              || cell.1 == 0
+              || cell.0 == rows - 1
+              || cell.1 == columns - 1
+            })
+          #(
+            case escapes {
+              True -> doomed
+              False -> set.union(doomed, region)
+            },
+            set.union(seen, region),
+          )
+        }
+      }
+    })
+
+  board
+  |> list.index_map(fn(row, r) {
+    list.index_map(row, fn(value, c) {
+      case set.contains(doomed, #(r, c)) {
+        True -> \"X\"
+        False -> value
+      }
+    })
+  })
+}
+
+fn flood(
+  open: Set(#(Int, Int)),
+  at: #(Int, Int),
+  seen: Set(#(Int, Int)),
+) -> Set(#(Int, Int)) {
+  case set.contains(open, at) && !set.contains(seen, at) {
+    False -> seen
+    True ->
+      list.fold(neighbours(at), set.insert(seen, at), fn(seen, next) {
+        flood(open, next, seen)
+      })
+  }
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  let #(r, c) = at
+  [#(r - 1, c), #(r + 1, c), #(r, c - 1), #(r, c + 1)]
+}"),
+    ],
+    check: Check(
+      signature: "pub fn solve(board: List(List(String))) -> List(List(String))",
+      starter: "pub fn solve(board: List(List(String))) -> List(List(String)) {
+  todo
+}",
+      harness: "import gleam/list
+import gleam/string
+import solution
+
+fn board(rows: List(String)) -> List(List(String)) {
+  list.map(rows, string.to_graphemes)
+}
+
+fn shown(rows: List(String)) -> List(String) {
+  solution.solve(board(rows))
+  |> list.map(string.concat)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"solve(the classic 4x4)\",
+      string.inspect([\"XXXX\", \"XXXX\", \"XXXX\", \"XOXX\"]),
+      string.inspect(shown([\"XXXX\", \"XOOX\", \"XXOX\", \"XOXX\"])),
+    ),
+    #(\"solve([[X]])\", string.inspect([\"X\"]), string.inspect(shown([\"X\"]))),
+    #(
+      \"solve([[O]]) \\u{2014} on the border, so it survives\",
+      string.inspect([\"O\"]),
+      string.inspect(shown([\"O\"])),
+    ),
+    #(\"solve([])\", string.inspect([]), string.inspect(shown([]))),
+    #(
+      \"solve(a region reaching the border through a neighbour)\",
+      string.inspect([\"XOX\", \"XOX\", \"XXX\"]),
+      string.inspect(shown([\"XOX\", \"XOX\", \"XXX\"])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc111_rotting_oranges() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Multi-source breadth-first search: every rotten orange is on the frontier at minute zero, so each wave of the search *is* one minute and the number of waves is the answer. A separate search per source would give distances from each and then still need combining. Any fresh orange left unreached is what makes the answer -1.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/set.{type Set}
+
+pub fn oranges_rotting(grid: List(List(Int))) -> Int {
+  let cells =
+    grid
+    |> list.index_map(fn(row, r) {
+      list.index_map(row, fn(value, c) { #(#(r, c), value) })
+    })
+    |> list.flatten
+  let board = dict.from_list(cells)
+
+  let rotten =
+    cells
+    |> list.filter(fn(cell: #(#(Int, Int), Int)) { cell.1 == 2 })
+    |> list.map(fn(cell: #(#(Int, Int), Int)) { cell.0 })
+  let fresh =
+    cells
+    |> list.filter(fn(cell: #(#(Int, Int), Int)) { cell.1 == 1 })
+    |> list.map(fn(cell: #(#(Int, Int), Int)) { cell.0 })
+    |> set.from_list
+
+  // Breadth-first from *every* rotten orange at once, which is what makes the
+  // level count a time: all the sources start at minute zero together, so each
+  // wave of the search is one minute. A separate search per source would give
+  // distances from each, and then need combining.
+  let #(minutes, reached) = spread(board, rotten, set.from_list(rotten), 0)
+
+  case set.size(set.difference(fresh, reached)) {
+    // Something fresh was never reached, so it never rots.
+    0 -> minutes
+    _ -> -1
+  }
+}
+
+fn spread(
+  board: Dict(#(Int, Int), Int),
+  frontier: List(#(Int, Int)),
+  reached: Set(#(Int, Int)),
+  minutes: Int,
+) -> #(Int, Set(#(Int, Int))) {
+  let next =
+    frontier
+    |> list.flat_map(neighbours)
+    |> list.filter(fn(at) {
+      dict.get(board, at) == Ok(1) && !set.contains(reached, at)
+    })
+    |> list.unique
+
+  case next {
+    [] -> #(minutes, reached)
+    _ -> spread(board, next, list.fold(next, reached, set.insert), minutes + 1)
+  }
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  let #(r, c) = at
+  [#(r - 1, c), #(r + 1, c), #(r, c - 1), #(r, c + 1)]
+}"),
+      #("Solution 2 · Simulate minutes", "Rebuild the grid one minute at a time, exactly as described. The same complexity as the wave search, and it makes the equivalence visible: a round of simulation and a level of breadth-first search are the same step written two ways.", "import gleam/dict.{type Dict}
+import gleam/list
+
+pub fn oranges_rotting(grid: List(List(Int))) -> Int {
+  let board =
+    grid
+    |> list.index_map(fn(row, r) {
+      list.index_map(row, fn(value, c) { #(#(r, c), value) })
+    })
+    |> list.flatten
+    |> dict.from_list
+
+  tick(board, 0)
+}
+
+/// Rewrite the whole grid once per minute rather than tracking a frontier. Much
+/// more work \\u{2014} every square is examined every minute, not just the ones next
+/// to the rot \\u{2014} but it is the problem statement executed literally, and it
+/// makes plain that the answer counts *rounds*, not distances.
+fn tick(board: Dict(#(Int, Int), Int), minutes: Int) -> Int {
+  let next =
+    dict.map_values(board, fn(at, value) {
+      case
+        value == 1
+        && list.any(neighbours(at), fn(n) { dict.get(board, n) == Ok(2) })
+      {
+        True -> 2
+        False -> value
+      }
+    })
+
+  case next == board {
+    // Nothing changed: either everything has rotted or what is left never will.
+    True ->
+      case list.any(dict.values(board), fn(value) { value == 1 }) {
+        True -> -1
+        False -> minutes
+      }
+    False -> tick(next, minutes + 1)
+  }
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  let #(r, c) = at
+  [#(r - 1, c), #(r + 1, c), #(r, c - 1), #(r, c + 1)]
+}"),
+    ],
+    check: Check(
+      signature: "pub fn oranges_rotting(grid: List(List(Int))) -> Int",
+      starter: "pub fn oranges_rotting(grid: List(List(Int))) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"oranges_rotting([[2,1,1],[1,1,0],[0,1,1]])\",
+      string.inspect(4),
+      string.inspect(
+        solution.oranges_rotting([[2, 1, 1], [1, 1, 0], [0, 1, 1]]),
+      ),
+    ),
+    #(
+      \"oranges_rotting([[2,1,1],[0,1,1],[1,0,1]])\",
+      string.inspect(-1),
+      string.inspect(
+        solution.oranges_rotting([[2, 1, 1], [0, 1, 1], [1, 0, 1]]),
+      ),
+    ),
+    #(
+      \"oranges_rotting([[0,2]])\",
+      string.inspect(0),
+      string.inspect(solution.oranges_rotting([[0, 2]])),
+    ),
+    #(
+      \"oranges_rotting([])\",
+      string.inspect(0),
+      string.inspect(solution.oranges_rotting([])),
+    ),
+    #(
+      \"oranges_rotting([[1]])\",
+      string.inspect(-1),
+      string.inspect(solution.oranges_rotting([[1]])),
+    ),
+    #(
+      \"oranges_rotting([[0]])\",
+      string.inspect(0),
+      string.inspect(solution.oranges_rotting([[0]])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc112_walls_and_gates() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The same multi-source wave as rotting oranges, writing the wave number into the cell instead of counting waves. Starting from every gate at once is what makes the first arrival at a room its nearest gate — no comparison between gates is ever needed.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+
+const infinity = 2_147_483_647
+
+pub fn walls_and_gates(rooms: List(List(Int))) -> List(List(Int)) {
+  let cells =
+    rooms
+    |> list.index_map(fn(row, r) {
+      list.index_map(row, fn(value, c) { #(#(r, c), value) })
+    })
+    |> list.flatten
+  let board = dict.from_list(cells)
+
+  let gates =
+    cells
+    |> list.filter(fn(cell: #(#(Int, Int), Int)) { cell.1 == 0 })
+    |> list.map(fn(cell: #(#(Int, Int), Int)) { cell.0 })
+
+  // One breadth-first search starting from *all* the gates at once, rather than
+  // one search per empty room. Because every source begins at distance zero
+  // together, the first time a room is reached is by its nearest gate \\u{2014} the
+  // multi-source search does the whole grid in one pass.
+  let distances =
+    spread(
+      board,
+      gates,
+      dict.from_list(list.map(gates, fn(at) { #(at, 0) })),
+      1,
+    )
+
+  rooms
+  |> list.index_map(fn(row, r) {
+    list.index_map(row, fn(value, c) {
+      case value == infinity {
+        True -> result.unwrap(dict.get(distances, #(r, c)), infinity)
+        False -> value
+      }
+    })
+  })
+}
+
+fn spread(
+  board: Dict(#(Int, Int), Int),
+  frontier: List(#(Int, Int)),
+  distances: Dict(#(Int, Int), Int),
+  steps: Int,
+) -> Dict(#(Int, Int), Int) {
+  let next =
+    frontier
+    |> list.flat_map(neighbours)
+    |> list.filter(fn(at) {
+      dict.get(board, at) == Ok(infinity) && !dict.has_key(distances, at)
+    })
+    |> list.unique
+
+  case next {
+    [] -> distances
+    _ ->
+      spread(
+        board,
+        next,
+        list.fold(next, distances, fn(acc, at) { dict.insert(acc, at, steps) }),
+        steps + 1,
+      )
+  }
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  let #(r, c) = at
+  [#(r - 1, c), #(r + 1, c), #(r, c - 1), #(r, c + 1)]
+}"),
+      #("Solution 2 · From each room", "A search outward from each empty room until it meets a gate. One full search per room for an answer the single multi-source pass already has, which is the cost the wave avoids — but it is the version that says the problem statement outright.", "import gleam/dict.{type Dict}
+import gleam/list
+
+const infinity = 2_147_483_647
+
+pub fn walls_and_gates(rooms: List(List(Int))) -> List(List(Int)) {
+  let board =
+    rooms
+    |> list.index_map(fn(row, r) {
+      list.index_map(row, fn(value, c) { #(#(r, c), value) })
+    })
+    |> list.flatten
+    |> dict.from_list
+
+  // One search per empty room, looking for the nearest gate. The answer is the
+  // same and the cost is not: every room re-explores the same corridors. It is
+  // worth writing once to see why starting from the gates instead \\u{2014} the
+  // sources, not the questions \\u{2014} collapses all of it into a single pass.
+  rooms
+  |> list.index_map(fn(row, r) {
+    list.index_map(row, fn(value, c) {
+      case value == infinity {
+        False -> value
+        True ->
+          nearest_gate(board, [#(r, c)], dict.from_list([#(#(r, c), 0)]), 0)
+      }
+    })
+  })
+}
+
+fn nearest_gate(
+  board: Dict(#(Int, Int), Int),
+  frontier: List(#(Int, Int)),
+  seen: Dict(#(Int, Int), Int),
+  steps: Int,
+) -> Int {
+  case list.any(frontier, fn(at) { dict.get(board, at) == Ok(0) }) {
+    True -> steps
+    False -> {
+      let next =
+        frontier
+        |> list.flat_map(neighbours)
+        |> list.filter(fn(at) {
+          !dict.has_key(seen, at)
+          && case dict.get(board, at) {
+            Ok(value) -> value != -1
+            Error(Nil) -> False
+          }
+        })
+        |> list.unique
+
+      case next {
+        [] -> infinity
+        _ ->
+          nearest_gate(
+            board,
+            next,
+            list.fold(next, seen, fn(acc, at) { dict.insert(acc, at, steps) }),
+            steps + 1,
+          )
+      }
+    }
+  }
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  let #(r, c) = at
+  [#(r - 1, c), #(r + 1, c), #(r, c - 1), #(r, c + 1)]
+}"),
+    ],
+    check: Check(
+      signature: "pub fn walls_and_gates(rooms: List(List(Int))) -> List(List(Int))",
+      starter: "pub fn walls_and_gates(rooms: List(List(Int))) -> List(List(Int)) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"walls_and_gates(the classic 4x4)\",
+      string.inspect([
+        [3, -1, 0, 1],
+        [2, 2, 1, -1],
+        [1, -1, 2, -1],
+        [0, -1, 3, 4],
+      ]),
+      string.inspect(
+        solution.walls_and_gates([
+          [2_147_483_647, -1, 0, 2_147_483_647],
+          [2_147_483_647, 2_147_483_647, 2_147_483_647, -1],
+          [2_147_483_647, -1, 2_147_483_647, -1],
+          [0, -1, 2_147_483_647, 2_147_483_647],
+        ]),
+      ),
+    ),
+    #(
+      \"walls_and_gates([[0]])\",
+      string.inspect([[0]]),
+      string.inspect(solution.walls_and_gates([[0]])),
+    ),
+    #(
+      \"walls_and_gates([[-1]])\",
+      string.inspect([[-1]]),
+      string.inspect(solution.walls_and_gates([[-1]])),
+    ),
+    #(
+      \"walls_and_gates([])\",
+      string.inspect([]),
+      string.inspect(solution.walls_and_gates([])),
+    ),
+    #(
+      \"walls_and_gates(no gate at all, so nothing changes)\",
+      string.inspect([[2_147_483_647, 2_147_483_647]]),
+      string.inspect(solution.walls_and_gates([[2_147_483_647, 2_147_483_647]])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc113_course_schedule() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "\"Can every course be finished\" is \"is this graph acyclic\". Kahn's algorithm takes whatever has no outstanding prerequisites, releases what depended on it, and stalls exactly when a cycle remains — so the cycle check is the algorithm running out of work early, not a separate test.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+
+pub fn can_finish(num_courses: Int, prerequisites: List(#(Int, Int))) -> Bool {
+  // Kahn's algorithm. Courses with nothing outstanding can be taken now; taking
+  // one releases whatever depended on it. If the process stalls with courses
+  // left, those courses depend on each other in a circle \\u{2014} a cycle is exactly
+  // what \"cannot be finished\" means.
+  let waiting =
+    list.fold(prerequisites, dict.new(), fn(acc, pair) {
+      dict.insert(acc, pair.0, count(acc, pair.0) + 1)
+    })
+  let unlocks =
+    list.fold(prerequisites, dict.new(), fn(acc, pair) {
+      dict.insert(acc, pair.1, [pair.0, ..unlocked(acc, pair.1)])
+    })
+
+  let ready =
+    courses(num_courses) |> list.filter(fn(c) { count(waiting, c) == 0 })
+
+  take(ready, waiting, unlocks, 0) == num_courses
+}
+
+fn take(
+  ready: List(Int),
+  waiting: Dict(Int, Int),
+  unlocks: Dict(Int, List(Int)),
+  taken: Int,
+) -> Int {
+  case ready {
+    [] -> taken
+    [course, ..rest] -> {
+      let #(waiting, freed) =
+        list.fold(unlocked(unlocks, course), #(waiting, []), fn(state, next) {
+          let #(waiting, freed) = state
+          let remaining = count(waiting, next) - 1
+          #(dict.insert(waiting, next, remaining), case remaining {
+            0 -> [next, ..freed]
+            _ -> freed
+          })
+        })
+      take(list.append(rest, freed), waiting, unlocks, taken + 1)
+    }
+  }
+}
+
+fn courses(n: Int) -> List(Int) {
+  list.index_map(list.repeat(Nil, n), fn(_, i) { i })
+}
+
+fn count(counts: Dict(Int, Int), key: Int) -> Int {
+  result.unwrap(dict.get(counts, key), 0)
+}
+
+fn unlocked(unlocks: Dict(Int, List(Int)), key: Int) -> List(Int) {
+  result.unwrap(dict.get(unlocks, key), [])
+}"),
+      #("Solution 2 · Dfs colours", "Depth-first needs three states, not two. \"Seen\" is not enough: a node reached again down a *different* branch is fine, while one reached again while still on the current path is a cycle. The in-progress set is exactly what tells those apart.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/set.{type Set}
+
+pub fn can_finish(num_courses: Int, prerequisites: List(#(Int, Int))) -> Bool {
+  let unlocks =
+    list.fold(prerequisites, dict.new(), fn(acc, pair) {
+      dict.insert(acc, pair.0, [pair.1, ..needed(acc, pair.0)])
+    })
+
+  // Depth-first with three states rather than two. \"Seen\" is not enough: a node
+  // reached twice down *different* branches is fine, while a node reached again
+  // while still on the current path is a cycle. The in-progress set is what
+  // tells those apart.
+  let #(ok, _) =
+    list.fold(courses(num_courses), #(True, set.new()), fn(state, course) {
+      let #(ok, done) = state
+      case ok {
+        False -> state
+        True ->
+          case visit(course, unlocks, set.new(), done) {
+            Ok(done) -> #(True, done)
+            Error(Nil) -> #(False, done)
+          }
+      }
+    })
+  ok
+}
+
+fn visit(
+  course: Int,
+  unlocks: Dict(Int, List(Int)),
+  on_path: Set(Int),
+  done: Set(Int),
+) -> Result(Set(Int), Nil) {
+  case set.contains(on_path, course) {
+    True -> Error(Nil)
+    False ->
+      case set.contains(done, course) {
+        True -> Ok(done)
+        False -> {
+          let on_path = set.insert(on_path, course)
+          case
+            list.try_fold(needed(unlocks, course), done, fn(done, next) {
+              visit(next, unlocks, on_path, done)
+            })
+          {
+            Ok(done) -> Ok(set.insert(done, course))
+            Error(Nil) -> Error(Nil)
+          }
+        }
+      }
+  }
+}
+
+fn courses(n: Int) -> List(Int) {
+  list.index_map(list.repeat(Nil, n), fn(_, i) { i })
+}
+
+fn needed(unlocks: Dict(Int, List(Int)), key: Int) -> List(Int) {
+  result.unwrap(dict.get(unlocks, key), [])
+}"),
+    ],
+    check: Check(
+      signature: "pub fn can_finish(num_courses: Int, prerequisites: List(#(Int, Int))) -> Bool",
+      starter: "pub fn can_finish(num_courses: Int, prerequisites: List(#(Int, Int))) -> Bool {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"can_finish(2, [#(1, 0)])\",
+      string.inspect(True),
+      string.inspect(solution.can_finish(2, [#(1, 0)])),
+    ),
+    #(
+      \"can_finish(2, [#(1, 0), #(0, 1)])\",
+      string.inspect(False),
+      string.inspect(solution.can_finish(2, [#(1, 0), #(0, 1)])),
+    ),
+    #(
+      \"can_finish(1, [])\",
+      string.inspect(True),
+      string.inspect(solution.can_finish(1, [])),
+    ),
+    #(
+      \"can_finish(0, [])\",
+      string.inspect(True),
+      string.inspect(solution.can_finish(0, [])),
+    ),
+    #(
+      \"can_finish(4, [#(1,0), #(2,1), #(3,2)])\",
+      string.inspect(True),
+      string.inspect(solution.can_finish(4, [#(1, 0), #(2, 1), #(3, 2)])),
+    ),
+    #(
+      \"can_finish(3, [#(0,1), #(1,2), #(2,0)])\",
+      string.inspect(False),
+      string.inspect(solution.can_finish(3, [#(0, 1), #(1, 2), #(2, 0)])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc114_course_schedule_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The same computation as deciding whether it is possible — the order courses come off the ready list is the answer. Detecting the cycle and producing the schedule are not two passes.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+
+pub fn find_order(
+  num_courses: Int,
+  prerequisites: List(#(Int, Int)),
+) -> List(Int) {
+  // The same Kahn's algorithm as deciding whether it is possible \\u{2014} except
+  // the order courses come off the ready list *is* the answer. Detecting the
+  // cycle and producing the schedule are the same computation.
+  let waiting =
+    list.fold(prerequisites, dict.new(), fn(acc, pair) {
+      dict.insert(acc, pair.0, count(acc, pair.0) + 1)
+    })
+  let unlocks =
+    list.fold(prerequisites, dict.new(), fn(acc, pair) {
+      dict.insert(acc, pair.1, [pair.0, ..unlocked(acc, pair.1)])
+    })
+
+  let ready =
+    courses(num_courses) |> list.filter(fn(c) { count(waiting, c) == 0 })
+  let order = take(ready, waiting, unlocks, [])
+
+  case list.length(order) == num_courses {
+    True -> order
+    // Stalled with courses left, so no order exists at all.
+    False -> []
+  }
+}
+
+fn take(
+  ready: List(Int),
+  waiting: Dict(Int, Int),
+  unlocks: Dict(Int, List(Int)),
+  order: List(Int),
+) -> List(Int) {
+  case ready {
+    [] -> list.reverse(order)
+    [course, ..rest] -> {
+      let #(waiting, freed) =
+        list.fold(unlocked(unlocks, course), #(waiting, []), fn(state, next) {
+          let #(waiting, freed) = state
+          let remaining = count(waiting, next) - 1
+          #(dict.insert(waiting, next, remaining), case remaining {
+            0 -> [next, ..freed]
+            _ -> freed
+          })
+        })
+      take(list.append(rest, freed), waiting, unlocks, [course, ..order])
+    }
+  }
+}
+
+fn courses(n: Int) -> List(Int) {
+  list.index_map(list.repeat(Nil, n), fn(_, i) { i })
+}
+
+fn count(counts: Dict(Int, Int), key: Int) -> Int {
+  result.unwrap(dict.get(counts, key), 0)
+}
+
+fn unlocked(unlocks: Dict(Int, List(Int)), key: Int) -> List(Int) {
+  result.unwrap(dict.get(unlocks, key), [])
+}"),
+      #("Solution 2 · Dfs postorder", "Record a course only after everything it depends on has been recorded. That post-order is a valid schedule by construction, with no indegrees to maintain — and it comes out reversed, which is the tell that it was built from the dependencies up.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/set.{type Set}
+
+pub fn find_order(
+  num_courses: Int,
+  prerequisites: List(#(Int, Int)),
+) -> List(Int) {
+  let needs =
+    list.fold(prerequisites, dict.new(), fn(acc, pair) {
+      dict.insert(acc, pair.0, [pair.1, ..needed(acc, pair.0)])
+    })
+
+  // Depth-first, recording a course only *after* everything it depends on has
+  // been recorded. That post-order is a valid schedule by construction \\u{2014} no
+  // indegrees to maintain \\u{2014} and the in-progress set doubles as the cycle
+  // check, which is what makes the impossible case fall out of the same walk.
+  case
+    list.try_fold(courses(num_courses), #([], set.new()), fn(state, course) {
+      let #(order, done) = state
+      visit(course, needs, set.new(), done, order)
+    })
+  {
+    Ok(#(order, _)) -> list.reverse(order)
+    Error(Nil) -> []
+  }
+}
+
+fn visit(
+  course: Int,
+  needs: Dict(Int, List(Int)),
+  on_path: Set(Int),
+  done: Set(Int),
+  order: List(Int),
+) -> Result(#(List(Int), Set(Int)), Nil) {
+  case set.contains(on_path, course) {
+    True -> Error(Nil)
+    False ->
+      case set.contains(done, course) {
+        True -> Ok(#(order, done))
+        False -> {
+          let on_path = set.insert(on_path, course)
+          case
+            list.try_fold(
+              needed(needs, course),
+              #(order, done),
+              fn(state, next) {
+                let #(order, done) = state
+                visit(next, needs, on_path, done, order)
+              },
+            )
+          {
+            Ok(#(order, done)) ->
+              Ok(#([course, ..order], set.insert(done, course)))
+            Error(Nil) -> Error(Nil)
+          }
+        }
+      }
+  }
+}
+
+fn courses(n: Int) -> List(Int) {
+  list.index_map(list.repeat(Nil, n), fn(_, i) { i })
+}
+
+fn needed(needs: Dict(Int, List(Int)), key: Int) -> List(Int) {
+  result.unwrap(dict.get(needs, key), [])
+}"),
+    ],
+    check: Check(
+      signature: "pub fn find_order(
+  num_courses: Int,
+  prerequisites: List(#(Int, Int)),
+) -> List(Int)",
+      starter: "pub fn find_order(
+  num_courses: Int,
+  prerequisites: List(#(Int, Int)),
+) -> List(Int) {
+  todo
+}",
+      harness: "import gleam/list
+import gleam/string
+import solution
+
+/// Any valid order is acceptable, so the harness checks the order rather than
+/// comparing it: every course appears exactly once, and every prerequisite
+/// comes before the course that needs it.
+fn valid(num_courses: Int, prerequisites: List(#(Int, Int))) -> Bool {
+  let order = solution.find_order(num_courses, prerequisites)
+  let positions = list.index_map(order, fn(course, i) { #(course, i) })
+
+  list.length(order) == num_courses
+  && list.length(list.unique(order)) == num_courses
+  && list.all(prerequisites, fn(pair: #(Int, Int)) {
+    case position(positions, pair.1), position(positions, pair.0) {
+      Ok(before), Ok(after) -> before < after
+      _, _ -> False
+    }
+  })
+}
+
+fn position(positions: List(#(Int, Int)), course: Int) -> Result(Int, Nil) {
+  case list.find(positions, fn(pair: #(Int, Int)) { pair.0 == course }) {
+    Ok(#(_, i)) -> Ok(i)
+    Error(Nil) -> Error(Nil)
+  }
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"find_order(2, [#(1, 0)]) is a valid order\",
+      string.inspect(True),
+      string.inspect(valid(2, [#(1, 0)])),
+    ),
+    #(
+      \"find_order(4, [#(1,0), #(2,0), #(3,1), #(3,2)]) is a valid order\",
+      string.inspect(True),
+      string.inspect(valid(4, [#(1, 0), #(2, 0), #(3, 1), #(3, 2)])),
+    ),
+    #(
+      \"find_order(1, []) is a valid order\",
+      string.inspect(True),
+      string.inspect(valid(1, [])),
+    ),
+    #(
+      \"find_order(2, [#(0,1), #(1,0)]) \\u{2014} a cycle, so no order\",
+      string.inspect([]),
+      string.inspect(solution.find_order(2, [#(0, 1), #(1, 0)])),
+    ),
+    #(
+      \"find_order(3, []) covers every course\",
+      string.inspect(3),
+      string.inspect(list.length(solution.find_order(3, []))),
+    ),
+    #(
+      \"find_order(0, [])\",
+      string.inspect([]),
+      string.inspect(solution.find_order(0, [])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc115_redundant_connection() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "n nodes and n edges means exactly one cycle, and union-find finds it the moment an edge joins two nodes already connected. Processing the edges in the order given is what makes the first such edge the *last* removable one, which is what the problem asks for.", "import gleam/dict.{type Dict}
+import gleam/list
+
+pub fn find_redundant_connection(edges: List(#(Int, Int))) -> #(Int, Int) {
+  // n nodes and n edges means exactly one cycle. Union-find spots it the moment
+  // an edge joins two nodes already connected \\u{2014} and because the edges are
+  // processed in order, the first such edge is the last one that could be
+  // removed, which is what the problem asks for.
+  let #(_, found) =
+    list.fold(edges, #(dict.new(), #(0, 0)), fn(state, edge) {
+      let #(parents, found) = state
+      let root_a = find(parents, edge.0)
+      let root_b = find(parents, edge.1)
+      case root_a == root_b {
+        True -> #(parents, edge)
+        False -> #(dict.insert(parents, root_a, root_b), found)
+      }
+    })
+  found
+}
+
+fn find(parents: Dict(Int, Int), node: Int) -> Int {
+  case dict.get(parents, node) {
+    Error(Nil) -> node
+    Ok(parent) ->
+      case parent == node {
+        True -> node
+        False -> find(parents, parent)
+      }
+  }
+}"),
+      #("Solution 2 · By removal", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Try removing each edge, latest first, and keep the first removal that leaves a tree. O(n^2) against near-linear, but it needs no new structure and it is the specification read literally.", "import gleam/list
+import gleam/set.{type Set}
+
+pub fn find_redundant_connection(edges: List(#(Int, Int))) -> #(Int, Int) {
+  // Try removing each edge, latest first, and keep the first removal that
+  // leaves a tree. O(n\\u{b2}) against union-find's near-linear, but it needs no new
+  // structure \\u{2014} and it says the specification outright: the answer is the
+  // last edge whose absence would make the graph a tree.
+  let nodes =
+    edges
+    |> list.flat_map(fn(edge: #(Int, Int)) { [edge.0, edge.1] })
+    |> set.from_list
+
+  edges
+  |> list.reverse
+  |> list.find(fn(candidate) {
+    is_tree(list.filter(edges, fn(edge) { edge != candidate }), nodes)
+  })
+  |> fn(found) {
+    case found {
+      Ok(edge) -> edge
+      Error(Nil) -> #(0, 0)
+    }
+  }
+}
+
+fn is_tree(edges: List(#(Int, Int)), nodes: Set(Int)) -> Bool {
+  case set.to_list(nodes) {
+    [] -> True
+    [first, ..] ->
+      list.length(edges) == set.size(nodes) - 1
+      && set.size(reach(edges, [first], set.new())) == set.size(nodes)
+  }
+}
+
+fn reach(
+  edges: List(#(Int, Int)),
+  frontier: List(Int),
+  seen: Set(Int),
+) -> Set(Int) {
+  case frontier {
+    [] -> seen
+    [node, ..rest] ->
+      case set.contains(seen, node) {
+        True -> reach(edges, rest, seen)
+        False -> {
+          let next =
+            edges
+            |> list.filter_map(fn(edge: #(Int, Int)) {
+              case edge.0 == node, edge.1 == node {
+                True, _ -> Ok(edge.1)
+                _, True -> Ok(edge.0)
+                _, _ -> Error(Nil)
+              }
+            })
+          reach(edges, list.append(rest, next), set.insert(seen, node))
+        }
+      }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn find_redundant_connection(edges: List(#(Int, Int))) -> #(Int, Int)",
+      starter: "pub fn find_redundant_connection(edges: List(#(Int, Int))) -> #(Int, Int) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"find_redundant_connection([#(1,2), #(1,3), #(2,3)])\",
+      string.inspect(#(2, 3)),
+      string.inspect(
+        solution.find_redundant_connection([#(1, 2), #(1, 3), #(2, 3)]),
+      ),
+    ),
+    #(
+      \"find_redundant_connection([#(1,2), #(2,3), #(3,4), #(1,4), #(1,5)])\",
+      string.inspect(#(1, 4)),
+      string.inspect(
+        solution.find_redundant_connection([
+          #(1, 2),
+          #(2, 3),
+          #(3, 4),
+          #(1, 4),
+          #(1, 5),
+        ]),
+      ),
+    ),
+    #(
+      \"find_redundant_connection([#(1,2), #(2,1)])\",
+      string.inspect(#(2, 1)),
+      string.inspect(solution.find_redundant_connection([#(1, 2), #(2, 1)])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc116_connected_components() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Start at n components and subtract a merge for every edge that actually joins two different ones. No adjacency list, no traversal — the count falls straight out of how many merges happened.", "import gleam/dict.{type Dict}
+import gleam/list
+
+pub fn count_components(n: Int, edges: List(#(Int, Int))) -> Int {
+  // Start with n components and merge: every edge whose ends are not already
+  // together removes one. No traversal, no adjacency list \\u{2014} the count falls
+  // straight out of how many merges actually happened.
+  let #(_, merges) =
+    list.fold(edges, #(dict.new(), 0), fn(state, edge) {
+      let #(parents, merges) = state
+      let root_a = find(parents, edge.0)
+      let root_b = find(parents, edge.1)
+      case root_a == root_b {
+        True -> #(parents, merges)
+        False -> #(dict.insert(parents, root_a, root_b), merges + 1)
+      }
+    })
+  n - merges
+}
+
+fn find(parents: Dict(Int, Int), node: Int) -> Int {
+  case dict.get(parents, node) {
+    Error(Nil) -> node
+    Ok(parent) ->
+      case parent == node {
+        True -> node
+        False -> find(parents, parent)
+      }
+  }
+}"),
+      #("Solution 2 · By traversal", "One search per unvisited node, exactly as with islands on a grid — the same counting idea with an adjacency list instead of coordinates. The contrast with union-find is the point: this needs the whole graph up front, the other can take edges as they arrive.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/set.{type Set}
+
+pub fn count_components(n: Int, edges: List(#(Int, Int))) -> Int {
+  let adjacency =
+    list.fold(edges, dict.new(), fn(acc, edge) {
+      acc
+      |> add(edge.0, edge.1)
+      |> add(edge.1, edge.0)
+    })
+
+  // One search per unvisited node, exactly as with islands on a grid \\u{2014} the
+  // same counting-components idea with an adjacency list instead of
+  // coordinates. Worth seeing side by side with union-find: this one needs the
+  // whole graph up front, the other can take edges as they arrive.
+  let #(count, _) =
+    list.fold(nodes(n), #(0, set.new()), fn(state, node) {
+      let #(count, seen) = state
+      case set.contains(seen, node) {
+        True -> #(count, seen)
+        False -> #(count + 1, explore(adjacency, [node], seen))
+      }
+    })
+  count
+}
+
+fn explore(
+  adjacency: Dict(Int, List(Int)),
+  frontier: List(Int),
+  seen: Set(Int),
+) -> Set(Int) {
+  case frontier {
+    [] -> seen
+    [node, ..rest] ->
+      case set.contains(seen, node) {
+        True -> explore(adjacency, rest, seen)
+        False ->
+          explore(
+            adjacency,
+            list.append(rest, result.unwrap(dict.get(adjacency, node), [])),
+            set.insert(seen, node),
+          )
+      }
+  }
+}
+
+fn add(
+  adjacency: Dict(Int, List(Int)),
+  from: Int,
+  to: Int,
+) -> Dict(Int, List(Int)) {
+  dict.insert(adjacency, from, [
+    to,
+    ..result.unwrap(dict.get(adjacency, from), [])
+  ])
+}
+
+fn nodes(n: Int) -> List(Int) {
+  list.index_map(list.repeat(Nil, n), fn(_, i) { i })
+}"),
+    ],
+    check: Check(
+      signature: "pub fn count_components(n: Int, edges: List(#(Int, Int))) -> Int",
+      starter: "pub fn count_components(n: Int, edges: List(#(Int, Int))) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"count_components(5, [#(0,1), #(1,2), #(3,4)])\",
+      string.inspect(2),
+      string.inspect(solution.count_components(5, [#(0, 1), #(1, 2), #(3, 4)])),
+    ),
+    #(
+      \"count_components(5, [#(0,1), #(1,2), #(2,3), #(3,4)])\",
+      string.inspect(1),
+      string.inspect(
+        solution.count_components(5, [#(0, 1), #(1, 2), #(2, 3), #(3, 4)]),
+      ),
+    ),
+    #(
+      \"count_components(3, [])\",
+      string.inspect(3),
+      string.inspect(solution.count_components(3, [])),
+    ),
+    #(
+      \"count_components(0, [])\",
+      string.inspect(0),
+      string.inspect(solution.count_components(0, [])),
+    ),
+    #(
+      \"count_components(1, [])\",
+      string.inspect(1),
+      string.inspect(solution.count_components(1, [])),
+    ),
+    #(
+      \"count_components(4, [#(0,1), #(1,0)]) — a repeated edge merges once\",
+      string.inspect(3),
+      string.inspect(solution.count_components(4, [#(0, 1), #(1, 0)])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc117_graph_valid_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A tree is connected *and* acyclic, but with exactly n-1 edges either condition implies the other, so the edge count plus one of them is enough. Here it is the count plus reachability. The n = 0 case has to be stated separately, since the n-1 count says otherwise.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/set.{type Set}
+
+/// A graph with no nodes at all is vacuously a tree, provided it has no edges
+/// either — worth stating, because the n-1 edge count says otherwise.
+pub fn valid_tree(n: Int, edges: List(#(Int, Int))) -> Bool {
+  case n <= 0 {
+    True -> edges == []
+    False -> non_empty(n, edges)
+  }
+}
+
+fn non_empty(n: Int, edges: List(#(Int, Int))) -> Bool {
+  // A tree is two conditions at once: connected, and no cycles. Checking both
+  // separately is unnecessary \\u{2014} with exactly n\\u{2212}1 edges, connected implies
+  // acyclic and acyclic implies connected, so testing the edge count plus
+  // either one is enough. Here it is the count plus reachability.
+  case list.length(edges) == n - 1 {
+    False -> False
+    True -> {
+      let adjacency =
+        list.fold(edges, dict.new(), fn(acc, edge) {
+          acc
+          |> add(edge.0, edge.1)
+          |> add(edge.1, edge.0)
+        })
+      set.size(explore(adjacency, [0], set.new())) == n
+    }
+  }
+}
+
+fn explore(
+  adjacency: Dict(Int, List(Int)),
+  frontier: List(Int),
+  seen: Set(Int),
+) -> Set(Int) {
+  case frontier {
+    [] -> seen
+    [node, ..rest] ->
+      case set.contains(seen, node) {
+        True -> explore(adjacency, rest, seen)
+        False ->
+          explore(
+            adjacency,
+            list.append(rest, result.unwrap(dict.get(adjacency, node), [])),
+            set.insert(seen, node),
+          )
+      }
+  }
+}
+
+fn add(
+  adjacency: Dict(Int, List(Int)),
+  from: Int,
+  to: Int,
+) -> Dict(Int, List(Int)) {
+  dict.insert(adjacency, from, [
+    to,
+    ..result.unwrap(dict.get(adjacency, from), [])
+  ])
+}"),
+      #("Solution 2 · Union find", "Both conditions from one pass. An edge inside a component is a cycle, so if none is, the graph is a forest — and a forest with n-1 merges is a single tree. No adjacency list and no traversal.", "import gleam/dict.{type Dict}
+import gleam/list
+
+/// A graph with no nodes at all is vacuously a tree, provided it has no edges
+/// either — worth stating, because the n-1 merge count says otherwise.
+pub fn valid_tree(n: Int, edges: List(#(Int, Int))) -> Bool {
+  case n <= 0 {
+    True -> edges == []
+    False -> non_empty(n, edges)
+  }
+}
+
+fn non_empty(n: Int, edges: List(#(Int, Int))) -> Bool {
+  // Both conditions from one pass. An edge joining two nodes already connected
+  // is a cycle, so if none does, the graph is a forest \\u{2014} and a forest with
+  // n\\u{2212}1 merges is a single tree. No adjacency list and no traversal.
+  let #(_, merges, acyclic) =
+    list.fold(edges, #(dict.new(), 0, True), fn(state, edge) {
+      let #(parents, merges, acyclic) = state
+      case acyclic {
+        False -> state
+        True -> {
+          let root_a = find(parents, edge.0)
+          let root_b = find(parents, edge.1)
+          case root_a == root_b {
+            True -> #(parents, merges, False)
+            False -> #(dict.insert(parents, root_a, root_b), merges + 1, True)
+          }
+        }
+      }
+    })
+
+  acyclic && merges == n - 1
+}
+
+fn find(parents: Dict(Int, Int), node: Int) -> Int {
+  case dict.get(parents, node) {
+    Error(Nil) -> node
+    Ok(parent) ->
+      case parent == node {
+        True -> node
+        False -> find(parents, parent)
+      }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn valid_tree(n: Int, edges: List(#(Int, Int))) -> Bool",
+      starter: "pub fn valid_tree(n: Int, edges: List(#(Int, Int))) -> Bool {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"valid_tree(5, [#(0,1), #(0,2), #(0,3), #(1,4)])\",
+      string.inspect(True),
+      string.inspect(
+        solution.valid_tree(5, [#(0, 1), #(0, 2), #(0, 3), #(1, 4)]),
+      ),
+    ),
+    #(
+      \"valid_tree(5, [#(0,1), #(1,2), #(2,3), #(1,3), #(1,4)])\",
+      string.inspect(False),
+      string.inspect(
+        solution.valid_tree(5, [#(0, 1), #(1, 2), #(2, 3), #(1, 3), #(1, 4)]),
+      ),
+    ),
+    #(
+      \"valid_tree(1, [])\",
+      string.inspect(True),
+      string.inspect(solution.valid_tree(1, [])),
+    ),
+    #(
+      \"valid_tree(0, [])\",
+      string.inspect(True),
+      string.inspect(solution.valid_tree(0, [])),
+    ),
+    #(
+      \"valid_tree(2, []) — disconnected\",
+      string.inspect(False),
+      string.inspect(solution.valid_tree(2, [])),
+    ),
+    #(
+      \"valid_tree(4, [#(0,1), #(2,3)]) — two trees, not one\",
+      string.inspect(False),
+      string.inspect(solution.valid_tree(4, [#(0, 1), #(2, 3)])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc118_word_ladder() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Shortest path on an unweighted graph, so breadth-first — but the graph is never built. Two words are neighbours when they share a wildcard pattern like \"*ot\", so bucketing every word under each of its patterns gives the adjacency in linear time.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/set.{type Set}
+import gleam/string
+
+pub fn ladder_length(
+  begin_word: String,
+  end_word: String,
+  word_list: List(String),
+) -> Int {
+  let words = set.from_list(word_list)
+
+  case set.contains(words, end_word) {
+    False -> 0
+    True -> {
+      // The graph is never built: \"hot\" and \"dot\" are neighbours because they
+      // share the pattern \"*ot\", so bucketing every word under each of its
+      // wildcard patterns gives the adjacency for free. Comparing every pair
+      // instead costs O(n\\u{b2}) comparisons before the search even starts.
+      let buckets =
+        list.fold(set.to_list(words), dict.new(), fn(acc, word) {
+          list.fold(patterns(word), acc, fn(acc, pattern) {
+            dict.insert(acc, pattern, [
+              word,
+              ..result.unwrap(dict.get(acc, pattern), [])
+            ])
+          })
+        })
+
+      spread(buckets, [begin_word], set.from_list([begin_word]), end_word, 1)
+    }
+  }
+}
+
+fn spread(
+  buckets: Dict(String, List(String)),
+  frontier: List(String),
+  seen: Set(String),
+  target: String,
+  steps: Int,
+) -> Int {
+  case list.contains(frontier, target) {
+    True -> steps
+    False -> {
+      let next =
+        frontier
+        |> list.flat_map(patterns)
+        |> list.flat_map(fn(pattern) {
+          result.unwrap(dict.get(buckets, pattern), [])
+        })
+        |> list.filter(fn(word) { !set.contains(seen, word) })
+        |> list.unique
+
+      case next {
+        [] -> 0
+        _ ->
+          spread(
+            buckets,
+            next,
+            list.fold(next, seen, set.insert),
+            target,
+            steps + 1,
+          )
+      }
+    }
+  }
+}
+
+/// One pattern per position, with that letter replaced by a wildcard.
+fn patterns(word: String) -> List(String) {
+  string.to_graphemes(word)
+  |> list.index_map(fn(_, i) {
+    string.slice(word, 0, i)
+    <> \"*\"
+    <> string.slice(word, i + 1, string.length(word))
+  })
+}"),
+      #("Solution 2 · Compare pairs", "Neighbours found by comparing against every remaining word. Simpler to state, and O(n) comparisons per expansion instead of a constant number of lookups — which is exactly the cost the wildcard buckets remove.", "import gleam/list
+import gleam/set.{type Set}
+import gleam/string
+
+pub fn ladder_length(
+  begin_word: String,
+  end_word: String,
+  word_list: List(String),
+) -> Int {
+  let words = set.from_list(word_list)
+
+  case set.contains(words, end_word) {
+    False -> 0
+    True ->
+      spread(
+        set.to_list(words),
+        [begin_word],
+        set.from_list([begin_word]),
+        end_word,
+        1,
+      )
+  }
+}
+
+/// Neighbours found by comparing against every remaining word. Simpler to state
+/// and O(n) comparisons per expansion rather than a constant number of lookups
+/// \\u{2014} which is the cost the wildcard buckets remove.
+fn spread(
+  words: List(String),
+  frontier: List(String),
+  seen: Set(String),
+  target: String,
+  steps: Int,
+) -> Int {
+  case list.contains(frontier, target) {
+    True -> steps
+    False -> {
+      let next =
+        words
+        |> list.filter(fn(word) {
+          !set.contains(seen, word)
+          && list.any(frontier, fn(from) { differs_by_one(from, word) })
+        })
+
+      case next {
+        [] -> 0
+        _ ->
+          spread(
+            words,
+            next,
+            list.fold(next, seen, set.insert),
+            target,
+            steps + 1,
+          )
+      }
+    }
+  }
+}
+
+fn differs_by_one(a: String, b: String) -> Bool {
+  case string.length(a) == string.length(b) {
+    False -> False
+    True ->
+      list.zip(string.to_graphemes(a), string.to_graphemes(b))
+      |> list.count(fn(pair: #(String, String)) { pair.0 != pair.1 })
+      == 1
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn ladder_length(
+  begin_word: String,
+  end_word: String,
+  word_list: List(String),
+) -> Int",
+      starter: "pub fn ladder_length(
+  begin_word: String,
+  end_word: String,
+  word_list: List(String),
+) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"ladder_length(\\\"hit\\\", \\\"cog\\\", [hot, dot, dog, lot, log, cog])\",
+      string.inspect(5),
+      string.inspect(
+        solution.ladder_length(\"hit\", \"cog\", [
+          \"hot\",
+          \"dot\",
+          \"dog\",
+          \"lot\",
+          \"log\",
+          \"cog\",
+        ]),
+      ),
+    ),
+    #(
+      \"ladder_length(\\\"hit\\\", \\\"cog\\\", without cog)\",
+      string.inspect(0),
+      string.inspect(
+        solution.ladder_length(\"hit\", \"cog\", [\"hot\", \"dot\", \"dog\", \"lot\", \"log\"]),
+      ),
+    ),
+    #(
+      \"ladder_length(\\\"a\\\", \\\"c\\\", [a, b, c])\",
+      string.inspect(2),
+      string.inspect(solution.ladder_length(\"a\", \"c\", [\"a\", \"b\", \"c\"])),
+    ),
+    #(
+      \"ladder_length(\\\"hit\\\", \\\"hit\\\", [hit])\",
+      string.inspect(1),
+      string.inspect(solution.ladder_length(\"hit\", \"hit\", [\"hit\"])),
+    ),
+    #(
+      \"ladder_length(\\\"hot\\\", \\\"dog\\\", [hot, dog]) — no bridge\",
+      string.inspect(0),
+      string.inspect(solution.ladder_length(\"hot\", \"dog\", [\"hot\", \"dog\"])),
     ),
   ]
 }",
@@ -13333,7 +15634,20 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc103_implement_trie" -> Ok(nc103_implement_trie())
     "nc104_word_dictionary" -> Ok(nc104_word_dictionary())
     "nc105_word_search_ii" -> Ok(nc105_word_search_ii())
+    "nc106_number_of_islands" -> Ok(nc106_number_of_islands())
+    "nc107_clone_graph" -> Ok(nc107_clone_graph())
+    "nc108_max_area_of_island" -> Ok(nc108_max_area_of_island())
+    "nc109_pacific_atlantic" -> Ok(nc109_pacific_atlantic())
     "nc10_three_sum" -> Ok(nc10_three_sum())
+    "nc110_surrounded_regions" -> Ok(nc110_surrounded_regions())
+    "nc111_rotting_oranges" -> Ok(nc111_rotting_oranges())
+    "nc112_walls_and_gates" -> Ok(nc112_walls_and_gates())
+    "nc113_course_schedule" -> Ok(nc113_course_schedule())
+    "nc114_course_schedule_ii" -> Ok(nc114_course_schedule_ii())
+    "nc115_redundant_connection" -> Ok(nc115_redundant_connection())
+    "nc116_connected_components" -> Ok(nc116_connected_components())
+    "nc117_graph_valid_tree" -> Ok(nc117_graph_valid_tree())
+    "nc118_word_ladder" -> Ok(nc118_word_ladder())
     "nc11_container_water" -> Ok(nc11_container_water())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())

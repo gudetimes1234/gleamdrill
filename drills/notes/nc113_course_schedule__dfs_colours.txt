@@ -1,0 +1,1 @@
+Depth-first needs three states, not two. "Seen" is not enough: a node reached again down a *different* branch is fine, while one reached again while still on the current path is a cycle. The in-progress set is exactly what tells those apart.
