@@ -1,0 +1,1 @@
+Every element is either in or out, independently, so the subsets of a list are the subsets of its tail twice over — once with the head added and once without. That recursion is the whole answer, and it is also why there are exactly 2ⁿ of them.

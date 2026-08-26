@@ -1,0 +1,1 @@
+One queen per row, so the only choice is the column. A diagonal is identified by row − column and an anti-diagonal by row + column, which turns "is this square attacked?" into three set lookups — and lets the search abandon an entire subtree the moment one of them fails.

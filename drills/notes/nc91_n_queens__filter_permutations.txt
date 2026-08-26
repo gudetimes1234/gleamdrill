@@ -1,0 +1,1 @@
+One queen per row with no two sharing a column *is* a permutation of the columns, so the row and column rules hold by construction and only the diagonals are left. Generating all n! and filtering is far slower than pruning as you go — it explores arrangements a backtracker abandons at the second queen — but it names what the search space actually is.

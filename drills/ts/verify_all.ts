@@ -167,6 +167,24 @@ import * as v162 from "./.verify/nc81_design_twitter/harness";
 import * as v163 from "./.verify/nc81_design_twitter__merge_per_user/harness";
 import * as v164 from "./.verify/nc82_find_median_stream/harness";
 import * as v165 from "./.verify/nc82_find_median_stream__sorted_list/harness";
+import * as v166 from "./.verify/nc83_subsets/harness";
+import * as v167 from "./.verify/nc83_subsets__bitmask/harness";
+import * as v168 from "./.verify/nc84_combination_sum/harness";
+import * as v169 from "./.verify/nc84_combination_sum__by_target/harness";
+import * as v170 from "./.verify/nc85_permutations/harness";
+import * as v171 from "./.verify/nc85_permutations__insert_everywhere/harness";
+import * as v172 from "./.verify/nc86_subsets_ii/harness";
+import * as v173 from "./.verify/nc86_subsets_ii__by_counts/harness";
+import * as v174 from "./.verify/nc87_combination_sum_ii/harness";
+import * as v175 from "./.verify/nc87_combination_sum_ii__dedupe_at_the_end/harness";
+import * as v176 from "./.verify/nc88_word_search/harness";
+import * as v177 from "./.verify/nc88_word_search__prune_by_counts/harness";
+import * as v178 from "./.verify/nc89_palindrome_partitioning/harness";
+import * as v179 from "./.verify/nc89_palindrome_partitioning__with_table/harness";
+import * as v180 from "./.verify/nc90_letter_combinations/harness";
+import * as v181 from "./.verify/nc90_letter_combinations__iterative_product/harness";
+import * as v182 from "./.verify/nc91_n_queens/harness";
+import * as v183 from "./.verify/nc91_n_queens__filter_permutations/harness";
 
 type Case = [string, string, string];
 
@@ -337,6 +355,24 @@ const VARIANTS: [string, string, () => Case[]][] = [
   ["nc81_design_twitter", "Solution 2 · Merge per user", v163.run],
   ["nc82_find_median_stream", "Solution 1", v164.run],
   ["nc82_find_median_stream", "Solution 2 · Sorted list", v165.run],
+  ["nc83_subsets", "Solution 1", v166.run],
+  ["nc83_subsets", "Solution 2 · Bitmask", v167.run],
+  ["nc84_combination_sum", "Solution 1", v168.run],
+  ["nc84_combination_sum", "Solution 2 · By target", v169.run],
+  ["nc85_permutations", "Solution 1", v170.run],
+  ["nc85_permutations", "Solution 2 · Insert everywhere", v171.run],
+  ["nc86_subsets_ii", "Solution 1", v172.run],
+  ["nc86_subsets_ii", "Solution 2 · By counts", v173.run],
+  ["nc87_combination_sum_ii", "Solution 1", v174.run],
+  ["nc87_combination_sum_ii", "Solution 2 · Dedupe at the end", v175.run],
+  ["nc88_word_search", "Solution 1", v176.run],
+  ["nc88_word_search", "Solution 2 · Prune by counts", v177.run],
+  ["nc89_palindrome_partitioning", "Solution 1", v178.run],
+  ["nc89_palindrome_partitioning", "Solution 2 · With table", v179.run],
+  ["nc90_letter_combinations", "Solution 1", v180.run],
+  ["nc90_letter_combinations", "Solution 2 · Iterative product", v181.run],
+  ["nc91_n_queens", "Solution 1", v182.run],
+  ["nc91_n_queens", "Solution 2 · Filter permutations", v183.run],
 ];
 
 const failures: string[] = [];

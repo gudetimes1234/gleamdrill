@@ -1,0 +1,1 @@
+Build up rather than choose: every permutation of n elements is a permutation of n−1 with the new element wedged into one of its n positions. No recursion into a shrinking remainder, and it explains the factorial directly — one more choice of position at every step.

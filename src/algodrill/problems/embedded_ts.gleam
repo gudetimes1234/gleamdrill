@@ -5324,6 +5324,685 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc83_subsets() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Every element is either in or out, independently, so the subsets of a list are the subsets of its tail twice over — once with the head added and once without. That recursion is the whole answer, and it is also why there are exactly 2ⁿ of them.", "export function subsets(nums: number[]): number[][] {
+  // Every element is either in or out, independently, so the subsets of a list
+  // are the subsets of its tail twice over: once with the head added and once
+  // without. That is the whole recursion, and it is why there are 2^n of them.
+  if (nums.length === 0) return [[]];
+  const without = subsets(nums.slice(1));
+  return [...without.map((subset) => [nums[0], ...subset]), ...without];
+}"),
+      #("Solution 2 · Bitmask", "The in-or-out choices *are* the bits of a number, so counting from 0 to 2ⁿ−1 enumerates every subset exactly once with no recursion at all. It also gives every subset a stable index, which matters the moment subsets have to be compared, cached or keyed on.", "export function subsets(nums: number[]): number[][] {
+  // The in-or-out choices *are* the bits of a number, so counting from 0 to
+  // 2^n - 1 enumerates every subset exactly once with no recursion at all.
+  // Worth knowing: it also gives every subset a stable index, which matters
+  // when subsets have to be compared or cached.
+  return Array.from({ length: 1 << nums.length }, (_, mask) =>
+    nums.filter((_value, i) => (mask >> i) & 1),
+  );
+}"),
+    ],
+    check: Check(
+      signature: "export function subsets(nums: number[]): number[][]",
+      starter: "export function subsets(nums: number[]): number[][] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// Both the outer order and the order within each subset are free.
+const sorted = (nums: number[]) =>
+  solution
+    .subsets(nums)
+    .map((subset) => [...subset].sort((a, b) => a - b).join(\",\"))
+    .sort();
+
+export function run(): [string, string, string][] {
+  if (typeof solution.subsets !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"subsets([1, 2, 3])\", show([\"\", \"1\", \"1,2\", \"1,2,3\", \"1,3\", \"2\", \"2,3\", \"3\"]), show(sorted([1, 2, 3]))],
+    [\"subsets([0])\", show([\"\", \"0\"]), show(sorted([0]))],
+    [\"subsets([])\", show([\"\"]), show(sorted([]))],
+    [\"subsets of five elements count\", show(32), show(solution.subsets([1, 2, 3, 4, 5]).length)],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc84_combination_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Each step either takes the current candidate again — reuse is allowed — or drops it for good. Never returning to a dropped candidate is what stops the same combination appearing in several orders, so there is no deduplication anywhere. That constraint doing the work is the pattern to carry to the harder variants.", "export function combinationSum(candidates: number[], target: number): number[][] {
+  return build(candidates, target);
+}
+
+// Each step either takes the current candidate again -- reuse is allowed -- or
+// drops it for good. Never going back to a dropped candidate is what stops the
+// same combination appearing in several orders, so no deduplication is needed.
+function build(candidates: number[], target: number): number[][] {
+  if (target === 0) return [[]];
+  if (candidates.length === 0) return [];
+
+  const first = candidates[0];
+  if (first > target || first <= 0) return build(candidates.slice(1), target);
+
+  return [
+    ...build(candidates, target - first).map((rest) => [first, ...rest]),
+    ...build(candidates.slice(1), target),
+  ];
+}"),
+      #("Solution 2 · By target", "Bottom-up: the combinations making a target are every combination making a smaller amount with one more candidate added. Requiring the added candidate to be no smaller than the combination's largest plays the same role the index does in the recursion — it fixes one order per combination.", "export function combinationSum(candidates: number[], target: number): number[][] {
+  const usable = candidates.filter((c) => c > 0).sort((a, b) => a - b);
+
+  // Bottom-up instead of by recursion: the combinations making a target are
+  // every combination making a smaller amount with one more candidate added.
+  // Requiring each added candidate to be no smaller than the combination's
+  // largest is what keeps one combination from appearing in several orders.
+  const table = new Map<number, number[][]>([[0, [[]]]]);
+
+  for (let amount = 1; amount <= target; amount++) {
+    const found: number[][] = [];
+    for (const candidate of usable) {
+      if (candidate > amount) break;
+      for (const combination of table.get(amount - candidate) ?? []) {
+        if (combination.length === 0 || candidate >= combination[0]) {
+          found.push([candidate, ...combination]);
+        }
+      }
+    }
+    table.set(amount, found);
+  }
+
+  return table.get(target) ?? [];
+}"),
+    ],
+    check: Check(
+      signature: "export function combinationSum(candidates: number[], target: number): number[][]",
+      starter: "export function combinationSum(candidates: number[], target: number): number[][] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const sorted = (candidates: number[], target: number) =>
+  solution
+    .combinationSum(candidates, target)
+    .map((combination) => [...combination].sort((a, b) => a - b).join(\",\"))
+    .sort();
+
+export function run(): [string, string, string][] {
+  if (typeof solution.combinationSum !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"combinationSum([2, 3, 6, 7], 7)\", show([\"2,2,3\", \"7\"]), show(sorted([2, 3, 6, 7], 7))],
+    [\"combinationSum([2, 3, 5], 8)\", show([\"2,2,2,2\", \"2,3,3\", \"3,5\"]), show(sorted([2, 3, 5], 8))],
+    [\"combinationSum([2], 1)\", show([]), show(sorted([2], 1))],
+    [\"combinationSum([1], 0)\", show([\"\"]), show(sorted([1], 0))],
+    [\"combinationSum([], 3)\", show([]), show(sorted([], 3))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc85_permutations() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Pick each element in turn as the first, then permute what is left. Removing the chosen element from the remainder is exactly what a \"used\" set does in an in-place version; here the remainder is simply a shorter list, and nothing has to be undone afterwards.", "export function permute(nums: number[]): number[][] {
+  // Pick each element in turn as the first, then permute what is left. Removing
+  // the chosen element from the remainder is what the \"used\" set does in an
+  // in-place version -- here the remainder is simply a shorter array.
+  if (nums.length === 0) return [[]];
+  return nums.flatMap((value, i) =>
+    permute([...nums.slice(0, i), ...nums.slice(i + 1)]).map((tail) => [value, ...tail]),
+  );
+}"),
+      #("Solution 2 · Insert everywhere", "Build up rather than choose: every permutation of n elements is a permutation of n−1 with the new element wedged into one of its n positions. No recursion into a shrinking remainder, and it explains the factorial directly — one more choice of position at every step.", "export function permute(nums: number[]): number[][] {
+  // Build up instead of choosing: every permutation of n elements is a
+  // permutation of n-1 with the new element wedged into one of its n positions.
+  // No recursion into a shrinking remainder, and it explains the factorial
+  // directly -- one more choice of position at every step.
+  let permutations: number[][] = [[]];
+  for (const value of nums) {
+    permutations = permutations.flatMap((permutation) =>
+      Array.from({ length: permutation.length + 1 }, (_, at) => [
+        ...permutation.slice(0, at),
+        value,
+        ...permutation.slice(at),
+      ]),
+    );
+  }
+  return permutations;
+}"),
+    ],
+    check: Check(
+      signature: "export function permute(nums: number[]): number[][]",
+      starter: "export function permute(nums: number[]): number[][] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// The outer order is free but the order *within* each permutation is the answer.
+const sorted = (nums: number[]) => solution.permute(nums).map((p) => p.join(\",\")).sort();
+
+export function run(): [string, string, string][] {
+  if (typeof solution.permute !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"permute([1, 2, 3])\", show([\"1,2,3\", \"1,3,2\", \"2,1,3\", \"2,3,1\", \"3,1,2\", \"3,2,1\"]), show(sorted([1, 2, 3]))],
+    [\"permute([0, 1])\", show([\"0,1\", \"1,0\"]), show(sorted([0, 1]))],
+    [\"permute([1])\", show([\"1\"]), show(sorted([1]))],
+    [\"permute([])\", show([\"\"]), show(sorted([]))],
+    [\"permute of four elements count\", show(24), show(solution.permute([1, 2, 3, 4]).length)],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc86_subsets_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Sorting puts equal values next to each other, which is what makes the duplicate rule expressible at all: when a value is skipped, skip *every* copy of it at once. Skipping one copy and keeping the next rebuilds the same subset from a different copy, which is exactly the repeat you are trying to avoid.", "export function subsetsWithDup(nums: number[]): number[][] {
+  return build([...nums].sort((a, b) => a - b));
+}
+
+// Sorting puts equal values next to each other, which is what makes the
+// duplicate rule expressible: when the head is skipped, skip *every* copy of it
+// at once. Skipping one copy and keeping the next would rebuild the same subset
+// by a different route.
+function build(sorted: number[]): number[][] {
+  if (sorted.length === 0) return [[]];
+
+  const first = sorted[0];
+  const withFirst = build(sorted.slice(1)).map((subset) => [first, ...subset]);
+
+  let past = 1;
+  while (past < sorted.length && sorted[past] === first) past++;
+
+  return [...withFirst, ...build(sorted.slice(past))];
+}"),
+      #("Solution 2 · By counts", "A different framing: the choice is not per *element* but per distinct *value* — how many copies to take, from none up to however many exist. Duplicates then cannot arise, so there is no skipping rule to remember and nothing to sort for correctness.", "export function subsetsWithDup(nums: number[]): number[][] {
+  // A different framing: the answer is not a choice per *element* but a choice
+  // per distinct *value* -- how many copies of it to take, from none up to
+  // however many there are. Duplicates then cannot arise at all, so there is no
+  // skipping rule to remember.
+  const counts = new Map<number, number>();
+  for (const value of nums) counts.set(value, (counts.get(value) ?? 0) + 1);
+
+  let subsets: number[][] = [[]];
+  for (const [value, count] of [...counts.entries()].sort((a, b) => a[0] - b[0])) {
+    subsets = subsets.flatMap((subset) =>
+      Array.from({ length: count + 1 }, (_, taken) => [
+        ...subset,
+        ...Array(taken).fill(value),
+      ]),
+    );
+  }
+  return subsets;
+}"),
+    ],
+    check: Check(
+      signature: "export function subsetsWithDup(nums: number[]): number[][]",
+      starter: "export function subsetsWithDup(nums: number[]): number[][] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const sorted = (nums: number[]) =>
+  solution
+    .subsetsWithDup(nums)
+    .map((subset) => [...subset].sort((a, b) => a - b).join(\",\"))
+    .sort();
+
+export function run(): [string, string, string][] {
+  if (typeof solution.subsetsWithDup !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"subsetsWithDup([1, 2, 2])\", show([\"\", \"1\", \"1,2\", \"1,2,2\", \"2\", \"2,2\"]), show(sorted([1, 2, 2]))],
+    [\"subsetsWithDup([0])\", show([\"\", \"0\"]), show(sorted([0]))],
+    [\"subsetsWithDup([])\", show([\"\"]), show(sorted([]))],
+    [\"subsetsWithDup([1, 1, 1])\", show([\"\", \"1\", \"1,1\", \"1,1,1\"]), show(sorted([1, 1, 1]))],
+    [\"subsetsWithDup([4, 4, 4, 1, 4]) count\", show(10), show(solution.subsetsWithDup([4, 4, 4, 1, 4]).length)],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc87_combination_sum_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Each candidate is used at most once, so taking one moves past it. The duplicate rule is the same as Subsets II — skipping a value means skipping every copy of it — and that shared rule is the reason to drill the two problems together.", "export function combinationSum2(candidates: number[], target: number): number[][] {
+  return build([...candidates].sort((a, b) => a - b), target);
+}
+
+// Each candidate is used at most once, so taking one moves past it. The
+// duplicate rule is the same as in Subsets II: skipping a value means skipping
+// every copy of it, otherwise the same combination is rebuilt from a different
+// copy of the same number.
+function build(sorted: number[], target: number): number[][] {
+  if (target === 0) return [[]];
+  if (sorted.length === 0) return [];
+
+  const first = sorted[0];
+  if (first > target) return [];
+
+  const withFirst = build(sorted.slice(1), target - first).map((rest) => [first, ...rest]);
+
+  let past = 1;
+  while (past < sorted.length && sorted[past] === first) past++;
+
+  return [...withFirst, ...build(sorted.slice(past), target)];
+}"),
+      #("Solution 2 · Dedupe at the end", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Generate every subset that hits the target and collapse the repeats afterwards. Correct, and exponentially wasteful on inputs with many equal values — which is precisely the cost the skipping rule avoids.", "export function combinationSum2(candidates: number[], target: number): number[][] {
+  // Generate every subset that hits the target and collapse the repeats
+  // afterwards. Correct, and exponentially wasteful on inputs with many equal
+  // values -- which is exactly why the skipping rule is worth getting right.
+  const seen = new Set<string>();
+  const found: number[][] = [];
+
+  for (const subset of everySubset([...candidates].sort((a, b) => a - b))) {
+    if (subset.reduce((a, b) => a + b, 0) !== target) continue;
+    const key = subset.join(\",\");
+    if (!seen.has(key)) {
+      seen.add(key);
+      found.push(subset);
+    }
+  }
+
+  return found;
+}
+
+function everySubset(sorted: number[]): number[][] {
+  if (sorted.length === 0) return [[]];
+  const without = everySubset(sorted.slice(1));
+  return [...without.map((subset) => [sorted[0], ...subset]), ...without];
+}"),
+    ],
+    check: Check(
+      signature: "export function combinationSum2(candidates: number[], target: number): number[][]",
+      starter: "export function combinationSum2(candidates: number[], target: number): number[][] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const sorted = (candidates: number[], target: number) =>
+  solution
+    .combinationSum2(candidates, target)
+    .map((combination) => [...combination].sort((a, b) => a - b).join(\",\"))
+    .sort();
+
+export function run(): [string, string, string][] {
+  if (typeof solution.combinationSum2 !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"combinationSum2([10, 1, 2, 7, 6, 1, 5], 8)\", show([\"1,1,6\", \"1,2,5\", \"1,7\", \"2,6\"]), show(sorted([10, 1, 2, 7, 6, 1, 5], 8))],
+    [\"combinationSum2([2, 5, 2, 1, 2], 5)\", show([\"1,2,2\", \"5\"]), show(sorted([2, 5, 2, 1, 2], 5))],
+    [\"combinationSum2([], 3)\", show([]), show(sorted([], 3))],
+    [\"combinationSum2([1], 1)\", show([\"1\"]), show(sorted([1], 1))],
+    [\"combinationSum2([2], 1)\", show([]), show(sorted([2], 1))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc88_word_search() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Depth-first from every square, with the path so far in a set so no letter is reused within one attempt. The set has to be per-path, not global: a square rejected on one route must still be available on another, and that distinction is the whole difference between backtracking and plain search.", "export function exist(board: string[][], word: string): boolean {
+  if (word === \"\") return true;
+  if (board.length === 0) return false;
+
+  // Depth-first from every starting square, with the path so far held in a set
+  // so a letter is never reused within one attempt. The set is per-path rather
+  // than global -- a square rejected on one route must still be available on
+  // another, which is the difference between backtracking and plain search.
+  const walk = (r: number, c: number, at: number, used: Set<string>): boolean => {
+    if (r < 0 || r >= board.length || c < 0 || c >= board[0].length) return false;
+    if (used.has(`${r},${c}`) || board[r][c] !== word[at]) return false;
+    if (at === word.length - 1) return true;
+
+    const next = new Set(used);
+    next.add(`${r},${c}`);
+    return (
+      walk(r - 1, c, at + 1, next) ||
+      walk(r + 1, c, at + 1, next) ||
+      walk(r, c - 1, at + 1, next) ||
+      walk(r, c + 1, at + 1, next)
+    );
+  };
+
+  for (let r = 0; r < board.length; r++) {
+    for (let c = 0; c < board[0].length; c++) {
+      if (walk(r, c, 0, new Set())) return true;
+    }
+  }
+  return false;
+}"),
+      #("Solution 2 · Prune by counts", "Two cheap checks before any searching. If the board does not hold enough copies of some letter, no search can succeed at all. And starting from whichever end of the word is rarer on the board begins from fewer squares — the branching factor at the root is what dominates, so halving it there is worth more than any saving deeper in.", "export function exist(board: string[][], word: string): boolean {
+  if (word === \"\") return true;
+  if (board.length === 0) return false;
+
+  const available = new Map<string, number>();
+  for (const row of board) {
+    for (const cell of row) available.set(cell, (available.get(cell) ?? 0) + 1);
+  }
+
+  // Two cheap checks before any searching. If the board does not hold enough
+  // copies of some letter, no search can succeed. And searching from whichever
+  // end of the word is rarer on the board starts from fewer squares -- the
+  // branching factor at the root is what dominates.
+  const needed = new Map<string, number>();
+  for (const letter of word) needed.set(letter, (needed.get(letter) ?? 0) + 1);
+  for (const [letter, count] of needed) {
+    if ((available.get(letter) ?? 0) < count) return false;
+  }
+
+  const target =
+    (available.get(word[0]) ?? 0) > (available.get(word[word.length - 1]) ?? 0)
+      ? [...word].reverse().join(\"\")
+      : word;
+
+  const walk = (r: number, c: number, at: number, used: Set<string>): boolean => {
+    if (r < 0 || r >= board.length || c < 0 || c >= board[0].length) return false;
+    if (used.has(`${r},${c}`) || board[r][c] !== target[at]) return false;
+    if (at === target.length - 1) return true;
+
+    const next = new Set(used);
+    next.add(`${r},${c}`);
+    return (
+      walk(r - 1, c, at + 1, next) ||
+      walk(r + 1, c, at + 1, next) ||
+      walk(r, c - 1, at + 1, next) ||
+      walk(r, c + 1, at + 1, next)
+    );
+  };
+
+  for (let r = 0; r < board.length; r++) {
+    for (let c = 0; c < board[0].length; c++) {
+      if (walk(r, c, 0, new Set())) return true;
+    }
+  }
+  return false;
+}"),
+    ],
+    check: Check(
+      signature: "export function exist(board: string[][], word: string): boolean",
+      starter: "export function exist(board: string[][], word: string): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const board = () => [\"ABCE\", \"SFCS\", \"ADEE\"].map((row) => row.split(\"\"));
+
+export function run(): [string, string, string][] {
+  if (typeof solution.exist !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"exist(board, 'ABCCED')\", show(true), show(solution.exist(board(), \"ABCCED\"))],
+    [\"exist(board, 'SEE')\", show(true), show(solution.exist(board(), \"SEE\"))],
+    [\"exist(board, 'ABCB')\", show(false), show(solution.exist(board(), \"ABCB\"))],
+    [\"exist(board, '')\", show(true), show(solution.exist(board(), \"\"))],
+    [\"exist(board, 'Z')\", show(false), show(solution.exist(board(), \"Z\"))],
+    [\"exist([], 'A')\", show(false), show(solution.exist([], \"A\"))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc89_palindrome_partitioning() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Every partition begins with some palindromic prefix, so the only choice at each step is how long that prefix is. Cutting there and recursing on the rest reaches each partition exactly once, in order, with nothing to deduplicate.", "export function partition(s: string): string[][] {
+  return build(s);
+}
+
+// Every partition starts with some palindromic prefix, so the choice at each
+// step is only how long that prefix is. Cutting there and recursing on the rest
+// reaches each partition exactly once, in order, with nothing to dedupe.
+function build(remaining: string): string[][] {
+  if (remaining === \"\") return [[]];
+
+  const out: string[][] = [];
+  for (let size = 1; size <= remaining.length; size++) {
+    const prefix = remaining.slice(0, size);
+    if (prefix !== [...prefix].reverse().join(\"\")) continue;
+    for (const rest of build(remaining.slice(size))) out.push([prefix, ...rest]);
+  }
+  return out;
+}"),
+      #("Solution 2 · With table", "Work out which spans are palindromes once, up front, instead of re-testing the same prefix on every branch. The search then becomes pure choice — a table lookup where there was a linear scan. Precomputing the predicate rather than the answer is a move worth having.", "export function partition(s: string): string[][] {
+  const n = s.length;
+
+  // Work out which spans are palindromes once, up front, rather than re-testing
+  // the same prefix on every branch of the search. The search is then pure
+  // choice: a table lookup replaces a linear scan at every step.
+  const table = new Map<string, boolean>();
+  for (let span = 0; span < n; span++) {
+    for (let i = 0; i + span < n; i++) {
+      const j = i + span;
+      const inside = j - i < 2 ? true : (table.get(`${i + 1},${j - 1}`) ?? false);
+      table.set(`${i},${j}`, s[i] === s[j] && inside);
+    }
+  }
+
+  const build = (start: number): string[][] => {
+    if (start >= n) return [[]];
+    const out: string[][] = [];
+    for (let end = start; end < n; end++) {
+      if (!table.get(`${start},${end}`)) continue;
+      for (const rest of build(end + 1)) out.push([s.slice(start, end + 1), ...rest]);
+    }
+    return out;
+  };
+
+  return build(0);
+}"),
+    ],
+    check: Check(
+      signature: "export function partition(s: string): string[][]",
+      starter: "export function partition(s: string): string[][] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// The order of pieces within a partition is the answer, so only the outer list
+// is normalised. Comma rather than a pipe: a pipe sorts after letters.
+const sorted = (s: string) => solution.partition(s).map((pieces) => pieces.join(\",\")).sort();
+
+export function run(): [string, string, string][] {
+  if (typeof solution.partition !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"partition('aab')\", show([\"a,a,b\", \"aa,b\"]), show(sorted(\"aab\"))],
+    [\"partition('a')\", show([\"a\"]), show(sorted(\"a\"))],
+    [\"partition('')\", show([\"\"]), show(sorted(\"\"))],
+    [\"partition('aba')\", show([\"a,b,a\", \"aba\"]), show(sorted(\"aba\"))],
+    [\"partition('abc')\", show([\"a,b,c\"]), show(sorted(\"abc\"))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc90_letter_combinations() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One choice per digit, independently, so the answer is the cross product of the letter sets. There is no pruning and no constraint between choices — which makes this the cleanest place to see what backtracking degenerates to when nothing can fail.", "const KEYPAD: Record<string, string> = {
+  \"2\": \"abc\", \"3\": \"def\", \"4\": \"ghi\", \"5\": \"jkl\",
+  \"6\": \"mno\", \"7\": \"pqrs\", \"8\": \"tuv\", \"9\": \"wxyz\",
+};
+
+export function letterCombinations(digits: string): string[] {
+  if (digits === \"\") return [];
+  return build(digits);
+}
+
+// One choice per digit, independently -- so the answer is the cross product of
+// the letter sets. Written as a recursion here: pick a letter for the first
+// digit, then every combination of the rest.
+function build(digits: string): string[] {
+  if (digits === \"\") return [\"\"];
+  const tails = build(digits.slice(1));
+  return [...(KEYPAD[digits[0]] ?? \"\")].flatMap((letter) =>
+    tails.map((tail) => letter + tail),
+  );
+}"),
+      #("Solution 2 · Iterative product", "The same cross product built by folding rather than recursing: hold every combination of the digits so far and extend each by every letter of the next. No call stack, and the growth is visible in the code — the list multiplies in size at each step.", "const KEYPAD: Record<string, string> = {
+  \"2\": \"abc\", \"3\": \"def\", \"4\": \"ghi\", \"5\": \"jkl\",
+  \"6\": \"mno\", \"7\": \"pqrs\", \"8\": \"tuv\", \"9\": \"wxyz\",
+};
+
+export function letterCombinations(digits: string): string[] {
+  if (digits === \"\") return [];
+
+  // The same cross product built by folding rather than recursing: hold every
+  // combination of the digits seen so far and extend each by every letter of
+  // the next. No call stack, and the growth is visible -- the list multiplies
+  // in size at each step.
+  let combinations = [\"\"];
+  for (const digit of digits) {
+    combinations = combinations.flatMap((prefix) =>
+      [...(KEYPAD[digit] ?? \"\")].map((letter) => prefix + letter),
+    );
+  }
+  return combinations;
+}"),
+    ],
+    check: Check(
+      signature: "export function letterCombinations(digits: string): string[]",
+      starter: "export function letterCombinations(digits: string): string[] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const sorted = (digits: string) => [...solution.letterCombinations(digits)].sort();
+
+export function run(): [string, string, string][] {
+  if (typeof solution.letterCombinations !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"letterCombinations('23')\", show([\"ad\", \"ae\", \"af\", \"bd\", \"be\", \"bf\", \"cd\", \"ce\", \"cf\"]), show(sorted(\"23\"))],
+    [\"letterCombinations('')\", show([]), show(sorted(\"\"))],
+    [\"letterCombinations('2')\", show([\"a\", \"b\", \"c\"]), show(sorted(\"2\"))],
+    [\"letterCombinations('9')\", show([\"w\", \"x\", \"y\", \"z\"]), show(sorted(\"9\"))],
+    [\"letterCombinations('79') count\", show(16), show(solution.letterCombinations(\"79\").length)],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc91_n_queens() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One queen per row, so the only choice is the column. A diagonal is identified by row − column and an anti-diagonal by row + column, which turns \"is this square attacked?\" into three set lookups — and lets the search abandon an entire subtree the moment one of them fails.", "export function solveNQueens(n: number): string[][] {
+  const boards: string[][] = [];
+
+  // One queen per row, so the only choice is which column. A diagonal is
+  // identified by row - column and an anti-diagonal by row + column, which
+  // turns \"is this square attacked?\" into three set lookups -- and lets the
+  // search abandon a whole subtree the moment one fails.
+  const place = (
+    row: number,
+    chosen: number[],
+    columns: Set<number>,
+    diagonals: Set<number>,
+    antiDiagonals: Set<number>,
+  ) => {
+    if (row === n) {
+      boards.push(chosen.map((c) => \".\".repeat(c) + \"Q\" + \".\".repeat(n - c - 1)));
+      return;
+    }
+    for (let column = 0; column < n; column++) {
+      if (columns.has(column) || diagonals.has(row - column) || antiDiagonals.has(row + column)) {
+        continue;
+      }
+      place(
+        row + 1,
+        [...chosen, column],
+        new Set(columns).add(column),
+        new Set(diagonals).add(row - column),
+        new Set(antiDiagonals).add(row + column),
+      );
+    }
+  };
+
+  place(0, [], new Set(), new Set(), new Set());
+  return boards;
+}"),
+      #("Solution 2 · Filter permutations", "One queen per row with no two sharing a column *is* a permutation of the columns, so the row and column rules hold by construction and only the diagonals are left. Generating all n! and filtering is far slower than pruning as you go — it explores arrangements a backtracker abandons at the second queen — but it names what the search space actually is.", "export function solveNQueens(n: number): string[][] {
+  // One queen per row with no two sharing a column *is* a permutation of the
+  // columns, so the row and column rules are satisfied by construction and only
+  // the diagonals are left to test. Generating all n! and filtering is far
+  // slower than pruning as you go -- it explores arrangements a backtracker
+  // would have abandoned at the second queen -- but it names what the search
+  // space actually is.
+  return permutations(Array.from({ length: n }, (_, i) => i))
+    .filter(noDiagonalClash)
+    .map((chosen) => chosen.map((c) => \".\".repeat(c) + \"Q\" + \".\".repeat(n - c - 1)));
+}
+
+function permutations(values: number[]): number[][] {
+  if (values.length === 0) return [[]];
+  return values.flatMap((value, i) =>
+    permutations([...values.slice(0, i), ...values.slice(i + 1)]).map((tail) => [
+      value,
+      ...tail,
+    ]),
+  );
+}
+
+function noDiagonalClash(chosen: number[]): boolean {
+  for (let a = 0; a < chosen.length; a++) {
+    for (let b = a + 1; b < chosen.length; b++) {
+      if (Math.abs(a - b) === Math.abs(chosen[a] - chosen[b])) return false;
+    }
+  }
+  return true;
+}"),
+    ],
+    check: Check(
+      signature: "export function solveNQueens(n: number): string[][]",
+      starter: "export function solveNQueens(n: number): string[][] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const sorted = (n: number) => solution.solveNQueens(n).map((board) => board.join(\"|\")).sort();
+
+export function run(): [string, string, string][] {
+  if (typeof solution.solveNQueens !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"solveNQueens(4)\", show([\"..Q.|Q...|...Q|.Q..\", \".Q..|...Q|Q...|..Q.\"]), show(sorted(4))],
+    [\"solveNQueens(1)\", show([\"Q\"]), show(sorted(1))],
+    [\"solveNQueens(2)\", show([]), show(sorted(2))],
+    [\"solveNQueens(3)\", show([]), show(sorted(3))],
+    [\"solveNQueens(6) count\", show(4), show(solution.solveNQueens(6).length)],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -5408,6 +6087,15 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc80_task_scheduler" -> Ok(nc80_task_scheduler())
     "nc81_design_twitter" -> Ok(nc81_design_twitter())
     "nc82_find_median_stream" -> Ok(nc82_find_median_stream())
+    "nc83_subsets" -> Ok(nc83_subsets())
+    "nc84_combination_sum" -> Ok(nc84_combination_sum())
+    "nc85_permutations" -> Ok(nc85_permutations())
+    "nc86_subsets_ii" -> Ok(nc86_subsets_ii())
+    "nc87_combination_sum_ii" -> Ok(nc87_combination_sum_ii())
+    "nc88_word_search" -> Ok(nc88_word_search())
+    "nc89_palindrome_partitioning" -> Ok(nc89_palindrome_partitioning())
+    "nc90_letter_combinations" -> Ok(nc90_letter_combinations())
+    "nc91_n_queens" -> Ok(nc91_n_queens())
     _ -> Error(Nil)
   }
 }

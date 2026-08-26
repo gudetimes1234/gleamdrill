@@ -1,0 +1,2 @@
+@shared/brute-force-baseline
+Generate every subset that hits the target and collapse the repeats afterwards. Correct, and exponentially wasteful on inputs with many equal values — which is precisely the cost the skipping rule avoids.

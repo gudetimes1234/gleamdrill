@@ -178,6 +178,24 @@ import nc81_design_twitter
 import nc81_design_twitter__merge_per_user
 import nc82_find_median_stream
 import nc82_find_median_stream__sorted_list
+import nc83_subsets
+import nc83_subsets__bitmask
+import nc84_combination_sum
+import nc84_combination_sum__by_target
+import nc85_permutations
+import nc85_permutations__insert_everywhere
+import nc86_subsets_ii
+import nc86_subsets_ii__by_counts
+import nc87_combination_sum_ii
+import nc87_combination_sum_ii__dedupe_at_the_end
+import nc88_word_search
+import nc88_word_search__prune_by_counts
+import nc89_palindrome_partitioning
+import nc89_palindrome_partitioning__with_table
+import nc90_letter_combinations
+import nc90_letter_combinations__iterative_product
+import nc91_n_queens
+import nc91_n_queens__filter_permutations
 import tip01_list_patterns
 import tip01_list_patterns__stdlib
 import tip02_tail_recursion
@@ -470,6 +488,30 @@ pub fn main() {
       nc82_find_median_stream__sorted_list.add_num,
       nc82_find_median_stream__sorted_list.find_median,
     ),
+    check_subsets(nc83_subsets.subsets),
+    check_subsets(nc83_subsets__bitmask.subsets),
+    check_combination_sum(nc84_combination_sum.combination_sum),
+    check_combination_sum(nc84_combination_sum__by_target.combination_sum),
+    check_permutations(nc85_permutations.permute),
+    check_permutations(nc85_permutations__insert_everywhere.permute),
+    check_subsets_ii(nc86_subsets_ii.subsets_with_dup),
+    check_subsets_ii(nc86_subsets_ii__by_counts.subsets_with_dup),
+    check_combination_sum_ii(nc87_combination_sum_ii.combination_sum2),
+    check_combination_sum_ii(
+      nc87_combination_sum_ii__dedupe_at_the_end.combination_sum2,
+    ),
+    check_word_search(nc88_word_search.exist),
+    check_word_search(nc88_word_search__prune_by_counts.exist),
+    check_palindrome_partitioning(nc89_palindrome_partitioning.partition),
+    check_palindrome_partitioning(
+      nc89_palindrome_partitioning__with_table.partition,
+    ),
+    check_letter_combinations(nc90_letter_combinations.letter_combinations),
+    check_letter_combinations(
+      nc90_letter_combinations__iterative_product.letter_combinations,
+    ),
+    check_n_queens(nc91_n_queens.solve_n_queens),
+    check_n_queens(nc91_n_queens__filter_permutations.solve_n_queens),
 
     // Gleam Tips
     check_list_patterns(tip01_list_patterns.length, tip01_list_patterns.last),
@@ -1354,6 +1396,149 @@ fn check_median_finder(
   let assert True = medians([5, 1, 2, 3]) == [5.0, 3.0, 2.0, 2.5]
   let assert True = medians([-1, -2]) == [-1.0, -1.5]
   let assert True = median(new()) == 0.0
+  Nil
+}
+
+/// Both the outer order and the order within each subset are free, so both are
+/// normalised before comparing.
+fn normalise_groups(groups: List(List(Int))) -> List(String) {
+  groups
+  |> list.map(fn(group) {
+    group
+    |> list.sort(int.compare)
+    |> list.map(int.to_string)
+    |> string.join(",")
+  })
+  |> list.sort(string.compare)
+}
+
+fn check_subsets(f: fn(List(Int)) -> List(List(Int))) -> Nil {
+  let assert True =
+    normalise_groups(f([1, 2, 3]))
+    == ["", "1", "1,2", "1,2,3", "1,3", "2", "2,3", "3"]
+  let assert True = normalise_groups(f([0])) == ["", "0"]
+  // The empty list still has one subset: itself.
+  let assert True = normalise_groups(f([])) == [""]
+  let assert True = list.length(f([1, 2, 3, 4, 5])) == 32
+  Nil
+}
+
+fn check_combination_sum(f: fn(List(Int), Int) -> List(List(Int))) -> Nil {
+  let assert True = normalise_groups(f([2, 3, 6, 7], 7)) == ["2,2,3", "7"]
+  // Candidates may be reused, so 2+2+2+2 is a legal combination.
+  let assert True =
+    normalise_groups(f([2, 3, 5], 8)) == ["2,2,2,2", "2,3,3", "3,5"]
+  let assert True = normalise_groups(f([2], 1)) == []
+  // A target of zero is met by the empty combination, not by nothing at all.
+  let assert True = normalise_groups(f([1], 0)) == [""]
+  let assert True = normalise_groups(f([], 3)) == []
+  Nil
+}
+
+fn check_permutations(f: fn(List(Int)) -> List(List(Int))) -> Nil {
+  // Only the outer order is free here: the order within a permutation is the
+  // answer, so the inner lists are compared as written.
+  let ordered = fn(nums) {
+    f(nums)
+    |> list.map(fn(permutation) {
+      permutation |> list.map(int.to_string) |> string.join(",")
+    })
+    |> list.sort(string.compare)
+  }
+
+  let assert True =
+    ordered([1, 2, 3]) == ["1,2,3", "1,3,2", "2,1,3", "2,3,1", "3,1,2", "3,2,1"]
+  let assert True = ordered([0, 1]) == ["0,1", "1,0"]
+  let assert True = ordered([1]) == ["1"]
+  let assert True = ordered([]) == [""]
+  let assert True = list.length(f([1, 2, 3, 4])) == 24
+  Nil
+}
+
+fn check_subsets_ii(f: fn(List(Int)) -> List(List(Int))) -> Nil {
+  let assert True =
+    normalise_groups(f([1, 2, 2])) == ["", "1", "1,2", "1,2,2", "2", "2,2"]
+  let assert True = normalise_groups(f([0])) == ["", "0"]
+  let assert True = normalise_groups(f([])) == [""]
+  let assert True = normalise_groups(f([1, 1, 1])) == ["", "1", "1,1", "1,1,1"]
+  // Duplicates not adjacent in the input, so sorting is part of the answer.
+  let assert True = list.length(f([4, 4, 4, 1, 4])) == 10
+  Nil
+}
+
+fn check_combination_sum_ii(f: fn(List(Int), Int) -> List(List(Int))) -> Nil {
+  let assert True =
+    normalise_groups(f([10, 1, 2, 7, 6, 1, 5], 8))
+    == ["1,1,6", "1,2,5", "1,7", "2,6"]
+  // Two of the three 2s are usable together; all three would overshoot.
+  let assert True = normalise_groups(f([2, 5, 2, 1, 2], 5)) == ["1,2,2", "5"]
+  let assert True = normalise_groups(f([], 3)) == []
+  let assert True = normalise_groups(f([1], 1)) == ["1"]
+  let assert True = normalise_groups(f([2], 1)) == []
+  Nil
+}
+
+fn check_word_search(f: fn(List(List(String)), String) -> Bool) -> Nil {
+  let board = list.map(["ABCE", "SFCS", "ADEE"], string.to_graphemes)
+
+  let assert True = f(board, "ABCCED")
+  let assert True = f(board, "SEE")
+  // Reaching the last B would mean reusing the first one.
+  let assert False = f(board, "ABCB")
+  let assert True = f(board, "")
+  let assert False = f(board, "Z")
+  let assert False = f([], "A")
+  Nil
+}
+
+fn check_palindrome_partitioning(f: fn(String) -> List(List(String))) -> Nil {
+  // The order of pieces within a partition is the answer, so only the outer
+  // list is normalised.
+  // Comma rather than a pipe as the separator: a pipe sorts *after* letters,
+  // which quietly reorders the expected list.
+  let sorted = fn(s) {
+    f(s)
+    |> list.map(fn(pieces) { string.join(pieces, ",") })
+    |> list.sort(string.compare)
+  }
+
+  let assert True = sorted("aab") == ["a,a,b", "aa,b"]
+  let assert True = sorted("a") == ["a"]
+  // The empty string has one partition: no pieces at all.
+  let assert True = sorted("") == [""]
+  let assert True = sorted("aba") == ["a,b,a", "aba"]
+  let assert True = sorted("abc") == ["a,b,c"]
+  Nil
+}
+
+fn check_letter_combinations(f: fn(String) -> List(String)) -> Nil {
+  let sorted = fn(digits) { list.sort(f(digits), string.compare) }
+
+  let assert True =
+    sorted("23") == ["ad", "ae", "af", "bd", "be", "bf", "cd", "ce", "cf"]
+  // No digits means no combinations \u{2014} not one empty combination.
+  let assert True = sorted("") == []
+  let assert True = sorted("2") == ["a", "b", "c"]
+  // 7 and 9 carry four letters each, unlike the rest.
+  let assert True = sorted("9") == ["w", "x", "y", "z"]
+  let assert True = list.length(f("79")) == 16
+  Nil
+}
+
+fn check_n_queens(f: fn(Int) -> List(List(String))) -> Nil {
+  let sorted = fn(n) {
+    f(n)
+    |> list.map(fn(board) { string.join(board, "|") })
+    |> list.sort(string.compare)
+  }
+
+  // Sorted, so the board starting "..Q." comes first.
+  let assert True = sorted(4) == ["..Q.|Q...|...Q|.Q..", ".Q..|...Q|Q...|..Q."]
+  let assert True = sorted(1) == ["Q"]
+  // Two and three queens cannot be placed at all.
+  let assert True = sorted(2) == []
+  let assert True = sorted(3) == []
+  let assert True = list.length(f(6)) == 4
   Nil
 }
 

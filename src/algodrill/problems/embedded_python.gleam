@@ -4941,6 +4941,645 @@ __case__(\"median before anything is added\", 0.0, MedianFinder().findMedian())"
   )
 }
 
+pub fn nc83_subsets() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Every element is either in or out, independently, so the subsets of a list are the subsets of its tail twice over — once with the head added and once without. That recursion is the whole answer, and it is also why there are exactly 2ⁿ of them.", "def subsets(nums):
+    # Every element is either in or out, independently, so the subsets of a list
+    # are the subsets of its tail twice over: once with the head added and once
+    # without. That is the whole recursion, and it is why there are 2^n of them.
+    if not nums:
+        return [[]]
+    without = subsets(nums[1:])
+    return [[nums[0]] + subset for subset in without] + without"),
+      #("Solution 2 · Bitmask", "The in-or-out choices *are* the bits of a number, so counting from 0 to 2ⁿ−1 enumerates every subset exactly once with no recursion at all. It also gives every subset a stable index, which matters the moment subsets have to be compared, cached or keyed on.", "def subsets(nums):
+    # The in-or-out choices *are* the bits of a number, so counting from 0 to
+    # 2^n - 1 enumerates every subset exactly once with no recursion at all.
+    # Worth knowing: it also gives every subset a stable index, which matters
+    # when subsets have to be compared or cached.
+    return [
+        [value for i, value in enumerate(nums) if mask >> i & 1]
+        for mask in range(1 << len(nums))
+    ]"),
+    ],
+    check: Check(
+      signature: "def subsets(nums):",
+      starter: "def subsets(nums):
+    pass",
+      harness: "try:
+    (subsets)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# Both the outer order and the order within each subset are free.
+def __sorted__(nums):
+    return sorted(\",\".join(str(v) for v in sorted(s)) for s in subsets(nums))
+
+__case__(\"subsets([1, 2, 3])\", [\"\", \"1\", \"1,2\", \"1,2,3\", \"1,3\", \"2\", \"2,3\", \"3\"], __sorted__([1, 2, 3]))
+__case__(\"subsets([0])\", [\"\", \"0\"], __sorted__([0]))
+__case__(\"subsets([])\", [\"\"], __sorted__([]))
+__case__(\"subsets of five elements count\", 32, len(subsets([1, 2, 3, 4, 5])))",
+    ),
+  )
+}
+
+pub fn nc84_combination_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Each step either takes the current candidate again — reuse is allowed — or drops it for good. Never returning to a dropped candidate is what stops the same combination appearing in several orders, so there is no deduplication anywhere. That constraint doing the work is the pattern to carry to the harder variants.", "def combinationSum(candidates, target):
+    return build(candidates, target)
+
+
+# Each step either takes the current candidate again -- reuse is allowed -- or
+# drops it for good. Never going back to a dropped candidate is what stops the
+# same combination appearing in several orders, so no deduplication is needed.
+def build(candidates, target):
+    if target == 0:
+        return [[]]
+    if not candidates:
+        return []
+
+    first = candidates[0]
+    if first > target or first <= 0:
+        return build(candidates[1:], target)
+
+    with_first = [[first] + rest for rest in build(candidates, target - first)]
+    return with_first + build(candidates[1:], target)"),
+      #("Solution 2 · By target", "Bottom-up: the combinations making a target are every combination making a smaller amount with one more candidate added. Requiring the added candidate to be no smaller than the combination's largest plays the same role the index does in the recursion — it fixes one order per combination.", "def combinationSum(candidates, target):
+    usable = sorted(c for c in candidates if c > 0)
+
+    # Bottom-up instead of by recursion: the combinations making a target are
+    # every combination making a smaller amount with one more candidate added.
+    # Requiring each added candidate to be no smaller than the combination's
+    # largest is what keeps one combination from appearing in several orders.
+    table = {0: [[]]}
+    for amount in range(1, target + 1):
+        found = []
+        for candidate in usable:
+            if candidate > amount:
+                break
+            for combination in table.get(amount - candidate, []):
+                if not combination or candidate >= combination[0]:
+                    found.append([candidate] + combination)
+        table[amount] = found
+
+    return table.get(target, [])"),
+    ],
+    check: Check(
+      signature: "def combinationSum(candidates, target):
+
+def build(candidates, target):",
+      starter: "def combinationSum(candidates, target):
+    pass
+
+def build(candidates, target):
+    pass",
+      harness: "try:
+    (combinationSum)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+def __sorted__(candidates, target):
+    return sorted(\",\".join(str(v) for v in sorted(c)) for c in combinationSum(candidates, target))
+
+__case__(\"combinationSum([2, 3, 6, 7], 7)\", [\"2,2,3\", \"7\"], __sorted__([2, 3, 6, 7], 7))
+__case__(\"combinationSum([2, 3, 5], 8)\", [\"2,2,2,2\", \"2,3,3\", \"3,5\"], __sorted__([2, 3, 5], 8))
+__case__(\"combinationSum([2], 1)\", [], __sorted__([2], 1))
+__case__(\"combinationSum([1], 0)\", [\"\"], __sorted__([1], 0))
+__case__(\"combinationSum([], 3)\", [], __sorted__([], 3))",
+    ),
+  )
+}
+
+pub fn nc85_permutations() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Pick each element in turn as the first, then permute what is left. Removing the chosen element from the remainder is exactly what a \"used\" set does in an in-place version; here the remainder is simply a shorter list, and nothing has to be undone afterwards.", "def permute(nums):
+    # Pick each element in turn as the first, then permute what is left.
+    # Removing the chosen element from the remainder is what the \"used\" set does
+    # in an in-place version -- here the remainder is simply a shorter list.
+    if not nums:
+        return [[]]
+    return [
+        [value] + tail
+        for i, value in enumerate(nums)
+        for tail in permute(nums[:i] + nums[i + 1:])
+    ]"),
+      #("Solution 2 · Insert everywhere", "Build up rather than choose: every permutation of n elements is a permutation of n−1 with the new element wedged into one of its n positions. No recursion into a shrinking remainder, and it explains the factorial directly — one more choice of position at every step.", "def permute(nums):
+    # Build up instead of choosing: every permutation of n elements is a
+    # permutation of n-1 with the new element wedged into one of its n
+    # positions. No recursion into a shrinking remainder, and it explains the
+    # factorial directly -- one more choice of position at every step.
+    permutations = [[]]
+    for value in nums:
+        permutations = [
+            permutation[:at] + [value] + permutation[at:]
+            for permutation in permutations
+            for at in range(len(permutation) + 1)
+        ]
+    return permutations"),
+    ],
+    check: Check(
+      signature: "def permute(nums):",
+      starter: "def permute(nums):
+    pass",
+      harness: "try:
+    (permute)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# The outer order is free but the order *within* each permutation is the answer.
+def __sorted__(nums):
+    return sorted(\",\".join(str(v) for v in p) for p in permute(nums))
+
+__case__(\"permute([1, 2, 3])\", [\"1,2,3\", \"1,3,2\", \"2,1,3\", \"2,3,1\", \"3,1,2\", \"3,2,1\"], __sorted__([1, 2, 3]))
+__case__(\"permute([0, 1])\", [\"0,1\", \"1,0\"], __sorted__([0, 1]))
+__case__(\"permute([1])\", [\"1\"], __sorted__([1]))
+__case__(\"permute([])\", [\"\"], __sorted__([]))
+__case__(\"permute of four elements count\", 24, len(permute([1, 2, 3, 4])))",
+    ),
+  )
+}
+
+pub fn nc86_subsets_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Sorting puts equal values next to each other, which is what makes the duplicate rule expressible at all: when a value is skipped, skip *every* copy of it at once. Skipping one copy and keeping the next rebuilds the same subset from a different copy, which is exactly the repeat you are trying to avoid.", "def subsetsWithDup(nums):
+    return build(sorted(nums))
+
+
+# Sorting puts equal values next to each other, which is what makes the
+# duplicate rule expressible: when the head is skipped, skip *every* copy of it
+# at once. Skipping one copy and keeping the next would rebuild the same subset
+# by a different route.
+def build(sorted_nums):
+    if not sorted_nums:
+        return [[]]
+
+    first = sorted_nums[0]
+    with_first = [[first] + subset for subset in build(sorted_nums[1:])]
+
+    past = 1
+    while past < len(sorted_nums) and sorted_nums[past] == first:
+        past += 1
+
+    return with_first + build(sorted_nums[past:])"),
+      #("Solution 2 · By counts", "A different framing: the choice is not per *element* but per distinct *value* — how many copies to take, from none up to however many exist. Duplicates then cannot arise, so there is no skipping rule to remember and nothing to sort for correctness.", "from collections import Counter
+
+
+def subsetsWithDup(nums):
+    # A different framing: the answer is not a choice per *element* but a choice
+    # per distinct *value* -- how many copies of it to take, from none up to
+    # however many there are. Duplicates then cannot arise at all, so there is
+    # no skipping rule to remember.
+    subsets = [[]]
+    for value, count in sorted(Counter(nums).items()):
+        subsets = [
+            subset + [value] * taken for subset in subsets for taken in range(count + 1)
+        ]
+    return subsets"),
+    ],
+    check: Check(
+      signature: "def subsetsWithDup(nums):
+
+def build(sorted_nums):",
+      starter: "def subsetsWithDup(nums):
+    pass
+
+def build(sorted_nums):
+    pass",
+      harness: "try:
+    (subsetsWithDup)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+def __sorted__(nums):
+    return sorted(\",\".join(str(v) for v in sorted(s)) for s in subsetsWithDup(nums))
+
+__case__(\"subsetsWithDup([1, 2, 2])\", [\"\", \"1\", \"1,2\", \"1,2,2\", \"2\", \"2,2\"], __sorted__([1, 2, 2]))
+__case__(\"subsetsWithDup([0])\", [\"\", \"0\"], __sorted__([0]))
+__case__(\"subsetsWithDup([])\", [\"\"], __sorted__([]))
+__case__(\"subsetsWithDup([1, 1, 1])\", [\"\", \"1\", \"1,1\", \"1,1,1\"], __sorted__([1, 1, 1]))
+__case__(\"subsetsWithDup([4, 4, 4, 1, 4]) count\", 10, len(subsetsWithDup([4, 4, 4, 1, 4])))",
+    ),
+  )
+}
+
+pub fn nc87_combination_sum_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Each candidate is used at most once, so taking one moves past it. The duplicate rule is the same as Subsets II — skipping a value means skipping every copy of it — and that shared rule is the reason to drill the two problems together.", "def combinationSum2(candidates, target):
+    return build(sorted(candidates), target)
+
+
+# Each candidate is used at most once, so taking one moves past it. The
+# duplicate rule is the same as in Subsets II: skipping a value means skipping
+# every copy of it, otherwise the same combination is rebuilt from a different
+# copy of the same number.
+def build(sorted_candidates, target):
+    if target == 0:
+        return [[]]
+    if not sorted_candidates:
+        return []
+
+    first = sorted_candidates[0]
+    if first > target:
+        return []
+
+    with_first = [[first] + rest for rest in build(sorted_candidates[1:], target - first)]
+
+    past = 1
+    while past < len(sorted_candidates) and sorted_candidates[past] == first:
+        past += 1
+
+    return with_first + build(sorted_candidates[past:], target)"),
+      #("Solution 2 · Dedupe at the end", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Generate every subset that hits the target and collapse the repeats afterwards. Correct, and exponentially wasteful on inputs with many equal values — which is precisely the cost the skipping rule avoids.", "def combinationSum2(candidates, target):
+    # Generate every subset that hits the target and collapse the repeats
+    # afterwards. Correct, and exponentially wasteful on inputs with many equal
+    # values -- which is exactly why the skipping rule is worth getting right.
+    found = []
+    for subset in everySubset(sorted(candidates)):
+        if sum(subset) == target and subset not in found:
+            found.append(subset)
+    return found
+
+
+def everySubset(sorted_candidates):
+    if not sorted_candidates:
+        return [[]]
+    without = everySubset(sorted_candidates[1:])
+    return [[sorted_candidates[0]] + subset for subset in without] + without"),
+    ],
+    check: Check(
+      signature: "def combinationSum2(candidates, target):
+
+def build(sorted_candidates, target):",
+      starter: "def combinationSum2(candidates, target):
+    pass
+
+def build(sorted_candidates, target):
+    pass",
+      harness: "try:
+    (combinationSum2)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+def __sorted__(candidates, target):
+    return sorted(\",\".join(str(v) for v in sorted(c)) for c in combinationSum2(candidates, target))
+
+__case__(\"combinationSum2([10, 1, 2, 7, 6, 1, 5], 8)\", [\"1,1,6\", \"1,2,5\", \"1,7\", \"2,6\"], __sorted__([10, 1, 2, 7, 6, 1, 5], 8))
+__case__(\"combinationSum2([2, 5, 2, 1, 2], 5)\", [\"1,2,2\", \"5\"], __sorted__([2, 5, 2, 1, 2], 5))
+__case__(\"combinationSum2([], 3)\", [], __sorted__([], 3))
+__case__(\"combinationSum2([1], 1)\", [\"1\"], __sorted__([1], 1))
+__case__(\"combinationSum2([2], 1)\", [], __sorted__([2], 1))",
+    ),
+  )
+}
+
+pub fn nc88_word_search() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Depth-first from every square, with the path so far in a set so no letter is reused within one attempt. The set has to be per-path, not global: a square rejected on one route must still be available on another, and that distinction is the whole difference between backtracking and plain search.", "def exist(board, word):
+    if not word:
+        return True
+    if not board:
+        return False
+
+    # Depth-first from every starting square, with the path so far held in a set
+    # so a letter is never reused within one attempt. The set is per-path rather
+    # than global -- a square rejected on one route must still be available on
+    # another, which is the difference between backtracking and plain search.
+    def walk(r, c, remaining, used):
+        if not remaining:
+            return True
+        if (r, c) in used or not (0 <= r < len(board) and 0 <= c < len(board[0])):
+            return False
+        if board[r][c] != remaining[0]:
+            return False
+        if len(remaining) == 1:
+            return True
+        used = used | {(r, c)}
+        return any(
+            walk(r + dr, c + dc, remaining[1:], used)
+            for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1))
+        )
+
+    return any(
+        walk(r, c, word, set())
+        for r in range(len(board))
+        for c in range(len(board[0]))
+    )"),
+      #("Solution 2 · Prune by counts", "Two cheap checks before any searching. If the board does not hold enough copies of some letter, no search can succeed at all. And starting from whichever end of the word is rarer on the board begins from fewer squares — the branching factor at the root is what dominates, so halving it there is worth more than any saving deeper in.", "from collections import Counter
+
+
+def exist(board, word):
+    if not word:
+        return True
+    if not board:
+        return False
+
+    letters = Counter(cell for row in board for cell in row)
+    needed = Counter(word)
+
+    # Two cheap checks before any searching. If the board does not hold enough
+    # copies of some letter, no search can succeed. And searching from whichever
+    # end of the word is rarer on the board starts from fewer squares -- the
+    # branching factor at the root is what dominates.
+    if any(letters[letter] < count for letter, count in needed.items()):
+        return False
+    if letters[word[0]] > letters[word[-1]]:
+        word = word[::-1]
+
+    def walk(r, c, remaining, used):
+        if (r, c) in used or not (0 <= r < len(board) and 0 <= c < len(board[0])):
+            return False
+        if board[r][c] != remaining[0]:
+            return False
+        if len(remaining) == 1:
+            return True
+        used = used | {(r, c)}
+        return any(
+            walk(r + dr, c + dc, remaining[1:], used)
+            for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1))
+        )
+
+    return any(
+        walk(r, c, word, set())
+        for r in range(len(board))
+        for c in range(len(board[0]))
+    )"),
+    ],
+    check: Check(
+      signature: "def exist(board, word):",
+      starter: "def exist(board, word):
+    pass",
+      harness: "try:
+    (exist)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__board__ = [list(row) for row in [\"ABCE\", \"SFCS\", \"ADEE\"]]
+
+__case__(\"exist(board, 'ABCCED')\", True, exist(__board__, \"ABCCED\"))
+__case__(\"exist(board, 'SEE')\", True, exist(__board__, \"SEE\"))
+__case__(\"exist(board, 'ABCB')\", False, exist(__board__, \"ABCB\"))
+__case__(\"exist(board, '')\", True, exist(__board__, \"\"))
+__case__(\"exist(board, 'Z')\", False, exist(__board__, \"Z\"))
+__case__(\"exist([], 'A')\", False, exist([], \"A\"))",
+    ),
+  )
+}
+
+pub fn nc89_palindrome_partitioning() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Every partition begins with some palindromic prefix, so the only choice at each step is how long that prefix is. Cutting there and recursing on the rest reaches each partition exactly once, in order, with nothing to deduplicate.", "def partition(s):
+    return build(s)
+
+
+# Every partition starts with some palindromic prefix, so the choice at each
+# step is only how long that prefix is. Cutting there and recursing on the rest
+# reaches each partition exactly once, in order, with nothing to dedupe.
+def build(remaining):
+    if not remaining:
+        return [[]]
+    return [
+        [prefix] + rest
+        for size in range(1, len(remaining) + 1)
+        for prefix in [remaining[:size]]
+        if prefix == prefix[::-1]
+        for rest in build(remaining[size:])
+    ]"),
+      #("Solution 2 · With table", "Work out which spans are palindromes once, up front, instead of re-testing the same prefix on every branch. The search then becomes pure choice — a table lookup where there was a linear scan. Precomputing the predicate rather than the answer is a move worth having.", "def partition(s):
+    n = len(s)
+
+    # Work out which spans are palindromes once, up front, rather than
+    # re-testing the same prefix on every branch of the search. The search is
+    # then pure choice: a table lookup replaces a linear scan at every step.
+    table = {}
+    for span in range(n):
+        for i in range(n - span):
+            j = i + span
+            inside = True if j - i < 2 else table[(i + 1, j - 1)]
+            table[(i, j)] = s[i] == s[j] and inside
+
+    def build(start):
+        if start >= n:
+            return [[]]
+        return [
+            [s[start:end + 1]] + rest
+            for end in range(start, n)
+            if table[(start, end)]
+            for rest in build(end + 1)
+        ]
+
+    return build(0)"),
+    ],
+    check: Check(
+      signature: "def partition(s):
+
+def build(remaining):",
+      starter: "def partition(s):
+    pass
+
+def build(remaining):
+    pass",
+      harness: "try:
+    (partition)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# The order of pieces within a partition is the answer, so only the outer list
+# is normalised. Comma rather than a pipe: a pipe sorts after letters.
+def __sorted__(s):
+    return sorted(\",\".join(pieces) for pieces in partition(s))
+
+__case__(\"partition('aab')\", [\"a,a,b\", \"aa,b\"], __sorted__(\"aab\"))
+__case__(\"partition('a')\", [\"a\"], __sorted__(\"a\"))
+__case__(\"partition('')\", [\"\"], __sorted__(\"\"))
+__case__(\"partition('aba')\", [\"a,b,a\", \"aba\"], __sorted__(\"aba\"))
+__case__(\"partition('abc')\", [\"a,b,c\"], __sorted__(\"abc\"))",
+    ),
+  )
+}
+
+pub fn nc90_letter_combinations() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One choice per digit, independently, so the answer is the cross product of the letter sets. There is no pruning and no constraint between choices — which makes this the cleanest place to see what backtracking degenerates to when nothing can fail.", "KEYPAD = {
+    \"2\": \"abc\", \"3\": \"def\", \"4\": \"ghi\", \"5\": \"jkl\",
+    \"6\": \"mno\", \"7\": \"pqrs\", \"8\": \"tuv\", \"9\": \"wxyz\",
+}
+
+
+def letterCombinations(digits):
+    if not digits:
+        return []
+    return build(digits)
+
+
+# One choice per digit, independently -- so the answer is the cross product of
+# the letter sets. Written as a recursion here: pick a letter for the first
+# digit, then every combination of the rest.
+def build(digits):
+    if not digits:
+        return [\"\"]
+    tails = build(digits[1:])
+    return [letter + tail for letter in KEYPAD.get(digits[0], \"\") for tail in tails]"),
+      #("Solution 2 · Iterative product", "The same cross product built by folding rather than recursing: hold every combination of the digits so far and extend each by every letter of the next. No call stack, and the growth is visible in the code — the list multiplies in size at each step.", "KEYPAD = {
+    \"2\": \"abc\", \"3\": \"def\", \"4\": \"ghi\", \"5\": \"jkl\",
+    \"6\": \"mno\", \"7\": \"pqrs\", \"8\": \"tuv\", \"9\": \"wxyz\",
+}
+
+
+def letterCombinations(digits):
+    if not digits:
+        return []
+
+    # The same cross product built by folding rather than recursing: hold every
+    # combination of the digits seen so far and extend each by every letter of
+    # the next. No call stack, and the growth is visible -- the list multiplies
+    # in size at each step.
+    combinations = [\"\"]
+    for digit in digits:
+        combinations = [
+            prefix + letter for prefix in combinations for letter in KEYPAD.get(digit, \"\")
+        ]
+    return combinations"),
+    ],
+    check: Check(
+      signature: "def letterCombinations(digits):
+
+def build(digits):",
+      starter: "def letterCombinations(digits):
+    pass
+
+def build(digits):
+    pass",
+      harness: "try:
+    (letterCombinations)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"letterCombinations('23')\", [\"ad\", \"ae\", \"af\", \"bd\", \"be\", \"bf\", \"cd\", \"ce\", \"cf\"], sorted(letterCombinations(\"23\")))
+__case__(\"letterCombinations('')\", [], sorted(letterCombinations(\"\")))
+__case__(\"letterCombinations('2')\", [\"a\", \"b\", \"c\"], sorted(letterCombinations(\"2\")))
+__case__(\"letterCombinations('9')\", [\"w\", \"x\", \"y\", \"z\"], sorted(letterCombinations(\"9\")))
+__case__(\"letterCombinations('79') count\", 16, len(letterCombinations(\"79\")))",
+    ),
+  )
+}
+
+pub fn nc91_n_queens() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One queen per row, so the only choice is the column. A diagonal is identified by row − column and an anti-diagonal by row + column, which turns \"is this square attacked?\" into three set lookups — and lets the search abandon an entire subtree the moment one of them fails.", "def solveNQueens(n):
+    boards = []
+
+    # One queen per row, so the only choice is which column. A diagonal is
+    # identified by row - column and an anti-diagonal by row + column, which
+    # turns \"is this square attacked?\" into three set lookups -- and lets the
+    # search abandon a whole subtree the moment one fails.
+    def place(row, chosen, columns, diagonals, antiDiagonals):
+        if row == n:
+            boards.append([\".\" * c + \"Q\" + \".\" * (n - c - 1) for c in chosen])
+            return
+        for column in range(n):
+            if column in columns or row - column in diagonals or row + column in antiDiagonals:
+                continue
+            place(
+                row + 1,
+                chosen + [column],
+                columns | {column},
+                diagonals | {row - column},
+                antiDiagonals | {row + column},
+            )
+
+    place(0, [], set(), set(), set())
+    return boards"),
+      #("Solution 2 · Filter permutations", "One queen per row with no two sharing a column *is* a permutation of the columns, so the row and column rules hold by construction and only the diagonals are left. Generating all n! and filtering is far slower than pruning as you go — it explores arrangements a backtracker abandons at the second queen — but it names what the search space actually is.", "from itertools import permutations
+
+
+def solveNQueens(n):
+    # One queen per row with no two sharing a column *is* a permutation of the
+    # columns, so the row and column rules are satisfied by construction and
+    # only the diagonals are left to test. Generating all n! and filtering is
+    # far slower than pruning as you go -- it explores arrangements a
+    # backtracker would have abandoned at the second queen -- but it names what
+    # the search space actually is.
+    return [
+        [\".\" * c + \"Q\" + \".\" * (n - c - 1) for c in chosen]
+        for chosen in permutations(range(n))
+        if noDiagonalClash(chosen)
+    ]
+
+
+def noDiagonalClash(chosen):
+    return all(
+        abs(r1 - r2) != abs(chosen[r1] - chosen[r2])
+        for r1 in range(len(chosen))
+        for r2 in range(r1 + 1, len(chosen))
+    )"),
+    ],
+    check: Check(
+      signature: "def solveNQueens(n):",
+      starter: "def solveNQueens(n):
+    pass",
+      harness: "try:
+    (solveNQueens)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+def __sorted__(n):
+    return sorted(\"|\".join(board) for board in solveNQueens(n))
+
+__case__(\"solveNQueens(4)\", [\"..Q.|Q...|...Q|.Q..\", \".Q..|...Q|Q...|..Q.\"], __sorted__(4))
+__case__(\"solveNQueens(1)\", [\"Q\"], __sorted__(1))
+__case__(\"solveNQueens(2)\", [], __sorted__(2))
+__case__(\"solveNQueens(3)\", [], __sorted__(3))
+__case__(\"solveNQueens(6) count\", 4, len(solveNQueens(6)))",
+    ),
+  )
+}
+
 pub fn tip01_counter() -> Embedded {
   Embedded(
     solutions: [
@@ -5397,6 +6036,15 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc80_task_scheduler" -> Ok(nc80_task_scheduler())
     "nc81_design_twitter" -> Ok(nc81_design_twitter())
     "nc82_find_median_stream" -> Ok(nc82_find_median_stream())
+    "nc83_subsets" -> Ok(nc83_subsets())
+    "nc84_combination_sum" -> Ok(nc84_combination_sum())
+    "nc85_permutations" -> Ok(nc85_permutations())
+    "nc86_subsets_ii" -> Ok(nc86_subsets_ii())
+    "nc87_combination_sum_ii" -> Ok(nc87_combination_sum_ii())
+    "nc88_word_search" -> Ok(nc88_word_search())
+    "nc89_palindrome_partitioning" -> Ok(nc89_palindrome_partitioning())
+    "nc90_letter_combinations" -> Ok(nc90_letter_combinations())
+    "nc91_n_queens" -> Ok(nc91_n_queens())
     "tip01_counter" -> Ok(tip01_counter())
     "tip02_defaultdict" -> Ok(tip02_defaultdict())
     "tip03_deque" -> Ok(tip03_deque())

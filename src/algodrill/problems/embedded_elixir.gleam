@@ -3805,6 +3805,466 @@ end"),
   ]
 }
 
+pub fn nc83_subsets() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Every element is either in or out, independently, so the subsets of a list are the subsets of its tail twice over — once with the head added and once without. That recursion is the whole answer, and it is also why there are exactly 2ⁿ of them.", "defmodule Solution do
+  # Every element is either in or out, independently, so the subsets of a list
+  # are the subsets of its tail twice over: once with the head added and once
+  # without. That is the whole recursion, and it is why there are 2^n of them.
+  def subsets([]), do: [[]]
+
+  def subsets([first | rest]) do
+    without = subsets(rest)
+    Enum.map(without, &[first | &1]) ++ without
+  end
+end"),
+    #("Solution 2 · Bitmask", "The in-or-out choices *are* the bits of a number, so counting from 0 to 2ⁿ−1 enumerates every subset exactly once with no recursion at all. It also gives every subset a stable index, which matters the moment subsets have to be compared, cached or keyed on.", "defmodule Solution do
+  import Bitwise
+
+  # The in-or-out choices *are* the bits of a number, so counting from 0 to
+  # 2^n - 1 enumerates every subset exactly once with no recursion at all.
+  # Worth knowing: it also gives every subset a stable index, which matters when
+  # subsets have to be compared or cached.
+  def subsets(nums) do
+    indexed = Enum.with_index(nums)
+
+    for mask <- 0..((1 <<< length(nums)) - 1)//1 do
+      for {value, i} <- indexed, (mask >>> i &&& 1) == 1, do: value
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc84_combination_sum() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Each step either takes the current candidate again — reuse is allowed — or drops it for good. Never returning to a dropped candidate is what stops the same combination appearing in several orders, so there is no deduplication anywhere. That constraint doing the work is the pattern to carry to the harder variants.", "defmodule Solution do
+  def combination_sum(candidates, target), do: build(candidates, target)
+
+  # Each step either takes the current candidate again -- reuse is allowed -- or
+  # drops it for good. Never going back to a dropped candidate is what stops the
+  # same combination appearing in several orders, so no deduplication is needed.
+  defp build(_candidates, 0), do: [[]]
+  defp build([], _target), do: []
+
+  defp build([first | rest] = candidates, target) do
+    if first > target or first <= 0 do
+      build(rest, target)
+    else
+      Enum.map(build(candidates, target - first), &[first | &1]) ++ build(rest, target)
+    end
+  end
+end"),
+    #("Solution 2 · By target", "Bottom-up: the combinations making a target are every combination making a smaller amount with one more candidate added. Requiring the added candidate to be no smaller than the combination's largest plays the same role the index does in the recursion — it fixes one order per combination.", "defmodule Solution do
+  # Bottom-up instead of by recursion: the combinations making a target are
+  # every combination making a smaller amount with one more candidate added.
+  # Requiring each added candidate to be no smaller than the combination's
+  # largest is what keeps one combination from appearing in several orders.
+  def combination_sum(candidates, target) do
+    usable = candidates |> Enum.filter(&(&1 > 0)) |> Enum.sort()
+
+    table =
+      Enum.reduce(1..target//1, %{0 => [[]]}, fn amount, acc ->
+        found =
+          Enum.flat_map(usable, fn candidate ->
+            if candidate > amount do
+              []
+            else
+              acc
+              |> Map.get(amount - candidate, [])
+              |> Enum.filter(fn
+                [] -> true
+                [largest | _] -> candidate >= largest
+              end)
+              |> Enum.map(&[candidate | &1])
+            end
+          end)
+
+        Map.put(acc, amount, found)
+      end)
+
+    Map.get(table, target, [])
+  end
+end"),
+  ]
+}
+
+pub fn nc85_permutations() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Pick each element in turn as the first, then permute what is left. Removing the chosen element from the remainder is exactly what a \"used\" set does in an in-place version; here the remainder is simply a shorter list, and nothing has to be undone afterwards.", "defmodule Solution do
+  # Pick each element in turn as the first, then permute what is left. Removing
+  # the chosen element from the remainder is what the \"used\" set does in an
+  # in-place version -- here the remainder is simply a shorter list.
+  def permute([]), do: [[]]
+
+  def permute(nums) do
+    for {value, i} <- Enum.with_index(nums),
+        tail <- permute(List.delete_at(nums, i)),
+        do: [value | tail]
+  end
+end"),
+    #("Solution 2 · Insert everywhere", "Build up rather than choose: every permutation of n elements is a permutation of n−1 with the new element wedged into one of its n positions. No recursion into a shrinking remainder, and it explains the factorial directly — one more choice of position at every step.", "defmodule Solution do
+  # Build up instead of choosing: every permutation of n elements is a
+  # permutation of n-1 with the new element wedged into one of its n positions.
+  # No recursion into a shrinking remainder, and it explains the factorial
+  # directly -- one more choice of position at every step.
+  def permute(nums) do
+    Enum.reduce(nums, [[]], fn value, permutations ->
+      for permutation <- permutations,
+          at <- 0..length(permutation)//1,
+          do: List.insert_at(permutation, at, value)
+    end)
+  end
+end"),
+  ]
+}
+
+pub fn nc86_subsets_ii() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Sorting puts equal values next to each other, which is what makes the duplicate rule expressible at all: when a value is skipped, skip *every* copy of it at once. Skipping one copy and keeping the next rebuilds the same subset from a different copy, which is exactly the repeat you are trying to avoid.", "defmodule Solution do
+  def subsets_with_dup(nums), do: build(Enum.sort(nums))
+
+  # Sorting puts equal values next to each other, which is what makes the
+  # duplicate rule expressible: when the head is skipped, skip *every* copy of
+  # it at once. Skipping one copy and keeping the next would rebuild the same
+  # subset by a different route.
+  defp build([]), do: [[]]
+
+  defp build([first | rest]) do
+    with_first = Enum.map(build(rest), &[first | &1])
+    with_first ++ build(Enum.drop_while(rest, &(&1 == first)))
+  end
+end"),
+    #("Solution 2 · By counts", "A different framing: the choice is not per *element* but per distinct *value* — how many copies to take, from none up to however many exist. Duplicates then cannot arise, so there is no skipping rule to remember and nothing to sort for correctness.", "defmodule Solution do
+  # A different framing: the answer is not a choice per *element* but a choice
+  # per distinct *value* -- how many copies of it to take, from none up to
+  # however many there are. Duplicates then cannot arise at all, so there is no
+  # skipping rule to remember.
+  def subsets_with_dup(nums) do
+    nums
+    |> Enum.frequencies()
+    |> Enum.sort()
+    |> Enum.reduce([[]], fn {value, count}, subsets ->
+      for subset <- subsets,
+          taken <- 0..count//1,
+          do: subset ++ List.duplicate(value, taken)
+    end)
+  end
+end"),
+  ]
+}
+
+pub fn nc87_combination_sum_ii() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Each candidate is used at most once, so taking one moves past it. The duplicate rule is the same as Subsets II — skipping a value means skipping every copy of it — and that shared rule is the reason to drill the two problems together.", "defmodule Solution do
+  def combination_sum2(candidates, target), do: build(Enum.sort(candidates), target)
+
+  # Each candidate is used at most once, so taking one moves past it. The
+  # duplicate rule is the same as in Subsets II: skipping a value means skipping
+  # every copy of it, otherwise the same combination is rebuilt from a different
+  # copy of the same number.
+  defp build(_sorted, 0), do: [[]]
+  defp build([], _target), do: []
+
+  defp build([first | rest], target) do
+    if first > target do
+      []
+    else
+      Enum.map(build(rest, target - first), &[first | &1]) ++
+        build(Enum.drop_while(rest, &(&1 == first)), target)
+    end
+  end
+end"),
+    #("Solution 2 · Dedupe at the end", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Generate every subset that hits the target and collapse the repeats afterwards. Correct, and exponentially wasteful on inputs with many equal values — which is precisely the cost the skipping rule avoids.", "defmodule Solution do
+  # Generate every subset that hits the target and collapse the repeats
+  # afterwards. Correct, and exponentially wasteful on inputs with many equal
+  # values -- which is exactly why the skipping rule is worth getting right.
+  def combination_sum2(candidates, target) do
+    candidates
+    |> Enum.sort()
+    |> every_subset()
+    |> Enum.filter(&(Enum.sum(&1) == target))
+    |> Enum.uniq()
+  end
+
+  defp every_subset([]), do: [[]]
+
+  defp every_subset([first | rest]) do
+    without = every_subset(rest)
+    Enum.map(without, &[first | &1]) ++ without
+  end
+end"),
+  ]
+}
+
+pub fn nc88_word_search() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Depth-first from every square, with the path so far in a set so no letter is reused within one attempt. The set has to be per-path, not global: a square rejected on one route must still be available on another, and that distinction is the whole difference between backtracking and plain search.", "defmodule Solution do
+  def exist(_board, \"\"), do: true
+  def exist([], _word), do: false
+
+  def exist(board, word) do
+    grid =
+      for {row, r} <- Enum.with_index(board),
+          {value, c} <- Enum.with_index(row),
+          into: %{},
+          do: {{r, c}, value}
+
+    letters = String.graphemes(word)
+    Enum.any?(Map.keys(grid), &walk(grid, &1, letters, MapSet.new()))
+  end
+
+  # Depth-first from every starting square, with the path so far held in a set
+  # so a letter is never reused within one attempt. The set is per-path rather
+  # than global -- a square rejected on one route must still be available on
+  # another, which is the difference between backtracking and plain search.
+  defp walk(_grid, _at, [], _used), do: true
+
+  defp walk(grid, at, [letter | rest], used) do
+    cond do
+      MapSet.member?(used, at) -> false
+      Map.get(grid, at) != letter -> false
+      rest == [] -> true
+      true -> Enum.any?(neighbours(at), &walk(grid, &1, rest, MapSet.put(used, at)))
+    end
+  end
+
+  defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+end"),
+    #("Solution 2 · Prune by counts", "Two cheap checks before any searching. If the board does not hold enough copies of some letter, no search can succeed at all. And starting from whichever end of the word is rarer on the board begins from fewer squares — the branching factor at the root is what dominates, so halving it there is worth more than any saving deeper in.", "defmodule Solution do
+  def exist(_board, \"\"), do: true
+  def exist([], _word), do: false
+
+  def exist(board, word) do
+    grid =
+      for {row, r} <- Enum.with_index(board),
+          {value, c} <- Enum.with_index(row),
+          into: %{},
+          do: {{r, c}, value}
+
+    available = board |> List.flatten() |> Enum.frequencies()
+    needed = word |> String.graphemes() |> Enum.frequencies()
+
+    # Two cheap checks before any searching. If the board does not hold enough
+    # copies of some letter, no search can succeed. And searching from whichever
+    # end of the word is rarer on the board starts from fewer squares -- the
+    # branching factor at the root is what dominates.
+    cond do
+      Enum.any?(needed, fn {letter, count} -> Map.get(available, letter, 0) < count end) ->
+        false
+
+      true ->
+        letters = String.graphemes(word)
+        first = hd(letters)
+        last = List.last(letters)
+
+        ordered =
+          if Map.get(available, first, 0) > Map.get(available, last, 0),
+            do: Enum.reverse(letters),
+            else: letters
+
+        Enum.any?(Map.keys(grid), &walk(grid, &1, ordered, MapSet.new()))
+    end
+  end
+
+  defp walk(_grid, _at, [], _used), do: true
+
+  defp walk(grid, at, [letter | rest], used) do
+    cond do
+      MapSet.member?(used, at) -> false
+      Map.get(grid, at) != letter -> false
+      rest == [] -> true
+      true -> Enum.any?(neighbours(at), &walk(grid, &1, rest, MapSet.put(used, at)))
+    end
+  end
+
+  defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+end"),
+  ]
+}
+
+pub fn nc89_palindrome_partitioning() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Every partition begins with some palindromic prefix, so the only choice at each step is how long that prefix is. Cutting there and recursing on the rest reaches each partition exactly once, in order, with nothing to deduplicate.", "defmodule Solution do
+  def partition(s), do: build(String.graphemes(s))
+
+  # Every partition starts with some palindromic prefix, so the choice at each
+  # step is only how long that prefix is. Cutting there and recursing on the
+  # rest reaches each partition exactly once, in order, with nothing to dedupe.
+  defp build([]), do: [[]]
+
+  defp build(remaining) do
+    for size <- 1..length(remaining)//1,
+        prefix = Enum.take(remaining, size),
+        prefix == Enum.reverse(prefix),
+        rest <- build(Enum.drop(remaining, size)),
+        do: [Enum.join(prefix) | rest]
+  end
+end"),
+    #("Solution 2 · With table", "Work out which spans are palindromes once, up front, instead of re-testing the same prefix on every branch. The search then becomes pure choice — a table lookup where there was a linear scan. Precomputing the predicate rather than the answer is a move worth having.", "defmodule Solution do
+  def partition(\"\"), do: [[]]
+
+  def partition(s) do
+    chars = s |> String.graphemes() |> List.to_tuple()
+    n = tuple_size(chars)
+
+    # Work out which spans are palindromes once, up front, rather than
+    # re-testing the same prefix on every branch of the search. The search is
+    # then pure choice: a table lookup replaces a linear scan at every step.
+    table =
+      for span <- 0..(n - 1)//1, i <- 0..(n - 1)//1, i + span < n, reduce: %{} do
+        acc ->
+          j = i + span
+          inside = if j - i < 2, do: true, else: Map.fetch!(acc, {i + 1, j - 1})
+          Map.put(acc, {i, j}, elem(chars, i) == elem(chars, j) and inside)
+      end
+
+    build(s, 0, n, table)
+  end
+
+  defp build(_s, start, n, _table) when start >= n, do: [[]]
+
+  defp build(s, start, n, table) do
+    for finish <- start..(n - 1)//1,
+        Map.fetch!(table, {start, finish}),
+        rest <- build(s, finish + 1, n, table),
+        do: [String.slice(s, start, finish - start + 1) | rest]
+  end
+end"),
+  ]
+}
+
+pub fn nc90_letter_combinations() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "One choice per digit, independently, so the answer is the cross product of the letter sets. There is no pruning and no constraint between choices — which makes this the cleanest place to see what backtracking degenerates to when nothing can fail.", "defmodule Solution do
+  @keypad %{
+    \"2\" => \"abc\", \"3\" => \"def\", \"4\" => \"ghi\", \"5\" => \"jkl\",
+    \"6\" => \"mno\", \"7\" => \"pqrs\", \"8\" => \"tuv\", \"9\" => \"wxyz\"
+  }
+
+  def letter_combinations(\"\"), do: []
+  def letter_combinations(digits), do: build(String.graphemes(digits))
+
+  # One choice per digit, independently -- so the answer is the cross product of
+  # the letter sets. Written as a recursion here: pick a letter for the first
+  # digit, then every combination of the rest.
+  defp build([]), do: [\"\"]
+
+  defp build([first | rest]) do
+    tails = build(rest)
+
+    for letter <- @keypad |> Map.get(first, \"\") |> String.graphemes(),
+        tail <- tails,
+        do: letter <> tail
+  end
+end"),
+    #("Solution 2 · Iterative product", "The same cross product built by folding rather than recursing: hold every combination of the digits so far and extend each by every letter of the next. No call stack, and the growth is visible in the code — the list multiplies in size at each step.", "defmodule Solution do
+  @keypad %{
+    \"2\" => \"abc\", \"3\" => \"def\", \"4\" => \"ghi\", \"5\" => \"jkl\",
+    \"6\" => \"mno\", \"7\" => \"pqrs\", \"8\" => \"tuv\", \"9\" => \"wxyz\"
+  }
+
+  def letter_combinations(\"\"), do: []
+
+  # The same cross product built by folding rather than recursing: hold every
+  # combination of the digits seen so far and extend each by every letter of the
+  # next. No call stack, and the growth is visible -- the list multiplies in
+  # size at each step.
+  def letter_combinations(digits) do
+    digits
+    |> String.graphemes()
+    |> Enum.reduce([\"\"], fn digit, combinations ->
+      for prefix <- combinations,
+          letter <- @keypad |> Map.get(digit, \"\") |> String.graphemes(),
+          do: prefix <> letter
+    end)
+  end
+end"),
+  ]
+}
+
+pub fn nc91_n_queens() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "One queen per row, so the only choice is the column. A diagonal is identified by row − column and an anti-diagonal by row + column, which turns \"is this square attacked?\" into three set lookups — and lets the search abandon an entire subtree the moment one of them fails.", "defmodule Solution do
+  def solve_n_queens(n) do
+    n
+    |> place(0, [], MapSet.new(), MapSet.new(), MapSet.new())
+    |> Enum.map(fn chosen -> render(Enum.reverse(chosen), n) end)
+  end
+
+  # One queen per row, so the only choice is which column. A diagonal is
+  # identified by row - column and an anti-diagonal by row + column, which turns
+  # \"is this square attacked?\" into three set lookups -- and lets the search
+  # abandon a whole subtree the moment one fails.
+  defp place(n, row, chosen, _columns, _diagonals, _anti) when row >= n, do: [chosen]
+
+  defp place(n, row, chosen, columns, diagonals, anti) do
+    for column <- 0..(n - 1)//1,
+        not MapSet.member?(columns, column),
+        not MapSet.member?(diagonals, row - column),
+        not MapSet.member?(anti, row + column),
+        result <-
+          place(
+            n,
+            row + 1,
+            [column | chosen],
+            MapSet.put(columns, column),
+            MapSet.put(diagonals, row - column),
+            MapSet.put(anti, row + column)
+          ),
+        do: result
+  end
+
+  defp render(chosen, n) do
+    Enum.map(chosen, fn column ->
+      String.duplicate(\".\", column) <> \"Q\" <> String.duplicate(\".\", n - column - 1)
+    end)
+  end
+end"),
+    #("Solution 2 · Filter permutations", "One queen per row with no two sharing a column *is* a permutation of the columns, so the row and column rules hold by construction and only the diagonals are left. Generating all n! and filtering is far slower than pruning as you go — it explores arrangements a backtracker abandons at the second queen — but it names what the search space actually is.", "defmodule Solution do
+  # One queen per row with no two sharing a column *is* a permutation of the
+  # columns, so the row and column rules are satisfied by construction and only
+  # the diagonals are left to test. Generating all n! and filtering is far
+  # slower than pruning as you go -- it explores arrangements a backtracker
+  # would have abandoned at the second queen -- but it names what the search
+  # space actually is.
+  def solve_n_queens(n) do
+    0..(n - 1)//1
+    |> Enum.to_list()
+    |> permutations()
+    |> Enum.filter(&no_diagonal_clash?/1)
+    |> Enum.map(&render(&1, n))
+  end
+
+  defp permutations([]), do: [[]]
+
+  defp permutations(values) do
+    for {value, i} <- Enum.with_index(values),
+        tail <- permutations(List.delete_at(values, i)),
+        do: [value | tail]
+  end
+
+  defp no_diagonal_clash?(chosen) do
+    placed = Enum.with_index(chosen)
+
+    Enum.all?(placed, fn {column_a, row_a} ->
+      Enum.all?(placed, fn {column_b, row_b} ->
+        row_a == row_b or abs(row_a - row_b) != abs(column_a - column_b)
+      end)
+    end)
+  end
+
+  defp render(chosen, n) do
+    Enum.map(chosen, fn column ->
+      String.duplicate(\".\", column) <> \"Q\" <> String.duplicate(\".\", n - column - 1)
+    end)
+  end
+end"),
+  ]
+}
+
 pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -3889,6 +4349,15 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
     "nc80_task_scheduler" -> Ok(nc80_task_scheduler())
     "nc81_design_twitter" -> Ok(nc81_design_twitter())
     "nc82_find_median_stream" -> Ok(nc82_find_median_stream())
+    "nc83_subsets" -> Ok(nc83_subsets())
+    "nc84_combination_sum" -> Ok(nc84_combination_sum())
+    "nc85_permutations" -> Ok(nc85_permutations())
+    "nc86_subsets_ii" -> Ok(nc86_subsets_ii())
+    "nc87_combination_sum_ii" -> Ok(nc87_combination_sum_ii())
+    "nc88_word_search" -> Ok(nc88_word_search())
+    "nc89_palindrome_partitioning" -> Ok(nc89_palindrome_partitioning())
+    "nc90_letter_combinations" -> Ok(nc90_letter_combinations())
+    "nc91_n_queens" -> Ok(nc91_n_queens())
     _ -> Error(Nil)
   }
 }

@@ -134,6 +134,53 @@ pub fn groups() -> List(Group) {
         "nc26_sliding_window_maximum",
       ),
     ]),
+    Group("Backtracking", [
+      Drill(
+        "Subsets",
+        "Given an array of unique integers, return all possible subsets. The answer may be in any order and must not contain duplicates.",
+        "nc83_subsets",
+      ),
+      Drill(
+        "Combination Sum",
+        "Given distinct candidate numbers and a target, return every unique combination of candidates summing to the target. The same candidate may be used any number of times.",
+        "nc84_combination_sum",
+      ),
+      Drill(
+        "Permutations",
+        "Given an array of distinct integers, return all possible permutations, in any order.",
+        "nc85_permutations",
+      ),
+      Drill(
+        "Subsets II",
+        "Given an array of integers that may contain duplicates, return all possible subsets with no duplicate subsets among them.",
+        "nc86_subsets_ii",
+      ),
+      Drill(
+        "Combination Sum II",
+        "Given candidate numbers that may repeat and a target, return every unique combination summing to the target. Each candidate may be used at most once.",
+        "nc87_combination_sum_ii",
+      ),
+      Drill(
+        "Word Search",
+        "Given a grid of letters and a word, return true if the word can be traced through horizontally or vertically neighbouring cells, using no cell more than once.",
+        "nc88_word_search",
+      ),
+      Drill(
+        "Palindrome Partitioning",
+        "Given a string s, partition it so that every piece is a palindrome, and return all such partitions.",
+        "nc89_palindrome_partitioning",
+      ),
+      Drill(
+        "Letter Combinations of a Phone Number",
+        "Given a string of digits from 2 to 9, return all the letter combinations the number could spell on a telephone keypad, in any order.",
+        "nc90_letter_combinations",
+      ),
+      Drill(
+        "N-Queens",
+        "Place n queens on an n x n board so that none attacks another, and return every distinct solution as a list of rows, using 'Q' for a queen and '.' for an empty square.",
+        "nc91_n_queens",
+      ),
+    ]),
     Group("Heap / Priority Queue", [
       Drill(
         "Kth Largest Element in a Stream",

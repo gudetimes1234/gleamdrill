@@ -1,0 +1,1 @@
+Sorting puts equal values next to each other, which is what makes the duplicate rule expressible at all: when a value is skipped, skip *every* copy of it at once. Skipping one copy and keeping the next rebuilds the same subset from a different copy, which is exactly the repeat you are trying to avoid.

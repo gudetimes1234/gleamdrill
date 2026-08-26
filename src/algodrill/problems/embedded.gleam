@@ -9284,6 +9284,1181 @@ pub fn run() -> List(#(String, String, String)) {
   )
 }
 
+pub fn nc83_subsets() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Every element is either in or out, independently, so the subsets of a list are the subsets of its tail twice over — once with the head added and once without. That recursion is the whole answer, and it is also why there are exactly 2ⁿ of them.", "import gleam/list
+
+pub fn subsets(nums: List(Int)) -> List(List(Int)) {
+  // Every element is either in or out, independently, so the subsets of a list
+  // are the subsets of its tail twice over: once with the head added and once
+  // without. That is the whole recursion, and it is why there are 2\\u{207f} of them.
+  case nums {
+    [] -> [[]]
+    [first, ..rest] -> {
+      let without = subsets(rest)
+      list.append(list.map(without, fn(subset) { [first, ..subset] }), without)
+    }
+  }
+}"),
+      #("Solution 2 · Bitmask", "The in-or-out choices *are* the bits of a number, so counting from 0 to 2ⁿ−1 enumerates every subset exactly once with no recursion at all. It also gives every subset a stable index, which matters the moment subsets have to be compared, cached or keyed on.", "import gleam/int
+import gleam/list
+
+pub fn subsets(nums: List(Int)) -> List(List(Int)) {
+  let indexed = list.index_map(nums, fn(value, i) { #(i, value) })
+
+  // The in-or-out choices *are* the bits of a number, so counting from 0 to
+  // 2\\u{207f}\\u{207b}\\u{b9} enumerates every subset exactly once with no recursion at all. Worth
+  // knowing: it also gives every subset a stable index, which matters when
+  // subsets have to be compared or cached.
+  list.repeat(Nil, power_of_two(list.length(nums)))
+  |> list.index_map(fn(_, mask) {
+    indexed
+    |> list.filter(fn(pair: #(Int, Int)) {
+      int.bitwise_and(int.bitwise_shift_right(mask, pair.0), 1) == 1
+    })
+    |> list.map(fn(pair: #(Int, Int)) { pair.1 })
+  })
+}
+
+fn power_of_two(n: Int) -> Int {
+  int.bitwise_shift_left(1, n)
+}"),
+    ],
+    check: Check(
+      signature: "pub fn subsets(nums: List(Int)) -> List(List(Int))",
+      starter: "pub fn subsets(nums: List(Int)) -> List(List(Int)) {
+  todo
+}",
+      harness: "import gleam/int
+import gleam/list
+import gleam/string
+import solution
+
+/// Any order is acceptable, and so is the order within each subset, so both
+/// levels are sorted before comparing.
+fn sorted(nums: List(Int)) -> List(String) {
+  solution.subsets(nums)
+  |> list.map(fn(subset) {
+    subset
+    |> list.sort(int.compare)
+    |> list.map(int.to_string)
+    |> string.join(\",\")
+  })
+  |> list.sort(string.compare)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"subsets([1, 2, 3])\",
+      string.inspect([\"\", \"1\", \"1,2\", \"1,2,3\", \"1,3\", \"2\", \"2,3\", \"3\"]),
+      string.inspect(sorted([1, 2, 3])),
+    ),
+    #(\"subsets([0])\", string.inspect([\"\", \"0\"]), string.inspect(sorted([0]))),
+    #(\"subsets([])\", string.inspect([\"\"]), string.inspect(sorted([]))),
+    #(
+      \"subsets([1, 2]) count\",
+      string.inspect(4),
+      string.inspect(list.length(sorted([1, 2]))),
+    ),
+    #(
+      \"subsets of five elements count\",
+      string.inspect(32),
+      string.inspect(list.length(sorted([1, 2, 3, 4, 5]))),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc84_combination_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Each step either takes the current candidate again — reuse is allowed — or drops it for good. Never returning to a dropped candidate is what stops the same combination appearing in several orders, so there is no deduplication anywhere. That constraint doing the work is the pattern to carry to the harder variants.", "import gleam/list
+
+pub fn combination_sum(candidates: List(Int), target: Int) -> List(List(Int)) {
+  build(candidates, target)
+}
+
+/// Each step either takes the current candidate again \\u{2014} reuse is allowed \\u{2014}
+/// or drops it for good. Never going back to a dropped candidate is what stops
+/// the same combination appearing in several orders, so no deduplication is
+/// needed anywhere.
+fn build(candidates: List(Int), target: Int) -> List(List(Int)) {
+  case target, candidates {
+    0, _ -> [[]]
+    _, [] -> []
+    _, [first, ..rest] ->
+      case first > target || first <= 0 {
+        True -> build(rest, target)
+        False ->
+          list.append(
+            list.map(build(candidates, target - first), fn(combination) {
+              [first, ..combination]
+            }),
+            build(rest, target),
+          )
+      }
+  }
+}"),
+      #("Solution 2 · By target", "Bottom-up: the combinations making a target are every combination making a smaller amount with one more candidate added. Requiring the added candidate to be no smaller than the combination's largest plays the same role the index does in the recursion — it fixes one order per combination.", "import gleam/dict.{type Dict}
+import gleam/int
+import gleam/list
+import gleam/result
+
+pub fn combination_sum(candidates: List(Int), target: Int) -> List(List(Int)) {
+  let usable =
+    candidates
+    |> list.filter(fn(candidate) { candidate > 0 })
+    |> list.sort(int.compare)
+
+  // Bottom-up instead of by recursion: the combinations making a target are
+  // every combination making a smaller amount with one more candidate added.
+  // Requiring each added candidate to be no smaller than the combination's
+  // largest is what keeps one combination from appearing in several orders.
+  let table =
+    list.fold(amounts(target), dict.from_list([#(0, [[]])]), fn(acc, amount) {
+      let found =
+        list.flat_map(usable, fn(candidate) {
+          case candidate > amount {
+            True -> []
+            False ->
+              at(acc, amount - candidate)
+              |> list.filter(fn(combination) {
+                case combination {
+                  [] -> True
+                  [largest, ..] -> candidate >= largest
+                }
+              })
+              |> list.map(fn(combination) { [candidate, ..combination] })
+          }
+        })
+      dict.insert(acc, amount, found)
+    })
+
+  at(table, target)
+}
+
+fn amounts(target: Int) -> List(Int) {
+  list.index_map(list.repeat(Nil, target), fn(_, i) { i + 1 })
+}
+
+fn at(table: Dict(Int, List(List(Int))), amount: Int) -> List(List(Int)) {
+  result.unwrap(dict.get(table, amount), [])
+}"),
+    ],
+    check: Check(
+      signature: "pub fn combination_sum(candidates: List(Int), target: Int) -> List(List(Int))",
+      starter: "pub fn combination_sum(candidates: List(Int), target: Int) -> List(List(Int)) {
+  todo
+}",
+      harness: "import gleam/int
+import gleam/list
+import gleam/string
+import solution
+
+fn sorted(candidates: List(Int), target: Int) -> List(String) {
+  solution.combination_sum(candidates, target)
+  |> list.map(fn(combination) {
+    combination
+    |> list.sort(int.compare)
+    |> list.map(int.to_string)
+    |> string.join(\",\")
+  })
+  |> list.sort(string.compare)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"combination_sum([2, 3, 6, 7], 7)\",
+      string.inspect([\"2,2,3\", \"7\"]),
+      string.inspect(sorted([2, 3, 6, 7], 7)),
+    ),
+    #(
+      \"combination_sum([2, 3, 5], 8)\",
+      string.inspect([\"2,2,2,2\", \"2,3,3\", \"3,5\"]),
+      string.inspect(sorted([2, 3, 5], 8)),
+    ),
+    #(
+      \"combination_sum([2], 1)\",
+      string.inspect([]),
+      string.inspect(sorted([2], 1)),
+    ),
+    #(
+      \"combination_sum([1], 0)\",
+      string.inspect([\"\"]),
+      string.inspect(sorted([1], 0)),
+    ),
+    #(
+      \"combination_sum([], 3)\",
+      string.inspect([]),
+      string.inspect(sorted([], 3)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc85_permutations() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Pick each element in turn as the first, then permute what is left. Removing the chosen element from the remainder is exactly what a \"used\" set does in an in-place version; here the remainder is simply a shorter list, and nothing has to be undone afterwards.", "import gleam/list
+
+pub fn permute(nums: List(Int)) -> List(List(Int)) {
+  // Pick each element in turn as the first, then permute what is left. Removing
+  // the chosen element from the remainder is what the \"used\" set does in an
+  // array version \\u{2014} here the remainder is simply a shorter list.
+  case nums {
+    [] -> [[]]
+    _ ->
+      list.index_map(nums, fn(value, i) { #(i, value) })
+      |> list.flat_map(fn(chosen: #(Int, Int)) {
+        let rest =
+          list.index_map(nums, fn(value, i) { #(i, value) })
+          |> list.filter(fn(other: #(Int, Int)) { other.0 != chosen.0 })
+          |> list.map(fn(other: #(Int, Int)) { other.1 })
+
+        list.map(permute(rest), fn(tail) { [chosen.1, ..tail] })
+      })
+  }
+}"),
+      #("Solution 2 · Insert everywhere", "Build up rather than choose: every permutation of n elements is a permutation of n−1 with the new element wedged into one of its n positions. No recursion into a shrinking remainder, and it explains the factorial directly — one more choice of position at every step.", "import gleam/list
+
+pub fn permute(nums: List(Int)) -> List(List(Int)) {
+  // Build up instead of choosing: every permutation of n elements is a
+  // permutation of n\\u{2212}1 with the new element wedged into one of its n
+  // positions. No recursion into a shrinking remainder, and it explains the
+  // factorial directly \\u{2014} one more choice of position at every step.
+  list.fold(nums, [[]], fn(permutations, value) {
+    list.flat_map(permutations, fn(permutation) {
+      positions(list.length(permutation))
+      |> list.map(fn(at) {
+        list.flatten([
+          list.take(permutation, at),
+          [value],
+          list.drop(permutation, at),
+        ])
+      })
+    })
+  })
+}
+
+fn positions(n: Int) -> List(Int) {
+  list.index_map(list.repeat(Nil, n + 1), fn(_, i) { i })
+}"),
+    ],
+    check: Check(
+      signature: "pub fn permute(nums: List(Int)) -> List(List(Int))",
+      starter: "pub fn permute(nums: List(Int)) -> List(List(Int)) {
+  todo
+}",
+      harness: "import gleam/int
+import gleam/list
+import gleam/string
+import solution
+
+/// The outer order is free but the order *within* each permutation is the
+/// answer, so only the outer list is sorted.
+fn sorted(nums: List(Int)) -> List(String) {
+  solution.permute(nums)
+  |> list.map(fn(permutation) {
+    permutation
+    |> list.map(int.to_string)
+    |> string.join(\",\")
+  })
+  |> list.sort(string.compare)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"permute([1, 2, 3])\",
+      string.inspect([\"1,2,3\", \"1,3,2\", \"2,1,3\", \"2,3,1\", \"3,1,2\", \"3,2,1\"]),
+      string.inspect(sorted([1, 2, 3])),
+    ),
+    #(
+      \"permute([0, 1])\",
+      string.inspect([\"0,1\", \"1,0\"]),
+      string.inspect(sorted([0, 1])),
+    ),
+    #(\"permute([1])\", string.inspect([\"1\"]), string.inspect(sorted([1]))),
+    #(\"permute([])\", string.inspect([\"\"]), string.inspect(sorted([]))),
+    #(
+      \"permute of four elements count\",
+      string.inspect(24),
+      string.inspect(list.length(sorted([1, 2, 3, 4]))),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc86_subsets_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Sorting puts equal values next to each other, which is what makes the duplicate rule expressible at all: when a value is skipped, skip *every* copy of it at once. Skipping one copy and keeping the next rebuilds the same subset from a different copy, which is exactly the repeat you are trying to avoid.", "import gleam/int
+import gleam/list
+
+pub fn subsets_with_dup(nums: List(Int)) -> List(List(Int)) {
+  build(list.sort(nums, int.compare))
+}
+
+/// Sorting puts equal values next to each other, which is what makes the
+/// duplicate rule expressible: when the head is skipped, skip *every* copy of
+/// it at once. Skipping one copy and keeping the next would rebuild the same
+/// subset by a different route.
+fn build(sorted: List(Int)) -> List(List(Int)) {
+  case sorted {
+    [] -> [[]]
+    [first, ..rest] -> {
+      let with_first = list.map(build(rest), fn(subset) { [first, ..subset] })
+      let past_duplicates = list.drop_while(rest, fn(n) { n == first })
+      list.append(with_first, build(past_duplicates))
+    }
+  }
+}"),
+      #("Solution 2 · By counts", "A different framing: the choice is not per *element* but per distinct *value* — how many copies to take, from none up to however many exist. Duplicates then cannot arise, so there is no skipping rule to remember and nothing to sort for correctness.", "import gleam/int
+import gleam/list
+
+pub fn subsets_with_dup(nums: List(Int)) -> List(List(Int)) {
+  // A different framing: the answer is not a choice per *element* but a choice
+  // per distinct *value* \\u{2014} how many copies of it to take, from none up to
+  // however many there are. Duplicates then cannot arise at all, so there is
+  // no skipping rule to remember.
+  nums
+  |> list.sort(int.compare)
+  |> runs([])
+  |> list.fold([[]], fn(subsets, run: #(Int, Int)) {
+    list.flat_map(subsets, fn(subset) {
+      counts(run.1)
+      |> list.map(fn(taken) { list.append(subset, list.repeat(run.0, taken)) })
+    })
+  })
+}
+
+/// Equal values collapsed into #(value, how many).
+fn runs(sorted: List(Int), acc: List(#(Int, Int))) -> List(#(Int, Int)) {
+  case sorted {
+    [] -> list.reverse(acc)
+    [first, ..] -> {
+      let same = list.take_while(sorted, fn(n) { n == first })
+      runs(list.drop(sorted, list.length(same)), [
+        #(first, list.length(same)),
+        ..acc
+      ])
+    }
+  }
+}
+
+fn counts(most: Int) -> List(Int) {
+  list.index_map(list.repeat(Nil, most + 1), fn(_, i) { i })
+}"),
+    ],
+    check: Check(
+      signature: "pub fn subsets_with_dup(nums: List(Int)) -> List(List(Int))",
+      starter: "pub fn subsets_with_dup(nums: List(Int)) -> List(List(Int)) {
+  todo
+}",
+      harness: "import gleam/int
+import gleam/list
+import gleam/string
+import solution
+
+fn sorted(nums: List(Int)) -> List(String) {
+  solution.subsets_with_dup(nums)
+  |> list.map(fn(subset) {
+    subset
+    |> list.sort(int.compare)
+    |> list.map(int.to_string)
+    |> string.join(\",\")
+  })
+  |> list.sort(string.compare)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"subsets_with_dup([1, 2, 2])\",
+      string.inspect([\"\", \"1\", \"1,2\", \"1,2,2\", \"2\", \"2,2\"]),
+      string.inspect(sorted([1, 2, 2])),
+    ),
+    #(
+      \"subsets_with_dup([0])\",
+      string.inspect([\"\", \"0\"]),
+      string.inspect(sorted([0])),
+    ),
+    #(\"subsets_with_dup([])\", string.inspect([\"\"]), string.inspect(sorted([]))),
+    #(
+      \"subsets_with_dup([1, 1, 1])\",
+      string.inspect([\"\", \"1\", \"1,1\", \"1,1,1\"]),
+      string.inspect(sorted([1, 1, 1])),
+    ),
+    #(
+      \"subsets_with_dup([4, 4, 4, 1, 4]) count\",
+      string.inspect(10),
+      string.inspect(list.length(sorted([4, 4, 4, 1, 4]))),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc87_combination_sum_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Each candidate is used at most once, so taking one moves past it. The duplicate rule is the same as Subsets II — skipping a value means skipping every copy of it — and that shared rule is the reason to drill the two problems together.", "import gleam/int
+import gleam/list
+
+pub fn combination_sum2(candidates: List(Int), target: Int) -> List(List(Int)) {
+  build(list.sort(candidates, int.compare), target)
+}
+
+/// Each candidate is used at most once, so taking one moves past it. The
+/// duplicate rule is the same as in Subsets II: skipping a value means skipping
+/// every copy of it, otherwise the same combination is rebuilt from a different
+/// copy of the same number.
+fn build(sorted: List(Int), target: Int) -> List(List(Int)) {
+  case target, sorted {
+    0, _ -> [[]]
+    _, [] -> []
+    _, [first, ..rest] ->
+      case first > target {
+        True -> []
+        False ->
+          list.append(
+            list.map(build(rest, target - first), fn(combination) {
+              [first, ..combination]
+            }),
+            build(list.drop_while(rest, fn(n) { n == first }), target),
+          )
+      }
+  }
+}"),
+      #("Solution 2 · Dedupe at the end", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Generate every subset that hits the target and collapse the repeats afterwards. Correct, and exponentially wasteful on inputs with many equal values — which is precisely the cost the skipping rule avoids.", "import gleam/int
+import gleam/list
+
+pub fn combination_sum2(candidates: List(Int), target: Int) -> List(List(Int)) {
+  // Generate every subset that hits the target and collapse the repeats
+  // afterwards. Correct, and exponentially wasteful on inputs with many equal
+  // values \\u{2014} which is exactly why the skipping rule is worth getting right.
+  candidates
+  |> list.sort(int.compare)
+  |> every_subset
+  |> list.filter(fn(subset) { int.sum(subset) == target })
+  |> list.unique
+}
+
+fn every_subset(sorted: List(Int)) -> List(List(Int)) {
+  case sorted {
+    [] -> [[]]
+    [first, ..rest] -> {
+      let without = every_subset(rest)
+      list.append(list.map(without, fn(subset) { [first, ..subset] }), without)
+    }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn combination_sum2(candidates: List(Int), target: Int) -> List(List(Int))",
+      starter: "pub fn combination_sum2(candidates: List(Int), target: Int) -> List(List(Int)) {
+  todo
+}",
+      harness: "import gleam/int
+import gleam/list
+import gleam/string
+import solution
+
+fn sorted(candidates: List(Int), target: Int) -> List(String) {
+  solution.combination_sum2(candidates, target)
+  |> list.map(fn(combination) {
+    combination
+    |> list.sort(int.compare)
+    |> list.map(int.to_string)
+    |> string.join(\",\")
+  })
+  |> list.sort(string.compare)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"combination_sum2([10, 1, 2, 7, 6, 1, 5], 8)\",
+      string.inspect([\"1,1,6\", \"1,2,5\", \"1,7\", \"2,6\"]),
+      string.inspect(sorted([10, 1, 2, 7, 6, 1, 5], 8)),
+    ),
+    #(
+      \"combination_sum2([2, 5, 2, 1, 2], 5)\",
+      string.inspect([\"1,2,2\", \"5\"]),
+      string.inspect(sorted([2, 5, 2, 1, 2], 5)),
+    ),
+    #(
+      \"combination_sum2([], 3)\",
+      string.inspect([]),
+      string.inspect(sorted([], 3)),
+    ),
+    #(
+      \"combination_sum2([1], 1)\",
+      string.inspect([\"1\"]),
+      string.inspect(sorted([1], 1)),
+    ),
+    #(
+      \"combination_sum2([2], 1)\",
+      string.inspect([]),
+      string.inspect(sorted([2], 1)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc88_word_search() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Depth-first from every square, with the path so far in a set so no letter is reused within one attempt. The set has to be per-path, not global: a square rejected on one route must still be available on another, and that distinction is the whole difference between backtracking and plain search.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/set.{type Set}
+import gleam/string
+
+pub fn exist(board: List(List(String)), word: String) -> Bool {
+  let cells =
+    board
+    |> list.index_map(fn(row, r) {
+      list.index_map(row, fn(value, c) { #(#(r, c), value) })
+    })
+    |> list.flatten
+  let grid = dict.from_list(cells)
+  let letters = string.to_graphemes(word)
+
+  case letters {
+    [] -> True
+    _ ->
+      list.any(cells, fn(cell: #(#(Int, Int), String)) {
+        walk(grid, cell.0, letters, set.new())
+      })
+  }
+}
+
+/// Depth-first from every starting square, with the path so far held in a set
+/// so a letter is never reused within one attempt. The set is per-path rather
+/// than global \\u{2014} a square rejected on one route must still be available on
+/// another, which is the difference between backtracking and plain search.
+fn walk(
+  grid: Dict(#(Int, Int), String),
+  at: #(Int, Int),
+  remaining: List(String),
+  used: Set(#(Int, Int)),
+) -> Bool {
+  case remaining {
+    [] -> True
+    [letter, ..rest] ->
+      case set.contains(used, at), dict.get(grid, at) {
+        True, _ -> False
+        _, Error(Nil) -> False
+        _, Ok(value) ->
+          case value == letter {
+            False -> False
+            True -> {
+              let used = set.insert(used, at)
+              case rest {
+                [] -> True
+                _ ->
+                  list.any(neighbours(at), fn(next) {
+                    walk(grid, next, rest, used)
+                  })
+              }
+            }
+          }
+      }
+  }
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  let #(r, c) = at
+  [#(r - 1, c), #(r + 1, c), #(r, c - 1), #(r, c + 1)]
+}"),
+      #("Solution 2 · Prune by counts", "Two cheap checks before any searching. If the board does not hold enough copies of some letter, no search can succeed at all. And starting from whichever end of the word is rarer on the board begins from fewer squares — the branching factor at the root is what dominates, so halving it there is worth more than any saving deeper in.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/set.{type Set}
+import gleam/string
+
+pub fn exist(board: List(List(String)), word: String) -> Bool {
+  let cells =
+    board
+    |> list.index_map(fn(row, r) {
+      list.index_map(row, fn(value, c) { #(#(r, c), value) })
+    })
+    |> list.flatten
+  let grid = dict.from_list(cells)
+  let letters = string.to_graphemes(word)
+
+  case letters {
+    [] -> True
+    _ -> {
+      let board_letters =
+        list.map(cells, fn(cell: #(#(Int, Int), String)) { cell.1 })
+
+      // Two cheap checks before any searching. If the board does not hold
+      // enough copies of some letter, no search can succeed. And searching from
+      // whichever end of the word is rarer on the board starts from fewer
+      // squares \\u{2014} the branching factor at the root is what dominates.
+      case enough_letters(letters, board_letters) {
+        False -> False
+        True -> {
+          let ordered = case
+            occurrences(board_letters, first_of(letters))
+            <= occurrences(board_letters, last_of(letters))
+          {
+            True -> letters
+            False -> list.reverse(letters)
+          }
+          list.any(cells, fn(cell: #(#(Int, Int), String)) {
+            walk(grid, cell.0, ordered, set.new())
+          })
+        }
+      }
+    }
+  }
+}
+
+fn enough_letters(needed: List(String), available: List(String)) -> Bool {
+  list.unique(needed)
+  |> list.all(fn(letter) {
+    occurrences(needed, letter) <= occurrences(available, letter)
+  })
+}
+
+fn occurrences(letters: List(String), letter: String) -> Int {
+  list.count(letters, fn(other) { other == letter })
+}
+
+fn first_of(letters: List(String)) -> String {
+  case letters {
+    [first, ..] -> first
+    [] -> \"\"
+  }
+}
+
+fn last_of(letters: List(String)) -> String {
+  first_of(list.reverse(letters))
+}
+
+fn walk(
+  grid: Dict(#(Int, Int), String),
+  at: #(Int, Int),
+  remaining: List(String),
+  used: Set(#(Int, Int)),
+) -> Bool {
+  case remaining {
+    [] -> True
+    [letter, ..rest] ->
+      case set.contains(used, at), dict.get(grid, at) {
+        True, _ -> False
+        _, Error(Nil) -> False
+        _, Ok(value) ->
+          case value == letter {
+            False -> False
+            True -> {
+              let used = set.insert(used, at)
+              case rest {
+                [] -> True
+                _ ->
+                  list.any(neighbours(at), fn(next) {
+                    walk(grid, next, rest, used)
+                  })
+              }
+            }
+          }
+      }
+  }
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  let #(r, c) = at
+  [#(r - 1, c), #(r + 1, c), #(r, c - 1), #(r, c + 1)]
+}"),
+    ],
+    check: Check(
+      signature: "pub fn exist(board: List(List(String)), word: String) -> Bool",
+      starter: "pub fn exist(board: List(List(String)), word: String) -> Bool {
+  todo
+}",
+      harness: "import gleam/list
+import gleam/string
+import solution
+
+const rows = [\"ABCE\", \"SFCS\", \"ADEE\"]
+
+fn board() -> List(List(String)) {
+  list.map(rows, string.to_graphemes)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"exist(board, \\\"ABCCED\\\")\",
+      string.inspect(True),
+      string.inspect(solution.exist(board(), \"ABCCED\")),
+    ),
+    #(
+      \"exist(board, \\\"SEE\\\")\",
+      string.inspect(True),
+      string.inspect(solution.exist(board(), \"SEE\")),
+    ),
+    #(
+      \"exist(board, \\\"ABCB\\\")\",
+      string.inspect(False),
+      string.inspect(solution.exist(board(), \"ABCB\")),
+    ),
+    #(
+      \"exist(board, \\\"\\\")\",
+      string.inspect(True),
+      string.inspect(solution.exist(board(), \"\")),
+    ),
+    #(
+      \"exist(board, \\\"Z\\\")\",
+      string.inspect(False),
+      string.inspect(solution.exist(board(), \"Z\")),
+    ),
+    #(
+      \"exist([], \\\"A\\\")\",
+      string.inspect(False),
+      string.inspect(solution.exist([], \"A\")),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc89_palindrome_partitioning() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Every partition begins with some palindromic prefix, so the only choice at each step is how long that prefix is. Cutting there and recursing on the rest reaches each partition exactly once, in order, with nothing to deduplicate.", "import gleam/list
+import gleam/string
+
+pub fn partition(s: String) -> List(List(String)) {
+  build(string.to_graphemes(s))
+}
+
+/// Every partition starts with some palindromic prefix, so the choice at each
+/// step is only how long that prefix is. Cutting there and recursing on the
+/// rest reaches each partition exactly once, in order, with nothing to dedupe.
+fn build(remaining: List(String)) -> List(List(String)) {
+  case remaining {
+    [] -> [[]]
+    _ ->
+      lengths(list.length(remaining))
+      |> list.flat_map(fn(size) {
+        let prefix = list.take(remaining, size)
+        case prefix == list.reverse(prefix) {
+          False -> []
+          True ->
+            build(list.drop(remaining, size))
+            |> list.map(fn(rest) { [string.concat(prefix), ..rest] })
+        }
+      })
+  }
+}
+
+fn lengths(n: Int) -> List(Int) {
+  list.index_map(list.repeat(Nil, n), fn(_, i) { i + 1 })
+}"),
+      #("Solution 2 · With table", "Work out which spans are palindromes once, up front, instead of re-testing the same prefix on every branch. The search then becomes pure choice — a table lookup where there was a linear scan. Precomputing the predicate rather than the answer is a move worth having.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/string
+
+pub fn partition(s: String) -> List(List(String)) {
+  let chars = string.to_graphemes(s)
+  let n = list.length(chars)
+
+  // Work out which spans are palindromes once, up front, rather than re-testing
+  // the same prefix on every branch of the search. The search itself is then
+  // pure choice: a table lookup replaces a linear scan at every step.
+  let table = palindromes(chars, n)
+  build(chars, 0, n, table)
+}
+
+fn build(
+  chars: List(String),
+  from: Int,
+  n: Int,
+  table: Dict(#(Int, Int), Bool),
+) -> List(List(String)) {
+  case from >= n {
+    True -> [[]]
+    False ->
+      list.index_map(list.repeat(Nil, n - from), fn(_, i) { from + i })
+      |> list.flat_map(fn(to) {
+        case result.unwrap(dict.get(table, #(from, to)), False) {
+          False -> []
+          True -> {
+            let piece =
+              chars
+              |> list.drop(from)
+              |> list.take(to - from + 1)
+              |> string.concat
+            build(chars, to + 1, n, table)
+            |> list.map(fn(rest) { [piece, ..rest] })
+          }
+        }
+      })
+  }
+}
+
+/// Shortest spans first, because a span is a palindrome only if the span inside
+/// it already was.
+fn palindromes(chars: List(String), n: Int) -> Dict(#(Int, Int), Bool) {
+  let indices = list.index_map(list.repeat(Nil, n), fn(_, i) { i })
+
+  list.flat_map(indices, fn(span) {
+    indices
+    |> list.filter(fn(i) { i + span < n })
+    |> list.map(fn(i) { #(i, i + span) })
+  })
+  |> list.fold(dict.new(), fn(table, at) {
+    let #(i, j) = at
+    let inside = case j - i < 2 {
+      True -> True
+      False -> result.unwrap(dict.get(table, #(i + 1, j - 1)), False)
+    }
+    dict.insert(table, at, char_at(chars, i) == char_at(chars, j) && inside)
+  })
+}
+
+fn char_at(chars: List(String), index: Int) -> String {
+  chars |> list.drop(index) |> list.first |> result.unwrap(\"\")
+}"),
+    ],
+    check: Check(
+      signature: "pub fn partition(s: String) -> List(List(String))",
+      starter: "pub fn partition(s: String) -> List(List(String)) {
+  todo
+}",
+      harness: "import gleam/list
+import gleam/string
+import solution
+
+/// The outer order is free; the order of pieces within a partition is the
+/// answer, so only the outer list is sorted.
+fn sorted(s: String) -> List(String) {
+  solution.partition(s)
+  |> list.map(fn(pieces) { string.join(pieces, \",\") })
+  |> list.sort(string.compare)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"partition(\\\"aab\\\")\",
+      string.inspect([\"a,a,b\", \"aa,b\"]),
+      string.inspect(sorted(\"aab\")),
+    ),
+    #(\"partition(\\\"a\\\")\", string.inspect([\"a\"]), string.inspect(sorted(\"a\"))),
+    #(\"partition(\\\"\\\")\", string.inspect([\"\"]), string.inspect(sorted(\"\"))),
+    #(
+      \"partition(\\\"aba\\\")\",
+      string.inspect([\"a,b,a\", \"aba\"]),
+      string.inspect(sorted(\"aba\")),
+    ),
+    #(
+      \"partition(\\\"abc\\\")\",
+      string.inspect([\"a,b,c\"]),
+      string.inspect(sorted(\"abc\")),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc90_letter_combinations() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One choice per digit, independently, so the answer is the cross product of the letter sets. There is no pruning and no constraint between choices — which makes this the cleanest place to see what backtracking degenerates to when nothing can fail.", "import gleam/list
+import gleam/string
+
+const keypad = [
+  #(\"2\", \"abc\"),
+  #(\"3\", \"def\"),
+  #(\"4\", \"ghi\"),
+  #(\"5\", \"jkl\"),
+  #(\"6\", \"mno\"),
+  #(\"7\", \"pqrs\"),
+  #(\"8\", \"tuv\"),
+  #(\"9\", \"wxyz\"),
+]
+
+pub fn letter_combinations(digits: String) -> List(String) {
+  case digits {
+    \"\" -> []
+    _ -> build(string.to_graphemes(digits))
+  }
+}
+
+/// One choice per digit, independently \\u{2014} so the answer is the cross product
+/// of the letter sets. Written as a recursion here: pick a letter for the first
+/// digit, then every combination of the rest.
+fn build(digits: List(String)) -> List(String) {
+  case digits {
+    [] -> [\"\"]
+    [first, ..rest] -> {
+      let tails = build(rest)
+      letters_for(first)
+      |> list.flat_map(fn(letter) {
+        list.map(tails, fn(tail) { letter <> tail })
+      })
+    }
+  }
+}
+
+fn letters_for(digit: String) -> List(String) {
+  case list.find(keypad, fn(entry: #(String, String)) { entry.0 == digit }) {
+    Ok(#(_, letters)) -> string.to_graphemes(letters)
+    Error(Nil) -> []
+  }
+}"),
+      #("Solution 2 · Iterative product", "The same cross product built by folding rather than recursing: hold every combination of the digits so far and extend each by every letter of the next. No call stack, and the growth is visible in the code — the list multiplies in size at each step.", "import gleam/list
+import gleam/string
+
+const keypad = [
+  #(\"2\", \"abc\"),
+  #(\"3\", \"def\"),
+  #(\"4\", \"ghi\"),
+  #(\"5\", \"jkl\"),
+  #(\"6\", \"mno\"),
+  #(\"7\", \"pqrs\"),
+  #(\"8\", \"tuv\"),
+  #(\"9\", \"wxyz\"),
+]
+
+pub fn letter_combinations(digits: String) -> List(String) {
+  case digits {
+    \"\" -> []
+    _ ->
+      // The same cross product built by folding rather than recursing: hold
+      // every combination of the digits seen so far and extend each by every
+      // letter of the next. No call stack, and the growth is visible \\u{2014} the
+      // list multiplies in size at each step.
+      digits
+      |> string.to_graphemes
+      |> list.fold([\"\"], fn(combinations, digit) {
+        list.flat_map(combinations, fn(prefix) {
+          list.map(letters_for(digit), fn(letter) { prefix <> letter })
+        })
+      })
+  }
+}
+
+fn letters_for(digit: String) -> List(String) {
+  case list.find(keypad, fn(entry: #(String, String)) { entry.0 == digit }) {
+    Ok(#(_, letters)) -> string.to_graphemes(letters)
+    Error(Nil) -> []
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn letter_combinations(digits: String) -> List(String)",
+      starter: "pub fn letter_combinations(digits: String) -> List(String) {
+  todo
+}",
+      harness: "import gleam/list
+import gleam/string
+import solution
+
+fn sorted(digits: String) -> List(String) {
+  list.sort(solution.letter_combinations(digits), string.compare)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"letter_combinations(\\\"23\\\")\",
+      string.inspect([\"ad\", \"ae\", \"af\", \"bd\", \"be\", \"bf\", \"cd\", \"ce\", \"cf\"]),
+      string.inspect(sorted(\"23\")),
+    ),
+    #(
+      \"letter_combinations(\\\"\\\")\",
+      string.inspect([]),
+      string.inspect(sorted(\"\")),
+    ),
+    #(
+      \"letter_combinations(\\\"2\\\")\",
+      string.inspect([\"a\", \"b\", \"c\"]),
+      string.inspect(sorted(\"2\")),
+    ),
+    #(
+      \"letter_combinations(\\\"9\\\")\",
+      string.inspect([\"w\", \"x\", \"y\", \"z\"]),
+      string.inspect(sorted(\"9\")),
+    ),
+    #(
+      \"letter_combinations(\\\"79\\\") count\",
+      string.inspect(16),
+      string.inspect(list.length(sorted(\"79\"))),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc91_n_queens() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One queen per row, so the only choice is the column. A diagonal is identified by row − column and an anti-diagonal by row + column, which turns \"is this square attacked?\" into three set lookups — and lets the search abandon an entire subtree the moment one of them fails.", "import gleam/list
+import gleam/set.{type Set}
+import gleam/string
+
+pub fn solve_n_queens(n: Int) -> List(List(String)) {
+  place(n, 0, [], set.new(), set.new(), set.new())
+  |> list.map(fn(columns) { render(list.reverse(columns), n) })
+}
+
+/// One queen per row, so the only choice is which column. A diagonal is
+/// identified by row \\u{2212} column and an anti-diagonal by row + column, which
+/// turns \"is this square attacked?\" into three set lookups \\u{2014} and lets the
+/// search abandon a whole subtree the moment one fails.
+fn place(
+  n: Int,
+  row: Int,
+  chosen: List(Int),
+  columns: Set(Int),
+  diagonals: Set(Int),
+  anti_diagonals: Set(Int),
+) -> List(List(Int)) {
+  case row >= n {
+    True -> [chosen]
+    False ->
+      list.index_map(list.repeat(Nil, n), fn(_, column) { column })
+      |> list.flat_map(fn(column) {
+        case
+          set.contains(columns, column)
+          || set.contains(diagonals, row - column)
+          || set.contains(anti_diagonals, row + column)
+        {
+          True -> []
+          False ->
+            place(
+              n,
+              row + 1,
+              [column, ..chosen],
+              set.insert(columns, column),
+              set.insert(diagonals, row - column),
+              set.insert(anti_diagonals, row + column),
+            )
+        }
+      })
+  }
+}
+
+fn render(columns: List(Int), n: Int) -> List(String) {
+  list.map(columns, fn(column) {
+    string.repeat(\".\", column) <> \"Q\" <> string.repeat(\".\", n - column - 1)
+  })
+}"),
+      #("Solution 2 · Filter permutations", "One queen per row with no two sharing a column *is* a permutation of the columns, so the row and column rules hold by construction and only the diagonals are left. Generating all n! and filtering is far slower than pruning as you go — it explores arrangements a backtracker abandons at the second queen — but it names what the search space actually is.", "import gleam/list
+import gleam/string
+
+pub fn solve_n_queens(n: Int) -> List(List(String)) {
+  // One queen per row with no two sharing a column *is* a permutation of the
+  // columns, so the row and column rules are satisfied by construction and only
+  // the diagonals are left to test. Generating all n! and filtering is far
+  // slower than pruning as you go \\u{2014} it explores arrangements a backtracker
+  // would have abandoned at the second queen \\u{2014} but it names what the search
+  // space actually is.
+  permutations(columns(n))
+  |> list.filter(no_diagonal_clash)
+  |> list.map(fn(chosen) { render(chosen, n) })
+}
+
+fn columns(n: Int) -> List(Int) {
+  list.index_map(list.repeat(Nil, n), fn(_, i) { i })
+}
+
+fn permutations(values: List(Int)) -> List(List(Int)) {
+  case values {
+    [] -> [[]]
+    _ ->
+      list.index_map(values, fn(value, i) { #(i, value) })
+      |> list.flat_map(fn(chosen: #(Int, Int)) {
+        let rest =
+          list.index_map(values, fn(value, i) { #(i, value) })
+          |> list.filter(fn(other: #(Int, Int)) { other.0 != chosen.0 })
+          |> list.map(fn(other: #(Int, Int)) { other.1 })
+        list.map(permutations(rest), fn(tail) { [chosen.1, ..tail] })
+      })
+  }
+}
+
+fn no_diagonal_clash(chosen: List(Int)) -> Bool {
+  let placed = list.index_map(chosen, fn(column, row) { #(row, column) })
+
+  list.all(placed, fn(a: #(Int, Int)) {
+    list.all(placed, fn(b: #(Int, Int)) {
+      a.0 == b.0 || absolute(a.0 - b.0) != absolute(a.1 - b.1)
+    })
+  })
+}
+
+fn absolute(n: Int) -> Int {
+  case n < 0 {
+    True -> -n
+    False -> n
+  }
+}
+
+fn render(chosen: List(Int), n: Int) -> List(String) {
+  list.map(chosen, fn(column) {
+    string.repeat(\".\", column) <> \"Q\" <> string.repeat(\".\", n - column - 1)
+  })
+}"),
+    ],
+    check: Check(
+      signature: "pub fn solve_n_queens(n: Int) -> List(List(String))",
+      starter: "pub fn solve_n_queens(n: Int) -> List(List(String)) {
+  todo
+}",
+      harness: "import gleam/list
+import gleam/string
+import solution
+
+fn sorted(n: Int) -> List(String) {
+  solution.solve_n_queens(n)
+  |> list.map(fn(board) { string.join(board, \"|\") })
+  |> list.sort(string.compare)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"solve_n_queens(4)\",
+      string.inspect([\"..Q.|Q...|...Q|.Q..\", \".Q..|...Q|Q...|..Q.\"]),
+      string.inspect(sorted(4)),
+    ),
+    #(\"solve_n_queens(1)\", string.inspect([\"Q\"]), string.inspect(sorted(1))),
+    #(\"solve_n_queens(2)\", string.inspect([]), string.inspect(sorted(2))),
+    #(\"solve_n_queens(3)\", string.inspect([]), string.inspect(sorted(3))),
+    #(
+      \"solve_n_queens(6) count\",
+      string.inspect(4),
+      string.inspect(list.length(sorted(6))),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
 pub fn tip01_list_patterns() -> Embedded {
   Embedded(
     solutions: [
@@ -10133,6 +11308,15 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc80_task_scheduler" -> Ok(nc80_task_scheduler())
     "nc81_design_twitter" -> Ok(nc81_design_twitter())
     "nc82_find_median_stream" -> Ok(nc82_find_median_stream())
+    "nc83_subsets" -> Ok(nc83_subsets())
+    "nc84_combination_sum" -> Ok(nc84_combination_sum())
+    "nc85_permutations" -> Ok(nc85_permutations())
+    "nc86_subsets_ii" -> Ok(nc86_subsets_ii())
+    "nc87_combination_sum_ii" -> Ok(nc87_combination_sum_ii())
+    "nc88_word_search" -> Ok(nc88_word_search())
+    "nc89_palindrome_partitioning" -> Ok(nc89_palindrome_partitioning())
+    "nc90_letter_combinations" -> Ok(nc90_letter_combinations())
+    "nc91_n_queens" -> Ok(nc91_n_queens())
     "tip01_list_patterns" -> Ok(tip01_list_patterns())
     "tip02_tail_recursion" -> Ok(tip02_tail_recursion())
     "tip03_fold" -> Ok(tip03_fold())

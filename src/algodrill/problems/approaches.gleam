@@ -106,6 +106,34 @@ pub fn for_title(title: String) -> String {
     "Search in Rotated Sorted Array" ->
       "Binary search with a twist: after the rotation, one half around the midpoint is always sorted. Check which half is sorted, then use its endpoints to decide whether the target lies inside it \u{2014} recurse into that half or the other."
 
+    // Backtracking
+    "Subsets" ->
+      "Every element is in or out, independently, so the subsets of a list are the subsets of its tail twice over \u{2014} once with the head added and once without. Those in-or-out choices are also the bits of a number, so counting from 0 to 2\u{207f}\u{2212}1 enumerates the same thing with no recursion at all."
+
+    "Combination Sum" ->
+      "Each step either takes the current candidate again \u{2014} reuse is allowed \u{2014} or drops it for good, and never returning to a dropped candidate is what stops one combination appearing in several orders. Getting the duplicates out by construction rather than by filtering afterwards is the pattern the harder variants all rest on."
+
+    "Permutations" ->
+      "Pick each element in turn as the first and permute what is left; removing the chosen element from the remainder is exactly what a \"used\" set does in an in-place version. The other direction works too: every permutation of n is a permutation of n\u{2212}1 with the new element wedged into one of its n positions, which explains the factorial outright."
+
+    "Subsets II" ->
+      "Sorting is what makes the duplicate rule expressible: with equal values adjacent, skipping a value means skipping *every* copy of it at once, and skipping one while keeping the next is exactly how the same subset gets built twice. Framing the choice as \"how many copies of this value\" avoids the rule entirely."
+
+    "Combination Sum II" ->
+      "Each candidate is usable once, so taking one moves past it \u{2014} and the duplicate rule is the same one as Subsets II, which is the reason to drill the two together. Generating everything and deduplicating afterwards is correct but exponentially wasteful when many values are equal."
+
+    "Word Search" ->
+      "Depth-first from every square, with the path so far in a set so no letter is reused within one attempt. The set must be per-path rather than global: a square rejected on one route has to stay available on another, and that is the whole difference between backtracking and plain search. Two cheap prunings help \u{2014} letter counts, and starting from whichever end of the word is rarer."
+
+    "Palindrome Partitioning" ->
+      "Every partition begins with some palindromic prefix, so the only choice at each step is how long that prefix is; cutting there and recursing on the rest reaches each partition exactly once. Precomputing which spans are palindromes turns the test inside the search from a scan into a lookup."
+
+    "Letter Combinations of a Phone Number" ->
+      "One choice per digit with no constraint between them, so the answer is simply the cross product of the letter sets \u{2014} which makes this the cleanest place to see what backtracking becomes when nothing can ever fail. Folding builds the same product without a call stack."
+
+    "N-Queens" ->
+      "One queen per row, so the only choice is the column. A diagonal is identified by row \u{2212} column and an anti-diagonal by row + column, which turns \"is this square attacked?\" into three set lookups and lets an entire subtree be abandoned the moment one fails. Note what the search space really is: an arrangement with no shared column *is* a permutation."
+
     // Heap / Priority Queue
     "Kth Largest Element in a Stream" ->
       "Only the k largest values can ever be the answer, so everything else is discarded on arrival and the store never grows past k \u{2014} which is exactly a bounded min-heap: its smallest element is the answer, and anything smaller never gets in. Note there is no answer at all until k values have arrived."

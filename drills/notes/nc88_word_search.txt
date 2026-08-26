@@ -1,0 +1,1 @@
+Depth-first from every square, with the path so far in a set so no letter is reused within one attempt. The set has to be per-path, not global: a square rejected on one route must still be available on another, and that distinction is the whole difference between backtracking and plain search.

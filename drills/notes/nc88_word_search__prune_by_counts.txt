@@ -1,0 +1,1 @@
+Two cheap checks before any searching. If the board does not hold enough copies of some letter, no search can succeed at all. And starting from whichever end of the word is rarer on the board begins from fewer squares — the branching factor at the root is what dominates, so halving it there is worth more than any saving deeper in.

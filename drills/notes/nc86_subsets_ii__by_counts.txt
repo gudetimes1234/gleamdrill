@@ -1,0 +1,1 @@
+A different framing: the choice is not per *element* but per distinct *value* — how many copies to take, from none up to however many exist. Duplicates then cannot arise, so there is no skipping rule to remember and nothing to sort for correctness.
