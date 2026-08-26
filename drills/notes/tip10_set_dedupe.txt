@@ -1,0 +1,1 @@
+A set answers "have I seen this" in constant time, which is what turns deduplication from O(n²) into O(n). Keeping a separate list of what was kept is what preserves the original order — a set alone has none.

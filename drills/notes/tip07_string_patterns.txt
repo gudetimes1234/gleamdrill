@@ -1,0 +1,1 @@
+Gleam pattern-matches on string *prefixes*: `"# " <> rest` both tests and strips in one step, and binds what is left. It is the tool for parsing small formats, and it is checked at compile time in a way `starts_with` plus `drop_start` is not.

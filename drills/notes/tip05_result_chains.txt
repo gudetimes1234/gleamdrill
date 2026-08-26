@@ -1,0 +1,1 @@
+`use` with `result.try` flattens what would otherwise be nested cases: each step either binds its value and continues, or short-circuits with the error. The happy path reads top to bottom, which is the whole point.

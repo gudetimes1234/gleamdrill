@@ -1,0 +1,1 @@
+Every field spelled out instead of the update syntax. More to type, and it stops compiling the moment a field is added — which is occasionally exactly what you want, and usually not.

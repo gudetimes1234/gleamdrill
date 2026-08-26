@@ -1,0 +1,1 @@
+`defaultdict(list)` makes a missing key produce an empty list rather than raise, which is what removes the "is this key here yet" check from every append. Grouping is then one line per item.

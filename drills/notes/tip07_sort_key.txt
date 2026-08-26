@@ -1,0 +1,1 @@
+`sort`/`sorted` take a key function mapping each element to what it should be compared by: `len`, a tuple for multi-field ordering, a negated number for descending. `sort` mutates in place; `sorted` returns a new list.

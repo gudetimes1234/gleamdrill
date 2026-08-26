@@ -1,0 +1,1 @@
+Fold is the shape almost every list function reduces to: a starting value and a function that folds one element into it. Naming it rather than writing the recursion out means the base case and the step are visible in one line, with no helper.

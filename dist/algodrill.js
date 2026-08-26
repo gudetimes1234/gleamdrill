@@ -17099,7 +17099,7 @@ pub fn run() -> List(#(String, String, String)) {
       string.inspect(solution.num_distinct("aaa", "aa")),
     ),
   ]
-}`))}function cW(){return new N(U([["Solution 1","",`pub fn length(items: List(a)) -> Int {
+}`))}function cW(){return new N(U([["Solution 1","A list in Gleam is either `[]` or `[head, ..tail]`, so every list function is a case expression over those two shapes — plus `[only]` when the last element is what matters. Recursion replaces the loop: handle the empty case, then recurse on the tail.",`pub fn length(items: List(a)) -> Int {
   case items {
     [] -> 0
     [_, ..rest] -> 1 + length(rest)
@@ -17144,7 +17144,7 @@ pub fn run() -> List(#(String, String, String)) {
       string.inspect(solution.last(no_ints)),
     ),
   ]
-}`))}function dW(){return new N(U([["Solution 1","",`pub fn reverse(items: List(a)) -> List(a) {
+}`))}function dW(){return new N(U([["Solution 1","The accumulator is what makes the recursive call the *last* thing the function does, which is what lets the runtime reuse the frame instead of stacking one per element. Without it, `1 + length(rest)` has to remember the addition, and a long list overflows.",`pub fn reverse(items: List(a)) -> List(a) {
   reverse_loop(items, [])
 }
 
@@ -17200,7 +17200,7 @@ pub fn run() -> List(#(String, String, String)) {
     #("sum([1, 2, 3])", string.inspect(6), string.inspect(solution.sum([1, 2, 3]))),
     #("sum([])", string.inspect(0), string.inspect(solution.sum([]))),
   ]
-}`))}function lW(){return new N(U([["Solution 1","",`import gleam/int
+}`))}function lW(){return new N(U([["Solution 1","Fold is the shape almost every list function reduces to: a starting value and a function that folds one element into it. Naming it rather than writing the recursion out means the base case and the step are visible in one line, with no helper.",`import gleam/int
 import gleam/list
 
 pub fn max(numbers: List(Int)) -> Result(Int, Nil) {
@@ -17292,7 +17292,7 @@ pub fn run() -> List(#(String, String, String)) {
       string.inspect(solution.running_total([1, 2, 3])),
     ),
   ]
-}`))}function sW(){return new N(U([["Solution 1","",`import gleam/dict
+}`))}function sW(){return new N(U([["Solution 1","`dict.upsert` is what makes counting one pass rather than a lookup and an insert: it hands you the existing value as an `Option`, so the missing case and the present case are handled together. Counting is the backbone of half the Arrays & Hashing problems.",`import gleam/dict
 import gleam/list
 import gleam/option
 import gleam/string
@@ -17361,7 +17361,7 @@ pub fn run() -> List(#(String, String, String)) {
       string.inspect(normalise(solution.word_frequencies("Go go GO"))),
     ),
   ]
-}`))}function nW(){return new N(U([["Solution 1","",`import gleam/int
+}`))}function nW(){return new N(U([["Solution 1","`use` with `result.try` flattens what would otherwise be nested cases: each step either binds its value and continues, or short-circuits with the error. The happy path reads top to bottom, which is the whole point.",`import gleam/int
 import gleam/result
 
 pub type Config {
@@ -17453,7 +17453,7 @@ pub fn run() -> List(#(String, String, String)) {
       string.inspect(fields(solution.parse_config("", "8080", "30"))),
     ),
   ]
-}`))}function iW(){return new N(U([["Solution 1","",`import gleam/dict
+}`))}function iW(){return new N(U([["Solution 1",'`Option` says "there may be nothing here" where `Result` says "this may have failed, and here is why". Converting between them at the boundary — and mapping over the inside rather than unwrapping — keeps the absent case from spreading into the rest of the code.',`import gleam/dict
 import gleam/option
 
 pub fn port_description(config: dict.Dict(String, String)) -> String {
@@ -17492,7 +17492,7 @@ pub fn run() -> List(#(String, String, String)) {
       string.inspect(solution.port_description(dict.new())),
     ),
   ]
-}`))}function rW(){return new N(U([["Solution 1","",`import gleam/list
+}`))}function rW(){return new N(U([["Solution 1",'Gleam pattern-matches on string *prefixes*: `"# " <> rest` both tests and strips in one step, and binds what is left. It is the tool for parsing small formats, and it is checked at compile time in a way `starts_with` plus `drop_start` is not.',`import gleam/list
 import gleam/string
 
 pub fn strip_comment(line: String) -> String {
@@ -17559,7 +17559,7 @@ pub fn run() -> List(#(String, String, String)) {
       string.inspect(solution.initials("grace brewster murray hopper")),
     ),
   ]
-}`))}function aW(){return new N(U([["Solution 1","",`import gleam/list
+}`))}function aW(){return new N(U([["Solution 1","`|>` puts the value first and reads left to right, which is the order the steps actually happen in. The same expression written as nested calls reads inside out, and every added step pushes the reader further from where it starts.",`import gleam/list
 import gleam/string
 
 pub fn slug(title: String) -> String {
@@ -17595,7 +17595,7 @@ pub fn run() -> List(#(String, String, String)) {
     #("slug(\\"Gleam\\")", string.inspect("gleam"), string.inspect(solution.slug("Gleam"))),
     #("slug(\\"\\")", string.inspect(""), string.inspect(solution.slug(""))),
   ]
-}`))}function oW(){return new N(U([["Solution 1","",`pub type Player {
+}`))}function oW(){return new N(U([["Solution 1","`Record(..existing, field: value)` copies everything and changes one thing. It is the idiom for updating immutable state, and it keeps compiling when a field is added — which is usually what you want, and occasionally exactly what you do not.",`pub type Player {
   Player(name: String, score: Int, level: Int)
 }
 
@@ -17609,7 +17609,7 @@ pub fn add_points(player: Player, points: Int) -> Player {
 
 pub fn level_up(player: Player) -> Player {
   Player(..player, level: player.level + 1, score: 0)
-}`],["Solution 2 · Explicit fields","",`pub type Player {
+}`],["Solution 2 · Explicit fields","Every field spelled out instead of the update syntax. More to type, and it stops compiling the moment a field is added — which is occasionally exactly what you want, and usually not.",`pub type Player {
   Player(name: String, score: Int, level: Int)
 }
 
@@ -17617,9 +17617,6 @@ pub fn new_player(name: String) -> Player {
   Player(name: name, score: 0, level: 1)
 }
 
-/// Every field spelled out instead of \`..player\`. More to type, and it stops
-/// compiling the moment a field is added — which is occasionally exactly what
-/// you want, and usually not.
 pub fn add_points(player: Player, points: Int) -> Player {
   Player(name: player.name, score: player.score + points, level: player.level)
 }
@@ -17676,7 +17673,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
     #("level_up keeps the name", string.inspect("lucy"), string.inspect(levelled.name)),
   ]
-}`))}function tW(){return new N(U([["Solution 1","",`import gleam/list
+}`))}function tW(){return new N(U([["Solution 1",'A set answers "have I seen this" in constant time, which is what turns deduplication from O(n²) into O(n). Keeping a separate list of what was kept is what preserves the original order — a set alone has none.',`import gleam/list
 import gleam/set
 
 pub fn dedupe(items: List(a)) -> List(a) {
@@ -33656,7 +33653,7 @@ __case__("numDistinct('babgbag', 'bag')", 5, numDistinct('babgbag', 'bag'))
 __case__("numDistinct('', 'a')", 0, numDistinct('', 'a'))
 __case__("numDistinct('a', '')", 1, numDistinct('a', ''))
 __case__("numDistinct('abc', 'abc')", 1, numDistinct('abc', 'abc'))
-__case__("numDistinct('aaa', 'aa')", 3, numDistinct('aaa', 'aa'))`))}function eW(){return new N(U([["Solution 1","",`from collections import Counter
+__case__("numDistinct('aaa', 'aa')", 3, numDistinct('aaa', 'aa'))`))}function eW(){return new N(U([["Solution 1","`Counter` counts anything iterable in one call, and `most_common(k)` gives the top k already sorted. It is a dict underneath, so everything a dict does still works — but the counting and the ranking come free.",`from collections import Counter
 
 def topTwo(nums):
     return Counter(nums).most_common(2)
@@ -33687,7 +33684,7 @@ def __case__(label, expected, actual):
 
 __case__("topTwo([1, 1, 1, 2, 2, 3])", [(1, 3), (2, 2)], topTwo([1, 1, 1, 2, 2, 3]))
 __case__("countOf([1, 1, 2], 1)", 2, countOf([1, 1, 2], 1))
-__case__("countOf([1, 1, 2], 9)", 0, countOf([1, 1, 2], 9))`))}function Zq(){return new N(U([["Solution 1","",`from collections import defaultdict
+__case__("countOf([1, 1, 2], 9)", 0, countOf([1, 1, 2], 9))`))}function Zq(){return new N(U([["Solution 1",'`defaultdict(list)` makes a missing key produce an empty list rather than raise, which is what removes the "is this key here yet" check from every append. Grouping is then one line per item.',`from collections import defaultdict
 
 def groupByLength(words):
     groups = defaultdict(list)
@@ -33708,7 +33705,7 @@ def __case__(label, expected, actual):
     __results__.append([label, repr(expected), repr(actual)])
 
 __case__("groupByLength(['a', 'bc', 'de', 'f'])", {1: ["a", "f"], 2: ["bc", "de"]}, groupByLength(["a", "bc", "de", "f"]))
-__case__("groupByLength([])", {}, groupByLength([]))`))}function Jq(){return new N(U([["Solution 1","",`from collections import deque
+__case__("groupByLength([])", {}, groupByLength([]))`))}function Jq(){return new N(U([["Solution 1","Lists pop from the front in O(n); `collections.deque` does it in O(1). Any queue-shaped algorithm — breadth-first search above all — wants a deque: append to the right, `popleft` from the left.",`from collections import deque
 
 def bfsOrder(graph, start):
     queue = deque([start])
@@ -33748,7 +33745,7 @@ def __case__(label, expected, actual):
 
 __graph__ = {"a": ["b", "c"], "b": ["d"], "c": ["d"], "d": []}
 __case__("bfsOrder(graph, 'a')", ["a", "b", "c", "d"], bfsOrder(__graph__, "a"))
-__case__("bfsOrder({'x': []}, 'x')", ["x"], bfsOrder({"x": []}, "x"))`))}function Qq(){return new N(U([["Solution 1","",`import heapq
+__case__("bfsOrder({'x': []}, 'x')", ["x"], bfsOrder({"x": []}, "x"))`))}function Qq(){return new N(U([["Solution 1","`heapq` turns a plain list into a min-heap: heapify in O(n), push and pop in O(log n). Python has no max-heap, so values are negated on the way in and out. Reach for it when you repeatedly need the smallest of a changing collection.",`import heapq
 
 def kSmallest(nums, k):
     heap = list(nums)
@@ -33779,7 +33776,7 @@ def __case__(label, expected, actual):
 
 __case__("kSmallest([5, 1, 4, 2], 2)", [1, 2], kSmallest([5, 1, 4, 2], 2))
 __case__("kLargest([5, 1, 4, 2], 2)", [5, 4], kLargest([5, 1, 4, 2], 2))
-__case__("kSmallest([3], 5)", [3], kSmallest([3], 5))`))}function Xq(){return new N(U([["Solution 1","",`def firstIndexOf(nums, target):
+__case__("kSmallest([3], 5)", [3], kSmallest([3], 5))`))}function Xq(){return new N(U([["Solution 1","`enumerate` gives index and value together, `zip` walks two sequences in lockstep, and tuple unpacking names the pieces. Between them, almost no loop needs `range(len(...))` — and the ones that do are usually doing something else wrong.",`def firstIndexOf(nums, target):
     for i, value in enumerate(nums):
         if value == target:
             return i
@@ -33813,7 +33810,7 @@ def __case__(label, expected, actual):
 
 __case__("firstIndexOf([9, 8, 7], 8)", 1, firstIndexOf([9, 8, 7], 8))
 __case__("firstIndexOf([9, 8, 7], 5)", -1, firstIndexOf([9, 8, 7], 5))
-__case__("dotProduct([1, 2, 3], [4, 5, 6])", 32, dotProduct([1, 2, 3], [4, 5, 6]))`))}function Yq(){return new N(U([["Solution 1","",`def reversedString(s):
+__case__("dotProduct([1, 2, 3], [4, 5, 6])", 32, dotProduct([1, 2, 3], [4, 5, 6]))`))}function Yq(){return new N(U([["Solution 1","Slices are Python's subsequence notation: `s[a:b:step]`. `[::-1]` reverses, `[:]` copies, negative indices count from the end. They never mutate — every slice is a new sequence, which is what makes them safe inside a loop over the original.",`def reversedString(s):
     return s[::-1]
 
 def everySecond(s):
@@ -33869,7 +33866,7 @@ def __case__(label, expected, actual):
 __case__("reversedString('gleam')", "maelg", reversedString("gleam"))
 __case__("everySecond('abcdef')", "ace", everySecond("abcdef"))
 __case__("lastN('drill', 3)", "ill", lastN("drill", 3))
-__case__("trimEnds('~mid~')", "mid", trimEnds("~mid~"))`))}function Kq(){return new N(U([["Solution 1","",`def sortByLength(words):
+__case__("trimEnds('~mid~')", "mid", trimEnds("~mid~"))`))}function Kq(){return new N(U([["Solution 1","`sort`/`sorted` take a key function mapping each element to what it should be compared by: `len`, a tuple for multi-field ordering, a negated number for descending. `sort` mutates in place; `sorted` returns a new list.",`def sortByLength(words):
     return sorted(words, key=len)
 
 def sortPairs(pairs):
@@ -33897,7 +33894,7 @@ def __case__(label, expected, actual):
     __results__.append([label, repr(expected), repr(actual)])
 
 __case__("sortByLength(['ccc', 'a', 'bb'])", ["a", "bb", "ccc"], sortByLength(["ccc", "a", "bb"]))
-__case__("sortPairs([('b', 1), ('a', 1), ('a', 9)])", [("a", 9), ("a", 1), ("b", 1)], sortPairs([("b", 1), ("a", 1), ("a", 9)]))`))}function Wq(){return new N(U([["Solution 1","",`def joinUpper(chars):
+__case__("sortPairs([('b', 1), ('a', 1), ('a', 9)])", [("a", 9), ("a", 1), ("b", 1)], sortPairs([("b", 1), ("a", 1), ("a", 9)]))`))}function Wq(){return new N(U([["Solution 1","Strings are immutable, so building one with `+=` in a loop re-copies everything each time — O(n²). Collect the pieces in a list and `''.join(parts)` once at the end for O(n). The same reasoning is why the drill runner buffers its output in an array.",`def joinUpper(chars):
     parts = []
     for c in chars:
         parts.append(c.upper())

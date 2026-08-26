@@ -19190,7 +19190,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip01_list_patterns() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "pub fn length(items: List(a)) -> Int {
+      #("Solution 1", "A list in Gleam is either `[]` or `[head, ..tail]`, so every list function is a case expression over those two shapes — plus `[only]` when the last element is what matters. Recursion replaces the loop: handle the empty case, then recurse on the tail.", "pub fn length(items: List(a)) -> Int {
   case items {
     [] -> 0
     [_, ..rest] -> 1 + length(rest)
@@ -19249,7 +19249,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip02_tail_recursion() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "pub fn reverse(items: List(a)) -> List(a) {
+      #("Solution 1", "The accumulator is what makes the recursive call the *last* thing the function does, which is what lets the runtime reuse the frame instead of stacking one per element. Without it, `1 + length(rest)` has to remember the addition, and a long list overflows.", "pub fn reverse(items: List(a)) -> List(a) {
   reverse_loop(items, [])
 }
 
@@ -19319,7 +19319,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip03_fold() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "import gleam/int
+      #("Solution 1", "Fold is the shape almost every list function reduces to: a starting value and a function that folds one element into it. Naming it rather than writing the recursion out means the base case and the step are visible in one line, with no helper.", "import gleam/int
 import gleam/list
 
 pub fn max(numbers: List(Int)) -> Result(Int, Nil) {
@@ -19425,7 +19425,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip04_frequency_maps() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "import gleam/dict
+      #("Solution 1", "`dict.upsert` is what makes counting one pass rather than a lookup and an insert: it hands you the existing value as an `Option`, so the missing case and the present case are handled together. Counting is the backbone of half the Arrays & Hashing problems.", "import gleam/dict
 import gleam/list
 import gleam/option
 import gleam/string
@@ -19508,7 +19508,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip05_result_chains() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "import gleam/int
+      #("Solution 1", "`use` with `result.try` flattens what would otherwise be nested cases: each step either binds its value and continues, or short-circuits with the error. The happy path reads top to bottom, which is the whole point.", "import gleam/int
 import gleam/result
 
 pub type Config {
@@ -19614,7 +19614,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip06_option() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "import gleam/dict
+      #("Solution 1", "`Option` says \"there may be nothing here\" where `Result` says \"this may have failed, and here is why\". Converting between them at the boundary — and mapping over the inside rather than unwrapping — keeps the absent case from spreading into the rest of the code.", "import gleam/dict
 import gleam/option
 
 pub fn port_description(config: dict.Dict(String, String)) -> String {
@@ -19667,7 +19667,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip07_string_patterns() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "import gleam/list
+      #("Solution 1", "Gleam pattern-matches on string *prefixes*: `\"# \" <> rest` both tests and strips in one step, and binds what is left. It is the tool for parsing small formats, and it is checked at compile time in a way `starts_with` plus `drop_start` is not.", "import gleam/list
 import gleam/string
 
 pub fn strip_comment(line: String) -> String {
@@ -19748,7 +19748,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip08_pipelines() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "import gleam/list
+      #("Solution 1", "`|>` puts the value first and reads left to right, which is the order the steps actually happen in. The same expression written as nested calls reads inside out, and every added step pushes the reader further from where it starts.", "import gleam/list
 import gleam/string
 
 pub fn slug(title: String) -> String {
@@ -19798,7 +19798,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip09_records() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "pub type Player {
+      #("Solution 1", "`Record(..existing, field: value)` copies everything and changes one thing. It is the idiom for updating immutable state, and it keeps compiling when a field is added — which is usually what you want, and occasionally exactly what you do not.", "pub type Player {
   Player(name: String, score: Int, level: Int)
 }
 
@@ -19813,7 +19813,7 @@ pub fn add_points(player: Player, points: Int) -> Player {
 pub fn level_up(player: Player) -> Player {
   Player(..player, level: player.level + 1, score: 0)
 }"),
-      #("Solution 2 · Explicit fields", "", "pub type Player {
+      #("Solution 2 · Explicit fields", "Every field spelled out instead of the update syntax. More to type, and it stops compiling the moment a field is added — which is occasionally exactly what you want, and usually not.", "pub type Player {
   Player(name: String, score: Int, level: Int)
 }
 
@@ -19821,9 +19821,6 @@ pub fn new_player(name: String) -> Player {
   Player(name: name, score: 0, level: 1)
 }
 
-/// Every field spelled out instead of `..player`. More to type, and it stops
-/// compiling the moment a field is added — which is occasionally exactly what
-/// you want, and usually not.
 pub fn add_points(player: Player, points: Int) -> Player {
   Player(name: player.name, score: player.score + points, level: player.level)
 }
@@ -19893,7 +19890,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip10_set_dedupe() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "import gleam/list
+      #("Solution 1", "A set answers \"have I seen this\" in constant time, which is what turns deduplication from O(n²) into O(n). Keeping a separate list of what was kept is what preserves the original order — a set alone has none.", "import gleam/list
 import gleam/set
 
 pub fn dedupe(items: List(a)) -> List(a) {

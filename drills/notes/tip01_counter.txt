@@ -1,0 +1,1 @@
+`Counter` counts anything iterable in one call, and `most_common(k)` gives the top k already sorted. It is a dict underneath, so everything a dict does still works — but the counting and the ranking come free.

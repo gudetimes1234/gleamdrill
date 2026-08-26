@@ -1,0 +1,1 @@
+`|>` puts the value first and reads left to right, which is the order the steps actually happen in. The same expression written as nested calls reads inside out, and every added step pushes the reader further from where it starts.

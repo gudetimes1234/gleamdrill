@@ -1,0 +1,1 @@
+`dict.upsert` is what makes counting one pass rather than a lookup and an insert: it hands you the existing value as an `Option`, so the missing case and the present case are handled together. Counting is the backbone of half the Arrays & Hashing problems.

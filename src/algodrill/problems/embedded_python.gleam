@@ -11125,7 +11125,7 @@ __case__(\"numDistinct('aaa', 'aa')\", 3, numDistinct('aaa', 'aa'))",
 pub fn tip01_counter() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "from collections import Counter
+      #("Solution 1", "`Counter` counts anything iterable in one call, and `most_common(k)` gives the top k already sorted. It is a dict underneath, so everything a dict does still works — but the counting and the ranking come free.", "from collections import Counter
 
 def topTwo(nums):
     return Counter(nums).most_common(2)
@@ -11170,7 +11170,7 @@ __case__(\"countOf([1, 1, 2], 9)\", 0, countOf([1, 1, 2], 9))",
 pub fn tip02_defaultdict() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "from collections import defaultdict
+      #("Solution 1", "`defaultdict(list)` makes a missing key produce an empty list rather than raise, which is what removes the \"is this key here yet\" check from every append. Grouping is then one line per item.", "from collections import defaultdict
 
 def groupByLength(words):
     groups = defaultdict(list)
@@ -11205,7 +11205,7 @@ __case__(\"groupByLength([])\", {}, groupByLength([]))",
 pub fn tip03_deque() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "from collections import deque
+      #("Solution 1", "Lists pop from the front in O(n); `collections.deque` does it in O(1). Any queue-shaped algorithm — breadth-first search above all — wants a deque: append to the right, `popleft` from the left.", "from collections import deque
 
 def bfsOrder(graph, start):
     queue = deque([start])
@@ -11259,7 +11259,7 @@ __case__(\"bfsOrder({'x': []}, 'x')\", [\"x\"], bfsOrder({\"x\": []}, \"x\"))",
 pub fn tip04_heapq() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "import heapq
+      #("Solution 1", "`heapq` turns a plain list into a min-heap: heapify in O(n), push and pop in O(log n). Python has no max-heap, so values are negated on the way in and out. Reach for it when you repeatedly need the smallest of a changing collection.", "import heapq
 
 def kSmallest(nums, k):
     heap = list(nums)
@@ -11304,7 +11304,7 @@ __case__(\"kSmallest([3], 5)\", [3], kSmallest([3], 5))",
 pub fn tip05_enumerate_zip() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "def firstIndexOf(nums, target):
+      #("Solution 1", "`enumerate` gives index and value together, `zip` walks two sequences in lockstep, and tuple unpacking names the pieces. Between them, almost no loop needs `range(len(...))` — and the ones that do are usually doing something else wrong.", "def firstIndexOf(nums, target):
     for i, value in enumerate(nums):
         if value == target:
             return i
@@ -11352,7 +11352,7 @@ __case__(\"dotProduct([1, 2, 3], [4, 5, 6])\", 32, dotProduct([1, 2, 3], [4, 5, 
 pub fn tip06_slicing() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "def reversedString(s):
+      #("Solution 1", "Slices are Python's subsequence notation: `s[a:b:step]`. `[::-1]` reverses, `[:]` copies, negative indices count from the end. They never mutate — every slice is a new sequence, which is what makes them safe inside a loop over the original.", "def reversedString(s):
     return s[::-1]
 
 def everySecond(s):
@@ -11422,7 +11422,7 @@ __case__(\"trimEnds('~mid~')\", \"mid\", trimEnds(\"~mid~\"))",
 pub fn tip07_sort_key() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "def sortByLength(words):
+      #("Solution 1", "`sort`/`sorted` take a key function mapping each element to what it should be compared by: `len`, a tuple for multi-field ordering, a negated number for descending. `sort` mutates in place; `sorted` returns a new list.", "def sortByLength(words):
     return sorted(words, key=len)
 
 def sortPairs(pairs):
@@ -11464,7 +11464,7 @@ __case__(\"sortPairs([('b', 1), ('a', 1), ('a', 9)])\", [(\"a\", 9), (\"a\", 1),
 pub fn tip08_join() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "", "def joinUpper(chars):
+      #("Solution 1", "Strings are immutable, so building one with `+=` in a loop re-copies everything each time — O(n²). Collect the pieces in a list and `''.join(parts)` once at the end for O(n). The same reasoning is why the drill runner buffers its output in an array.", "def joinUpper(chars):
     parts = []
     for c in chars:
         parts.append(c.upper())

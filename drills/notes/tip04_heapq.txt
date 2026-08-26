@@ -1,0 +1,1 @@
+`heapq` turns a plain list into a min-heap: heapify in O(n), push and pop in O(log n). Python has no max-heap, so values are negated on the way in and out. Reach for it when you repeatedly need the smallest of a changing collection.

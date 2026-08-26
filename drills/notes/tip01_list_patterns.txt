@@ -1,0 +1,1 @@
+A list in Gleam is either `[]` or `[head, ..tail]`, so every list function is a case expression over those two shapes — plus `[only]` when the last element is what matters. Recursion replaces the loop: handle the empty case, then recurse on the tail.

@@ -1,0 +1,1 @@
+`Record(..existing, field: value)` copies everything and changes one thing. It is the idiom for updating immutable state, and it keeps compiling when a field is added — which is usually what you want, and occasionally exactly what you do not.

@@ -1,0 +1,1 @@
+Slices are Python's subsequence notation: `s[a:b:step]`. `[::-1]` reverses, `[:]` copies, negative indices count from the end. They never mutate — every slice is a new sequence, which is what makes them safe inside a loop over the original.

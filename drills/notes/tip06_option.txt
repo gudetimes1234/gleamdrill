@@ -1,0 +1,1 @@
+`Option` says "there may be nothing here" where `Result` says "this may have failed, and here is why". Converting between them at the boundary — and mapping over the inside rather than unwrapping — keeps the absent case from spreading into the rest of the code.
