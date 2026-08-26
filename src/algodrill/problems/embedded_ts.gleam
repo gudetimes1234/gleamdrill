@@ -3094,6 +3094,357 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc49_single_number() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "XOR is its own inverse and does not care about order, so every value appearing twice cancels itself out wherever the two copies happen to sit, and the lone one is what is left. Constant space, one pass, and no reliance on the values being small or positive.", "export function singleNumber(nums: number[]): number {
+  // XOR is its own inverse and does not care about order, so every value that
+  // appears twice cancels itself out and only the lone one survives.
+  return nums.reduce((result, n) => result ^ n, 0);
+}"),
+      #("Solution 2 · Sum of uniques", "Twice the sum of the distinct values counts every pair twice and the lone value twice; subtracting the real total leaves the lone value. No bit tricks, but it leans harder on the promise that everything else appears exactly twice — three copies of something and it is wrong.", "export function singleNumber(nums: number[]): number {
+  // Twice the sum of the distinct values counts every pair twice and the lone
+  // value twice; subtracting the real total leaves the lone value. No bit
+  // tricks, but it leans harder on the promise that everything else is a pair.
+  const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
+  return 2 * sum([...new Set(nums)]) - sum(nums);
+}"),
+    ],
+    check: Check(
+      signature: "export function singleNumber(nums: number[]): number",
+      starter: "export function singleNumber(nums: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.singleNumber !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"singleNumber([2, 2, 1])\", show(1), show(solution.singleNumber([2, 2, 1]))],
+    [\"singleNumber([4, 1, 2, 1, 2])\", show(4), show(solution.singleNumber([4, 1, 2, 1, 2]))],
+    [\"singleNumber([1])\", show(1), show(solution.singleNumber([1]))],
+    [\"singleNumber([-1, -1, -3])\", show(-3), show(solution.singleNumber([-1, -1, -3]))],
+    [\"singleNumber([0, 1, 1])\", show(0), show(solution.singleNumber([0, 1, 1]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc50_number_of_one_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "n & (n − 1) clears the lowest set bit and touches nothing else, so the loop runs once per one bit rather than once per bit position. Worth having in the fingers: the same trick tests for powers of two, and shows up in half the bit problems there are.", "export function hammingWeight(n: number): number {
+  // n & (n - 1) clears the lowest set bit and nothing else, so the loop runs
+  // once per one bit rather than once per bit position.
+  let count = 0;
+  while (n !== 0) {
+    n &= n - 1;
+    count++;
+  }
+  return count;
+}"),
+      #("Solution 2 · Shift and test", "One step per bit position rather than per set bit: 32 iterations whatever the input, but nothing to remember beyond \"look at the bottom bit, shift\". In a fixed-width language mind the shift — an arithmetic right shift on a negative number never terminates.", "export function hammingWeight(n: number): number {
+  // One step per bit position rather than per set bit: 32 iterations whatever
+  // the input, but nothing to remember beyond \"look at the bottom bit, shift\".
+  // >>> rather than >>, so the sign bit does not shift in forever.
+  let count = 0;
+  while (n > 0) {
+    count += n & 1;
+    n >>>= 1;
+  }
+  return count;
+}"),
+    ],
+    check: Check(
+      signature: "export function hammingWeight(n: number): number",
+      starter: "export function hammingWeight(n: number): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.hammingWeight !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"hammingWeight(11)\", show(3), show(solution.hammingWeight(11))],
+    [\"hammingWeight(128)\", show(1), show(solution.hammingWeight(128))],
+    [\"hammingWeight(0)\", show(0), show(solution.hammingWeight(0))],
+    [\"hammingWeight(2147483645)\", show(30), show(solution.hammingWeight(2147483645))],
+    [\"hammingWeight(1)\", show(1), show(solution.hammingWeight(1))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc51_counting_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Every number is some smaller number with one more bit stuck on the end, so count(i) is count(i >> 1) plus that last bit. Each answer costs a single lookup into what has already been computed, which is what makes the whole array O(n) rather than O(n log n).", "export function countBits(n: number): number[] {
+  // Every number is some smaller number with one extra bit on the end:
+  // count(i) is count(i >> 1) plus whatever that last bit is. Each answer costs
+  // one lookup, so the whole array is O(n).
+  const counts = new Array<number>(n + 1).fill(0);
+  for (let i = 1; i <= n; i++) counts[i] = counts[i >> 1] + (i & 1);
+  return counts;
+}"),
+      #("Solution 2 · Popcount each", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Each number counted from scratch with the clear-lowest-bit trick. O(n log n), and it remembers nothing between numbers — which is precisely the redundancy the dynamic version exploits.", "export function countBits(n: number): number[] {
+  return Array.from({ length: n + 1 }, (_, i) => popcount(i));
+}
+
+// Each number counted from scratch with the clear-lowest-bit trick. O(n log n)
+// against the dynamic version's O(n), and it remembers nothing between numbers
+// -- which is exactly what the other one exploits.
+function popcount(n: number): number {
+  let count = 0;
+  while (n !== 0) {
+    n &= n - 1;
+    count++;
+  }
+  return count;
+}"),
+    ],
+    check: Check(
+      signature: "export function countBits(n: number): number[]",
+      starter: "export function countBits(n: number): number[] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.countBits !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"countBits(5)\", show([0, 1, 1, 2, 1, 2]), show(solution.countBits(5))],
+    [\"countBits(2)\", show([0, 1, 1]), show(solution.countBits(2))],
+    [\"countBits(0)\", show([0]), show(solution.countBits(0))],
+    [\"countBits(8)\", show([0, 1, 1, 2, 1, 2, 2, 3, 1]), show(solution.countBits(8))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc52_reverse_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Peel the bottom bit off the input and push it onto the bottom of the result: the first bit out is the last bit in. Fixed at 32 rounds, because the width is part of the problem rather than a property of the value — stopping when the input hits zero silently drops the leading zeros that should have become trailing ones.", "export function reverseBits(n: number): number {
+  // Peel the bottom bit off the input and push it onto the bottom of the
+  // result: the first bit out is the last bit in. Fixed at 32 rounds, because
+  // the width is part of the problem rather than a property of the value.
+  //
+  // >>> 0 at the end because JavaScript's bitwise operators produce a *signed*
+  // 32-bit result, and the answer here is unsigned.
+  let reversed = 0;
+  for (let i = 0; i < 32; i++) {
+    reversed = (reversed << 1) | (n & 1);
+    n >>>= 1;
+  }
+  return reversed >>> 0;
+}"),
+      #("Solution 2 · Via binary string", "Write the number in binary, pad to the full width, reverse the text, read it back. Slower and it allocates, but the explicit padding makes the thing the bit version keeps implicit — that the width is 32, not however many bits this value happens to need — impossible to forget.", "export function reverseBits(n: number): number {
+  // Write the number out in binary, pad to the full width, reverse the text,
+  // read it back. Slower and allocates, but the padding makes the thing the bit
+  // version keeps implicit -- that the width is 32, not however many bits this
+  // particular value happens to need -- impossible to forget.
+  const bits = (n >>> 0).toString(2).padStart(32, \"0\");
+  return parseInt([...bits].reverse().join(\"\"), 2);
+}"),
+    ],
+    check: Check(
+      signature: "export function reverseBits(n: number): number",
+      starter: "export function reverseBits(n: number): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.reverseBits !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"reverseBits(43261596)\", show(964176192), show(solution.reverseBits(43261596))],
+    [\"reverseBits(4294967293)\", show(3221225471), show(solution.reverseBits(4294967293))],
+    [\"reverseBits(0)\", show(0), show(solution.reverseBits(0))],
+    [\"reverseBits(1)\", show(2147483648), show(solution.reverseBits(1))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc53_missing_number() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "XOR every value against every index it should have had. Each present number meets its own index and cancels, so the missing one leaves its index without a partner and that index survives. No sum, so nothing can overflow.", "export function missingNumber(nums: number[]): number {
+  // XOR every value against every index it should have had. Each present number
+  // meets its own index and cancels; the missing one has an index with no
+  // partner, so that index is what survives.
+  let result = nums.length;
+  for (let i = 0; i < nums.length; i++) result ^= i ^ nums[i];
+  return result;
+}"),
+      #("Solution 2 · Gauss sum", "The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap between that and the actual total is the missing value. Shorter than the XOR version, and the trade worth knowing: in a fixed-width language it overflows on inputs the XOR version handles without complaint.", "export function missingNumber(nums: number[]): number {
+  // The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap
+  // between that and the actual total is the missing value. One multiplication
+  // instead of a pass of XORs -- but it overflows on inputs the XOR version
+  // handles fine, which is the trade worth knowing.
+  const n = nums.length;
+  return (n * (n + 1)) / 2 - nums.reduce((a, b) => a + b, 0);
+}"),
+    ],
+    check: Check(
+      signature: "export function missingNumber(nums: number[]): number",
+      starter: "export function missingNumber(nums: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.missingNumber !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"missingNumber([3, 0, 1])\", show(2), show(solution.missingNumber([3, 0, 1]))],
+    [\"missingNumber([0, 1])\", show(2), show(solution.missingNumber([0, 1]))],
+    [\"missingNumber([9, 6, 4, 2, 3, 5, 7, 0, 1])\", show(8), show(solution.missingNumber([9, 6, 4, 2, 3, 5, 7, 0, 1]))],
+    [\"missingNumber([0])\", show(1), show(solution.missingNumber([0]))],
+    [\"missingNumber([1])\", show(0), show(solution.missingNumber([1]))],
+    [\"missingNumber([])\", show(0), show(solution.missingNumber([]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc54_sum_of_two_integers() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Addition without +. XOR is addition that forgets to carry; AND finds exactly the places a carry was owed, and shifting it left one puts it where it belongs. Repeat until nothing is owed. In an arbitrary-precision language the negatives are the difficulty: mask to 32 bits so the carry loop terminates, then read the sign bit back by hand.", "export function getSum(a: number, b: number): number {
+  // Addition without +. XOR is addition that forgets to carry; AND finds
+  // exactly the places a carry was owed, and shifting it left one puts it where
+  // it belongs. Repeat until nothing is owed.
+  //
+  // No masking here: JavaScript's bitwise operators already work on signed
+  // 32-bit values, so two's complement comes out right on its own.
+  while (b !== 0) {
+    const carry = (a & b) << 1;
+    a = a ^ b;
+    b = carry;
+  }
+  return a;
+}"),
+      #("Solution 2 · Full adder", "The same addition written as hardware: thirty-two full adders in a row, each taking two input bits and a carry and producing a sum bit and a carry out. Slower than the XOR loop, which stops as soon as no carries remain, but it is where the XOR loop comes from — and it never uses arithmetic at all.", "export function getSum(a: number, b: number): number {
+  // The same addition written as hardware: thirty-two full adders in a row,
+  // each taking two input bits and a carry and producing a sum bit and a carry
+  // out. Slower than the XOR loop, which stops as soon as no carries are left,
+  // but it is where the XOR loop comes from.
+  let result = 0;
+  let carry = 0;
+
+  for (let i = 0; i < 32; i++) {
+    const x = (a >> i) & 1;
+    const y = (b >> i) & 1;
+    const xor = x ^ y;
+    result |= (xor ^ carry) << i;
+    carry = (x & y) | (carry & xor);
+  }
+
+  return result;
+}"),
+    ],
+    check: Check(
+      signature: "export function getSum(a: number, b: number): number",
+      starter: "export function getSum(a: number, b: number): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.getSum !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"getSum(1, 2)\", show(3), show(solution.getSum(1, 2))],
+    [\"getSum(2, 3)\", show(5), show(solution.getSum(2, 3))],
+    [\"getSum(-1, 1)\", show(0), show(solution.getSum(-1, 1))],
+    [\"getSum(-2, -3)\", show(-5), show(solution.getSum(-2, -3))],
+    [\"getSum(0, 0)\", show(0), show(solution.getSum(0, 0))],
+    [\"getSum(-1, -1)\", show(-2), show(solution.getSum(-1, -1))],
+    [\"getSum(5, -3)\", show(2), show(solution.getSum(5, -3))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc55_reverse_integer() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Peel a digit off the bottom of the input and push it onto the bottom of the result. The whole difficulty is that the test has to happen *before* the multiply: in a fixed-width language the multiply is the moment the value would be lost, so checking afterwards is checking a number that no longer exists.", "const LARGEST = 2147483647;
+const SMALLEST = -2147483648;
+
+export function reverse(x: number): number {
+  // Peel a digit off the bottom of the input and push it onto the bottom of the
+  // result. The overflow test has to happen *before* the multiply, because in a
+  // fixed-width language the multiply is where the value would be lost.
+  const sign = x < 0 ? -1 : 1;
+  let remaining = Math.abs(x);
+  let result = 0;
+
+  while (remaining > 0) {
+    if (result > Math.floor(LARGEST / 10)) return 0;
+    result = result * 10 + (remaining % 10);
+    remaining = Math.floor(remaining / 10);
+  }
+
+  const signed = result * sign;
+  return signed > LARGEST || signed < SMALLEST ? 0 : signed;
+}"),
+      #("Solution 2 · Via string", "Reverse the digits as text and read them back. It cannot overflow along the way, so the range check is a plain comparison at the end — which is honest here and dishonest in C, and worth being able to say which language you are in when you offer it.", "const LARGEST = 2147483647;
+const SMALLEST = -2147483648;
+
+export function reverse(x: number): number {
+  // Reversing the text cannot overflow here, so the range check is a plain
+  // comparison at the end rather than a guard inside the loop -- which is only
+  // safe because the value is not held in 32 bits along the way.
+  const magnitude = Number([...String(Math.abs(x))].reverse().join(\"\"));
+  const result = x < 0 ? -magnitude : magnitude;
+  return result > LARGEST || result < SMALLEST ? 0 : result;
+}"),
+    ],
+    check: Check(
+      signature: "export function reverse(x: number): number",
+      starter: "export function reverse(x: number): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.reverse !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"reverse(123)\", show(321), show(solution.reverse(123))],
+    [\"reverse(-123)\", show(-321), show(solution.reverse(-123))],
+    [\"reverse(120)\", show(21), show(solution.reverse(120))],
+    [\"reverse(0)\", show(0), show(solution.reverse(0))],
+    [\"reverse(1534236469)\", show(0), show(solution.reverse(1534236469))],
+    [\"reverse(-2147483648)\", show(0), show(solution.reverse(-2147483648))],
+    [\"reverse(1463847412)\", show(2147483641), show(solution.reverse(1463847412))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -3144,6 +3495,13 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc46_merge_triplets" -> Ok(nc46_merge_triplets())
     "nc47_partition_labels" -> Ok(nc47_partition_labels())
     "nc48_valid_parenthesis_string" -> Ok(nc48_valid_parenthesis_string())
+    "nc49_single_number" -> Ok(nc49_single_number())
+    "nc50_number_of_one_bits" -> Ok(nc50_number_of_one_bits())
+    "nc51_counting_bits" -> Ok(nc51_counting_bits())
+    "nc52_reverse_bits" -> Ok(nc52_reverse_bits())
+    "nc53_missing_number" -> Ok(nc53_missing_number())
+    "nc54_sum_of_two_integers" -> Ok(nc54_sum_of_two_integers())
+    "nc55_reverse_integer" -> Ok(nc55_reverse_integer())
     _ -> Error(Nil)
   }
 }

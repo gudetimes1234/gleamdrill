@@ -109,6 +109,20 @@ import nc47_partition_labels
 import nc47_partition_labels__expand_end
 import nc48_valid_parenthesis_string
 import nc48_valid_parenthesis_string__two_passes
+import nc49_single_number
+import nc49_single_number__sum_of_uniques
+import nc50_number_of_one_bits
+import nc50_number_of_one_bits__shift_and_test
+import nc51_counting_bits
+import nc51_counting_bits__popcount_each
+import nc52_reverse_bits
+import nc52_reverse_bits__via_binary_string
+import nc53_missing_number
+import nc53_missing_number__gauss_sum
+import nc54_sum_of_two_integers
+import nc54_sum_of_two_integers__full_adder
+import nc55_reverse_integer
+import nc55_reverse_integer__via_string
 import tip01_list_patterns
 import tip01_list_patterns__stdlib
 import tip02_tail_recursion
@@ -283,6 +297,20 @@ pub fn main() {
     check_valid_parenthesis_string(
       nc48_valid_parenthesis_string__two_passes.check_valid_string,
     ),
+    check_single_number(nc49_single_number.single_number),
+    check_single_number(nc49_single_number__sum_of_uniques.single_number),
+    check_hamming_weight(nc50_number_of_one_bits.hamming_weight),
+    check_hamming_weight(nc50_number_of_one_bits__shift_and_test.hamming_weight),
+    check_counting_bits(nc51_counting_bits.count_bits),
+    check_counting_bits(nc51_counting_bits__popcount_each.count_bits),
+    check_reverse_bits(nc52_reverse_bits.reverse_bits),
+    check_reverse_bits(nc52_reverse_bits__via_binary_string.reverse_bits),
+    check_missing_number(nc53_missing_number.missing_number),
+    check_missing_number(nc53_missing_number__gauss_sum.missing_number),
+    check_get_sum(nc54_sum_of_two_integers.get_sum),
+    check_get_sum(nc54_sum_of_two_integers__full_adder.get_sum),
+    check_reverse_integer(nc55_reverse_integer.reverse),
+    check_reverse_integer(nc55_reverse_integer__via_string.reverse),
 
     // Gleam Tips
     check_list_patterns(tip01_list_patterns.length, tip01_list_patterns.last),
@@ -702,6 +730,81 @@ fn check_valid_parenthesis_string(f: fn(String) -> Bool) -> Nil {
   // The closer comes first, so no reading of the star can rescue it.
   let assert False = f(")*")
   let assert True = f("(*()")
+  Nil
+}
+
+fn check_single_number(f: fn(List(Int)) -> Int) -> Nil {
+  let assert True = f([2, 2, 1]) == 1
+  let assert True = f([4, 1, 2, 1, 2]) == 4
+  let assert True = f([1]) == 1
+  let assert True = f([-1, -1, -3]) == -3
+  // Zero is the lone value, which a "sum of everything" shortcut would miss.
+  let assert True = f([0, 1, 1]) == 0
+  Nil
+}
+
+fn check_hamming_weight(f: fn(Int) -> Int) -> Nil {
+  let assert True = f(11) == 3
+  let assert True = f(128) == 1
+  let assert True = f(0) == 0
+  let assert True = f(2_147_483_645) == 30
+  let assert True = f(1) == 1
+  Nil
+}
+
+fn check_counting_bits(f: fn(Int) -> List(Int)) -> Nil {
+  let assert True = f(5) == [0, 1, 1, 2, 1, 2]
+  let assert True = f(2) == [0, 1, 1]
+  let assert True = f(0) == [0]
+  let assert True = f(8) == [0, 1, 1, 2, 1, 2, 2, 3, 1]
+  Nil
+}
+
+fn check_reverse_bits(f: fn(Int) -> Int) -> Nil {
+  let assert True = f(43_261_596) == 964_176_192
+  // Above 2^31: the answer is unsigned, so a signed shift loses this one.
+  let assert True = f(4_294_967_293) == 3_221_225_471
+  let assert True = f(0) == 0
+  // One bit at the bottom becomes one bit at the top, 31 places up.
+  let assert True = f(1) == 2_147_483_648
+  Nil
+}
+
+fn check_missing_number(f: fn(List(Int)) -> Int) -> Nil {
+  let assert True = f([3, 0, 1]) == 2
+  // The missing value is n itself, past the end of every index.
+  let assert True = f([0, 1]) == 2
+  let assert True = f([9, 6, 4, 2, 3, 5, 7, 0, 1]) == 8
+  let assert True = f([0]) == 1
+  let assert True = f([1]) == 0
+  let assert True = f([]) == 0
+  Nil
+}
+
+fn check_get_sum(f: fn(Int, Int) -> Int) -> Nil {
+  let assert True = f(1, 2) == 3
+  let assert True = f(2, 3) == 5
+  // Mixed and negative signs are the whole difficulty: two's complement has to
+  // survive the carry loop and be read back at the end.
+  let assert True = f(-1, 1) == 0
+  let assert True = f(-2, -3) == -5
+  let assert True = f(0, 0) == 0
+  let assert True = f(-1, -1) == -2
+  let assert True = f(5, -3) == 2
+  Nil
+}
+
+fn check_reverse_integer(f: fn(Int) -> Int) -> Nil {
+  let assert True = f(123) == 321
+  let assert True = f(-123) == -321
+  // Trailing zeros disappear rather than becoming leading ones.
+  let assert True = f(120) == 21
+  let assert True = f(0) == 0
+  // Reverses past the 32-bit maximum, so the answer is zero.
+  let assert True = f(1_534_236_469) == 0
+  let assert True = f(-2_147_483_648) == 0
+  // Reverses to exactly six below the maximum: the nearest legal case.
+  let assert True = f(1_463_847_412) == 2_147_483_641
   Nil
 }
 

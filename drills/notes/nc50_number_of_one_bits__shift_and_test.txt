@@ -1,0 +1,1 @@
+One step per bit position rather than per set bit: 32 iterations whatever the input, but nothing to remember beyond "look at the bottom bit, shift". In a fixed-width language mind the shift — an arithmetic right shift on a negative number never terminates.

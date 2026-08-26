@@ -134,6 +134,43 @@ pub fn groups() -> List(Group) {
         "nc26_sliding_window_maximum",
       ),
     ]),
+    Group("Bit Manipulation", [
+      Drill(
+        "Single Number",
+        "Given a non-empty array of integers where every element appears twice except for one, find that single one. Your solution should run in linear time and use constant extra space.",
+        "nc49_single_number",
+      ),
+      Drill(
+        "Number of 1 Bits",
+        "Given an unsigned integer, return the number of bits set to 1 in its binary representation.",
+        "nc50_number_of_one_bits",
+      ),
+      Drill(
+        "Counting Bits",
+        "Given an integer n, return an array of length n + 1 where the entry at index i is the number of 1 bits in the binary representation of i.",
+        "nc51_counting_bits",
+      ),
+      Drill(
+        "Reverse Bits",
+        "Reverse the bits of a given 32-bit unsigned integer.",
+        "nc52_reverse_bits",
+      ),
+      Drill(
+        "Missing Number",
+        "Given an array containing n distinct numbers taken from 0 to n, return the one that is missing.",
+        "nc53_missing_number",
+      ),
+      Drill(
+        "Sum of Two Integers",
+        "Given two integers a and b, return their sum without using the operators + and -.",
+        "nc54_sum_of_two_integers",
+      ),
+      Drill(
+        "Reverse Integer",
+        "Given a signed 32-bit integer x, return x with its digits reversed. If reversing it would fall outside the signed 32-bit range, return 0.",
+        "nc55_reverse_integer",
+      ),
+    ]),
     Group("Greedy", [
       Drill(
         "Maximum Subarray",

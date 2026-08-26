@@ -106,6 +106,28 @@ pub fn for_title(title: String) -> String {
     "Search in Rotated Sorted Array" ->
       "Binary search with a twist: after the rotation, one half around the midpoint is always sorted. Check which half is sorted, then use its endpoints to decide whether the target lies inside it \u{2014} recurse into that half or the other."
 
+    // Bit Manipulation
+    "Single Number" ->
+      "XOR is its own inverse and ignores order, so every value that appears twice cancels itself out wherever the copies sit and the lone one survives. One pass, constant space, and nothing assumed about the size or sign of the values. The arithmetic alternative \u{2014} twice the sum of the distinct values minus the real total \u{2014} says the same thing but depends on every other value appearing exactly twice."
+
+    "Number of 1 Bits" ->
+      "n & (n \u{2212} 1) clears the lowest set bit and touches nothing else, so counting takes one step per set bit rather than one per bit position. Worth having in the fingers: the same expression tests for a power of two. Shifting and testing the bottom bit is the plain alternative \u{2014} 32 steps whatever the input, and mind the sign on a right shift."
+
+    "Counting Bits" ->
+      "Every number is some smaller number with one more bit on the end, so count(i) is count(i >> 1) plus that final bit. Each answer is one lookup into work already done, which is what turns an O(n log n) sweep of popcounts into an O(n) pass."
+
+    "Reverse Bits" ->
+      "Peel the bottom bit off the input and push it onto the bottom of the result \u{2014} the first bit out is the last bit in. The trap is stopping early: the loop must run a fixed 32 times, because the leading zeros of a small input are exactly the trailing zeros the answer needs."
+
+    "Missing Number" ->
+      "XOR every value against every index it should have had. Present numbers meet their own index and cancel, leaving the missing one's index unpaired. The sum formula n(n+1)/2 minus the actual total is shorter and reads better, at the cost of an intermediate that can overflow where the XOR cannot."
+
+    "Sum of Two Integers" ->
+      "XOR is addition that forgets to carry, and AND finds exactly where a carry was owed \u{2014} shift that left one place and add it in the same way, until nothing is owed. In a language with fixed-width integers this just works; in one with arbitrary precision the negatives have to be masked into 32 bits or the carry never stops, and the sign read back by hand."
+
+    "Reverse Integer" ->
+      "Peel digits off the bottom of the input and push them onto the bottom of the result. The whole difficulty is the overflow test, which has to happen *before* the multiplication \u{2014} in a fixed-width language that multiply is the moment the value is destroyed, so a check afterwards is inspecting a number that no longer exists."
+
     // Greedy
     "Maximum Subarray" ->
       "Kadane. At each position the best subarray ending there either extends the one ending just before it or starts fresh, and the choice comes down to whether the running total has gone negative \u{2014} a negative prefix can only hurt whatever follows. The prefix-sum framing says the same thing differently: the best subarray ending at j is prefix[j] minus the smallest prefix before it. The answer is not clamped at zero."

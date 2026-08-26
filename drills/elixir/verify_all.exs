@@ -102,6 +102,20 @@ variants = [
   {"nc47_partition_labels", "Solution 2 · Expand end", "nc47_partition_labels__expand_end"},
   {"nc48_valid_parenthesis_string", "Solution 1", "nc48_valid_parenthesis_string"},
   {"nc48_valid_parenthesis_string", "Solution 2 · Two passes", "nc48_valid_parenthesis_string__two_passes"},
+  {"nc49_single_number", "Solution 1", "nc49_single_number"},
+  {"nc49_single_number", "Solution 2 · Sum of uniques", "nc49_single_number__sum_of_uniques"},
+  {"nc50_number_of_one_bits", "Solution 1", "nc50_number_of_one_bits"},
+  {"nc50_number_of_one_bits", "Solution 2 · Shift and test", "nc50_number_of_one_bits__shift_and_test"},
+  {"nc51_counting_bits", "Solution 1", "nc51_counting_bits"},
+  {"nc51_counting_bits", "Solution 2 · Popcount each", "nc51_counting_bits__popcount_each"},
+  {"nc52_reverse_bits", "Solution 1", "nc52_reverse_bits"},
+  {"nc52_reverse_bits", "Solution 2 · Via binary string", "nc52_reverse_bits__via_binary_string"},
+  {"nc53_missing_number", "Solution 1", "nc53_missing_number"},
+  {"nc53_missing_number", "Solution 2 · Gauss sum", "nc53_missing_number__gauss_sum"},
+  {"nc54_sum_of_two_integers", "Solution 1", "nc54_sum_of_two_integers"},
+  {"nc54_sum_of_two_integers", "Solution 2 · Full adder", "nc54_sum_of_two_integers__full_adder"},
+  {"nc55_reverse_integer", "Solution 1", "nc55_reverse_integer"},
+  {"nc55_reverse_integer", "Solution 2 · Via string", "nc55_reverse_integer__via_string"},
 ]
 
 root = Path.dirname(__ENV__.file)

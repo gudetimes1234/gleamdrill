@@ -5287,6 +5287,597 @@ pub fn run() -> List(#(String, String, String)) {
   )
 }
 
+pub fn nc49_single_number() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "XOR is its own inverse and does not care about order, so every value appearing twice cancels itself out wherever the two copies happen to sit, and the lone one is what is left. Constant space, one pass, and no reliance on the values being small or positive.", "import gleam/int
+import gleam/list
+
+pub fn single_number(nums: List(Int)) -> Int {
+  // XOR is its own inverse and does not care about order, so every value that
+  // appears twice cancels itself out and only the lone one survives.
+  list.fold(nums, 0, int.bitwise_exclusive_or)
+}"),
+      #("Solution 2 · Sum of uniques", "Twice the sum of the distinct values counts every pair twice and the lone value twice; subtracting the real total leaves the lone value. No bit tricks, but it leans harder on the promise that everything else appears exactly twice — three copies of something and it is wrong.", "import gleam/int
+import gleam/list
+
+pub fn single_number(nums: List(Int)) -> Int {
+  // Twice the sum of the distinct values counts every pair twice and the lone
+  // value twice; subtracting the real total leaves the lone value. No bit
+  // tricks, but it leans harder on the promise that everything else is a pair.
+  2 * int.sum(list.unique(nums)) - int.sum(nums)
+}"),
+    ],
+    check: Check(
+      signature: "pub fn single_number(nums: List(Int)) -> Int",
+      starter: "pub fn single_number(nums: List(Int)) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"single_number([2, 2, 1])\",
+      string.inspect(1),
+      string.inspect(solution.single_number([2, 2, 1])),
+    ),
+    #(
+      \"single_number([4, 1, 2, 1, 2])\",
+      string.inspect(4),
+      string.inspect(solution.single_number([4, 1, 2, 1, 2])),
+    ),
+    #(
+      \"single_number([1])\",
+      string.inspect(1),
+      string.inspect(solution.single_number([1])),
+    ),
+    #(
+      \"single_number([-1, -1, -3])\",
+      string.inspect(-3),
+      string.inspect(solution.single_number([-1, -1, -3])),
+    ),
+    #(
+      \"single_number([0, 1, 1])\",
+      string.inspect(0),
+      string.inspect(solution.single_number([0, 1, 1])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc50_number_of_one_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "n & (n − 1) clears the lowest set bit and touches nothing else, so the loop runs once per one bit rather than once per bit position. Worth having in the fingers: the same trick tests for powers of two, and shows up in half the bit problems there are.", "import gleam/int
+
+pub fn hamming_weight(n: Int) -> Int {
+  // n & (n - 1) clears the lowest set bit and nothing else, so the loop runs
+  // once per one bit rather than once per bit position.
+  case n {
+    0 -> 0
+    _ -> 1 + hamming_weight(int.bitwise_and(n, n - 1))
+  }
+}"),
+      #("Solution 2 · Shift and test", "One step per bit position rather than per set bit: 32 iterations whatever the input, but nothing to remember beyond \"look at the bottom bit, shift\". In a fixed-width language mind the shift — an arithmetic right shift on a negative number never terminates.", "import gleam/int
+
+pub fn hamming_weight(n: Int) -> Int {
+  count(n, 0)
+}
+
+/// One step per bit position rather than per set bit: 32 iterations whatever
+/// the input, but nothing to remember beyond \"look at the bottom bit, shift\".
+fn count(n: Int, total: Int) -> Int {
+  case n <= 0 {
+    True -> total
+    False -> count(int.bitwise_shift_right(n, 1), total + int.bitwise_and(n, 1))
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn hamming_weight(n: Int) -> Int",
+      starter: "pub fn hamming_weight(n: Int) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"hamming_weight(11)\",
+      string.inspect(3),
+      string.inspect(solution.hamming_weight(11)),
+    ),
+    #(
+      \"hamming_weight(128)\",
+      string.inspect(1),
+      string.inspect(solution.hamming_weight(128)),
+    ),
+    #(
+      \"hamming_weight(0)\",
+      string.inspect(0),
+      string.inspect(solution.hamming_weight(0)),
+    ),
+    #(
+      \"hamming_weight(2147483645)\",
+      string.inspect(30),
+      string.inspect(solution.hamming_weight(2_147_483_645)),
+    ),
+    #(
+      \"hamming_weight(1)\",
+      string.inspect(1),
+      string.inspect(solution.hamming_weight(1)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc51_counting_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Every number is some smaller number with one more bit stuck on the end, so count(i) is count(i >> 1) plus that last bit. Each answer costs a single lookup into what has already been computed, which is what makes the whole array O(n) rather than O(n log n).", "import gleam/dict
+import gleam/int
+import gleam/list
+import gleam/result
+
+pub fn count_bits(n: Int) -> List(Int) {
+  let indices = list.index_map(list.repeat(Nil, n + 1), fn(_, i) { i })
+
+  // Every number is some smaller number with one extra bit on the end:
+  // count(i) is count(i >> 1) plus whatever that last bit is. Each answer costs
+  // one lookup, so the whole array is O(n).
+  let counts =
+    list.fold(indices, dict.new(), fn(acc, i) {
+      let value = case i {
+        0 -> 0
+        _ ->
+          result.unwrap(dict.get(acc, int.bitwise_shift_right(i, 1)), 0)
+          + int.bitwise_and(i, 1)
+      }
+      dict.insert(acc, i, value)
+    })
+
+  list.map(indices, fn(i) { result.unwrap(dict.get(counts, i), 0) })
+}"),
+      #("Solution 2 · Popcount each", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Each number counted from scratch with the clear-lowest-bit trick. O(n log n), and it remembers nothing between numbers — which is precisely the redundancy the dynamic version exploits.", "import gleam/int
+import gleam/list
+
+pub fn count_bits(n: Int) -> List(Int) {
+  list.repeat(Nil, n + 1)
+  |> list.index_map(fn(_, i) { popcount(i) })
+}
+
+/// Each number counted from scratch with the clear-lowest-bit trick. O(n log n)
+/// against the dynamic version's O(n), and it remembers nothing between
+/// numbers \\u{2014} which is exactly what the other one exploits.
+fn popcount(n: Int) -> Int {
+  case n {
+    0 -> 0
+    _ -> 1 + popcount(int.bitwise_and(n, n - 1))
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn count_bits(n: Int) -> List(Int)",
+      starter: "pub fn count_bits(n: Int) -> List(Int) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"count_bits(5)\",
+      string.inspect([0, 1, 1, 2, 1, 2]),
+      string.inspect(solution.count_bits(5)),
+    ),
+    #(
+      \"count_bits(2)\",
+      string.inspect([0, 1, 1]),
+      string.inspect(solution.count_bits(2)),
+    ),
+    #(
+      \"count_bits(0)\",
+      string.inspect([0]),
+      string.inspect(solution.count_bits(0)),
+    ),
+    #(
+      \"count_bits(8)\",
+      string.inspect([0, 1, 1, 2, 1, 2, 2, 3, 1]),
+      string.inspect(solution.count_bits(8)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc52_reverse_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Peel the bottom bit off the input and push it onto the bottom of the result: the first bit out is the last bit in. Fixed at 32 rounds, because the width is part of the problem rather than a property of the value — stopping when the input hits zero silently drops the leading zeros that should have become trailing ones.", "import gleam/int
+import gleam/list
+
+pub fn reverse_bits(n: Int) -> Int {
+  // Peel the bottom bit off the input and push it onto the bottom of the
+  // result: the first bit out is the last bit in. Fixed at 32 rounds, because
+  // the width is part of the problem rather than a property of the value.
+  let #(_, reversed) =
+    list.fold(list.repeat(Nil, 32), #(n, 0), fn(state, _) {
+      let #(remaining, reversed) = state
+      #(
+        int.bitwise_shift_right(remaining, 1),
+        int.bitwise_or(
+          int.bitwise_shift_left(reversed, 1),
+          int.bitwise_and(remaining, 1),
+        ),
+      )
+    })
+  reversed
+}"),
+      #("Solution 2 · Via binary string", "Write the number in binary, pad to the full width, reverse the text, read it back. Slower and it allocates, but the explicit padding makes the thing the bit version keeps implicit — that the width is 32, not however many bits this value happens to need — impossible to forget.", "import gleam/int
+import gleam/list
+import gleam/result
+import gleam/string
+
+pub fn reverse_bits(n: Int) -> Int {
+  // Write the number out in binary, pad to the full width, reverse the text,
+  // read it back. Slower and allocates, but the padding makes the thing the
+  // bit version keeps implicit \\u{2014} that the width is 32, not however many bits
+  // this particular value happens to need \\u{2014} impossible to forget.
+  let bits = int.to_base_string(n, 2) |> result.unwrap(\"0\")
+  let padded = string.repeat(\"0\", 32 - string.length(bits)) <> bits
+
+  padded
+  |> string.to_graphemes
+  |> list.reverse
+  |> string.concat
+  |> int.base_parse(2)
+  |> result.unwrap(0)
+}"),
+    ],
+    check: Check(
+      signature: "pub fn reverse_bits(n: Int) -> Int",
+      starter: "pub fn reverse_bits(n: Int) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"reverse_bits(43261596)\",
+      string.inspect(964_176_192),
+      string.inspect(solution.reverse_bits(43_261_596)),
+    ),
+    #(
+      \"reverse_bits(4294967293)\",
+      string.inspect(3_221_225_471),
+      string.inspect(solution.reverse_bits(4_294_967_293)),
+    ),
+    #(
+      \"reverse_bits(0)\",
+      string.inspect(0),
+      string.inspect(solution.reverse_bits(0)),
+    ),
+    #(
+      \"reverse_bits(1)\",
+      string.inspect(2_147_483_648),
+      string.inspect(solution.reverse_bits(1)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc53_missing_number() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "XOR every value against every index it should have had. Each present number meets its own index and cancels, so the missing one leaves its index without a partner and that index survives. No sum, so nothing can overflow.", "import gleam/int
+import gleam/list
+
+pub fn missing_number(nums: List(Int)) -> Int {
+  // XOR every value against every index it should have had. Each present number
+  // meets its own index and cancels; the missing one has an index with no
+  // partner, so that index is what survives.
+  let with_indices =
+    list.index_fold(nums, 0, fn(acc, n, i) {
+      int.bitwise_exclusive_or(int.bitwise_exclusive_or(acc, n), i)
+    })
+  int.bitwise_exclusive_or(with_indices, list.length(nums))
+}"),
+      #("Solution 2 · Gauss sum", "The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap between that and the actual total is the missing value. Shorter than the XOR version, and the trade worth knowing: in a fixed-width language it overflows on inputs the XOR version handles without complaint.", "import gleam/int
+import gleam/list
+
+pub fn missing_number(nums: List(Int)) -> Int {
+  // The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap
+  // between that and the actual total is the missing value. One multiplication
+  // instead of a pass of XORs \\u{2014} but it overflows on inputs the XOR version
+  // handles fine, which is the trade worth knowing.
+  let n = list.length(nums)
+  n * { n + 1 } / 2 - int.sum(nums)
+}"),
+    ],
+    check: Check(
+      signature: "pub fn missing_number(nums: List(Int)) -> Int",
+      starter: "pub fn missing_number(nums: List(Int)) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"missing_number([3, 0, 1])\",
+      string.inspect(2),
+      string.inspect(solution.missing_number([3, 0, 1])),
+    ),
+    #(
+      \"missing_number([0, 1])\",
+      string.inspect(2),
+      string.inspect(solution.missing_number([0, 1])),
+    ),
+    #(
+      \"missing_number([9, 6, 4, 2, 3, 5, 7, 0, 1])\",
+      string.inspect(8),
+      string.inspect(solution.missing_number([9, 6, 4, 2, 3, 5, 7, 0, 1])),
+    ),
+    #(
+      \"missing_number([0])\",
+      string.inspect(1),
+      string.inspect(solution.missing_number([0])),
+    ),
+    #(
+      \"missing_number([1])\",
+      string.inspect(0),
+      string.inspect(solution.missing_number([1])),
+    ),
+    #(
+      \"missing_number([])\",
+      string.inspect(0),
+      string.inspect(solution.missing_number([])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc54_sum_of_two_integers() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Addition without +. XOR is addition that forgets to carry; AND finds exactly the places a carry was owed, and shifting it left one puts it where it belongs. Repeat until nothing is owed. In an arbitrary-precision language the negatives are the difficulty: mask to 32 bits so the carry loop terminates, then read the sign bit back by hand.", "import gleam/int
+
+const mask = 0xFFFFFFFF
+
+const largest = 0x7FFFFFFF
+
+pub fn get_sum(a: Int, b: Int) -> Int {
+  // Addition without +. XOR is addition that forgets to carry; AND finds
+  // exactly the places a carry was owed, and shifting it left one puts it where
+  // it belongs. Repeat until nothing is owed.
+  let result = add(int.bitwise_and(a, mask), int.bitwise_and(b, mask))
+  case result <= largest {
+    True -> result
+    // Gleam integers are arbitrary precision, so negatives have to be put back
+    // by hand: a 32-bit pattern above the signed maximum is a negative number.
+    False -> int.bitwise_not(int.bitwise_exclusive_or(result, mask))
+  }
+}
+
+fn add(a: Int, b: Int) -> Int {
+  case b {
+    0 -> a
+    _ ->
+      add(
+        int.bitwise_and(int.bitwise_exclusive_or(a, b), mask),
+        int.bitwise_and(int.bitwise_shift_left(int.bitwise_and(a, b), 1), mask),
+      )
+  }
+}"),
+      #("Solution 2 · Full adder", "The same addition written as hardware: thirty-two full adders in a row, each taking two input bits and a carry and producing a sum bit and a carry out. Slower than the XOR loop, which stops as soon as no carries remain, but it is where the XOR loop comes from — and it never uses arithmetic at all.", "import gleam/int
+import gleam/list
+
+const mask = 0xFFFFFFFF
+
+const largest = 0x7FFFFFFF
+
+pub fn get_sum(a: Int, b: Int) -> Int {
+  // The same addition written as hardware: thirty-two full adders in a row,
+  // each taking two input bits and a carry and producing a sum bit and a carry
+  // out. Slower than the XOR loop, which stops as soon as no carries are left,
+  // but it is where the XOR loop comes from.
+  let positions = list.index_map(list.repeat(Nil, 32), fn(_, i) { i })
+
+  let #(result, _carry) =
+    list.fold(positions, #(0, 0), fn(state, i) {
+      let #(result, carry) = state
+      let x = bit(a, i)
+      let y = bit(b, i)
+      let xor = int.bitwise_exclusive_or(x, y)
+      #(
+        int.bitwise_or(
+          result,
+          int.bitwise_shift_left(int.bitwise_exclusive_or(xor, carry), i),
+        ),
+        int.bitwise_or(int.bitwise_and(x, y), int.bitwise_and(carry, xor)),
+      )
+    })
+
+  case result <= largest {
+    True -> result
+    False -> int.bitwise_not(int.bitwise_exclusive_or(result, mask))
+  }
+}
+
+fn bit(value: Int, at: Int) -> Int {
+  int.bitwise_and(int.bitwise_shift_right(value, at), 1)
+}"),
+    ],
+    check: Check(
+      signature: "pub fn get_sum(a: Int, b: Int) -> Int",
+      starter: "pub fn get_sum(a: Int, b: Int) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"get_sum(1, 2)\",
+      string.inspect(3),
+      string.inspect(solution.get_sum(1, 2)),
+    ),
+    #(
+      \"get_sum(2, 3)\",
+      string.inspect(5),
+      string.inspect(solution.get_sum(2, 3)),
+    ),
+    #(
+      \"get_sum(-1, 1)\",
+      string.inspect(0),
+      string.inspect(solution.get_sum(-1, 1)),
+    ),
+    #(
+      \"get_sum(-2, -3)\",
+      string.inspect(-5),
+      string.inspect(solution.get_sum(-2, -3)),
+    ),
+    #(
+      \"get_sum(0, 0)\",
+      string.inspect(0),
+      string.inspect(solution.get_sum(0, 0)),
+    ),
+    #(
+      \"get_sum(-1, -1)\",
+      string.inspect(-2),
+      string.inspect(solution.get_sum(-1, -1)),
+    ),
+    #(
+      \"get_sum(5, -3)\",
+      string.inspect(2),
+      string.inspect(solution.get_sum(5, -3)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc55_reverse_integer() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Peel a digit off the bottom of the input and push it onto the bottom of the result. The whole difficulty is that the test has to happen *before* the multiply: in a fixed-width language the multiply is the moment the value would be lost, so checking afterwards is checking a number that no longer exists.", "const largest = 2_147_483_647
+
+const smallest = -2_147_483_648
+
+pub fn reverse(x: Int) -> Int {
+  build(x, 0)
+}
+
+/// Peel a digit off the bottom of the input and push it onto the bottom of the
+/// result. The overflow test has to happen *before* the multiply, because in a
+/// fixed-width language the multiply is where the value would be lost.
+fn build(remaining: Int, result: Int) -> Int {
+  case remaining {
+    0 -> result
+    _ -> {
+      let digit = remaining % 10
+      case result > largest / 10 || result < smallest / 10 {
+        True -> 0
+        False -> build(remaining / 10, result * 10 + digit)
+      }
+    }
+  }
+}"),
+      #("Solution 2 · Via string", "Reverse the digits as text and read them back. It cannot overflow along the way, so the range check is a plain comparison at the end — which is honest here and dishonest in C, and worth being able to say which language you are in when you offer it.", "import gleam/int
+import gleam/list
+import gleam/result
+import gleam/string
+
+const largest = 2_147_483_647
+
+const smallest = -2_147_483_648
+
+pub fn reverse(x: Int) -> Int {
+  let digits =
+    int.absolute_value(x)
+    |> int.to_string
+    |> string.to_graphemes
+    |> list.reverse
+    |> string.concat
+
+  let magnitude = digits |> int.parse |> result.unwrap(0)
+  let signed = case x < 0 {
+    True -> -magnitude
+    False -> magnitude
+  }
+
+  // Reversing the text cannot overflow here, so the range check is a plain
+  // comparison at the end rather than a guard inside the loop \\u{2014} which is only
+  // safe because the value is not held in 32 bits along the way.
+  case signed > largest || signed < smallest {
+    True -> 0
+    False -> signed
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn reverse(x: Int) -> Int",
+      starter: "pub fn reverse(x: Int) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"reverse(123)\",
+      string.inspect(321),
+      string.inspect(solution.reverse(123)),
+    ),
+    #(
+      \"reverse(-123)\",
+      string.inspect(-321),
+      string.inspect(solution.reverse(-123)),
+    ),
+    #(\"reverse(120)\", string.inspect(21), string.inspect(solution.reverse(120))),
+    #(\"reverse(0)\", string.inspect(0), string.inspect(solution.reverse(0))),
+    #(
+      \"reverse(1534236469)\",
+      string.inspect(0),
+      string.inspect(solution.reverse(1_534_236_469)),
+    ),
+    #(
+      \"reverse(-2147483648)\",
+      string.inspect(0),
+      string.inspect(solution.reverse(-2_147_483_648)),
+    ),
+    #(
+      \"reverse(1463847412)\",
+      string.inspect(2_147_483_641),
+      string.inspect(solution.reverse(1_463_847_412)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
 pub fn tip01_list_patterns() -> Embedded {
   Embedded(
     solutions: [
@@ -6102,6 +6693,13 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc46_merge_triplets" -> Ok(nc46_merge_triplets())
     "nc47_partition_labels" -> Ok(nc47_partition_labels())
     "nc48_valid_parenthesis_string" -> Ok(nc48_valid_parenthesis_string())
+    "nc49_single_number" -> Ok(nc49_single_number())
+    "nc50_number_of_one_bits" -> Ok(nc50_number_of_one_bits())
+    "nc51_counting_bits" -> Ok(nc51_counting_bits())
+    "nc52_reverse_bits" -> Ok(nc52_reverse_bits())
+    "nc53_missing_number" -> Ok(nc53_missing_number())
+    "nc54_sum_of_two_integers" -> Ok(nc54_sum_of_two_integers())
+    "nc55_reverse_integer" -> Ok(nc55_reverse_integer())
     "tip01_list_patterns" -> Ok(tip01_list_patterns())
     "tip02_tail_recursion" -> Ok(tip02_tail_recursion())
     "tip03_fold" -> Ok(tip03_fold())

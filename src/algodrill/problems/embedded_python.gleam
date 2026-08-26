@@ -2883,6 +2883,341 @@ __case__(\"checkValidString('(*()')\", True, checkValidString('(*()'))",
   )
 }
 
+pub fn nc49_single_number() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "XOR is its own inverse and does not care about order, so every value appearing twice cancels itself out wherever the two copies happen to sit, and the lone one is what is left. Constant space, one pass, and no reliance on the values being small or positive.", "def singleNumber(nums):
+    # XOR is its own inverse and does not care about order, so every value that
+    # appears twice cancels itself out and only the lone one survives.
+    result = 0
+    for n in nums:
+        result ^= n
+    return result"),
+      #("Solution 2 · Sum of uniques", "Twice the sum of the distinct values counts every pair twice and the lone value twice; subtracting the real total leaves the lone value. No bit tricks, but it leans harder on the promise that everything else appears exactly twice — three copies of something and it is wrong.", "def singleNumber(nums):
+    # Twice the sum of the distinct values counts every pair twice and the lone
+    # value twice; subtracting the real total leaves the lone value. No bit
+    # tricks, but it leans harder on the promise that everything else is a pair.
+    return 2 * sum(set(nums)) - sum(nums)"),
+    ],
+    check: Check(
+      signature: "def singleNumber(nums):",
+      starter: "def singleNumber(nums):
+    pass",
+      harness: "try:
+    (singleNumber)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"singleNumber([2, 2, 1])\", 1, singleNumber([2, 2, 1]))
+__case__(\"singleNumber([4, 1, 2, 1, 2])\", 4, singleNumber([4, 1, 2, 1, 2]))
+__case__(\"singleNumber([1])\", 1, singleNumber([1]))
+__case__(\"singleNumber([-1, -1, -3])\", -3, singleNumber([-1, -1, -3]))
+__case__(\"singleNumber([0, 1, 1])\", 0, singleNumber([0, 1, 1]))",
+    ),
+  )
+}
+
+pub fn nc50_number_of_one_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "n & (n − 1) clears the lowest set bit and touches nothing else, so the loop runs once per one bit rather than once per bit position. Worth having in the fingers: the same trick tests for powers of two, and shows up in half the bit problems there are.", "def hammingWeight(n):
+    # n & (n - 1) clears the lowest set bit and nothing else, so the loop runs
+    # once per one bit rather than once per bit position.
+    count = 0
+    while n:
+        n &= n - 1
+        count += 1
+    return count"),
+      #("Solution 2 · Shift and test", "One step per bit position rather than per set bit: 32 iterations whatever the input, but nothing to remember beyond \"look at the bottom bit, shift\". In a fixed-width language mind the shift — an arithmetic right shift on a negative number never terminates.", "def hammingWeight(n):
+    # One step per bit position rather than per set bit: 32 iterations whatever
+    # the input, but nothing to remember beyond \"look at the bottom bit, shift\".
+    count = 0
+    while n > 0:
+        count += n & 1
+        n >>= 1
+    return count"),
+    ],
+    check: Check(
+      signature: "def hammingWeight(n):",
+      starter: "def hammingWeight(n):
+    pass",
+      harness: "try:
+    (hammingWeight)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"hammingWeight(11)\", 3, hammingWeight(11))
+__case__(\"hammingWeight(128)\", 1, hammingWeight(128))
+__case__(\"hammingWeight(0)\", 0, hammingWeight(0))
+__case__(\"hammingWeight(2147483645)\", 30, hammingWeight(2147483645))
+__case__(\"hammingWeight(1)\", 1, hammingWeight(1))",
+    ),
+  )
+}
+
+pub fn nc51_counting_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Every number is some smaller number with one more bit stuck on the end, so count(i) is count(i >> 1) plus that last bit. Each answer costs a single lookup into what has already been computed, which is what makes the whole array O(n) rather than O(n log n).", "def countBits(n):
+    # Every number is some smaller number with one extra bit on the end:
+    # count(i) is count(i >> 1) plus whatever that last bit is. Each answer
+    # costs one lookup, so the whole array is O(n).
+    counts = [0] * (n + 1)
+    for i in range(1, n + 1):
+        counts[i] = counts[i >> 1] + (i & 1)
+    return counts"),
+      #("Solution 2 · Popcount each", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Each number counted from scratch with the clear-lowest-bit trick. O(n log n), and it remembers nothing between numbers — which is precisely the redundancy the dynamic version exploits.", "def countBits(n):
+    return [popcount(i) for i in range(n + 1)]
+
+
+# Each number counted from scratch with the clear-lowest-bit trick. O(n log n)
+# against the dynamic version's O(n), and it remembers nothing between numbers
+# -- which is exactly what the other one exploits.
+def popcount(n):
+    count = 0
+    while n:
+        n &= n - 1
+        count += 1
+    return count"),
+    ],
+    check: Check(
+      signature: "def countBits(n):",
+      starter: "def countBits(n):
+    pass",
+      harness: "try:
+    (countBits)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"countBits(5)\", [0, 1, 1, 2, 1, 2], countBits(5))
+__case__(\"countBits(2)\", [0, 1, 1], countBits(2))
+__case__(\"countBits(0)\", [0], countBits(0))
+__case__(\"countBits(8)\", [0, 1, 1, 2, 1, 2, 2, 3, 1], countBits(8))",
+    ),
+  )
+}
+
+pub fn nc52_reverse_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Peel the bottom bit off the input and push it onto the bottom of the result: the first bit out is the last bit in. Fixed at 32 rounds, because the width is part of the problem rather than a property of the value — stopping when the input hits zero silently drops the leading zeros that should have become trailing ones.", "def reverseBits(n):
+    # Peel the bottom bit off the input and push it onto the bottom of the
+    # result: the first bit out is the last bit in. Fixed at 32 rounds, because
+    # the width is part of the problem rather than a property of the value.
+    reversed_bits = 0
+    for _ in range(32):
+        reversed_bits = (reversed_bits << 1) | (n & 1)
+        n >>= 1
+    return reversed_bits"),
+      #("Solution 2 · Via binary string", "Write the number in binary, pad to the full width, reverse the text, read it back. Slower and it allocates, but the explicit padding makes the thing the bit version keeps implicit — that the width is 32, not however many bits this value happens to need — impossible to forget.", "def reverseBits(n):
+    # Write the number out in binary, pad to the full width, reverse the text,
+    # read it back. Slower and allocates, but the padding makes the thing the
+    # bit version keeps implicit -- that the width is 32, not however many bits
+    # this particular value happens to need -- impossible to forget.
+    return int(format(n, \"032b\")[::-1], 2)"),
+    ],
+    check: Check(
+      signature: "def reverseBits(n):",
+      starter: "def reverseBits(n):
+    pass",
+      harness: "try:
+    (reverseBits)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"reverseBits(43261596)\", 964176192, reverseBits(43261596))
+__case__(\"reverseBits(4294967293)\", 3221225471, reverseBits(4294967293))
+__case__(\"reverseBits(0)\", 0, reverseBits(0))
+__case__(\"reverseBits(1)\", 2147483648, reverseBits(1))",
+    ),
+  )
+}
+
+pub fn nc53_missing_number() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "XOR every value against every index it should have had. Each present number meets its own index and cancels, so the missing one leaves its index without a partner and that index survives. No sum, so nothing can overflow.", "def missingNumber(nums):
+    # XOR every value against every index it should have had. Each present
+    # number meets its own index and cancels; the missing one has an index with
+    # no partner, so that index is what survives.
+    result = len(nums)
+    for i, n in enumerate(nums):
+        result ^= i ^ n
+    return result"),
+      #("Solution 2 · Gauss sum", "The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap between that and the actual total is the missing value. Shorter than the XOR version, and the trade worth knowing: in a fixed-width language it overflows on inputs the XOR version handles without complaint.", "def missingNumber(nums):
+    # The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap
+    # between that and the actual total is the missing value. One multiplication
+    # instead of a pass of XORs -- but in a fixed-width language it overflows on
+    # inputs the XOR version handles fine, which is the trade worth knowing.
+    n = len(nums)
+    return n * (n + 1) // 2 - sum(nums)"),
+    ],
+    check: Check(
+      signature: "def missingNumber(nums):",
+      starter: "def missingNumber(nums):
+    pass",
+      harness: "try:
+    (missingNumber)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"missingNumber([3, 0, 1])\", 2, missingNumber([3, 0, 1]))
+__case__(\"missingNumber([0, 1])\", 2, missingNumber([0, 1]))
+__case__(\"missingNumber([9, 6, 4, 2, 3, 5, 7, 0, 1])\", 8, missingNumber([9, 6, 4, 2, 3, 5, 7, 0, 1]))
+__case__(\"missingNumber([0])\", 1, missingNumber([0]))
+__case__(\"missingNumber([1])\", 0, missingNumber([1]))
+__case__(\"missingNumber([])\", 0, missingNumber([]))",
+    ),
+  )
+}
+
+pub fn nc54_sum_of_two_integers() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Addition without +. XOR is addition that forgets to carry; AND finds exactly the places a carry was owed, and shifting it left one puts it where it belongs. Repeat until nothing is owed. In an arbitrary-precision language the negatives are the difficulty: mask to 32 bits so the carry loop terminates, then read the sign bit back by hand.", "MASK = 0xFFFFFFFF
+LARGEST = 0x7FFFFFFF
+
+
+def getSum(a, b):
+    # Addition without +. XOR is addition that forgets to carry; AND finds
+    # exactly the places a carry was owed, and shifting it left one puts it
+    # where it belongs. Repeat until nothing is owed.
+    a &= MASK
+    b &= MASK
+    while b:
+        carry = ((a & b) << 1) & MASK
+        a = (a ^ b) & MASK
+        b = carry
+
+    # Python integers are arbitrary precision, so negatives have to be put back
+    # by hand: a 32-bit pattern above the signed maximum is a negative number.
+    return a if a <= LARGEST else ~(a ^ MASK)"),
+      #("Solution 2 · Full adder", "The same addition written as hardware: thirty-two full adders in a row, each taking two input bits and a carry and producing a sum bit and a carry out. Slower than the XOR loop, which stops as soon as no carries remain, but it is where the XOR loop comes from — and it never uses arithmetic at all.", "MASK = 0xFFFFFFFF
+LARGEST = 0x7FFFFFFF
+
+
+def getSum(a, b):
+    # The same addition written as hardware: thirty-two full adders in a row,
+    # each taking two input bits and a carry and producing a sum bit and a carry
+    # out. Slower than the XOR loop, which stops as soon as no carries are left,
+    # but it is where the XOR loop comes from.
+    result = 0
+    carry = 0
+
+    for i in range(32):
+        x = (a >> i) & 1
+        y = (b >> i) & 1
+        xor = x ^ y
+        result |= (xor ^ carry) << i
+        carry = (x & y) | (carry & xor)
+
+    return result if result <= LARGEST else ~(result ^ MASK)"),
+    ],
+    check: Check(
+      signature: "def getSum(a, b):",
+      starter: "def getSum(a, b):
+    pass",
+      harness: "try:
+    (getSum)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"getSum(1, 2)\", 3, getSum(1, 2))
+__case__(\"getSum(2, 3)\", 5, getSum(2, 3))
+__case__(\"getSum(-1, 1)\", 0, getSum(-1, 1))
+__case__(\"getSum(-2, -3)\", -5, getSum(-2, -3))
+__case__(\"getSum(0, 0)\", 0, getSum(0, 0))
+__case__(\"getSum(-1, -1)\", -2, getSum(-1, -1))
+__case__(\"getSum(5, -3)\", 2, getSum(5, -3))",
+    ),
+  )
+}
+
+pub fn nc55_reverse_integer() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Peel a digit off the bottom of the input and push it onto the bottom of the result. The whole difficulty is that the test has to happen *before* the multiply: in a fixed-width language the multiply is the moment the value would be lost, so checking afterwards is checking a number that no longer exists.", "LARGEST = 2147483647
+SMALLEST = -2147483648
+
+
+def reverse(x):
+    # Peel a digit off the bottom of the input and push it onto the bottom of
+    # the result. The overflow test has to happen *before* the multiply, because
+    # in a fixed-width language the multiply is where the value would be lost.
+    sign = -1 if x < 0 else 1
+    remaining = abs(x)
+    result = 0
+
+    while remaining:
+        if result > LARGEST // 10:
+            return 0
+        result = result * 10 + remaining % 10
+        remaining //= 10
+
+    result *= sign
+    return 0 if result > LARGEST or result < SMALLEST else result"),
+      #("Solution 2 · Via string", "Reverse the digits as text and read them back. It cannot overflow along the way, so the range check is a plain comparison at the end — which is honest here and dishonest in C, and worth being able to say which language you are in when you offer it.", "LARGEST = 2147483647
+SMALLEST = -2147483648
+
+
+def reverse(x):
+    # Reversing the text cannot overflow here, so the range check is a plain
+    # comparison at the end rather than a guard inside the loop -- which is only
+    # safe because the value is not held in 32 bits along the way.
+    magnitude = int(str(abs(x))[::-1])
+    result = -magnitude if x < 0 else magnitude
+    return 0 if result > LARGEST or result < SMALLEST else result"),
+    ],
+    check: Check(
+      signature: "def reverse(x):",
+      starter: "def reverse(x):
+    pass",
+      harness: "try:
+    (reverse)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"reverse(123)\", 321, reverse(123))
+__case__(\"reverse(-123)\", -321, reverse(-123))
+__case__(\"reverse(120)\", 21, reverse(120))
+__case__(\"reverse(0)\", 0, reverse(0))
+__case__(\"reverse(1534236469)\", 0, reverse(1534236469))
+__case__(\"reverse(-2147483648)\", 0, reverse(-2147483648))
+__case__(\"reverse(1463847412)\", 2147483641, reverse(1463847412))",
+    ),
+  )
+}
+
 pub fn tip01_counter() -> Embedded {
   Embedded(
     solutions: [
@@ -3305,6 +3640,13 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc46_merge_triplets" -> Ok(nc46_merge_triplets())
     "nc47_partition_labels" -> Ok(nc47_partition_labels())
     "nc48_valid_parenthesis_string" -> Ok(nc48_valid_parenthesis_string())
+    "nc49_single_number" -> Ok(nc49_single_number())
+    "nc50_number_of_one_bits" -> Ok(nc50_number_of_one_bits())
+    "nc51_counting_bits" -> Ok(nc51_counting_bits())
+    "nc52_reverse_bits" -> Ok(nc52_reverse_bits())
+    "nc53_missing_number" -> Ok(nc53_missing_number())
+    "nc54_sum_of_two_integers" -> Ok(nc54_sum_of_two_integers())
+    "nc55_reverse_integer" -> Ok(nc55_reverse_integer())
     "tip01_counter" -> Ok(tip01_counter())
     "tip02_defaultdict" -> Ok(tip02_defaultdict())
     "tip03_deque" -> Ok(tip03_deque())

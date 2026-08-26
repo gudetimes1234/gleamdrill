@@ -1,0 +1,2 @@
+@shared/brute-force-baseline
+Each number counted from scratch with the clear-lowest-bit trick. O(n log n), and it remembers nothing between numbers — which is precisely the redundancy the dynamic version exploits.

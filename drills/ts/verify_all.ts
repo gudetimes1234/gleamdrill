@@ -99,6 +99,20 @@ import * as v94 from "./.verify/nc47_partition_labels/harness";
 import * as v95 from "./.verify/nc47_partition_labels__expand_end/harness";
 import * as v96 from "./.verify/nc48_valid_parenthesis_string/harness";
 import * as v97 from "./.verify/nc48_valid_parenthesis_string__two_passes/harness";
+import * as v98 from "./.verify/nc49_single_number/harness";
+import * as v99 from "./.verify/nc49_single_number__sum_of_uniques/harness";
+import * as v100 from "./.verify/nc50_number_of_one_bits/harness";
+import * as v101 from "./.verify/nc50_number_of_one_bits__shift_and_test/harness";
+import * as v102 from "./.verify/nc51_counting_bits/harness";
+import * as v103 from "./.verify/nc51_counting_bits__popcount_each/harness";
+import * as v104 from "./.verify/nc52_reverse_bits/harness";
+import * as v105 from "./.verify/nc52_reverse_bits__via_binary_string/harness";
+import * as v106 from "./.verify/nc53_missing_number/harness";
+import * as v107 from "./.verify/nc53_missing_number__gauss_sum/harness";
+import * as v108 from "./.verify/nc54_sum_of_two_integers/harness";
+import * as v109 from "./.verify/nc54_sum_of_two_integers__full_adder/harness";
+import * as v110 from "./.verify/nc55_reverse_integer/harness";
+import * as v111 from "./.verify/nc55_reverse_integer__via_string/harness";
 
 type Case = [string, string, string];
 
@@ -201,6 +215,20 @@ const VARIANTS: [string, string, () => Case[]][] = [
   ["nc47_partition_labels", "Solution 2 · Expand end", v95.run],
   ["nc48_valid_parenthesis_string", "Solution 1", v96.run],
   ["nc48_valid_parenthesis_string", "Solution 2 · Two passes", v97.run],
+  ["nc49_single_number", "Solution 1", v98.run],
+  ["nc49_single_number", "Solution 2 · Sum of uniques", v99.run],
+  ["nc50_number_of_one_bits", "Solution 1", v100.run],
+  ["nc50_number_of_one_bits", "Solution 2 · Shift and test", v101.run],
+  ["nc51_counting_bits", "Solution 1", v102.run],
+  ["nc51_counting_bits", "Solution 2 · Popcount each", v103.run],
+  ["nc52_reverse_bits", "Solution 1", v104.run],
+  ["nc52_reverse_bits", "Solution 2 · Via binary string", v105.run],
+  ["nc53_missing_number", "Solution 1", v106.run],
+  ["nc53_missing_number", "Solution 2 · Gauss sum", v107.run],
+  ["nc54_sum_of_two_integers", "Solution 1", v108.run],
+  ["nc54_sum_of_two_integers", "Solution 2 · Full adder", v109.run],
+  ["nc55_reverse_integer", "Solution 1", v110.run],
+  ["nc55_reverse_integer", "Solution 2 · Via string", v111.run],
 ];
 
 const failures: string[] = [];

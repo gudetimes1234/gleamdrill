@@ -2241,6 +2241,232 @@ end"),
   ]
 }
 
+pub fn nc49_single_number() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "XOR is its own inverse and does not care about order, so every value appearing twice cancels itself out wherever the two copies happen to sit, and the lone one is what is left. Constant space, one pass, and no reliance on the values being small or positive.", "defmodule Solution do
+  import Bitwise
+
+  # XOR is its own inverse and does not care about order, so every value that
+  # appears twice cancels itself out and only the lone one survives.
+  def single_number(nums), do: Enum.reduce(nums, 0, &bxor/2)
+end"),
+    #("Solution 2 · Sum of uniques", "Twice the sum of the distinct values counts every pair twice and the lone value twice; subtracting the real total leaves the lone value. No bit tricks, but it leans harder on the promise that everything else appears exactly twice — three copies of something and it is wrong.", "defmodule Solution do
+  # Twice the sum of the distinct values counts every pair twice and the lone
+  # value twice; subtracting the real total leaves the lone value. No bit
+  # tricks, but it leans harder on the promise that everything else is a pair.
+  def single_number(nums) do
+    2 * (nums |> Enum.uniq() |> Enum.sum()) - Enum.sum(nums)
+  end
+end"),
+  ]
+}
+
+pub fn nc50_number_of_one_bits() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "n & (n − 1) clears the lowest set bit and touches nothing else, so the loop runs once per one bit rather than once per bit position. Worth having in the fingers: the same trick tests for powers of two, and shows up in half the bit problems there are.", "defmodule Solution do
+  import Bitwise
+
+  # n &&& (n - 1) clears the lowest set bit and nothing else, so the recursion
+  # runs once per one bit rather than once per bit position.
+  def hamming_weight(0), do: 0
+  def hamming_weight(n), do: 1 + hamming_weight(n &&& (n - 1))
+end"),
+    #("Solution 2 · Shift and test", "One step per bit position rather than per set bit: 32 iterations whatever the input, but nothing to remember beyond \"look at the bottom bit, shift\". In a fixed-width language mind the shift — an arithmetic right shift on a negative number never terminates.", "defmodule Solution do
+  import Bitwise
+
+  # One step per bit position rather than per set bit: 32 iterations whatever
+  # the input, but nothing to remember beyond \"look at the bottom bit, shift\".
+  def hamming_weight(n), do: count(n, 0)
+
+  defp count(n, total) when n <= 0, do: total
+  defp count(n, total), do: count(n >>> 1, total + (n &&& 1))
+end"),
+  ]
+}
+
+pub fn nc51_counting_bits() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Every number is some smaller number with one more bit stuck on the end, so count(i) is count(i >> 1) plus that last bit. Each answer costs a single lookup into what has already been computed, which is what makes the whole array O(n) rather than O(n log n).", "defmodule Solution do
+  import Bitwise
+
+  # Every number is some smaller number with one extra bit on the end: count(i)
+  # is count(i >>> 1) plus whatever that last bit is. Each answer costs one
+  # lookup, so the whole list is O(n).
+  def count_bits(n) do
+    counts =
+      Enum.reduce(0..n//1, %{}, fn i, acc ->
+        value = if i == 0, do: 0, else: Map.fetch!(acc, i >>> 1) + (i &&& 1)
+        Map.put(acc, i, value)
+      end)
+
+    Enum.map(0..n//1, &Map.fetch!(counts, &1))
+  end
+end"),
+    #("Solution 2 · Popcount each", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Each number counted from scratch with the clear-lowest-bit trick. O(n log n), and it remembers nothing between numbers — which is precisely the redundancy the dynamic version exploits.", "defmodule Solution do
+  import Bitwise
+
+  def count_bits(n), do: Enum.map(0..n//1, &popcount/1)
+
+  # Each number counted from scratch with the clear-lowest-bit trick.
+  # O(n log n) against the dynamic version's O(n), and it remembers nothing
+  # between numbers -- which is exactly what the other one exploits.
+  defp popcount(0), do: 0
+  defp popcount(n), do: 1 + popcount(n &&& (n - 1))
+end"),
+  ]
+}
+
+pub fn nc52_reverse_bits() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Peel the bottom bit off the input and push it onto the bottom of the result: the first bit out is the last bit in. Fixed at 32 rounds, because the width is part of the problem rather than a property of the value — stopping when the input hits zero silently drops the leading zeros that should have become trailing ones.", "defmodule Solution do
+  import Bitwise
+
+  # Peel the bottom bit off the input and push it onto the bottom of the result:
+  # the first bit out is the last bit in. Fixed at 32 rounds, because the width
+  # is part of the problem rather than a property of the value.
+  def reverse_bits(n) do
+    {_remaining, reversed} =
+      Enum.reduce(1..32//1, {n, 0}, fn _, {remaining, reversed} ->
+        {remaining >>> 1, reversed <<< 1 ||| (remaining &&& 1)}
+      end)
+
+    reversed
+  end
+end"),
+    #("Solution 2 · Via binary string", "Write the number in binary, pad to the full width, reverse the text, read it back. Slower and it allocates, but the explicit padding makes the thing the bit version keeps implicit — that the width is 32, not however many bits this value happens to need — impossible to forget.", "defmodule Solution do
+  # Write the number out in binary, pad to the full width, reverse the text,
+  # read it back. Slower and allocates, but the padding makes the thing the bit
+  # version keeps implicit -- that the width is 32, not however many bits this
+  # particular value happens to need -- impossible to forget.
+  def reverse_bits(n) do
+    n
+    |> Integer.to_string(2)
+    |> String.pad_leading(32, \"0\")
+    |> String.reverse()
+    |> String.to_integer(2)
+  end
+end"),
+  ]
+}
+
+pub fn nc53_missing_number() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "XOR every value against every index it should have had. Each present number meets its own index and cancels, so the missing one leaves its index without a partner and that index survives. No sum, so nothing can overflow.", "defmodule Solution do
+  import Bitwise
+
+  # XOR every value against every index it should have had. Each present number
+  # meets its own index and cancels; the missing one has an index with no
+  # partner, so that index is what survives.
+  def missing_number(nums) do
+    nums
+    |> Enum.with_index()
+    |> Enum.reduce(length(nums), fn {n, i}, acc -> bxor(bxor(acc, n), i) end)
+  end
+end"),
+    #("Solution 2 · Gauss sum", "The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap between that and the actual total is the missing value. Shorter than the XOR version, and the trade worth knowing: in a fixed-width language it overflows on inputs the XOR version handles without complaint.", "defmodule Solution do
+  # The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap
+  # between that and the actual total is the missing value. One multiplication
+  # instead of a pass of XORs -- but in a fixed-width language it overflows on
+  # inputs the XOR version handles fine, which is the trade worth knowing.
+  def missing_number(nums) do
+    n = length(nums)
+    div(n * (n + 1), 2) - Enum.sum(nums)
+  end
+end"),
+  ]
+}
+
+pub fn nc54_sum_of_two_integers() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Addition without +. XOR is addition that forgets to carry; AND finds exactly the places a carry was owed, and shifting it left one puts it where it belongs. Repeat until nothing is owed. In an arbitrary-precision language the negatives are the difficulty: mask to 32 bits so the carry loop terminates, then read the sign bit back by hand.", "defmodule Solution do
+  import Bitwise
+
+  @mask 0xFFFFFFFF
+  @largest 0x7FFFFFFF
+
+  # Addition without +. XOR is addition that forgets to carry; AND finds exactly
+  # the places a carry was owed, and shifting it left one puts it where it
+  # belongs. Repeat until nothing is owed.
+  def get_sum(a, b) do
+    result = add(a &&& @mask, b &&& @mask)
+
+    # Erlang integers are arbitrary precision, so negatives have to be put back
+    # by hand: a 32-bit pattern above the signed maximum is a negative number.
+    if result <= @largest, do: result, else: bnot(bxor(result, @mask))
+  end
+
+  defp add(a, 0), do: a
+
+  defp add(a, b), do: add(bxor(a, b) &&& @mask, (a &&& b) <<< 1 &&& @mask)
+end"),
+    #("Solution 2 · Full adder", "The same addition written as hardware: thirty-two full adders in a row, each taking two input bits and a carry and producing a sum bit and a carry out. Slower than the XOR loop, which stops as soon as no carries remain, but it is where the XOR loop comes from — and it never uses arithmetic at all.", "defmodule Solution do
+  import Bitwise
+
+  @mask 0xFFFFFFFF
+  @largest 0x7FFFFFFF
+
+  # The same addition written as hardware: thirty-two full adders in a row, each
+  # taking two input bits and a carry and producing a sum bit and a carry out.
+  # Slower than the XOR loop, which stops as soon as no carries are left, but it
+  # is where the XOR loop comes from.
+  def get_sum(a, b) do
+    {result, _carry} =
+      Enum.reduce(0..31//1, {0, 0}, fn i, {result, carry} ->
+        x = a >>> i &&& 1
+        y = b >>> i &&& 1
+        xor = bxor(x, y)
+        {result ||| bxor(xor, carry) <<< i, (x &&& y) ||| (carry &&& xor)}
+      end)
+
+    if result <= @largest, do: result, else: bnot(bxor(result, @mask))
+  end
+end"),
+  ]
+}
+
+pub fn nc55_reverse_integer() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Peel a digit off the bottom of the input and push it onto the bottom of the result. The whole difficulty is that the test has to happen *before* the multiply: in a fixed-width language the multiply is the moment the value would be lost, so checking afterwards is checking a number that no longer exists.", "defmodule Solution do
+  @largest 2_147_483_647
+  @smallest -2_147_483_648
+
+  def reverse(x) do
+    sign = if x < 0, do: -1, else: 1
+    result = sign * build(abs(x), 0)
+    if result > @largest or result < @smallest, do: 0, else: result
+  end
+
+  # Peel a digit off the bottom of the input and push it onto the bottom of the
+  # result. The overflow test has to happen *before* the multiply, because in a
+  # fixed-width language the multiply is where the value would be lost.
+  defp build(0, result), do: result
+
+  defp build(remaining, result) do
+    if result > div(@largest, 10),
+      do: 0,
+      else: build(div(remaining, 10), result * 10 + rem(remaining, 10))
+  end
+end"),
+    #("Solution 2 · Via string", "Reverse the digits as text and read them back. It cannot overflow along the way, so the range check is a plain comparison at the end — which is honest here and dishonest in C, and worth being able to say which language you are in when you offer it.", "defmodule Solution do
+  @largest 2_147_483_647
+  @smallest -2_147_483_648
+
+  # Reversing the text cannot overflow here, so the range check is a plain
+  # comparison at the end rather than a guard inside the loop -- which is only
+  # safe because the value is not held in 32 bits along the way.
+  def reverse(x) do
+    magnitude =
+      x |> abs() |> Integer.to_string() |> String.reverse() |> String.to_integer()
+
+    result = if x < 0, do: -magnitude, else: magnitude
+    if result > @largest or result < @smallest, do: 0, else: result
+  end
+end"),
+  ]
+}
+
 pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -2291,6 +2517,13 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
     "nc46_merge_triplets" -> Ok(nc46_merge_triplets())
     "nc47_partition_labels" -> Ok(nc47_partition_labels())
     "nc48_valid_parenthesis_string" -> Ok(nc48_valid_parenthesis_string())
+    "nc49_single_number" -> Ok(nc49_single_number())
+    "nc50_number_of_one_bits" -> Ok(nc50_number_of_one_bits())
+    "nc51_counting_bits" -> Ok(nc51_counting_bits())
+    "nc52_reverse_bits" -> Ok(nc52_reverse_bits())
+    "nc53_missing_number" -> Ok(nc53_missing_number())
+    "nc54_sum_of_two_integers" -> Ok(nc54_sum_of_two_integers())
+    "nc55_reverse_integer" -> Ok(nc55_reverse_integer())
     _ -> Error(Nil)
   }
 }
