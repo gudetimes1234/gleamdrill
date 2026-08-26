@@ -1,0 +1,1 @@
+Same filter, different question: rather than merging the survivors, ask whether each of the three positions is hit exactly by some survivor. It is the same condition — a componentwise max equals the target exactly when every component is attained somewhere — but arrived at without computing the merge.

@@ -134,6 +134,48 @@ pub fn groups() -> List(Group) {
         "nc26_sliding_window_maximum",
       ),
     ]),
+    Group("Greedy", [
+      Drill(
+        "Maximum Subarray",
+        "Given an integer array nums, find the contiguous subarray with the largest sum and return that sum.",
+        "nc41_maximum_subarray",
+      ),
+      Drill(
+        "Jump Game",
+        "You are given an integer array nums. Each element is the maximum jump length from that position. Return true if you can reach the last index.",
+        "nc42_jump_game",
+      ),
+      Drill(
+        "Jump Game II",
+        "You are given an array nums where each element is the maximum jump length from that position, and the last index is always reachable. Return the minimum number of jumps to get there.",
+        "nc43_jump_game_ii",
+      ),
+      Drill(
+        "Gas Station",
+        "There are n gas stations in a circle. gas[i] is the fuel at station i and cost[i] is what it takes to travel to the next. Starting with an empty tank, return the index to start from to get all the way round, or -1 if there is none.",
+        "nc44_gas_station",
+      ),
+      Drill(
+        "Hand of Straights",
+        "Given an array of card values and a group size, determine whether the hand can be rearranged into groups of that size, each made of consecutive values.",
+        "nc45_hand_of_straights",
+      ),
+      Drill(
+        "Merge Triplets to Form Target Triplet",
+        "You may repeatedly pick two triplets and replace one with their componentwise maximum. Return true if the target triplet can be produced from the given triplets.",
+        "nc46_merge_triplets",
+      ),
+      Drill(
+        "Partition Labels",
+        "Partition a string into as many pieces as possible so that each letter appears in at most one piece. Return the sizes of those pieces, in order.",
+        "nc47_partition_labels",
+      ),
+      Drill(
+        "Valid Parenthesis String",
+        "Given a string containing only the characters '(', ')' and '*', where a star may stand for an opening bracket, a closing bracket, or nothing at all, return true if the string can be read as valid.",
+        "nc48_valid_parenthesis_string",
+      ),
+    ]),
     Group("Intervals", [
       Drill(
         "Insert Interval",

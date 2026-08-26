@@ -1,0 +1,1 @@
+Merging takes componentwise maxima, and a max never comes back down. So any triplet with a component above the target is permanently poisonous and must be discarded; and once discarded, every remaining triplet can be merged freely, because a max can only help. The answer is then just whether their maximum is the target.

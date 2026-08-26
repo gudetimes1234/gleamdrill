@@ -1,0 +1,1 @@
+Two facts do all the work. If the total gas falls short of the total cost, no start works at all. And if the tank runs dry travelling from i to j, no station between them can start either — each would begin with even less — so the search jumps straight to j+1 rather than restarting at i+1. Together they turn an O(n²) search into one pass.

@@ -1869,6 +1869,378 @@ end"),
   ]
 }
 
+pub fn nc41_maximum_subarray() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Kadane. At each position the best subarray ending here either extends the one ending just before it or starts fresh — and the choice is decided by a single question: has the running total gone negative? A negative prefix can only hurt whatever follows, so it is dropped. Note the answer is not clamped at zero: an all-negative array's answer is its least bad element.", "defmodule Solution do
+  def max_sub_array([]), do: 0
+
+  # Kadane: at each position the best subarray ending here either extends the
+  # one ending just before it or starts fresh. A running total that has gone
+  # negative can only hurt whatever follows, so it is dropped.
+  def max_sub_array([first | rest]) do
+    {_here, best} =
+      Enum.reduce(rest, {first, first}, fn n, {here, best} ->
+        here = max(n, here + n)
+        {here, max(best, here)}
+      end)
+
+    best
+  end
+end"),
+    #("Solution 2 · Prefix minimum", "The same answer from prefix sums. The sum from i to j is prefix[j] − prefix[i−1], so the best subarray ending at j is prefix[j] minus the smallest prefix seen before it. One pass carrying that minimum. Worth knowing because the prefix framing generalises to problems Kadane cannot touch — subarrays summing to k, divisible by k, and so on.", "defmodule Solution do
+  def max_sub_array([]), do: 0
+
+  # The sum from i to j is prefix[j] - prefix[i-1], so the best subarray ending
+  # at j is prefix[j] minus the smallest prefix before it. One pass carrying
+  # that minimum answers the whole thing.
+  def max_sub_array(nums) do
+    {_running, _smallest, best} =
+      Enum.reduce(nums, {0, 0, :none}, fn n, {running, smallest, best} ->
+        running = running + n
+        candidate = running - smallest
+        best = if best == :none, do: candidate, else: max(best, candidate)
+        {running, min(smallest, running), best}
+      end)
+
+    best
+  end
+end"),
+  ]
+}
+
+pub fn nc42_jump_game() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Only one number matters: the furthest index reachable so far. Walk forward extending it, and the moment the walk gets past it nothing further is reachable. No search, no visited set — the reachable set from the left is always a prefix, which is what collapses the whole problem to one integer.", "defmodule Solution do
+  # Only one number matters: the furthest index reachable so far. Walk forward
+  # and extend it; the moment the walk gets past it, nothing further is
+  # reachable and the value stops changing.
+  def can_jump(nums) do
+    reach =
+      nums
+      |> Enum.with_index()
+      |> Enum.reduce(0, fn {jump, i}, reach ->
+        if i > reach, do: reach, else: max(reach, i + jump)
+      end)
+
+    reach >= length(nums) - 1
+  end
+end"),
+    #("Solution 2 · Backwards", "Walk backwards carrying the leftmost index known to reach the end. Any index that can reach *that* can reach the end, so it becomes the new goal — and the answer is whether the goal walks all the way back to zero. The same greedy from the other side, and often the easier one to convince yourself of.", "defmodule Solution do
+  def can_jump([]), do: true
+
+  # Walk backwards carrying the leftmost index known to reach the end. Any index
+  # that can reach *that* can reach the end, so it becomes the new goal.
+  def can_jump(nums) do
+    goal =
+      nums
+      |> Enum.with_index()
+      |> Enum.reverse()
+      |> Enum.reduce(length(nums) - 1, fn {jump, i}, goal ->
+        if i + jump >= goal, do: i, else: goal
+      end)
+
+    goal == 0
+  end
+end"),
+  ]
+}
+
+pub fn nc43_jump_game_ii() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Breadth-first search without a queue. Everything reachable in k jumps is a contiguous window, so the levels of the search are just ranges: when the walk reaches the current window's end, one more jump is spent and the next window runs to the furthest index seen so far. Recognising that the frontier stays contiguous is the whole trick.", "defmodule Solution do
+  # Breadth-first search without a queue. Everything reachable in k jumps forms
+  # a contiguous window; when the walk reaches that window's end, one more jump
+  # is spent and the next window runs to the furthest index seen so far.
+  def jump(nums) do
+    n = length(nums)
+
+    {jumps, _window_end, _furthest} =
+      nums
+      |> Enum.with_index()
+      |> Enum.reduce({0, 0, 0}, fn {step, i}, {jumps, window_end, furthest} = state ->
+        if i >= n - 1 do
+          state
+        else
+          furthest = max(furthest, i + step)
+
+          if i == window_end,
+            do: {jumps + 1, furthest, furthest},
+            else: {jumps, window_end, furthest}
+        end
+      end)
+
+    jumps
+  end
+end"),
+    #("Solution 2 · Reverse greedy", "From the goal, step back to the earliest index that can reach it. Taking the earliest can never cost more jumps — anything later is reachable from it too — so the choice is safe at every step. O(n²), and it makes the greedy argument visible in a way the window version hides.", "defmodule Solution do
+  def jump(nums) when length(nums) <= 1, do: 0
+
+  def jump(nums), do: walk(Enum.with_index(nums), length(nums) - 1, 0)
+
+  # From the goal, step back to the *earliest* index that can reach it: taking
+  # the earliest can never cost more jumps, and it is the only choice that is
+  # obviously safe. O(n^2), and it makes the greedy argument visible.
+  defp walk(_indexed, 0, jumps), do: jumps
+
+  defp walk(indexed, goal, jumps) do
+    case Enum.find(indexed, fn {step, i} -> i + step >= goal end) do
+      {_step, index} -> walk(indexed, index, jumps + 1)
+      nil -> jumps
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc44_gas_station() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Two facts do all the work. If the total gas falls short of the total cost, no start works at all. And if the tank runs dry travelling from i to j, no station between them can start either — each would begin with even less — so the search jumps straight to j+1 rather than restarting at i+1. Together they turn an O(n²) search into one pass.", "defmodule Solution do
+  def can_complete_circuit([], _cost), do: -1
+
+  # Two facts do all the work. If the total gas is short of the total cost no
+  # start works at all; and if the tank runs dry between i and j, no station in
+  # between can start either, so the search jumps straight to j + 1 rather than
+  # restarting.
+  def can_complete_circuit(gas, cost) do
+    {total, _tank, start} =
+      gas
+      |> Enum.zip(cost)
+      |> Enum.with_index()
+      |> Enum.reduce({0, 0, 0}, fn {{g, c}, i}, {total, tank, start} ->
+        diff = g - c
+        tank = tank + diff
+        if tank < 0, do: {total + diff, 0, i + 1}, else: {total + diff, tank, start}
+      end)
+
+    if total >= 0, do: start, else: -1
+  end
+end"),
+    #("Solution 2 · Try each start", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Drive the whole loop from each start and watch the tank. O(n²), and the thing worth extracting from it: the single pass is not a different algorithm, it is this one with the starts that cannot possibly work skipped.", "defmodule Solution do
+  # Drive the whole loop from each start and see whether the tank ever goes
+  # negative. O(n^2) -- the definition, and what the single pass replaces.
+  def can_complete_circuit(gas, cost) do
+    diffs = gas |> Enum.zip(cost) |> Enum.map(fn {g, c} -> g - c end)
+
+    Enum.find(0..(length(diffs) - 1)//1, -1, fn start ->
+      survives?(Enum.drop(diffs, start) ++ Enum.take(diffs, start))
+    end)
+  end
+
+  defp survives?(rotated) do
+    Enum.reduce_while(rotated, 0, fn diff, tank ->
+      if tank + diff < 0, do: {:halt, :dry}, else: {:cont, tank + diff}
+    end) != :dry
+  end
+end"),
+  ]
+}
+
+pub fn nc45_hand_of_straights() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The smallest card left has no smaller neighbour to hide behind, so whatever group it belongs to must begin with it. That removes all choice, which is exactly what makes a greedy correct here. Every copy of that smallest card needs its own group and they are indistinguishable, so all of them are taken in one step.", "defmodule Solution do
+  def is_n_straight_hand(hand, group_size)
+      when group_size <= 0 or rem(length(hand), max(group_size, 1)) != 0,
+      do: false
+
+  def is_n_straight_hand(hand, group_size) do
+    counts = Enum.frequencies(hand)
+
+    # The smallest card left has no smaller neighbour to hide behind, so
+    # whatever group it belongs to must start with it. That removes all choice,
+    # which is what makes the greedy correct -- and every copy of it needs its
+    # own group, so they are all taken at once.
+    counts
+    |> Map.keys()
+    |> Enum.sort()
+    |> Enum.reduce_while(counts, fn smallest, counts ->
+      case Map.get(counts, smallest, 0) do
+        0 -> {:cont, counts}
+        copies -> take_run(counts, smallest, group_size, copies)
+      end
+    end)
+    |> case do
+      :impossible -> false
+      _counts -> true
+    end
+  end
+
+  defp take_run(counts, from, remaining, copies) do
+    Enum.reduce_while(from..(from + remaining - 1)//1, counts, fn card, counts ->
+      available = Map.get(counts, card, 0)
+
+      if available < copies,
+        do: {:halt, :impossible},
+        else: {:cont, Map.put(counts, card, available - copies)}
+    end)
+    |> case do
+      :impossible -> {:halt, :impossible}
+      counts -> {:cont, counts}
+    end
+  end
+end"),
+    #("Solution 2 · Sorted consume", "No counts at all: sort, then peel one full run off the front, removing each card as it is used. Slower, since every removal is a list walk, but the only thing you have to believe is the same greedy claim — a group begins with the smallest card left.", "defmodule Solution do
+  def is_n_straight_hand(hand, group_size)
+      when group_size <= 0 or rem(length(hand), max(group_size, 1)) != 0,
+      do: false
+
+  # No counts: sort, then peel one full run off the front at a time, removing
+  # each card as it is used. Slower -- every removal is a list walk -- but the
+  # only thing to believe is that a group must begin with the smallest card
+  # left.
+  def is_n_straight_hand(hand, group_size), do: build(Enum.sort(hand), group_size)
+
+  defp build([], _group_size), do: true
+
+  defp build([smallest | _] = cards, group_size) do
+    case peel(cards, smallest, group_size) do
+      :impossible -> false
+      remaining -> build(remaining, group_size)
+    end
+  end
+
+  defp peel(cards, _wanted, 0), do: cards
+
+  defp peel(cards, wanted, remaining) do
+    if wanted in cards,
+      do: peel(List.delete(cards, wanted), wanted + 1, remaining - 1),
+      else: :impossible
+  end
+end"),
+  ]
+}
+
+pub fn nc46_merge_triplets() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Merging takes componentwise maxima, and a max never comes back down. So any triplet with a component above the target is permanently poisonous and must be discarded; and once discarded, every remaining triplet can be merged freely, because a max can only help. The answer is then just whether their maximum is the target.", "defmodule Solution do
+  # A triplet with any component above the target can never be used: merging
+  # takes maxima, so that component would be stuck too high forever. Throw those
+  # away and the rest can all be merged, because a max only ever helps.
+  def merge_triplets(triplets, {ta, tb, tc} = target) do
+    triplets
+    |> Enum.filter(fn {a, b, c} -> a <= ta and b <= tb and c <= tc end)
+    |> Enum.reduce({0, 0, 0}, fn {a, b, c}, {x, y, z} ->
+      {max(x, a), max(y, b), max(z, c)}
+    end)
+    |> Kernel.==(target)
+  end
+end"),
+    #("Solution 2 · Track positions", "Same filter, different question: rather than merging the survivors, ask whether each of the three positions is hit exactly by some survivor. It is the same condition — a componentwise max equals the target exactly when every component is attained somewhere — but arrived at without computing the merge.", "defmodule Solution do
+  # Ask a different question: is each of the three positions hit exactly by some
+  # usable triplet? The answer is yes exactly when all three are covered -- the
+  # same condition, arrived at without taking maxima.
+  def merge_triplets(triplets, {ta, tb, tc}) do
+    usable = Enum.filter(triplets, fn {a, b, c} -> a <= ta and b <= tb and c <= tc end)
+
+    Enum.any?(usable, fn {a, _, _} -> a == ta end) and
+      Enum.any?(usable, fn {_, b, _} -> b == tb end) and
+      Enum.any?(usable, fn {_, _, c} -> c == tc end)
+  end
+end"),
+  ]
+}
+
+pub fn nc47_partition_labels() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "A piece can only end where every character inside it has run out, so map each character to its last position first. Then sweep, pushing the piece's end out to the furthest last-position seen; when the walk catches up with that end, nothing inside can reappear and the piece is closed.", "defmodule Solution do
+  def partition_labels(s) do
+    graphemes = String.graphemes(s)
+
+    # Overwriting as we go leaves each character mapped to its last position.
+    last =
+      graphemes
+      |> Enum.with_index()
+      |> Enum.reduce(%{}, fn {c, i}, acc -> Map.put(acc, c, i) end)
+
+    # A piece can only end where every character it contains has run out. Extend
+    # the end to the furthest last-position seen; when the walk catches up with
+    # it, the piece is closed.
+    {parts, _start, _end} =
+      graphemes
+      |> Enum.with_index()
+      |> Enum.reduce({[], 0, -1}, fn {c, i}, {parts, start, finish} ->
+        finish = max(finish, Map.fetch!(last, c))
+
+        if i == finish,
+          do: {[finish - start + 1 | parts], i + 1, finish},
+          else: {parts, start, finish}
+      end)
+
+    Enum.reverse(parts)
+  end
+end"),
+    #("Solution 2 · Expand end", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Grow the piece one character at a time until nothing inside it also appears in the tail. No last-position map — the tail is asked directly — so it is far slower, but it is the condition stated outright rather than pre-computed.", "defmodule Solution do
+  def partition_labels(s), do: cut(String.graphemes(s), [])
+
+  defp cut([], acc), do: Enum.reverse(acc)
+
+  defp cut(rest, acc) do
+    size = grow(rest, 1)
+    cut(Enum.drop(rest, size), [size | acc])
+  end
+
+  # Grow the piece one character at a time until nothing inside it also appears
+  # in what is left. No last-position map -- the tail is asked directly -- which
+  # is far slower but is the condition stated outright.
+  defp grow(rest, size) do
+    prefix = Enum.take(rest, size)
+    tail = Enum.drop(rest, size)
+    if Enum.any?(prefix, &(&1 in tail)), do: grow(rest, size + 1), else: size
+  end
+end"),
+  ]
+}
+
+pub fn nc48_valid_parenthesis_string() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Do not guess what each star should be — carry the range of open counts still possible. Low is the count if every star so far were a closer, high if every one were an opener. High going negative means even the most generous reading has too many closers, so bail; low is clamped at zero because a star can always be nothing. Valid exactly when low reaches zero at the end.", "defmodule Solution do
+  # Rather than guessing what each star should be, carry the *range* of open
+  # counts still possible: low if every star so far were a closer, high if every
+  # one were an opener. High going negative means even the most generous reading
+  # has too many closers; low is clamped at zero because a star can always be
+  # nothing.
+  def check_valid_string(s) do
+    s
+    |> String.graphemes()
+    |> Enum.reduce_while({0, 0}, fn c, {low, high} ->
+      {low, high} =
+        case c do
+          \"(\" -> {low + 1, high + 1}
+          \")\" -> {max(low - 1, 0), high - 1}
+          _ -> {max(low - 1, 0), high + 1}
+        end
+
+      if high < 0, do: {:halt, :impossible}, else: {:cont, {low, high}}
+    end)
+    |> case do
+      :impossible -> false
+      {low, _high} -> low == 0
+    end
+  end
+end"),
+    #("Solution 2 · Two passes", "Two one-sided checks instead of a range. Left to right with every star an opener asks whether there are ever too many closers; right to left with every star a closer asks whether there are ever too many openers. Passing both is exactly the condition — and each pass is the ordinary balance check you already know.", "defmodule Solution do
+  # Two one-sided checks. Left to right with every star an opener asks whether
+  # there are ever too many closers; right to left with every star a closer asks
+  # whether there are ever too many openers. Passing both is exactly the
+  # condition, and each pass is the ordinary balance check.
+  def check_valid_string(s) do
+    graphemes = String.graphemes(s)
+    never_negative?(graphemes, \"(\") and never_negative?(Enum.reverse(graphemes), \")\")
+  end
+
+  defp never_negative?(graphemes, credit) do
+    Enum.reduce_while(graphemes, 0, fn c, balance ->
+      balance = if c == credit or c == \"*\", do: balance + 1, else: balance - 1
+      if balance < 0, do: {:halt, :negative}, else: {:cont, balance}
+    end) != :negative
+  end
+end"),
+  ]
+}
+
 pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -1911,6 +2283,14 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
     "nc38_meeting_rooms" -> Ok(nc38_meeting_rooms())
     "nc39_meeting_rooms_ii" -> Ok(nc39_meeting_rooms_ii())
     "nc40_min_interval" -> Ok(nc40_min_interval())
+    "nc41_maximum_subarray" -> Ok(nc41_maximum_subarray())
+    "nc42_jump_game" -> Ok(nc42_jump_game())
+    "nc43_jump_game_ii" -> Ok(nc43_jump_game_ii())
+    "nc44_gas_station" -> Ok(nc44_gas_station())
+    "nc45_hand_of_straights" -> Ok(nc45_hand_of_straights())
+    "nc46_merge_triplets" -> Ok(nc46_merge_triplets())
+    "nc47_partition_labels" -> Ok(nc47_partition_labels())
+    "nc48_valid_parenthesis_string" -> Ok(nc48_valid_parenthesis_string())
     _ -> Error(Nil)
   }
 }

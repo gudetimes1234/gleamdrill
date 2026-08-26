@@ -93,6 +93,22 @@ import nc39_meeting_rooms_ii
 import nc39_meeting_rooms_ii__count_at_each_start
 import nc40_min_interval
 import nc40_min_interval__offline_by_length
+import nc41_maximum_subarray
+import nc41_maximum_subarray__prefix_minimum
+import nc42_jump_game
+import nc42_jump_game__backwards
+import nc43_jump_game_ii
+import nc43_jump_game_ii__reverse_greedy
+import nc44_gas_station
+import nc44_gas_station__try_each_start
+import nc45_hand_of_straights
+import nc45_hand_of_straights__sorted_consume
+import nc46_merge_triplets
+import nc46_merge_triplets__track_positions
+import nc47_partition_labels
+import nc47_partition_labels__expand_end
+import nc48_valid_parenthesis_string
+import nc48_valid_parenthesis_string__two_passes
 import tip01_list_patterns
 import tip01_list_patterns__stdlib
 import tip02_tail_recursion
@@ -245,6 +261,28 @@ pub fn main() {
     ),
     check_min_interval(nc40_min_interval.min_interval),
     check_min_interval(nc40_min_interval__offline_by_length.min_interval),
+    check_maximum_subarray(nc41_maximum_subarray.max_sub_array),
+    check_maximum_subarray(nc41_maximum_subarray__prefix_minimum.max_sub_array),
+    check_jump_game(nc42_jump_game.can_jump),
+    check_jump_game(nc42_jump_game__backwards.can_jump),
+    check_jump_game_ii(nc43_jump_game_ii.jump),
+    check_jump_game_ii(nc43_jump_game_ii__reverse_greedy.jump),
+    check_gas_station(nc44_gas_station.can_complete_circuit),
+    check_gas_station(nc44_gas_station__try_each_start.can_complete_circuit),
+    check_hand_of_straights(nc45_hand_of_straights.is_n_straight_hand),
+    check_hand_of_straights(
+      nc45_hand_of_straights__sorted_consume.is_n_straight_hand,
+    ),
+    check_merge_triplets(nc46_merge_triplets.merge_triplets),
+    check_merge_triplets(nc46_merge_triplets__track_positions.merge_triplets),
+    check_partition_labels(nc47_partition_labels.partition_labels),
+    check_partition_labels(nc47_partition_labels__expand_end.partition_labels),
+    check_valid_parenthesis_string(
+      nc48_valid_parenthesis_string.check_valid_string,
+    ),
+    check_valid_parenthesis_string(
+      nc48_valid_parenthesis_string__two_passes.check_valid_string,
+    ),
 
     // Gleam Tips
     check_list_patterns(tip01_list_patterns.length, tip01_list_patterns.last),
@@ -572,6 +610,98 @@ fn check_min_interval(f: fn(List(#(Int, Int)), List(Int)) -> List(Int)) -> Nil {
   let assert True = f([#(1, 10)], []) == []
   // Both queries fall outside, one either side.
   let assert True = f([#(1, 3)], [0, 4]) == [-1, -1]
+  Nil
+}
+
+fn check_maximum_subarray(f: fn(List(Int)) -> Int) -> Nil {
+  let assert True = f([-2, 1, -3, 4, -1, 2, 1, -5, 4]) == 6
+  let assert True = f([1]) == 1
+  let assert True = f([5, 4, -1, 7, 8]) == 23
+  // All negative: the answer is the least bad single element, not zero.
+  let assert True = f([-1]) == -1
+  let assert True = f([-2, -1]) == -1
+  let assert True = f([]) == 0
+  Nil
+}
+
+fn check_jump_game(f: fn(List(Int)) -> Bool) -> Nil {
+  let assert True = f([2, 3, 1, 1, 4])
+  let assert False = f([3, 2, 1, 0, 4])
+  // Already at the end, so a zero jump is fine.
+  let assert True = f([0])
+  let assert True = f([])
+  let assert False = f([1, 0, 1, 0])
+  let assert True = f([2, 0, 0])
+  Nil
+}
+
+fn check_jump_game_ii(f: fn(List(Int)) -> Int) -> Nil {
+  let assert True = f([2, 3, 1, 1, 4]) == 2
+  let assert True = f([2, 3, 0, 1, 4]) == 2
+  let assert True = f([0]) == 0
+  let assert True = f([1]) == 0
+  let assert True = f([1, 2, 3]) == 2
+  let assert True = f([1, 1, 1, 1]) == 3
+  Nil
+}
+
+fn check_gas_station(f: fn(List(Int), List(Int)) -> Int) -> Nil {
+  let assert True = f([1, 2, 3, 4, 5], [3, 4, 5, 1, 2]) == 3
+  let assert True = f([2, 3, 4], [3, 4, 3]) == -1
+  let assert True = f([5], [4]) == 0
+  let assert True = f([1, 2], [2, 1]) == 1
+  let assert True = f([], []) == -1
+  // Starts at zero and only just survives: the tank hits exactly zero.
+  let assert True = f([3, 1, 1], [1, 2, 2]) == 0
+  Nil
+}
+
+fn check_hand_of_straights(f: fn(List(Int), Int) -> Bool) -> Nil {
+  let assert True = f([1, 2, 3, 6, 2, 3, 4, 7, 8], 3)
+  // Five cards cannot make groups of four whatever they are.
+  let assert False = f([1, 2, 3, 4, 5], 4)
+  let assert True = f([1, 2, 3, 4, 5, 6], 2)
+  let assert True = f([], 1)
+  // Duplicates: two identical runs, so every copy needs its own group.
+  let assert True = f([1, 1, 2, 2, 3, 3], 3)
+  let assert False = f([8, 10, 12], 3)
+  Nil
+}
+
+fn check_merge_triplets(
+  f: fn(List(#(Int, Int, Int)), #(Int, Int, Int)) -> Bool,
+) -> Nil {
+  let assert True = f([#(2, 5, 3), #(1, 8, 4), #(1, 7, 5)], #(2, 7, 5))
+  let assert False = f([#(3, 4, 5), #(4, 5, 6)], #(3, 2, 5))
+  let assert True =
+    f([#(2, 5, 3), #(2, 3, 4), #(1, 2, 5), #(5, 2, 3)], #(5, 5, 5))
+  let assert True = f([#(1, 1, 1)], #(1, 1, 1))
+  let assert False = f([], #(1, 1, 1))
+  // Every component is present somewhere, but not in the right position.
+  let assert False = f([#(1, 2, 3)], #(3, 2, 1))
+  Nil
+}
+
+fn check_partition_labels(f: fn(String) -> List(Int)) -> Nil {
+  let assert True = f("ababcbacadefegdehijhklij") == [9, 7, 8]
+  // One character reaches the far end, so the whole string is one piece.
+  let assert True = f("eccbbbbdec") == [10]
+  let assert True = f("a") == [1]
+  let assert True = f("") == []
+  let assert True = f("abc") == [1, 1, 1]
+  Nil
+}
+
+fn check_valid_parenthesis_string(f: fn(String) -> Bool) -> Nil {
+  let assert True = f("()")
+  let assert True = f("(*)")
+  let assert True = f("(*))")
+  let assert False = f(")(")
+  let assert True = f("")
+  let assert True = f("*")
+  // The closer comes first, so no reading of the star can rescue it.
+  let assert False = f(")*")
+  let assert True = f("(*()")
   Nil
 }
 

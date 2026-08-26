@@ -1,0 +1,1 @@
+Only one number matters: the furthest index reachable so far. Walk forward extending it, and the moment the walk gets past it nothing further is reachable. No search, no visited set — the reachable set from the left is always a prefix, which is what collapses the whole problem to one integer.

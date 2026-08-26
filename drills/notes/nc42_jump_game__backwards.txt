@@ -1,0 +1,1 @@
+Walk backwards carrying the leftmost index known to reach the end. Any index that can reach *that* can reach the end, so it becomes the new goal — and the answer is whether the goal walks all the way back to zero. The same greedy from the other side, and often the easier one to convince yourself of.

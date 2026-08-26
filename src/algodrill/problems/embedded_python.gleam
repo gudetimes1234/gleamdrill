@@ -2425,6 +2425,464 @@ __case__(\"minInterval([[1, 3]], [0, 4])\", [-1, -1], minInterval([[1, 3]], [0, 
   )
 }
 
+pub fn nc41_maximum_subarray() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Kadane. At each position the best subarray ending here either extends the one ending just before it or starts fresh — and the choice is decided by a single question: has the running total gone negative? A negative prefix can only hurt whatever follows, so it is dropped. Note the answer is not clamped at zero: an all-negative array's answer is its least bad element.", "def maxSubArray(nums):
+    if not nums:
+        return 0
+
+    # Kadane: at each position the best subarray ending here either extends the
+    # one ending just before it or starts fresh. A running total that has gone
+    # negative can only hurt whatever follows, so it is dropped.
+    here = best = nums[0]
+    for n in nums[1:]:
+        here = max(n, here + n)
+        best = max(best, here)
+    return best"),
+      #("Solution 2 · Prefix minimum", "The same answer from prefix sums. The sum from i to j is prefix[j] − prefix[i−1], so the best subarray ending at j is prefix[j] minus the smallest prefix seen before it. One pass carrying that minimum. Worth knowing because the prefix framing generalises to problems Kadane cannot touch — subarrays summing to k, divisible by k, and so on.", "def maxSubArray(nums):
+    if not nums:
+        return 0
+
+    # The sum from i to j is prefix[j] - prefix[i-1], so the best subarray
+    # ending at j is prefix[j] minus the smallest prefix before it. One pass
+    # carrying that minimum answers the whole thing.
+    running = 0
+    smallest = 0
+    best = float(\"-inf\")
+    for n in nums:
+        running += n
+        best = max(best, running - smallest)
+        smallest = min(smallest, running)
+    return best"),
+    ],
+    check: Check(
+      signature: "def maxSubArray(nums):",
+      starter: "def maxSubArray(nums):
+    pass",
+      harness: "try:
+    (maxSubArray)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"maxSubArray([-2, 1, -3, 4, -1, 2, 1, -5, 4])\", 6, maxSubArray([-2, 1, -3, 4, -1, 2, 1, -5, 4]))
+__case__(\"maxSubArray([1])\", 1, maxSubArray([1]))
+__case__(\"maxSubArray([5, 4, -1, 7, 8])\", 23, maxSubArray([5, 4, -1, 7, 8]))
+__case__(\"maxSubArray([-1])\", -1, maxSubArray([-1]))
+__case__(\"maxSubArray([-2, -1])\", -1, maxSubArray([-2, -1]))
+__case__(\"maxSubArray([])\", 0, maxSubArray([]))",
+    ),
+  )
+}
+
+pub fn nc42_jump_game() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Only one number matters: the furthest index reachable so far. Walk forward extending it, and the moment the walk gets past it nothing further is reachable. No search, no visited set — the reachable set from the left is always a prefix, which is what collapses the whole problem to one integer.", "def canJump(nums):
+    # Only one number matters: the furthest index reachable so far. Walk forward
+    # and extend it; the moment the walk gets past it, nothing further is
+    # reachable.
+    reach = 0
+    for i, jump in enumerate(nums):
+        if i > reach:
+            return False
+        reach = max(reach, i + jump)
+    return reach >= len(nums) - 1"),
+      #("Solution 2 · Backwards", "Walk backwards carrying the leftmost index known to reach the end. Any index that can reach *that* can reach the end, so it becomes the new goal — and the answer is whether the goal walks all the way back to zero. The same greedy from the other side, and often the easier one to convince yourself of.", "def canJump(nums):
+    if not nums:
+        return True
+
+    # Walk backwards carrying the leftmost index known to reach the end. Any
+    # index that can reach *that* can reach the end, so it becomes the new goal.
+    goal = len(nums) - 1
+    for i in range(len(nums) - 1, -1, -1):
+        if i + nums[i] >= goal:
+            goal = i
+    return goal == 0"),
+    ],
+    check: Check(
+      signature: "def canJump(nums):",
+      starter: "def canJump(nums):
+    pass",
+      harness: "try:
+    (canJump)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"canJump([2, 3, 1, 1, 4])\", True, canJump([2, 3, 1, 1, 4]))
+__case__(\"canJump([3, 2, 1, 0, 4])\", False, canJump([3, 2, 1, 0, 4]))
+__case__(\"canJump([0])\", True, canJump([0]))
+__case__(\"canJump([])\", True, canJump([]))
+__case__(\"canJump([1, 0, 1, 0])\", False, canJump([1, 0, 1, 0]))
+__case__(\"canJump([2, 0, 0])\", True, canJump([2, 0, 0]))",
+    ),
+  )
+}
+
+pub fn nc43_jump_game_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Breadth-first search without a queue. Everything reachable in k jumps is a contiguous window, so the levels of the search are just ranges: when the walk reaches the current window's end, one more jump is spent and the next window runs to the furthest index seen so far. Recognising that the frontier stays contiguous is the whole trick.", "def jump(nums):
+    # Breadth-first search without a queue. Everything reachable in k jumps
+    # forms a contiguous window; when the walk reaches that window's end, one
+    # more jump is spent and the next window runs to the furthest index seen.
+    jumps = 0
+    window_end = 0
+    furthest = 0
+
+    for i in range(len(nums) - 1):
+        furthest = max(furthest, i + nums[i])
+        if i == window_end:
+            jumps += 1
+            window_end = furthest
+
+    return jumps"),
+      #("Solution 2 · Reverse greedy", "From the goal, step back to the earliest index that can reach it. Taking the earliest can never cost more jumps — anything later is reachable from it too — so the choice is safe at every step. O(n²), and it makes the greedy argument visible in a way the window version hides.", "def jump(nums):
+    if len(nums) <= 1:
+        return 0
+
+    # From the goal, step back to the *earliest* index that can reach it: taking
+    # the earliest can never cost more jumps, and it is the only choice that is
+    # obviously safe. O(n^2), and it makes the greedy argument visible.
+    goal = len(nums) - 1
+    jumps = 0
+    while goal > 0:
+        for i in range(len(nums)):
+            if i + nums[i] >= goal:
+                goal = i
+                jumps += 1
+                break
+        else:
+            break
+    return jumps"),
+    ],
+    check: Check(
+      signature: "def jump(nums):",
+      starter: "def jump(nums):
+    pass",
+      harness: "try:
+    (jump)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"jump([2, 3, 1, 1, 4])\", 2, jump([2, 3, 1, 1, 4]))
+__case__(\"jump([2, 3, 0, 1, 4])\", 2, jump([2, 3, 0, 1, 4]))
+__case__(\"jump([0])\", 0, jump([0]))
+__case__(\"jump([1])\", 0, jump([1]))
+__case__(\"jump([1, 2, 3])\", 2, jump([1, 2, 3]))
+__case__(\"jump([1, 1, 1, 1])\", 3, jump([1, 1, 1, 1]))",
+    ),
+  )
+}
+
+pub fn nc44_gas_station() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two facts do all the work. If the total gas falls short of the total cost, no start works at all. And if the tank runs dry travelling from i to j, no station between them can start either — each would begin with even less — so the search jumps straight to j+1 rather than restarting at i+1. Together they turn an O(n²) search into one pass.", "def canCompleteCircuit(gas, cost):
+    if not gas:
+        return -1
+
+    # Two facts do all the work. If the total gas is short of the total cost no
+    # start works at all; and if the tank runs dry between i and j, no station
+    # in between can start either, so the search jumps straight to j + 1.
+    total = 0
+    tank = 0
+    start = 0
+
+    for i in range(len(gas)):
+        diff = gas[i] - cost[i]
+        total += diff
+        tank += diff
+        if tank < 0:
+            start = i + 1
+            tank = 0
+
+    return start if total >= 0 else -1"),
+      #("Solution 2 · Try each start", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Drive the whole loop from each start and watch the tank. O(n²), and the thing worth extracting from it: the single pass is not a different algorithm, it is this one with the starts that cannot possibly work skipped.", "def canCompleteCircuit(gas, cost):
+    # Drive the whole loop from each start and see whether the tank ever goes
+    # negative. O(n^2) -- the definition, and what the single pass replaces.
+    diffs = [g - c for g, c in zip(gas, cost)]
+
+    for start in range(len(diffs)):
+        tank = 0
+        survives = True
+        for diff in diffs[start:] + diffs[:start]:
+            tank += diff
+            if tank < 0:
+                survives = False
+                break
+        if survives:
+            return start
+
+    return -1"),
+    ],
+    check: Check(
+      signature: "def canCompleteCircuit(gas, cost):",
+      starter: "def canCompleteCircuit(gas, cost):
+    pass",
+      harness: "try:
+    (canCompleteCircuit)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"canCompleteCircuit([1, 2, 3, 4, 5], [3, 4, 5, 1, 2])\", 3, canCompleteCircuit([1, 2, 3, 4, 5], [3, 4, 5, 1, 2]))
+__case__(\"canCompleteCircuit([2, 3, 4], [3, 4, 3])\", -1, canCompleteCircuit([2, 3, 4], [3, 4, 3]))
+__case__(\"canCompleteCircuit([5], [4])\", 0, canCompleteCircuit([5], [4]))
+__case__(\"canCompleteCircuit([1, 2], [2, 1])\", 1, canCompleteCircuit([1, 2], [2, 1]))
+__case__(\"canCompleteCircuit([], [])\", -1, canCompleteCircuit([], []))
+__case__(\"canCompleteCircuit([3, 1, 1], [1, 2, 2])\", 0, canCompleteCircuit([3, 1, 1], [1, 2, 2]))",
+    ),
+  )
+}
+
+pub fn nc45_hand_of_straights() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The smallest card left has no smaller neighbour to hide behind, so whatever group it belongs to must begin with it. That removes all choice, which is exactly what makes a greedy correct here. Every copy of that smallest card needs its own group and they are indistinguishable, so all of them are taken in one step.", "from collections import Counter
+
+
+def isNStraightHand(hand, groupSize):
+    if groupSize <= 0 or len(hand) % groupSize != 0:
+        return False
+
+    counts = Counter(hand)
+
+    # The smallest card left has no smaller neighbour to hide behind, so
+    # whatever group it belongs to must start with it. That removes all choice,
+    # which is what makes the greedy correct -- and every copy of it needs its
+    # own group, so they are all taken at once.
+    for smallest in sorted(counts):
+        copies = counts[smallest]
+        if copies == 0:
+            continue
+        for card in range(smallest, smallest + groupSize):
+            if counts[card] < copies:
+                return False
+            counts[card] -= copies
+
+    return True"),
+      #("Solution 2 · Sorted consume", "No counts at all: sort, then peel one full run off the front, removing each card as it is used. Slower, since every removal is a list walk, but the only thing you have to believe is the same greedy claim — a group begins with the smallest card left.", "def isNStraightHand(hand, groupSize):
+    if groupSize <= 0 or len(hand) % groupSize != 0:
+        return False
+
+    # No counts: sort, then peel one full run off the front at a time, removing
+    # each card as it is used. Slower -- every removal is a list walk -- but the
+    # only thing to believe is that a group must begin with the smallest card
+    # left.
+    cards = sorted(hand)
+    while cards:
+        smallest = cards[0]
+        for card in range(smallest, smallest + groupSize):
+            if card not in cards:
+                return False
+            cards.remove(card)
+
+    return True"),
+    ],
+    check: Check(
+      signature: "def isNStraightHand(hand, groupSize):",
+      starter: "def isNStraightHand(hand, groupSize):
+    pass",
+      harness: "try:
+    (isNStraightHand)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"isNStraightHand([1, 2, 3, 6, 2, 3, 4, 7, 8], 3)\", True, isNStraightHand([1, 2, 3, 6, 2, 3, 4, 7, 8], 3))
+__case__(\"isNStraightHand([1, 2, 3, 4, 5], 4)\", False, isNStraightHand([1, 2, 3, 4, 5], 4))
+__case__(\"isNStraightHand([1, 2, 3, 4, 5, 6], 2)\", True, isNStraightHand([1, 2, 3, 4, 5, 6], 2))
+__case__(\"isNStraightHand([], 1)\", True, isNStraightHand([], 1))
+__case__(\"isNStraightHand([1, 1, 2, 2, 3, 3], 3)\", True, isNStraightHand([1, 1, 2, 2, 3, 3], 3))
+__case__(\"isNStraightHand([8, 10, 12], 3)\", False, isNStraightHand([8, 10, 12], 3))",
+    ),
+  )
+}
+
+pub fn nc46_merge_triplets() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Merging takes componentwise maxima, and a max never comes back down. So any triplet with a component above the target is permanently poisonous and must be discarded; and once discarded, every remaining triplet can be merged freely, because a max can only help. The answer is then just whether their maximum is the target.", "def mergeTriplets(triplets, target):
+    # A triplet with any component above the target can never be used: merging
+    # takes maxima, so that component would be stuck too high forever. Throw
+    # those away and the rest can all be merged, because a max only ever helps.
+    best = [0, 0, 0]
+    for triplet in triplets:
+        if all(triplet[i] <= target[i] for i in range(3)):
+            best = [max(best[i], triplet[i]) for i in range(3)]
+    return best == list(target)"),
+      #("Solution 2 · Track positions", "Same filter, different question: rather than merging the survivors, ask whether each of the three positions is hit exactly by some survivor. It is the same condition — a componentwise max equals the target exactly when every component is attained somewhere — but arrived at without computing the merge.", "def mergeTriplets(triplets, target):
+    # Ask a different question: is each of the three positions hit exactly by
+    # some usable triplet? The answer is yes exactly when all three are covered
+    # -- the same condition, arrived at without taking maxima.
+    usable = [t for t in triplets if all(t[i] <= target[i] for i in range(3))]
+    return all(any(t[i] == target[i] for t in usable) for i in range(3))"),
+    ],
+    check: Check(
+      signature: "def mergeTriplets(triplets, target):",
+      starter: "def mergeTriplets(triplets, target):
+    pass",
+      harness: "try:
+    (mergeTriplets)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"mergeTriplets([[2, 5, 3], [1, 8, 4], [1, 7, 5]], [2, 7, 5])\", True, mergeTriplets([[2, 5, 3], [1, 8, 4], [1, 7, 5]], [2, 7, 5]))
+__case__(\"mergeTriplets([[3, 4, 5], [4, 5, 6]], [3, 2, 5])\", False, mergeTriplets([[3, 4, 5], [4, 5, 6]], [3, 2, 5]))
+__case__(\"mergeTriplets([[2, 5, 3], [2, 3, 4], [1, 2, 5], [5, 2, 3]], [5, 5, 5])\", True, mergeTriplets([[2, 5, 3], [2, 3, 4], [1, 2, 5], [5, 2, 3]], [5, 5, 5]))
+__case__(\"mergeTriplets([[1, 1, 1]], [1, 1, 1])\", True, mergeTriplets([[1, 1, 1]], [1, 1, 1]))
+__case__(\"mergeTriplets([], [1, 1, 1])\", False, mergeTriplets([], [1, 1, 1]))
+__case__(\"mergeTriplets([[1, 2, 3]], [3, 2, 1])\", False, mergeTriplets([[1, 2, 3]], [3, 2, 1]))",
+    ),
+  )
+}
+
+pub fn nc47_partition_labels() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A piece can only end where every character inside it has run out, so map each character to its last position first. Then sweep, pushing the piece's end out to the furthest last-position seen; when the walk catches up with that end, nothing inside can reappear and the piece is closed.", "def partitionLabels(s):
+    # Overwriting as we go leaves each character mapped to its last position.
+    last = {c: i for i, c in enumerate(s)}
+
+    # A piece can only end where every character it contains has run out.
+    # Extend the end to the furthest last-position seen; when the walk catches
+    # up with it, the piece is closed.
+    out = []
+    start = 0
+    end = -1
+    for i, c in enumerate(s):
+        end = max(end, last[c])
+        if i == end:
+            out.append(end - start + 1)
+            start = i + 1
+
+    return out"),
+      #("Solution 2 · Expand end", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Grow the piece one character at a time until nothing inside it also appears in the tail. No last-position map — the tail is asked directly — so it is far slower, but it is the condition stated outright rather than pre-computed.", "def partitionLabels(s):
+    # Grow the piece one character at a time until nothing inside it also
+    # appears in what is left. No last-position map -- the tail is asked
+    # directly -- which is far slower but is the condition stated outright.
+    out = []
+    rest = s
+    while rest:
+        size = 1
+        while any(c in rest[size:] for c in rest[:size]):
+            size += 1
+        out.append(size)
+        rest = rest[size:]
+    return out"),
+    ],
+    check: Check(
+      signature: "def partitionLabels(s):",
+      starter: "def partitionLabels(s):
+    pass",
+      harness: "try:
+    (partitionLabels)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"partitionLabels('ababcbacadefegdehijhklij')\", [9, 7, 8], partitionLabels('ababcbacadefegdehijhklij'))
+__case__(\"partitionLabels('eccbbbbdec')\", [10], partitionLabels('eccbbbbdec'))
+__case__(\"partitionLabels('a')\", [1], partitionLabels('a'))
+__case__(\"partitionLabels('')\", [], partitionLabels(''))
+__case__(\"partitionLabels('abc')\", [1, 1, 1], partitionLabels('abc'))",
+    ),
+  )
+}
+
+pub fn nc48_valid_parenthesis_string() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Do not guess what each star should be — carry the range of open counts still possible. Low is the count if every star so far were a closer, high if every one were an opener. High going negative means even the most generous reading has too many closers, so bail; low is clamped at zero because a star can always be nothing. Valid exactly when low reaches zero at the end.", "def checkValidString(s):
+    # Rather than guessing what each star should be, carry the *range* of open
+    # counts still possible: low if every star so far were a closer, high if
+    # every one were an opener. High going negative means even the most generous
+    # reading has too many closers; low is clamped at zero because a star can
+    # always be nothing.
+    low = high = 0
+
+    for c in s:
+        if c == \"(\":
+            low, high = low + 1, high + 1
+        elif c == \")\":
+            low, high = max(low - 1, 0), high - 1
+        else:
+            low, high = max(low - 1, 0), high + 1
+        if high < 0:
+            return False
+
+    return low == 0"),
+      #("Solution 2 · Two passes", "Two one-sided checks instead of a range. Left to right with every star an opener asks whether there are ever too many closers; right to left with every star a closer asks whether there are ever too many openers. Passing both is exactly the condition — and each pass is the ordinary balance check you already know.", "def checkValidString(s):
+    # Two one-sided checks. Left to right with every star an opener asks whether
+    # there are ever too many closers; right to left with every star a closer
+    # asks whether there are ever too many openers. Passing both is exactly the
+    # condition, and each pass is the ordinary balance check.
+    return neverNegative(s, \"(\") and neverNegative(s[::-1], \")\")
+
+
+def neverNegative(s, credit):
+    balance = 0
+    for c in s:
+        balance += 1 if c == credit or c == \"*\" else -1
+        if balance < 0:
+            return False
+    return True"),
+    ],
+    check: Check(
+      signature: "def checkValidString(s):",
+      starter: "def checkValidString(s):
+    pass",
+      harness: "try:
+    (checkValidString)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"checkValidString('()')\", True, checkValidString('()'))
+__case__(\"checkValidString('(*)')\", True, checkValidString('(*)'))
+__case__(\"checkValidString('(*))')\", True, checkValidString('(*))'))
+__case__(\"checkValidString(')(')\", False, checkValidString(')('))
+__case__(\"checkValidString('')\", True, checkValidString(''))
+__case__(\"checkValidString('*')\", True, checkValidString('*'))
+__case__(\"checkValidString(')*')\", False, checkValidString(')*'))
+__case__(\"checkValidString('(*()')\", True, checkValidString('(*()'))",
+    ),
+  )
+}
+
 pub fn tip01_counter() -> Embedded {
   Embedded(
     solutions: [
@@ -2839,6 +3297,14 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc38_meeting_rooms" -> Ok(nc38_meeting_rooms())
     "nc39_meeting_rooms_ii" -> Ok(nc39_meeting_rooms_ii())
     "nc40_min_interval" -> Ok(nc40_min_interval())
+    "nc41_maximum_subarray" -> Ok(nc41_maximum_subarray())
+    "nc42_jump_game" -> Ok(nc42_jump_game())
+    "nc43_jump_game_ii" -> Ok(nc43_jump_game_ii())
+    "nc44_gas_station" -> Ok(nc44_gas_station())
+    "nc45_hand_of_straights" -> Ok(nc45_hand_of_straights())
+    "nc46_merge_triplets" -> Ok(nc46_merge_triplets())
+    "nc47_partition_labels" -> Ok(nc47_partition_labels())
+    "nc48_valid_parenthesis_string" -> Ok(nc48_valid_parenthesis_string())
     "tip01_counter" -> Ok(tip01_counter())
     "tip02_defaultdict" -> Ok(tip02_defaultdict())
     "tip03_deque" -> Ok(tip03_deque())

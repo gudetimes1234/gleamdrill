@@ -1,0 +1,1 @@
+From the goal, step back to the earliest index that can reach it. Taking the earliest can never cost more jumps — anything later is reachable from it too — so the choice is safe at every step. O(n²), and it makes the greedy argument visible in a way the window version hides.

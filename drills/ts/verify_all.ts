@@ -83,6 +83,22 @@ import * as v78 from "./.verify/nc39_meeting_rooms_ii/harness";
 import * as v79 from "./.verify/nc39_meeting_rooms_ii__count_at_each_start/harness";
 import * as v80 from "./.verify/nc40_min_interval/harness";
 import * as v81 from "./.verify/nc40_min_interval__offline_by_length/harness";
+import * as v82 from "./.verify/nc41_maximum_subarray/harness";
+import * as v83 from "./.verify/nc41_maximum_subarray__prefix_minimum/harness";
+import * as v84 from "./.verify/nc42_jump_game/harness";
+import * as v85 from "./.verify/nc42_jump_game__backwards/harness";
+import * as v86 from "./.verify/nc43_jump_game_ii/harness";
+import * as v87 from "./.verify/nc43_jump_game_ii__reverse_greedy/harness";
+import * as v88 from "./.verify/nc44_gas_station/harness";
+import * as v89 from "./.verify/nc44_gas_station__try_each_start/harness";
+import * as v90 from "./.verify/nc45_hand_of_straights/harness";
+import * as v91 from "./.verify/nc45_hand_of_straights__sorted_consume/harness";
+import * as v92 from "./.verify/nc46_merge_triplets/harness";
+import * as v93 from "./.verify/nc46_merge_triplets__track_positions/harness";
+import * as v94 from "./.verify/nc47_partition_labels/harness";
+import * as v95 from "./.verify/nc47_partition_labels__expand_end/harness";
+import * as v96 from "./.verify/nc48_valid_parenthesis_string/harness";
+import * as v97 from "./.verify/nc48_valid_parenthesis_string__two_passes/harness";
 
 type Case = [string, string, string];
 
@@ -169,6 +185,22 @@ const VARIANTS: [string, string, () => Case[]][] = [
   ["nc39_meeting_rooms_ii", "Solution 2 · Count at each start", v79.run],
   ["nc40_min_interval", "Solution 1", v80.run],
   ["nc40_min_interval", "Solution 2 · Offline by length", v81.run],
+  ["nc41_maximum_subarray", "Solution 1", v82.run],
+  ["nc41_maximum_subarray", "Solution 2 · Prefix minimum", v83.run],
+  ["nc42_jump_game", "Solution 1", v84.run],
+  ["nc42_jump_game", "Solution 2 · Backwards", v85.run],
+  ["nc43_jump_game_ii", "Solution 1", v86.run],
+  ["nc43_jump_game_ii", "Solution 2 · Reverse greedy", v87.run],
+  ["nc44_gas_station", "Solution 1", v88.run],
+  ["nc44_gas_station", "Solution 2 · Try each start", v89.run],
+  ["nc45_hand_of_straights", "Solution 1", v90.run],
+  ["nc45_hand_of_straights", "Solution 2 · Sorted consume", v91.run],
+  ["nc46_merge_triplets", "Solution 1", v92.run],
+  ["nc46_merge_triplets", "Solution 2 · Track positions", v93.run],
+  ["nc47_partition_labels", "Solution 1", v94.run],
+  ["nc47_partition_labels", "Solution 2 · Expand end", v95.run],
+  ["nc48_valid_parenthesis_string", "Solution 1", v96.run],
+  ["nc48_valid_parenthesis_string", "Solution 2 · Two passes", v97.run],
 ];
 
 const failures: string[] = [];

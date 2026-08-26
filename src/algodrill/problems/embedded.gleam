@@ -4394,6 +4394,899 @@ pub fn run() -> List(#(String, String, String)) {
   )
 }
 
+pub fn nc41_maximum_subarray() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Kadane. At each position the best subarray ending here either extends the one ending just before it or starts fresh — and the choice is decided by a single question: has the running total gone negative? A negative prefix can only hurt whatever follows, so it is dropped. Note the answer is not clamped at zero: an all-negative array's answer is its least bad element.", "import gleam/int
+import gleam/list
+
+pub fn max_sub_array(nums: List(Int)) -> Int {
+  case nums {
+    [] -> 0
+    [first, ..rest] -> {
+      // Kadane: at each position the best subarray ending here either extends
+      // the one ending just before it or starts fresh. A running total that has
+      // gone negative can only hurt whatever follows, so it is dropped.
+      let #(_, best) =
+        list.fold(rest, #(first, first), fn(state, n) {
+          let #(here, best) = state
+          let here = int.max(n, here + n)
+          #(here, int.max(best, here))
+        })
+      best
+    }
+  }
+}"),
+      #("Solution 2 · Prefix minimum", "The same answer from prefix sums. The sum from i to j is prefix[j] − prefix[i−1], so the best subarray ending at j is prefix[j] minus the smallest prefix seen before it. One pass carrying that minimum. Worth knowing because the prefix framing generalises to problems Kadane cannot touch — subarrays summing to k, divisible by k, and so on.", "import gleam/int
+import gleam/list
+
+pub fn max_sub_array(nums: List(Int)) -> Int {
+  case nums {
+    [] -> 0
+    _ -> {
+      // The sum from i to j is prefix[j] - prefix[i-1], so the best subarray
+      // ending at j is prefix[j] minus the smallest prefix before it. One pass
+      // carrying that minimum answers the whole thing.
+      let #(_, _, best) =
+        list.fold(nums, #(0, 0, -2_147_483_648), fn(state, n) {
+          let #(running, smallest, best) = state
+          let running = running + n
+          #(
+            running,
+            int.min(smallest, running),
+            int.max(best, running - smallest),
+          )
+        })
+      best
+    }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn max_sub_array(nums: List(Int)) -> Int",
+      starter: "pub fn max_sub_array(nums: List(Int)) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"max_sub_array([-2, 1, -3, 4, -1, 2, 1, -5, 4])\",
+      string.inspect(6),
+      string.inspect(solution.max_sub_array([-2, 1, -3, 4, -1, 2, 1, -5, 4])),
+    ),
+    #(
+      \"max_sub_array([1])\",
+      string.inspect(1),
+      string.inspect(solution.max_sub_array([1])),
+    ),
+    #(
+      \"max_sub_array([5, 4, -1, 7, 8])\",
+      string.inspect(23),
+      string.inspect(solution.max_sub_array([5, 4, -1, 7, 8])),
+    ),
+    #(
+      \"max_sub_array([-1])\",
+      string.inspect(-1),
+      string.inspect(solution.max_sub_array([-1])),
+    ),
+    #(
+      \"max_sub_array([-2, -1])\",
+      string.inspect(-1),
+      string.inspect(solution.max_sub_array([-2, -1])),
+    ),
+    #(
+      \"max_sub_array([])\",
+      string.inspect(0),
+      string.inspect(solution.max_sub_array([])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc42_jump_game() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Only one number matters: the furthest index reachable so far. Walk forward extending it, and the moment the walk gets past it nothing further is reachable. No search, no visited set — the reachable set from the left is always a prefix, which is what collapses the whole problem to one integer.", "import gleam/int
+import gleam/list
+
+pub fn can_jump(nums: List(Int)) -> Bool {
+  // Only one number matters: the furthest index reachable so far. Walk forward
+  // and extend it; the moment the walk gets past it, nothing further is
+  // reachable and the value stops changing.
+  let reach =
+    list.index_fold(nums, 0, fn(reach, jump, i) {
+      case i > reach {
+        True -> reach
+        False -> int.max(reach, i + jump)
+      }
+    })
+  reach >= list.length(nums) - 1
+}"),
+      #("Solution 2 · Backwards", "Walk backwards carrying the leftmost index known to reach the end. Any index that can reach *that* can reach the end, so it becomes the new goal — and the answer is whether the goal walks all the way back to zero. The same greedy from the other side, and often the easier one to convince yourself of.", "import gleam/list
+
+pub fn can_jump(nums: List(Int)) -> Bool {
+  let n = list.length(nums)
+  case n {
+    0 -> True
+    _ -> {
+      // Walk backwards carrying the leftmost index known to reach the end. Any
+      // index that can reach *that* can reach the end, so it becomes the new
+      // goal. Reachable exactly when the goal walks all the way back to 0.
+      let goal =
+        nums
+        |> list.index_map(fn(jump, i) { #(i, jump) })
+        |> list.reverse
+        |> list.fold(n - 1, fn(goal, cell) {
+          let #(i, jump) = cell
+          case i + jump >= goal {
+            True -> i
+            False -> goal
+          }
+        })
+      goal == 0
+    }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn can_jump(nums: List(Int)) -> Bool",
+      starter: "pub fn can_jump(nums: List(Int)) -> Bool {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"can_jump([2, 3, 1, 1, 4])\",
+      string.inspect(True),
+      string.inspect(solution.can_jump([2, 3, 1, 1, 4])),
+    ),
+    #(
+      \"can_jump([3, 2, 1, 0, 4])\",
+      string.inspect(False),
+      string.inspect(solution.can_jump([3, 2, 1, 0, 4])),
+    ),
+    #(
+      \"can_jump([0])\",
+      string.inspect(True),
+      string.inspect(solution.can_jump([0])),
+    ),
+    #(
+      \"can_jump([])\",
+      string.inspect(True),
+      string.inspect(solution.can_jump([])),
+    ),
+    #(
+      \"can_jump([1, 0, 1, 0])\",
+      string.inspect(False),
+      string.inspect(solution.can_jump([1, 0, 1, 0])),
+    ),
+    #(
+      \"can_jump([2, 0, 0])\",
+      string.inspect(True),
+      string.inspect(solution.can_jump([2, 0, 0])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc43_jump_game_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Breadth-first search without a queue. Everything reachable in k jumps is a contiguous window, so the levels of the search are just ranges: when the walk reaches the current window's end, one more jump is spent and the next window runs to the furthest index seen so far. Recognising that the frontier stays contiguous is the whole trick.", "import gleam/int
+import gleam/list
+
+pub fn jump(nums: List(Int)) -> Int {
+  let n = list.length(nums)
+  // Breadth-first search without a queue. Everything reachable in k jumps forms
+  // a contiguous window; when the walk reaches that window's end, one more jump
+  // is spent and the next window runs to the furthest index seen so far.
+  let #(jumps, _, _) =
+    nums
+    |> list.index_map(fn(jump, i) { #(i, jump) })
+    |> list.fold(#(0, 0, 0), fn(state, cell) {
+      let #(jumps, window_end, furthest) = state
+      let #(i, jump) = cell
+      case i >= n - 1 {
+        True -> state
+        False -> {
+          let furthest = int.max(furthest, i + jump)
+          case i == window_end {
+            True -> #(jumps + 1, furthest, furthest)
+            False -> #(jumps, window_end, furthest)
+          }
+        }
+      }
+    })
+  jumps
+}"),
+      #("Solution 2 · Reverse greedy", "From the goal, step back to the earliest index that can reach it. Taking the earliest can never cost more jumps — anything later is reachable from it too — so the choice is safe at every step. O(n²), and it makes the greedy argument visible in a way the window version hides.", "import gleam/list
+
+pub fn jump(nums: List(Int)) -> Int {
+  let n = list.length(nums)
+  case n <= 1 {
+    True -> 0
+    False -> {
+      let indexed = list.index_map(nums, fn(jump, i) { #(i, jump) })
+      walk(indexed, n - 1, 0)
+    }
+  }
+}
+
+/// From the goal, step back to the *earliest* index that can reach it: taking
+/// the earliest can never cost more jumps, and it is the only choice that is
+/// obviously safe. O(n\\u{b2}), and it makes the greedy argument visible.
+fn walk(indexed: List(#(Int, Int)), goal: Int, jumps: Int) -> Int {
+  case goal == 0 {
+    True -> jumps
+    False ->
+      case list.find(indexed, fn(cell) { cell.0 + cell.1 >= goal }) {
+        Ok(#(index, _)) -> walk(indexed, index, jumps + 1)
+        Error(Nil) -> jumps
+      }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn jump(nums: List(Int)) -> Int",
+      starter: "pub fn jump(nums: List(Int)) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"jump([2, 3, 1, 1, 4])\",
+      string.inspect(2),
+      string.inspect(solution.jump([2, 3, 1, 1, 4])),
+    ),
+    #(
+      \"jump([2, 3, 0, 1, 4])\",
+      string.inspect(2),
+      string.inspect(solution.jump([2, 3, 0, 1, 4])),
+    ),
+    #(\"jump([0])\", string.inspect(0), string.inspect(solution.jump([0]))),
+    #(\"jump([1])\", string.inspect(0), string.inspect(solution.jump([1]))),
+    #(
+      \"jump([1, 2, 3])\",
+      string.inspect(2),
+      string.inspect(solution.jump([1, 2, 3])),
+    ),
+    #(
+      \"jump([1, 1, 1, 1])\",
+      string.inspect(3),
+      string.inspect(solution.jump([1, 1, 1, 1])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc44_gas_station() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two facts do all the work. If the total gas falls short of the total cost, no start works at all. And if the tank runs dry travelling from i to j, no station between them can start either — each would begin with even less — so the search jumps straight to j+1 rather than restarting at i+1. Together they turn an O(n²) search into one pass.", "import gleam/list
+
+pub fn can_complete_circuit(gas: List(Int), cost: List(Int)) -> Int {
+  case gas {
+    [] -> -1
+    _ -> {
+      // Two facts do all the work. If the total gas is short of the total cost
+      // no start works at all; and if the tank runs dry between i and j, no
+      // station in between can start either, so the search jumps straight to
+      // j + 1 rather than restarting.
+      let #(total, _tank, start) =
+        list.zip(gas, cost)
+        |> list.index_fold(#(0, 0, 0), fn(state, pair, i) {
+          let #(total, tank, start) = state
+          let diff = pair.0 - pair.1
+          let tank = tank + diff
+          case tank < 0 {
+            True -> #(total + diff, 0, i + 1)
+            False -> #(total + diff, tank, start)
+          }
+        })
+      case total >= 0 {
+        True -> start
+        False -> -1
+      }
+    }
+  }
+}"),
+      #("Solution 2 · Try each start", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Drive the whole loop from each start and watch the tank. O(n²), and the thing worth extracting from it: the single pass is not a different algorithm, it is this one with the starts that cannot possibly work skipped.", "import gleam/list
+
+pub fn can_complete_circuit(gas: List(Int), cost: List(Int)) -> Int {
+  let diffs = list.zip(gas, cost) |> list.map(fn(pair) { pair.0 - pair.1 })
+  let n = list.length(diffs)
+
+  diffs
+  |> list.index_map(fn(_, start) { start })
+  |> list.find(fn(start) { survives(diffs, start, n) })
+  |> fn(found) {
+    case found {
+      Ok(start) -> start
+      Error(Nil) -> -1
+    }
+  }
+}
+
+/// Drive the whole loop from `start` and see whether the tank ever goes
+/// negative. O(n\\u{b2}) \\u{2014} the definition, and what the single pass replaces.
+fn survives(diffs: List(Int), start: Int, n: Int) -> Bool {
+  let rotated = list.append(list.drop(diffs, start), list.take(diffs, start))
+  let #(_, ok) =
+    list.fold(rotated, #(0, True), fn(state, diff) {
+      let #(tank, ok) = state
+      let tank = tank + diff
+      #(tank, ok && tank >= 0)
+    })
+  ok && n > 0
+}"),
+    ],
+    check: Check(
+      signature: "pub fn can_complete_circuit(gas: List(Int), cost: List(Int)) -> Int",
+      starter: "pub fn can_complete_circuit(gas: List(Int), cost: List(Int)) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"can_complete_circuit([1, 2, 3, 4, 5], [3, 4, 5, 1, 2])\",
+      string.inspect(3),
+      string.inspect(
+        solution.can_complete_circuit([1, 2, 3, 4, 5], [3, 4, 5, 1, 2]),
+      ),
+    ),
+    #(
+      \"can_complete_circuit([2, 3, 4], [3, 4, 3])\",
+      string.inspect(-1),
+      string.inspect(solution.can_complete_circuit([2, 3, 4], [3, 4, 3])),
+    ),
+    #(
+      \"can_complete_circuit([5], [4])\",
+      string.inspect(0),
+      string.inspect(solution.can_complete_circuit([5], [4])),
+    ),
+    #(
+      \"can_complete_circuit([1, 2], [2, 1])\",
+      string.inspect(1),
+      string.inspect(solution.can_complete_circuit([1, 2], [2, 1])),
+    ),
+    #(
+      \"can_complete_circuit([], [])\",
+      string.inspect(-1),
+      string.inspect(solution.can_complete_circuit([], [])),
+    ),
+    #(
+      \"can_complete_circuit([3, 1, 1], [1, 2, 2])\",
+      string.inspect(0),
+      string.inspect(solution.can_complete_circuit([3, 1, 1], [1, 2, 2])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc45_hand_of_straights() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The smallest card left has no smaller neighbour to hide behind, so whatever group it belongs to must begin with it. That removes all choice, which is exactly what makes a greedy correct here. Every copy of that smallest card needs its own group and they are indistinguishable, so all of them are taken in one step.", "import gleam/dict.{type Dict}
+import gleam/int
+import gleam/list
+
+pub fn is_n_straight_hand(hand: List(Int), group_size: Int) -> Bool {
+  case group_size <= 0 {
+    True -> False
+    False ->
+      case list.length(hand) % group_size {
+        0 -> {
+          let counts =
+            list.fold(hand, dict.new(), fn(acc, card) {
+              dict.insert(acc, card, count(acc, card) + 1)
+            })
+          // The smallest card left has no smaller neighbour to hide behind, so
+          // whatever group it belongs to must start with it. That removes all
+          // choice, which is what makes the greedy correct.
+          consume(counts, list.sort(list.unique(hand), int.compare), group_size)
+        }
+        _ -> False
+      }
+  }
+}
+
+fn consume(
+  counts: Dict(Int, Int),
+  ascending: List(Int),
+  group_size: Int,
+) -> Bool {
+  case ascending {
+    [] -> True
+    [smallest, ..rest] ->
+      case count(counts, smallest) {
+        0 -> consume(counts, rest, group_size)
+        copies ->
+          case take_run(counts, smallest, group_size, copies) {
+            Ok(counts) -> consume(counts, rest, group_size)
+            Error(Nil) -> False
+          }
+      }
+  }
+}
+
+/// Removes `copies` groups starting at `from`, all at once: every copy of the
+/// smallest card needs its own group, and they all look identical.
+fn take_run(
+  counts: Dict(Int, Int),
+  from: Int,
+  remaining: Int,
+  copies: Int,
+) -> Result(Dict(Int, Int), Nil) {
+  case remaining {
+    0 -> Ok(counts)
+    _ ->
+      case count(counts, from) >= copies {
+        False -> Error(Nil)
+        True ->
+          take_run(
+            dict.insert(counts, from, count(counts, from) - copies),
+            from + 1,
+            remaining - 1,
+            copies,
+          )
+      }
+  }
+}
+
+fn count(counts: Dict(Int, Int), key: Int) -> Int {
+  case dict.get(counts, key) {
+    Ok(n) -> n
+    Error(Nil) -> 0
+  }
+}"),
+      #("Solution 2 · Sorted consume", "No counts at all: sort, then peel one full run off the front, removing each card as it is used. Slower, since every removal is a list walk, but the only thing you have to believe is the same greedy claim — a group begins with the smallest card left.", "import gleam/int
+import gleam/list
+
+pub fn is_n_straight_hand(hand: List(Int), group_size: Int) -> Bool {
+  case group_size <= 0 {
+    True -> False
+    False ->
+      case list.length(hand) % group_size {
+        0 -> build(list.sort(hand, int.compare), group_size)
+        _ -> False
+      }
+  }
+}
+
+/// No counts: sort, then peel one full run off the front at a time, removing
+/// each card as it is used. Slower \\u{2014} every removal is a list walk \\u{2014} but the
+/// only thing to believe is that a group must begin with the smallest card
+/// left.
+fn build(sorted: List(Int), group_size: Int) -> Bool {
+  case sorted {
+    [] -> True
+    [smallest, ..] ->
+      case peel(sorted, smallest, group_size) {
+        Ok(remaining) -> build(remaining, group_size)
+        Error(Nil) -> False
+      }
+  }
+}
+
+fn peel(
+  sorted: List(Int),
+  wanted: Int,
+  remaining: Int,
+) -> Result(List(Int), Nil) {
+  case remaining {
+    0 -> Ok(sorted)
+    _ ->
+      case list.contains(sorted, wanted) {
+        False -> Error(Nil)
+        True ->
+          peel(remove_first(sorted, wanted, []), wanted + 1, remaining - 1)
+      }
+  }
+}
+
+fn remove_first(sorted: List(Int), wanted: Int, seen: List(Int)) -> List(Int) {
+  case sorted {
+    [] -> list.reverse(seen)
+    [first, ..rest] ->
+      case first == wanted {
+        True -> list.append(list.reverse(seen), rest)
+        False -> remove_first(rest, wanted, [first, ..seen])
+      }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn is_n_straight_hand(hand: List(Int), group_size: Int) -> Bool",
+      starter: "pub fn is_n_straight_hand(hand: List(Int), group_size: Int) -> Bool {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"is_n_straight_hand([1, 2, 3, 6, 2, 3, 4, 7, 8], 3)\",
+      string.inspect(True),
+      string.inspect(solution.is_n_straight_hand([1, 2, 3, 6, 2, 3, 4, 7, 8], 3)),
+    ),
+    #(
+      \"is_n_straight_hand([1, 2, 3, 4, 5], 4)\",
+      string.inspect(False),
+      string.inspect(solution.is_n_straight_hand([1, 2, 3, 4, 5], 4)),
+    ),
+    #(
+      \"is_n_straight_hand([1, 2, 3, 4, 5, 6], 2)\",
+      string.inspect(True),
+      string.inspect(solution.is_n_straight_hand([1, 2, 3, 4, 5, 6], 2)),
+    ),
+    #(
+      \"is_n_straight_hand([], 1)\",
+      string.inspect(True),
+      string.inspect(solution.is_n_straight_hand([], 1)),
+    ),
+    #(
+      \"is_n_straight_hand([1, 1, 2, 2, 3, 3], 3)\",
+      string.inspect(True),
+      string.inspect(solution.is_n_straight_hand([1, 1, 2, 2, 3, 3], 3)),
+    ),
+    #(
+      \"is_n_straight_hand([8, 10, 12], 3)\",
+      string.inspect(False),
+      string.inspect(solution.is_n_straight_hand([8, 10, 12], 3)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc46_merge_triplets() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Merging takes componentwise maxima, and a max never comes back down. So any triplet with a component above the target is permanently poisonous and must be discarded; and once discarded, every remaining triplet can be merged freely, because a max can only help. The answer is then just whether their maximum is the target.", "import gleam/int
+import gleam/list
+
+pub fn merge_triplets(
+  triplets: List(#(Int, Int, Int)),
+  target: #(Int, Int, Int),
+) -> Bool {
+  // A triplet with any component above the target can never be used: merging
+  // takes maxima, so that component would be stuck too high forever. Throw
+  // those away and the rest can all be merged, because merging is a max and a
+  // max only ever helps.
+  triplets
+  |> list.filter(fn(t) { t.0 <= target.0 && t.1 <= target.1 && t.2 <= target.2 })
+  |> list.fold(#(0, 0, 0), fn(best, t) {
+    #(int.max(best.0, t.0), int.max(best.1, t.1), int.max(best.2, t.2))
+  })
+  |> fn(best) { best == target }
+}"),
+      #("Solution 2 · Track positions", "Same filter, different question: rather than merging the survivors, ask whether each of the three positions is hit exactly by some survivor. It is the same condition — a componentwise max equals the target exactly when every component is attained somewhere — but arrived at without computing the merge.", "import gleam/list
+
+pub fn merge_triplets(
+  triplets: List(#(Int, Int, Int)),
+  target: #(Int, Int, Int),
+) -> Bool {
+  // Ask a different question: is each of the three positions hit exactly by
+  // some usable triplet? A usable triplet is one no component of which exceeds
+  // the target, and the answer is yes exactly when all three positions are
+  // covered \\u{2014} which is the same condition, arrived at without taking maxima.
+  let usable =
+    list.filter(triplets, fn(t) {
+      t.0 <= target.0 && t.1 <= target.1 && t.2 <= target.2
+    })
+
+  list.any(usable, fn(t) { t.0 == target.0 })
+  && list.any(usable, fn(t) { t.1 == target.1 })
+  && list.any(usable, fn(t) { t.2 == target.2 })
+}"),
+    ],
+    check: Check(
+      signature: "pub fn merge_triplets(
+  triplets: List(#(Int, Int, Int)),
+  target: #(Int, Int, Int),
+) -> Bool",
+      starter: "pub fn merge_triplets(
+  triplets: List(#(Int, Int, Int)),
+  target: #(Int, Int, Int),
+) -> Bool {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"merge_triplets([#(2,5,3), #(1,8,4), #(1,7,5)], #(2,7,5))\",
+      string.inspect(True),
+      string.inspect(
+        solution.merge_triplets([#(2, 5, 3), #(1, 8, 4), #(1, 7, 5)], #(2, 7, 5)),
+      ),
+    ),
+    #(
+      \"merge_triplets([#(3,4,5), #(4,5,6)], #(3,2,5))\",
+      string.inspect(False),
+      string.inspect(
+        solution.merge_triplets([#(3, 4, 5), #(4, 5, 6)], #(3, 2, 5)),
+      ),
+    ),
+    #(
+      \"merge_triplets([#(2,5,3), #(2,3,4), #(1,2,5), #(5,2,3)], #(5,5,5))\",
+      string.inspect(True),
+      string.inspect(
+        solution.merge_triplets(
+          [#(2, 5, 3), #(2, 3, 4), #(1, 2, 5), #(5, 2, 3)],
+          #(5, 5, 5),
+        ),
+      ),
+    ),
+    #(
+      \"merge_triplets([#(1,1,1)], #(1,1,1))\",
+      string.inspect(True),
+      string.inspect(solution.merge_triplets([#(1, 1, 1)], #(1, 1, 1))),
+    ),
+    #(
+      \"merge_triplets([], #(1,1,1))\",
+      string.inspect(False),
+      string.inspect(solution.merge_triplets([], #(1, 1, 1))),
+    ),
+    #(
+      \"merge_triplets([#(1,2,3)], #(3,2,1))\",
+      string.inspect(False),
+      string.inspect(solution.merge_triplets([#(1, 2, 3)], #(3, 2, 1))),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc47_partition_labels() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A piece can only end where every character inside it has run out, so map each character to its last position first. Then sweep, pushing the piece's end out to the furthest last-position seen; when the walk catches up with that end, nothing inside can reappear and the piece is closed.", "import gleam/dict
+import gleam/int
+import gleam/list
+import gleam/result
+import gleam/string
+
+pub fn partition_labels(s: String) -> List(Int) {
+  let graphemes = string.to_graphemes(s)
+  // Overwriting as we go leaves each character mapped to its last position.
+  let last =
+    list.index_fold(graphemes, dict.new(), fn(acc, c, i) {
+      dict.insert(acc, c, i)
+    })
+
+  // A piece can only end where every character it contains has run out. Extend
+  // the end to the furthest last-position seen so far; when the walk catches
+  // up with it, the piece is closed.
+  let #(parts, _, _) =
+    list.index_fold(graphemes, #([], 0, -1), fn(state, c, i) {
+      let #(parts, start, end) = state
+      let end = int.max(end, result.unwrap(dict.get(last, c), i))
+      case i == end {
+        True -> #([end - start + 1, ..parts], i + 1, end)
+        False -> #(parts, start, end)
+      }
+    })
+
+  list.reverse(parts)
+}"),
+      #("Solution 2 · Expand end", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Grow the piece one character at a time until nothing inside it also appears in the tail. No last-position map — the tail is asked directly — so it is far slower, but it is the condition stated outright rather than pre-computed.", "import gleam/list
+import gleam/string
+
+pub fn partition_labels(s: String) -> List(Int) {
+  cut(string.to_graphemes(s), [])
+}
+
+fn cut(rest: List(String), acc: List(Int)) -> List(Int) {
+  case rest {
+    [] -> list.reverse(acc)
+    _ -> {
+      let size = grow(rest, 1)
+      cut(list.drop(rest, size), [size, ..acc])
+    }
+  }
+}
+
+/// Grow the piece one character at a time until nothing inside it also appears
+/// in what is left. No last-position map \\u{2014} the tail is asked directly \\u{2014} which
+/// is far slower but is the condition stated outright.
+fn grow(rest: List(String), size: Int) -> Int {
+  let prefix = list.take(rest, size)
+  let tail = list.drop(rest, size)
+  case list.any(prefix, fn(c) { list.contains(tail, c) }) {
+    False -> size
+    True -> grow(rest, size + 1)
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn partition_labels(s: String) -> List(Int)",
+      starter: "pub fn partition_labels(s: String) -> List(Int) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"partition_labels(\\\"ababcbacadefegdehijhklij\\\")\",
+      string.inspect([9, 7, 8]),
+      string.inspect(solution.partition_labels(\"ababcbacadefegdehijhklij\")),
+    ),
+    #(
+      \"partition_labels(\\\"eccbbbbdec\\\")\",
+      string.inspect([10]),
+      string.inspect(solution.partition_labels(\"eccbbbbdec\")),
+    ),
+    #(
+      \"partition_labels(\\\"a\\\")\",
+      string.inspect([1]),
+      string.inspect(solution.partition_labels(\"a\")),
+    ),
+    #(
+      \"partition_labels(\\\"\\\")\",
+      string.inspect([]),
+      string.inspect(solution.partition_labels(\"\")),
+    ),
+    #(
+      \"partition_labels(\\\"abc\\\")\",
+      string.inspect([1, 1, 1]),
+      string.inspect(solution.partition_labels(\"abc\")),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc48_valid_parenthesis_string() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Do not guess what each star should be — carry the range of open counts still possible. Low is the count if every star so far were a closer, high if every one were an opener. High going negative means even the most generous reading has too many closers, so bail; low is clamped at zero because a star can always be nothing. Valid exactly when low reaches zero at the end.", "import gleam/int
+import gleam/list
+import gleam/string
+
+pub fn check_valid_string(s: String) -> Bool {
+  // Rather than guessing what each star should be, carry the *range* of open
+  // counts still possible: low if every star so far were a closer, high if
+  // every one were an opener. High going negative means even the most generous
+  // reading has too many closers; low is clamped at zero because a star can
+  // always be nothing.
+  let #(low, _high, ok) =
+    list.fold(string.to_graphemes(s), #(0, 0, True), fn(state, c) {
+      let #(low, high, ok) = state
+      case ok {
+        False -> state
+        True -> {
+          let #(low, high) = case c {
+            \"(\" -> #(low + 1, high + 1)
+            \")\" -> #(int.max(low - 1, 0), high - 1)
+            _ -> #(int.max(low - 1, 0), high + 1)
+          }
+          #(low, high, high >= 0)
+        }
+      }
+    })
+
+  ok && low == 0
+}"),
+      #("Solution 2 · Two passes", "Two one-sided checks instead of a range. Left to right with every star an opener asks whether there are ever too many closers; right to left with every star a closer asks whether there are ever too many openers. Passing both is exactly the condition — and each pass is the ordinary balance check you already know.", "import gleam/list
+import gleam/string
+
+pub fn check_valid_string(s: String) -> Bool {
+  let graphemes = string.to_graphemes(s)
+  // Two one-sided checks. Left to right with every star an opener asks whether
+  // there are ever too many closers; right to left with every star a closer
+  // asks whether there are ever too many openers. Passing both is exactly the
+  // condition, and each pass is the ordinary balance check.
+  never_negative(graphemes, \"(\", \")\")
+  && never_negative(list.reverse(graphemes), \")\", \"(\")
+}
+
+fn never_negative(
+  graphemes: List(String),
+  credit: String,
+  debit: String,
+) -> Bool {
+  let #(_, ok) =
+    list.fold(graphemes, #(0, True), fn(state, c) {
+      let #(balance, ok) = state
+      let balance = case c {
+        _ if c == debit -> balance - 1
+        _ if c == credit -> balance + 1
+        _ -> balance + 1
+      }
+      #(balance, ok && balance >= 0)
+    })
+  ok
+}"),
+    ],
+    check: Check(
+      signature: "pub fn check_valid_string(s: String) -> Bool",
+      starter: "pub fn check_valid_string(s: String) -> Bool {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"check_valid_string(\\\"()\\\")\",
+      string.inspect(True),
+      string.inspect(solution.check_valid_string(\"()\")),
+    ),
+    #(
+      \"check_valid_string(\\\"(*)\\\")\",
+      string.inspect(True),
+      string.inspect(solution.check_valid_string(\"(*)\")),
+    ),
+    #(
+      \"check_valid_string(\\\"(*))\\\")\",
+      string.inspect(True),
+      string.inspect(solution.check_valid_string(\"(*))\")),
+    ),
+    #(
+      \"check_valid_string(\\\")(\\\")\",
+      string.inspect(False),
+      string.inspect(solution.check_valid_string(\")(\")),
+    ),
+    #(
+      \"check_valid_string(\\\"\\\")\",
+      string.inspect(True),
+      string.inspect(solution.check_valid_string(\"\")),
+    ),
+    #(
+      \"check_valid_string(\\\"*\\\")\",
+      string.inspect(True),
+      string.inspect(solution.check_valid_string(\"*\")),
+    ),
+    #(
+      \"check_valid_string(\\\")*\\\")\",
+      string.inspect(False),
+      string.inspect(solution.check_valid_string(\")*\")),
+    ),
+    #(
+      \"check_valid_string(\\\"(*()\\\")\",
+      string.inspect(True),
+      string.inspect(solution.check_valid_string(\"(*()\")),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
 pub fn tip01_list_patterns() -> Embedded {
   Embedded(
     solutions: [
@@ -5201,6 +6094,14 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc38_meeting_rooms" -> Ok(nc38_meeting_rooms())
     "nc39_meeting_rooms_ii" -> Ok(nc39_meeting_rooms_ii())
     "nc40_min_interval" -> Ok(nc40_min_interval())
+    "nc41_maximum_subarray" -> Ok(nc41_maximum_subarray())
+    "nc42_jump_game" -> Ok(nc42_jump_game())
+    "nc43_jump_game_ii" -> Ok(nc43_jump_game_ii())
+    "nc44_gas_station" -> Ok(nc44_gas_station())
+    "nc45_hand_of_straights" -> Ok(nc45_hand_of_straights())
+    "nc46_merge_triplets" -> Ok(nc46_merge_triplets())
+    "nc47_partition_labels" -> Ok(nc47_partition_labels())
+    "nc48_valid_parenthesis_string" -> Ok(nc48_valid_parenthesis_string())
     "tip01_list_patterns" -> Ok(tip01_list_patterns())
     "tip02_tail_recursion" -> Ok(tip02_tail_recursion())
     "tip03_fold" -> Ok(tip03_fold())

@@ -1,0 +1,1 @@
+Two one-sided checks instead of a range. Left to right with every star an opener asks whether there are ever too many closers; right to left with every star a closer asks whether there are ever too many openers. Passing both is exactly the condition — and each pass is the ordinary balance check you already know.

@@ -1,0 +1,1 @@
+The smallest card left has no smaller neighbour to hide behind, so whatever group it belongs to must begin with it. That removes all choice, which is exactly what makes a greedy correct here. Every copy of that smallest card needs its own group and they are indistinguishable, so all of them are taken in one step.

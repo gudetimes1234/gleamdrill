@@ -1,0 +1,1 @@
+Kadane. At each position the best subarray ending here either extends the one ending just before it or starts fresh — and the choice is decided by a single question: has the running total gone negative? A negative prefix can only hurt whatever follows, so it is dropped. Note the answer is not clamped at zero: an all-negative array's answer is its least bad element.

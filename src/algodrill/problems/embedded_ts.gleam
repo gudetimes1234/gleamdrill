@@ -2600,6 +2600,500 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc41_maximum_subarray() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Kadane. At each position the best subarray ending here either extends the one ending just before it or starts fresh — and the choice is decided by a single question: has the running total gone negative? A negative prefix can only hurt whatever follows, so it is dropped. Note the answer is not clamped at zero: an all-negative array's answer is its least bad element.", "export function maxSubArray(nums: number[]): number {
+  if (nums.length === 0) return 0;
+
+  // Kadane: at each position the best subarray ending here either extends the
+  // one ending just before it or starts fresh. A running total that has gone
+  // negative can only hurt whatever follows, so it is dropped.
+  let here = nums[0];
+  let best = nums[0];
+  for (const n of nums.slice(1)) {
+    here = Math.max(n, here + n);
+    best = Math.max(best, here);
+  }
+  return best;
+}"),
+      #("Solution 2 · Prefix minimum", "The same answer from prefix sums. The sum from i to j is prefix[j] − prefix[i−1], so the best subarray ending at j is prefix[j] minus the smallest prefix seen before it. One pass carrying that minimum. Worth knowing because the prefix framing generalises to problems Kadane cannot touch — subarrays summing to k, divisible by k, and so on.", "export function maxSubArray(nums: number[]): number {
+  if (nums.length === 0) return 0;
+
+  // The sum from i to j is prefix[j] - prefix[i-1], so the best subarray ending
+  // at j is prefix[j] minus the smallest prefix before it. One pass carrying
+  // that minimum answers the whole thing.
+  let running = 0;
+  let smallest = 0;
+  let best = -Infinity;
+  for (const n of nums) {
+    running += n;
+    best = Math.max(best, running - smallest);
+    smallest = Math.min(smallest, running);
+  }
+  return best;
+}"),
+    ],
+    check: Check(
+      signature: "export function maxSubArray(nums: number[]): number",
+      starter: "export function maxSubArray(nums: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.maxSubArray !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"maxSubArray([-2, 1, -3, 4, -1, 2, 1, -5, 4])\", show(6), show(solution.maxSubArray([-2, 1, -3, 4, -1, 2, 1, -5, 4]))],
+    [\"maxSubArray([1])\", show(1), show(solution.maxSubArray([1]))],
+    [\"maxSubArray([5, 4, -1, 7, 8])\", show(23), show(solution.maxSubArray([5, 4, -1, 7, 8]))],
+    [\"maxSubArray([-1])\", show(-1), show(solution.maxSubArray([-1]))],
+    [\"maxSubArray([-2, -1])\", show(-1), show(solution.maxSubArray([-2, -1]))],
+    [\"maxSubArray([])\", show(0), show(solution.maxSubArray([]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc42_jump_game() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Only one number matters: the furthest index reachable so far. Walk forward extending it, and the moment the walk gets past it nothing further is reachable. No search, no visited set — the reachable set from the left is always a prefix, which is what collapses the whole problem to one integer.", "export function canJump(nums: number[]): boolean {
+  // Only one number matters: the furthest index reachable so far. Walk forward
+  // and extend it; the moment the walk gets past it, nothing further is
+  // reachable.
+  let reach = 0;
+  for (let i = 0; i < nums.length; i++) {
+    if (i > reach) return false;
+    reach = Math.max(reach, i + nums[i]);
+  }
+  return reach >= nums.length - 1;
+}"),
+      #("Solution 2 · Backwards", "Walk backwards carrying the leftmost index known to reach the end. Any index that can reach *that* can reach the end, so it becomes the new goal — and the answer is whether the goal walks all the way back to zero. The same greedy from the other side, and often the easier one to convince yourself of.", "export function canJump(nums: number[]): boolean {
+  if (nums.length === 0) return true;
+
+  // Walk backwards carrying the leftmost index known to reach the end. Any
+  // index that can reach *that* can reach the end, so it becomes the new goal.
+  let goal = nums.length - 1;
+  for (let i = nums.length - 1; i >= 0; i--) {
+    if (i + nums[i] >= goal) goal = i;
+  }
+  return goal === 0;
+}"),
+    ],
+    check: Check(
+      signature: "export function canJump(nums: number[]): boolean",
+      starter: "export function canJump(nums: number[]): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.canJump !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"canJump([2, 3, 1, 1, 4])\", show(true), show(solution.canJump([2, 3, 1, 1, 4]))],
+    [\"canJump([3, 2, 1, 0, 4])\", show(false), show(solution.canJump([3, 2, 1, 0, 4]))],
+    [\"canJump([0])\", show(true), show(solution.canJump([0]))],
+    [\"canJump([])\", show(true), show(solution.canJump([]))],
+    [\"canJump([1, 0, 1, 0])\", show(false), show(solution.canJump([1, 0, 1, 0]))],
+    [\"canJump([2, 0, 0])\", show(true), show(solution.canJump([2, 0, 0]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc43_jump_game_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Breadth-first search without a queue. Everything reachable in k jumps is a contiguous window, so the levels of the search are just ranges: when the walk reaches the current window's end, one more jump is spent and the next window runs to the furthest index seen so far. Recognising that the frontier stays contiguous is the whole trick.", "export function jump(nums: number[]): number {
+  // Breadth-first search without a queue. Everything reachable in k jumps forms
+  // a contiguous window; when the walk reaches that window's end, one more jump
+  // is spent and the next window runs to the furthest index seen.
+  let jumps = 0;
+  let windowEnd = 0;
+  let furthest = 0;
+
+  for (let i = 0; i < nums.length - 1; i++) {
+    furthest = Math.max(furthest, i + nums[i]);
+    if (i === windowEnd) {
+      jumps++;
+      windowEnd = furthest;
+    }
+  }
+
+  return jumps;
+}"),
+      #("Solution 2 · Reverse greedy", "From the goal, step back to the earliest index that can reach it. Taking the earliest can never cost more jumps — anything later is reachable from it too — so the choice is safe at every step. O(n²), and it makes the greedy argument visible in a way the window version hides.", "export function jump(nums: number[]): number {
+  if (nums.length <= 1) return 0;
+
+  // From the goal, step back to the *earliest* index that can reach it: taking
+  // the earliest can never cost more jumps, and it is the only choice that is
+  // obviously safe. O(n^2), and it makes the greedy argument visible.
+  let goal = nums.length - 1;
+  let jumps = 0;
+  while (goal > 0) {
+    const found = nums.findIndex((jumpLength, i) => i + jumpLength >= goal);
+    if (found === -1) break;
+    goal = found;
+    jumps++;
+  }
+  return jumps;
+}"),
+    ],
+    check: Check(
+      signature: "export function jump(nums: number[]): number",
+      starter: "export function jump(nums: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.jump !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"jump([2, 3, 1, 1, 4])\", show(2), show(solution.jump([2, 3, 1, 1, 4]))],
+    [\"jump([2, 3, 0, 1, 4])\", show(2), show(solution.jump([2, 3, 0, 1, 4]))],
+    [\"jump([0])\", show(0), show(solution.jump([0]))],
+    [\"jump([1])\", show(0), show(solution.jump([1]))],
+    [\"jump([1, 2, 3])\", show(2), show(solution.jump([1, 2, 3]))],
+    [\"jump([1, 1, 1, 1])\", show(3), show(solution.jump([1, 1, 1, 1]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc44_gas_station() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two facts do all the work. If the total gas falls short of the total cost, no start works at all. And if the tank runs dry travelling from i to j, no station between them can start either — each would begin with even less — so the search jumps straight to j+1 rather than restarting at i+1. Together they turn an O(n²) search into one pass.", "export function canCompleteCircuit(gas: number[], cost: number[]): number {
+  if (gas.length === 0) return -1;
+
+  // Two facts do all the work. If the total gas is short of the total cost no
+  // start works at all; and if the tank runs dry between i and j, no station in
+  // between can start either, so the search jumps straight to j + 1.
+  let total = 0;
+  let tank = 0;
+  let start = 0;
+
+  for (let i = 0; i < gas.length; i++) {
+    const diff = gas[i] - cost[i];
+    total += diff;
+    tank += diff;
+    if (tank < 0) {
+      start = i + 1;
+      tank = 0;
+    }
+  }
+
+  return total >= 0 ? start : -1;
+}"),
+      #("Solution 2 · Try each start", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Drive the whole loop from each start and watch the tank. O(n²), and the thing worth extracting from it: the single pass is not a different algorithm, it is this one with the starts that cannot possibly work skipped.", "export function canCompleteCircuit(gas: number[], cost: number[]): number {
+  // Drive the whole loop from each start and see whether the tank ever goes
+  // negative. O(n^2) -- the definition, and what the single pass replaces.
+  const diffs = gas.map((g, i) => g - cost[i]);
+
+  for (let start = 0; start < diffs.length; start++) {
+    const rotated = diffs.slice(start).concat(diffs.slice(0, start));
+    let tank = 0;
+    let survives = true;
+    for (const diff of rotated) {
+      tank += diff;
+      if (tank < 0) {
+        survives = false;
+        break;
+      }
+    }
+    if (survives) return start;
+  }
+
+  return -1;
+}"),
+    ],
+    check: Check(
+      signature: "export function canCompleteCircuit(gas: number[], cost: number[]): number",
+      starter: "export function canCompleteCircuit(gas: number[], cost: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.canCompleteCircuit !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"canCompleteCircuit([1, 2, 3, 4, 5], [3, 4, 5, 1, 2])\", show(3), show(solution.canCompleteCircuit([1, 2, 3, 4, 5], [3, 4, 5, 1, 2]))],
+    [\"canCompleteCircuit([2, 3, 4], [3, 4, 3])\", show(-1), show(solution.canCompleteCircuit([2, 3, 4], [3, 4, 3]))],
+    [\"canCompleteCircuit([5], [4])\", show(0), show(solution.canCompleteCircuit([5], [4]))],
+    [\"canCompleteCircuit([1, 2], [2, 1])\", show(1), show(solution.canCompleteCircuit([1, 2], [2, 1]))],
+    [\"canCompleteCircuit([], [])\", show(-1), show(solution.canCompleteCircuit([], []))],
+    [\"canCompleteCircuit([3, 1, 1], [1, 2, 2])\", show(0), show(solution.canCompleteCircuit([3, 1, 1], [1, 2, 2]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc45_hand_of_straights() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The smallest card left has no smaller neighbour to hide behind, so whatever group it belongs to must begin with it. That removes all choice, which is exactly what makes a greedy correct here. Every copy of that smallest card needs its own group and they are indistinguishable, so all of them are taken in one step.", "export function isNStraightHand(hand: number[], groupSize: number): boolean {
+  if (groupSize <= 0 || hand.length % groupSize !== 0) return false;
+
+  const counts = new Map<number, number>();
+  for (const card of hand) counts.set(card, (counts.get(card) ?? 0) + 1);
+
+  // The smallest card left has no smaller neighbour to hide behind, so whatever
+  // group it belongs to must start with it. That removes all choice, which is
+  // what makes the greedy correct -- and every copy of it needs its own group,
+  // so they are all taken at once.
+  for (const smallest of [...counts.keys()].sort((a, b) => a - b)) {
+    const copies = counts.get(smallest) ?? 0;
+    if (copies === 0) continue;
+    for (let card = smallest; card < smallest + groupSize; card++) {
+      const available = counts.get(card) ?? 0;
+      if (available < copies) return false;
+      counts.set(card, available - copies);
+    }
+  }
+
+  return true;
+}"),
+      #("Solution 2 · Sorted consume", "No counts at all: sort, then peel one full run off the front, removing each card as it is used. Slower, since every removal is a list walk, but the only thing you have to believe is the same greedy claim — a group begins with the smallest card left.", "export function isNStraightHand(hand: number[], groupSize: number): boolean {
+  if (groupSize <= 0 || hand.length % groupSize !== 0) return false;
+
+  // No counts: sort, then peel one full run off the front at a time, removing
+  // each card as it is used. Slower -- every removal is an array walk -- but the
+  // only thing to believe is that a group must begin with the smallest card
+  // left.
+  const cards = [...hand].sort((a, b) => a - b);
+  while (cards.length) {
+    const smallest = cards[0];
+    for (let card = smallest; card < smallest + groupSize; card++) {
+      const at = cards.indexOf(card);
+      if (at === -1) return false;
+      cards.splice(at, 1);
+    }
+  }
+
+  return true;
+}"),
+    ],
+    check: Check(
+      signature: "export function isNStraightHand(hand: number[], groupSize: number): boolean",
+      starter: "export function isNStraightHand(hand: number[], groupSize: number): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.isNStraightHand !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"isNStraightHand([1, 2, 3, 6, 2, 3, 4, 7, 8], 3)\", show(true), show(solution.isNStraightHand([1, 2, 3, 6, 2, 3, 4, 7, 8], 3))],
+    [\"isNStraightHand([1, 2, 3, 4, 5], 4)\", show(false), show(solution.isNStraightHand([1, 2, 3, 4, 5], 4))],
+    [\"isNStraightHand([1, 2, 3, 4, 5, 6], 2)\", show(true), show(solution.isNStraightHand([1, 2, 3, 4, 5, 6], 2))],
+    [\"isNStraightHand([], 1)\", show(true), show(solution.isNStraightHand([], 1))],
+    [\"isNStraightHand([1, 1, 2, 2, 3, 3], 3)\", show(true), show(solution.isNStraightHand([1, 1, 2, 2, 3, 3], 3))],
+    [\"isNStraightHand([8, 10, 12], 3)\", show(false), show(solution.isNStraightHand([8, 10, 12], 3))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc46_merge_triplets() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Merging takes componentwise maxima, and a max never comes back down. So any triplet with a component above the target is permanently poisonous and must be discarded; and once discarded, every remaining triplet can be merged freely, because a max can only help. The answer is then just whether their maximum is the target.", "export function mergeTriplets(triplets: number[][], target: number[]): boolean {
+  // A triplet with any component above the target can never be used: merging
+  // takes maxima, so that component would be stuck too high forever. Throw
+  // those away and the rest can all be merged, because a max only ever helps.
+  const best = [0, 0, 0];
+  for (const triplet of triplets) {
+    if (triplet.every((value, i) => value <= target[i])) {
+      for (let i = 0; i < 3; i++) best[i] = Math.max(best[i], triplet[i]);
+    }
+  }
+  return best.every((value, i) => value === target[i]);
+}"),
+      #("Solution 2 · Track positions", "Same filter, different question: rather than merging the survivors, ask whether each of the three positions is hit exactly by some survivor. It is the same condition — a componentwise max equals the target exactly when every component is attained somewhere — but arrived at without computing the merge.", "export function mergeTriplets(triplets: number[][], target: number[]): boolean {
+  // Ask a different question: is each of the three positions hit exactly by
+  // some usable triplet? The answer is yes exactly when all three are covered
+  // -- the same condition, arrived at without taking maxima.
+  const usable = triplets.filter((t) => t.every((value, i) => value <= target[i]));
+  return target.every((value, i) => usable.some((t) => t[i] === value));
+}"),
+    ],
+    check: Check(
+      signature: "export function mergeTriplets(triplets: number[][], target: number[]): boolean",
+      starter: "export function mergeTriplets(triplets: number[][], target: number[]): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.mergeTriplets !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"mergeTriplets([[2, 5, 3], [1, 8, 4], [1, 7, 5]], [2, 7, 5])\", show(true), show(solution.mergeTriplets([[2, 5, 3], [1, 8, 4], [1, 7, 5]], [2, 7, 5]))],
+    [\"mergeTriplets([[3, 4, 5], [4, 5, 6]], [3, 2, 5])\", show(false), show(solution.mergeTriplets([[3, 4, 5], [4, 5, 6]], [3, 2, 5]))],
+    [\"mergeTriplets([[2, 5, 3], [2, 3, 4], [1, 2, 5], [5, 2, 3]], [5, 5, 5])\", show(true), show(solution.mergeTriplets([[2, 5, 3], [2, 3, 4], [1, 2, 5], [5, 2, 3]], [5, 5, 5]))],
+    [\"mergeTriplets([[1, 1, 1]], [1, 1, 1])\", show(true), show(solution.mergeTriplets([[1, 1, 1]], [1, 1, 1]))],
+    [\"mergeTriplets([], [1, 1, 1])\", show(false), show(solution.mergeTriplets([], [1, 1, 1]))],
+    [\"mergeTriplets([[1, 2, 3]], [3, 2, 1])\", show(false), show(solution.mergeTriplets([[1, 2, 3]], [3, 2, 1]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc47_partition_labels() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "A piece can only end where every character inside it has run out, so map each character to its last position first. Then sweep, pushing the piece's end out to the furthest last-position seen; when the walk catches up with that end, nothing inside can reappear and the piece is closed.", "export function partitionLabels(s: string): number[] {
+  // Overwriting as we go leaves each character mapped to its last position.
+  const last = new Map<string, number>();
+  for (let i = 0; i < s.length; i++) last.set(s[i], i);
+
+  // A piece can only end where every character it contains has run out. Extend
+  // the end to the furthest last-position seen; when the walk catches up with
+  // it, the piece is closed.
+  const out: number[] = [];
+  let start = 0;
+  let end = -1;
+  for (let i = 0; i < s.length; i++) {
+    end = Math.max(end, last.get(s[i])!);
+    if (i === end) {
+      out.push(end - start + 1);
+      start = i + 1;
+    }
+  }
+
+  return out;
+}"),
+      #("Solution 2 · Expand end", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Grow the piece one character at a time until nothing inside it also appears in the tail. No last-position map — the tail is asked directly — so it is far slower, but it is the condition stated outright rather than pre-computed.", "export function partitionLabels(s: string): number[] {
+  // Grow the piece one character at a time until nothing inside it also appears
+  // in what is left. No last-position map -- the tail is asked directly -- which
+  // is far slower but is the condition stated outright.
+  const out: number[] = [];
+  let rest = s;
+  while (rest.length) {
+    let size = 1;
+    while ([...rest.slice(0, size)].some((c) => rest.slice(size).includes(c))) size++;
+    out.push(size);
+    rest = rest.slice(size);
+  }
+  return out;
+}"),
+    ],
+    check: Check(
+      signature: "export function partitionLabels(s: string): number[]",
+      starter: "export function partitionLabels(s: string): number[] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.partitionLabels !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"partitionLabels('ababcbacadefegdehijhklij')\", show([9, 7, 8]), show(solution.partitionLabels('ababcbacadefegdehijhklij'))],
+    [\"partitionLabels('eccbbbbdec')\", show([10]), show(solution.partitionLabels('eccbbbbdec'))],
+    [\"partitionLabels('a')\", show([1]), show(solution.partitionLabels('a'))],
+    [\"partitionLabels('')\", show([]), show(solution.partitionLabels(''))],
+    [\"partitionLabels('abc')\", show([1, 1, 1]), show(solution.partitionLabels('abc'))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc48_valid_parenthesis_string() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Do not guess what each star should be — carry the range of open counts still possible. Low is the count if every star so far were a closer, high if every one were an opener. High going negative means even the most generous reading has too many closers, so bail; low is clamped at zero because a star can always be nothing. Valid exactly when low reaches zero at the end.", "export function checkValidString(s: string): boolean {
+  // Rather than guessing what each star should be, carry the *range* of open
+  // counts still possible: low if every star so far were a closer, high if
+  // every one were an opener. High going negative means even the most generous
+  // reading has too many closers; low is clamped at zero because a star can
+  // always be nothing.
+  let low = 0;
+  let high = 0;
+
+  for (const c of s) {
+    if (c === \"(\") {
+      low++;
+      high++;
+    } else if (c === \")\") {
+      low = Math.max(low - 1, 0);
+      high--;
+    } else {
+      low = Math.max(low - 1, 0);
+      high++;
+    }
+    if (high < 0) return false;
+  }
+
+  return low === 0;
+}"),
+      #("Solution 2 · Two passes", "Two one-sided checks instead of a range. Left to right with every star an opener asks whether there are ever too many closers; right to left with every star a closer asks whether there are ever too many openers. Passing both is exactly the condition — and each pass is the ordinary balance check you already know.", "export function checkValidString(s: string): boolean {
+  // Two one-sided checks. Left to right with every star an opener asks whether
+  // there are ever too many closers; right to left with every star a closer
+  // asks whether there are ever too many openers. Passing both is exactly the
+  // condition, and each pass is the ordinary balance check.
+  return neverNegative(s, \"(\") && neverNegative([...s].reverse().join(\"\"), \")\");
+}
+
+function neverNegative(s: string, credit: string): boolean {
+  let balance = 0;
+  for (const c of s) {
+    balance += c === credit || c === \"*\" ? 1 : -1;
+    if (balance < 0) return false;
+  }
+  return true;
+}"),
+    ],
+    check: Check(
+      signature: "export function checkValidString(s: string): boolean",
+      starter: "export function checkValidString(s: string): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.checkValidString !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"checkValidString('()')\", show(true), show(solution.checkValidString('()'))],
+    [\"checkValidString('(*)')\", show(true), show(solution.checkValidString('(*)'))],
+    [\"checkValidString('(*))')\", show(true), show(solution.checkValidString('(*))'))],
+    [\"checkValidString(')(')\", show(false), show(solution.checkValidString(')('))],
+    [\"checkValidString('')\", show(true), show(solution.checkValidString(''))],
+    [\"checkValidString('*')\", show(true), show(solution.checkValidString('*'))],
+    [\"checkValidString(')*')\", show(false), show(solution.checkValidString(')*'))],
+    [\"checkValidString('(*()')\", show(true), show(solution.checkValidString('(*()'))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -2642,6 +3136,14 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc38_meeting_rooms" -> Ok(nc38_meeting_rooms())
     "nc39_meeting_rooms_ii" -> Ok(nc39_meeting_rooms_ii())
     "nc40_min_interval" -> Ok(nc40_min_interval())
+    "nc41_maximum_subarray" -> Ok(nc41_maximum_subarray())
+    "nc42_jump_game" -> Ok(nc42_jump_game())
+    "nc43_jump_game_ii" -> Ok(nc43_jump_game_ii())
+    "nc44_gas_station" -> Ok(nc44_gas_station())
+    "nc45_hand_of_straights" -> Ok(nc45_hand_of_straights())
+    "nc46_merge_triplets" -> Ok(nc46_merge_triplets())
+    "nc47_partition_labels" -> Ok(nc47_partition_labels())
+    "nc48_valid_parenthesis_string" -> Ok(nc48_valid_parenthesis_string())
     _ -> Error(Nil)
   }
 }

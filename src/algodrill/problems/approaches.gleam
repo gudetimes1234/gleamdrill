@@ -106,6 +106,31 @@ pub fn for_title(title: String) -> String {
     "Search in Rotated Sorted Array" ->
       "Binary search with a twist: after the rotation, one half around the midpoint is always sorted. Check which half is sorted, then use its endpoints to decide whether the target lies inside it \u{2014} recurse into that half or the other."
 
+    // Greedy
+    "Maximum Subarray" ->
+      "Kadane. At each position the best subarray ending there either extends the one ending just before it or starts fresh, and the choice comes down to whether the running total has gone negative \u{2014} a negative prefix can only hurt whatever follows. The prefix-sum framing says the same thing differently: the best subarray ending at j is prefix[j] minus the smallest prefix before it. The answer is not clamped at zero."
+
+    "Jump Game" ->
+      "The set of indices reachable from the left is always a prefix, which collapses the whole problem to one number: the furthest index reachable so far. Walk forward extending it, and the moment the walk gets past it nothing further is reachable. Walking backwards works too \u{2014} carry the leftmost index known to reach the end and see whether it makes it to zero."
+
+    "Jump Game II" ->
+      "Breadth-first search, except the frontier stays contiguous: everything reachable in k jumps is a range. So the levels are just windows \u{2014} when the walk reaches the current window's end, one jump is spent and the next window runs to the furthest index seen. No queue, no visited set, one pass."
+
+    "Gas Station" ->
+      "Two observations. If the total gas is less than the total cost, no start works at all. And if the tank runs dry between i and j, no station in between can start either, since each begins with even less \u{2014} so the search jumps straight past them to j+1. Together they turn the O(n\u{b2}) search over starts into a single pass."
+
+    "Hand of Straights" ->
+      "Greedy with no choice to make: the smallest card left has no smaller neighbour to hide behind, so whatever group it belongs to must begin with it. Count the cards, then repeatedly consume a run of the required length starting at the smallest one still present. Every copy of that card needs its own group, and they are indistinguishable, so take them together."
+
+    "Merge Triplets to Form Target Triplet" ->
+      "Merging takes componentwise maxima, and a max never comes back down \u{2014} so a triplet with any component above the target is permanently poisonous and can never be used. Discard those, and everything left can be merged freely because a max only helps. The answer is whether the survivors' componentwise maximum is the target."
+
+    "Partition Labels" ->
+      "A piece can only end once every character inside it has run out, so start by mapping each character to its last position. Then sweep, pushing the piece's end out to the furthest last-position seen so far; the moment the walk catches up with that end, nothing inside can reappear and the piece is closed."
+
+    "Valid Parenthesis String" ->
+      "The wildcard makes a single counter impossible, so carry a range instead: the fewest and most open brackets still possible, treating every star as a closer and as an opener respectively. Bail when the high end goes negative \u{2014} even the most generous reading has too many closers \u{2014} clamp the low end at zero, and the string is valid when the low end reaches zero at the end."
+
     // Intervals
     "Insert Interval" ->
       "The input is already sorted, and that is the whole gift: the list falls into everything that finishes before the new interval starts, everything that touches it, and everything after. Only the middle run collapses \u{2014} into a single interval spanning the lot \u{2014} so one pass does it with no sorting at all."
