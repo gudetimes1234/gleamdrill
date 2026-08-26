@@ -3766,6 +3766,487 @@ __case__(\"reverseKGroup([], 2)\", [], __grouped__([], 2))",
   )
 }
 
+pub fn nc136_invert_binary_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Swap the children, then invert each of them — the swap and the recursion are the same line. The order does not matter: swapping before or after recursing gives the same tree, which is why this is the shortest tree problem there is.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def invertTree(root):
+    # Swap the children, then invert each of them. The swap and the recursion
+    # are the same two lines, which is why this is the shortest tree problem
+    # there is -- and why the order does not matter: swapping before or after
+    # recursing gives the same tree.
+    if root is None:
+        return None
+    root.left, root.right = invertTree(root.right), invertTree(root.left)
+    return root"),
+      #("Solution 2 · By rebuilding", "Write the tree out pre-order with a marker for every empty child, then read it back taking the first subtree as the *right* child. The inversion happens entirely in the reading — nothing is ever swapped. Longer than the direct recursion, and worth having because the same flatten/rebuild pair is all [[nc150_serialize_deserialize]] is.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def invertTree(root):
+    # Write the tree out pre-order with a marker for every empty child, then
+    # read it back taking the first subtree as the *right* child. The inversion
+    # happens entirely in the reading -- nothing is ever swapped. Longer than
+    # the direct recursion, and worth having because the same flatten/rebuild
+    # pair is all Serialize and Deserialize is.
+    tokens = []
+    flatten(root, tokens)
+    return rebuild(tokens, [0])
+
+
+def flatten(node, tokens):
+    if node is None:
+        tokens.append(None)
+        return
+    tokens.append(node.val)
+    flatten(node.left, tokens)
+    flatten(node.right, tokens)
+
+
+def rebuild(tokens, at):
+    value = tokens[at[0]]
+    at[0] += 1
+    if value is None:
+        return None
+    first = rebuild(tokens, at)
+    second = rebuild(tokens, at)
+    return TreeNode(value, second, first)"),
+    ],
+    check: Check(
+      signature: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+
+def invertTree(root):",
+      starter: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        pass
+
+def invertTree(root):
+    pass",
+      harness: "try:
+    (invertTree, TreeNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# LeetCode's level-order form: a list of values with None for a missing child,
+# trailing Nones trimmed.
+def __build__(values):
+    if not values or values[0] is None:
+        return None
+    root = TreeNode(values[0])
+    queue, head, i = [root], 0, 1
+    while head < len(queue) and i < len(values):
+        node = queue[head]
+        head += 1
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.left = TreeNode(value)
+                queue.append(node.left)
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.right = TreeNode(value)
+                queue.append(node.right)
+    return root
+
+
+def __levels__(node):
+    out, queue, head = [], [node], 0
+    while head < len(queue) and len(out) < 500:
+        current = queue[head]
+        head += 1
+        if current is None:
+            out.append(None)
+        else:
+            out.append(current.val)
+            queue.append(current.left)
+            queue.append(current.right)
+    while out and out[-1] is None:
+        out.pop()
+    return out
+
+__case__(\"invertTree([4,2,7,1,3,6,9])\", [4, 7, 2, 9, 6, 3, 1], __levels__(invertTree(__build__([4, 2, 7, 1, 3, 6, 9]))))
+__case__(\"invertTree([]) -- an empty tree\", [], __levels__(invertTree(__build__([]))))
+__case__(\"invertTree([1]) -- a single node\", [1], __levels__(invertTree(__build__([1]))))
+__case__(\"invertTree twice is the original\", [1, 2], __levels__(invertTree(invertTree(__build__([1, 2])))))",
+    ),
+  )
+}
+
+pub fn nc137_maximum_depth() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One more than the deeper of the two children, with an empty tree at zero. The whole problem is that base case; everything else is the definition of depth read aloud.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def maxDepth(root):
+    # One more than the deeper of the two children, with an empty tree at zero.
+    # The whole problem is that base case: everything else is the definition of
+    # depth read aloud.
+    if root is None:
+        return 0
+    return 1 + max(maxDepth(root.left), maxDepth(root.right))"),
+      #("Solution 2 · By levels", "Count the levels instead of measuring the branches: take the whole frontier, replace it with all its children, and add one. No recursion and no stack — which is what makes this the version that survives a tree deep enough to overflow one.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def maxDepth(root):
+    # Count the levels instead of measuring the branches: take the whole
+    # frontier, replace it with all its children, and add one. No recursion and
+    # no stack -- which is what makes this the version that survives a tree deep
+    # enough to overflow one.
+    depth = 0
+    frontier = [root] if root is not None else []
+    while frontier:
+        depth += 1
+        frontier = [
+            child
+            for node in frontier
+            for child in (node.left, node.right)
+            if child is not None
+        ]
+    return depth"),
+    ],
+    check: Check(
+      signature: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+
+def maxDepth(root):",
+      starter: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        pass
+
+def maxDepth(root):
+    pass",
+      harness: "try:
+    (maxDepth, TreeNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# LeetCode's level-order form: a list of values with None for a missing child,
+# trailing Nones trimmed.
+def __build__(values):
+    if not values or values[0] is None:
+        return None
+    root = TreeNode(values[0])
+    queue, head, i = [root], 0, 1
+    while head < len(queue) and i < len(values):
+        node = queue[head]
+        head += 1
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.left = TreeNode(value)
+                queue.append(node.left)
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.right = TreeNode(value)
+                queue.append(node.right)
+    return root
+
+
+def __levels__(node):
+    out, queue, head = [], [node], 0
+    while head < len(queue) and len(out) < 500:
+        current = queue[head]
+        head += 1
+        if current is None:
+            out.append(None)
+        else:
+            out.append(current.val)
+            queue.append(current.left)
+            queue.append(current.right)
+    while out and out[-1] is None:
+        out.pop()
+    return out
+
+__case__(\"maxDepth([3,9,20,None,None,15,7])\", 3, maxDepth(__build__([3, 9, 20, None, None, 15, 7])))
+__case__(\"maxDepth([])\", 0, maxDepth(__build__([])))
+__case__(\"maxDepth([1])\", 1, maxDepth(__build__([1])))
+__case__(\"maxDepth(a spindly tree)\", 3, maxDepth(__build__([1, 2, None, 3])))",
+    ),
+  )
+}
+
+pub fn nc138_diameter_of_binary_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One walk doing two jobs: each call *returns* its own height, and on the way past it *records* the path through that node — left height plus right height. The answer is the largest such path, so it is never returned, only tracked. That split between return and record is the pattern, and it comes back in [[nc149_max_path_sum]].", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def diameterOfBinaryTree(root):
+    # One walk, doing two jobs: each call returns its own height, and on the way
+    # past it records the path *through* that node -- left height plus right
+    # height. The answer is the largest such path, so it is never returned, only
+    # tracked. That split between what a call returns and what it records is the
+    # pattern worth keeping.
+    return measure(root)[1]
+
+
+def measure(node):
+    if node is None:
+        return 0, 0
+    leftHeight, leftWidest = measure(node.left)
+    rightHeight, rightWidest = measure(node.right)
+    return (
+        1 + max(leftHeight, rightHeight),
+        max(leftHeight + rightHeight, leftWidest, rightWidest),
+    )"),
+      #("Solution 2 · Height per node", "Ask every node how tall its two sides are and keep the largest sum. Correct and obvious, but height is recomputed from scratch at every node, so a balanced tree costs O(n log n) and a spindly one O(n²) — exactly what returning the height alongside the answer avoids.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def diameterOfBinaryTree(root):
+    # Ask every node how tall its two sides are and keep the largest sum.
+    # Correct and obvious, but height is recomputed from scratch at every node,
+    # so a balanced tree costs O(n log n) and a spindly one O(n^2) -- which is
+    # exactly what returning the height alongside the answer avoids.
+    if root is None:
+        return 0
+    return max(
+        height(root.left) + height(root.right),
+        diameterOfBinaryTree(root.left),
+        diameterOfBinaryTree(root.right),
+    )
+
+
+def height(node):
+    return 0 if node is None else 1 + max(height(node.left), height(node.right))"),
+    ],
+    check: Check(
+      signature: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+
+def diameterOfBinaryTree(root):
+
+def measure(node):",
+      starter: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        pass
+
+def diameterOfBinaryTree(root):
+    pass
+
+def measure(node):
+    pass",
+      harness: "try:
+    (diameterOfBinaryTree, TreeNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# LeetCode's level-order form: a list of values with None for a missing child,
+# trailing Nones trimmed.
+def __build__(values):
+    if not values or values[0] is None:
+        return None
+    root = TreeNode(values[0])
+    queue, head, i = [root], 0, 1
+    while head < len(queue) and i < len(values):
+        node = queue[head]
+        head += 1
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.left = TreeNode(value)
+                queue.append(node.left)
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.right = TreeNode(value)
+                queue.append(node.right)
+    return root
+
+
+def __levels__(node):
+    out, queue, head = [], [node], 0
+    while head < len(queue) and len(out) < 500:
+        current = queue[head]
+        head += 1
+        if current is None:
+            out.append(None)
+        else:
+            out.append(current.val)
+            queue.append(current.left)
+            queue.append(current.right)
+    while out and out[-1] is None:
+        out.pop()
+    return out
+
+__case__(\"diameterOfBinaryTree([1,2,3,4,5])\", 3, diameterOfBinaryTree(__build__([1, 2, 3, 4, 5])))
+__case__(\"diameterOfBinaryTree([])\", 0, diameterOfBinaryTree(__build__([])))
+__case__(\"diameterOfBinaryTree([1])\", 0, diameterOfBinaryTree(__build__([1])))
+__case__(\"diameterOfBinaryTree([1,2])\", 1, diameterOfBinaryTree(__build__([1, 2])))
+__case__(\"diameterOfBinaryTree(widest path misses the root)\", 4, diameterOfBinaryTree(__build__([1, 2, None, 4, 5, 6, None, None, 7])))",
+    ),
+  )
+}
+
+pub fn nc139_balanced_binary_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Height and balance in one walk. A subtree reports its height, or reports that something below it is already unbalanced — and once that happens nothing above needs measuring. Using -1 as the \"not balanced\" height is what lets a single return value carry both answers.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def isBalanced(root):
+    # Height and balance in one walk. A subtree reports its height, or reports
+    # that something below it is already unbalanced -- and once that happens
+    # nothing above needs measuring at all. Using -1 as the \"not balanced\"
+    # height is what lets a single return value carry both answers.
+    return measure(root) >= 0
+
+
+def measure(node):
+    if node is None:
+        return 0
+    left, right = measure(node.left), measure(node.right)
+    if left < 0 or right < 0 or abs(left - right) > 1:
+        return -1
+    return 1 + max(left, right)"),
+      #("Solution 2 · Height per node", "The definition read literally: every node's two sides differ by at most one, and both sides are themselves balanced. It recomputes height at every node, so the work is O(n²) on a spindly tree — the price of separating the two questions the single-pass version answers together.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def isBalanced(root):
+    # The definition read literally: every node's two sides differ by at most
+    # one, and both sides are themselves balanced. It recomputes height at every
+    # node, so the work is O(n^2) on a spindly tree -- the price of separating
+    # the two questions the single-pass version answers together.
+    if root is None:
+        return True
+    return (
+        abs(height(root.left) - height(root.right)) <= 1
+        and isBalanced(root.left)
+        and isBalanced(root.right)
+    )
+
+
+def height(node):
+    return 0 if node is None else 1 + max(height(node.left), height(node.right))"),
+    ],
+    check: Check(
+      signature: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+
+def isBalanced(root):
+
+def measure(node):",
+      starter: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        pass
+
+def isBalanced(root):
+    pass
+
+def measure(node):
+    pass",
+      harness: "try:
+    (isBalanced, TreeNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# LeetCode's level-order form: a list of values with None for a missing child,
+# trailing Nones trimmed.
+def __build__(values):
+    if not values or values[0] is None:
+        return None
+    root = TreeNode(values[0])
+    queue, head, i = [root], 0, 1
+    while head < len(queue) and i < len(values):
+        node = queue[head]
+        head += 1
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.left = TreeNode(value)
+                queue.append(node.left)
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.right = TreeNode(value)
+                queue.append(node.right)
+    return root
+
+
+def __levels__(node):
+    out, queue, head = [], [node], 0
+    while head < len(queue) and len(out) < 500:
+        current = queue[head]
+        head += 1
+        if current is None:
+            out.append(None)
+        else:
+            out.append(current.val)
+            queue.append(current.left)
+            queue.append(current.right)
+    while out and out[-1] is None:
+        out.pop()
+    return out
+
+__case__(\"isBalanced([3,9,20,None,None,15,7])\", True, isBalanced(__build__([3, 9, 20, None, None, 15, 7])))
+__case__(\"isBalanced([])\", True, isBalanced(__build__([])))
+__case__(\"isBalanced([1])\", True, isBalanced(__build__([1])))
+__case__(\"isBalanced([1,2,2,3,3,None,None,4,4])\", False, isBalanced(__build__([1, 2, 2, 3, 3, None, None, 4, 4])))
+__case__(\"isBalanced(balanced at the root, not below)\", False, isBalanced(__build__([1, 2, 2, 3, None, None, None, 4])))",
+    ),
+  )
+}
+
 pub fn nc13_longest_substring() -> Embedded {
   Embedded(
     solutions: [
@@ -3811,6 +4292,1235 @@ __case__(\"lengthOfLongestSubstring('abcabcbb')\", 3, lengthOfLongestSubstring(\
 __case__(\"lengthOfLongestSubstring('bbbbb')\", 1, lengthOfLongestSubstring(\"bbbbb\"))
 __case__(\"lengthOfLongestSubstring('pwwkew')\", 3, lengthOfLongestSubstring(\"pwwkew\"))
 __case__(\"lengthOfLongestSubstring('')\", 0, lengthOfLongestSubstring(\"\"))",
+    ),
+  )
+}
+
+pub fn nc140_same_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Walk both trees in step. Two empties match, an empty and a node never do, and two nodes match when their values do and both pairs of children do. The same shape is what [[nc141_subtree_of_another_tree]] is built from, which is why it is worth writing out rather than leaning on the language's equality.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def isSameTree(p, q):
+    # Walk both trees in step. Two empties match, an empty and a node never do,
+    # and two nodes match when their values do and both pairs of children do.
+    # The same shape is what Subtree of Another Tree and Symmetric Tree are
+    # built from, which is why it is worth writing out rather than comparing
+    # serialisations.
+    if p is None and q is None:
+        return True
+    if p is None or q is None:
+        return False
+    return p.val == q.val and isSameTree(p.left, q.left) and isSameTree(p.right, q.right)"),
+      #("Solution 2 · By serialising", "Turn each tree into a string and compare those. It works *only* because the serialisation records the empty children: without a marker for them, different trees flatten to the same sequence — the same trap [[nc150_serialize_deserialize]] turns on.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def isSameTree(p, q):
+    # Turn each tree into a string and compare those. It works only because the
+    # serialisation records the empty children too: without a marker for them,
+    # different trees flatten to the same sequence -- the same trap Serialize
+    # and Deserialize turns on.
+    return serialise(p) == serialise(q)
+
+
+def serialise(node):
+    if node is None:
+        return \"#\"
+    return \"(\" + str(node.val) + serialise(node.left) + serialise(node.right) + \")\""),
+    ],
+    check: Check(
+      signature: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+
+def isSameTree(p, q):",
+      starter: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        pass
+
+def isSameTree(p, q):
+    pass",
+      harness: "try:
+    (isSameTree, TreeNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# LeetCode's level-order form: a list of values with None for a missing child,
+# trailing Nones trimmed.
+def __build__(values):
+    if not values or values[0] is None:
+        return None
+    root = TreeNode(values[0])
+    queue, head, i = [root], 0, 1
+    while head < len(queue) and i < len(values):
+        node = queue[head]
+        head += 1
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.left = TreeNode(value)
+                queue.append(node.left)
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.right = TreeNode(value)
+                queue.append(node.right)
+    return root
+
+
+def __levels__(node):
+    out, queue, head = [], [node], 0
+    while head < len(queue) and len(out) < 500:
+        current = queue[head]
+        head += 1
+        if current is None:
+            out.append(None)
+        else:
+            out.append(current.val)
+            queue.append(current.left)
+            queue.append(current.right)
+    while out and out[-1] is None:
+        out.pop()
+    return out
+
+__case__(\"isSameTree([1,2,3], [1,2,3])\", True, isSameTree(__build__([1, 2, 3]), __build__([1, 2, 3])))
+__case__(\"isSameTree([], [])\", True, isSameTree(__build__([]), __build__([])))
+__case__(\"isSameTree([], [1])\", False, isSameTree(__build__([]), __build__([1])))
+__case__(\"isSameTree([1,2], [1,None,2]) -- same values, mirrored\", False, isSameTree(__build__([1, 2]), __build__([1, None, 2])))
+__case__(\"isSameTree([1,2,1], [1,1,2]) -- children swapped\", False, isSameTree(__build__([1, 2, 1]), __build__([1, 1, 2])))",
+    ),
+  )
+}
+
+pub fn nc141_subtree_of_another_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Try to match at every node. The two questions are kept apart on purpose: \"are these two trees identical\" is the whole of the work, and \"is it a subtree\" is that question asked once per node. O(n·m) in the worst case, and a partial match that fails deep is what makes it so.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def isSubtree(root, subRoot):
+    # Try to match at every node. The two questions are kept apart on purpose:
+    # \"are these two trees identical\" is the whole of the work, and \"is it a
+    # subtree\" is that question asked once per node. O(n*m) in the worst case,
+    # and a partial match that fails deep is what makes it so.
+    if subRoot is None:
+        return True
+    if root is None:
+        return False
+    return same(root, subRoot) or isSubtree(root.left, subRoot) or isSubtree(root.right, subRoot)
+
+
+def same(a, b):
+    if a is None and b is None:
+        return True
+    if a is None or b is None:
+        return False
+    return a.val == b.val and same(a.left, b.left) and same(a.right, b.right)"),
+      #("Solution 2 · By serialising", "Serialise both trees and ask whether one string contains the other — an O(n·m) tree comparison turned into substring search. It is only sound because the serialisation marks the empty children: without them \"2\" inside \"12\" would match, and so would a subtree that starts the same way but is missing a child.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def isSubtree(root, subRoot):
+    # Serialise both trees and ask whether one string contains the other. That
+    # turns an O(n*m) tree comparison into substring search, which is linear
+    # with the right algorithm. It is only sound because the serialisation marks
+    # the empty children: without them \"2\" inside \"12\" would match, and so would
+    # a subtree that starts the same way but is missing a child.
+    return serialise(subRoot) in serialise(root)
+
+
+def serialise(node):
+    if node is None:
+        return \"#\"
+    return \"(\" + str(node.val) + serialise(node.left) + serialise(node.right) + \")\""),
+    ],
+    check: Check(
+      signature: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+
+def isSubtree(root, subRoot):
+
+def same(a, b):",
+      starter: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        pass
+
+def isSubtree(root, subRoot):
+    pass
+
+def same(a, b):
+    pass",
+      harness: "try:
+    (isSubtree, TreeNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# LeetCode's level-order form: a list of values with None for a missing child,
+# trailing Nones trimmed.
+def __build__(values):
+    if not values or values[0] is None:
+        return None
+    root = TreeNode(values[0])
+    queue, head, i = [root], 0, 1
+    while head < len(queue) and i < len(values):
+        node = queue[head]
+        head += 1
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.left = TreeNode(value)
+                queue.append(node.left)
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.right = TreeNode(value)
+                queue.append(node.right)
+    return root
+
+
+def __levels__(node):
+    out, queue, head = [], [node], 0
+    while head < len(queue) and len(out) < 500:
+        current = queue[head]
+        head += 1
+        if current is None:
+            out.append(None)
+        else:
+            out.append(current.val)
+            queue.append(current.left)
+            queue.append(current.right)
+    while out and out[-1] is None:
+        out.pop()
+    return out
+
+__case__(\"isSubtree([3,4,5,1,2], [4,1,2])\", True, isSubtree(__build__([3, 4, 5, 1, 2]), __build__([4, 1, 2])))
+__case__(\"isSubtree(a near match with an extra node)\", False, isSubtree(__build__([3, 4, 5, 1, 2, None, None, None, None, 0]), __build__([4, 1, 2])))
+__case__(\"isSubtree([1], [1]) -- a tree is its own subtree\", True, isSubtree(__build__([1]), __build__([1])))
+__case__(\"isSubtree([], [1])\", False, isSubtree(__build__([]), __build__([1])))
+__case__(\"isSubtree([1], []) -- the empty tree is in everything\", True, isSubtree(__build__([1]), __build__([])))",
+    ),
+  )
+}
+
+pub fn nc142_lowest_common_ancestor_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The ordering does all the work. Both targets below the current value means go left, both above means go right, and anything else means this node is the split point — which is the answer. No searching for either node first, and no comparing of paths.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def lowestCommonAncestor(root, p, q):
+    # The ordering does all the work. If both targets are below the current
+    # value go left, if both are above go right, and otherwise this node is the
+    # split point -- which is the answer. No searching for either node first,
+    # and no comparing of paths.
+    node = root
+    while node is not None:
+        if p < node.val and q < node.val:
+            node = node.left
+        elif p > node.val and q > node.val:
+            node = node.right
+        else:
+            return node.val
+    return -1"),
+      #("Solution 2 · By paths", "Find the path from the root to each target, then take the last node they share. It ignores the ordering entirely, which is why it is the version that also works on a plain binary tree — at the cost of two searches and two stored paths rather than one walk and nothing.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def lowestCommonAncestor(root, p, q):
+    # Find the path from the root to each target, then take the last node they
+    # share. It ignores the ordering entirely, which is why it is the version
+    # that also works on a plain binary tree -- at the cost of two searches and
+    # two stored paths rather than one walk and nothing.
+    toP, toQ = path(root, p), path(root, q)
+    best = -1
+    for a, b in zip(toP, toQ):
+        if a != b:
+            break
+        best = a
+    return best
+
+
+def path(node, target):
+    if node is None:
+        return []
+    if node.val == target:
+        return [node.val]
+    for side in (node.left, node.right):
+        found = path(side, target)
+        if found:
+            return [node.val] + found
+    return []"),
+    ],
+    check: Check(
+      signature: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+
+def lowestCommonAncestor(root, p, q):",
+      starter: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        pass
+
+def lowestCommonAncestor(root, p, q):
+    pass",
+      harness: "try:
+    (lowestCommonAncestor, TreeNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# LeetCode's level-order form: a list of values with None for a missing child,
+# trailing Nones trimmed.
+def __build__(values):
+    if not values or values[0] is None:
+        return None
+    root = TreeNode(values[0])
+    queue, head, i = [root], 0, 1
+    while head < len(queue) and i < len(values):
+        node = queue[head]
+        head += 1
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.left = TreeNode(value)
+                queue.append(node.left)
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.right = TreeNode(value)
+                queue.append(node.right)
+    return root
+
+
+def __levels__(node):
+    out, queue, head = [], [node], 0
+    while head < len(queue) and len(out) < 500:
+        current = queue[head]
+        head += 1
+        if current is None:
+            out.append(None)
+        else:
+            out.append(current.val)
+            queue.append(current.left)
+            queue.append(current.right)
+    while out and out[-1] is None:
+        out.pop()
+    return out
+
+__bst__ = __build__([6, 2, 8, 0, 4, 7, 9, None, None, 3, 5])
+
+__case__(\"lowestCommonAncestor(bst, 2, 8)\", 6, lowestCommonAncestor(__bst__, 2, 8))
+__case__(\"lowestCommonAncestor(bst, 2, 4) -- an ancestor counts\", 2, lowestCommonAncestor(__bst__, 2, 4))
+__case__(\"lowestCommonAncestor(bst, 3, 5)\", 4, lowestCommonAncestor(__bst__, 3, 5))
+__case__(\"lowestCommonAncestor(bst, 7, 9)\", 8, lowestCommonAncestor(__bst__, 7, 9))
+__case__(\"lowestCommonAncestor([1], 1, 1)\", 1, lowestCommonAncestor(__build__([1]), 1, 1))",
+    ),
+  )
+}
+
+pub fn nc143_level_order_traversal() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Take the whole frontier at once rather than one node at a time: everything on it is the current level, and its children are the next. That is what makes the grouping fall out without tracking any depth — a plain queue gives the right order but no idea where each level ends.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def levelOrder(root):
+    # Take the whole frontier at once rather than one node at a time: everything
+    # on it is the current level, and its children are the next. That is what
+    # makes the grouping fall out without tracking any depth -- a plain queue
+    # would give the right order but no idea where each level ends.
+    levels = []
+    frontier = [root] if root is not None else []
+    while frontier:
+        levels.append([node.val for node in frontier])
+        frontier = [
+            child
+            for node in frontier
+            for child in (node.left, node.right)
+            if child is not None
+        ]
+    return levels"),
+      #("Solution 2 · By depth", "Walk depth-first and file each value under its depth. The traversal order is wrong for the answer, but appending to the right bucket puts it right — and within a level, left is still visited before right, which is all the ordering the answer needs.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def levelOrder(root):
+    # Walk depth-first and file each value under its depth. The traversal order
+    # is wrong for the answer, but appending to the right bucket puts it right
+    # -- and within a level, left is still visited before right, which is all
+    # the ordering the answer needs. One dictionary instead of a frontier.
+    levels = {}
+    collect(root, 0, levels)
+    return [levels[depth] for depth in range(len(levels))]
+
+
+def collect(node, depth, levels):
+    if node is None:
+        return
+    levels.setdefault(depth, []).append(node.val)
+    collect(node.left, depth + 1, levels)
+    collect(node.right, depth + 1, levels)"),
+    ],
+    check: Check(
+      signature: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+
+def levelOrder(root):",
+      starter: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        pass
+
+def levelOrder(root):
+    pass",
+      harness: "try:
+    (levelOrder, TreeNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# LeetCode's level-order form: a list of values with None for a missing child,
+# trailing Nones trimmed.
+def __build__(values):
+    if not values or values[0] is None:
+        return None
+    root = TreeNode(values[0])
+    queue, head, i = [root], 0, 1
+    while head < len(queue) and i < len(values):
+        node = queue[head]
+        head += 1
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.left = TreeNode(value)
+                queue.append(node.left)
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.right = TreeNode(value)
+                queue.append(node.right)
+    return root
+
+
+def __levels__(node):
+    out, queue, head = [], [node], 0
+    while head < len(queue) and len(out) < 500:
+        current = queue[head]
+        head += 1
+        if current is None:
+            out.append(None)
+        else:
+            out.append(current.val)
+            queue.append(current.left)
+            queue.append(current.right)
+    while out and out[-1] is None:
+        out.pop()
+    return out
+
+__case__(\"levelOrder([3,9,20,None,None,15,7])\", [[3], [9, 20], [15, 7]], levelOrder(__build__([3, 9, 20, None, None, 15, 7])))
+__case__(\"levelOrder([])\", [], levelOrder(__build__([])))
+__case__(\"levelOrder([1])\", [[1]], levelOrder(__build__([1])))
+__case__(\"levelOrder(missing left children)\", [[1], [3], [4]], levelOrder(__build__([1, None, 3, None, 4])))",
+    ),
+  )
+}
+
+pub fn nc144_right_side_view() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The last value on each level, which is what \"seen from the right\" means once the question is asked level by level. Walking down the right children alone is the tempting wrong answer: where the right side is short, a node further left is the one that shows.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def rightSideView(root):
+    # The last value on each level, which is what \"seen from the right\" means
+    # once the question is asked level by level. Walking down the right children
+    # alone is the tempting wrong answer: where the right side is short, a node
+    # further left is the one that shows.
+    seen = []
+    frontier = [root] if root is not None else []
+    while frontier:
+        seen.append(frontier[-1].val)
+        frontier = [
+            child
+            for node in frontier
+            for child in (node.left, node.right)
+            if child is not None
+        ]
+    return seen"),
+      #("Solution 2 · Right first", "Depth-first, visiting the right child first, and recording a value only when its depth is met for the first time. No frontier at all — being first to reach a depth is the same thing as being rightmost on it, given that order of visiting.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def rightSideView(root):
+    # Depth-first, visiting the right child first, and recording a value only
+    # when its depth is met for the first time. No frontier at all: being first
+    # to reach a depth is the same thing as being rightmost on it, given that
+    # order of visiting.
+    seen = []
+    look(root, 0, seen)
+    return seen
+
+
+def look(node, depth, seen):
+    if node is None:
+        return
+    if depth == len(seen):
+        seen.append(node.val)
+    look(node.right, depth + 1, seen)
+    look(node.left, depth + 1, seen)"),
+    ],
+    check: Check(
+      signature: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+
+def rightSideView(root):",
+      starter: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        pass
+
+def rightSideView(root):
+    pass",
+      harness: "try:
+    (rightSideView, TreeNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# LeetCode's level-order form: a list of values with None for a missing child,
+# trailing Nones trimmed.
+def __build__(values):
+    if not values or values[0] is None:
+        return None
+    root = TreeNode(values[0])
+    queue, head, i = [root], 0, 1
+    while head < len(queue) and i < len(values):
+        node = queue[head]
+        head += 1
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.left = TreeNode(value)
+                queue.append(node.left)
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.right = TreeNode(value)
+                queue.append(node.right)
+    return root
+
+
+def __levels__(node):
+    out, queue, head = [], [node], 0
+    while head < len(queue) and len(out) < 500:
+        current = queue[head]
+        head += 1
+        if current is None:
+            out.append(None)
+        else:
+            out.append(current.val)
+            queue.append(current.left)
+            queue.append(current.right)
+    while out and out[-1] is None:
+        out.pop()
+    return out
+
+__case__(\"rightSideView([1,2,3,None,5,None,4])\", [1, 3, 4], rightSideView(__build__([1, 2, 3, None, 5, None, 4])))
+__case__(\"rightSideView([])\", [], rightSideView(__build__([])))
+__case__(\"rightSideView([1])\", [1], rightSideView(__build__([1])))
+__case__(\"rightSideView(the right side runs out)\", [1, 3, 4], rightSideView(__build__([1, 2, 3, 4])))",
+    ),
+  )
+}
+
+pub fn nc145_count_good_nodes() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Carry the largest value seen on the way down. A node is good when nothing above it is bigger, so the check needs no knowledge of the tree below — which is what makes one pass enough. The root is always good, and passing its own value down as the initial maximum is what says so.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def goodNodes(root):
+    # Carry the largest value seen on the way down. A node is good when nothing
+    # above it is bigger, so the check needs no knowledge of the tree below --
+    # which is what makes one pass enough. The root is always good, and passing
+    # its own value down as the initial maximum is what says so.
+    if root is None:
+        return 0
+    return count(root, root.val)
+
+
+def count(node, largest):
+    if node is None:
+        return 0
+    here = 1 if node.val >= largest else 0
+    largest = max(largest, node.val)
+    return here + count(node.left, largest) + count(node.right, largest)"),
+      #("Solution 2 · By path", "Carry the whole path instead of just its maximum, and take the maximum at each node. The same answer for O(depth) memory per node rather than one number — worth writing once, because it makes plain that the running maximum is a fold of the path, not a separate idea.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def goodNodes(root):
+    # Carry the whole path instead of just its maximum, and take the maximum at
+    # each node. The same answer for O(depth) memory per node rather than one
+    # integer -- the version worth writing once, because it makes plain that the
+    # running maximum is a fold of the path, not a separate idea.
+    return count(root, [])
+
+
+def count(node, above):
+    if node is None:
+        return 0
+    here = 1 if all(other <= node.val for other in above) else 0
+    below = above + [node.val]
+    return here + count(node.left, below) + count(node.right, below)"),
+    ],
+    check: Check(
+      signature: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+
+def goodNodes(root):
+
+def count(node, largest):",
+      starter: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        pass
+
+def goodNodes(root):
+    pass
+
+def count(node, largest):
+    pass",
+      harness: "try:
+    (goodNodes, TreeNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# LeetCode's level-order form: a list of values with None for a missing child,
+# trailing Nones trimmed.
+def __build__(values):
+    if not values or values[0] is None:
+        return None
+    root = TreeNode(values[0])
+    queue, head, i = [root], 0, 1
+    while head < len(queue) and i < len(values):
+        node = queue[head]
+        head += 1
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.left = TreeNode(value)
+                queue.append(node.left)
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.right = TreeNode(value)
+                queue.append(node.right)
+    return root
+
+
+def __levels__(node):
+    out, queue, head = [], [node], 0
+    while head < len(queue) and len(out) < 500:
+        current = queue[head]
+        head += 1
+        if current is None:
+            out.append(None)
+        else:
+            out.append(current.val)
+            queue.append(current.left)
+            queue.append(current.right)
+    while out and out[-1] is None:
+        out.pop()
+    return out
+
+__case__(\"goodNodes([3,1,4,3,None,1,5])\", 4, goodNodes(__build__([3, 1, 4, 3, None, 1, 5])))
+__case__(\"goodNodes([])\", 0, goodNodes(__build__([])))
+__case__(\"goodNodes([1])\", 1, goodNodes(__build__([1])))
+__case__(\"goodNodes([2,2]) -- equal counts as good\", 2, goodNodes(__build__([2, 2])))
+__case__(\"goodNodes([3,3,None,4,2])\", 3, goodNodes(__build__([3, 3, None, 4, 2])))",
+    ),
+  )
+}
+
+pub fn nc146_validate_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Check against a range, not against the parent. A node can be larger than its own parent and still break the order, because the constraint comes from an ancestor further up — and that is the whole difficulty. Going left tightens the upper bound, going right the lower one.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def isValidBST(root):
+    # Check against a range, not against the parent. A node can be larger than
+    # its own parent and still break the order, because the constraint comes
+    # from an ancestor further up -- and that is the whole difficulty. Going
+    # left tightens the upper bound, going right the lower one.
+    return within(root, None, None)
+
+
+def within(node, low, high):
+    if node is None:
+        return True
+    if low is not None and node.val <= low:
+        return False
+    if high is not None and node.val >= high:
+        return False
+    return within(node.left, low, node.val) and within(node.right, node.val, high)"),
+      #("Solution 2 · In order", "A binary search tree is exactly a tree whose in-order walk is strictly increasing — the definition, restated so that no bounds have to be threaded anywhere. The cost is the list: O(n) memory against the range check's O(depth).", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def isValidBST(root):
+    # A binary search tree is exactly a tree whose in-order walk is strictly
+    # increasing -- that is the definition, restated so that no bounds have to
+    # be threaded anywhere. The cost is the list: O(n) memory against the range
+    # check's O(depth).
+    values = []
+    inOrder(root, values)
+    return all(a < b for a, b in zip(values, values[1:]))
+
+
+def inOrder(node, values):
+    if node is None:
+        return
+    inOrder(node.left, values)
+    values.append(node.val)
+    inOrder(node.right, values)"),
+    ],
+    check: Check(
+      signature: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+
+def isValidBST(root):
+
+def within(node, low, high):",
+      starter: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        pass
+
+def isValidBST(root):
+    pass
+
+def within(node, low, high):
+    pass",
+      harness: "try:
+    (isValidBST, TreeNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# LeetCode's level-order form: a list of values with None for a missing child,
+# trailing Nones trimmed.
+def __build__(values):
+    if not values or values[0] is None:
+        return None
+    root = TreeNode(values[0])
+    queue, head, i = [root], 0, 1
+    while head < len(queue) and i < len(values):
+        node = queue[head]
+        head += 1
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.left = TreeNode(value)
+                queue.append(node.left)
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.right = TreeNode(value)
+                queue.append(node.right)
+    return root
+
+
+def __levels__(node):
+    out, queue, head = [], [node], 0
+    while head < len(queue) and len(out) < 500:
+        current = queue[head]
+        head += 1
+        if current is None:
+            out.append(None)
+        else:
+            out.append(current.val)
+            queue.append(current.left)
+            queue.append(current.right)
+    while out and out[-1] is None:
+        out.pop()
+    return out
+
+__case__(\"isValidBST([2,1,3])\", True, isValidBST(__build__([2, 1, 3])))
+__case__(\"isValidBST([])\", True, isValidBST(__build__([])))
+__case__(\"isValidBST([1])\", True, isValidBST(__build__([1])))
+__case__(\"isValidBST([5,1,4,None,None,3,6])\", False, isValidBST(__build__([5, 1, 4, None, None, 3, 6])))
+__case__(\"isValidBST(every node beats its parent, but 3 is on the wrong side)\", False, isValidBST(__build__([5, 4, 6, None, None, 3, 7])))
+__case__(\"isValidBST([2,2]) -- equal values are not allowed\", False, isValidBST(__build__([2, 2])))",
+    ),
+  )
+}
+
+pub fn nc147_kth_smallest_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "An in-order walk of a search tree visits the values in order, so the answer is the kth thing it reaches. Stopping there is the point: the tree below the kth value is never touched, which is what separates this from sorting everything.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def kthSmallest(root, k):
+    # An in-order walk of a search tree visits the values in order, so the
+    # answer is the kth thing it reaches. Stopping there is the point: the tree
+    # below the kth value is never touched, which is what separates this from
+    # sorting everything. The explicit stack is what makes stopping possible --
+    # a recursive walk would have to run to the end.
+    stack, node = [], root
+    while stack or node is not None:
+        while node is not None:
+            stack.append(node)
+            node = node.left
+        node = stack.pop()
+        k -= 1
+        if k == 0:
+            return node.val
+        node = node.right
+    return -1"),
+      #("Solution 2 · By counting", "Count the left subtree and decide which way to go — fewer than k on the left means the answer is this node or to its right. It descends one path instead of walking in order, and it is the version that adapts when the tree stores its own subtree sizes, which turns the whole thing into O(depth).", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def kthSmallest(root, k):
+    # Count the left subtree and decide which way to go -- fewer than k on the
+    # left means the answer is this node or to its right. It descends one path
+    # instead of walking in order, and it is the version that adapts when the
+    # tree stores its own subtree sizes, which turns the whole thing into
+    # O(depth).
+    node = root
+    while node is not None:
+        onTheLeft = size(node.left)
+        if k <= onTheLeft:
+            node = node.left
+        elif k == onTheLeft + 1:
+            return node.val
+        else:
+            k -= onTheLeft + 1
+            node = node.right
+    return -1
+
+
+def size(node):
+    return 0 if node is None else 1 + size(node.left) + size(node.right)"),
+    ],
+    check: Check(
+      signature: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+
+def kthSmallest(root, k):",
+      starter: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        pass
+
+def kthSmallest(root, k):
+    pass",
+      harness: "try:
+    (kthSmallest, TreeNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# LeetCode's level-order form: a list of values with None for a missing child,
+# trailing Nones trimmed.
+def __build__(values):
+    if not values or values[0] is None:
+        return None
+    root = TreeNode(values[0])
+    queue, head, i = [root], 0, 1
+    while head < len(queue) and i < len(values):
+        node = queue[head]
+        head += 1
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.left = TreeNode(value)
+                queue.append(node.left)
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.right = TreeNode(value)
+                queue.append(node.right)
+    return root
+
+
+def __levels__(node):
+    out, queue, head = [], [node], 0
+    while head < len(queue) and len(out) < 500:
+        current = queue[head]
+        head += 1
+        if current is None:
+            out.append(None)
+        else:
+            out.append(current.val)
+            queue.append(current.left)
+            queue.append(current.right)
+    while out and out[-1] is None:
+        out.pop()
+    return out
+
+__bst__ = __build__([3, 1, 4, None, 2])
+
+__case__(\"kthSmallest(bst, 1)\", 1, kthSmallest(__bst__, 1))
+__case__(\"kthSmallest(bst, 2)\", 2, kthSmallest(__bst__, 2))
+__case__(\"kthSmallest(bst, 3)\", 3, kthSmallest(__bst__, 3))
+__case__(\"kthSmallest(bst, 4)\", 4, kthSmallest(__bst__, 4))
+__case__(\"kthSmallest([7], 1)\", 7, kthSmallest(__build__([7]), 1))",
+    ),
+  )
+}
+
+pub fn nc148_build_tree_preorder_inorder() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Pre-order names the root; in-order says how much of the rest belongs to each side. Neither traversal alone determines a tree, and this is precisely why together they do — the split point found in the in-order list is the size of the left subtree, which is what carves up the pre-order list too.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def buildTree(preorder, inorder):
+    # Pre-order names the root; in-order says how much of the rest belongs to
+    # each side. Neither traversal alone determines a tree, and this is why
+    # together they do -- the split point found in the in-order list is exactly
+    # the size of the left subtree, which is what carves up the pre-order list
+    # too.
+    if not preorder:
+        return None
+    root = preorder[0]
+    split = inorder.index(root)
+    return TreeNode(
+        root,
+        buildTree(preorder[1 : split + 1], inorder[:split]),
+        buildTree(preorder[split + 1 :], inorder[split + 1 :]),
+    )"),
+      #("Solution 2 · By bounds", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+The same construction without slicing anything: a map from value to its in-order position, plus a low and a high bound saying which slice each call owns. Building the map once turns the repeated search for the root — the hidden O(n) inside the slicing version — into a lookup.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def buildTree(preorder, inorder):
+    # The same construction without slicing anything: a map from value to its
+    # in-order position, plus a low and a high bound saying which slice each
+    # call owns. Building the map once turns the repeated search for the root --
+    # the hidden O(n) inside the slicing version -- into a lookup.
+    places = {value: i for i, value in enumerate(inorder)}
+    return take(preorder, [0], places, 0, len(inorder) - 1)
+
+
+def take(preorder, at, places, low, high):
+    if low > high or at[0] >= len(preorder):
+        return None
+    root = preorder[at[0]]
+    at[0] += 1
+    split = places[root]
+    return TreeNode(
+        root,
+        take(preorder, at, places, low, split - 1),
+        take(preorder, at, places, split + 1, high),
+    )"),
+    ],
+    check: Check(
+      signature: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+
+def buildTree(preorder, inorder):",
+      starter: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        pass
+
+def buildTree(preorder, inorder):
+    pass",
+      harness: "try:
+    (buildTree, TreeNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# LeetCode's level-order form: a list of values with None for a missing child,
+# trailing Nones trimmed.
+def __build__(values):
+    if not values or values[0] is None:
+        return None
+    root = TreeNode(values[0])
+    queue, head, i = [root], 0, 1
+    while head < len(queue) and i < len(values):
+        node = queue[head]
+        head += 1
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.left = TreeNode(value)
+                queue.append(node.left)
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.right = TreeNode(value)
+                queue.append(node.right)
+    return root
+
+
+def __levels__(node):
+    out, queue, head = [], [node], 0
+    while head < len(queue) and len(out) < 500:
+        current = queue[head]
+        head += 1
+        if current is None:
+            out.append(None)
+        else:
+            out.append(current.val)
+            queue.append(current.left)
+            queue.append(current.right)
+    while out and out[-1] is None:
+        out.pop()
+    return out
+
+__case__(\"buildTree([3,9,20,15,7], [9,3,15,20,7])\", [3, 9, 20, None, None, 15, 7], __levels__(buildTree([3, 9, 20, 15, 7], [9, 3, 15, 20, 7])))
+__case__(\"buildTree([], [])\", [], __levels__(buildTree([], [])))
+__case__(\"buildTree([-1], [-1])\", [-1], __levels__(buildTree([-1], [-1])))
+__case__(\"buildTree([1,2,3], [3,2,1]) -- leaning left\", [1, 2, None, 3], __levels__(buildTree([1, 2, 3], [3, 2, 1])))
+__case__(\"buildTree([1,2,3], [1,2,3]) -- leaning right\", [1, None, 2, None, 3], __levels__(buildTree([1, 2, 3], [1, 2, 3])))",
+    ),
+  )
+}
+
+pub fn nc149_max_path_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two different quantities, which is the whole trick. What a node *returns* is the best path that can continue upwards, so at most one of its children. What it *records* is the best path through it, which may use both. A negative branch is dropped rather than added, because a path is allowed to stop. Same shape as [[nc138_diameter_of_binary_tree]].", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def maxPathSum(root):
+    # Two different quantities, which is the whole trick. What a node *returns*
+    # is the best path that can continue upwards -- so at most one of its
+    # children. What it *records* is the best path through it, which may use
+    # both. A negative branch is dropped rather than added, because a path is
+    # allowed to stop.
+    if root is None:
+        return 0
+    return walk(root)[1]
+
+
+def walk(node):
+    if node is None:
+        return 0, -(10 ** 9)
+    leftUp, leftBest = walk(node.left)
+    rightUp, rightBest = walk(node.right)
+    leftGain, rightGain = max(leftUp, 0), max(rightUp, 0)
+    return (
+        node.val + max(leftGain, rightGain),
+        max(node.val + leftGain + rightGain, leftBest, rightBest),
+    )"),
+      #("Solution 2 · All paths", "Every path through every node, measured outright: for each node, take the best downward run on each side and add them. It recomputes those runs from scratch at every node, so it is O(n²) on a spindly tree — the cost of asking the two questions separately instead of returning both from one walk.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def maxPathSum(root):
+    # Every path through every node, measured outright: for each node, take the
+    # best downward run on each side and add them. It recomputes those runs from
+    # scratch at every node, so it is O(n^2) on a spindly tree -- the cost of
+    # asking the two questions separately instead of returning both from one
+    # walk.
+    found = candidates(root)
+    return max(found) if found else 0
+
+
+def candidates(node):
+    if node is None:
+        return []
+    through = node.val + max(downwards(node.left), 0) + max(downwards(node.right), 0)
+    return [through] + candidates(node.left) + candidates(node.right)
+
+
+def downwards(node):
+    if node is None:
+        return 0
+    return node.val + max(downwards(node.left), downwards(node.right), 0)"),
+    ],
+    check: Check(
+      signature: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+
+def maxPathSum(root):
+
+def walk(node):",
+      starter: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        pass
+
+def maxPathSum(root):
+    pass
+
+def walk(node):
+    pass",
+      harness: "try:
+    (maxPathSum, TreeNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# LeetCode's level-order form: a list of values with None for a missing child,
+# trailing Nones trimmed.
+def __build__(values):
+    if not values or values[0] is None:
+        return None
+    root = TreeNode(values[0])
+    queue, head, i = [root], 0, 1
+    while head < len(queue) and i < len(values):
+        node = queue[head]
+        head += 1
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.left = TreeNode(value)
+                queue.append(node.left)
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.right = TreeNode(value)
+                queue.append(node.right)
+    return root
+
+
+def __levels__(node):
+    out, queue, head = [], [node], 0
+    while head < len(queue) and len(out) < 500:
+        current = queue[head]
+        head += 1
+        if current is None:
+            out.append(None)
+        else:
+            out.append(current.val)
+            queue.append(current.left)
+            queue.append(current.right)
+    while out and out[-1] is None:
+        out.pop()
+    return out
+
+__case__(\"maxPathSum([1,2,3])\", 6, maxPathSum(__build__([1, 2, 3])))
+__case__(\"maxPathSum([-10,9,20,None,None,15,7])\", 42, maxPathSum(__build__([-10, 9, 20, None, None, 15, 7])))
+__case__(\"maxPathSum([-3]) -- a single negative node\", -3, maxPathSum(__build__([-3])))
+__case__(\"maxPathSum([-2,-1]) -- all negative\", -1, maxPathSum(__build__([-2, -1])))
+__case__(\"maxPathSum([0])\", 0, maxPathSum(__build__([0])))",
     ),
   )
 }
@@ -3870,6 +5580,178 @@ def __case__(label, expected, actual):
 __case__(\"characterReplacement('ABAB', 2)\", 4, characterReplacement(\"ABAB\", 2))
 __case__(\"characterReplacement('AABABBA', 1)\", 4, characterReplacement(\"AABABBA\", 1))
 __case__(\"characterReplacement('AAAA', 0)\", 4, characterReplacement(\"AAAA\", 0))",
+    ),
+  )
+}
+
+pub fn nc150_serialize_deserialize() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Pre-order with a marker for every empty child. Recording the empties is what makes the format unambiguous — a pre-order list of values alone matches many different trees — and it is also what lets the reader work with no length information at all: it stops as soon as it has consumed a whole subtree.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def serialize(root):
+    # Pre-order with a marker for every empty child. Recording the empties is
+    # what makes the format unambiguous -- a pre-order list of values alone
+    # matches many different trees -- and it is also what lets the reader work
+    # without any length information: it stops as soon as it has consumed a
+    # whole subtree.
+    parts = []
+    write(root, parts)
+    return \",\".join(parts)
+
+
+def write(node, parts):
+    if node is None:
+        parts.append(\"#\")
+        return
+    parts.append(str(node.val))
+    write(node.left, parts)
+    write(node.right, parts)
+
+
+def deserialize(data):
+    return read(data.split(\",\"), [0])
+
+
+def read(parts, at):
+    token = parts[at[0]]
+    at[0] += 1
+    if token == \"#\":
+        return None
+    node = TreeNode(int(token))
+    node.left = read(parts, at)
+    node.right = read(parts, at)
+    return node"),
+      #("Solution 2 · Post order", "Post-order instead of pre-order, still with a marker for every empty child. The root is then the *last* token, so the reader works backwards — and reading backwards means taking the right subtree before the left. The format is what decides the parse direction, and nothing else about the two versions differs.", "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+def serialize(root):
+    # Post-order instead of pre-order, still with a marker for every empty
+    # child. The root is then the *last* token rather than the first, so the
+    # reader works backwards -- and reading backwards means taking the right
+    # subtree before the left. Worth writing once: the format is what decides
+    # the parse direction, and nothing else about the two versions differs.
+    parts = []
+    write(root, parts)
+    return \",\".join(parts)
+
+
+def write(node, parts):
+    if node is None:
+        parts.append(\"#\")
+        return
+    write(node.left, parts)
+    write(node.right, parts)
+    parts.append(str(node.val))
+
+
+def deserialize(data):
+    return read(data.split(\",\"), [len(data.split(\",\")) - 1])
+
+
+def read(parts, at):
+    token = parts[at[0]]
+    at[0] -= 1
+    if token == \"#\":
+        return None
+    node = TreeNode(int(token))
+    node.right = read(parts, at)
+    node.left = read(parts, at)
+    return node"),
+    ],
+    check: Check(
+      signature: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+
+def serialize(root):
+
+def write(node, parts):
+
+def deserialize(data):
+
+def read(parts, at):",
+      starter: "class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        pass
+
+def serialize(root):
+    pass
+
+def write(node, parts):
+    pass
+
+def deserialize(data):
+    pass
+
+def read(parts, at):
+    pass",
+      harness: "try:
+    (serialize, deserialize, TreeNode)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+# LeetCode's level-order form: a list of values with None for a missing child,
+# trailing Nones trimmed.
+def __build__(values):
+    if not values or values[0] is None:
+        return None
+    root = TreeNode(values[0])
+    queue, head, i = [root], 0, 1
+    while head < len(queue) and i < len(values):
+        node = queue[head]
+        head += 1
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.left = TreeNode(value)
+                queue.append(node.left)
+        if i < len(values):
+            value = values[i]
+            i += 1
+            if value is not None:
+                node.right = TreeNode(value)
+                queue.append(node.right)
+    return root
+
+
+def __levels__(node):
+    out, queue, head = [], [node], 0
+    while head < len(queue) and len(out) < 500:
+        current = queue[head]
+        head += 1
+        if current is None:
+            out.append(None)
+        else:
+            out.append(current.val)
+            queue.append(current.left)
+            queue.append(current.right)
+    while out and out[-1] is None:
+        out.pop()
+    return out
+
+# The format is free, so what is checked is the round trip.
+def __round_trip__(values):
+    return __levels__(deserialize(serialize(__build__(values))))
+
+__case__(\"deserialize(serialize([1,2,3,None,None,4,5]))\", [1, 2, 3, None, None, 4, 5], __round_trip__([1, 2, 3, None, None, 4, 5]))
+__case__(\"deserialize(serialize([]))\", [], __round_trip__([]))
+__case__(\"deserialize(serialize([0]))\", [0], __round_trip__([0]))
+__case__(\"deserialize(serialize(a lopsided tree))\", [1, 2, None, 3, None, None, 4], __round_trip__([1, 2, None, 3, None, None, 4]))
+__case__(\"deserialize(serialize([-1,-2,-3])) -- negatives survive\", [-1, -2, -3], __round_trip__([-1, -2, -3]))",
     ),
   )
 }
@@ -9662,8 +11544,23 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc133_lru_cache" -> Ok(nc133_lru_cache())
     "nc134_merge_k_sorted_lists" -> Ok(nc134_merge_k_sorted_lists())
     "nc135_reverse_k_group" -> Ok(nc135_reverse_k_group())
+    "nc136_invert_binary_tree" -> Ok(nc136_invert_binary_tree())
+    "nc137_maximum_depth" -> Ok(nc137_maximum_depth())
+    "nc138_diameter_of_binary_tree" -> Ok(nc138_diameter_of_binary_tree())
+    "nc139_balanced_binary_tree" -> Ok(nc139_balanced_binary_tree())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())
+    "nc140_same_tree" -> Ok(nc140_same_tree())
+    "nc141_subtree_of_another_tree" -> Ok(nc141_subtree_of_another_tree())
+    "nc142_lowest_common_ancestor_bst" -> Ok(nc142_lowest_common_ancestor_bst())
+    "nc143_level_order_traversal" -> Ok(nc143_level_order_traversal())
+    "nc144_right_side_view" -> Ok(nc144_right_side_view())
+    "nc145_count_good_nodes" -> Ok(nc145_count_good_nodes())
+    "nc146_validate_bst" -> Ok(nc146_validate_bst())
+    "nc147_kth_smallest_bst" -> Ok(nc147_kth_smallest_bst())
+    "nc148_build_tree_preorder_inorder" -> Ok(nc148_build_tree_preorder_inorder())
+    "nc149_max_path_sum" -> Ok(nc149_max_path_sum())
     "nc14_character_replacement" -> Ok(nc14_character_replacement())
+    "nc150_serialize_deserialize" -> Ok(nc150_serialize_deserialize())
     "nc15_permutation_in_string" -> Ok(nc15_permutation_in_string())
     "nc16_valid_parentheses" -> Ok(nc16_valid_parentheses())
     "nc17_min_stack" -> Ok(nc17_min_stack())

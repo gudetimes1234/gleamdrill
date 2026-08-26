@@ -97,182 +97,212 @@ import * as v92 from "./.verify/nc134_merge_k_sorted_lists/harness";
 import * as v93 from "./.verify/nc134_merge_k_sorted_lists__smallest_head/harness";
 import * as v94 from "./.verify/nc135_reverse_k_group/harness";
 import * as v95 from "./.verify/nc135_reverse_k_group__count_first/harness";
-import * as v96 from "./.verify/nc13_longest_substring/harness";
-import * as v97 from "./.verify/nc13_longest_substring__index_scan/harness";
-import * as v98 from "./.verify/nc14_character_replacement/harness";
-import * as v99 from "./.verify/nc14_character_replacement__per_character/harness";
-import * as v100 from "./.verify/nc15_permutation_in_string/harness";
-import * as v101 from "./.verify/nc15_permutation_in_string__sorted_windows/harness";
-import * as v102 from "./.verify/nc16_valid_parentheses/harness";
-import * as v103 from "./.verify/nc16_valid_parentheses__reduction/harness";
-import * as v104 from "./.verify/nc17_min_stack/harness";
-import * as v105 from "./.verify/nc17_min_stack__pair_stack/harness";
-import * as v106 from "./.verify/nc18_daily_temperatures/harness";
-import * as v107 from "./.verify/nc18_daily_temperatures__brute_force/harness";
-import * as v108 from "./.verify/nc19_binary_search/harness";
-import * as v109 from "./.verify/nc19_binary_search__recursive/harness";
-import * as v110 from "./.verify/nc20_find_min_rotated/harness";
-import * as v111 from "./.verify/nc20_find_min_rotated__linear_scan/harness";
-import * as v112 from "./.verify/nc21_search_rotated/harness";
-import * as v113 from "./.verify/nc21_search_rotated__find_pivot/harness";
-import * as v114 from "./.verify/nc22_encode_decode/harness";
-import * as v115 from "./.verify/nc22_encode_decode__escaping/harness";
-import * as v116 from "./.verify/nc23_valid_sudoku/harness";
-import * as v117 from "./.verify/nc23_valid_sudoku__by_unit/harness";
-import * as v118 from "./.verify/nc24_trapping_rain_water/harness";
-import * as v119 from "./.verify/nc24_trapping_rain_water__prefix_maxima/harness";
-import * as v120 from "./.verify/nc25_min_window_substring/harness";
-import * as v121 from "./.verify/nc25_min_window_substring__filtered_positions/harness";
-import * as v122 from "./.verify/nc26_sliding_window_maximum/harness";
-import * as v123 from "./.verify/nc26_sliding_window_maximum__brute_force/harness";
-import * as v124 from "./.verify/nc26_sliding_window_maximum__monotonic_deque/harness";
-import * as v125 from "./.verify/nc27_eval_rpn/harness";
-import * as v126 from "./.verify/nc27_eval_rpn__recursive/harness";
-import * as v127 from "./.verify/nc28_generate_parentheses/harness";
-import * as v128 from "./.verify/nc28_generate_parentheses__by_composition/harness";
-import * as v129 from "./.verify/nc29_car_fleet/harness";
-import * as v130 from "./.verify/nc29_car_fleet__pairwise/harness";
-import * as v131 from "./.verify/nc30_largest_rectangle/harness";
-import * as v132 from "./.verify/nc30_largest_rectangle__expand_from_each_bar/harness";
-import * as v133 from "./.verify/nc31_search_2d_matrix/harness";
-import * as v134 from "./.verify/nc31_search_2d_matrix__staircase/harness";
-import * as v135 from "./.verify/nc32_koko_bananas/harness";
-import * as v136 from "./.verify/nc32_koko_bananas__linear_scan/harness";
-import * as v137 from "./.verify/nc33_time_map/harness";
-import * as v138 from "./.verify/nc33_time_map__linear_scan/harness";
-import * as v139 from "./.verify/nc34_median_two_sorted/harness";
-import * as v140 from "./.verify/nc34_median_two_sorted__concat_sort/harness";
-import * as v141 from "./.verify/nc34_median_two_sorted__partition_search/harness";
-import * as v142 from "./.verify/nc35_insert_interval/harness";
-import * as v143 from "./.verify/nc35_insert_interval__merge_after_append/harness";
-import * as v144 from "./.verify/nc36_merge_intervals/harness";
-import * as v145 from "./.verify/nc36_merge_intervals__sweep_counts/harness";
-import * as v146 from "./.verify/nc37_non_overlapping/harness";
-import * as v147 from "./.verify/nc37_non_overlapping__by_start/harness";
-import * as v148 from "./.verify/nc38_meeting_rooms/harness";
-import * as v149 from "./.verify/nc38_meeting_rooms__pairwise/harness";
-import * as v150 from "./.verify/nc39_meeting_rooms_ii/harness";
-import * as v151 from "./.verify/nc39_meeting_rooms_ii__count_at_each_start/harness";
-import * as v152 from "./.verify/nc40_min_interval/harness";
-import * as v153 from "./.verify/nc40_min_interval__offline_by_length/harness";
-import * as v154 from "./.verify/nc41_maximum_subarray/harness";
-import * as v155 from "./.verify/nc41_maximum_subarray__prefix_minimum/harness";
-import * as v156 from "./.verify/nc42_jump_game/harness";
-import * as v157 from "./.verify/nc42_jump_game__backwards/harness";
-import * as v158 from "./.verify/nc43_jump_game_ii/harness";
-import * as v159 from "./.verify/nc43_jump_game_ii__reverse_greedy/harness";
-import * as v160 from "./.verify/nc44_gas_station/harness";
-import * as v161 from "./.verify/nc44_gas_station__try_each_start/harness";
-import * as v162 from "./.verify/nc45_hand_of_straights/harness";
-import * as v163 from "./.verify/nc45_hand_of_straights__sorted_consume/harness";
-import * as v164 from "./.verify/nc46_merge_triplets/harness";
-import * as v165 from "./.verify/nc46_merge_triplets__track_positions/harness";
-import * as v166 from "./.verify/nc47_partition_labels/harness";
-import * as v167 from "./.verify/nc47_partition_labels__expand_end/harness";
-import * as v168 from "./.verify/nc48_valid_parenthesis_string/harness";
-import * as v169 from "./.verify/nc48_valid_parenthesis_string__two_passes/harness";
-import * as v170 from "./.verify/nc49_single_number/harness";
-import * as v171 from "./.verify/nc49_single_number__sum_of_uniques/harness";
-import * as v172 from "./.verify/nc50_number_of_one_bits/harness";
-import * as v173 from "./.verify/nc50_number_of_one_bits__shift_and_test/harness";
-import * as v174 from "./.verify/nc51_counting_bits/harness";
-import * as v175 from "./.verify/nc51_counting_bits__popcount_each/harness";
-import * as v176 from "./.verify/nc52_reverse_bits/harness";
-import * as v177 from "./.verify/nc52_reverse_bits__via_binary_string/harness";
-import * as v178 from "./.verify/nc53_missing_number/harness";
-import * as v179 from "./.verify/nc53_missing_number__gauss_sum/harness";
-import * as v180 from "./.verify/nc54_sum_of_two_integers/harness";
-import * as v181 from "./.verify/nc54_sum_of_two_integers__full_adder/harness";
-import * as v182 from "./.verify/nc55_reverse_integer/harness";
-import * as v183 from "./.verify/nc55_reverse_integer__via_string/harness";
-import * as v184 from "./.verify/nc56_rotate_image/harness";
-import * as v185 from "./.verify/nc56_rotate_image__by_index/harness";
-import * as v186 from "./.verify/nc57_spiral_matrix/harness";
-import * as v187 from "./.verify/nc57_spiral_matrix__boundaries/harness";
-import * as v188 from "./.verify/nc58_set_matrix_zeroes/harness";
-import * as v189 from "./.verify/nc58_set_matrix_zeroes__by_scanning/harness";
-import * as v190 from "./.verify/nc59_happy_number/harness";
-import * as v191 from "./.verify/nc59_happy_number__floyd_cycle/harness";
-import * as v192 from "./.verify/nc60_plus_one/harness";
-import * as v193 from "./.verify/nc60_plus_one__via_number/harness";
-import * as v194 from "./.verify/nc61_pow/harness";
-import * as v195 from "./.verify/nc61_pow__repeated_multiplication/harness";
-import * as v196 from "./.verify/nc62_multiply_strings/harness";
-import * as v197 from "./.verify/nc62_multiply_strings__partial_sums/harness";
-import * as v198 from "./.verify/nc63_detect_squares/harness";
-import * as v199 from "./.verify/nc63_detect_squares__by_side_length/harness";
-import * as v200 from "./.verify/nc64_climbing_stairs/harness";
-import * as v201 from "./.verify/nc64_climbing_stairs__memoised/harness";
-import * as v202 from "./.verify/nc65_min_cost_climbing_stairs/harness";
-import * as v203 from "./.verify/nc65_min_cost_climbing_stairs__from_the_top/harness";
-import * as v204 from "./.verify/nc66_house_robber/harness";
-import * as v205 from "./.verify/nc66_house_robber__memoised/harness";
-import * as v206 from "./.verify/nc67_house_robber_ii/harness";
-import * as v207 from "./.verify/nc67_house_robber_ii__both_at_once/harness";
-import * as v208 from "./.verify/nc68_longest_palindrome/harness";
-import * as v209 from "./.verify/nc68_longest_palindrome__brute_force/harness";
-import * as v210 from "./.verify/nc69_palindromic_substrings/harness";
-import * as v211 from "./.verify/nc69_palindromic_substrings__dp_table/harness";
-import * as v212 from "./.verify/nc70_decode_ways/harness";
-import * as v213 from "./.verify/nc70_decode_ways__memoised/harness";
-import * as v214 from "./.verify/nc71_coin_change/harness";
-import * as v215 from "./.verify/nc71_coin_change__breadth_first/harness";
-import * as v216 from "./.verify/nc72_maximum_product_subarray/harness";
-import * as v217 from "./.verify/nc72_maximum_product_subarray__prefix_and_suffix/harness";
-import * as v218 from "./.verify/nc73_word_break/harness";
-import * as v219 from "./.verify/nc73_word_break__memoised/harness";
-import * as v220 from "./.verify/nc74_longest_increasing_subsequence/harness";
-import * as v221 from "./.verify/nc74_longest_increasing_subsequence__patience/harness";
-import * as v222 from "./.verify/nc75_partition_equal_subset/harness";
-import * as v223 from "./.verify/nc75_partition_equal_subset__memoised/harness";
-import * as v224 from "./.verify/nc76_kth_largest_stream/harness";
-import * as v225 from "./.verify/nc76_kth_largest_stream__keep_everything/harness";
-import * as v226 from "./.verify/nc77_last_stone_weight/harness";
-import * as v227 from "./.verify/nc77_last_stone_weight__find_max_each_round/harness";
-import * as v228 from "./.verify/nc78_k_closest_points/harness";
-import * as v229 from "./.verify/nc78_k_closest_points__select_k_times/harness";
-import * as v230 from "./.verify/nc79_kth_largest_array/harness";
-import * as v231 from "./.verify/nc79_kth_largest_array__quickselect/harness";
-import * as v232 from "./.verify/nc80_task_scheduler/harness";
-import * as v233 from "./.verify/nc80_task_scheduler__simulate/harness";
-import * as v234 from "./.verify/nc81_design_twitter/harness";
-import * as v235 from "./.verify/nc81_design_twitter__merge_per_user/harness";
-import * as v236 from "./.verify/nc82_find_median_stream/harness";
-import * as v237 from "./.verify/nc82_find_median_stream__sorted_list/harness";
-import * as v238 from "./.verify/nc83_subsets/harness";
-import * as v239 from "./.verify/nc83_subsets__bitmask/harness";
-import * as v240 from "./.verify/nc84_combination_sum/harness";
-import * as v241 from "./.verify/nc84_combination_sum__by_target/harness";
-import * as v242 from "./.verify/nc85_permutations/harness";
-import * as v243 from "./.verify/nc85_permutations__insert_everywhere/harness";
-import * as v244 from "./.verify/nc86_subsets_ii/harness";
-import * as v245 from "./.verify/nc86_subsets_ii__by_counts/harness";
-import * as v246 from "./.verify/nc87_combination_sum_ii/harness";
-import * as v247 from "./.verify/nc87_combination_sum_ii__dedupe_at_the_end/harness";
-import * as v248 from "./.verify/nc88_word_search/harness";
-import * as v249 from "./.verify/nc88_word_search__prune_by_counts/harness";
-import * as v250 from "./.verify/nc89_palindrome_partitioning/harness";
-import * as v251 from "./.verify/nc89_palindrome_partitioning__with_table/harness";
-import * as v252 from "./.verify/nc90_letter_combinations/harness";
-import * as v253 from "./.verify/nc90_letter_combinations__iterative_product/harness";
-import * as v254 from "./.verify/nc91_n_queens/harness";
-import * as v255 from "./.verify/nc91_n_queens__filter_permutations/harness";
-import * as v256 from "./.verify/nc92_unique_paths/harness";
-import * as v257 from "./.verify/nc92_unique_paths__pascal/harness";
-import * as v258 from "./.verify/nc93_longest_common_subsequence/harness";
-import * as v259 from "./.verify/nc93_longest_common_subsequence__memoised/harness";
-import * as v260 from "./.verify/nc94_coin_change_ii/harness";
-import * as v261 from "./.verify/nc94_coin_change_ii__by_coin_recursion/harness";
-import * as v262 from "./.verify/nc95_target_sum/harness";
-import * as v263 from "./.verify/nc95_target_sum__as_subset_sum/harness";
-import * as v264 from "./.verify/nc96_stock_with_cooldown/harness";
-import * as v265 from "./.verify/nc96_stock_with_cooldown__memoised/harness";
-import * as v266 from "./.verify/nc97_interleaving_string/harness";
-import * as v267 from "./.verify/nc97_interleaving_string__rolling_row/harness";
-import * as v268 from "./.verify/nc98_longest_increasing_path/harness";
-import * as v269 from "./.verify/nc98_longest_increasing_path__by_value_order/harness";
-import * as v270 from "./.verify/nc99_distinct_subsequences/harness";
-import * as v271 from "./.verify/nc99_distinct_subsequences__memoised/harness";
+import * as v96 from "./.verify/nc136_invert_binary_tree/harness";
+import * as v97 from "./.verify/nc136_invert_binary_tree__by_rebuilding/harness";
+import * as v98 from "./.verify/nc137_maximum_depth/harness";
+import * as v99 from "./.verify/nc137_maximum_depth__by_levels/harness";
+import * as v100 from "./.verify/nc138_diameter_of_binary_tree/harness";
+import * as v101 from "./.verify/nc138_diameter_of_binary_tree__height_per_node/harness";
+import * as v102 from "./.verify/nc139_balanced_binary_tree/harness";
+import * as v103 from "./.verify/nc139_balanced_binary_tree__height_per_node/harness";
+import * as v104 from "./.verify/nc13_longest_substring/harness";
+import * as v105 from "./.verify/nc13_longest_substring__index_scan/harness";
+import * as v106 from "./.verify/nc140_same_tree/harness";
+import * as v107 from "./.verify/nc140_same_tree__by_serialising/harness";
+import * as v108 from "./.verify/nc141_subtree_of_another_tree/harness";
+import * as v109 from "./.verify/nc141_subtree_of_another_tree__by_serialising/harness";
+import * as v110 from "./.verify/nc142_lowest_common_ancestor_bst/harness";
+import * as v111 from "./.verify/nc142_lowest_common_ancestor_bst__by_paths/harness";
+import * as v112 from "./.verify/nc143_level_order_traversal/harness";
+import * as v113 from "./.verify/nc143_level_order_traversal__by_depth/harness";
+import * as v114 from "./.verify/nc144_right_side_view/harness";
+import * as v115 from "./.verify/nc144_right_side_view__right_first/harness";
+import * as v116 from "./.verify/nc145_count_good_nodes/harness";
+import * as v117 from "./.verify/nc145_count_good_nodes__by_path/harness";
+import * as v118 from "./.verify/nc146_validate_bst/harness";
+import * as v119 from "./.verify/nc146_validate_bst__in_order/harness";
+import * as v120 from "./.verify/nc147_kth_smallest_bst/harness";
+import * as v121 from "./.verify/nc147_kth_smallest_bst__by_counting/harness";
+import * as v122 from "./.verify/nc148_build_tree_preorder_inorder/harness";
+import * as v123 from "./.verify/nc148_build_tree_preorder_inorder__by_bounds/harness";
+import * as v124 from "./.verify/nc149_max_path_sum/harness";
+import * as v125 from "./.verify/nc149_max_path_sum__all_paths/harness";
+import * as v126 from "./.verify/nc14_character_replacement/harness";
+import * as v127 from "./.verify/nc14_character_replacement__per_character/harness";
+import * as v128 from "./.verify/nc150_serialize_deserialize/harness";
+import * as v129 from "./.verify/nc150_serialize_deserialize__post_order/harness";
+import * as v130 from "./.verify/nc15_permutation_in_string/harness";
+import * as v131 from "./.verify/nc15_permutation_in_string__sorted_windows/harness";
+import * as v132 from "./.verify/nc16_valid_parentheses/harness";
+import * as v133 from "./.verify/nc16_valid_parentheses__reduction/harness";
+import * as v134 from "./.verify/nc17_min_stack/harness";
+import * as v135 from "./.verify/nc17_min_stack__pair_stack/harness";
+import * as v136 from "./.verify/nc18_daily_temperatures/harness";
+import * as v137 from "./.verify/nc18_daily_temperatures__brute_force/harness";
+import * as v138 from "./.verify/nc19_binary_search/harness";
+import * as v139 from "./.verify/nc19_binary_search__recursive/harness";
+import * as v140 from "./.verify/nc20_find_min_rotated/harness";
+import * as v141 from "./.verify/nc20_find_min_rotated__linear_scan/harness";
+import * as v142 from "./.verify/nc21_search_rotated/harness";
+import * as v143 from "./.verify/nc21_search_rotated__find_pivot/harness";
+import * as v144 from "./.verify/nc22_encode_decode/harness";
+import * as v145 from "./.verify/nc22_encode_decode__escaping/harness";
+import * as v146 from "./.verify/nc23_valid_sudoku/harness";
+import * as v147 from "./.verify/nc23_valid_sudoku__by_unit/harness";
+import * as v148 from "./.verify/nc24_trapping_rain_water/harness";
+import * as v149 from "./.verify/nc24_trapping_rain_water__prefix_maxima/harness";
+import * as v150 from "./.verify/nc25_min_window_substring/harness";
+import * as v151 from "./.verify/nc25_min_window_substring__filtered_positions/harness";
+import * as v152 from "./.verify/nc26_sliding_window_maximum/harness";
+import * as v153 from "./.verify/nc26_sliding_window_maximum__brute_force/harness";
+import * as v154 from "./.verify/nc26_sliding_window_maximum__monotonic_deque/harness";
+import * as v155 from "./.verify/nc27_eval_rpn/harness";
+import * as v156 from "./.verify/nc27_eval_rpn__recursive/harness";
+import * as v157 from "./.verify/nc28_generate_parentheses/harness";
+import * as v158 from "./.verify/nc28_generate_parentheses__by_composition/harness";
+import * as v159 from "./.verify/nc29_car_fleet/harness";
+import * as v160 from "./.verify/nc29_car_fleet__pairwise/harness";
+import * as v161 from "./.verify/nc30_largest_rectangle/harness";
+import * as v162 from "./.verify/nc30_largest_rectangle__expand_from_each_bar/harness";
+import * as v163 from "./.verify/nc31_search_2d_matrix/harness";
+import * as v164 from "./.verify/nc31_search_2d_matrix__staircase/harness";
+import * as v165 from "./.verify/nc32_koko_bananas/harness";
+import * as v166 from "./.verify/nc32_koko_bananas__linear_scan/harness";
+import * as v167 from "./.verify/nc33_time_map/harness";
+import * as v168 from "./.verify/nc33_time_map__linear_scan/harness";
+import * as v169 from "./.verify/nc34_median_two_sorted/harness";
+import * as v170 from "./.verify/nc34_median_two_sorted__concat_sort/harness";
+import * as v171 from "./.verify/nc34_median_two_sorted__partition_search/harness";
+import * as v172 from "./.verify/nc35_insert_interval/harness";
+import * as v173 from "./.verify/nc35_insert_interval__merge_after_append/harness";
+import * as v174 from "./.verify/nc36_merge_intervals/harness";
+import * as v175 from "./.verify/nc36_merge_intervals__sweep_counts/harness";
+import * as v176 from "./.verify/nc37_non_overlapping/harness";
+import * as v177 from "./.verify/nc37_non_overlapping__by_start/harness";
+import * as v178 from "./.verify/nc38_meeting_rooms/harness";
+import * as v179 from "./.verify/nc38_meeting_rooms__pairwise/harness";
+import * as v180 from "./.verify/nc39_meeting_rooms_ii/harness";
+import * as v181 from "./.verify/nc39_meeting_rooms_ii__count_at_each_start/harness";
+import * as v182 from "./.verify/nc40_min_interval/harness";
+import * as v183 from "./.verify/nc40_min_interval__offline_by_length/harness";
+import * as v184 from "./.verify/nc41_maximum_subarray/harness";
+import * as v185 from "./.verify/nc41_maximum_subarray__prefix_minimum/harness";
+import * as v186 from "./.verify/nc42_jump_game/harness";
+import * as v187 from "./.verify/nc42_jump_game__backwards/harness";
+import * as v188 from "./.verify/nc43_jump_game_ii/harness";
+import * as v189 from "./.verify/nc43_jump_game_ii__reverse_greedy/harness";
+import * as v190 from "./.verify/nc44_gas_station/harness";
+import * as v191 from "./.verify/nc44_gas_station__try_each_start/harness";
+import * as v192 from "./.verify/nc45_hand_of_straights/harness";
+import * as v193 from "./.verify/nc45_hand_of_straights__sorted_consume/harness";
+import * as v194 from "./.verify/nc46_merge_triplets/harness";
+import * as v195 from "./.verify/nc46_merge_triplets__track_positions/harness";
+import * as v196 from "./.verify/nc47_partition_labels/harness";
+import * as v197 from "./.verify/nc47_partition_labels__expand_end/harness";
+import * as v198 from "./.verify/nc48_valid_parenthesis_string/harness";
+import * as v199 from "./.verify/nc48_valid_parenthesis_string__two_passes/harness";
+import * as v200 from "./.verify/nc49_single_number/harness";
+import * as v201 from "./.verify/nc49_single_number__sum_of_uniques/harness";
+import * as v202 from "./.verify/nc50_number_of_one_bits/harness";
+import * as v203 from "./.verify/nc50_number_of_one_bits__shift_and_test/harness";
+import * as v204 from "./.verify/nc51_counting_bits/harness";
+import * as v205 from "./.verify/nc51_counting_bits__popcount_each/harness";
+import * as v206 from "./.verify/nc52_reverse_bits/harness";
+import * as v207 from "./.verify/nc52_reverse_bits__via_binary_string/harness";
+import * as v208 from "./.verify/nc53_missing_number/harness";
+import * as v209 from "./.verify/nc53_missing_number__gauss_sum/harness";
+import * as v210 from "./.verify/nc54_sum_of_two_integers/harness";
+import * as v211 from "./.verify/nc54_sum_of_two_integers__full_adder/harness";
+import * as v212 from "./.verify/nc55_reverse_integer/harness";
+import * as v213 from "./.verify/nc55_reverse_integer__via_string/harness";
+import * as v214 from "./.verify/nc56_rotate_image/harness";
+import * as v215 from "./.verify/nc56_rotate_image__by_index/harness";
+import * as v216 from "./.verify/nc57_spiral_matrix/harness";
+import * as v217 from "./.verify/nc57_spiral_matrix__boundaries/harness";
+import * as v218 from "./.verify/nc58_set_matrix_zeroes/harness";
+import * as v219 from "./.verify/nc58_set_matrix_zeroes__by_scanning/harness";
+import * as v220 from "./.verify/nc59_happy_number/harness";
+import * as v221 from "./.verify/nc59_happy_number__floyd_cycle/harness";
+import * as v222 from "./.verify/nc60_plus_one/harness";
+import * as v223 from "./.verify/nc60_plus_one__via_number/harness";
+import * as v224 from "./.verify/nc61_pow/harness";
+import * as v225 from "./.verify/nc61_pow__repeated_multiplication/harness";
+import * as v226 from "./.verify/nc62_multiply_strings/harness";
+import * as v227 from "./.verify/nc62_multiply_strings__partial_sums/harness";
+import * as v228 from "./.verify/nc63_detect_squares/harness";
+import * as v229 from "./.verify/nc63_detect_squares__by_side_length/harness";
+import * as v230 from "./.verify/nc64_climbing_stairs/harness";
+import * as v231 from "./.verify/nc64_climbing_stairs__memoised/harness";
+import * as v232 from "./.verify/nc65_min_cost_climbing_stairs/harness";
+import * as v233 from "./.verify/nc65_min_cost_climbing_stairs__from_the_top/harness";
+import * as v234 from "./.verify/nc66_house_robber/harness";
+import * as v235 from "./.verify/nc66_house_robber__memoised/harness";
+import * as v236 from "./.verify/nc67_house_robber_ii/harness";
+import * as v237 from "./.verify/nc67_house_robber_ii__both_at_once/harness";
+import * as v238 from "./.verify/nc68_longest_palindrome/harness";
+import * as v239 from "./.verify/nc68_longest_palindrome__brute_force/harness";
+import * as v240 from "./.verify/nc69_palindromic_substrings/harness";
+import * as v241 from "./.verify/nc69_palindromic_substrings__dp_table/harness";
+import * as v242 from "./.verify/nc70_decode_ways/harness";
+import * as v243 from "./.verify/nc70_decode_ways__memoised/harness";
+import * as v244 from "./.verify/nc71_coin_change/harness";
+import * as v245 from "./.verify/nc71_coin_change__breadth_first/harness";
+import * as v246 from "./.verify/nc72_maximum_product_subarray/harness";
+import * as v247 from "./.verify/nc72_maximum_product_subarray__prefix_and_suffix/harness";
+import * as v248 from "./.verify/nc73_word_break/harness";
+import * as v249 from "./.verify/nc73_word_break__memoised/harness";
+import * as v250 from "./.verify/nc74_longest_increasing_subsequence/harness";
+import * as v251 from "./.verify/nc74_longest_increasing_subsequence__patience/harness";
+import * as v252 from "./.verify/nc75_partition_equal_subset/harness";
+import * as v253 from "./.verify/nc75_partition_equal_subset__memoised/harness";
+import * as v254 from "./.verify/nc76_kth_largest_stream/harness";
+import * as v255 from "./.verify/nc76_kth_largest_stream__keep_everything/harness";
+import * as v256 from "./.verify/nc77_last_stone_weight/harness";
+import * as v257 from "./.verify/nc77_last_stone_weight__find_max_each_round/harness";
+import * as v258 from "./.verify/nc78_k_closest_points/harness";
+import * as v259 from "./.verify/nc78_k_closest_points__select_k_times/harness";
+import * as v260 from "./.verify/nc79_kth_largest_array/harness";
+import * as v261 from "./.verify/nc79_kth_largest_array__quickselect/harness";
+import * as v262 from "./.verify/nc80_task_scheduler/harness";
+import * as v263 from "./.verify/nc80_task_scheduler__simulate/harness";
+import * as v264 from "./.verify/nc81_design_twitter/harness";
+import * as v265 from "./.verify/nc81_design_twitter__merge_per_user/harness";
+import * as v266 from "./.verify/nc82_find_median_stream/harness";
+import * as v267 from "./.verify/nc82_find_median_stream__sorted_list/harness";
+import * as v268 from "./.verify/nc83_subsets/harness";
+import * as v269 from "./.verify/nc83_subsets__bitmask/harness";
+import * as v270 from "./.verify/nc84_combination_sum/harness";
+import * as v271 from "./.verify/nc84_combination_sum__by_target/harness";
+import * as v272 from "./.verify/nc85_permutations/harness";
+import * as v273 from "./.verify/nc85_permutations__insert_everywhere/harness";
+import * as v274 from "./.verify/nc86_subsets_ii/harness";
+import * as v275 from "./.verify/nc86_subsets_ii__by_counts/harness";
+import * as v276 from "./.verify/nc87_combination_sum_ii/harness";
+import * as v277 from "./.verify/nc87_combination_sum_ii__dedupe_at_the_end/harness";
+import * as v278 from "./.verify/nc88_word_search/harness";
+import * as v279 from "./.verify/nc88_word_search__prune_by_counts/harness";
+import * as v280 from "./.verify/nc89_palindrome_partitioning/harness";
+import * as v281 from "./.verify/nc89_palindrome_partitioning__with_table/harness";
+import * as v282 from "./.verify/nc90_letter_combinations/harness";
+import * as v283 from "./.verify/nc90_letter_combinations__iterative_product/harness";
+import * as v284 from "./.verify/nc91_n_queens/harness";
+import * as v285 from "./.verify/nc91_n_queens__filter_permutations/harness";
+import * as v286 from "./.verify/nc92_unique_paths/harness";
+import * as v287 from "./.verify/nc92_unique_paths__pascal/harness";
+import * as v288 from "./.verify/nc93_longest_common_subsequence/harness";
+import * as v289 from "./.verify/nc93_longest_common_subsequence__memoised/harness";
+import * as v290 from "./.verify/nc94_coin_change_ii/harness";
+import * as v291 from "./.verify/nc94_coin_change_ii__by_coin_recursion/harness";
+import * as v292 from "./.verify/nc95_target_sum/harness";
+import * as v293 from "./.verify/nc95_target_sum__as_subset_sum/harness";
+import * as v294 from "./.verify/nc96_stock_with_cooldown/harness";
+import * as v295 from "./.verify/nc96_stock_with_cooldown__memoised/harness";
+import * as v296 from "./.verify/nc97_interleaving_string/harness";
+import * as v297 from "./.verify/nc97_interleaving_string__rolling_row/harness";
+import * as v298 from "./.verify/nc98_longest_increasing_path/harness";
+import * as v299 from "./.verify/nc98_longest_increasing_path__by_value_order/harness";
+import * as v300 from "./.verify/nc99_distinct_subsequences/harness";
+import * as v301 from "./.verify/nc99_distinct_subsequences__memoised/harness";
 
 type Case = [string, string, string];
 
@@ -373,182 +403,212 @@ const VARIANTS: [string, string, () => Case[]][] = [
   ["nc134_merge_k_sorted_lists", "Solution 2 · Smallest head", v93.run],
   ["nc135_reverse_k_group", "Solution 1", v94.run],
   ["nc135_reverse_k_group", "Solution 2 · Count first", v95.run],
-  ["nc13_longest_substring", "Solution 1", v96.run],
-  ["nc13_longest_substring", "Solution 2 · Index scan", v97.run],
-  ["nc14_character_replacement", "Solution 1", v98.run],
-  ["nc14_character_replacement", "Solution 2 · Per character", v99.run],
-  ["nc15_permutation_in_string", "Solution 1", v100.run],
-  ["nc15_permutation_in_string", "Solution 2 · Sorted windows", v101.run],
-  ["nc16_valid_parentheses", "Solution 1", v102.run],
-  ["nc16_valid_parentheses", "Solution 2 · Reduction", v103.run],
-  ["nc17_min_stack", "Solution 1", v104.run],
-  ["nc17_min_stack", "Solution 2 · Pair stack", v105.run],
-  ["nc18_daily_temperatures", "Solution 1", v106.run],
-  ["nc18_daily_temperatures", "Solution 2 · Brute force", v107.run],
-  ["nc19_binary_search", "Solution 1", v108.run],
-  ["nc19_binary_search", "Solution 2 · Recursive", v109.run],
-  ["nc20_find_min_rotated", "Solution 1", v110.run],
-  ["nc20_find_min_rotated", "Solution 2 · Linear scan", v111.run],
-  ["nc21_search_rotated", "Solution 1", v112.run],
-  ["nc21_search_rotated", "Solution 2 · Find pivot", v113.run],
-  ["nc22_encode_decode", "Solution 1", v114.run],
-  ["nc22_encode_decode", "Solution 2 · Escaping", v115.run],
-  ["nc23_valid_sudoku", "Solution 1", v116.run],
-  ["nc23_valid_sudoku", "Solution 2 · By unit", v117.run],
-  ["nc24_trapping_rain_water", "Solution 1", v118.run],
-  ["nc24_trapping_rain_water", "Solution 2 · Prefix maxima", v119.run],
-  ["nc25_min_window_substring", "Solution 1", v120.run],
-  ["nc25_min_window_substring", "Solution 2 · Filtered positions", v121.run],
-  ["nc26_sliding_window_maximum", "Solution 1", v122.run],
-  ["nc26_sliding_window_maximum", "Solution 2 · Brute force", v123.run],
-  ["nc26_sliding_window_maximum", "Solution 3 · Monotonic deque", v124.run],
-  ["nc27_eval_rpn", "Solution 1", v125.run],
-  ["nc27_eval_rpn", "Solution 2 · Recursive", v126.run],
-  ["nc28_generate_parentheses", "Solution 1", v127.run],
-  ["nc28_generate_parentheses", "Solution 2 · By composition", v128.run],
-  ["nc29_car_fleet", "Solution 1", v129.run],
-  ["nc29_car_fleet", "Solution 2 · Pairwise", v130.run],
-  ["nc30_largest_rectangle", "Solution 1", v131.run],
-  ["nc30_largest_rectangle", "Solution 2 · Expand from each bar", v132.run],
-  ["nc31_search_2d_matrix", "Solution 1", v133.run],
-  ["nc31_search_2d_matrix", "Solution 2 · Staircase", v134.run],
-  ["nc32_koko_bananas", "Solution 1", v135.run],
-  ["nc32_koko_bananas", "Solution 2 · Linear scan", v136.run],
-  ["nc33_time_map", "Solution 1", v137.run],
-  ["nc33_time_map", "Solution 2 · Linear scan", v138.run],
-  ["nc34_median_two_sorted", "Solution 1", v139.run],
-  ["nc34_median_two_sorted", "Solution 2 · Concat sort", v140.run],
-  ["nc34_median_two_sorted", "Solution 3 · Partition search", v141.run],
-  ["nc35_insert_interval", "Solution 1", v142.run],
-  ["nc35_insert_interval", "Solution 2 · Merge after append", v143.run],
-  ["nc36_merge_intervals", "Solution 1", v144.run],
-  ["nc36_merge_intervals", "Solution 2 · Sweep counts", v145.run],
-  ["nc37_non_overlapping", "Solution 1", v146.run],
-  ["nc37_non_overlapping", "Solution 2 · By start", v147.run],
-  ["nc38_meeting_rooms", "Solution 1", v148.run],
-  ["nc38_meeting_rooms", "Solution 2 · Pairwise", v149.run],
-  ["nc39_meeting_rooms_ii", "Solution 1", v150.run],
-  ["nc39_meeting_rooms_ii", "Solution 2 · Count at each start", v151.run],
-  ["nc40_min_interval", "Solution 1", v152.run],
-  ["nc40_min_interval", "Solution 2 · Offline by length", v153.run],
-  ["nc41_maximum_subarray", "Solution 1", v154.run],
-  ["nc41_maximum_subarray", "Solution 2 · Prefix minimum", v155.run],
-  ["nc42_jump_game", "Solution 1", v156.run],
-  ["nc42_jump_game", "Solution 2 · Backwards", v157.run],
-  ["nc43_jump_game_ii", "Solution 1", v158.run],
-  ["nc43_jump_game_ii", "Solution 2 · Reverse greedy", v159.run],
-  ["nc44_gas_station", "Solution 1", v160.run],
-  ["nc44_gas_station", "Solution 2 · Try each start", v161.run],
-  ["nc45_hand_of_straights", "Solution 1", v162.run],
-  ["nc45_hand_of_straights", "Solution 2 · Sorted consume", v163.run],
-  ["nc46_merge_triplets", "Solution 1", v164.run],
-  ["nc46_merge_triplets", "Solution 2 · Track positions", v165.run],
-  ["nc47_partition_labels", "Solution 1", v166.run],
-  ["nc47_partition_labels", "Solution 2 · Expand end", v167.run],
-  ["nc48_valid_parenthesis_string", "Solution 1", v168.run],
-  ["nc48_valid_parenthesis_string", "Solution 2 · Two passes", v169.run],
-  ["nc49_single_number", "Solution 1", v170.run],
-  ["nc49_single_number", "Solution 2 · Sum of uniques", v171.run],
-  ["nc50_number_of_one_bits", "Solution 1", v172.run],
-  ["nc50_number_of_one_bits", "Solution 2 · Shift and test", v173.run],
-  ["nc51_counting_bits", "Solution 1", v174.run],
-  ["nc51_counting_bits", "Solution 2 · Popcount each", v175.run],
-  ["nc52_reverse_bits", "Solution 1", v176.run],
-  ["nc52_reverse_bits", "Solution 2 · Via binary string", v177.run],
-  ["nc53_missing_number", "Solution 1", v178.run],
-  ["nc53_missing_number", "Solution 2 · Gauss sum", v179.run],
-  ["nc54_sum_of_two_integers", "Solution 1", v180.run],
-  ["nc54_sum_of_two_integers", "Solution 2 · Full adder", v181.run],
-  ["nc55_reverse_integer", "Solution 1", v182.run],
-  ["nc55_reverse_integer", "Solution 2 · Via string", v183.run],
-  ["nc56_rotate_image", "Solution 1", v184.run],
-  ["nc56_rotate_image", "Solution 2 · By index", v185.run],
-  ["nc57_spiral_matrix", "Solution 1", v186.run],
-  ["nc57_spiral_matrix", "Solution 2 · Boundaries", v187.run],
-  ["nc58_set_matrix_zeroes", "Solution 1", v188.run],
-  ["nc58_set_matrix_zeroes", "Solution 2 · By scanning", v189.run],
-  ["nc59_happy_number", "Solution 1", v190.run],
-  ["nc59_happy_number", "Solution 2 · Floyd cycle", v191.run],
-  ["nc60_plus_one", "Solution 1", v192.run],
-  ["nc60_plus_one", "Solution 2 · Via number", v193.run],
-  ["nc61_pow", "Solution 1", v194.run],
-  ["nc61_pow", "Solution 2 · Repeated multiplication", v195.run],
-  ["nc62_multiply_strings", "Solution 1", v196.run],
-  ["nc62_multiply_strings", "Solution 2 · Partial sums", v197.run],
-  ["nc63_detect_squares", "Solution 1", v198.run],
-  ["nc63_detect_squares", "Solution 2 · By side length", v199.run],
-  ["nc64_climbing_stairs", "Solution 1", v200.run],
-  ["nc64_climbing_stairs", "Solution 2 · Memoised", v201.run],
-  ["nc65_min_cost_climbing_stairs", "Solution 1", v202.run],
-  ["nc65_min_cost_climbing_stairs", "Solution 2 · From the top", v203.run],
-  ["nc66_house_robber", "Solution 1", v204.run],
-  ["nc66_house_robber", "Solution 2 · Memoised", v205.run],
-  ["nc67_house_robber_ii", "Solution 1", v206.run],
-  ["nc67_house_robber_ii", "Solution 2 · Both at once", v207.run],
-  ["nc68_longest_palindrome", "Solution 1", v208.run],
-  ["nc68_longest_palindrome", "Solution 2 · Brute force", v209.run],
-  ["nc69_palindromic_substrings", "Solution 1", v210.run],
-  ["nc69_palindromic_substrings", "Solution 2 · Dp table", v211.run],
-  ["nc70_decode_ways", "Solution 1", v212.run],
-  ["nc70_decode_ways", "Solution 2 · Memoised", v213.run],
-  ["nc71_coin_change", "Solution 1", v214.run],
-  ["nc71_coin_change", "Solution 2 · Breadth first", v215.run],
-  ["nc72_maximum_product_subarray", "Solution 1", v216.run],
-  ["nc72_maximum_product_subarray", "Solution 2 · Prefix and suffix", v217.run],
-  ["nc73_word_break", "Solution 1", v218.run],
-  ["nc73_word_break", "Solution 2 · Memoised", v219.run],
-  ["nc74_longest_increasing_subsequence", "Solution 1", v220.run],
-  ["nc74_longest_increasing_subsequence", "Solution 2 · Patience", v221.run],
-  ["nc75_partition_equal_subset", "Solution 1", v222.run],
-  ["nc75_partition_equal_subset", "Solution 2 · Memoised", v223.run],
-  ["nc76_kth_largest_stream", "Solution 1", v224.run],
-  ["nc76_kth_largest_stream", "Solution 2 · Keep everything", v225.run],
-  ["nc77_last_stone_weight", "Solution 1", v226.run],
-  ["nc77_last_stone_weight", "Solution 2 · Find max each round", v227.run],
-  ["nc78_k_closest_points", "Solution 1", v228.run],
-  ["nc78_k_closest_points", "Solution 2 · Select k times", v229.run],
-  ["nc79_kth_largest_array", "Solution 1", v230.run],
-  ["nc79_kth_largest_array", "Solution 2 · Quickselect", v231.run],
-  ["nc80_task_scheduler", "Solution 1", v232.run],
-  ["nc80_task_scheduler", "Solution 2 · Simulate", v233.run],
-  ["nc81_design_twitter", "Solution 1", v234.run],
-  ["nc81_design_twitter", "Solution 2 · Merge per user", v235.run],
-  ["nc82_find_median_stream", "Solution 1", v236.run],
-  ["nc82_find_median_stream", "Solution 2 · Sorted list", v237.run],
-  ["nc83_subsets", "Solution 1", v238.run],
-  ["nc83_subsets", "Solution 2 · Bitmask", v239.run],
-  ["nc84_combination_sum", "Solution 1", v240.run],
-  ["nc84_combination_sum", "Solution 2 · By target", v241.run],
-  ["nc85_permutations", "Solution 1", v242.run],
-  ["nc85_permutations", "Solution 2 · Insert everywhere", v243.run],
-  ["nc86_subsets_ii", "Solution 1", v244.run],
-  ["nc86_subsets_ii", "Solution 2 · By counts", v245.run],
-  ["nc87_combination_sum_ii", "Solution 1", v246.run],
-  ["nc87_combination_sum_ii", "Solution 2 · Dedupe at the end", v247.run],
-  ["nc88_word_search", "Solution 1", v248.run],
-  ["nc88_word_search", "Solution 2 · Prune by counts", v249.run],
-  ["nc89_palindrome_partitioning", "Solution 1", v250.run],
-  ["nc89_palindrome_partitioning", "Solution 2 · With table", v251.run],
-  ["nc90_letter_combinations", "Solution 1", v252.run],
-  ["nc90_letter_combinations", "Solution 2 · Iterative product", v253.run],
-  ["nc91_n_queens", "Solution 1", v254.run],
-  ["nc91_n_queens", "Solution 2 · Filter permutations", v255.run],
-  ["nc92_unique_paths", "Solution 1", v256.run],
-  ["nc92_unique_paths", "Solution 2 · Pascal", v257.run],
-  ["nc93_longest_common_subsequence", "Solution 1", v258.run],
-  ["nc93_longest_common_subsequence", "Solution 2 · Memoised", v259.run],
-  ["nc94_coin_change_ii", "Solution 1", v260.run],
-  ["nc94_coin_change_ii", "Solution 2 · By coin recursion", v261.run],
-  ["nc95_target_sum", "Solution 1", v262.run],
-  ["nc95_target_sum", "Solution 2 · As subset sum", v263.run],
-  ["nc96_stock_with_cooldown", "Solution 1", v264.run],
-  ["nc96_stock_with_cooldown", "Solution 2 · Memoised", v265.run],
-  ["nc97_interleaving_string", "Solution 1", v266.run],
-  ["nc97_interleaving_string", "Solution 2 · Rolling row", v267.run],
-  ["nc98_longest_increasing_path", "Solution 1", v268.run],
-  ["nc98_longest_increasing_path", "Solution 2 · By value order", v269.run],
-  ["nc99_distinct_subsequences", "Solution 1", v270.run],
-  ["nc99_distinct_subsequences", "Solution 2 · Memoised", v271.run],
+  ["nc136_invert_binary_tree", "Solution 1", v96.run],
+  ["nc136_invert_binary_tree", "Solution 2 · By rebuilding", v97.run],
+  ["nc137_maximum_depth", "Solution 1", v98.run],
+  ["nc137_maximum_depth", "Solution 2 · By levels", v99.run],
+  ["nc138_diameter_of_binary_tree", "Solution 1", v100.run],
+  ["nc138_diameter_of_binary_tree", "Solution 2 · Height per node", v101.run],
+  ["nc139_balanced_binary_tree", "Solution 1", v102.run],
+  ["nc139_balanced_binary_tree", "Solution 2 · Height per node", v103.run],
+  ["nc13_longest_substring", "Solution 1", v104.run],
+  ["nc13_longest_substring", "Solution 2 · Index scan", v105.run],
+  ["nc140_same_tree", "Solution 1", v106.run],
+  ["nc140_same_tree", "Solution 2 · By serialising", v107.run],
+  ["nc141_subtree_of_another_tree", "Solution 1", v108.run],
+  ["nc141_subtree_of_another_tree", "Solution 2 · By serialising", v109.run],
+  ["nc142_lowest_common_ancestor_bst", "Solution 1", v110.run],
+  ["nc142_lowest_common_ancestor_bst", "Solution 2 · By paths", v111.run],
+  ["nc143_level_order_traversal", "Solution 1", v112.run],
+  ["nc143_level_order_traversal", "Solution 2 · By depth", v113.run],
+  ["nc144_right_side_view", "Solution 1", v114.run],
+  ["nc144_right_side_view", "Solution 2 · Right first", v115.run],
+  ["nc145_count_good_nodes", "Solution 1", v116.run],
+  ["nc145_count_good_nodes", "Solution 2 · By path", v117.run],
+  ["nc146_validate_bst", "Solution 1", v118.run],
+  ["nc146_validate_bst", "Solution 2 · In order", v119.run],
+  ["nc147_kth_smallest_bst", "Solution 1", v120.run],
+  ["nc147_kth_smallest_bst", "Solution 2 · By counting", v121.run],
+  ["nc148_build_tree_preorder_inorder", "Solution 1", v122.run],
+  ["nc148_build_tree_preorder_inorder", "Solution 2 · By bounds", v123.run],
+  ["nc149_max_path_sum", "Solution 1", v124.run],
+  ["nc149_max_path_sum", "Solution 2 · All paths", v125.run],
+  ["nc14_character_replacement", "Solution 1", v126.run],
+  ["nc14_character_replacement", "Solution 2 · Per character", v127.run],
+  ["nc150_serialize_deserialize", "Solution 1", v128.run],
+  ["nc150_serialize_deserialize", "Solution 2 · Post order", v129.run],
+  ["nc15_permutation_in_string", "Solution 1", v130.run],
+  ["nc15_permutation_in_string", "Solution 2 · Sorted windows", v131.run],
+  ["nc16_valid_parentheses", "Solution 1", v132.run],
+  ["nc16_valid_parentheses", "Solution 2 · Reduction", v133.run],
+  ["nc17_min_stack", "Solution 1", v134.run],
+  ["nc17_min_stack", "Solution 2 · Pair stack", v135.run],
+  ["nc18_daily_temperatures", "Solution 1", v136.run],
+  ["nc18_daily_temperatures", "Solution 2 · Brute force", v137.run],
+  ["nc19_binary_search", "Solution 1", v138.run],
+  ["nc19_binary_search", "Solution 2 · Recursive", v139.run],
+  ["nc20_find_min_rotated", "Solution 1", v140.run],
+  ["nc20_find_min_rotated", "Solution 2 · Linear scan", v141.run],
+  ["nc21_search_rotated", "Solution 1", v142.run],
+  ["nc21_search_rotated", "Solution 2 · Find pivot", v143.run],
+  ["nc22_encode_decode", "Solution 1", v144.run],
+  ["nc22_encode_decode", "Solution 2 · Escaping", v145.run],
+  ["nc23_valid_sudoku", "Solution 1", v146.run],
+  ["nc23_valid_sudoku", "Solution 2 · By unit", v147.run],
+  ["nc24_trapping_rain_water", "Solution 1", v148.run],
+  ["nc24_trapping_rain_water", "Solution 2 · Prefix maxima", v149.run],
+  ["nc25_min_window_substring", "Solution 1", v150.run],
+  ["nc25_min_window_substring", "Solution 2 · Filtered positions", v151.run],
+  ["nc26_sliding_window_maximum", "Solution 1", v152.run],
+  ["nc26_sliding_window_maximum", "Solution 2 · Brute force", v153.run],
+  ["nc26_sliding_window_maximum", "Solution 3 · Monotonic deque", v154.run],
+  ["nc27_eval_rpn", "Solution 1", v155.run],
+  ["nc27_eval_rpn", "Solution 2 · Recursive", v156.run],
+  ["nc28_generate_parentheses", "Solution 1", v157.run],
+  ["nc28_generate_parentheses", "Solution 2 · By composition", v158.run],
+  ["nc29_car_fleet", "Solution 1", v159.run],
+  ["nc29_car_fleet", "Solution 2 · Pairwise", v160.run],
+  ["nc30_largest_rectangle", "Solution 1", v161.run],
+  ["nc30_largest_rectangle", "Solution 2 · Expand from each bar", v162.run],
+  ["nc31_search_2d_matrix", "Solution 1", v163.run],
+  ["nc31_search_2d_matrix", "Solution 2 · Staircase", v164.run],
+  ["nc32_koko_bananas", "Solution 1", v165.run],
+  ["nc32_koko_bananas", "Solution 2 · Linear scan", v166.run],
+  ["nc33_time_map", "Solution 1", v167.run],
+  ["nc33_time_map", "Solution 2 · Linear scan", v168.run],
+  ["nc34_median_two_sorted", "Solution 1", v169.run],
+  ["nc34_median_two_sorted", "Solution 2 · Concat sort", v170.run],
+  ["nc34_median_two_sorted", "Solution 3 · Partition search", v171.run],
+  ["nc35_insert_interval", "Solution 1", v172.run],
+  ["nc35_insert_interval", "Solution 2 · Merge after append", v173.run],
+  ["nc36_merge_intervals", "Solution 1", v174.run],
+  ["nc36_merge_intervals", "Solution 2 · Sweep counts", v175.run],
+  ["nc37_non_overlapping", "Solution 1", v176.run],
+  ["nc37_non_overlapping", "Solution 2 · By start", v177.run],
+  ["nc38_meeting_rooms", "Solution 1", v178.run],
+  ["nc38_meeting_rooms", "Solution 2 · Pairwise", v179.run],
+  ["nc39_meeting_rooms_ii", "Solution 1", v180.run],
+  ["nc39_meeting_rooms_ii", "Solution 2 · Count at each start", v181.run],
+  ["nc40_min_interval", "Solution 1", v182.run],
+  ["nc40_min_interval", "Solution 2 · Offline by length", v183.run],
+  ["nc41_maximum_subarray", "Solution 1", v184.run],
+  ["nc41_maximum_subarray", "Solution 2 · Prefix minimum", v185.run],
+  ["nc42_jump_game", "Solution 1", v186.run],
+  ["nc42_jump_game", "Solution 2 · Backwards", v187.run],
+  ["nc43_jump_game_ii", "Solution 1", v188.run],
+  ["nc43_jump_game_ii", "Solution 2 · Reverse greedy", v189.run],
+  ["nc44_gas_station", "Solution 1", v190.run],
+  ["nc44_gas_station", "Solution 2 · Try each start", v191.run],
+  ["nc45_hand_of_straights", "Solution 1", v192.run],
+  ["nc45_hand_of_straights", "Solution 2 · Sorted consume", v193.run],
+  ["nc46_merge_triplets", "Solution 1", v194.run],
+  ["nc46_merge_triplets", "Solution 2 · Track positions", v195.run],
+  ["nc47_partition_labels", "Solution 1", v196.run],
+  ["nc47_partition_labels", "Solution 2 · Expand end", v197.run],
+  ["nc48_valid_parenthesis_string", "Solution 1", v198.run],
+  ["nc48_valid_parenthesis_string", "Solution 2 · Two passes", v199.run],
+  ["nc49_single_number", "Solution 1", v200.run],
+  ["nc49_single_number", "Solution 2 · Sum of uniques", v201.run],
+  ["nc50_number_of_one_bits", "Solution 1", v202.run],
+  ["nc50_number_of_one_bits", "Solution 2 · Shift and test", v203.run],
+  ["nc51_counting_bits", "Solution 1", v204.run],
+  ["nc51_counting_bits", "Solution 2 · Popcount each", v205.run],
+  ["nc52_reverse_bits", "Solution 1", v206.run],
+  ["nc52_reverse_bits", "Solution 2 · Via binary string", v207.run],
+  ["nc53_missing_number", "Solution 1", v208.run],
+  ["nc53_missing_number", "Solution 2 · Gauss sum", v209.run],
+  ["nc54_sum_of_two_integers", "Solution 1", v210.run],
+  ["nc54_sum_of_two_integers", "Solution 2 · Full adder", v211.run],
+  ["nc55_reverse_integer", "Solution 1", v212.run],
+  ["nc55_reverse_integer", "Solution 2 · Via string", v213.run],
+  ["nc56_rotate_image", "Solution 1", v214.run],
+  ["nc56_rotate_image", "Solution 2 · By index", v215.run],
+  ["nc57_spiral_matrix", "Solution 1", v216.run],
+  ["nc57_spiral_matrix", "Solution 2 · Boundaries", v217.run],
+  ["nc58_set_matrix_zeroes", "Solution 1", v218.run],
+  ["nc58_set_matrix_zeroes", "Solution 2 · By scanning", v219.run],
+  ["nc59_happy_number", "Solution 1", v220.run],
+  ["nc59_happy_number", "Solution 2 · Floyd cycle", v221.run],
+  ["nc60_plus_one", "Solution 1", v222.run],
+  ["nc60_plus_one", "Solution 2 · Via number", v223.run],
+  ["nc61_pow", "Solution 1", v224.run],
+  ["nc61_pow", "Solution 2 · Repeated multiplication", v225.run],
+  ["nc62_multiply_strings", "Solution 1", v226.run],
+  ["nc62_multiply_strings", "Solution 2 · Partial sums", v227.run],
+  ["nc63_detect_squares", "Solution 1", v228.run],
+  ["nc63_detect_squares", "Solution 2 · By side length", v229.run],
+  ["nc64_climbing_stairs", "Solution 1", v230.run],
+  ["nc64_climbing_stairs", "Solution 2 · Memoised", v231.run],
+  ["nc65_min_cost_climbing_stairs", "Solution 1", v232.run],
+  ["nc65_min_cost_climbing_stairs", "Solution 2 · From the top", v233.run],
+  ["nc66_house_robber", "Solution 1", v234.run],
+  ["nc66_house_robber", "Solution 2 · Memoised", v235.run],
+  ["nc67_house_robber_ii", "Solution 1", v236.run],
+  ["nc67_house_robber_ii", "Solution 2 · Both at once", v237.run],
+  ["nc68_longest_palindrome", "Solution 1", v238.run],
+  ["nc68_longest_palindrome", "Solution 2 · Brute force", v239.run],
+  ["nc69_palindromic_substrings", "Solution 1", v240.run],
+  ["nc69_palindromic_substrings", "Solution 2 · Dp table", v241.run],
+  ["nc70_decode_ways", "Solution 1", v242.run],
+  ["nc70_decode_ways", "Solution 2 · Memoised", v243.run],
+  ["nc71_coin_change", "Solution 1", v244.run],
+  ["nc71_coin_change", "Solution 2 · Breadth first", v245.run],
+  ["nc72_maximum_product_subarray", "Solution 1", v246.run],
+  ["nc72_maximum_product_subarray", "Solution 2 · Prefix and suffix", v247.run],
+  ["nc73_word_break", "Solution 1", v248.run],
+  ["nc73_word_break", "Solution 2 · Memoised", v249.run],
+  ["nc74_longest_increasing_subsequence", "Solution 1", v250.run],
+  ["nc74_longest_increasing_subsequence", "Solution 2 · Patience", v251.run],
+  ["nc75_partition_equal_subset", "Solution 1", v252.run],
+  ["nc75_partition_equal_subset", "Solution 2 · Memoised", v253.run],
+  ["nc76_kth_largest_stream", "Solution 1", v254.run],
+  ["nc76_kth_largest_stream", "Solution 2 · Keep everything", v255.run],
+  ["nc77_last_stone_weight", "Solution 1", v256.run],
+  ["nc77_last_stone_weight", "Solution 2 · Find max each round", v257.run],
+  ["nc78_k_closest_points", "Solution 1", v258.run],
+  ["nc78_k_closest_points", "Solution 2 · Select k times", v259.run],
+  ["nc79_kth_largest_array", "Solution 1", v260.run],
+  ["nc79_kth_largest_array", "Solution 2 · Quickselect", v261.run],
+  ["nc80_task_scheduler", "Solution 1", v262.run],
+  ["nc80_task_scheduler", "Solution 2 · Simulate", v263.run],
+  ["nc81_design_twitter", "Solution 1", v264.run],
+  ["nc81_design_twitter", "Solution 2 · Merge per user", v265.run],
+  ["nc82_find_median_stream", "Solution 1", v266.run],
+  ["nc82_find_median_stream", "Solution 2 · Sorted list", v267.run],
+  ["nc83_subsets", "Solution 1", v268.run],
+  ["nc83_subsets", "Solution 2 · Bitmask", v269.run],
+  ["nc84_combination_sum", "Solution 1", v270.run],
+  ["nc84_combination_sum", "Solution 2 · By target", v271.run],
+  ["nc85_permutations", "Solution 1", v272.run],
+  ["nc85_permutations", "Solution 2 · Insert everywhere", v273.run],
+  ["nc86_subsets_ii", "Solution 1", v274.run],
+  ["nc86_subsets_ii", "Solution 2 · By counts", v275.run],
+  ["nc87_combination_sum_ii", "Solution 1", v276.run],
+  ["nc87_combination_sum_ii", "Solution 2 · Dedupe at the end", v277.run],
+  ["nc88_word_search", "Solution 1", v278.run],
+  ["nc88_word_search", "Solution 2 · Prune by counts", v279.run],
+  ["nc89_palindrome_partitioning", "Solution 1", v280.run],
+  ["nc89_palindrome_partitioning", "Solution 2 · With table", v281.run],
+  ["nc90_letter_combinations", "Solution 1", v282.run],
+  ["nc90_letter_combinations", "Solution 2 · Iterative product", v283.run],
+  ["nc91_n_queens", "Solution 1", v284.run],
+  ["nc91_n_queens", "Solution 2 · Filter permutations", v285.run],
+  ["nc92_unique_paths", "Solution 1", v286.run],
+  ["nc92_unique_paths", "Solution 2 · Pascal", v287.run],
+  ["nc93_longest_common_subsequence", "Solution 1", v288.run],
+  ["nc93_longest_common_subsequence", "Solution 2 · Memoised", v289.run],
+  ["nc94_coin_change_ii", "Solution 1", v290.run],
+  ["nc94_coin_change_ii", "Solution 2 · By coin recursion", v291.run],
+  ["nc95_target_sum", "Solution 1", v292.run],
+  ["nc95_target_sum", "Solution 2 · As subset sum", v293.run],
+  ["nc96_stock_with_cooldown", "Solution 1", v294.run],
+  ["nc96_stock_with_cooldown", "Solution 2 · Memoised", v295.run],
+  ["nc97_interleaving_string", "Solution 1", v296.run],
+  ["nc97_interleaving_string", "Solution 2 · Rolling row", v297.run],
+  ["nc98_longest_increasing_path", "Solution 1", v298.run],
+  ["nc98_longest_increasing_path", "Solution 2 · By value order", v299.run],
+  ["nc99_distinct_subsequences", "Solution 1", v300.run],
+  ["nc99_distinct_subsequences", "Solution 2 · Memoised", v301.run],
 ];
 
 const failures: string[] = [];

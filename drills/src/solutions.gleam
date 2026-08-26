@@ -110,10 +110,40 @@ import nc134_merge_k_sorted_lists
 import nc134_merge_k_sorted_lists__smallest_head
 import nc135_reverse_k_group
 import nc135_reverse_k_group__count_first
+import nc136_invert_binary_tree
+import nc136_invert_binary_tree__by_rebuilding
+import nc137_maximum_depth
+import nc137_maximum_depth__by_levels
+import nc138_diameter_of_binary_tree
+import nc138_diameter_of_binary_tree__height_per_node
+import nc139_balanced_binary_tree
+import nc139_balanced_binary_tree__height_per_node
 import nc13_longest_substring
 import nc13_longest_substring__shrinking_window
+import nc140_same_tree
+import nc140_same_tree__by_serialising
+import nc141_subtree_of_another_tree
+import nc141_subtree_of_another_tree__by_serialising
+import nc142_lowest_common_ancestor_bst
+import nc142_lowest_common_ancestor_bst__by_paths
+import nc143_level_order_traversal
+import nc143_level_order_traversal__by_depth
+import nc144_right_side_view
+import nc144_right_side_view__right_first
+import nc145_count_good_nodes
+import nc145_count_good_nodes__by_path
+import nc146_validate_bst
+import nc146_validate_bst__in_order
+import nc147_kth_smallest_bst
+import nc147_kth_smallest_bst__by_counting
+import nc148_build_tree_preorder_inorder
+import nc148_build_tree_preorder_inorder__by_bounds
+import nc149_max_path_sum
+import nc149_max_path_sum__all_paths
 import nc14_character_replacement
 import nc14_character_replacement__per_character
+import nc150_serialize_deserialize
+import nc150_serialize_deserialize__post_order
 import nc15_permutation_in_string
 import nc15_permutation_in_string__sorted_windows
 import nc16_valid_parentheses
@@ -752,6 +782,158 @@ pub fn main() {
     check_merge_k_lists(nc134_merge_k_sorted_lists__smallest_head.merge_k_lists),
     check_reverse_k_group(nc135_reverse_k_group.reverse_k_group),
     check_reverse_k_group(nc135_reverse_k_group__count_first.reverse_k_group),
+    check_invert_tree(
+      nc136_invert_binary_tree.Leaf,
+      nc136_invert_binary_tree.Node,
+      nc136_invert_binary_tree.invert_tree,
+    ),
+    check_invert_tree(
+      nc136_invert_binary_tree__by_rebuilding.Leaf,
+      nc136_invert_binary_tree__by_rebuilding.Node,
+      nc136_invert_binary_tree__by_rebuilding.invert_tree,
+    ),
+    check_max_depth(
+      nc137_maximum_depth.Leaf,
+      nc137_maximum_depth.Node,
+      nc137_maximum_depth.max_depth,
+    ),
+    check_max_depth(
+      nc137_maximum_depth__by_levels.Leaf,
+      nc137_maximum_depth__by_levels.Node,
+      nc137_maximum_depth__by_levels.max_depth,
+    ),
+    check_diameter(
+      nc138_diameter_of_binary_tree.Leaf,
+      nc138_diameter_of_binary_tree.Node,
+      nc138_diameter_of_binary_tree.diameter_of_binary_tree,
+    ),
+    check_diameter(
+      nc138_diameter_of_binary_tree__height_per_node.Leaf,
+      nc138_diameter_of_binary_tree__height_per_node.Node,
+      nc138_diameter_of_binary_tree__height_per_node.diameter_of_binary_tree,
+    ),
+    check_is_balanced(
+      nc139_balanced_binary_tree.Leaf,
+      nc139_balanced_binary_tree.Node,
+      nc139_balanced_binary_tree.is_balanced,
+    ),
+    check_is_balanced(
+      nc139_balanced_binary_tree__height_per_node.Leaf,
+      nc139_balanced_binary_tree__height_per_node.Node,
+      nc139_balanced_binary_tree__height_per_node.is_balanced,
+    ),
+    check_same_tree(
+      nc140_same_tree.Leaf,
+      nc140_same_tree.Node,
+      nc140_same_tree.is_same_tree,
+    ),
+    check_same_tree(
+      nc140_same_tree__by_serialising.Leaf,
+      nc140_same_tree__by_serialising.Node,
+      nc140_same_tree__by_serialising.is_same_tree,
+    ),
+    check_is_subtree(
+      nc141_subtree_of_another_tree.Leaf,
+      nc141_subtree_of_another_tree.Node,
+      nc141_subtree_of_another_tree.is_subtree,
+    ),
+    check_is_subtree(
+      nc141_subtree_of_another_tree__by_serialising.Leaf,
+      nc141_subtree_of_another_tree__by_serialising.Node,
+      nc141_subtree_of_another_tree__by_serialising.is_subtree,
+    ),
+    check_lca_bst(
+      nc142_lowest_common_ancestor_bst.Leaf,
+      nc142_lowest_common_ancestor_bst.Node,
+      nc142_lowest_common_ancestor_bst.lowest_common_ancestor,
+    ),
+    check_lca_bst(
+      nc142_lowest_common_ancestor_bst__by_paths.Leaf,
+      nc142_lowest_common_ancestor_bst__by_paths.Node,
+      nc142_lowest_common_ancestor_bst__by_paths.lowest_common_ancestor,
+    ),
+    check_level_order(
+      nc143_level_order_traversal.Leaf,
+      nc143_level_order_traversal.Node,
+      nc143_level_order_traversal.level_order,
+    ),
+    check_level_order(
+      nc143_level_order_traversal__by_depth.Leaf,
+      nc143_level_order_traversal__by_depth.Node,
+      nc143_level_order_traversal__by_depth.level_order,
+    ),
+    check_right_side_view(
+      nc144_right_side_view.Leaf,
+      nc144_right_side_view.Node,
+      nc144_right_side_view.right_side_view,
+    ),
+    check_right_side_view(
+      nc144_right_side_view__right_first.Leaf,
+      nc144_right_side_view__right_first.Node,
+      nc144_right_side_view__right_first.right_side_view,
+    ),
+    check_good_nodes(
+      nc145_count_good_nodes.Leaf,
+      nc145_count_good_nodes.Node,
+      nc145_count_good_nodes.good_nodes,
+    ),
+    check_good_nodes(
+      nc145_count_good_nodes__by_path.Leaf,
+      nc145_count_good_nodes__by_path.Node,
+      nc145_count_good_nodes__by_path.good_nodes,
+    ),
+    check_valid_bst(
+      nc146_validate_bst.Leaf,
+      nc146_validate_bst.Node,
+      nc146_validate_bst.is_valid_bst,
+    ),
+    check_valid_bst(
+      nc146_validate_bst__in_order.Leaf,
+      nc146_validate_bst__in_order.Node,
+      nc146_validate_bst__in_order.is_valid_bst,
+    ),
+    check_kth_smallest(
+      nc147_kth_smallest_bst.Leaf,
+      nc147_kth_smallest_bst.Node,
+      nc147_kth_smallest_bst.kth_smallest,
+    ),
+    check_kth_smallest(
+      nc147_kth_smallest_bst__by_counting.Leaf,
+      nc147_kth_smallest_bst__by_counting.Node,
+      nc147_kth_smallest_bst__by_counting.kth_smallest,
+    ),
+    check_build_tree(
+      nc148_build_tree_preorder_inorder.Leaf,
+      nc148_build_tree_preorder_inorder.Node,
+      nc148_build_tree_preorder_inorder.build_tree,
+    ),
+    check_build_tree(
+      nc148_build_tree_preorder_inorder__by_bounds.Leaf,
+      nc148_build_tree_preorder_inorder__by_bounds.Node,
+      nc148_build_tree_preorder_inorder__by_bounds.build_tree,
+    ),
+    check_max_path_sum(
+      nc149_max_path_sum.Leaf,
+      nc149_max_path_sum.Node,
+      nc149_max_path_sum.max_path_sum,
+    ),
+    check_max_path_sum(
+      nc149_max_path_sum__all_paths.Leaf,
+      nc149_max_path_sum__all_paths.Node,
+      nc149_max_path_sum__all_paths.max_path_sum,
+    ),
+    check_serialize(
+      nc150_serialize_deserialize.Leaf,
+      nc150_serialize_deserialize.Node,
+      nc150_serialize_deserialize.serialize,
+      nc150_serialize_deserialize.deserialize,
+    ),
+    check_serialize(
+      nc150_serialize_deserialize__post_order.Leaf,
+      nc150_serialize_deserialize__post_order.Node,
+      nc150_serialize_deserialize__post_order.serialize,
+      nc150_serialize_deserialize__post_order.deserialize,
+    ),
 
     // Gleam Tips
     check_list_patterns(tip01_list_patterns.length, tip01_list_patterns.last),
@@ -2377,6 +2559,257 @@ fn check_reverse_k_group(f: fn(List(Int), Int) -> List(Int)) -> Nil {
   let assert [1, 2, 3] = f([1, 2, 3], 1)
   let assert [1, 2] = f([1, 2], 5)
   let assert [] = f([], 2)
+  Nil
+}
+
+fn check_invert_tree(
+  leaf: tree,
+  node: fn(Int, tree, tree) -> tree,
+  invert: fn(tree) -> tree,
+) -> Nil {
+  let bud = fn(value) { node(value, leaf, leaf) }
+  let original = node(4, node(2, bud(1), bud(3)), node(7, bud(6), bud(9)))
+  let mirrored = node(4, node(7, bud(9), bud(6)), node(2, bud(3), bud(1)))
+  let assert True = invert(original) == mirrored
+  let assert True = invert(leaf) == leaf
+  let assert True = invert(bud(1)) == bud(1)
+  // Inverting twice is the identity, which is the cheapest check there is.
+  let assert True = invert(invert(original)) == original
+  Nil
+}
+
+fn check_max_depth(
+  leaf: tree,
+  node: fn(Int, tree, tree) -> tree,
+  depth: fn(tree) -> Int,
+) -> Nil {
+  let bud = fn(value) { node(value, leaf, leaf) }
+  let assert True = depth(node(3, bud(9), node(20, bud(15), bud(7)))) == 3
+  let assert True = depth(leaf) == 0
+  let assert True = depth(bud(1)) == 1
+  // A spindly tree is as deep as it is big.
+  let assert True = depth(node(1, node(2, bud(3), leaf), leaf)) == 3
+  Nil
+}
+
+fn check_diameter(
+  leaf: tree,
+  node: fn(Int, tree, tree) -> tree,
+  diameter: fn(tree) -> Int,
+) -> Nil {
+  let bud = fn(value) { node(value, leaf, leaf) }
+  let assert True = diameter(node(1, node(2, bud(4), bud(5)), bud(3))) == 3
+  let assert True = diameter(leaf) == 0
+  let assert True = diameter(bud(1)) == 0
+  let assert True = diameter(node(1, bud(2), leaf)) == 1
+  // The widest path need not pass through the root.
+  let assert True =
+    diameter(node(
+      1,
+      node(2, node(4, bud(6), leaf), node(5, leaf, bud(7))),
+      leaf,
+    ))
+    == 4
+  Nil
+}
+
+fn check_is_balanced(
+  leaf: tree,
+  node: fn(Int, tree, tree) -> tree,
+  balanced: fn(tree) -> Bool,
+) -> Nil {
+  let bud = fn(value) { node(value, leaf, leaf) }
+  let assert True = balanced(node(3, bud(9), node(20, bud(15), bud(7))))
+  let assert True = balanced(leaf)
+  let assert True = balanced(bud(1))
+  let assert False =
+    balanced(node(1, node(2, node(3, bud(4), bud(4)), bud(3)), bud(2)))
+  // Balanced at the root, unbalanced below it.
+  let assert False =
+    balanced(node(1, node(2, node(3, bud(4), leaf), leaf), bud(2)))
+  Nil
+}
+
+fn check_same_tree(
+  leaf: tree,
+  node: fn(Int, tree, tree) -> tree,
+  same: fn(tree, tree) -> Bool,
+) -> Nil {
+  let bud = fn(value) { node(value, leaf, leaf) }
+  let assert True = same(node(1, bud(2), bud(3)), node(1, bud(2), bud(3)))
+  let assert True = same(leaf, leaf)
+  let assert False = same(leaf, bud(1))
+  let assert False = same(node(1, bud(2), leaf), node(1, leaf, bud(2)))
+  let assert False = same(node(1, bud(2), bud(1)), node(1, bud(1), bud(2)))
+  Nil
+}
+
+fn check_is_subtree(
+  leaf: tree,
+  node: fn(Int, tree, tree) -> tree,
+  subtree: fn(tree, tree) -> Bool,
+) -> Nil {
+  let bud = fn(value) { node(value, leaf, leaf) }
+  let assert True =
+    subtree(node(3, node(4, bud(1), bud(2)), bud(5)), node(4, bud(1), bud(2)))
+  // The candidate starts the same way but has an extra node below it.
+  let assert False =
+    subtree(
+      node(3, node(4, bud(1), node(2, bud(0), leaf)), bud(5)),
+      node(4, bud(1), bud(2)),
+    )
+  let assert True = subtree(bud(1), bud(1))
+  let assert False = subtree(leaf, bud(1))
+  let assert True = subtree(bud(1), leaf)
+  Nil
+}
+
+fn check_lca_bst(
+  leaf: tree,
+  node: fn(Int, tree, tree) -> tree,
+  lca: fn(tree, Int, Int) -> Int,
+) -> Nil {
+  let bud = fn(value) { node(value, leaf, leaf) }
+  let tree =
+    node(6, node(2, bud(0), node(4, bud(3), bud(5))), node(8, bud(7), bud(9)))
+  let assert True = lca(tree, 2, 8) == 6
+  // An ancestor counts as its own descendant.
+  let assert True = lca(tree, 2, 4) == 2
+  let assert True = lca(tree, 3, 5) == 4
+  let assert True = lca(tree, 7, 9) == 8
+  let assert True = lca(bud(1), 1, 1) == 1
+  Nil
+}
+
+fn check_level_order(
+  leaf: tree,
+  node: fn(Int, tree, tree) -> tree,
+  levels: fn(tree) -> List(List(Int)),
+) -> Nil {
+  let bud = fn(value) { node(value, leaf, leaf) }
+  let assert [[3], [9, 20], [15, 7]] =
+    levels(node(3, bud(9), node(20, bud(15), bud(7))))
+  let assert [] = levels(leaf)
+  let assert [[1]] = levels(bud(1))
+  // A missing left child does not shift the right one leftwards.
+  let assert [[1], [3], [4]] = levels(node(1, leaf, node(3, leaf, bud(4))))
+  Nil
+}
+
+fn check_right_side_view(
+  leaf: tree,
+  node: fn(Int, tree, tree) -> tree,
+  view: fn(tree) -> List(Int),
+) -> Nil {
+  let bud = fn(value) { node(value, leaf, leaf) }
+  let assert [1, 3, 4] =
+    view(node(1, node(2, leaf, bud(5)), node(3, leaf, bud(4))))
+  let assert [] = view(leaf)
+  let assert [1] = view(bud(1))
+  // The right side runs out, so a node further left is the one that shows.
+  let assert [1, 3, 4] = view(node(1, node(2, bud(4), leaf), bud(3)))
+  Nil
+}
+
+fn check_good_nodes(
+  leaf: tree,
+  node: fn(Int, tree, tree) -> tree,
+  good: fn(tree) -> Int,
+) -> Nil {
+  let bud = fn(value) { node(value, leaf, leaf) }
+  let assert True =
+    good(node(3, node(1, bud(3), leaf), node(4, bud(1), bud(5)))) == 4
+  let assert True = good(leaf) == 0
+  let assert True = good(bud(1)) == 1
+  // Equal to the largest so far still counts as good.
+  let assert True = good(node(2, bud(2), leaf)) == 2
+  let assert True = good(node(3, node(3, bud(4), bud(2)), leaf)) == 3
+  Nil
+}
+
+fn check_valid_bst(
+  leaf: tree,
+  node: fn(Int, tree, tree) -> tree,
+  valid: fn(tree) -> Bool,
+) -> Nil {
+  let bud = fn(value) { node(value, leaf, leaf) }
+  let assert True = valid(node(2, bud(1), bud(3)))
+  let assert True = valid(leaf)
+  let assert True = valid(bud(1))
+  let assert False = valid(node(5, bud(1), node(4, bud(3), bud(6))))
+  // Each node beats its own parent, but 3 is on the wrong side of the root.
+  let assert False = valid(node(5, bud(4), node(6, bud(3), bud(7))))
+  // Equal values are not allowed either.
+  let assert False = valid(node(2, bud(2), leaf))
+  Nil
+}
+
+fn check_kth_smallest(
+  leaf: tree,
+  node: fn(Int, tree, tree) -> tree,
+  kth: fn(tree, Int) -> Int,
+) -> Nil {
+  let bud = fn(value) { node(value, leaf, leaf) }
+  let tree = node(3, node(1, leaf, bud(2)), bud(4))
+  let assert True = kth(tree, 1) == 1
+  let assert True = kth(tree, 2) == 2
+  let assert True = kth(tree, 3) == 3
+  let assert True = kth(tree, 4) == 4
+  let assert True = kth(bud(7), 1) == 7
+  Nil
+}
+
+fn check_build_tree(
+  leaf: tree,
+  node: fn(Int, tree, tree) -> tree,
+  build: fn(List(Int), List(Int)) -> tree,
+) -> Nil {
+  let bud = fn(value) { node(value, leaf, leaf) }
+  let assert True =
+    build([3, 9, 20, 15, 7], [9, 3, 15, 20, 7])
+    == node(3, bud(9), node(20, bud(15), bud(7)))
+  let assert True = build([], []) == leaf
+  let assert True = build([-1], [-1]) == bud(-1)
+  // A tree that leans entirely one way.
+  let assert True =
+    build([1, 2, 3], [3, 2, 1]) == node(1, node(2, bud(3), leaf), leaf)
+  let assert True =
+    build([1, 2, 3], [1, 2, 3]) == node(1, leaf, node(2, leaf, bud(3)))
+  Nil
+}
+
+fn check_max_path_sum(
+  leaf: tree,
+  node: fn(Int, tree, tree) -> tree,
+  best: fn(tree) -> Int,
+) -> Nil {
+  let bud = fn(value) { node(value, leaf, leaf) }
+  let assert True = best(node(1, bud(2), bud(3))) == 6
+  let assert True = best(node(-10, bud(9), node(20, bud(15), bud(7)))) == 42
+  // Every value negative, so the best path is the single largest node.
+  let assert True = best(bud(-3)) == -3
+  let assert True = best(node(-2, bud(-1), leaf)) == -1
+  let assert True = best(bud(0)) == 0
+  Nil
+}
+
+fn check_serialize(
+  leaf: tree,
+  node: fn(Int, tree, tree) -> tree,
+  serialize: fn(tree) -> String,
+  deserialize: fn(String) -> tree,
+) -> Nil {
+  let bud = fn(value) { node(value, leaf, leaf) }
+  // The format is free, so what is checked is the round trip.
+  let full = node(1, bud(2), node(3, bud(4), bud(5)))
+  let assert True = deserialize(serialize(full)) == full
+  let assert True = deserialize(serialize(leaf)) == leaf
+  let assert True = deserialize(serialize(bud(0))) == bud(0)
+  let lopsided = node(1, node(2, node(3, leaf, bud(4)), leaf), leaf)
+  let assert True = deserialize(serialize(lopsided)) == lopsided
+  // Negative values have to survive too.
+  let negatives = node(-1, bud(-2), bud(-3))
+  let assert True = deserialize(serialize(negatives)) == negatives
   Nil
 }
 

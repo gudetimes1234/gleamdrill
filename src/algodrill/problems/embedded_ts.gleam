@@ -4189,6 +4189,554 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc136_invert_binary_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Swap the children, then invert each of them — the swap and the recursion are the same line. The order does not matter: swapping before or after recursing gives the same tree, which is why this is the shortest tree problem there is.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function invertTree(root: TreeNode | null): TreeNode | null {
+  // Swap the children, then invert each of them. The swap and the recursion are
+  // the same two lines, which is why this is the shortest tree problem there is
+  // -- and why the order does not matter: swapping before or after recursing
+  // gives the same tree.
+  if (root === null) return null;
+  const left = invertTree(root.left);
+  root.left = invertTree(root.right);
+  root.right = left;
+  return root;
+}"),
+      #("Solution 2 · By rebuilding", "Write the tree out pre-order with a marker for every empty child, then read it back taking the first subtree as the *right* child. The inversion happens entirely in the reading — nothing is ever swapped. Longer than the direct recursion, and worth having because the same flatten/rebuild pair is all [[nc150_serialize_deserialize]] is.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function invertTree(root: TreeNode | null): TreeNode | null {
+  // Write the tree out pre-order with a marker for every empty child, then read
+  // it back taking the first subtree as the *right* child. The inversion
+  // happens entirely in the reading -- nothing is ever swapped. Longer than the
+  // direct recursion, and worth having because the same flatten/rebuild pair is
+  // all Serialize and Deserialize is.
+  const tokens: (number | null)[] = [];
+  flatten(root, tokens);
+  return rebuild(tokens, { at: 0 });
+}
+
+function flatten(node: TreeNode | null, tokens: (number | null)[]): void {
+  if (node === null) {
+    tokens.push(null);
+    return;
+  }
+  tokens.push(node.val);
+  flatten(node.left, tokens);
+  flatten(node.right, tokens);
+}
+
+function rebuild(tokens: (number | null)[], cursor: { at: number }): TreeNode | null {
+  const value = tokens[cursor.at++];
+  if (value === null) return null;
+  const first = rebuild(tokens, cursor);
+  const second = rebuild(tokens, cursor);
+  return new TreeNode(value, second, first);
+}"),
+    ],
+    check: Check(
+      signature: "export class TreeNode
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null)
+
+export function invertTree(root: TreeNode | null): TreeNode | null",
+      starter: "export class TreeNode {
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    // todo
+  }
+}
+
+export function invertTree(root: TreeNode | null): TreeNode | null {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// LeetCode's level-order form: an array of values with null for a missing
+// child, trailing nulls trimmed.
+const build = (values: (number | null)[]): any => {
+  if (values.length === 0 || values[0] === null) return null;
+  const root = new solution.TreeNode(values[0]!);
+  const queue: any[] = [root];
+  let head = 0;
+  let i = 1;
+  while (head < queue.length && i < values.length) {
+    const node = queue[head++];
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.left = new solution.TreeNode(value);
+        queue.push(node.left);
+      }
+    }
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.right = new solution.TreeNode(value);
+        queue.push(node.right);
+      }
+    }
+  }
+  return root;
+};
+
+const levels = (node: any): (number | null)[] => {
+  const out: (number | null)[] = [];
+  const queue: any[] = [node];
+  let head = 0;
+  while (head < queue.length && out.length < 500) {
+    const current = queue[head++];
+    if (current === null || current === undefined) {
+      out.push(null);
+    } else {
+      out.push(current.val);
+      queue.push(current.left ?? null);
+      queue.push(current.right ?? null);
+    }
+  }
+  while (out.length > 0 && out[out.length - 1] === null) out.pop();
+  return out;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.invertTree !== \"function\" || typeof solution.TreeNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"invertTree([4,2,7,1,3,6,9])\", show([4, 7, 2, 9, 6, 3, 1]), show(levels(solution.invertTree(build([4, 2, 7, 1, 3, 6, 9]))))],
+    [\"invertTree([]) -- an empty tree\", show([]), show(levels(solution.invertTree(build([]))))],
+    [\"invertTree([1]) -- a single node\", show([1]), show(levels(solution.invertTree(build([1]))))],
+    [\"invertTree twice is the original\", show([1, 2]), show(levels(solution.invertTree(solution.invertTree(build([1, 2])))))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc137_maximum_depth() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One more than the deeper of the two children, with an empty tree at zero. The whole problem is that base case; everything else is the definition of depth read aloud.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function maxDepth(root: TreeNode | null): number {
+  // One more than the deeper of the two children, with an empty tree at zero.
+  // The whole problem is that base case: everything else is the definition of
+  // depth read aloud.
+  if (root === null) return 0;
+  return 1 + Math.max(maxDepth(root.left), maxDepth(root.right));
+}"),
+      #("Solution 2 · By levels", "Count the levels instead of measuring the branches: take the whole frontier, replace it with all its children, and add one. No recursion and no stack — which is what makes this the version that survives a tree deep enough to overflow one.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function maxDepth(root: TreeNode | null): number {
+  // Count the levels instead of measuring the branches: take the whole
+  // frontier, replace it with all its children, and add one. No recursion and
+  // no stack -- which is what makes this the version that survives a tree deep
+  // enough to overflow one.
+  let depth = 0;
+  let frontier = root === null ? [] : [root];
+  while (frontier.length > 0) {
+    depth++;
+    frontier = frontier.flatMap((node) =>
+      [node.left, node.right].filter((child): child is TreeNode => child !== null),
+    );
+  }
+  return depth;
+}"),
+    ],
+    check: Check(
+      signature: "export class TreeNode
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null)
+
+export function maxDepth(root: TreeNode | null): number",
+      starter: "export class TreeNode {
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    // todo
+  }
+}
+
+export function maxDepth(root: TreeNode | null): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// LeetCode's level-order form: an array of values with null for a missing
+// child, trailing nulls trimmed.
+const build = (values: (number | null)[]): any => {
+  if (values.length === 0 || values[0] === null) return null;
+  const root = new solution.TreeNode(values[0]!);
+  const queue: any[] = [root];
+  let head = 0;
+  let i = 1;
+  while (head < queue.length && i < values.length) {
+    const node = queue[head++];
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.left = new solution.TreeNode(value);
+        queue.push(node.left);
+      }
+    }
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.right = new solution.TreeNode(value);
+        queue.push(node.right);
+      }
+    }
+  }
+  return root;
+};
+
+const levels = (node: any): (number | null)[] => {
+  const out: (number | null)[] = [];
+  const queue: any[] = [node];
+  let head = 0;
+  while (head < queue.length && out.length < 500) {
+    const current = queue[head++];
+    if (current === null || current === undefined) {
+      out.push(null);
+    } else {
+      out.push(current.val);
+      queue.push(current.left ?? null);
+      queue.push(current.right ?? null);
+    }
+  }
+  while (out.length > 0 && out[out.length - 1] === null) out.pop();
+  return out;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.maxDepth !== \"function\" || typeof solution.TreeNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"maxDepth([3,9,20,null,null,15,7])\", show(3), show(solution.maxDepth(build([3, 9, 20, null, null, 15, 7])))],
+    [\"maxDepth([])\", show(0), show(solution.maxDepth(build([])))],
+    [\"maxDepth([1])\", show(1), show(solution.maxDepth(build([1])))],
+    [\"maxDepth(a spindly tree)\", show(3), show(solution.maxDepth(build([1, 2, null, 3])))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc138_diameter_of_binary_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One walk doing two jobs: each call *returns* its own height, and on the way past it *records* the path through that node — left height plus right height. The answer is the largest such path, so it is never returned, only tracked. That split between return and record is the pattern, and it comes back in [[nc149_max_path_sum]].", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function diameterOfBinaryTree(root: TreeNode | null): number {
+  // One walk, doing two jobs: each call returns its own height, and on the way
+  // past it records the path *through* that node -- left height plus right
+  // height. The answer is the largest such path, so it is never returned, only
+  // tracked. That split between what a call returns and what it records is the
+  // pattern worth keeping.
+  return measure(root)[1];
+}
+
+function measure(node: TreeNode | null): [number, number] {
+  if (node === null) return [0, 0];
+  const [leftHeight, leftWidest] = measure(node.left);
+  const [rightHeight, rightWidest] = measure(node.right);
+  return [
+    1 + Math.max(leftHeight, rightHeight),
+    Math.max(leftHeight + rightHeight, leftWidest, rightWidest),
+  ];
+}"),
+      #("Solution 2 · Height per node", "Ask every node how tall its two sides are and keep the largest sum. Correct and obvious, but height is recomputed from scratch at every node, so a balanced tree costs O(n log n) and a spindly one O(n²) — exactly what returning the height alongside the answer avoids.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function diameterOfBinaryTree(root: TreeNode | null): number {
+  // Ask every node how tall its two sides are and keep the largest sum. Correct
+  // and obvious, but height is recomputed from scratch at every node, so a
+  // balanced tree costs O(n log n) and a spindly one O(n^2) -- which is exactly
+  // what returning the height alongside the answer avoids.
+  if (root === null) return 0;
+  return Math.max(
+    height(root.left) + height(root.right),
+    diameterOfBinaryTree(root.left),
+    diameterOfBinaryTree(root.right),
+  );
+}
+
+function height(node: TreeNode | null): number {
+  return node === null ? 0 : 1 + Math.max(height(node.left), height(node.right));
+}"),
+    ],
+    check: Check(
+      signature: "export class TreeNode
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null)
+
+export function diameterOfBinaryTree(root: TreeNode | null): number",
+      starter: "export class TreeNode {
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    // todo
+  }
+}
+
+export function diameterOfBinaryTree(root: TreeNode | null): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// LeetCode's level-order form: an array of values with null for a missing
+// child, trailing nulls trimmed.
+const build = (values: (number | null)[]): any => {
+  if (values.length === 0 || values[0] === null) return null;
+  const root = new solution.TreeNode(values[0]!);
+  const queue: any[] = [root];
+  let head = 0;
+  let i = 1;
+  while (head < queue.length && i < values.length) {
+    const node = queue[head++];
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.left = new solution.TreeNode(value);
+        queue.push(node.left);
+      }
+    }
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.right = new solution.TreeNode(value);
+        queue.push(node.right);
+      }
+    }
+  }
+  return root;
+};
+
+const levels = (node: any): (number | null)[] => {
+  const out: (number | null)[] = [];
+  const queue: any[] = [node];
+  let head = 0;
+  while (head < queue.length && out.length < 500) {
+    const current = queue[head++];
+    if (current === null || current === undefined) {
+      out.push(null);
+    } else {
+      out.push(current.val);
+      queue.push(current.left ?? null);
+      queue.push(current.right ?? null);
+    }
+  }
+  while (out.length > 0 && out[out.length - 1] === null) out.pop();
+  return out;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.diameterOfBinaryTree !== \"function\" || typeof solution.TreeNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"diameterOfBinaryTree([1,2,3,4,5])\", show(3), show(solution.diameterOfBinaryTree(build([1, 2, 3, 4, 5])))],
+    [\"diameterOfBinaryTree([])\", show(0), show(solution.diameterOfBinaryTree(build([])))],
+    [\"diameterOfBinaryTree([1])\", show(0), show(solution.diameterOfBinaryTree(build([1])))],
+    [\"diameterOfBinaryTree([1,2])\", show(1), show(solution.diameterOfBinaryTree(build([1, 2])))],
+    [\"diameterOfBinaryTree(widest path misses the root)\", show(4), show(solution.diameterOfBinaryTree(build([1, 2, null, 4, 5, 6, null, null, 7])))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc139_balanced_binary_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Height and balance in one walk. A subtree reports its height, or reports that something below it is already unbalanced — and once that happens nothing above needs measuring. Using -1 as the \"not balanced\" height is what lets a single return value carry both answers.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function isBalanced(root: TreeNode | null): boolean {
+  // Height and balance in one walk. A subtree reports its height, or reports
+  // that something below it is already unbalanced -- and once that happens
+  // nothing above needs measuring at all. Using -1 as the \"not balanced\" height
+  // is what lets a single return value carry both answers.
+  return measure(root) >= 0;
+}
+
+function measure(node: TreeNode | null): number {
+  if (node === null) return 0;
+  const left = measure(node.left);
+  const right = measure(node.right);
+  if (left < 0 || right < 0 || Math.abs(left - right) > 1) return -1;
+  return 1 + Math.max(left, right);
+}"),
+      #("Solution 2 · Height per node", "The definition read literally: every node's two sides differ by at most one, and both sides are themselves balanced. It recomputes height at every node, so the work is O(n²) on a spindly tree — the price of separating the two questions the single-pass version answers together.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function isBalanced(root: TreeNode | null): boolean {
+  // The definition read literally: every node's two sides differ by at most
+  // one, and both sides are themselves balanced. It recomputes height at every
+  // node, so the work is O(n^2) on a spindly tree -- the price of separating
+  // the two questions the single-pass version answers together.
+  if (root === null) return true;
+  return (
+    Math.abs(height(root.left) - height(root.right)) <= 1 &&
+    isBalanced(root.left) &&
+    isBalanced(root.right)
+  );
+}
+
+function height(node: TreeNode | null): number {
+  return node === null ? 0 : 1 + Math.max(height(node.left), height(node.right));
+}"),
+    ],
+    check: Check(
+      signature: "export class TreeNode
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null)
+
+export function isBalanced(root: TreeNode | null): boolean",
+      starter: "export class TreeNode {
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    // todo
+  }
+}
+
+export function isBalanced(root: TreeNode | null): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// LeetCode's level-order form: an array of values with null for a missing
+// child, trailing nulls trimmed.
+const build = (values: (number | null)[]): any => {
+  if (values.length === 0 || values[0] === null) return null;
+  const root = new solution.TreeNode(values[0]!);
+  const queue: any[] = [root];
+  let head = 0;
+  let i = 1;
+  while (head < queue.length && i < values.length) {
+    const node = queue[head++];
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.left = new solution.TreeNode(value);
+        queue.push(node.left);
+      }
+    }
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.right = new solution.TreeNode(value);
+        queue.push(node.right);
+      }
+    }
+  }
+  return root;
+};
+
+const levels = (node: any): (number | null)[] => {
+  const out: (number | null)[] = [];
+  const queue: any[] = [node];
+  let head = 0;
+  while (head < queue.length && out.length < 500) {
+    const current = queue[head++];
+    if (current === null || current === undefined) {
+      out.push(null);
+    } else {
+      out.push(current.val);
+      queue.push(current.left ?? null);
+      queue.push(current.right ?? null);
+    }
+  }
+  while (out.length > 0 && out[out.length - 1] === null) out.pop();
+  return out;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.isBalanced !== \"function\" || typeof solution.TreeNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"isBalanced([3,9,20,null,null,15,7])\", show(true), show(solution.isBalanced(build([3, 9, 20, null, null, 15, 7])))],
+    [\"isBalanced([])\", show(true), show(solution.isBalanced(build([])))],
+    [\"isBalanced([1])\", show(true), show(solution.isBalanced(build([1])))],
+    [\"isBalanced([1,2,2,3,3,null,null,4,4])\", show(false), show(solution.isBalanced(build([1, 2, 2, 3, 3, null, null, 4, 4])))],
+    [\"isBalanced(balanced at the root, not below)\", show(false), show(solution.isBalanced(build([1, 2, 2, 3, null, null, null, 4])))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn nc13_longest_substring() -> Embedded {
   Embedded(
     solutions: [
@@ -4237,6 +4785,1403 @@ export function run(): [string, string, string][] {
     [\"lengthOfLongestSubstring('bbbbb')\", show(1), show(solution.lengthOfLongestSubstring(\"bbbbb\"))],
     [\"lengthOfLongestSubstring('pwwkew')\", show(3), show(solution.lengthOfLongestSubstring(\"pwwkew\"))],
     [\"lengthOfLongestSubstring('')\", show(0), show(solution.lengthOfLongestSubstring(\"\"))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc140_same_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Walk both trees in step. Two empties match, an empty and a node never do, and two nodes match when their values do and both pairs of children do. The same shape is what [[nc141_subtree_of_another_tree]] is built from, which is why it is worth writing out rather than leaning on the language's equality.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function isSameTree(p: TreeNode | null, q: TreeNode | null): boolean {
+  // Walk both trees in step. Two empties match, an empty and a node never do,
+  // and two nodes match when their values do and both pairs of children do. The
+  // same shape is what Subtree of Another Tree and Symmetric Tree are built
+  // from, which is why it is worth writing out rather than comparing
+  // serialisations.
+  if (p === null && q === null) return true;
+  if (p === null || q === null) return false;
+  return p.val === q.val && isSameTree(p.left, q.left) && isSameTree(p.right, q.right);
+}"),
+      #("Solution 2 · By serialising", "Turn each tree into a string and compare those. It works *only* because the serialisation records the empty children: without a marker for them, different trees flatten to the same sequence — the same trap [[nc150_serialize_deserialize]] turns on.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function isSameTree(p: TreeNode | null, q: TreeNode | null): boolean {
+  // Turn each tree into a string and compare those. It works only because the
+  // serialisation records the empty children too: without a marker for them,
+  // different trees flatten to the same sequence -- the same trap Serialize and
+  // Deserialize turns on.
+  return serialise(p) === serialise(q);
+}
+
+function serialise(node: TreeNode | null): string {
+  if (node === null) return \"#\";
+  return \"(\" + node.val + serialise(node.left) + serialise(node.right) + \")\";
+}"),
+    ],
+    check: Check(
+      signature: "export class TreeNode
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null)
+
+export function isSameTree(p: TreeNode | null, q: TreeNode | null): boolean",
+      starter: "export class TreeNode {
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    // todo
+  }
+}
+
+export function isSameTree(p: TreeNode | null, q: TreeNode | null): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// LeetCode's level-order form: an array of values with null for a missing
+// child, trailing nulls trimmed.
+const build = (values: (number | null)[]): any => {
+  if (values.length === 0 || values[0] === null) return null;
+  const root = new solution.TreeNode(values[0]!);
+  const queue: any[] = [root];
+  let head = 0;
+  let i = 1;
+  while (head < queue.length && i < values.length) {
+    const node = queue[head++];
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.left = new solution.TreeNode(value);
+        queue.push(node.left);
+      }
+    }
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.right = new solution.TreeNode(value);
+        queue.push(node.right);
+      }
+    }
+  }
+  return root;
+};
+
+const levels = (node: any): (number | null)[] => {
+  const out: (number | null)[] = [];
+  const queue: any[] = [node];
+  let head = 0;
+  while (head < queue.length && out.length < 500) {
+    const current = queue[head++];
+    if (current === null || current === undefined) {
+      out.push(null);
+    } else {
+      out.push(current.val);
+      queue.push(current.left ?? null);
+      queue.push(current.right ?? null);
+    }
+  }
+  while (out.length > 0 && out[out.length - 1] === null) out.pop();
+  return out;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.isSameTree !== \"function\" || typeof solution.TreeNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"isSameTree([1,2,3], [1,2,3])\", show(true), show(solution.isSameTree(build([1, 2, 3]), build([1, 2, 3])))],
+    [\"isSameTree([], [])\", show(true), show(solution.isSameTree(build([]), build([])))],
+    [\"isSameTree([], [1])\", show(false), show(solution.isSameTree(build([]), build([1])))],
+    [\"isSameTree([1,2], [1,null,2]) -- same values, mirrored\", show(false), show(solution.isSameTree(build([1, 2]), build([1, null, 2])))],
+    [\"isSameTree([1,2,1], [1,1,2]) -- children swapped\", show(false), show(solution.isSameTree(build([1, 2, 1]), build([1, 1, 2])))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc141_subtree_of_another_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Try to match at every node. The two questions are kept apart on purpose: \"are these two trees identical\" is the whole of the work, and \"is it a subtree\" is that question asked once per node. O(n·m) in the worst case, and a partial match that fails deep is what makes it so.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function isSubtree(root: TreeNode | null, subRoot: TreeNode | null): boolean {
+  // Try to match at every node. The two questions are kept apart on purpose:
+  // \"are these two trees identical\" is the whole of the work, and \"is it a
+  // subtree\" is that question asked once per node. O(n*m) in the worst case,
+  // and a partial match that fails deep is what makes it so.
+  if (subRoot === null) return true;
+  if (root === null) return false;
+  return same(root, subRoot) || isSubtree(root.left, subRoot) || isSubtree(root.right, subRoot);
+}
+
+function same(a: TreeNode | null, b: TreeNode | null): boolean {
+  if (a === null && b === null) return true;
+  if (a === null || b === null) return false;
+  return a.val === b.val && same(a.left, b.left) && same(a.right, b.right);
+}"),
+      #("Solution 2 · By serialising", "Serialise both trees and ask whether one string contains the other — an O(n·m) tree comparison turned into substring search. It is only sound because the serialisation marks the empty children: without them \"2\" inside \"12\" would match, and so would a subtree that starts the same way but is missing a child.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function isSubtree(root: TreeNode | null, subRoot: TreeNode | null): boolean {
+  // Serialise both trees and ask whether one string contains the other. That
+  // turns an O(n*m) tree comparison into substring search, which is linear with
+  // the right algorithm. It is only sound because the serialisation marks the
+  // empty children: without them \"2\" inside \"12\" would match, and so would a
+  // subtree that starts the same way but is missing a child.
+  return serialise(root).includes(serialise(subRoot));
+}
+
+function serialise(node: TreeNode | null): string {
+  if (node === null) return \"#\";
+  return \"(\" + node.val + serialise(node.left) + serialise(node.right) + \")\";
+}"),
+    ],
+    check: Check(
+      signature: "export class TreeNode
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null)
+
+export function isSubtree(root: TreeNode | null, subRoot: TreeNode | null): boolean",
+      starter: "export class TreeNode {
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    // todo
+  }
+}
+
+export function isSubtree(root: TreeNode | null, subRoot: TreeNode | null): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// LeetCode's level-order form: an array of values with null for a missing
+// child, trailing nulls trimmed.
+const build = (values: (number | null)[]): any => {
+  if (values.length === 0 || values[0] === null) return null;
+  const root = new solution.TreeNode(values[0]!);
+  const queue: any[] = [root];
+  let head = 0;
+  let i = 1;
+  while (head < queue.length && i < values.length) {
+    const node = queue[head++];
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.left = new solution.TreeNode(value);
+        queue.push(node.left);
+      }
+    }
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.right = new solution.TreeNode(value);
+        queue.push(node.right);
+      }
+    }
+  }
+  return root;
+};
+
+const levels = (node: any): (number | null)[] => {
+  const out: (number | null)[] = [];
+  const queue: any[] = [node];
+  let head = 0;
+  while (head < queue.length && out.length < 500) {
+    const current = queue[head++];
+    if (current === null || current === undefined) {
+      out.push(null);
+    } else {
+      out.push(current.val);
+      queue.push(current.left ?? null);
+      queue.push(current.right ?? null);
+    }
+  }
+  while (out.length > 0 && out[out.length - 1] === null) out.pop();
+  return out;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.isSubtree !== \"function\" || typeof solution.TreeNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"isSubtree([3,4,5,1,2], [4,1,2])\", show(true), show(solution.isSubtree(build([3, 4, 5, 1, 2]), build([4, 1, 2])))],
+    [\"isSubtree(a near match with an extra node)\", show(false), show(solution.isSubtree(build([3, 4, 5, 1, 2, null, null, null, null, 0]), build([4, 1, 2])))],
+    [\"isSubtree([1], [1]) -- a tree is its own subtree\", show(true), show(solution.isSubtree(build([1]), build([1])))],
+    [\"isSubtree([], [1])\", show(false), show(solution.isSubtree(build([]), build([1])))],
+    [\"isSubtree([1], []) -- the empty tree is in everything\", show(true), show(solution.isSubtree(build([1]), build([])))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc142_lowest_common_ancestor_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The ordering does all the work. Both targets below the current value means go left, both above means go right, and anything else means this node is the split point — which is the answer. No searching for either node first, and no comparing of paths.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function lowestCommonAncestor(root: TreeNode | null, p: number, q: number): number {
+  // The ordering does all the work. If both targets are below the current value
+  // go left, if both are above go right, and otherwise this node is the split
+  // point -- which is the answer. No searching for either node first, and no
+  // comparing of paths.
+  let node = root;
+  while (node !== null) {
+    if (p < node.val && q < node.val) node = node.left;
+    else if (p > node.val && q > node.val) node = node.right;
+    else return node.val;
+  }
+  return -1;
+}"),
+      #("Solution 2 · By paths", "Find the path from the root to each target, then take the last node they share. It ignores the ordering entirely, which is why it is the version that also works on a plain binary tree — at the cost of two searches and two stored paths rather than one walk and nothing.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function lowestCommonAncestor(root: TreeNode | null, p: number, q: number): number {
+  // Find the path from the root to each target, then take the last node they
+  // share. It ignores the ordering entirely, which is why it is the version
+  // that also works on a plain binary tree -- at the cost of two searches and
+  // two stored paths rather than one walk and nothing.
+  const toP = path(root, p);
+  const toQ = path(root, q);
+  let best = -1;
+  for (let i = 0; i < Math.min(toP.length, toQ.length); i++) {
+    if (toP[i] !== toQ[i]) break;
+    best = toP[i];
+  }
+  return best;
+}
+
+function path(node: TreeNode | null, target: number): number[] {
+  if (node === null) return [];
+  if (node.val === target) return [node.val];
+  for (const side of [node.left, node.right]) {
+    const found = path(side, target);
+    if (found.length > 0) return [node.val, ...found];
+  }
+  return [];
+}"),
+    ],
+    check: Check(
+      signature: "export class TreeNode
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null)
+
+export function lowestCommonAncestor(root: TreeNode | null, p: number, q: number): number",
+      starter: "export class TreeNode {
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    // todo
+  }
+}
+
+export function lowestCommonAncestor(root: TreeNode | null, p: number, q: number): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// LeetCode's level-order form: an array of values with null for a missing
+// child, trailing nulls trimmed.
+const build = (values: (number | null)[]): any => {
+  if (values.length === 0 || values[0] === null) return null;
+  const root = new solution.TreeNode(values[0]!);
+  const queue: any[] = [root];
+  let head = 0;
+  let i = 1;
+  while (head < queue.length && i < values.length) {
+    const node = queue[head++];
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.left = new solution.TreeNode(value);
+        queue.push(node.left);
+      }
+    }
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.right = new solution.TreeNode(value);
+        queue.push(node.right);
+      }
+    }
+  }
+  return root;
+};
+
+const levels = (node: any): (number | null)[] => {
+  const out: (number | null)[] = [];
+  const queue: any[] = [node];
+  let head = 0;
+  while (head < queue.length && out.length < 500) {
+    const current = queue[head++];
+    if (current === null || current === undefined) {
+      out.push(null);
+    } else {
+      out.push(current.val);
+      queue.push(current.left ?? null);
+      queue.push(current.right ?? null);
+    }
+  }
+  while (out.length > 0 && out[out.length - 1] === null) out.pop();
+  return out;
+};
+
+const bst = build([6, 2, 8, 0, 4, 7, 9, null, null, 3, 5]);
+
+export function run(): [string, string, string][] {
+  if (typeof solution.lowestCommonAncestor !== \"function\" || typeof solution.TreeNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"lowestCommonAncestor(bst, 2, 8)\", show(6), show(solution.lowestCommonAncestor(bst, 2, 8))],
+    [\"lowestCommonAncestor(bst, 2, 4) -- an ancestor counts\", show(2), show(solution.lowestCommonAncestor(bst, 2, 4))],
+    [\"lowestCommonAncestor(bst, 3, 5)\", show(4), show(solution.lowestCommonAncestor(bst, 3, 5))],
+    [\"lowestCommonAncestor(bst, 7, 9)\", show(8), show(solution.lowestCommonAncestor(bst, 7, 9))],
+    [\"lowestCommonAncestor([1], 1, 1)\", show(1), show(solution.lowestCommonAncestor(build([1]), 1, 1))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc143_level_order_traversal() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Take the whole frontier at once rather than one node at a time: everything on it is the current level, and its children are the next. That is what makes the grouping fall out without tracking any depth — a plain queue gives the right order but no idea where each level ends.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function levelOrder(root: TreeNode | null): number[][] {
+  // Take the whole frontier at once rather than one node at a time: everything
+  // on it is the current level, and its children are the next. That is what
+  // makes the grouping fall out without tracking any depth -- a plain queue
+  // would give the right order but no idea where each level ends.
+  const levels: number[][] = [];
+  let frontier = root === null ? [] : [root];
+  while (frontier.length > 0) {
+    levels.push(frontier.map((node) => node.val));
+    frontier = frontier.flatMap((node) =>
+      [node.left, node.right].filter((child): child is TreeNode => child !== null),
+    );
+  }
+  return levels;
+}"),
+      #("Solution 2 · By depth", "Walk depth-first and file each value under its depth. The traversal order is wrong for the answer, but appending to the right bucket puts it right — and within a level, left is still visited before right, which is all the ordering the answer needs.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function levelOrder(root: TreeNode | null): number[][] {
+  // Walk depth-first and file each value under its depth. The traversal order
+  // is wrong for the answer, but appending to the right bucket puts it right --
+  // and within a level, left is still visited before right, which is all the
+  // ordering the answer needs. One array of buckets instead of a frontier.
+  const levels: number[][] = [];
+  collect(root, 0, levels);
+  return levels;
+}
+
+function collect(node: TreeNode | null, depth: number, levels: number[][]): void {
+  if (node === null) return;
+  if (levels.length === depth) levels.push([]);
+  levels[depth].push(node.val);
+  collect(node.left, depth + 1, levels);
+  collect(node.right, depth + 1, levels);
+}"),
+    ],
+    check: Check(
+      signature: "export class TreeNode
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null)
+
+export function levelOrder(root: TreeNode | null): number[][]",
+      starter: "export class TreeNode {
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    // todo
+  }
+}
+
+export function levelOrder(root: TreeNode | null): number[][] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// LeetCode's level-order form: an array of values with null for a missing
+// child, trailing nulls trimmed.
+const build = (values: (number | null)[]): any => {
+  if (values.length === 0 || values[0] === null) return null;
+  const root = new solution.TreeNode(values[0]!);
+  const queue: any[] = [root];
+  let head = 0;
+  let i = 1;
+  while (head < queue.length && i < values.length) {
+    const node = queue[head++];
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.left = new solution.TreeNode(value);
+        queue.push(node.left);
+      }
+    }
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.right = new solution.TreeNode(value);
+        queue.push(node.right);
+      }
+    }
+  }
+  return root;
+};
+
+const levels = (node: any): (number | null)[] => {
+  const out: (number | null)[] = [];
+  const queue: any[] = [node];
+  let head = 0;
+  while (head < queue.length && out.length < 500) {
+    const current = queue[head++];
+    if (current === null || current === undefined) {
+      out.push(null);
+    } else {
+      out.push(current.val);
+      queue.push(current.left ?? null);
+      queue.push(current.right ?? null);
+    }
+  }
+  while (out.length > 0 && out[out.length - 1] === null) out.pop();
+  return out;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.levelOrder !== \"function\" || typeof solution.TreeNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"levelOrder([3,9,20,null,null,15,7])\", show([[3], [9, 20], [15, 7]]), show(solution.levelOrder(build([3, 9, 20, null, null, 15, 7])))],
+    [\"levelOrder([])\", show([]), show(solution.levelOrder(build([])))],
+    [\"levelOrder([1])\", show([[1]]), show(solution.levelOrder(build([1])))],
+    [\"levelOrder(missing left children)\", show([[1], [3], [4]]), show(solution.levelOrder(build([1, null, 3, null, 4])))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc144_right_side_view() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The last value on each level, which is what \"seen from the right\" means once the question is asked level by level. Walking down the right children alone is the tempting wrong answer: where the right side is short, a node further left is the one that shows.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function rightSideView(root: TreeNode | null): number[] {
+  // The last value on each level, which is what \"seen from the right\" means
+  // once the question is asked level by level. Walking down the right children
+  // alone is the tempting wrong answer: where the right side is short, a node
+  // further left is the one that shows.
+  const seen: number[] = [];
+  let frontier = root === null ? [] : [root];
+  while (frontier.length > 0) {
+    seen.push(frontier[frontier.length - 1].val);
+    frontier = frontier.flatMap((node) =>
+      [node.left, node.right].filter((child): child is TreeNode => child !== null),
+    );
+  }
+  return seen;
+}"),
+      #("Solution 2 · Right first", "Depth-first, visiting the right child first, and recording a value only when its depth is met for the first time. No frontier at all — being first to reach a depth is the same thing as being rightmost on it, given that order of visiting.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function rightSideView(root: TreeNode | null): number[] {
+  // Depth-first, visiting the right child first, and recording a value only
+  // when its depth is met for the first time. No frontier at all: being first
+  // to reach a depth is the same thing as being rightmost on it, given that
+  // order of visiting.
+  const seen: number[] = [];
+  look(root, 0, seen);
+  return seen;
+}
+
+function look(node: TreeNode | null, depth: number, seen: number[]): void {
+  if (node === null) return;
+  if (depth === seen.length) seen.push(node.val);
+  look(node.right, depth + 1, seen);
+  look(node.left, depth + 1, seen);
+}"),
+    ],
+    check: Check(
+      signature: "export class TreeNode
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null)
+
+export function rightSideView(root: TreeNode | null): number[]",
+      starter: "export class TreeNode {
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    // todo
+  }
+}
+
+export function rightSideView(root: TreeNode | null): number[] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// LeetCode's level-order form: an array of values with null for a missing
+// child, trailing nulls trimmed.
+const build = (values: (number | null)[]): any => {
+  if (values.length === 0 || values[0] === null) return null;
+  const root = new solution.TreeNode(values[0]!);
+  const queue: any[] = [root];
+  let head = 0;
+  let i = 1;
+  while (head < queue.length && i < values.length) {
+    const node = queue[head++];
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.left = new solution.TreeNode(value);
+        queue.push(node.left);
+      }
+    }
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.right = new solution.TreeNode(value);
+        queue.push(node.right);
+      }
+    }
+  }
+  return root;
+};
+
+const levels = (node: any): (number | null)[] => {
+  const out: (number | null)[] = [];
+  const queue: any[] = [node];
+  let head = 0;
+  while (head < queue.length && out.length < 500) {
+    const current = queue[head++];
+    if (current === null || current === undefined) {
+      out.push(null);
+    } else {
+      out.push(current.val);
+      queue.push(current.left ?? null);
+      queue.push(current.right ?? null);
+    }
+  }
+  while (out.length > 0 && out[out.length - 1] === null) out.pop();
+  return out;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.rightSideView !== \"function\" || typeof solution.TreeNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"rightSideView([1,2,3,null,5,null,4])\", show([1, 3, 4]), show(solution.rightSideView(build([1, 2, 3, null, 5, null, 4])))],
+    [\"rightSideView([])\", show([]), show(solution.rightSideView(build([])))],
+    [\"rightSideView([1])\", show([1]), show(solution.rightSideView(build([1])))],
+    [\"rightSideView(the right side runs out)\", show([1, 3, 4]), show(solution.rightSideView(build([1, 2, 3, 4])))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc145_count_good_nodes() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Carry the largest value seen on the way down. A node is good when nothing above it is bigger, so the check needs no knowledge of the tree below — which is what makes one pass enough. The root is always good, and passing its own value down as the initial maximum is what says so.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function goodNodes(root: TreeNode | null): number {
+  // Carry the largest value seen on the way down. A node is good when nothing
+  // above it is bigger, so the check needs no knowledge of the tree below --
+  // which is what makes one pass enough. The root is always good, and passing
+  // its own value down as the initial maximum is what says so.
+  if (root === null) return 0;
+  return count(root, root.val);
+}
+
+function count(node: TreeNode | null, largest: number): number {
+  if (node === null) return 0;
+  const here = node.val >= largest ? 1 : 0;
+  const next = Math.max(largest, node.val);
+  return here + count(node.left, next) + count(node.right, next);
+}"),
+      #("Solution 2 · By path", "Carry the whole path instead of just its maximum, and take the maximum at each node. The same answer for O(depth) memory per node rather than one number — worth writing once, because it makes plain that the running maximum is a fold of the path, not a separate idea.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function goodNodes(root: TreeNode | null): number {
+  // Carry the whole path instead of just its maximum, and take the maximum at
+  // each node. The same answer for O(depth) memory per node rather than one
+  // number -- the version worth writing once, because it makes plain that the
+  // running maximum is a fold of the path, not a separate idea.
+  return count(root, []);
+}
+
+function count(node: TreeNode | null, above: number[]): number {
+  if (node === null) return 0;
+  const here = above.every((other) => other <= node.val) ? 1 : 0;
+  const below = [...above, node.val];
+  return here + count(node.left, below) + count(node.right, below);
+}"),
+    ],
+    check: Check(
+      signature: "export class TreeNode
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null)
+
+export function goodNodes(root: TreeNode | null): number",
+      starter: "export class TreeNode {
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    // todo
+  }
+}
+
+export function goodNodes(root: TreeNode | null): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// LeetCode's level-order form: an array of values with null for a missing
+// child, trailing nulls trimmed.
+const build = (values: (number | null)[]): any => {
+  if (values.length === 0 || values[0] === null) return null;
+  const root = new solution.TreeNode(values[0]!);
+  const queue: any[] = [root];
+  let head = 0;
+  let i = 1;
+  while (head < queue.length && i < values.length) {
+    const node = queue[head++];
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.left = new solution.TreeNode(value);
+        queue.push(node.left);
+      }
+    }
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.right = new solution.TreeNode(value);
+        queue.push(node.right);
+      }
+    }
+  }
+  return root;
+};
+
+const levels = (node: any): (number | null)[] => {
+  const out: (number | null)[] = [];
+  const queue: any[] = [node];
+  let head = 0;
+  while (head < queue.length && out.length < 500) {
+    const current = queue[head++];
+    if (current === null || current === undefined) {
+      out.push(null);
+    } else {
+      out.push(current.val);
+      queue.push(current.left ?? null);
+      queue.push(current.right ?? null);
+    }
+  }
+  while (out.length > 0 && out[out.length - 1] === null) out.pop();
+  return out;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.goodNodes !== \"function\" || typeof solution.TreeNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"goodNodes([3,1,4,3,null,1,5])\", show(4), show(solution.goodNodes(build([3, 1, 4, 3, null, 1, 5])))],
+    [\"goodNodes([])\", show(0), show(solution.goodNodes(build([])))],
+    [\"goodNodes([1])\", show(1), show(solution.goodNodes(build([1])))],
+    [\"goodNodes([2,2]) -- equal counts as good\", show(2), show(solution.goodNodes(build([2, 2])))],
+    [\"goodNodes([3,3,null,4,2])\", show(3), show(solution.goodNodes(build([3, 3, null, 4, 2])))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc146_validate_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Check against a range, not against the parent. A node can be larger than its own parent and still break the order, because the constraint comes from an ancestor further up — and that is the whole difficulty. Going left tightens the upper bound, going right the lower one.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function isValidBST(root: TreeNode | null): boolean {
+  // Check against a range, not against the parent. A node can be larger than
+  // its own parent and still break the order, because the constraint comes from
+  // an ancestor further up -- and that is the whole difficulty. Going left
+  // tightens the upper bound, going right the lower one.
+  return within(root, null, null);
+}
+
+function within(node: TreeNode | null, low: number | null, high: number | null): boolean {
+  if (node === null) return true;
+  if (low !== null && node.val <= low) return false;
+  if (high !== null && node.val >= high) return false;
+  return within(node.left, low, node.val) && within(node.right, node.val, high);
+}"),
+      #("Solution 2 · In order", "A binary search tree is exactly a tree whose in-order walk is strictly increasing — the definition, restated so that no bounds have to be threaded anywhere. The cost is the list: O(n) memory against the range check's O(depth).", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function isValidBST(root: TreeNode | null): boolean {
+  // A binary search tree is exactly a tree whose in-order walk is strictly
+  // increasing -- that is the definition, restated so that no bounds have to be
+  // threaded anywhere. The cost is the array: O(n) memory against the range
+  // check's O(depth).
+  const values: number[] = [];
+  inOrder(root, values);
+  return values.every((value, i) => i === 0 || values[i - 1] < value);
+}
+
+function inOrder(node: TreeNode | null, values: number[]): void {
+  if (node === null) return;
+  inOrder(node.left, values);
+  values.push(node.val);
+  inOrder(node.right, values);
+}"),
+    ],
+    check: Check(
+      signature: "export class TreeNode
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null)
+
+export function isValidBST(root: TreeNode | null): boolean",
+      starter: "export class TreeNode {
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    // todo
+  }
+}
+
+export function isValidBST(root: TreeNode | null): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// LeetCode's level-order form: an array of values with null for a missing
+// child, trailing nulls trimmed.
+const build = (values: (number | null)[]): any => {
+  if (values.length === 0 || values[0] === null) return null;
+  const root = new solution.TreeNode(values[0]!);
+  const queue: any[] = [root];
+  let head = 0;
+  let i = 1;
+  while (head < queue.length && i < values.length) {
+    const node = queue[head++];
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.left = new solution.TreeNode(value);
+        queue.push(node.left);
+      }
+    }
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.right = new solution.TreeNode(value);
+        queue.push(node.right);
+      }
+    }
+  }
+  return root;
+};
+
+const levels = (node: any): (number | null)[] => {
+  const out: (number | null)[] = [];
+  const queue: any[] = [node];
+  let head = 0;
+  while (head < queue.length && out.length < 500) {
+    const current = queue[head++];
+    if (current === null || current === undefined) {
+      out.push(null);
+    } else {
+      out.push(current.val);
+      queue.push(current.left ?? null);
+      queue.push(current.right ?? null);
+    }
+  }
+  while (out.length > 0 && out[out.length - 1] === null) out.pop();
+  return out;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.isValidBST !== \"function\" || typeof solution.TreeNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"isValidBST([2,1,3])\", show(true), show(solution.isValidBST(build([2, 1, 3])))],
+    [\"isValidBST([])\", show(true), show(solution.isValidBST(build([])))],
+    [\"isValidBST([1])\", show(true), show(solution.isValidBST(build([1])))],
+    [\"isValidBST([5,1,4,null,null,3,6])\", show(false), show(solution.isValidBST(build([5, 1, 4, null, null, 3, 6])))],
+    [\"isValidBST(every node beats its parent, but 3 is on the wrong side)\", show(false), show(solution.isValidBST(build([5, 4, 6, null, null, 3, 7])))],
+    [\"isValidBST([2,2]) -- equal values are not allowed\", show(false), show(solution.isValidBST(build([2, 2])))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc147_kth_smallest_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "An in-order walk of a search tree visits the values in order, so the answer is the kth thing it reaches. Stopping there is the point: the tree below the kth value is never touched, which is what separates this from sorting everything.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function kthSmallest(root: TreeNode | null, k: number): number {
+  // An in-order walk of a search tree visits the values in order, so the answer
+  // is the kth thing it reaches. Stopping there is the point: the tree below
+  // the kth value is never touched, which is what separates this from sorting
+  // everything. The explicit stack is what makes stopping possible -- a
+  // recursive walk would have to run to the end.
+  const stack: TreeNode[] = [];
+  let node = root;
+  while (stack.length > 0 || node !== null) {
+    while (node !== null) {
+      stack.push(node);
+      node = node.left;
+    }
+    const current = stack.pop()!;
+    if (--k === 0) return current.val;
+    node = current.right;
+  }
+  return -1;
+}"),
+      #("Solution 2 · By counting", "Count the left subtree and decide which way to go — fewer than k on the left means the answer is this node or to its right. It descends one path instead of walking in order, and it is the version that adapts when the tree stores its own subtree sizes, which turns the whole thing into O(depth).", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function kthSmallest(root: TreeNode | null, k: number): number {
+  // Count the left subtree and decide which way to go -- fewer than k on the
+  // left means the answer is this node or to its right. It descends one path
+  // instead of walking in order, and it is the version that adapts when the
+  // tree stores its own subtree sizes, which turns the whole thing into
+  // O(depth).
+  let node = root;
+  while (node !== null) {
+    const onTheLeft = size(node.left);
+    if (k <= onTheLeft) node = node.left;
+    else if (k === onTheLeft + 1) return node.val;
+    else {
+      k -= onTheLeft + 1;
+      node = node.right;
+    }
+  }
+  return -1;
+}
+
+function size(node: TreeNode | null): number {
+  return node === null ? 0 : 1 + size(node.left) + size(node.right);
+}"),
+    ],
+    check: Check(
+      signature: "export class TreeNode
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null)
+
+export function kthSmallest(root: TreeNode | null, k: number): number",
+      starter: "export class TreeNode {
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    // todo
+  }
+}
+
+export function kthSmallest(root: TreeNode | null, k: number): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// LeetCode's level-order form: an array of values with null for a missing
+// child, trailing nulls trimmed.
+const build = (values: (number | null)[]): any => {
+  if (values.length === 0 || values[0] === null) return null;
+  const root = new solution.TreeNode(values[0]!);
+  const queue: any[] = [root];
+  let head = 0;
+  let i = 1;
+  while (head < queue.length && i < values.length) {
+    const node = queue[head++];
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.left = new solution.TreeNode(value);
+        queue.push(node.left);
+      }
+    }
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.right = new solution.TreeNode(value);
+        queue.push(node.right);
+      }
+    }
+  }
+  return root;
+};
+
+const levels = (node: any): (number | null)[] => {
+  const out: (number | null)[] = [];
+  const queue: any[] = [node];
+  let head = 0;
+  while (head < queue.length && out.length < 500) {
+    const current = queue[head++];
+    if (current === null || current === undefined) {
+      out.push(null);
+    } else {
+      out.push(current.val);
+      queue.push(current.left ?? null);
+      queue.push(current.right ?? null);
+    }
+  }
+  while (out.length > 0 && out[out.length - 1] === null) out.pop();
+  return out;
+};
+
+const bst = build([3, 1, 4, null, 2]);
+
+export function run(): [string, string, string][] {
+  if (typeof solution.kthSmallest !== \"function\" || typeof solution.TreeNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"kthSmallest(bst, 1)\", show(1), show(solution.kthSmallest(bst, 1))],
+    [\"kthSmallest(bst, 2)\", show(2), show(solution.kthSmallest(bst, 2))],
+    [\"kthSmallest(bst, 3)\", show(3), show(solution.kthSmallest(bst, 3))],
+    [\"kthSmallest(bst, 4)\", show(4), show(solution.kthSmallest(bst, 4))],
+    [\"kthSmallest([7], 1)\", show(7), show(solution.kthSmallest(build([7]), 1))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc148_build_tree_preorder_inorder() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Pre-order names the root; in-order says how much of the rest belongs to each side. Neither traversal alone determines a tree, and this is precisely why together they do — the split point found in the in-order list is the size of the left subtree, which is what carves up the pre-order list too.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function buildTree(preorder: number[], inorder: number[]): TreeNode | null {
+  // Pre-order names the root; in-order says how much of the rest belongs to
+  // each side. Neither traversal alone determines a tree, and this is why
+  // together they do -- the split point found in the in-order list is exactly
+  // the size of the left subtree, which is what carves up the pre-order list
+  // too.
+  if (preorder.length === 0) return null;
+  const root = preorder[0];
+  const split = inorder.indexOf(root);
+  return new TreeNode(
+    root,
+    buildTree(preorder.slice(1, split + 1), inorder.slice(0, split)),
+    buildTree(preorder.slice(split + 1), inorder.slice(split + 1)),
+  );
+}"),
+      #("Solution 2 · By bounds", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+The same construction without slicing anything: a map from value to its in-order position, plus a low and a high bound saying which slice each call owns. Building the map once turns the repeated search for the root — the hidden O(n) inside the slicing version — into a lookup.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function buildTree(preorder: number[], inorder: number[]): TreeNode | null {
+  // The same construction without slicing anything: a map from value to its
+  // in-order position, plus a low and a high bound saying which slice each call
+  // owns. Building the map once turns the repeated search for the root -- the
+  // hidden O(n) inside the slicing version -- into a lookup.
+  const places = new Map(inorder.map((value, i) => [value, i]));
+  return take(preorder, { at: 0 }, places, 0, inorder.length - 1);
+}
+
+function take(
+  preorder: number[],
+  cursor: { at: number },
+  places: Map<number, number>,
+  low: number,
+  high: number,
+): TreeNode | null {
+  if (low > high || cursor.at >= preorder.length) return null;
+  const root = preorder[cursor.at++];
+  const split = places.get(root)!;
+  return new TreeNode(
+    root,
+    take(preorder, cursor, places, low, split - 1),
+    take(preorder, cursor, places, split + 1, high),
+  );
+}"),
+    ],
+    check: Check(
+      signature: "export class TreeNode
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null)
+
+export function buildTree(preorder: number[], inorder: number[]): TreeNode | null",
+      starter: "export class TreeNode {
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    // todo
+  }
+}
+
+export function buildTree(preorder: number[], inorder: number[]): TreeNode | null {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// LeetCode's level-order form: an array of values with null for a missing
+// child, trailing nulls trimmed.
+const build = (values: (number | null)[]): any => {
+  if (values.length === 0 || values[0] === null) return null;
+  const root = new solution.TreeNode(values[0]!);
+  const queue: any[] = [root];
+  let head = 0;
+  let i = 1;
+  while (head < queue.length && i < values.length) {
+    const node = queue[head++];
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.left = new solution.TreeNode(value);
+        queue.push(node.left);
+      }
+    }
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.right = new solution.TreeNode(value);
+        queue.push(node.right);
+      }
+    }
+  }
+  return root;
+};
+
+const levels = (node: any): (number | null)[] => {
+  const out: (number | null)[] = [];
+  const queue: any[] = [node];
+  let head = 0;
+  while (head < queue.length && out.length < 500) {
+    const current = queue[head++];
+    if (current === null || current === undefined) {
+      out.push(null);
+    } else {
+      out.push(current.val);
+      queue.push(current.left ?? null);
+      queue.push(current.right ?? null);
+    }
+  }
+  while (out.length > 0 && out[out.length - 1] === null) out.pop();
+  return out;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.buildTree !== \"function\" || typeof solution.TreeNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"buildTree([3,9,20,15,7], [9,3,15,20,7])\", show([3, 9, 20, null, null, 15, 7]), show(levels(solution.buildTree([3, 9, 20, 15, 7], [9, 3, 15, 20, 7])))],
+    [\"buildTree([], [])\", show([]), show(levels(solution.buildTree([], [])))],
+    [\"buildTree([-1], [-1])\", show([-1]), show(levels(solution.buildTree([-1], [-1])))],
+    [\"buildTree([1,2,3], [3,2,1]) -- leaning left\", show([1, 2, null, 3]), show(levels(solution.buildTree([1, 2, 3], [3, 2, 1])))],
+    [\"buildTree([1,2,3], [1,2,3]) -- leaning right\", show([1, null, 2, null, 3]), show(levels(solution.buildTree([1, 2, 3], [1, 2, 3])))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc149_max_path_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two different quantities, which is the whole trick. What a node *returns* is the best path that can continue upwards, so at most one of its children. What it *records* is the best path through it, which may use both. A negative branch is dropped rather than added, because a path is allowed to stop. Same shape as [[nc138_diameter_of_binary_tree]].", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function maxPathSum(root: TreeNode | null): number {
+  // Two different quantities, which is the whole trick. What a node *returns*
+  // is the best path that can continue upwards -- so at most one of its
+  // children. What it *records* is the best path through it, which may use
+  // both. A negative branch is dropped rather than added, because a path is
+  // allowed to stop.
+  if (root === null) return 0;
+  return walk(root)[1];
+}
+
+function walk(node: TreeNode | null): [number, number] {
+  if (node === null) return [0, -Infinity];
+  const [leftUp, leftBest] = walk(node.left);
+  const [rightUp, rightBest] = walk(node.right);
+  const leftGain = Math.max(leftUp, 0);
+  const rightGain = Math.max(rightUp, 0);
+  return [
+    node.val + Math.max(leftGain, rightGain),
+    Math.max(node.val + leftGain + rightGain, leftBest, rightBest),
+  ];
+}"),
+      #("Solution 2 · All paths", "Every path through every node, measured outright: for each node, take the best downward run on each side and add them. It recomputes those runs from scratch at every node, so it is O(n²) on a spindly tree — the cost of asking the two questions separately instead of returning both from one walk.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function maxPathSum(root: TreeNode | null): number {
+  // Every path through every node, measured outright: for each node, take the
+  // best downward run on each side and add them. It recomputes those runs from
+  // scratch at every node, so it is O(n^2) on a spindly tree -- the cost of
+  // asking the two questions separately instead of returning both from one
+  // walk.
+  const found = candidates(root);
+  return found.length > 0 ? Math.max(...found) : 0;
+}
+
+function candidates(node: TreeNode | null): number[] {
+  if (node === null) return [];
+  const through =
+    node.val + Math.max(downwards(node.left), 0) + Math.max(downwards(node.right), 0);
+  return [through, ...candidates(node.left), ...candidates(node.right)];
+}
+
+function downwards(node: TreeNode | null): number {
+  if (node === null) return 0;
+  return node.val + Math.max(downwards(node.left), downwards(node.right), 0);
+}"),
+    ],
+    check: Check(
+      signature: "export class TreeNode
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null)
+
+export function maxPathSum(root: TreeNode | null): number",
+      starter: "export class TreeNode {
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    // todo
+  }
+}
+
+export function maxPathSum(root: TreeNode | null): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// LeetCode's level-order form: an array of values with null for a missing
+// child, trailing nulls trimmed.
+const build = (values: (number | null)[]): any => {
+  if (values.length === 0 || values[0] === null) return null;
+  const root = new solution.TreeNode(values[0]!);
+  const queue: any[] = [root];
+  let head = 0;
+  let i = 1;
+  while (head < queue.length && i < values.length) {
+    const node = queue[head++];
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.left = new solution.TreeNode(value);
+        queue.push(node.left);
+      }
+    }
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.right = new solution.TreeNode(value);
+        queue.push(node.right);
+      }
+    }
+  }
+  return root;
+};
+
+const levels = (node: any): (number | null)[] => {
+  const out: (number | null)[] = [];
+  const queue: any[] = [node];
+  let head = 0;
+  while (head < queue.length && out.length < 500) {
+    const current = queue[head++];
+    if (current === null || current === undefined) {
+      out.push(null);
+    } else {
+      out.push(current.val);
+      queue.push(current.left ?? null);
+      queue.push(current.right ?? null);
+    }
+  }
+  while (out.length > 0 && out[out.length - 1] === null) out.pop();
+  return out;
+};
+
+export function run(): [string, string, string][] {
+  if (typeof solution.maxPathSum !== \"function\" || typeof solution.TreeNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"maxPathSum([1,2,3])\", show(6), show(solution.maxPathSum(build([1, 2, 3])))],
+    [\"maxPathSum([-10,9,20,null,null,15,7])\", show(42), show(solution.maxPathSum(build([-10, 9, 20, null, null, 15, 7])))],
+    [\"maxPathSum([-3]) -- a single negative node\", show(-3), show(solution.maxPathSum(build([-3])))],
+    [\"maxPathSum([-2,-1]) -- all negative\", show(-1), show(solution.maxPathSum(build([-2, -1])))],
+    [\"maxPathSum([0])\", show(0), show(solution.maxPathSum(build([0])))],
   ];
 }",
     ),
@@ -4303,6 +6248,189 @@ export function run(): [string, string, string][] {
     [\"characterReplacement('ABAB', 2)\", show(4), show(solution.characterReplacement(\"ABAB\", 2))],
     [\"characterReplacement('AABABBA', 1)\", show(4), show(solution.characterReplacement(\"AABABBA\", 1))],
     [\"characterReplacement('AAAA', 0)\", show(4), show(solution.characterReplacement(\"AAAA\", 0))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc150_serialize_deserialize() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Pre-order with a marker for every empty child. Recording the empties is what makes the format unambiguous — a pre-order list of values alone matches many different trees — and it is also what lets the reader work with no length information at all: it stops as soon as it has consumed a whole subtree.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function serialize(root: TreeNode | null): string {
+  // Pre-order with a marker for every empty child. Recording the empties is
+  // what makes the format unambiguous -- a pre-order list of values alone
+  // matches many different trees -- and it is also what lets the reader work
+  // without any length information: it stops as soon as it has consumed a whole
+  // subtree.
+  const parts: string[] = [];
+  write(root, parts);
+  return parts.join(\",\");
+}
+
+export function deserialize(data: string): TreeNode | null {
+  return read(data.split(\",\"), { at: 0 });
+}
+
+function write(node: TreeNode | null, parts: string[]): void {
+  if (node === null) {
+    parts.push(\"#\");
+    return;
+  }
+  parts.push(String(node.val));
+  write(node.left, parts);
+  write(node.right, parts);
+}
+
+function read(parts: string[], cursor: { at: number }): TreeNode | null {
+  const token = parts[cursor.at++];
+  if (token === \"#\" || token === undefined) return null;
+  const node = new TreeNode(Number(token));
+  node.left = read(parts, cursor);
+  node.right = read(parts, cursor);
+  return node;
+}"),
+      #("Solution 2 · Post order", "Post-order instead of pre-order, still with a marker for every empty child. The root is then the *last* token, so the reader works backwards — and reading backwards means taking the right subtree before the left. The format is what decides the parse direction, and nothing else about the two versions differs.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function serialize(root: TreeNode | null): string {
+  // Post-order instead of pre-order, still with a marker for every empty child.
+  // The root is then the *last* token rather than the first, so the reader
+  // works backwards -- and reading backwards means taking the right subtree
+  // before the left. Worth writing once: the format is what decides the parse
+  // direction, and nothing else about the two versions differs.
+  const parts: string[] = [];
+  write(root, parts);
+  return parts.join(\",\");
+}
+
+export function deserialize(data: string): TreeNode | null {
+  const parts = data.split(\",\");
+  return read(parts, { at: parts.length - 1 });
+}
+
+function write(node: TreeNode | null, parts: string[]): void {
+  if (node === null) {
+    parts.push(\"#\");
+    return;
+  }
+  write(node.left, parts);
+  write(node.right, parts);
+  parts.push(String(node.val));
+}
+
+function read(parts: string[], cursor: { at: number }): TreeNode | null {
+  const token = parts[cursor.at--];
+  if (token === \"#\" || token === undefined) return null;
+  const node = new TreeNode(Number(token));
+  node.right = read(parts, cursor);
+  node.left = read(parts, cursor);
+  return node;
+}"),
+    ],
+    check: Check(
+      signature: "export class TreeNode
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null)
+
+export function serialize(root: TreeNode | null): string
+
+export function deserialize(data: string): TreeNode | null",
+      starter: "export class TreeNode {
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    // todo
+  }
+}
+
+export function serialize(root: TreeNode | null): string {
+  // todo
+}
+
+export function deserialize(data: string): TreeNode | null {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+// LeetCode's level-order form: an array of values with null for a missing
+// child, trailing nulls trimmed.
+const build = (values: (number | null)[]): any => {
+  if (values.length === 0 || values[0] === null) return null;
+  const root = new solution.TreeNode(values[0]!);
+  const queue: any[] = [root];
+  let head = 0;
+  let i = 1;
+  while (head < queue.length && i < values.length) {
+    const node = queue[head++];
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.left = new solution.TreeNode(value);
+        queue.push(node.left);
+      }
+    }
+    if (i < values.length) {
+      const value = values[i++];
+      if (value !== null) {
+        node.right = new solution.TreeNode(value);
+        queue.push(node.right);
+      }
+    }
+  }
+  return root;
+};
+
+const levels = (node: any): (number | null)[] => {
+  const out: (number | null)[] = [];
+  const queue: any[] = [node];
+  let head = 0;
+  while (head < queue.length && out.length < 500) {
+    const current = queue[head++];
+    if (current === null || current === undefined) {
+      out.push(null);
+    } else {
+      out.push(current.val);
+      queue.push(current.left ?? null);
+      queue.push(current.right ?? null);
+    }
+  }
+  while (out.length > 0 && out[out.length - 1] === null) out.pop();
+  return out;
+};
+
+// The format is free, so what is checked is the round trip.
+const roundTrip = (values: (number | null)[]) =>
+  levels(solution.deserialize(solution.serialize(build(values))));
+
+export function run(): [string, string, string][] {
+  if (typeof solution.serialize !== \"function\" || typeof solution.deserialize !== \"function\" || typeof solution.TreeNode !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"deserialize(serialize([1,2,3,null,null,4,5]))\", show([1, 2, 3, null, null, 4, 5]), show(roundTrip([1, 2, 3, null, null, 4, 5]))],
+    [\"deserialize(serialize([]))\", show([]), show(roundTrip([]))],
+    [\"deserialize(serialize([0]))\", show([0]), show(roundTrip([0]))],
+    [\"deserialize(serialize(a lopsided tree))\", show([1, 2, null, 3, null, null, 4]), show(roundTrip([1, 2, null, 3, null, null, 4]))],
+    [\"deserialize(serialize([-1,-2,-3])) -- negatives survive\", show([-1, -2, -3]), show(roundTrip([-1, -2, -3]))],
   ];
 }",
     ),
@@ -10120,8 +12248,23 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc133_lru_cache" -> Ok(nc133_lru_cache())
     "nc134_merge_k_sorted_lists" -> Ok(nc134_merge_k_sorted_lists())
     "nc135_reverse_k_group" -> Ok(nc135_reverse_k_group())
+    "nc136_invert_binary_tree" -> Ok(nc136_invert_binary_tree())
+    "nc137_maximum_depth" -> Ok(nc137_maximum_depth())
+    "nc138_diameter_of_binary_tree" -> Ok(nc138_diameter_of_binary_tree())
+    "nc139_balanced_binary_tree" -> Ok(nc139_balanced_binary_tree())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())
+    "nc140_same_tree" -> Ok(nc140_same_tree())
+    "nc141_subtree_of_another_tree" -> Ok(nc141_subtree_of_another_tree())
+    "nc142_lowest_common_ancestor_bst" -> Ok(nc142_lowest_common_ancestor_bst())
+    "nc143_level_order_traversal" -> Ok(nc143_level_order_traversal())
+    "nc144_right_side_view" -> Ok(nc144_right_side_view())
+    "nc145_count_good_nodes" -> Ok(nc145_count_good_nodes())
+    "nc146_validate_bst" -> Ok(nc146_validate_bst())
+    "nc147_kth_smallest_bst" -> Ok(nc147_kth_smallest_bst())
+    "nc148_build_tree_preorder_inorder" -> Ok(nc148_build_tree_preorder_inorder())
+    "nc149_max_path_sum" -> Ok(nc149_max_path_sum())
     "nc14_character_replacement" -> Ok(nc14_character_replacement())
+    "nc150_serialize_deserialize" -> Ok(nc150_serialize_deserialize())
     "nc15_permutation_in_string" -> Ok(nc15_permutation_in_string())
     "nc16_valid_parentheses" -> Ok(nc16_valid_parentheses())
     "nc17_min_stack" -> Ok(nc17_min_stack())

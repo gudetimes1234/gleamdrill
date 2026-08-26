@@ -1,0 +1,1 @@
+Serialise both trees and ask whether one string contains the other — an O(n·m) tree comparison turned into substring search. It is only sound because the serialisation marks the empty children: without them "2" inside "12" would match, and so would a subtree that starts the same way but is missing a child.

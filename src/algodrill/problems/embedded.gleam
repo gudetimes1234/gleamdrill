@@ -6809,6 +6809,529 @@ pub fn run() -> List(#(String, String, String)) {
   )
 }
 
+pub fn nc136_invert_binary_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Swap the children, then invert each of them — the swap and the recursion are the same line. The order does not matter: swapping before or after recursing gives the same tree, which is why this is the shortest tree problem there is.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+// Swap the children, then invert each of them. The swap and the recursion are
+// the same line, which is why this is the shortest tree problem there is —
+// and why the order does not matter: swapping before or after recursing gives
+// the same tree.
+pub fn invert_tree(tree: Tree) -> Tree {
+  case tree {
+    Leaf -> Leaf
+    Node(value, left, right) ->
+      Node(value, invert_tree(right), invert_tree(left))
+  }
+}"),
+      #("Solution 2 · By rebuilding", "Write the tree out pre-order with a marker for every empty child, then read it back taking the first subtree as the *right* child. The inversion happens entirely in the reading — nothing is ever swapped. Longer than the direct recursion, and worth having because the same flatten/rebuild pair is all [[nc150_serialize_deserialize]] is.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+import gleam/list
+import gleam/option.{type Option, None, Some}
+
+// Write the tree out pre-order with a marker for every empty child, then read
+// it back taking the first subtree as the *right* child. The inversion happens
+// entirely in the reading — nothing is ever swapped. Slower and longer than the
+// direct recursion, and worth having because the same flatten/rebuild pair is
+// all Serialize and Deserialize is.
+pub fn invert_tree(tree: Tree) -> Tree {
+  let #(inverted, _rest) = rebuild(flatten(tree))
+  inverted
+}
+
+fn flatten(tree: Tree) -> List(Option(Int)) {
+  case tree {
+    Leaf -> [None]
+    Node(value, left, right) -> [
+      Some(value),
+      ..list.append(flatten(left), flatten(right))
+    ]
+  }
+}
+
+fn rebuild(tokens: List(Option(Int))) -> #(Tree, List(Option(Int))) {
+  case tokens {
+    [Some(value), ..rest] -> {
+      let #(first, after_first) = rebuild(rest)
+      let #(second, after_second) = rebuild(after_first)
+      #(Node(value, second, first), after_second)
+    }
+    [None, ..rest] -> #(Leaf, rest)
+    [] -> #(Leaf, [])
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn invert_tree(tree: Tree) -> Tree",
+      starter: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn invert_tree(tree: Tree) -> Tree {
+  todo
+}",
+      harness: "import gleam/string
+import solution.{Leaf, Node}
+
+fn bud(value: Int) -> solution.Tree {
+  Node(value, Leaf, Leaf)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"invert_tree(the 4/2/7 tree)\",
+      string.inspect(Node(4, Node(7, bud(9), bud(6)), Node(2, bud(3), bud(1)))),
+      string.inspect(
+        solution.invert_tree(Node(
+          4,
+          Node(2, bud(1), bud(3)),
+          Node(7, bud(6), bud(9)),
+        )),
+      ),
+    ),
+    #(
+      \"invert_tree(Leaf)\",
+      string.inspect(Leaf),
+      string.inspect(solution.invert_tree(Leaf)),
+    ),
+    #(
+      \"invert_tree(a single node)\",
+      string.inspect(bud(1)),
+      string.inspect(solution.invert_tree(bud(1))),
+    ),
+    #(
+      \"invert_tree twice is the original\",
+      string.inspect(Node(1, bud(2), Leaf)),
+      string.inspect(
+        solution.invert_tree(solution.invert_tree(Node(1, bud(2), Leaf))),
+      ),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc137_maximum_depth() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One more than the deeper of the two children, with an empty tree at zero. The whole problem is that base case; everything else is the definition of depth read aloud.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+// One more than the deeper of the two children, with an empty tree at zero.
+// The whole problem is that base case: everything else is the definition of
+// depth read aloud.
+pub fn max_depth(tree: Tree) -> Int {
+  case tree {
+    Leaf -> 0
+    Node(_value, left, right) -> 1 + max(max_depth(left), max_depth(right))
+  }
+}
+
+fn max(a: Int, b: Int) -> Int {
+  case a > b {
+    True -> a
+    False -> b
+  }
+}"),
+      #("Solution 2 · By levels", "Count the levels instead of measuring the branches: take the whole frontier, replace it with all its children, and add one. No recursion and no stack — which is what makes this the version that survives a tree deep enough to overflow one.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+import gleam/list
+
+// Count the levels instead of measuring the branches: take the whole frontier,
+// replace it with all its children, and add one. No recursion and no stack —
+// which is what makes this the version that survives a tree deep enough to
+// overflow one.
+pub fn max_depth(tree: Tree) -> Int {
+  case tree {
+    Leaf -> 0
+    _ -> descend([tree], 0)
+  }
+}
+
+fn descend(frontier: List(Tree), depth: Int) -> Int {
+  case frontier {
+    [] -> depth
+    _ ->
+      descend(
+        list.flat_map(frontier, fn(node) {
+          case node {
+            Leaf -> []
+            Node(_value, left, right) ->
+              list.filter([left, right], fn(child) { child != Leaf })
+          }
+        }),
+        depth + 1,
+      )
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn max_depth(tree: Tree) -> Int",
+      starter: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn max_depth(tree: Tree) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution.{Leaf, Node}
+
+fn bud(value: Int) -> solution.Tree {
+  Node(value, Leaf, Leaf)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"max_depth(the 3/9/20 tree)\",
+      string.inspect(3),
+      string.inspect(
+        solution.max_depth(Node(3, bud(9), Node(20, bud(15), bud(7)))),
+      ),
+    ),
+    #(
+      \"max_depth(Leaf)\",
+      string.inspect(0),
+      string.inspect(solution.max_depth(Leaf)),
+    ),
+    #(
+      \"max_depth(a single node)\",
+      string.inspect(1),
+      string.inspect(solution.max_depth(bud(1))),
+    ),
+    #(
+      \"max_depth(a spindly tree)\",
+      string.inspect(3),
+      string.inspect(solution.max_depth(Node(1, Node(2, bud(3), Leaf), Leaf))),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc138_diameter_of_binary_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "One walk doing two jobs: each call *returns* its own height, and on the way past it *records* the path through that node — left height plus right height. The answer is the largest such path, so it is never returned, only tracked. That split between return and record is the pattern, and it comes back in [[nc149_max_path_sum]].", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+// One walk, doing two jobs: each call returns its own height, and on the way
+// past it records the path *through* that node — left height plus right height.
+// The answer is the largest such path, so it is never returned, only tracked.
+// That split between \"what I return\" and \"what I record\" is the pattern.
+pub fn diameter_of_binary_tree(tree: Tree) -> Int {
+  let #(_height, widest) = measure(tree)
+  widest
+}
+
+fn measure(tree: Tree) -> #(Int, Int) {
+  case tree {
+    Leaf -> #(0, 0)
+    Node(_value, left, right) -> {
+      let #(left_height, left_widest) = measure(left)
+      let #(right_height, right_widest) = measure(right)
+      let through = left_height + right_height
+      #(
+        1 + max(left_height, right_height),
+        max(through, max(left_widest, right_widest)),
+      )
+    }
+  }
+}
+
+fn max(a: Int, b: Int) -> Int {
+  case a > b {
+    True -> a
+    False -> b
+  }
+}"),
+      #("Solution 2 · Height per node", "Ask every node how tall its two sides are and keep the largest sum. Correct and obvious, but height is recomputed from scratch at every node, so a balanced tree costs O(n log n) and a spindly one O(n²) — exactly what returning the height alongside the answer avoids.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+// Ask every node how tall its two sides are and keep the largest sum. Correct
+// and obvious, but height is recomputed from scratch at every node, so a
+// balanced tree costs O(n log n) and a spindly one O(n²) — which is exactly
+// what returning the height alongside the answer avoids.
+pub fn diameter_of_binary_tree(tree: Tree) -> Int {
+  case tree {
+    Leaf -> 0
+    Node(_value, left, right) ->
+      max(
+        height(left) + height(right),
+        max(diameter_of_binary_tree(left), diameter_of_binary_tree(right)),
+      )
+  }
+}
+
+fn height(tree: Tree) -> Int {
+  case tree {
+    Leaf -> 0
+    Node(_value, left, right) -> 1 + max(height(left), height(right))
+  }
+}
+
+fn max(a: Int, b: Int) -> Int {
+  case a > b {
+    True -> a
+    False -> b
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn diameter_of_binary_tree(tree: Tree) -> Int",
+      starter: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn diameter_of_binary_tree(tree: Tree) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution.{Leaf, Node}
+
+fn bud(value: Int) -> solution.Tree {
+  Node(value, Leaf, Leaf)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"diameter_of_binary_tree(the 1/2/3 tree)\",
+      string.inspect(3),
+      string.inspect(
+        solution.diameter_of_binary_tree(Node(
+          1,
+          Node(2, bud(4), bud(5)),
+          bud(3),
+        )),
+      ),
+    ),
+    #(
+      \"diameter_of_binary_tree(Leaf)\",
+      string.inspect(0),
+      string.inspect(solution.diameter_of_binary_tree(Leaf)),
+    ),
+    #(
+      \"diameter_of_binary_tree(a single node)\",
+      string.inspect(0),
+      string.inspect(solution.diameter_of_binary_tree(bud(1))),
+    ),
+    #(
+      \"diameter_of_binary_tree(one child)\",
+      string.inspect(1),
+      string.inspect(solution.diameter_of_binary_tree(Node(1, bud(2), Leaf))),
+    ),
+    #(
+      \"diameter_of_binary_tree(widest path misses the root)\",
+      string.inspect(4),
+      string.inspect(
+        solution.diameter_of_binary_tree(Node(
+          1,
+          Node(2, Node(4, bud(6), Leaf), Node(5, Leaf, bud(7))),
+          Leaf,
+        )),
+      ),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc139_balanced_binary_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Height and balance in one walk. A subtree reports its height, or reports that something below it is already unbalanced — and once that happens nothing above needs measuring. Using -1 as the \"not balanced\" height is what lets a single return value carry both answers.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+// Height and balance in one walk. A subtree reports its height, or reports that
+// something below it is already unbalanced — and once that happens nothing
+// above needs measuring at all. Using -1 as the \"not balanced\" height is what
+// lets a single return value carry both answers.
+pub fn is_balanced(tree: Tree) -> Bool {
+  height(tree) >= 0
+}
+
+fn height(tree: Tree) -> Int {
+  case tree {
+    Leaf -> 0
+    Node(_value, left, right) -> {
+      let left_height = height(left)
+      let right_height = height(right)
+      case left_height < 0 || right_height < 0 {
+        True -> -1
+        False ->
+          case abs(left_height - right_height) > 1 {
+            True -> -1
+            False -> 1 + max(left_height, right_height)
+          }
+      }
+    }
+  }
+}
+
+fn abs(n: Int) -> Int {
+  case n < 0 {
+    True -> -n
+    False -> n
+  }
+}
+
+fn max(a: Int, b: Int) -> Int {
+  case a > b {
+    True -> a
+    False -> b
+  }
+}"),
+      #("Solution 2 · Height per node", "The definition read literally: every node's two sides differ by at most one, and both sides are themselves balanced. It recomputes height at every node, so the work is O(n²) on a spindly tree — the price of separating the two questions the single-pass version answers together.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+// The definition read literally: every node's two sides differ by at most one,
+// and both sides are themselves balanced. It recomputes height at every node,
+// so the work is O(n²) on a spindly tree — the price of separating the two
+// questions the single-pass version answers together.
+pub fn is_balanced(tree: Tree) -> Bool {
+  case tree {
+    Leaf -> True
+    Node(_value, left, right) ->
+      abs(height(left) - height(right)) <= 1
+      && is_balanced(left)
+      && is_balanced(right)
+  }
+}
+
+fn height(tree: Tree) -> Int {
+  case tree {
+    Leaf -> 0
+    Node(_value, left, right) -> 1 + max(height(left), height(right))
+  }
+}
+
+fn abs(n: Int) -> Int {
+  case n < 0 {
+    True -> -n
+    False -> n
+  }
+}
+
+fn max(a: Int, b: Int) -> Int {
+  case a > b {
+    True -> a
+    False -> b
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn is_balanced(tree: Tree) -> Bool",
+      starter: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn is_balanced(tree: Tree) -> Bool {
+  todo
+}",
+      harness: "import gleam/string
+import solution.{Leaf, Node}
+
+fn bud(value: Int) -> solution.Tree {
+  Node(value, Leaf, Leaf)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"is_balanced(the 3/9/20 tree)\",
+      string.inspect(True),
+      string.inspect(
+        solution.is_balanced(Node(3, bud(9), Node(20, bud(15), bud(7)))),
+      ),
+    ),
+    #(
+      \"is_balanced(Leaf)\",
+      string.inspect(True),
+      string.inspect(solution.is_balanced(Leaf)),
+    ),
+    #(
+      \"is_balanced(a single node)\",
+      string.inspect(True),
+      string.inspect(solution.is_balanced(bud(1))),
+    ),
+    #(
+      \"is_balanced(the classic unbalanced tree)\",
+      string.inspect(False),
+      string.inspect(
+        solution.is_balanced(Node(
+          1,
+          Node(2, Node(3, bud(4), bud(4)), bud(3)),
+          bud(2),
+        )),
+      ),
+    ),
+    #(
+      \"is_balanced(balanced at the root, not below)\",
+      string.inspect(False),
+      string.inspect(
+        solution.is_balanced(Node(
+          1,
+          Node(2, Node(3, bud(4), Leaf), Leaf),
+          bud(2),
+        )),
+      ),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
 pub fn nc13_longest_substring() -> Embedded {
   Embedded(
     solutions: [
@@ -6888,6 +7411,1317 @@ pub fn run() -> List(#(String, String, String)) {
       \"length_of_longest_substring(\\\"\\\")\",
       string.inspect(0),
       string.inspect(solution.length_of_longest_substring(\"\")),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc140_same_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Walk both trees in step. Two empties match, an empty and a node never do, and two nodes match when their values do and both pairs of children do. The same shape is what [[nc141_subtree_of_another_tree]] is built from, which is why it is worth writing out rather than leaning on the language's equality.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+// Walk both trees in step. Two empties match, an empty and a node never do, and
+// two nodes match when their values do and both pairs of children do. Gleam's
+// structural equality would answer this in one character — the point of writing
+// it out is that the same shape is what Subtree and Symmetric Tree are built
+// from.
+pub fn is_same_tree(first: Tree, second: Tree) -> Bool {
+  case first, second {
+    Leaf, Leaf -> True
+    Node(a, a_left, a_right), Node(b, b_left, b_right) ->
+      a == b && is_same_tree(a_left, b_left) && is_same_tree(a_right, b_right)
+    _, _ -> False
+  }
+}"),
+      #("Solution 2 · By serialising", "Turn each tree into a string and compare those. It works *only* because the serialisation records the empty children: without a marker for them, different trees flatten to the same sequence — the same trap [[nc150_serialize_deserialize]] turns on.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+import gleam/int
+
+// Turn each tree into a string and compare those. It works only because the
+// serialisation records the empty children too: without a marker for them,
+// different trees can flatten to the same sequence, which is the same trap
+// Serialize and Deserialize turns on.
+pub fn is_same_tree(first: Tree, second: Tree) -> Bool {
+  serialise(first) == serialise(second)
+}
+
+fn serialise(tree: Tree) -> String {
+  case tree {
+    Leaf -> \"#\"
+    Node(value, left, right) ->
+      \"(\" <> int.to_string(value) <> serialise(left) <> serialise(right) <> \")\"
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn is_same_tree(first: Tree, second: Tree) -> Bool",
+      starter: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn is_same_tree(first: Tree, second: Tree) -> Bool {
+  todo
+}",
+      harness: "import gleam/string
+import solution.{Leaf, Node}
+
+fn bud(value: Int) -> solution.Tree {
+  Node(value, Leaf, Leaf)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"is_same_tree(two identical trees)\",
+      string.inspect(True),
+      string.inspect(solution.is_same_tree(
+        Node(1, bud(2), bud(3)),
+        Node(1, bud(2), bud(3)),
+      )),
+    ),
+    #(
+      \"is_same_tree(Leaf, Leaf)\",
+      string.inspect(True),
+      string.inspect(solution.is_same_tree(Leaf, Leaf)),
+    ),
+    #(
+      \"is_same_tree(Leaf, a node)\",
+      string.inspect(False),
+      string.inspect(solution.is_same_tree(Leaf, bud(1))),
+    ),
+    #(
+      \"is_same_tree(same values, mirrored)\",
+      string.inspect(False),
+      string.inspect(solution.is_same_tree(
+        Node(1, bud(2), Leaf),
+        Node(1, Leaf, bud(2)),
+      )),
+    ),
+    #(
+      \"is_same_tree(children swapped)\",
+      string.inspect(False),
+      string.inspect(solution.is_same_tree(
+        Node(1, bud(2), bud(1)),
+        Node(1, bud(1), bud(2)),
+      )),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc141_subtree_of_another_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Try to match at every node. The two questions are kept apart on purpose: \"are these two trees identical\" is the whole of the work, and \"is it a subtree\" is that question asked once per node. O(n·m) in the worst case, and a partial match that fails deep is what makes it so.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+// Try to match at every node. The two questions are kept apart on purpose:
+// \"are these two trees identical\" is the whole of the work, and \"is it a
+// subtree\" is that question asked once per node. O(n*m) in the worst case, and
+// a partial match that fails deep is what makes it so.
+pub fn is_subtree(root: Tree, sub: Tree) -> Bool {
+  case root, sub {
+    _, Leaf -> True
+    Leaf, _ -> False
+    Node(_value, left, right), _ ->
+      same(root, sub) || is_subtree(left, sub) || is_subtree(right, sub)
+  }
+}
+
+fn same(first: Tree, second: Tree) -> Bool {
+  case first, second {
+    Leaf, Leaf -> True
+    Node(a, a_left, a_right), Node(b, b_left, b_right) ->
+      a == b && same(a_left, b_left) && same(a_right, b_right)
+    _, _ -> False
+  }
+}"),
+      #("Solution 2 · By serialising", "Serialise both trees and ask whether one string contains the other — an O(n·m) tree comparison turned into substring search. It is only sound because the serialisation marks the empty children: without them \"2\" inside \"12\" would match, and so would a subtree that starts the same way but is missing a child.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+import gleam/int
+import gleam/string
+
+// Serialise both trees and ask whether one string contains the other. That
+// turns an O(n*m) tree comparison into substring search, which is linear with
+// the right algorithm. It is only sound because the serialisation marks the
+// empty children: without them \"2\" inside \"12\" would match, and so would a
+// subtree that happens to start the same way but is missing a child.
+pub fn is_subtree(root: Tree, sub: Tree) -> Bool {
+  string.contains(serialise(root), serialise(sub))
+}
+
+fn serialise(tree: Tree) -> String {
+  case tree {
+    Leaf -> \"#\"
+    Node(value, left, right) ->
+      \"(\" <> int.to_string(value) <> serialise(left) <> serialise(right) <> \")\"
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn is_subtree(root: Tree, sub: Tree) -> Bool",
+      starter: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn is_subtree(root: Tree, sub: Tree) -> Bool {
+  todo
+}",
+      harness: "import gleam/string
+import solution.{Leaf, Node}
+
+fn bud(value: Int) -> solution.Tree {
+  Node(value, Leaf, Leaf)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"is_subtree(4/1/2 inside 3/4/5)\",
+      string.inspect(True),
+      string.inspect(solution.is_subtree(
+        Node(3, Node(4, bud(1), bud(2)), bud(5)),
+        Node(4, bud(1), bud(2)),
+      )),
+    ),
+    #(
+      \"is_subtree(a near match with an extra node)\",
+      string.inspect(False),
+      string.inspect(solution.is_subtree(
+        Node(3, Node(4, bud(1), Node(2, bud(0), Leaf)), bud(5)),
+        Node(4, bud(1), bud(2)),
+      )),
+    ),
+    #(
+      \"is_subtree(a tree is its own subtree)\",
+      string.inspect(True),
+      string.inspect(solution.is_subtree(bud(1), bud(1))),
+    ),
+    #(
+      \"is_subtree(Leaf, a node)\",
+      string.inspect(False),
+      string.inspect(solution.is_subtree(Leaf, bud(1))),
+    ),
+    #(
+      \"is_subtree(anything, Leaf)\",
+      string.inspect(True),
+      string.inspect(solution.is_subtree(bud(1), Leaf)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc142_lowest_common_ancestor_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The ordering does all the work. Both targets below the current value means go left, both above means go right, and anything else means this node is the split point — which is the answer. No searching for either node first, and no comparing of paths.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+// The ordering does all the work. If both targets are below the current value
+// go left, if both are above go right, and otherwise this node is the split
+// point — which is the answer. No searching for either node first, and no
+// comparing of paths.
+pub fn lowest_common_ancestor(tree: Tree, p: Int, q: Int) -> Int {
+  case tree {
+    Leaf -> -1
+    Node(value, left, right) ->
+      case p < value && q < value, p > value && q > value {
+        True, _ -> lowest_common_ancestor(left, p, q)
+        _, True -> lowest_common_ancestor(right, p, q)
+        _, _ -> value
+      }
+  }
+}"),
+      #("Solution 2 · By paths", "Find the path from the root to each target, then take the last node they share. It ignores the ordering entirely, which is why it is the version that also works on a plain binary tree — at the cost of two searches and two stored paths rather than one walk and nothing.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+import gleam/list
+
+// Find the path from the root to each target, then take the last node they
+// share. It ignores the ordering entirely, which is why it is the version that
+// also works on a plain binary tree — at the cost of two searches and two
+// stored paths rather than one walk and nothing.
+pub fn lowest_common_ancestor(tree: Tree, p: Int, q: Int) -> Int {
+  let to_p = path(tree, p, [])
+  let to_q = path(tree, q, [])
+  last_shared(list.reverse(to_p), list.reverse(to_q), -1)
+}
+
+fn path(tree: Tree, target: Int, seen: List(Int)) -> List(Int) {
+  case tree {
+    Leaf -> []
+    Node(value, left, right) ->
+      case value == target {
+        True -> [value, ..seen]
+        False ->
+          case path(left, target, [value, ..seen]) {
+            [] -> path(right, target, [value, ..seen])
+            found -> found
+          }
+      }
+  }
+}
+
+fn last_shared(first: List(Int), second: List(Int), best: Int) -> Int {
+  case first, second {
+    [a, ..a_rest], [b, ..b_rest] ->
+      case a == b {
+        True -> last_shared(a_rest, b_rest, a)
+        False -> best
+      }
+    _, _ -> best
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn lowest_common_ancestor(tree: Tree, p: Int, q: Int) -> Int",
+      starter: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn lowest_common_ancestor(tree: Tree, p: Int, q: Int) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution.{Leaf, Node}
+
+fn bud(value: Int) -> solution.Tree {
+  Node(value, Leaf, Leaf)
+}
+
+const tree = Node(
+  6,
+  Node(
+    2,
+    Node(0, Leaf, Leaf),
+    Node(4, Node(3, Leaf, Leaf), Node(5, Leaf, Leaf)),
+  ),
+  Node(8, Node(7, Leaf, Leaf), Node(9, Leaf, Leaf)),
+)
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"lowest_common_ancestor(tree, 2, 8)\",
+      string.inspect(6),
+      string.inspect(solution.lowest_common_ancestor(tree, 2, 8)),
+    ),
+    #(
+      \"lowest_common_ancestor(tree, 2, 4) -- an ancestor counts\",
+      string.inspect(2),
+      string.inspect(solution.lowest_common_ancestor(tree, 2, 4)),
+    ),
+    #(
+      \"lowest_common_ancestor(tree, 3, 5)\",
+      string.inspect(4),
+      string.inspect(solution.lowest_common_ancestor(tree, 3, 5)),
+    ),
+    #(
+      \"lowest_common_ancestor(tree, 7, 9)\",
+      string.inspect(8),
+      string.inspect(solution.lowest_common_ancestor(tree, 7, 9)),
+    ),
+    #(
+      \"lowest_common_ancestor(a single node, 1, 1)\",
+      string.inspect(1),
+      string.inspect(solution.lowest_common_ancestor(bud(1), 1, 1)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc143_level_order_traversal() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Take the whole frontier at once rather than one node at a time: everything on it is the current level, and its children are the next. That is what makes the grouping fall out without tracking any depth — a plain queue gives the right order but no idea where each level ends.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+import gleam/list
+
+// Take the whole frontier at once rather than one node at a time: everything on
+// it is the current level, and its children are the next. That is what makes
+// the grouping fall out without tracking any depth — a plain queue would give
+// the right order but no idea where each level ends.
+pub fn level_order(tree: Tree) -> List(List(Int)) {
+  case tree {
+    Leaf -> []
+    _ -> descend([tree], [])
+  }
+}
+
+fn descend(frontier: List(Tree), levels: List(List(Int))) -> List(List(Int)) {
+  case frontier {
+    [] -> list.reverse(levels)
+    _ -> {
+      let values =
+        list.filter_map(frontier, fn(node) {
+          case node {
+            Leaf -> Error(Nil)
+            Node(value, _left, _right) -> Ok(value)
+          }
+        })
+      descend(children(frontier), [values, ..levels])
+    }
+  }
+}
+
+fn children(frontier: List(Tree)) -> List(Tree) {
+  list.flat_map(frontier, fn(node) {
+    case node {
+      Leaf -> []
+      Node(_value, left, right) ->
+        list.filter([left, right], fn(child) { child != Leaf })
+    }
+  })
+}"),
+      #("Solution 2 · By depth", "Walk depth-first and file each value under its depth. The traversal order is wrong for the answer, but appending to the right bucket puts it right — and within a level, left is still visited before right, which is all the ordering the answer needs.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+import gleam/dict
+import gleam/list
+import gleam/result
+
+// Walk depth-first and file each value under its depth. The traversal order is
+// wrong for the answer, but appending to the right bucket puts it right — and
+// within a level, left is still visited before right, which is all the ordering
+// the answer needs. One dictionary instead of a frontier.
+pub fn level_order(tree: Tree) -> List(List(Int)) {
+  let levels = collect(tree, 0, dict.new())
+  gather(levels, 0, [])
+}
+
+fn collect(
+  tree: Tree,
+  depth: Int,
+  levels: dict.Dict(Int, List(Int)),
+) -> dict.Dict(Int, List(Int)) {
+  case tree {
+    Leaf -> levels
+    Node(value, left, right) -> {
+      let at_depth = result.unwrap(dict.get(levels, depth), [])
+      let levels = dict.insert(levels, depth, [value, ..at_depth])
+      collect(right, depth + 1, collect(left, depth + 1, levels))
+    }
+  }
+}
+
+fn gather(
+  levels: dict.Dict(Int, List(Int)),
+  depth: Int,
+  out: List(List(Int)),
+) -> List(List(Int)) {
+  case dict.get(levels, depth) {
+    Error(Nil) -> list.reverse(out)
+    Ok(values) -> gather(levels, depth + 1, [list.reverse(values), ..out])
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn level_order(tree: Tree) -> List(List(Int))",
+      starter: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn level_order(tree: Tree) -> List(List(Int)) {
+  todo
+}",
+      harness: "import gleam/string
+import solution.{Leaf, Node}
+
+fn bud(value: Int) -> solution.Tree {
+  Node(value, Leaf, Leaf)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"level_order(the 3/9/20 tree)\",
+      string.inspect([[3], [9, 20], [15, 7]]),
+      string.inspect(
+        solution.level_order(Node(3, bud(9), Node(20, bud(15), bud(7)))),
+      ),
+    ),
+    #(
+      \"level_order(Leaf)\",
+      string.inspect([]),
+      string.inspect(solution.level_order(Leaf)),
+    ),
+    #(
+      \"level_order(a single node)\",
+      string.inspect([[1]]),
+      string.inspect(solution.level_order(bud(1))),
+    ),
+    #(
+      \"level_order(missing left children)\",
+      string.inspect([[1], [3], [4]]),
+      string.inspect(solution.level_order(Node(1, Leaf, Node(3, Leaf, bud(4))))),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc144_right_side_view() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The last value on each level, which is what \"seen from the right\" means once the question is asked level by level. Walking down the right children alone is the tempting wrong answer: where the right side is short, a node further left is the one that shows.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+import gleam/list
+
+// The last value on each level, which is what \"seen from the right\" means once
+// the question is asked level by level. Walking down the right children alone
+// is the tempting wrong answer: where the right side is short, a node further
+// left is the one that shows.
+pub fn right_side_view(tree: Tree) -> List(Int) {
+  case tree {
+    Leaf -> []
+    _ -> descend([tree], [])
+  }
+}
+
+fn descend(frontier: List(Tree), seen: List(Int)) -> List(Int) {
+  case frontier {
+    [] -> list.reverse(seen)
+    _ -> {
+      let values =
+        list.filter_map(frontier, fn(node) {
+          case node {
+            Leaf -> Error(Nil)
+            Node(value, _left, _right) -> Ok(value)
+          }
+        })
+      let seen = case list.last(values) {
+        Ok(rightmost) -> [rightmost, ..seen]
+        Error(Nil) -> seen
+      }
+      descend(children(frontier), seen)
+    }
+  }
+}
+
+fn children(frontier: List(Tree)) -> List(Tree) {
+  list.flat_map(frontier, fn(node) {
+    case node {
+      Leaf -> []
+      Node(_value, left, right) ->
+        list.filter([left, right], fn(child) { child != Leaf })
+    }
+  })
+}"),
+      #("Solution 2 · Right first", "Depth-first, visiting the right child first, and recording a value only when its depth is met for the first time. No frontier at all — being first to reach a depth is the same thing as being rightmost on it, given that order of visiting.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+import gleam/dict
+
+// Depth-first, visiting the right child first, and recording a value only when
+// its depth is met for the first time. No frontier at all: being first to reach
+// a depth is the same thing as being rightmost on it, given that order of
+// visiting.
+pub fn right_side_view(tree: Tree) -> List(Int) {
+  let seen = look(tree, 0, dict.new())
+  gather(seen, 0, [])
+}
+
+fn look(
+  tree: Tree,
+  depth: Int,
+  seen: dict.Dict(Int, Int),
+) -> dict.Dict(Int, Int) {
+  case tree {
+    Leaf -> seen
+    Node(value, left, right) -> {
+      let seen = case dict.has_key(seen, depth) {
+        True -> seen
+        False -> dict.insert(seen, depth, value)
+      }
+      look(left, depth + 1, look(right, depth + 1, seen))
+    }
+  }
+}
+
+fn gather(seen: dict.Dict(Int, Int), depth: Int, out: List(Int)) -> List(Int) {
+  case dict.get(seen, depth) {
+    Error(Nil) -> out
+    Ok(value) -> [value, ..gather(seen, depth + 1, out)]
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn right_side_view(tree: Tree) -> List(Int)",
+      starter: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn right_side_view(tree: Tree) -> List(Int) {
+  todo
+}",
+      harness: "import gleam/string
+import solution.{Leaf, Node}
+
+fn bud(value: Int) -> solution.Tree {
+  Node(value, Leaf, Leaf)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"right_side_view(the 1/2/3 tree)\",
+      string.inspect([1, 3, 4]),
+      string.inspect(
+        solution.right_side_view(Node(
+          1,
+          Node(2, Leaf, bud(5)),
+          Node(3, Leaf, bud(4)),
+        )),
+      ),
+    ),
+    #(
+      \"right_side_view(Leaf)\",
+      string.inspect([]),
+      string.inspect(solution.right_side_view(Leaf)),
+    ),
+    #(
+      \"right_side_view(a single node)\",
+      string.inspect([1]),
+      string.inspect(solution.right_side_view(bud(1))),
+    ),
+    #(
+      \"right_side_view(the right side runs out)\",
+      string.inspect([1, 3, 4]),
+      string.inspect(
+        solution.right_side_view(Node(1, Node(2, bud(4), Leaf), bud(3))),
+      ),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc145_count_good_nodes() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Carry the largest value seen on the way down. A node is good when nothing above it is bigger, so the check needs no knowledge of the tree below — which is what makes one pass enough. The root is always good, and passing its own value down as the initial maximum is what says so.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+// Carry the largest value seen on the way down. A node is good when nothing
+// above it is bigger, so the check needs no knowledge of the tree below — which
+// is what makes one pass enough. The root is always good, and passing its own
+// value down as the initial maximum is what says so.
+pub fn good_nodes(tree: Tree) -> Int {
+  case tree {
+    Leaf -> 0
+    Node(value, _left, _right) -> count(tree, value)
+  }
+}
+
+fn count(tree: Tree, largest: Int) -> Int {
+  case tree {
+    Leaf -> 0
+    Node(value, left, right) -> {
+      let here = case value >= largest {
+        True -> 1
+        False -> 0
+      }
+      let largest = case value > largest {
+        True -> value
+        False -> largest
+      }
+      here + count(left, largest) + count(right, largest)
+    }
+  }
+}"),
+      #("Solution 2 · By path", "Carry the whole path instead of just its maximum, and take the maximum at each node. The same answer for O(depth) memory per node rather than one number — worth writing once, because it makes plain that the running maximum is a fold of the path, not a separate idea.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+import gleam/list
+
+// Carry the whole path instead of just its maximum, and take the maximum at
+// each node. The same answer for O(depth) memory per node rather than one
+// integer — the version worth writing once, because it makes plain that the
+// running maximum is a fold of the path, not a separate idea.
+pub fn good_nodes(tree: Tree) -> Int {
+  count(tree, [])
+}
+
+fn count(tree: Tree, above: List(Int)) -> Int {
+  case tree {
+    Leaf -> 0
+    Node(value, left, right) -> {
+      let here = case list.all(above, fn(other) { other <= value }) {
+        True -> 1
+        False -> 0
+      }
+      here + count(left, [value, ..above]) + count(right, [value, ..above])
+    }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn good_nodes(tree: Tree) -> Int",
+      starter: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn good_nodes(tree: Tree) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution.{Leaf, Node}
+
+fn bud(value: Int) -> solution.Tree {
+  Node(value, Leaf, Leaf)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"good_nodes(the 3/1/4 tree)\",
+      string.inspect(4),
+      string.inspect(
+        solution.good_nodes(Node(
+          3,
+          Node(1, bud(3), Leaf),
+          Node(4, bud(1), bud(5)),
+        )),
+      ),
+    ),
+    #(
+      \"good_nodes(Leaf)\",
+      string.inspect(0),
+      string.inspect(solution.good_nodes(Leaf)),
+    ),
+    #(
+      \"good_nodes(a single node)\",
+      string.inspect(1),
+      string.inspect(solution.good_nodes(bud(1))),
+    ),
+    #(
+      \"good_nodes(equal counts as good)\",
+      string.inspect(2),
+      string.inspect(solution.good_nodes(Node(2, bud(2), Leaf))),
+    ),
+    #(
+      \"good_nodes(a smaller node hides nothing below it)\",
+      string.inspect(3),
+      string.inspect(
+        solution.good_nodes(Node(3, Node(3, bud(4), bud(2)), Leaf)),
+      ),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc146_validate_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Check against a range, not against the parent. A node can be larger than its own parent and still break the order, because the constraint comes from an ancestor further up — and that is the whole difficulty. Going left tightens the upper bound, going right the lower one.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+// Check against a range, not against the parent. A node can be larger than its
+// own parent and still break the order, because the constraint comes from an
+// ancestor further up — and that is the whole difficulty. Going left tightens
+// the upper bound, going right the lower one.
+pub fn is_valid_bst(tree: Tree) -> Bool {
+  within(tree, None, None)
+}
+
+type Bound {
+  None
+  Limit(Int)
+}
+
+fn within(tree: Tree, low: Bound, high: Bound) -> Bool {
+  case tree {
+    Leaf -> True
+    Node(value, left, right) ->
+      above(value, low)
+      && below(value, high)
+      && within(left, low, Limit(value))
+      && within(right, Limit(value), high)
+  }
+}
+
+fn above(value: Int, low: Bound) -> Bool {
+  case low {
+    None -> True
+    Limit(limit) -> value > limit
+  }
+}
+
+fn below(value: Int, high: Bound) -> Bool {
+  case high {
+    None -> True
+    Limit(limit) -> value < limit
+  }
+}"),
+      #("Solution 2 · In order", "A binary search tree is exactly a tree whose in-order walk is strictly increasing — the definition, restated so that no bounds have to be threaded anywhere. The cost is the list: O(n) memory against the range check's O(depth).", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+// A binary search tree is exactly a tree whose in-order walk is strictly
+// increasing — that is the definition, restated so that no bounds have to be
+// threaded anywhere. The cost is the list: O(n) memory against the range
+// check's O(depth).
+pub fn is_valid_bst(tree: Tree) -> Bool {
+  increasing(in_order(tree, []))
+}
+
+fn in_order(tree: Tree, after: List(Int)) -> List(Int) {
+  case tree {
+    Leaf -> after
+    Node(value, left, right) ->
+      in_order(left, [value, ..in_order(right, after)])
+  }
+}
+
+fn increasing(values: List(Int)) -> Bool {
+  case values {
+    [] | [_] -> True
+    [first, second, ..rest] -> first < second && increasing([second, ..rest])
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn is_valid_bst(tree: Tree) -> Bool",
+      starter: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn is_valid_bst(tree: Tree) -> Bool {
+  todo
+}",
+      harness: "import gleam/string
+import solution.{Leaf, Node}
+
+fn bud(value: Int) -> solution.Tree {
+  Node(value, Leaf, Leaf)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"is_valid_bst(2/1/3)\",
+      string.inspect(True),
+      string.inspect(solution.is_valid_bst(Node(2, bud(1), bud(3)))),
+    ),
+    #(
+      \"is_valid_bst(Leaf)\",
+      string.inspect(True),
+      string.inspect(solution.is_valid_bst(Leaf)),
+    ),
+    #(
+      \"is_valid_bst(a single node)\",
+      string.inspect(True),
+      string.inspect(solution.is_valid_bst(bud(1))),
+    ),
+    #(
+      \"is_valid_bst(5/1/4 with 3 and 6 below 4)\",
+      string.inspect(False),
+      string.inspect(
+        solution.is_valid_bst(Node(5, bud(1), Node(4, bud(3), bud(6)))),
+      ),
+    ),
+    #(
+      \"is_valid_bst(every node beats its parent, but 3 is on the wrong side)\",
+      string.inspect(False),
+      string.inspect(
+        solution.is_valid_bst(Node(5, bud(4), Node(6, bud(3), bud(7)))),
+      ),
+    ),
+    #(
+      \"is_valid_bst(equal values are not allowed)\",
+      string.inspect(False),
+      string.inspect(solution.is_valid_bst(Node(2, bud(2), Leaf))),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc147_kth_smallest_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "An in-order walk of a search tree visits the values in order, so the answer is the kth thing it reaches. Stopping there is the point: the tree below the kth value is never touched, which is what separates this from sorting everything.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+// An in-order walk of a search tree visits the values in order, so the answer
+// is the kth thing it reaches. Stopping there is the point: the tree below the
+// kth value is never touched, which is what separates this from sorting
+// everything.
+pub fn kth_smallest(tree: Tree, k: Int) -> Int {
+  case take(tree, k) {
+    Found(value) -> value
+    Remaining(_) -> -1
+  }
+}
+
+type Progress {
+  Found(Int)
+  Remaining(Int)
+}
+
+fn take(tree: Tree, k: Int) -> Progress {
+  case tree {
+    Leaf -> Remaining(k)
+    Node(value, left, right) ->
+      case take(left, k) {
+        Found(found) -> Found(found)
+        Remaining(1) -> Found(value)
+        Remaining(left_over) -> take(right, left_over - 1)
+      }
+  }
+}"),
+      #("Solution 2 · By counting", "Count the left subtree and decide which way to go — fewer than k on the left means the answer is this node or to its right. It descends one path instead of walking in order, and it is the version that adapts when the tree stores its own subtree sizes, which turns the whole thing into O(depth).", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+// Count the left subtree and decide which way to go — fewer than k on the left
+// means the answer is this node or to its right. It descends one path instead
+// of walking in order, and it is the version that adapts when the tree stores
+// its own subtree sizes, which turns the whole thing into O(depth).
+pub fn kth_smallest(tree: Tree, k: Int) -> Int {
+  case tree {
+    Leaf -> -1
+    Node(value, left, right) -> {
+      let on_the_left = size(left)
+      case k <= on_the_left, k == on_the_left + 1 {
+        True, _ -> kth_smallest(left, k)
+        _, True -> value
+        _, _ -> kth_smallest(right, k - on_the_left - 1)
+      }
+    }
+  }
+}
+
+fn size(tree: Tree) -> Int {
+  case tree {
+    Leaf -> 0
+    Node(_value, left, right) -> 1 + size(left) + size(right)
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn kth_smallest(tree: Tree, k: Int) -> Int",
+      starter: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn kth_smallest(tree: Tree, k: Int) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution.{Leaf, Node}
+
+fn bud(value: Int) -> solution.Tree {
+  Node(value, Leaf, Leaf)
+}
+
+const tree = Node(3, Node(1, Leaf, Node(2, Leaf, Leaf)), Node(4, Leaf, Leaf))
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"kth_smallest(tree, 1)\",
+      string.inspect(1),
+      string.inspect(solution.kth_smallest(tree, 1)),
+    ),
+    #(
+      \"kth_smallest(tree, 2)\",
+      string.inspect(2),
+      string.inspect(solution.kth_smallest(tree, 2)),
+    ),
+    #(
+      \"kth_smallest(tree, 3)\",
+      string.inspect(3),
+      string.inspect(solution.kth_smallest(tree, 3)),
+    ),
+    #(
+      \"kth_smallest(tree, 4)\",
+      string.inspect(4),
+      string.inspect(solution.kth_smallest(tree, 4)),
+    ),
+    #(
+      \"kth_smallest(a single node, 1)\",
+      string.inspect(7),
+      string.inspect(solution.kth_smallest(bud(7), 1)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc148_build_tree_preorder_inorder() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Pre-order names the root; in-order says how much of the rest belongs to each side. Neither traversal alone determines a tree, and this is precisely why together they do — the split point found in the in-order list is the size of the left subtree, which is what carves up the pre-order list too.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+import gleam/list
+
+// Pre-order names the root; in-order says how much of the rest belongs to each
+// side. Neither traversal alone determines a tree, and this is why together
+// they do — the split point found in the in-order list is exactly the size of
+// the left subtree, which is what carves up the pre-order list too.
+pub fn build_tree(preorder: List(Int), inorder: List(Int)) -> Tree {
+  case preorder, inorder {
+    [], _ -> Leaf
+    [root, ..rest], _ -> {
+      let left_size = index_of(inorder, root, 0)
+      let #(left_pre, right_pre) = list.split(rest, left_size)
+      let #(left_in, right_in) = list.split(inorder, left_size)
+      Node(
+        root,
+        build_tree(left_pre, left_in),
+        build_tree(right_pre, list.drop(right_in, 1)),
+      )
+    }
+  }
+}
+
+fn index_of(values: List(Int), target: Int, at: Int) -> Int {
+  case values {
+    [] -> 0
+    [head, ..rest] ->
+      case head == target {
+        True -> at
+        False -> index_of(rest, target, at + 1)
+      }
+  }
+}"),
+      #("Solution 2 · By bounds", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+The same construction without slicing anything: a map from value to its in-order position, plus a low and a high bound saying which slice each call owns. Building the map once turns the repeated search for the root — the hidden O(n) inside the slicing version — into a lookup.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+import gleam/dict
+import gleam/list
+import gleam/result
+
+// The same construction without slicing anything: a map from value to its
+// in-order position, plus a low and a high bound saying which slice each call
+// owns. Building the map once turns the repeated search for the root — the
+// hidden O(n) inside the slicing version — into a lookup.
+pub fn build_tree(preorder: List(Int), inorder: List(Int)) -> Tree {
+  let places =
+    list.index_fold(inorder, dict.new(), fn(acc, value, i) {
+      dict.insert(acc, value, i)
+    })
+  let #(tree, _rest) = take(preorder, places, 0, list.length(inorder) - 1)
+  tree
+}
+
+fn take(
+  preorder: List(Int),
+  places: dict.Dict(Int, Int),
+  low: Int,
+  high: Int,
+) -> #(Tree, List(Int)) {
+  case low > high, preorder {
+    True, _ -> #(Leaf, preorder)
+    _, [] -> #(Leaf, [])
+    _, [root, ..rest] -> {
+      let split = result.unwrap(dict.get(places, root), low)
+      let #(left, after_left) = take(rest, places, low, split - 1)
+      let #(right, after_right) = take(after_left, places, split + 1, high)
+      #(Node(root, left, right), after_right)
+    }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn build_tree(preorder: List(Int), inorder: List(Int)) -> Tree",
+      starter: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn build_tree(preorder: List(Int), inorder: List(Int)) -> Tree {
+  todo
+}",
+      harness: "import gleam/string
+import solution.{Leaf, Node}
+
+fn bud(value: Int) -> solution.Tree {
+  Node(value, Leaf, Leaf)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"build_tree([3,9,20,15,7], [9,3,15,20,7])\",
+      string.inspect(Node(3, bud(9), Node(20, bud(15), bud(7)))),
+      string.inspect(solution.build_tree([3, 9, 20, 15, 7], [9, 3, 15, 20, 7])),
+    ),
+    #(
+      \"build_tree([], [])\",
+      string.inspect(Leaf),
+      string.inspect(solution.build_tree([], [])),
+    ),
+    #(
+      \"build_tree([-1], [-1])\",
+      string.inspect(bud(-1)),
+      string.inspect(solution.build_tree([-1], [-1])),
+    ),
+    #(
+      \"build_tree([1,2,3], [3,2,1]) -- leaning left\",
+      string.inspect(Node(1, Node(2, bud(3), Leaf), Leaf)),
+      string.inspect(solution.build_tree([1, 2, 3], [3, 2, 1])),
+    ),
+    #(
+      \"build_tree([1,2,3], [1,2,3]) -- leaning right\",
+      string.inspect(Node(1, Leaf, Node(2, Leaf, bud(3)))),
+      string.inspect(solution.build_tree([1, 2, 3], [1, 2, 3])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc149_max_path_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two different quantities, which is the whole trick. What a node *returns* is the best path that can continue upwards, so at most one of its children. What it *records* is the best path through it, which may use both. A negative branch is dropped rather than added, because a path is allowed to stop. Same shape as [[nc138_diameter_of_binary_tree]].", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+// Two different quantities, which is the whole trick. What a node *returns* is
+// the best path that can continue upwards — so at most one of its children.
+// What it *records* is the best path through it, which may use both. A
+// negative branch is dropped rather than added, because a path is allowed to
+// stop.
+pub fn max_path_sum(tree: Tree) -> Int {
+  case tree {
+    Leaf -> 0
+    _ -> {
+      let #(_upwards, best) = walk(tree)
+      best
+    }
+  }
+}
+
+fn walk(tree: Tree) -> #(Int, Int) {
+  case tree {
+    Leaf -> #(0, -1_000_000_000)
+    Node(value, left, right) -> {
+      let #(left_up, left_best) = walk(left)
+      let #(right_up, right_best) = walk(right)
+      let left_gain = max(left_up, 0)
+      let right_gain = max(right_up, 0)
+      #(
+        value + max(left_gain, right_gain),
+        max(value + left_gain + right_gain, max(left_best, right_best)),
+      )
+    }
+  }
+}
+
+fn max(a: Int, b: Int) -> Int {
+  case a > b {
+    True -> a
+    False -> b
+  }
+}"),
+      #("Solution 2 · All paths", "Every path through every node, measured outright: for each node, take the best downward run on each side and add them. It recomputes those runs from scratch at every node, so it is O(n²) on a spindly tree — the cost of asking the two questions separately instead of returning both from one walk.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+import gleam/list
+
+// Every path through every node, measured outright: for each node, take the
+// best downward run on each side and add them. It recomputes those runs from
+// scratch at every node, so it is O(n²) on a spindly tree — the cost of asking
+// the two questions separately instead of returning both from one walk.
+pub fn max_path_sum(tree: Tree) -> Int {
+  case candidates(tree) {
+    [] -> 0
+    [first, ..rest] -> list.fold(rest, first, max)
+  }
+}
+
+fn candidates(tree: Tree) -> List(Int) {
+  case tree {
+    Leaf -> []
+    Node(value, left, right) -> [
+      value + max(downwards(left), 0) + max(downwards(right), 0),
+      ..list.append(candidates(left), candidates(right))
+    ]
+  }
+}
+
+fn downwards(tree: Tree) -> Int {
+  case tree {
+    Leaf -> 0
+    Node(value, left, right) ->
+      value + max(max(downwards(left), downwards(right)), 0)
+  }
+}
+
+fn max(a: Int, b: Int) -> Int {
+  case a > b {
+    True -> a
+    False -> b
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn max_path_sum(tree: Tree) -> Int",
+      starter: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn max_path_sum(tree: Tree) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution.{Leaf, Node}
+
+fn bud(value: Int) -> solution.Tree {
+  Node(value, Leaf, Leaf)
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"max_path_sum(1/2/3)\",
+      string.inspect(6),
+      string.inspect(solution.max_path_sum(Node(1, bud(2), bud(3)))),
+    ),
+    #(
+      \"max_path_sum(-10/9/20)\",
+      string.inspect(42),
+      string.inspect(
+        solution.max_path_sum(Node(-10, bud(9), Node(20, bud(15), bud(7)))),
+      ),
+    ),
+    #(
+      \"max_path_sum(a single negative node)\",
+      string.inspect(-3),
+      string.inspect(solution.max_path_sum(bud(-3))),
+    ),
+    #(
+      \"max_path_sum(all negative)\",
+      string.inspect(-1),
+      string.inspect(solution.max_path_sum(Node(-2, bud(-1), Leaf))),
+    ),
+    #(
+      \"max_path_sum(a single zero)\",
+      string.inspect(0),
+      string.inspect(solution.max_path_sum(bud(0))),
     ),
   ]
 }",
@@ -7020,6 +8854,172 @@ pub fn run() -> List(#(String, String, String)) {
       \"character_replacement(\\\"AAAA\\\", 0)\",
       string.inspect(4),
       string.inspect(solution.character_replacement(\"AAAA\", 0)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc150_serialize_deserialize() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Pre-order with a marker for every empty child. Recording the empties is what makes the format unambiguous — a pre-order list of values alone matches many different trees — and it is also what lets the reader work with no length information at all: it stops as soon as it has consumed a whole subtree.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+import gleam/int
+import gleam/list
+import gleam/string
+
+// Pre-order with a marker for every empty child. Recording the empties is what
+// makes the format unambiguous — a pre-order list of values alone matches many
+// different trees — and it is also what lets the reader work without any length
+// information: it stops as soon as it has consumed a whole subtree.
+pub fn serialize(tree: Tree) -> String {
+  string.join(tokens(tree), \",\")
+}
+
+pub fn deserialize(text: String) -> Tree {
+  let #(tree, _rest) = rebuild(string.split(text, \",\"))
+  tree
+}
+
+fn tokens(tree: Tree) -> List(String) {
+  case tree {
+    Leaf -> [\"#\"]
+    Node(value, left, right) -> [
+      int.to_string(value),
+      ..list.append(tokens(left), tokens(right))
+    ]
+  }
+}
+
+fn rebuild(parts: List(String)) -> #(Tree, List(String)) {
+  case parts {
+    [] -> #(Leaf, [])
+    [\"#\", ..rest] -> #(Leaf, rest)
+    [head, ..rest] ->
+      case int.parse(head) {
+        Error(Nil) -> #(Leaf, rest)
+        Ok(value) -> {
+          let #(left, after_left) = rebuild(rest)
+          let #(right, after_right) = rebuild(after_left)
+          #(Node(value, left, right), after_right)
+        }
+      }
+  }
+}"),
+      #("Solution 2 · Post order", "Post-order instead of pre-order, still with a marker for every empty child. The root is then the *last* token, so the reader works backwards — and reading backwards means taking the right subtree before the left. The format is what decides the parse direction, and nothing else about the two versions differs.", "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+import gleam/int
+import gleam/list
+import gleam/string
+
+// Post-order instead of pre-order, still with a marker for every empty child.
+// The root is then the *last* token rather than the first, so the reader works
+// backwards — and reading backwards means taking the right subtree before the
+// left. Worth writing once: the format is what decides the parse direction, and
+// nothing else about the two versions differs.
+pub fn serialize(tree: Tree) -> String {
+  string.join(tokens(tree), \",\")
+}
+
+pub fn deserialize(text: String) -> Tree {
+  let #(tree, _rest) = rebuild(list.reverse(string.split(text, \",\")))
+  tree
+}
+
+fn tokens(tree: Tree) -> List(String) {
+  case tree {
+    Leaf -> [\"#\"]
+    Node(value, left, right) ->
+      list.append(list.append(tokens(left), tokens(right)), [
+        int.to_string(value),
+      ])
+  }
+}
+
+fn rebuild(reversed: List(String)) -> #(Tree, List(String)) {
+  case reversed {
+    [] -> #(Leaf, [])
+    [\"#\", ..rest] -> #(Leaf, rest)
+    [head, ..rest] ->
+      case int.parse(head) {
+        Error(Nil) -> #(Leaf, rest)
+        Ok(value) -> {
+          let #(right, after_right) = rebuild(rest)
+          let #(left, after_left) = rebuild(after_right)
+          #(Node(value, left, right), after_left)
+        }
+      }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn serialize(tree: Tree) -> String
+
+pub fn deserialize(text: String) -> Tree",
+      starter: "pub type Tree {
+  Leaf
+  Node(value: Int, left: Tree, right: Tree)
+}
+
+pub fn serialize(tree: Tree) -> String {
+  todo
+}
+
+pub fn deserialize(text: String) -> Tree {
+  todo
+}",
+      harness: "import gleam/string
+import solution.{Leaf, Node}
+
+fn bud(value: Int) -> solution.Tree {
+  Node(value, Leaf, Leaf)
+}
+
+fn round_trip(tree: solution.Tree) -> solution.Tree {
+  solution.deserialize(solution.serialize(tree))
+}
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"deserialize(serialize(1/2/3-4-5)) -- the format is free, the round trip is not\",
+      string.inspect(Node(1, bud(2), Node(3, bud(4), bud(5)))),
+      string.inspect(round_trip(Node(1, bud(2), Node(3, bud(4), bud(5))))),
+    ),
+    #(
+      \"deserialize(serialize(Leaf))\",
+      string.inspect(Leaf),
+      string.inspect(round_trip(Leaf)),
+    ),
+    #(
+      \"deserialize(serialize(a single zero))\",
+      string.inspect(bud(0)),
+      string.inspect(round_trip(bud(0))),
+    ),
+    #(
+      \"deserialize(serialize(a lopsided tree))\",
+      string.inspect(Node(1, Node(2, Node(3, Leaf, bud(4)), Leaf), Leaf)),
+      string.inspect(
+        round_trip(Node(1, Node(2, Node(3, Leaf, bud(4)), Leaf), Leaf)),
+      ),
+    ),
+    #(
+      \"deserialize(serialize(negative values))\",
+      string.inspect(Node(-1, bud(-2), bud(-3))),
+      string.inspect(round_trip(Node(-1, bud(-2), bud(-3)))),
     ),
   ]
 }",
@@ -18002,8 +20002,23 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc133_lru_cache" -> Ok(nc133_lru_cache())
     "nc134_merge_k_sorted_lists" -> Ok(nc134_merge_k_sorted_lists())
     "nc135_reverse_k_group" -> Ok(nc135_reverse_k_group())
+    "nc136_invert_binary_tree" -> Ok(nc136_invert_binary_tree())
+    "nc137_maximum_depth" -> Ok(nc137_maximum_depth())
+    "nc138_diameter_of_binary_tree" -> Ok(nc138_diameter_of_binary_tree())
+    "nc139_balanced_binary_tree" -> Ok(nc139_balanced_binary_tree())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())
+    "nc140_same_tree" -> Ok(nc140_same_tree())
+    "nc141_subtree_of_another_tree" -> Ok(nc141_subtree_of_another_tree())
+    "nc142_lowest_common_ancestor_bst" -> Ok(nc142_lowest_common_ancestor_bst())
+    "nc143_level_order_traversal" -> Ok(nc143_level_order_traversal())
+    "nc144_right_side_view" -> Ok(nc144_right_side_view())
+    "nc145_count_good_nodes" -> Ok(nc145_count_good_nodes())
+    "nc146_validate_bst" -> Ok(nc146_validate_bst())
+    "nc147_kth_smallest_bst" -> Ok(nc147_kth_smallest_bst())
+    "nc148_build_tree_preorder_inorder" -> Ok(nc148_build_tree_preorder_inorder())
+    "nc149_max_path_sum" -> Ok(nc149_max_path_sum())
     "nc14_character_replacement" -> Ok(nc14_character_replacement())
+    "nc150_serialize_deserialize" -> Ok(nc150_serialize_deserialize())
     "nc15_permutation_in_string" -> Ok(nc15_permutation_in_string())
     "nc16_valid_parentheses" -> Ok(nc16_valid_parentheses())
     "nc17_min_stack" -> Ok(nc17_min_stack())

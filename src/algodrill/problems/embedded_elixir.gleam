@@ -2954,6 +2954,156 @@ end"),
   ]
 }
 
+pub fn nc136_invert_binary_tree() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Swap the children, then invert each of them — the swap and the recursion are the same line. The order does not matter: swapping before or after recursing gives the same tree, which is why this is the shortest tree problem there is.", "defmodule Solution do
+  @moduledoc \"\"\"
+  A tree is `nil` for empty, or `{value, left, right}` for a node.
+  \"\"\"
+
+  # Swap the children, then invert each of them. The swap and the recursion are
+  # the same line, which is why this is the shortest tree problem there is --
+  # and why the order does not matter: swapping before or after recursing gives
+  # the same tree.
+  def invert_tree(nil), do: nil
+
+  def invert_tree({value, left, right}), do: {value, invert_tree(right), invert_tree(left)}
+end"),
+    #("Solution 2 · By rebuilding", "Write the tree out pre-order with a marker for every empty child, then read it back taking the first subtree as the *right* child. The inversion happens entirely in the reading — nothing is ever swapped. Longer than the direct recursion, and worth having because the same flatten/rebuild pair is all [[nc150_serialize_deserialize]] is.", "defmodule Solution do
+  # Write the tree out pre-order with a marker for every empty child, then read
+  # it back taking the first subtree as the *right* child. The inversion happens
+  # entirely in the reading -- nothing is ever swapped. Longer than the direct
+  # recursion, and worth having because the same flatten/rebuild pair is all
+  # Serialize and Deserialize is.
+  def invert_tree(tree) do
+    {inverted, _rest} = rebuild(flatten(tree))
+    inverted
+  end
+
+  defp flatten(nil), do: [:empty]
+  defp flatten({value, left, right}), do: [value | flatten(left) ++ flatten(right)]
+
+  defp rebuild([:empty | rest]), do: {nil, rest}
+  defp rebuild([]), do: {nil, []}
+
+  defp rebuild([value | rest]) do
+    {first, after_first} = rebuild(rest)
+    {second, after_second} = rebuild(after_first)
+    {{value, second, first}, after_second}
+  end
+end"),
+  ]
+}
+
+pub fn nc137_maximum_depth() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "One more than the deeper of the two children, with an empty tree at zero. The whole problem is that base case; everything else is the definition of depth read aloud.", "defmodule Solution do
+  # One more than the deeper of the two children, with an empty tree at zero.
+  # The whole problem is that base case: everything else is the definition of
+  # depth read aloud.
+  def max_depth(nil), do: 0
+  def max_depth({_value, left, right}), do: 1 + max(max_depth(left), max_depth(right))
+end"),
+    #("Solution 2 · By levels", "Count the levels instead of measuring the branches: take the whole frontier, replace it with all its children, and add one. No recursion and no stack — which is what makes this the version that survives a tree deep enough to overflow one.", "defmodule Solution do
+  # Count the levels instead of measuring the branches: take the whole frontier,
+  # replace it with all its children, and add one. No recursion down the tree
+  # and no stack -- which is what makes this the version that survives a tree
+  # deep enough to overflow one.
+  def max_depth(nil), do: 0
+  def max_depth(tree), do: descend([tree], 0)
+
+  defp descend([], depth), do: depth
+
+  defp descend(frontier, depth) do
+    frontier
+    |> Enum.flat_map(fn {_value, left, right} -> Enum.reject([left, right], &is_nil/1) end)
+    |> descend(depth + 1)
+  end
+end"),
+  ]
+}
+
+pub fn nc138_diameter_of_binary_tree() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "One walk doing two jobs: each call *returns* its own height, and on the way past it *records* the path through that node — left height plus right height. The answer is the largest such path, so it is never returned, only tracked. That split between return and record is the pattern, and it comes back in [[nc149_max_path_sum]].", "defmodule Solution do
+  # One walk, doing two jobs: each call returns its own height, and on the way
+  # past it records the path *through* that node -- left height plus right
+  # height. The answer is the largest such path, so it is never returned, only
+  # tracked. That split between what a call returns and what it records is the
+  # pattern worth keeping.
+  def diameter_of_binary_tree(tree) do
+    {_height, widest} = measure(tree)
+    widest
+  end
+
+  defp measure(nil), do: {0, 0}
+
+  defp measure({_value, left, right}) do
+    {left_height, left_widest} = measure(left)
+    {right_height, right_widest} = measure(right)
+
+    {1 + max(left_height, right_height),
+     Enum.max([left_height + right_height, left_widest, right_widest])}
+  end
+end"),
+    #("Solution 2 · Height per node", "Ask every node how tall its two sides are and keep the largest sum. Correct and obvious, but height is recomputed from scratch at every node, so a balanced tree costs O(n log n) and a spindly one O(n²) — exactly what returning the height alongside the answer avoids.", "defmodule Solution do
+  # Ask every node how tall its two sides are and keep the largest sum. Correct
+  # and obvious, but height is recomputed from scratch at every node, so a
+  # balanced tree costs O(n log n) and a spindly one O(n^2) -- which is exactly
+  # what returning the height alongside the answer avoids.
+  def diameter_of_binary_tree(nil), do: 0
+
+  def diameter_of_binary_tree({_value, left, right}) do
+    Enum.max([
+      height(left) + height(right),
+      diameter_of_binary_tree(left),
+      diameter_of_binary_tree(right)
+    ])
+  end
+
+  defp height(nil), do: 0
+  defp height({_value, left, right}), do: 1 + max(height(left), height(right))
+end"),
+  ]
+}
+
+pub fn nc139_balanced_binary_tree() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Height and balance in one walk. A subtree reports its height, or reports that something below it is already unbalanced — and once that happens nothing above needs measuring. Using -1 as the \"not balanced\" height is what lets a single return value carry both answers.", "defmodule Solution do
+  # Height and balance in one walk. A subtree reports its height, or reports
+  # that something below it is already unbalanced -- and once that happens
+  # nothing above needs measuring at all. Using -1 as the \"not balanced\" height
+  # is what lets a single return value carry both answers.
+  def is_balanced(tree), do: measure(tree) >= 0
+
+  defp measure(nil), do: 0
+
+  defp measure({_value, left, right}) do
+    left_height = measure(left)
+    right_height = measure(right)
+
+    if left_height < 0 or right_height < 0 or abs(left_height - right_height) > 1,
+      do: -1,
+      else: 1 + max(left_height, right_height)
+  end
+end"),
+    #("Solution 2 · Height per node", "The definition read literally: every node's two sides differ by at most one, and both sides are themselves balanced. It recomputes height at every node, so the work is O(n²) on a spindly tree — the price of separating the two questions the single-pass version answers together.", "defmodule Solution do
+  # The definition read literally: every node's two sides differ by at most one,
+  # and both sides are themselves balanced. It recomputes height at every node,
+  # so the work is O(n^2) on a spindly tree -- the price of separating the two
+  # questions the single-pass version answers together.
+  def is_balanced(nil), do: true
+
+  def is_balanced({_value, left, right}) do
+    abs(height(left) - height(right)) <= 1 and is_balanced(left) and is_balanced(right)
+  end
+
+  defp height(nil), do: 0
+  defp height({_value, left, right}), do: 1 + max(height(left), height(right))
+end"),
+  ]
+}
+
 pub fn nc13_longest_substring() -> List(#(String, String, String)) {
   [
     #("Solution 1", "Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.", "defmodule Solution do
@@ -2993,6 +3143,432 @@ end"),
   defp drop_through([g | rest], g), do: rest
   defp drop_through([_other | rest], g), do: drop_through(rest, g)
   defp drop_through([], _g), do: []
+end"),
+  ]
+}
+
+pub fn nc140_same_tree() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Walk both trees in step. Two empties match, an empty and a node never do, and two nodes match when their values do and both pairs of children do. The same shape is what [[nc141_subtree_of_another_tree]] is built from, which is why it is worth writing out rather than leaning on the language's equality.", "defmodule Solution do
+  # Walk both trees in step. Two empties match, an empty and a node never do,
+  # and two nodes match when their values do and both pairs of children do.
+  # Elixir's structural equality would answer this in one character -- the point
+  # of writing it out is that the same shape is what Subtree of Another Tree and
+  # Symmetric Tree are built from.
+  def is_same_tree(nil, nil), do: true
+
+  def is_same_tree({a, a_left, a_right}, {b, b_left, b_right}) do
+    a == b and is_same_tree(a_left, b_left) and is_same_tree(a_right, b_right)
+  end
+
+  def is_same_tree(_first, _second), do: false
+end"),
+    #("Solution 2 · By serialising", "Turn each tree into a string and compare those. It works *only* because the serialisation records the empty children: without a marker for them, different trees flatten to the same sequence — the same trap [[nc150_serialize_deserialize]] turns on.", "defmodule Solution do
+  # Turn each tree into a string and compare those. It works only because the
+  # serialisation records the empty children too: without a marker for them,
+  # different trees flatten to the same sequence -- the same trap Serialize and
+  # Deserialize turns on.
+  def is_same_tree(first, second), do: serialise(first) == serialise(second)
+
+  defp serialise(nil), do: \"#\"
+
+  defp serialise({value, left, right}) do
+    \"(\" <> Integer.to_string(value) <> serialise(left) <> serialise(right) <> \")\"
+  end
+end"),
+  ]
+}
+
+pub fn nc141_subtree_of_another_tree() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Try to match at every node. The two questions are kept apart on purpose: \"are these two trees identical\" is the whole of the work, and \"is it a subtree\" is that question asked once per node. O(n·m) in the worst case, and a partial match that fails deep is what makes it so.", "defmodule Solution do
+  # Try to match at every node. The two questions are kept apart on purpose:
+  # \"are these two trees identical\" is the whole of the work, and \"is it a
+  # subtree\" is that question asked once per node. O(n*m) in the worst case, and
+  # a partial match that fails deep is what makes it so.
+  def is_subtree(_root, nil), do: true
+  def is_subtree(nil, _sub), do: false
+
+  def is_subtree({_value, left, right} = root, sub) do
+    same(root, sub) or is_subtree(left, sub) or is_subtree(right, sub)
+  end
+
+  defp same(nil, nil), do: true
+
+  defp same({a, a_left, a_right}, {b, b_left, b_right}) do
+    a == b and same(a_left, b_left) and same(a_right, b_right)
+  end
+
+  defp same(_first, _second), do: false
+end"),
+    #("Solution 2 · By serialising", "Serialise both trees and ask whether one string contains the other — an O(n·m) tree comparison turned into substring search. It is only sound because the serialisation marks the empty children: without them \"2\" inside \"12\" would match, and so would a subtree that starts the same way but is missing a child.", "defmodule Solution do
+  # Serialise both trees and ask whether one string contains the other. That
+  # turns an O(n*m) tree comparison into substring search, which is linear with
+  # the right algorithm. It is only sound because the serialisation marks the
+  # empty children: without them \"2\" inside \"12\" would match, and so would a
+  # subtree that starts the same way but is missing a child.
+  def is_subtree(root, sub), do: String.contains?(serialise(root), serialise(sub))
+
+  defp serialise(nil), do: \"#\"
+
+  defp serialise({value, left, right}) do
+    \"(\" <> Integer.to_string(value) <> serialise(left) <> serialise(right) <> \")\"
+  end
+end"),
+  ]
+}
+
+pub fn nc142_lowest_common_ancestor_bst() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The ordering does all the work. Both targets below the current value means go left, both above means go right, and anything else means this node is the split point — which is the answer. No searching for either node first, and no comparing of paths.", "defmodule Solution do
+  # The ordering does all the work. If both targets are below the current value
+  # go left, if both are above go right, and otherwise this node is the split
+  # point -- which is the answer. No searching for either node first, and no
+  # comparing of paths.
+  def lowest_common_ancestor(nil, _p, _q), do: -1
+
+  def lowest_common_ancestor({value, left, right}, p, q) do
+    cond do
+      p < value and q < value -> lowest_common_ancestor(left, p, q)
+      p > value and q > value -> lowest_common_ancestor(right, p, q)
+      true -> value
+    end
+  end
+end"),
+    #("Solution 2 · By paths", "Find the path from the root to each target, then take the last node they share. It ignores the ordering entirely, which is why it is the version that also works on a plain binary tree — at the cost of two searches and two stored paths rather than one walk and nothing.", "defmodule Solution do
+  # Find the path from the root to each target, then take the last node they
+  # share. It ignores the ordering entirely, which is why it is the version that
+  # also works on a plain binary tree -- at the cost of two searches and two
+  # stored paths rather than one walk and nothing.
+  def lowest_common_ancestor(tree, p, q) do
+    tree
+    |> path(p)
+    |> Enum.zip(path(tree, q))
+    |> Enum.reduce_while(-1, fn {a, b}, best ->
+      if a == b, do: {:cont, a}, else: {:halt, best}
+    end)
+  end
+
+  defp path(nil, _target), do: []
+  defp path({target, _left, _right}, target), do: [target]
+
+  defp path({value, left, right}, target) do
+    case path(left, target) do
+      [] ->
+        case path(right, target) do
+          [] -> []
+          found -> [value | found]
+        end
+
+      found ->
+        [value | found]
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc143_level_order_traversal() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Take the whole frontier at once rather than one node at a time: everything on it is the current level, and its children are the next. That is what makes the grouping fall out without tracking any depth — a plain queue gives the right order but no idea where each level ends.", "defmodule Solution do
+  # Take the whole frontier at once rather than one node at a time: everything
+  # on it is the current level, and its children are the next. That is what
+  # makes the grouping fall out without tracking any depth -- a plain queue
+  # would give the right order but no idea where each level ends.
+  def level_order(nil), do: []
+  def level_order(tree), do: descend([tree], [])
+
+  defp descend([], levels), do: Enum.reverse(levels)
+
+  defp descend(frontier, levels) do
+    values = Enum.map(frontier, fn {value, _left, _right} -> value end)
+
+    frontier
+    |> Enum.flat_map(fn {_value, left, right} -> Enum.reject([left, right], &is_nil/1) end)
+    |> descend([values | levels])
+  end
+end"),
+    #("Solution 2 · By depth", "Walk depth-first and file each value under its depth. The traversal order is wrong for the answer, but appending to the right bucket puts it right — and within a level, left is still visited before right, which is all the ordering the answer needs.", "defmodule Solution do
+  # Walk depth-first and file each value under its depth. The traversal order is
+  # wrong for the answer, but appending to the right bucket puts it right -- and
+  # within a level, left is still visited before right, which is all the
+  # ordering the answer needs. One map instead of a frontier.
+  def level_order(tree) do
+    levels = collect(tree, 0, %{})
+
+    0..(map_size(levels) - 1)//1
+    |> Enum.map(fn depth -> Enum.reverse(Map.fetch!(levels, depth)) end)
+  end
+
+  defp collect(nil, _depth, levels), do: levels
+
+  defp collect({value, left, right}, depth, levels) do
+    levels = Map.update(levels, depth, [value], &[value | &1])
+    collect(right, depth + 1, collect(left, depth + 1, levels))
+  end
+end"),
+  ]
+}
+
+pub fn nc144_right_side_view() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The last value on each level, which is what \"seen from the right\" means once the question is asked level by level. Walking down the right children alone is the tempting wrong answer: where the right side is short, a node further left is the one that shows.", "defmodule Solution do
+  # The last value on each level, which is what \"seen from the right\" means once
+  # the question is asked level by level. Walking down the right children alone
+  # is the tempting wrong answer: where the right side is short, a node further
+  # left is the one that shows.
+  def right_side_view(nil), do: []
+  def right_side_view(tree), do: descend([tree], [])
+
+  defp descend([], seen), do: Enum.reverse(seen)
+
+  defp descend(frontier, seen) do
+    {rightmost, _left, _right} = List.last(frontier)
+
+    frontier
+    |> Enum.flat_map(fn {_value, left, right} -> Enum.reject([left, right], &is_nil/1) end)
+    |> descend([rightmost | seen])
+  end
+end"),
+    #("Solution 2 · Right first", "Depth-first, visiting the right child first, and recording a value only when its depth is met for the first time. No frontier at all — being first to reach a depth is the same thing as being rightmost on it, given that order of visiting.", "defmodule Solution do
+  # Depth-first, visiting the right child first, and recording a value only when
+  # its depth is met for the first time. No frontier at all: being first to
+  # reach a depth is the same thing as being rightmost on it, given that order
+  # of visiting.
+  def right_side_view(tree) do
+    seen = look(tree, 0, %{})
+
+    0..(map_size(seen) - 1)//1
+    |> Enum.map(&Map.fetch!(seen, &1))
+  end
+
+  defp look(nil, _depth, seen), do: seen
+
+  defp look({value, left, right}, depth, seen) do
+    seen = Map.put_new(seen, depth, value)
+    look(left, depth + 1, look(right, depth + 1, seen))
+  end
+end"),
+  ]
+}
+
+pub fn nc145_count_good_nodes() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Carry the largest value seen on the way down. A node is good when nothing above it is bigger, so the check needs no knowledge of the tree below — which is what makes one pass enough. The root is always good, and passing its own value down as the initial maximum is what says so.", "defmodule Solution do
+  # Carry the largest value seen on the way down. A node is good when nothing
+  # above it is bigger, so the check needs no knowledge of the tree below --
+  # which is what makes one pass enough. The root is always good, and passing
+  # its own value down as the initial maximum is what says so.
+  def good_nodes(nil), do: 0
+  def good_nodes({value, _left, _right} = tree), do: count(tree, value)
+
+  defp count(nil, _largest), do: 0
+
+  defp count({value, left, right}, largest) do
+    here = if value >= largest, do: 1, else: 0
+    below = max(largest, value)
+    here + count(left, below) + count(right, below)
+  end
+end"),
+    #("Solution 2 · By path", "Carry the whole path instead of just its maximum, and take the maximum at each node. The same answer for O(depth) memory per node rather than one number — worth writing once, because it makes plain that the running maximum is a fold of the path, not a separate idea.", "defmodule Solution do
+  # Carry the whole path instead of just its maximum, and take the maximum at
+  # each node. The same answer for O(depth) memory per node rather than one
+  # integer -- the version worth writing once, because it makes plain that the
+  # running maximum is a fold of the path, not a separate idea.
+  def good_nodes(tree), do: count(tree, [])
+
+  defp count(nil, _above), do: 0
+
+  defp count({value, left, right}, above) do
+    here = if Enum.all?(above, &(&1 <= value)), do: 1, else: 0
+    below = [value | above]
+    here + count(left, below) + count(right, below)
+  end
+end"),
+  ]
+}
+
+pub fn nc146_validate_bst() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Check against a range, not against the parent. A node can be larger than its own parent and still break the order, because the constraint comes from an ancestor further up — and that is the whole difficulty. Going left tightens the upper bound, going right the lower one.", "defmodule Solution do
+  # Check against a range, not against the parent. A node can be larger than its
+  # own parent and still break the order, because the constraint comes from an
+  # ancestor further up -- and that is the whole difficulty. Going left tightens
+  # the upper bound, going right the lower one.
+  def is_valid_bst(tree), do: within(tree, nil, nil)
+
+  defp within(nil, _low, _high), do: true
+
+  defp within({value, left, right}, low, high) do
+    above?(value, low) and below?(value, high) and
+      within(left, low, value) and within(right, value, high)
+  end
+
+  defp above?(_value, nil), do: true
+  defp above?(value, low), do: value > low
+
+  defp below?(_value, nil), do: true
+  defp below?(value, high), do: value < high
+end"),
+    #("Solution 2 · In order", "A binary search tree is exactly a tree whose in-order walk is strictly increasing — the definition, restated so that no bounds have to be threaded anywhere. The cost is the list: O(n) memory against the range check's O(depth).", "defmodule Solution do
+  # A binary search tree is exactly a tree whose in-order walk is strictly
+  # increasing -- that is the definition, restated so that no bounds have to be
+  # threaded anywhere. The cost is the list: O(n) memory against the range
+  # check's O(depth).
+  def is_valid_bst(tree) do
+    values = in_order(tree, [])
+    values |> Enum.zip(Enum.drop(values, 1)) |> Enum.all?(fn {a, b} -> a < b end)
+  end
+
+  defp in_order(nil, after_it), do: after_it
+
+  defp in_order({value, left, right}, after_it) do
+    in_order(left, [value | in_order(right, after_it)])
+  end
+end"),
+  ]
+}
+
+pub fn nc147_kth_smallest_bst() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "An in-order walk of a search tree visits the values in order, so the answer is the kth thing it reaches. Stopping there is the point: the tree below the kth value is never touched, which is what separates this from sorting everything.", "defmodule Solution do
+  # An in-order walk of a search tree visits the values in order, so the answer
+  # is the kth thing it reaches. Stopping there is the point: the tree below the
+  # kth value is never touched, which is what separates this from sorting
+  # everything.
+  def kth_smallest(tree, k) do
+    case take(tree, k) do
+      {:found, value} -> value
+      {:remaining, _left} -> -1
+    end
+  end
+
+  defp take(nil, k), do: {:remaining, k}
+
+  defp take({value, left, right}, k) do
+    case take(left, k) do
+      {:found, found} -> {:found, found}
+      {:remaining, 1} -> {:found, value}
+      {:remaining, left_over} -> take(right, left_over - 1)
+    end
+  end
+end"),
+    #("Solution 2 · By counting", "Count the left subtree and decide which way to go — fewer than k on the left means the answer is this node or to its right. It descends one path instead of walking in order, and it is the version that adapts when the tree stores its own subtree sizes, which turns the whole thing into O(depth).", "defmodule Solution do
+  # Count the left subtree and decide which way to go -- fewer than k on the
+  # left means the answer is this node or to its right. It descends one path
+  # instead of walking in order, and it is the version that adapts when the tree
+  # stores its own subtree sizes, which turns the whole thing into O(depth).
+  def kth_smallest(nil, _k), do: -1
+
+  def kth_smallest({value, left, right}, k) do
+    on_the_left = size(left)
+
+    cond do
+      k <= on_the_left -> kth_smallest(left, k)
+      k == on_the_left + 1 -> value
+      true -> kth_smallest(right, k - on_the_left - 1)
+    end
+  end
+
+  defp size(nil), do: 0
+  defp size({_value, left, right}), do: 1 + size(left) + size(right)
+end"),
+  ]
+}
+
+pub fn nc148_build_tree_preorder_inorder() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Pre-order names the root; in-order says how much of the rest belongs to each side. Neither traversal alone determines a tree, and this is precisely why together they do — the split point found in the in-order list is the size of the left subtree, which is what carves up the pre-order list too.", "defmodule Solution do
+  # Pre-order names the root; in-order says how much of the rest belongs to each
+  # side. Neither traversal alone determines a tree, and this is why together
+  # they do -- the split point found in the in-order list is exactly the size of
+  # the left subtree, which is what carves up the pre-order list too.
+  def build_tree([], _inorder), do: nil
+
+  def build_tree([root | rest], inorder) do
+    left_size = Enum.find_index(inorder, &(&1 == root)) || 0
+    {left_pre, right_pre} = Enum.split(rest, left_size)
+    {left_in, right_in} = Enum.split(inorder, left_size)
+    {root, build_tree(left_pre, left_in), build_tree(right_pre, Enum.drop(right_in, 1))}
+  end
+end"),
+    #("Solution 2 · By bounds", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+The same construction without slicing anything: a map from value to its in-order position, plus a low and a high bound saying which slice each call owns. Building the map once turns the repeated search for the root — the hidden O(n) inside the slicing version — into a lookup.", "defmodule Solution do
+  # The same construction without slicing anything: a map from value to its
+  # in-order position, plus a low and a high bound saying which slice each call
+  # owns. Building the map once turns the repeated search for the root -- the
+  # hidden O(n) inside the slicing version -- into a lookup.
+  def build_tree(preorder, inorder) do
+    places = inorder |> Enum.with_index() |> Map.new()
+    {tree, _rest} = take(preorder, places, 0, length(inorder) - 1)
+    tree
+  end
+
+  defp take(preorder, _places, low, high) when low > high, do: {nil, preorder}
+  defp take([], _places, _low, _high), do: {nil, []}
+
+  defp take([root | rest], places, low, high) do
+    split = Map.get(places, root, low)
+    {left, after_left} = take(rest, places, low, split - 1)
+    {right, after_right} = take(after_left, places, split + 1, high)
+    {{root, left, right}, after_right}
+  end
+end"),
+  ]
+}
+
+pub fn nc149_max_path_sum() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Two different quantities, which is the whole trick. What a node *returns* is the best path that can continue upwards, so at most one of its children. What it *records* is the best path through it, which may use both. A negative branch is dropped rather than added, because a path is allowed to stop. Same shape as [[nc138_diameter_of_binary_tree]].", "defmodule Solution do
+  # Two different quantities, which is the whole trick. What a node *returns* is
+  # the best path that can continue upwards -- so at most one of its children.
+  # What it *records* is the best path through it, which may use both. A
+  # negative branch is dropped rather than added, because a path is allowed to
+  # stop.
+  def max_path_sum(nil), do: 0
+
+  def max_path_sum(tree) do
+    {_upwards, best} = walk(tree)
+    best
+  end
+
+  defp walk(nil), do: {0, -1_000_000_000}
+
+  defp walk({value, left, right}) do
+    {left_up, left_best} = walk(left)
+    {right_up, right_best} = walk(right)
+    left_gain = max(left_up, 0)
+    right_gain = max(right_up, 0)
+
+    {value + max(left_gain, right_gain),
+     Enum.max([value + left_gain + right_gain, left_best, right_best])}
+  end
+end"),
+    #("Solution 2 · All paths", "Every path through every node, measured outright: for each node, take the best downward run on each side and add them. It recomputes those runs from scratch at every node, so it is O(n²) on a spindly tree — the cost of asking the two questions separately instead of returning both from one walk.", "defmodule Solution do
+  # Every path through every node, measured outright: for each node, take the
+  # best downward run on each side and add them. It recomputes those runs from
+  # scratch at every node, so it is O(n^2) on a spindly tree -- the cost of
+  # asking the two questions separately instead of returning both from one walk.
+  def max_path_sum(tree) do
+    case candidates(tree) do
+      [] -> 0
+      found -> Enum.max(found)
+    end
+  end
+
+  defp candidates(nil), do: []
+
+  defp candidates({value, left, right}) do
+    through = value + max(downwards(left), 0) + max(downwards(right), 0)
+    [through | candidates(left) ++ candidates(right)]
+  end
+
+  defp downwards(nil), do: 0
+
+  defp downwards({value, left, right}) do
+    value + Enum.max([downwards(left), downwards(right), 0])
+  end
 end"),
   ]
 }
@@ -3048,6 +3624,66 @@ end"),
   end
 
   defp shrink(left, size, others, _target, _k), do: {left, size, others}
+end"),
+  ]
+}
+
+pub fn nc150_serialize_deserialize() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Pre-order with a marker for every empty child. Recording the empties is what makes the format unambiguous — a pre-order list of values alone matches many different trees — and it is also what lets the reader work with no length information at all: it stops as soon as it has consumed a whole subtree.", "defmodule Solution do
+  # Pre-order with a marker for every empty child. Recording the empties is what
+  # makes the format unambiguous -- a pre-order list of values alone matches
+  # many different trees -- and it is also what lets the reader work without any
+  # length information: it stops as soon as it has consumed a whole subtree.
+  def serialize(tree), do: tree |> tokens() |> Enum.join(\",\")
+
+  def deserialize(text) do
+    {tree, _rest} = rebuild(String.split(text, \",\"))
+    tree
+  end
+
+  defp tokens(nil), do: [\"#\"]
+
+  defp tokens({value, left, right}) do
+    [Integer.to_string(value) | tokens(left) ++ tokens(right)]
+  end
+
+  defp rebuild([]), do: {nil, []}
+  defp rebuild([\"#\" | rest]), do: {nil, rest}
+
+  defp rebuild([head | rest]) do
+    {left, after_left} = rebuild(rest)
+    {right, after_right} = rebuild(after_left)
+    {{String.to_integer(head), left, right}, after_right}
+  end
+end"),
+    #("Solution 2 · Post order", "Post-order instead of pre-order, still with a marker for every empty child. The root is then the *last* token, so the reader works backwards — and reading backwards means taking the right subtree before the left. The format is what decides the parse direction, and nothing else about the two versions differs.", "defmodule Solution do
+  # Post-order instead of pre-order, still with a marker for every empty child.
+  # The root is then the *last* token rather than the first, so the reader works
+  # backwards -- and reading backwards means taking the right subtree before the
+  # left. Worth writing once: the format is what decides the parse direction,
+  # and nothing else about the two versions differs.
+  def serialize(tree), do: tree |> tokens() |> Enum.join(\",\")
+
+  def deserialize(text) do
+    {tree, _rest} = text |> String.split(\",\") |> Enum.reverse() |> rebuild()
+    tree
+  end
+
+  defp tokens(nil), do: [\"#\"]
+
+  defp tokens({value, left, right}) do
+    tokens(left) ++ tokens(right) ++ [Integer.to_string(value)]
+  end
+
+  defp rebuild([]), do: {nil, []}
+  defp rebuild([\"#\" | rest]), do: {nil, rest}
+
+  defp rebuild([head | rest]) do
+    {right, after_right} = rebuild(rest)
+    {left, after_left} = rebuild(after_right)
+    {{String.to_integer(head), left, right}, after_left}
+  end
 end"),
   ]
 }
@@ -7387,8 +8023,23 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
     "nc133_lru_cache" -> Ok(nc133_lru_cache())
     "nc134_merge_k_sorted_lists" -> Ok(nc134_merge_k_sorted_lists())
     "nc135_reverse_k_group" -> Ok(nc135_reverse_k_group())
+    "nc136_invert_binary_tree" -> Ok(nc136_invert_binary_tree())
+    "nc137_maximum_depth" -> Ok(nc137_maximum_depth())
+    "nc138_diameter_of_binary_tree" -> Ok(nc138_diameter_of_binary_tree())
+    "nc139_balanced_binary_tree" -> Ok(nc139_balanced_binary_tree())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())
+    "nc140_same_tree" -> Ok(nc140_same_tree())
+    "nc141_subtree_of_another_tree" -> Ok(nc141_subtree_of_another_tree())
+    "nc142_lowest_common_ancestor_bst" -> Ok(nc142_lowest_common_ancestor_bst())
+    "nc143_level_order_traversal" -> Ok(nc143_level_order_traversal())
+    "nc144_right_side_view" -> Ok(nc144_right_side_view())
+    "nc145_count_good_nodes" -> Ok(nc145_count_good_nodes())
+    "nc146_validate_bst" -> Ok(nc146_validate_bst())
+    "nc147_kth_smallest_bst" -> Ok(nc147_kth_smallest_bst())
+    "nc148_build_tree_preorder_inorder" -> Ok(nc148_build_tree_preorder_inorder())
+    "nc149_max_path_sum" -> Ok(nc149_max_path_sum())
     "nc14_character_replacement" -> Ok(nc14_character_replacement())
+    "nc150_serialize_deserialize" -> Ok(nc150_serialize_deserialize())
     "nc15_permutation_in_string" -> Ok(nc15_permutation_in_string())
     "nc16_valid_parentheses" -> Ok(nc16_valid_parentheses())
     "nc17_min_stack" -> Ok(nc17_min_stack())

@@ -421,6 +421,52 @@ pub fn for_title(title: String) -> String {
     "Reverse Nodes in k-Group" ->
       "The reversal is ordinary; knowing whether to do it is not. Once the rewiring starts there is no way to tell how far it got, so the k nodes have to be confirmed present *before* any link changes \u{2014} otherwise a short final group gets reversed too. Counting the length up front answers the same question in one pass instead of one look-ahead per group."
 
+    // Trees
+    "Invert Binary Tree" ->
+      "Swap the children, then invert each of them \u{2014} the swap and the recursion are the same line, and the order between them makes no difference. It is the shortest tree problem there is, and the one worth doing first because every other tree answer is this walk with something else at the node."
+
+    "Maximum Depth of Binary Tree" ->
+      "One more than the deeper of the two children, with an empty tree at zero. The whole problem is that base case. Counting levels breadth-first gives the same number without recursing, which is what a tree deep enough to overflow the stack needs."
+
+    "Diameter of Binary Tree" ->
+      "One walk doing two jobs: each call *returns* its own height, and on the way past it *records* the path through that node \u{2014} left height plus right height. The answer is never returned, only tracked, and that separation is what turns an O(n\u{b2}) height-at-every-node solution into a single pass."
+
+    "Balanced Binary Tree" ->
+      "Height and balance answered together. A subtree reports its height, or reports that something below it is already unbalanced \u{2014} and once that happens nothing above needs measuring. Using \u{2212}1 as the \"not balanced\" height is what lets one return value carry both, and it is the same trick as the diameter walk."
+
+    "Same Tree" ->
+      "Walk both trees in step: two empties match, an empty and a node never do, and two nodes match when their values and both pairs of children do. Small on its own, and worth writing out because it is the inner loop of Subtree of Another Tree and of Symmetric Tree."
+
+    "Subtree of Another Tree" ->
+      "Two questions kept apart on purpose: \"are these trees identical\" is the work, and \"is it a subtree\" is that question asked once per node \u{2014} O(n\u{b7}m) when partial matches keep failing deep. Serialising both trees and doing substring search collapses it, but only if the serialisation marks the empty children."
+
+    "Lowest Common Ancestor of a Binary Search Tree" ->
+      "The ordering does all the work: both targets below means go left, both above means go right, and anything else means this node is where they split \u{2014} which is the answer. Neither node is ever searched for. On a plain binary tree the ordering is gone and the fallback is comparing the two root-to-node paths."
+
+    "Binary Tree Level Order Traversal" ->
+      "Take the whole frontier at once rather than one node at a time: everything on it is the current level and its children are the next. That is what makes the grouping fall out with no depth tracking \u{2014} a plain queue gives the right order but no idea where each level ends. Depth-first works too, if each value is filed under its depth."
+
+    "Binary Tree Right Side View" ->
+      "The last value on each level, once the question is asked level by level. Walking down the right children alone is the tempting wrong answer \u{2014} where the right side is short, a node further left is the one that shows. Depth-first with the right child visited first gives the same answer, since first to reach a depth is rightmost on it."
+
+    "Count Good Nodes in Binary Tree" ->
+      "Carry the largest value seen so far down the tree. A node is good when nothing above it is bigger, so the test needs nothing from the tree below \u{2014} which is what makes one pass enough. The root passing its own value down as the initial maximum is what makes the root always good."
+
+    "Validate Binary Search Tree" ->
+      "Check against a range, not against the parent. A node can beat its own parent and still be on the wrong side of an ancestor further up, and that is the entire difficulty: going left tightens the upper bound, going right the lower one. The other way in is that a valid tree is exactly one whose in-order walk strictly increases."
+
+    "Kth Smallest Element in a BST" ->
+      "An in-order walk visits a search tree's values in order, so the answer is the kth thing it reaches \u{2014} and stopping there is the point, since the tree beyond it is never touched. Counting subtree sizes instead descends a single path, which is the version that becomes O(depth) when the tree stores its own sizes."
+
+    "Construct Binary Tree from Preorder and Inorder Traversal" ->
+      "Pre-order names the root; in-order says how much of the rest belongs to each side. Neither alone determines a tree, and this is exactly why together they do. Finding the root in the in-order list by searching is the hidden O(n) \u{2014} a value-to-position map plus a pair of bounds removes both the search and the slicing."
+
+    "Binary Tree Maximum Path Sum" ->
+      "The same return-versus-record split as the diameter, with sums instead of heights. What a node returns is the best path that can continue upwards, so at most one child; what it records is the best path through it, which may use both. A negative branch is dropped rather than added, because a path is allowed to stop."
+
+    "Serialize and Deserialize Binary Tree" ->
+      "The format is free; what is not is that it has to record the empty children. A pre-order list of values alone matches many different trees, and the markers are also what let the reader work with no length information \u{2014} it stops as soon as it has consumed a whole subtree. Post-order works just as well, read from the end."
+
     // Gleam Tips
     "Pattern matching on lists" ->
       "In Gleam a list is either [] or [head, ..tail] \u{2014} every list function is a case expression over those two shapes (plus [only] when the last element matters). Recursion replaces loops: handle the empty case, then recurse on the tail."
