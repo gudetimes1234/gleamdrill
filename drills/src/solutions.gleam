@@ -61,6 +61,10 @@ import nc23_valid_sudoku
 import nc23_valid_sudoku__by_unit
 import nc24_trapping_rain_water
 import nc24_trapping_rain_water__prefix_maxima
+import nc25_min_window_substring
+import nc25_min_window_substring__filtered_positions
+import nc26_sliding_window_maximum
+import nc26_sliding_window_maximum__brute_force
 import tip01_list_patterns
 import tip01_list_patterns__stdlib
 import tip02_tail_recursion
@@ -165,6 +169,12 @@ pub fn main() {
     check_valid_sudoku(nc23_valid_sudoku__by_unit.is_valid_sudoku),
     check_trapping_rain_water(nc24_trapping_rain_water.trap),
     check_trapping_rain_water(nc24_trapping_rain_water__prefix_maxima.trap),
+    check_min_window(nc25_min_window_substring.min_window),
+    check_min_window(nc25_min_window_substring__filtered_positions.min_window),
+    check_sliding_window_maximum(nc26_sliding_window_maximum.max_sliding_window),
+    check_sliding_window_maximum(
+      nc26_sliding_window_maximum__brute_force.max_sliding_window,
+    ),
 
     // Gleam Tips
     check_list_patterns(tip01_list_patterns.length, tip01_list_patterns.last),
@@ -298,6 +308,29 @@ fn check_trapping_rain_water(f: fn(List(Int)) -> Int) -> Nil {
   let assert True = f([2, 0, 2]) == 2
   // A slope holds nothing: there is no right-hand wall to trap against.
   let assert True = f([5, 4, 3, 2, 1]) == 0
+  Nil
+}
+
+fn check_min_window(f: fn(String, String) -> String) -> Nil {
+  let assert True = f("ADOBECODEBANC", "ABC") == "BANC"
+  let assert True = f("a", "a") == "a"
+  // The needle needs two copies and the haystack has one.
+  let assert True = f("a", "aa") == ""
+  let assert True = f("", "a") == ""
+  let assert True = f("ab", "") == ""
+  // Repeats in the needle: the window has to hold all three, not just one.
+  let assert True = f("aaflslflsldkalskaaa", "aaa") == "aaa"
+  Nil
+}
+
+fn check_sliding_window_maximum(f: fn(List(Int), Int) -> List(Int)) -> Nil {
+  let assert True = f([1, 3, -1, -3, 5, 3, 6, 7], 3) == [3, 3, 5, 5, 6, 7]
+  let assert True = f([1], 1) == [1]
+  let assert True = f([], 3) == []
+  let assert True = f([9, 8, 7, 6], 2) == [9, 8, 7]
+  // All negative, k = 1: a running maximum seeded with zero fails here.
+  let assert True = f([1, -1], 1) == [1, -1]
+  let assert True = f([-7, -8, 7, 5, 7, 1, 6, 0], 4) == [7, 7, 7, 7, 7]
   Nil
 }
 

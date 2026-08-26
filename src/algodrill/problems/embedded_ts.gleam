@@ -1484,6 +1484,176 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc25_min_window_substring() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Count what is still missing, not what is present. Every character the window takes in decrements its requirement, and only a character that was actually still needed moves the counter — so \"missing == 0\" is a single integer test rather than a map comparison. Once the window is valid, shrink from the left until it stops being valid, recording the best as you go.", "export function minWindow(s: string, t: string): string {
+  if (s === \"\" || t === \"\") return \"\";
+
+  const need = new Map<string, number>();
+  for (const c of t) need.set(c, (need.get(c) ?? 0) + 1);
+
+  let missing = t.length;
+  let left = 0;
+  let bestStart = 0;
+  let bestLength = 0;
+
+  for (let right = 0; right < s.length; right++) {
+    const c = s[right];
+    if ((need.get(c) ?? 0) > 0) missing--;
+    need.set(c, (need.get(c) ?? 0) - 1);
+
+    while (missing === 0) {
+      if (bestLength === 0 || right - left + 1 < bestLength) {
+        bestStart = left;
+        bestLength = right - left + 1;
+      }
+      const leaving = s[left];
+      need.set(leaving, (need.get(leaving) ?? 0) + 1);
+      if ((need.get(leaving) ?? 0) > 0) missing++;
+      left++;
+    }
+  }
+
+  return s.slice(bestStart, bestStart + bestLength);
+}"),
+      #("Solution 2 · Filtered positions", "Two changes from the counting version, both worth knowing. First, throw away every position whose character is not in the needle: for a long haystack and a short needle, that is nearly the whole walk gone. Second, track how many distinct requirements are fully covered rather than how many characters remain — the counter only moves when a count crosses its requirement.", "export function minWindow(s: string, t: string): string {
+  if (s === \"\" || t === \"\") return \"\";
+
+  const need = new Map<string, number>();
+  for (const c of t) need.set(c, (need.get(c) ?? 0) + 1);
+
+  // Only the positions that could possibly matter. For a long haystack and a
+  // short needle this is a far shorter walk than the whole string.
+  const positions: [number, string][] = [];
+  for (let i = 0; i < s.length; i++) {
+    if (need.has(s[i])) positions.push([i, s[i]]);
+  }
+
+  const window = new Map<string, number>();
+  let satisfied = 0;
+  let left = 0;
+  let bestStart = 0;
+  let bestLength = 0;
+
+  for (const [index, c] of positions) {
+    window.set(c, (window.get(c) ?? 0) + 1);
+    if (window.get(c) === need.get(c)) satisfied++;
+
+    while (satisfied === need.size) {
+      const [start, leaving] = positions[left];
+      const length = index - start + 1;
+      if (bestLength === 0 || length < bestLength) {
+        bestStart = start;
+        bestLength = length;
+      }
+      window.set(leaving, (window.get(leaving) ?? 0) - 1);
+      if ((window.get(leaving) ?? 0) < (need.get(leaving) ?? 0)) satisfied--;
+      left++;
+    }
+  }
+
+  return s.slice(bestStart, bestStart + bestLength);
+}"),
+    ],
+    check: Check(
+      signature: "export function minWindow(s: string, t: string): string",
+      starter: "export function minWindow(s: string, t: string): string {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.minWindow !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"minWindow('ADOBECODEBANC', 'ABC')\", show(\"BANC\"), show(solution.minWindow(\"ADOBECODEBANC\", \"ABC\"))],
+    [\"minWindow('a', 'a')\", show(\"a\"), show(solution.minWindow(\"a\", \"a\"))],
+    [\"minWindow('a', 'aa')\", show(\"\"), show(solution.minWindow(\"a\", \"aa\"))],
+    [\"minWindow('', 'a')\", show(\"\"), show(solution.minWindow(\"\", \"a\"))],
+    [\"minWindow('ab', '')\", show(\"\"), show(solution.minWindow(\"ab\", \"\"))],
+    [\"minWindow('aaflslflsldkalskaaa', 'aaa')\", show(\"aaa\"), show(solution.minWindow(\"aaflslflsldkalskaaa\", \"aaa\"))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc26_sliding_window_maximum() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Cut the array into blocks of k and pre-compute, within each block, the running maximum forwards and backwards. Any window of width k straddles at most one block boundary, so it is exactly a suffix of one block and a prefix of the next — one max from each, and the whole thing is O(n) with no queue at all.", "export function maxSlidingWindow(nums: number[], k: number): number[] {
+  if (k <= 0 || nums.length < k) return [];
+
+  const n = nums.length;
+  const left = new Array<number>(n);
+  const right = new Array<number>(n);
+
+  for (let i = 0; i < n; i++) {
+    left[i] = i % k === 0 ? nums[i] : Math.max(left[i - 1], nums[i]);
+  }
+  for (let i = n - 1; i >= 0; i--) {
+    right[i] = i === n - 1 || (i + 1) % k === 0 ? nums[i] : Math.max(right[i + 1], nums[i]);
+  }
+
+  // Every window of width k straddles at most one block boundary, so it is
+  // covered by a suffix of one block and a prefix of the next.
+  const out: number[] = [];
+  for (let i = 0; i + k <= n; i++) out.push(Math.max(right[i], left[i + k - 1]));
+  return out;
+}"),
+      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every window, maximised. O(n·k) rather than O(n), which is exactly the rescanning the other two variants exist to avoid.", "export function maxSlidingWindow(nums: number[], k: number): number[] {
+  if (k <= 0 || nums.length < k) return [];
+  const out: number[] = [];
+  for (let i = 0; i + k <= nums.length; i++) out.push(Math.max(...nums.slice(i, i + k)));
+  return out;
+}"),
+      #("Solution 3 · Monotonic deque", "The classic answer. Hold the indices whose value could still be the maximum, kept in decreasing order: a new value pops every smaller one off the back, because they can never win again while it is in the window. The front is always the answer, and the front leaves once it falls out of range. Each index is pushed and popped once.", "export function maxSlidingWindow(nums: number[], k: number): number[] {
+  if (k <= 0) return [];
+
+  // Indices, their values decreasing. `head` rather than shift(), which would
+  // make every expiry O(n) and quietly undo the point of the deque.
+  const window: number[] = [];
+  let head = 0;
+  const out: number[] = [];
+
+  for (let i = 0; i < nums.length; i++) {
+    while (window.length > head && nums[window[window.length - 1]] <= nums[i]) window.pop();
+    window.push(i);
+    if (window[head] <= i - k) head++;
+    if (i >= k - 1) out.push(nums[window[head]]);
+  }
+
+  return out;
+}"),
+    ],
+    check: Check(
+      signature: "export function maxSlidingWindow(nums: number[], k: number): number[]",
+      starter: "export function maxSlidingWindow(nums: number[], k: number): number[] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.maxSlidingWindow !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"maxSlidingWindow([1, 3, -1, -3, 5, 3, 6, 7], 3)\", show([3, 3, 5, 5, 6, 7]), show(solution.maxSlidingWindow([1, 3, -1, -3, 5, 3, 6, 7], 3))],
+    [\"maxSlidingWindow([1], 1)\", show([1]), show(solution.maxSlidingWindow([1], 1))],
+    [\"maxSlidingWindow([], 3)\", show([]), show(solution.maxSlidingWindow([], 3))],
+    [\"maxSlidingWindow([9, 8, 7, 6], 2)\", show([9, 8, 7]), show(solution.maxSlidingWindow([9, 8, 7, 6], 2))],
+    [\"maxSlidingWindow([1, -1], 1)\", show([1, -1]), show(solution.maxSlidingWindow([1, -1], 1))],
+    [\"maxSlidingWindow([-7, -8, 7, 5, 7, 1, 6, 0], 4)\", show([7, 7, 7, 7, 7]), show(solution.maxSlidingWindow([-7, -8, 7, 5, 7, 1, 6, 0], 4))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -1510,6 +1680,8 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc22_encode_decode" -> Ok(nc22_encode_decode())
     "nc23_valid_sudoku" -> Ok(nc23_valid_sudoku())
     "nc24_trapping_rain_water" -> Ok(nc24_trapping_rain_water())
+    "nc25_min_window_substring" -> Ok(nc25_min_window_substring())
+    "nc26_sliding_window_maximum" -> Ok(nc26_sliding_window_maximum())
     _ -> Error(Nil)
   }
 }

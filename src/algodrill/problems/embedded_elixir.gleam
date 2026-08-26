@@ -973,6 +973,217 @@ end"),
   ]
 }
 
+pub fn nc25_min_window_substring() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Count what is still missing, not what is present. Every character the window takes in decrements its requirement, and only a character that was actually still needed moves the counter — so \"missing == 0\" is a single integer test rather than a map comparison. Once the window is valid, shrink from the left until it stops being valid, recording the best as you go.", "defmodule Solution do
+  def min_window(\"\", _t), do: \"\"
+  def min_window(_s, \"\"), do: \"\"
+
+  def min_window(s, t) do
+    graphemes = String.graphemes(s)
+    need = Enum.frequencies(String.graphemes(t))
+
+    case scan(graphemes, 0, graphemes, 0, need, String.length(t), {0, 0}) do
+      {_start, 0} -> \"\"
+      {start, length} -> String.slice(s, start, length)
+    end
+  end
+
+  # The window is the gap between two views of the same list: `right` is what
+  # has not been taken in yet, `left` is everything from the window's start
+  # onwards. Advancing either end is one list head.
+  #
+  # This clause matches only while nothing is missing, so the window is valid:
+  # record it, then give a character back from the left.
+  defp scan(right, right_index, [c | left_rest], left_index, counts, 0, best) do
+    length = right_index - left_index
+
+    best =
+      if elem(best, 1) == 0 or length < elem(best, 1),
+        do: {left_index, length},
+        else: best
+
+    raised = Map.get(counts, c, 0) + 1
+
+    scan(
+      right,
+      right_index,
+      left_rest,
+      left_index + 1,
+      Map.put(counts, c, raised),
+      if(raised > 0, do: 1, else: 0),
+      best
+    )
+  end
+
+  defp scan([], _right_index, _left, _left_index, _counts, _missing, best), do: best
+
+  defp scan([c | right_rest], right_index, left, left_index, counts, missing, best) do
+    current = Map.get(counts, c, 0)
+
+    scan(
+      right_rest,
+      right_index + 1,
+      left,
+      left_index,
+      Map.put(counts, c, current - 1),
+      if(current > 0, do: missing - 1, else: missing),
+      best
+    )
+  end
+end"),
+    #("Solution 2 · Filtered positions", "Two changes from the counting version, both worth knowing. First, throw away every position whose character is not in the needle: for a long haystack and a short needle, that is nearly the whole walk gone. Second, track how many distinct requirements are fully covered rather than how many characters remain — the counter only moves when a count crosses its requirement.", "defmodule Solution do
+  def min_window(\"\", _t), do: \"\"
+  def min_window(_s, \"\"), do: \"\"
+
+  def min_window(s, t) do
+    need = Enum.frequencies(String.graphemes(t))
+
+    # Only the positions that could possibly matter. For a long haystack and a
+    # short needle this is a far shorter walk than the whole string.
+    positions =
+      s
+      |> String.graphemes()
+      |> Enum.with_index()
+      |> Enum.filter(fn {c, _i} -> Map.has_key?(need, c) end)
+      |> Enum.map(fn {c, i} -> {i, c} end)
+
+    case scan(positions, positions, need, %{}, 0, map_size(need), -1, {0, 0}) do
+      {_start, 0} -> \"\"
+      {start, length} -> String.slice(s, start, length)
+    end
+  end
+
+  # Counts how many of the needle's distinct characters are fully covered,
+  # rather than how many characters are still missing. Same window, different
+  # bookkeeping: `satisfied` only moves when a count crosses its requirement.
+  defp scan(right, left, need, window, satisfied, distinct, last_index, best)
+
+  defp scan(right, [{start, c} | left_rest], need, window, satisfied, distinct, last_index, best)
+       when satisfied == distinct do
+    length = last_index - start + 1
+
+    best =
+      if elem(best, 1) == 0 or length < elem(best, 1), do: {start, length}, else: best
+
+    lowered = Map.get(window, c, 0) - 1
+
+    scan(
+      right,
+      left_rest,
+      need,
+      Map.put(window, c, lowered),
+      if(lowered < Map.get(need, c, 0), do: satisfied - 1, else: satisfied),
+      distinct,
+      last_index,
+      best
+    )
+  end
+
+  defp scan([], _left, _need, _window, _satisfied, _distinct, _last_index, best), do: best
+
+  defp scan([{index, c} | right_rest], left, need, window, satisfied, distinct, _last, best) do
+    raised = Map.get(window, c, 0) + 1
+
+    scan(
+      right_rest,
+      left,
+      need,
+      Map.put(window, c, raised),
+      if(raised == Map.get(need, c, 0), do: satisfied + 1, else: satisfied),
+      distinct,
+      index,
+      best
+    )
+  end
+end"),
+  ]
+}
+
+pub fn nc26_sliding_window_maximum() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Cut the array into blocks of k and pre-compute, within each block, the running maximum forwards and backwards. Any window of width k straddles at most one block boundary, so it is exactly a suffix of one block and a prefix of the next — one max from each, and the whole thing is O(n) with no queue at all.", "defmodule Solution do
+  def max_sliding_window(_nums, k) when k <= 0, do: []
+
+  def max_sliding_window(nums, k) do
+    blocks = Enum.chunk_every(nums, k)
+    left = Enum.flat_map(blocks, &running_max/1)
+
+    right =
+      Enum.flat_map(blocks, fn block ->
+        block |> Enum.reverse() |> running_max() |> Enum.reverse()
+      end)
+
+    # Every window of width k straddles at most one block boundary, so it is
+    # covered by a suffix of one block and a prefix of the next.
+    [right, Enum.drop(left, k - 1)]
+    |> Enum.zip_with(fn [r, l] -> max(r, l) end)
+  end
+
+  # Seeded with the first element rather than zero: the values can be negative.
+  defp running_max([]), do: []
+  defp running_max([first | rest]), do: [first | Enum.scan(rest, first, &max/2)]
+end"),
+    #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every window, maximised. O(n·k) rather than O(n), which is exactly the rescanning the other two variants exist to avoid.", "defmodule Solution do
+  def max_sliding_window(_nums, k) when k <= 0, do: []
+
+  def max_sliding_window(nums, k) do
+    nums
+    |> Enum.chunk_every(k, 1, :discard)
+    |> Enum.map(&Enum.max/1)
+  end
+end"),
+    #("Solution 3 · Monotonic deque", "The classic answer. Hold the indices whose value could still be the maximum, kept in decreasing order: a new value pops every smaller one off the back, because they can never win again while it is in the window. The front is always the answer, and the front leaves once it falls out of range. Each index is pushed and popped once.", "defmodule Solution do
+  def max_sliding_window(_nums, k) when k <= 0, do: []
+
+  def max_sliding_window(nums, k) do
+    values = List.to_tuple(nums)
+
+    {_window, out} =
+      nums
+      |> Enum.with_index()
+      |> Enum.reduce({:queue.new(), []}, fn {num, i}, {window, out} ->
+        window =
+          window
+          |> drop_smaller(num, values)
+          |> then(&:queue.in(i, &1))
+          |> drop_expired(i - k)
+
+        {window, if(i >= k - 1, do: [elem(values, front(window)) | out], else: out)}
+      end)
+
+    Enum.reverse(out)
+  end
+
+  # Erlang's :queue rather than a list: this needs both ends, and a list only
+  # gives one of them cheaply.
+  defp drop_smaller(window, num, values) do
+    case :queue.out_r(window) do
+      {{:value, index}, rest} ->
+        if elem(values, index) <= num, do: drop_smaller(rest, num, values), else: window
+
+      {:empty, _} ->
+        window
+    end
+  end
+
+  defp drop_expired(window, limit) do
+    case :queue.peek(window) do
+      {:value, index} when index <= limit -> :queue.drop(window)
+      _ -> window
+    end
+  end
+
+  defp front(window) do
+    {:value, index} = :queue.peek(window)
+    index
+  end
+end"),
+  ]
+}
+
 pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -999,6 +1210,8 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
     "nc22_encode_decode" -> Ok(nc22_encode_decode())
     "nc23_valid_sudoku" -> Ok(nc23_valid_sudoku())
     "nc24_trapping_rain_water" -> Ok(nc24_trapping_rain_water())
+    "nc25_min_window_substring" -> Ok(nc25_min_window_substring())
+    "nc26_sliding_window_maximum" -> Ok(nc26_sliding_window_maximum())
     _ -> Error(Nil)
   }
 }

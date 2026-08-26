@@ -2485,6 +2485,354 @@ pub fn run() -> List(#(String, String, String)) {
   )
 }
 
+pub fn nc25_min_window_substring() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Count what is still missing, not what is present. Every character the window takes in decrements its requirement, and only a character that was actually still needed moves the counter — so \"missing == 0\" is a single integer test rather than a map comparison. Once the window is valid, shrink from the left until it stops being valid, recording the best as you go.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/string
+
+pub fn min_window(s: String, t: String) -> String {
+  case t == \"\" || s == \"\" {
+    True -> \"\"
+    False -> {
+      let graphemes = string.to_graphemes(s)
+      let need =
+        list.fold(string.to_graphemes(t), dict.new(), fn(counts, c) {
+          dict.insert(counts, c, count(counts, c) + 1)
+        })
+      let #(start, length) =
+        scan(graphemes, 0, graphemes, 0, need, string.length(t), #(0, 0))
+      string.slice(s, start, length)
+    }
+  }
+}
+
+/// The window is the gap between two views of the same list: `right` is what
+/// has not been taken in yet, `left` is everything from the window's start
+/// onwards. Advancing either end is one list head, and the indices are carried
+/// alongside because the answer is a slice.
+fn scan(
+  right: List(String),
+  right_index: Int,
+  left: List(String),
+  left_index: Int,
+  counts: Dict(String, Int),
+  missing: Int,
+  best: #(Int, Int),
+) -> #(Int, Int) {
+  case missing == 0 {
+    True ->
+      case left {
+        [] -> best
+        [c, ..left_rest] -> {
+          let length = right_index - left_index
+          let best = case best.1 == 0 || length < best.1 {
+            True -> #(left_index, length)
+            False -> best
+          }
+          let raised = count(counts, c) + 1
+          scan(
+            right,
+            right_index,
+            left_rest,
+            left_index + 1,
+            dict.insert(counts, c, raised),
+            case raised > 0 {
+              True -> missing + 1
+              False -> missing
+            },
+            best,
+          )
+        }
+      }
+    False ->
+      case right {
+        [] -> best
+        [c, ..right_rest] -> {
+          let current = count(counts, c)
+          scan(
+            right_rest,
+            right_index + 1,
+            left,
+            left_index,
+            dict.insert(counts, c, current - 1),
+            case current > 0 {
+              True -> missing - 1
+              False -> missing
+            },
+            best,
+          )
+        }
+      }
+  }
+}
+
+fn count(counts: Dict(String, Int), key: String) -> Int {
+  case dict.get(counts, key) {
+    Ok(n) -> n
+    Error(Nil) -> 0
+  }
+}"),
+      #("Solution 2 · Filtered positions", "Two changes from the counting version, both worth knowing. First, throw away every position whose character is not in the needle: for a long haystack and a short needle, that is nearly the whole walk gone. Second, track how many distinct requirements are fully covered rather than how many characters remain — the counter only moves when a count crosses its requirement.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/string
+
+pub fn min_window(s: String, t: String) -> String {
+  case t == \"\" || s == \"\" {
+    True -> \"\"
+    False -> {
+      let need = tally(string.to_graphemes(t))
+      // Only the positions that could possibly matter. For a long haystack and
+      // a short needle this is a far shorter walk than the whole string.
+      let positions =
+        string.to_graphemes(s)
+        |> list.index_map(fn(c, i) { #(i, c) })
+        |> list.filter(fn(entry) { dict.has_key(need, entry.1) })
+
+      case
+        scan(positions, positions, need, dict.new(), 0, dict.size(need), -1, #(
+          0,
+          0,
+        ))
+      {
+        #(_, 0) -> \"\"
+        #(start, length) -> string.slice(s, start, length)
+      }
+    }
+  }
+}
+
+/// Counts how many of the needle's distinct characters are fully covered,
+/// rather than how many characters are still missing. Same window, different
+/// bookkeeping: `satisfied` only moves when a count crosses its requirement.
+fn scan(
+  right: List(#(Int, String)),
+  left: List(#(Int, String)),
+  need: Dict(String, Int),
+  window: Dict(String, Int),
+  satisfied: Int,
+  distinct: Int,
+  last_index: Int,
+  best: #(Int, Int),
+) -> #(Int, Int) {
+  case satisfied == distinct {
+    True ->
+      case left {
+        [] -> best
+        [#(start, c), ..left_rest] -> {
+          let length = last_index - start + 1
+          let best = case best.1 == 0 || length < best.1 {
+            True -> #(start, length)
+            False -> best
+          }
+          let lowered = count(window, c) - 1
+          scan(
+            right,
+            left_rest,
+            need,
+            dict.insert(window, c, lowered),
+            case lowered < count(need, c) {
+              True -> satisfied - 1
+              False -> satisfied
+            },
+            distinct,
+            last_index,
+            best,
+          )
+        }
+      }
+    False ->
+      case right {
+        [] -> best
+        [#(index, c), ..right_rest] -> {
+          let raised = count(window, c) + 1
+          scan(
+            right_rest,
+            left,
+            need,
+            dict.insert(window, c, raised),
+            case raised == count(need, c) {
+              True -> satisfied + 1
+              False -> satisfied
+            },
+            distinct,
+            index,
+            best,
+          )
+        }
+      }
+  }
+}
+
+fn tally(graphemes: List(String)) -> Dict(String, Int) {
+  list.fold(graphemes, dict.new(), fn(counts, c) {
+    dict.insert(counts, c, count(counts, c) + 1)
+  })
+}
+
+fn count(counts: Dict(String, Int), key: String) -> Int {
+  case dict.get(counts, key) {
+    Ok(n) -> n
+    Error(Nil) -> 0
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn min_window(s: String, t: String) -> String",
+      starter: "pub fn min_window(s: String, t: String) -> String {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"min_window(\\\"ADOBECODEBANC\\\", \\\"ABC\\\")\",
+      string.inspect(\"BANC\"),
+      string.inspect(solution.min_window(\"ADOBECODEBANC\", \"ABC\")),
+    ),
+    #(
+      \"min_window(\\\"a\\\", \\\"a\\\")\",
+      string.inspect(\"a\"),
+      string.inspect(solution.min_window(\"a\", \"a\")),
+    ),
+    #(
+      \"min_window(\\\"a\\\", \\\"aa\\\")\",
+      string.inspect(\"\"),
+      string.inspect(solution.min_window(\"a\", \"aa\")),
+    ),
+    #(
+      \"min_window(\\\"\\\", \\\"a\\\")\",
+      string.inspect(\"\"),
+      string.inspect(solution.min_window(\"\", \"a\")),
+    ),
+    #(
+      \"min_window(\\\"ab\\\", \\\"\\\")\",
+      string.inspect(\"\"),
+      string.inspect(solution.min_window(\"ab\", \"\")),
+    ),
+    #(
+      \"min_window(\\\"aaflslflsldkalskaaa\\\", \\\"aaa\\\")\",
+      string.inspect(\"aaa\"),
+      string.inspect(solution.min_window(\"aaflslflsldkalskaaa\", \"aaa\")),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc26_sliding_window_maximum() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Cut the array into blocks of k and pre-compute, within each block, the running maximum forwards and backwards. Any window of width k straddles at most one block boundary, so it is exactly a suffix of one block and a prefix of the next — one max from each, and the whole thing is O(n) with no queue at all.", "import gleam/int
+import gleam/list
+
+pub fn max_sliding_window(nums: List(Int), k: Int) -> List(Int) {
+  case k <= 0 {
+    True -> []
+    False -> {
+      let blocks = list.sized_chunk(nums, k)
+      let left = list.flat_map(blocks, running_max)
+      let right =
+        list.flat_map(blocks, fn(block) {
+          block
+          |> list.reverse
+          |> running_max
+          |> list.reverse
+        })
+
+      // Every window of width k straddles at most one block boundary, so it is
+      // covered by a suffix of one block and a prefix of the next.
+      list.zip(right, list.drop(left, k - 1))
+      |> list.map(fn(pair) { int.max(pair.0, pair.1) })
+    }
+  }
+}
+
+/// Seeded with the first element rather than zero: the values can be negative.
+fn running_max(values: List(Int)) -> List(Int) {
+  case values {
+    [] -> []
+    [first, ..rest] -> [first, ..list.scan(rest, first, int.max)]
+  }
+}"),
+      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every window, maximised. O(n·k) rather than O(n), which is exactly the rescanning the other two variants exist to avoid.", "import gleam/int
+import gleam/list
+
+pub fn max_sliding_window(nums: List(Int), k: Int) -> List(Int) {
+  case k <= 0 {
+    True -> []
+    False -> windows(nums, k, [])
+  }
+}
+
+/// Every window, maximised, by walking the list one start at a time. There is
+/// no random access to slice with, so the tail is re-taken each step \\u{2014} which is
+/// the O(n\\u{b7}k) the other variants exist to avoid.
+fn windows(nums: List(Int), k: Int, acc: List(Int)) -> List(Int) {
+  let window = list.take(nums, k)
+  case list.length(window) < k, nums {
+    True, _ -> list.reverse(acc)
+    False, [] -> list.reverse(acc)
+    False, [_, ..rest] ->
+      case list.reduce(window, int.max) {
+        Ok(best) -> windows(rest, k, [best, ..acc])
+        Error(Nil) -> list.reverse(acc)
+      }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn max_sliding_window(nums: List(Int), k: Int) -> List(Int)",
+      starter: "pub fn max_sliding_window(nums: List(Int), k: Int) -> List(Int) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"max_sliding_window([1, 3, -1, -3, 5, 3, 6, 7], 3)\",
+      string.inspect([3, 3, 5, 5, 6, 7]),
+      string.inspect(solution.max_sliding_window([1, 3, -1, -3, 5, 3, 6, 7], 3)),
+    ),
+    #(
+      \"max_sliding_window([1], 1)\",
+      string.inspect([1]),
+      string.inspect(solution.max_sliding_window([1], 1)),
+    ),
+    #(
+      \"max_sliding_window([], 3)\",
+      string.inspect([]),
+      string.inspect(solution.max_sliding_window([], 3)),
+    ),
+    #(
+      \"max_sliding_window([9, 8, 7, 6], 2)\",
+      string.inspect([9, 8, 7]),
+      string.inspect(solution.max_sliding_window([9, 8, 7, 6], 2)),
+    ),
+    #(
+      \"max_sliding_window([1, -1], 1)\",
+      string.inspect([1, -1]),
+      string.inspect(solution.max_sliding_window([1, -1], 1)),
+    ),
+    #(
+      \"max_sliding_window([-7, -8, 7, 5, 7, 1, 6, 0], 4)\",
+      string.inspect([7, 7, 7, 7, 7]),
+      string.inspect(solution.max_sliding_window([-7, -8, 7, 5, 7, 1, 6, 0], 4)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
 pub fn tip01_list_patterns() -> Embedded {
   Embedded(
     solutions: [
@@ -3276,6 +3624,8 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc22_encode_decode" -> Ok(nc22_encode_decode())
     "nc23_valid_sudoku" -> Ok(nc23_valid_sudoku())
     "nc24_trapping_rain_water" -> Ok(nc24_trapping_rain_water())
+    "nc25_min_window_substring" -> Ok(nc25_min_window_substring())
+    "nc26_sliding_window_maximum" -> Ok(nc26_sliding_window_maximum())
     "tip01_list_patterns" -> Ok(tip01_list_patterns())
     "tip02_tail_recursion" -> Ok(tip02_tail_recursion())
     "tip03_fold" -> Ok(tip03_fold())

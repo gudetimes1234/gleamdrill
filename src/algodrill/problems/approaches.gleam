@@ -58,6 +58,12 @@ pub fn for_title(title: String) -> String {
     "Permutation in String" ->
       "A fixed-width sliding window. A permutation of s1 is just any window of length |s1| in s2 with identical character frequencies \u{2014} slide the window one character at a time, incrementally adding the new character and removing the old, comparing frequency maps."
 
+    "Minimum Window Substring" ->
+      "A sliding window that grows until it is valid and shrinks while it stays valid. The whole trick is making \"valid\" a single integer test rather than a map comparison: count how many needed characters are still missing, decrement only when a character that was genuinely still needed arrives, and the window is valid exactly when that count hits zero. Then pull the left edge in as far as it will go before growing again."
+
+    "Sliding Window Maximum" ->
+      "The maximum is not something you can maintain by adding and removing \u{2014} dropping the current maximum leaves you with no idea what the next one is. Two ways out: keep a queue of the indices that could still win, values decreasing, so the front is always the answer; or pre-compute running maxima within blocks of k, since every window straddles at most one block boundary. Both are O(n)."
+
     "Valid Parentheses" ->
       "A stack problem. On every opener, push the closer you expect; on every closer, it must match the top of the stack. Valid means never mismatching and ending with an empty stack."
 

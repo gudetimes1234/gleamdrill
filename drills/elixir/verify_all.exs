@@ -52,6 +52,11 @@ variants = [
   {"nc23_valid_sudoku", "Solution 2 · By unit", "nc23_valid_sudoku__by_unit"},
   {"nc24_trapping_rain_water", "Solution 1", "nc24_trapping_rain_water"},
   {"nc24_trapping_rain_water", "Solution 2 · Prefix maxima", "nc24_trapping_rain_water__prefix_maxima"},
+  {"nc25_min_window_substring", "Solution 1", "nc25_min_window_substring"},
+  {"nc25_min_window_substring", "Solution 2 · Filtered positions", "nc25_min_window_substring__filtered_positions"},
+  {"nc26_sliding_window_maximum", "Solution 1", "nc26_sliding_window_maximum"},
+  {"nc26_sliding_window_maximum", "Solution 2 · Brute force", "nc26_sliding_window_maximum__brute_force"},
+  {"nc26_sliding_window_maximum", "Solution 3 · Monotonic deque", "nc26_sliding_window_maximum__monotonic_deque"},
 ]
 
 root = Path.dirname(__ENV__.file)

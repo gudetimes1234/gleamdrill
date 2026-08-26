@@ -123,6 +123,16 @@ pub fn groups() -> List(Group) {
         "Given two strings s1 and s2, return true if s2 contains a permutation of s1. In other words, return true if one of s1's permutations is a substring of s2.",
         "nc15_permutation_in_string",
       ),
+      Drill(
+        "Minimum Window Substring",
+        "Given two strings s and t, return the minimum window substring of s that contains every character of t, including duplicates. If there is no such substring, return the empty string.",
+        "nc25_min_window_substring",
+      ),
+      Drill(
+        "Sliding Window Maximum",
+        "You are given an array of integers nums and a window of size k sliding from the very left to the very right, one position at a time. Return the maximum in the window at each position.",
+        "nc26_sliding_window_maximum",
+      ),
     ]),
     Group("Stack", [
       Drill(

@@ -49,6 +49,11 @@ import * as v44 from "./.verify/nc23_valid_sudoku/harness";
 import * as v45 from "./.verify/nc23_valid_sudoku__by_unit/harness";
 import * as v46 from "./.verify/nc24_trapping_rain_water/harness";
 import * as v47 from "./.verify/nc24_trapping_rain_water__prefix_maxima/harness";
+import * as v48 from "./.verify/nc25_min_window_substring/harness";
+import * as v49 from "./.verify/nc25_min_window_substring__filtered_positions/harness";
+import * as v50 from "./.verify/nc26_sliding_window_maximum/harness";
+import * as v51 from "./.verify/nc26_sliding_window_maximum__brute_force/harness";
+import * as v52 from "./.verify/nc26_sliding_window_maximum__monotonic_deque/harness";
 
 type Case = [string, string, string];
 
@@ -101,6 +106,11 @@ const VARIANTS: [string, string, () => Case[]][] = [
   ["nc23_valid_sudoku", "Solution 2 · By unit", v45.run],
   ["nc24_trapping_rain_water", "Solution 1", v46.run],
   ["nc24_trapping_rain_water", "Solution 2 · Prefix maxima", v47.run],
+  ["nc25_min_window_substring", "Solution 1", v48.run],
+  ["nc25_min_window_substring", "Solution 2 · Filtered positions", v49.run],
+  ["nc26_sliding_window_maximum", "Solution 1", v50.run],
+  ["nc26_sliding_window_maximum", "Solution 2 · Brute force", v51.run],
+  ["nc26_sliding_window_maximum", "Solution 3 · Monotonic deque", v52.run],
 ];
 
 const failures: string[] = [];

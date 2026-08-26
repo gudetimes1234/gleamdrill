@@ -1329,6 +1329,162 @@ __case__(\"trap([5, 4, 3, 2, 1])\", 0, trap([5, 4, 3, 2, 1]))",
   )
 }
 
+pub fn nc25_min_window_substring() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Count what is still missing, not what is present. Every character the window takes in decrements its requirement, and only a character that was actually still needed moves the counter — so \"missing == 0\" is a single integer test rather than a map comparison. Once the window is valid, shrink from the left until it stops being valid, recording the best as you go.", "def minWindow(s, t):
+    if not s or not t:
+        return \"\"
+
+    need = {}
+    for c in t:
+        need[c] = need.get(c, 0) + 1
+
+    missing = len(t)
+    left = 0
+    best_start, best_length = 0, 0
+
+    for right, c in enumerate(s):
+        if need.get(c, 0) > 0:
+            missing -= 1
+        need[c] = need.get(c, 0) - 1
+
+        while missing == 0:
+            if best_length == 0 or right - left + 1 < best_length:
+                best_start, best_length = left, right - left + 1
+            need[s[left]] += 1
+            if need[s[left]] > 0:
+                missing += 1
+            left += 1
+
+    return s[best_start:best_start + best_length]"),
+      #("Solution 2 · Filtered positions", "Two changes from the counting version, both worth knowing. First, throw away every position whose character is not in the needle: for a long haystack and a short needle, that is nearly the whole walk gone. Second, track how many distinct requirements are fully covered rather than how many characters remain — the counter only moves when a count crosses its requirement.", "def minWindow(s, t):
+    if not s or not t:
+        return \"\"
+
+    need = {}
+    for c in t:
+        need[c] = need.get(c, 0) + 1
+
+    # Only the positions that could possibly matter. For a long haystack and a
+    # short needle this is a far shorter walk than the whole string.
+    positions = [(i, c) for i, c in enumerate(s) if c in need]
+
+    window = {}
+    satisfied = 0
+    left = 0
+    best_start, best_length = 0, 0
+
+    for right, (index, c) in enumerate(positions):
+        window[c] = window.get(c, 0) + 1
+        if window[c] == need[c]:
+            satisfied += 1
+
+        while satisfied == len(need):
+            start = positions[left][0]
+            length = index - start + 1
+            if best_length == 0 or length < best_length:
+                best_start, best_length = start, length
+            leaving = positions[left][1]
+            window[leaving] -= 1
+            if window[leaving] < need[leaving]:
+                satisfied -= 1
+            left += 1
+
+    return s[best_start:best_start + best_length]"),
+    ],
+    check: Check(
+      signature: "def minWindow(s, t):",
+      starter: "def minWindow(s, t):
+    pass",
+      harness: "try:
+    (minWindow)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"minWindow('ADOBECODEBANC', 'ABC')\", \"BANC\", minWindow(\"ADOBECODEBANC\", \"ABC\"))
+__case__(\"minWindow('a', 'a')\", \"a\", minWindow(\"a\", \"a\"))
+__case__(\"minWindow('a', 'aa')\", \"\", minWindow(\"a\", \"aa\"))
+__case__(\"minWindow('', 'a')\", \"\", minWindow(\"\", \"a\"))
+__case__(\"minWindow('ab', '')\", \"\", minWindow(\"ab\", \"\"))
+__case__(\"minWindow('aaflslflsldkalskaaa', 'aaa')\", \"aaa\", minWindow(\"aaflslflsldkalskaaa\", \"aaa\"))",
+    ),
+  )
+}
+
+pub fn nc26_sliding_window_maximum() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Cut the array into blocks of k and pre-compute, within each block, the running maximum forwards and backwards. Any window of width k straddles at most one block boundary, so it is exactly a suffix of one block and a prefix of the next — one max from each, and the whole thing is O(n) with no queue at all.", "def maxSlidingWindow(nums, k):
+    if k <= 0 or len(nums) < k:
+        return []
+
+    n = len(nums)
+    left = [0] * n
+    right = [0] * n
+
+    for i in range(n):
+        left[i] = nums[i] if i % k == 0 else max(left[i - 1], nums[i])
+    for i in range(n - 1, -1, -1):
+        right[i] = nums[i] if i == n - 1 or (i + 1) % k == 0 else max(right[i + 1], nums[i])
+
+    # Every window of width k straddles at most one block boundary, so it is
+    # covered by a suffix of one block and a prefix of the next.
+    return [max(right[i], left[i + k - 1]) for i in range(n - k + 1)]"),
+      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every window, maximised. O(n·k) rather than O(n), which is exactly the rescanning the other two variants exist to avoid.", "def maxSlidingWindow(nums, k):
+    if k <= 0 or len(nums) < k:
+        return []
+    return [max(nums[i:i + k]) for i in range(len(nums) - k + 1)]"),
+      #("Solution 3 · Monotonic deque", "The classic answer. Hold the indices whose value could still be the maximum, kept in decreasing order: a new value pops every smaller one off the back, because they can never win again while it is in the window. The front is always the answer, and the front leaves once it falls out of range. Each index is pushed and popped once.", "from collections import deque
+
+
+def maxSlidingWindow(nums, k):
+    if k <= 0:
+        return []
+
+    window = deque()
+    out = []
+
+    for i, num in enumerate(nums):
+        while window and nums[window[-1]] <= num:
+            window.pop()
+        window.append(i)
+        if window[0] <= i - k:
+            window.popleft()
+        if i >= k - 1:
+            out.append(nums[window[0]])
+
+    return out"),
+    ],
+    check: Check(
+      signature: "def maxSlidingWindow(nums, k):",
+      starter: "def maxSlidingWindow(nums, k):
+    pass",
+      harness: "try:
+    (maxSlidingWindow)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"maxSlidingWindow([1, 3, -1, -3, 5, 3, 6, 7], 3)\", [3, 3, 5, 5, 6, 7], maxSlidingWindow([1, 3, -1, -3, 5, 3, 6, 7], 3))
+__case__(\"maxSlidingWindow([1], 1)\", [1], maxSlidingWindow([1], 1))
+__case__(\"maxSlidingWindow([], 3)\", [], maxSlidingWindow([], 3))
+__case__(\"maxSlidingWindow([9, 8, 7, 6], 2)\", [9, 8, 7], maxSlidingWindow([9, 8, 7, 6], 2))
+__case__(\"maxSlidingWindow([1, -1], 1)\", [1, -1], maxSlidingWindow([1, -1], 1))
+__case__(\"maxSlidingWindow([-7, -8, 7, 5, 7, 1, 6, 0], 4)\", [7, 7, 7, 7, 7], maxSlidingWindow([-7, -8, 7, 5, 7, 1, 6, 0], 4))",
+    ),
+  )
+}
+
 pub fn tip01_counter() -> Embedded {
   Embedded(
     solutions: [
@@ -1727,6 +1883,8 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc22_encode_decode" -> Ok(nc22_encode_decode())
     "nc23_valid_sudoku" -> Ok(nc23_valid_sudoku())
     "nc24_trapping_rain_water" -> Ok(nc24_trapping_rain_water())
+    "nc25_min_window_substring" -> Ok(nc25_min_window_substring())
+    "nc26_sliding_window_maximum" -> Ok(nc26_sliding_window_maximum())
     "tip01_counter" -> Ok(tip01_counter())
     "tip02_defaultdict" -> Ok(tip02_defaultdict())
     "tip03_deque" -> Ok(tip03_deque())
