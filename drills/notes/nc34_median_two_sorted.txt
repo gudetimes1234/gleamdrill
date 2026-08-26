@@ -1,0 +1,1 @@
+Merging, but stopping at the middle and keeping only the last two values seen. The merged array is never built, so it is O(m + n) time and O(1) space. The two values are what makes the even case work: the median is then the average of the middle pair.

@@ -1927,6 +1927,329 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc31_search_2d_matrix() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Twice: the rows do not overlap, so which row a value could be in is itself a halving question — compare the target against a row's first and last entries — and then the row is an ordinary sorted array.", "export function searchMatrix(matrix: number[][], target: number): boolean {
+  // The rows are sorted and do not overlap, so the row a value could live in is
+  // itself found by halving: compare the target against a row's ends.
+  let low = 0;
+  let high = matrix.length - 1;
+  while (low <= high) {
+    const mid = (low + high) >> 1;
+    const row = matrix[mid];
+    if (row[row.length - 1] < target) low = mid + 1;
+    else if (row[0] > target) high = mid - 1;
+    else return contains(row, target);
+  }
+  return false;
+}
+
+function contains(row: number[], target: number): boolean {
+  let low = 0;
+  let high = row.length - 1;
+  while (low <= high) {
+    const mid = (low + high) >> 1;
+    if (row[mid] === target) return true;
+    if (row[mid] < target) low = mid + 1;
+    else high = mid - 1;
+  }
+  return false;
+}"),
+      #("Solution 2 · Staircase", "Start at the top-right corner and every step is forced: a value too big rules out its whole column, a value too small rules out its whole row. O(m + n) rather than O(log mn), but it never uses the fact that the rows do not overlap, so it still works on a matrix that is merely sorted along both axes.", "export function searchMatrix(matrix: number[][], target: number): boolean {
+  if (matrix.length === 0 || matrix[0].length === 0) return false;
+
+  // From the top-right corner every step is forced: too big and the whole
+  // column is too big, so drop it; too small and the whole row is too small, so
+  // drop that. O(m + n), and it never uses the fact that rows do not overlap --
+  // it works on any matrix sorted along both axes.
+  let row = 0;
+  let column = matrix[0].length - 1;
+  while (row < matrix.length && column >= 0) {
+    const value = matrix[row][column];
+    if (value === target) return true;
+    if (value > target) column--;
+    else row++;
+  }
+  return false;
+}"),
+    ],
+    check: Check(
+      signature: "export function searchMatrix(matrix: number[][], target: number): boolean",
+      starter: "export function searchMatrix(matrix: number[][], target: number): boolean {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+const MATRIX = [[1, 3, 5, 7], [10, 11, 16, 20], [23, 30, 34, 60]];
+
+export function run(): [string, string, string][] {
+  if (typeof solution.searchMatrix !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"searchMatrix(matrix, 3)\", show(true), show(solution.searchMatrix(MATRIX, 3))],
+    [\"searchMatrix(matrix, 13)\", show(false), show(solution.searchMatrix(MATRIX, 13))],
+    [\"searchMatrix(matrix, 60)\", show(true), show(solution.searchMatrix(MATRIX, 60))],
+    [\"searchMatrix([[1]], 1)\", show(true), show(solution.searchMatrix([[1]], 1))],
+    [\"searchMatrix([], 1)\", show(false), show(solution.searchMatrix([], 1))],
+    [\"searchMatrix([[1], [3], [5]], 5)\", show(true), show(solution.searchMatrix([[1], [3], [5]], 5))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc32_koko_bananas() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The search space is the answer, not the input. What makes it work is that feasibility is monotone: if a speed finishes in time then so does every faster one, so \"the smallest speed that works\" is a boundary to halve towards.", "export function minEatingSpeed(piles: number[], h: number): number {
+  // The search space is the answer, not the input. Feasibility is monotone --
+  // if a speed finishes in time then so does every faster one -- which is
+  // exactly the property halving needs.
+  let low = 1;
+  let high = Math.max(...piles);
+  while (low < high) {
+    const mid = (low + high) >> 1;
+    if (hours(piles, mid) <= h) high = mid;
+    else low = mid + 1;
+  }
+  return low;
+}
+
+// A pile never shares an hour with another, so each costs ceil(pile / speed).
+function hours(piles: number[], speed: number): number {
+  return piles.reduce((total, pile) => total + Math.ceil(pile / speed), 0);
+}"),
+      #("Solution 2 · Linear scan", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Try 1, then 2, then 3, and stop at the first speed that fits. O(max pile) calls to the same feasibility check the halving version makes O(log max pile) of — worth writing once, because getting the check right is most of the problem.", "export function minEatingSpeed(piles: number[], h: number): number {
+  const highest = Math.max(...piles);
+  let speed = 1;
+  while (speed < highest && hours(piles, speed) > h) speed++;
+  return speed;
+}
+
+function hours(piles: number[], speed: number): number {
+  return piles.reduce((total, pile) => total + Math.ceil(pile / speed), 0);
+}"),
+    ],
+    check: Check(
+      signature: "export function minEatingSpeed(piles: number[], h: number): number",
+      starter: "export function minEatingSpeed(piles: number[], h: number): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.minEatingSpeed !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"minEatingSpeed([3, 6, 7, 11], 8)\", show(4), show(solution.minEatingSpeed([3, 6, 7, 11], 8))],
+    [\"minEatingSpeed([30, 11, 23, 4, 20], 5)\", show(30), show(solution.minEatingSpeed([30, 11, 23, 4, 20], 5))],
+    [\"minEatingSpeed([30, 11, 23, 4, 20], 6)\", show(23), show(solution.minEatingSpeed([30, 11, 23, 4, 20], 6))],
+    [\"minEatingSpeed([1], 1)\", show(1), show(solution.minEatingSpeed([1], 1))],
+    [\"minEatingSpeed([4, 4, 4, 4], 4)\", show(4), show(solution.minEatingSpeed([4, 4, 4, 4], 4))],
+    [\"minEatingSpeed([1, 1, 1, 10], 4)\", show(10), show(solution.minEatingSpeed([1, 1, 1, 10], 4))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc33_time_map() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Timestamps only ever increase, so each key's history is already sorted and needs no sorting on write. The lookup is \"newest entry at or before this time\", which is a halving question: keep the candidate, then keep looking on the newer side for a better one.", "export class TimeMap {
+  private store = new Map<string, [number, string][]>();
+
+  set(key: string, value: string, timestamp: number): void {
+    // Timestamps only ever increase, so appending keeps each key's history
+    // sorted for free.
+    const history = this.store.get(key);
+    if (history) history.push([timestamp, value]);
+    else this.store.set(key, [[timestamp, value]]);
+  }
+
+  get(key: string, timestamp: number): string {
+    // The history is sorted, so the newest entry at or before a timestamp is a
+    // halving question, not a walk.
+    const history = this.store.get(key) ?? [];
+    let low = 0;
+    let high = history.length - 1;
+    let best = \"\";
+    while (low <= high) {
+      const mid = (low + high) >> 1;
+      if (history[mid][0] <= timestamp) {
+        best = history[mid][1];
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+    return best;
+  }
+}"),
+      #("Solution 2 · Linear scan", "Store newest first and the lookup is the first entry old enough — one `find`, no split arithmetic. O(n) per lookup against the halving version's O(log n), which for a key with a handful of versions is the faster of the two in practice.", "export class TimeMap {
+  private store = new Map<string, [number, string][]>();
+
+  set(key: string, value: string, timestamp: number): void {
+    this.store.set(key, [[timestamp, value], ...(this.store.get(key) ?? [])]);
+  }
+
+  get(key: string, timestamp: number): string {
+    // Newest first, so the first entry old enough is the answer. O(n) per
+    // lookup against the halving version's O(log n), but there is no split
+    // arithmetic to get wrong.
+    for (const [stamp, value] of this.store.get(key) ?? []) {
+      if (stamp <= timestamp) return value;
+    }
+    return \"\";
+  }
+}"),
+    ],
+    check: Check(
+      signature: "export class TimeMap
+  set(key: string, value: string, timestamp: number): void
+  get(key: string, timestamp: number): string",
+      starter: "export class TimeMap {
+  set(key: string, value: string, timestamp: number): void {
+    // todo
+  }
+  get(key: string, timestamp: number): string {
+    // todo
+  }
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.TimeMap !== \"function\") throw new Error(\"__signature_mismatch__\");
+
+  const store = new solution.TimeMap();
+  store.set(\"foo\", \"bar\", 1);
+
+  const cases: [string, string, string][] = [
+    [\"get('foo', 1) after set at 1\", show(\"bar\"), show(store.get(\"foo\", 1))],
+    [\"get('foo', 3) with only the value at 1\", show(\"bar\"), show(store.get(\"foo\", 3))],
+  ];
+
+  store.set(\"foo\", \"bar2\", 4);
+
+  cases.push([\"get('foo', 4) after set at 4\", show(\"bar2\"), show(store.get(\"foo\", 4))]);
+  cases.push([\"get('foo', 5) after set at 4\", show(\"bar2\"), show(store.get(\"foo\", 5))]);
+  cases.push([\"get('foo', 3) still sees the older value\", show(\"bar\"), show(store.get(\"foo\", 3))]);
+  cases.push([\"get('foo', 0) before anything was set\", show(\"\"), show(store.get(\"foo\", 0))]);
+  cases.push([\"get('missing', 1)\", show(\"\"), show(store.get(\"missing\", 1))]);
+
+  return cases;
+}",
+    ),
+  )
+}
+
+pub fn nc34_median_two_sorted() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Merging, but stopping at the middle and keeping only the last two values seen. The merged array is never built, so it is O(m + n) time and O(1) space. The two values are what makes the even case work: the median is then the average of the middle pair.", "export function findMedianSortedArrays(nums1: number[], nums2: number[]): number {
+  const total = nums1.length + nums2.length;
+  if (total === 0) return 0;
+
+  // Merge, but stop at the middle and keep only the last two values seen: the
+  // merged array is never built, so this is O(m + n) time and no extra space.
+  let i = 0;
+  let j = 0;
+  let previous = 0;
+  let current = 0;
+  for (let step = 0; step <= Math.floor(total / 2); step++) {
+    previous = current;
+    if (i < nums1.length && (j >= nums2.length || nums1[i] <= nums2[j])) {
+      current = nums1[i++];
+    } else {
+      current = nums2[j++];
+    }
+  }
+
+  return total % 2 === 1 ? current : (previous + current) / 2;
+}"),
+      #("Solution 2 · Concat sort", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Concatenate, sort, take the middle. O((m+n) log(m+n)) and it throws away the fact that both inputs were already sorted — but the indexing is worth seeing once, because averaging positions n/2 and (n-1)/2 handles both parities in one expression.", "export function findMedianSortedArrays(nums1: number[], nums2: number[]): number {
+  const merged = [...nums1, ...nums2].sort((a, b) => a - b);
+  if (merged.length === 0) return 0;
+  // One expression for both parities: for an odd length the two indices are the
+  // same element, so the average of it with itself is itself.
+  return (merged[Math.floor(merged.length / 2)] + merged[Math.floor((merged.length - 1) / 2)]) / 2;
+}"),
+      #("Solution 3 · Partition search", "The O(log min(m, n)) answer, and the reason the problem is rated hard. Do not look for the median: look for a cut through both arrays with exactly half the elements to its left. Such a cut is correct when both left-hand values are no bigger than both right-hand values, and that condition is monotone in where you cut the shorter array — so halve on the cut position.", "export function findMedianSortedArrays(nums1: number[], nums2: number[]): number {
+  // Always halve the shorter side, so the search is O(log min(m, n)).
+  let a = nums1;
+  let b = nums2;
+  if (a.length > b.length) [a, b] = [b, a];
+
+  const m = a.length;
+  const n = b.length;
+  const total = m + n;
+  if (total === 0) return 0;
+  const half = Math.floor((total + 1) / 2);
+
+  let low = 0;
+  let high = m;
+  while (low <= high) {
+    const cut1 = Math.floor((low + high) / 2);
+    const cut2 = half - cut1;
+
+    const left1 = cut1 > 0 ? a[cut1 - 1] : -Infinity;
+    const right1 = cut1 < m ? a[cut1] : Infinity;
+    const left2 = cut2 > 0 ? b[cut2 - 1] : -Infinity;
+    const right2 = cut2 < n ? b[cut2] : Infinity;
+
+    // A correct cut is one where everything left of it is <= everything right
+    // of it, across both arrays.
+    if (left1 <= right2 && left2 <= right1) {
+      if (total % 2 === 1) return Math.max(left1, left2);
+      return (Math.max(left1, left2) + Math.min(right1, right2)) / 2;
+    }
+    if (left1 > right2) high = cut1 - 1;
+    else low = cut1 + 1;
+  }
+
+  return 0;
+}"),
+    ],
+    check: Check(
+      signature: "export function findMedianSortedArrays(nums1: number[], nums2: number[]): number",
+      starter: "export function findMedianSortedArrays(nums1: number[], nums2: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.findMedianSortedArrays !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"findMedianSortedArrays([1, 3], [2])\", show(2), show(solution.findMedianSortedArrays([1, 3], [2]))],
+    [\"findMedianSortedArrays([1, 2], [3, 4])\", show(2.5), show(solution.findMedianSortedArrays([1, 2], [3, 4]))],
+    [\"findMedianSortedArrays([], [1])\", show(1), show(solution.findMedianSortedArrays([], [1]))],
+    [\"findMedianSortedArrays([2], [])\", show(2), show(solution.findMedianSortedArrays([2], []))],
+    [\"findMedianSortedArrays([], [])\", show(0), show(solution.findMedianSortedArrays([], []))],
+    [\"findMedianSortedArrays([1, 2], [])\", show(1.5), show(solution.findMedianSortedArrays([1, 2], []))],
+    [\"findMedianSortedArrays([1, 3, 5, 7], [2, 4, 6])\", show(4), show(solution.findMedianSortedArrays([1, 3, 5, 7], [2, 4, 6]))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -1959,6 +2282,10 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc28_generate_parentheses" -> Ok(nc28_generate_parentheses())
     "nc29_car_fleet" -> Ok(nc29_car_fleet())
     "nc30_largest_rectangle" -> Ok(nc30_largest_rectangle())
+    "nc31_search_2d_matrix" -> Ok(nc31_search_2d_matrix())
+    "nc32_koko_bananas" -> Ok(nc32_koko_bananas())
+    "nc33_time_map" -> Ok(nc33_time_map())
+    "nc34_median_two_sorted" -> Ok(nc34_median_two_sorted())
     _ -> Error(Nil)
   }
 }

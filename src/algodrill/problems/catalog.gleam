@@ -178,6 +178,16 @@ pub fn groups() -> List(Group) {
         "nc19_binary_search",
       ),
       Drill(
+        "Search a 2D Matrix",
+        "You are given an m x n integer matrix where each row is sorted in non-decreasing order and the first integer of each row is greater than the last integer of the row before. Return true if target is in the matrix.",
+        "nc31_search_2d_matrix",
+      ),
+      Drill(
+        "Koko Eating Bananas",
+        "Koko has piles of bananas and h hours before the guards return. At a speed of k bananas per hour she eats k from one pile, and if the pile is smaller she eats it and stops for that hour. Return the smallest k that lets her finish in time.",
+        "nc32_koko_bananas",
+      ),
+      Drill(
         "Find Minimum in Rotated Sorted Array",
         "Suppose an array of length n sorted in ascending order is rotated. Given the rotated array of unique elements, return the minimum element. Must run in O(log n) time.",
         "nc20_find_min_rotated",
@@ -186,6 +196,16 @@ pub fn groups() -> List(Group) {
         "Search in Rotated Sorted Array",
         "Given a rotated sorted array of distinct integers nums and an integer target, return the index of target, or -1 if it is not present. Must run in O(log n) time.",
         "nc21_search_rotated",
+      ),
+      Drill(
+        "Time Based Key-Value Store",
+        "Design a key-value store that keeps multiple values per key, each stamped with a time. set(key, value, timestamp) stores a value; get(key, timestamp) returns the value set at the largest time no later than timestamp, or the empty string if there is none.",
+        "nc33_time_map",
+      ),
+      Drill(
+        "Median of Two Sorted Arrays",
+        "Given two sorted arrays nums1 and nums2, return the median of the two arrays combined.",
+        "nc34_median_two_sorted",
       ),
     ]),
   ]

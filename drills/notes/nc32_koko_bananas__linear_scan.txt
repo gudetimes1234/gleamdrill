@@ -1,0 +1,2 @@
+@shared/brute-force-baseline
+Try 1, then 2, then 3, and stop at the first speed that fits. O(max pile) calls to the same feasibility check the halving version makes O(log max pile) of — worth writing once, because getting the check right is most of the problem.

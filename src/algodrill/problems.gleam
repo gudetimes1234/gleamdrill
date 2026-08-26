@@ -9,7 +9,13 @@ import algodrill/problems/python_tips
 import algodrill/problems/system_design
 import gleam/list
 
+/// Memoised: see problems_ffi.mjs. Deterministic, so the first call builds and
+/// every later one is free.
 pub fn all() -> List(Category) {
+  ffi_memo(build)
+}
+
+fn build() -> List(Category) {
   [
     neetcode_python.category(),
     neetcode_gleam.category(),
@@ -20,6 +26,9 @@ pub fn all() -> List(Category) {
     system_design.category(),
   ]
 }
+
+@external(javascript, "./problems_ffi.mjs", "memo")
+fn ffi_memo(build: fn() -> List(Category)) -> List(Category)
 
 /// Refs for every quiz question in the System Design category, grouped by
 /// subcategory. The exam sampler takes a flat number from each group rather

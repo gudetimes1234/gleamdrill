@@ -1,0 +1,1 @@
+Start at the top-right corner and every step is forced: a value too big rules out its whole column, a value too small rules out its whole row. O(m + n) rather than O(log mn), but it never uses the fact that the rows do not overlap, so it still works on a matrix that is merely sorted along both axes.

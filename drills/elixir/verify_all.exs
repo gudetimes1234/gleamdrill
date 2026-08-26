@@ -65,6 +65,15 @@ variants = [
   {"nc29_car_fleet", "Solution 2 · Pairwise", "nc29_car_fleet__pairwise"},
   {"nc30_largest_rectangle", "Solution 1", "nc30_largest_rectangle"},
   {"nc30_largest_rectangle", "Solution 2 · Expand from each bar", "nc30_largest_rectangle__expand_from_each_bar"},
+  {"nc31_search_2d_matrix", "Solution 1", "nc31_search_2d_matrix"},
+  {"nc31_search_2d_matrix", "Solution 2 · Staircase", "nc31_search_2d_matrix__staircase"},
+  {"nc32_koko_bananas", "Solution 1", "nc32_koko_bananas"},
+  {"nc32_koko_bananas", "Solution 2 · Linear scan", "nc32_koko_bananas__linear_scan"},
+  {"nc33_time_map", "Solution 1", "nc33_time_map"},
+  {"nc33_time_map", "Solution 2 · Linear scan", "nc33_time_map__linear_scan"},
+  {"nc34_median_two_sorted", "Solution 1", "nc34_median_two_sorted"},
+  {"nc34_median_two_sorted", "Solution 2 · Concat sort", "nc34_median_two_sorted__concat_sort"},
+  {"nc34_median_two_sorted", "Solution 3 · Partition search", "nc34_median_two_sorted__partition_search"},
 ]
 
 root = Path.dirname(__ENV__.file)

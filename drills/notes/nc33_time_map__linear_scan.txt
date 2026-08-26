@@ -1,0 +1,1 @@
+Store newest first and the lookup is the first entry old enough — one `find`, no split arithmetic. O(n) per lookup against the halving version's O(log n), which for a key with a handful of versions is the faster of the two in practice.

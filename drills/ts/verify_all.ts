@@ -62,6 +62,15 @@ import * as v57 from "./.verify/nc29_car_fleet/harness";
 import * as v58 from "./.verify/nc29_car_fleet__pairwise/harness";
 import * as v59 from "./.verify/nc30_largest_rectangle/harness";
 import * as v60 from "./.verify/nc30_largest_rectangle__expand_from_each_bar/harness";
+import * as v61 from "./.verify/nc31_search_2d_matrix/harness";
+import * as v62 from "./.verify/nc31_search_2d_matrix__staircase/harness";
+import * as v63 from "./.verify/nc32_koko_bananas/harness";
+import * as v64 from "./.verify/nc32_koko_bananas__linear_scan/harness";
+import * as v65 from "./.verify/nc33_time_map/harness";
+import * as v66 from "./.verify/nc33_time_map__linear_scan/harness";
+import * as v67 from "./.verify/nc34_median_two_sorted/harness";
+import * as v68 from "./.verify/nc34_median_two_sorted__concat_sort/harness";
+import * as v69 from "./.verify/nc34_median_two_sorted__partition_search/harness";
 
 type Case = [string, string, string];
 
@@ -127,6 +136,15 @@ const VARIANTS: [string, string, () => Case[]][] = [
   ["nc29_car_fleet", "Solution 2 · Pairwise", v58.run],
   ["nc30_largest_rectangle", "Solution 1", v59.run],
   ["nc30_largest_rectangle", "Solution 2 · Expand from each bar", v60.run],
+  ["nc31_search_2d_matrix", "Solution 1", v61.run],
+  ["nc31_search_2d_matrix", "Solution 2 · Staircase", v62.run],
+  ["nc32_koko_bananas", "Solution 1", v63.run],
+  ["nc32_koko_bananas", "Solution 2 · Linear scan", v64.run],
+  ["nc33_time_map", "Solution 1", v65.run],
+  ["nc33_time_map", "Solution 2 · Linear scan", v66.run],
+  ["nc34_median_two_sorted", "Solution 1", v67.run],
+  ["nc34_median_two_sorted", "Solution 2 · Concat sort", v68.run],
+  ["nc34_median_two_sorted", "Solution 3 · Partition search", v69.run],
 ];
 
 const failures: string[] = [];

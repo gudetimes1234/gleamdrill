@@ -88,6 +88,18 @@ pub fn for_title(title: String) -> String {
     "Binary Search" ->
       "The classic halving. Compare the target with the middle element and discard the half that can't contain it; repeat until found or empty. O(log n) because the search space halves every step."
 
+    "Search a 2D Matrix" ->
+      "The rows are sorted and do not overlap, so the whole matrix is one sorted sequence wearing a grid costume \u{2014} halve to the row a value could be in, then halve within it, or index the grid as if it were flat. The staircase walk from the top-right is the other answer: every step rules out a whole row or a whole column, and it does not need the non-overlap."
+
+    "Koko Eating Bananas" ->
+      "Binary search on the answer rather than on the input. The speeds run from 1 to the largest pile, and \"can she finish in h hours at this speed?\" is monotone \u{2014} true for a speed means true for every faster one \u{2014} so the smallest speed that works is a boundary you can halve towards. The check itself is a sum of ceil(pile / speed), because piles are never combined within an hour."
+
+    "Time Based Key-Value Store" ->
+      "A map from key to that key's history, and a binary search inside it. Timestamps only ever increase, so appending keeps each history sorted without any sorting; the lookup is then \"the newest entry at or before this time\", which is the standard predecessor search \u{2014} keep the candidate and keep looking on the newer side for a better one."
+
+    "Median of Two Sorted Arrays" ->
+      "The O(log) answer does not look for the median at all: it looks for a cut through both arrays with exactly half the elements to its left, which is correct when both left-hand values are no bigger than both right-hand values. That condition is monotone in where you cut the shorter array, so halve on the cut position. Merging until the middle is the O(m + n) version, and worth writing first."
+
     "Find Minimum in Rotated Sorted Array" ->
       "Binary search on a rotation. The minimum is the one place order breaks. Compare the middle against a boundary: if the segment looks sorted the minimum is at its start; otherwise the rotation point \u{2014} and the minimum \u{2014} hides in the unsorted half."
 

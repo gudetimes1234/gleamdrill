@@ -1366,6 +1366,273 @@ end"),
   ]
 }
 
+pub fn nc31_search_2d_matrix() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Twice: the rows do not overlap, so which row a value could be in is itself a halving question — compare the target against a row's first and last entries — and then the row is an ordinary sorted array.", "defmodule Solution do
+  def search_matrix(matrix, target) do
+    case find_row(List.to_tuple(matrix), target, 0, length(matrix) - 1) do
+      nil -> false
+      row -> contains?(List.to_tuple(row), target, 0, length(row) - 1)
+    end
+  end
+
+  # The rows are sorted and do not overlap, so the row a value could live in is
+  # itself found by halving: compare the target against a row's ends.
+  defp find_row(_rows, _target, low, high) when low > high, do: nil
+
+  defp find_row(rows, target, low, high) do
+    mid = div(low + high, 2)
+    row = elem(rows, mid)
+
+    cond do
+      List.last(row) < target -> find_row(rows, target, mid + 1, high)
+      hd(row) > target -> find_row(rows, target, low, mid - 1)
+      true -> row
+    end
+  end
+
+  defp contains?(_row, _target, low, high) when low > high, do: false
+
+  defp contains?(row, target, low, high) do
+    mid = div(low + high, 2)
+
+    cond do
+      elem(row, mid) == target -> true
+      elem(row, mid) < target -> contains?(row, target, mid + 1, high)
+      true -> contains?(row, target, low, mid - 1)
+    end
+  end
+end"),
+    #("Solution 2 · Staircase", "Start at the top-right corner and every step is forced: a value too big rules out its whole column, a value too small rules out its whole row. O(m + n) rather than O(log mn), but it never uses the fact that the rows do not overlap, so it still works on a matrix that is merely sorted along both axes.", "defmodule Solution do
+  def search_matrix([], _target), do: false
+  def search_matrix([[] | _], _target), do: false
+
+  def search_matrix(matrix, target) do
+    width = length(hd(matrix))
+    walk(matrix, width, target)
+  end
+
+  # From the top-right corner every step is forced: too big and the whole column
+  # is too big, so drop it; too small and the whole row is too small, so drop
+  # that. O(m + n), and it never uses the fact that rows do not overlap -- it
+  # works on any matrix sorted along both axes.
+  defp walk([], _column, _target), do: false
+  defp walk(_rows, column, _target) when column <= 0, do: false
+
+  defp walk([row | below] = rows, column, target) do
+    value = Enum.at(row, column - 1)
+
+    cond do
+      value == target -> true
+      value > target -> walk(rows, column - 1, target)
+      true -> walk(below, column, target)
+    end
+  end
+end"),
+  ]
+}
+
+pub fn nc32_koko_bananas() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The search space is the answer, not the input. What makes it work is that feasibility is monotone: if a speed finishes in time then so does every faster one, so \"the smallest speed that works\" is a boundary to halve towards.", "defmodule Solution do
+  def min_eating_speed(piles, h), do: search(piles, h, 1, Enum.max(piles))
+
+  # The search space is the answer, not the input. Feasibility is monotone -- if
+  # a speed finishes in time then so does every faster one -- which is exactly
+  # the property halving needs.
+  defp search(_piles, _h, low, high) when low >= high, do: low
+
+  defp search(piles, h, low, high) do
+    mid = div(low + high, 2)
+
+    if hours(piles, mid) <= h,
+      do: search(piles, h, low, mid),
+      else: search(piles, h, mid + 1, high)
+  end
+
+  # A pile never shares an hour with another, so each costs ceil(pile / speed).
+  defp hours(piles, speed) do
+    Enum.reduce(piles, 0, fn pile, total -> total + div(pile + speed - 1, speed) end)
+  end
+end"),
+    #("Solution 2 · Linear scan", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Try 1, then 2, then 3, and stop at the first speed that fits. O(max pile) calls to the same feasibility check the halving version makes O(log max pile) of — worth writing once, because getting the check right is most of the problem.", "defmodule Solution do
+  def min_eating_speed(piles, h), do: climb(piles, h, 1, Enum.max(piles))
+
+  defp climb(piles, h, speed, highest) do
+    if speed >= highest or hours(piles, speed) <= h,
+      do: speed,
+      else: climb(piles, h, speed + 1, highest)
+  end
+
+  defp hours(piles, speed) do
+    Enum.reduce(piles, 0, fn pile, total -> total + div(pile + speed - 1, speed) end)
+  end
+end"),
+  ]
+}
+
+pub fn nc33_time_map() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Timestamps only ever increase, so each key's history is already sorted and needs no sorting on write. The lookup is \"newest entry at or before this time\", which is a halving question: keep the candidate, then keep looking on the newer side for a better one.", "defmodule Solution do
+  # Immutable, so the store is a value that set returns a new version of.
+  def new, do: %{}
+
+  # Timestamps only ever increase, so prepending keeps each key's history sorted
+  # newest first for free.
+  def set(store, key, value, timestamp) do
+    Map.update(store, key, [{timestamp, value}], &[{timestamp, value} | &1])
+  end
+
+  def get(store, key, timestamp) do
+    case Map.get(store, key) do
+      nil -> \"\"
+      history -> newest_at_most(List.to_tuple(history), timestamp, 0, length(history) - 1)
+    end
+  end
+
+  # The history is sorted newest first, so the newest entry at or before a
+  # timestamp is a halving question, not a walk.
+  defp newest_at_most(_history, _timestamp, low, high) when low > high, do: \"\"
+
+  defp newest_at_most(history, timestamp, low, high) do
+    mid = div(low + high, 2)
+    {stamp, value} = elem(history, mid)
+
+    if stamp <= timestamp do
+      case newest_at_most(history, timestamp, low, mid - 1) do
+        \"\" -> value
+        newer -> newer
+      end
+    else
+      newest_at_most(history, timestamp, mid + 1, high)
+    end
+  end
+end"),
+    #("Solution 2 · Linear scan", "Store newest first and the lookup is the first entry old enough — one `find`, no split arithmetic. O(n) per lookup against the halving version's O(log n), which for a key with a handful of versions is the faster of the two in practice.", "defmodule Solution do
+  def new, do: %{}
+
+  def set(store, key, value, timestamp) do
+    Map.update(store, key, [{timestamp, value}], &[{timestamp, value} | &1])
+  end
+
+  # Newest first, so the first entry old enough is the answer. O(n) per lookup
+  # against the halving version's O(log n), but there is no split arithmetic to
+  # get wrong.
+  def get(store, key, timestamp) do
+    store
+    |> Map.get(key, [])
+    |> Enum.find_value(\"\", fn {stamp, value} -> if stamp <= timestamp, do: value end)
+  end
+end"),
+  ]
+}
+
+pub fn nc34_median_two_sorted() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Merging, but stopping at the middle and keeping only the last two values seen. The merged array is never built, so it is O(m + n) time and O(1) space. The two values are what makes the even case work: the median is then the average of the middle pair.", "defmodule Solution do
+  def find_median_sorted_arrays([], []), do: 0.0
+
+  def find_median_sorted_arrays(nums1, nums2) do
+    total = length(nums1) + length(nums2)
+    {previous, current} = advance(nums1, nums2, div(total, 2) + 1, 0, 0)
+
+    if rem(total, 2) == 1, do: current / 1, else: (previous + current) / 2
+  end
+
+  # Merge, but stop at the middle and keep only the last two values seen: the
+  # merged list is never built, so this is O(m + n) time and no extra space.
+  defp advance(_a, _b, steps, previous, current) when steps <= 0, do: {previous, current}
+  defp advance([], [], _steps, previous, current), do: {previous, current}
+
+  defp advance([x | rest], [y | _] = b, steps, _previous, current) when x <= y,
+    do: advance(rest, b, steps - 1, current, x)
+
+  defp advance([x | rest], [], steps, _previous, current),
+    do: advance(rest, [], steps - 1, current, x)
+
+  defp advance(a, [y | rest], steps, _previous, current),
+    do: advance(a, rest, steps - 1, current, y)
+end"),
+    #("Solution 2 · Concat sort", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Concatenate, sort, take the middle. O((m+n) log(m+n)) and it throws away the fact that both inputs were already sorted — but the indexing is worth seeing once, because averaging positions n/2 and (n-1)/2 handles both parities in one expression.", "defmodule Solution do
+  def find_median_sorted_arrays([], []), do: 0.0
+
+  def find_median_sorted_arrays(nums1, nums2) do
+    merged = Enum.sort(nums1 ++ nums2)
+    total = length(merged)
+
+    # One expression for both parities: for an odd length the two indices are
+    # the same element, so the average of it with itself is itself.
+    (Enum.at(merged, div(total, 2)) + Enum.at(merged, div(total - 1, 2))) / 2
+  end
+end"),
+    #("Solution 3 · Partition search", "The O(log min(m, n)) answer, and the reason the problem is rated hard. Do not look for the median: look for a cut through both arrays with exactly half the elements to its left. Such a cut is correct when both left-hand values are no bigger than both right-hand values, and that condition is monotone in where you cut the shorter array — so halve on the cut position.", "defmodule Solution do
+  def find_median_sorted_arrays([], []), do: 0.0
+
+  def find_median_sorted_arrays(nums1, nums2) do
+    # Always halve the shorter side, so the search is O(log min(m, n)).
+    {a, b} =
+      if length(nums1) > length(nums2), do: {nums2, nums1}, else: {nums1, nums2}
+
+    m = length(a)
+    total = m + length(b)
+    search(List.to_tuple(a), List.to_tuple(b), m, length(b), total, div(total + 1, 2), 0, m)
+  end
+
+  defp search(a, b, m, n, total, half, low, high) do
+    cut1 = div(low + high, 2)
+    cut2 = half - cut1
+
+    left1 = if cut1 > 0, do: elem(a, cut1 - 1), else: :negative
+    right1 = if cut1 < m, do: elem(a, cut1), else: :positive
+    left2 = if cut2 > 0, do: elem(b, cut2 - 1), else: :negative
+    right2 = if cut2 < n, do: elem(b, cut2), else: :positive
+
+    # A correct cut is one where everything left of it is <= everything right of
+    # it, across both arrays.
+    cond do
+      le(left1, right2) and le(left2, right1) ->
+        if rem(total, 2) == 1 do
+          bigger(left1, left2) / 1
+        else
+          (bigger(left1, left2) + smaller(right1, right2)) / 2
+        end
+
+      not le(left1, right2) ->
+        search(a, b, m, n, total, half, low, cut1 - 1)
+
+      true ->
+        search(a, b, m, n, total, half, cut1 + 1, high)
+    end
+  end
+
+  # :negative and :positive stand in for the infinities at the array edges.
+  defp le(:negative, _), do: true
+  defp le(_, :positive), do: true
+  defp le(:positive, _), do: false
+  defp le(_, :negative), do: false
+  defp le(x, y), do: x <= y
+
+  defp bigger(:negative, y), do: y
+  defp bigger(x, :negative), do: x
+  defp bigger(x, y), do: max(x, y)
+
+  defp smaller(:positive, y), do: y
+  defp smaller(x, :positive), do: x
+  defp smaller(x, y), do: min(x, y)
+end"),
+  ]
+}
+
 pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -1398,6 +1665,10 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
     "nc28_generate_parentheses" -> Ok(nc28_generate_parentheses())
     "nc29_car_fleet" -> Ok(nc29_car_fleet())
     "nc30_largest_rectangle" -> Ok(nc30_largest_rectangle())
+    "nc31_search_2d_matrix" -> Ok(nc31_search_2d_matrix())
+    "nc32_koko_bananas" -> Ok(nc32_koko_bananas())
+    "nc33_time_map" -> Ok(nc33_time_map())
+    "nc34_median_two_sorted" -> Ok(nc34_median_two_sorted())
     _ -> Error(Nil)
   }
 }

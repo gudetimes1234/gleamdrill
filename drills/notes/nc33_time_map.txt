@@ -1,0 +1,2 @@
+@shared/binary-search-halving
+Timestamps only ever increase, so each key's history is already sorted and needs no sorting on write. The lookup is "newest entry at or before this time", which is a halving question: keep the candidate, then keep looking on the newer side for a better one.

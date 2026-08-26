@@ -3254,6 +3254,545 @@ pub fn run() -> List(#(String, String, String)) {
   )
 }
 
+pub fn nc31_search_2d_matrix() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Twice: the rows do not overlap, so which row a value could be in is itself a halving question — compare the target against a row's first and last entries — and then the row is an ordinary sorted array.", "import gleam/int
+import gleam/list
+import gleam/order
+
+pub fn search_matrix(matrix: List(List(Int)), target: Int) -> Bool {
+  case find_row(matrix, target) {
+    Ok(row) -> contains(row, target)
+    Error(Nil) -> False
+  }
+}
+
+/// The rows are sorted and do not overlap, so the row a value could live in is
+/// itself found by halving: compare the target against a row's ends.
+fn find_row(rows: List(List(Int)), target: Int) -> Result(List(Int), Nil) {
+  case rows {
+    [] -> Error(Nil)
+    _ -> {
+      let half = list.length(rows) / 2
+      let #(before, rest) = list.split(rows, half)
+      case rest {
+        [] -> Error(Nil)
+        [row, ..after] ->
+          case list.last(row), list.first(row) {
+            Ok(last), _ if last < target -> find_row(after, target)
+            _, Ok(first) if first > target -> find_row(before, target)
+            Ok(_), Ok(_) -> Ok(row)
+            _, _ -> Error(Nil)
+          }
+      }
+    }
+  }
+}
+
+fn contains(row: List(Int), target: Int) -> Bool {
+  case row {
+    [] -> False
+    _ -> {
+      let half = list.length(row) / 2
+      let #(before, rest) = list.split(row, half)
+      case rest {
+        [] -> False
+        [mid, ..after] ->
+          case int.compare(target, mid) {
+            order.Eq -> True
+            order.Lt -> contains(before, target)
+            order.Gt -> contains(after, target)
+          }
+      }
+    }
+  }
+}"),
+      #("Solution 2 · Staircase", "Start at the top-right corner and every step is forced: a value too big rules out its whole column, a value too small rules out its whole row. O(m + n) rather than O(log mn), but it never uses the fact that the rows do not overlap, so it still works on a matrix that is merely sorted along both axes.", "import gleam/int
+import gleam/list
+import gleam/order
+
+pub fn search_matrix(matrix: List(List(Int)), target: Int) -> Bool {
+  let width = case matrix {
+    [row, ..] -> list.length(row)
+    [] -> 0
+  }
+  walk(matrix, width, target)
+}
+
+/// From the top-right corner every step is forced: too big and the whole column
+/// is too big, so drop it; too small and the whole row is too small, so drop
+/// that. O(m + n), and it never uses the fact that rows do not overlap \\u{2014} it
+/// works on any matrix sorted along both axes.
+fn walk(rows: List(List(Int)), column: Int, target: Int) -> Bool {
+  case rows, column <= 0 {
+    [], _ -> False
+    _, True -> False
+    [row, ..below], False ->
+      case row |> list.drop(column - 1) |> list.first {
+        Error(Nil) -> False
+        Ok(value) ->
+          case int.compare(value, target) {
+            order.Eq -> True
+            order.Gt -> walk(rows, column - 1, target)
+            order.Lt -> walk(below, column, target)
+          }
+      }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn search_matrix(matrix: List(List(Int)), target: Int) -> Bool",
+      starter: "pub fn search_matrix(matrix: List(List(Int)), target: Int) -> Bool {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+const matrix = [[1, 3, 5, 7], [10, 11, 16, 20], [23, 30, 34, 60]]
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"search_matrix(matrix, 3)\",
+      string.inspect(True),
+      string.inspect(solution.search_matrix(matrix, 3)),
+    ),
+    #(
+      \"search_matrix(matrix, 13)\",
+      string.inspect(False),
+      string.inspect(solution.search_matrix(matrix, 13)),
+    ),
+    #(
+      \"search_matrix(matrix, 60)\",
+      string.inspect(True),
+      string.inspect(solution.search_matrix(matrix, 60)),
+    ),
+    #(
+      \"search_matrix([[1]], 1)\",
+      string.inspect(True),
+      string.inspect(solution.search_matrix([[1]], 1)),
+    ),
+    #(
+      \"search_matrix([], 1)\",
+      string.inspect(False),
+      string.inspect(solution.search_matrix([], 1)),
+    ),
+    #(
+      \"search_matrix([[1], [3], [5]], 5)\",
+      string.inspect(True),
+      string.inspect(solution.search_matrix([[1], [3], [5]], 5)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc32_koko_bananas() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The search space is the answer, not the input. What makes it work is that feasibility is monotone: if a speed finishes in time then so does every faster one, so \"the smallest speed that works\" is a boundary to halve towards.", "import gleam/int
+import gleam/list
+
+pub fn min_eating_speed(piles: List(Int), h: Int) -> Int {
+  search(piles, h, 1, list.fold(piles, 1, int.max))
+}
+
+/// The search space is the answer, not the input. Feasibility is monotone \\u{2014}
+/// if a speed finishes in time then so does every faster one \\u{2014} which is
+/// exactly the property halving needs.
+fn search(piles: List(Int), h: Int, low: Int, high: Int) -> Int {
+  case low >= high {
+    True -> low
+    False -> {
+      let mid = { low + high } / 2
+      case hours(piles, mid) <= h {
+        True -> search(piles, h, low, mid)
+        False -> search(piles, h, mid + 1, high)
+      }
+    }
+  }
+}
+
+/// A pile never shares an hour with another, so each costs ceil(pile / speed).
+fn hours(piles: List(Int), speed: Int) -> Int {
+  list.fold(piles, 0, fn(total, pile) { total + { pile + speed - 1 } / speed })
+}"),
+      #("Solution 2 · Linear scan", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Try 1, then 2, then 3, and stop at the first speed that fits. O(max pile) calls to the same feasibility check the halving version makes O(log max pile) of — worth writing once, because getting the check right is most of the problem.", "import gleam/int
+import gleam/list
+
+pub fn min_eating_speed(piles: List(Int), h: Int) -> Int {
+  climb(piles, h, 1, list.fold(piles, 1, int.max))
+}
+
+fn climb(piles: List(Int), h: Int, speed: Int, highest: Int) -> Int {
+  case speed >= highest || hours(piles, speed) <= h {
+    True -> speed
+    False -> climb(piles, h, speed + 1, highest)
+  }
+}
+
+fn hours(piles: List(Int), speed: Int) -> Int {
+  list.fold(piles, 0, fn(total, pile) { total + { pile + speed - 1 } / speed })
+}"),
+    ],
+    check: Check(
+      signature: "pub fn min_eating_speed(piles: List(Int), h: Int) -> Int",
+      starter: "pub fn min_eating_speed(piles: List(Int), h: Int) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"min_eating_speed([3, 6, 7, 11], 8)\",
+      string.inspect(4),
+      string.inspect(solution.min_eating_speed([3, 6, 7, 11], 8)),
+    ),
+    #(
+      \"min_eating_speed([30, 11, 23, 4, 20], 5)\",
+      string.inspect(30),
+      string.inspect(solution.min_eating_speed([30, 11, 23, 4, 20], 5)),
+    ),
+    #(
+      \"min_eating_speed([30, 11, 23, 4, 20], 6)\",
+      string.inspect(23),
+      string.inspect(solution.min_eating_speed([30, 11, 23, 4, 20], 6)),
+    ),
+    #(
+      \"min_eating_speed([1], 1)\",
+      string.inspect(1),
+      string.inspect(solution.min_eating_speed([1], 1)),
+    ),
+    #(
+      \"min_eating_speed([4, 4, 4, 4], 4)\",
+      string.inspect(4),
+      string.inspect(solution.min_eating_speed([4, 4, 4, 4], 4)),
+    ),
+    #(
+      \"min_eating_speed([1, 1, 1, 10], 4)\",
+      string.inspect(10),
+      string.inspect(solution.min_eating_speed([1, 1, 1, 10], 4)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc33_time_map() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Timestamps only ever increase, so each key's history is already sorted and needs no sorting on write. The lookup is \"newest entry at or before this time\", which is a halving question: keep the candidate, then keep looking on the newer side for a better one.", "import gleam/dict.{type Dict}
+import gleam/list
+
+pub type TimeMap {
+  TimeMap(entries: Dict(String, List(#(Int, String))))
+}
+
+pub fn new() -> TimeMap {
+  TimeMap(dict.new())
+}
+
+/// Timestamps only ever increase, so prepending keeps each key's history sorted
+/// newest first for free.
+pub fn set(
+  store: TimeMap,
+  key: String,
+  value: String,
+  timestamp: Int,
+) -> TimeMap {
+  let history = case dict.get(store.entries, key) {
+    Ok(history) -> history
+    Error(Nil) -> []
+  }
+  TimeMap(dict.insert(store.entries, key, [#(timestamp, value), ..history]))
+}
+
+pub fn get(store: TimeMap, key: String, timestamp: Int) -> String {
+  case dict.get(store.entries, key) {
+    Ok(history) -> newest_at_most(history, timestamp)
+    Error(Nil) -> \"\"
+  }
+}
+
+/// The history is sorted, so the newest entry at or before a timestamp is a
+/// halving question, not a walk. Everything before the split point is newer.
+fn newest_at_most(history: List(#(Int, String)), timestamp: Int) -> String {
+  case history {
+    [] -> \"\"
+    _ -> {
+      let half = list.length(history) / 2
+      let #(newer, rest) = list.split(history, half)
+      case rest {
+        [] -> \"\"
+        [#(stamp, value), ..older] ->
+          case stamp <= timestamp {
+            True ->
+              case newest_at_most(newer, timestamp) {
+                \"\" -> value
+                found -> found
+              }
+            False -> newest_at_most(older, timestamp)
+          }
+      }
+    }
+  }
+}"),
+      #("Solution 2 · Linear scan", "Store newest first and the lookup is the first entry old enough — one `find`, no split arithmetic. O(n) per lookup against the halving version's O(log n), which for a key with a handful of versions is the faster of the two in practice.", "import gleam/dict.{type Dict}
+import gleam/list
+
+pub type TimeMap {
+  TimeMap(entries: Dict(String, List(#(Int, String))))
+}
+
+pub fn new() -> TimeMap {
+  TimeMap(dict.new())
+}
+
+pub fn set(
+  store: TimeMap,
+  key: String,
+  value: String,
+  timestamp: Int,
+) -> TimeMap {
+  let history = case dict.get(store.entries, key) {
+    Ok(history) -> history
+    Error(Nil) -> []
+  }
+  TimeMap(dict.insert(store.entries, key, [#(timestamp, value), ..history]))
+}
+
+/// Newest first, so the first entry old enough is the answer. O(n) per lookup
+/// against the halving version's O(log n), but there is no split arithmetic to
+/// get wrong, and for a key with a handful of versions it wins on constants.
+pub fn get(store: TimeMap, key: String, timestamp: Int) -> String {
+  case dict.get(store.entries, key) {
+    Error(Nil) -> \"\"
+    Ok(history) ->
+      case list.find(history, fn(entry) { entry.0 <= timestamp }) {
+        Ok(#(_, value)) -> value
+        Error(Nil) -> \"\"
+      }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub type TimeMap {
+  TimeMap(entries: Dict(String, List(#(Int, String))))
+}
+
+pub fn new() -> TimeMap
+
+pub fn set(
+  store: TimeMap,
+  key: String,
+  value: String,
+  timestamp: Int,
+) -> TimeMap
+
+pub fn get(store: TimeMap, key: String, timestamp: Int) -> String",
+      starter: "pub type TimeMap {
+  TimeMap(entries: Dict(String, List(#(Int, String))))
+}
+
+pub fn new() -> TimeMap {
+  todo
+}
+
+pub fn set(
+  store: TimeMap,
+  key: String,
+  value: String,
+  timestamp: Int,
+) -> TimeMap {
+  todo
+}
+
+pub fn get(store: TimeMap, key: String, timestamp: Int) -> String {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  let store =
+    solution.new()
+    |> solution.set(\"foo\", \"bar\", 1)
+
+  let later = solution.set(store, \"foo\", \"bar2\", 4)
+
+  [
+    #(
+      \"get(\\\"foo\\\", 1) after set at 1\",
+      string.inspect(\"bar\"),
+      string.inspect(solution.get(store, \"foo\", 1)),
+    ),
+    #(
+      \"get(\\\"foo\\\", 3) with only the value at 1\",
+      string.inspect(\"bar\"),
+      string.inspect(solution.get(store, \"foo\", 3)),
+    ),
+    #(
+      \"get(\\\"foo\\\", 4) after set at 4\",
+      string.inspect(\"bar2\"),
+      string.inspect(solution.get(later, \"foo\", 4)),
+    ),
+    #(
+      \"get(\\\"foo\\\", 5) after set at 4\",
+      string.inspect(\"bar2\"),
+      string.inspect(solution.get(later, \"foo\", 5)),
+    ),
+    #(
+      \"get(\\\"foo\\\", 3) still sees the older value\",
+      string.inspect(\"bar\"),
+      string.inspect(solution.get(later, \"foo\", 3)),
+    ),
+    #(
+      \"get(\\\"foo\\\", 0) before anything was set\",
+      string.inspect(\"\"),
+      string.inspect(solution.get(later, \"foo\", 0)),
+    ),
+    #(
+      \"get(\\\"missing\\\", 1)\",
+      string.inspect(\"\"),
+      string.inspect(solution.get(later, \"missing\", 1)),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc34_median_two_sorted() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Merging, but stopping at the middle and keeping only the last two values seen. The merged array is never built, so it is O(m + n) time and O(1) space. The two values are what makes the even case work: the median is then the average of the middle pair.", "import gleam/int
+import gleam/list
+
+pub fn find_median_sorted_arrays(nums1: List(Int), nums2: List(Int)) -> Float {
+  let total = list.length(nums1) + list.length(nums2)
+  case total {
+    0 -> 0.0
+    _ -> {
+      let #(previous, current) = advance(nums1, nums2, total / 2 + 1, 0, 0)
+      case total % 2 {
+        1 -> int.to_float(current)
+        _ -> int.to_float(previous + current) /. 2.0
+      }
+    }
+  }
+}
+
+/// Merge, but stop at the middle and keep only the last two values seen: the
+/// merged list is never built, so this is O(m + n) time and no extra space.
+fn advance(
+  a: List(Int),
+  b: List(Int),
+  steps: Int,
+  previous: Int,
+  current: Int,
+) -> #(Int, Int) {
+  case steps <= 0 {
+    True -> #(previous, current)
+    False ->
+      case a, b {
+        [x, ..rest], [y, ..] if x <= y -> advance(rest, b, steps - 1, current, x)
+        [x, ..rest], [] -> advance(rest, b, steps - 1, current, x)
+        _, [y, ..rest] -> advance(a, rest, steps - 1, current, y)
+        [], [] -> #(previous, current)
+      }
+  }
+}"),
+      #("Solution 2 · Concat sort", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Concatenate, sort, take the middle. O((m+n) log(m+n)) and it throws away the fact that both inputs were already sorted — but the indexing is worth seeing once, because averaging positions n/2 and (n-1)/2 handles both parities in one expression.", "import gleam/int
+import gleam/list
+
+pub fn find_median_sorted_arrays(nums1: List(Int), nums2: List(Int)) -> Float {
+  let merged =
+    nums1
+    |> list.append(nums2)
+    |> list.sort(int.compare)
+  let total = list.length(merged)
+
+  case total, at(merged, total / 2), at(merged, { total - 1 } / 2) {
+    0, _, _ -> 0.0
+    _, upper, lower -> int.to_float(lower + upper) /. 2.0
+  }
+}
+
+fn at(values: List(Int), index: Int) -> Int {
+  case values |> list.drop(index) |> list.first {
+    Ok(value) -> value
+    Error(Nil) -> 0
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn find_median_sorted_arrays(nums1: List(Int), nums2: List(Int)) -> Float",
+      starter: "pub fn find_median_sorted_arrays(nums1: List(Int), nums2: List(Int)) -> Float {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"find_median_sorted_arrays([1, 3], [2])\",
+      string.inspect(2.0),
+      string.inspect(solution.find_median_sorted_arrays([1, 3], [2])),
+    ),
+    #(
+      \"find_median_sorted_arrays([1, 2], [3, 4])\",
+      string.inspect(2.5),
+      string.inspect(solution.find_median_sorted_arrays([1, 2], [3, 4])),
+    ),
+    #(
+      \"find_median_sorted_arrays([], [1])\",
+      string.inspect(1.0),
+      string.inspect(solution.find_median_sorted_arrays([], [1])),
+    ),
+    #(
+      \"find_median_sorted_arrays([2], [])\",
+      string.inspect(2.0),
+      string.inspect(solution.find_median_sorted_arrays([2], [])),
+    ),
+    #(
+      \"find_median_sorted_arrays([], [])\",
+      string.inspect(0.0),
+      string.inspect(solution.find_median_sorted_arrays([], [])),
+    ),
+    #(
+      \"find_median_sorted_arrays([1, 2], [])\",
+      string.inspect(1.5),
+      string.inspect(solution.find_median_sorted_arrays([1, 2], [])),
+    ),
+    #(
+      \"find_median_sorted_arrays([1, 3, 5, 7], [2, 4, 6])\",
+      string.inspect(4.0),
+      string.inspect(
+        solution.find_median_sorted_arrays([1, 3, 5, 7], [2, 4, 6]),
+      ),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
 pub fn tip01_list_patterns() -> Embedded {
   Embedded(
     solutions: [
@@ -4051,6 +4590,10 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc28_generate_parentheses" -> Ok(nc28_generate_parentheses())
     "nc29_car_fleet" -> Ok(nc29_car_fleet())
     "nc30_largest_rectangle" -> Ok(nc30_largest_rectangle())
+    "nc31_search_2d_matrix" -> Ok(nc31_search_2d_matrix())
+    "nc32_koko_bananas" -> Ok(nc32_koko_bananas())
+    "nc33_time_map" -> Ok(nc33_time_map())
+    "nc34_median_two_sorted" -> Ok(nc34_median_two_sorted())
     "tip01_list_patterns" -> Ok(tip01_list_patterns())
     "tip02_tail_recursion" -> Ok(tip02_tail_recursion())
     "tip03_fold" -> Ok(tip03_fold())

@@ -1,0 +1,2 @@
+@shared/binary-search-halving
+The search space is the answer, not the input. What makes it work is that feasibility is monotone: if a speed finishes in time then so does every faster one, so "the smallest speed that works" is a boundary to halve towards.

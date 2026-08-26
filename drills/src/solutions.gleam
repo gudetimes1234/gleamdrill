@@ -73,6 +73,14 @@ import nc29_car_fleet
 import nc29_car_fleet__pairwise
 import nc30_largest_rectangle
 import nc30_largest_rectangle__expand_from_each_bar
+import nc31_search_2d_matrix
+import nc31_search_2d_matrix__staircase
+import nc32_koko_bananas
+import nc32_koko_bananas__linear_scan
+import nc33_time_map
+import nc33_time_map__linear_scan
+import nc34_median_two_sorted
+import nc34_median_two_sorted__concat_sort
 import tip01_list_patterns
 import tip01_list_patterns__stdlib
 import tip02_tail_recursion
@@ -194,6 +202,20 @@ pub fn main() {
     check_largest_rectangle(nc30_largest_rectangle.largest_rectangle_area),
     check_largest_rectangle(
       nc30_largest_rectangle__expand_from_each_bar.largest_rectangle_area,
+    ),
+    check_search_2d_matrix(nc31_search_2d_matrix.search_matrix),
+    check_search_2d_matrix(nc31_search_2d_matrix__staircase.search_matrix),
+    check_koko_bananas(nc32_koko_bananas.min_eating_speed),
+    check_koko_bananas(nc32_koko_bananas__linear_scan.min_eating_speed),
+    check_time_map(nc33_time_map.new, nc33_time_map.set, nc33_time_map.get),
+    check_time_map(
+      nc33_time_map__linear_scan.new,
+      nc33_time_map__linear_scan.set,
+      nc33_time_map__linear_scan.get,
+    ),
+    check_median_two_sorted(nc34_median_two_sorted.find_median_sorted_arrays),
+    check_median_two_sorted(
+      nc34_median_two_sorted__concat_sort.find_median_sorted_arrays,
     ),
 
     // Gleam Tips
@@ -396,6 +418,60 @@ fn check_largest_rectangle(f: fn(List(Int)) -> Int) -> Nil {
   let assert True = f([5]) == 5
   // A zero splits the histogram in two; the best rectangle is on the right.
   let assert True = f([4, 2, 0, 3, 2, 5]) == 6
+  Nil
+}
+
+fn check_search_2d_matrix(f: fn(List(List(Int)), Int) -> Bool) -> Nil {
+  let matrix = [[1, 3, 5, 7], [10, 11, 16, 20], [23, 30, 34, 60]]
+  let assert True = f(matrix, 3)
+  // Falls between two rows rather than inside one.
+  let assert False = f(matrix, 13)
+  let assert True = f(matrix, 60)
+  let assert True = f([[1]], 1)
+  let assert False = f([], 1)
+  let assert True = f([[1], [3], [5]], 5)
+  Nil
+}
+
+fn check_koko_bananas(f: fn(List(Int), Int) -> Int) -> Nil {
+  let assert True = f([3, 6, 7, 11], 8) == 4
+  // Exactly as many hours as piles, so she cannot split any pile across hours.
+  let assert True = f([30, 11, 23, 4, 20], 5) == 30
+  let assert True = f([30, 11, 23, 4, 20], 6) == 23
+  let assert True = f([1], 1) == 1
+  let assert True = f([4, 4, 4, 4], 4) == 4
+  let assert True = f([1, 1, 1, 10], 4) == 10
+  Nil
+}
+
+/// Generic over the store type, so both variants can carry their own.
+fn check_time_map(
+  new: fn() -> store,
+  set: fn(store, String, String, Int) -> store,
+  get: fn(store, String, Int) -> String,
+) -> Nil {
+  let store = set(new(), "foo", "bar", 1)
+  let assert True = get(store, "foo", 1) == "bar"
+  let assert True = get(store, "foo", 3) == "bar"
+
+  let later = set(store, "foo", "bar2", 4)
+  let assert True = get(later, "foo", 4) == "bar2"
+  let assert True = get(later, "foo", 5) == "bar2"
+  // A later write must not hide the value that was current earlier.
+  let assert True = get(later, "foo", 3) == "bar"
+  let assert True = get(later, "foo", 0) == ""
+  let assert True = get(later, "missing", 1) == ""
+  Nil
+}
+
+fn check_median_two_sorted(f: fn(List(Int), List(Int)) -> Float) -> Nil {
+  let assert True = f([1, 3], [2]) == 2.0
+  let assert True = f([1, 2], [3, 4]) == 2.5
+  let assert True = f([], [1]) == 1.0
+  let assert True = f([2], []) == 2.0
+  let assert True = f([], []) == 0.0
+  let assert True = f([1, 2], []) == 1.5
+  let assert True = f([1, 3, 5, 7], [2, 4, 6]) == 4.0
   Nil
 }
 

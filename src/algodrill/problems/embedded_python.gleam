@@ -1761,6 +1761,322 @@ __case__(\"largestRectangleArea([4, 2, 0, 3, 2, 5])\", 6, largestRectangleArea([
   )
 }
 
+pub fn nc31_search_2d_matrix() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Twice: the rows do not overlap, so which row a value could be in is itself a halving question — compare the target against a row's first and last entries — and then the row is an ordinary sorted array.", "def searchMatrix(matrix, target):
+    # The rows are sorted and do not overlap, so the row a value could live in
+    # is itself found by halving: compare the target against a row's ends.
+    low, high = 0, len(matrix) - 1
+    while low <= high:
+        mid = (low + high) // 2
+        if matrix[mid][-1] < target:
+            low = mid + 1
+        elif matrix[mid][0] > target:
+            high = mid - 1
+        else:
+            return contains(matrix[mid], target)
+    return False
+
+
+def contains(row, target):
+    low, high = 0, len(row) - 1
+    while low <= high:
+        mid = (low + high) // 2
+        if row[mid] == target:
+            return True
+        if row[mid] < target:
+            low = mid + 1
+        else:
+            high = mid - 1
+    return False"),
+      #("Solution 2 · Staircase", "Start at the top-right corner and every step is forced: a value too big rules out its whole column, a value too small rules out its whole row. O(m + n) rather than O(log mn), but it never uses the fact that the rows do not overlap, so it still works on a matrix that is merely sorted along both axes.", "def searchMatrix(matrix, target):
+    if not matrix or not matrix[0]:
+        return False
+
+    # From the top-right corner every step is forced: too big and the whole
+    # column is too big, so drop it; too small and the whole row is too small,
+    # so drop that. O(m + n), and it never uses the fact that rows do not
+    # overlap -- it works on any matrix sorted along both axes.
+    row, column = 0, len(matrix[0]) - 1
+    while row < len(matrix) and column >= 0:
+        value = matrix[row][column]
+        if value == target:
+            return True
+        if value > target:
+            column -= 1
+        else:
+            row += 1
+    return False"),
+    ],
+    check: Check(
+      signature: "def searchMatrix(matrix, target):
+
+def contains(row, target):",
+      starter: "def searchMatrix(matrix, target):
+    pass
+
+def contains(row, target):
+    pass",
+      harness: "try:
+    (searchMatrix)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__matrix__ = [[1, 3, 5, 7], [10, 11, 16, 20], [23, 30, 34, 60]]
+
+__case__(\"searchMatrix(matrix, 3)\", True, searchMatrix(__matrix__, 3))
+__case__(\"searchMatrix(matrix, 13)\", False, searchMatrix(__matrix__, 13))
+__case__(\"searchMatrix(matrix, 60)\", True, searchMatrix(__matrix__, 60))
+__case__(\"searchMatrix([[1]], 1)\", True, searchMatrix([[1]], 1))
+__case__(\"searchMatrix([], 1)\", False, searchMatrix([], 1))
+__case__(\"searchMatrix([[1], [3], [5]], 5)\", True, searchMatrix([[1], [3], [5]], 5))",
+    ),
+  )
+}
+
+pub fn nc32_koko_bananas() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The search space is the answer, not the input. What makes it work is that feasibility is monotone: if a speed finishes in time then so does every faster one, so \"the smallest speed that works\" is a boundary to halve towards.", "def minEatingSpeed(piles, h):
+    # The search space is the answer, not the input. Feasibility is monotone --
+    # if a speed finishes in time then so does every faster one -- which is
+    # exactly the property halving needs.
+    low, high = 1, max(piles)
+    while low < high:
+        mid = (low + high) // 2
+        if hours(piles, mid) <= h:
+            high = mid
+        else:
+            low = mid + 1
+    return low
+
+
+# A pile never shares an hour with another, so each costs ceil(pile / speed).
+def hours(piles, speed):
+    return sum((pile + speed - 1) // speed for pile in piles)"),
+      #("Solution 2 · Linear scan", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Try 1, then 2, then 3, and stop at the first speed that fits. O(max pile) calls to the same feasibility check the halving version makes O(log max pile) of — worth writing once, because getting the check right is most of the problem.", "def minEatingSpeed(piles, h):
+    highest = max(piles)
+    speed = 1
+    while speed < highest and hours(piles, speed) > h:
+        speed += 1
+    return speed
+
+
+def hours(piles, speed):
+    return sum((pile + speed - 1) // speed for pile in piles)"),
+    ],
+    check: Check(
+      signature: "def minEatingSpeed(piles, h):
+
+def hours(piles, speed):",
+      starter: "def minEatingSpeed(piles, h):
+    pass
+
+def hours(piles, speed):
+    pass",
+      harness: "try:
+    (minEatingSpeed)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"minEatingSpeed([3, 6, 7, 11], 8)\", 4, minEatingSpeed([3, 6, 7, 11], 8))
+__case__(\"minEatingSpeed([30, 11, 23, 4, 20], 5)\", 30, minEatingSpeed([30, 11, 23, 4, 20], 5))
+__case__(\"minEatingSpeed([30, 11, 23, 4, 20], 6)\", 23, minEatingSpeed([30, 11, 23, 4, 20], 6))
+__case__(\"minEatingSpeed([1], 1)\", 1, minEatingSpeed([1], 1))
+__case__(\"minEatingSpeed([4, 4, 4, 4], 4)\", 4, minEatingSpeed([4, 4, 4, 4], 4))
+__case__(\"minEatingSpeed([1, 1, 1, 10], 4)\", 10, minEatingSpeed([1, 1, 1, 10], 4))",
+    ),
+  )
+}
+
+pub fn nc33_time_map() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Timestamps only ever increase, so each key's history is already sorted and needs no sorting on write. The lookup is \"newest entry at or before this time\", which is a halving question: keep the candidate, then keep looking on the newer side for a better one.", "class TimeMap:
+    def __init__(self):
+        self.store = {}
+
+    def set(self, key, value, timestamp):
+        # Timestamps only ever increase, so appending keeps each key's history
+        # sorted for free.
+        self.store.setdefault(key, []).append((timestamp, value))
+
+    def get(self, key, timestamp):
+        # The history is sorted, so the newest entry at or before a timestamp is
+        # a halving question, not a walk.
+        history = self.store.get(key, [])
+        low, high = 0, len(history) - 1
+        best = \"\"
+        while low <= high:
+            mid = (low + high) // 2
+            if history[mid][0] <= timestamp:
+                best = history[mid][1]
+                low = mid + 1
+            else:
+                high = mid - 1
+        return best"),
+      #("Solution 2 · Linear scan", "Store newest first and the lookup is the first entry old enough — one `find`, no split arithmetic. O(n) per lookup against the halving version's O(log n), which for a key with a handful of versions is the faster of the two in practice.", "class TimeMap:
+    def __init__(self):
+        self.store = {}
+
+    def set(self, key, value, timestamp):
+        self.store.setdefault(key, []).insert(0, (timestamp, value))
+
+    def get(self, key, timestamp):
+        # Newest first, so the first entry old enough is the answer. O(n) per
+        # lookup against the halving version's O(log n), but there is no split
+        # arithmetic to get wrong.
+        for stamp, value in self.store.get(key, []):
+            if stamp <= timestamp:
+                return value
+        return \"\""),
+    ],
+    check: Check(
+      signature: "class TimeMap:
+    def __init__(self):
+    def set(self, key, value, timestamp):
+    def get(self, key, timestamp):",
+      starter: "class TimeMap:
+    def __init__(self):
+        pass
+    def set(self, key, value, timestamp):
+        pass
+    def get(self, key, timestamp):
+        pass",
+      harness: "try:
+    (TimeMap)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__store__ = TimeMap()
+__store__.set(\"foo\", \"bar\", 1)
+
+__case__(\"get('foo', 1) after set at 1\", \"bar\", __store__.get(\"foo\", 1))
+__case__(\"get('foo', 3) with only the value at 1\", \"bar\", __store__.get(\"foo\", 3))
+
+__store__.set(\"foo\", \"bar2\", 4)
+
+__case__(\"get('foo', 4) after set at 4\", \"bar2\", __store__.get(\"foo\", 4))
+__case__(\"get('foo', 5) after set at 4\", \"bar2\", __store__.get(\"foo\", 5))
+__case__(\"get('foo', 3) still sees the older value\", \"bar\", __store__.get(\"foo\", 3))
+__case__(\"get('foo', 0) before anything was set\", \"\", __store__.get(\"foo\", 0))
+__case__(\"get('missing', 1)\", \"\", __store__.get(\"missing\", 1))",
+    ),
+  )
+}
+
+pub fn nc34_median_two_sorted() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Merging, but stopping at the middle and keeping only the last two values seen. The merged array is never built, so it is O(m + n) time and O(1) space. The two values are what makes the even case work: the median is then the average of the middle pair.", "def findMedianSortedArrays(nums1, nums2):
+    total = len(nums1) + len(nums2)
+    if total == 0:
+        return 0.0
+
+    # Merge, but stop at the middle and keep only the last two values seen: the
+    # merged array is never built, so this is O(m + n) time and no extra space.
+    i = j = 0
+    previous = current = 0
+    for _ in range(total // 2 + 1):
+        previous = current
+        if i < len(nums1) and (j >= len(nums2) or nums1[i] <= nums2[j]):
+            current = nums1[i]
+            i += 1
+        else:
+            current = nums2[j]
+            j += 1
+
+    if total % 2 == 1:
+        return float(current)
+    return (previous + current) / 2"),
+      #("Solution 2 · Concat sort", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Concatenate, sort, take the middle. O((m+n) log(m+n)) and it throws away the fact that both inputs were already sorted — but the indexing is worth seeing once, because averaging positions n/2 and (n-1)/2 handles both parities in one expression.", "def findMedianSortedArrays(nums1, nums2):
+    merged = sorted(nums1 + nums2)
+    if not merged:
+        return 0.0
+    # One expression for both parities: for an odd length the two indices are
+    # the same element, so the average of it with itself is itself.
+    return (merged[len(merged) // 2] + merged[(len(merged) - 1) // 2]) / 2"),
+      #("Solution 3 · Partition search", "The O(log min(m, n)) answer, and the reason the problem is rated hard. Do not look for the median: look for a cut through both arrays with exactly half the elements to its left. Such a cut is correct when both left-hand values are no bigger than both right-hand values, and that condition is monotone in where you cut the shorter array — so halve on the cut position.", "def findMedianSortedArrays(nums1, nums2):
+    # Always halve the shorter side, so the search is O(log min(m, n)).
+    if len(nums1) > len(nums2):
+        nums1, nums2 = nums2, nums1
+
+    m, n = len(nums1), len(nums2)
+    total = m + n
+    if total == 0:
+        return 0.0
+    half = (total + 1) // 2
+
+    low, high = 0, m
+    while low <= high:
+        cut1 = (low + high) // 2
+        cut2 = half - cut1
+
+        left1 = nums1[cut1 - 1] if cut1 > 0 else float(\"-inf\")
+        right1 = nums1[cut1] if cut1 < m else float(\"inf\")
+        left2 = nums2[cut2 - 1] if cut2 > 0 else float(\"-inf\")
+        right2 = nums2[cut2] if cut2 < n else float(\"inf\")
+
+        # A correct cut is one where everything left of it is <= everything
+        # right of it, across both arrays.
+        if left1 <= right2 and left2 <= right1:
+            if total % 2 == 1:
+                return float(max(left1, left2))
+            return (max(left1, left2) + min(right1, right2)) / 2
+        if left1 > right2:
+            high = cut1 - 1
+        else:
+            low = cut1 + 1
+
+    return 0.0"),
+    ],
+    check: Check(
+      signature: "def findMedianSortedArrays(nums1, nums2):",
+      starter: "def findMedianSortedArrays(nums1, nums2):
+    pass",
+      harness: "try:
+    (findMedianSortedArrays)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"findMedianSortedArrays([1, 3], [2])\", 2.0, findMedianSortedArrays([1, 3], [2]))
+__case__(\"findMedianSortedArrays([1, 2], [3, 4])\", 2.5, findMedianSortedArrays([1, 2], [3, 4]))
+__case__(\"findMedianSortedArrays([], [1])\", 1.0, findMedianSortedArrays([], [1]))
+__case__(\"findMedianSortedArrays([2], [])\", 2.0, findMedianSortedArrays([2], []))
+__case__(\"findMedianSortedArrays([], [])\", 0.0, findMedianSortedArrays([], []))
+__case__(\"findMedianSortedArrays([1, 2], [])\", 1.5, findMedianSortedArrays([1, 2], []))
+__case__(\"findMedianSortedArrays([1, 3, 5, 7], [2, 4, 6])\", 4.0, findMedianSortedArrays([1, 3, 5, 7], [2, 4, 6]))",
+    ),
+  )
+}
+
 pub fn tip01_counter() -> Embedded {
   Embedded(
     solutions: [
@@ -2165,6 +2481,10 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc28_generate_parentheses" -> Ok(nc28_generate_parentheses())
     "nc29_car_fleet" -> Ok(nc29_car_fleet())
     "nc30_largest_rectangle" -> Ok(nc30_largest_rectangle())
+    "nc31_search_2d_matrix" -> Ok(nc31_search_2d_matrix())
+    "nc32_koko_bananas" -> Ok(nc32_koko_bananas())
+    "nc33_time_map" -> Ok(nc33_time_map())
+    "nc34_median_two_sorted" -> Ok(nc34_median_two_sorted())
     "tip01_counter" -> Ok(tip01_counter())
     "tip02_defaultdict" -> Ok(tip02_defaultdict())
     "tip03_deque" -> Ok(tip03_deque())
