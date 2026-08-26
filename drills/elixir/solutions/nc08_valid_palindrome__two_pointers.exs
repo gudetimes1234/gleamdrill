@@ -1,6 +1,5 @@
 defmodule Solution do
   def palindrome?(s) do
-    # Compare inwards from both ends instead of building a reversed copy.
     cleaned =
       s
       |> String.downcase()

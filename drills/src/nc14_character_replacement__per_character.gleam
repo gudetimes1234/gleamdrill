@@ -2,9 +2,6 @@ import gleam/int
 import gleam/list
 import gleam/string
 
-/// One sweep per distinct character, asking a much simpler question each time:
-/// how long a window can I hold if *this* is the character I keep? The answer
-/// is the best of those. No running frequency map, no max-count bookkeeping.
 pub fn character_replacement(s: String, k: Int) -> Int {
   let graphemes = string.to_graphemes(s)
   graphemes

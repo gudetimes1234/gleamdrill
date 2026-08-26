@@ -1,0 +1,2 @@
+@shared/sorting-instead-of-hashing
+Runs are contiguous once sorted, so one pass counting steps of exactly one finds the longest. Duplicates neither extend a run nor break it, which is the only case worth care.

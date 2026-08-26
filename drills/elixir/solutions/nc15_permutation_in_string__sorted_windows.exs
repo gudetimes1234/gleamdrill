@@ -1,7 +1,5 @@
 defmodule Solution do
   def inclusion?(s1, s2) do
-    # Every window of the right length, sorted and compared. Slower, but there
-    # is no incremental state to get wrong.
     needle = s1 |> String.graphemes() |> Enum.sort()
     size = length(needle)
     graphemes = String.graphemes(s2)

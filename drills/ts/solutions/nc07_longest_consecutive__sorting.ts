@@ -1,6 +1,4 @@
 export function longestConsecutive(nums: number[]): number {
-  // No set: sort, then walk once counting runs. O(n log n) rather than O(n),
-  // but it needs no extra structure and the run logic reads straight through.
   if (nums.length === 0) return 0;
 
   const ordered = [...nums].sort((a, b) => a - b);

@@ -1,6 +1,4 @@
 def lengthOfLongestSubstring(s):
-    # No set, no dict: ask the string itself whether this character already
-    # appeared inside the current window, and if so start just past it.
     longest = 0
     start = 0
 

@@ -1,0 +1,2 @@
+@shared/brute-force-baseline
+For each slot, multiply everything that is not in it. O(n^2), and exactly what the prefix/suffix pass replaces.

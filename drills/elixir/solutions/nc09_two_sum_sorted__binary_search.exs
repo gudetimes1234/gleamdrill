@@ -1,6 +1,5 @@
 defmodule Solution do
   def two_sum_sorted(numbers, target) do
-    # Fix each number and binary search the tail for its complement.
     tuple = List.to_tuple(numbers)
 
     Enum.find_value(0..(tuple_size(tuple) - 1)//1, fn i ->

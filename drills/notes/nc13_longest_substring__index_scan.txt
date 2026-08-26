@@ -1,0 +1,1 @@
+No set and no map: ask the string itself whether this character already appeared inside the current window, and if so restart just past it.

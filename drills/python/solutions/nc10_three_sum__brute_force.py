@@ -1,6 +1,4 @@
 def threeSum(nums):
-    # Every triple, checked. Sorting first means each triple comes out in
-    # ascending order, so duplicates are literal list equality.
     ordered = sorted(nums)
     result = []
 

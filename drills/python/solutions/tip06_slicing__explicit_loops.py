@@ -1,6 +1,4 @@
 def reversedString(s):
-    # Every slice spelled out as a loop. The slices are better in real code;
-    # writing them this way once makes the step and the negative bounds obvious.
     out = ""
     for char in s:
         out = char + out

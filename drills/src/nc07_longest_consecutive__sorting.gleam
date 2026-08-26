@@ -1,8 +1,6 @@
 import gleam/int
 import gleam/list
 
-/// No set: sort, then walk once counting runs. O(n log n) rather than O(n), but
-/// it needs no extra structure and the run logic is easier to hold in your head.
 pub fn longest_consecutive(nums: List(Int)) -> Int {
   case list.sort(nums, int.compare) {
     [] -> 0

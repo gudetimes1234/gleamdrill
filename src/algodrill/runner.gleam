@@ -91,13 +91,15 @@ fn message_decoder(language: String) -> Decoder(Msg) {
     "ready" -> decode.success(RunnerReady(language))
     "result" -> {
       use id <- decode.field("id", decode.int)
+      use stdout <- stdout_field()
       use outcome <- result_decoder()
-      decode.success(RunFinished(id, outcome))
+      decode.success(RunFinished(id, outcome, stdout))
     }
     "error" -> {
       use id <- decode.field("id", decode.int)
+      use stdout <- stdout_field()
       use outcome <- error_decoder()
-      decode.success(RunFinished(id, outcome))
+      decode.success(RunFinished(id, outcome, stdout))
     }
     _ -> decode.failure(RunnerReady(language), "Msg")
   }
@@ -122,6 +124,11 @@ fn error_decoder(next: fn(RunOutcome) -> Decoder(Msg)) -> Decoder(Msg) {
   use column <- nullable_field("column", decode.int)
   use message <- decode.field("message", decode.string)
   next(Errored(RunError(phase, file, line, column, message)))
+}
+
+/// Optional so a worker bundle built before stdout capture still decodes.
+fn stdout_field(next: fn(String) -> Decoder(a)) -> Decoder(a) {
+  decode.optional_field("stdout", "", decode.string, next)
 }
 
 fn nullable_field(

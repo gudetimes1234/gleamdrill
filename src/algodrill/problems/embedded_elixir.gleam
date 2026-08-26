@@ -2,18 +2,17 @@
 //// Source of truth: drills/elixir/solutions/*.exs.
 //// Reveal-only: Elixir drills carry solutions but no Check.
 
-pub fn nc01_contains_duplicate() -> List(#(String, String)) {
+pub fn nc01_contains_duplicate() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "A set answers the whole question. Walk once, and the moment a value is already in the set you are done — no need to finish the pass, and no need to know where the duplicate was.", "defmodule Solution do
   def contains_duplicate?(nums) do
-    # A MapSet collapses duplicates, so a shrunken size is the answer.
     MapSet.size(MapSet.new(nums)) != length(nums)
   end
 end"),
-    #("Solution 2 · Sorting", "defmodule Solution do
+    #("Solution 2 · Sorting", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+
+Duplicates land next to each other, so comparing neighbouring pairs is enough.", "defmodule Solution do
   def contains_duplicate?(nums) do
-    # Duplicates are adjacent once sorted, so a sliding pair over the sorted
-    # list answers it without holding every value in a set.
     nums
     |> Enum.sort()
     |> Enum.chunk_every(2, 1, :discard)
@@ -23,9 +22,9 @@ end"),
   ]
 }
 
-pub fn nc02_valid_anagram() -> List(#(String, String)) {
+pub fn nc02_valid_anagram() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "Two strings are anagrams exactly when every character occurs the same number of times in both, so build a count per string and compare the two maps.", "defmodule Solution do
   def anagram?(s, t) do
     frequencies(s) == frequencies(t)
   end
@@ -34,9 +33,10 @@ pub fn nc02_valid_anagram() -> List(#(String, String)) {
     word |> String.graphemes() |> Enum.frequencies()
   end
 end"),
-    #("Solution 2 · Sorting", "defmodule Solution do
+    #("Solution 2 · Sorting", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+Sorted letters are the canonical form, so the whole check is one equality. No counting to get wrong.", "defmodule Solution do
   def anagram?(s, t) do
-    # Two words are anagrams exactly when their sorted letters match.
     sorted(s) == sorted(t)
   end
 
@@ -45,9 +45,9 @@ end"),
   ]
 }
 
-pub fn nc03_two_sum() -> List(#(String, String)) {
+pub fn nc03_two_sum() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "Every number seen so far is already in the map, so the complement is one lookup away — one pass, O(1) per step, and the map hands back the index for free.", "defmodule Solution do
   def two_sum(nums, target) do
     find_pair(Enum.with_index(nums), target, %{})
   end
@@ -62,7 +62,9 @@ pub fn nc03_two_sum() -> List(#(String, String)) {
     end
   end
 end"),
-    #("Solution 2 · Brute force", "defmodule Solution do
+    #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every ordered pair, checked, stopping at the first hit.", "defmodule Solution do
   def two_sum(nums, target) do
     indexed = Enum.with_index(nums)
 
@@ -77,19 +79,21 @@ end"),
   ]
 }
 
-pub fn nc04_group_anagrams() -> List(#(String, String)) {
+pub fn nc04_group_anagrams() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len) to build against sorting's O(len log len); the sorted word needs no assumption about the alphabet.", "defmodule Solution do
   def group_anagrams(strs) do
     strs
     |> Enum.group_by(fn s -> s |> String.graphemes() |> Enum.sort() end)
     |> Map.values()
   end
 end"),
-    #("Solution 2 · Count key", "defmodule Solution do
+    #("Solution 2 · Count key", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+A letter tally is anagram-invariant too, and costs O(len) to build rather than O(len log len).", "defmodule Solution do
   def group_anagrams(strs) do
-    # A letter tally is anagram-invariant too, and costs O(len) to build rather
-    # than O(len log len).
     strs
     |> Enum.group_by(fn s -> s |> String.graphemes() |> Enum.frequencies() end)
     |> Map.values()
@@ -98,9 +102,9 @@ end"),
   ]
 }
 
-pub fn nc05_top_k_frequent() -> List(#(String, String)) {
+pub fn nc05_top_k_frequent() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.", "defmodule Solution do
   def top_k_frequent(nums, k) do
     nums
     |> Enum.frequencies()
@@ -109,10 +113,8 @@ pub fn nc05_top_k_frequent() -> List(#(String, String)) {
     |> Enum.map(fn {num, _count} -> num end)
   end
 end"),
-    #("Solution 2 · Bucket sort", "defmodule Solution do
+    #("Solution 2 · Bucket sort", "A count can never exceed the input length, so one bucket per frequency covers every possibility. Reading the buckets downwards gives the answer in O(n) and replaces the comparison sort entirely.", "defmodule Solution do
   def top_k_frequent(nums, k) do
-    # A count can never exceed the input length, so grouping by count and
-    # reading the groups downwards replaces the comparison sort entirely.
     buckets =
       nums
       |> Enum.frequencies()
@@ -126,11 +128,10 @@ end"),
   ]
 }
 
-pub fn nc06_product_except_self() -> List(#(String, String)) {
+pub fn nc06_product_except_self() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "The answer at each slot is everything before it times everything after it. One forward pass builds the prefixes, one reverse pass folds in the suffixes — and no division, so a zero in the input costs nothing special.", "defmodule Solution do
   def product_except_self(nums) do
-    # Everything before each slot, times everything after it — no division.
     prefixes = nums |> Enum.scan(1, &(&1 * &2)) |> then(&[1 | Enum.drop(&1, -1)])
 
     suffixes =
@@ -143,9 +144,10 @@ pub fn nc06_product_except_self() -> List(#(String, String)) {
     Enum.zip_with(prefixes, suffixes, &(&1 * &2))
   end
 end"),
-    #("Solution 2 · Brute force", "defmodule Solution do
+    #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+For each slot, multiply everything that is not in it. O(n^2), and exactly what the prefix/suffix pass replaces.", "defmodule Solution do
   def product_except_self(nums) do
-    # The obvious O(n^2) reading: for each slot, multiply everything else.
     indexed = Enum.with_index(nums)
 
     Enum.map(indexed, fn {_num, i} ->
@@ -159,9 +161,9 @@ end"),
   ]
 }
 
-pub fn nc07_longest_consecutive() -> List(#(String, String)) {
+pub fn nc07_longest_consecutive() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "Put everything in a set, then only start counting at numbers with no predecessor. That guard is what keeps it O(n): every run is walked exactly once instead of once per member.", "defmodule Solution do
   def longest_consecutive(nums) do
     all = MapSet.new(nums)
 
@@ -176,10 +178,10 @@ pub fn nc07_longest_consecutive() -> List(#(String, String)) {
     if MapSet.member?(all, n), do: run_length(all, n + 1, count + 1), else: count
   end
 end"),
-    #("Solution 2 · Sorting", "defmodule Solution do
+    #("Solution 2 · Sorting", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+
+Runs are contiguous once sorted, so one pass counting steps of exactly one finds the longest. Duplicates neither extend a run nor break it, which is the only case worth care.", "defmodule Solution do
   def longest_consecutive(nums) do
-    # No set: sort, then fold once over the gaps. O(n log n) rather than O(n),
-    # but the run logic reads straight through.
     case Enum.sort(nums) do
       [] ->
         0
@@ -201,9 +203,9 @@ end"),
   ]
 }
 
-pub fn nc08_valid_palindrome() -> List(#(String, String)) {
+pub fn nc08_valid_palindrome() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.", "defmodule Solution do
   def palindrome?(s) do
     cleaned = clean(s)
     cleaned == Enum.reverse(cleaned)
@@ -216,9 +218,8 @@ pub fn nc08_valid_palindrome() -> List(#(String, String)) {
     |> Enum.filter(&(&1 =~ ~r/^[a-z0-9]$/))
   end
 end"),
-    #("Solution 2 · Two pointers", "defmodule Solution do
+    #("Solution 2 · Two pointers", "Compare inwards from both ends, skipping anything that is not alphanumeric as you go. No second string is built.", "defmodule Solution do
   def palindrome?(s) do
-    # Compare inwards from both ends instead of building a reversed copy.
     cleaned =
       s
       |> String.downcase()
@@ -237,12 +238,12 @@ end"),
   ]
 }
 
-pub fn nc09_two_sum_sorted() -> List(#(String, String)) {
+pub fn nc09_two_sum_sorted() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "Sorted input plus a pointer at each end. A sum that is too small can only be fixed by raising the low end, one that is too large by lowering the high end, so neither pointer ever needs to go back. They meet in O(n) with no extra memory.
+
+Positions are 1-based here, which is the only trap.", "defmodule Solution do
   def two_sum_sorted(numbers, target) do
-    # Positions are 1-based. Sorted input means too small can only be fixed by
-    # raising the low end, too large by lowering the high end.
     converge(numbers, Enum.reverse(numbers), 1, length(numbers), target)
   end
 
@@ -256,9 +257,10 @@ pub fn nc09_two_sum_sorted() -> List(#(String, String)) {
     end
   end
 end"),
-    #("Solution 2 · Binary search", "defmodule Solution do
+    #("Solution 2 · Binary search", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Fix each number in turn and search the tail for its complement, rather than converging two pointers. O(n log n), and it reuses a search you already know instead of a second pointer discipline.", "defmodule Solution do
   def two_sum_sorted(numbers, target) do
-    # Fix each number and binary search the tail for its complement.
     tuple = List.to_tuple(numbers)
 
     Enum.find_value(0..(tuple_size(tuple) - 1)//1, fn i ->
@@ -284,9 +286,9 @@ end"),
   ]
 }
 
-pub fn nc10_three_sum() -> List(#(String, String)) {
+pub fn nc10_three_sum() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "Sort, fix one number, then run the two-pointer scan on the remainder looking for its negation. Sorting is what makes the duplicate triples skippable: equal values are adjacent, so stepping past them is a while loop, not a set.", "defmodule Solution do
   def three_sum(nums) do
     sorted = Enum.sort(nums)
 
@@ -316,10 +318,10 @@ pub fn nc10_three_sum() -> List(#(String, String)) {
     end
   end
 end"),
-    #("Solution 2 · Brute force", "defmodule Solution do
+    #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every triple, checked. Sorting first means each triple comes out in ascending order, so collapsing the duplicates that repeated values produce is plain equality — no set needed.", "defmodule Solution do
   def three_sum(nums) do
-    # Every triple, checked. Sorting first means each triple comes out in
-    # ascending order, so `uniq` is enough to collapse the repeats.
     indexed = nums |> Enum.sort() |> Enum.with_index()
 
     triples =
@@ -336,9 +338,9 @@ end"),
   ]
 }
 
-pub fn nc11_container_water() -> List(#(String, String)) {
+pub fn nc11_container_water() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "Start at both ends. The area is capped by the shorter line, so moving the taller one in can never help — always move the shorter, and track the best area seen.", "defmodule Solution do
   def max_area(heights) do
     converge(heights, Enum.reverse(heights), length(heights) - 1, 0)
   end
@@ -356,10 +358,10 @@ pub fn nc11_container_water() -> List(#(String, String)) {
     end
   end
 end"),
-    #("Solution 2 · Brute force", "defmodule Solution do
+    #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every pair of lines, measured. O(n^2), but it makes what the two-pointer sweep is maximising explicit: shorter line times distance.", "defmodule Solution do
   def max_area(heights) do
-    # Every pair of lines, measured — the definition the two-pointer sweep is
-    # an optimisation of.
     indexed = Enum.with_index(heights)
 
     areas =
@@ -374,11 +376,10 @@ end"),
   ]
 }
 
-pub fn nc12_best_time_stock() -> List(#(String, String)) {
+pub fn nc12_best_time_stock() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "Carry the cheapest price seen so far; today's best sale is today's price against that minimum. One pass, two variables.", "defmodule Solution do
   def max_profit(prices) do
-    # Carry the cheapest day seen so far; today's best sale is against that.
     {_lowest, profit} =
       Enum.reduce(prices, {nil, 0}, fn price, {lowest, profit} ->
         lowest = if lowest == nil, do: price, else: min(lowest, price)
@@ -388,10 +389,10 @@ pub fn nc12_best_time_stock() -> List(#(String, String)) {
     profit
   end
 end"),
-    #("Solution 2 · Brute force", "defmodule Solution do
+    #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every buy day against every later sell day. O(n^2), and the problem statement written out.", "defmodule Solution do
   def max_profit(prices) do
-    # Every buy day against every later sell day. O(n^2), and the problem
-    # statement written out.
     indexed = Enum.with_index(prices)
 
     profits =
@@ -406,9 +407,9 @@ end"),
   ]
 }
 
-pub fn nc13_longest_substring() -> List(#(String, String)) {
+pub fn nc13_longest_substring() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.", "defmodule Solution do
   def length_of_longest_substring(s) do
     {_last_seen, _start, best} =
       s
@@ -428,10 +429,8 @@ pub fn nc13_longest_substring() -> List(#(String, String)) {
     best
   end
 end"),
-    #("Solution 2 · Shrinking window", "defmodule Solution do
+    #("Solution 2 · Shrinking window", "The window itself is the bookkeeping: on a repeat, drop everything up to and including the earlier copy. No last-seen map at all, at the cost of scanning the window on each repeat.", "defmodule Solution do
   def length_of_longest_substring(s) do
-    # The window itself is the bookkeeping: on a repeat, drop everything up to
-    # and including the earlier copy. No last-seen map at all.
     {_window, best} =
       s
       |> String.graphemes()
@@ -451,9 +450,9 @@ end"),
   ]
 }
 
-pub fn nc14_character_replacement() -> List(#(String, String)) {
+pub fn nc14_character_replacement() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "A window can be made uniform with k changes when its size minus its most-frequent-character count is at most k. Grow the right edge, shrink from the left when that breaks, and the biggest valid window is the answer.", "defmodule Solution do
   def character_replacement(s, k) do
     {_counts, _window, best} =
       s
@@ -480,12 +479,10 @@ pub fn nc14_character_replacement() -> List(#(String, String)) {
     end
   end
 end"),
-    #("Solution 2 · Per character", "defmodule Solution do
+    #("Solution 2 · Per character", "One sweep per letter, asking a much simpler question each time: how long a window can I hold if *this* is the letter I keep? No running frequency map and no max-count bookkeeping — 26 easy passes instead of one subtle one.", "defmodule Solution do
   @alphabet String.graphemes(\"ABCDEFGHIJKLMNOPQRSTUVWXYZ\")
 
   def character_replacement(s, k) do
-    # One sweep per letter, asking a much simpler question each time: how long
-    # a window can I hold if *this* is the letter I keep?
     graphemes = String.graphemes(s)
     Enum.reduce(@alphabet, 0, fn target, best -> max(best, sweep(graphemes, graphemes, 0, 0, 0, target, k)) end)
   end
@@ -508,9 +505,9 @@ end"),
   ]
 }
 
-pub fn nc15_permutation_in_string() -> List(#(String, String)) {
+pub fn nc15_permutation_in_string() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "A permutation of s1 is any window of length |s1| in s2 with identical character counts. Slide one character at a time, adding the entering character and removing the leaving one, so each step is O(1) rather than a recount.", "defmodule Solution do
   def inclusion?(s1, s2) do
     need = s1 |> String.graphemes() |> Enum.frequencies()
     size = String.length(s1)
@@ -537,10 +534,8 @@ pub fn nc15_permutation_in_string() -> List(#(String, String)) {
     slide(oldest, upcoming, window, need)
   end
 end"),
-    #("Solution 2 · Sorted windows", "defmodule Solution do
+    #("Solution 2 · Sorted windows", "Every window of the right length, sorted and compared against the sorted needle. Slower than sliding counts, but there is no incremental state to get wrong: the whole method is \"is this window an anagram?\".", "defmodule Solution do
   def inclusion?(s1, s2) do
-    # Every window of the right length, sorted and compared. Slower, but there
-    # is no incremental state to get wrong.
     needle = s1 |> String.graphemes() |> Enum.sort()
     size = length(needle)
     graphemes = String.graphemes(s2)
@@ -555,9 +550,9 @@ end"),
   ]
 }
 
-pub fn nc16_valid_parentheses() -> List(#(String, String)) {
+pub fn nc16_valid_parentheses() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "On every opener, push the closer you expect; on every closer, it must match the top. Valid means never mismatching and finishing with an empty stack — both halves are needed.", "defmodule Solution do
   @closers %{\"(\" => \")\", \"[\" => \"]\", \"{\" => \"}\"}
 
   def valid?(s) do
@@ -574,11 +569,8 @@ pub fn nc16_valid_parentheses() -> List(#(String, String)) {
     end
   end
 end"),
-    #("Solution 2 · Reduction", "defmodule Solution do
+    #("Solution 2 · Reduction", "No stack: strip every matched pair, over and over, until nothing more can go. Whatever survives is unmatched. It is also why \"([)]\" fails — neither pair is ever adjacent.", "defmodule Solution do
   def valid?(s) do
-    # No stack: strip every matched pair, over and over. Whatever survives is
-    # unmatched — which is also why \"([)]\" fails, since neither pair is ever
-    # adjacent.
     reduce(s) == \"\"
   end
 
@@ -590,9 +582,9 @@ end"),
   ]
 }
 
-pub fn nc17_min_stack() -> List(#(String, String)) {
+pub fn nc17_min_stack() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.", "defmodule Solution do
   # Immutable, so the \"stack\" is a value that each operation returns a new
   # version of. Each entry carries the minimum of everything at or below it.
   def new, do: []
@@ -616,7 +608,7 @@ pub fn nc17_min_stack() -> List(#(String, String)) {
   def get_min([{_value, minimum} | _]), do: minimum
   def get_min([]), do: nil
 end"),
-    #("Solution 2 · Two stacks", "defmodule Solution do
+    #("Solution 2 · Two stacks", "Values in one stack, running minimums in a parallel one. The two concerns stay separate, which is what makes adding a max stack a copy-paste.", "defmodule Solution do
   # Values in one list, running minimums in a parallel one. The two concerns
   # stay separate, which is what makes adding a max stack a copy-paste.
   def new, do: {[], []}
@@ -643,12 +635,10 @@ end"),
   ]
 }
 
-pub fn nc18_daily_temperatures() -> List(#(String, String)) {
+pub fn nc18_daily_temperatures() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "A stack of days still waiting for something warmer, kept in decreasing temperature order. Each new day resolves and pops every colder day below it, so every day is pushed once and popped once — O(n).", "defmodule Solution do
   def daily_temperatures(temps) do
-    # A stack of days still waiting for something warmer; each day resolves
-    # every colder day below it, so each day is pushed and popped once.
     {answers, _stack} =
       temps
       |> Enum.with_index()
@@ -666,10 +656,10 @@ pub fn nc18_daily_temperatures() -> List(#(String, String)) {
 
   defp resolve(answers, stack, _temp, _i), do: {answers, stack}
 end"),
-    #("Solution 2 · Brute force", "defmodule Solution do
+    #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+For each day, scan forward until it gets warmer. O(n^2) — the monotonic stack exists only to avoid rescanning the same cold stretch once per day.", "defmodule Solution do
   def daily_temperatures(temps) do
-    # For each day, scan forward until it gets warmer. O(n^2) — the monotonic
-    # stack exists only to avoid rescanning the same cold stretch every day.
     temps
     |> Enum.with_index()
     |> Enum.map(fn {temp, i} ->
@@ -683,12 +673,12 @@ end"),
   ]
 }
 
-pub fn nc19_binary_search() -> List(#(String, String)) {
+pub fn nc19_binary_search() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Worth writing until the bounds are automatic: this is the search every rotated-array problem is built on top of.", "defmodule Solution do
   def search(nums, target) do
-    # Lists have no random access, so index into a tuple instead — otherwise
-    # every \"midpoint\" would cost a walk and the log would be a lie.
     halve(List.to_tuple(nums), target, 0, length(nums) - 1)
   end
 
@@ -704,19 +694,21 @@ pub fn nc19_binary_search() -> List(#(String, String)) {
     end
   end
 end"),
-    #("Solution 2 · First match scan", "defmodule Solution do
+    #("Solution 2 · First match scan", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+A plain indexed scan. O(n), so it fails the stated requirement — but it is what the halving has to beat, and it shows exactly what the sortedness buys.", "defmodule Solution do
   def search(nums, target) do
-    # O(n), so it fails the stated requirement — but it is the baseline the
-    # halving has to beat, and on a short list it wins on constants.
     Enum.find_index(nums, &(&1 == target))
   end
 end"),
   ]
 }
 
-pub fn nc20_find_min_rotated() -> List(#(String, String)) {
+pub fn nc20_find_min_rotated() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The minimum is the one place order breaks. Compare the midpoint against a boundary: a segment that still looks sorted cannot hold the break, so the answer is in the other half.", "defmodule Solution do
   def find_min([]), do: nil
 
   def find_min(nums) do
@@ -738,7 +730,9 @@ pub fn nc20_find_min_rotated() -> List(#(String, String)) {
     end
   end
 end"),
-    #("Solution 2 · Linear scan", "defmodule Solution do
+    #("Solution 2 · Linear scan", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+O(n) rather than O(log n), but it makes the shape obvious: a rotated sorted array drops in value exactly once, and that drop is the minimum. No drop means it was never rotated, so the head wins.", "defmodule Solution do
   def find_min([]), do: nil
 
   def find_min([head | rest]) do
@@ -756,9 +750,11 @@ end"),
   ]
 }
 
-pub fn nc21_search_rotated() -> List(#(String, String)) {
+pub fn nc21_search_rotated() -> List(#(String, String, String)) {
   [
-    #("Solution 1", "defmodule Solution do
+    #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The twist: after a rotation, one half around the midpoint is always sorted. Work out which, then use its endpoints to decide whether the target lies inside it.", "defmodule Solution do
   def search_rotated(nums, target) do
     halve(List.to_tuple(nums), target, 0, length(nums) - 1)
   end
@@ -786,10 +782,10 @@ pub fn nc21_search_rotated() -> List(#(String, String)) {
     end
   end
 end"),
-    #("Solution 2 · Find pivot", "defmodule Solution do
+    #("Solution 2 · Find pivot", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Two plain steps instead of one clever one: find where the rotation wrapped, which leaves two ordinary sorted runs, then search each. Nothing has to reason mid-search about which half is sorted.", "defmodule Solution do
   def search_rotated(nums, target) do
-    # Two plain steps instead of one clever one: find where the rotation
-    # wrapped, which leaves two ordinary sorted runs, then binary search each.
     tuple = List.to_tuple(nums)
     pivot = rotation_point(nums)
     size = tuple_size(tuple)

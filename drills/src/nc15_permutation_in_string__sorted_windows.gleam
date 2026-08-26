@@ -1,9 +1,6 @@
 import gleam/list
 import gleam/string
 
-/// Every window of the right length, sorted and compared against the sorted
-/// needle. Slower than sliding counts, but there is no incremental state to get
-/// wrong — the whole method is "is this window an anagram?".
 pub fn check_inclusion(s1: String, s2: String) -> Bool {
   let needle =
     string.to_graphemes(s1)

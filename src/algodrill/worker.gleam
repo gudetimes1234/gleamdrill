@@ -11,7 +11,7 @@
 //// this; the site sets no CSP.
 
 import gleam/dynamic.{type Dynamic}
-import gleam/dynamic/decode
+import gleam/dynamic/decode.{type Decoder}
 import gleam/int
 import gleam/javascript/promise.{type Promise}
 import gleam/json.{type Json}
@@ -112,7 +112,7 @@ fn serve(
     diagnostic -> {
       post(
         request.id,
-        Failed("compile", diagnostic),
+        Failed("compile", diagnostic, ""),
         drain_warnings(compiler, []),
       )
       promise.resolve(Nil)
@@ -128,8 +128,8 @@ fn rewrite_imports(js: String, precompiled: String) -> String {
 }
 
 type Outcome {
-  Ran(cases: List(#(String, String, String)))
-  Failed(phase: String, message: String)
+  Ran(cases: List(#(String, String, String)), stdout: String)
+  Failed(phase: String, message: String, stdout: String)
 }
 
 fn decode_outcome(outcome: Dynamic) -> Outcome {
@@ -141,15 +141,31 @@ fn decode_outcome(outcome: Dynamic) -> Outcome {
   }
   let ran = {
     use cases <- decode.field("cases", decode.list(case_decoder))
-    decode.success(Ran(cases))
+    use stdout <- stdout_field()
+    decode.success(Ran(cases, stdout))
   }
   let failed = {
     use message <- decode.field("error", decode.string)
-    decode.success(Failed("run", message))
+    use stdout <- stdout_field()
+    decode.success(Failed("run", message, stdout))
   }
   case decode.run(outcome, decode.one_of(ran, [failed])) {
     Ok(decoded) -> decoded
-    Error(_) -> Failed("run", "The harness produced an unreadable result.")
+    Error(_) -> Failed("run", "The harness produced an unreadable result.", "")
+  }
+}
+
+/// Capped here rather than in the view: a print inside a hot loop must not get
+/// as far as postMessage, let alone the DOM.
+fn stdout_field(next: fn(String) -> Decoder(a)) -> Decoder(a) {
+  use text <- decode.optional_field("stdout", "", decode.string)
+  next(truncate(text, 4000))
+}
+
+fn truncate(text: String, max: Int) -> String {
+  case string.length(text) > max {
+    True -> string.slice(text, 0, max) <> "\u{2026}"
+    False -> text
   }
 }
 
@@ -163,7 +179,7 @@ fn drain_warnings(compiler: Compiler, acc: List(String)) -> List(String) {
 fn post(id: Int, outcome: Outcome, warnings: List(String)) -> Nil {
   let warnings_json = #("warnings", json.array(warnings, json.string))
   let payload = case outcome {
-    Ran(cases) ->
+    Ran(cases, stdout) ->
       json.object([
         #("type", json.string("result")),
         #("id", json.int(id)),
@@ -178,9 +194,10 @@ fn post(id: Int, outcome: Outcome, warnings: List(String)) -> Nil {
             ])
           }),
         ),
+        #("stdout", json.string(stdout)),
         warnings_json,
       ])
-    Failed(phase, message) -> {
+    Failed(phase, message, stdout) -> {
       let location = locate(message)
       json.object([
         #("type", json.string("error")),
@@ -190,6 +207,7 @@ fn post(id: Int, outcome: Outcome, warnings: List(String)) -> Nil {
         #("line", nullable_int(option.map(location, fn(l) { l.1 }))),
         #("column", nullable_int(option.map(location, fn(l) { l.2 }))),
         #("message", json.string(message)),
+        #("stdout", json.string(stdout)),
         warnings_json,
       ])
     }

@@ -134,13 +134,13 @@ pub fn category() -> Category {
 fn drill(
   title: String,
   prompt: String,
-  solutions: List(#(String, String)),
+  solutions: List(#(String, String, String)),
 ) -> Problem {
   Problem(
     title: title,
     prompt: prompt,
     approach: approaches.for_title(title),
-    solutions: list.map(solutions, fn(s) { Solution(label: s.0, code: s.1) }),
+    solutions: list.map(solutions, fn(s) { Solution(label: s.0, note: s.1, code: s.2) }),
     language: Elixir,
     check: None,
     quiz: None,

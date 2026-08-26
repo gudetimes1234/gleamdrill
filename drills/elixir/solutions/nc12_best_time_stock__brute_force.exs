@@ -1,7 +1,5 @@
 defmodule Solution do
   def max_profit(prices) do
-    # Every buy day against every later sell day. O(n^2), and the problem
-    # statement written out.
     indexed = Enum.with_index(prices)
 
     profits =

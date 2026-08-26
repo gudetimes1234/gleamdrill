@@ -1,8 +1,5 @@
 defmodule Solution do
   def valid?(s) do
-    # No stack: strip every matched pair, over and over. Whatever survives is
-    # unmatched — which is also why "([)]" fails, since neither pair is ever
-    # adjacent.
     reduce(s) == ""
   end
 

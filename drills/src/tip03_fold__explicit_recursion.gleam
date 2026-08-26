@@ -1,9 +1,6 @@
 import gleam/int
 import gleam/list
 
-/// What each fold expands to. Useful to write once so the folded version stops
-/// looking like magic — and to notice that `count_if` here is not tail
-/// recursive, while the fold always is.
 pub fn max(numbers: List(Int)) -> Result(Int, Nil) {
   case numbers {
     [] -> Error(Nil)

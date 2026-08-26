@@ -1,7 +1,4 @@
 def checkInclusion(s1, s2):
-    # Every window of the right length, sorted and compared. Slower than
-    # sliding counts, but there is no incremental state to get wrong: the whole
-    # method is "is this window an anagram?".
     if len(s1) > len(s2):
         return False
 

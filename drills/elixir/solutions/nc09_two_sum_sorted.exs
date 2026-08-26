@@ -1,7 +1,5 @@
 defmodule Solution do
   def two_sum_sorted(numbers, target) do
-    # Positions are 1-based. Sorted input means too small can only be fixed by
-    # raising the low end, too large by lowering the high end.
     converge(numbers, Enum.reverse(numbers), 1, length(numbers), target)
   end
 

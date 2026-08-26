@@ -550,7 +550,8 @@ details.approach summary:focus-visible {
 /* Prose reads in the UI font; everything code-shaped stays monospace. Prompts
    run several sentences and monospace costs real width on a phone. */
 .problem-prompt,
-.approach-text {
+.approach-text,
+.answer-note {
     font-family: var(--font-ui);
     font-size: 14px;
 }
@@ -760,6 +761,23 @@ gleam-editor .cm-editor {
     color: var(--text-secondary);
 }
 
+/* Whatever the attempt printed. Same slab as .results-message, but the text is
+   the user's own, so it keeps the primary colour rather than reading as chrome. */
+.results-stdout {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin-top: 6px;
+    overflow-x: auto;
+    white-space: pre;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text-primary);
+    max-height: 220px;
+    overflow-y: auto;
+}
+
 .results-details summary {
     cursor: pointer;
     color: var(--text-secondary);
@@ -774,6 +792,18 @@ gleam-editor .cm-editor {
     padding: 15px;
     overflow-x: auto;
     box-shadow: 0 8px 24px -18px var(--success);
+}
+
+/* Sits between the label and the code: what this particular approach does, as
+   prose, so the code below it can carry only the comments that explain a line. */
+.answer-note {
+    color: var(--text-secondary);
+    /* Notes are one paragraph per line — the shared technique blurb, then what
+       this variant does with it. pre-line is what keeps them apart. */
+    white-space: pre-line;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
 }
 
 .answer-content pre {

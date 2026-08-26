@@ -4,13 +4,13 @@
 import algodrill/problem.{type Check, Check}
 
 pub type Embedded {
-  Embedded(solutions: List(#(String, String)), check: Check)
+  Embedded(solutions: List(#(String, String, String)), check: Check)
 }
 
 pub fn nc01_contains_duplicate() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/set
+      #("Solution 1", "A set answers the whole question. Walk once, and the moment a value is already in the set you are done — no need to finish the pass, and no need to know where the duplicate was.", "import gleam/set
 
 pub fn contains_duplicate(nums: List(Int)) -> Bool {
   check(nums, set.new())
@@ -26,7 +26,9 @@ fn check(nums: List(Int), seen: set.Set(Int)) -> Bool {
       }
   }
 }"),
-      #("Solution 2 · Sorting", "import gleam/int
+      #("Solution 2 · Sorting", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+
+Duplicates land next to each other, so comparing neighbouring pairs is enough.", "import gleam/int
 import gleam/list
 
 pub fn contains_duplicate(nums: List(Int)) -> Bool {
@@ -82,7 +84,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc02_valid_anagram() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/dict
+      #("Solution 1", "Two strings are anagrams exactly when every character occurs the same number of times in both, so build a count per string and compare the two maps.", "import gleam/dict
 import gleam/list
 import gleam/option
 import gleam/string
@@ -97,7 +99,9 @@ fn counts(word: String) -> dict.Dict(String, Int) {
     dict.upsert(acc, g, fn(n) { option.unwrap(n, 0) + 1 })
   })
 }"),
-      #("Solution 2 · Sorting", "import gleam/list
+      #("Solution 2 · Sorting", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+Sorted letters are the canonical form, so the whole check is one equality. No counting to get wrong.", "import gleam/list
 import gleam/string
 
 pub fn is_anagram(s: String, t: String) -> Bool {
@@ -151,7 +155,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc03_two_sum() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/dict
+      #("Solution 1", "Every number seen so far is already in the map, so the complement is one lookup away — one pass, O(1) per step, and the map hands back the index for free.", "import gleam/dict
 
 pub fn two_sum(nums: List(Int), target: Int) -> Result(#(Int, Int), Nil) {
   find_pair(nums, target, 0, dict.new())
@@ -172,7 +176,9 @@ fn find_pair(
       }
   }
 }"),
-      #("Solution 2 · Brute force", "import gleam/list
+      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every ordered pair, checked, stopping at the first hit.", "import gleam/list
 
 pub fn two_sum(nums: List(Int), target: Int) -> Result(#(Int, Int), Nil) {
   outer(nums, target, 0)
@@ -197,7 +203,9 @@ fn inner(nums: List(Int), needed: Int, j: Int) -> Result(Int, Nil) {
     }
   })
 }"),
-      #("Solution 3 · Sorted two pointer", "import gleam/int
+      #("Solution 3 · Sorted two pointer", "Sorted input plus a pointer at each end. A sum that is too small can only be fixed by raising the low end, one that is too large by lowering the high end, so neither pointer ever needs to go back. They meet in O(n) with no extra memory.
+
+Sorting loses the original positions, which is the whole difficulty here: carry each number's index alongside it and report those at the end.", "import gleam/int
 import gleam/list
 import gleam/order
 
@@ -272,7 +280,9 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc04_group_anagrams() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/dict
+      #("Solution 1", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len) to build against sorting's O(len log len); the sorted word needs no assumption about the alphabet.", "import gleam/dict
 import gleam/list
 import gleam/option
 import gleam/string
@@ -294,7 +304,9 @@ pub fn group_anagrams(strs: List(String)) -> List(List(String)) {
   |> dict.values
   |> list.map(list.reverse)
 }"),
-      #("Solution 2 · Count key", "import gleam/dict
+      #("Solution 2 · Count key", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+A letter tally is anagram-invariant too, and costs O(len) to build rather than O(len log len).", "import gleam/dict
 import gleam/int
 import gleam/list
 import gleam/option
@@ -375,7 +387,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc05_top_k_frequent() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/dict
+      #("Solution 1", "Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.", "import gleam/dict
 import gleam/int
 import gleam/list
 import gleam/option
@@ -390,7 +402,7 @@ pub fn top_k_frequent(nums: List(Int), k: Int) -> List(Int) {
   |> list.take(k)
   |> list.map(fn(pair) { pair.0 })
 }"),
-      #("Solution 2 · Bucket sort", "import gleam/dict
+      #("Solution 2 · Bucket sort", "A count can never exceed the input length, so one bucket per frequency covers every possibility. Reading the buckets downwards gives the answer in O(n) and replaces the comparison sort entirely.", "import gleam/dict
 import gleam/list
 import gleam/option
 
@@ -466,7 +478,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc06_product_except_self() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/list
+      #("Solution 1", "The answer at each slot is everything before it times everything after it. One forward pass builds the prefixes, one reverse pass folds in the suffixes — and no division, so a zero in the input costs nothing special.", "import gleam/list
 
 pub fn product_except_self(nums: List(Int)) -> List(Int) {
   let n = list.length(nums)
@@ -482,10 +494,10 @@ pub fn product_except_self(nums: List(Int)) -> List(Int) {
     |> list.reverse
   list.map2(prefixes, suffixes, fn(prefix, suffix) { prefix * suffix })
 }"),
-      #("Solution 2 · Brute force", "import gleam/list
+      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-/// The obvious O(n²) reading of the problem: for each slot, multiply everything
-/// that is not in it. Worth knowing as the thing the prefix/suffix trick beats.
+For each slot, multiply everything that is not in it. O(n^2), and exactly what the prefix/suffix pass replaces.", "import gleam/list
+
 pub fn product_except_self(nums: List(Int)) -> List(Int) {
   list.index_map(nums, fn(_, i) {
     list.index_fold(nums, 1, fn(product, n, j) {
@@ -531,7 +543,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc07_longest_consecutive() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/int
+      #("Solution 1", "Put everything in a set, then only start counting at numbers with no predecessor. That guard is what keeps it O(n): every run is walked exactly once instead of once per member.", "import gleam/int
 import gleam/list
 import gleam/set
 
@@ -553,11 +565,11 @@ fn run_length(all: set.Set(Int), n: Int, count: Int) -> Int {
     False -> count
   }
 }"),
-      #("Solution 2 · Sorting", "import gleam/int
+      #("Solution 2 · Sorting", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+
+Runs are contiguous once sorted, so one pass counting steps of exactly one finds the longest. Duplicates neither extend a run nor break it, which is the only case worth care.", "import gleam/int
 import gleam/list
 
-/// No set: sort, then walk once counting runs. O(n log n) rather than O(n), but
-/// it needs no extra structure and the run logic is easier to hold in your head.
 pub fn longest_consecutive(nums: List(Int)) -> Int {
   case list.sort(nums, int.compare) {
     [] -> 0
@@ -614,7 +626,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc08_valid_palindrome() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/list
+      #("Solution 1", "Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.", "import gleam/list
 import gleam/string
 
 pub fn is_palindrome(s: String) -> Bool {
@@ -642,7 +654,7 @@ fn is_digit(n: Int) -> Bool {
 fn is_lowercase_letter(n: Int) -> Bool {
   n >= 97 && n <= 122
 }"),
-      #("Solution 2 · Two pointers", "import gleam/list
+      #("Solution 2 · Two pointers", "Compare inwards from both ends, skipping anything that is not alphanumeric as you go. No second string is built.", "import gleam/list
 import gleam/string
 
 pub fn is_palindrome(s: String) -> Bool {
@@ -728,7 +740,9 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc09_two_sum_sorted() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/int
+      #("Solution 1", "Sorted input plus a pointer at each end. A sum that is too small can only be fixed by raising the low end, one that is too large by lowering the high end, so neither pointer ever needs to go back. They meet in O(n) with no extra memory.
+
+Positions are 1-based here, which is the only trap.", "import gleam/int
 import gleam/list
 import gleam/order
 
@@ -760,13 +774,12 @@ fn search(
     _, _ -> Error(Nil)
   }
 }"),
-      #("Solution 2 · Binary search", "import gleam/int
+      #("Solution 2 · Binary search", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Fix each number in turn and search the tail for its complement, rather than converging two pointers. O(n log n), and it reuses a search you already know instead of a second pointer discipline.", "import gleam/int
 import gleam/list
 import gleam/order
 
-/// Instead of converging two pointers, fix each number and binary search the
-/// tail for its complement — O(n log n), and it reuses the binary search you
-/// already know rather than a second pointer discipline.
 pub fn two_sum_sorted(
   numbers: List(Int),
   target: Int,
@@ -854,7 +867,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc10_three_sum() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/int
+      #("Solution 1", "Sort, fix one number, then run the two-pointer scan on the remainder looking for its negation. Sorting is what makes the duplicate triples skippable: equal values are adjacent, so stepping past them is a while loop, not a set.", "import gleam/int
 import gleam/list
 import gleam/order
 import gleam/set
@@ -907,12 +920,11 @@ fn inner(
       }
   }
 }"),
-      #("Solution 2 · Brute force", "import gleam/int
+      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every triple, checked. Sorting first means each triple comes out in ascending order, so collapsing the duplicates that repeated values produce is plain equality — no set needed.", "import gleam/int
 import gleam/list
 
-/// Every triple, checked. Sorting first means each triple comes out in
-/// ascending order, so `list.unique` is enough to collapse the duplicates that
-/// repeated values produce — no set needed.
 pub fn three_sum(nums: List(Int)) -> List(#(Int, Int, Int)) {
   list.sort(nums, int.compare)
   |> triples([])
@@ -991,7 +1003,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc11_container_water() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/int
+      #("Solution 1", "Start at both ends. The area is capped by the shorter line, so moving the taller one in can never help — always move the shorter, and track the best area seen.", "import gleam/int
 import gleam/list
 
 pub fn max_area(heights: List(Int)) -> Int {
@@ -1020,11 +1032,11 @@ fn converge(
       }
   }
 }"),
-      #("Solution 2 · Brute force", "import gleam/int
+      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every pair of lines, measured. O(n^2), but it makes what the two-pointer sweep is maximising explicit: shorter line times distance.", "import gleam/int
 import gleam/list
 
-/// Every pair of lines, measured. O(n²), but it makes the thing the two-pointer
-/// sweep is actually maximising explicit: shorter line times distance.
 pub fn max_area(heights: List(Int)) -> Int {
   let indexed = list.index_map(heights, fn(height, i) { #(i, height) })
   list.fold(indexed, 0, fn(best, left) {
@@ -1071,7 +1083,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc12_best_time_stock() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/int
+      #("Solution 1", "Carry the cheapest price seen so far; today's best sale is today's price against that minimum. One pass, two variables.", "import gleam/int
 import gleam/list
 
 pub fn max_profit(prices: List(Int)) -> Int {
@@ -1087,7 +1099,9 @@ pub fn max_profit(prices: List(Int)) -> Int {
     }
   }
 }"),
-      #("Solution 2 · Brute force", "import gleam/int
+      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every buy day against every later sell day. O(n^2), and the problem statement written out.", "import gleam/int
 import gleam/list
 
 pub fn max_profit(prices: List(Int)) -> Int {
@@ -1135,7 +1149,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc13_longest_substring() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/dict
+      #("Solution 1", "Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.", "import gleam/dict
 import gleam/int
 import gleam/list
 import gleam/string
@@ -1153,13 +1167,10 @@ pub fn length_of_longest_substring(s: String) -> Int {
     })
   best
 }"),
-      #("Solution 2 · Shrinking window", "import gleam/int
+      #("Solution 2 · Shrinking window", "The window itself is the bookkeeping: on a repeat, drop everything up to and including the earlier copy. No last-seen map at all, at the cost of scanning the window on each repeat.", "import gleam/int
 import gleam/list
 import gleam/string
 
-/// The window itself is the bookkeeping: when a character repeats, drop
-/// everything up to and including its earlier copy. No last-seen dictionary,
-/// at the cost of scanning the window on each repeat.
 pub fn length_of_longest_substring(s: String) -> Int {
   string.to_graphemes(s)
   |> list.fold(#([], 0), fn(acc, g) {
@@ -1224,7 +1235,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc14_character_replacement() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/dict
+      #("Solution 1", "A window can be made uniform with k changes when its size minus its most-frequent-character count is at most k. Grow the right edge, shrink from the left when that breaks, and the biggest valid window is the answer.", "import gleam/dict
 import gleam/int
 import gleam/list
 import gleam/option
@@ -1261,13 +1272,10 @@ fn shrink(
     _, _ -> #(counts, window)
   }
 }"),
-      #("Solution 2 · Per character", "import gleam/int
+      #("Solution 2 · Per character", "One sweep per letter, asking a much simpler question each time: how long a window can I hold if *this* is the letter I keep? No running frequency map and no max-count bookkeeping — 26 easy passes instead of one subtle one.", "import gleam/int
 import gleam/list
 import gleam/string
 
-/// One sweep per distinct character, asking a much simpler question each time:
-/// how long a window can I hold if *this* is the character I keep? The answer
-/// is the best of those. No running frequency map, no max-count bookkeeping.
 pub fn character_replacement(s: String, k: Int) -> Int {
   let graphemes = string.to_graphemes(s)
   graphemes
@@ -1359,7 +1367,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc15_permutation_in_string() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/dict
+      #("Solution 1", "A permutation of s1 is any window of length |s1| in s2 with identical character counts. Slide one character at a time, adding the entering character and removing the leaving one, so each step is O(1) rather than a recount.", "import gleam/dict
 import gleam/list
 import gleam/option
 import gleam/string
@@ -1416,12 +1424,9 @@ fn remove_one(
     Error(Nil) -> window
   }
 }"),
-      #("Solution 2 · Sorted windows", "import gleam/list
+      #("Solution 2 · Sorted windows", "Every window of the right length, sorted and compared against the sorted needle. Slower than sliding counts, but there is no incremental state to get wrong: the whole method is \"is this window an anagram?\".", "import gleam/list
 import gleam/string
 
-/// Every window of the right length, sorted and compared against the sorted
-/// needle. Slower than sliding counts, but there is no incremental state to get
-/// wrong — the whole method is \"is this window an anagram?\".
 pub fn check_inclusion(s1: String, s2: String) -> Bool {
   let needle =
     string.to_graphemes(s1)
@@ -1477,7 +1482,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc16_valid_parentheses() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/string
+      #("Solution 1", "On every opener, push the closer you expect; on every closer, it must match the top. Valid means never mismatching and finishing with an empty stack — both halves are needed.", "import gleam/string
 
 pub fn is_valid(s: String) -> Bool {
   check(string.to_graphemes(s), [])
@@ -1495,11 +1500,8 @@ fn check(graphemes: List(String), stack: List(String)) -> Bool {
     _, _ -> False
   }
 }"),
-      #("Solution 2 · Reduction", "import gleam/string
+      #("Solution 2 · Reduction", "No stack: strip every matched pair, over and over, until nothing more can go. Whatever survives is unmatched. It is also why \"([)]\" fails — neither pair is ever adjacent.", "import gleam/string
 
-/// No stack: strip every matched pair, over and over, until nothing more can
-/// go. Whatever survives is unmatched, so the string was balanced exactly when
-/// nothing survives. This is why \"([)]\" fails — neither pair is ever adjacent.
 pub fn is_valid(s: String) -> Bool {
   reduce(s) == \"\"
 }
@@ -1556,7 +1558,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc17_min_stack() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/int
+      #("Solution 1", "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.", "import gleam/int
 
 pub type MinStack {
   MinStack(entries: List(#(Int, Int)))
@@ -1594,7 +1596,7 @@ pub fn get_min(stack: MinStack) -> Result(Int, Nil) {
     [] -> Error(Nil)
   }
 }"),
-      #("Solution 2 · Two stacks", "import gleam/int
+      #("Solution 2 · Two stacks", "Values in one stack, running minimums in a parallel one. The two concerns stay separate, which is what makes adding a max stack a copy-paste.", "import gleam/int
 
 /// Values in one stack, the running minimum in a parallel one. Same O(1)
 /// get_min as pairing each value with its minimum, but the two concerns stay
@@ -1710,7 +1712,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc18_daily_temperatures() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/dict
+      #("Solution 1", "A stack of days still waiting for something warmer, kept in decreasing temperature order. Each new day resolves and pops every colder day below it, so every day is pushed once and popped once — O(n).", "import gleam/dict
 import gleam/list
 
 pub fn daily_temperatures(temps: List(Int)) -> List(Int) {
@@ -1741,11 +1743,10 @@ fn pop_colder(
     _ -> #(answers, stack)
   }
 }"),
-      #("Solution 2 · Brute force", "import gleam/list
+      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-/// For each day, scan forward until it gets warmer. O(n²), and the direct
-/// reading of the question — the monotonic stack exists only to avoid rescanning
-/// the same cold stretch once per day.
+For each day, scan forward until it gets warmer. O(n^2) — the monotonic stack exists only to avoid rescanning the same cold stretch once per day.", "import gleam/list
+
 pub fn daily_temperatures(temps: List(Int)) -> List(Int) {
   list.index_map(temps, fn(temp, i) {
     days_until_warmer(list.drop(temps, i + 1), temp, 1)
@@ -1799,7 +1800,9 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc19_binary_search() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/int
+      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Worth writing until the bounds are automatic: this is the search every rotated-array problem is built on top of.", "import gleam/int
 import gleam/list
 import gleam/order
 
@@ -1825,10 +1828,10 @@ fn halve(nums: List(Int), target: Int, offset: Int) -> Result(Int, Nil) {
     }
   }
 }"),
-      #("Solution 2 · First match scan", "import gleam/list
+      #("Solution 2 · First match scan", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-/// The O(n) baseline the binary search beats: scan with an index. Worth
-/// contrasting with the halving version to see what the sortedness buys.
+A plain indexed scan. O(n), so it fails the stated requirement — but it is what the halving has to beat, and it shows exactly what the sortedness buys.", "import gleam/list
+
 pub fn search(nums: List(Int), target: Int) -> Result(Int, Nil) {
   list.index_fold(nums, Error(Nil), fn(found, n, i) {
     case found, n == target {
@@ -1875,7 +1878,9 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc20_find_min_rotated() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/int
+      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The minimum is the one place order breaks. Compare the midpoint against a boundary: a segment that still looks sorted cannot hold the break, so the answer is in the other half.", "import gleam/int
 import gleam/list
 import gleam/result
 
@@ -1908,10 +1913,9 @@ pub fn find_min(nums: List(Int)) -> Result(Int, Nil) {
     }
   }
 }"),
-      #("Solution 2 · Linear scan", "/// O(n) rather than O(log n), but it makes the shape of the problem obvious:
-/// a rotated sorted array has exactly one place where a value drops, and that
-/// drop is the minimum. No drop means it was never rotated, so the head wins.
-pub fn find_min(nums: List(Int)) -> Result(Int, Nil) {
+      #("Solution 2 · Linear scan", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+O(n) rather than O(log n), but it makes the shape obvious: a rotated sorted array drops in value exactly once, and that drop is the minimum. No drop means it was never rotated, so the head wins.", "pub fn find_min(nums: List(Int)) -> Result(Int, Nil) {
   case nums {
     [] -> Error(Nil)
     [first, ..rest] -> Ok(scan(rest, first, first))
@@ -1964,7 +1968,9 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn nc21_search_rotated() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/list
+      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The twist: after a rotation, one half around the midpoint is always sorted. Work out which, then use its endpoints to decide whether the target lies inside it.", "import gleam/list
 import gleam/result
 
 pub fn search_rotated(nums: List(Int), target: Int) -> Result(Int, Nil) {
@@ -2009,13 +2015,12 @@ fn halve(nums: List(Int), target: Int, offset: Int) -> Result(Int, Nil) {
     }
   }
 }"),
-      #("Solution 2 · Find pivot", "import gleam/int
+      #("Solution 2 · Find pivot", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Two plain steps instead of one clever one: find where the rotation wrapped, which leaves two ordinary sorted runs, then search each. Nothing has to reason mid-search about which half is sorted.", "import gleam/int
 import gleam/list
 import gleam/order
 
-/// Two plain steps instead of one clever one: find where the rotation wrapped,
-/// which splits the input into two ordinary sorted arrays, then binary search
-/// each. Nothing has to reason about which half is sorted mid-search.
 pub fn search_rotated(nums: List(Int), target: Int) -> Result(Int, Nil) {
   let pivot = rotation_point(nums)
   let #(left, right) = list.split(nums, pivot)
@@ -2102,7 +2107,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip01_list_patterns() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "pub fn length(items: List(a)) -> Int {
+      #("Solution 1", "", "pub fn length(items: List(a)) -> Int {
   case items {
     [] -> 0
     [_, ..rest] -> 1 + length(rest)
@@ -2116,11 +2121,8 @@ pub fn last(items: List(a)) -> Result(a, Nil) {
     [_, ..rest] -> last(rest)
   }
 }"),
-      #("Solution 2 · Stdlib", "import gleam/list
+      #("Solution 2 · Stdlib", "The same two answers straight from the standard library. Writing the recursion by hand is how you learn the shape; reaching for these is what you actually do afterwards.", "import gleam/list
 
-/// The same two answers straight from the standard library. Writing the
-/// recursion by hand is how you learn the shape; reaching for these is what you
-/// actually do afterwards.
 pub fn length(items: List(a)) -> Int {
   list.length(items)
 }
@@ -2164,7 +2166,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip02_tail_recursion() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "pub fn reverse(items: List(a)) -> List(a) {
+      #("Solution 1", "", "pub fn reverse(items: List(a)) -> List(a) {
   reverse_loop(items, [])
 }
 
@@ -2185,11 +2187,8 @@ fn sum_loop(numbers: List(Int), acc: Int) -> Int {
     [first, ..rest] -> sum_loop(rest, acc + first)
   }
 }"),
-      #("Solution 2 · Fold", "import gleam/list
+      #("Solution 2 · Fold", "A fold *is* a tail-recursive loop with a name: the accumulator is the second argument, the step function is the body. Once you see that, most hand-written `*_loop` helpers turn into one line.", "import gleam/list
 
-/// A fold *is* a tail-recursive loop with a name: the accumulator is the second
-/// argument, the step function is the body. Once you see that, most hand-written
-/// `*_loop` helpers turn into one line.
 pub fn reverse(items: List(a)) -> List(a) {
   list.fold(items, [], fn(acc, item) { [item, ..acc] })
 }
@@ -2237,7 +2236,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip03_fold() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/int
+      #("Solution 1", "", "import gleam/int
 import gleam/list
 
 pub fn max(numbers: List(Int)) -> Result(Int, Nil) {
@@ -2259,12 +2258,9 @@ pub fn count_if(items: List(a), predicate: fn(a) -> Bool) -> Int {
 pub fn running_total(numbers: List(Int)) -> List(Int) {
   list.scan(numbers, 0, fn(acc, n) { acc + n })
 }"),
-      #("Solution 2 · Explicit recursion", "import gleam/int
+      #("Solution 2 · Explicit recursion", "What each fold expands to. Useful to write once so the folded version stops looking like magic — and to notice that `count_if` here is not tail recursive, while the fold always is.", "import gleam/int
 import gleam/list
 
-/// What each fold expands to. Useful to write once so the folded version stops
-/// looking like magic — and to notice that `count_if` here is not tail
-/// recursive, while the fold always is.
 pub fn max(numbers: List(Int)) -> Result(Int, Nil) {
   case numbers {
     [] -> Error(Nil)
@@ -2346,7 +2342,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip04_frequency_maps() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/dict
+      #("Solution 1", "", "import gleam/dict
 import gleam/list
 import gleam/option
 import gleam/string
@@ -2360,13 +2356,10 @@ pub fn word_frequencies(text: String) -> dict.Dict(String, Int) {
     dict.upsert(counts, word, fn(n) { option.unwrap(n, 0) + 1 })
   })
 }"),
-      #("Solution 2 · Sorted runs", "import gleam/dict
+      #("Solution 2 · Sorted runs", "Group by sorting instead of by lookup: once the words are in order, equal ones are adjacent, so counting is a single pass that never searches for anything. The dictionary is built at the end, from finished pairs.", "import gleam/dict
 import gleam/list
 import gleam/string
 
-/// Group by sorting instead of by lookup: once the words are in order, equal
-/// ones are adjacent, so counting is a single pass that never searches for
-/// anything. The dictionary is built at the end, from finished pairs.
 pub fn word_frequencies(text: String) -> dict.Dict(String, Int) {
   text
   |> string.lowercase
@@ -2432,7 +2425,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip05_result_chains() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/int
+      #("Solution 1", "", "import gleam/int
 import gleam/result
 
 pub type Config {
@@ -2451,14 +2444,12 @@ pub fn parse_config(
     _ -> Ok(Config(host, port, timeout))
   }
 }"),
-      #("Solution 2 · Nested case", "import gleam/int
+      #("Solution 2 · Nested case", "What `use <- result.try` desugars to. Same behaviour, one level of nesting per fallible step — which is exactly the staircase `use` exists to flatten.", "import gleam/int
 
 pub type Config {
   Config(host: String, port: Int, timeout: Int)
 }
 
-/// What `use <- result.try` desugars to. Same behaviour, one level of nesting
-/// per fallible step — which is exactly the staircase `use` exists to flatten.
 pub fn parse_config(
   host: String,
   port: String,
@@ -2540,7 +2531,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip06_option() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/dict
+      #("Solution 1", "", "import gleam/dict
 import gleam/option
 
 pub fn port_description(config: dict.Dict(String, String)) -> String {
@@ -2551,11 +2542,8 @@ pub fn port_description(config: dict.Dict(String, String)) -> String {
     |> option.unwrap(\"8080 (default)\")
   \"port: \" <> port
 }"),
-      #("Solution 2 · Case on result", "import gleam/dict
+      #("Solution 2 · Case on result", "Skipping Option entirely: `dict.get` already returns a Result, so one `case` covers both branches. Converting to Option earns its keep when the value is passed on, not when it is consumed immediately like this.", "import gleam/dict
 
-/// Skipping Option entirely: `dict.get` already returns a Result, so one `case`
-/// covers both branches. Converting to Option earns its keep when the value is
-/// passed on, not when it is consumed immediately like this.
 pub fn port_description(config: dict.Dict(String, String)) -> String {
   let port = case dict.get(config, \"port\") {
     Ok(raw) -> raw <> \" (configured)\"
@@ -2596,7 +2584,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip07_string_patterns() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/list
+      #("Solution 1", "", "import gleam/list
 import gleam/string
 
 pub fn strip_comment(line: String) -> String {
@@ -2614,12 +2602,9 @@ pub fn initials(name: String) -> String {
   |> string.concat
   |> string.uppercase
 }"),
-      #("Solution 2 · Prefix functions", "import gleam/list
+      #("Solution 2 · Prefix functions", "The same work with functions rather than string patterns. Patterns bind the remainder for free, which is why they win for prefixes; these read better when the test and the surgery are separate ideas.", "import gleam/list
 import gleam/string
 
-/// The same work with functions rather than string patterns. Patterns bind the
-/// remainder for free, which is why they win for prefixes; these read better
-/// when the test and the surgery are separate ideas.
 pub fn strip_comment(line: String) -> String {
   case string.starts_with(line, \"#\") {
     True -> line |> string.drop_start(1) |> string.trim_start
@@ -2680,7 +2665,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip08_pipelines() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/list
+      #("Solution 1", "", "import gleam/list
 import gleam/string
 
 pub fn slug(title: String) -> String {
@@ -2691,12 +2676,9 @@ pub fn slug(title: String) -> String {
   |> list.filter(fn(word) { word != \"\" })
   |> string.join(\"-\")
 }"),
-      #("Solution 2 · Nested calls", "import gleam/list
+      #("Solution 2 · Nested calls", "The same steps without the pipe, and therefore inside out: to read the order of operations you start at `title` in the middle and work outwards. Identical output — the pipe only changes which end you read from.", "import gleam/list
 import gleam/string
 
-/// The same steps without the pipe, and therefore inside out: to read the order
-/// of operations you start at `title` in the middle and work outwards. Identical
-/// output — the pipe only changes which end you read from.
 pub fn slug(title: String) -> String {
   string.join(
     list.filter(
@@ -2733,7 +2715,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip09_records() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "pub type Player {
+      #("Solution 1", "", "pub type Player {
   Player(name: String, score: Int, level: Int)
 }
 
@@ -2748,7 +2730,7 @@ pub fn add_points(player: Player, points: Int) -> Player {
 pub fn level_up(player: Player) -> Player {
   Player(..player, level: player.level + 1, score: 0)
 }"),
-      #("Solution 2 · Explicit fields", "pub type Player {
+      #("Solution 2 · Explicit fields", "", "pub type Player {
   Player(name: String, score: Int, level: Int)
 }
 
@@ -2828,7 +2810,7 @@ pub fn run() -> List(#(String, String, String)) {
 pub fn tip10_set_dedupe() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "import gleam/list
+      #("Solution 1", "", "import gleam/list
 import gleam/set
 
 pub fn dedupe(items: List(a)) -> List(a) {
@@ -2842,11 +2824,8 @@ pub fn dedupe(items: List(a)) -> List(a) {
     })
   list.reverse(kept)
 }"),
-      #("Solution 2 · List contains", "import gleam/list
+      #("Solution 2 · List contains", "No set: keep what has been accepted and ask that list directly. O(n^2) instead of O(n), but it needs nothing of the element type — and for a handful of items it is the shorter, plainer code.", "import gleam/list
 
-/// No set: keep what has been accepted and ask that list directly. O(n²)
-/// instead of O(n), but it needs nothing of the element type — and for a
-/// handful of items it is the shorter, plainer code.
 pub fn dedupe(items: List(a)) -> List(a) {
   list.fold(items, [], fn(kept, item) {
     case list.contains(kept, item) {

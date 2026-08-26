@@ -1,0 +1,1 @@
+Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.

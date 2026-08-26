@@ -44,7 +44,17 @@ Every drill carries a required signature, a starter stub, a collapsed
 **Approach** write-up ("this is a sliding-window problem…"), at least two
 reference **solutions**, and a test harness with per-case expected-vs-actual
 results. Compile errors underline the offending line; runaway code is
-terminated by a timeout.
+terminated by a timeout. Anything your code prints is captured and shown under
+**Output** — on a pass, on a failure, and on a crash, since printing and then
+crashing is when you most want to read it.
+
+Each solution carries its own note explaining that particular approach. The
+notes live in `drills/notes/<variant>.txt`, one file per variant rather than one
+comment per language, so the Gleam, Python, TypeScript and Elixir mirrors of a
+solution share a single write-up. A note starting with `@shared/<name>` pulls in
+`drills/notes/shared/<name>.txt` first — the two-pointer convergence, the case
+for keeping a brute force around — and then adds its own line, so the technique
+is written once and the specifics stay per variant.
 
 The alternates are the point of having more than one: they are chosen to reach
 for a *different* technique rather than reword the same one — sorting instead

@@ -7,7 +7,7 @@ import algodrill/problems/embedded.{type Embedded, Embedded}
 pub fn nc01_contains_duplicate() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function containsDuplicate(nums: number[]): boolean {
+      #("Solution 1", "A set answers the whole question. Walk once, and the moment a value is already in the set you are done — no need to finish the pass, and no need to know where the duplicate was.", "export function containsDuplicate(nums: number[]): boolean {
   const seen = new Set<number>();
   for (const num of nums) {
     if (seen.has(num)) return true;
@@ -15,9 +15,9 @@ pub fn nc01_contains_duplicate() -> Embedded {
   }
   return false;
 }"),
-      #("Solution 2 · Sorting", "export function containsDuplicate(nums: number[]): boolean {
-  // Duplicates are adjacent once sorted, so one pass over the sorted copy
-  // answers it — O(n log n), but nothing has to hold every value at once.
+      #("Solution 2 · Sorting", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+
+Duplicates land next to each other, so comparing neighbouring pairs is enough.", "export function containsDuplicate(nums: number[]): boolean {
   const ordered = [...nums].sort((a, b) => a - b);
   for (let i = 1; i < ordered.length; i++) {
     if (ordered[i] === ordered[i - 1]) return true;
@@ -49,7 +49,7 @@ export function run(): [string, string, string][] {
 pub fn nc02_valid_anagram() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function isAnagram(s: string, t: string): boolean {
+      #("Solution 1", "Two strings are anagrams exactly when every character occurs the same number of times in both, so build a count per string and compare the two maps.", "export function isAnagram(s: string, t: string): boolean {
   if (s.length !== t.length) return false;
 
   const counts = new Map<string, number>();
@@ -63,9 +63,9 @@ pub fn nc02_valid_anagram() -> Embedded {
 
   return true;
 }"),
-      #("Solution 2 · Sorting", "export function isAnagram(s: string, t: string): boolean {
-  // Two words are anagrams exactly when their sorted letters match. O(n log n),
-  // and there is no counting to get wrong.
+      #("Solution 2 · Sorting", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+Sorted letters are the canonical form, so the whole check is one equality. No counting to get wrong.", "export function isAnagram(s: string, t: string): boolean {
   const letters = (word: string) => [...word].sort().join(\"\");
   return letters(s) === letters(t);
 }"),
@@ -95,7 +95,7 @@ export function run(): [string, string, string][] {
 pub fn nc03_two_sum() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function twoSum(nums: number[], target: number): number[] {
+      #("Solution 1", "Every number seen so far is already in the map, so the complement is one lookup away — one pass, O(1) per step, and the map hands back the index for free.", "export function twoSum(nums: number[], target: number): number[] {
   const seen = new Map<number, number>();
   for (let i = 0; i < nums.length; i++) {
     const complement = target - nums[i];
@@ -104,9 +104,9 @@ pub fn nc03_two_sum() -> Embedded {
   }
   return [];
 }"),
-      #("Solution 2 · Sorted two pointer", "export function twoSum(nums: number[], target: number): number[] {
-  // Sorting loses the original positions, so carry them along, then walk one
-  // pointer in from each end.
+      #("Solution 2 · Sorted two pointer", "Sorted input plus a pointer at each end. A sum that is too small can only be fixed by raising the low end, one that is too large by lowering the high end, so neither pointer ever needs to go back. They meet in O(n) with no extra memory.
+
+Sorting loses the original positions, which is the whole difficulty here: carry each number's index alongside it and report those at the end.", "export function twoSum(nums: number[], target: number): number[] {
   const ordered = nums
     .map((num, index) => [num, index] as [number, number])
     .sort((a, b) => a[0] - b[0]);
@@ -153,7 +153,9 @@ export function run(): [string, string, string][] {
 pub fn nc04_group_anagrams() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function groupAnagrams(strs: string[]): string[][] {
+      #("Solution 1", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len) to build against sorting's O(len log len); the sorted word needs no assumption about the alphabet.", "export function groupAnagrams(strs: string[]): string[][] {
   const groups = new Map<string, string[]>();
 
   for (const s of strs) {
@@ -173,9 +175,9 @@ pub fn nc04_group_anagrams() -> Embedded {
 
   return [...groups.values()];
 }"),
-      #("Solution 2 · Sorted key", "export function groupAnagrams(strs: string[]): string[][] {
-  // The sorted word itself is an anagram-invariant key: shorter than tallying
-  // letters, and it works for any alphabet rather than just a-z.
+      #("Solution 2 · Sorted key", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+The sorted word itself is the key. Shorter than tallying letters, and it works for any alphabet rather than just a-z.", "export function groupAnagrams(strs: string[]): string[][] {
   const groups = new Map<string, string[]>();
 
   for (const s of strs) {
@@ -223,7 +225,7 @@ export function run(): [string, string, string][] {
 pub fn nc05_top_k_frequent() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function topKFrequent(nums: number[], k: number): number[] {
+      #("Solution 1", "Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.", "export function topKFrequent(nums: number[], k: number): number[] {
   const counts = new Map<number, number>();
   for (const num of nums) counts.set(num, (counts.get(num) ?? 0) + 1);
 
@@ -241,9 +243,9 @@ pub fn nc05_top_k_frequent() -> Embedded {
   }
   return result;
 }"),
-      #("Solution 2 · Sorting", "export function topKFrequent(nums: number[], k: number): number[] {
-  // Straight sort by frequency: O(n log n) rather than the bucket version's
-  // O(n), but it is the version you can write without thinking.
+      #("Solution 2 · Sorting", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+
+Straight sort by frequency: O(n log n) rather than the bucket version's O(n), but it is the version you can write without thinking.", "export function topKFrequent(nums: number[], k: number): number[] {
   const counts = new Map<number, number>();
   for (const num of nums) counts.set(num, (counts.get(num) ?? 0) + 1);
 
@@ -277,7 +279,7 @@ export function run(): [string, string, string][] {
 pub fn nc06_product_except_self() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function productExceptSelf(nums: number[]): number[] {
+      #("Solution 1", "The answer at each slot is everything before it times everything after it. One forward pass builds the prefixes, one reverse pass folds in the suffixes — and no division, so a zero in the input costs nothing special.", "export function productExceptSelf(nums: number[]): number[] {
   const result = new Array(nums.length).fill(1);
 
   let prefix = 1;
@@ -294,9 +296,9 @@ pub fn nc06_product_except_self() -> Embedded {
 
   return result;
 }"),
-      #("Solution 2 · Brute force", "export function productExceptSelf(nums: number[]): number[] {
-  // The obvious O(n^2) reading: for each slot, multiply everything that is not
-  // in it. Worth knowing as the thing prefix/suffix beats.
+      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+For each slot, multiply everything that is not in it. O(n^2), and exactly what the prefix/suffix pass replaces.", "export function productExceptSelf(nums: number[]): number[] {
   return nums.map((_, i) => {
     let product = 1;
     for (let j = 0; j < nums.length; j++) {
@@ -330,7 +332,7 @@ export function run(): [string, string, string][] {
 pub fn nc07_longest_consecutive() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function longestConsecutive(nums: number[]): number {
+      #("Solution 1", "Put everything in a set, then only start counting at numbers with no predecessor. That guard is what keeps it O(n): every run is walked exactly once instead of once per member.", "export function longestConsecutive(nums: number[]): number {
   const all = new Set(nums);
   let longest = 0;
 
@@ -344,9 +346,9 @@ pub fn nc07_longest_consecutive() -> Embedded {
 
   return longest;
 }"),
-      #("Solution 2 · Sorting", "export function longestConsecutive(nums: number[]): number {
-  // No set: sort, then walk once counting runs. O(n log n) rather than O(n),
-  // but it needs no extra structure and the run logic reads straight through.
+      #("Solution 2 · Sorting", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+
+Runs are contiguous once sorted, so one pass counting steps of exactly one finds the longest. Duplicates neither extend a run nor break it, which is the only case worth care.", "export function longestConsecutive(nums: number[]): number {
   if (nums.length === 0) return 0;
 
   const ordered = [...nums].sort((a, b) => a - b);
@@ -391,7 +393,7 @@ export function run(): [string, string, string][] {
 pub fn nc08_valid_palindrome() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function isPalindrome(s: string): boolean {
+      #("Solution 1", "Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.", "export function isPalindrome(s: string): boolean {
   const cleaned = s.toLowerCase().replace(/[^a-z0-9]/g, \"\");
   let left = 0;
   let right = cleaned.length - 1;
@@ -402,9 +404,7 @@ pub fn nc08_valid_palindrome() -> Embedded {
   }
   return true;
 }"),
-      #("Solution 2 · Cleaned reverse", "export function isPalindrome(s: string): boolean {
-  // Strip, then compare against the reverse. Allocates a second string instead
-  // of converging two pointers, but it is one line of intent.
+      #("Solution 2 · Cleaned reverse", "Strip, then compare against the reverse. Allocates a second string instead of converging two pointers, but it is one line of intent.", "export function isPalindrome(s: string): boolean {
   const cleaned = s.toLowerCase().replace(/[^a-z0-9]/g, \"\");
   return cleaned === [...cleaned].reverse().join(\"\");
 }"),
@@ -434,7 +434,9 @@ export function run(): [string, string, string][] {
 pub fn nc09_two_sum_sorted() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function twoSum(numbers: number[], target: number): number[] {
+      #("Solution 1", "Sorted input plus a pointer at each end. A sum that is too small can only be fixed by raising the low end, one that is too large by lowering the high end, so neither pointer ever needs to go back. They meet in O(n) with no extra memory.
+
+Positions are 1-based here, which is the only trap.", "export function twoSum(numbers: number[], target: number): number[] {
   let left = 0;
   let right = numbers.length - 1;
 
@@ -450,9 +452,9 @@ pub fn nc09_two_sum_sorted() -> Embedded {
 
   return [];
 }"),
-      #("Solution 2 · Binary search", "export function twoSum(numbers: number[], target: number): number[] {
-  // Fix each number and binary search the tail for its complement, rather than
-  // converging two pointers. O(n log n), reusing a search you already know.
+      #("Solution 2 · Binary search", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Fix each number in turn and search the tail for its complement, rather than converging two pointers. O(n log n), and it reuses a search you already know instead of a second pointer discipline.", "export function twoSum(numbers: number[], target: number): number[] {
   for (let i = 0; i < numbers.length; i++) {
     const wanted = target - numbers[i];
     let lo = i + 1;
@@ -495,7 +497,7 @@ export function run(): [string, string, string][] {
 pub fn nc10_three_sum() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function threeSum(nums: number[]): number[][] {
+      #("Solution 1", "Sort, fix one number, then run the two-pointer scan on the remainder looking for its negation. Sorting is what makes the duplicate triples skippable: equal values are adjacent, so stepping past them is a while loop, not a set.", "export function threeSum(nums: number[]): number[][] {
   const ordered = [...nums].sort((a, b) => a - b);
   const result: number[][] = [];
 
@@ -520,9 +522,9 @@ pub fn nc10_three_sum() -> Embedded {
 
   return result;
 }"),
-      #("Solution 2 · Brute force", "export function threeSum(nums: number[]): number[][] {
-  // Every triple, checked. Sorting first means each triple comes out in
-  // ascending order, so duplicates are plain string equality on the triple.
+      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every triple, checked. Sorting first means each triple comes out in ascending order, so collapsing the duplicates that repeated values produce is plain equality — no set needed.", "export function threeSum(nums: number[]): number[][] {
   const ordered = [...nums].sort((a, b) => a - b);
   const seen = new Set<string>();
   const result: number[][] = [];
@@ -574,7 +576,7 @@ export function run(): [string, string, string][] {
 pub fn nc11_container_water() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function maxArea(height: number[]): number {
+      #("Solution 1", "Start at both ends. The area is capped by the shorter line, so moving the taller one in can never help — always move the shorter, and track the best area seen.", "export function maxArea(height: number[]): number {
   let left = 0;
   let right = height.length - 1;
   let best = 0;
@@ -591,9 +593,9 @@ pub fn nc11_container_water() -> Embedded {
 
   return best;
 }"),
-      #("Solution 2 · Brute force", "export function maxArea(height: number[]): number {
-  // Every pair of lines, measured. O(n^2), but it makes what the two-pointer
-  // sweep is maximising explicit: shorter line times distance.
+      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every pair of lines, measured. O(n^2), but it makes what the two-pointer sweep is maximising explicit: shorter line times distance.", "export function maxArea(height: number[]): number {
   let best = 0;
   for (let left = 0; left < height.length; left++) {
     for (let right = left + 1; right < height.length; right++) {
@@ -626,7 +628,7 @@ export function run(): [string, string, string][] {
 pub fn nc12_best_time_stock() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function maxProfit(prices: number[]): number {
+      #("Solution 1", "Carry the cheapest price seen so far; today's best sale is today's price against that minimum. One pass, two variables.", "export function maxProfit(prices: number[]): number {
   let lowest = Infinity;
   let profit = 0;
   for (const price of prices) {
@@ -635,9 +637,9 @@ pub fn nc12_best_time_stock() -> Embedded {
   }
   return profit;
 }"),
-      #("Solution 2 · Brute force", "export function maxProfit(prices: number[]): number {
-  // Every buy day against every later sell day. O(n^2), and the definition of
-  // the problem written out — the single pass is the optimisation.
+      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every buy day against every later sell day. O(n^2), and the problem statement written out.", "export function maxProfit(prices: number[]): number {
   let profit = 0;
   for (let buy = 0; buy < prices.length; buy++) {
     for (let sell = buy + 1; sell < prices.length; sell++) {
@@ -671,7 +673,7 @@ export function run(): [string, string, string][] {
 pub fn nc13_longest_substring() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function lengthOfLongestSubstring(s: string): number {
+      #("Solution 1", "Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.", "export function lengthOfLongestSubstring(s: string): number {
   const window = new Set<string>();
   let left = 0;
   let longest = 0;
@@ -687,9 +689,7 @@ pub fn nc13_longest_substring() -> Embedded {
 
   return longest;
 }"),
-      #("Solution 2 · Index scan", "export function lengthOfLongestSubstring(s: string): number {
-  // No set: ask the string itself whether this character already appeared
-  // inside the current window, and if so restart just past it.
+      #("Solution 2 · Index scan", "No set and no map: ask the string itself whether this character already appeared inside the current window, and if so restart just past it.", "export function lengthOfLongestSubstring(s: string): number {
   let longest = 0;
   let start = 0;
 
@@ -727,7 +727,7 @@ export function run(): [string, string, string][] {
 pub fn nc14_character_replacement() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function characterReplacement(s: string, k: number): number {
+      #("Solution 1", "A window can be made uniform with k changes when its size minus its most-frequent-character count is at most k. Grow the right edge, shrink from the left when that breaks, and the biggest valid window is the answer.", "export function characterReplacement(s: string, k: number): number {
   const counts = new Map<string, number>();
   let left = 0;
   let maxCount = 0;
@@ -748,12 +748,9 @@ pub fn nc14_character_replacement() -> Embedded {
 
   return longest;
 }"),
-      #("Solution 2 · Per character", "const ALPHABET = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";
+      #("Solution 2 · Per character", "One sweep per letter, asking a much simpler question each time: how long a window can I hold if *this* is the letter I keep? No running frequency map and no max-count bookkeeping — 26 easy passes instead of one subtle one.", "const ALPHABET = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";
 
 export function characterReplacement(s: string, k: number): number {
-  // One sweep per letter, asking a much simpler question each time: how long a
-  // window can I hold if *this* is the letter I keep? No running frequency map
-  // and no max-count bookkeeping — 26 easy passes instead of one subtle one.
   let longest = 0;
 
   for (const target of ALPHABET) {
@@ -796,7 +793,7 @@ export function run(): [string, string, string][] {
 pub fn nc15_permutation_in_string() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function checkInclusion(s1: string, s2: string): boolean {
+      #("Solution 1", "A permutation of s1 is any window of length |s1| in s2 with identical character counts. Slide one character at a time, adding the entering character and removing the leaving one, so each step is O(1) rather than a recount.", "export function checkInclusion(s1: string, s2: string): boolean {
   if (s1.length > s2.length) return false;
 
   // Fixed 26-slot tallies, compared slot by slot as the window slides.
@@ -820,10 +817,7 @@ pub fn nc15_permutation_in_string() -> Embedded {
 
   return false;
 }"),
-      #("Solution 2 · Sorted windows", "export function checkInclusion(s1: string, s2: string): boolean {
-  // Every window of the right length, sorted and compared. Slower than sliding
-  // counts, but there is no incremental state to get wrong: the whole method is
-  // \"is this window an anagram?\".
+      #("Solution 2 · Sorted windows", "Every window of the right length, sorted and compared against the sorted needle. Slower than sliding counts, but there is no incremental state to get wrong: the whole method is \"is this window an anagram?\".", "export function checkInclusion(s1: string, s2: string): boolean {
   if (s1.length > s2.length) return false;
 
   const needle = [...s1].sort().join(\"\");
@@ -860,7 +854,7 @@ export function run(): [string, string, string][] {
 pub fn nc16_valid_parentheses() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function isValid(s: string): boolean {
+      #("Solution 1", "On every opener, push the closer you expect; on every closer, it must match the top. Valid means never mismatching and finishing with an empty stack — both halves are needed.", "export function isValid(s: string): boolean {
   const closerFor: Record<string, string> = { \"(\": \")\", \"[\": \"]\", \"{\": \"}\" };
   const stack: string[] = [];
   for (const char of s) {
@@ -872,10 +866,7 @@ pub fn nc16_valid_parentheses() -> Embedded {
   }
   return stack.length === 0;
 }"),
-      #("Solution 2 · Reduction", "export function isValid(s: string): boolean {
-  // No stack: strip every matched pair, over and over, until nothing more can
-  // go. Whatever survives is unmatched. It is also why \"([)]\" fails — neither
-  // pair is ever adjacent.
+      #("Solution 2 · Reduction", "No stack: strip every matched pair, over and over, until nothing more can go. Whatever survives is unmatched. It is also why \"([)]\" fails — neither pair is ever adjacent.", "export function isValid(s: string): boolean {
   let previous = \"\";
   while (previous !== s) {
     previous = s;
@@ -910,7 +901,7 @@ export function run(): [string, string, string][] {
 pub fn nc17_min_stack() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export class MinStack {
+      #("Solution 1", "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.", "export class MinStack {
   private values: number[] = [];
   private minimums: number[] = [];
 
@@ -935,9 +926,7 @@ pub fn nc17_min_stack() -> Embedded {
     return this.minimums[this.minimums.length - 1];
   }
 }"),
-      #("Solution 2 · Pair stack", "export class MinStack {
-  // Each entry carries the minimum of everything at or below it, so getMin is
-  // a peek. One array instead of two, at the cost of a second number per value.
+      #("Solution 2 · Pair stack", "Each entry carries the minimum of everything at or below it, so getMin is a peek. One structure instead of two, at the cost of a second number per value.", "export class MinStack {
   private entries: [number, number][] = [];
 
   push(val: number): void {
@@ -1005,7 +994,7 @@ export function run(): [string, string, string][] {
 pub fn nc18_daily_temperatures() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function dailyTemperatures(temperatures: number[]): number[] {
+      #("Solution 1", "A stack of days still waiting for something warmer, kept in decreasing temperature order. Each new day resolves and pops every colder day below it, so every day is pushed once and popped once — O(n).", "export function dailyTemperatures(temperatures: number[]): number[] {
   const result = new Array(temperatures.length).fill(0);
   const stack: number[] = []; // indices, temperatures decreasing
 
@@ -1019,10 +1008,9 @@ pub fn nc18_daily_temperatures() -> Embedded {
 
   return result;
 }"),
-      #("Solution 2 · Brute force", "export function dailyTemperatures(temperatures: number[]): number[] {
-  // For each day, scan forward until it gets warmer. O(n^2), and the direct
-  // reading of the question — the monotonic stack exists only to avoid
-  // rescanning the same cold stretch once per day.
+      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+For each day, scan forward until it gets warmer. O(n^2) — the monotonic stack exists only to avoid rescanning the same cold stretch once per day.", "export function dailyTemperatures(temperatures: number[]): number[] {
   return temperatures.map((temp, i) => {
     for (let j = i + 1; j < temperatures.length; j++) {
       if (temperatures[j] > temp) return j - i;
@@ -1059,7 +1047,9 @@ export function run(): [string, string, string][] {
 pub fn nc19_binary_search() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function search(nums: number[], target: number): number {
+      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Worth writing until the bounds are automatic: this is the search every rotated-array problem is built on top of.", "export function search(nums: number[], target: number): number {
   let left = 0;
   let right = nums.length - 1;
   while (left <= right) {
@@ -1073,9 +1063,9 @@ pub fn nc19_binary_search() -> Embedded {
   }
   return -1;
 }"),
-      #("Solution 2 · Recursive", "export function search(nums: number[], target: number): number {
-  // The same halving, written as recursion: the bounds are arguments rather
-  // than mutated locals, which makes each step's invariant easier to see.
+      #("Solution 2 · Recursive", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The same halving as recursion. The bounds are arguments rather than mutated locals, which makes each step's invariant easier to see.", "export function search(nums: number[], target: number): number {
   return halve(nums, target, 0, nums.length - 1);
 }
 
@@ -1112,7 +1102,9 @@ export function run(): [string, string, string][] {
 pub fn nc20_find_min_rotated() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function findMin(nums: number[]): number {
+      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The minimum is the one place order breaks. Compare the midpoint against a boundary: a segment that still looks sorted cannot hold the break, so the answer is in the other half.", "export function findMin(nums: number[]): number {
   let left = 0;
   let right = nums.length - 1;
 
@@ -1129,10 +1121,9 @@ pub fn nc20_find_min_rotated() -> Embedded {
 
   return nums[left];
 }"),
-      #("Solution 2 · Linear scan", "export function findMin(nums: number[]): number {
-  // O(n) rather than O(log n), but it makes the shape of the problem obvious:
-  // a rotated sorted array drops in value exactly once, and that drop is the
-  // minimum. No drop means it was never rotated, so the head wins.
+      #("Solution 2 · Linear scan", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+O(n) rather than O(log n), but it makes the shape obvious: a rotated sorted array drops in value exactly once, and that drop is the minimum. No drop means it was never rotated, so the head wins.", "export function findMin(nums: number[]): number {
   for (let i = 1; i < nums.length; i++) {
     if (nums[i] < nums[i - 1]) return nums[i];
   }
@@ -1164,7 +1155,9 @@ export function run(): [string, string, string][] {
 pub fn nc21_search_rotated() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "export function search(nums: number[], target: number): number {
+      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The twist: after a rotation, one half around the midpoint is always sorted. Work out which, then use its endpoints to decide whether the target lies inside it.", "export function search(nums: number[], target: number): number {
   let left = 0;
   let right = nums.length - 1;
 
@@ -1191,10 +1184,9 @@ pub fn nc21_search_rotated() -> Embedded {
 
   return -1;
 }"),
-      #("Solution 2 · Find pivot", "export function search(nums: number[], target: number): number {
-  // Two plain steps instead of one clever one: find where the rotation wrapped,
-  // which splits the input into two ordinary sorted arrays, then binary search
-  // each. Nothing has to reason mid-search about which half is sorted.
+      #("Solution 2 · Find pivot", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Two plain steps instead of one clever one: find where the rotation wrapped, which leaves two ordinary sorted runs, then search each. Nothing has to reason mid-search about which half is sorted.", "export function search(nums: number[], target: number): number {
   const pivot = rotationPoint(nums);
   const found = binarySearch(nums, target, 0, pivot - 1);
   if (found !== -1) return found;

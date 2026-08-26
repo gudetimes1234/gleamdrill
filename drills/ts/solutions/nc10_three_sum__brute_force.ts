@@ -1,6 +1,4 @@
 export function threeSum(nums: number[]): number[][] {
-  // Every triple, checked. Sorting first means each triple comes out in
-  // ascending order, so duplicates are plain string equality on the triple.
   const ordered = [...nums].sort((a, b) => a - b);
   const seen = new Set<string>();
   const result: number[][] = [];

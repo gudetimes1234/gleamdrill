@@ -1,0 +1,1 @@
+Compare inwards from both ends, skipping anything that is not alphanumeric as you go. No second string is built.

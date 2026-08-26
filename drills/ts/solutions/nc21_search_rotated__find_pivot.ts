@@ -1,7 +1,4 @@
 export function search(nums: number[], target: number): number {
-  // Two plain steps instead of one clever one: find where the rotation wrapped,
-  // which splits the input into two ordinary sorted arrays, then binary search
-  // each. Nothing has to reason mid-search about which half is sorted.
   const pivot = rotationPoint(nums);
   const found = binarySearch(nums, target, 0, pivot - 1);
   if (found !== -1) return found;

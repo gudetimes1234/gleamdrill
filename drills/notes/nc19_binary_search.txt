@@ -1,0 +1,2 @@
+@shared/binary-search-halving
+Worth writing until the bounds are automatic: this is the search every rotated-array problem is built on top of.

@@ -1,7 +1,5 @@
 defmodule Solution do
   def top_k_frequent(nums, k) do
-    # A count can never exceed the input length, so grouping by count and
-    # reading the groups downwards replaces the comparison sort entirely.
     buckets =
       nums
       |> Enum.frequencies()

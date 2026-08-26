@@ -1,0 +1,2 @@
+@shared/brute-force-baseline
+A plain indexed scan. O(n), so it fails the stated requirement — but it is what the halving has to beat, and it shows exactly what the sortedness buys.

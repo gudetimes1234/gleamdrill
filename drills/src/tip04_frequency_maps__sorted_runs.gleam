@@ -2,9 +2,6 @@ import gleam/dict
 import gleam/list
 import gleam/string
 
-/// Group by sorting instead of by lookup: once the words are in order, equal
-/// ones are adjacent, so counting is a single pass that never searches for
-/// anything. The dictionary is built at the end, from finished pairs.
 pub fn word_frequencies(text: String) -> dict.Dict(String, Int) {
   text
   |> string.lowercase

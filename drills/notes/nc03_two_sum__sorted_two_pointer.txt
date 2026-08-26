@@ -1,0 +1,2 @@
+@shared/two-pointer-convergence
+Sorting loses the original positions, which is the whole difficulty here: carry each number's index alongside it and report those at the end.

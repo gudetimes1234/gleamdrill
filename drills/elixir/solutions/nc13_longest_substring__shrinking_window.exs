@@ -1,7 +1,5 @@
 defmodule Solution do
   def length_of_longest_substring(s) do
-    # The window itself is the bookkeeping: on a repeat, drop everything up to
-    # and including the earlier copy. No last-seen map at all.
     {_window, best} =
       s
       |> String.graphemes()

@@ -356,7 +356,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.none(),
     )
 
-    RunFinished(id, outcome) ->
+    RunFinished(id, outcome, stdout) ->
       case m.run {
         Running(current) if current == id -> {
           let passed = case outcome {
@@ -367,7 +367,10 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             Ok(ref) -> record_attempt(m.attempts, ref, passed)
             Error(Nil) -> m.attempts
           }
-          #(Model(..m, run: Ran(outcome), attempts: attempts), effect.none())
+          #(
+            Model(..m, run: Ran(outcome, stdout), attempts: attempts),
+            effect.none(),
+          )
         }
         _ -> #(m, effect.none())
       }
@@ -384,14 +387,14 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             Ok(language) -> #(
               Model(
                 ..m,
-                run: Ran(TimedOut),
+                run: Ran(TimedOut, ""),
                 attempts: attempts,
                 runtimes: model.assoc_put(m.runtimes, language, RuntimeLoading),
               ),
               runner.restart(language),
             )
             Error(Nil) -> #(
-              Model(..m, run: Ran(TimedOut), attempts: attempts),
+              Model(..m, run: Ran(TimedOut, ""), attempts: attempts),
               effect.none(),
             )
           }

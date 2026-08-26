@@ -47,7 +47,10 @@ pub type RunOutcome {
 pub type RunState {
   RunIdle
   Running(id: Int)
-  Ran(RunOutcome)
+  /// `stdout` is whatever the attempt printed, captured by the worker. It hangs
+  /// off `Ran` rather than off `Cases` so a crash carries it too — code that
+  /// printed and *then* blew up is exactly when it is worth reading.
+  Ran(outcome: RunOutcome, stdout: String)
 }
 
 /// Best result so far for a problem; drives the status badges in the menu.
@@ -157,7 +160,7 @@ pub type Msg {
   UserClickedRun
   RunnerReady(language: String)
   RunnerFailed(language: String, message: String)
-  RunFinished(id: Int, outcome: RunOutcome)
+  RunFinished(id: Int, outcome: RunOutcome, stdout: String)
   RunTimedOut(id: Int)
   UserPickedChoice(Int)
   UserSubmittedAnswer

@@ -1,6 +1,4 @@
 def longestConsecutive(nums):
-    # No set: sort, then walk once counting runs. O(n log n) rather than O(n),
-    # but it needs no extra structure and the run logic reads straight through.
     if not nums:
         return 0
 

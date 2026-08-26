@@ -1,6 +1,4 @@
 export function twoSum(nums: number[], target: number): number[] {
-  // Sorting loses the original positions, so carry them along, then walk one
-  // pointer in from each end.
   const ordered = nums
     .map((num, index) => [num, index] as [number, number])
     .sort((a, b) => a[0] - b[0]);

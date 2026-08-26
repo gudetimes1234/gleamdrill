@@ -1,8 +1,6 @@
 import gleam/int
 import gleam/list
 
-/// Every pair of lines, measured. O(n²), but it makes the thing the two-pointer
-/// sweep is actually maximising explicit: shorter line times distance.
 pub fn max_area(heights: List(Int)) -> Int {
   let indexed = list.index_map(heights, fn(height, i) { #(i, height) })
   list.fold(indexed, 0, fn(best, left) {

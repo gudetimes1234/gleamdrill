@@ -1,7 +1,5 @@
 defmodule Solution do
   def three_sum(nums) do
-    # Every triple, checked. Sorting first means each triple comes out in
-    # ascending order, so `uniq` is enough to collapse the repeats.
     indexed = nums |> Enum.sort() |> Enum.with_index()
 
     triples =

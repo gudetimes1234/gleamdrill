@@ -2,9 +2,6 @@ import gleam/int
 import gleam/list
 import gleam/string
 
-/// The window itself is the bookkeeping: when a character repeats, drop
-/// everything up to and including its earlier copy. No last-seen dictionary,
-/// at the cost of scanning the window on each repeat.
 pub fn length_of_longest_substring(s: String) -> Int {
   string.to_graphemes(s)
   |> list.fold(#([], 0), fn(acc, g) {

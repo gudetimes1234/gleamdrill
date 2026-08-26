@@ -1,7 +1,5 @@
 defmodule Solution do
   def search(nums, target) do
-    # Lists have no random access, so index into a tuple instead — otherwise
-    # every "midpoint" would cost a walk and the log would be a lie.
     halve(List.to_tuple(nums), target, 0, length(nums) - 1)
   end
 

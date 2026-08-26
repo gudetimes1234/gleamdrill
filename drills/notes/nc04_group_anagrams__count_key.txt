@@ -1,0 +1,2 @@
+@shared/canonical-key
+A letter tally is anagram-invariant too, and costs O(len) to build rather than O(len log len).

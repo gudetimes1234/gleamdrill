@@ -1,9 +1,6 @@
 import gleam/int
 import gleam/list
 
-/// Every triple, checked. Sorting first means each triple comes out in
-/// ascending order, so `list.unique` is enough to collapse the duplicates that
-/// repeated values produce — no set needed.
 pub fn three_sum(nums: List(Int)) -> List(#(Int, Int, Int)) {
   list.sort(nums, int.compare)
   |> triples([])

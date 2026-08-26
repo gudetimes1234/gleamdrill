@@ -1,6 +1,4 @@
 def topTwo(nums):
-    # What Counter does underneath: a dict of counts, then a sort. Worth writing
-    # once so most_common stops being a black box.
     counts = {}
     for num in nums:
         counts[num] = counts.get(num, 0) + 1

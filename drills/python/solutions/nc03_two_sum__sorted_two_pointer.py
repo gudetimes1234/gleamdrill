@@ -1,7 +1,4 @@
 def twoSum(nums, target):
-    # Sorting loses the original positions, so carry them along, then walk one
-    # pointer in from each end: too small lifts the low end, too large drops
-    # the high end.
     ordered = sorted((num, i) for i, num in enumerate(nums))
     left, right = 0, len(ordered) - 1
 

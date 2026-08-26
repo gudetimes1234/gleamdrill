@@ -2,8 +2,6 @@ defmodule Solution do
   @alphabet String.graphemes("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
   def character_replacement(s, k) do
-    # One sweep per letter, asking a much simpler question each time: how long
-    # a window can I hold if *this* is the letter I keep?
     graphemes = String.graphemes(s)
     Enum.reduce(@alphabet, 0, fn target, best -> max(best, sweep(graphemes, graphemes, 0, 0, 0, target, k)) end)
   end

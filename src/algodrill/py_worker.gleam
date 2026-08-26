@@ -20,6 +20,35 @@ from browser import self as __algodrill_self__
 __algodrill_self__.__algodrill_result__ = __algodrill_json__.dumps(__results__)
 "
 
+/// Runs before the user's code, so `print` is captured from the first line. It
+/// hands each chunk to the FFI rather than buffering in Python, so the output
+/// survives a raise — a crash never reaches the epilogue, and printing and then
+/// crashing is exactly the case worth reading. Only stdout is redirected:
+/// Brython reports tracebacks through stderr, and swallowing those would cost
+/// the error messages.
+const capture_prologue = "import sys as __algodrill_sys__
+from browser import self as __algodrill_self__
+
+
+class __AlgodrillOut__:
+    def write(self, text):
+        __algodrill_self__.__algodrill_write__(text)
+
+    def flush(self):
+        pass
+
+
+__algodrill_sys__.stdout = __AlgodrillOut__()
+
+"
+
+/// The prologue sits above the user's code, so every position Brython reports
+/// is that many lines too high. Derived from the constant rather than written
+/// down, because a hand-kept number is a line-number bug waiting to happen.
+fn prologue_offset() -> Int {
+  list.length(string.split(capture_prologue, "\n")) - 1
+}
+
 pub type Request {
   Request(id: Int, solution: String, harness: String)
 }
@@ -46,13 +75,19 @@ fn request_decoder() -> Decoder(Request) {
 }
 
 fn serve(request: Request) -> Nil {
-  let program = request.solution <> "\n\n" <> request.harness <> stash_epilogue
+  let program =
+    capture_prologue
+    <> request.solution
+    <> "\n\n"
+    <> request.harness
+    <> stash_epilogue
   let outcome = ffi_run_python(program)
+  let stdout = truncate(ffi_captured_stdout(), 4000)
 
   case decode.run(outcome, outcome_decoder()) {
-    Ok(RanTo(triples)) -> post_result(request.id, triples)
+    Ok(RanTo(triples)) -> post_result(request.id, triples, stdout)
     Ok(FailedWith(marker, message, line, column)) ->
-      post_error(request.id, marker, message, line, column)
+      post_error(request.id, marker, message, line, column, stdout)
     Error(_) ->
       post_error(
         request.id,
@@ -60,6 +95,7 @@ fn serve(request: Request) -> Nil {
         "The Python runtime produced an unreadable outcome.",
         None,
         None,
+        stdout,
       )
   }
 }
@@ -95,7 +131,7 @@ fn outcome_decoder() -> Decoder(Outcome) {
   decode.one_of(ran, [failed])
 }
 
-fn post_result(id: Int, triples: List(List(String))) -> Nil {
+fn post_result(id: Int, triples: List(List(String)), stdout: String) -> Nil {
   let cases =
     list.filter_map(triples, fn(triple) {
       case triple {
@@ -117,6 +153,7 @@ fn post_result(id: Int, triples: List(List(String))) -> Nil {
         #("type", json.string("result")),
         #("id", json.int(id)),
         #("cases", json.preprocessed_array(cases)),
+        #("stdout", json.string(stdout)),
         #("warnings", json.array([], json.string)),
       ]),
     ),
@@ -129,6 +166,7 @@ fn post_error(
   message: String,
   line: Option(Int),
   column: Option(Int),
+  stdout: String,
 ) -> Nil {
   // The harness raises this marker when the expected function names are
   // missing — the UI turns file "check.py" into a friendly signature message.
@@ -138,6 +176,7 @@ fn post_error(
     False, Some(_) -> #("compile", Some("solution.py"))
     False, None -> #("run", None)
   }
+  let line = option.map(line, fn(n) { n - prologue_offset() })
   ffi_post_json(
     json.to_string(
       json.object([
@@ -148,6 +187,7 @@ fn post_error(
         #("line", nullable_int(line)),
         #("column", nullable_int(column)),
         #("message", json.string(strip_marker(message))),
+        #("stdout", json.string(stdout)),
         #("warnings", json.array([], json.string)),
       ]),
     ),
@@ -186,6 +226,9 @@ fn nullable_int(value: Option(Int)) -> Json {
 
 @external(javascript, "./py_worker_ffi.mjs", "run_python")
 fn ffi_run_python(program: String) -> Dynamic
+
+@external(javascript, "./py_worker_ffi.mjs", "captured_stdout")
+fn ffi_captured_stdout() -> String
 
 @external(javascript, "./py_worker_ffi.mjs", "post_json")
 fn ffi_post_json(payload: String) -> Nil

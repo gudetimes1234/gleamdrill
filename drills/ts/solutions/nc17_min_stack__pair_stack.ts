@@ -1,6 +1,4 @@
 export class MinStack {
-  // Each entry carries the minimum of everything at or below it, so getMin is
-  // a peek. One array instead of two, at the cost of a second number per value.
   private entries: [number, number][] = [];
 
   push(val: number): void {

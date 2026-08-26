@@ -1,0 +1,1 @@
+Two strings are anagrams exactly when every character occurs the same number of times in both, so build a count per string and compare the two maps.

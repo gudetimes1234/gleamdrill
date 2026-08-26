@@ -1,6 +1,4 @@
 def sortByLength(words):
-    # Decorate, sort, undecorate: attach the sort key to each item, sort the
-    # pairs, then strip it. `key=` is this pattern built into sorted().
     decorated = [(len(word), word) for word in words]
     decorated.sort(key=lambda pair: pair[0])
     return [word for _, word in decorated]

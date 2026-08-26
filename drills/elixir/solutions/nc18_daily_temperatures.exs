@@ -1,7 +1,5 @@
 defmodule Solution do
   def daily_temperatures(temps) do
-    # A stack of days still waiting for something warmer; each day resolves
-    # every colder day below it, so each day is pushed and popped once.
     {answers, _stack} =
       temps
       |> Enum.with_index()

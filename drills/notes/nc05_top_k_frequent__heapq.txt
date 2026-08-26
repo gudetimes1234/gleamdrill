@@ -1,0 +1,1 @@
+A heap of size k keeps only the candidates that can still win: O(n + k log n), and the win is largest when k is much smaller than n.

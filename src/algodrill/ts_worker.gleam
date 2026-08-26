@@ -45,7 +45,7 @@ fn request_decoder() -> Decoder(Request) {
 fn serve(request: Request) -> Promise(Nil) {
   case unsupported_syntax(request.solution) {
     Some(reason) -> {
-      post_error(request.id, "compile", None, None, None, reason)
+      post_error(request.id, "compile", None, None, None, reason, "")
       promise.resolve(Nil)
     }
     None -> compile_and_run(request)
@@ -85,6 +85,7 @@ fn compile_and_run(request: Request) -> Promise(Nil) {
         line,
         column,
         message,
+        "",
       )
       promise.resolve(Nil)
     }
@@ -98,6 +99,7 @@ fn compile_and_run(request: Request) -> Promise(Nil) {
             None,
             None,
             message,
+            "",
           )
           promise.resolve(Nil)
         }
@@ -166,8 +168,19 @@ fn report(id: Int, outcome: Dynamic) -> Nil {
     use message <- decode.field("error", decode.string)
     decode.success(Error(message))
   }
+  // Decoded on its own so both arms get it: printing and *then* throwing is
+  // exactly when the output is worth reading.
+  let stdout = case
+    decode.run(outcome, {
+      use text <- decode.optional_field("stdout", "", decode.string)
+      decode.success(text)
+    })
+  {
+    Ok(text) -> truncate(text, 4000)
+    Error(_) -> ""
+  }
   case decode.run(outcome, decode.one_of(ran, [failed])) {
-    Ok(Ok(cases)) -> post_result(id, cases)
+    Ok(Ok(cases)) -> post_result(id, cases, stdout)
     Ok(Error(message)) ->
       case string.contains(message, "__signature_mismatch__") {
         True ->
@@ -178,8 +191,9 @@ fn report(id: Int, outcome: Dynamic) -> Nil {
             None,
             None,
             "The expected function isn't exported.",
+            stdout,
           )
-        False -> post_error(id, "run", None, None, None, message)
+        False -> post_error(id, "run", None, None, None, message, stdout)
       }
     Error(_) ->
       post_error(
@@ -189,11 +203,24 @@ fn report(id: Int, outcome: Dynamic) -> Nil {
         None,
         None,
         "The harness produced an unreadable result.",
+        stdout,
       )
   }
 }
 
-fn post_result(id: Int, cases: List(#(String, String, String))) -> Nil {
+/// Capped before postMessage: a print inside a hot loop must not reach the DOM.
+fn truncate(text: String, max: Int) -> String {
+  case string.length(text) > max {
+    True -> string.slice(text, 0, max) <> "\u{2026}"
+    False -> text
+  }
+}
+
+fn post_result(
+  id: Int,
+  cases: List(#(String, String, String)),
+  stdout: String,
+) -> Nil {
   ffi_post_json(
     json.to_string(
       json.object([
@@ -210,6 +237,7 @@ fn post_result(id: Int, cases: List(#(String, String, String))) -> Nil {
             ])
           }),
         ),
+        #("stdout", json.string(stdout)),
         #("warnings", json.array([], json.string)),
       ]),
     ),
@@ -223,6 +251,7 @@ fn post_error(
   line: Option(Int),
   column: Option(Int),
   message: String,
+  stdout: String,
 ) -> Nil {
   ffi_post_json(
     json.to_string(
@@ -234,6 +263,7 @@ fn post_error(
         #("line", nullable_int(line)),
         #("column", nullable_int(column)),
         #("message", json.string(message)),
+        #("stdout", json.string(stdout)),
         #("warnings", json.array([], json.string)),
       ]),
     ),

@@ -2,9 +2,6 @@ import gleam/int
 import gleam/list
 import gleam/order
 
-/// Two plain steps instead of one clever one: find where the rotation wrapped,
-/// which splits the input into two ordinary sorted arrays, then binary search
-/// each. Nothing has to reason about which half is sorted mid-search.
 pub fn search_rotated(nums: List(Int), target: Int) -> Result(Int, Nil) {
   let pivot = rotation_point(nums)
   let #(left, right) = list.split(nums, pivot)

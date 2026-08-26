@@ -131,7 +131,7 @@ fn drill(title: String, prompt: String, e: embedded.Embedded) -> Problem {
     title: title,
     prompt: prompt,
     approach: approaches.for_title(title),
-    solutions: list.map(e.solutions, fn(s) { Solution(label: s.0, code: s.1) }),
+    solutions: list.map(e.solutions, fn(s) { Solution(label: s.0, note: s.1, code: s.2) }),
     language: Gleam,
     check: Some(e.check),
     quiz: None,

@@ -292,7 +292,7 @@ fn side_panels(
 
 fn tests_panel(m: Model) -> Element(Msg) {
   case m.run {
-    Ran(Cases(cases)) ->
+    Ran(Cases(cases), _) ->
       html.ul(
         [attribute.class("case-list")],
         list.map(cases, fn(c: CaseResult) {
@@ -401,9 +401,9 @@ fn results_and_answer(m: Model, current: Problem) -> List(Element(Msg)) {
         ]),
       ]),
     ]
-    Ran(Cases(cases)) -> [case_results(cases)]
-    Ran(Errored(error)) -> [error_results(error, current)]
-    Ran(TimedOut) -> [
+    Ran(Cases(cases), stdout) -> [case_results(cases, stdout)]
+    Ran(Errored(error), stdout) -> [error_results(error, current, stdout)]
+    Ran(TimedOut, _) -> [
       html.div([attribute.class("results")], [
         html.div([attribute.class("results-summary fail")], [
           html.text(
@@ -416,12 +416,25 @@ fn results_and_answer(m: Model, current: Problem) -> List(Element(Msg)) {
 
   let answer = case revealed(m, current) {
     Ok(solution) -> [
-      html.div([attribute.class("answer-content")], [
-        html.div([attribute.class("answer-label")], [
-          html.text(solution.label),
+      html.div(
+        [attribute.class("answer-content")],
+        list.flatten([
+          [
+            html.div([attribute.class("answer-label")], [
+              html.text(solution.label),
+            ]),
+          ],
+          // Solutions written before their note exists simply have none; an
+          // empty div would still draw its margins.
+          case solution.note {
+            "" -> []
+            note -> [
+              html.div([attribute.class("answer-note")], [html.text(note)]),
+            ]
+          },
+          [html.pre([], [html.code([], [html.text(solution.code)])])],
         ]),
-        html.pre([], [html.code([], [html.text(solution.code)])]),
-      ]),
+      ),
     ]
     Error(Nil) -> []
   }
@@ -439,7 +452,7 @@ fn revealed(m: Model, current: Problem) -> Result(Solution, Nil) {
   }
 }
 
-fn case_results(cases: List(CaseResult)) -> Element(Msg) {
+fn case_results(cases: List(CaseResult), stdout: String) -> Element(Msg) {
   let total = list.length(cases)
   let passed = list.count(cases, fn(c) { c.passed })
   let all_passed = passed == total && total > 0
@@ -490,10 +503,32 @@ fn case_results(cases: List(CaseResult)) -> Element(Msg) {
       ])
     })
 
-  html.div([attribute.class("results")], [summary, ..failures])
+  html.div(
+    [attribute.class("results")],
+    [summary, ..list.append(output_panel(stdout), failures)],
+  )
 }
 
-fn error_results(error: RunError, current: Problem) -> Element(Msg) {
+/// Whatever the attempt printed, collapsed. Collapsed because a passing run
+/// should still read as one line — but present, because a print is how you
+/// find out why a case came back wrong.
+fn output_panel(stdout: String) -> List(Element(Msg)) {
+  case string.trim(stdout) {
+    "" -> []
+    text -> [
+      html.details([attribute.class("results-details")], [
+        html.summary([], [html.text("Output")]),
+        html.pre([attribute.class("results-stdout")], [html.text(text)]),
+      ]),
+    ]
+  }
+}
+
+fn error_results(
+  error: RunError,
+  current: Problem,
+  stdout: String,
+) -> Element(Msg) {
   let is_check_file = case error.file {
     Some(file) -> string.starts_with(file, "check")
     None -> False
@@ -513,6 +548,7 @@ fn error_results(error: RunError, current: Problem) -> Element(Msg) {
             html.text(error.message),
           ]),
         ]),
+        ..output_panel(stdout)
       ])
     _, _ ->
       html.div([attribute.class("results")], [
@@ -525,6 +561,7 @@ fn error_results(error: RunError, current: Problem) -> Element(Msg) {
         html.pre([attribute.class("results-message")], [
           html.text(error.message),
         ]),
+        ..output_panel(stdout)
       ])
   }
 }
@@ -532,7 +569,7 @@ fn error_results(error: RunError, current: Problem) -> Element(Msg) {
 /// Compile errors inside the user's own module become inline underlines.
 fn editor_diagnostics(m: Model) -> List(editor.Diagnostic) {
   case m.run {
-    Ran(Errored(error)) ->
+    Ran(Errored(error), _) ->
       case error.file, error.line, error.column {
         Some("solution.gleam"), Some(line), Some(column) -> [
           editor.Diagnostic(line, column, first_lines(error.message)),

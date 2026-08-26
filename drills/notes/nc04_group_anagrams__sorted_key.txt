@@ -1,0 +1,2 @@
+@shared/canonical-key
+The sorted word itself is the key. Shorter than tallying letters, and it works for any alphabet rather than just a-z.

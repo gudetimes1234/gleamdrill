@@ -2,9 +2,6 @@ import gleam/int
 import gleam/list
 import gleam/order
 
-/// Instead of converging two pointers, fix each number and binary search the
-/// tail for its complement — O(n log n), and it reuses the binary search you
-/// already know rather than a second pointer discipline.
 pub fn two_sum_sorted(
   numbers: List(Int),
   target: Int,

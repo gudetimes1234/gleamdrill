@@ -1,6 +1,4 @@
 def bfsOrder(graph, start):
-    # A list plus a read cursor. The cursor is the point: list.pop(0) is O(n),
-    # so a plain list only stays a good queue if you never shift it.
     queue = [start]
     head = 0
     seen = {start}

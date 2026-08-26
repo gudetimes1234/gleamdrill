@@ -1,6 +1,4 @@
 export function search(nums: number[], target: number): number {
-  // The same halving, written as recursion: the bounds are arguments rather
-  // than mutated locals, which makes each step's invariant easier to see.
   return halve(nums, target, 0, nums.length - 1);
 }
 

@@ -1,7 +1,4 @@
 def dailyTemperatures(temperatures):
-    # For each day, scan forward until it gets warmer. O(n^2), and the direct
-    # reading of the question — the monotonic stack exists only to avoid
-    # rescanning the same cold stretch once per day.
     result = []
     for i, temp in enumerate(temperatures):
         days = 0

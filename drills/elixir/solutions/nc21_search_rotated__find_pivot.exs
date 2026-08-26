@@ -1,7 +1,5 @@
 defmodule Solution do
   def search_rotated(nums, target) do
-    # Two plain steps instead of one clever one: find where the rotation
-    # wrapped, which leaves two ordinary sorted runs, then binary search each.
     tuple = List.to_tuple(nums)
     pivot = rotation_point(nums)
     size = tuple_size(tuple)

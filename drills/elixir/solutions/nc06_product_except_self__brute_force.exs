@@ -1,6 +1,5 @@
 defmodule Solution do
   def product_except_self(nums) do
-    # The obvious O(n^2) reading: for each slot, multiply everything else.
     indexed = Enum.with_index(nums)
 
     Enum.map(indexed, fn {_num, i} ->

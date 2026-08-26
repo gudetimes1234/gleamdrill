@@ -1,0 +1,2 @@
+@shared/brute-force-baseline
+Every ordered pair, checked, stopping at the first hit.

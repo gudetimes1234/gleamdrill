@@ -1,7 +1,5 @@
 defmodule Solution do
   def longest_consecutive(nums) do
-    # No set: sort, then fold once over the gaps. O(n log n) rather than O(n),
-    # but the run logic reads straight through.
     case Enum.sort(nums) do
       [] ->
         0

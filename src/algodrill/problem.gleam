@@ -23,8 +23,13 @@ pub type Check {
 
 /// One way of solving a problem. Every problem has at least one; some carry
 /// alternates ("Solution 2 · Brute force") showing a different approach.
+///
+/// `note` is the prose explaining *this* approach, shown above the code when a
+/// solution is revealed. It lives in drills/notes/<stem>.txt rather than as a
+/// comment in the source, so the four language mirrors of one variant share a
+/// single write-up instead of four hand-kept rewordings. Empty means "no note".
 pub type Solution {
-  Solution(label: String, code: String)
+  Solution(label: String, note: String, code: String)
 }
 
 /// A multiple-choice question. `correct` indexes into `choices`. The distractors

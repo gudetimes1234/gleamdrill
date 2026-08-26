@@ -1,0 +1,2 @@
+@shared/brute-force-baseline
+Every buy day against every later sell day. O(n^2), and the problem statement written out.
