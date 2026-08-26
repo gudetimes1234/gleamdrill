@@ -1,0 +1,1 @@
+Record a letter only once everything that must follow it has been recorded, and prepend rather than append — that is what puts it back in front of them. The in-progress set is the cycle check, exactly as in Course Schedule: a letter met again on the current path contradicts itself.

@@ -1,0 +1,1 @@
+The stop limit is what stops this being plain Dijkstra: cheapest-so-far no longer settles a city, because a costlier route with fewer stops may still be the one that gets through. Bellman-Ford handles it by construction — one round is one flight — provided each round reads a snapshot of the last, or two flights leak into a single round.

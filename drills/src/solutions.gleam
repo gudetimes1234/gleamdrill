@@ -72,8 +72,20 @@ import nc117_graph_valid_tree
 import nc117_graph_valid_tree__union_find
 import nc118_word_ladder
 import nc118_word_ladder__compare_pairs
+import nc119_reconstruct_itinerary
+import nc119_reconstruct_itinerary__backtracking
 import nc11_container_water
 import nc11_container_water__brute_force
+import nc120_min_cost_connect_points
+import nc120_min_cost_connect_points__kruskal
+import nc121_network_delay_time
+import nc121_network_delay_time__bellman_ford
+import nc122_swim_in_water
+import nc122_swim_in_water__binary_search
+import nc123_alien_dictionary
+import nc123_alien_dictionary__dfs_postorder
+import nc124_cheapest_flights
+import nc124_cheapest_flights__breadth_first
 import nc12_best_time_stock
 import nc12_best_time_stock__brute_force
 import nc13_longest_substring
@@ -660,6 +672,28 @@ pub fn main() {
     check_graph_valid_tree(nc117_graph_valid_tree__union_find.valid_tree),
     check_word_ladder(nc118_word_ladder.ladder_length),
     check_word_ladder(nc118_word_ladder__compare_pairs.ladder_length),
+    check_reconstruct_itinerary(nc119_reconstruct_itinerary.find_itinerary),
+    check_reconstruct_itinerary(
+      nc119_reconstruct_itinerary__backtracking.find_itinerary,
+    ),
+    check_min_cost_connect_points(
+      nc120_min_cost_connect_points.min_cost_connect_points,
+    ),
+    check_min_cost_connect_points(
+      nc120_min_cost_connect_points__kruskal.min_cost_connect_points,
+    ),
+    check_network_delay_time(nc121_network_delay_time.network_delay_time),
+    check_network_delay_time(
+      nc121_network_delay_time__bellman_ford.network_delay_time,
+    ),
+    check_swim_in_water(nc122_swim_in_water.swim_in_water),
+    check_swim_in_water(nc122_swim_in_water__binary_search.swim_in_water),
+    check_alien_order(nc123_alien_dictionary.alien_order),
+    check_alien_order(nc123_alien_dictionary__dfs_postorder.alien_order),
+    check_cheapest_flights(nc124_cheapest_flights.find_cheapest_price),
+    check_cheapest_flights(
+      nc124_cheapest_flights__breadth_first.find_cheapest_price,
+    ),
 
     // Gleam Tips
     check_list_patterns(tip01_list_patterns.length, tip01_list_patterns.last),
@@ -2056,6 +2090,114 @@ fn check_word_ladder(f: fn(String, String, List(String)) -> Int) -> Nil {
   // Start and end are the same word, which is a ladder of length one.
   let assert True = f("hit", "hit", ["hit"]) == 1
   let assert True = f("hot", "dog", ["hot", "dog"]) == 0
+  Nil
+}
+
+fn check_reconstruct_itinerary(
+  f: fn(List(#(String, String))) -> List(String),
+) -> Nil {
+  let assert ["JFK", "MUC", "LHR", "SFO", "SJC"] =
+    f([
+      #("MUC", "LHR"),
+      #("JFK", "MUC"),
+      #("SFO", "SJC"),
+      #("LHR", "SFO"),
+    ])
+  // Two ways out of JFK, and the smaller one has to be taken first.
+  let assert ["JFK", "ATL", "JFK", "SFO", "ATL", "SFO"] =
+    f([
+      #("JFK", "SFO"),
+      #("JFK", "ATL"),
+      #("SFO", "ATL"),
+      #("ATL", "JFK"),
+      #("ATL", "SFO"),
+    ])
+  // KUL is smaller than NRT but is a dead end, so it cannot be taken first.
+  let assert ["JFK", "NRT", "JFK", "KUL"] =
+    f([#("JFK", "KUL"), #("JFK", "NRT"), #("NRT", "JFK")])
+  let assert ["JFK"] = f([])
+  Nil
+}
+
+fn check_min_cost_connect_points(f: fn(List(#(Int, Int))) -> Int) -> Nil {
+  let assert True = f([#(0, 0), #(2, 2), #(3, 10), #(5, 2), #(7, 0)]) == 20
+  let assert True = f([#(3, 12), #(-2, 5), #(-4, 1)]) == 18
+  let assert True = f([]) == 0
+  let assert True = f([#(1, 1)]) == 0
+  let assert True = f([#(0, 0), #(0, 5)]) == 5
+  Nil
+}
+
+fn check_network_delay_time(
+  f: fn(List(#(Int, Int, Int)), Int, Int) -> Int,
+) -> Nil {
+  let assert True = f([#(2, 1, 1), #(2, 3, 1), #(3, 4, 1)], 4, 2) == 2
+  let assert True = f([#(1, 2, 1)], 2, 1) == 1
+  // Signals only travel the way the edge points, so node 1 never hears it.
+  let assert True = f([#(1, 2, 1)], 2, 2) == -1
+  let assert True = f([], 1, 1) == 0
+  // The two-hop route is shorter than the direct edge.
+  let assert True = f([#(1, 2, 1), #(2, 3, 2), #(1, 3, 4)], 3, 1) == 3
+  Nil
+}
+
+fn check_swim_in_water(f: fn(List(List(Int))) -> Int) -> Nil {
+  let assert True = f([[0, 2], [1, 3]]) == 3
+  let assert True =
+    f([
+      [0, 1, 2, 3, 4],
+      [24, 23, 22, 21, 5],
+      [12, 13, 14, 15, 16],
+      [11, 17, 18, 19, 20],
+      [10, 9, 8, 7, 6],
+    ])
+    == 16
+  let assert True = f([[0]]) == 0
+  // The starting cell counts too, even when everything after it is shallower.
+  let assert True = f([[3, 2], [1, 0]]) == 3
+  Nil
+}
+
+fn check_alien_order(f: fn(List(String)) -> String) -> Nil {
+  let assert "wertf" = f(["wrt", "wrf", "er", "ett", "rftt"])
+  let assert "zx" = f(["z", "x"])
+  // z before x before z: no alphabet can satisfy that.
+  let assert "" = f(["z", "x", "z"])
+  // A word followed by its own prefix is impossible however letters are ordered.
+  let assert "" = f(["abc", "ab"])
+  let assert "z" = f(["z", "z"])
+  let assert "xyz" = f(["x", "y", "z"])
+  Nil
+}
+
+fn check_cheapest_flights(
+  f: fn(Int, List(#(Int, Int, Int)), Int, Int, Int) -> Int,
+) -> Nil {
+  let assert True =
+    f(
+      4,
+      [#(0, 1, 100), #(1, 2, 100), #(2, 0, 100), #(1, 3, 600), #(2, 3, 200)],
+      0,
+      3,
+      1,
+    )
+    == 700
+  let assert True =
+    f(3, [#(0, 1, 100), #(1, 2, 100), #(0, 2, 500)], 0, 2, 1) == 200
+  // One fewer stop allowed, so the cheap two-hop route is out of reach.
+  let assert True =
+    f(3, [#(0, 1, 100), #(1, 2, 100), #(0, 2, 500)], 0, 2, 0) == 500
+  let assert True = f(2, [], 0, 1, 5) == -1
+  let assert True = f(1, [], 0, 0, 0) == 0
+  let assert True =
+    f(
+      5,
+      [#(0, 1, 5), #(1, 2, 5), #(0, 3, 2), #(3, 1, 2), #(1, 4, 1), #(4, 2, 1)],
+      0,
+      2,
+      2,
+    )
+    == 7
   Nil
 }
 

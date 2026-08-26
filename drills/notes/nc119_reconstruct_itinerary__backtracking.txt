@@ -1,0 +1,2 @@
+@shared/brute-force-baseline
+Every ticket used, smallest option first, undoing a choice that leads nowhere. Because the options are sorted, the first complete itinerary found is already the smallest — no candidates to compare. Exponential in the worst case, which is precisely what Hierholzer's one-pass walk removes.

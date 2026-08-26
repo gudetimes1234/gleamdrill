@@ -2264,6 +2264,84 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc119_reconstruct_itinerary() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Hierholzer's algorithm. Take the smallest unused ticket every time and never look back — an airport is only recorded once it has no tickets left, so the dead end the greedy choice walks into is exactly where the route has to *end*, and recording it first is what puts it last. Nothing is ever undone, which is the whole difference from the backtracking version.", "export function findItinerary(tickets: string[][]): string[] {
+  const destinations = new Map<string, string[]>();
+  for (const [origin, destination] of tickets) {
+    if (!destinations.has(origin)) destinations.set(origin, []);
+    destinations.get(origin)!.push(destination);
+  }
+  for (const options of destinations.values()) options.sort();
+
+  // Hierholzer's algorithm. Take the smallest unused ticket every time and
+  // never look back: an airport is only recorded once it has no tickets left,
+  // so the dead end the greedy choice walks into is exactly where the route has
+  // to *end* -- and being recorded first puts it at the front once the record
+  // is reversed.
+  const route: string[] = [];
+  const stack = [\"JFK\"];
+  while (stack.length) {
+    const airport = stack[stack.length - 1];
+    const options = destinations.get(airport);
+    if (options && options.length) stack.push(options.shift()!);
+    else route.push(stack.pop()!);
+  }
+
+  return route.reverse();
+}"),
+      #("Solution 2 · Backtracking", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every ticket used, smallest option first, undoing a choice that leads nowhere. Because the options are sorted, the first complete itinerary found is already the smallest — no candidates to compare. Exponential in the worst case, which is precisely what Hierholzer's one-pass walk removes.", "export function findItinerary(tickets: string[][]): string[] {
+  const destinations = new Map<string, string[]>();
+  for (const [origin, destination] of tickets) {
+    if (!destinations.has(origin)) destinations.set(origin, []);
+    destinations.get(origin)!.push(destination);
+  }
+  for (const options of destinations.values()) options.sort();
+
+  // Every ticket used, smallest option first, undoing a choice that leads
+  // nowhere. Because the options are sorted, the first complete itinerary found
+  // is the smallest one -- no comparing of candidates. Exponential in the worst
+  // case, which is what Hierholzer's one-pass walk removes.
+  const extend = (airport: string, route: string[], remaining: number): string[] | null => {
+    if (remaining === 0) return route;
+    const options = destinations.get(airport) ?? [];
+    for (let i = 0; i < options.length; i++) {
+      const [next] = options.splice(i, 1);
+      const found = extend(next, [...route, next], remaining - 1);
+      options.splice(i, 0, next);
+      if (found) return found;
+    }
+    return null;
+  };
+
+  return extend(\"JFK\", [\"JFK\"], tickets.length) ?? [];
+}"),
+    ],
+    check: Check(
+      signature: "export function findItinerary(tickets: string[][]): string[]",
+      starter: "export function findItinerary(tickets: string[][]): string[] {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.findItinerary !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"findItinerary(MUC/LHR/SFO/SJC chain)\", show([\"JFK\", \"MUC\", \"LHR\", \"SFO\", \"SJC\"]), show(solution.findItinerary([[\"MUC\", \"LHR\"], [\"JFK\", \"MUC\"], [\"SFO\", \"SJC\"], [\"LHR\", \"SFO\"]]))],
+    [\"findItinerary(two ways out of JFK -- smallest first)\", show([\"JFK\", \"ATL\", \"JFK\", \"SFO\", \"ATL\", \"SFO\"]), show(solution.findItinerary([[\"JFK\", \"SFO\"], [\"JFK\", \"ATL\"], [\"SFO\", \"ATL\"], [\"ATL\", \"JFK\"], [\"ATL\", \"SFO\"]]))],
+    [\"findItinerary(KUL is a dead end, so it must come last)\", show([\"JFK\", \"NRT\", \"JFK\", \"KUL\"]), show(solution.findItinerary([[\"JFK\", \"KUL\"], [\"JFK\", \"NRT\"], [\"NRT\", \"JFK\"]]))],
+    [\"findItinerary([])\", show([\"JFK\"]), show(solution.findItinerary([]))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn nc11_container_water() -> Embedded {
   Embedded(
     solutions: [
@@ -2310,6 +2388,488 @@ export function run(): [string, string, string][] {
   return [
     [\"maxArea([1, 8, 6, 2, 5, 4, 8, 3, 7])\", show(49), show(solution.maxArea([1, 8, 6, 2, 5, 4, 8, 3, 7]))],
     [\"maxArea([1, 1])\", show(1), show(solution.maxArea([1, 1]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc120_min_cost_connect_points() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Prim's algorithm. Each outside point remembers only its distance to the tree so far, so adding one is a pass to find the nearest and a pass to update — O(n^2), which is what a complete graph costs anyway, and it needs no heap. Taking the cheapest edge is safe because the cheapest edge leaving any set of points is in some minimum spanning tree.", "export function minCostConnectPoints(points: number[][]): number {
+  if (points.length === 0) return 0;
+
+  // Prim's algorithm. Each outside point remembers only its distance to the
+  // tree so far, so adding a point is one pass to find the nearest and one pass
+  // to update -- O(n^2) total, which is what a complete graph costs anyway, and
+  // it needs no heap. Cheapest-edge-first is safe because the cheapest edge
+  // leaving any set of points is always in some minimum spanning tree.
+  const outside = points.slice(1).map((point) => ({ point, cost: distance(points[0], point) }));
+  let total = 0;
+
+  while (outside.length) {
+    let best = 0;
+    for (let i = 1; i < outside.length; i++) if (outside[i].cost < outside[best].cost) best = i;
+    const [nearest] = outside.splice(best, 1);
+    total += nearest.cost;
+    for (const entry of outside) {
+      entry.cost = Math.min(entry.cost, distance(nearest.point, entry.point));
+    }
+  }
+
+  return total;
+}
+
+function distance(a: number[], b: number[]): number {
+  return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+}"),
+      #("Solution 2 · Kruskal", "Every edge, cheapest first, kept only when it joins two pieces that are not already connected — union-find is what makes that test cheap. The trade against Prim's is the sort, but Kruskal never looks at the points themselves, only at the edge list, which is why it is the one that generalises to a sparse graph.", "export function minCostConnectPoints(points: number[][]): number {
+  // Kruskal's algorithm: every edge, cheapest first, kept only when it joins
+  // two pieces that are not already connected. Union-find is what makes that
+  // test cheap. The trade against Prim's is the sort -- O(n^2 log n) edges here
+  // against Prim's O(n^2) -- but Kruskal never needs the points themselves,
+  // only the edge list, so it is the one that generalises to a sparse graph.
+  const edges: [number, number, number][] = [];
+  for (let i = 0; i < points.length; i++) {
+    for (let j = i + 1; j < points.length; j++) {
+      edges.push([distance(points[i], points[j]), i, j]);
+    }
+  }
+  edges.sort((a, b) => a[0] - b[0]);
+
+  const parents = new Map<number, number>();
+  const find = (node: number): number => {
+    while ((parents.get(node) ?? node) !== node) node = parents.get(node)!;
+    return node;
+  };
+
+  let total = 0;
+  for (const [cost, i, j] of edges) {
+    const rootI = find(i);
+    const rootJ = find(j);
+    if (rootI !== rootJ) {
+      parents.set(rootI, rootJ);
+      total += cost;
+    }
+  }
+
+  return total;
+}
+
+function distance(a: number[], b: number[]): number {
+  return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+}"),
+    ],
+    check: Check(
+      signature: "export function minCostConnectPoints(points: number[][]): number",
+      starter: "export function minCostConnectPoints(points: number[][]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.minCostConnectPoints !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"minCostConnectPoints(the five-point example)\", show(20), show(solution.minCostConnectPoints([[0, 0], [2, 2], [3, 10], [5, 2], [7, 0]]))],
+    [\"minCostConnectPoints([[3,12],[-2,5],[-4,1]])\", show(18), show(solution.minCostConnectPoints([[3, 12], [-2, 5], [-4, 1]]))],
+    [\"minCostConnectPoints([])\", show(0), show(solution.minCostConnectPoints([]))],
+    [\"minCostConnectPoints([[1,1]]) -- nothing to connect\", show(0), show(solution.minCostConnectPoints([[1, 1]]))],
+    [\"minCostConnectPoints([[0,0],[0,5]])\", show(5), show(solution.minCostConnectPoints([[0, 0], [0, 5]]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc121_network_delay_time() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Dijkstra's algorithm. Taking the smallest tentative arrival settles that node for good, because any other route to it would have to start with an edge at least as long. That argument is exactly where a negative edge would break it — which is the reason to know Bellman-Ford as well.", "export function networkDelayTime(times: number[][], n: number, k: number): number {
+  const edges = new Map<number, [number, number][]>();
+  for (const [origin, destination, weight] of times) {
+    if (!edges.has(origin)) edges.set(origin, []);
+    edges.get(origin)!.push([destination, weight]);
+  }
+
+  // Dijkstra's algorithm. The frontier holds tentative arrival times; taking
+  // the smallest one settles that node for good, because every other route to
+  // it would have to start with an edge at least as long. JavaScript has no
+  // heap in the standard library, so the smallest is found by a scan -- O(V^2)
+  // rather than O(E log V), which is the better shape anyway when the graph is
+  // dense.
+  const settled = new Map<number, number>();
+  let frontier: [number, number][] = [[k, 0]];
+
+  while (frontier.length) {
+    let best = 0;
+    for (let i = 1; i < frontier.length; i++) if (frontier[i][1] < frontier[best][1]) best = i;
+    const [node, at] = frontier[best];
+    frontier = frontier.filter((entry) => entry[0] !== node);
+    if (settled.has(node)) continue;
+    settled.set(node, at);
+    for (const [destination, weight] of edges.get(node) ?? []) {
+      if (!settled.has(destination)) frontier.push([destination, at + weight]);
+    }
+  }
+
+  // Every node has to have heard the signal, and the answer is the last one to.
+  return settled.size === n ? Math.max(...settled.values()) : -1;
+}"),
+      #("Solution 2 · Bellman ford", "No choosing what to settle next: relax every edge, n-1 times over, and the times settle by themselves — a shortest path is at most n-1 edges long, and each round fixes at least one more of them. Slower at O(V·E), and worth knowing because it survives negative weights.", "export function networkDelayTime(times: number[][], n: number, k: number): number {
+  // Bellman-Ford. No choosing what to settle next: relax every edge, n-1 times
+  // over, and the times settle by themselves -- a shortest path is at most n-1
+  // edges long, and each round fixes at least one more of them. Slower than
+  // Dijkstra at O(V*E), and the reason to know it is that it survives negative
+  // edge weights, which Dijkstra's settle-and-never-revisit does not.
+  const settled = new Map<number, number>([[k, 0]]);
+
+  for (let round = 0; round < n - 1; round++) {
+    for (const [origin, destination, weight] of times) {
+      if (!settled.has(origin)) continue;
+      const arrival = settled.get(origin)! + weight;
+      if (!settled.has(destination) || arrival < settled.get(destination)!) {
+        settled.set(destination, arrival);
+      }
+    }
+  }
+
+  return settled.size === n ? Math.max(...settled.values()) : -1;
+}"),
+    ],
+    check: Check(
+      signature: "export function networkDelayTime(times: number[][], n: number, k: number): number",
+      starter: "export function networkDelayTime(times: number[][], n: number, k: number): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.networkDelayTime !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"networkDelayTime([[2,1,1],[2,3,1],[3,4,1]], 4, 2)\", show(2), show(solution.networkDelayTime([[2, 1, 1], [2, 3, 1], [3, 4, 1]], 4, 2))],
+    [\"networkDelayTime([[1,2,1]], 2, 1)\", show(1), show(solution.networkDelayTime([[1, 2, 1]], 2, 1))],
+    [\"networkDelayTime([[1,2,1]], 2, 2) -- node 1 is unreachable\", show(-1), show(solution.networkDelayTime([[1, 2, 1]], 2, 2))],
+    [\"networkDelayTime([], 1, 1)\", show(0), show(solution.networkDelayTime([], 1, 1))],
+    [\"networkDelayTime(the long way round is shorter, 3, 1)\", show(3), show(solution.networkDelayTime([[1, 2, 1], [2, 3, 2], [1, 3, 4]], 3, 1))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc122_swim_in_water() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Dijkstra's, with the cost of a path redefined from the sum of its steps to the largest step in it — the water only has to rise once. Everything else about the algorithm is untouched, which is the point: the shortest-path machinery works for any cost that only grows along a path.", "export function swimInWater(grid: number[][]): number {
+  if (grid.length === 0) return 0;
+
+  const n = grid.length;
+
+  // Dijkstra's, with \"cost of a path\" redefined from the sum of its steps to
+  // the largest step in it -- the water only has to rise once. Everything else
+  // about the algorithm is unchanged, which is the point: settle the cheapest
+  // reachable cell, and the first time the far corner is settled that cost is
+  // the answer.
+  const seen = new Set<string>();
+  let frontier: [number, number, number][] = [[grid[0][0], 0, 0]];
+
+  while (frontier.length) {
+    let best = 0;
+    for (let i = 1; i < frontier.length; i++) if (frontier[i][0] < frontier[best][0]) best = i;
+    const [cost, r, c] = frontier[best];
+    frontier.splice(best, 1);
+    if (r === n - 1 && c === n - 1) return cost;
+    if (seen.has(`${r},${c}`)) continue;
+    seen.add(`${r},${c}`);
+    for (const [nr, nc] of [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]) {
+      if (nr < 0 || nr >= n || nc < 0 || nc >= grid[nr].length) continue;
+      if (seen.has(`${nr},${nc}`)) continue;
+      frontier.push([Math.max(cost, grid[nr][nc]), nr, nc]);
+    }
+  }
+
+  return -1;
+}"),
+      #("Solution 2 · Binary search", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Reachability at time t is monotone: once the corner can be reached, it stays reachable as the water rises. That is the shape binary search needs, and it turns the question from \"what is the cheapest path\" into \"is it possible yet\", answered by a plain flood fill.", "export function swimInWater(grid: number[][]): number {
+  if (grid.length === 0) return 0;
+
+  const n = grid.length;
+
+  const reaches = (limit: number): boolean => {
+    // The target has to be passable itself, so its depth is checked before it
+    // counts as reached.
+    if (grid[0][0] > limit) return false;
+    const seen = new Set<string>();
+    const stack: [number, number][] = [[0, 0]];
+    while (stack.length) {
+      const [r, c] = stack.pop()!;
+      if (seen.has(`${r},${c}`) || grid[r][c] > limit) continue;
+      if (r === n - 1 && c === n - 1) return true;
+      seen.add(`${r},${c}`);
+      for (const [nr, nc] of [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]) {
+        if (nr >= 0 && nr < n && nc >= 0 && nc < grid[nr].length) stack.push([nr, nc]);
+      }
+    }
+    return false;
+  };
+
+  // Reachability at time t is monotone: once the corner can be reached it stays
+  // reachable as the water rises further. That is exactly the shape binary
+  // search needs, so the question turns from \"what is the cheapest path\" into
+  // \"is it possible yet\", answered by a plain flood fill.
+  let low = grid[0][0];
+  let high = n * n - 1;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (reaches(middle)) high = middle;
+    else low = middle + 1;
+  }
+  return low;
+}"),
+    ],
+    check: Check(
+      signature: "export function swimInWater(grid: number[][]): number",
+      starter: "export function swimInWater(grid: number[][]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.swimInWater !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"swimInWater([[0,2],[1,3]])\", show(3), show(solution.swimInWater([[0, 2], [1, 3]]))],
+    [\"swimInWater(the 5x5 spiral)\", show(16), show(solution.swimInWater([[0, 1, 2, 3, 4], [24, 23, 22, 21, 5], [12, 13, 14, 15, 16], [11, 17, 18, 19, 20], [10, 9, 8, 7, 6]]))],
+    [\"swimInWater([[0]])\", show(0), show(solution.swimInWater([[0]]))],
+    [\"swimInWater([[3,2],[1,0]]) -- the start is the deepest cell\", show(3), show(solution.swimInWater([[3, 2], [1, 0]]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc123_alien_dictionary() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The words are the input but the graph is over letters. Two adjacent words agree up to their first difference, and that difference is the only ordering they establish — everything after it says nothing at all. Then it is a topological sort, with two distinct ways to fail: a cycle, and a word followed by its own prefix.", "export function alienOrder(words: string[]): string {
+  const letters = new Set<string>();
+  for (const word of words) for (const letter of word) letters.add(letter);
+
+  const waiting = new Map<string, number>();
+  const unlocks = new Map<string, string[]>();
+  for (const letter of letters) {
+    waiting.set(letter, 0);
+    unlocks.set(letter, []);
+  }
+
+  // Two adjacent words agree up to their first difference, and that difference
+  // is the only thing they say about the alphabet -- everything after it is
+  // unordered. The one case with no letters to compare is a word followed by a
+  // prefix of itself, which no alphabet can explain.
+  for (let i = 0; i + 1 < words.length; i++) {
+    const first = words[i];
+    const second = words[i + 1];
+    const shared = Math.min(first.length, second.length);
+    let split = -1;
+    for (let j = 0; j < shared; j++) {
+      if (first[j] !== second[j]) {
+        split = j;
+        break;
+      }
+    }
+    if (split === -1) {
+      if (first.length > second.length) return \"\";
+      continue;
+    }
+    unlocks.get(first[split])!.push(second[split]);
+    waiting.set(second[split], waiting.get(second[split])! + 1);
+  }
+
+  const ready = [...letters].filter((letter) => waiting.get(letter) === 0);
+  const order: string[] = [];
+  while (ready.length) {
+    const letter = ready.pop()!;
+    order.push(letter);
+    for (const following of unlocks.get(letter)!) {
+      waiting.set(following, waiting.get(following)! - 1);
+      if (waiting.get(following) === 0) ready.push(following);
+    }
+  }
+
+  // Short means the leftovers all depend on each other: the ordering the words
+  // describe is contradictory, so no alphabet satisfies it.
+  return order.length === letters.size ? order.join(\"\") : \"\";
+}"),
+      #("Solution 2 · Dfs postorder", "Record a letter only once everything that must follow it has been recorded, and prepend rather than append — that is what puts it back in front of them. The in-progress set is the cycle check, exactly as in Course Schedule: a letter met again on the current path contradicts itself.", "export function alienOrder(words: string[]): string {
+  const letters = new Set<string>();
+  for (const word of words) for (const letter of word) letters.add(letter);
+
+  const after = new Map<string, string[]>();
+  for (const letter of letters) after.set(letter, []);
+
+  for (let i = 0; i + 1 < words.length; i++) {
+    const first = words[i];
+    const second = words[i + 1];
+    const shared = Math.min(first.length, second.length);
+    let split = -1;
+    for (let j = 0; j < shared; j++) {
+      if (first[j] !== second[j]) {
+        split = j;
+        break;
+      }
+    }
+    if (split === -1) {
+      if (first.length > second.length) return \"\";
+      continue;
+    }
+    after.get(first[split])!.push(second[split]);
+  }
+
+  // Depth-first, recording a letter only once everything that must follow it
+  // has been recorded -- so the record comes out backwards and is reversed at
+  // the end. The in-progress set is the cycle check: a letter met again on the
+  // current path contradicts itself.
+  const onPath = new Set<string>();
+  const done = new Set<string>();
+  const order: string[] = [];
+
+  const visit = (letter: string): boolean => {
+    if (onPath.has(letter)) return false;
+    if (done.has(letter)) return true;
+    onPath.add(letter);
+    for (const following of after.get(letter)!) {
+      if (!visit(following)) return false;
+    }
+    onPath.delete(letter);
+    done.add(letter);
+    order.push(letter);
+    return true;
+  };
+
+  for (const letter of letters) {
+    if (!visit(letter)) return \"\";
+  }
+
+  return order.reverse().join(\"\");
+}"),
+    ],
+    check: Check(
+      signature: "export function alienOrder(words: string[]): string",
+      starter: "export function alienOrder(words: string[]): string {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.alienOrder !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"alienOrder(['wrt','wrf','er','ett','rftt'])\", show(\"wertf\"), show(solution.alienOrder([\"wrt\", \"wrf\", \"er\", \"ett\", \"rftt\"]))],
+    [\"alienOrder(['z','x'])\", show(\"zx\"), show(solution.alienOrder([\"z\", \"x\"]))],
+    [\"alienOrder(['z','x','z']) -- contradictory\", show(\"\"), show(solution.alienOrder([\"z\", \"x\", \"z\"]))],
+    [\"alienOrder(['abc','ab']) -- a word before its own prefix\", show(\"\"), show(solution.alienOrder([\"abc\", \"ab\"]))],
+    [\"alienOrder(['z','z'])\", show(\"z\"), show(solution.alienOrder([\"z\", \"z\"]))],
+    [\"alienOrder(['x','y','z'])\", show(\"xyz\"), show(solution.alienOrder([\"x\", \"y\", \"z\"]))],
+  ];
+}",
+    ),
+  )
+}
+
+pub fn nc124_cheapest_flights() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The stop limit is what stops this being plain Dijkstra: cheapest-so-far no longer settles a city, because a costlier route with fewer stops may still be the one that gets through. Bellman-Ford handles it by construction — one round is one flight — provided each round reads a snapshot of the last, or two flights leak into a single round.", "export function findCheapestPrice(
+  n: number,
+  flights: number[][],
+  src: number,
+  dst: number,
+  k: number,
+): number {
+  // Bellman-Ford, stopped after k+1 rounds -- one round is one flight, so the
+  // round count *is* the stop limit. Each round reads the previous round's
+  // costs from a snapshot rather than from the table being written; without
+  // that, two flights could be taken within a single round and the limit would
+  // leak.
+  let costs = new Map<number, number>([[src, 0]]);
+
+  for (let round = 0; round <= k; round++) {
+    const previous = new Map(costs);
+    for (const [origin, destination, price] of flights) {
+      if (!previous.has(origin)) continue;
+      const total = previous.get(origin)! + price;
+      if (!costs.has(destination) || total < costs.get(destination)!) {
+        costs.set(destination, total);
+      }
+    }
+  }
+
+  return costs.get(dst) ?? -1;
+}"),
+      #("Solution 2 · Breadth first", "Breadth-first by number of flights taken, which makes the stop limit the depth limit — the same bound Bellman-Ford gets from its round count, arrived at from the other direction. The cheapest-so-far table is what stops it exploding: a city is expanded again only when this route reached it for less.", "export function findCheapestPrice(
+  n: number,
+  flights: number[][],
+  src: number,
+  dst: number,
+  k: number,
+): number {
+  const outgoing = new Map<number, [number, number][]>();
+  for (const [origin, destination, price] of flights) {
+    if (!outgoing.has(origin)) outgoing.set(origin, []);
+    outgoing.get(origin)!.push([destination, price]);
+  }
+
+  // Breadth-first by number of flights taken, which makes the stop limit the
+  // depth limit -- the same bound Bellman-Ford gets from its round count. The
+  // cheapest-so-far table is what stops it exploding: a city is only expanded
+  // again if this route reached it for less than any earlier one did.
+  const best = new Map<number, number>([[src, 0]]);
+  let frontier: [number, number][] = [[src, 0]];
+
+  for (let round = 0; round <= k && frontier.length; round++) {
+    const following: [number, number][] = [];
+    for (const [city, spent] of frontier) {
+      for (const [destination, price] of outgoing.get(city) ?? []) {
+        const total = spent + price;
+        if (!best.has(destination) || total < best.get(destination)!) {
+          best.set(destination, total);
+          following.push([destination, total]);
+        }
+      }
+    }
+    frontier = following;
+  }
+
+  return best.get(dst) ?? -1;
+}"),
+    ],
+    check: Check(
+      signature: "export function findCheapestPrice(",
+      starter: "export function findCheapestPrice( {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.findCheapestPrice !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"findCheapestPrice(4, the loop example, 0, 3, 1)\", show(700), show(solution.findCheapestPrice(4, [[0, 1, 100], [1, 2, 100], [2, 0, 100], [1, 3, 600], [2, 3, 200]], 0, 3, 1))],
+    [\"findCheapestPrice(3, two hops allowed, 0, 2, 1)\", show(200), show(solution.findCheapestPrice(3, [[0, 1, 100], [1, 2, 100], [0, 2, 500]], 0, 2, 1))],
+    [\"findCheapestPrice(3, no stop allowed, 0, 2, 0)\", show(500), show(solution.findCheapestPrice(3, [[0, 1, 100], [1, 2, 100], [0, 2, 500]], 0, 2, 0))],
+    [\"findCheapestPrice(2, no flights at all, 0, 1, 5)\", show(-1), show(solution.findCheapestPrice(2, [], 0, 1, 5))],
+    [\"findCheapestPrice(1, already there, 0, 0, 0)\", show(0), show(solution.findCheapestPrice(1, [], 0, 0, 0))],
+    [\"findCheapestPrice(5, cheapest route needs the third hop, 0, 2, 2)\", show(7), show(solution.findCheapestPrice(5, [[0, 1, 5], [1, 2, 5], [0, 3, 2], [3, 1, 2], [1, 4, 1], [4, 2, 1]], 0, 2, 2))],
   ];
 }",
     ),
@@ -8273,7 +8833,13 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc116_connected_components" -> Ok(nc116_connected_components())
     "nc117_graph_valid_tree" -> Ok(nc117_graph_valid_tree())
     "nc118_word_ladder" -> Ok(nc118_word_ladder())
+    "nc119_reconstruct_itinerary" -> Ok(nc119_reconstruct_itinerary())
     "nc11_container_water" -> Ok(nc11_container_water())
+    "nc120_min_cost_connect_points" -> Ok(nc120_min_cost_connect_points())
+    "nc121_network_delay_time" -> Ok(nc121_network_delay_time())
+    "nc122_swim_in_water" -> Ok(nc122_swim_in_water())
+    "nc123_alien_dictionary" -> Ok(nc123_alien_dictionary())
+    "nc124_cheapest_flights" -> Ok(nc124_cheapest_flights())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())
     "nc14_character_replacement" -> Ok(nc14_character_replacement())

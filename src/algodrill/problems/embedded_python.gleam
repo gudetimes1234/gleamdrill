@@ -2111,6 +2111,80 @@ __case__(\"ladderLength('hot','dog', ['hot','dog']) -- no bridge\", 0, ladderLen
   )
 }
 
+pub fn nc119_reconstruct_itinerary() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Hierholzer's algorithm. Take the smallest unused ticket every time and never look back — an airport is only recorded once it has no tickets left, so the dead end the greedy choice walks into is exactly where the route has to *end*, and recording it first is what puts it last. Nothing is ever undone, which is the whole difference from the backtracking version.", "def findItinerary(tickets):
+    destinations = {}
+    for origin, destination in tickets:
+        destinations.setdefault(origin, []).append(destination)
+    for options in destinations.values():
+        options.sort()
+
+    # Hierholzer's algorithm. Take the smallest unused ticket every time and
+    # never look back: an airport is only recorded once it has no tickets left,
+    # so the dead end the greedy choice walks into is exactly where the route
+    # has to *end* -- and being recorded first puts it at the front once the
+    # record is reversed.
+    route = []
+    stack = [\"JFK\"]
+    while stack:
+        airport = stack[-1]
+        options = destinations.get(airport)
+        if options:
+            stack.append(options.pop(0))
+        else:
+            route.append(stack.pop())
+
+    return route[::-1]"),
+      #("Solution 2 · Backtracking", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every ticket used, smallest option first, undoing a choice that leads nowhere. Because the options are sorted, the first complete itinerary found is already the smallest — no candidates to compare. Exponential in the worst case, which is precisely what Hierholzer's one-pass walk removes.", "def findItinerary(tickets):
+    destinations = {}
+    for origin, destination in tickets:
+        destinations.setdefault(origin, []).append(destination)
+    for options in destinations.values():
+        options.sort()
+
+    # Every ticket used, smallest option first, undoing a choice that leads
+    # nowhere. Because the options are sorted, the first complete itinerary
+    # found is the smallest one -- no comparing of candidates. Exponential in
+    # the worst case, which is what Hierholzer's one-pass walk removes.
+    def extend(airport, route, remaining):
+        if remaining == 0:
+            return route
+        options = destinations.get(airport, [])
+        for i in range(len(options)):
+            next_stop = options.pop(i)
+            found = extend(next_stop, route + [next_stop], remaining - 1)
+            options.insert(i, next_stop)
+            if found is not None:
+                return found
+        return None
+
+    return extend(\"JFK\", [\"JFK\"], len(tickets)) or []"),
+    ],
+    check: Check(
+      signature: "def findItinerary(tickets):",
+      starter: "def findItinerary(tickets):
+    pass",
+      harness: "try:
+    (findItinerary)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"findItinerary(MUC/LHR/SFO/SJC chain)\", [\"JFK\", \"MUC\", \"LHR\", \"SFO\", \"SJC\"], findItinerary([[\"MUC\", \"LHR\"], [\"JFK\", \"MUC\"], [\"SFO\", \"SJC\"], [\"LHR\", \"SFO\"]]))
+__case__(\"findItinerary(two ways out of JFK -- smallest first)\", [\"JFK\", \"ATL\", \"JFK\", \"SFO\", \"ATL\", \"SFO\"], findItinerary([[\"JFK\", \"SFO\"], [\"JFK\", \"ATL\"], [\"SFO\", \"ATL\"], [\"ATL\", \"JFK\"], [\"ATL\", \"SFO\"]]))
+__case__(\"findItinerary(KUL is a dead end, so it must come last)\", [\"JFK\", \"NRT\", \"JFK\", \"KUL\"], findItinerary([[\"JFK\", \"KUL\"], [\"JFK\", \"NRT\"], [\"NRT\", \"JFK\"]]))
+__case__(\"findItinerary([])\", [\"JFK\"], findItinerary([]))",
+    ),
+  )
+}
+
 pub fn nc11_container_water() -> Embedded {
   Embedded(
     solutions: [
@@ -2152,6 +2226,421 @@ def __case__(label, expected, actual):
 
 __case__(\"maxArea([1, 8, 6, 2, 5, 4, 8, 3, 7])\", 49, maxArea([1, 8, 6, 2, 5, 4, 8, 3, 7]))
 __case__(\"maxArea([1, 1])\", 1, maxArea([1, 1]))",
+    ),
+  )
+}
+
+pub fn nc120_min_cost_connect_points() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Prim's algorithm. Each outside point remembers only its distance to the tree so far, so adding one is a pass to find the nearest and a pass to update — O(n^2), which is what a complete graph costs anyway, and it needs no heap. Taking the cheapest edge is safe because the cheapest edge leaving any set of points is in some minimum spanning tree.", "def minCostConnectPoints(points):
+    if not points:
+        return 0
+
+    # Prim's algorithm. Each outside point remembers only its distance to the
+    # tree so far, so adding a point is one pass to find the nearest and one
+    # pass to update -- O(n^2) total, which is what a complete graph costs
+    # anyway, and it needs no heap. Cheapest-edge-first is safe because the
+    # cheapest edge leaving any set of points is always in some minimum
+    # spanning tree.
+    start = points[0]
+    outside = [[point, distance(start, point)] for point in points[1:]]
+    total = 0
+
+    while outside:
+        best = min(range(len(outside)), key=lambda i: outside[i][1])
+        point, cost = outside.pop(best)
+        total += cost
+        for entry in outside:
+            entry[1] = min(entry[1], distance(point, entry[0]))
+
+    return total
+
+
+def distance(a, b):
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])"),
+      #("Solution 2 · Kruskal", "Every edge, cheapest first, kept only when it joins two pieces that are not already connected — union-find is what makes that test cheap. The trade against Prim's is the sort, but Kruskal never looks at the points themselves, only at the edge list, which is why it is the one that generalises to a sparse graph.", "def minCostConnectPoints(points):
+    # Kruskal's algorithm: every edge, cheapest first, kept only when it joins
+    # two pieces that are not already connected. Union-find is what makes that
+    # test cheap. The trade against Prim's is the sort -- O(n^2 log n) edges
+    # here against Prim's O(n^2) -- but Kruskal never needs the points
+    # themselves, only the edge list, so it is the one that generalises to a
+    # sparse graph.
+    edges = []
+    for i in range(len(points)):
+        for j in range(i + 1, len(points)):
+            edges.append((distance(points[i], points[j]), i, j))
+    edges.sort()
+
+    parents = {}
+
+    def find(node):
+        while parents.get(node, node) != node:
+            node = parents[node]
+        return node
+
+    total = 0
+    for cost, i, j in edges:
+        rootI, rootJ = find(i), find(j)
+        if rootI != rootJ:
+            parents[rootI] = rootJ
+            total += cost
+
+    return total
+
+
+def distance(a, b):
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])"),
+    ],
+    check: Check(
+      signature: "def minCostConnectPoints(points):
+
+def distance(a, b):",
+      starter: "def minCostConnectPoints(points):
+    pass
+
+def distance(a, b):
+    pass",
+      harness: "try:
+    (minCostConnectPoints)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"minCostConnectPoints(the five-point example)\", 20, minCostConnectPoints([[0, 0], [2, 2], [3, 10], [5, 2], [7, 0]]))
+__case__(\"minCostConnectPoints([[3,12],[-2,5],[-4,1]])\", 18, minCostConnectPoints([[3, 12], [-2, 5], [-4, 1]]))
+__case__(\"minCostConnectPoints([])\", 0, minCostConnectPoints([]))
+__case__(\"minCostConnectPoints([[1,1]]) -- nothing to connect\", 0, minCostConnectPoints([[1, 1]]))
+__case__(\"minCostConnectPoints([[0,0],[0,5]])\", 5, minCostConnectPoints([[0, 0], [0, 5]]))",
+    ),
+  )
+}
+
+pub fn nc121_network_delay_time() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Dijkstra's algorithm. Taking the smallest tentative arrival settles that node for good, because any other route to it would have to start with an edge at least as long. That argument is exactly where a negative edge would break it — which is the reason to know Bellman-Ford as well.", "import heapq
+
+
+def networkDelayTime(times, n, k):
+    edges = {}
+    for origin, destination, weight in times:
+        edges.setdefault(origin, []).append((destination, weight))
+
+    # Dijkstra's algorithm. The heap holds tentative arrival times; taking the
+    # smallest one settles that node for good, because every other route to it
+    # would have to start with an edge at least as long. Stale entries are left
+    # in the heap and skipped on the way out -- cheaper than finding and
+    # rewriting them.
+    settled = {}
+    frontier = [(0, k)]
+    while frontier:
+        at, node = heapq.heappop(frontier)
+        if node in settled:
+            continue
+        settled[node] = at
+        for destination, weight in edges.get(node, []):
+            if destination not in settled:
+                heapq.heappush(frontier, (at + weight, destination))
+
+    # Every node has to have heard the signal, and the answer is the last one to.
+    return max(settled.values()) if len(settled) == n else -1"),
+      #("Solution 2 · Bellman ford", "No choosing what to settle next: relax every edge, n-1 times over, and the times settle by themselves — a shortest path is at most n-1 edges long, and each round fixes at least one more of them. Slower at O(V·E), and worth knowing because it survives negative weights.", "def networkDelayTime(times, n, k):
+    # Bellman-Ford. No choosing what to settle next: relax every edge, n-1
+    # times over, and the times settle by themselves -- a shortest path is at
+    # most n-1 edges long, and each round fixes at least one more of them.
+    # Slower than Dijkstra at O(V*E), and the reason to know it is that it
+    # survives negative edge weights, which Dijkstra's settle-and-never-revisit
+    # does not.
+    settled = {k: 0}
+    for _ in range(max(n - 1, 0)):
+        for origin, destination, weight in times:
+            if origin in settled:
+                arrival = settled[origin] + weight
+                if destination not in settled or arrival < settled[destination]:
+                    settled[destination] = arrival
+
+    return max(settled.values()) if len(settled) == n else -1"),
+    ],
+    check: Check(
+      signature: "def networkDelayTime(times, n, k):",
+      starter: "def networkDelayTime(times, n, k):
+    pass",
+      harness: "try:
+    (networkDelayTime)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"networkDelayTime([[2,1,1],[2,3,1],[3,4,1]], 4, 2)\", 2, networkDelayTime([[2, 1, 1], [2, 3, 1], [3, 4, 1]], 4, 2))
+__case__(\"networkDelayTime([[1,2,1]], 2, 1)\", 1, networkDelayTime([[1, 2, 1]], 2, 1))
+__case__(\"networkDelayTime([[1,2,1]], 2, 2) -- node 1 is unreachable\", -1, networkDelayTime([[1, 2, 1]], 2, 2))
+__case__(\"networkDelayTime([], 1, 1)\", 0, networkDelayTime([], 1, 1))
+__case__(\"networkDelayTime(the long way round is shorter, 3, 1)\", 3, networkDelayTime([[1, 2, 1], [2, 3, 2], [1, 3, 4]], 3, 1))",
+    ),
+  )
+}
+
+pub fn nc122_swim_in_water() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Dijkstra's, with the cost of a path redefined from the sum of its steps to the largest step in it — the water only has to rise once. Everything else about the algorithm is untouched, which is the point: the shortest-path machinery works for any cost that only grows along a path.", "import heapq
+
+
+def swimInWater(grid):
+    if not grid:
+        return 0
+
+    n = len(grid)
+    target = (n - 1, n - 1)
+
+    # Dijkstra's, with \"cost of a path\" redefined from the sum of its steps to
+    # the largest step in it -- the water only has to rise once. Everything else
+    # about the algorithm is unchanged, which is the point: settle the cheapest
+    # reachable cell, and the first time the far corner is settled that cost is
+    # the answer.
+    seen = set()
+    frontier = [(grid[0][0], 0, 0)]
+    while frontier:
+        cost, r, c = heapq.heappop(frontier)
+        if (r, c) == target:
+            return cost
+        if (r, c) in seen:
+            continue
+        seen.add((r, c))
+        for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
+            if 0 <= nr < n and 0 <= nc < len(grid[nr]) and (nr, nc) not in seen:
+                heapq.heappush(frontier, (max(cost, grid[nr][nc]), nr, nc))
+
+    return -1"),
+      #("Solution 2 · Binary search", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Reachability at time t is monotone: once the corner can be reached, it stays reachable as the water rises. That is the shape binary search needs, and it turns the question from \"what is the cheapest path\" into \"is it possible yet\", answered by a plain flood fill.", "def swimInWater(grid):
+    if not grid:
+        return 0
+
+    n = len(grid)
+    target = (n - 1, n - 1)
+
+    def reaches(limit):
+        # The target has to be passable itself, so its depth is checked before
+        # it counts as reached.
+        if grid[0][0] > limit:
+            return False
+        seen = set()
+        stack = [(0, 0)]
+        while stack:
+            r, c = stack.pop()
+            if (r, c) in seen or grid[r][c] > limit:
+                continue
+            if (r, c) == target:
+                return True
+            seen.add((r, c))
+            for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
+                if 0 <= nr < n and 0 <= nc < len(grid[nr]):
+                    stack.append((nr, nc))
+        return False
+
+    # Reachability at time t is monotone: once the corner can be reached it
+    # stays reachable as the water rises further. That is exactly the shape
+    # binary search needs, so the question turns from \"what is the cheapest
+    # path\" into \"is it possible yet\", answered by a plain flood fill.
+    low, high = grid[0][0], n * n - 1
+    while low < high:
+        middle = (low + high) // 2
+        if reaches(middle):
+            high = middle
+        else:
+            low = middle + 1
+    return low"),
+    ],
+    check: Check(
+      signature: "def swimInWater(grid):",
+      starter: "def swimInWater(grid):
+    pass",
+      harness: "try:
+    (swimInWater)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"swimInWater([[0,2],[1,3]])\", 3, swimInWater([[0, 2], [1, 3]]))
+__case__(\"swimInWater(the 5x5 spiral)\", 16, swimInWater([[0, 1, 2, 3, 4], [24, 23, 22, 21, 5], [12, 13, 14, 15, 16], [11, 17, 18, 19, 20], [10, 9, 8, 7, 6]]))
+__case__(\"swimInWater([[0]])\", 0, swimInWater([[0]]))
+__case__(\"swimInWater([[3,2],[1,0]]) -- the start is the deepest cell\", 3, swimInWater([[3, 2], [1, 0]]))",
+    ),
+  )
+}
+
+pub fn nc123_alien_dictionary() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The words are the input but the graph is over letters. Two adjacent words agree up to their first difference, and that difference is the only ordering they establish — everything after it says nothing at all. Then it is a topological sort, with two distinct ways to fail: a cycle, and a word followed by its own prefix.", "def alienOrder(words):
+    letters = {letter for word in words for letter in word}
+
+    # Two adjacent words agree up to their first difference, and that difference
+    # is the only thing they say about the alphabet -- everything after it is
+    # unordered. The one case with no letters to compare is a word followed by a
+    # prefix of itself, which no alphabet can explain.
+    waiting = {letter: 0 for letter in letters}
+    unlocks = {letter: [] for letter in letters}
+    for first, second in zip(words, words[1:]):
+        for a, b in zip(first, second):
+            if a != b:
+                unlocks[a].append(b)
+                waiting[b] += 1
+                break
+        else:
+            if len(first) > len(second):
+                return \"\"
+
+    ready = [letter for letter in letters if waiting[letter] == 0]
+    order = []
+    while ready:
+        letter = ready.pop()
+        order.append(letter)
+        for following in unlocks[letter]:
+            waiting[following] -= 1
+            if waiting[following] == 0:
+                ready.append(following)
+
+    # Short means the leftovers all depend on each other: the ordering the words
+    # describe is contradictory, so no alphabet satisfies it.
+    return \"\".join(order) if len(order) == len(letters) else \"\""),
+      #("Solution 2 · Dfs postorder", "Record a letter only once everything that must follow it has been recorded, and prepend rather than append — that is what puts it back in front of them. The in-progress set is the cycle check, exactly as in Course Schedule: a letter met again on the current path contradicts itself.", "def alienOrder(words):
+    letters = {letter for word in words for letter in word}
+
+    after = {letter: [] for letter in letters}
+    for first, second in zip(words, words[1:]):
+        for a, b in zip(first, second):
+            if a != b:
+                after[a].append(b)
+                break
+        else:
+            if len(first) > len(second):
+                return \"\"
+
+    # Depth-first, recording a letter only once everything that must follow it
+    # has been recorded -- and recording it by prepending, which is what puts it
+    # back in front of them. The in-progress set is the cycle check: a letter
+    # met again on the current path contradicts itself.
+    onPath, done, order = set(), set(), []
+
+    def visit(letter):
+        if letter in onPath:
+            return False
+        if letter in done:
+            return True
+        onPath.add(letter)
+        for following in after[letter]:
+            if not visit(following):
+                return False
+        onPath.discard(letter)
+        done.add(letter)
+        order.append(letter)
+        return True
+
+    for letter in letters:
+        if not visit(letter):
+            return \"\"
+
+    return \"\".join(reversed(order))"),
+    ],
+    check: Check(
+      signature: "def alienOrder(words):",
+      starter: "def alienOrder(words):
+    pass",
+      harness: "try:
+    (alienOrder)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"alienOrder(['wrt','wrf','er','ett','rftt'])\", \"wertf\", alienOrder([\"wrt\", \"wrf\", \"er\", \"ett\", \"rftt\"]))
+__case__(\"alienOrder(['z','x'])\", \"zx\", alienOrder([\"z\", \"x\"]))
+__case__(\"alienOrder(['z','x','z']) -- contradictory\", \"\", alienOrder([\"z\", \"x\", \"z\"]))
+__case__(\"alienOrder(['abc','ab']) -- a word before its own prefix\", \"\", alienOrder([\"abc\", \"ab\"]))
+__case__(\"alienOrder(['z','z'])\", \"z\", alienOrder([\"z\", \"z\"]))
+__case__(\"alienOrder(['x','y','z'])\", \"xyz\", alienOrder([\"x\", \"y\", \"z\"]))",
+    ),
+  )
+}
+
+pub fn nc124_cheapest_flights() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The stop limit is what stops this being plain Dijkstra: cheapest-so-far no longer settles a city, because a costlier route with fewer stops may still be the one that gets through. Bellman-Ford handles it by construction — one round is one flight — provided each round reads a snapshot of the last, or two flights leak into a single round.", "def findCheapestPrice(n, flights, src, dst, k):
+    # Bellman-Ford, stopped after k+1 rounds -- one round is one flight, so the
+    # round count *is* the stop limit. Each round reads the previous round's
+    # costs from a snapshot rather than from the table being written; without
+    # that, two flights could be taken within a single round and the limit would
+    # leak.
+    costs = {src: 0}
+    for _ in range(k + 1):
+        previous = dict(costs)
+        for origin, destination, price in flights:
+            if origin in previous:
+                total = previous[origin] + price
+                if destination not in costs or total < costs[destination]:
+                    costs[destination] = total
+
+    return costs.get(dst, -1)"),
+      #("Solution 2 · Breadth first", "Breadth-first by number of flights taken, which makes the stop limit the depth limit — the same bound Bellman-Ford gets from its round count, arrived at from the other direction. The cheapest-so-far table is what stops it exploding: a city is expanded again only when this route reached it for less.", "def findCheapestPrice(n, flights, src, dst, k):
+    outgoing = {}
+    for origin, destination, price in flights:
+        outgoing.setdefault(origin, []).append((destination, price))
+
+    # Breadth-first by number of flights taken, which makes the stop limit the
+    # depth limit -- the same bound Bellman-Ford gets from its round count. The
+    # cheapest-so-far table is what stops it exploding: a city is only expanded
+    # again if this route reached it for less than any earlier one did.
+    best = {src: 0}
+    frontier = [(src, 0)]
+    for _ in range(k + 1):
+        following = []
+        for city, spent in frontier:
+            for destination, price in outgoing.get(city, []):
+                total = spent + price
+                if destination not in best or total < best[destination]:
+                    best[destination] = total
+                    following.append((destination, total))
+        frontier = following
+        if not frontier:
+            break
+
+    return best.get(dst, -1)"),
+    ],
+    check: Check(
+      signature: "def findCheapestPrice(n, flights, src, dst, k):",
+      starter: "def findCheapestPrice(n, flights, src, dst, k):
+    pass",
+      harness: "try:
+    (findCheapestPrice)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"findCheapestPrice(4, the loop example, 0, 3, 1)\", 700, findCheapestPrice(4, [[0, 1, 100], [1, 2, 100], [2, 0, 100], [1, 3, 600], [2, 3, 200]], 0, 3, 1))
+__case__(\"findCheapestPrice(3, two hops allowed, 0, 2, 1)\", 200, findCheapestPrice(3, [[0, 1, 100], [1, 2, 100], [0, 2, 500]], 0, 2, 1))
+__case__(\"findCheapestPrice(3, no stop allowed, 0, 2, 0)\", 500, findCheapestPrice(3, [[0, 1, 100], [1, 2, 100], [0, 2, 500]], 0, 2, 0))
+__case__(\"findCheapestPrice(2, no flights at all, 0, 1, 5)\", -1, findCheapestPrice(2, [], 0, 1, 5))
+__case__(\"findCheapestPrice(1, already there, 0, 0, 0)\", 0, findCheapestPrice(1, [], 0, 0, 0))
+__case__(\"findCheapestPrice(5, cheapest route needs the third hop, 0, 2, 2)\", 7, findCheapestPrice(5, [[0, 1, 5], [1, 2, 5], [0, 3, 2], [3, 1, 2], [1, 4, 1], [4, 2, 1]], 0, 2, 2))",
     ),
   )
 }
@@ -8074,7 +8563,13 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc116_connected_components" -> Ok(nc116_connected_components())
     "nc117_graph_valid_tree" -> Ok(nc117_graph_valid_tree())
     "nc118_word_ladder" -> Ok(nc118_word_ladder())
+    "nc119_reconstruct_itinerary" -> Ok(nc119_reconstruct_itinerary())
     "nc11_container_water" -> Ok(nc11_container_water())
+    "nc120_min_cost_connect_points" -> Ok(nc120_min_cost_connect_points())
+    "nc121_network_delay_time" -> Ok(nc121_network_delay_time())
+    "nc122_swim_in_water" -> Ok(nc122_swim_in_water())
+    "nc123_alien_dictionary" -> Ok(nc123_alien_dictionary())
+    "nc124_cheapest_flights" -> Ok(nc124_cheapest_flights())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())
     "nc14_character_replacement" -> Ok(nc14_character_replacement())

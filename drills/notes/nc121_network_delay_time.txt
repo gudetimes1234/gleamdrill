@@ -1,0 +1,1 @@
+Dijkstra's algorithm. Taking the smallest tentative arrival settles that node for good, because any other route to it would have to start with an edge at least as long. That argument is exactly where a negative edge would break it — which is the reason to know Bellman-Ford as well.

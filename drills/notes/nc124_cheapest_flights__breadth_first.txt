@@ -1,0 +1,1 @@
+Breadth-first by number of flights taken, which makes the stop limit the depth limit — the same bound Bellman-Ford gets from its round count, arrived at from the other direction. The cheapest-so-far table is what stops it exploding: a city is expanded again only when this route reached it for less.

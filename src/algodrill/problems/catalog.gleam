@@ -648,6 +648,38 @@ pub fn groups() -> List(Group) {
         "nc118_word_ladder",
       ),
     ]),
+    Group("Advanced Graphs", [
+      Drill(
+        "Reconstruct Itinerary",
+        "Given a list of airline tickets as [from, to] pairs, reconstruct the itinerary in order. It starts at JFK and uses every ticket exactly once; where several itineraries are possible, return the one that comes first alphabetically.",
+        "nc119_reconstruct_itinerary",
+      ),
+      Drill(
+        "Min Cost to Connect All Points",
+        "Given points on a plane, return the least total cost to connect all of them, where the cost of joining two points is the Manhattan distance between them.",
+        "nc120_min_cost_connect_points",
+      ),
+      Drill(
+        "Network Delay Time",
+        "Given a network of n nodes numbered 1 to n and directed travel times as [from, to, time], a signal is sent from node k. Return how long it takes every node to receive it, or -1 if some node never does.",
+        "nc121_network_delay_time",
+      ),
+      Drill(
+        "Swim in Rising Water",
+        "Given an n x n grid of depths, the water level rises by one each unit of time and you may move between neighbouring squares once the level is at least the depth of both. Return the earliest time the bottom-right square can be reached from the top-left.",
+        "nc122_swim_in_water",
+      ),
+      Drill(
+        "Alien Dictionary",
+        "Given a list of words sorted by the rules of an unknown alphabet, return the letters of that alphabet in order. Return the empty string if the words contradict each other or no ordering can explain them.",
+        "nc123_alien_dictionary",
+      ),
+      Drill(
+        "Cheapest Flights Within K Stops",
+        "Given n cities and flights as [from, to, price], return the cheapest fare from src to dst using at most k stops, or -1 if no such route exists.",
+        "nc124_cheapest_flights",
+      ),
+    ]),
   ]
 }
 

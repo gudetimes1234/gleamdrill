@@ -368,6 +368,25 @@ pub fn for_title(title: String) -> String {
     "Word Ladder" ->
       "Shortest path on an unweighted graph, so breadth-first \u{2014} but the graph is never built. Two words are neighbours when they share a wildcard pattern like \"*ot\", so bucketing every word under each of its patterns gives adjacency in linear time; comparing every pair costs O(n\u{b2}) before the search even starts."
 
+    // Advanced Graphs
+    "Reconstruct Itinerary" ->
+      "An Eulerian path \u{2014} every edge used once, not every node visited once \u{2014} which is why it is tractable at all. Hierholzer\u{2019}s walk takes the smallest unused ticket every time and never backtracks: an airport is recorded only once its tickets are exhausted, so the dead end the greedy choice walks into is exactly where the route has to end, and reversing the record puts everything in order. Backtracking gets the same answer by trying and undoing, at exponential cost."
+
+    "Min Cost to Connect All Points" ->
+      "A minimum spanning tree on a complete graph. Prim\u{2019}s grows one tree, each outside point remembering only its distance to it \u{2014} O(n\u{b2}) with no heap, which is the right shape when every pair is an edge. Kruskal\u{2019}s sorts all the edges and uses union-find to skip the ones that would close a loop; it never looks at the points, only the edges, so it is the one that generalises to a sparse graph."
+
+    "Network Delay Time" ->
+      "Single-source shortest paths, and the answer is the largest of them \u{2014} plus a check that every node was reached at all. Dijkstra settles the smallest tentative time and never revisits it, which is only sound because no edge is negative. Bellman-Ford chooses nothing and just relaxes every edge n\u{2212}1 times: slower, but it is the one that survives negative weights."
+
+    "Swim in Rising Water" ->
+      "Dijkstra with the cost of a path redefined from the sum of its steps to the largest step in it \u{2014} the water only has to rise once. Nothing else about the algorithm changes. The other way in is that reachability is monotone in time, so binary search over the answer turns \"what is the cheapest path\" into a plain flood fill asking \"is it possible yet\"."
+
+    "Alien Dictionary" ->
+      "The words are the input, but the graph is over letters: two adjacent words agree up to their first difference, and that difference is the only ordering they establish \u{2014} everything after it says nothing. Then it is a topological sort, with two ways to fail: a cycle, and a word followed by its own prefix, which no alphabet can explain."
+
+    "Cheapest Flights Within K Stops" ->
+      "The stop limit is what stops this being plain Dijkstra: cheapest-so-far is no longer enough to settle a city, because a costlier route with fewer stops may still be the one that gets through. Bellman-Ford handles it by construction \u{2014} one round is one flight, so stopping after k+1 rounds is the limit \u{2014} provided each round reads a snapshot of the last, or two flights leak into one round."
+
     // Gleam Tips
     "Pattern matching on lists" ->
       "In Gleam a list is either [] or [head, ..tail] \u{2014} every list function is a case expression over those two shapes (plus [only] when the last element matters). Recursion replaces loops: handle the empty case, then recurse on the tail."

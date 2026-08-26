@@ -1,0 +1,1 @@
+Prim's algorithm. Each outside point remembers only its distance to the tree so far, so adding one is a pass to find the nearest and a pass to update — O(n^2), which is what a complete graph costs anyway, and it needs no heap. Taking the cheapest edge is safe because the cheapest edge leaving any set of points is in some minimum spanning tree.

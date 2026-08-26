@@ -1854,6 +1854,81 @@ end"),
   ]
 }
 
+pub fn nc119_reconstruct_itinerary() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Hierholzer's algorithm. Take the smallest unused ticket every time and never look back — an airport is only recorded once it has no tickets left, so the dead end the greedy choice walks into is exactly where the route has to *end*, and recording it first is what puts it last. Nothing is ever undone, which is the whole difference from the backtracking version.", "defmodule Solution do
+  # Hierholzer's algorithm. Take the smallest unused ticket every time and never
+  # look back: an airport is only recorded once it has no tickets left, so the
+  # dead end the greedy choice walks into is exactly where the route has to
+  # *end*, and it lands at the front of the answer by being recorded first.
+  def find_itinerary(tickets) do
+    destinations =
+      tickets
+      |> Enum.reduce(%{}, fn [origin, destination], acc ->
+        Map.update(acc, origin, [destination], &[destination | &1])
+      end)
+      |> Map.new(fn {origin, options} -> {origin, Enum.sort(options)} end)
+
+    {_left, route} = walk(destinations, \"JFK\", [])
+    route
+  end
+
+  defp walk(destinations, airport, route) do
+    case Map.get(destinations, airport, []) do
+      [next | rest] ->
+        {destinations, route} =
+          walk(Map.put(destinations, airport, rest), next, route)
+
+        walk(destinations, airport, route)
+
+      [] ->
+        {destinations, [airport | route]}
+    end
+  end
+end"),
+    #("Solution 2 · Backtracking", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every ticket used, smallest option first, undoing a choice that leads nowhere. Because the options are sorted, the first complete itinerary found is already the smallest — no candidates to compare. Exponential in the worst case, which is precisely what Hierholzer's one-pass walk removes.", "defmodule Solution do
+  # Every ticket used, smallest option first, undoing a choice that leads
+  # nowhere. Because the options are sorted, the first complete itinerary found
+  # is the smallest one -- no comparing of candidates. Exponential in the worst
+  # case, which is what Hierholzer's one-pass walk removes.
+  def find_itinerary(tickets) do
+    destinations =
+      tickets
+      |> Enum.reduce(%{}, fn [origin, destination], acc ->
+        Map.update(acc, origin, [destination], &[destination | &1])
+      end)
+      |> Map.new(fn {origin, options} -> {origin, Enum.sort(options)} end)
+
+    case extend(destinations, \"JFK\", [\"JFK\"], length(tickets)) do
+      nil -> []
+      route -> Enum.reverse(route)
+    end
+  end
+
+  defp extend(_destinations, _airport, route, 0), do: route
+
+  defp extend(destinations, airport, route, remaining) do
+    options = Map.get(destinations, airport, [])
+
+    options
+    |> Enum.with_index()
+    |> Enum.find_value(fn {next, i} ->
+      left = List.delete_at(options, i)
+
+      extend(
+        Map.put(destinations, airport, left),
+        next,
+        [next | route],
+        remaining - 1
+      )
+    end)
+  end
+end"),
+  ]
+}
+
 pub fn nc11_container_water() -> List(#(String, String, String)) {
   [
     #("Solution 1", "Start at both ends. The area is capped by the shorter line, so moving the taller one in can never help — always move the shorter, and track the best area seen.", "defmodule Solution do
@@ -1887,6 +1962,464 @@ Every pair of lines, measured. O(n^2), but it makes what the two-pointer sweep i
           do: min(a, b) * (j - i)
 
     Enum.max([0 | areas])
+  end
+end"),
+  ]
+}
+
+pub fn nc120_min_cost_connect_points() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Prim's algorithm. Each outside point remembers only its distance to the tree so far, so adding one is a pass to find the nearest and a pass to update — O(n^2), which is what a complete graph costs anyway, and it needs no heap. Taking the cheapest edge is safe because the cheapest edge leaving any set of points is in some minimum spanning tree.", "defmodule Solution do
+  # Prim's algorithm. Each outside point remembers only its distance to the tree
+  # so far, so adding a point is one pass to find the nearest and one pass to
+  # update -- O(n^2) total, which is what a complete graph costs anyway, and it
+  # needs no heap. Cheapest-edge-first is safe because the cheapest edge leaving
+  # any set of points is always in some minimum spanning tree.
+  def min_cost_connect_points([]), do: 0
+
+  def min_cost_connect_points([start | rest]) do
+    rest
+    |> Enum.with_index()
+    |> Enum.map(fn {point, i} -> {i, point, distance(start, point)} end)
+    |> grow(0)
+  end
+
+  defp grow([], total), do: total
+
+  defp grow(outside, total) do
+    {index, point, cost} = Enum.min_by(outside, fn {_i, _point, cost} -> cost end)
+
+    outside
+    |> Enum.reject(fn {i, _point, _cost} -> i == index end)
+    |> Enum.map(fn {i, other, best} -> {i, other, min(best, distance(point, other))} end)
+    |> grow(total + cost)
+  end
+
+  defp distance([ax, ay], [bx, by]), do: abs(ax - bx) + abs(ay - by)
+end"),
+    #("Solution 2 · Kruskal", "Every edge, cheapest first, kept only when it joins two pieces that are not already connected — union-find is what makes that test cheap. The trade against Prim's is the sort, but Kruskal never looks at the points themselves, only at the edge list, which is why it is the one that generalises to a sparse graph.", "defmodule Solution do
+  # Kruskal's algorithm: every edge, cheapest first, kept only when it joins two
+  # pieces that are not already connected. Union-find is what makes that test
+  # cheap. The trade against Prim's is the sort -- O(n^2 log n) edges here
+  # against Prim's O(n^2) -- but Kruskal never needs the points themselves, only
+  # the edge list, so it is the one that generalises to a sparse graph.
+  def min_cost_connect_points(points) do
+    indexed = Enum.with_index(points)
+
+    edges =
+      for {a, i} <- indexed, {b, j} <- indexed, i < j do
+        {distance(a, b), i, j}
+      end
+      |> Enum.sort()
+
+    {_parents, total} =
+      Enum.reduce(edges, {%{}, 0}, fn {cost, i, j}, {parents, total} ->
+        root_i = find(parents, i)
+        root_j = find(parents, j)
+
+        if root_i == root_j,
+          do: {parents, total},
+          else: {Map.put(parents, root_i, root_j), total + cost}
+      end)
+
+    total
+  end
+
+  defp find(parents, node) do
+    case Map.get(parents, node, node) do
+      ^node -> node
+      parent -> find(parents, parent)
+    end
+  end
+
+  defp distance([ax, ay], [bx, by]), do: abs(ax - bx) + abs(ay - by)
+end"),
+  ]
+}
+
+pub fn nc121_network_delay_time() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Dijkstra's algorithm. Taking the smallest tentative arrival settles that node for good, because any other route to it would have to start with an edge at least as long. That argument is exactly where a negative edge would break it — which is the reason to know Bellman-Ford as well.", "defmodule Solution do
+  def network_delay_time(times, n, k) do
+    edges =
+      Enum.reduce(times, %{}, fn [origin, destination, weight], acc ->
+        Map.update(acc, origin, [{destination, weight}], &[{destination, weight} | &1])
+      end)
+
+    settled = settle(edges, [{k, 0}], %{})
+
+    # Every node has to have heard the signal, and the answer is the last one to.
+    if map_size(settled) == n, do: Enum.max(Map.values(settled)), else: -1
+  end
+
+  # Dijkstra's algorithm. The frontier holds tentative arrival times; taking the
+  # smallest one settles that node for good, because every other route to it
+  # would have to start with an edge at least as long. Erlang has no heap in its
+  # standard library, so the smallest is found by a scan -- O(V^2) rather than
+  # O(E log V), which is the better shape anyway when the graph is dense.
+  defp settle(_edges, [], settled), do: settled
+
+  defp settle(edges, frontier, settled) do
+    {node, at} = Enum.min_by(frontier, fn {_node, at} -> at end)
+    rest = Enum.reject(frontier, fn {other, _at} -> other == node end)
+
+    if Map.has_key?(settled, node) do
+      settle(edges, rest, settled)
+    else
+      settled = Map.put(settled, node, at)
+
+      reached =
+        edges
+        |> Map.get(node, [])
+        |> Enum.reject(fn {destination, _weight} -> Map.has_key?(settled, destination) end)
+        |> Enum.map(fn {destination, weight} -> {destination, at + weight} end)
+
+      settle(edges, rest ++ reached, settled)
+    end
+  end
+end"),
+    #("Solution 2 · Bellman ford", "No choosing what to settle next: relax every edge, n-1 times over, and the times settle by themselves — a shortest path is at most n-1 edges long, and each round fixes at least one more of them. Slower at O(V·E), and worth knowing because it survives negative weights.", "defmodule Solution do
+  # Bellman-Ford. No choosing what to settle next: relax every edge, n-1 times
+  # over, and the times settle by themselves -- a shortest path is at most n-1
+  # edges long, and each round fixes at least one more of them. Slower than
+  # Dijkstra at O(V*E), and the reason to know it is that it survives negative
+  # edge weights, which Dijkstra's settle-and-never-revisit does not.
+  def network_delay_time(times, n, k) do
+    settled =
+      Enum.reduce(1..(n - 1)//1, %{k => 0}, fn _round, settled ->
+        Enum.reduce(times, settled, fn [origin, destination, weight], settled ->
+          case Map.fetch(settled, origin) do
+            {:ok, at} ->
+              arrival = at + weight
+
+              if arrival < Map.get(settled, destination, arrival + 1),
+                do: Map.put(settled, destination, arrival),
+                else: settled
+
+            :error ->
+              settled
+          end
+        end)
+      end)
+
+    if map_size(settled) == n, do: Enum.max(Map.values(settled)), else: -1
+  end
+end"),
+  ]
+}
+
+pub fn nc122_swim_in_water() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Dijkstra's, with the cost of a path redefined from the sum of its steps to the largest step in it — the water only has to rise once. Everything else about the algorithm is untouched, which is the point: the shortest-path machinery works for any cost that only grows along a path.", "defmodule Solution do
+  def swim_in_water([]), do: 0
+
+  def swim_in_water(grid) do
+    heights =
+      for {row, r} <- Enum.with_index(grid),
+          {height, c} <- Enum.with_index(row),
+          into: %{},
+          do: {{r, c}, height}
+
+    n = length(grid)
+    cross(heights, {n - 1, n - 1}, [{{0, 0}, Map.fetch!(heights, {0, 0})}], MapSet.new())
+  end
+
+  # Dijkstra's, with \"cost of a path\" redefined from the sum of its steps to the
+  # largest step in it -- the water only has to rise once. Everything else about
+  # the algorithm is unchanged, which is the point: settle the cheapest
+  # reachable cell, and the first time the far corner is settled that cost is
+  # the answer.
+  defp cross(_heights, _target, [], _seen), do: -1
+
+  defp cross(heights, target, frontier, seen) do
+    {at, cost} = Enum.min_by(frontier, fn {_at, cost} -> cost end)
+    rest = Enum.reject(frontier, fn {other, _cost} -> other == at end)
+
+    cond do
+      at == target ->
+        cost
+
+      MapSet.member?(seen, at) ->
+        cross(heights, target, rest, seen)
+
+      true ->
+        seen = MapSet.put(seen, at)
+
+        reached =
+          at
+          |> neighbours()
+          |> Enum.filter(fn next ->
+            not MapSet.member?(seen, next) and Map.has_key?(heights, next)
+          end)
+          |> Enum.map(fn next -> {next, max(cost, Map.fetch!(heights, next))} end)
+
+        cross(heights, target, rest ++ reached, seen)
+    end
+  end
+
+  defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+end"),
+    #("Solution 2 · Binary search", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Reachability at time t is monotone: once the corner can be reached, it stays reachable as the water rises. That is the shape binary search needs, and it turns the question from \"what is the cheapest path\" into \"is it possible yet\", answered by a plain flood fill.", "defmodule Solution do
+  def swim_in_water([]), do: 0
+
+  def swim_in_water(grid) do
+    heights =
+      for {row, r} <- Enum.with_index(grid),
+          {height, c} <- Enum.with_index(row),
+          into: %{},
+          do: {{r, c}, height}
+
+    # Reachability at time t is monotone: once the corner can be reached it
+    # stays reachable as the water rises further. That is exactly the shape
+    # binary search needs, so the question turns from \"what is the cheapest
+    # path\" into \"is it possible yet\", answered by a plain flood fill.
+    n = length(grid)
+    search(heights, {n - 1, n - 1}, Map.fetch!(heights, {0, 0}), n * n - 1)
+  end
+
+  defp search(_heights, _target, low, high) when low >= high, do: low
+
+  defp search(heights, target, low, high) do
+    middle = div(low + high, 2)
+
+    if reaches(heights, target, [{0, 0}], MapSet.new(), middle),
+      do: search(heights, target, low, middle),
+      else: search(heights, target, middle + 1, high)
+  end
+
+  defp reaches(_heights, _target, [], _seen, _limit), do: false
+
+  defp reaches(heights, target, [at | rest], seen, limit) do
+    # The target has to be passable itself, so its depth is checked before it
+    # counts as reached.
+    cond do
+      MapSet.member?(seen, at) or Map.get(heights, at, limit + 1) > limit ->
+        reaches(heights, target, rest, seen, limit)
+
+      at == target ->
+        true
+
+      true ->
+        reaches(heights, target, rest ++ neighbours(at), MapSet.put(seen, at), limit)
+    end
+  end
+
+  defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+end"),
+  ]
+}
+
+pub fn nc123_alien_dictionary() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The words are the input but the graph is over letters. Two adjacent words agree up to their first difference, and that difference is the only ordering they establish — everything after it says nothing at all. Then it is a topological sort, with two distinct ways to fail: a cycle, and a word followed by its own prefix.", "defmodule Solution do
+  def alien_order(words) do
+    letters =
+      Enum.reduce(words, MapSet.new(), fn word, acc ->
+        Enum.reduce(String.graphemes(word), acc, &MapSet.put(&2, &1))
+      end)
+
+    case edges(words) do
+      :contradiction ->
+        \"\"
+
+      pairs ->
+        waiting =
+          Enum.reduce(pairs, Map.new(letters, &{&1, 0}), fn {_a, b}, acc ->
+            Map.update!(acc, b, &(&1 + 1))
+          end)
+
+        unlocks =
+          Enum.reduce(pairs, Map.new(letters, &{&1, []}), fn {a, b}, acc ->
+            Map.update!(acc, a, &[b | &1])
+          end)
+
+        ready = for letter <- letters, Map.fetch!(waiting, letter) == 0, do: letter
+        order = take(ready, waiting, unlocks, [])
+
+        # Short means the leftovers all depend on each other: the ordering the
+        # words describe is contradictory, so no alphabet satisfies it.
+        if length(order) == MapSet.size(letters), do: Enum.join(order), else: \"\"
+    end
+  end
+
+  # Two adjacent words agree up to their first difference, and that difference
+  # is the only thing they say about the alphabet -- everything after it is
+  # unordered. The one case with no letters to compare is a word followed by a
+  # prefix of itself, which no alphabet can explain.
+  defp edges(words) do
+    words
+    |> Enum.zip(Enum.drop(words, 1))
+    |> Enum.reduce_while([], fn {first, second}, acc ->
+      case difference(String.graphemes(first), String.graphemes(second)) do
+        :contradiction -> {:halt, :contradiction}
+        nil -> {:cont, acc}
+        pair -> {:cont, [pair | acc]}
+      end
+    end)
+  end
+
+  defp difference([a | a_rest], [b | b_rest]) do
+    if a == b, do: difference(a_rest, b_rest), else: {a, b}
+  end
+
+  defp difference([_ | _], []), do: :contradiction
+  defp difference(_, _), do: nil
+
+  defp take([], _waiting, _unlocks, order), do: Enum.reverse(order)
+
+  defp take([letter | rest], waiting, unlocks, order) do
+    {waiting, freed} =
+      Enum.reduce(Map.fetch!(unlocks, letter), {waiting, []}, fn following, {waiting, freed} ->
+        left = Map.fetch!(waiting, following) - 1
+        waiting = Map.put(waiting, following, left)
+        if left == 0, do: {waiting, [following | freed]}, else: {waiting, freed}
+      end)
+
+    take(rest ++ freed, waiting, unlocks, [letter | order])
+  end
+end"),
+    #("Solution 2 · Dfs postorder", "Record a letter only once everything that must follow it has been recorded, and prepend rather than append — that is what puts it back in front of them. The in-progress set is the cycle check, exactly as in Course Schedule: a letter met again on the current path contradicts itself.", "defmodule Solution do
+  def alien_order(words) do
+    letters =
+      Enum.reduce(words, MapSet.new(), fn word, acc ->
+        Enum.reduce(String.graphemes(word), acc, &MapSet.put(&2, &1))
+      end)
+
+    case edges(words) do
+      :contradiction ->
+        \"\"
+
+      pairs ->
+        after_map =
+          Enum.reduce(pairs, Map.new(letters, &{&1, []}), fn {a, b}, acc ->
+            Map.update!(acc, a, &[b | &1])
+          end)
+
+        # Depth-first, recording a letter only once everything that must follow
+        # it has been recorded -- and recording it by prepending, which is what
+        # puts it back in front of them. The in-progress set is the cycle check:
+        # a letter met again on the current path contradicts itself.
+        letters
+        |> Enum.reduce_while({MapSet.new(), []}, fn letter, {done, order} ->
+          case visit(after_map, letter, MapSet.new(), done, order) do
+            :cycle -> {:halt, :cycle}
+            {done, order} -> {:cont, {done, order}}
+          end
+        end)
+        |> case do
+          :cycle -> \"\"
+          {_done, order} -> Enum.join(order)
+        end
+    end
+  end
+
+  defp visit(after_map, letter, on_path, done, order) do
+    cond do
+      MapSet.member?(on_path, letter) ->
+        :cycle
+
+      MapSet.member?(done, letter) ->
+        {done, order}
+
+      true ->
+        on_path = MapSet.put(on_path, letter)
+
+        after_map
+        |> Map.fetch!(letter)
+        |> Enum.reduce_while({done, order}, fn following, {done, order} ->
+          case visit(after_map, following, on_path, done, order) do
+            :cycle -> {:halt, :cycle}
+            {done, order} -> {:cont, {done, order}}
+          end
+        end)
+        |> case do
+          :cycle -> :cycle
+          {done, order} -> {MapSet.put(done, letter), [letter | order]}
+        end
+    end
+  end
+
+  defp edges(words) do
+    words
+    |> Enum.zip(Enum.drop(words, 1))
+    |> Enum.reduce_while([], fn {first, second}, acc ->
+      case difference(String.graphemes(first), String.graphemes(second)) do
+        :contradiction -> {:halt, :contradiction}
+        nil -> {:cont, acc}
+        pair -> {:cont, [pair | acc]}
+      end
+    end)
+  end
+
+  defp difference([a | a_rest], [b | b_rest]) do
+    if a == b, do: difference(a_rest, b_rest), else: {a, b}
+  end
+
+  defp difference([_ | _], []), do: :contradiction
+  defp difference(_, _), do: nil
+end"),
+  ]
+}
+
+pub fn nc124_cheapest_flights() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "The stop limit is what stops this being plain Dijkstra: cheapest-so-far no longer settles a city, because a costlier route with fewer stops may still be the one that gets through. Bellman-Ford handles it by construction — one round is one flight — provided each round reads a snapshot of the last, or two flights leak into a single round.", "defmodule Solution do
+  # Bellman-Ford, stopped after k+1 rounds -- one round is one flight, so the
+  # round count *is* the stop limit. Each round reads the previous round's costs
+  # from a snapshot rather than from the table being written; without that, two
+  # flights could be taken within a single round and the limit would leak.
+  def find_cheapest_price(_n, flights, src, dst, k) do
+    costs =
+      Enum.reduce(0..k//1, %{src => 0}, fn _round, costs ->
+        previous = costs
+
+        Enum.reduce(flights, costs, fn [origin, destination, price], costs ->
+          case Map.fetch(previous, origin) do
+            {:ok, spent} ->
+              total = spent + price
+
+              if total < Map.get(costs, destination, total + 1),
+                do: Map.put(costs, destination, total),
+                else: costs
+
+            :error ->
+              costs
+          end
+        end)
+      end)
+
+    Map.get(costs, dst, -1)
+  end
+end"),
+    #("Solution 2 · Breadth first", "Breadth-first by number of flights taken, which makes the stop limit the depth limit — the same bound Bellman-Ford gets from its round count, arrived at from the other direction. The cheapest-so-far table is what stops it exploding: a city is expanded again only when this route reached it for less.", "defmodule Solution do
+  # Breadth-first by number of flights taken, which makes the stop limit the
+  # depth limit -- the same bound Bellman-Ford gets from its round count. The
+  # cheapest-so-far table is what stops it exploding: a city is only expanded
+  # again if this route reached it for less than any earlier one did.
+  def find_cheapest_price(_n, flights, src, dst, k) do
+    outgoing =
+      Enum.reduce(flights, %{}, fn [origin, destination, price], acc ->
+        Map.update(acc, origin, [{destination, price}], &[{destination, price} | &1])
+      end)
+
+    {best, _frontier} =
+      Enum.reduce(0..k//1, {%{src => 0}, [{src, 0}]}, fn _round, {best, frontier} ->
+        Enum.reduce(frontier, {best, []}, fn {city, spent}, acc ->
+          outgoing
+          |> Map.get(city, [])
+          |> Enum.reduce(acc, fn {destination, price}, {best, following} ->
+            total = spent + price
+
+            if total < Map.get(best, destination, total + 1),
+              do: {Map.put(best, destination, total), [{destination, total} | following]},
+              else: {best, following}
+          end)
+        end)
+      end)
+
+    Map.get(best, dst, -1)
   end
 end"),
   ]
@@ -6337,7 +6870,13 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
     "nc116_connected_components" -> Ok(nc116_connected_components())
     "nc117_graph_valid_tree" -> Ok(nc117_graph_valid_tree())
     "nc118_word_ladder" -> Ok(nc118_word_ladder())
+    "nc119_reconstruct_itinerary" -> Ok(nc119_reconstruct_itinerary())
     "nc11_container_water" -> Ok(nc11_container_water())
+    "nc120_min_cost_connect_points" -> Ok(nc120_min_cost_connect_points())
+    "nc121_network_delay_time" -> Ok(nc121_network_delay_time())
+    "nc122_swim_in_water" -> Ok(nc122_swim_in_water())
+    "nc123_alien_dictionary" -> Ok(nc123_alien_dictionary())
+    "nc124_cheapest_flights" -> Ok(nc124_cheapest_flights())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())
     "nc14_character_replacement" -> Ok(nc14_character_replacement())

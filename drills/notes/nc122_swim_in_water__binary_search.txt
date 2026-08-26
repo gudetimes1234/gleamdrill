@@ -1,0 +1,2 @@
+@shared/binary-search-halving
+Reachability at time t is monotone: once the corner can be reached, it stays reachable as the water rises. That is the shape binary search needs, and it turns the question from "what is the cheapest path" into "is it possible yet", answered by a plain flood fill.

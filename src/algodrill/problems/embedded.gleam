@@ -4328,6 +4328,181 @@ pub fn run() -> List(#(String, String, String)) {
   )
 }
 
+pub fn nc119_reconstruct_itinerary() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Hierholzer's algorithm. Take the smallest unused ticket every time and never look back — an airport is only recorded once it has no tickets left, so the dead end the greedy choice walks into is exactly where the route has to *end*, and recording it first is what puts it last. Nothing is ever undone, which is the whole difference from the backtracking version.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/string
+
+pub fn find_itinerary(tickets: List(#(String, String))) -> List(String) {
+  let destinations =
+    list.fold(tickets, dict.new(), fn(acc, ticket: #(String, String)) {
+      dict.insert(acc, ticket.0, [
+        ticket.1,
+        ..result.unwrap(dict.get(acc, ticket.0), [])
+      ])
+    })
+    |> dict.map_values(fn(_, options) { list.sort(options, string.compare) })
+
+  let #(_, route) = walk(destinations, \"JFK\", [])
+  route
+}
+
+// Hierholzer's algorithm. Take the smallest unused ticket every time and never
+// look back: an airport is only added to the route once it has no tickets left,
+// so the dead end the greedy choice walks into is exactly where the route has
+// to *end*, and it lands at the front of the answer by being recorded first.
+fn walk(
+  destinations: Dict(String, List(String)),
+  airport: String,
+  route: List(String),
+) -> #(Dict(String, List(String)), List(String)) {
+  case dict.get(destinations, airport) {
+    Ok([next, ..rest]) -> {
+      let #(destinations, route) =
+        walk(dict.insert(destinations, airport, rest), next, route)
+      walk(destinations, airport, route)
+    }
+    _ -> #(destinations, [airport, ..route])
+  }
+}"),
+      #("Solution 2 · Backtracking", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every ticket used, smallest option first, undoing a choice that leads nowhere. Because the options are sorted, the first complete itinerary found is already the smallest — no candidates to compare. Exponential in the worst case, which is precisely what Hierholzer's one-pass walk removes.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/string
+
+pub fn find_itinerary(tickets: List(#(String, String))) -> List(String) {
+  let destinations =
+    list.fold(tickets, dict.new(), fn(acc, ticket: #(String, String)) {
+      dict.insert(acc, ticket.0, [
+        ticket.1,
+        ..result.unwrap(dict.get(acc, ticket.0), [])
+      ])
+    })
+    |> dict.map_values(fn(_, options) { list.sort(options, string.compare) })
+
+  // Every ticket used, smallest option first, undoing a choice that leads
+  // nowhere. Because the options are sorted, the first complete itinerary found
+  // is the smallest one — no comparing of candidates. Exponential in the worst
+  // case, which is what Hierholzer's one-pass walk removes.
+  case extend(destinations, \"JFK\", [\"JFK\"], list.length(tickets)) {
+    Ok(route) -> list.reverse(route)
+    Error(Nil) -> []
+  }
+}
+
+fn extend(
+  destinations: Dict(String, List(String)),
+  airport: String,
+  route: List(String),
+  remaining: Int,
+) -> Result(List(String), Nil) {
+  case remaining {
+    0 -> Ok(route)
+    _ ->
+      try_each(
+        destinations,
+        airport,
+        route,
+        remaining,
+        result.unwrap(dict.get(destinations, airport), []),
+        [],
+      )
+  }
+}
+
+fn try_each(
+  destinations: Dict(String, List(String)),
+  airport: String,
+  route: List(String),
+  remaining: Int,
+  options: List(String),
+  rejected: List(String),
+) -> Result(List(String), Nil) {
+  case options {
+    [] -> Error(Nil)
+    [next, ..rest] -> {
+      let left = list.append(list.reverse(rejected), rest)
+      case
+        extend(
+          dict.insert(destinations, airport, left),
+          next,
+          [next, ..route],
+          remaining - 1,
+        )
+      {
+        Ok(found) -> Ok(found)
+        Error(Nil) ->
+          try_each(destinations, airport, route, remaining, rest, [
+            next,
+            ..rejected
+          ])
+      }
+    }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn find_itinerary(tickets: List(#(String, String))) -> List(String)",
+      starter: "pub fn find_itinerary(tickets: List(#(String, String))) -> List(String) {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"find_itinerary(MUC/LHR/SFO/SJC chain)\",
+      string.inspect([\"JFK\", \"MUC\", \"LHR\", \"SFO\", \"SJC\"]),
+      string.inspect(
+        solution.find_itinerary([
+          #(\"MUC\", \"LHR\"),
+          #(\"JFK\", \"MUC\"),
+          #(\"SFO\", \"SJC\"),
+          #(\"LHR\", \"SFO\"),
+        ]),
+      ),
+    ),
+    #(
+      \"find_itinerary(two ways out of JFK — smallest first)\",
+      string.inspect([\"JFK\", \"ATL\", \"JFK\", \"SFO\", \"ATL\", \"SFO\"]),
+      string.inspect(
+        solution.find_itinerary([
+          #(\"JFK\", \"SFO\"),
+          #(\"JFK\", \"ATL\"),
+          #(\"SFO\", \"ATL\"),
+          #(\"ATL\", \"JFK\"),
+          #(\"ATL\", \"SFO\"),
+        ]),
+      ),
+    ),
+    #(
+      \"find_itinerary(KUL is a dead end, so it must come last)\",
+      string.inspect([\"JFK\", \"NRT\", \"JFK\", \"KUL\"]),
+      string.inspect(
+        solution.find_itinerary([
+          #(\"JFK\", \"KUL\"),
+          #(\"JFK\", \"NRT\"),
+          #(\"NRT\", \"JFK\"),
+        ]),
+      ),
+    ),
+    #(
+      \"find_itinerary([])\",
+      string.inspect([\"JFK\"]),
+      string.inspect(solution.find_itinerary([])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
 pub fn nc11_container_water() -> Embedded {
   Embedded(
     solutions: [
@@ -4401,6 +4576,1025 @@ pub fn run() -> List(#(String, String, String)) {
       \"max_area([])\",
       string.inspect(0),
       string.inspect(solution.max_area([])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc120_min_cost_connect_points() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Prim's algorithm. Each outside point remembers only its distance to the tree so far, so adding one is a pass to find the nearest and a pass to update — O(n^2), which is what a complete graph costs anyway, and it needs no heap. Taking the cheapest edge is safe because the cheapest edge leaving any set of points is in some minimum spanning tree.", "import gleam/int
+import gleam/list
+
+pub fn min_cost_connect_points(points: List(#(Int, Int))) -> Int {
+  case list.index_map(points, fn(point, i) { #(i, point) }) {
+    [] -> 0
+    [#(_, start), ..rest] ->
+      grow(
+        list.map(rest, fn(entry: #(Int, #(Int, Int))) {
+          #(entry.0, entry.1, distance(start, entry.1))
+        }),
+        0,
+      )
+  }
+}
+
+// Prim's algorithm. Each outside point remembers only its distance to the tree
+// so far, so adding a point is one pass to find the nearest and one pass to
+// update — O(n²) total, which is what a complete graph costs anyway, and it
+// needs no heap. Cheapest-edge-first is safe because the cheapest edge leaving
+// any set of points is always in some minimum spanning tree.
+fn grow(outside: List(#(Int, #(Int, Int), Int)), total: Int) -> Int {
+  case outside {
+    [] -> total
+    [head, ..tail] -> {
+      let nearest =
+        list.fold(
+          tail,
+          head,
+          fn(best: #(Int, #(Int, Int), Int), entry: #(Int, #(Int, Int), Int)) {
+            case entry.2 < best.2 {
+              True -> entry
+              False -> best
+            }
+          },
+        )
+      let rest =
+        outside
+        |> list.filter(fn(entry: #(Int, #(Int, Int), Int)) {
+          entry.0 != nearest.0
+        })
+        |> list.map(fn(entry: #(Int, #(Int, Int), Int)) {
+          let reached = distance(nearest.1, entry.1)
+          case reached < entry.2 {
+            True -> #(entry.0, entry.1, reached)
+            False -> entry
+          }
+        })
+      grow(rest, total + nearest.2)
+    }
+  }
+}
+
+fn distance(a: #(Int, Int), b: #(Int, Int)) -> Int {
+  int.absolute_value(a.0 - b.0) + int.absolute_value(a.1 - b.1)
+}"),
+      #("Solution 2 · Kruskal", "Every edge, cheapest first, kept only when it joins two pieces that are not already connected — union-find is what makes that test cheap. The trade against Prim's is the sort, but Kruskal never looks at the points themselves, only at the edge list, which is why it is the one that generalises to a sparse graph.", "import gleam/dict.{type Dict}
+import gleam/int
+import gleam/list
+import gleam/result
+
+pub fn min_cost_connect_points(points: List(#(Int, Int))) -> Int {
+  let indexed = list.index_map(points, fn(point, i) { #(i, point) })
+
+  // Kruskal's algorithm: every edge, cheapest first, kept only when it joins
+  // two pieces that are not already connected. Union-find is what makes that
+  // test cheap. The trade against Prim's is the sort — O(n² log n) edges here
+  // against Prim's O(n²) — but Kruskal never needs the points themselves, only
+  // the edge list, so it is the one that generalises to a sparse graph.
+  let edges =
+    pairs(indexed)
+    |> list.sort(fn(a: #(Int, Int, Int), b: #(Int, Int, Int)) {
+      int.compare(a.2, b.2)
+    })
+
+  let #(_, total) =
+    list.fold(edges, #(dict.new(), 0), fn(state, edge: #(Int, Int, Int)) {
+      let #(parents, total) = state
+      let root_a = find(parents, edge.0)
+      let root_b = find(parents, edge.1)
+      case root_a == root_b {
+        True -> #(parents, total)
+        False -> #(dict.insert(parents, root_a, root_b), total + edge.2)
+      }
+    })
+  total
+}
+
+fn pairs(indexed: List(#(Int, #(Int, Int)))) -> List(#(Int, Int, Int)) {
+  case indexed {
+    [] -> []
+    [head, ..tail] ->
+      list.append(
+        list.map(tail, fn(other: #(Int, #(Int, Int))) {
+          #(head.0, other.0, distance(head.1, other.1))
+        }),
+        pairs(tail),
+      )
+  }
+}
+
+fn find(parents: Dict(Int, Int), node: Int) -> Int {
+  case result.unwrap(dict.get(parents, node), node) {
+    parent if parent == node -> node
+    parent -> find(parents, parent)
+  }
+}
+
+fn distance(a: #(Int, Int), b: #(Int, Int)) -> Int {
+  int.absolute_value(a.0 - b.0) + int.absolute_value(a.1 - b.1)
+}"),
+    ],
+    check: Check(
+      signature: "pub fn min_cost_connect_points(points: List(#(Int, Int))) -> Int",
+      starter: "pub fn min_cost_connect_points(points: List(#(Int, Int))) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"min_cost_connect_points(the five-point example)\",
+      string.inspect(20),
+      string.inspect(
+        solution.min_cost_connect_points([
+          #(0, 0),
+          #(2, 2),
+          #(3, 10),
+          #(5, 2),
+          #(7, 0),
+        ]),
+      ),
+    ),
+    #(
+      \"min_cost_connect_points([#(3,12), #(-2,5), #(-4,1)])\",
+      string.inspect(18),
+      string.inspect(
+        solution.min_cost_connect_points([#(3, 12), #(-2, 5), #(-4, 1)]),
+      ),
+    ),
+    #(
+      \"min_cost_connect_points([])\",
+      string.inspect(0),
+      string.inspect(solution.min_cost_connect_points([])),
+    ),
+    #(
+      \"min_cost_connect_points([#(1,1)]) — nothing to connect\",
+      string.inspect(0),
+      string.inspect(solution.min_cost_connect_points([#(1, 1)])),
+    ),
+    #(
+      \"min_cost_connect_points([#(0,0), #(0,5)])\",
+      string.inspect(5),
+      string.inspect(solution.min_cost_connect_points([#(0, 0), #(0, 5)])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc121_network_delay_time() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Dijkstra's algorithm. Taking the smallest tentative arrival settles that node for good, because any other route to it would have to start with an edge at least as long. That argument is exactly where a negative edge would break it — which is the reason to know Bellman-Ford as well.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+
+pub fn network_delay_time(
+  times: List(#(Int, Int, Int)),
+  n: Int,
+  k: Int,
+) -> Int {
+  let edges =
+    list.fold(times, dict.new(), fn(acc, edge: #(Int, Int, Int)) {
+      dict.insert(acc, edge.0, [
+        #(edge.1, edge.2),
+        ..result.unwrap(dict.get(acc, edge.0), [])
+      ])
+    })
+
+  let settled = settle(edges, [#(k, 0)], dict.new())
+
+  // Every node has to have heard the signal, and the answer is the last one to.
+  case dict.size(settled) == n {
+    True ->
+      list.fold(dict.values(settled), 0, fn(most, at) {
+        case at > most {
+          True -> at
+          False -> most
+        }
+      })
+    False -> -1
+  }
+}
+
+// Dijkstra's algorithm. The frontier holds tentative arrival times; taking the
+// smallest one settles that node for good, because every other route to it
+// would have to start with an edge at least as long. Gleam has no heap, so the
+// smallest is found by a scan — O(V²) rather than O(E log V), which is the
+// better shape anyway when the graph is dense.
+fn settle(
+  edges: Dict(Int, List(#(Int, Int))),
+  frontier: List(#(Int, Int)),
+  settled: Dict(Int, Int),
+) -> Dict(Int, Int) {
+  case frontier {
+    [] -> settled
+    [head, ..tail] -> {
+      let #(node, at) =
+        list.fold(tail, head, fn(best: #(Int, Int), entry: #(Int, Int)) {
+          case entry.1 < best.1 {
+            True -> entry
+            False -> best
+          }
+        })
+      let rest =
+        list.filter(frontier, fn(entry: #(Int, Int)) { entry.0 != node })
+      case dict.has_key(settled, node) {
+        True -> settle(edges, rest, settled)
+        False -> {
+          let settled = dict.insert(settled, node, at)
+          let reached =
+            result.unwrap(dict.get(edges, node), [])
+            |> list.filter(fn(edge: #(Int, Int)) {
+              !dict.has_key(settled, edge.0)
+            })
+            |> list.map(fn(edge: #(Int, Int)) { #(edge.0, at + edge.1) })
+          settle(edges, list.append(rest, reached), settled)
+        }
+      }
+    }
+  }
+}"),
+      #("Solution 2 · Bellman ford", "No choosing what to settle next: relax every edge, n-1 times over, and the times settle by themselves — a shortest path is at most n-1 edges long, and each round fixes at least one more of them. Slower at O(V·E), and worth knowing because it survives negative weights.", "import gleam/dict
+import gleam/list
+
+pub fn network_delay_time(
+  times: List(#(Int, Int, Int)),
+  n: Int,
+  k: Int,
+) -> Int {
+  // Bellman-Ford. No choosing what to settle next: relax every edge, n-1 times
+  // over, and the times settle by themselves — a shortest path is at most n-1
+  // edges long, and each round fixes at least one more of them. Slower than
+  // Dijkstra at O(V·E), and the reason to know it is that it survives negative
+  // edge weights, which Dijkstra's settle-and-never-revisit does not.
+  let settled =
+    list.fold(rounds(n - 1), dict.insert(dict.new(), k, 0), fn(best, _) {
+      list.fold(times, best, fn(best, edge: #(Int, Int, Int)) {
+        case dict.get(best, edge.0) {
+          Ok(at) -> {
+            let arrival = at + edge.2
+            case dict.get(best, edge.1) {
+              Ok(current) if current <= arrival -> best
+              _ -> dict.insert(best, edge.1, arrival)
+            }
+          }
+          Error(Nil) -> best
+        }
+      })
+    })
+
+  case dict.size(settled) == n {
+    True ->
+      list.fold(dict.values(settled), 0, fn(most, at) {
+        case at > most {
+          True -> at
+          False -> most
+        }
+      })
+    False -> -1
+  }
+}
+
+fn rounds(n: Int) -> List(Int) {
+  case n <= 0 {
+    True -> []
+    False -> list.index_map(list.repeat(Nil, n), fn(_, i) { i })
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn network_delay_time(
+  times: List(#(Int, Int, Int)),
+  n: Int,
+  k: Int,
+) -> Int",
+      starter: "pub fn network_delay_time(
+  times: List(#(Int, Int, Int)),
+  n: Int,
+  k: Int,
+) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"network_delay_time([#(2,1,1), #(2,3,1), #(3,4,1)], 4, 2)\",
+      string.inspect(2),
+      string.inspect(
+        solution.network_delay_time([#(2, 1, 1), #(2, 3, 1), #(3, 4, 1)], 4, 2),
+      ),
+    ),
+    #(
+      \"network_delay_time([#(1,2,1)], 2, 1)\",
+      string.inspect(1),
+      string.inspect(solution.network_delay_time([#(1, 2, 1)], 2, 1)),
+    ),
+    #(
+      \"network_delay_time([#(1,2,1)], 2, 2) — node 1 is unreachable\",
+      string.inspect(-1),
+      string.inspect(solution.network_delay_time([#(1, 2, 1)], 2, 2)),
+    ),
+    #(
+      \"network_delay_time([], 1, 1)\",
+      string.inspect(0),
+      string.inspect(solution.network_delay_time([], 1, 1)),
+    ),
+    #(
+      \"network_delay_time(the long way round is shorter, 3, 1)\",
+      string.inspect(3),
+      string.inspect(
+        solution.network_delay_time([#(1, 2, 1), #(2, 3, 2), #(1, 3, 4)], 3, 1),
+      ),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc122_swim_in_water() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Dijkstra's, with the cost of a path redefined from the sum of its steps to the largest step in it — the water only has to rise once. Everything else about the algorithm is untouched, which is the point: the shortest-path machinery works for any cost that only grows along a path.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/set.{type Set}
+
+pub fn swim_in_water(grid: List(List(Int))) -> Int {
+  let heights = cells(grid)
+  let n = list.length(grid)
+  case n {
+    0 -> 0
+    _ ->
+      cross(
+        heights,
+        #(n - 1, n - 1),
+        [#(#(0, 0), result.unwrap(dict.get(heights, #(0, 0)), 0))],
+        set.new(),
+      )
+  }
+}
+
+// Dijkstra's, with \"cost of a path\" redefined from the sum of its steps to the
+// largest step in it — the water only has to rise once. Everything else about
+// the algorithm is unchanged, which is the point: settle the cheapest reachable
+// cell, and the first time the far corner is settled that cost is the answer.
+fn cross(
+  heights: Dict(#(Int, Int), Int),
+  target: #(Int, Int),
+  frontier: List(#(#(Int, Int), Int)),
+  seen: Set(#(Int, Int)),
+) -> Int {
+  case frontier {
+    [] -> -1
+    [head, ..tail] -> {
+      let #(at, cost) =
+        list.fold(
+          tail,
+          head,
+          fn(best: #(#(Int, Int), Int), entry: #(#(Int, Int), Int)) {
+            case entry.1 < best.1 {
+              True -> entry
+              False -> best
+            }
+          },
+        )
+      let rest =
+        list.filter(frontier, fn(entry: #(#(Int, Int), Int)) { entry.0 != at })
+      case at == target, set.contains(seen, at) {
+        True, _ -> cost
+        _, True -> cross(heights, target, rest, seen)
+        _, False -> {
+          let seen = set.insert(seen, at)
+          let reached =
+            neighbours(at)
+            |> list.filter_map(fn(next) {
+              case set.contains(seen, next), dict.get(heights, next) {
+                False, Ok(height) -> Ok(#(next, max(cost, height)))
+                _, _ -> Error(Nil)
+              }
+            })
+          cross(heights, target, list.append(rest, reached), seen)
+        }
+      }
+    }
+  }
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  [
+    #(at.0 - 1, at.1),
+    #(at.0 + 1, at.1),
+    #(at.0, at.1 - 1),
+    #(at.0, at.1 + 1),
+  ]
+}
+
+fn cells(grid: List(List(Int))) -> Dict(#(Int, Int), Int) {
+  grid
+  |> list.index_map(fn(row, r) {
+    list.index_map(row, fn(height, c) { #(#(r, c), height) })
+  })
+  |> list.flatten
+  |> dict.from_list
+}
+
+fn max(a: Int, b: Int) -> Int {
+  case a > b {
+    True -> a
+    False -> b
+  }
+}"),
+      #("Solution 2 · Binary search", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Reachability at time t is monotone: once the corner can be reached, it stays reachable as the water rises. That is the shape binary search needs, and it turns the question from \"what is the cheapest path\" into \"is it possible yet\", answered by a plain flood fill.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/set.{type Set}
+
+pub fn swim_in_water(grid: List(List(Int))) -> Int {
+  let heights = cells(grid)
+  let n = list.length(grid)
+  case n {
+    0 -> 0
+    _ -> {
+      // Reachability at time t is monotone: once the corner can be reached it
+      // stays reachable as the water rises further. That is exactly the shape
+      // binary search needs, so the question turns from \"what is the cheapest
+      // path\" into \"is it possible yet\", answered by a plain flood fill.
+      let start = result.unwrap(dict.get(heights, #(0, 0)), 0)
+      search(heights, #(n - 1, n - 1), start, n * n - 1)
+    }
+  }
+}
+
+fn search(
+  heights: Dict(#(Int, Int), Int),
+  target: #(Int, Int),
+  low: Int,
+  high: Int,
+) -> Int {
+  case low >= high {
+    True -> low
+    False -> {
+      let middle = { low + high } / 2
+      case reaches(heights, target, [#(0, 0)], set.new(), middle) {
+        True -> search(heights, target, low, middle)
+        False -> search(heights, target, middle + 1, high)
+      }
+    }
+  }
+}
+
+fn reaches(
+  heights: Dict(#(Int, Int), Int),
+  target: #(Int, Int),
+  frontier: List(#(Int, Int)),
+  seen: Set(#(Int, Int)),
+  limit: Int,
+) -> Bool {
+  case frontier {
+    [] -> False
+    [at, ..rest] ->
+      // The target has to be passable itself — testing for it before testing
+      // its depth would report the corner reached while it is still too deep.
+      case set.contains(seen, at), dict.get(heights, at) {
+        False, Ok(height) if height <= limit ->
+          case at == target {
+            True -> True
+            False ->
+              reaches(
+                heights,
+                target,
+                list.append(rest, neighbours(at)),
+                set.insert(seen, at),
+                limit,
+              )
+          }
+        _, _ -> reaches(heights, target, rest, seen, limit)
+      }
+  }
+}
+
+fn neighbours(at: #(Int, Int)) -> List(#(Int, Int)) {
+  [
+    #(at.0 - 1, at.1),
+    #(at.0 + 1, at.1),
+    #(at.0, at.1 - 1),
+    #(at.0, at.1 + 1),
+  ]
+}
+
+fn cells(grid: List(List(Int))) -> Dict(#(Int, Int), Int) {
+  grid
+  |> list.index_map(fn(row, r) {
+    list.index_map(row, fn(height, c) { #(#(r, c), height) })
+  })
+  |> list.flatten
+  |> dict.from_list
+}"),
+    ],
+    check: Check(
+      signature: "pub fn swim_in_water(grid: List(List(Int))) -> Int",
+      starter: "pub fn swim_in_water(grid: List(List(Int))) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"swim_in_water([[0,2],[1,3]])\",
+      string.inspect(3),
+      string.inspect(solution.swim_in_water([[0, 2], [1, 3]])),
+    ),
+    #(
+      \"swim_in_water(the 5x5 spiral)\",
+      string.inspect(16),
+      string.inspect(
+        solution.swim_in_water([
+          [0, 1, 2, 3, 4],
+          [24, 23, 22, 21, 5],
+          [12, 13, 14, 15, 16],
+          [11, 17, 18, 19, 20],
+          [10, 9, 8, 7, 6],
+        ]),
+      ),
+    ),
+    #(
+      \"swim_in_water([[0]])\",
+      string.inspect(0),
+      string.inspect(solution.swim_in_water([[0]])),
+    ),
+    #(
+      \"swim_in_water([[3,2],[1,0]]) — the start is the deepest cell\",
+      string.inspect(3),
+      string.inspect(solution.swim_in_water([[3, 2], [1, 0]])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc123_alien_dictionary() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The words are the input but the graph is over letters. Two adjacent words agree up to their first difference, and that difference is the only ordering they establish — everything after it says nothing at all. Then it is a topological sort, with two distinct ways to fail: a cycle, and a word followed by its own prefix.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/set
+import gleam/string
+
+pub fn alien_order(words: List(String)) -> String {
+  let letters =
+    list.fold(words, set.new(), fn(acc, word) {
+      list.fold(string.to_graphemes(word), acc, set.insert)
+    })
+
+  case edges(words) {
+    Error(Nil) -> \"\"
+    Ok(pairs) -> {
+      let waiting =
+        list.fold(pairs, dict.new(), fn(acc, pair: #(String, String)) {
+          dict.insert(acc, pair.1, result.unwrap(dict.get(acc, pair.1), 0) + 1)
+        })
+      let unlocks =
+        list.fold(pairs, dict.new(), fn(acc, pair: #(String, String)) {
+          dict.insert(acc, pair.0, [
+            pair.1,
+            ..result.unwrap(dict.get(acc, pair.0), [])
+          ])
+        })
+      let ready =
+        set.to_list(letters)
+        |> list.filter(fn(letter) {
+          result.unwrap(dict.get(waiting, letter), 0) == 0
+        })
+      let order = take(ready, waiting, unlocks, [])
+      // Short means the leftovers all depend on each other: the ordering the
+      // words describe is contradictory, so no alphabet satisfies it.
+      case list.length(order) == set.size(letters) {
+        True -> string.join(order, \"\")
+        False -> \"\"
+      }
+    }
+  }
+}
+
+// Two adjacent words agree up to their first difference, and that difference is
+// the only thing they say about the alphabet — everything after it is unordered.
+// The one case with no letters to compare is a word followed by a prefix of
+// itself, which no alphabet can explain.
+fn edges(words: List(String)) -> Result(List(#(String, String)), Nil) {
+  case words {
+    [first, second, ..rest] ->
+      case difference(string.to_graphemes(first), string.to_graphemes(second)) {
+        Error(Nil) -> Error(Nil)
+        Ok(found) ->
+          case edges([second, ..rest]) {
+            Ok(more) -> Ok(list.append(found, more))
+            Error(Nil) -> Error(Nil)
+          }
+      }
+    _ -> Ok([])
+  }
+}
+
+fn difference(
+  first: List(String),
+  second: List(String),
+) -> Result(List(#(String, String)), Nil) {
+  case first, second {
+    [a, ..a_rest], [b, ..b_rest] ->
+      case a == b {
+        True -> difference(a_rest, b_rest)
+        False -> Ok([#(a, b)])
+      }
+    [_, ..], [] -> Error(Nil)
+    _, _ -> Ok([])
+  }
+}
+
+fn take(
+  ready: List(String),
+  waiting: Dict(String, Int),
+  unlocks: Dict(String, List(String)),
+  order: List(String),
+) -> List(String) {
+  case ready {
+    [] -> list.reverse(order)
+    [letter, ..rest] -> {
+      let #(waiting, freed) =
+        result.unwrap(dict.get(unlocks, letter), [])
+        |> list.fold(#(waiting, []), fn(state, following) {
+          let #(waiting, freed) = state
+          let left = result.unwrap(dict.get(waiting, following), 0) - 1
+          let waiting = dict.insert(waiting, following, left)
+          case left == 0 {
+            True -> #(waiting, [following, ..freed])
+            False -> #(waiting, freed)
+          }
+        })
+      take(list.append(rest, freed), waiting, unlocks, [letter, ..order])
+    }
+  }
+}"),
+      #("Solution 2 · Dfs postorder", "Record a letter only once everything that must follow it has been recorded, and prepend rather than append — that is what puts it back in front of them. The in-progress set is the cycle check, exactly as in Course Schedule: a letter met again on the current path contradicts itself.", "import gleam/dict.{type Dict}
+import gleam/list
+import gleam/result
+import gleam/set.{type Set}
+import gleam/string
+
+pub fn alien_order(words: List(String)) -> String {
+  let letters =
+    list.fold(words, set.new(), fn(acc, word) {
+      list.fold(string.to_graphemes(word), acc, set.insert)
+    })
+
+  case edges(words) {
+    Error(Nil) -> \"\"
+    Ok(pairs) -> {
+      let after =
+        list.fold(pairs, dict.new(), fn(acc, pair: #(String, String)) {
+          dict.insert(acc, pair.0, [
+            pair.1,
+            ..result.unwrap(dict.get(acc, pair.0), [])
+          ])
+        })
+      // Depth-first, recording a letter only once everything that must follow
+      // it has been recorded — and recording it by prepending, which is what
+      // puts it back in front of them. The in-progress set is the cycle check:
+      // a letter met again on the current path contradicts itself.
+      case
+        list.fold(set.to_list(letters), Ok(#(set.new(), [])), fn(state, letter) {
+          case state {
+            Error(Nil) -> Error(Nil)
+            Ok(#(done, order)) -> visit(after, letter, set.new(), done, order)
+          }
+        })
+      {
+        Error(Nil) -> \"\"
+        Ok(#(_, order)) -> string.join(order, \"\")
+      }
+    }
+  }
+}
+
+fn visit(
+  after: Dict(String, List(String)),
+  letter: String,
+  on_path: Set(String),
+  done: Set(String),
+  order: List(String),
+) -> Result(#(Set(String), List(String)), Nil) {
+  case set.contains(on_path, letter), set.contains(done, letter) {
+    True, _ -> Error(Nil)
+    _, True -> Ok(#(done, order))
+    _, _ -> {
+      let on_path = set.insert(on_path, letter)
+      case
+        list.fold(
+          result.unwrap(dict.get(after, letter), []),
+          Ok(#(done, order)),
+          fn(state, following) {
+            case state {
+              Error(Nil) -> Error(Nil)
+              Ok(#(done, order)) ->
+                visit(after, following, on_path, done, order)
+            }
+          },
+        )
+      {
+        Error(Nil) -> Error(Nil)
+        Ok(#(done, order)) -> Ok(#(set.insert(done, letter), [letter, ..order]))
+      }
+    }
+  }
+}
+
+fn edges(words: List(String)) -> Result(List(#(String, String)), Nil) {
+  case words {
+    [first, second, ..rest] ->
+      case difference(string.to_graphemes(first), string.to_graphemes(second)) {
+        Error(Nil) -> Error(Nil)
+        Ok(found) ->
+          case edges([second, ..rest]) {
+            Ok(more) -> Ok(list.append(found, more))
+            Error(Nil) -> Error(Nil)
+          }
+      }
+    _ -> Ok([])
+  }
+}
+
+fn difference(
+  first: List(String),
+  second: List(String),
+) -> Result(List(#(String, String)), Nil) {
+  case first, second {
+    [a, ..a_rest], [b, ..b_rest] ->
+      case a == b {
+        True -> difference(a_rest, b_rest)
+        False -> Ok([#(a, b)])
+      }
+    [_, ..], [] -> Error(Nil)
+    _, _ -> Ok([])
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn alien_order(words: List(String)) -> String",
+      starter: "pub fn alien_order(words: List(String)) -> String {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"alien_order([wrt, wrf, er, ett, rftt])\",
+      string.inspect(\"wertf\"),
+      string.inspect(solution.alien_order([\"wrt\", \"wrf\", \"er\", \"ett\", \"rftt\"])),
+    ),
+    #(
+      \"alien_order([z, x])\",
+      string.inspect(\"zx\"),
+      string.inspect(solution.alien_order([\"z\", \"x\"])),
+    ),
+    #(
+      \"alien_order([z, x, z]) — contradictory\",
+      string.inspect(\"\"),
+      string.inspect(solution.alien_order([\"z\", \"x\", \"z\"])),
+    ),
+    #(
+      \"alien_order([abc, ab]) — a word before its own prefix\",
+      string.inspect(\"\"),
+      string.inspect(solution.alien_order([\"abc\", \"ab\"])),
+    ),
+    #(
+      \"alien_order([z, z])\",
+      string.inspect(\"z\"),
+      string.inspect(solution.alien_order([\"z\", \"z\"])),
+    ),
+    #(
+      \"alien_order([x, y, z])\",
+      string.inspect(\"xyz\"),
+      string.inspect(solution.alien_order([\"x\", \"y\", \"z\"])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
+pub fn nc124_cheapest_flights() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "The stop limit is what stops this being plain Dijkstra: cheapest-so-far no longer settles a city, because a costlier route with fewer stops may still be the one that gets through. Bellman-Ford handles it by construction — one round is one flight — provided each round reads a snapshot of the last, or two flights leak into a single round.", "import gleam/dict
+import gleam/list
+
+pub fn find_cheapest_price(
+  _n: Int,
+  flights: List(#(Int, Int, Int)),
+  src: Int,
+  dst: Int,
+  k: Int,
+) -> Int {
+  // Bellman-Ford, stopped after k+1 rounds — one round is one flight, so the
+  // round count *is* the stop limit. Each round reads the previous round's
+  // costs from a snapshot rather than from the table being written; without
+  // that, two flights could be taken within a single round and the limit would
+  // leak.
+  let costs =
+    list.fold(rounds(k + 1), dict.insert(dict.new(), src, 0), fn(costs, _) {
+      list.fold(flights, costs, fn(next, flight: #(Int, Int, Int)) {
+        case dict.get(costs, flight.0) {
+          Ok(so_far) -> {
+            let total = so_far + flight.2
+            case dict.get(next, flight.1) {
+              Ok(current) if current <= total -> next
+              _ -> dict.insert(next, flight.1, total)
+            }
+          }
+          Error(Nil) -> next
+        }
+      })
+    })
+
+  case dict.get(costs, dst) {
+    Ok(cost) -> cost
+    Error(Nil) -> -1
+  }
+}
+
+fn rounds(n: Int) -> List(Int) {
+  case n <= 0 {
+    True -> []
+    False -> list.index_map(list.repeat(Nil, n), fn(_, i) { i })
+  }
+}"),
+      #("Solution 2 · Breadth first", "Breadth-first by number of flights taken, which makes the stop limit the depth limit — the same bound Bellman-Ford gets from its round count, arrived at from the other direction. The cheapest-so-far table is what stops it exploding: a city is expanded again only when this route reached it for less.", "import gleam/dict.{type Dict}
+import gleam/list
+
+pub fn find_cheapest_price(
+  _n: Int,
+  flights: List(#(Int, Int, Int)),
+  src: Int,
+  dst: Int,
+  k: Int,
+) -> Int {
+  // Breadth-first by number of flights taken, which makes the stop limit the
+  // depth limit — the same bound Bellman-Ford gets from its round count. The
+  // cheapest-so-far table is what stops it exploding: a city is only expanded
+  // again if this route reached it for less than any earlier one did.
+  let best =
+    expand(flights, [#(src, 0)], dict.insert(dict.new(), src, 0), k + 1)
+  case dict.get(best, dst) {
+    Ok(cost) -> cost
+    Error(Nil) -> -1
+  }
+}
+
+fn expand(
+  flights: List(#(Int, Int, Int)),
+  frontier: List(#(Int, Int)),
+  best: Dict(Int, Int),
+  left: Int,
+) -> Dict(Int, Int) {
+  case frontier, left {
+    [], _ -> best
+    _, 0 -> best
+    _, _ -> {
+      let #(next, best) =
+        list.fold(frontier, #([], best), fn(state, at: #(Int, Int)) {
+          list.filter(flights, fn(flight: #(Int, Int, Int)) { flight.0 == at.0 })
+          |> list.fold(state, fn(state, flight: #(Int, Int, Int)) {
+            let #(next, best) = state
+            let total = at.1 + flight.2
+            case dict.get(best, flight.1) {
+              Ok(current) if current <= total -> #(next, best)
+              _ -> #(
+                [#(flight.1, total), ..next],
+                dict.insert(best, flight.1, total),
+              )
+            }
+          })
+        })
+      expand(flights, next, best, left - 1)
+    }
+  }
+}"),
+    ],
+    check: Check(
+      signature: "pub fn find_cheapest_price(
+  _n: Int,
+  flights: List(#(Int, Int, Int)),
+  src: Int,
+  dst: Int,
+  k: Int,
+) -> Int",
+      starter: "pub fn find_cheapest_price(
+  _n: Int,
+  flights: List(#(Int, Int, Int)),
+  src: Int,
+  dst: Int,
+  k: Int,
+) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"find_cheapest_price(4, the loop example, 0, 3, 1)\",
+      string.inspect(700),
+      string.inspect(
+        solution.find_cheapest_price(
+          4,
+          [
+            #(0, 1, 100),
+            #(1, 2, 100),
+            #(2, 0, 100),
+            #(1, 3, 600),
+            #(2, 3, 200),
+          ],
+          0,
+          3,
+          1,
+        ),
+      ),
+    ),
+    #(
+      \"find_cheapest_price(3, two hops allowed, 0, 2, 1)\",
+      string.inspect(200),
+      string.inspect(
+        solution.find_cheapest_price(
+          3,
+          [#(0, 1, 100), #(1, 2, 100), #(0, 2, 500)],
+          0,
+          2,
+          1,
+        ),
+      ),
+    ),
+    #(
+      \"find_cheapest_price(3, no stop allowed, 0, 2, 0)\",
+      string.inspect(500),
+      string.inspect(
+        solution.find_cheapest_price(
+          3,
+          [#(0, 1, 100), #(1, 2, 100), #(0, 2, 500)],
+          0,
+          2,
+          0,
+        ),
+      ),
+    ),
+    #(
+      \"find_cheapest_price(2, no flights at all, 0, 1, 5)\",
+      string.inspect(-1),
+      string.inspect(solution.find_cheapest_price(2, [], 0, 1, 5)),
+    ),
+    #(
+      \"find_cheapest_price(1, already there, 0, 0, 0)\",
+      string.inspect(0),
+      string.inspect(solution.find_cheapest_price(1, [], 0, 0, 0)),
+    ),
+    #(
+      \"find_cheapest_price(5, cheapest route needs the third hop, 0, 2, 2)\",
+      string.inspect(7),
+      string.inspect(
+        solution.find_cheapest_price(
+          5,
+          [
+            #(0, 1, 5),
+            #(1, 2, 5),
+            #(0, 3, 2),
+            #(3, 1, 2),
+            #(1, 4, 1),
+            #(4, 2, 1),
+          ],
+          0,
+          2,
+          2,
+        ),
+      ),
     ),
   ]
 }",
@@ -15648,7 +16842,13 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc116_connected_components" -> Ok(nc116_connected_components())
     "nc117_graph_valid_tree" -> Ok(nc117_graph_valid_tree())
     "nc118_word_ladder" -> Ok(nc118_word_ladder())
+    "nc119_reconstruct_itinerary" -> Ok(nc119_reconstruct_itinerary())
     "nc11_container_water" -> Ok(nc11_container_water())
+    "nc120_min_cost_connect_points" -> Ok(nc120_min_cost_connect_points())
+    "nc121_network_delay_time" -> Ok(nc121_network_delay_time())
+    "nc122_swim_in_water" -> Ok(nc122_swim_in_water())
+    "nc123_alien_dictionary" -> Ok(nc123_alien_dictionary())
+    "nc124_cheapest_flights" -> Ok(nc124_cheapest_flights())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())
     "nc14_character_replacement" -> Ok(nc14_character_replacement())
