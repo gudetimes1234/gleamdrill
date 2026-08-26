@@ -96,6 +96,11 @@ pub fn groups() -> List(Group) {
         "You are given an integer array height of length n. Find two lines that together with the x-axis form a container that holds the most water. Return the maximum amount of water a container can store.",
         "nc11_container_water",
       ),
+      Drill(
+        "Trapping Rain Water",
+        "Given n non-negative integers representing an elevation map where the width of each bar is 1, compute how much water it can trap after raining.",
+        "nc24_trapping_rain_water",
+      ),
     ]),
     Group("Sliding Window", [
       Drill(

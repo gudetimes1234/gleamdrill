@@ -59,6 +59,8 @@ import nc22_encode_decode
 import nc22_encode_decode__escaping
 import nc23_valid_sudoku
 import nc23_valid_sudoku__by_unit
+import nc24_trapping_rain_water
+import nc24_trapping_rain_water__prefix_maxima
 import tip01_list_patterns
 import tip01_list_patterns__stdlib
 import tip02_tail_recursion
@@ -161,6 +163,8 @@ pub fn main() {
     ),
     check_valid_sudoku(nc23_valid_sudoku.is_valid_sudoku),
     check_valid_sudoku(nc23_valid_sudoku__by_unit.is_valid_sudoku),
+    check_trapping_rain_water(nc24_trapping_rain_water.trap),
+    check_trapping_rain_water(nc24_trapping_rain_water__prefix_maxima.trap),
 
     // Gleam Tips
     check_list_patterns(tip01_list_patterns.length, tip01_list_patterns.last),
@@ -283,6 +287,17 @@ fn check_valid_sudoku(f: fn(List(List(String))) -> Bool) -> Nil {
   let assert False = f(with_cell(3, 0, "5"))
   let assert False = f(with_cell(2, 0, "3"))
   let assert True = f(list.repeat(list.repeat(".", 9), 9))
+  Nil
+}
+
+fn check_trapping_rain_water(f: fn(List(Int)) -> Int) -> Nil {
+  let assert True = f([0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]) == 6
+  let assert True = f([4, 2, 0, 3, 2, 5]) == 9
+  let assert True = f([]) == 0
+  let assert True = f([3]) == 0
+  let assert True = f([2, 0, 2]) == 2
+  // A slope holds nothing: there is no right-hand wall to trap against.
+  let assert True = f([5, 4, 3, 2, 1]) == 0
   Nil
 }
 

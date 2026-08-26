@@ -47,6 +47,8 @@ import * as v42 from "./.verify/nc22_encode_decode/harness";
 import * as v43 from "./.verify/nc22_encode_decode__escaping/harness";
 import * as v44 from "./.verify/nc23_valid_sudoku/harness";
 import * as v45 from "./.verify/nc23_valid_sudoku__by_unit/harness";
+import * as v46 from "./.verify/nc24_trapping_rain_water/harness";
+import * as v47 from "./.verify/nc24_trapping_rain_water__prefix_maxima/harness";
 
 type Case = [string, string, string];
 
@@ -97,6 +99,8 @@ const VARIANTS: [string, string, () => Case[]][] = [
   ["nc22_encode_decode", "Solution 2 · Escaping", v43.run],
   ["nc23_valid_sudoku", "Solution 1", v44.run],
   ["nc23_valid_sudoku", "Solution 2 · By unit", v45.run],
+  ["nc24_trapping_rain_water", "Solution 1", v46.run],
+  ["nc24_trapping_rain_water", "Solution 2 · Prefix maxima", v47.run],
 ];
 
 const failures: string[] = [];

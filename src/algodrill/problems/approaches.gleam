@@ -43,6 +43,9 @@ pub fn for_title(title: String) -> String {
     "Container With Most Water" ->
       "Two pointers with a greedy argument. Start at both ends; the area is limited by the shorter line, so moving the taller pointer can never help \u{2014} always move the shorter one inwards and track the best area seen."
 
+    "Trapping Rain Water" ->
+      "Ask what sits above one position, not how the pools are shaped. The water at index i is min(tallest to the left, tallest to the right) minus height[i]. Computing both running maxima and summing is the direct reading; the two-pointer version gets there in one pass by always advancing the shorter side, where the near maximum alone already fixes the water level."
+
     "Best Time to Buy and Sell Stock" ->
       "A running-minimum problem. Sweep once, tracking the cheapest price seen so far and the best profit if you sold today (price minus that minimum). One pass, two variables."
 

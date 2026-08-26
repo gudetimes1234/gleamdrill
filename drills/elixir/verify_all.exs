@@ -50,6 +50,8 @@ variants = [
   {"nc22_encode_decode", "Solution 2 · Escaping", "nc22_encode_decode__escaping"},
   {"nc23_valid_sudoku", "Solution 1", "nc23_valid_sudoku"},
   {"nc23_valid_sudoku", "Solution 2 · By unit", "nc23_valid_sudoku__by_unit"},
+  {"nc24_trapping_rain_water", "Solution 1", "nc24_trapping_rain_water"},
+  {"nc24_trapping_rain_water", "Solution 2 · Prefix maxima", "nc24_trapping_rain_water__prefix_maxima"},
 ]
 
 root = Path.dirname(__ENV__.file)

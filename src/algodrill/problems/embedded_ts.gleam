@@ -1418,6 +1418,72 @@ export function run(): [string, string, string][] {
   )
 }
 
+pub fn nc24_trapping_rain_water() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two pointers, moving whichever side is shorter. The trick is that the shorter side alone decides how much water sits above it: whatever is on the far side is at least as tall, so the running maximum behind the short pointer is the water level, and there is no need to know the far maximum exactly. One pass, no extra arrays.", "export function trap(height: number[]): number {
+  let left = 0;
+  let right = height.length - 1;
+  let leftMax = 0;
+  let rightMax = 0;
+  let total = 0;
+
+  while (left < right) {
+    if (height[left] < height[right]) {
+      leftMax = Math.max(leftMax, height[left]);
+      total += leftMax - height[left];
+      left++;
+    } else {
+      rightMax = Math.max(rightMax, height[right]);
+      total += rightMax - height[right];
+      right--;
+    }
+  }
+
+  return total;
+}"),
+      #("Solution 2 · Prefix maxima", "State the definition and compute it. Water above a position is min(tallest to its left, tallest to its right) minus its own height, so build both running maxima and sum the differences. Two extra arrays against the two-pointer version's none, but the formula is right there in the code.", "export function trap(height: number[]): number {
+  const left: number[] = [];
+  let best = 0;
+  for (const h of height) {
+    best = Math.max(best, h);
+    left.push(best);
+  }
+
+  const right = new Array<number>(height.length);
+  best = 0;
+  for (let i = height.length - 1; i >= 0; i--) {
+    best = Math.max(best, height[i]);
+    right[i] = best;
+  }
+
+  return height.reduce((total, h, i) => total + Math.min(left[i], right[i]) - h, 0);
+}"),
+    ],
+    check: Check(
+      signature: "export function trap(height: number[]): number",
+      starter: "export function trap(height: number[]): number {
+  // todo
+}",
+      harness: "import * as solution from \"./solution\";
+
+const show = (v: unknown) => JSON.stringify(v) ?? \"undefined\";
+
+export function run(): [string, string, string][] {
+  if (typeof solution.trap !== \"function\") throw new Error(\"__signature_mismatch__\");
+  return [
+    [\"trap([0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1])\", show(6), show(solution.trap([0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]))],
+    [\"trap([4, 2, 0, 3, 2, 5])\", show(9), show(solution.trap([4, 2, 0, 3, 2, 5]))],
+    [\"trap([])\", show(0), show(solution.trap([]))],
+    [\"trap([3])\", show(0), show(solution.trap([3]))],
+    [\"trap([2, 0, 2])\", show(2), show(solution.trap([2, 0, 2]))],
+    [\"trap([5, 4, 3, 2, 1])\", show(0), show(solution.trap([5, 4, 3, 2, 1]))],
+  ];
+}",
+    ),
+  )
+}
+
 pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -1443,6 +1509,7 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc21_search_rotated" -> Ok(nc21_search_rotated())
     "nc22_encode_decode" -> Ok(nc22_encode_decode())
     "nc23_valid_sudoku" -> Ok(nc23_valid_sudoku())
+    "nc24_trapping_rain_water" -> Ok(nc24_trapping_rain_water())
     _ -> Error(Nil)
   }
 }

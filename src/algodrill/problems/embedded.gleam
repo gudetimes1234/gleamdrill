@@ -2374,6 +2374,117 @@ pub fn run() -> List(#(String, String, String)) {
   )
 }
 
+pub fn nc24_trapping_rain_water() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two pointers, moving whichever side is shorter. The trick is that the shorter side alone decides how much water sits above it: whatever is on the far side is at least as tall, so the running maximum behind the short pointer is the water level, and there is no need to know the far maximum exactly. One pass, no extra arrays.", "import gleam/int
+import gleam/list
+
+pub fn trap(height: List(Int)) -> Int {
+  walk(height, list.reverse(height), list.length(height) - 1, 0, 0, 0)
+}
+
+/// The two pointers are the list read from the front and the list read from the
+/// back; `remaining` stands in for \"left < right\", since neither end knows
+/// where the other has got to.
+fn walk(
+  front: List(Int),
+  back: List(Int),
+  remaining: Int,
+  left_max: Int,
+  right_max: Int,
+  total: Int,
+) -> Int {
+  case remaining <= 0, front, back {
+    False, [l, ..front_rest], [r, ..back_rest] ->
+      case l < r {
+        True -> {
+          let left_max = int.max(left_max, l)
+          walk(
+            front_rest,
+            back,
+            remaining - 1,
+            left_max,
+            right_max,
+            total + left_max - l,
+          )
+        }
+        False -> {
+          let right_max = int.max(right_max, r)
+          walk(
+            front,
+            back_rest,
+            remaining - 1,
+            left_max,
+            right_max,
+            total + right_max - r,
+          )
+        }
+      }
+    _, _, _ -> total
+  }
+}"),
+      #("Solution 2 · Prefix maxima", "State the definition and compute it. Water above a position is min(tallest to its left, tallest to its right) minus its own height, so build both running maxima and sum the differences. Two extra arrays against the two-pointer version's none, but the formula is right there in the code.", "import gleam/int
+import gleam/list
+
+pub fn trap(height: List(Int)) -> Int {
+  let left = running_max(height)
+  let right =
+    height
+    |> list.reverse
+    |> running_max
+    |> list.reverse
+
+  list.zip(list.zip(left, right), height)
+  |> list.map(fn(cell) {
+    let #(#(l, r), h) = cell
+    int.min(l, r) - h
+  })
+  |> int.sum
+}
+
+fn running_max(values: List(Int)) -> List(Int) {
+  list.scan(values, 0, int.max)
+}"),
+    ],
+    check: Check(
+      signature: "pub fn trap(height: List(Int)) -> Int",
+      starter: "pub fn trap(height: List(Int)) -> Int {
+  todo
+}",
+      harness: "import gleam/string
+import solution
+
+pub fn run() -> List(#(String, String, String)) {
+  [
+    #(
+      \"trap([0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1])\",
+      string.inspect(6),
+      string.inspect(solution.trap([0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1])),
+    ),
+    #(
+      \"trap([4, 2, 0, 3, 2, 5])\",
+      string.inspect(9),
+      string.inspect(solution.trap([4, 2, 0, 3, 2, 5])),
+    ),
+    #(\"trap([])\", string.inspect(0), string.inspect(solution.trap([]))),
+    #(\"trap([3])\", string.inspect(0), string.inspect(solution.trap([3]))),
+    #(
+      \"trap([2, 0, 2])\",
+      string.inspect(2),
+      string.inspect(solution.trap([2, 0, 2])),
+    ),
+    #(
+      \"trap([5, 4, 3, 2, 1])\",
+      string.inspect(0),
+      string.inspect(solution.trap([5, 4, 3, 2, 1])),
+    ),
+  ]
+}",
+    ),
+  )
+}
+
 pub fn tip01_list_patterns() -> Embedded {
   Embedded(
     solutions: [
@@ -3164,6 +3275,7 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc21_search_rotated" -> Ok(nc21_search_rotated())
     "nc22_encode_decode" -> Ok(nc22_encode_decode())
     "nc23_valid_sudoku" -> Ok(nc23_valid_sudoku())
+    "nc24_trapping_rain_water" -> Ok(nc24_trapping_rain_water())
     "tip01_list_patterns" -> Ok(tip01_list_patterns())
     "tip02_tail_recursion" -> Ok(tip02_tail_recursion())
     "tip03_fold" -> Ok(tip03_fold())

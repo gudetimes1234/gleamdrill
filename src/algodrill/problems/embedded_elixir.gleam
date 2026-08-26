@@ -934,6 +934,45 @@ end"),
   ]
 }
 
+pub fn nc24_trapping_rain_water() -> List(#(String, String, String)) {
+  [
+    #("Solution 1", "Two pointers, moving whichever side is shorter. The trick is that the shorter side alone decides how much water sits above it: whatever is on the far side is at least as tall, so the running maximum behind the short pointer is the water level, and there is no need to know the far maximum exactly. One pass, no extra arrays.", "defmodule Solution do
+  def trap(height) do
+    walk(height, Enum.reverse(height), length(height) - 1, 0, 0, 0)
+  end
+
+  # The two pointers are the list read from the front and the list read from the
+  # back; `remaining` stands in for \"left < right\", since neither end knows
+  # where the other has got to.
+  defp walk(_front, _back, remaining, _left_max, _right_max, total)
+       when remaining <= 0,
+       do: total
+
+  defp walk([l | front_rest] = front, [r | back_rest] = back, remaining, left_max, right_max, total) do
+    if l < r do
+      left_max = max(left_max, l)
+      walk(front_rest, back, remaining - 1, left_max, right_max, total + left_max - l)
+    else
+      right_max = max(right_max, r)
+      walk(front, back_rest, remaining - 1, left_max, right_max, total + right_max - r)
+    end
+  end
+end"),
+    #("Solution 2 · Prefix maxima", "State the definition and compute it. Water above a position is min(tallest to its left, tallest to its right) minus its own height, so build both running maxima and sum the differences. Two extra arrays against the two-pointer version's none, but the formula is right there in the code.", "defmodule Solution do
+  def trap(height) do
+    left = running_max(height)
+    right = height |> Enum.reverse() |> running_max() |> Enum.reverse()
+
+    [left, right, height]
+    |> Enum.zip_with(fn [l, r, h] -> min(l, r) - h end)
+    |> Enum.sum()
+  end
+
+  defp running_max(values), do: Enum.scan(values, 0, &max/2)
+end"),
+  ]
+}
+
 pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -959,6 +998,7 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String)), Nil) {
     "nc21_search_rotated" -> Ok(nc21_search_rotated())
     "nc22_encode_decode" -> Ok(nc22_encode_decode())
     "nc23_valid_sudoku" -> Ok(nc23_valid_sudoku())
+    "nc24_trapping_rain_water" -> Ok(nc24_trapping_rain_water())
     _ -> Error(Nil)
   }
 }

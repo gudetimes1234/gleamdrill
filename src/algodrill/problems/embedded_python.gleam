@@ -1273,6 +1273,62 @@ __case__(\"isValidSudoku(empty board)\", True, isValidSudoku([[\".\"] * 9 for _ 
   )
 }
 
+pub fn nc24_trapping_rain_water() -> Embedded {
+  Embedded(
+    solutions: [
+      #("Solution 1", "Two pointers, moving whichever side is shorter. The trick is that the shorter side alone decides how much water sits above it: whatever is on the far side is at least as tall, so the running maximum behind the short pointer is the water level, and there is no need to know the far maximum exactly. One pass, no extra arrays.", "def trap(height):
+    left, right = 0, len(height) - 1
+    left_max = right_max = total = 0
+
+    while left < right:
+        if height[left] < height[right]:
+            left_max = max(left_max, height[left])
+            total += left_max - height[left]
+            left += 1
+        else:
+            right_max = max(right_max, height[right])
+            total += right_max - height[right]
+            right -= 1
+
+    return total"),
+      #("Solution 2 · Prefix maxima", "State the definition and compute it. Water above a position is min(tallest to its left, tallest to its right) minus its own height, so build both running maxima and sum the differences. Two extra arrays against the two-pointer version's none, but the formula is right there in the code.", "def trap(height):
+    left = []
+    best = 0
+    for h in height:
+        best = max(best, h)
+        left.append(best)
+
+    right = [0] * len(height)
+    best = 0
+    for i in range(len(height) - 1, -1, -1):
+        best = max(best, height[i])
+        right[i] = best
+
+    return sum(min(left[i], right[i]) - height[i] for i in range(len(height)))"),
+    ],
+    check: Check(
+      signature: "def trap(height):",
+      starter: "def trap(height):
+    pass",
+      harness: "try:
+    (trap)
+except NameError:
+    raise Exception(\"__signature_mismatch__\")
+
+__results__ = []
+def __case__(label, expected, actual):
+    __results__.append([label, repr(expected), repr(actual)])
+
+__case__(\"trap([0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1])\", 6, trap([0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]))
+__case__(\"trap([4, 2, 0, 3, 2, 5])\", 9, trap([4, 2, 0, 3, 2, 5]))
+__case__(\"trap([])\", 0, trap([]))
+__case__(\"trap([3])\", 0, trap([3]))
+__case__(\"trap([2, 0, 2])\", 2, trap([2, 0, 2]))
+__case__(\"trap([5, 4, 3, 2, 1])\", 0, trap([5, 4, 3, 2, 1]))",
+    ),
+  )
+}
+
 pub fn tip01_counter() -> Embedded {
   Embedded(
     solutions: [
@@ -1670,6 +1726,7 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc21_search_rotated" -> Ok(nc21_search_rotated())
     "nc22_encode_decode" -> Ok(nc22_encode_decode())
     "nc23_valid_sudoku" -> Ok(nc23_valid_sudoku())
+    "nc24_trapping_rain_water" -> Ok(nc24_trapping_rain_water())
     "tip01_counter" -> Ok(tip01_counter())
     "tip02_defaultdict" -> Ok(tip02_defaultdict())
     "tip03_deque" -> Ok(tip03_deque())
