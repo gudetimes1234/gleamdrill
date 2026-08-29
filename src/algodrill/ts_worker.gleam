@@ -25,7 +25,9 @@ pub fn main() -> Nil {
         let _ = serve(request)
         Nil
       }
-      Error(_) -> Nil
+      // Silence here meant an 8-second wait and a bogus "infinite loop"
+      // verdict; answer with whatever can be said instead.
+      Error(details) -> post_unreadable(data, details)
     }
   })
   ffi_post_json(json.to_string(json.object([#("type", json.string("ready"))])))
@@ -53,8 +55,15 @@ fn serve(request: Request) -> Promise(Nil) {
 }
 
 /// Line-level scan for the two constructs sucrase gets silently wrong.
+/// Lines inside template literals or block comments are skipped: `@` there is
+/// text, not a decorator. Tracking is line-grained (unescaped backtick / the
+/// comment delimiters flipping state), which matches how the drills are
+/// written without pretending to be a parser.
 fn unsupported_syntax(source: String) -> Option(String) {
-  let lines = list.map(string.split(source, "\n"), string.trim)
+  let lines =
+    string.split(source, "\n")
+    |> scannable_lines(False, False, [])
+    |> list.map(string.trim)
   let is_namespace = fn(line) {
     string.starts_with(line, "namespace ")
     || string.starts_with(line, "module ")
@@ -75,6 +84,43 @@ fn unsupported_syntax(source: String) -> Option(String) {
   }
 }
 
+/// Keeps only the lines that are real code: state flips on an odd number of
+/// backticks (template literal) and on /* ... */ pairs.
+fn scannable_lines(
+  lines: List(String),
+  in_template: Bool,
+  in_comment: Bool,
+  acc: List(String),
+) -> List(String) {
+  case lines {
+    [] -> list.reverse(acc)
+    [line, ..rest] -> {
+      let keep = !in_template && !in_comment
+      let backticks =
+        list.length(string.split(line, "`")) - 1
+        - { list.length(string.split(line, "\\`")) - 1 }
+      let in_template = case backticks % 2 {
+        0 -> in_template
+        _ -> !in_template
+      }
+      let in_comment = case in_template {
+        True -> in_comment
+        False ->
+          case string.contains(line, "/*"), string.contains(line, "*/") {
+            True, False -> True
+            False, True -> False
+            _, _ -> in_comment
+          }
+      }
+      let acc = case keep {
+        True -> [line, ..acc]
+        False -> acc
+      }
+      scannable_lines(rest, in_template, in_comment, acc)
+    }
+  }
+}
+
 fn compile_and_run(request: Request) -> Promise(Nil) {
   case transform(request.solution) {
     Error(#(message, line, column)) -> {
@@ -92,13 +138,16 @@ fn compile_and_run(request: Request) -> Promise(Nil) {
     Ok(solution_js) ->
       case transform(request.harness) {
         Error(#(message, _, _)) -> {
+          // The harness ships with the drill; failing to transform it is a
+          // repo bug, and blaming the user's signature for it was worse than
+          // saying so.
           post_error(
             request.id,
-            "compile",
-            Some("check.ts"),
+            "internal",
             None,
             None,
-            message,
+            None,
+            "The drill's harness failed to transform: " <> message,
             "",
           )
           promise.resolve(Nil)
@@ -117,7 +166,10 @@ fn compile_and_run(request: Request) -> Promise(Nil) {
             )
             |> ffi_to_data_url
 
-          use outcome <- promise.await(ffi_import_and_run(check_url))
+          use outcome <- promise.await(ffi_import_and_run(
+            check_url,
+            solution_url,
+          ))
           report(request.id, outcome)
           promise.resolve(Nil)
         }
@@ -166,7 +218,15 @@ fn report(id: Int, outcome: Dynamic) -> Nil {
   }
   let failed = {
     use message <- decode.field("error", decode.string)
-    decode.success(Error(message))
+    // Present when the throw's stack named the solution module; sucrase is
+    // line-preserving so the position maps onto solution.ts.
+    use line <- decode.optional_field("line", None, decode.optional(decode.int))
+    use column <- decode.optional_field(
+      "column",
+      None,
+      decode.optional(decode.int),
+    )
+    decode.success(Error(#(message, line, column)))
   }
   // Decoded on its own so both arms get it: printing and *then* throwing is
   // exactly when the output is worth reading.
@@ -181,7 +241,7 @@ fn report(id: Int, outcome: Dynamic) -> Nil {
   }
   case decode.run(outcome, decode.one_of(ran, [failed])) {
     Ok(Ok(cases)) -> post_result(id, cases, stdout)
-    Ok(Error(message)) ->
+    Ok(Error(#(message, line, column))) ->
       case string.contains(message, "__signature_mismatch__") {
         True ->
           post_error(
@@ -193,17 +253,56 @@ fn report(id: Int, outcome: Dynamic) -> Nil {
             "The expected function isn't exported.",
             stdout,
           )
-        False -> post_error(id, "run", None, None, None, message, stdout)
+        False ->
+          post_error(
+            id,
+            "run",
+            case line {
+              Some(_) -> Some("solution.ts")
+              None -> None
+            },
+            line,
+            column,
+            truncate(message, 2000),
+            stdout,
+          )
       }
-    Error(_) ->
+    Error(details) ->
       post_error(
         id,
         "run",
         None,
         None,
         None,
-        "The harness produced an unreadable result.",
+        truncate(
+          "The harness produced an unreadable result: "
+            <> string.inspect(details),
+          2000,
+        ),
         stdout,
+      )
+  }
+}
+
+/// A request that failed to decode still deserves an answer. With an id the
+/// reply is an ordinary error; without one, "fatal" says the runtime itself is
+/// unusable.
+fn post_unreadable(data: Dynamic, details: List(decode.DecodeError)) -> Nil {
+  let message =
+    truncate(
+      "The runtime received an unreadable request: " <> string.inspect(details),
+      2000,
+    )
+  case decode.run(data, decode.at(["id"], decode.int)) {
+    Ok(id) -> post_error(id, "internal", None, None, None, message, "")
+    Error(_) ->
+      ffi_post_json(
+        json.to_string(
+          json.object([
+            #("type", json.string("fatal")),
+            #("message", json.string(message)),
+          ]),
+        ),
       )
   }
 }
@@ -291,7 +390,7 @@ fn ffi_transform_ts(source: String) -> Dynamic
 fn ffi_to_data_url(js: String) -> String
 
 @external(javascript, "./ts_worker_ffi.mjs", "import_and_run")
-fn ffi_import_and_run(url: String) -> Promise(Dynamic)
+fn ffi_import_and_run(url: String, solution_url: String) -> Promise(Dynamic)
 
 @external(javascript, "./ts_worker_ffi.mjs", "post_json")
 fn ffi_post_json(payload: String) -> Nil

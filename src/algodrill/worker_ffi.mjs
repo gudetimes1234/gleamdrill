@@ -36,13 +36,15 @@ export function write_module(compiler, project, name, code) {
   compiler.write_module(project, name, code);
 }
 
-// "" on success, the thrown pretty-printed diagnostic otherwise.
+// "" on success, the thrown pretty-printed diagnostic otherwise. A non-string
+// throw is the compiler itself crashing (a wasm panic), not a diagnostic about
+// the user's code -- marked so the caller can say whose bug it is.
 export function compile(compiler, project) {
   try {
     compiler.compile_package(project, "javascript");
     return "";
   } catch (error) {
-    return typeof error === "string" ? error : String(error?.stack ?? error);
+    return typeof error === "string" ? error : "__internal__:" + String(error);
   }
 }
 
@@ -90,7 +92,19 @@ function capturedConsole() {
   };
 }
 
-// Resolves to {cases: [{label, expected, actual}], stdout} or {error, stdout}.
+// Every stack frame names the data: URL the module ran from, which embeds the
+// whole base64-encoded compiled module. Useless to a reader and megabytes long.
+function scrubDataUrls(text) {
+  return String(text).replace(
+    /data:text\/javascript;base64,[A-Za-z0-9+/=]+/g,
+    "<compiled module>",
+  );
+}
+
+// Resolves to {cases: [{label, expected, actual}], stdout} or
+// {error, file?, line?, stdout}. Gleam's panic/todo/let-assert errors carry
+// their origin (gleam.mjs makeError), which maps straight onto an editor
+// diagnostic; plain JS throws keep the message and a few scrubbed frames.
 export function import_and_run(url) {
   const captured = capturedConsole();
   return import(url)
@@ -102,7 +116,19 @@ export function import_and_run(url) {
       }
       return { cases };
     })
-    .catch((error) => ({ error: String(error?.stack ?? error) }))
+    .catch((error) => {
+      const text =
+        typeof error?.stack === "string"
+          ? scrubDataUrls(error.stack).split("\n").slice(0, 4).join("\n")
+          : scrubDataUrls(error);
+      const outcome = { error: text };
+      if (error?.gleam_error && typeof error.line === "number") {
+        outcome.file =
+          error.module === "solution" ? "solution.gleam" : "check.gleam";
+        outcome.line = error.line;
+      }
+      return outcome;
+    })
     .then((outcome) => ({ ...outcome, stdout: captured.restore() }));
 }
 

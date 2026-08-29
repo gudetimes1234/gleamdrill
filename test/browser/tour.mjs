@@ -66,7 +66,11 @@ page.on("console", (m) => {
   // not JavaScript errors. Only genuine script failures are collected.
   const text = m.text();
   const expectedHttp = /Failed to load resource.*\b(401|409|422|429)\b/.test(text);
-  if (m.type() === "error" && !/favicon/i.test(text) && !expectedHttp) {
+  // The Python worker mirrors the user program's tracebacks to the console
+  // under a [python] prefix; several acts run deliberately broken programs.
+  const mirroredTrace = text.startsWith("[python]");
+  if (m.type() === "error" && !/favicon/i.test(text) && !expectedHttp
+      && !mirroredTrace) {
     errors.push(`${act}: ${text}`);
   }
 });
@@ -104,7 +108,7 @@ const waitForRunnable = async (timeout = 180000) => {
 const verdict = async () => {
   await page.waitForFunction(() => {
     const s = document.querySelector(".results-summary");
-    return s && !s.textContent.includes("Compiling");
+    return s && !s.classList.contains("running");
   }, { timeout: 90000 });
   await page.waitForTimeout(400);
 };
@@ -160,8 +164,11 @@ const countServerCards = async () =>
   }, await page.evaluate(() => localStorage.getItem("algoDrill.token")));
 
 const gradeWhatever = async () => {
-  const good = await page.$(".grade-good");
-  await (good ?? await page.$(".grade-again"))?.click();
+  // Selector-based click, resolved at action time: a banner appearing (the
+  // storage-full act provokes exactly that) re-renders the bar and detaches
+  // any handle grabbed a moment earlier.
+  if (await page.$(".grade-good")) await page.click(".grade-good");
+  else if (await page.$(".grade-again")) await page.click(".grade-again");
   await page.waitForTimeout(1200);
 };
 
@@ -193,6 +200,7 @@ check("sign-in mode by default from the Sign in link",
 await capture("signin", "Sign-in form");
 
 await page.click(".auth-switch");
+await page.waitForTimeout(300);
 check("toggles to register",
   (await page.textContent(".auth-submit")).includes("Create account"));
 await capture("register", "Register form, reached by the toggle");
@@ -498,6 +506,84 @@ check("a failed later run offers only Again",
   JSON.stringify(await gradeLabels()) === '["Again"]',
   JSON.stringify(await gradeLabels()));
 await capture("forced-again", "Second review, failed run: the one honest answer");
+dialogs.length = 0;
+await page.click("text=Exit");
+await page.waitForTimeout(800);
+
+// ---------------------------------------------------------------- act 4c
+act = "04c-run-controls";
+console.log(act);
+exercises("UserClickedStopRun", "UserToggledSide");
+
+// Stop: an infinite loop is interruptible, and stopping one must not poison
+// the next run with a stale timeout verdict.
+await goHome();
+await page.click("text=Browse problems");
+await page.waitForSelector(".menu-container", { timeout: 10000 });
+await openByHand("Python", "Arrays & Hashing", "Contains Duplicate");
+await waitForRunnable();
+await setCode("def containsDuplicate(nums):\n    while True:\n        pass");
+await page.click(".run-button");
+await page.waitForSelector(".stop-button", { timeout: 10000 });
+await capture("running", "Mid-run: disabled Run, live Stop");
+await page.click(".stop-button");
+// Stopping replaces the worker; the button re-enables when it reports ready.
+await waitForRunnable();
+check("Stop interrupts a hung run and the runtime recovers", true);
+await setCode("def containsDuplicate(nums):\n    return len(set(nums)) != len(nums)");
+await page.click(".run-button");
+await verdict();
+check("the run after a Stop gets a correct verdict, not a stale timeout",
+  (await page.textContent(".results-summary")).includes("passed"),
+  await page.textContent(".results-summary"));
+
+// Collapsible prompt + the solution panel beside the editor.
+await page.keyboard.press("p");
+await page.waitForTimeout(400);
+check("p collapses the prompt column to the toggle rail",
+  (await page.$$(".drill-side .panel")).length === 0
+    && await page.isVisible(".side-toggle"));
+await capture("collapsed", "Prompt collapsed: editor takes the width");
+await page.click(".solution-button");
+await page.waitForTimeout(500);
+const editorBox = await page.locator(".editor-frame").boundingBox();
+const answerBox = await page.locator(".answer-content").boundingBox();
+check("the revealed solution sits beside the editor, not under it",
+  editorBox && answerBox
+    && answerBox.x >= editorBox.x + editorBox.width - 1
+    && answerBox.y < editorBox.y + editorBox.height,
+  JSON.stringify({ editorBox, answerBox }));
+await capture("side-solution", "Solution panel to the right of the editor");
+await page.click(".solution-button");
+await page.click(".side-toggle");
+await page.waitForTimeout(300);
+check("the toggle restores the prompt column",
+  (await page.$$(".drill-side .panel")).length > 0);
+dialogs.length = 0;
+await page.click("text=Exit");
+await page.waitForTimeout(800);
+
+// ---------------------------------------------------------------- act 4d
+act = "04d-runtime-failure";
+console.log(act);
+exercises("UserClickedRetryRuntime");
+
+// A runtime whose worker script never arrives must fail loudly and offer a
+// Retry that actually works. TypeScript is the one runtime no act has loaded
+// yet, so its first fetch is still interceptable here.
+await page.route("**/ts-worker.js*", (r) => r.abort());
+await goHome();
+await page.click("text=Browse problems");
+await page.waitForSelector(".menu-container", { timeout: 10000 });
+await openByHand("TypeScript", "Arrays & Hashing", "Contains Duplicate");
+await page.waitForSelector(".retry-button", { timeout: 15000 });
+check("a failed runtime load shows Retry and the reason",
+  await page.isVisible(".retry-button") && await page.isVisible(".run-error"));
+await capture("runtime-failed", "Worker script unreachable: Retry and the reason in the run bar");
+await page.unroute("**/ts-worker.js*");
+await page.click(".retry-button");
+await waitForRunnable(60000);
+check("Retry recovers the runtime without a reload", true);
 dialogs.length = 0;
 await page.click("text=Exit");
 await page.waitForTimeout(800);
@@ -880,7 +966,8 @@ const declared = [
   "UserClickedSelectAll", "UserClickedClearSelection", "UserChangedIterations",
   "UserClickedStartDrill", "UserClickedExitDrill", "ExitConfirmed",
   "UserToggledSolution", "UserClickedNext", "UserSearched", "UserChangedKeymap",
-  "UserClickedRun", "UserPickedChoice", "UserSubmittedAnswer",
+  "UserClickedRun", "UserClickedStopRun", "UserClickedRetryRuntime",
+  "UserToggledSide", "UserPickedChoice", "UserSubmittedAnswer",
   "UserClickedStartExam", "UserClickedExitReport",
   "KeyPressed", "HelpToggled", "MenuCursorMoved", "MenuPaneFocused",
   "MenuCursorJumped", "MenuActivated", "MenuToggledAtCursor", "QuizMoved",

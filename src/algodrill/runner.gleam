@@ -5,11 +5,12 @@
 
 import algodrill/model.{
   type Msg, type RunOutcome, CaseResult, Cases, Errored, RunError, RunFinished,
-  RunTimedOut, RunnerFailed, RunnerReady,
+  RunTimedOut, RunnerFailed, RunnerReady, RuntimeLoadTimedOut,
 }
 import gleam/dynamic/decode.{type Decoder}
 import gleam/json
 import gleam/option.{type Option, None}
+import gleam/string
 import lustre/effect.{type Effect}
 
 /// The vendored Gleam compiler version — must match GLEAM_VERSION in the
@@ -24,13 +25,20 @@ pub const python_version = "3.14.3"
 /// worker cannot be interrupted, only terminated.
 const run_timeout_ms = 8000
 
+/// A worker cannot load in under a millisecond or hang forever; past this the
+/// fetch or init is presumed dead and the user is offered a Retry.
+const load_timeout_ms = 30_000
+
 /// The Python worker is classic (Brython needs importScripts); the others are
-/// module workers.
-fn worker_config(language: String) -> #(String, Bool) {
+/// module workers. Explicit arms: routing an unknown language (elixir,
+/// concept) to the Gleam worker by default was a trap waiting for a check to
+/// be added.
+fn worker_config(language: String) -> Result(#(String, Bool), Nil) {
   case language {
-    "python" -> #("/python-worker.js?v=" <> python_version, False)
-    "typescript" -> #("/ts-worker.js", True)
-    _ -> #("/gleam-worker.js?v=" <> gleam_version, True)
+    "gleam" -> Ok(#("/gleam-worker.js?v=" <> gleam_version, True))
+    "python" -> Ok(#("/python-worker.js?v=" <> python_version, False))
+    "typescript" -> Ok(#("/ts-worker.js", True))
+    _ -> Error(Nil)
   }
 }
 
@@ -38,28 +46,44 @@ fn worker_config(language: String) -> #(String, Bool) {
 /// repeatedly.
 pub fn ensure(language: String) -> Effect(Msg) {
   effect.from(fn(dispatch) {
-    let #(url, is_module) = worker_config(language)
-    ffi_spawn(
-      language,
-      url,
-      is_module,
-      fn(raw) { dispatch(decode_message(language, raw)) },
-      fn(message) { dispatch(RunnerFailed(language, message)) },
-    )
+    case worker_config(language) {
+      Ok(#(url, is_module)) -> {
+        ffi_spawn(
+          language,
+          url,
+          is_module,
+          fn(raw) { dispatch(decode_message(language, raw)) },
+          fn(message) { dispatch(RunnerFailed(language, message)) },
+        )
+        ffi_after(load_timeout_ms, fn() {
+          dispatch(RuntimeLoadTimedOut(language))
+        })
+      }
+      Error(Nil) ->
+        dispatch(RunnerFailed(language, "No runtime exists for this language."))
+    }
   })
 }
 
 /// Terminate a hung worker and boot a fresh one.
 pub fn restart(language: String) -> Effect(Msg) {
   effect.from(fn(dispatch) {
-    let #(url, is_module) = worker_config(language)
-    ffi_restart(
-      language,
-      url,
-      is_module,
-      fn(raw) { dispatch(decode_message(language, raw)) },
-      fn(message) { dispatch(RunnerFailed(language, message)) },
-    )
+    case worker_config(language) {
+      Ok(#(url, is_module)) -> {
+        ffi_restart(
+          language,
+          url,
+          is_module,
+          fn(raw) { dispatch(decode_message(language, raw)) },
+          fn(message) { dispatch(RunnerFailed(language, message)) },
+        )
+        ffi_after(load_timeout_ms, fn() {
+          dispatch(RuntimeLoadTimedOut(language))
+        })
+      }
+      Error(Nil) ->
+        dispatch(RunnerFailed(language, "No runtime exists for this language."))
+    }
   })
 }
 
@@ -72,16 +96,23 @@ pub fn run(
   harness: String,
 ) -> Effect(Msg) {
   effect.from(fn(dispatch) {
-    ffi_post_run(language, id, solution, harness)
-    ffi_after(run_timeout_ms, fn() { dispatch(RunTimedOut(id)) })
+    case ffi_post_run(language, id, solution, harness) {
+      True -> ffi_after(run_timeout_ms, fn() { dispatch(RunTimedOut(id)) })
+      // No worker to post to: fail loudly now rather than letting the
+      // timeout blame the user's code for an infinite loop in 8 seconds.
+      False -> dispatch(RunnerFailed(language, "The runtime was not running."))
+    }
   })
 }
 
 fn decode_message(language: String, raw: String) -> Msg {
   case json.parse(raw, message_decoder(language)) {
     Ok(msg) -> msg
-    Error(_) ->
-      RunnerFailed(language, "The runtime sent an unreadable message.")
+    Error(details) ->
+      RunnerFailed(
+        language,
+        "The runtime sent an unreadable message: " <> string.inspect(details),
+      )
   }
 }
 
@@ -89,17 +120,25 @@ fn message_decoder(language: String) -> Decoder(Msg) {
   use kind <- decode.field("type", decode.string)
   case kind {
     "ready" -> decode.success(RunnerReady(language))
+    // The worker's own report that it cannot serve at all: a boot failure or
+    // a request it could not even attribute to a run.
+    "fatal" -> {
+      use message <- decode.field("message", decode.string)
+      decode.success(RunnerFailed(language, message))
+    }
     "result" -> {
       use id <- decode.field("id", decode.int)
       use stdout <- stdout_field()
+      use warnings <- warnings_field()
       use outcome <- result_decoder()
-      decode.success(RunFinished(id, outcome, stdout))
+      decode.success(RunFinished(id, outcome, with_warnings(stdout, warnings)))
     }
     "error" -> {
       use id <- decode.field("id", decode.int)
       use stdout <- stdout_field()
+      use warnings <- warnings_field()
       use outcome <- error_decoder()
-      decode.success(RunFinished(id, outcome, stdout))
+      decode.success(RunFinished(id, outcome, with_warnings(stdout, warnings)))
     }
     _ -> decode.failure(RunnerReady(language), "Msg")
   }
@@ -129,6 +168,22 @@ fn error_decoder(next: fn(RunOutcome) -> Decoder(Msg)) -> Decoder(Msg) {
 /// Optional so a worker bundle built before stdout capture still decodes.
 fn stdout_field(next: fn(String) -> Decoder(a)) -> Decoder(a) {
   decode.optional_field("stdout", "", decode.string, next)
+}
+
+/// The Gleam worker has always shipped compiler warnings; until now nothing
+/// read them. They ride into the Output panel under the program's own output.
+fn warnings_field(next: fn(List(String)) -> Decoder(a)) -> Decoder(a) {
+  decode.optional_field("warnings", [], decode.list(decode.string), next)
+}
+
+fn with_warnings(stdout: String, warnings: List(String)) -> String {
+  case warnings {
+    [] -> stdout
+    _ ->
+      stdout
+      <> "\n\n\u{26a0} Compiler warnings:\n"
+      <> string.join(warnings, "\n\n")
+  }
 }
 
 fn nullable_field(
@@ -163,7 +218,7 @@ fn ffi_post_run(
   id: Int,
   solution: String,
   harness: String,
-) -> Nil
+) -> Bool
 
 @external(javascript, "./runner_ffi.mjs", "after")
 fn ffi_after(delay_ms: Int, callback: fn() -> Nil) -> Nil

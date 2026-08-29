@@ -59,8 +59,20 @@ function capturedConsole() {
   };
 }
 
-// Resolves to {cases: [{label, expected, actual}], stdout} or {error, stdout}.
-export function import_and_run(url) {
+// Every stack frame names the data: URL the module ran from, which embeds the
+// whole base64-encoded compiled module. Useless to a reader and huge.
+function scrubDataUrls(text) {
+  return String(text).replace(
+    /data:text\/javascript;base64,[A-Za-z0-9+/=]+/g,
+    "<compiled module>",
+  );
+}
+
+// Resolves to {cases: [{label, expected, actual}], stdout} or
+// {error, line?, column?, stdout}. A runtime throw's stack names the
+// solution's data: URL; sucrase is line-preserving, so its first frame there
+// maps straight back onto solution.ts. Best-effort -- message-only otherwise.
+export function import_and_run(url, solutionUrl) {
   const captured = capturedConsole();
   return import(url)
     .then((mod) => ({
@@ -70,6 +82,25 @@ export function import_and_run(url) {
         actual,
       })),
     }))
-    .catch((error) => ({ error: String(error?.message ?? error) }))
+    .catch((error) => {
+      const outcome = { error: scrubDataUrls(error?.message ?? error) };
+      const stack = typeof error?.stack === "string" ? error.stack : "";
+      const frame = stack
+        .split("\n")
+        .map((row) => {
+          const at = row.indexOf(solutionUrl);
+          if (at === -1) return null;
+          const position = row
+            .slice(at + solutionUrl.length)
+            .match(/^:(\d+):(\d+)/);
+          return position && { line: Number(position[1]), column: Number(position[2]) };
+        })
+        .find(Boolean);
+      if (frame) {
+        outcome.line = frame.line;
+        outcome.column = frame.column;
+      }
+      return outcome;
+    })
     .then((outcome) => ({ ...outcome, stdout: captured.restore() }));
 }

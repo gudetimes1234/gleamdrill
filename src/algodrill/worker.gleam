@@ -49,7 +49,9 @@ pub fn main() -> Promise(Nil) {
         let _ = serve(compiler, precompiled, request)
         Nil
       }
-      Error(_) -> Nil
+      // Silence here meant an 8-second wait and a bogus "infinite loop"
+      // verdict; answer with whatever can be said instead.
+      Error(details) -> post_unreadable(data, details)
     }
   })
   promise.resolve(Nil)
@@ -110,11 +112,14 @@ fn serve(
     }
 
     diagnostic -> {
-      post(
-        request.id,
-        Failed("compile", diagnostic, ""),
-        drain_warnings(compiler, []),
-      )
+      // A wasm panic is the compiler's bug, not a diagnostic about the
+      // user's code; the FFI marks it so the view can say whose fault it is.
+      let outcome = case diagnostic {
+        "__internal__:" <> detail ->
+          Failed("internal", truncate(detail, 2000), "", None, None)
+        _ -> Failed("compile", diagnostic, "", None, None)
+      }
+      post(request.id, outcome, drain_warnings(compiler, []))
       promise.resolve(Nil)
     }
   }
@@ -129,7 +134,13 @@ fn rewrite_imports(js: String, precompiled: String) -> String {
 
 type Outcome {
   Ran(cases: List(#(String, String, String)), stdout: String)
-  Failed(phase: String, message: String, stdout: String)
+  Failed(
+    phase: String,
+    message: String,
+    stdout: String,
+    file: Option(String),
+    line: Option(Int),
+  )
 }
 
 fn decode_outcome(outcome: Dynamic) -> Outcome {
@@ -146,12 +157,31 @@ fn decode_outcome(outcome: Dynamic) -> Outcome {
   }
   let failed = {
     use message <- decode.field("error", decode.string)
+    // Populated for Gleam panic/todo/let-assert, whose errors know their
+    // origin; absent for plain JS throws.
+    use file <- decode.optional_field(
+      "file",
+      None,
+      decode.optional(decode.string),
+    )
+    use line <- decode.optional_field("line", None, decode.optional(decode.int))
     use stdout <- stdout_field()
-    decode.success(Failed("run", message, stdout))
+    decode.success(Failed("run", truncate(message, 2000), stdout, file, line))
   }
   case decode.run(outcome, decode.one_of(ran, [failed])) {
     Ok(decoded) -> decoded
-    Error(_) -> Failed("run", "The harness produced an unreadable result.", "")
+    Error(details) ->
+      Failed(
+        "run",
+        truncate(
+          "The harness produced an unreadable result: "
+            <> string.inspect(details),
+          2000,
+        ),
+        "",
+        None,
+        None,
+      )
   }
 }
 
@@ -197,8 +227,14 @@ fn post(id: Int, outcome: Outcome, warnings: List(String)) -> Nil {
         #("stdout", json.string(stdout)),
         warnings_json,
       ])
-    Failed(phase, message, stdout) -> {
-      let location = locate(message)
+    Failed(phase, message, stdout, file, line) -> {
+      // A runtime error names its origin exactly; the textual scrape of a
+      // compile diagnostic is the fallback. Runtime errors carry no column,
+      // and the underline only needs somewhere on the line to anchor.
+      let location = case file, line {
+        Some(f), Some(l) -> Some(#(f, l, 1))
+        _, _ -> locate(message)
+      }
       json.object([
         #("type", json.string("error")),
         #("id", json.int(id)),
@@ -213,6 +249,44 @@ fn post(id: Int, outcome: Outcome, warnings: List(String)) -> Nil {
     }
   }
   ffi_post_json(json.to_string(payload))
+}
+
+/// A request that failed to decode still deserves an answer. When an id is
+/// recoverable the reply is an ordinary error the app can attribute to the
+/// run; without one, "fatal" tells the app the runtime itself is unusable.
+fn post_unreadable(data: Dynamic, details: List(decode.DecodeError)) -> Nil {
+  let message =
+    truncate(
+      "The runtime received an unreadable request: " <> string.inspect(details),
+      2000,
+    )
+  case decode.run(data, decode.at(["id"], decode.int)) {
+    Ok(id) ->
+      ffi_post_json(
+        json.to_string(
+          json.object([
+            #("type", json.string("error")),
+            #("id", json.int(id)),
+            #("phase", json.string("internal")),
+            #("file", json.null()),
+            #("line", json.null()),
+            #("column", json.null()),
+            #("message", json.string(message)),
+            #("stdout", json.string("")),
+            #("warnings", json.array([], json.string)),
+          ]),
+        ),
+      )
+    Error(_) ->
+      ffi_post_json(
+        json.to_string(
+          json.object([
+            #("type", json.string("fatal")),
+            #("message", json.string(message)),
+          ]),
+        ),
+      )
+  }
 }
 
 /// Compiler diagnostics carry their position only as text:

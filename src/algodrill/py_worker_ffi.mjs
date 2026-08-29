@@ -38,10 +38,32 @@ export function run_python(program) {
   const originalError = console.error;
   console.error = (...args) => {
     trace += args.join(" ") + "\n";
+    // Mirrored, not swallowed: Brython reports tracebacks here, and hiding
+    // them from the real console left silent failures undiagnosable.
+    originalError("[python]", ...args);
   };
   try {
     __BRYTHON__.runPythonSource(program, { id: "solution" });
-    return { result: self.__algodrill_result__ ?? null };
+    if (typeof self.__algodrill_result__ === "string") {
+      return { result: self.__algodrill_result__ };
+    }
+    // Brython returned without throwing and without the epilogue stashing a
+    // result. Its loader swallows an already-handled error on the second pass,
+    // and a deferred task queue means the program may not even have run yet.
+    // The captured traceback is the best evidence; fall back to naming which
+    // silent state this was.
+    const silent =
+      __BRYTHON__.tasks?.length > 0
+        ? "The Python runtime deferred execution and never produced a result."
+        : "The program finished without producing a result.";
+    return {
+      error: {
+        marker: "__no_result__",
+        message: trace.trim() || silent,
+        line: null,
+        column: null,
+      },
+    };
   } catch (error) {
     const args = Array.isArray(error?.args) ? Array.from(error.args) : [];
     const position = Array.isArray(args[1]) ? args[1] : null;

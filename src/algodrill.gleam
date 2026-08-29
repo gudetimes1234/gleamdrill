@@ -13,20 +13,22 @@ import algodrill/model.{
   MenuCursorMoved, MenuPaneFocused, MenuRoute, MenuToggledAtCursor, Model,
   NotGrading, NotStarted, PromptDismissed, QuizMoved, Ran, Registering,
   ReportRoute, ReviewRecorded, RunFinished, RunIdle, RunTimedOut, RunnerFailed,
-  RunnerReady, Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded,
-  RuntimeReady, SearchFocusRequested, SignOutCompleted, SigningIn, StateImported,
+  RunnerReady, Running, RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading,
+  RuntimeNotLoaded, RuntimeReady, SearchFocusRequested, SignOutCompleted, SigningIn, StateImported,
   StateLoaded, StatsActivated, StatsCursorMoved, StatsLoaded, StatsRoute,
   StudyRoute, SubmittingGrade, SyncFailed, Synced, Syncing, TimedOut,
   UserChangedAuthEmail, UserChangedAuthPassword, UserChangedIterations,
   UserChangedKeymap, UserClickedBackToStudy, UserClickedBreadcrumb,
   UserClickedBrowse, UserClickedCategory, UserClickedClearSelection,
   UserClickedExitDrill, UserClickedExitReport, UserClickedMergeGuest,
-  UserClickedNext, UserClickedRun, UserClickedSelectAll, UserClickedSignIn,
-  UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
+  UserClickedNext, UserClickedRetryRuntime, UserClickedRun,
+  UserClickedSelectAll, UserClickedSignIn, UserClickedSignOut,
+  UserClickedStartDrill, UserClickedStartExam, UserClickedStopRun,
   UserClickedStats, UserClickedStudy, UserClickedSubcategory, UserClosedDetail,
   UserDismissedNotice, UserDismissedUpgradePrompt, UserGraded, UserOpenedDetail,
   UserPickedChoice, UserSearched, UserSubmittedAnswer, UserSubmittedAuth,
-  UserToggledAuthMode, UserToggledProblem, UserToggledSolution,
+  UserToggledAuthMode, UserToggledProblem, UserToggledSide,
+  UserToggledSolution,
 }
 import algodrill/problem.{type ProblemRef, ProblemRef}
 import algodrill/problems
@@ -61,7 +63,12 @@ pub fn main() {
 fn init(_flags) -> #(Model, Effect(Msg)) {
   let preferences = session.load_preferences()
   let base = model.default()
-  let m = Model(..base, editor_keymap: preferences.editor_keymap)
+  let m =
+    Model(
+      ..base,
+      editor_keymap: preferences.editor_keymap,
+      side_collapsed: preferences.side_collapsed,
+    )
 
   case session.load_token() {
     // Signed in: study state lives on the server, so there is nothing to
@@ -366,6 +373,15 @@ fn with_prefetch(pair: #(Model, Effect(Msg))) -> #(Model, Effect(Msg)) {
           ),
           effect.batch([fx, runner.ensure(language)]),
         )
+        // A failed load gets one fresh chance per drill open; without this
+        // the only recovery was a page reload.
+        RuntimeFailed(_) -> #(
+          Model(
+            ..m,
+            runtimes: model.assoc_put(m.runtimes, language, RuntimeLoading),
+          ),
+          effect.batch([fx, runner.restart(language)]),
+        )
         _ -> pair
       }
     _, _ -> pair
@@ -609,7 +625,12 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     // usable app rather than an error screen.
     StateLoaded(Error(api.Unauthorised)) -> {
       let guest =
-        Model(..model.default(), editor_keymap: m.editor_keymap, boot: Syncing)
+        Model(
+          ..model.default(),
+          editor_keymap: m.editor_keymap,
+          side_collapsed: m.side_collapsed,
+          boot: Syncing,
+        )
       #(guest, effect.batch([session.clear_token(), store.load_state(guest)]))
     }
 
@@ -644,7 +665,12 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UserClickedSignOut -> {
       let signed_out =
-        Model(..model.default(), editor_keymap: m.editor_keymap, boot: Syncing)
+        Model(
+          ..model.default(),
+          editor_keymap: m.editor_keymap,
+          side_collapsed: m.side_collapsed,
+          boot: Syncing,
+        )
       #(
         signed_out,
         effect.batch([
@@ -839,9 +865,17 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.none(),
     )
 
-    // Drafts sync in the background; a failure is not worth interrupting
-    // typing over, and the next keystroke will retry anyway.
-    DraftSynced(_) -> #(m, effect.none())
+    DraftSynced(Ok(Nil)) -> #(m, effect.none())
+    // A failed sync is silent data loss: the typing looked saved and was not.
+    // Same surfacing as a failed review write; the next keystroke retries.
+    DraftSynced(Error(failure)) -> #(
+      Model(
+        ..m,
+        storage_full: m.mode == Guest || m.storage_full,
+        notice: Some(api.error_message(failure)),
+      ),
+      effect.none(),
+    )
 
     UserClickedCategory(name) -> #(
       Model(..m, selected_category: Some(name), selected_subcategory: None),
@@ -1009,9 +1043,14 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.from(fn(dispatch) {
         dispatch(
           ExitConfirmed(
-            browser.confirm(case current_quiz(m) {
-              Ok(_) -> "Exit the exam? You will not get a score for it."
-              Error(Nil) -> "Exit the drill? Your typed code will be lost."
+            browser.confirm(case current_quiz(m), m.studying {
+              Ok(_), _ -> "Exit the exam? You will not get a score for it."
+              // Study-rep typing is deliberately not persisted; a manual
+              // drill's draft was saved moments after the last keystroke.
+              Error(Nil), True ->
+                "Exit the drill? Your typed code will be lost."
+              Error(Nil), False ->
+                "Exit the drill? Your code is saved as a draft."
             }),
           ),
         )
@@ -1021,7 +1060,10 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     // `reset_home`, not `reset_to_menu`: a sitting started from the study
     // queue must end back on the study screen. Landing in the manual browser
     // is disorienting when that is not where you came from.
-    ExitConfirmed(True) -> #(reset_home(m), effect.none())
+    ExitConfirmed(True) -> {
+      let #(m, abandoned) = abandon_run(m)
+      #(reset_home(m), abandoned)
+    }
     ExitConfirmed(False) -> #(m, effect.none())
 
     UserToggledSolution(index) -> {
@@ -1038,8 +1080,22 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UserChangedKeymap(mode) -> #(
       Model(..m, editor_keymap: mode),
-      session.save_preferences(session.Preferences(editor_keymap: mode)),
+      session.save_preferences(session.Preferences(
+        editor_keymap: mode,
+        side_collapsed: m.side_collapsed,
+      )),
     )
+
+    UserToggledSide -> {
+      let collapsed = !m.side_collapsed
+      #(
+        Model(..m, side_collapsed: collapsed),
+        session.save_preferences(session.Preferences(
+          editor_keymap: m.editor_keymap,
+          side_collapsed: collapsed,
+        )),
+      )
+    }
 
     EditorChanged(text) -> {
       // Study-rep typing is throwaway in memory as well as on disk: updating
@@ -1063,20 +1119,59 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
 
     UserClickedRun ->
-      case current_language(m), current_check(m) {
-        Ok(language), Ok(check) ->
-          case model.runtime_for(m, language) {
-            RuntimeReady -> {
-              let id = m.next_run_id
-              #(
-                Model(..m, run: Running(id), next_run_id: id + 1),
-                runner.run(language, id, m.draft, check.harness),
-              )
-            }
-            _ -> #(m, effect.none())
+      case m.run {
+        // One run at a time: `r` and Ctrl+Enter bypass the disabled button,
+        // and a queued second run just doubles the wait.
+        Running(_, _) -> #(m, effect.none())
+        _ ->
+          case current_language(m), current_check(m) {
+            Ok(language), Ok(check) ->
+              case model.runtime_for(m, language) {
+                RuntimeReady -> {
+                  let id = m.next_run_id
+                  let previous = case m.run {
+                    Ran(_, stdout) -> stdout
+                    _ -> ""
+                  }
+                  #(
+                    Model(..m, run: Running(id, previous), next_run_id: id + 1),
+                    runner.run(language, id, m.draft, check.harness),
+                  )
+                }
+                // The button is disabled in these states, but the keyboard
+                // paths land here too and silence reads as a broken key.
+                RuntimeLoading | RuntimeNotLoaded -> #(
+                  Model(
+                    ..m,
+                    notice: Some(
+                      "The runtime is still loading \u{2014} the Run button enables when it's ready.",
+                    ),
+                  ),
+                  effect.none(),
+                )
+                RuntimeFailed(_) -> #(
+                  Model(
+                    ..m,
+                    notice: Some(
+                      "The runtime failed to load \u{2014} use Retry next to the Run button.",
+                    ),
+                  ),
+                  effect.none(),
+                )
+              }
+            _, _ -> #(m, effect.none())
           }
-        _, _ -> #(m, effect.none())
       }
+
+    UserClickedStopRun -> abandon_run(m)
+
+    UserClickedRetryRuntime(language) -> #(
+      Model(
+        ..m,
+        runtimes: model.assoc_put(m.runtimes, language, RuntimeLoading),
+      ),
+      runner.restart(language),
+    )
 
     RunnerReady(language) -> #(
       Model(..m, runtimes: model.assoc_put(m.runtimes, language, RuntimeReady)),
@@ -1086,13 +1181,19 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       Model(
         ..m,
         runtimes: model.assoc_put(m.runtimes, language, RuntimeFailed(message)),
+        // A dead runtime cannot finish the in-flight run; clearing it here
+        // stops the still-armed timeout from reporting a bogus infinite loop.
+        run: case m.run {
+          Running(_, _) -> RunIdle
+          other -> other
+        },
       ),
       effect.none(),
     )
 
     RunFinished(id, outcome, stdout) ->
       case m.run {
-        Running(current) if current == id -> #(
+        Running(current, _) if current == id -> #(
           // Whatever the harness said, the drill is now answerable: the
           // grading bar decides what the buttons offer.
           Model(..m, run: Ran(outcome, stdout), grading: AwaitingGrade),
@@ -1105,7 +1206,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     RunTimedOut(id) ->
       case m.run {
-        Running(current) if current == id -> {
+        Running(current, _) if current == id -> {
           let timed_out =
             Model(..m, run: Ran(TimedOut, ""), grading: AwaitingGrade)
           // The worker cannot be interrupted, only replaced.
@@ -1120,6 +1221,24 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             Error(Nil) -> #(timed_out, effect.none())
           }
         }
+        _ -> #(m, effect.none())
+      }
+
+    // Armed alongside every spawn; a stale timer for a runtime that made it
+    // to ready (or already failed loudly) is a no-op.
+    RuntimeLoadTimedOut(language) ->
+      case model.runtime_for(m, language) {
+        RuntimeLoading -> #(
+          Model(
+            ..m,
+            runtimes: model.assoc_put(
+              m.runtimes,
+              language,
+              RuntimeFailed("The runtime took too long to load."),
+            ),
+          ),
+          effect.none(),
+        )
         _ -> #(m, effect.none())
       }
   }
@@ -1251,7 +1370,33 @@ fn problem_kind(ref: ProblemRef) -> ProblemKind {
 }
 
 /// Move to the next problem in the sitting, or end it.
+/// A run abandoned mid-flight leaves a possibly-wedged worker behind, and its
+/// stale timeout would blame the *next* problem's code for the hang. Replace
+/// the worker and clear the run so neither can happen.
+fn abandon_run(m: Model) -> #(Model, Effect(Msg)) {
+  case m.run, current_language(m) {
+    Running(_, _), Ok(language) -> #(
+      Model(
+        ..m,
+        run: RunIdle,
+        runtimes: model.assoc_put(m.runtimes, language, RuntimeLoading),
+      ),
+      runner.restart(language),
+    )
+    Running(_, _), Error(Nil) -> #(Model(..m, run: RunIdle), effect.none())
+    _, _ -> #(m, effect.none())
+  }
+}
+
 fn advance(m: Model) -> #(Model, Effect(Msg)) {
+  // Before anything else: `m` still points at the problem whose run may be
+  // in flight, which is the only moment its language can be resolved.
+  let #(m, abandoned) = abandon_run(m)
+  let #(next, fx) = advance_inner(m)
+  #(next, effect.batch([abandoned, fx]))
+}
+
+fn advance_inner(m: Model) -> #(Model, Effect(Msg)) {
   // Round-robin: walk the whole selection, then come back around for the
   // next pass. Drilling one problem N times in a row before moving on is
   // the thing this deliberately avoids.

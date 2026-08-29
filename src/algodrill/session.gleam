@@ -24,11 +24,11 @@ const preferences_key = "algoDrill.prefs.v1"
 
 /// Settings that belong to this browser rather than to the account.
 pub type Preferences {
-  Preferences(editor_keymap: String)
+  Preferences(editor_keymap: String, side_collapsed: Bool)
 }
 
 pub fn default_preferences() -> Preferences {
-  Preferences(editor_keymap: "default")
+  Preferences(editor_keymap: "default", side_collapsed: False)
 }
 
 pub fn load_token() -> Option(String) {
@@ -63,7 +63,16 @@ pub fn load_preferences() -> Preferences {
       |> result.try(fn(raw) {
         json.parse(raw, {
           use keymap <- decode.field("editorKeymap", decode.string)
-          decode.success(Preferences(editor_keymap: keymap))
+          // Optional so blobs written before the field existed still parse.
+          use collapsed <- decode.optional_field(
+            "sideCollapsed",
+            False,
+            decode.bool,
+          )
+          decode.success(Preferences(
+            editor_keymap: keymap,
+            side_collapsed: collapsed,
+          ))
         })
         |> result.replace_error(Nil)
       })
@@ -78,6 +87,7 @@ pub fn save_preferences(preferences: Preferences) -> Effect(message) {
     json.to_string(
       json.object([
         #("editorKeymap", json.string(preferences.editor_keymap)),
+        #("sideCollapsed", json.bool(preferences.side_collapsed)),
       ]),
     ),
   )

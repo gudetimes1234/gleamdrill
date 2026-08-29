@@ -36,8 +36,17 @@ import {
   HighlightStyle,
   bracketMatching,
   indentUnit,
+  indentOnInput,
 } from "@codemirror/language";
 import { setDiagnostics } from "@codemirror/lint";
+import {
+  closeBrackets,
+  closeBracketsKeymap,
+  autocompletion,
+  completionKeymap,
+  completeAnyWord,
+} from "@codemirror/autocomplete";
+import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
 import { tags } from "@lezer/highlight";
 import {
   cursorCharLeft,
@@ -841,16 +850,20 @@ function keymapExtension(mode) {
   }
 }
 
+// Indent rides the same compartment as the language so the attribute-driven
+// reconfigure carries both: Python drills ship 4-space bodies, everything
+// else in the repo is 2-space.
 function languageExtension(language) {
+  const unit = indentUnit.of(language === "python" ? "    " : "  ");
   switch (language) {
     case "python":
-      return StreamLanguage.define(python);
+      return [StreamLanguage.define(python), unit];
     case "typescript":
-      return StreamLanguage.define(typescript);
+      return [StreamLanguage.define(typescript), unit];
     case "elixir":
-      return elixir;
+      return [elixir, unit];
     default:
-      return gleam;
+      return [gleam, unit];
   }
 }
 
@@ -943,12 +956,26 @@ class GleamEditor extends HTMLElement {
           history(),
           drawSelection(),
           bracketMatching(),
+          closeBrackets(),
+          autocompletion({ override: [completeAnyWord] }),
+          indentOnInput(),
           highlightActiveLine(),
-          indentUnit.of("  "),
+          highlightSelectionMatches(),
+          EditorView.lineWrapping,
           this.#languageCompartment.of(languageExtension(this.#language)),
           syntaxHighlighting(highlight),
           theme,
-          keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
+          // closeBrackets' Backspace pairing must beat the default; Tab still
+          // indents, with CodeMirror's built-in Esc-then-Tab escape hatch as
+          // the way out of the editor.
+          keymap.of([
+            ...closeBracketsKeymap,
+            ...defaultKeymap,
+            ...searchKeymap,
+            ...historyKeymap,
+            ...completionKeymap,
+            indentWithTab,
+          ]),
           notify,
         ],
       }),

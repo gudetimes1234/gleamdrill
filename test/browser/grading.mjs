@@ -39,7 +39,7 @@ const runTests = async () => {
   // so wait for a summary that is a verdict, not the spinner.
   await page.waitForFunction(() => {
     const s = document.querySelector(".results-summary");
-    return s && !s.textContent.includes("Compiling");
+    return s && !s.classList.contains("running");
   }, { timeout: 90000 });
   await page.waitForTimeout(400);
 };

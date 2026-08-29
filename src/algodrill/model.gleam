@@ -169,7 +169,9 @@ pub type RunOutcome {
 
 pub type RunState {
   RunIdle
-  Running(id: Int)
+  /// `stdout` is the previous run's output, carried so the Output panel does
+  /// not blank the moment a new run starts.
+  Running(id: Int, stdout: String)
   /// `stdout` is whatever the attempt printed, captured by the worker. It hangs
   /// off `Ran` rather than off `Cases` so a crash carries it too — code that
   /// printed and *then* blew up is exactly when it is worth reading.
@@ -246,6 +248,8 @@ pub type Model {
     search: String,
     next_run_id: Int,
     editor_keymap: String,
+    /// Whether the drill's prompt column is collapsed to a slim rail.
+    side_collapsed: Bool,
     /// Quiz option currently picked, before Submit is pressed.
     choice: Option(Int),
     /// Whether the current quiz question has been submitted and graded.
@@ -300,6 +304,7 @@ pub fn default() -> Model {
     search: "",
     next_run_id: 1,
     editor_keymap: "default",
+    side_collapsed: False,
     choice: None,
     graded: False,
     exam_answers: [],
@@ -362,7 +367,7 @@ pub fn run_failed(run: RunState) -> Bool {
   case run {
     Ran(Cases(cases), _) -> cases == [] || !list.all(cases, fn(c) { c.passed })
     Ran(Errored(_), _) | Ran(TimedOut, _) -> True
-    RunIdle | Running(_) -> False
+    RunIdle | Running(_, _) -> False
   }
 }
 
@@ -441,10 +446,14 @@ pub type Msg {
   EditorChanged(String)
   DraftSaveTicked
   UserClickedRun
+  UserClickedStopRun
+  UserClickedRetryRuntime(String)
+  UserToggledSide
   RunnerReady(language: String)
   RunnerFailed(language: String, message: String)
   RunFinished(id: Int, outcome: RunOutcome, stdout: String)
   RunTimedOut(id: Int)
+  RuntimeLoadTimedOut(language: String)
   UserPickedChoice(Int)
   UserSubmittedAnswer
   UserClickedStartExam

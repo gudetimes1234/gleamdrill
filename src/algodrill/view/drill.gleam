@@ -3,8 +3,9 @@ import algodrill/model.{
   type CaseResult, type Model, type Msg, type RunError, AwaitingGrade, Cases,
   EditorChanged, Errored, NotGrading, Ran, RunIdle, Running, RuntimeFailed,
   RuntimeLoading, RuntimeNotLoaded, RuntimeReady, SubmittingGrade, TimedOut,
-  UserChangedKeymap, UserClickedExitDrill, UserClickedNext, UserClickedRun,
-  UserGraded, UserPickedChoice, UserSubmittedAnswer, UserToggledSolution,
+  UserChangedKeymap, UserClickedExitDrill, UserClickedNext,
+  UserClickedRetryRuntime, UserClickedRun, UserClickedStopRun, UserGraded,
+  UserPickedChoice, UserSubmittedAnswer, UserToggledSide, UserToggledSolution,
 }
 import algodrill/problem.{
   type Problem, type ProblemRef, type Quiz, type Solution,
@@ -102,28 +103,42 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
         [html.text(progress)],
       ),
     ]),
-    html.div([attribute.class("drill-grid")], [
-      html.div([attribute.class("drill-side")], side_panels(m, ref, current)),
-      html.div([attribute.class("drill-main")], case current.quiz {
-        Some(quiz) -> quiz_main(m, quiz)
-        None -> [
-          keyed.div([attribute.class("editor-frame")], [
-            #(
-              body_key,
-              editor.view([
-                editor.doc(m.draft),
-                editor.language(problem.language_slug(current.language)),
-                editor.keymap(m.editor_keymap),
-                editor.on_change(EditorChanged),
-                editor.diagnostics(editor_diagnostics(m)),
+    html.div(
+      [
+        attribute.classes([
+          #("drill-grid", True),
+          #("side-collapsed", m.side_collapsed),
+        ]),
+      ],
+      [
+        html.div([attribute.class("drill-side")], side_panels(m, ref, current)),
+        // The editor's keyed frame stays the permanent first child of
+        // .work-row: appending the answer panel after it cannot remount
+        // CodeMirror, which would drop undo history and cursor.
+        html.div([attribute.class("drill-main")], case current.quiz {
+          Some(quiz) -> quiz_main(m, quiz)
+          None -> [
+            html.div([attribute.class("work-row")], [
+              keyed.div([attribute.class("editor-frame")], [
+                #(
+                  body_key,
+                  editor.view([
+                    editor.doc(m.draft),
+                    editor.language(problem.language_slug(current.language)),
+                    editor.keymap(m.editor_keymap),
+                    editor.on_change(EditorChanged),
+                    editor.diagnostics(editor_diagnostics(m)),
+                  ]),
+                ),
               ]),
-            ),
-          ]),
-          run_bar(m, current),
-          ..results_and_answer(m, current)
-        ]
-      }),
-    ]),
+              ..answer_panel(m, current)
+            ]),
+            run_bar(m, current),
+            ..results_only(m, current)
+          ]
+        }),
+      ],
+    ),
   ])
 }
 
@@ -257,6 +272,30 @@ fn side_panels(
   ref: ProblemRef,
   current: Problem,
 ) -> List(Element(Msg)) {
+  let toggle =
+    html.button(
+      [
+        attribute.class("btn-secondary side-toggle"),
+        event.on_click(UserToggledSide),
+      ],
+      [
+        html.text(case m.side_collapsed {
+          True -> "Prompt \u{27e9}"
+          False -> "\u{27e8} Hide prompt"
+        }),
+      ],
+    )
+  case m.side_collapsed {
+    True -> [toggle]
+    False -> [toggle, ..expanded_panels(m, ref, current)]
+  }
+}
+
+fn expanded_panels(
+  m: Model,
+  ref: ProblemRef,
+  current: Problem,
+) -> List(Element(Msg)) {
   let prompt =
     panel("Prompt", [
       html.div([attribute.class("problem-category")], [
@@ -281,6 +320,8 @@ fn side_panels(
     ]
   }
 
+  // Output rides with the checkable panes: a drill that cannot run cannot
+  // print, and a permanently empty pane is just noise.
   let checked = case current.check {
     Some(check) -> [
       panel("Signature", [
@@ -289,15 +330,14 @@ fn side_panels(
         ]),
       ]),
       panel("Tests", [tests_panel(m)]),
+      // Its own pane rather than a section buried in the results: watching
+      // what your program prints is half of debugging it.
+      panel("Output", [output_panel(m)]),
     ]
     None -> []
   }
 
-  // Its own pane rather than a section buried in the results: watching what
-  // your program prints is half of debugging it.
-  let output = [panel("Output", [output_panel(m)])]
-
-  [prompt, ..list.flatten([approach, checked, output])]
+  [prompt, ..list.flatten([approach, checked])]
 }
 
 fn output_panel(m: Model) -> Element(Msg) {
@@ -313,7 +353,20 @@ fn output_panel(m: Model) -> Element(Msg) {
             html.text(text),
           ])
       }
-    _ ->
+    // The previous run's output, dimmed rather than blanked: it is still the
+    // latest thing the program said.
+    Running(_, stdout) ->
+      case string.trim(stdout) {
+        "" ->
+          html.div([attribute.class("output-empty")], [
+            html.text("Nothing printed yet."),
+          ])
+        text ->
+          html.pre([attribute.class("results-stdout output-pane output-stale")], [
+            html.text(text),
+          ])
+      }
+    RunIdle ->
       html.div([attribute.class("output-empty")], [
         html.text("Nothing printed yet."),
       ])
@@ -362,18 +415,40 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
         ),
       ]),
     ]
-    Some(_) -> [
+    Some(_) ->
       case
         model.runtime_for(m, problem.language_slug(current.language)),
         m.run
       {
-        _, Running(_) -> run_button("Running\u{2026}", True)
-        RuntimeReady, _ -> run_button("\u{25b6} Run tests", False)
-        RuntimeLoading, _ -> run_button("Loading runtime\u{2026}", True)
-        RuntimeNotLoaded, _ -> run_button("Loading runtime\u{2026}", True)
-        RuntimeFailed(_), _ -> run_button("Runtime unavailable", True)
-      },
-    ]
+        _, Running(_, _) -> [
+          run_button("Running\u{2026}", True),
+          html.button(
+            [
+              attribute.class("btn-secondary stop-button"),
+              event.on_click(UserClickedStopRun),
+            ],
+            [html.text("Stop")],
+          ),
+        ]
+        RuntimeReady, _ -> [run_button("\u{25b6} Run tests", False)]
+        RuntimeLoading, _ -> [run_button("Loading runtime\u{2026}", True)]
+        RuntimeNotLoaded, _ -> [run_button("Loading runtime\u{2026}", True)]
+        RuntimeFailed(message), _ -> [
+          run_button("Runtime unavailable", True),
+          html.button(
+            [
+              attribute.class("btn-secondary retry-button"),
+              event.on_click(
+                UserClickedRetryRuntime(problem.language_slug(current.language)),
+              ),
+            ],
+            [html.text("Retry")],
+          ),
+          html.span([attribute.class("run-error")], [
+            html.text(first_lines(message)),
+          ]),
+        ]
+      }
   }
 
   html.div(
@@ -505,13 +580,17 @@ fn run_button(label: String, disabled: Bool) -> Element(Msg) {
   )
 }
 
-fn results_and_answer(m: Model, current: Problem) -> List(Element(Msg)) {
-  let results = case m.run {
+fn results_only(m: Model, current: Problem) -> List(Element(Msg)) {
+  case m.run {
     RunIdle -> []
-    Running(_) -> [
+    Running(_, _) -> [
       html.div([attribute.class("results")], [
-        html.div([attribute.class("results-summary")], [
-          html.text("Compiling and running\u{2026}"),
+        html.div([attribute.class("results-summary running")], [
+          html.text(case problem.language_slug(current.language) {
+            // Brython interprets; nothing compiles.
+            "python" -> "Running\u{2026}"
+            _ -> "Compiling and running\u{2026}"
+          }),
         ]),
       ]),
     ]
@@ -527,11 +606,15 @@ fn results_and_answer(m: Model, current: Problem) -> List(Element(Msg)) {
       ]),
     ]
   }
+}
 
-  let answer = case revealed(m, current) {
+/// The revealed solution, rendered beside the editor so code and answer can be
+/// compared line by line rather than by scrolling.
+fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
+  case revealed(m, current) {
     Ok(solution) -> [
       html.div(
-        [attribute.class("answer-content")],
+        [attribute.class("answer-content answer-side")],
         list.flatten([
           [
             html.div([attribute.class("answer-label")], [
@@ -552,8 +635,6 @@ fn results_and_answer(m: Model, current: Problem) -> List(Element(Msg)) {
     ]
     Error(Nil) -> []
   }
-
-  list.append(results, answer)
 }
 
 fn revealed(m: Model, current: Problem) -> Result(Solution, Nil) {
@@ -621,9 +702,12 @@ fn case_results(cases: List(CaseResult)) -> Element(Msg) {
 }
 
 fn error_results(error: RunError, current: Problem) -> Element(Msg) {
-  let is_check_file = case error.file {
-    Some(file) -> string.starts_with(file, "check")
-    None -> False
+  // An "internal" failure is the drill runner's own bug; even when it names a
+  // check file it must not read as "your signature is wrong".
+  let is_check_file = case error.file, error.phase {
+    _, "internal" -> False
+    Some(file), _ -> string.starts_with(file, "check")
+    None, _ -> False
   }
   case is_check_file, current.check {
     True, Some(check) ->
@@ -646,6 +730,8 @@ fn error_results(error: RunError, current: Problem) -> Element(Msg) {
         html.div([attribute.class("results-summary fail")], [
           html.text(case error.phase {
             "compile" -> "Your code doesn't compile."
+            "internal" ->
+              "The drill runner itself failed on this input \u{2014} a bug in AlgoDrill, not your code."
             _ -> "Your code crashed while running."
           }),
         ]),

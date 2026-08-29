@@ -82,7 +82,9 @@ pub fn main() -> Nil {
   ffi_on_message(fn(data) {
     case decode.run(data, request_decoder()) {
       Ok(request) -> serve(request)
-      Error(_) -> Nil
+      // Silence here meant an 8-second wait and a bogus "infinite loop"
+      // verdict; answer with whatever can be said instead.
+      Error(details) -> post_unreadable(data, details)
     }
   })
   ffi_post_json(json.to_string(json.object([#("type", json.string("ready"))])))
@@ -113,11 +115,18 @@ fn serve(request: Request) -> Nil {
     Ok(RanTo(triples)) -> post_result(request.id, triples, stdout)
     Ok(FailedWith(marker, message, line, column)) ->
       post_error(request.id, marker, message, line, column, stdout)
-    Error(_) ->
+    // The FFI guarantees a result string or an error object, so this arm means
+    // the harness stashed triples in an unexpected shape. Keep the decoder's
+    // complaint: it names the field and what was found.
+    Error(details) ->
       post_error(
         request.id,
         "",
-        "The Python runtime produced an unreadable outcome.",
+        truncate(
+          "The Python runtime produced an unreadable outcome: "
+            <> string.inspect(details),
+          2000,
+        ),
         None,
         None,
         stdout,
@@ -223,6 +232,29 @@ fn post_error(
       ]),
     ),
   )
+}
+
+/// A request that failed to decode still deserves an answer. With an id the
+/// reply is an ordinary error; without one, "fatal" says the runtime itself is
+/// unusable.
+fn post_unreadable(data: Dynamic, details: List(decode.DecodeError)) -> Nil {
+  let message =
+    truncate(
+      "The runtime received an unreadable request: " <> string.inspect(details),
+      2000,
+    )
+  case decode.run(data, decode.at(["id"], decode.int)) {
+    Ok(id) -> post_error(id, "", message, None, None, "")
+    Error(_) ->
+      ffi_post_json(
+        json.to_string(
+          json.object([
+            #("type", json.string("fatal")),
+            #("message", json.string(message)),
+          ]),
+        ),
+      )
+  }
 }
 
 /// The traceback for the signature-mismatch marker is noise; everything else

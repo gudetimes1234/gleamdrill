@@ -166,7 +166,10 @@ body {
    light-grey ones read as a rendering glitch against Tokyo Night. */
 .pane-list,
 .drill-side,
+.drill-main,
 .search-results,
+.output-pane,
+.answer-content.answer-side,
 gleam-editor .cm-scroller {
     scrollbar-width: thin;
     scrollbar-color: var(--bg-hover) transparent;
@@ -622,6 +625,61 @@ details.approach[open] summary.panel-title {
     caret-color: transparent;
 }
 
+/* CodeMirror's own panels (Ctrl+F search) and autocomplete tooltip, restyled
+   from their light defaults to match the rest of the chrome. */
+.cm-panels {
+    background: var(--bg-raised);
+    color: var(--text-primary);
+    border-color: var(--border);
+}
+
+.cm-panel.cm-search {
+    font-family: var(--font-ui);
+    font-size: 12px;
+}
+
+.cm-panel.cm-search input,
+.cm-panel.cm-search button {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 12px;
+}
+
+.cm-panel.cm-search label {
+    color: var(--text-secondary);
+}
+
+.cm-searchMatch {
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.cm-searchMatch-selected {
+    background: color-mix(in srgb, var(--warning) 40%, transparent);
+}
+
+.cm-selectionMatch {
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.cm-tooltip-autocomplete {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+}
+
+.cm-tooltip-autocomplete ul li {
+    color: var(--text-primary);
+}
+
+.cm-tooltip-autocomplete ul li[aria-selected] {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
 .signature {
     background: var(--bg-raised);
     border: 1px solid var(--border);
@@ -691,6 +749,15 @@ gleam-editor .cm-editor {
     color: var(--text-secondary);
     font-style: italic;
     font-size: 13px;
+}
+
+/* Why the runtime is unavailable, next to the Retry button. First lines only —
+   the full story belongs to the results pane, not the toolbar. */
+.run-error {
+    color: var(--error);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    white-space: pre-line;
 }
 
 .next-button {
@@ -792,6 +859,25 @@ gleam-editor .cm-editor {
     overflow-y: auto;
 }
 
+/* The Output side panel reuses the stdout slab; the margin belonged to its
+   life under the results and reads as a gap up in the panel. */
+.output-pane {
+    margin-top: 0;
+}
+
+.output-empty {
+    color: var(--text-secondary);
+    font-style: italic;
+    font-size: 13px;
+    font-family: var(--font-ui);
+}
+
+/* The previous run's output while a new one is in flight: still the latest
+   thing the program said, but visibly not this run's. */
+.output-stale {
+    opacity: 0.55;
+}
+
 .results-details summary {
     cursor: pointer;
     color: var(--text-secondary);
@@ -830,6 +916,65 @@ gleam-editor .cm-editor {
     display: none;
 }
 
+/* Editor and revealed solution side by side; the row is permanent so the keyed
+   editor frame never remounts when the answer appears next to it. */
+.work-row {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+    min-width: 0;
+}
+
+.work-row .editor-frame {
+    flex: 1 1 54%;
+    min-width: 0;
+}
+
+.answer-content.answer-side {
+    flex: 1 1 46%;
+    min-width: 280px;
+    max-height: calc(100svh - 240px);
+    overflow-y: auto;
+    margin: 0;
+}
+
+/* Collapsed, the prompt column is just the toggle standing on end. */
+.drill-grid.side-collapsed {
+    grid-template-columns: auto 1fr;
+}
+
+.drill-grid.side-collapsed .side-toggle {
+    writing-mode: vertical-rl;
+    padding: 14px 6px;
+}
+
+/* Desktop only: let the editor take the column's height, LeetCode-style, with
+   results scrolling inside the main column instead of pushing the page down.
+   The CM theme already sets height: 100%, so the old min-height becomes a
+   floor rather than the size. */
+@media (min-width: 901px) {
+    .drill-main {
+        max-height: calc(100vh - 140px);
+        max-height: calc(100svh - 140px);
+        overflow-y: auto;
+    }
+
+    .work-row {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    .work-row .editor-frame {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .work-row .editor-frame gleam-editor {
+        flex: 1;
+        height: 100%;
+    }
+}
+
 /* ---------- Tablet ---------- */
 
 @media (max-width: 900px) {
@@ -859,6 +1004,24 @@ gleam-editor .cm-editor {
 
     .drill-grid {
         grid-template-columns: 1fr;
+    }
+
+    .drill-grid.side-collapsed {
+        grid-template-columns: 1fr;
+    }
+
+    .drill-grid.side-collapsed .side-toggle {
+        writing-mode: horizontal-tb;
+        padding: 8px 14px;
+    }
+
+    .work-row {
+        flex-direction: column;
+    }
+
+    .answer-content.answer-side {
+        min-width: 0;
+        max-height: none;
     }
 
     /* There is still room here for the panels to run their natural height. The
