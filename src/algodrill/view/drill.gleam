@@ -1,13 +1,18 @@
 import algodrill/editor
 import algodrill/model.{
-  type CaseResult, type Model, type Msg, type ProblemRef, type RunError, Cases,
-  EditorChanged, Errored, Ran, RunIdle, Running, RuntimeFailed, RuntimeLoading,
-  RuntimeNotLoaded, RuntimeReady, TimedOut, UserChangedKeymap,
-  UserClickedExitDrill, UserClickedNext, UserClickedRun, UserPickedChoice,
-  UserSubmittedAnswer, UserToggledSolution,
+  type CaseResult, type Model, type Msg, type RunError, AwaitingGrade, Cases,
+  EditorChanged, Errored, NotGrading, Ran, RunIdle, Running, RuntimeFailed,
+  RuntimeLoading, RuntimeNotLoaded, RuntimeReady, SubmittingGrade, TimedOut,
+  UserChangedKeymap, UserClickedExitDrill, UserClickedNext, UserClickedRun,
+  UserGraded, UserPickedChoice, UserSubmittedAnswer, UserToggledSolution,
 }
-import algodrill/problem.{type Problem, type Quiz, type Solution}
+import algodrill/problem.{
+  type Problem, type ProblemRef, type Quiz, type Solution,
+}
 import algodrill/problems
+import algodrill/view/banner
+import algodrill/view/format
+import fsrs
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
@@ -74,6 +79,7 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
     <> int.to_string(m.current_iteration)
 
   html.div([attribute.class("drill-container")], [
+    banner.storage_warning(m),
     html.div([attribute.class("drill-header")], [
       html.button(
         [
@@ -287,7 +293,31 @@ fn side_panels(
     None -> []
   }
 
-  [prompt, ..list.append(approach, checked)]
+  // Its own pane rather than a section buried in the results: watching what
+  // your program prints is half of debugging it.
+  let output = [panel("Output", [output_panel(m)])]
+
+  [prompt, ..list.flatten([approach, checked, output])]
+}
+
+fn output_panel(m: Model) -> Element(Msg) {
+  case m.run {
+    Ran(_, stdout) ->
+      case string.trim(stdout) {
+        "" ->
+          html.div([attribute.class("output-empty")], [
+            html.text("The last run printed nothing."),
+          ])
+        text ->
+          html.pre([attribute.class("results-stdout output-pane")], [
+            html.text(text),
+          ])
+      }
+    _ ->
+      html.div([attribute.class("output-empty")], [
+        html.text("Nothing printed yet."),
+      ])
+  }
 }
 
 fn tests_panel(m: Model) -> Element(Msg) {
@@ -351,17 +381,101 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
     list.flatten([
       run_control,
       solution_buttons(m, current),
-      [
-        html.button(
-          [
-            attribute.class("btn-primary next-button"),
-            event.on_click(UserClickedNext),
-          ],
-          [html.text("Next")],
-        ),
-      ],
+      [grade_controls(m, current)],
     ]),
   )
+}
+
+/// The grading bar: how a drill turns into a scheduled review.
+///
+/// The rules, in order of precedence:
+///   * A quiz grades itself on submit — plain Next button.
+///   * The FIRST encounter of a problem grades freely: all four buttons from
+///     the moment it opens. Revealing the solution is how you learn something
+///     the first time, so nothing is coerced — flip the card, judge yourself.
+///   * A reveal-only drill (no harness exists) is a flashcard proper: all four
+///     buttons, every time.
+///   * Every later review of a checkable drill must run first; a pass offers
+///     all four (Again included — you may know better than the harness), and a
+///     failed run or a revealed solution leaves exactly one honest answer.
+fn grade_controls(m: Model, current: Problem) -> Element(Msg) {
+  case current.quiz {
+    Some(_) ->
+      html.button(
+        [
+          attribute.class("btn-primary next-button"),
+          event.on_click(UserClickedNext),
+        ],
+        [html.text("Next")],
+      )
+    None ->
+      case m.grading {
+        NotGrading ->
+          html.span([attribute.class("grade-hint")], [
+            html.text("Run the tests to grade this."),
+          ])
+        SubmittingGrade ->
+          html.span([attribute.class("grade-hint")], [
+            html.text("Saving\u{2026}"),
+          ])
+        AwaitingGrade -> grade_buttons(m, current)
+      }
+  }
+}
+
+fn grade_buttons(m: Model, current: Problem) -> Element(Msg) {
+  let free = case model.current_ref(m) {
+    Ok(ref) -> model.first_encounter(m, ref) || current.check == None
+    Error(Nil) -> True
+  }
+  let forced =
+    !free && { model.run_failed(m.run) || m.revealed_solution != None }
+
+  html.div([attribute.class("grade-bar")], case forced {
+    True -> [grade_button(m, fsrs.Again, "Again", "again")]
+    False -> [
+      grade_button(m, fsrs.Again, "Again", "again"),
+      grade_button(m, fsrs.Hard, "Hard", "hard"),
+      grade_button(m, fsrs.Good, "Good", "good"),
+      grade_button(m, fsrs.Easy, "Easy", "easy"),
+    ]
+  })
+}
+
+/// Each button carries the interval it would actually produce, computed with
+/// the same scheduler module the server schedules with — so the number on the
+/// button is a promise the server will keep, not an estimate.
+fn grade_button(
+  m: Model,
+  rating: fsrs.Rating,
+  label: String,
+  kind: String,
+) -> Element(Msg) {
+  html.button(
+    [
+      attribute.class("grade-button grade-" <> kind),
+      event.on_click(UserGraded(rating)),
+    ],
+    [
+      html.span([attribute.class("grade-label")], [html.text(label)]),
+      html.span([attribute.class("grade-interval")], [
+        html.text(preview_interval(m, rating)),
+      ]),
+    ],
+  )
+}
+
+fn preview_interval(m: Model, rating: fsrs.Rating) -> String {
+  let card = case model.current_ref(m) {
+    Ok(ref) ->
+      case model.card_for(m, ref) {
+        Some(state) -> state.card
+        None -> fsrs.new_card(m.now)
+      }
+    Error(Nil) -> fsrs.new_card(m.now)
+  }
+  let scheduled = fsrs.review(card, rating, m.now, m.settings.scheduler, 0.0)
+  format.interval(fsrs.interval_seconds(scheduled, m.now))
 }
 
 fn solution_buttons(m: Model, current: Problem) -> List(Element(Msg)) {
@@ -401,8 +515,8 @@ fn results_and_answer(m: Model, current: Problem) -> List(Element(Msg)) {
         ]),
       ]),
     ]
-    Ran(Cases(cases), stdout) -> [case_results(cases, stdout)]
-    Ran(Errored(error), stdout) -> [error_results(error, current, stdout)]
+    Ran(Cases(cases), _) -> [case_results(cases)]
+    Ran(Errored(error), _) -> [error_results(error, current)]
     Ran(TimedOut, _) -> [
       html.div([attribute.class("results")], [
         html.div([attribute.class("results-summary fail")], [
@@ -452,7 +566,7 @@ fn revealed(m: Model, current: Problem) -> Result(Solution, Nil) {
   }
 }
 
-fn case_results(cases: List(CaseResult), stdout: String) -> Element(Msg) {
+fn case_results(cases: List(CaseResult)) -> Element(Msg) {
   let total = list.length(cases)
   let passed = list.count(cases, fn(c) { c.passed })
   let all_passed = passed == total && total > 0
@@ -503,32 +617,10 @@ fn case_results(cases: List(CaseResult), stdout: String) -> Element(Msg) {
       ])
     })
 
-  html.div(
-    [attribute.class("results")],
-    [summary, ..list.append(output_panel(stdout), failures)],
-  )
+  html.div([attribute.class("results")], [summary, ..failures])
 }
 
-/// Whatever the attempt printed, collapsed. Collapsed because a passing run
-/// should still read as one line — but present, because a print is how you
-/// find out why a case came back wrong.
-fn output_panel(stdout: String) -> List(Element(Msg)) {
-  case string.trim(stdout) {
-    "" -> []
-    text -> [
-      html.details([attribute.class("results-details")], [
-        html.summary([], [html.text("Output")]),
-        html.pre([attribute.class("results-stdout")], [html.text(text)]),
-      ]),
-    ]
-  }
-}
-
-fn error_results(
-  error: RunError,
-  current: Problem,
-  stdout: String,
-) -> Element(Msg) {
+fn error_results(error: RunError, current: Problem) -> Element(Msg) {
   let is_check_file = case error.file {
     Some(file) -> string.starts_with(file, "check")
     None -> False
@@ -548,7 +640,6 @@ fn error_results(
             html.text(error.message),
           ]),
         ]),
-        ..output_panel(stdout)
       ])
     _, _ ->
       html.div([attribute.class("results")], [
@@ -561,7 +652,6 @@ fn error_results(
         html.pre([attribute.class("results-message")], [
           html.text(error.message),
         ]),
-        ..output_panel(stdout)
       ])
   }
 }

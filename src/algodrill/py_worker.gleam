@@ -8,6 +8,7 @@
 
 import gleam/dynamic.{type Dynamic}
 import gleam/dynamic/decode.{type Decoder}
+import gleam/int
 import gleam/json.{type Json}
 import gleam/list
 import gleam/option.{type Option, None, Some}
@@ -41,6 +42,30 @@ class __AlgodrillOut__:
 __algodrill_sys__.stdout = __AlgodrillOut__()
 
 "
+
+/// Replaces Brython's `File "<worker bundle>", line N` header with the
+/// corrected location, and drops it entirely when there is nothing true to put
+/// in its place. Everything after it -- the offending source line, the caret,
+/// and the error itself -- is worth keeping.
+fn retitle_location(
+  message: String,
+  file: Option(String),
+  line: Option(Int),
+) -> String {
+  string.split(message, "\n")
+  |> list.filter_map(fn(row) {
+    case string.starts_with(string.trim_start(row), "File \"") {
+      False -> Ok(row)
+      True ->
+        case file, line {
+          Some(name), Some(number) ->
+            Ok("File \"" <> name <> "\", line " <> int.to_string(number))
+          _, _ -> Error(Nil)
+        }
+    }
+  })
+  |> string.join("\n")
+}
 
 /// The prologue sits above the user's code, so every position Brython reports
 /// is that many lines too high. Derived from the constant rather than written
@@ -177,6 +202,12 @@ fn post_error(
     False, None -> #("run", None)
   }
   let line = option.map(line, fn(n) { n - prologue_offset() })
+  // Brython's traceback text carries its own location header, and that one is
+  // neither corrected for the prologue nor written in terms the user knows:
+  // it names the worker bundle. The structured fields above are right, so the
+  // header in the message is rewritten to match rather than left to
+  // contradict them.
+  let message = retitle_location(strip_marker(message), file, line)
   ffi_post_json(
     json.to_string(
       json.object([
@@ -186,7 +217,7 @@ fn post_error(
         #("file", nullable_string(file)),
         #("line", nullable_int(line)),
         #("column", nullable_int(column)),
-        #("message", json.string(strip_marker(message))),
+        #("message", json.string(message)),
         #("stdout", json.string(stdout)),
         #("warnings", json.array([], json.string)),
       ]),

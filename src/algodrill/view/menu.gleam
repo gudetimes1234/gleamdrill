@@ -1,11 +1,13 @@
 import algodrill/model.{
-  type Model, type Msg, type ProblemRef, Failed, Passed, ProblemRef,
-  UserChangedIterations, UserClickedBreadcrumb, UserClickedCategory,
-  UserClickedClearSelection, UserClickedSelectAll, UserClickedStartDrill,
-  UserClickedStartExam, UserClickedSubcategory, UserSearched, UserToggledProblem,
+  type Model, type Msg, UserChangedIterations, UserClickedBreadcrumb,
+  UserClickedCategory, UserClickedClearSelection, UserClickedSelectAll,
+  UserClickedStartDrill, UserClickedStartExam, UserClickedSubcategory,
+  UserSearched, UserToggledProblem,
 }
-import algodrill/problem.{type Problem}
+import algodrill/problem.{type Problem, type ProblemRef, ProblemRef}
 import algodrill/problems
+import algodrill/view/format
+import fsrs
 import gleam/dynamic/decode
 import gleam/int
 import gleam/list
@@ -25,7 +27,7 @@ pub fn view(m: Model) -> Element(Msg) {
 
   html.div([attribute.class("menu-container")], [
     html.div([attribute.class("menu-top")], [
-      html.h1([attribute.class("menu-title")], [html.text("Algo Drill")]),
+      html.h1([attribute.class("menu-title")], [html.text("AlgoDrill")]),
       html.input([
         attribute.type_("search"),
         attribute.class("search"),
@@ -38,15 +40,15 @@ pub fn view(m: Model) -> Element(Msg) {
       "" -> [
         breadcrumbs(m),
         html.div([attribute.class("panes-container")], [
-          category_pane(m),
+          language_pane(m),
           subcategory_pane(m),
           problem_pane(m, listed_problems),
+          selected_pane(m),
         ]),
       ]
       query -> [search_results(m, query)]
     }
     |> list.append([
-      chips(m),
       html.div([attribute.class("iteration-control")], [
         html.label([attribute.for("iterations")], [
           html.text("Repetitions per problem"),
@@ -114,21 +116,7 @@ fn exam_pool_size() -> Int {
 
 /// Flat list of every problem whose title matches, across all categories.
 fn search_results(m: Model, query: String) -> Element(Msg) {
-  let needle = string.lowercase(query)
-  let hits =
-    problems.all()
-    |> list.flat_map(fn(category) {
-      category.subcategories
-      |> list.flat_map(fn(sub) {
-        sub.problems
-        |> list.filter_map(fn(p: Problem) {
-          case string.contains(string.lowercase(p.title), needle) {
-            True -> Ok(#(ProblemRef(category.name, sub.name, p.title), p))
-            False -> Error(Nil)
-          }
-        })
-      })
-    })
+  let hits = problems.search_refs(query)
 
   case hits {
     [] ->
@@ -140,16 +128,19 @@ fn search_results(m: Model, query: String) -> Element(Msg) {
     _ ->
       keyed.div(
         [attribute.class("search-results")],
-        list.map(hits, fn(hit) {
-          let #(ref, _) = hit
+        list.index_map(hits, fn(ref, index) {
           #(ref.category <> "|" <> ref.subcategory <> "|" <> ref.title, {
             let selected = list.contains(m.selected, ref)
+            let here =
+              int.clamp(m.nav.search, 0, list.length(hits) - 1) == index
             html.div(
               [
                 attribute.classes([
                   #("search-hit", True),
                   #("selected", selected),
+                  #("cursor", here),
                 ]),
+                attribute.id("hit-" <> int.to_string(index)),
                 attribute.tabindex(0),
                 event.on_click(UserToggledProblem(ref)),
                 on_activate_key(UserToggledProblem(ref)),
@@ -170,35 +161,60 @@ fn search_results(m: Model, query: String) -> Element(Msg) {
   }
 }
 
-fn chips(m: Model) -> Element(Msg) {
-  case m.selected {
-    [] -> element.none()
+/// The running selection as a pane of its own, not chips below the fold: what
+/// you are about to drill deserves the same standing as what you are picking
+/// from. Cross-language selections are normal here, so each row carries a
+/// short language tag.
+fn selected_pane(m: Model) -> Element(Msg) {
+  let length = list.length(m.selected)
+  pane("Selected", m.nav.focus == model.SelectedPane, case m.selected {
+    [] ->
+      html.div([attribute.class("pane-list")], [
+        html.div([attribute.class("pane-empty")], [
+          html.text("Nothing selected yet"),
+        ]),
+      ])
     refs ->
       keyed.div(
-        [attribute.class("chips")],
-        list.map(refs, fn(ref) {
+        [attribute.class("pane-list")],
+        list.index_map(refs, fn(ref, index) {
           #(ref.category <> "|" <> ref.subcategory <> "|" <> ref.title, {
-            html.span([attribute.class("chip")], [
-              html.text(ref.title <> " "),
-              html.button(
-                [
-                  attribute.class("chip-remove"),
-                  attribute.attribute("aria-label", "Remove " <> ref.title),
-                  event.on_click(UserToggledProblem(ref)),
-                ],
-                [html.text("\u{d7}")],
-              ),
-            ])
+            html.div(
+              [
+                attribute.class("pane-item selected-item"),
+                attribute.tabindex(0),
+                event.on_click(UserToggledProblem(ref)),
+                on_activate_key(UserToggledProblem(ref)),
+                ..cursor_attributes(m, model.SelectedPane, index, length)
+              ],
+              [
+                html.span([attribute.class("selected-title")], [
+                  html.text(ref.title),
+                ]),
+                html.span([attribute.class("lang-tag")], [
+                  html.text(problems.language_tag(ref.category)),
+                ]),
+                html.span(
+                  [
+                    attribute.class("selected-remove"),
+                    attribute.attribute("aria-label", "Remove " <> ref.title),
+                  ],
+                  [html.text("\u{d7}")],
+                ),
+              ],
+            )
           })
         }),
       )
-  }
+  })
 }
 
 fn breadcrumbs(m: Model) -> Element(Msg) {
   let crumbs =
-    ["Categories"]
-    |> list.append(option.values([m.selected_category]))
+    ["Languages"]
+    |> list.append(
+      option.values([m.selected_category]) |> list.map(problems.language_label),
+    )
     |> list.append(option.values([m.selected_subcategory]))
   let last = list.length(crumbs) - 1
 
@@ -228,18 +244,28 @@ fn breadcrumbs(m: Model) -> Element(Msg) {
   )
 }
 
-fn category_pane(m: Model) -> Element(Msg) {
+/// The first question is which language you are drilling in, so it is the
+/// first pane. Each row opens its category — `selected_category` still stores
+/// the real category name, so nothing downstream (cards, refs, the server)
+/// changes. The day a language has a second collection, a Category pane
+/// re-inserts itself here as a view-only change.
+fn language_pane(m: Model) -> Element(Msg) {
+  let entries = problems.language_entries()
+  let length = list.length(entries)
   pane(
-    "Category",
+    "Language",
+    m.nav.focus == model.LanguagesPane,
     keyed.div(
       [attribute.class("pane-list")],
-      list.map(problems.category_names(), fn(name) {
+      list.index_map(entries, fn(entry, index) {
+        let #(label, category) = entry
         #(
-          name,
+          category,
           nav_item(
-            name,
-            m.selected_category == Some(name),
-            UserClickedCategory(name),
+            label,
+            m.selected_category == Some(category),
+            cursor_attributes(m, model.LanguagesPane, index, length),
+            UserClickedCategory(category),
           ),
         )
       }),
@@ -252,32 +278,39 @@ fn subcategory_pane(m: Model) -> Element(Msg) {
     Some(cat) -> problems.subcategory_names(cat)
     None -> []
   }
-  pane("Subcategory", case subcategories {
-    [] ->
-      html.div([attribute.class("pane-list")], [
-        html.div([attribute.class("pane-empty")], [
-          html.text("Pick a category first"),
-        ]),
-      ])
-    _ ->
-      keyed.div(
-        [attribute.class("pane-list")],
-        list.map(subcategories, fn(name) {
-          #(
-            name,
-            nav_item(
+  let length = list.length(subcategories)
+  pane(
+    "Subcategory",
+    m.nav.focus == model.SubcategoriesPane,
+    case subcategories {
+      [] ->
+        html.div([attribute.class("pane-list")], [
+          html.div([attribute.class("pane-empty")], [
+            html.text("Pick a language first"),
+          ]),
+        ])
+      _ ->
+        keyed.div(
+          [attribute.class("pane-list")],
+          list.index_map(subcategories, fn(name, index) {
+            #(
               name,
-              m.selected_subcategory == Some(name),
-              UserClickedSubcategory(name),
-            ),
-          )
-        }),
-      )
-  })
+              nav_item(
+                name,
+                m.selected_subcategory == Some(name),
+                cursor_attributes(m, model.SubcategoriesPane, index, length),
+                UserClickedSubcategory(name),
+              ),
+            )
+          }),
+        )
+    },
+  )
 }
 
 fn problem_pane(m: Model, listed_problems: List(Problem)) -> Element(Msg) {
-  pane("Problems", case listed_problems {
+  let length = list.length(listed_problems)
+  pane("Problems", m.nav.focus == model.ProblemsPane, case listed_problems {
     [] ->
       html.div([attribute.class("pane-list")], [
         html.div([attribute.class("pane-empty")], [
@@ -289,9 +322,16 @@ fn problem_pane(m: Model, listed_problems: List(Problem)) -> Element(Msg) {
       let assert Some(sub) = m.selected_subcategory
       keyed.div(
         [attribute.class("pane-list")],
-        list.map(listed_problems, fn(p: Problem) {
+        list.index_map(listed_problems, fn(p: Problem, index) {
           let ref = ProblemRef(cat, sub, p.title)
-          #(p.title, problem_item(m, ref))
+          #(
+            p.title,
+            problem_item(
+              m,
+              ref,
+              cursor_attributes(m, model.ProblemsPane, index, length),
+            ),
+          )
         }),
       )
     }
@@ -299,13 +339,19 @@ fn problem_pane(m: Model, listed_problems: List(Problem)) -> Element(Msg) {
 }
 
 /// Navigation rows (category/subcategory): "current" highlights where you are.
-fn nav_item(label: String, current: Bool, msg: Msg) -> Element(Msg) {
+fn nav_item(
+  label: String,
+  current: Bool,
+  extra: List(attribute.Attribute(Msg)),
+  msg: Msg,
+) -> Element(Msg) {
   html.div(
     [
       attribute.classes([#("pane-item", True), #("current", current)]),
       attribute.tabindex(0),
       event.on_click(msg),
       on_activate_key(msg),
+      ..extra
     ],
     [html.text(label)],
   )
@@ -313,7 +359,11 @@ fn nav_item(label: String, current: Bool, msg: Msg) -> Element(Msg) {
 
 /// Problem rows: "selected" marks membership in the drill selection, plus a
 /// pass/fail badge from previous runs.
-fn problem_item(m: Model, ref: ProblemRef) -> Element(Msg) {
+fn problem_item(
+  m: Model,
+  ref: ProblemRef,
+  extra: List(attribute.Attribute(Msg)),
+) -> Element(Msg) {
   html.div(
     [
       attribute.classes([
@@ -323,29 +373,66 @@ fn problem_item(m: Model, ref: ProblemRef) -> Element(Msg) {
       attribute.tabindex(0),
       event.on_click(UserToggledProblem(ref)),
       on_activate_key(UserToggledProblem(ref)),
+      ..extra
     ],
     [html.text(ref.title), status_badge(m, ref)],
   )
 }
 
+/// The badge now reports where a problem sits in the schedule rather than a
+/// sticky pass/fail. "Due" is the one that should pull the eye; a scheduled
+/// card shows how far out it is, so the menu doubles as a forecast.
 fn status_badge(m: Model, ref: ProblemRef) -> Element(Msg) {
-  case model.assoc_get(m.attempts, ref) {
-    Ok(attempt) -> {
-      let #(class, mark) = case attempt {
-        Passed -> #("badge badge-passed", "\u{2713}")
-        Failed -> #("badge badge-failed", "\u{2717}")
+  case model.card_for(m, ref) {
+    None -> element.none()
+    Some(state) -> {
+      let #(class, label) = case
+        fsrs.is_due(state.card, m.now),
+        state.card.state
+      {
+        True, _ -> #("badge badge-due", "due")
+        False, fsrs.Learning(_) -> #("badge badge-learning", "learning")
+        False, fsrs.Relearning(_) -> #("badge badge-learning", "relearning")
+        False, fsrs.Review -> #(
+          "badge badge-scheduled",
+          format.interval(fsrs.interval_seconds(state.card, m.now)),
+        )
       }
-      html.span([attribute.class(class)], [html.text(mark)])
+      html.span([attribute.class(class)], [html.text(label)])
     }
-    Error(Nil) -> element.none()
   }
 }
 
-fn pane(title: String, contents: Element(Msg)) -> Element(Msg) {
-  html.div([attribute.class("pane")], [
+fn pane(title: String, focused: Bool, contents: Element(Msg)) -> Element(Msg) {
+  html.div([attribute.classes([#("pane", True), #("focused", focused)])], [
     html.h3([], [html.text(title)]),
     contents,
   ])
+}
+
+/// The keyboard cursor's row in one pane, clamped against the rendered list —
+/// the same clamp the update side applies, so highlight and action agree.
+fn cursor_row(m: Model, pane: model.MenuPane, length: Int) -> Int {
+  let raw = case pane {
+    model.LanguagesPane -> m.nav.language
+    model.SubcategoriesPane -> m.nav.subcategory
+    model.ProblemsPane -> m.nav.problem
+    model.SelectedPane -> m.nav.selected
+  }
+  int.clamp(raw, 0, int.max(0, length - 1))
+}
+
+fn cursor_attributes(
+  m: Model,
+  pane: model.MenuPane,
+  index: Int,
+  length: Int,
+) -> List(attribute.Attribute(Msg)) {
+  let here = m.nav.focus == pane && cursor_row(m, pane, length) == index
+  [
+    attribute.id(model.menu_row_id(pane, index)),
+    attribute.classes([#("cursor", here)]),
+  ]
 }
 
 fn on_activate_key(msg: Msg) -> attribute.Attribute(Msg) {

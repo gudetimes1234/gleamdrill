@@ -4,7 +4,9 @@ TARBALL_URL     := https://github.com/gleam-lang/gleam/releases/download/v$(GLEA
 BRYTHON_VERSION := 3.14.3
 PY_RUNTIME_DIR  := assets/python-runtime/$(BRYTHON_VERSION)
 
-.PHONY: dev build deploy vendor content verify worker clean-vendor
+.PHONY: dev build deploy vendor content verify worker clean-vendor \
+        fsrs-test fsrs-vectors server-dev server-test server-smoke \
+        app-test api-fixtures e2e tour serve-dist up down down-clean
 
 dev: vendor content worker
 	gleam run -m lustre/dev start
@@ -12,21 +14,99 @@ dev: vendor content worker
 build: vendor content worker
 	gleam run -m lustre/dev build
 
+# Both Railway services build from the repository root, so `dist/` must be
+# current before pushing: the web image copies it verbatim rather than building
+# it. `railway up` picks the service from the linked environment.
 deploy: build
-	vercel deploy --prod
+	railway up
 
 # Regenerates src/algodrill/problems/embedded*.gleam from the drill sources,
 # plus the two generated verifiers `verify` runs.
 content:
 	cd drills && gleam run -m generate
 
-# Runs every solution variant — primaries and alternates, all three languages —
-# against its harness. A new alternate is not done until this passes.
-verify: content
+# Runs every solution variant — primaries and alternates, all four languages —
+# against its harness, then the scheduler's conformance suite. A new alternate
+# is not done until this passes.
+verify: content fsrs-test app-test
 	cd drills && gleam run -m solutions
 	cd drills/python && python3 verify_all.py
 	cd drills/ts && bun verify_all.ts
 	cd drills/elixir && elixir verify_all.exs
+
+# The scheduler is compiled to Erlang by the server and to JavaScript by the
+# app, so it is tested both ways: identical results are what licenses sharing
+# one module between them.
+fsrs-test:
+	cd fsrs && gleam test
+	cd fsrs && gleam test --target javascript
+
+# Rebuilds test/vectors.gleam from the reference py-fsrs package. A diff here
+# means upstream FSRS changed; read it before committing.
+fsrs-vectors:
+	cd fsrs && uv run --with fsrs python tools/gen_vectors.py
+	cd fsrs && gleam format test/vectors.gleam
+
+# Decodes captured server responses with the app's own decoders, so a change
+# to the API's shape fails here rather than as a blank screen in the browser.
+app-test:
+	gleam test --target javascript
+
+# Recaptures those responses from a running backend. Run after changing
+# anything the API returns.
+api-fixtures:
+	./test/capture-fixtures.sh
+
+# Serves the committed dist/ for the browser suites. Port 4173 on purpose:
+# :1234 belongs to `make dev`, and the two running at once is how e2e testing
+# once broke `make dev` with Eaddrinuse.
+serve-dist:
+	cd dist && python3 -m http.server 4173 --bind 127.0.0.1
+
+# The whole stack -- Caddy, the backend, Postgres -- on http://localhost:8080,
+# behind one origin. Needs SECRET_KEY_BASE in .env; see .env.example.
+# Podman and Docker both work; override with COMPOSE=docker\ compose.
+COMPOSE ?= podman compose
+
+up: build
+	$(COMPOSE) up --build
+
+down:
+	$(COMPOSE) down
+
+# Drops the database volume too. Everything stored locally is lost.
+down-clean:
+	$(COMPOSE) down --volumes
+
+# Drives a real browser against a built app and a running backend. Checks the
+# things only a browser can: the grading rule in the DOM, a session surviving a
+# reload, a review reaching the database. Needs chromium on PATH (or set
+# CHROMIUM), the backend on :1637, and dist/ served on :4173 (make serve-dist).
+e2e:
+	bun test/browser/flow.mjs
+	bun test/browser/grading.mjs
+	bun test/browser/guest.mjs
+
+# Walks every route and every user-initiated message, photographing each state.
+# Broader and slower than $(MAKE) e2e: it is what catches screens no
+# task-shaped test visits, and its screenshots are the only check on layout.
+# Set SHOTS to choose where the images land.
+tour:
+	bun test/browser/tour.mjs
+
+# The backend. Needs the environment from server/.env.example; `server-dev`
+# reads server/.env if it exists.
+server-dev:
+	cd server && set -a && [ -f .env ] && . ./.env; set +a; gleam run
+
+server-test:
+	cd server && gleam test
+
+# Exercises the real HTTP surface against a server already running on $$BASE
+# (default http://127.0.0.1:1637) — status codes, JSON shapes, the auth
+# boundary. Things a unit test cannot reach.
+server-smoke:
+	cd server && ./test/smoke.sh
 
 # The workers are separate JS entry points: their Gleam logic is compiled,
 # then bundled (with the FFI graph) into single files the bootstraps load.

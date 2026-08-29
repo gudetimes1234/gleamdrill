@@ -1,0 +1,14 @@
+name = "fsrs"
+version = "1.0.0"
+description = "FSRS-6 spaced repetition scheduler. Pure, target-agnostic Gleam."
+
+# Deliberately no `target` key: this package is compiled to Erlang by the
+# server and to JavaScript by the browser app, from the same source. Run its
+# tests both ways -- see the Makefile's `fsrs-test` target.
+
+[dependencies]
+gleam_stdlib = ">= 0.44.0 and < 2.0.0"
+gleam_time = ">= 1.10.0 and < 2.0.0"
+
+[dev-dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"

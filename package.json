@@ -11,5 +11,8 @@
     "@lezer/highlight": "^1.2.3",
     "brython": "3.14.3",
     "sucrase": "3.35.1"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.62.1"
   }
 }

@@ -1,0 +1,27 @@
+{
+ "now": 1787870700.024488,
+ "card": {
+  "category": "NeetCode 150 · Python",
+  "subcategory": "Arrays & Hashing",
+  "title": "Contains Duplicate",
+  "state": 1,
+  "step": 1,
+  "stability": 2.3065,
+  "difficulty": 2.118103970459015,
+  "due": 1787871300.024488,
+  "lastReview": 1787870700.024488,
+  "introducedAt": 1787870700.026213,
+  "reps": 1,
+  "lapses": 0,
+  "suspended": false
+ },
+ "today": {
+  "dayStart": 1787803200.0,
+  "dayEnd": 1787889600.0,
+  "reviewsDone": 1,
+  "newIntroduced": 1,
+  "reviewsRemaining": 99,
+  "newRemaining": 9,
+  "dueNow": 0
+ }
+}

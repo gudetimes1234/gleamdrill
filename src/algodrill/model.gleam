@@ -1,18 +1,141 @@
+import algodrill/api.{type ApiError, type CardState, type Settings, type User}
+import algodrill/problem.{type ProblemRef}
+import fsrs
+import gleam/dict.{type Dict}
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None}
 import gleam/order
 import gleam/string
+import gleam/time/timestamp.{type Timestamp}
 
 pub type Route {
+  /// Shown whenever there is no valid session. Everything else is behind it.
+  AuthRoute
+  /// The scheduler's home: what is due, what is new, and a button to begin.
+  StudyRoute
+  /// The manual three-pane browser, kept for picking problems by hand.
   MenuRoute
   DrillRoute
   /// The scored breakdown shown after an exam finishes.
   ReportRoute
+  StatsRoute
 }
 
-pub type ProblemRef {
-  ProblemRef(category: String, subcategory: String, title: String)
+/// Whether this browser is signed in, and therefore where study data lives.
+///
+/// The two are separate stores with a one-way migration between them, not two
+/// views of one store. That is deliberate: it is what means there is no sync
+/// and no conflict resolution anywhere in this app.
+pub type Mode {
+  /// No account. Everything lives in this browser and nowhere else.
+  Guest
+  /// Signed in; the server is authoritative.
+  Account(token: String)
+}
+
+pub fn is_guest(mode: Mode) -> Bool {
+  mode == Guest
+}
+
+/// Progress of the one blocking network call the app makes at boot.
+pub type Sync {
+  /// No token, so nothing to load.
+  NotStarted
+  Syncing
+  Synced
+  SyncFailed(String)
+}
+
+/// One keystroke, as the document-level listener reports it.
+///
+/// `editing` is where the key landed: `"editor"` (inside the code editor,
+/// whose own keymaps must never be fought), `"input"` (search or a form
+/// field), `"control"` (a focused button or link — native activation wins),
+/// or `"none"` (the app owns it).
+pub type Key {
+  Key(key: String, ctrl: Bool, shift: Bool, editing: String)
+}
+
+/// Which pane of the browser holds the keyboard cursor.
+pub type MenuPane {
+  LanguagesPane
+  SubcategoriesPane
+  ProblemsPane
+  SelectedPane
+}
+
+/// The TUI cursor: a focused pane plus a remembered row per pane, and a row
+/// for the search-results list, which replaces the panes while searching.
+pub type MenuNav {
+  MenuNav(
+    focus: MenuPane,
+    language: Int,
+    subcategory: Int,
+    problem: Int,
+    selected: Int,
+    search: Int,
+    /// Cursor in the stats screen's problem list.
+    stats: Int,
+  )
+}
+
+/// Stable row ids, shared by the menu's renderer and the scroll effect so the
+/// cursor always scrolls to the row it highlights.
+pub fn menu_row_id(pane: MenuPane, index: Int) -> String {
+  let prefix = case pane {
+    LanguagesPane -> "lang"
+    SubcategoriesPane -> "sub"
+    ProblemsPane -> "prob"
+    SelectedPane -> "sel"
+  }
+  prefix <> "-" <> int.to_string(index)
+}
+
+pub fn default_nav() -> MenuNav {
+  MenuNav(
+    focus: LanguagesPane,
+    language: 0,
+    subcategory: 0,
+    problem: 0,
+    selected: 0,
+    search: 0,
+    stats: 0,
+  )
+}
+
+/// Where the guest is in the one-time upgrade nudge.
+pub type UpgradePrompt {
+  /// Not yet earned: too little progress for the warning to mean anything.
+  PromptUnseen
+  PromptShowing
+  PromptDismissed
+}
+
+pub type AuthMode {
+  SigningIn
+  Registering
+}
+
+pub type AuthForm {
+  AuthForm(
+    mode: AuthMode,
+    email: String,
+    password: String,
+    busy: Bool,
+    error: Option(String),
+  )
+}
+
+/// Where the current drill sits in the grade-and-move-on cycle.
+pub type Grading {
+  /// The drill has not reached a gradeable state yet.
+  NotGrading
+  /// Waiting for the user to press one of the grade buttons.
+  AwaitingGrade
+  /// The review is in flight; the buttons are disabled so one answer cannot be
+  /// recorded twice.
+  SubmittingGrade
 }
 
 /// The compile-and-run backend (worker + 4.7MB wasm), loaded lazily when a
@@ -53,14 +176,53 @@ pub type RunState {
   Ran(outcome: RunOutcome, stdout: String)
 }
 
-/// Best result so far for a problem; drives the status badges in the menu.
-pub type Attempt {
-  Passed
-  Failed
-}
-
 pub type Model {
   Model(
+    // --- session and server state ---
+    mode: Mode,
+    /// Known only once `/api/state` answers, which is why it is separate from
+    /// the token in `Account` -- on a reload the token comes straight back
+    /// from localStorage but the user does not.
+    user: Option(User),
+    boot: Sync,
+    /// The server's clock as of the last response. Due dates are compared
+    /// against this rather than the device clock, so a wrong system time
+    /// cannot make cards look due when they are not.
+    now: Timestamp,
+    settings: Settings,
+    /// Every card the account has, keyed by problem. A `Dict` rather than the
+    /// association lists used elsewhere here: the menu looks up a badge for
+    /// every visible problem on every render, and this can hold a thousand
+    /// entries.
+    cards: Dict(ProblemRef, CardState),
+    today: api.Today,
+    stats: Option(api.Stats),
+    /// The raw insight payload; `insights.analyse` turns it into tiers and
+    /// calibration at render time.
+    insights: Option(api.Insights),
+    /// The problem whose review timeline is open on the stats screen, and its
+    /// rows once they arrive.
+    detail: Option(#(ProblemRef, Option(List(api.ReviewRow)))),
+    auth: AuthForm,
+    /// A transient banner for whatever last went wrong with the server.
+    notice: Option(String),
+    /// The keyboard cursor in the problem browser.
+    nav: MenuNav,
+    /// Whether the `?` cheatsheet overlay is up.
+    help_open: Bool,
+    /// Set when a local write has failed, which as a guest means progress is
+    /// silently not being saved. Unlike `notice` this is not dismissible --
+    /// it is the one situation where an account genuinely matters.
+    storage_full: Bool,
+    /// Whether the stronger "your progress is at risk" prompt has already been
+    /// shown. Escalating with stake is honest; nagging from review one is not.
+    upgrade_prompt: UpgradePrompt,
+    /// Set after signing in to an existing account while this browser still
+    /// holds guest progress. Merging is offered rather than done, because
+    /// folding scratch progress into an established account unasked would be
+    /// surprising.
+    merge_offer: Bool,
+    // --- the current sitting ---
     route: Route,
     selected_category: Option(String),
     selected_subcategory: Option(String),
@@ -68,12 +230,19 @@ pub type Model {
     problem_index: Int,
     iteration_count: Int,
     current_iteration: Int,
+    /// True when this sitting was started from the study queue, as opposed to
+    /// hand-picked from the menu. Reviews are recorded either way; this only
+    /// decides where exiting returns to.
+    studying: Bool,
+    grading: Grading,
+    /// Wall-clock milliseconds when the current problem was opened, for the
+    /// review log's `duration_ms`.
+    opened_at_ms: Int,
     draft: String,
     revealed_solution: Option(Int),
     runtimes: List(#(String, RuntimeState)),
     run: RunState,
     drafts: List(#(ProblemRef, String)),
-    attempts: List(#(ProblemRef, Attempt)),
     search: String,
     next_run_id: Int,
     editor_keymap: String,
@@ -82,27 +251,52 @@ pub type Model {
     /// Whether the current quiz question has been submitted and graded.
     graded: Bool,
     /// This sitting's answers, in the order given. The report is computed from
-    /// this rather than from `attempts`, because `attempts` is deliberately
-    /// sticky (a pass is never downgraded) and a score must not be.
+    /// this rather than from card history, because a score must reflect one
+    /// sitting and card state deliberately does not.
     exam_answers: List(#(ProblemRef, Bool)),
   )
 }
 
 pub fn default() -> Model {
   Model(
-    route: MenuRoute,
+    mode: Guest,
+    user: None,
+    boot: NotStarted,
+    now: timestamp.from_unix_seconds(0),
+    settings: api.default_settings(),
+    cards: dict.new(),
+    today: api.empty_today(),
+    stats: None,
+    insights: None,
+    detail: None,
+    auth: AuthForm(
+      mode: SigningIn,
+      email: "",
+      password: "",
+      busy: False,
+      error: None,
+    ),
+    notice: None,
+    nav: default_nav(),
+    help_open: False,
+    storage_full: False,
+    upgrade_prompt: PromptUnseen,
+    merge_offer: False,
+    route: StudyRoute,
     selected_category: None,
     selected_subcategory: None,
     selected: [],
     problem_index: 0,
     iteration_count: 3,
     current_iteration: 1,
+    studying: False,
+    grading: NotGrading,
+    opened_at_ms: 0,
     draft: "",
     revealed_solution: None,
     runtimes: [],
     run: RunIdle,
     drafts: [],
-    attempts: [],
     search: "",
     next_run_id: 1,
     editor_keymap: "default",
@@ -140,7 +334,96 @@ pub fn current_ref(model: Model) -> Result(ProblemRef, Nil) {
   |> list.first
 }
 
+pub fn card_for(model: Model, problem: ProblemRef) -> Option(CardState) {
+  dict.get(model.cards, problem) |> option.from_result
+}
+
+/// Whether this problem has never actually been reviewed — no card, or a card
+/// that was created but never answered.
+///
+/// This is the boundary the grading rules turn on: the first encounter is the
+/// learning step, where revealing the solution is how you learn and nothing is
+/// coerced. From the second review onward the honesty rules apply. One
+/// definition, used by the view, the local store and (mirrored) the server.
+pub fn first_encounter(model: Model, problem: ProblemRef) -> Bool {
+  case card_for(model, problem) {
+    None -> True
+    option.Some(state) -> state.card.memory == None
+  }
+}
+
+/// Whether the most recent run failed. Strictly "a run happened and said no":
+/// no run at all is not a failure — for checkable drills the grade bar does
+/// not appear until a run lands, and reveal-only drills have nothing to run.
+///
+/// Lives here because both the update loop (what to send the server) and the
+/// drill view (which buttons to offer) need it, and two copies drifted once.
+pub fn run_failed(run: RunState) -> Bool {
+  case run {
+    Ran(Cases(cases), _) -> cases == [] || !list.all(cases, fn(c) { c.passed })
+    Ran(Errored(_), _) | Ran(TimedOut, _) -> True
+    RunIdle | Running(_) -> False
+  }
+}
+
+/// Whether a card is due as of the server's clock. A card the account has
+/// never seen is not "due" — it is new, and new cards are introduced against
+/// the daily budget rather than because a date passed.
+pub fn is_due(model: Model, problem: ProblemRef) -> Bool {
+  case card_for(model, problem) {
+    option.Some(state) -> fsrs.is_due(state.card, model.now)
+    None -> False
+  }
+}
+
 pub type Msg {
+  // --- keyboard ---
+  KeyPressed(Key)
+  HelpToggled
+  /// Move the pane focus left (-1) or right (+1).
+  MenuPaneFocused(Int)
+  /// Move the cursor within the focused pane by a delta.
+  MenuCursorMoved(Int)
+  /// Jump the cursor to the first (True) or last row.
+  MenuCursorJumped(Bool)
+  /// Enter on the cursor row: descend into a pane, or toggle a problem.
+  MenuActivated
+  /// Space/x on the cursor row: toggle membership, or remove from Selected.
+  MenuToggledAtCursor
+  /// Move the quiz choice cursor by a delta.
+  QuizMoved(Int)
+  EditorFocusRequested
+  SearchFocusRequested
+  // --- session ---
+  UserChangedAuthEmail(String)
+  UserChangedAuthPassword(String)
+  UserToggledAuthMode
+  UserSubmittedAuth
+  AuthCompleted(Result(api.Session, ApiError))
+  StateLoaded(Result(api.BootState, ApiError))
+  StateImported(Result(Nil, ApiError))
+  UserClickedMergeGuest
+  UserClickedSignOut
+  SignOutCompleted(Result(Nil, ApiError))
+  UserDismissedNotice
+  UserDismissedUpgradePrompt
+  UserClickedSignIn(AuthMode)
+  // --- the scheduler ---
+  UserClickedStudy
+  UserClickedBrowse
+  UserClickedBackToStudy
+  UserGraded(fsrs.Rating)
+  ReviewRecorded(Result(api.ReviewOutcome, ApiError))
+  DraftSynced(Result(Nil, ApiError))
+  UserClickedStats
+  StatsLoaded(Result(api.Stats, ApiError))
+  InsightsLoaded(Result(api.Insights, ApiError))
+  StatsCursorMoved(Int)
+  StatsActivated
+  UserOpenedDetail(ProblemRef)
+  UserClosedDetail
+  HistoryLoaded(ProblemRef, Result(List(api.ReviewRow), ApiError))
+  // --- browsing and drilling ---
   UserClickedCategory(String)
   UserClickedSubcategory(String)
   UserClickedBreadcrumb(Int)

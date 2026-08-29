@@ -33,7 +33,12 @@ pub fn view(m: Model) -> Element(Msg) {
           attribute.class("btn-secondary"),
           event.on_click(UserClickedExitReport),
         ],
-        [html.text("\u{2190} Menu")],
+        [
+          html.text(case m.studying {
+            True -> "\u{2190} Study"
+            False -> "\u{2190} Menu"
+          }),
+        ],
       ),
       html.h2([attribute.class("drill-title")], [html.text("Exam result")]),
     ]),
@@ -60,30 +65,27 @@ pub fn view(m: Model) -> Element(Msg) {
 fn section_row(score: SectionScore) -> Element(Msg) {
   let pct = model.percent(score.correct, score.total)
   let weak = pct < model.weak_threshold
-  html.li(
-    [attribute.classes([#("report-section", True), #("weak", weak)])],
-    [
-      html.span([attribute.class("report-section-name")], [
-        html.text(score.section),
-      ]),
-      // The bar is the scannable part; the numbers are for confirming it.
-      html.span(
-        [
-          attribute.class("report-bar"),
-          attribute.style("--score", int.to_string(pct) <> "%"),
-        ],
-        [],
+  html.li([attribute.classes([#("report-section", True), #("weak", weak)])], [
+    html.span([attribute.class("report-section-name")], [
+      html.text(score.section),
+    ]),
+    // The bar is the scannable part; the numbers are for confirming it.
+    html.span(
+      [
+        attribute.class("report-bar"),
+        attribute.style("--score", int.to_string(pct) <> "%"),
+      ],
+      [],
+    ),
+    html.span([attribute.class("report-section-score")], [
+      html.text(
+        int.to_string(score.correct) <> "/" <> int.to_string(score.total),
       ),
-      html.span([attribute.class("report-section-score")], [
-        html.text(
-          int.to_string(score.correct) <> "/" <> int.to_string(score.total),
-        ),
-      ]),
-      html.span([attribute.class("report-section-percent")], [
-        html.text(int.to_string(pct) <> "%"),
-      ]),
-    ],
-  )
+    ]),
+    html.span([attribute.class("report-section-percent")], [
+      html.text(int.to_string(pct) <> "%"),
+    ]),
+  ])
 }
 
 fn verdict(weak: List(SectionScore)) -> List(Element(Msg)) {

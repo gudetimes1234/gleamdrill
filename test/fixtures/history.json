@@ -1,0 +1,34 @@
+{
+ "reviews": [
+  {
+   "at": 1787870700.398688,
+   "rating": 3,
+   "durationMs": 150000,
+   "revealed": false,
+   "autoFailed": false,
+   "stateBefore": 1,
+   "scheduledDays": 0,
+   "stabilityAfter": 2.3065
+  },
+  {
+   "at": 1787870700.440385,
+   "rating": 1,
+   "durationMs": null,
+   "revealed": true,
+   "autoFailed": false,
+   "stateBefore": 1,
+   "scheduledDays": 0,
+   "stabilityAfter": 0.7750839828558983
+  },
+  {
+   "at": 1787870700.482354,
+   "rating": 3,
+   "durationMs": 90000,
+   "revealed": false,
+   "autoFailed": false,
+   "stateBefore": 1,
+   "scheduledDays": 0,
+   "stabilityAfter": 0.8281648000472625
+  }
+ ]
+}

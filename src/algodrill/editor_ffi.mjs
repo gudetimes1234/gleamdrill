@@ -866,6 +866,12 @@ class GleamEditor extends HTMLElement {
   #keymapCompartment = new Compartment();
   #languageCompartment = new Compartment();
 
+  // Focusing the host focuses the CodeMirror view: this is what the `i`
+  // keybinding calls to enter the editor from the keyboard.
+  focus() {
+    this.#view?.focus();
+  }
+
   set doc(value) {
     this.#doc = value ?? "";
     if (this.#view && this.#view.state.doc.toString() !== this.#doc) {

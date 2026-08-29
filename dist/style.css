@@ -227,16 +227,24 @@ gleam-editor .cm-scroller {
     flex-shrink: 0;
 }
 
-.badge-passed {
-    color: var(--success);
-    border: 1px solid var(--success);
-    background: color-mix(in srgb, var(--success) 14%, transparent);
+.badge-due {
+    color: var(--warning);
+    border: 1px solid var(--warning);
+    background: color-mix(in srgb, var(--warning) 14%, transparent);
 }
 
-.badge-failed {
-    color: var(--error);
-    border: 1px solid var(--error);
-    background: color-mix(in srgb, var(--error) 14%, transparent);
+.badge-learning {
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+/* Scheduled cards are the quiet majority: outlined, not filled, so a screen
+   of them does not compete with the handful that are actually due. */
+.badge-scheduled {
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    opacity: 0.75;
 }
 
 .search-results {
@@ -291,39 +299,42 @@ gleam-editor .cm-scroller {
     margin-left: 0;
 }
 
-.chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 20px;
-}
+/* --- the Selected pane --- */
 
-.chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-    font-size: 12px;
-    color: var(--text-secondary);
-    transition: border-color var(--ease), color var(--ease);
-}
-
-.chip-remove {
-    background: none;
-    border: none;
-    color: var(--text-secondary);
+.selected-item {
     cursor: pointer;
+}
+
+.selected-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Two letters that say which language a selection came from, since the pane
+   mixes them freely. */
+.lang-tag {
+    flex-shrink: 0;
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 5px;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.selected-remove {
+    flex-shrink: 0;
+    color: var(--text-secondary);
     font-size: 14px;
     line-height: 1;
-    padding: 0 2px;
-    font-family: inherit;
-    transition: color var(--ease);
 }
 
-.chip-remove:hover {
+.selected-item:hover .selected-remove {
     color: var(--error);
 }
 
@@ -413,7 +424,7 @@ gleam-editor .cm-scroller {
 .search-hit:focus-visible,
 .search:focus-visible,
 .keymap-option:focus-visible,
-.chip-remove:focus-visible,
+.selected-item:focus-visible,
 .solution-button:focus-visible,
 .results-details summary:focus-visible,
 details.approach summary:focus-visible {
@@ -738,9 +749,12 @@ gleam-editor .cm-editor {
     overflow-x: auto;
 }
 
+/* `min-width`, not `width`: "expected " is nine characters and a fixed 8ch
+   box swallowed its trailing space, so the value butted straight up against
+   the label while "got" alongside it kept a gap. */
 .case-diff-tag {
     display: inline-block;
-    width: 8ch;
+    min-width: 9ch;
     color: var(--text-secondary);
 }
 
@@ -1010,16 +1024,6 @@ gleam-editor .cm-editor {
         font-size: 13px;
     }
 
-    /* Grows to 44px square, then pulls the overhang back with negative margins
-       so the chip itself keeps its size. */
-    .chip-remove {
-        min-width: 44px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-        margin: -9px -12px -9px 0;
-    }
 
     /* Padding rather than flex centring: display:flex on a <summary> drops the
        disclosure triangle. */
@@ -1221,4 +1225,952 @@ gleam-editor .cm-editor {
         grid-column: 1 / -1;
         order: 1;
     }
+}
+
+/* ==========================================================================
+   Accounts and scheduling
+   ========================================================================== */
+
+.auth-screen {
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+}
+
+.auth-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: min(380px, 100%);
+    padding: 28px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-2);
+}
+
+.auth-title {
+    font-size: 22px;
+    letter-spacing: -0.01em;
+}
+
+.auth-subtitle {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-top: -6px;
+}
+
+.auth-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.auth-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.auth-input {
+    font-family: var(--font-ui);
+    font-size: 16px; /* Under 16px iOS Safari zooms the page on focus. */
+    padding: 9px 11px;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+
+.auth-input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.auth-error {
+    color: var(--error);
+    font-size: 13px;
+}
+
+.auth-submit {
+    font-family: var(--font-ui);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 10px;
+    color: var(--bg-primary);
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background var(--ease);
+}
+
+.auth-submit:hover:not(:disabled) {
+    background: var(--accent-hover);
+}
+
+.auth-submit:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.auth-switch,
+.footer-link,
+.link-button {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.auth-switch:hover,
+.footer-link:hover,
+.link-button:hover {
+    color: var(--text-primary);
+}
+
+/* --- study screen --- */
+
+.study-screen,
+.stats-screen {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 28px 20px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.study-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.study-title {
+    font-size: 24px;
+    letter-spacing: -0.01em;
+}
+
+.study-account {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.study-email {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.study-counts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.study-count {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 16px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.study-count-value {
+    font-size: 30px;
+    font-weight: 600;
+    line-height: 1.1;
+}
+
+.study-count-due .study-count-value {
+    color: var(--warning);
+}
+
+.study-count-new .study-count-value {
+    color: var(--accent);
+}
+
+.study-count-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.study-summary {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.study-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.study-start {
+    font-family: var(--font-ui);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 11px 22px;
+    color: var(--bg-primary);
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.study-start:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.study-secondary {
+    font-family: var(--font-ui);
+    font-size: 14px;
+    padding: 11px 16px;
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.study-secondary:hover {
+    background: var(--bg-hover);
+}
+
+.study-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+/* --- forecast --- */
+
+.forecast-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 90px;
+}
+
+.forecast-day {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 4px;
+    height: 100%;
+}
+
+.forecast-bar {
+    width: 100%;
+    background: var(--accent);
+    border-radius: 2px 2px 0 0;
+    opacity: 0.75;
+    min-height: 2px;
+}
+
+.forecast-count,
+.forecast-label {
+    font-size: 10px;
+    color: var(--text-secondary);
+    line-height: 1;
+}
+
+.forecast-month {
+    height: 70px;
+    gap: 2px;
+}
+
+/* --- the support footer, last thing on the study screen --- */
+
+.study-footer {
+    margin-top: 6px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    opacity: 0.75;
+}
+
+.study-footer:hover {
+    opacity: 1;
+}
+
+.footer-sep {
+    color: var(--text-secondary);
+    opacity: 0.5;
+}
+
+/* The shared link rule sizes for the auth screens; the footer runs smaller. */
+.study-footer .footer-link,
+.help-footnote .footer-link {
+    font-size: inherit;
+    padding: 0;
+}
+
+/* --- grading bar --- */
+
+.grade-bar {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.grade-hint {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.grade-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    min-width: 74px;
+    padding: 6px 12px;
+    font-family: var(--font-ui);
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background var(--ease), border-color var(--ease);
+}
+
+.grade-button:hover {
+    background: var(--bg-hover);
+}
+
+.grade-label {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+/* The interval is the point of the button, but it is reference information:
+   readable at a glance, never louder than the verdict above it. */
+.grade-interval {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1;
+}
+
+.grade-again {
+    border-color: color-mix(in srgb, var(--error) 55%, var(--border));
+}
+
+.grade-again .grade-label {
+    color: var(--error);
+}
+
+.grade-good {
+    border-color: color-mix(in srgb, var(--success) 55%, var(--border));
+}
+
+.grade-good .grade-label {
+    color: var(--success);
+}
+
+.grade-hard .grade-label {
+    color: var(--warning);
+}
+
+.grade-easy .grade-label {
+    color: var(--accent);
+}
+
+/* --- notice banner --- */
+
+.notice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--warning);
+    background: color-mix(in srgb, var(--warning) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--warning) 40%, transparent);
+    border-radius: var(--radius-sm);
+}
+
+.notice-text {
+    flex: 1;
+}
+
+.notice-dismiss {
+    font-size: 18px;
+    line-height: 1;
+    color: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+/* --- stats --- */
+
+.stats-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.stats-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 16px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.stats-tile-value {
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.1;
+}
+
+.stats-tile-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.stats-section {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+}
+
+/* Half a year of study days. Wraps into columns of seven so each column is a
+   week, the way a calendar reads. */
+.heatmap {
+    display: grid;
+    grid-template-rows: repeat(7, 1fr);
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 3px;
+}
+
+.heatmap-cell {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    background: var(--bg-secondary);
+}
+
+.heatmap-1 { background: color-mix(in srgb, var(--accent) 30%, var(--bg-secondary)); }
+.heatmap-2 { background: color-mix(in srgb, var(--accent) 52%, var(--bg-secondary)); }
+.heatmap-3 { background: color-mix(in srgb, var(--accent) 74%, var(--bg-secondary)); }
+.heatmap-4 { background: var(--accent); }
+
+.state-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.state-row {
+    display: grid;
+    grid-template-columns: 84px 1fr 44px;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+}
+
+.state-label {
+    color: var(--text-secondary);
+}
+
+.state-track {
+    height: 8px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+}
+
+.state-fill {
+    height: 100%;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+}
+
+.state-fill-1 { background: var(--accent); }
+.state-fill-2 { background: var(--success); }
+.state-fill-3 { background: var(--warning); }
+
+.state-count {
+    text-align: right;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 560px) {
+    .study-counts {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .study-count-value {
+        font-size: 24px;
+    }
+
+    .grade-bar {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .grade-button {
+        flex: 1;
+        min-width: 0;
+    }
+}
+
+/* ==========================================================================
+   Guest mode
+   ========================================================================== */
+
+/* The standing reminder. Deliberately quiet: it states where the data lives,
+   it is not an alert, and it is on screen the entire time. */
+.guest-strip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+
+.guest-strip-text {
+    flex: 1;
+    min-width: 200px;
+}
+
+.guest-strip-action {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    background: none;
+    border: none;
+    padding: 2px 4px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    white-space: nowrap;
+}
+
+.guest-strip-action:hover {
+    color: var(--accent-hover);
+}
+
+/* Shown once, and only once there is a real number to put in it. */
+.upgrade-prompt {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    background: var(--bg-raised);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-2);
+}
+
+.upgrade-prompt-title {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.upgrade-prompt-body {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.upgrade-prompt-cta {
+    font-family: var(--font-ui);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 11px 22px;
+    color: var(--bg-primary);
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.upgrade-prompt-cta:hover {
+    background: var(--accent-hover);
+}
+
+.upgrade-prompt-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+}
+
+/* Not dismissible, and louder than the notice banner: progress is actively
+   being lost while this is on screen. */
+.storage-warning {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--error);
+    background: color-mix(in srgb, var(--error) 12%, transparent);
+    border: 1px solid var(--error);
+    border-radius: var(--radius-sm);
+}
+
+.storage-warning .guest-strip-action {
+    color: var(--error);
+}
+
+/* ==========================================================================
+   The TUI layer: status bar, cursor, help overlay
+   ========================================================================== */
+
+/* Focused pane: where j/k acts. Quiet accent, tmux active-pane style. */
+.pane.focused {
+    border-color: var(--accent);
+}
+
+.pane.focused h3::after {
+    content: ' \25c2';
+    opacity: 0.7;
+}
+
+/* The cursor row. Distinct from `.current` (where you ARE) and `.selected`
+   (what you picked): this is where the keyboard is pointing. */
+.pane-item.cursor,
+.search-hit.cursor {
+    outline: 1px solid var(--accent);
+    outline-offset: -1px;
+    color: var(--text-primary);
+}
+
+.statusbar {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 40;
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    height: 30px;
+    padding: 0 8px 0 0;
+    background: var(--bg-raised);
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    overflow: hidden;
+}
+
+.statusbar-context {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    background: var(--accent);
+    color: var(--bg-primary);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+}
+
+.statusbar-hints {
+    display: flex;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+.keyhint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px;
+    background: none;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.keyhint:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.keyhint-keys {
+    color: var(--warning);
+}
+
+/* The status bar is a keyboard artifact; on touch there is no keyboard and
+   the 30px are better spent on content. */
+body {
+    padding-bottom: 30px;
+}
+
+@media (hover: none) {
+    .statusbar {
+        display: none;
+    }
+
+    body {
+        padding-bottom: 0;
+    }
+}
+
+/* --- the ? cheatsheet --- */
+
+.help-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgb(10 12 20 / 0.7);
+}
+
+.help-card {
+    width: min(560px, 100%);
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 22px 26px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-2);
+}
+
+.help-title {
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    margin-bottom: 14px;
+}
+
+.help-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.help-row {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 14px;
+    font-size: 13px;
+}
+
+.help-keys {
+    color: var(--warning);
+    text-align: right;
+}
+
+.help-desc {
+    color: var(--text-secondary);
+}
+
+.help-footnote {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+/* A second footnote is a continuation, not a new section: one rule above it. */
+.help-footnote + .help-footnote {
+    margin-top: 8px;
+    padding-top: 0;
+    border-top: none;
+}
+
+/* ==========================================================================
+   Insights: tiers, calibration, problem lists, the review timeline
+   ========================================================================== */
+
+.stats-tile-hero .stats-tile-value {
+    color: var(--success);
+}
+
+.stats-tile-delta {
+    font-size: 12px;
+    color: var(--success);
+}
+
+.tier-fluent { background: var(--success); }
+.tier-solid { background: var(--accent); }
+.tier-grinding { background: var(--warning); }
+.tier-learning { background: var(--bg-hover); }
+
+.grade-name-again { color: var(--error); }
+.grade-name-hard { color: var(--warning); }
+.grade-name-good { color: var(--success); }
+.grade-name-easy { color: var(--accent); }
+
+.calibration-verdict {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.calibration-verdict.quiet {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.problem-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.problem-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    text-align: left;
+    color: var(--text-secondary);
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background var(--ease), color var(--ease);
+}
+
+.problem-row:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.problem-row.cursor {
+    outline: 1px solid var(--accent);
+    outline-offset: -1px;
+    color: var(--text-primary);
+}
+
+.problem-row-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.problem-row-time {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+.problem-row-due {
+    font-size: 12px;
+    opacity: 0.8;
+    flex-shrink: 0;
+}
+
+.trend { flex-shrink: 0; }
+.trend-down { color: var(--success); }
+.trend-up { color: var(--warning); }
+
+/* --- the review timeline --- */
+
+.detail-card {
+    width: min(640px, 100%);
+}
+
+.detail-context {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+}
+
+/* The journey headline: first honest solve to latest. The whole point. */
+.detail-journey {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--success);
+    margin-bottom: 14px;
+    font-variant-numeric: tabular-nums;
+}
+
+.timeline {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 120px;
+    padding-bottom: 4px;
+    overflow-x: auto;
+}
+
+.timeline-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    height: 100%;
+    min-width: 34px;
+}
+
+.timeline-bar {
+    width: 18px;
+    border-radius: 2px 2px 0 0;
+    min-height: 6px;
+}
+
+/* A reveal wears a ring: the bar's height is still real time spent, but it
+   was spent reading the answer. */
+.timeline-bar.revealed {
+    outline: 2px dashed var(--text-secondary);
+    outline-offset: 1px;
+}
+
+.grade-fill-again { background: var(--error); }
+.grade-fill-hard { background: var(--warning); }
+.grade-fill-good { background: var(--success); }
+.grade-fill-easy { background: var(--accent); }
+
+.timeline-caption {
+    font-size: 10px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.detail-intervals {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-secondary);
 }

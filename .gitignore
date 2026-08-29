@@ -6,3 +6,12 @@ node_modules/
 # Scratch tree `gleam run -m generate` builds so each TypeScript variant gets
 # the sibling ./solution module its harness imports.
 drills/ts/.verify/
+
+# Local backend secrets. See server/.env.example.
+server/.env
+
+# Compose secrets. See .env.example.
+/.env
+
+# Crash dumps the BEAM drops in the working directory.
+erl_crash.dump

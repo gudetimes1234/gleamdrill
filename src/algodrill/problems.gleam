@@ -1,13 +1,14 @@
-import algodrill/model.{type ProblemRef, ProblemRef}
-import algodrill/problem.{type Category, type Problem}
-import algodrill/problems/gleam_idioms
+import algodrill/problem.{
+  type Category, type Problem, type ProblemRef, ProblemRef,
+}
 import algodrill/problems/neetcode_elixir
 import algodrill/problems/neetcode_gleam
 import algodrill/problems/neetcode_python
 import algodrill/problems/neetcode_ts
-import algodrill/problems/python_tips
 import algodrill/problems/system_design
 import gleam/list
+import gleam/result
+import gleam/string
 
 /// Memoised: see problems_ffi.mjs. Deterministic, so the first call builds and
 /// every later one is free.
@@ -16,13 +17,15 @@ pub fn all() -> List(Category) {
 }
 
 fn build() -> List(Category) {
+  // Tips categories are deliberately absent: the content is half-baked. The
+  // modules stay in the tree and verified; re-adding a line here restores
+  // them. Their absence also removes them from `all_refs`, so the study queue
+  // stops introducing them and existing tips cards go dormant.
   [
     neetcode_python.category(),
     neetcode_gleam.category(),
     neetcode_ts.category(),
     neetcode_elixir.category(),
-    python_tips.category(),
-    gleam_idioms.category(),
     system_design.category(),
   ]
 }
@@ -95,5 +98,80 @@ fn try_find(
   case list.find(items, predicate) {
     Ok(item) -> next(item)
     Error(Nil) -> Error(Nil)
+  }
+}
+
+/// Every drill in the catalogue, in catalogue order.
+///
+/// The scheduler needs this because the server cannot: cards are created on
+/// first review, so "which problems have I never seen" is a question only the
+/// client — which ships the catalogue — can answer. Catalogue order is also
+/// the order new cards are introduced in, which is why it is NeetCode's own
+/// ordering and not something derived.
+pub fn all_refs() -> List(ProblemRef) {
+  use category <- list.flat_map(all())
+  use subcategory <- list.flat_map(category.subcategories)
+  use problem <- list.map(subcategory.problems)
+  ProblemRef(category.name, subcategory.name, problem.title)
+}
+
+/// The Language pane's rows: display label and the category it opens.
+///
+/// The label comes from each category's own content — its first problem's
+/// language — so a new category slots in with no edit here. A `Concept`
+/// category (System Design) is its own label, since "Concept" names nothing.
+pub fn language_entries() -> List(#(String, String)) {
+  use category <- list.map(all())
+  #(label_for(category), category.name)
+}
+
+fn label_for(category: Category) -> String {
+  case first_language(category) {
+    Ok(problem.Concept) | Error(Nil) -> category.name
+    Ok(language) -> problem.language_label(language)
+  }
+}
+
+fn first_language(category: Category) -> Result(problem.Language, Nil) {
+  use subcategory <- result.try(list.first(category.subcategories))
+  use first <- result.try(list.first(subcategory.problems))
+  Ok(first.language)
+}
+
+/// The label the Language pane uses for a category, for breadcrumbs.
+pub fn language_label(category_name: String) -> String {
+  case list.find(all(), fn(c: Category) { c.name == category_name }) {
+    Ok(category) -> label_for(category)
+    Error(Nil) -> category_name
+  }
+}
+
+/// Two-letter tag for the Selected pane, where every language can appear at
+/// once and the full label would drown the titles.
+pub fn language_tag(category_name: String) -> String {
+  case list.find(all(), fn(c: Category) { c.name == category_name }) {
+    Ok(category) ->
+      case first_language(category) {
+        Ok(problem.Python) -> "py"
+        Ok(problem.Gleam) -> "gl"
+        Ok(problem.TypeScript) -> "ts"
+        Ok(problem.Elixir) -> "ex"
+        Ok(problem.Concept) | Error(Nil) -> "sd"
+      }
+    Error(Nil) -> "??"
+  }
+}
+
+/// Every problem whose title contains the query, case-insensitively, in
+/// catalogue order. Shared by the search view and the keyboard cursor so the
+/// row the cursor thinks it is on is the row on screen.
+pub fn search_refs(query: String) -> List(ProblemRef) {
+  let needle = string.lowercase(query)
+  use category <- list.flat_map(all())
+  use subcategory <- list.flat_map(category.subcategories)
+  use found <- list.filter_map(subcategory.problems)
+  case string.contains(string.lowercase(found.title), needle) {
+    True -> Ok(ProblemRef(category.name, subcategory.name, found.title))
+    False -> Error(Nil)
   }
 }

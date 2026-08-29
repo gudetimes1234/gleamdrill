@@ -1,27 +1,52 @@
+import algodrill/api
 import algodrill/browser
 import algodrill/editor
+import algodrill/insights
+import algodrill/keys
+import algodrill/legacy
+import algodrill/local
 import algodrill/model.{
-  type Model, type Msg, type ProblemRef, Cases, DraftSaveTicked, DrillRoute,
-  EditorChanged, Errored, ExamSampled, ExitConfirmed, MenuRoute, Model,
-  ProblemRef, Ran, ReportRoute, RunFinished, RunIdle, RunTimedOut, RunnerFailed,
+  type Model, type Msg, Account, AuthCompleted, AuthForm, AuthRoute,
+  AwaitingGrade, DraftSaveTicked, DraftSynced, DrillRoute, EditorChanged,
+  EditorFocusRequested, ExamSampled, ExitConfirmed, Guest, HelpToggled,
+  HistoryLoaded, InsightsLoaded, KeyPressed, MenuActivated, MenuCursorJumped,
+  MenuCursorMoved, MenuPaneFocused, MenuRoute, MenuToggledAtCursor, Model,
+  NotGrading, NotStarted, PromptDismissed, QuizMoved, Ran, Registering,
+  ReportRoute, ReviewRecorded, RunFinished, RunIdle, RunTimedOut, RunnerFailed,
   RunnerReady, Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded,
-  RuntimeReady, TimedOut, UserChangedIterations, UserChangedKeymap,
-  UserClickedBreadcrumb, UserClickedCategory, UserClickedClearSelection,
-  UserClickedExitDrill, UserClickedExitReport, UserClickedNext, UserClickedRun,
-  UserClickedSelectAll, UserClickedStartDrill, UserClickedStartExam,
-  UserClickedSubcategory, UserPickedChoice, UserSearched, UserSubmittedAnswer,
-  UserToggledProblem, UserToggledSolution,
+  RuntimeReady, SearchFocusRequested, SignOutCompleted, SigningIn, StateImported,
+  StateLoaded, StatsActivated, StatsCursorMoved, StatsLoaded, StatsRoute,
+  StudyRoute, SubmittingGrade, SyncFailed, Synced, Syncing, TimedOut,
+  UserChangedAuthEmail, UserChangedAuthPassword, UserChangedIterations,
+  UserChangedKeymap, UserClickedBackToStudy, UserClickedBreadcrumb,
+  UserClickedBrowse, UserClickedCategory, UserClickedClearSelection,
+  UserClickedExitDrill, UserClickedExitReport, UserClickedMergeGuest,
+  UserClickedNext, UserClickedRun, UserClickedSelectAll, UserClickedSignIn,
+  UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
+  UserClickedStats, UserClickedStudy, UserClickedSubcategory, UserClosedDetail,
+  UserDismissedNotice, UserDismissedUpgradePrompt, UserGraded, UserOpenedDetail,
+  UserPickedChoice, UserSearched, UserSubmittedAnswer, UserSubmittedAuth,
+  UserToggledAuthMode, UserToggledProblem, UserToggledSolution,
 }
-import algodrill/problem
+import algodrill/problem.{type ProblemRef, ProblemRef}
 import algodrill/problems
 import algodrill/runner
-import algodrill/storage
+import algodrill/session
+import algodrill/store
+import algodrill/view/auth
 import algodrill/view/drill
+import algodrill/view/help
 import algodrill/view/menu
 import algodrill/view/report
+import algodrill/view/stats
+import algodrill/view/statusbar
+import algodrill/view/study
+import fsrs
+import gleam/dict
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
+import gleam/string
 import lustre
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
@@ -34,12 +59,293 @@ pub fn main() {
 }
 
 fn init(_flags) -> #(Model, Effect(Msg)) {
-  let loaded = storage.load()
-  let hydrated = case loaded.route, model.current_ref(loaded) {
-    DrillRoute, Ok(ref) -> Model(..loaded, draft: draft_for(loaded, ref))
-    _, _ -> loaded
+  let preferences = session.load_preferences()
+  let base = model.default()
+  let m = Model(..base, editor_keymap: preferences.editor_keymap)
+
+  case session.load_token() {
+    // Signed in: study state lives on the server, so there is nothing to
+    // restore from disk and we block on fetching it.
+    Some(token) -> {
+      let m = Model(..m, mode: Account(token), boot: Syncing)
+      #(m, effect.batch([keyboard_effect(), store.load_state(m)]))
+    }
+    // No account. The app is fully usable anyway -- guest progress lives in
+    // this browser. A pre-account `algoDrillState` blob is folded in here, so
+    // a returning user keeps their work without being made to sign up first.
+    None -> {
+      let m = Model(..m, mode: Guest, boot: Syncing)
+      #(
+        m,
+        effect.batch([keyboard_effect(), adopt_legacy(), store.load_state(m)]),
+      )
+    }
   }
-  with_prefetch(#(hydrated, effect.none()))
+}
+
+/// Seeds the guest store from the pre-account localStorage format, once.
+///
+/// Solved problems become review cards with the memory state a `Good` first
+/// answer earns -- the same seed the server uses for this migration, because
+/// the old format recorded a sticky boolean and no dates at all.
+fn adopt_legacy() -> Effect(Msg) {
+  case legacy.pending() {
+    None -> effect.none()
+    Some(old) ->
+      case legacy.is_empty(old) {
+        True -> legacy.mark_imported()
+        False -> {
+          use _dispatch <- effect.from
+          local.seed_from_legacy(old.solved, old.drafts)
+          Nil
+        }
+      }
+  }
+}
+
+/// Raises the stronger upgrade prompt once a guest has enough at stake for
+/// the warning to mean something. Escalating with stake is honest; nagging
+/// from review one is noise.
+///
+/// A prompt already dismissed stays dismissed -- `local.prompt_state` reads the
+/// persisted flag, so it does not reappear on the next reload.
+fn escalate(m: Model) -> model.UpgradePrompt {
+  case m.mode, m.upgrade_prompt {
+    Guest, PromptDismissed -> PromptDismissed
+    Guest, _ -> local.prompt_state(local.current_day(m.settings))
+    _, current -> current
+  }
+}
+
+fn local_dismiss_prompt() -> Effect(Msg) {
+  use _dispatch <- effect.from
+  let _ = local.dismiss_prompt()
+  Nil
+}
+
+/// The rows the keyboard cursor can sit on in a pane, as toggle targets.
+type PaneRows {
+  /// Language and subcategory rows *choose*; the payload is what clicking
+  /// them would dispatch.
+  ChoiceRows(List(Msg))
+  /// Problem and Selected rows *toggle* a ProblemRef.
+  ToggleRows(List(ProblemRef))
+}
+
+fn pane_rows(m: Model, pane: model.MenuPane) -> PaneRows {
+  case pane {
+    model.LanguagesPane ->
+      ChoiceRows(
+        problems.language_entries()
+        |> list.map(fn(entry) { UserClickedCategory(entry.1) }),
+      )
+    model.SubcategoriesPane ->
+      ChoiceRows(case m.selected_category {
+        Some(category) ->
+          problems.subcategory_names(category)
+          |> list.map(UserClickedSubcategory)
+        None -> []
+      })
+    model.ProblemsPane ->
+      ToggleRows(case m.selected_category, m.selected_subcategory {
+        Some(category), Some(subcategory) ->
+          problems.problems_in(category, subcategory)
+          |> list.map(fn(found) {
+            ProblemRef(category, subcategory, found.title)
+          })
+        _, _ -> []
+      })
+    model.SelectedPane -> ToggleRows(m.selected)
+  }
+}
+
+fn rows_length(rows: PaneRows) -> Int {
+  case rows {
+    ChoiceRows(msgs) -> list.length(msgs)
+    ToggleRows(refs) -> list.length(refs)
+  }
+}
+
+/// The cursor index for a pane, clamped into the pane's current list — lists
+/// change under the cursor (switching language shrinks the problem list), and
+/// clamping on read beats chasing every mutation site.
+pub fn cursor_in(m: Model, pane: model.MenuPane) -> Int {
+  let raw = case pane {
+    model.LanguagesPane -> m.nav.language
+    model.SubcategoriesPane -> m.nav.subcategory
+    model.ProblemsPane -> m.nav.problem
+    model.SelectedPane -> m.nav.selected
+  }
+  int.clamp(raw, 0, int.max(0, rows_length(pane_rows(m, pane)) - 1))
+}
+
+fn set_cursor(m: Model, pane: model.MenuPane, index: Int) -> Model {
+  let nav = case pane {
+    model.LanguagesPane -> model.MenuNav(..m.nav, language: index)
+    model.SubcategoriesPane -> model.MenuNav(..m.nav, subcategory: index)
+    model.ProblemsPane -> model.MenuNav(..m.nav, problem: index)
+    model.SelectedPane -> model.MenuNav(..m.nav, selected: index)
+  }
+  Model(..m, nav: nav)
+}
+
+fn searching(m: Model) -> Bool {
+  string.trim(m.search) != ""
+}
+
+fn move_cursor(m: Model, next: fn(Int, Int) -> Int) -> #(Model, Effect(Msg)) {
+  case searching(m) {
+    True -> {
+      let hits = problems.search_refs(string.trim(m.search))
+      let last = int.max(0, list.length(hits) - 1)
+      let index = next(int.clamp(m.nav.search, 0, last), last)
+      #(
+        Model(..m, nav: model.MenuNav(..m.nav, search: index)),
+        scroll_to("hit-" <> int.to_string(index)),
+      )
+    }
+    False -> {
+      let pane = m.nav.focus
+      let last = int.max(0, rows_length(pane_rows(m, pane)) - 1)
+      let index = next(cursor_in(m, pane), last)
+      #(set_cursor(m, pane, index), scroll_to(row_id(pane, index)))
+    }
+  }
+}
+
+/// h/l between panes. Moving right through an unmade choice makes it: `l` on a
+/// language selects that language and lands in its subcategories, which is how
+/// a TUI drills down.
+fn focus_pane(m: Model, direction: Int) -> #(Model, Effect(Msg)) {
+  let order = [
+    model.LanguagesPane,
+    model.SubcategoriesPane,
+    model.ProblemsPane,
+    model.SelectedPane,
+  ]
+  let position =
+    list.fold(list.index_map(order, fn(p, i) { #(p, i) }), 0, fn(acc, pair) {
+      case pair.0 == m.nav.focus {
+        True -> pair.1
+        False -> acc
+      }
+    })
+  let target = int.clamp(position + direction, 0, 3)
+
+  case direction > 0, m.nav.focus {
+    // Descending picks the cursor row if that level has no pick yet.
+    True, model.LanguagesPane ->
+      case m.selected_category {
+        None -> {
+          let #(chosen, fx) = activate_cursor(m)
+          #(
+            Model(
+              ..chosen,
+              nav: model.MenuNav(..chosen.nav, focus: model.SubcategoriesPane),
+            ),
+            fx,
+          )
+        }
+        Some(_) -> #(
+          Model(
+            ..m,
+            nav: model.MenuNav(..m.nav, focus: model.SubcategoriesPane),
+          ),
+          effect.none(),
+        )
+      }
+    True, model.SubcategoriesPane ->
+      case m.selected_subcategory {
+        None -> {
+          let #(chosen, fx) = activate_cursor(m)
+          #(
+            Model(
+              ..chosen,
+              nav: model.MenuNav(..chosen.nav, focus: model.ProblemsPane),
+            ),
+            fx,
+          )
+        }
+        Some(_) -> #(
+          Model(..m, nav: model.MenuNav(..m.nav, focus: model.ProblemsPane)),
+          effect.none(),
+        )
+      }
+    _, _ -> {
+      let focus = case list.drop(order, target) {
+        [pane, ..] -> pane
+        [] -> model.LanguagesPane
+      }
+      #(Model(..m, nav: model.MenuNav(..m.nav, focus: focus)), effect.none())
+    }
+  }
+}
+
+/// Enter or Space on the cursor row.
+fn activate_cursor(m: Model) -> #(Model, Effect(Msg)) {
+  case searching(m) {
+    True -> {
+      let hits = problems.search_refs(string.trim(m.search))
+      case list.drop(hits, int.clamp(m.nav.search, 0, list.length(hits) - 1)) {
+        [ref, ..] -> handle(m, UserToggledProblem(ref))
+        [] -> #(m, effect.none())
+      }
+    }
+    False -> {
+      let pane = m.nav.focus
+      let index = cursor_in(m, pane)
+      case pane_rows(m, pane) {
+        ChoiceRows(msgs) ->
+          case list.drop(msgs, index) {
+            [msg, ..] -> handle(m, msg)
+            [] -> #(m, effect.none())
+          }
+        ToggleRows(refs) ->
+          case list.drop(refs, index) {
+            [ref, ..] -> handle(m, UserToggledProblem(ref))
+            [] -> #(m, effect.none())
+          }
+      }
+    }
+  }
+}
+
+fn row_id(pane: model.MenuPane, index: Int) -> String {
+  model.menu_row_id(pane, index)
+}
+
+fn scroll_to(id: String) -> Effect(Msg) {
+  run_effect(fn() { browser.scroll_into_view(id) })
+}
+
+fn run_effect(action: fn() -> Nil) -> Effect(Msg) {
+  use _dispatch <- effect.from
+  action()
+}
+
+fn keyboard_effect() -> Effect(Msg) {
+  use dispatch <- effect.from
+  browser.on_keys(fn(key, ctrl, shift, editing) {
+    dispatch(KeyPressed(model.Key(key:, ctrl:, shift:, editing:)))
+  })
+}
+
+fn guest_has_progress() -> Bool {
+  local.has_data()
+}
+
+fn api_base() -> String {
+  browser.api_base()
+}
+
+/// The token for the current session, or "" when signed out. Callers that need
+/// one are only reachable from behind the auth gate, so the empty case is a
+/// belt-and-braces default rather than a real path.
+fn token(m: Model) -> String {
+  case m.mode {
+    Account(token) -> token
+    Guest -> ""
+  }
 }
 
 /// Opening a checkable drill starts that language's (lazy) runtime download so
@@ -93,27 +399,450 @@ fn current_check(m: Model) -> Result(problem.Check, Nil) {
 }
 
 fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
-  let #(new_model, fx) = handle(m, msg)
-  case should_persist(msg) {
-    True -> #(new_model, effect.batch([storage.save(new_model), fx]))
-    False -> #(new_model, fx)
-  }
-}
-
-/// State is written to localStorage after every mutation of persisted fields.
-/// Editor keystrokes are debounced: EditorChanged schedules DraftSaveTicked,
-/// and only that write hits storage.
-fn should_persist(msg: Msg) -> Bool {
-  case msg {
-    EditorChanged(_) | UserToggledSolution(_) -> False
-    UserClickedExitDrill | ExitConfirmed(False) -> False
-    UserClickedRun | RunnerReady(_) | RunnerFailed(_, _) -> False
-    _ -> True
-  }
+  handle(m, msg)
 }
 
 fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
+    // --- keyboard ---
+    KeyPressed(key) ->
+      case key.editing {
+        // The editor's own keymaps own the keyboard; the one thing the app
+        // claims there is Ctrl+Enter, so write -> run -> grade needs no mouse.
+        "editor" ->
+          case key.ctrl && key.key == "Enter" && m.route == DrillRoute {
+            True -> handle(m, UserClickedRun)
+            False -> #(m, effect.none())
+          }
+        // Inputs keep their keys; Escape hands focus back to the app.
+        "input" ->
+          case key.key {
+            "Escape" -> #(m, run_effect(browser.blur_active))
+            _ -> #(m, effect.none())
+          }
+        // A focused button activates natively; stay out of its way.
+        "control" -> #(m, effect.none())
+        _ ->
+          case keys.dispatch(m, key) {
+            Ok(resolved) -> handle(m, resolved)
+            Error(Nil) -> #(m, effect.none())
+          }
+      }
+
+    HelpToggled -> #(Model(..m, help_open: !m.help_open), effect.none())
+
+    EditorFocusRequested -> #(
+      m,
+      run_effect(fn() { browser.focus_element("gleam-editor") }),
+    )
+
+    SearchFocusRequested -> #(
+      m,
+      run_effect(fn() { browser.focus_element(".search") }),
+    )
+
+    MenuCursorMoved(delta) ->
+      move_cursor(m, fn(index, last) { int.clamp(index + delta, 0, last) })
+
+    MenuCursorJumped(first) ->
+      move_cursor(m, fn(_index, last) {
+        case first {
+          True -> 0
+          False -> last
+        }
+      })
+
+    MenuPaneFocused(direction) -> focus_pane(m, direction)
+
+    MenuActivated -> activate_cursor(m)
+
+    MenuToggledAtCursor -> activate_cursor(m)
+
+    QuizMoved(delta) ->
+      case m.graded, current_quiz(m) {
+        False, Ok(quiz) -> {
+          let last = list.length(quiz.choices) - 1
+          let next = case m.choice {
+            Some(current) -> int.clamp(current + delta, 0, last)
+            // First press lands on an edge, so j starts at the top and k at
+            // the bottom.
+            None ->
+              case delta > 0 {
+                True -> 0
+                False -> last
+              }
+          }
+          #(Model(..m, choice: Some(next)), effect.none())
+        }
+        _, _ -> #(m, effect.none())
+      }
+
+    // --- session ---
+    UserChangedAuthEmail(value) -> #(
+      Model(..m, auth: AuthForm(..m.auth, email: value, error: None)),
+      effect.none(),
+    )
+
+    UserChangedAuthPassword(value) -> #(
+      Model(..m, auth: AuthForm(..m.auth, password: value, error: None)),
+      effect.none(),
+    )
+
+    UserToggledAuthMode -> #(
+      Model(
+        ..m,
+        auth: AuthForm(
+          ..m.auth,
+          mode: case m.auth.mode {
+            SigningIn -> Registering
+            Registering -> SigningIn
+          },
+          error: None,
+        ),
+      ),
+      effect.none(),
+    )
+
+    UserSubmittedAuth ->
+      case m.auth.busy, m.auth.email, m.auth.password {
+        // Ignore a second submit while one is already in flight, so a double
+        // click cannot create two accounts.
+        True, _, _ -> #(m, effect.none())
+        False, "", _ | False, _, "" -> #(
+          Model(
+            ..m,
+            auth: AuthForm(
+              ..m.auth,
+              error: Some("Enter an email and a password."),
+            ),
+          ),
+          effect.none(),
+        )
+        False, email, password -> #(
+          Model(..m, auth: AuthForm(..m.auth, busy: True, error: None)),
+          case m.auth.mode {
+            SigningIn -> api.login(api_base(), email, password, AuthCompleted)
+            Registering ->
+              api.signup(
+                api_base(),
+                email,
+                password,
+                browser.time_zone(),
+                AuthCompleted,
+              )
+          },
+        )
+      }
+
+    AuthCompleted(Ok(session)) -> {
+      let signed_in =
+        Model(
+          ..m,
+          mode: Account(session.token),
+          user: Some(session.user),
+          boot: Syncing,
+          // The password leaves the model the moment it is no longer needed.
+          auth: AuthForm(..m.auth, password: "", busy: False, error: None),
+        )
+
+      // Whatever this browser was holding as a guest goes up now, before the
+      // first state load, so the state that comes back already includes it.
+      // On a brand new account there is nothing to lose by merging; signing
+      // in to an existing one is handled by `UserClickedMergeGuest`, because
+      // folding scratch progress into an established account unasked would be
+      // surprising.
+      let upgrading = m.auth.mode == Registering && guest_has_progress()
+
+      #(
+        Model(..signed_in, merge_offer: !upgrading && guest_has_progress()),
+        effect.batch([
+          session.save_token(session.token),
+          case upgrading {
+            True -> store.upgrade(session.token, [], StateImported)
+            False -> effect.none()
+          },
+          store.load_state(signed_in),
+        ]),
+      )
+    }
+
+    AuthCompleted(Error(failure)) -> #(
+      Model(
+        ..m,
+        auth: AuthForm(
+          ..m.auth,
+          busy: False,
+          error: Some(api.error_message(failure)),
+        ),
+      ),
+      effect.none(),
+    )
+
+    StateLoaded(Ok(state)) -> {
+      let loaded = apply_state(m, state)
+      case m.mode, legacy.pending() {
+        // A guest adopts the pre-account blob locally at boot instead; there
+        // is nothing to send anywhere.
+        Guest, _ | _, None -> #(loaded, effect.none())
+        Account(token), Some(old) ->
+          case legacy.is_empty(old) {
+            True -> #(loaded, legacy.mark_imported())
+            False -> #(
+              loaded,
+              effect.batch([
+                api.import_legacy(
+                  api_base(),
+                  token,
+                  old.solved,
+                  [],
+                  old.drafts,
+                  StateImported,
+                ),
+                legacy.mark_imported(),
+              ]),
+            )
+          }
+      }
+    }
+
+    // The token is dead. Drop it and fall back to guest, which is at least a
+    // usable app rather than an error screen.
+    StateLoaded(Error(api.Unauthorised)) -> {
+      let guest =
+        Model(..model.default(), editor_keymap: m.editor_keymap, boot: Syncing)
+      #(guest, effect.batch([session.clear_token(), store.load_state(guest)]))
+    }
+
+    StateLoaded(Error(failure)) -> #(
+      Model(..m, boot: SyncFailed(api.error_message(failure))),
+      effect.none(),
+    )
+
+    // Progress merged. Wipe the local copy so signing out later cannot
+    // resurrect a stale duplicate, and reload so the screen shows the
+    // authoritative state.
+    StateImported(Ok(Nil)) -> #(
+      Model(..m, merge_offer: False),
+      effect.batch([store.clear_guest(), store.load_state(m)]),
+    )
+
+    StateImported(Error(failure)) -> #(
+      Model(
+        ..m,
+        notice: Some(
+          "Your progress could not be moved to this account: "
+          <> api.error_message(failure),
+        ),
+      ),
+      effect.none(),
+    )
+
+    UserClickedMergeGuest -> #(
+      Model(..m, merge_offer: False),
+      store.upgrade(token(m), [], StateImported),
+    )
+
+    UserClickedSignOut -> {
+      let signed_out =
+        Model(..model.default(), editor_keymap: m.editor_keymap, boot: Syncing)
+      #(
+        signed_out,
+        effect.batch([
+          api.logout(api_base(), token(m), SignOutCompleted),
+          session.clear_token(),
+          // Back to guest rather than to a sign-in wall. The guest store was
+          // cleared on upgrade, so this loads empty.
+          store.load_state(signed_out),
+        ]),
+      )
+    }
+
+    // The local session is already gone; whether the server agreed is not
+    // worth telling the user about.
+    SignOutCompleted(_) -> #(m, effect.none())
+
+    UserDismissedNotice -> #(
+      Model(..m, notice: None, merge_offer: False),
+      effect.none(),
+    )
+
+    UserDismissedUpgradePrompt -> #(
+      Model(..m, upgrade_prompt: PromptDismissed),
+      local_dismiss_prompt(),
+    )
+
+    UserClickedSignIn(mode) -> #(
+      Model(
+        ..m,
+        route: AuthRoute,
+        auth: AuthForm(..m.auth, mode:, error: None, busy: False),
+      ),
+      effect.none(),
+    )
+
+    // --- the scheduler ---
+    UserClickedStudy ->
+      case build_queue(m) {
+        [] -> #(
+          Model(
+            ..m,
+            notice: Some(
+              "Nothing to study right now. Come back when cards are due, or pick problems by hand.",
+            ),
+          ),
+          effect.none(),
+        )
+        queue ->
+          with_prefetch(#(
+            Model(
+              ..open_first(Model(..m, studying: True), queue),
+              // A scheduled sitting is one pass: FSRS decides when a card comes
+              // back, so repeating it three times now would just be three
+              // same-day reviews.
+              iteration_count: 1,
+            ),
+            effect.none(),
+          ))
+      }
+
+    UserClickedBrowse -> #(Model(..m, route: MenuRoute), effect.none())
+
+    UserClickedBackToStudy -> #(Model(..m, route: StudyRoute), effect.none())
+
+    UserClickedStats -> #(
+      Model(..m, route: StatsRoute, detail: None),
+      effect.batch([store.load_stats(m), store.load_insights(m)]),
+    )
+
+    StatsLoaded(Ok(loaded)) -> #(Model(..m, stats: Some(loaded)), effect.none())
+
+    StatsLoaded(Error(failure)) -> #(
+      Model(..m, notice: Some(api.error_message(failure))),
+      effect.none(),
+    )
+
+    InsightsLoaded(Ok(loaded)) -> #(
+      Model(..m, insights: Some(loaded)),
+      effect.none(),
+    )
+
+    InsightsLoaded(Error(failure)) -> #(
+      Model(..m, notice: Some(api.error_message(failure))),
+      effect.none(),
+    )
+
+    StatsCursorMoved(delta) ->
+      case m.insights {
+        Some(data) -> {
+          let rows = insights.listed(insights.analyse(data, m.cards, m.now))
+          let last = int.max(0, list.length(rows) - 1)
+          #(
+            Model(
+              ..m,
+              nav: model.MenuNav(
+                ..m.nav,
+                stats: int.clamp(m.nav.stats + delta, 0, last),
+              ),
+            ),
+            effect.none(),
+          )
+        }
+        None -> #(m, effect.none())
+      }
+
+    StatsActivated ->
+      case m.insights {
+        Some(data) -> {
+          let rows = insights.listed(insights.analyse(data, m.cards, m.now))
+          case
+            list.drop(rows, int.clamp(m.nav.stats, 0, list.length(rows) - 1))
+          {
+            [row, ..] -> handle(m, UserOpenedDetail(row.problem))
+            [] -> #(m, effect.none())
+          }
+        }
+        None -> #(m, effect.none())
+      }
+
+    UserOpenedDetail(problem) -> #(
+      Model(..m, detail: Some(#(problem, None))),
+      store.load_history(m, problem),
+    )
+
+    UserClosedDetail -> #(Model(..m, detail: None), effect.none())
+
+    HistoryLoaded(problem, Ok(rows)) ->
+      case m.detail {
+        // Only fill the panel still being looked at; a slow response for a
+        // closed panel is dropped.
+        Some(#(open, None)) if open == problem -> #(
+          Model(..m, detail: Some(#(problem, Some(rows)))),
+          effect.none(),
+        )
+        _ -> #(m, effect.none())
+      }
+
+    HistoryLoaded(_, Error(failure)) -> #(
+      Model(..m, detail: None, notice: Some(api.error_message(failure))),
+      effect.none(),
+    )
+
+    UserGraded(rating) ->
+      case m.grading, model.current_ref(m) {
+        // Guard against a second press while the first is in flight: a review
+        // must not be recorded twice.
+        SubmittingGrade, _ -> #(m, effect.none())
+        _, Error(Nil) -> #(m, effect.none())
+        _, Ok(ref) -> #(
+          Model(..m, grading: SubmittingGrade),
+          store.record_review(
+            m,
+            api.Review(
+              problem: ref,
+              rating:,
+              duration_ms: Some(browser.now_ms() - m.opened_at_ms),
+              auto_failed: model.run_failed(m.run),
+              revealed: m.revealed_solution != None,
+            ),
+          ),
+        )
+      }
+
+    ReviewRecorded(Ok(outcome)) -> {
+      let cards = dict.insert(m.cards, outcome.card.problem, outcome.card)
+      let recorded =
+        Model(
+          ..m,
+          now: outcome.now,
+          today: outcome.today,
+          cards:,
+          upgrade_prompt: escalate(m),
+        )
+      case m.grading {
+        // A graded drill moves on by itself; a quiz waits for Next, because
+        // the explanation is worth reading first.
+        SubmittingGrade -> advance(Model(..recorded, grading: NotGrading))
+        _ -> #(recorded, effect.none())
+      }
+    }
+
+    ReviewRecorded(Error(failure)) -> #(
+      Model(
+        ..m,
+        grading: case m.grading {
+          SubmittingGrade -> AwaitingGrade
+          other -> other
+        },
+        storage_full: m.mode == Guest || m.storage_full,
+        notice: Some(api.error_message(failure)),
+      ),
+      effect.none(),
+    )
+
+    // Drafts sync in the background; a failure is not worth interrupting
+    // typing over, and the next keystroke will retry anyway.
+    DraftSynced(_) -> #(m, effect.none())
+
     UserClickedCategory(name) -> #(
       Model(..m, selected_category: Some(name), selected_subcategory: None),
       effect.none(),
@@ -170,10 +899,16 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               route: DrillRoute,
               problem_index: 0,
               current_iteration: 1,
-              draft: starter_for(first),
-              drafts: model.assoc_put(m.drafts, first, starter_for(first)),
+              // A hand-picked sitting still ends where it started.
+              studying: False,
+              draft: draft_for(m, first),
               revealed_solution: None,
               run: RunIdle,
+              // Without this a reveal-only drill -- Elixir has no harness at
+              // all -- would sit forever on "run the tests to grade this" with
+              // no tests to run, and could never be scheduled.
+              grading: initial_grading(m, first),
+              opened_at_ms: browser.now_ms(),
               // Clearing the log is what distinguishes a drill from an exam at
               // the end of the run: a non-empty log means a report is owed.
               exam_answers: [],
@@ -198,6 +933,10 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             route: DrillRoute,
             selected: refs,
             problem_index: 0,
+            // The exam is reachable from both the study screen and the menu,
+              // and finishing it should hand you back to whichever you came
+              // from rather than always to the menu.
+              studying: m.route == StudyRoute,
             // An exam is one pass over the questions; repeating it inside the
             // sitting would score the same question twice.
             iteration_count: 1,
@@ -214,7 +953,14 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
 
     UserClickedExitReport -> #(
-      Model(..m, route: MenuRoute),
+      Model(
+        ..m,
+        route: case m.studying {
+          True -> StudyRoute
+          False -> MenuRoute
+        },
+        studying: False,
+      ),
       effect.none(),
     )
 
@@ -235,9 +981,24 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               // Appended at the head; the report only groups and counts, so
               // the order does not matter.
               exam_answers: [#(ref, right), ..m.exam_answers],
-              attempts: record_attempt(m.attempts, ref, right),
             ),
-            effect.none(),
+            // A quiz grades itself: the answer is either right or it is not,
+            // so there is no Hard/Good/Easy judgement to ask for. The review
+            // is recorded now and the user still presses Next, because the
+            // explanation is worth reading before moving on.
+            store.record_review(
+              m,
+              api.Review(
+                problem: ref,
+                rating: case right {
+                  True -> fsrs.Good
+                  False -> fsrs.Again
+                },
+                duration_ms: Some(browser.now_ms() - m.opened_at_ms),
+                auto_failed: !right,
+                revealed: False,
+              ),
+            ),
           )
         }
         _, _, _, _ -> #(m, effect.none())
@@ -247,15 +1008,20 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       m,
       effect.from(fn(dispatch) {
         dispatch(
-          ExitConfirmed(browser.confirm(case current_quiz(m) {
-            Ok(_) -> "Exit the exam? You will not get a score for it."
-            Error(Nil) -> "Exit the drill? Your typed code will be lost."
-          })),
+          ExitConfirmed(
+            browser.confirm(case current_quiz(m) {
+              Ok(_) -> "Exit the exam? You will not get a score for it."
+              Error(Nil) -> "Exit the drill? Your typed code will be lost."
+            }),
+          ),
         )
       }),
     )
 
-    ExitConfirmed(True) -> #(reset_to_menu(m), effect.none())
+    // `reset_home`, not `reset_to_menu`: a sitting started from the study
+    // queue must end back on the study screen. Landing in the manual browser
+    // is disorienting when that is not where you came from.
+    ExitConfirmed(True) -> #(reset_home(m), effect.none())
     ExitConfirmed(False) -> #(m, effect.none())
 
     UserToggledSolution(index) -> {
@@ -266,67 +1032,35 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(Model(..m, revealed_solution: revealed), effect.none())
     }
 
-    UserClickedNext -> {
-      // Round-robin: walk the whole selection, then come back around for the
-      // next pass. Drilling one problem N times in a row before moving on is
-      // the thing this deliberately avoids.
-      let #(index, iteration) = case
-        m.problem_index + 1 < list.length(m.selected)
-      {
-        True -> #(m.problem_index + 1, m.current_iteration)
-        False -> #(0, m.current_iteration + 1)
-      }
-      case iteration > m.iteration_count, m.exam_answers {
-        // An exam ends in the report rather than an alert — the score is the
-        // entire reason the sitting happened.
-        True, [_, ..] -> #(
-          Model(..reset_to_menu(m), route: ReportRoute),
-          effect.none(),
-        )
-        True, [] -> #(
-          reset_to_menu(m),
-          effect.from(fn(_dispatch) { browser.alert("Drill complete.") }),
-        )
-        False, _ -> {
-          let advanced =
-            Model(
-              ..m,
-              current_iteration: iteration,
-              problem_index: index,
-              revealed_solution: None,
-              run: RunIdle,
-              choice: None,
-              graded: False,
-            )
-          // Each repetition starts from the stub: retyping is the drill.
-          // The saved draft only survives reloads mid-repetition.
-          let advanced = case model.current_ref(advanced) {
-            Ok(ref) ->
-              Model(
-                ..advanced,
-                draft: starter_for(ref),
-                drafts: model.assoc_put(advanced.drafts, ref, starter_for(ref)),
-              )
-            Error(Nil) -> Model(..advanced, draft: "")
-          }
-          with_prefetch(#(advanced, effect.none()))
-        }
-      }
-    }
+    UserClickedNext -> advance(m)
 
     UserSearched(query) -> #(Model(..m, search: query), effect.none())
 
-    UserChangedKeymap(mode) -> #(Model(..m, editor_keymap: mode), effect.none())
+    UserChangedKeymap(mode) -> #(
+      Model(..m, editor_keymap: mode),
+      session.save_preferences(session.Preferences(editor_keymap: mode)),
+    )
 
     EditorChanged(text) -> {
-      let drafts = case model.current_ref(m) {
-        Ok(ref) -> model.assoc_put(m.drafts, ref, text)
-        Error(Nil) -> m.drafts
+      // Study-rep typing is throwaway in memory as well as on disk: updating
+      // the assoc here would let a manual open minutes later restore the
+      // answer you just typed from memory, which is the leak the study reset
+      // exists to prevent.
+      let drafts = case model.current_ref(m), m.studying {
+        Ok(ref), False -> model.assoc_put(m.drafts, ref, text)
+        _, _ -> m.drafts
       }
       #(Model(..m, draft: text, drafts: drafts), schedule_draft_save())
     }
 
-    DraftSaveTicked -> #(m, effect.none())
+    DraftSaveTicked ->
+      case model.current_ref(m), m.studying {
+        // A study rep is throwaway typing; persisting it would clobber the
+        // draft saved from a real working session on the same problem.
+        _, True -> #(m, effect.none())
+        Ok(ref), False -> #(m, store.save_draft(m, ref, m.draft))
+        Error(Nil), _ -> #(m, effect.none())
+      }
 
     UserClickedRun ->
       case current_language(m), current_check(m) {
@@ -358,45 +1092,32 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     RunFinished(id, outcome, stdout) ->
       case m.run {
-        Running(current) if current == id -> {
-          let passed = case outcome {
-            Cases(cases) -> cases != [] && list.all(cases, fn(c) { c.passed })
-            Errored(_) | TimedOut -> False
-          }
-          let attempts = case model.current_ref(m) {
-            Ok(ref) -> record_attempt(m.attempts, ref, passed)
-            Error(Nil) -> m.attempts
-          }
-          #(
-            Model(..m, run: Ran(outcome, stdout), attempts: attempts),
-            effect.none(),
-          )
-        }
+        Running(current) if current == id -> #(
+          // Whatever the harness said, the drill is now answerable: the
+          // grading bar decides what the buttons offer.
+          Model(..m, run: Ran(outcome, stdout), grading: AwaitingGrade),
+          // Blur the editor so 1-4 grade immediately: the whole rep is
+          // type, Ctrl+Enter, digit.
+          run_effect(browser.blur_active),
+        )
         _ -> #(m, effect.none())
       }
 
     RunTimedOut(id) ->
       case m.run {
         Running(current) if current == id -> {
-          let attempts = case model.current_ref(m) {
-            Ok(ref) -> record_attempt(m.attempts, ref, False)
-            Error(Nil) -> m.attempts
-          }
+          let timed_out =
+            Model(..m, run: Ran(TimedOut, ""), grading: AwaitingGrade)
           // The worker cannot be interrupted, only replaced.
           case current_language(m) {
             Ok(language) -> #(
               Model(
-                ..m,
-                run: Ran(TimedOut, ""),
-                attempts: attempts,
+                ..timed_out,
                 runtimes: model.assoc_put(m.runtimes, language, RuntimeLoading),
               ),
               runner.restart(language),
             )
-            Error(Nil) -> #(
-              Model(..m, run: Ran(TimedOut, ""), attempts: attempts),
-              effect.none(),
-            )
+            Error(Nil) -> #(timed_out, effect.none())
           }
         }
         _ -> #(m, effect.none())
@@ -404,18 +1125,207 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   }
 }
 
-/// A pass is sticky: once a problem has been solved, a later failed rerun
-/// keeps the passed badge.
-fn record_attempt(
-  attempts: List(#(ProblemRef, model.Attempt)),
-  ref: ProblemRef,
-  passed: Bool,
-) -> List(#(ProblemRef, model.Attempt)) {
-  case passed, model.assoc_get(attempts, ref) {
-    True, _ -> model.assoc_put(attempts, ref, model.Passed)
-    False, Ok(model.Passed) -> attempts
-    False, _ -> model.assoc_put(attempts, ref, model.Failed)
+/// Folds a fresh `/api/state` into the model.
+///
+/// Note the route: a signed-in user lands on the study screen, not the manual
+/// browser. The browser is still there, but what to study today is the
+/// question the app now answers first.
+fn apply_state(m: Model, state: api.BootState) -> Model {
+  Model(
+    ..m,
+    user: Some(state.user),
+    boot: Synced,
+    now: state.now,
+    settings: state.settings,
+    cards: dict.from_list(
+      list.map(state.cards, fn(card) { #(card.problem, card) }),
+    ),
+    today: state.today,
+    drafts: state.drafts,
+    route: StudyRoute,
+    // Evaluated on every load, not only after a review: a guest who crossed
+    // the threshold in a previous session should still be told.
+    upgrade_prompt: escalate(m),
+  )
+}
+
+/// Today's queue: everything due, oldest first, then new problems in
+/// catalogue order — each capped by the daily budget the server reports.
+///
+/// New problems are chosen here rather than server-side because the server has
+/// no catalogue: cards only exist once reviewed, so "never seen" is a question
+/// only this bundle can answer.
+fn build_queue(m: Model) -> List(ProblemRef) {
+  let catalogue = problems.all_refs()
+
+  let due =
+    catalogue
+    |> list.filter(fn(ref) { model.is_due(m, ref) })
+    |> list.sort(fn(a, b) { int.compare(due_seconds(m, a), due_seconds(m, b)) })
+    |> list.take(m.today.reviews_remaining)
+
+  let fresh =
+    catalogue
+    |> list.filter(fn(ref) { model.card_for(m, ref) == None })
+    |> list.take(m.today.new_remaining)
+
+  list.append(due, fresh)
+}
+
+/// How overdue a card is, for ordering. Missing cards sort last; they are
+/// filtered out before this is used, so the fallback is only a total-function
+/// requirement.
+fn due_seconds(m: Model, ref: ProblemRef) -> Int {
+  case model.card_for(m, ref) {
+    Some(state) -> fsrs.interval_seconds(state.card, m.now)
+    None -> 0
   }
+}
+
+/// Starts a sitting on the given list of problems.
+fn open_first(m: Model, queue: List(ProblemRef)) -> Model {
+  case queue {
+    [] -> m
+    [first, ..] ->
+      Model(
+        ..m,
+        route: DrillRoute,
+        selected: queue,
+        problem_index: 0,
+        current_iteration: 1,
+        // A study rep starts from the stub: retyping from memory is the whole
+        // product, and restoring your previous answer would defeat it. Manual
+        // sittings keep restoring work in progress.
+        draft: case m.studying {
+          True -> starter_for(first)
+          False -> draft_for(m, first)
+        },
+        revealed_solution: None,
+        run: RunIdle,
+        grading: initial_grading(m, first),
+        opened_at_ms: browser.now_ms(),
+        exam_answers: [],
+        choice: None,
+        graded: False,
+      )
+  }
+}
+
+/// A drill with no harness has nothing to run, so it is gradeable the moment
+/// it opens. One with a harness waits for a result.
+/// What the grade bar starts as when a problem opens.
+///
+/// Gradeable from the first moment when either there is nothing to run (a
+/// reveal-only drill is a flashcard proper) or this is the problem's first
+/// encounter — the learning step, where you reveal, study, and self-grade like
+/// flipping a card. Otherwise a run is required before grading.
+fn initial_grading(m: Model, ref: ProblemRef) -> model.Grading {
+  case problem_kind(ref) {
+    // Quizzes grade themselves on submit.
+    QuizProblem -> NotGrading
+    CheckableProblem ->
+      case model.first_encounter(m, ref) {
+        True -> AwaitingGrade
+        False -> NotGrading
+      }
+    RevealOnlyProblem -> AwaitingGrade
+  }
+}
+
+type ProblemKind {
+  CheckableProblem
+  QuizProblem
+  RevealOnlyProblem
+}
+
+fn problem_kind(ref: ProblemRef) -> ProblemKind {
+  case problems.find(ref.category, ref.subcategory, ref.title) {
+    Ok(found) ->
+      case found.check, found.quiz {
+        _, Some(_) -> QuizProblem
+        Some(_), None -> CheckableProblem
+        None, None -> RevealOnlyProblem
+      }
+    Error(Nil) -> RevealOnlyProblem
+  }
+}
+
+/// Move to the next problem in the sitting, or end it.
+fn advance(m: Model) -> #(Model, Effect(Msg)) {
+  // Round-robin: walk the whole selection, then come back around for the
+  // next pass. Drilling one problem N times in a row before moving on is
+  // the thing this deliberately avoids.
+  let #(index, iteration) = case m.problem_index + 1 < list.length(m.selected) {
+    True -> #(m.problem_index + 1, m.current_iteration)
+    False -> #(0, m.current_iteration + 1)
+  }
+
+  case iteration > m.iteration_count, m.exam_answers {
+    // An exam ends in the report rather than an alert — the score is the
+    // entire reason the sitting happened.
+    True, [_, ..] -> #(
+      // `reset_home` clears `studying`, but the report still needs to know
+      // where the sitting began so its back button returns there.
+      Model(..reset_home(m), route: ReportRoute, studying: m.studying),
+      effect.none(),
+    )
+    True, [] -> #(
+      reset_home(m),
+      effect.from(fn(_dispatch) { browser.alert("Session complete.") }),
+    )
+    False, _ -> {
+      let advanced =
+        Model(
+          ..m,
+          current_iteration: iteration,
+          problem_index: index,
+          revealed_solution: None,
+          run: RunIdle,
+          grading: NotGrading,
+          opened_at_ms: browser.now_ms(),
+          choice: None,
+          graded: False,
+        )
+      // Retyping is the drill, so a repeat pass starts from the stub. The
+      // first time a problem comes up in a sitting, though, whatever you last
+      // typed is restored — that is the point of syncing drafts at all.
+      let advanced = case model.current_ref(advanced) {
+        Ok(ref) ->
+          Model(
+            ..advanced,
+            draft: case iteration == 1 && !m.studying {
+              True -> draft_for(advanced, ref)
+              False -> starter_for(ref)
+            },
+            grading: initial_grading(m, ref),
+          )
+        Error(Nil) -> Model(..advanced, draft: "")
+      }
+      with_prefetch(#(advanced, effect.none()))
+    }
+  }
+}
+
+/// Ends a sitting, returning to wherever it started from.
+///
+/// A scheduled sitting also clears the selection: the study queue was never
+/// something the user picked, and leaving it behind would make the next manual
+/// drill drag along ten problems they never chose. A manual selection is
+/// theirs and survives.
+fn reset_home(m: Model) -> Model {
+  Model(
+    ..reset_to_menu(m),
+    route: case m.studying {
+      True -> StudyRoute
+      False -> MenuRoute
+    },
+    selected: case m.studying {
+      True -> []
+      False -> m.selected
+    },
+    studying: False,
+    grading: NotGrading,
+  )
 }
 
 fn draft_for(m: Model, ref: ProblemRef) -> String {
@@ -521,13 +1431,29 @@ fn toggle_selection(
 }
 
 fn view(m: Model) -> Element(Msg) {
-  case m.route {
-    DrillRoute ->
-      case drill.view(m) {
-        Ok(el) -> el
-        Error(Nil) -> menu.view(m)
+  case m.boot {
+    // The one blocking load. A guest resolves it locally and instantly; an
+    // account waits on the network, and a failure there is a dead end worth
+    // saying out loud, because the app is online-only once signed in.
+    NotStarted | Syncing | SyncFailed(_) -> auth.loading(m)
+    Synced -> {
+      let screen = case m.route {
+        AuthRoute -> auth.view(m)
+        StudyRoute -> study.view(m)
+        StatsRoute -> stats.view(m)
+        DrillRoute ->
+          case drill.view(m) {
+            Ok(el) -> el
+            Error(Nil) -> menu.view(m)
+          }
+        ReportRoute -> report.view(m)
+        MenuRoute -> menu.view(m)
       }
-    ReportRoute -> report.view(m)
-    MenuRoute -> menu.view(m)
+      case m.route {
+        // The sign-in form keeps its focused, chrome-free layout.
+        AuthRoute -> screen
+        _ -> element.fragment([screen, statusbar.view(m), help.view(m)])
+      }
+    }
   }
 }

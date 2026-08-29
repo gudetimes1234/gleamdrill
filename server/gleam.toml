@@ -1,0 +1,26 @@
+name = "server"
+version = "1.0.0"
+description = "AlgoDrill backend: accounts, study history, FSRS scheduling."
+target = "erlang"
+
+[dependencies]
+gleam_stdlib = ">= 0.44.0 and < 2.0.0"
+gleam_erlang = ">= 1.0.0 and < 2.0.0"
+gleam_otp = ">= 1.0.0 and < 2.0.0"
+gleam_json = ">= 3.1.0 and < 4.0.0"
+gleam_http = ">= 4.0.0 and < 5.0.0"
+gleam_time = ">= 1.10.0 and < 2.0.0"
+gleam_crypto = ">= 1.6.0 and < 2.0.0"
+wisp = ">= 2.2.2 and < 3.0.0"
+mist = ">= 6.0.3 and < 7.0.0"
+pog = ">= 4.1.0 and < 5.0.0"
+antigone = ">= 1.1.0 and < 2.0.0"
+cors_builder = ">= 2.0.8 and < 3.0.0"
+envoy = ">= 1.0.0 and < 2.0.0"
+simplifile = ">= 2.0.0 and < 3.0.0"
+
+# The scheduler is shared with the browser app; see ../fsrs.
+fsrs = { path = "../fsrs" }
+
+[dev-dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"

@@ -1,5 +1,17 @@
 import gleam/option.{type Option}
 
+/// Identifies one drill in the catalogue.
+///
+/// `category` already encodes the language ("NeetCode 150 · Python"), so this
+/// is the whole key -- it is what localStorage, the server's `cards` table and
+/// the scheduler all agree on.
+///
+/// It lives here rather than in `model` because the API layer needs it too,
+/// and `model` depends on the API layer for its messages.
+pub type ProblemRef {
+  ProblemRef(category: String, subcategory: String, title: String)
+}
+
 pub type Language {
   Python
   Gleam
