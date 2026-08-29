@@ -65,8 +65,9 @@ serve-dist:
 
 # The whole stack -- Caddy, the backend, Postgres -- on http://localhost:8080,
 # behind one origin. Needs SECRET_KEY_BASE in .env; see .env.example.
-# Podman and Docker both work; override with COMPOSE=docker\ compose.
-COMPOSE ?= podman compose
+# Docker by default so `lazydocker` can see the containers; Podman works too,
+# with COMPOSE="podman compose".
+COMPOSE ?= docker compose
 
 up: build
 	$(COMPOSE) up --build

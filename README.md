@@ -221,8 +221,8 @@ make down          # stop
 make down-clean    # stop and drop the database volume
 ```
 
-Podman by default, because it is rootless and needs no daemon; override with
-`make up COMPOSE="docker compose"`. Both images build from the **repository
+Docker by default, so `lazydocker` and friends can see the containers; for
+rootless Podman use `make up COMPOSE="podman compose"`. Both images build from the **repository
 root** — the backend needs `fsrs/` alongside `server/`, and the web image copies
 the committed `dist/`. A `.dockerignore` keeps the context to the ~14M that is
 actually used rather than the whole 278M tree.
