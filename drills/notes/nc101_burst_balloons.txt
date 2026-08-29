@@ -1,1 +1,4 @@
+@kind Top-Down Memo
+@big-o O(n³) time · O(n²) space
+@order 2
 Ask which balloon is burst *last* in a span, not first. The last one still has both span boundaries as neighbours — they are untouched by definition — so its value is known and the two sides become independent subproblems. Asking "first" leaves neighbours that depend on the other side and the recursion never closes. Padding with a 1 at each end removes the edge cases.

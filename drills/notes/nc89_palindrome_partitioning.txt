@@ -1,1 +1,4 @@
+@kind Backtracking
+@big-o O(n·2ⁿ) time · O(n·2ⁿ) space
+@order 1
 Every partition begins with some palindromic prefix, so the only choice at each step is how long that prefix is. Cutting there and recursing on the rest reaches each partition exactly once, in order, with nothing to deduplicate.

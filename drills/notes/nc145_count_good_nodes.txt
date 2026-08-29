@@ -1,1 +1,4 @@
+@kind DFS
+@big-o O(n) time · O(h) space
+@order 2
 Carry the largest value seen on the way down. A node is good when nothing above it is bigger, so the check needs no knowledge of the tree below — which is what makes one pass enough. The root is always good, and passing its own value down as the initial maximum is what says so.

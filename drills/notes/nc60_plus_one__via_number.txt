@@ -1,1 +1,4 @@
+@kind Nifty Python · Big Int
+@big-o O(n²) time · O(n) space
+@order 1
 Fold the digits into a number, add one, take it apart again. Shorter, and safe in a language with arbitrary-precision integers; in one without, this is exactly the version that breaks, and being handed digits rather than a number is the problem telling you so.

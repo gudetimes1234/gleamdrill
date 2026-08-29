@@ -1,1 +1,4 @@
+@kind DFS
+@big-o O(n) time · O(h) space
+@order 2
 One more than the deeper of the two children, with an empty tree at zero. The whole problem is that base case; everything else is the definition of depth read aloud.

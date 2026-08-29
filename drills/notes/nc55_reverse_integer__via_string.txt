@@ -1,1 +1,4 @@
+@kind Nifty Python · Strings
+@big-o O(log n) time · O(log n) space
+@order 1
 Reverse the digits as text and read them back. It cannot overflow along the way, so the range check is a plain comparison at the end — which is honest here and dishonest in C, and worth being able to say which language you are in when you offer it.

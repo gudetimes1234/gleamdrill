@@ -1,1 +1,4 @@
+@kind Greedy
+@big-o O(n) time · O(1) space
+@order 2
 Breadth-first search without a queue. Everything reachable in k jumps is a contiguous window, so the levels of the search are just ranges: when the walk reaches the current window's end, one more jump is spent and the next window runs to the furthest index seen so far. Recognising that the frontier stays contiguous is the whole trick.

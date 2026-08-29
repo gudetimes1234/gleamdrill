@@ -1,2 +1,5 @@
+@kind Brute Force
+@big-o O(n³) time · O(n) space
+@order 1
 @shared/brute-force-baseline
 Grow the piece one character at a time until nothing inside it also appears in the tail. No last-position map — the tail is asked directly — so it is far slower, but it is the condition stated outright rather than pre-computed.

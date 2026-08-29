@@ -1,1 +1,4 @@
+@kind Space-Saving DP
+@big-o O(n) time · O(1) space
+@order 2
 A negative number turns the best running product into the worst and the worst into the best, so both have to be carried. Zero resets them, which falls out for free from taking the element itself as one of the candidates rather than special-casing it.

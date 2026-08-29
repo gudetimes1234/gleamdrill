@@ -1,1 +1,4 @@
+@kind Intervals
+@big-o O(n) time · O(n) space
+@order 2
 The input is already sorted, which turns the problem into a three-way split: everything that finishes before the new interval starts passes through untouched, everything that touches it collapses into one, and everything after it passes through too. One pass, no sorting.

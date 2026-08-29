@@ -1,1 +1,4 @@
+@kind Check Each Unit
+@big-o O(9²) time · O(9²) space
+@order 1
 Turn the board into the 27 things being constrained — nine rows, nine columns, nine boxes — and the problem collapses to "does any of these contain a repeat?". More passes than the signature set, but the constraint is stated once and the box arithmetic is confined to building the units.

@@ -1,1 +1,4 @@
+@kind String Concatenation
+@big-o O(n²) time · O(n) space
+@order 1
 The version join exists to replace. Each `+=` builds a whole new string, so this is quadratic in the output length — fine for two characters, painful for a megabyte.

@@ -1,1 +1,4 @@
+@kind In-Order Traversal
+@big-o O(n) time · O(n) space
+@order 1
 A binary search tree is exactly a tree whose in-order walk is strictly increasing — the definition, restated so that no bounds have to be threaded anywhere. The cost is the list: O(n) memory against the range check's O(depth).

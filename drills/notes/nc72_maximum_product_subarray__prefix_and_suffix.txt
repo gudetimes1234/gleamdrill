@@ -1,1 +1,4 @@
+@kind Prefix & Suffix Products
+@big-o O(n) time · O(n) space
+@order 1
 A different argument entirely: the best subarray always runs to one end of the zero-free block it sits in, so running products swept from both directions — reset at each zero — cover every candidate. No min to track, and the reason it works is worth being able to state.

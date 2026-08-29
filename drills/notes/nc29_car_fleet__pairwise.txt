@@ -1,2 +1,5 @@
+@kind Brute Force
+@big-o O(n²) time · O(n) space
+@order 1
 @shared/brute-force-baseline
 A car leads a fleet exactly when it arrives strictly later than every car ahead of it. Checking that directly needs no sort and no running state — O(n²), and it is the definition the sorted scan is a consequence of.

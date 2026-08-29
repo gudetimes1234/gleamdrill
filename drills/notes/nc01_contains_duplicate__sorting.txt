@@ -1,2 +1,5 @@
+@kind Sorting
+@big-o O(n log n) time · O(n) space
+@order 2
 @shared/sorting-instead-of-hashing
 Duplicates land next to each other, so comparing neighbouring pairs is enough.

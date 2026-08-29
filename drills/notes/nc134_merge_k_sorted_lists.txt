@@ -1,1 +1,4 @@
+@kind Divide & Conquer
+@big-o O(n log k) time · O(k) space
+@order 2
 Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.

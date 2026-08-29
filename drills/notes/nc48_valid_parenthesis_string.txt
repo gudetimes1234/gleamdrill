@@ -1,1 +1,4 @@
+@kind Greedy
+@big-o O(n) time · O(1) space
+@order 2
 Do not guess what each star should be — carry the range of open counts still possible. Low is the count if every star so far were a closer, high if every one were an opener. High going negative means even the most generous reading has too many closers, so bail; low is clamped at zero because a star can always be nothing. Valid exactly when low reaches zero at the end.

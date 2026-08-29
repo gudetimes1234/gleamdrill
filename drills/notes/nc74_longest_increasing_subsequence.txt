@@ -1,1 +1,4 @@
+@kind Bottom-Up DP
+@big-o O(n²) time · O(n) space
+@order 1
 The longest subsequence ending at each position: one plus the best of every earlier position holding a smaller value. O(n²), and the version to reach for first because the recurrence is stated directly rather than encoded.

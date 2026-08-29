@@ -1,1 +1,4 @@
+@kind Pair Stack
+@big-o O(1) per operation · O(n) space
+@order 1
 Each entry carries the minimum of everything at or below it, so getMin is a peek. One structure instead of two, at the cost of a second number per value.

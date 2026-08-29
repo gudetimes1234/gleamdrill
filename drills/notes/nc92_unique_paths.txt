@@ -1,1 +1,4 @@
+@kind Space-Saving DP
+@big-o O(m·n) time · O(n) space
+@order 1
 Only right and down moves, so the ways to reach a square are the ways to reach the one above plus the one to its left. Rows fill top to bottom and only the previous row is ever needed, so one row of counters does for the whole grid.

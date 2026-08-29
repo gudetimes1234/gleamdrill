@@ -1,1 +1,4 @@
+@kind Space-Saving DP
+@big-o O(m·n) time · O(n) space
+@order 2
 Row j counts the ways to build the first j characters of the target from the source seen so far, and a new source character extends a count at j−1 into one at j when it matches. In a mutable array the row must be swept right to left, or one source character gets used twice; building a fresh row removes the hazard entirely.

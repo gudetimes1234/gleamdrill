@@ -1,1 +1,4 @@
+@kind DFS
+@big-o O(m·n) time · O(m·n) space
+@order 2
 Number of Islands with the count replaced by a size. Depth-first suits it because the size falls out of the return value — one for this cell plus whatever the four neighbours return — rather than needing a counter threaded through the walk.

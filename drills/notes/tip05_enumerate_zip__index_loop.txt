@@ -1,1 +1,4 @@
+@kind Index Loop
+@big-o O(n) time · O(1) space
+@order 1
 Indexing by hand. It works, and it is exactly what enumerate and zip save you from: the off-by-one risk and the second subscript in dotProduct.

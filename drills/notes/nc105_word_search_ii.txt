@@ -1,1 +1,4 @@
+@kind Trie
+@big-o O(m·n·4ᴸ) time · O(total letters) space
+@order 2
 Build one trie of all the words and walk it *alongside* the board. Searching for each word separately re-walks every shared prefix once per word; the trie walks each prefix once and abandons a square the moment no word continues that way. That is where nearly all the saving is, and it is the reason this problem exists rather than being Word Search in a loop.

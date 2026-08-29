@@ -1,0 +1,4 @@
+@kind Nifty Python
+@big-o O(n) time · O(n) space
+@order 4
+set(nums) drops the duplicates, so the lengths differ exactly when one existed. Same set idea as the loop, but the whole pass is built in — it just cannot stop early on the first hit.

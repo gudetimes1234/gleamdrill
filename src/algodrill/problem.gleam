@@ -33,15 +33,21 @@ pub type Check {
   Check(signature: String, starter: String, harness: String)
 }
 
-/// One way of solving a problem. Every problem has at least one; some carry
-/// alternates ("Solution 2 · Brute force") showing a different approach.
+/// One way of solving a problem, ordered worst-to-best by runtime. Every
+/// problem has at least one; most carry alternates showing different
+/// techniques.
 ///
-/// `note` is the prose explaining *this* approach, shown above the code when a
-/// solution is revealed. It lives in drills/notes/<stem>.txt rather than as a
-/// comment in the source, so the four language mirrors of one variant share a
-/// single write-up instead of four hand-kept rewordings. Empty means "no note".
+/// `label` names the technique ("Brute Force", "Hash Map", "Nifty Python") —
+/// declared by a `@kind` directive in the variant's note, falling back to the
+/// old filename-derived "Solution N · Variant" scheme where not yet annotated.
+/// `complexity` is the Big-O line ("O(n²) time · O(1) space") from `@big-o`;
+/// empty means not yet annotated. `note` is the prose explaining *this*
+/// approach, shown above the code when a solution is revealed. It lives in
+/// drills/notes/<stem>.txt rather than as a comment in the source, so the four
+/// language mirrors of one variant share a single write-up instead of four
+/// hand-kept rewordings. Empty means "no note".
 pub type Solution {
-  Solution(label: String, note: String, code: String)
+  Solution(label: String, complexity: String, note: String, code: String)
 }
 
 /// A multiple-choice question. `correct` indexes into `choices`. The distractors

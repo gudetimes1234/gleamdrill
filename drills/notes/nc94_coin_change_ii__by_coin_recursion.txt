@@ -1,1 +1,4 @@
+@kind Top-Down Memo
+@big-o O(n·t) time · O(n·t) space
+@order 1
 The same rule stated as a choice rather than a loop order: use this coin again, or set it aside for good. Setting it aside permanently is what fixes one order per combination — the identical constraint the outer loop encodes, made visible.

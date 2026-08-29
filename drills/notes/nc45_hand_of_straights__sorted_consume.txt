@@ -1,1 +1,4 @@
+@kind Sorting
+@big-o O(n²) time · O(n) space
+@order 1
 No counts at all: sort, then peel one full run off the front, removing each card as it is used. Slower, since every removal is a list walk, but the only thing you have to believe is the same greedy claim — a group begins with the smallest card left.

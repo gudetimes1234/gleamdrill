@@ -1,1 +1,4 @@
+@kind Subset Sum
+@big-o O(n·S) time · O(S) space
+@order 2
 Rewrite the problem. If P is the set given a plus and N the set given a minus then P − N = target and P + N = total, so P = (total + target)/2. A sign-assignment question becomes "how many subsets sum to a fixed value" — a knapsack, with no negative totals to track at all. Reformulating rather than optimising is the move.

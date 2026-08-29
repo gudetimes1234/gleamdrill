@@ -1,1 +1,4 @@
+@kind DFS
+@big-o O(n·m) time · O(n+m) space
+@order 1
 Try to match at every node. The two questions are kept apart on purpose: "are these two trees identical" is the whole of the work, and "is it a subtree" is that question asked once per node. O(n·m) in the worst case, and a partial match that fails deep is what makes it so.

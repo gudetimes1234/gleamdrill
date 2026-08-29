@@ -1,1 +1,4 @@
+@kind Nifty Python · str.find
+@big-o O(n²) time · O(1) space
+@order 1
 No set and no map: ask the string itself whether this character already appeared inside the current window, and if so restart just past it.

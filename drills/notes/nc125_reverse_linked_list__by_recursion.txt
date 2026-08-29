@@ -1,1 +1,4 @@
+@kind Recursion
+@big-o O(n) time · O(n) space
+@order 1
 Reverse the rest, then hook the current node onto its end. The new head comes back unchanged through every frame, which is why it is returned rather than tracked — and `head.next.next = head` is the whole rewiring, done on the way back out. O(n) stack against the loop's O(1).

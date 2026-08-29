@@ -1,1 +1,4 @@
+@kind Topological Sort
+@big-o O(C) time · O(V+E) space
+@order 2
 The words are the input but the graph is over letters. Two adjacent words agree up to their first difference, and that difference is the only ordering they establish — everything after it says nothing at all. Then it is a topological sort, with two distinct ways to fail: a cycle, and a word followed by its own prefix.

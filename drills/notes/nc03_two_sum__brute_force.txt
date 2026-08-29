@@ -1,2 +1,5 @@
+@kind Brute Force
+@big-o O(n²) time · O(1) space
+@order 1
 @shared/brute-force-baseline
 Every ordered pair, checked, stopping at the first hit.

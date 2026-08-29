@@ -1,1 +1,4 @@
+@kind Union-Find
+@big-o O(n·α(n)) time · O(n) space
+@order 1
 Both conditions from one pass. An edge inside a component is a cycle, so if none is, the graph is a forest — and a forest with n-1 merges is a single tree. No adjacency list and no traversal.

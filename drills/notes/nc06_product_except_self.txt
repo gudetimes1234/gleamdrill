@@ -1,1 +1,4 @@
+@kind Prefix & Suffix Products
+@big-o O(n) time · O(1) extra space
+@order 2
 The answer at each slot is everything before it times everything after it. One forward pass builds the prefixes, one reverse pass folds in the suffixes — and no division, so a zero in the input costs nothing special.

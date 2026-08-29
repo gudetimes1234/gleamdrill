@@ -1,2 +1,5 @@
+@kind Binary Search
+@big-o O(log n) time · O(1) space
+@order 2
 @shared/binary-search-halving
 Worth writing until the bounds are automatic: this is the search every rotated-array problem is built on top of.

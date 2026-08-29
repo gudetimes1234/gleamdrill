@@ -1,1 +1,4 @@
+@kind Manual Loop
+@big-o O(n log n) time · O(n) space
+@order 1
 What Counter does underneath: a dict of counts, then a sort. Worth writing once so most_common stops being a black box.

@@ -1,2 +1,5 @@
+@kind Brute Force
+@big-o O(n·q) time · O(n+q) space
+@order 1
 @shared/brute-force-baseline
 For each query, the smallest interval containing it. O(q·n), and the definition — worth having before the clever version, because it is what you check the clever version against.

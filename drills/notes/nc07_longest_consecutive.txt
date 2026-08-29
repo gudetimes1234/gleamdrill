@@ -1,1 +1,4 @@
+@kind Hash Set
+@big-o O(n) time · O(n) space
+@order 2
 Put everything in a set, then only start counting at numbers with no predecessor. That guard is what keeps it O(n): every run is walked exactly once instead of once per member.

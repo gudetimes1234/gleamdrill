@@ -1,1 +1,4 @@
+@kind Trie
+@big-o O(k) per operation · O(total letters) space
+@order 2
 One node per prefix, with a flag marking which prefixes are whole words. That flag is the entire difference between search and startsWith — without it, "app" and "apple" are indistinguishable once both are stored. The other detail worth keeping: the empty prefix always exists, because the root does.

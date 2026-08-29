@@ -1,2 +1,5 @@
+@kind Brute Force
+@big-o O(n²) time · O(1) space
+@order 1
 @shared/brute-force-baseline
 Every pair of lines, measured. O(n^2), but it makes what the two-pointer sweep is maximising explicit: shorter line times distance.

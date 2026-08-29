@@ -1,1 +1,4 @@
+@kind Backtracking
+@big-o O(2ᵗ) time · O(t) space
+@order 2
 Each step either takes the current candidate again — reuse is allowed — or drops it for good. Never returning to a dropped candidate is what stops the same combination appearing in several orders, so there is no deduplication anywhere. That constraint doing the work is the pattern to carry to the harder variants.

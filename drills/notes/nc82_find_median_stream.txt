@@ -1,1 +1,4 @@
+@kind Two Heaps
+@big-o O(log n) per operation · O(n) space
+@order 2
 Split the values into a smaller half and a larger half, and the median is always sitting at one or both of the two inner ends. Each half only ever has to surrender its extreme value, which is exactly a heap — a max-heap below, a min-heap above. The whole difficulty is the rebalancing rule: sizes within one, and nothing below bigger than anything above.

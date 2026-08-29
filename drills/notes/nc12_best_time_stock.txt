@@ -1,1 +1,4 @@
+@kind Greedy
+@big-o O(n) time · O(1) space
+@order 2
 Carry the cheapest price seen so far; today's best sale is today's price against that minimum. One pass, two variables.

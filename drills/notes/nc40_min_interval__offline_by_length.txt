@@ -1,1 +1,4 @@
+@kind Greedy
+@big-o O(n log n + n·q) time · O(n+q) space
+@order 2
 Answer each query once and never revisit it. Taking the intervals shortest first means the first interval to cover a query is already its answer, so a query leaves the pool the moment it is settled and the pool only shrinks. Reordering the work so each answer is final is the technique here, and it generalises well beyond this problem.

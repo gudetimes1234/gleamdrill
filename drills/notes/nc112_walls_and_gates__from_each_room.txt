@@ -1,1 +1,4 @@
+@kind Brute Force
+@big-o O(m²·n²) time · O(m·n) space
+@order 1
 A search outward from each empty room until it meets a gate. One full search per room for an answer the single multi-source pass already has, which is the cost the wave avoids — but it is the version that says the problem statement outright.

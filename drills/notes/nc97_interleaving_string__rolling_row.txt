@@ -1,1 +1,4 @@
+@kind Space-Saving DP
+@big-o O(m·n) time · O(n) space
+@order 2
 Bottom-up over the same two-index state. Row i says which prefixes of s2 pair with the first i characters of s1, and each row depends only on the one above and itself to the left, so a single row suffices. Note the length check first: without it the recursion can succeed on a target that is too short.

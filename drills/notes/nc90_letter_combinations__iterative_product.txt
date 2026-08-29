@@ -1,1 +1,4 @@
+@kind Iterative
+@big-o O(n·4ⁿ) time · O(n·4ⁿ) space
+@order 1
 The same cross product built by folding rather than recursing: hold every combination of the digits so far and extend each by every letter of the next. No call stack, and the growth is visible in the code — the list multiplies in size at each step.

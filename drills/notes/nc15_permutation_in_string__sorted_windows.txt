@@ -1,1 +1,4 @@
+@kind Brute Force
+@big-o O(n·m log m) time · O(m) space
+@order 1
 Every window of the right length, sorted and compared against the sorted needle. Slower than sliding counts, but there is no incremental state to get wrong: the whole method is "is this window an anagram?".

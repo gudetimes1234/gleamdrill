@@ -1,1 +1,4 @@
+@kind Nifty Python · join
+@big-o O(n) time · O(n) space
+@order 2
 Strings are immutable, so building one with `+=` in a loop re-copies everything each time — O(n²). Collect the pieces in a list and `''.join(parts)` once at the end for O(n). The same reasoning is why the drill runner buffers its output in an array.

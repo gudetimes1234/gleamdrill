@@ -1,2 +1,5 @@
+@kind Brute Force
+@big-o O(n³) time · O(n) space
+@order 1
 @shared/brute-force-baseline
 Every start with every length, each checked against its own reverse. O(n³), and the thing centre expansion optimises: it never re-checks the inside of a palindrome it has already grown through.

@@ -1,1 +1,4 @@
+@kind Design
+@big-o O(all tweets) per feed · O(all tweets) space
+@order 1
 A counter standing in for time is the whole design: it orders tweets across every user without any real timestamps. Then the feed is a filter over one global timeline — simple, correct, and the wrong shape at scale, since it walks every tweet ever posted to produce ten.

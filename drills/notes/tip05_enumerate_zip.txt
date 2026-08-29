@@ -1,1 +1,4 @@
+@kind Nifty Python · Iterators
+@big-o O(n) time · O(1) space
+@order 2
 `enumerate` gives index and value together, `zip` walks two sequences in lockstep, and tuple unpacking names the pieces. Between them, almost no loop needs `range(len(...))` — and the ones that do are usually doing something else wrong.

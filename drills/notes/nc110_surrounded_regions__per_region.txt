@@ -1,1 +1,4 @@
+@kind Per-Region DFS
+@big-o O(m·n) time · O(m·n) space
+@order 1
 The direct reading: gather each region, then flip it only if no cell in it sits on the border. Honest, and it makes explicit what the border-first version is exploiting — but it has to collect the whole region before it can decide anything about it.

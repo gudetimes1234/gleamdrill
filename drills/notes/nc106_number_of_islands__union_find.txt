@@ -1,1 +1,4 @@
+@kind Union-Find
+@big-o O(m·n·α(m·n)) time · O(m·n) space
+@order 1
 The same count without recursing: join each land cell to the land above and to its left, and the answer is the number of land cells minus the number of joins that actually merged two components. Worth having because a deep enough grid overflows the recursive walk, and because union-find can take cells as they arrive rather than needing the whole grid first.

@@ -1,2 +1,5 @@
+@kind Brute Force
+@big-o O(n²) time · O(1) space
+@order 1
 @shared/brute-force-baseline
 For each day, scan forward until it gets warmer. O(n^2) — the monotonic stack exists only to avoid rescanning the same cold stretch once per day.

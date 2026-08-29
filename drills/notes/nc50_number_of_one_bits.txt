@@ -1,1 +1,4 @@
+@kind Bit Manipulation
+@big-o O(k) time · O(1) space
+@order 2
 n & (n − 1) clears the lowest set bit and touches nothing else, so the loop runs once per one bit rather than once per bit position. Worth having in the fingers: the same trick tests for powers of two, and shows up in half the bit problems there are.

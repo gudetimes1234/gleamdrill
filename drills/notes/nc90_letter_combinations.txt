@@ -1,1 +1,4 @@
+@kind Recursion
+@big-o O(n·4ⁿ) time · O(n·4ⁿ) space
+@order 2
 One choice per digit, independently, so the answer is the cross product of the letter sets. There is no pruning and no constraint between choices — which makes this the cleanest place to see what backtracking degenerates to when nothing can fail.

@@ -1,1 +1,4 @@
+@kind DFS
+@big-o O(V+E) time · O(V+E) space
+@order 1
 One search per unvisited node, exactly as with islands on a grid — the same counting idea with an adjacency list instead of coordinates. The contrast with union-find is the point: this needs the whole graph up front, the other can take edges as they arrive.

@@ -1,2 +1,5 @@
+@kind Binary Search
+@big-o O(n log n) time · O(1) space
+@order 1
 @shared/binary-search-halving
 Binary search over the *values*, not the positions. For a candidate v, count how many numbers are at most v: with no duplicate that count is exactly v, so a count running ahead says the repeat is at or below v. O(n log n), but it needs no insight about cycles.

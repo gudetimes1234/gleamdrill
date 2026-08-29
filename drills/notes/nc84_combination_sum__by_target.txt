@@ -1,1 +1,4 @@
+@kind Bottom-Up DP
+@big-o O(t·2ᵗ) time · O(t·2ᵗ) space
+@order 1
 Bottom-up: the combinations making a target are every combination making a smaller amount with one more candidate added. Requiring the added candidate to be no smaller than the combination's largest plays the same role the index does in the recursion — it fixes one order per combination.

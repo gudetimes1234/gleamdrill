@@ -1,1 +1,4 @@
+@kind Two Pass
+@big-o O(n) time · O(1) space
+@order 1
 Count first, then remove by position. Two passes rather than one, and it says outright what the gap encodes: nth from the end is length minus n from the front. Where a list cannot be walked twice — a stream, say — that is the assumption that fails.

@@ -1,2 +1,5 @@
+@kind Pivot + Binary Search
+@big-o O(n) time · O(1) space
+@order 1
 @shared/binary-search-halving
 Two plain steps instead of one clever one: find where the rotation wrapped, which leaves two ordinary sorted runs, then search each. Nothing has to reason mid-search about which half is sorted.

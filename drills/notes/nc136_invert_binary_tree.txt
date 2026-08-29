@@ -1,1 +1,4 @@
+@kind DFS
+@big-o O(n) time · O(h) space
+@order 2
 Swap the children, then invert each of them — the swap and the recursion are the same line. The order does not matter: swapping before or after recursing gives the same tree, which is why this is the shortest tree problem there is.

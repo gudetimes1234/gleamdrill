@@ -1,2 +1,5 @@
+@kind Brute Force
+@big-o O(n) time · O(1) space
+@order 1
 @shared/brute-force-baseline
 Multiply n times. Fine for small exponents, and it makes the saving obvious: the fast version does about log₂(n) multiplications where this one does n — thirty against a billion.

@@ -1,1 +1,4 @@
+@kind Sorting
+@big-o O(n log n) time · O(n) space
+@order 1
 Sorting answers every k at once, which is more than was asked but is the version nobody gets wrong. O(n log n), and usually the right thing to write first before offering anything cleverer.

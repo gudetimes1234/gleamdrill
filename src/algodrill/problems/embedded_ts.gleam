@@ -7,20 +7,20 @@ import algodrill/problems/embedded.{type Embedded, Embedded}
 pub fn nc01_contains_duplicate() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "A set answers the whole question. Walk once, and the moment a value is already in the set you are done — no need to finish the pass, and no need to know where the duplicate was.", "export function containsDuplicate(nums: number[]): boolean {
-  const seen = new Set<number>();
-  for (const num of nums) {
-    if (seen.has(num)) return true;
-    seen.add(num);
-  }
-  return false;
-}"),
-      #("Solution 2 · Sorting", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+      #("Sorting", "O(n log n) time · O(n) space", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
 
 Duplicates land next to each other, so comparing neighbouring pairs is enough.", "export function containsDuplicate(nums: number[]): boolean {
   const ordered = [...nums].sort((a, b) => a - b);
   for (let i = 1; i < ordered.length; i++) {
     if (ordered[i] === ordered[i - 1]) return true;
+  }
+  return false;
+}"),
+      #("Hash Set", "O(n) time · O(n) space", "A set answers the whole question. Walk once, and the moment a value is already in the set you are done — no need to finish the pass, and no need to know where the duplicate was.", "export function containsDuplicate(nums: number[]): boolean {
+  const seen = new Set<number>();
+  for (const num of nums) {
+    if (seen.has(num)) return true;
+    seen.add(num);
   }
   return false;
 }"),
@@ -49,7 +49,13 @@ export function run(): [string, string, string][] {
 pub fn nc02_valid_anagram() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Two strings are anagrams exactly when every character occurs the same number of times in both, so build a count per string and compare the two maps.", "export function isAnagram(s: string, t: string): boolean {
+      #("Sorting", "O(n log n) time · O(n) space", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+Sorted letters are the canonical form, so the whole check is one equality. No counting to get wrong.", "export function isAnagram(s: string, t: string): boolean {
+  const letters = (word: string) => [...word].sort().join(\"\");
+  return letters(s) === letters(t);
+}"),
+      #("Count Map", "O(n) time · O(1) space", "Two strings are anagrams exactly when every character occurs the same number of times in both, so build a count per string and compare the two maps.", "export function isAnagram(s: string, t: string): boolean {
   if (s.length !== t.length) return false;
 
   const counts = new Map<string, number>();
@@ -62,12 +68,6 @@ pub fn nc02_valid_anagram() -> Embedded {
   }
 
   return true;
-}"),
-      #("Solution 2 · Sorting", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
-
-Sorted letters are the canonical form, so the whole check is one equality. No counting to get wrong.", "export function isAnagram(s: string, t: string): boolean {
-  const letters = (word: string) => [...word].sort().join(\"\");
-  return letters(s) === letters(t);
 }"),
     ],
     check: Check(
@@ -95,16 +95,7 @@ export function run(): [string, string, string][] {
 pub fn nc03_two_sum() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Every number seen so far is already in the map, so the complement is one lookup away — one pass, O(1) per step, and the map hands back the index for free.", "export function twoSum(nums: number[], target: number): number[] {
-  const seen = new Map<number, number>();
-  for (let i = 0; i < nums.length; i++) {
-    const complement = target - nums[i];
-    if (seen.has(complement)) return [seen.get(complement)!, i];
-    seen.set(nums[i], i);
-  }
-  return [];
-}"),
-      #("Solution 2 · Sorted two pointer", "Sorted input plus a pointer at each end. A sum that is too small can only be fixed by raising the low end, one that is too large by lowering the high end, so neither pointer ever needs to go back. They meet in O(n) with no extra memory.
+      #("Sort + Two Pointers", "O(n log n) time · O(n) space", "Sorted input plus a pointer at each end. A sum that is too small can only be fixed by raising the low end, one that is too large by lowering the high end, so neither pointer ever needs to go back. They meet in O(n) with no extra memory.
 
 Sorting loses the original positions, which is the whole difficulty here: carry each number's index alongside it and report those at the end.", "export function twoSum(nums: number[], target: number): number[] {
   const ordered = nums
@@ -125,6 +116,15 @@ Sorting loses the original positions, which is the whole difficulty here: carry 
     }
   }
 
+  return [];
+}"),
+      #("Hash Map", "O(n) time · O(n) space", "Every number seen so far is already in the map, so the complement is one lookup away — one pass, O(1) per step, and the map hands back the index for free.", "export function twoSum(nums: number[], target: number): number[] {
+  const seen = new Map<number, number>();
+  for (let i = 0; i < nums.length; i++) {
+    const complement = target - nums[i];
+    if (seen.has(complement)) return [seen.get(complement)!, i];
+    seen.set(nums[i], i);
+  }
   return [];
 }"),
     ],
@@ -153,7 +153,24 @@ export function run(): [string, string, string][] {
 pub fn nc04_group_anagrams() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+      #("Sorted Key", "O(n·k log k) time · O(n·k) space", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+The sorted word itself is the key. Shorter than tallying letters, and it works for any alphabet rather than just a-z.", "export function groupAnagrams(strs: string[]): string[][] {
+  const groups = new Map<string, string[]>();
+
+  for (const s of strs) {
+    const key = [...s].sort().join(\"\");
+    const group = groups.get(key);
+    if (group) {
+      group.push(s);
+    } else {
+      groups.set(key, [s]);
+    }
+  }
+
+  return [...groups.values()];
+}"),
+      #("Count Key", "O(n·k) time · O(n·k) space", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
 
 Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len) to build against sorting's O(len log len); the sorted word needs no assumption about the alphabet.", "export function groupAnagrams(strs: string[]): string[][] {
   const groups = new Map<string, string[]>();
@@ -165,23 +182,6 @@ Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len
     for (const char of s) tally[char.charCodeAt(0) - 97]++;
     const key = tally.join(\",\");
 
-    const group = groups.get(key);
-    if (group) {
-      group.push(s);
-    } else {
-      groups.set(key, [s]);
-    }
-  }
-
-  return [...groups.values()];
-}"),
-      #("Solution 2 · Sorted key", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
-
-The sorted word itself is the key. Shorter than tallying letters, and it works for any alphabet rather than just a-z.", "export function groupAnagrams(strs: string[]): string[][] {
-  const groups = new Map<string, string[]>();
-
-  for (const s of strs) {
-    const key = [...s].sort().join(\"\");
     const group = groups.get(key);
     if (group) {
       group.push(s);
@@ -225,7 +225,18 @@ export function run(): [string, string, string][] {
 pub fn nc05_top_k_frequent() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.", "export function topKFrequent(nums: number[], k: number): number[] {
+      #("Sorting", "O(n log n) time · O(n) space", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+
+Straight sort by frequency: O(n log n) rather than the bucket version's O(n), but it is the version you can write without thinking.", "export function topKFrequent(nums: number[], k: number): number[] {
+  const counts = new Map<number, number>();
+  for (const num of nums) counts.set(num, (counts.get(num) ?? 0) + 1);
+
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, k)
+    .map(([num]) => num);
+}"),
+      #("Bucket Sort", "O(n) time · O(n) space", "Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.", "export function topKFrequent(nums: number[], k: number): number[] {
   const counts = new Map<number, number>();
   for (const num of nums) counts.set(num, (counts.get(num) ?? 0) + 1);
 
@@ -242,17 +253,6 @@ pub fn nc05_top_k_frequent() -> Embedded {
     }
   }
   return result;
-}"),
-      #("Solution 2 · Sorting", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
-
-Straight sort by frequency: O(n log n) rather than the bucket version's O(n), but it is the version you can write without thinking.", "export function topKFrequent(nums: number[], k: number): number[] {
-  const counts = new Map<number, number>();
-  for (const num of nums) counts.set(num, (counts.get(num) ?? 0) + 1);
-
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, k)
-    .map(([num]) => num);
 }"),
     ],
     check: Check(
@@ -279,7 +279,18 @@ export function run(): [string, string, string][] {
 pub fn nc06_product_except_self() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The answer at each slot is everything before it times everything after it. One forward pass builds the prefixes, one reverse pass folds in the suffixes — and no division, so a zero in the input costs nothing special.", "export function productExceptSelf(nums: number[]): number[] {
+      #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+For each slot, multiply everything that is not in it. O(n^2), and exactly what the prefix/suffix pass replaces.", "export function productExceptSelf(nums: number[]): number[] {
+  return nums.map((_, i) => {
+    let product = 1;
+    for (let j = 0; j < nums.length; j++) {
+      if (i !== j) product *= nums[j];
+    }
+    return product;
+  });
+}"),
+      #("Prefix & Suffix Products", "O(n) time · O(1) extra space", "The answer at each slot is everything before it times everything after it. One forward pass builds the prefixes, one reverse pass folds in the suffixes — and no division, so a zero in the input costs nothing special.", "export function productExceptSelf(nums: number[]): number[] {
   const result = new Array(nums.length).fill(1);
 
   let prefix = 1;
@@ -295,17 +306,6 @@ pub fn nc06_product_except_self() -> Embedded {
   }
 
   return result;
-}"),
-      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-For each slot, multiply everything that is not in it. O(n^2), and exactly what the prefix/suffix pass replaces.", "export function productExceptSelf(nums: number[]): number[] {
-  return nums.map((_, i) => {
-    let product = 1;
-    for (let j = 0; j < nums.length; j++) {
-      if (i !== j) product *= nums[j];
-    }
-    return product;
-  });
 }"),
     ],
     check: Check(
@@ -332,21 +332,7 @@ export function run(): [string, string, string][] {
 pub fn nc07_longest_consecutive() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Put everything in a set, then only start counting at numbers with no predecessor. That guard is what keeps it O(n): every run is walked exactly once instead of once per member.", "export function longestConsecutive(nums: number[]): number {
-  const all = new Set(nums);
-  let longest = 0;
-
-  for (const num of all) {
-    // Only count from the start of a run, so each run is walked once.
-    if (all.has(num - 1)) continue;
-    let length = 1;
-    while (all.has(num + length)) length++;
-    longest = Math.max(longest, length);
-  }
-
-  return longest;
-}"),
-      #("Solution 2 · Sorting", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+      #("Sorting", "O(n log n) time · O(n) space", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
 
 Runs are contiguous once sorted, so one pass counting steps of exactly one finds the longest. Duplicates neither extend a run nor break it, which is the only case worth care.", "export function longestConsecutive(nums: number[]): number {
   if (nums.length === 0) return 0;
@@ -364,6 +350,20 @@ Runs are contiguous once sorted, so one pass counting steps of exactly one finds
     } else {
       run = 1;
     }
+  }
+
+  return longest;
+}"),
+      #("Hash Set", "O(n) time · O(n) space", "Put everything in a set, then only start counting at numbers with no predecessor. That guard is what keeps it O(n): every run is walked exactly once instead of once per member.", "export function longestConsecutive(nums: number[]): number {
+  const all = new Set(nums);
+  let longest = 0;
+
+  for (const num of all) {
+    // Only count from the start of a run, so each run is walked once.
+    if (all.has(num - 1)) continue;
+    let length = 1;
+    while (all.has(num + length)) length++;
+    longest = Math.max(longest, length);
   }
 
   return longest;
@@ -393,7 +393,11 @@ export function run(): [string, string, string][] {
 pub fn nc08_valid_palindrome() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.", "export function isPalindrome(s: string): boolean {
+      #("Nifty Python · Reverse", "O(n) time · O(n) space", "Strip, then compare against the reverse. Allocates a second string instead of converging two pointers, but it is one line of intent.", "export function isPalindrome(s: string): boolean {
+  const cleaned = s.toLowerCase().replace(/[^a-z0-9]/g, \"\");
+  return cleaned === [...cleaned].reverse().join(\"\");
+}"),
+      #("Two Pointers", "O(n) time · O(1) space", "Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.", "export function isPalindrome(s: string): boolean {
   const cleaned = s.toLowerCase().replace(/[^a-z0-9]/g, \"\");
   let left = 0;
   let right = cleaned.length - 1;
@@ -403,10 +407,6 @@ pub fn nc08_valid_palindrome() -> Embedded {
     right--;
   }
   return true;
-}"),
-      #("Solution 2 · Cleaned reverse", "Strip, then compare against the reverse. Allocates a second string instead of converging two pointers, but it is one line of intent.", "export function isPalindrome(s: string): boolean {
-  const cleaned = s.toLowerCase().replace(/[^a-z0-9]/g, \"\");
-  return cleaned === [...cleaned].reverse().join(\"\");
 }"),
     ],
     check: Check(
@@ -434,25 +434,7 @@ export function run(): [string, string, string][] {
 pub fn nc09_two_sum_sorted() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Sorted input plus a pointer at each end. A sum that is too small can only be fixed by raising the low end, one that is too large by lowering the high end, so neither pointer ever needs to go back. They meet in O(n) with no extra memory.
-
-Positions are 1-based here, which is the only trap.", "export function twoSum(numbers: number[], target: number): number[] {
-  let left = 0;
-  let right = numbers.length - 1;
-
-  while (left < right) {
-    const total = numbers[left] + numbers[right];
-    if (total === target) return [left + 1, right + 1];
-    if (total < target) {
-      left++;
-    } else {
-      right--;
-    }
-  }
-
-  return [];
-}"),
-      #("Solution 2 · Binary search", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+      #("Binary Search", "O(n log n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
 Fix each number in turn and search the tail for its complement, rather than converging two pointers. O(n log n), and it reuses a search you already know instead of a second pointer discipline.", "export function twoSum(numbers: number[], target: number): number[] {
   for (let i = 0; i < numbers.length; i++) {
@@ -469,6 +451,24 @@ Fix each number in turn and search the tail for its complement, rather than conv
       }
     }
   }
+  return [];
+}"),
+      #("Two Pointers", "O(n) time · O(1) space", "Sorted input plus a pointer at each end. A sum that is too small can only be fixed by raising the low end, one that is too large by lowering the high end, so neither pointer ever needs to go back. They meet in O(n) with no extra memory.
+
+Positions are 1-based here, which is the only trap.", "export function twoSum(numbers: number[], target: number): number[] {
+  let left = 0;
+  let right = numbers.length - 1;
+
+  while (left < right) {
+    const total = numbers[left] + numbers[right];
+    if (total === target) return [left + 1, right + 1];
+    if (total < target) {
+      left++;
+    } else {
+      right--;
+    }
+  }
+
   return [];
 }"),
     ],
@@ -497,29 +497,7 @@ export function run(): [string, string, string][] {
 pub fn nc100_edit_distance() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Three edits, three neighbours in the table: replace from the diagonal, delete from above, insert from the left. Equal characters cost nothing and take the diagonal outright. The first row and column are the cost of building a string from nothing, which is simply its length.", "export function minDistance(word1: string, word2: string): number {
-  // Three edits, three neighbours in the table: replace comes from the
-  // diagonal, delete from above, insert from the left. Equal characters cost
-  // nothing and take the diagonal outright -- the whole algorithm is those four
-  // lines. The first row and column are the cost of building a string from
-  // nothing, which is its length.
-  let previous = Array.from({ length: word2.length + 1 }, (_, j) => j);
-
-  for (let i = 1; i <= word1.length; i++) {
-    const row = new Array<number>(word2.length + 1).fill(0);
-    row[0] = i;
-    for (let j = 1; j <= word2.length; j++) {
-      row[j] =
-        word1[i - 1] === word2[j - 1]
-          ? previous[j - 1]
-          : 1 + Math.min(previous[j - 1], previous[j], row[j - 1]);
-    }
-    previous = row;
-  }
-
-  return previous[word2.length];
-}"),
-      #("Solution 2 · Memoised", "The same three edits as an explicit choice from the front. Running out of one word costs whatever remains of the other, since every leftover character must be inserted or deleted — the base case that the table encodes in its first row and column.", "export function minDistance(word1: string, word2: string): number {
+      #("Top-Down Memo", "O(m·n) time · O(m·n) space", "The same three edits as an explicit choice from the front. Running out of one word costs whatever remains of the other, since every leftover character must be inserted or deleted — the base case that the table encodes in its first row and column.", "export function minDistance(word1: string, word2: string): number {
   const memo = new Map<string, number>();
 
   // The same three edits as an explicit choice from the front. Running out of
@@ -541,6 +519,28 @@ pub fn nc100_edit_distance() -> Embedded {
   };
 
   return cost(0, 0);
+}"),
+      #("Space-Saving DP", "O(m·n) time · O(n) space", "Three edits, three neighbours in the table: replace from the diagonal, delete from above, insert from the left. Equal characters cost nothing and take the diagonal outright. The first row and column are the cost of building a string from nothing, which is simply its length.", "export function minDistance(word1: string, word2: string): number {
+  // Three edits, three neighbours in the table: replace comes from the
+  // diagonal, delete from above, insert from the left. Equal characters cost
+  // nothing and take the diagonal outright -- the whole algorithm is those four
+  // lines. The first row and column are the cost of building a string from
+  // nothing, which is its length.
+  let previous = Array.from({ length: word2.length + 1 }, (_, j) => j);
+
+  for (let i = 1; i <= word1.length; i++) {
+    const row = new Array<number>(word2.length + 1).fill(0);
+    row[0] = i;
+    for (let j = 1; j <= word2.length; j++) {
+      row[j] =
+        word1[i - 1] === word2[j - 1]
+          ? previous[j - 1]
+          : 1 + Math.min(previous[j - 1], previous[j], row[j - 1]);
+    }
+    previous = row;
+  }
+
+  return previous[word2.length];
 }"),
     ],
     check: Check(
@@ -570,7 +570,32 @@ export function run(): [string, string, string][] {
 pub fn nc101_burst_balloons() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Ask which balloon is burst *last* in a span, not first. The last one still has both span boundaries as neighbours — they are untouched by definition — so its value is known and the two sides become independent subproblems. Asking \"first\" leaves neighbours that depend on the other side and the recursion never closes. Padding with a 1 at each end removes the edge cases.", "export function maxCoins(nums: number[]): number {
+      #("Bottom-Up DP", "O(n³) time · O(n²) space", "The same recurrence filled by hand, shortest spans first — because a span needs both of the shorter spans a chosen last balloon splits it into. Writing the loop order out makes that dependency visible where the recursion leaves it implicit.", "export function maxCoins(nums: number[]): number {
+  const balloons = [1, ...nums, 1];
+  const n = balloons.length;
+  const table = Array.from({ length: n }, () => new Array<number>(n).fill(0));
+
+  // The same \"which balloon goes last\" recurrence filled by hand, shortest
+  // spans first -- because a span's answer needs both of the shorter spans that
+  // a chosen last balloon splits it into. Writing the loop order out makes that
+  // dependency visible where the recursion leaves it implicit.
+  for (let width = 2; width < n; width++) {
+    for (let left = 0; left + width < n; left++) {
+      const right = left + width;
+      for (let last = left + 1; last < right; last++) {
+        table[left][right] = Math.max(
+          table[left][right],
+          balloons[left] * balloons[last] * balloons[right] +
+            table[left][last] +
+            table[last][right],
+        );
+      }
+    }
+  }
+
+  return table[0][n - 1];
+}"),
+      #("Top-Down Memo", "O(n³) time · O(n²) space", "Ask which balloon is burst *last* in a span, not first. The last one still has both span boundaries as neighbours — they are untouched by definition — so its value is known and the two sides become independent subproblems. Asking \"first\" leaves neighbours that depend on the other side and the recursion never closes. Padding with a 1 at each end removes the edge cases.", "export function maxCoins(nums: number[]): number {
   // Padding with a 1 at each end removes the edge cases: every balloon then has
   // a neighbour on both sides whatever happens.
   const balloons = [1, ...nums, 1];
@@ -599,31 +624,6 @@ pub fn nc101_burst_balloons() -> Embedded {
 
   return best(0, balloons.length - 1);
 }"),
-      #("Solution 2 · Bottom up", "The same recurrence filled by hand, shortest spans first — because a span needs both of the shorter spans a chosen last balloon splits it into. Writing the loop order out makes that dependency visible where the recursion leaves it implicit.", "export function maxCoins(nums: number[]): number {
-  const balloons = [1, ...nums, 1];
-  const n = balloons.length;
-  const table = Array.from({ length: n }, () => new Array<number>(n).fill(0));
-
-  // The same \"which balloon goes last\" recurrence filled by hand, shortest
-  // spans first -- because a span's answer needs both of the shorter spans that
-  // a chosen last balloon splits it into. Writing the loop order out makes that
-  // dependency visible where the recursion leaves it implicit.
-  for (let width = 2; width < n; width++) {
-    for (let left = 0; left + width < n; left++) {
-      const right = left + width;
-      for (let last = left + 1; last < right; last++) {
-        table[left][right] = Math.max(
-          table[left][right],
-          balloons[left] * balloons[last] * balloons[right] +
-            table[left][last] +
-            table[last][right],
-        );
-      }
-    }
-  }
-
-  return table[0][n - 1];
-}"),
     ],
     check: Check(
       signature: "export function maxCoins(nums: number[]): number",
@@ -651,7 +651,22 @@ export function run(): [string, string, string][] {
 pub fn nc102_regular_expression_matching() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "A star binds to the character *before* it, so the pattern is read two symbols at a time. Given \"x*\": either skip the pair entirely — zero copies — or, if x matches here, consume one character of the text and stay on the same pair. Everything else is a single-character match. Getting the zero-copies branch right is most of the problem.", "export function isMatch(s: string, p: string): boolean {
+      #("Recursion", "O(2ⁿ) time · O(n²) space", "The same rules with no table at all, which is shorter and far easier to trust. It is exponential on patterns like \"a*a*a*a*b\", where the same suffix is reached along many different splits — so write this first, get it right, and add the cache afterwards.", "export function isMatch(s: string, p: string): boolean {
+  // The same rules with no table at all. Shorter and easier to trust, and
+  // exponential on patterns like \"a*a*a*a*b\" where the same suffix is reached
+  // along many different splits. Worth writing first, then adding the cache
+  // once it is right.
+  if (p === \"\") return s === \"\";
+
+  const here = s !== \"\" && (p[0] === s[0] || p[0] === \".\");
+
+  if (p.length >= 2 && p[1] === \"*\") {
+    return isMatch(s, p.slice(2)) || (here && isMatch(s.slice(1), p));
+  }
+
+  return here && isMatch(s.slice(1), p.slice(1));
+}"),
+      #("Top-Down Memo", "O(m·n) time · O(m·n) space", "A star binds to the character *before* it, so the pattern is read two symbols at a time. Given \"x*\": either skip the pair entirely — zero copies — or, if x matches here, consume one character of the text and stay on the same pair. Everything else is a single-character match. Getting the zero-copies branch right is most of the problem.", "export function isMatch(s: string, p: string): boolean {
   const memo = new Map<string, boolean>();
 
   // A star binds to the character *before* it, so the pattern has to be read
@@ -674,21 +689,6 @@ pub fn nc102_regular_expression_matching() -> Embedded {
   };
 
   return works(0, 0);
-}"),
-      #("Solution 2 · No cache", "The same rules with no table at all, which is shorter and far easier to trust. It is exponential on patterns like \"a*a*a*a*b\", where the same suffix is reached along many different splits — so write this first, get it right, and add the cache afterwards.", "export function isMatch(s: string, p: string): boolean {
-  // The same rules with no table at all. Shorter and easier to trust, and
-  // exponential on patterns like \"a*a*a*a*b\" where the same suffix is reached
-  // along many different splits. Worth writing first, then adding the cache
-  // once it is right.
-  if (p === \"\") return s === \"\";
-
-  const here = s !== \"\" && (p[0] === s[0] || p[0] === \".\");
-
-  if (p.length >= 2 && p[1] === \"*\") {
-    return isMatch(s, p.slice(2)) || (here && isMatch(s.slice(1), p));
-  }
-
-  return here && isMatch(s.slice(1), p.slice(1));
 }"),
     ],
     check: Check(
@@ -720,7 +720,28 @@ export function run(): [string, string, string][] {
 pub fn nc103_implement_trie() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "One node per prefix, with a flag marking which prefixes are whole words. That flag is the entire difference between search and startsWith — without it, \"app\" and \"apple\" are indistinguishable once both are stored. The other detail worth keeping: the empty prefix always exists, because the root does.", "export class Trie {
+      #("Hash Set", "O(k²) per insert · O(total prefixes) space", "Two sets — the whole words, and every prefix of every word — and both questions answer in one lookup. Correct and shorter, at the cost of storing O(total letters) strings rather than sharing them. That shared storage is precisely what a trie is for, so this is the version that shows what is being bought.", "export class Trie {
+  // Two sets: the whole words, and every prefix of every word. Both questions
+  // then answer in one lookup, at the cost of storing O(total letters) strings
+  // rather than sharing them -- which is precisely the memory a trie exists to
+  // save. The empty prefix is present from the start: it is the root.
+  private words = new Set<string>();
+  private prefixes = new Set<string>([\"\"]);
+
+  insert(word: string): void {
+    this.words.add(word);
+    for (let size = 0; size <= word.length; size++) this.prefixes.add(word.slice(0, size));
+  }
+
+  search(word: string): boolean {
+    return this.words.has(word);
+  }
+
+  startsWith(prefix: string): boolean {
+    return this.prefixes.has(prefix);
+  }
+}"),
+      #("Trie", "O(k) per operation · O(total letters) space", "One node per prefix, with a flag marking which prefixes are whole words. That flag is the entire difference between search and startsWith — without it, \"app\" and \"apple\" are indistinguishable once both are stored. The other detail worth keeping: the empty prefix always exists, because the root does.", "export class Trie {
   // One node per prefix; `terminal` marks the prefixes that are whole words.
   // Without that flag \"app\" and \"apple\" are indistinguishable once both are
   // stored, which is the entire difference between search and startsWith.
@@ -753,27 +774,6 @@ pub fn nc103_implement_trie() -> Embedded {
       node = child;
     }
     return node;
-  }
-}"),
-      #("Solution 2 · Prefix set", "Two sets — the whole words, and every prefix of every word — and both questions answer in one lookup. Correct and shorter, at the cost of storing O(total letters) strings rather than sharing them. That shared storage is precisely what a trie is for, so this is the version that shows what is being bought.", "export class Trie {
-  // Two sets: the whole words, and every prefix of every word. Both questions
-  // then answer in one lookup, at the cost of storing O(total letters) strings
-  // rather than sharing them -- which is precisely the memory a trie exists to
-  // save. The empty prefix is present from the start: it is the root.
-  private words = new Set<string>();
-  private prefixes = new Set<string>([\"\"]);
-
-  insert(word: string): void {
-    this.words.add(word);
-    for (let size = 0; size <= word.length; size++) this.prefixes.add(word.slice(0, size));
-  }
-
-  search(word: string): boolean {
-    return this.words.has(word);
-  }
-
-  startsWith(prefix: string): boolean {
-    return this.prefixes.has(prefix);
   }
 }"),
     ],
@@ -828,7 +828,27 @@ export function run(): [string, string, string][] {
 pub fn nc104_word_dictionary() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "A dot has to try every child, which turns the lookup from a walk into a search. The trie is what keeps that search from being over the whole dictionary: a branch that cannot match is abandoned at the first letter, so shared prefixes are explored once rather than once per word.", "export class WordDictionary {
+      #("Brute Force", "O(n·k) per search · O(total letters) space", "Bucket the words by length and compare position by position. A pattern can only match words of its own length, so that one check throws away most of the collection before any character is compared — often enough on its own, and it needs no tree at all.", "export class WordDictionary {
+  // Words bucketed by length. A pattern can only match words of its own length,
+  // so that one check throws away most of the collection before any character
+  // is compared.
+  private byLength = new Map<number, string[]>();
+
+  addWord(word: string): void {
+    if (!this.byLength.has(word.length)) this.byLength.set(word.length, []);
+    this.byLength.get(word.length)!.push(word);
+  }
+
+  // No shared prefixes, so every candidate of the right length is compared
+  // position by position. Slower than the trie on a large dictionary, and it
+  // needs no tree -- which is the trade the trie is making.
+  search(word: string): boolean {
+    return (this.byLength.get(word.length) ?? []).some((candidate) =>
+      [...word].every((p, i) => p === \".\" || p === candidate[i]),
+    );
+  }
+}"),
+      #("Trie", "O(total letters) per search · O(total letters) space", "A dot has to try every child, which turns the lookup from a walk into a search. The trie is what keeps that search from being over the whole dictionary: a branch that cannot match is abandoned at the first letter, so shared prefixes are explored once rather than once per word.", "export class WordDictionary {
   private children = new Map<string, WordDictionary>();
   private terminal = false;
 
@@ -851,26 +871,6 @@ pub fn nc104_word_dictionary() -> Embedded {
       return [...this.children.values()].some((child) => child.search(rest));
     }
     return this.children.get(letter)?.search(rest) ?? false;
-  }
-}"),
-      #("Solution 2 · By length", "Bucket the words by length and compare position by position. A pattern can only match words of its own length, so that one check throws away most of the collection before any character is compared — often enough on its own, and it needs no tree at all.", "export class WordDictionary {
-  // Words bucketed by length. A pattern can only match words of its own length,
-  // so that one check throws away most of the collection before any character
-  // is compared.
-  private byLength = new Map<number, string[]>();
-
-  addWord(word: string): void {
-    if (!this.byLength.has(word.length)) this.byLength.set(word.length, []);
-    this.byLength.get(word.length)!.push(word);
-  }
-
-  // No shared prefixes, so every candidate of the right length is compared
-  // position by position. Slower than the trie on a large dictionary, and it
-  // needs no tree -- which is the trade the trie is making.
-  search(word: string): boolean {
-    return (this.byLength.get(word.length) ?? []).some((candidate) =>
-      [...word].every((p, i) => p === \".\" || p === candidate[i]),
-    );
   }
 }"),
     ],
@@ -913,7 +913,39 @@ export function run(): [string, string, string][] {
 pub fn nc105_word_search_ii() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Build one trie of all the words and walk it *alongside* the board. Searching for each word separately re-walks every shared prefix once per word; the trie walks each prefix once and abandons a square the moment no word continues that way. That is where nearly all the saving is, and it is the reason this problem exists rather than being Word Search in a loop.", "type Node = { children: Map<string, Node>; word: string | null };
+      #("Backtracking", "O(W·m·n·4ᴸ) time · O(L²) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Word Search, once per word. Correct, and it redoes the search for every shared prefix — a hundred words beginning \"ab\" each re-walk that \"ab\" from every square. Worth writing to feel the repetition the trie removes.", "export function findWords(board: string[][], words: string[]): string[] {
+  if (board.length === 0 || board[0].length === 0) return [];
+
+  // Word Search, once per word. Correct, and it redoes the search for every
+  // shared prefix: a hundred words beginning \"ab\" each re-walk that \"ab\" from
+  // every square. That repetition is exactly what the trie removes.
+  const exists = (word: string): boolean => {
+    if (word === \"\") return false;
+
+    const walk = (r: number, c: number, at: number, used: Set<string>): boolean => {
+      if (r < 0 || r >= board.length || c < 0 || c >= board[0].length) return false;
+      if (used.has(`${r},${c}`) || board[r][c] !== word[at]) return false;
+      if (at === word.length - 1) return true;
+      const next = new Set(used);
+      next.add(`${r},${c}`);
+      return [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dr, dc]) =>
+        walk(r + dr, c + dc, at + 1, next),
+      );
+    };
+
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[0].length; c++) {
+        if (walk(r, c, 0, new Set())) return true;
+      }
+    }
+    return false;
+  };
+
+  return words.filter(exists);
+}"),
+      #("Trie", "O(m·n·4ᴸ) time · O(total letters) space", "Build one trie of all the words and walk it *alongside* the board. Searching for each word separately re-walks every shared prefix once per word; the trie walks each prefix once and abandons a square the moment no word continues that way. That is where nearly all the saving is, and it is the reason this problem exists rather than being Word Search in a loop.", "type Node = { children: Map<string, Node>; word: string | null };
 
 export function findWords(board: string[][], words: string[]): string[] {
   if (board.length === 0 || board[0].length === 0) return [];
@@ -951,38 +983,6 @@ export function findWords(board: string[][], words: string[]): string[] {
 
   return [...found];
 }"),
-      #("Solution 2 · Each word", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-Word Search, once per word. Correct, and it redoes the search for every shared prefix — a hundred words beginning \"ab\" each re-walk that \"ab\" from every square. Worth writing to feel the repetition the trie removes.", "export function findWords(board: string[][], words: string[]): string[] {
-  if (board.length === 0 || board[0].length === 0) return [];
-
-  // Word Search, once per word. Correct, and it redoes the search for every
-  // shared prefix: a hundred words beginning \"ab\" each re-walk that \"ab\" from
-  // every square. That repetition is exactly what the trie removes.
-  const exists = (word: string): boolean => {
-    if (word === \"\") return false;
-
-    const walk = (r: number, c: number, at: number, used: Set<string>): boolean => {
-      if (r < 0 || r >= board.length || c < 0 || c >= board[0].length) return false;
-      if (used.has(`${r},${c}`) || board[r][c] !== word[at]) return false;
-      if (at === word.length - 1) return true;
-      const next = new Set(used);
-      next.add(`${r},${c}`);
-      return [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dr, dc]) =>
-        walk(r + dr, c + dc, at + 1, next),
-      );
-    };
-
-    for (let r = 0; r < board.length; r++) {
-      for (let c = 0; c < board[0].length; c++) {
-        if (walk(r, c, 0, new Set())) return true;
-      }
-    }
-    return false;
-  };
-
-  return words.filter(exists);
-}"),
     ],
     check: Check(
       signature: "export function findWords(board: string[][], words: string[]): string[]",
@@ -1013,32 +1013,7 @@ export function run(): [string, string, string][] {
 pub fn nc106_number_of_islands() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The grid is the graph: cells are nodes, the four neighbours are the edges, and nothing is ever built. Walk out from each unvisited land cell, mark everything it reaches, and add one — the traversal itself does the counting, which is why the answer needs no extra bookkeeping.", "export function numIslands(grid: string[][]): number {
-  const land = new Set<string>();
-  grid.forEach((row, r) => row.forEach((value, c) => value === \"1\" && land.add(`${r},${c}`)));
-
-  // Counting connected components: start a search at every piece of land not
-  // already reached, and each search that has to be started is one more island.
-  // Marking as you go is what stops a component being counted once per square.
-  const seen = new Set<string>();
-  let count = 0;
-
-  for (const at of land) {
-    if (seen.has(at)) continue;
-    count++;
-    const stack = [at];
-    while (stack.length) {
-      const key = stack.pop()!;
-      if (!land.has(key) || seen.has(key)) continue;
-      seen.add(key);
-      const [r, c] = key.split(\",\").map(Number);
-      stack.push(`${r - 1},${c}`, `${r + 1},${c}`, `${r},${c - 1}`, `${r},${c + 1}`);
-    }
-  }
-
-  return count;
-}"),
-      #("Solution 2 · Union find", "The same count without recursing: join each land cell to the land above and to its left, and the answer is the number of land cells minus the number of joins that actually merged two components. Worth having because a deep enough grid overflows the recursive walk, and because union-find can take cells as they arrive rather than needing the whole grid first.", "export function numIslands(grid: string[][]): number {
+      #("Union-Find", "O(m·n·α(m·n)) time · O(m·n) space", "The same count without recursing: join each land cell to the land above and to its left, and the answer is the number of land cells minus the number of joins that actually merged two components. Worth having because a deep enough grid overflows the recursive walk, and because union-find can take cells as they arrive rather than needing the whole grid first.", "export function numIslands(grid: string[][]): number {
   const land = new Set<string>();
   grid.forEach((row, r) => row.forEach((value, c) => value === \"1\" && land.add(`${r},${c}`)));
 
@@ -1070,6 +1045,31 @@ pub fn nc106_number_of_islands() -> Embedded {
 
   return new Set([...land].map(find)).size;
 }"),
+      #("DFS", "O(m·n) time · O(m·n) space", "The grid is the graph: cells are nodes, the four neighbours are the edges, and nothing is ever built. Walk out from each unvisited land cell, mark everything it reaches, and add one — the traversal itself does the counting, which is why the answer needs no extra bookkeeping.", "export function numIslands(grid: string[][]): number {
+  const land = new Set<string>();
+  grid.forEach((row, r) => row.forEach((value, c) => value === \"1\" && land.add(`${r},${c}`)));
+
+  // Counting connected components: start a search at every piece of land not
+  // already reached, and each search that has to be started is one more island.
+  // Marking as you go is what stops a component being counted once per square.
+  const seen = new Set<string>();
+  let count = 0;
+
+  for (const at of land) {
+    if (seen.has(at)) continue;
+    count++;
+    const stack = [at];
+    while (stack.length) {
+      const key = stack.pop()!;
+      if (!land.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      const [r, c] = key.split(\",\").map(Number);
+      stack.push(`${r - 1},${c}`, `${r + 1},${c}`, `${r},${c - 1}`, `${r},${c + 1}`);
+    }
+  }
+
+  return count;
+}"),
     ],
     check: Check(
       signature: "export function numIslands(grid: string[][]): number",
@@ -1098,7 +1098,32 @@ export function run(): [string, string, string][] {
 pub fn nc107_clone_graph() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The map from original node to its copy is the whole problem. Consulting it before copying anything is what makes a cycle terminate: a node already in the map is returned rather than copied again. Without that check any cycle recurses forever.", "export function cloneGraph(adjacency: number[][], start: number): number[][] {
+      #("DFS", "O(V log V + E) time · O(V+E) space", "Same map, depth-first instead of breadth-first — proof that the traversal order is irrelevant here. The copy is created and registered *before* its neighbours are visited, which is the ordering that makes a cycle find the half-built copy instead of recursing into it.", "export function cloneGraph(adjacency: number[][], start: number): number[][] {
+  if (start < 0 || start >= adjacency.length) return [];
+
+  const reached = new Set<number>();
+
+  // Depth-first. The node is marked *before* recursing into its neighbours,
+  // which is what makes a cycle terminate -- marking afterwards would let the
+  // traversal reach the same node again while it was still being visited.
+  const visit = (node: number) => {
+    if (reached.has(node) || node < 0 || node >= adjacency.length) return;
+    reached.add(node);
+    for (const neighbour of adjacency[node]) visit(neighbour);
+  };
+
+  visit(start);
+  return renumber(adjacency, reached);
+}
+
+function renumber(adjacency: number[][], reached: Set<number>): number[][] {
+  const ordered = [...reached].sort((a, b) => a - b);
+  const numbering = new Map(ordered.map((node, i) => [node, i]));
+  return ordered.map((node) =>
+    adjacency[node].filter((n) => numbering.has(n)).map((n) => numbering.get(n)!),
+  );
+}"),
+      #("BFS", "O(V log V + E) time · O(V+E) space", "The map from original node to its copy is the whole problem. Consulting it before copying anything is what makes a cycle terminate: a node already in the map is returned rather than copied again. Without that check any cycle recurses forever.", "export function cloneGraph(adjacency: number[][], start: number): number[][] {
   if (start < 0 || start >= adjacency.length) return [];
 
   // The set of nodes already dealt with is the whole problem. Without it a
@@ -1120,31 +1145,6 @@ pub fn nc107_clone_graph() -> Embedded {
 // Reachable nodes renumbered by their original index, ascending. Numbering by
 // *discovery* order would make the answer depend on whether the traversal was
 // breadth- or depth-first, which is not part of the problem.
-function renumber(adjacency: number[][], reached: Set<number>): number[][] {
-  const ordered = [...reached].sort((a, b) => a - b);
-  const numbering = new Map(ordered.map((node, i) => [node, i]));
-  return ordered.map((node) =>
-    adjacency[node].filter((n) => numbering.has(n)).map((n) => numbering.get(n)!),
-  );
-}"),
-      #("Solution 2 · Depth first", "Same map, depth-first instead of breadth-first — proof that the traversal order is irrelevant here. The copy is created and registered *before* its neighbours are visited, which is the ordering that makes a cycle find the half-built copy instead of recursing into it.", "export function cloneGraph(adjacency: number[][], start: number): number[][] {
-  if (start < 0 || start >= adjacency.length) return [];
-
-  const reached = new Set<number>();
-
-  // Depth-first. The node is marked *before* recursing into its neighbours,
-  // which is what makes a cycle terminate -- marking afterwards would let the
-  // traversal reach the same node again while it was still being visited.
-  const visit = (node: number) => {
-    if (reached.has(node) || node < 0 || node >= adjacency.length) return;
-    reached.add(node);
-    for (const neighbour of adjacency[node]) visit(neighbour);
-  };
-
-  visit(start);
-  return renumber(adjacency, reached);
-}
-
 function renumber(adjacency: number[][], reached: Set<number>): number[][] {
   const ordered = [...reached].sort((a, b) => a - b);
   const numbering = new Map(ordered.map((node, i) => [node, i]));
@@ -1180,33 +1180,7 @@ export function run(): [string, string, string][] {
 pub fn nc108_max_area_of_island() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Number of Islands with the count replaced by a size. Depth-first suits it because the size falls out of the return value — one for this cell plus whatever the four neighbours return — rather than needing a counter threaded through the walk.", "export function maxAreaOfIsland(grid: number[][]): number {
-  const land = new Set<string>();
-  grid.forEach((row, r) => row.forEach((value, c) => value === 1 && land.add(`${r},${c}`)));
-
-  // The same component search as counting islands, except each search reports
-  // how much it covered rather than just that it happened.
-  const seen = new Set<string>();
-  let best = 0;
-
-  for (const at of land) {
-    if (seen.has(at)) continue;
-    let area = 0;
-    const stack = [at];
-    while (stack.length) {
-      const key = stack.pop()!;
-      if (!land.has(key) || seen.has(key)) continue;
-      seen.add(key);
-      area++;
-      const [r, c] = key.split(\",\").map(Number);
-      stack.push(`${r - 1},${c}`, `${r + 1},${c}`, `${r},${c - 1}`, `${r},${c + 1}`);
-    }
-    best = Math.max(best, area);
-  }
-
-  return best;
-}"),
-      #("Solution 2 · Breadth first", "The same areas found wave by wave. Nothing is gained over the depth-first version here, but the frontier is explicit rather than living on the call stack, which is what a grid deep enough to overflow the stack needs.", "export function maxAreaOfIsland(grid: number[][]): number {
+      #("BFS", "O(m·n) time · O(m·n) space", "The same areas found wave by wave. Nothing is gained over the depth-first version here, but the frontier is explicit rather than living on the call stack, which is what a grid deep enough to overflow the stack needs.", "export function maxAreaOfIsland(grid: number[][]): number {
   const land = new Set<string>();
   grid.forEach((row, r) => row.forEach((value, c) => value === 1 && land.add(`${r},${c}`)));
 
@@ -1230,6 +1204,32 @@ pub fn nc108_max_area_of_island() -> Embedded {
       area++;
       const [r, c] = key.split(\",\").map(Number);
       frontier.push(`${r - 1},${c}`, `${r + 1},${c}`, `${r},${c - 1}`, `${r},${c + 1}`);
+    }
+    best = Math.max(best, area);
+  }
+
+  return best;
+}"),
+      #("DFS", "O(m·n) time · O(m·n) space", "Number of Islands with the count replaced by a size. Depth-first suits it because the size falls out of the return value — one for this cell plus whatever the four neighbours return — rather than needing a counter threaded through the walk.", "export function maxAreaOfIsland(grid: number[][]): number {
+  const land = new Set<string>();
+  grid.forEach((row, r) => row.forEach((value, c) => value === 1 && land.add(`${r},${c}`)));
+
+  // The same component search as counting islands, except each search reports
+  // how much it covered rather than just that it happened.
+  const seen = new Set<string>();
+  let best = 0;
+
+  for (const at of land) {
+    if (seen.has(at)) continue;
+    let area = 0;
+    const stack = [at];
+    while (stack.length) {
+      const key = stack.pop()!;
+      if (!land.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      area++;
+      const [r, c] = key.split(\",\").map(Number);
+      stack.push(`${r - 1},${c}`, `${r + 1},${c}`, `${r},${c - 1}`, `${r},${c + 1}`);
     }
     best = Math.max(best, area);
   }
@@ -1263,7 +1263,46 @@ export function run(): [string, string, string][] {
 pub fn nc109_pacific_atlantic() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Reverse the question. Asking of each cell whether water can get from there to both oceans repeats the same searches over and over; asking instead which cells an ocean could reach if water flowed uphill is two searches from the borders, and the answer is where the two sets meet. Flipping a search to start from the goal is the idea worth taking away.", "export function pacificAtlantic(heights: number[][]): number[][] {
+      #("Brute Force", "O(m²·n²) time · O(m·n) space", "The literal reading: from every cell, search downhill and see which oceans it reaches. O(cells) searches over O(cells) each, against two searches total — and the two are answering the same question, which is what makes the reversal legitimate rather than a trick.", "export function pacificAtlantic(heights: number[][]): number[][] {
+  if (heights.length === 0 || heights[0].length === 0) return [];
+
+  const rows = heights.length;
+  const columns = heights[0].length;
+
+  // The direct reading: from each square, flow downhill and see which edges are
+  // reachable. Correct, and it repeats nearly all of its work -- every square
+  // on a shared downhill path re-explores the same route. Reversing the
+  // question is what removes the repetition.
+  const downhill = (start: [number, number]): [number, number][] => {
+    const reached = new Set<string>();
+    const frontier = [start];
+    let head = 0;
+    while (head < frontier.length) {
+      const [r, c] = frontier[head++];
+      if (reached.has(`${r},${c}`)) continue;
+      reached.add(`${r},${c}`);
+      for (const [nr, nc] of [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]) {
+        if (nr >= 0 && nr < rows && nc >= 0 && nc < columns && heights[nr][nc] <= heights[r][c]) {
+          frontier.push([nr, nc]);
+        }
+      }
+    }
+    return [...reached].map((key) => key.split(\",\").map(Number) as [number, number]);
+  };
+
+  const out: number[][] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < columns; c++) {
+      const reached = downhill([r, c]);
+      const touchesPacific = reached.some(([rr, cc]) => rr === 0 || cc === 0);
+      const touchesAtlantic = reached.some(([rr, cc]) => rr === rows - 1 || cc === columns - 1);
+      if (touchesPacific && touchesAtlantic) out.push([r, c]);
+    }
+  }
+
+  return out.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+}"),
+      #("BFS", "O(m·n log(m·n)) time · O(m·n) space", "Reverse the question. Asking of each cell whether water can get from there to both oceans repeats the same searches over and over; asking instead which cells an ocean could reach if water flowed uphill is two searches from the borders, and the answer is where the two sets meet. Flipping a search to start from the goal is the idea worth taking away.", "export function pacificAtlantic(heights: number[][]): number[][] {
   if (heights.length === 0 || heights[0].length === 0) return [];
 
   const rows = heights.length;
@@ -1309,45 +1348,6 @@ pub fn nc109_pacific_atlantic() -> Embedded {
     .map((key) => key.split(\",\").map(Number))
     .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
 }"),
-      #("Solution 2 · From each cell", "The literal reading: from every cell, search downhill and see which oceans it reaches. O(cells) searches over O(cells) each, against two searches total — and the two are answering the same question, which is what makes the reversal legitimate rather than a trick.", "export function pacificAtlantic(heights: number[][]): number[][] {
-  if (heights.length === 0 || heights[0].length === 0) return [];
-
-  const rows = heights.length;
-  const columns = heights[0].length;
-
-  // The direct reading: from each square, flow downhill and see which edges are
-  // reachable. Correct, and it repeats nearly all of its work -- every square
-  // on a shared downhill path re-explores the same route. Reversing the
-  // question is what removes the repetition.
-  const downhill = (start: [number, number]): [number, number][] => {
-    const reached = new Set<string>();
-    const frontier = [start];
-    let head = 0;
-    while (head < frontier.length) {
-      const [r, c] = frontier[head++];
-      if (reached.has(`${r},${c}`)) continue;
-      reached.add(`${r},${c}`);
-      for (const [nr, nc] of [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]) {
-        if (nr >= 0 && nr < rows && nc >= 0 && nc < columns && heights[nr][nc] <= heights[r][c]) {
-          frontier.push([nr, nc]);
-        }
-      }
-    }
-    return [...reached].map((key) => key.split(\",\").map(Number) as [number, number]);
-  };
-
-  const out: number[][] = [];
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < columns; c++) {
-      const reached = downhill([r, c]);
-      const touchesPacific = reached.some(([rr, cc]) => rr === 0 || cc === 0);
-      const touchesAtlantic = reached.some(([rr, cc]) => rr === rows - 1 || cc === columns - 1);
-      if (touchesPacific && touchesAtlantic) out.push([r, c]);
-    }
-  }
-
-  return out.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-}"),
     ],
     check: Check(
       signature: "export function pacificAtlantic(heights: number[][]): number[][]",
@@ -1377,7 +1377,29 @@ export function run(): [string, string, string][] {
 pub fn nc10_three_sum() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Sort, fix one number, then run the two-pointer scan on the remainder looking for its negation. Sorting is what makes the duplicate triples skippable: equal values are adjacent, so stepping past them is a while loop, not a set.", "export function threeSum(nums: number[]): number[][] {
+      #("Brute Force", "O(n³) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every triple, checked. Sorting first means each triple comes out in ascending order, so collapsing the duplicates that repeated values produce is plain equality — no set needed.", "export function threeSum(nums: number[]): number[][] {
+  const ordered = [...nums].sort((a, b) => a - b);
+  const seen = new Set<string>();
+  const result: number[][] = [];
+
+  for (let i = 0; i < ordered.length; i++) {
+    for (let j = i + 1; j < ordered.length; j++) {
+      for (let k = j + 1; k < ordered.length; k++) {
+        if (ordered[i] + ordered[j] + ordered[k] !== 0) continue;
+        const triple = [ordered[i], ordered[j], ordered[k]];
+        const key = triple.join(\",\");
+        if (seen.has(key)) continue;
+        seen.add(key);
+        result.push(triple);
+      }
+    }
+  }
+
+  return result;
+}"),
+      #("Sort + Two Pointers", "O(n²) time · O(1) extra space", "Sort, fix one number, then run the two-pointer scan on the remainder looking for its negation. Sorting is what makes the duplicate triples skippable: equal values are adjacent, so stepping past them is a while loop, not a set.", "export function threeSum(nums: number[]): number[][] {
   const ordered = [...nums].sort((a, b) => a - b);
   const result: number[][] = [];
 
@@ -1396,28 +1418,6 @@ pub fn nc10_three_sum() -> Embedded {
         result.push([ordered[i], ordered[left], ordered[right]]);
         left++;
         while (left < right && ordered[left] === ordered[left - 1]) left++;
-      }
-    }
-  }
-
-  return result;
-}"),
-      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-Every triple, checked. Sorting first means each triple comes out in ascending order, so collapsing the duplicates that repeated values produce is plain equality — no set needed.", "export function threeSum(nums: number[]): number[][] {
-  const ordered = [...nums].sort((a, b) => a - b);
-  const seen = new Set<string>();
-  const result: number[][] = [];
-
-  for (let i = 0; i < ordered.length; i++) {
-    for (let j = i + 1; j < ordered.length; j++) {
-      for (let k = j + 1; k < ordered.length; k++) {
-        if (ordered[i] + ordered[j] + ordered[k] !== 0) continue;
-        const triple = [ordered[i], ordered[j], ordered[k]];
-        const key = triple.join(\",\");
-        if (seen.has(key)) continue;
-        seen.add(key);
-        result.push(triple);
       }
     }
   }
@@ -1456,38 +1456,7 @@ export function run(): [string, string, string][] {
 pub fn nc110_surrounded_regions() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Easier backwards. Rather than finding the surrounded regions, mark the ones that are not — everything reachable from a border O — and flip whatever is left. That side-steps having to notice mid-traversal that a region touches the edge, and costs one pass from the border rather than one per region.", "export function solve(board: string[][]): string[][] {
-  if (board.length === 0 || board[0].length === 0) return board;
-
-  const rows = board.length;
-  const columns = board[0].length;
-
-  // Invert the question. \"Which regions are surrounded?\" needs a search per
-  // region and a rule for what counts as escaping; \"which regions touch an
-  // edge?\" is one search from the border, and everything it does not reach is
-  // surrounded by definition.
-  const safe = new Set<string>();
-  const stack: [number, number][] = [];
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < columns; c++) {
-      const onBorder = r === 0 || c === 0 || r === rows - 1 || c === columns - 1;
-      if (onBorder && board[r][c] === \"O\") stack.push([r, c]);
-    }
-  }
-
-  while (stack.length) {
-    const [r, c] = stack.pop()!;
-    if (r < 0 || r >= rows || c < 0 || c >= columns) continue;
-    if (safe.has(`${r},${c}`) || board[r][c] !== \"O\") continue;
-    safe.add(`${r},${c}`);
-    stack.push([r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]);
-  }
-
-  return board.map((row, r) =>
-    row.map((value, c) => (value === \"O\" && !safe.has(`${r},${c}`) ? \"X\" : value)),
-  );
-}"),
-      #("Solution 2 · Per region", "The direct reading: gather each region, then flip it only if no cell in it sits on the border. Honest, and it makes explicit what the border-first version is exploiting — but it has to collect the whole region before it can decide anything about it.", "export function solve(board: string[][]): string[][] {
+      #("Per-Region DFS", "O(m·n) time · O(m·n) space", "The direct reading: gather each region, then flip it only if no cell in it sits on the border. Honest, and it makes explicit what the border-first version is exploiting — but it has to collect the whole region before it can decide anything about it.", "export function solve(board: string[][]): string[][] {
   if (board.length === 0 || board[0].length === 0) return board;
 
   const rows = board.length;
@@ -1525,6 +1494,37 @@ pub fn nc110_surrounded_regions() -> Embedded {
 
   return board.map((row, r) => row.map((value, c) => (doomed.has(`${r},${c}`) ? \"X\" : value)));
 }"),
+      #("Boundary DFS", "O(m·n) time · O(m·n) space", "Easier backwards. Rather than finding the surrounded regions, mark the ones that are not — everything reachable from a border O — and flip whatever is left. That side-steps having to notice mid-traversal that a region touches the edge, and costs one pass from the border rather than one per region.", "export function solve(board: string[][]): string[][] {
+  if (board.length === 0 || board[0].length === 0) return board;
+
+  const rows = board.length;
+  const columns = board[0].length;
+
+  // Invert the question. \"Which regions are surrounded?\" needs a search per
+  // region and a rule for what counts as escaping; \"which regions touch an
+  // edge?\" is one search from the border, and everything it does not reach is
+  // surrounded by definition.
+  const safe = new Set<string>();
+  const stack: [number, number][] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < columns; c++) {
+      const onBorder = r === 0 || c === 0 || r === rows - 1 || c === columns - 1;
+      if (onBorder && board[r][c] === \"O\") stack.push([r, c]);
+    }
+  }
+
+  while (stack.length) {
+    const [r, c] = stack.pop()!;
+    if (r < 0 || r >= rows || c < 0 || c >= columns) continue;
+    if (safe.has(`${r},${c}`) || board[r][c] !== \"O\") continue;
+    safe.add(`${r},${c}`);
+    stack.push([r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]);
+  }
+
+  return board.map((row, r) =>
+    row.map((value, c) => (value === \"O\" && !safe.has(`${r},${c}`) ? \"X\" : value)),
+  );
+}"),
     ],
     check: Check(
       signature: "export function solve(board: string[][]): string[][]",
@@ -1554,7 +1554,36 @@ export function run(): [string, string, string][] {
 pub fn nc111_rotting_oranges() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Multi-source breadth-first search: every rotten orange is on the frontier at minute zero, so each wave of the search *is* one minute and the number of waves is the answer. A separate search per source would give distances from each and then still need combining. Any fresh orange left unreached is what makes the answer -1.", "export function orangesRotting(grid: number[][]): number {
+      #("Simulation", "O(m·n·(m+n)) time · O(m·n) space", "Rebuild the grid one minute at a time, exactly as described. The same complexity as the wave search, and it makes the equivalence visible: a round of simulation and a level of breadth-first search are the same step written two ways.", "export function orangesRotting(grid: number[][]): number {
+  let board = grid.map((row) => [...row]);
+  let minutes = 0;
+
+  // Rewrite the whole grid once per minute rather than tracking a frontier.
+  // Much more work -- every square is examined every minute, not just the ones
+  // next to the rot -- but it is the problem statement executed literally, and
+  // it makes plain that the answer counts *rounds*, not distances.
+  for (;;) {
+    const following = board.map((row, r) =>
+      row.map((value, c) => {
+        if (value !== 1) return value;
+        const touched = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].some(
+          ([nr, nc]) =>
+            nr >= 0 && nr < board.length && nc >= 0 && nc < board[0].length && board[nr][nc] === 2,
+        );
+        return touched ? 2 : value;
+      }),
+    );
+
+    if (JSON.stringify(following) === JSON.stringify(board)) {
+      // Nothing changed: either everything has rotted or what is left never
+      // will.
+      return board.some((row) => row.includes(1)) ? -1 : minutes;
+    }
+    board = following;
+    minutes++;
+  }
+}"),
+      #("Multi-Source BFS", "O(m·n) time · O(m·n) space", "Multi-source breadth-first search: every rotten orange is on the frontier at minute zero, so each wave of the search *is* one minute and the number of waves is the answer. A separate search per source would give distances from each and then still need combining. Any fresh orange left unreached is what makes the answer -1.", "export function orangesRotting(grid: number[][]): number {
   let rotten: [number, number][] = [];
   let fresh = 0;
 
@@ -1590,35 +1619,6 @@ pub fn nc111_rotting_oranges() -> Embedded {
 
   return fresh === 0 ? minutes : -1;
 }"),
-      #("Solution 2 · Simulate minutes", "Rebuild the grid one minute at a time, exactly as described. The same complexity as the wave search, and it makes the equivalence visible: a round of simulation and a level of breadth-first search are the same step written two ways.", "export function orangesRotting(grid: number[][]): number {
-  let board = grid.map((row) => [...row]);
-  let minutes = 0;
-
-  // Rewrite the whole grid once per minute rather than tracking a frontier.
-  // Much more work -- every square is examined every minute, not just the ones
-  // next to the rot -- but it is the problem statement executed literally, and
-  // it makes plain that the answer counts *rounds*, not distances.
-  for (;;) {
-    const following = board.map((row, r) =>
-      row.map((value, c) => {
-        if (value !== 1) return value;
-        const touched = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].some(
-          ([nr, nc]) =>
-            nr >= 0 && nr < board.length && nc >= 0 && nc < board[0].length && board[nr][nc] === 2,
-        );
-        return touched ? 2 : value;
-      }),
-    );
-
-    if (JSON.stringify(following) === JSON.stringify(board)) {
-      // Nothing changed: either everything has rotted or what is left never
-      // will.
-      return board.some((row) => row.includes(1)) ? -1 : minutes;
-    }
-    board = following;
-    minutes++;
-  }
-}"),
     ],
     check: Check(
       signature: "export function orangesRotting(grid: number[][]): number",
@@ -1647,38 +1647,7 @@ export function run(): [string, string, string][] {
 pub fn nc112_walls_and_gates() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The same multi-source wave as rotting oranges, writing the wave number into the cell instead of counting waves. Starting from every gate at once is what makes the first arrival at a room its nearest gate — no comparison between gates is ever needed.", "const INFINITY = 2147483647;
-
-export function wallsAndGates(rooms: number[][]): number[][] {
-  if (rooms.length === 0 || rooms[0].length === 0) return rooms;
-
-  const board = rooms.map((row) => [...row]);
-  const rows = board.length;
-  const columns = board[0].length;
-
-  // One breadth-first search starting from *all* the gates at once, rather than
-  // one search per empty room. Because every source begins at distance zero
-  // together, the first time a room is reached is by its nearest gate -- the
-  // multi-source search does the whole grid in one pass.
-  const frontier: [number, number][] = [];
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < columns; c++) if (board[r][c] === 0) frontier.push([r, c]);
-  }
-
-  let head = 0;
-  while (head < frontier.length) {
-    const [r, c] = frontier[head++];
-    for (const [nr, nc] of [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]) {
-      if (nr < 0 || nr >= rows || nc < 0 || nc >= columns) continue;
-      if (board[nr][nc] !== INFINITY) continue;
-      board[nr][nc] = board[r][c] + 1;
-      frontier.push([nr, nc]);
-    }
-  }
-
-  return board;
-}"),
-      #("Solution 2 · From each room", "A search outward from each empty room until it meets a gate. One full search per room for an answer the single multi-source pass already has, which is the cost the wave avoids — but it is the version that says the problem statement outright.", "const INFINITY = 2147483647;
+      #("Brute Force", "O(m²·n²) time · O(m·n) space", "A search outward from each empty room until it meets a gate. One full search per room for an answer the single multi-source pass already has, which is the cost the wave avoids — but it is the version that says the problem statement outright.", "const INFINITY = 2147483647;
 
 export function wallsAndGates(rooms: number[][]): number[][] {
   if (rooms.length === 0 || rooms[0].length === 0) return rooms;
@@ -1715,6 +1684,37 @@ export function wallsAndGates(rooms: number[][]): number[][] {
     row.map((value, c) => (value === INFINITY ? nearest([r, c]) : value)),
   );
 }"),
+      #("Multi-Source BFS", "O(m·n) time · O(m·n) space", "The same multi-source wave as rotting oranges, writing the wave number into the cell instead of counting waves. Starting from every gate at once is what makes the first arrival at a room its nearest gate — no comparison between gates is ever needed.", "const INFINITY = 2147483647;
+
+export function wallsAndGates(rooms: number[][]): number[][] {
+  if (rooms.length === 0 || rooms[0].length === 0) return rooms;
+
+  const board = rooms.map((row) => [...row]);
+  const rows = board.length;
+  const columns = board[0].length;
+
+  // One breadth-first search starting from *all* the gates at once, rather than
+  // one search per empty room. Because every source begins at distance zero
+  // together, the first time a room is reached is by its nearest gate -- the
+  // multi-source search does the whole grid in one pass.
+  const frontier: [number, number][] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < columns; c++) if (board[r][c] === 0) frontier.push([r, c]);
+  }
+
+  let head = 0;
+  while (head < frontier.length) {
+    const [r, c] = frontier[head++];
+    for (const [nr, nc] of [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]) {
+      if (nr < 0 || nr >= rows || nc < 0 || nc >= columns) continue;
+      if (board[nr][nc] !== INFINITY) continue;
+      board[nr][nc] = board[r][c] + 1;
+      frontier.push([nr, nc]);
+    }
+  }
+
+  return board;
+}"),
     ],
     check: Check(
       signature: "export function wallsAndGates(rooms: number[][]): number[][]",
@@ -1743,35 +1743,7 @@ export function run(): [string, string, string][] {
 pub fn nc113_course_schedule() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "\"Can every course be finished\" is \"is this graph acyclic\". Kahn's algorithm takes whatever has no outstanding prerequisites, releases what depended on it, and stalls exactly when a cycle remains — so the cycle check is the algorithm running out of work early, not a separate test.", "export function canFinish(numCourses: number, prerequisites: number[][]): boolean {
-  // Kahn's algorithm. Courses with nothing outstanding can be taken now; taking
-  // one releases whatever depended on it. If the process stalls with courses
-  // left, those courses depend on each other in a circle -- a cycle is exactly
-  // what \"cannot be finished\" means.
-  const waiting = new Array<number>(numCourses).fill(0);
-  const unlocks: number[][] = Array.from({ length: numCourses }, () => []);
-
-  for (const [course, prereq] of prerequisites) {
-    waiting[course]++;
-    unlocks[prereq].push(course);
-  }
-
-  const ready: number[] = [];
-  for (let c = 0; c < numCourses; c++) if (waiting[c] === 0) ready.push(c);
-
-  let head = 0;
-  let taken = 0;
-  while (head < ready.length) {
-    const course = ready[head++];
-    taken++;
-    for (const following of unlocks[course]) {
-      if (--waiting[following] === 0) ready.push(following);
-    }
-  }
-
-  return taken === numCourses;
-}"),
-      #("Solution 2 · Dfs colours", "Depth-first needs three states, not two. \"Seen\" is not enough: a node reached again down a *different* branch is fine, while one reached again while still on the current path is a cycle. The in-progress set is exactly what tells those apart.", "export function canFinish(numCourses: number, prerequisites: number[][]): boolean {
+      #("DFS Colouring", "O(V+E) time · O(V+E) space", "Depth-first needs three states, not two. \"Seen\" is not enough: a node reached again down a *different* branch is fine, while one reached again while still on the current path is a cycle. The in-progress set is exactly what tells those apart.", "export function canFinish(numCourses: number, prerequisites: number[][]): boolean {
   const needs: number[][] = Array.from({ length: numCourses }, () => []);
   for (const [course, prereq] of prerequisites) needs[course].push(prereq);
 
@@ -1798,6 +1770,34 @@ pub fn nc113_course_schedule() -> Embedded {
     if (!visit(course)) return false;
   }
   return true;
+}"),
+      #("Topological Sort", "O(V+E) time · O(V+E) space", "\"Can every course be finished\" is \"is this graph acyclic\". Kahn's algorithm takes whatever has no outstanding prerequisites, releases what depended on it, and stalls exactly when a cycle remains — so the cycle check is the algorithm running out of work early, not a separate test.", "export function canFinish(numCourses: number, prerequisites: number[][]): boolean {
+  // Kahn's algorithm. Courses with nothing outstanding can be taken now; taking
+  // one releases whatever depended on it. If the process stalls with courses
+  // left, those courses depend on each other in a circle -- a cycle is exactly
+  // what \"cannot be finished\" means.
+  const waiting = new Array<number>(numCourses).fill(0);
+  const unlocks: number[][] = Array.from({ length: numCourses }, () => []);
+
+  for (const [course, prereq] of prerequisites) {
+    waiting[course]++;
+    unlocks[prereq].push(course);
+  }
+
+  const ready: number[] = [];
+  for (let c = 0; c < numCourses; c++) if (waiting[c] === 0) ready.push(c);
+
+  let head = 0;
+  let taken = 0;
+  while (head < ready.length) {
+    const course = ready[head++];
+    taken++;
+    for (const following of unlocks[course]) {
+      if (--waiting[following] === 0) ready.push(following);
+    }
+  }
+
+  return taken === numCourses;
 }"),
     ],
     check: Check(
@@ -1827,33 +1827,7 @@ export function run(): [string, string, string][] {
 pub fn nc114_course_schedule_ii() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The same computation as deciding whether it is possible — the order courses come off the ready list is the answer. Detecting the cycle and producing the schedule are not two passes.", "export function findOrder(numCourses: number, prerequisites: number[][]): number[] {
-  // The same Kahn's algorithm as deciding whether it is possible -- except the
-  // order courses come off the ready list *is* the answer. Detecting the cycle
-  // and producing the schedule are the same computation.
-  const waiting = new Array<number>(numCourses).fill(0);
-  const unlocks: number[][] = Array.from({ length: numCourses }, () => []);
-
-  for (const [course, prereq] of prerequisites) {
-    waiting[course]++;
-    unlocks[prereq].push(course);
-  }
-
-  const order: number[] = [];
-  for (let c = 0; c < numCourses; c++) if (waiting[c] === 0) order.push(c);
-
-  let head = 0;
-  while (head < order.length) {
-    const course = order[head++];
-    for (const following of unlocks[course]) {
-      if (--waiting[following] === 0) order.push(following);
-    }
-  }
-
-  // Stalled with courses left, so no order exists at all.
-  return order.length === numCourses ? order : [];
-}"),
-      #("Solution 2 · Dfs postorder", "Record a course only after everything it depends on has been recorded. That post-order is a valid schedule by construction, with no indegrees to maintain — and it comes out reversed, which is the tell that it was built from the dependencies up.", "export function findOrder(numCourses: number, prerequisites: number[][]): number[] {
+      #("DFS Postorder", "O(V+E) time · O(V+E) space", "Record a course only after everything it depends on has been recorded. That post-order is a valid schedule by construction, with no indegrees to maintain — and it comes out reversed, which is the tell that it was built from the dependencies up.", "export function findOrder(numCourses: number, prerequisites: number[][]): number[] {
   const needs: number[][] = Array.from({ length: numCourses }, () => []);
   for (const [course, prereq] of prerequisites) needs[course].push(prereq);
 
@@ -1882,6 +1856,32 @@ pub fn nc114_course_schedule_ii() -> Embedded {
     if (!visit(course)) return [];
   }
   return order;
+}"),
+      #("Topological Sort", "O(V+E) time · O(V+E) space", "The same computation as deciding whether it is possible — the order courses come off the ready list is the answer. Detecting the cycle and producing the schedule are not two passes.", "export function findOrder(numCourses: number, prerequisites: number[][]): number[] {
+  // The same Kahn's algorithm as deciding whether it is possible -- except the
+  // order courses come off the ready list *is* the answer. Detecting the cycle
+  // and producing the schedule are the same computation.
+  const waiting = new Array<number>(numCourses).fill(0);
+  const unlocks: number[][] = Array.from({ length: numCourses }, () => []);
+
+  for (const [course, prereq] of prerequisites) {
+    waiting[course]++;
+    unlocks[prereq].push(course);
+  }
+
+  const order: number[] = [];
+  for (let c = 0; c < numCourses; c++) if (waiting[c] === 0) order.push(c);
+
+  let head = 0;
+  while (head < order.length) {
+    const course = order[head++];
+    for (const following of unlocks[course]) {
+      if (--waiting[following] === 0) order.push(following);
+    }
+  }
+
+  // Stalled with courses left, so no order exists at all.
+  return order.length === numCourses ? order : [];
 }"),
     ],
     check: Check(
@@ -1921,29 +1921,7 @@ export function run(): [string, string, string][] {
 pub fn nc115_redundant_connection() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "n nodes and n edges means exactly one cycle, and union-find finds it the moment an edge joins two nodes already connected. Processing the edges in the order given is what makes the first such edge the *last* removable one, which is what the problem asks for.", "export function findRedundantConnection(edges: number[][]): number[] {
-  // n nodes and n edges means exactly one cycle. Union-find spots it the moment
-  // an edge joins two nodes already connected -- and because the edges are
-  // processed in order, the first such edge is the last one that could be
-  // removed, which is what the problem asks for.
-  const parents = new Map<number, number>();
-
-  const find = (node: number): number => {
-    while ((parents.get(node) ?? node) !== node) node = parents.get(node)!;
-    return node;
-  };
-
-  let found: number[] = [];
-  for (const [a, b] of edges) {
-    const rootA = find(a);
-    const rootB = find(b);
-    if (rootA === rootB) found = [a, b];
-    else parents.set(rootA, rootB);
-  }
-
-  return found;
-}"),
-      #("Solution 2 · By removal", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #("Brute Force", "O(n²) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
 Try removing each edge, latest first, and keep the first removal that leaves a tree. O(n^2) against near-linear, but it needs no new structure and it is the specification read literally.", "export function findRedundantConnection(edges: number[][]): number[] {
   // Try removing each edge, latest first, and keep the first removal that
@@ -1982,6 +1960,28 @@ function isTree(edges: number[][], nodes: Set<number>): boolean {
 
   return seen.size === nodes.size;
 }"),
+      #("Union-Find", "O(n·α(n)) time · O(n) space", "n nodes and n edges means exactly one cycle, and union-find finds it the moment an edge joins two nodes already connected. Processing the edges in the order given is what makes the first such edge the *last* removable one, which is what the problem asks for.", "export function findRedundantConnection(edges: number[][]): number[] {
+  // n nodes and n edges means exactly one cycle. Union-find spots it the moment
+  // an edge joins two nodes already connected -- and because the edges are
+  // processed in order, the first such edge is the last one that could be
+  // removed, which is what the problem asks for.
+  const parents = new Map<number, number>();
+
+  const find = (node: number): number => {
+    while ((parents.get(node) ?? node) !== node) node = parents.get(node)!;
+    return node;
+  };
+
+  let found: number[] = [];
+  for (const [a, b] of edges) {
+    const rootA = find(a);
+    const rootB = find(b);
+    if (rootA === rootB) found = [a, b];
+    else parents.set(rootA, rootB);
+  }
+
+  return found;
+}"),
     ],
     check: Check(
       signature: "export function findRedundantConnection(edges: number[][]): number[]",
@@ -2007,30 +2007,7 @@ export function run(): [string, string, string][] {
 pub fn nc116_connected_components() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Start at n components and subtract a merge for every edge that actually joins two different ones. No adjacency list, no traversal — the count falls straight out of how many merges happened.", "export function countComponents(n: number, edges: number[][]): number {
-  // Start with n components and merge: every edge whose ends are not already
-  // together removes one. No traversal, no adjacency list -- the count falls
-  // straight out of how many merges actually happened.
-  const parents = new Map<number, number>();
-
-  const find = (node: number): number => {
-    while ((parents.get(node) ?? node) !== node) node = parents.get(node)!;
-    return node;
-  };
-
-  let merges = 0;
-  for (const [a, b] of edges) {
-    const rootA = find(a);
-    const rootB = find(b);
-    if (rootA !== rootB) {
-      parents.set(rootA, rootB);
-      merges++;
-    }
-  }
-
-  return n - merges;
-}"),
-      #("Solution 2 · By traversal", "One search per unvisited node, exactly as with islands on a grid — the same counting idea with an adjacency list instead of coordinates. The contrast with union-find is the point: this needs the whole graph up front, the other can take edges as they arrive.", "export function countComponents(n: number, edges: number[][]): number {
+      #("DFS", "O(V+E) time · O(V+E) space", "One search per unvisited node, exactly as with islands on a grid — the same counting idea with an adjacency list instead of coordinates. The contrast with union-find is the point: this needs the whole graph up front, the other can take edges as they arrive.", "export function countComponents(n: number, edges: number[][]): number {
   const adjacency: number[][] = Array.from({ length: n }, () => []);
   for (const [a, b] of edges) {
     adjacency[a].push(b);
@@ -2057,6 +2034,29 @@ pub fn nc116_connected_components() -> Embedded {
   }
 
   return count;
+}"),
+      #("Union-Find", "O(E·α(V)) time · O(V) space", "Start at n components and subtract a merge for every edge that actually joins two different ones. No adjacency list, no traversal — the count falls straight out of how many merges happened.", "export function countComponents(n: number, edges: number[][]): number {
+  // Start with n components and merge: every edge whose ends are not already
+  // together removes one. No traversal, no adjacency list -- the count falls
+  // straight out of how many merges actually happened.
+  const parents = new Map<number, number>();
+
+  const find = (node: number): number => {
+    while ((parents.get(node) ?? node) !== node) node = parents.get(node)!;
+    return node;
+  };
+
+  let merges = 0;
+  for (const [a, b] of edges) {
+    const rootA = find(a);
+    const rootB = find(b);
+    if (rootA !== rootB) {
+      parents.set(rootA, rootB);
+      merges++;
+    }
+  }
+
+  return n - merges;
 }"),
     ],
     check: Check(
@@ -2086,7 +2086,31 @@ export function run(): [string, string, string][] {
 pub fn nc117_graph_valid_tree() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "A tree is connected *and* acyclic, but with exactly n-1 edges either condition implies the other, so the edge count plus one of them is enough. Here it is the count plus reachability. The n = 0 case has to be stated separately, since the n-1 count says otherwise.", "export function validTree(n: number, edges: number[][]): boolean {
+      #("Union-Find", "O(n·α(n)) time · O(n) space", "Both conditions from one pass. An edge inside a component is a cycle, so if none is, the graph is a forest — and a forest with n-1 merges is a single tree. No adjacency list and no traversal.", "export function validTree(n: number, edges: number[][]): boolean {
+  if (n <= 0) return edges.length === 0;
+
+  // Both conditions from one pass. An edge joining two nodes already connected
+  // is a cycle, so if none does, the graph is a forest -- and a forest with n-1
+  // merges is a single tree. No adjacency list and no traversal.
+  const parents = new Map<number, number>();
+
+  const find = (node: number): number => {
+    while ((parents.get(node) ?? node) !== node) node = parents.get(node)!;
+    return node;
+  };
+
+  let merges = 0;
+  for (const [a, b] of edges) {
+    const rootA = find(a);
+    const rootB = find(b);
+    if (rootA === rootB) return false;
+    parents.set(rootA, rootB);
+    merges++;
+  }
+
+  return merges === n - 1;
+}"),
+      #("DFS", "O(n) time · O(n) space", "A tree is connected *and* acyclic, but with exactly n-1 edges either condition implies the other, so the edge count plus one of them is enough. Here it is the count plus reachability. The n = 0 case has to be stated separately, since the n-1 count says otherwise.", "export function validTree(n: number, edges: number[][]): boolean {
   // A graph with no nodes at all is vacuously a tree, provided it has no edges
   // either -- worth stating, because the n-1 edge count says otherwise.
   if (n <= 0) return edges.length === 0;
@@ -2113,30 +2137,6 @@ pub fn nc117_graph_valid_tree() -> Embedded {
   }
 
   return seen.size === n;
-}"),
-      #("Solution 2 · Union find", "Both conditions from one pass. An edge inside a component is a cycle, so if none is, the graph is a forest — and a forest with n-1 merges is a single tree. No adjacency list and no traversal.", "export function validTree(n: number, edges: number[][]): boolean {
-  if (n <= 0) return edges.length === 0;
-
-  // Both conditions from one pass. An edge joining two nodes already connected
-  // is a cycle, so if none does, the graph is a forest -- and a forest with n-1
-  // merges is a single tree. No adjacency list and no traversal.
-  const parents = new Map<number, number>();
-
-  const find = (node: number): number => {
-    while ((parents.get(node) ?? node) !== node) node = parents.get(node)!;
-    return node;
-  };
-
-  let merges = 0;
-  for (const [a, b] of edges) {
-    const rootA = find(a);
-    const rootB = find(b);
-    if (rootA === rootB) return false;
-    parents.set(rootA, rootB);
-    merges++;
-  }
-
-  return merges === n - 1;
 }"),
     ],
     check: Check(
@@ -2166,7 +2166,41 @@ export function run(): [string, string, string][] {
 pub fn nc118_word_ladder() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Shortest path on an unweighted graph, so breadth-first — but the graph is never built. Two words are neighbours when they share a wildcard pattern like \"*ot\", so bucketing every word under each of its patterns gives the adjacency in linear time.", "export function ladderLength(beginWord: string, endWord: string, wordList: string[]): number {
+      #("Brute Force", "O(n²·k) time · O(n·k) space", "Neighbours found by comparing against every remaining word. Simpler to state, and O(n) comparisons per expansion instead of a constant number of lookups — which is exactly the cost the wildcard buckets remove.", "export function ladderLength(beginWord: string, endWord: string, wordList: string[]): number {
+  const words = new Set(wordList);
+  if (!words.has(endWord)) return 0;
+
+  // Neighbours found by comparing against every remaining word. Simpler to
+  // state and O(n) comparisons per expansion rather than a constant number of
+  // lookups -- which is the cost the wildcard buckets remove.
+  const seen = new Set([beginWord]);
+  let frontier = [beginWord];
+  let steps = 1;
+
+  while (frontier.length) {
+    if (frontier.includes(endWord)) return steps;
+    const following: string[] = [];
+    for (const candidate of words) {
+      if (seen.has(candidate)) continue;
+      if (frontier.some((word) => differsByOne(word, candidate))) {
+        seen.add(candidate);
+        following.push(candidate);
+      }
+    }
+    frontier = following;
+    steps++;
+  }
+
+  return 0;
+}
+
+function differsByOne(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let differences = 0;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) differences++;
+  return differences === 1;
+}"),
+      #("BFS", "O(n·k²) time · O(n·k) space", "Shortest path on an unweighted graph, so breadth-first — but the graph is never built. Two words are neighbours when they share a wildcard pattern like \"*ot\", so bucketing every word under each of its patterns gives the adjacency in linear time.", "export function ladderLength(beginWord: string, endWord: string, wordList: string[]): number {
   const words = new Set(wordList);
   if (!words.has(endWord)) return 0;
 
@@ -2206,40 +2240,6 @@ pub fn nc118_word_ladder() -> Embedded {
 
   return 0;
 }"),
-      #("Solution 2 · Compare pairs", "Neighbours found by comparing against every remaining word. Simpler to state, and O(n) comparisons per expansion instead of a constant number of lookups — which is exactly the cost the wildcard buckets remove.", "export function ladderLength(beginWord: string, endWord: string, wordList: string[]): number {
-  const words = new Set(wordList);
-  if (!words.has(endWord)) return 0;
-
-  // Neighbours found by comparing against every remaining word. Simpler to
-  // state and O(n) comparisons per expansion rather than a constant number of
-  // lookups -- which is the cost the wildcard buckets remove.
-  const seen = new Set([beginWord]);
-  let frontier = [beginWord];
-  let steps = 1;
-
-  while (frontier.length) {
-    if (frontier.includes(endWord)) return steps;
-    const following: string[] = [];
-    for (const candidate of words) {
-      if (seen.has(candidate)) continue;
-      if (frontier.some((word) => differsByOne(word, candidate))) {
-        seen.add(candidate);
-        following.push(candidate);
-      }
-    }
-    frontier = following;
-    steps++;
-  }
-
-  return 0;
-}
-
-function differsByOne(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let differences = 0;
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) differences++;
-  return differences === 1;
-}"),
     ],
     check: Check(
       signature: "export function ladderLength(beginWord: string, endWord: string, wordList: string[]): number",
@@ -2267,31 +2267,7 @@ export function run(): [string, string, string][] {
 pub fn nc119_reconstruct_itinerary() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Hierholzer's algorithm. Take the smallest unused ticket every time and never look back — an airport is only recorded once it has no tickets left, so the dead end the greedy choice walks into is exactly where the route has to *end*, and recording it first is what puts it last. Nothing is ever undone, which is the whole difference from the backtracking version.", "export function findItinerary(tickets: string[][]): string[] {
-  const destinations = new Map<string, string[]>();
-  for (const [origin, destination] of tickets) {
-    if (!destinations.has(origin)) destinations.set(origin, []);
-    destinations.get(origin)!.push(destination);
-  }
-  for (const options of destinations.values()) options.sort();
-
-  // Hierholzer's algorithm. Take the smallest unused ticket every time and
-  // never look back: an airport is only recorded once it has no tickets left,
-  // so the dead end the greedy choice walks into is exactly where the route has
-  // to *end* -- and being recorded first puts it at the front once the record
-  // is reversed.
-  const route: string[] = [];
-  const stack = [\"JFK\"];
-  while (stack.length) {
-    const airport = stack[stack.length - 1];
-    const options = destinations.get(airport);
-    if (options && options.length) stack.push(options.shift()!);
-    else route.push(stack.pop()!);
-  }
-
-  return route.reverse();
-}"),
-      #("Solution 2 · Backtracking", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #("Backtracking", "O(E!) time · O(E²) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
 Every ticket used, smallest option first, undoing a choice that leads nowhere. Because the options are sorted, the first complete itinerary found is already the smallest — no candidates to compare. Exponential in the worst case, which is precisely what Hierholzer's one-pass walk removes.", "export function findItinerary(tickets: string[][]): string[] {
   const destinations = new Map<string, string[]>();
@@ -2319,6 +2295,30 @@ Every ticket used, smallest option first, undoing a choice that leads nowhere. B
 
   return extend(\"JFK\", [\"JFK\"], tickets.length) ?? [];
 }"),
+      #("Hierholzer", "O(E log E) time · O(E) space", "Hierholzer's algorithm. Take the smallest unused ticket every time and never look back — an airport is only recorded once it has no tickets left, so the dead end the greedy choice walks into is exactly where the route has to *end*, and recording it first is what puts it last. Nothing is ever undone, which is the whole difference from the backtracking version.", "export function findItinerary(tickets: string[][]): string[] {
+  const destinations = new Map<string, string[]>();
+  for (const [origin, destination] of tickets) {
+    if (!destinations.has(origin)) destinations.set(origin, []);
+    destinations.get(origin)!.push(destination);
+  }
+  for (const options of destinations.values()) options.sort();
+
+  // Hierholzer's algorithm. Take the smallest unused ticket every time and
+  // never look back: an airport is only recorded once it has no tickets left,
+  // so the dead end the greedy choice walks into is exactly where the route has
+  // to *end* -- and being recorded first puts it at the front once the record
+  // is reversed.
+  const route: string[] = [];
+  const stack = [\"JFK\"];
+  while (stack.length) {
+    const airport = stack[stack.length - 1];
+    const options = destinations.get(airport);
+    if (options && options.length) stack.push(options.shift()!);
+    else route.push(stack.pop()!);
+  }
+
+  return route.reverse();
+}"),
     ],
     check: Check(
       signature: "export function findItinerary(tickets: string[][]): string[]",
@@ -2345,7 +2345,18 @@ export function run(): [string, string, string][] {
 pub fn nc11_container_water() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Start at both ends. The area is capped by the shorter line, so moving the taller one in can never help — always move the shorter, and track the best area seen.", "export function maxArea(height: number[]): number {
+      #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every pair of lines, measured. O(n^2), but it makes what the two-pointer sweep is maximising explicit: shorter line times distance.", "export function maxArea(height: number[]): number {
+  let best = 0;
+  for (let left = 0; left < height.length; left++) {
+    for (let right = left + 1; right < height.length; right++) {
+      best = Math.max(best, (right - left) * Math.min(height[left], height[right]));
+    }
+  }
+  return best;
+}"),
+      #("Two Pointers", "O(n) time · O(1) space", "Start at both ends. The area is capped by the shorter line, so moving the taller one in can never help — always move the shorter, and track the best area seen.", "export function maxArea(height: number[]): number {
   let left = 0;
   let right = height.length - 1;
   let best = 0;
@@ -2360,17 +2371,6 @@ pub fn nc11_container_water() -> Embedded {
     }
   }
 
-  return best;
-}"),
-      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-Every pair of lines, measured. O(n^2), but it makes what the two-pointer sweep is maximising explicit: shorter line times distance.", "export function maxArea(height: number[]): number {
-  let best = 0;
-  for (let left = 0; left < height.length; left++) {
-    for (let right = left + 1; right < height.length; right++) {
-      best = Math.max(best, (right - left) * Math.min(height[left], height[right]));
-    }
-  }
   return best;
 }"),
     ],
@@ -2397,34 +2397,7 @@ export function run(): [string, string, string][] {
 pub fn nc120_min_cost_connect_points() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Prim's algorithm. Each outside point remembers only its distance to the tree so far, so adding one is a pass to find the nearest and a pass to update — O(n^2), which is what a complete graph costs anyway, and it needs no heap. Taking the cheapest edge is safe because the cheapest edge leaving any set of points is in some minimum spanning tree.", "export function minCostConnectPoints(points: number[][]): number {
-  if (points.length === 0) return 0;
-
-  // Prim's algorithm. Each outside point remembers only its distance to the
-  // tree so far, so adding a point is one pass to find the nearest and one pass
-  // to update -- O(n^2) total, which is what a complete graph costs anyway, and
-  // it needs no heap. Cheapest-edge-first is safe because the cheapest edge
-  // leaving any set of points is always in some minimum spanning tree.
-  const outside = points.slice(1).map((point) => ({ point, cost: distance(points[0], point) }));
-  let total = 0;
-
-  while (outside.length) {
-    let best = 0;
-    for (let i = 1; i < outside.length; i++) if (outside[i].cost < outside[best].cost) best = i;
-    const [nearest] = outside.splice(best, 1);
-    total += nearest.cost;
-    for (const entry of outside) {
-      entry.cost = Math.min(entry.cost, distance(nearest.point, entry.point));
-    }
-  }
-
-  return total;
-}
-
-function distance(a: number[], b: number[]): number {
-  return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
-}"),
-      #("Solution 2 · Kruskal", "Every edge, cheapest first, kept only when it joins two pieces that are not already connected — union-find is what makes that test cheap. The trade against Prim's is the sort, but Kruskal never looks at the points themselves, only at the edge list, which is why it is the one that generalises to a sparse graph.", "export function minCostConnectPoints(points: number[][]): number {
+      #("Kruskal", "O(n² log n) time · O(n²) space", "Every edge, cheapest first, kept only when it joins two pieces that are not already connected — union-find is what makes that test cheap. The trade against Prim's is the sort, but Kruskal never looks at the points themselves, only at the edge list, which is why it is the one that generalises to a sparse graph.", "export function minCostConnectPoints(points: number[][]): number {
   // Kruskal's algorithm: every edge, cheapest first, kept only when it joins
   // two pieces that are not already connected. Union-find is what makes that
   // test cheap. The trade against Prim's is the sort -- O(n^2 log n) edges here
@@ -2451,6 +2424,33 @@ function distance(a: number[], b: number[]): number {
     if (rootI !== rootJ) {
       parents.set(rootI, rootJ);
       total += cost;
+    }
+  }
+
+  return total;
+}
+
+function distance(a: number[], b: number[]): number {
+  return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+}"),
+      #("Prim", "O(n²) time · O(n) space", "Prim's algorithm. Each outside point remembers only its distance to the tree so far, so adding one is a pass to find the nearest and a pass to update — O(n^2), which is what a complete graph costs anyway, and it needs no heap. Taking the cheapest edge is safe because the cheapest edge leaving any set of points is in some minimum spanning tree.", "export function minCostConnectPoints(points: number[][]): number {
+  if (points.length === 0) return 0;
+
+  // Prim's algorithm. Each outside point remembers only its distance to the
+  // tree so far, so adding a point is one pass to find the nearest and one pass
+  // to update -- O(n^2) total, which is what a complete graph costs anyway, and
+  // it needs no heap. Cheapest-edge-first is safe because the cheapest edge
+  // leaving any set of points is always in some minimum spanning tree.
+  const outside = points.slice(1).map((point) => ({ point, cost: distance(points[0], point) }));
+  let total = 0;
+
+  while (outside.length) {
+    let best = 0;
+    for (let i = 1; i < outside.length; i++) if (outside[i].cost < outside[best].cost) best = i;
+    const [nearest] = outside.splice(best, 1);
+    total += nearest.cost;
+    for (const entry of outside) {
+      entry.cost = Math.min(entry.cost, distance(nearest.point, entry.point));
     }
   }
 
@@ -2487,7 +2487,27 @@ export function run(): [string, string, string][] {
 pub fn nc121_network_delay_time() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Dijkstra's algorithm. Taking the smallest tentative arrival settles that node for good, because any other route to it would have to start with an edge at least as long. That argument is exactly where a negative edge would break it — which is the reason to know Bellman-Ford as well.", "export function networkDelayTime(times: number[][], n: number, k: number): number {
+      #("Bellman-Ford", "O(V·E) time · O(V) space", "No choosing what to settle next: relax every edge, n-1 times over, and the times settle by themselves — a shortest path is at most n-1 edges long, and each round fixes at least one more of them. Slower at O(V·E), and worth knowing because it survives negative weights.", "export function networkDelayTime(times: number[][], n: number, k: number): number {
+  // Bellman-Ford. No choosing what to settle next: relax every edge, n-1 times
+  // over, and the times settle by themselves -- a shortest path is at most n-1
+  // edges long, and each round fixes at least one more of them. Slower than
+  // Dijkstra at O(V*E), and the reason to know it is that it survives negative
+  // edge weights, which Dijkstra's settle-and-never-revisit does not.
+  const settled = new Map<number, number>([[k, 0]]);
+
+  for (let round = 0; round < n - 1; round++) {
+    for (const [origin, destination, weight] of times) {
+      if (!settled.has(origin)) continue;
+      const arrival = settled.get(origin)! + weight;
+      if (!settled.has(destination) || arrival < settled.get(destination)!) {
+        settled.set(destination, arrival);
+      }
+    }
+  }
+
+  return settled.size === n ? Math.max(...settled.values()) : -1;
+}"),
+      #("Dijkstra", "O(E log V) time · O(V+E) space", "Dijkstra's algorithm. Taking the smallest tentative arrival settles that node for good, because any other route to it would have to start with an edge at least as long. That argument is exactly where a negative edge would break it — which is the reason to know Bellman-Ford as well.", "export function networkDelayTime(times: number[][], n: number, k: number): number {
   const edges = new Map<number, [number, number][]>();
   for (const [origin, destination, weight] of times) {
     if (!edges.has(origin)) edges.set(origin, []);
@@ -2518,26 +2538,6 @@ pub fn nc121_network_delay_time() -> Embedded {
   // Every node has to have heard the signal, and the answer is the last one to.
   return settled.size === n ? Math.max(...settled.values()) : -1;
 }"),
-      #("Solution 2 · Bellman ford", "No choosing what to settle next: relax every edge, n-1 times over, and the times settle by themselves — a shortest path is at most n-1 edges long, and each round fixes at least one more of them. Slower at O(V·E), and worth knowing because it survives negative weights.", "export function networkDelayTime(times: number[][], n: number, k: number): number {
-  // Bellman-Ford. No choosing what to settle next: relax every edge, n-1 times
-  // over, and the times settle by themselves -- a shortest path is at most n-1
-  // edges long, and each round fixes at least one more of them. Slower than
-  // Dijkstra at O(V*E), and the reason to know it is that it survives negative
-  // edge weights, which Dijkstra's settle-and-never-revisit does not.
-  const settled = new Map<number, number>([[k, 0]]);
-
-  for (let round = 0; round < n - 1; round++) {
-    for (const [origin, destination, weight] of times) {
-      if (!settled.has(origin)) continue;
-      const arrival = settled.get(origin)! + weight;
-      if (!settled.has(destination) || arrival < settled.get(destination)!) {
-        settled.set(destination, arrival);
-      }
-    }
-  }
-
-  return settled.size === n ? Math.max(...settled.values()) : -1;
-}"),
     ],
     check: Check(
       signature: "export function networkDelayTime(times: number[][], n: number, k: number): number",
@@ -2565,37 +2565,7 @@ export function run(): [string, string, string][] {
 pub fn nc122_swim_in_water() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Dijkstra's, with the cost of a path redefined from the sum of its steps to the largest step in it — the water only has to rise once. Everything else about the algorithm is untouched, which is the point: the shortest-path machinery works for any cost that only grows along a path.", "export function swimInWater(grid: number[][]): number {
-  if (grid.length === 0) return 0;
-
-  const n = grid.length;
-
-  // Dijkstra's, with \"cost of a path\" redefined from the sum of its steps to
-  // the largest step in it -- the water only has to rise once. Everything else
-  // about the algorithm is unchanged, which is the point: settle the cheapest
-  // reachable cell, and the first time the far corner is settled that cost is
-  // the answer.
-  const seen = new Set<string>();
-  let frontier: [number, number, number][] = [[grid[0][0], 0, 0]];
-
-  while (frontier.length) {
-    let best = 0;
-    for (let i = 1; i < frontier.length; i++) if (frontier[i][0] < frontier[best][0]) best = i;
-    const [cost, r, c] = frontier[best];
-    frontier.splice(best, 1);
-    if (r === n - 1 && c === n - 1) return cost;
-    if (seen.has(`${r},${c}`)) continue;
-    seen.add(`${r},${c}`);
-    for (const [nr, nc] of [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]) {
-      if (nr < 0 || nr >= n || nc < 0 || nc >= grid[nr].length) continue;
-      if (seen.has(`${nr},${nc}`)) continue;
-      frontier.push([Math.max(cost, grid[nr][nc]), nr, nc]);
-    }
-  }
-
-  return -1;
-}"),
-      #("Solution 2 · Binary search", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+      #("Binary Search", "O(n² log n) time · O(n²) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
 Reachability at time t is monotone: once the corner can be reached, it stays reachable as the water rises. That is the shape binary search needs, and it turns the question from \"what is the cheapest path\" into \"is it possible yet\", answered by a plain flood fill.", "export function swimInWater(grid: number[][]): number {
   if (grid.length === 0) return 0;
@@ -2633,6 +2603,36 @@ Reachability at time t is monotone: once the corner can be reached, it stays rea
   }
   return low;
 }"),
+      #("Dijkstra", "O(n² log n) time · O(n²) space", "Dijkstra's, with the cost of a path redefined from the sum of its steps to the largest step in it — the water only has to rise once. Everything else about the algorithm is untouched, which is the point: the shortest-path machinery works for any cost that only grows along a path.", "export function swimInWater(grid: number[][]): number {
+  if (grid.length === 0) return 0;
+
+  const n = grid.length;
+
+  // Dijkstra's, with \"cost of a path\" redefined from the sum of its steps to
+  // the largest step in it -- the water only has to rise once. Everything else
+  // about the algorithm is unchanged, which is the point: settle the cheapest
+  // reachable cell, and the first time the far corner is settled that cost is
+  // the answer.
+  const seen = new Set<string>();
+  let frontier: [number, number, number][] = [[grid[0][0], 0, 0]];
+
+  while (frontier.length) {
+    let best = 0;
+    for (let i = 1; i < frontier.length; i++) if (frontier[i][0] < frontier[best][0]) best = i;
+    const [cost, r, c] = frontier[best];
+    frontier.splice(best, 1);
+    if (r === n - 1 && c === n - 1) return cost;
+    if (seen.has(`${r},${c}`)) continue;
+    seen.add(`${r},${c}`);
+    for (const [nr, nc] of [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]) {
+      if (nr < 0 || nr >= n || nc < 0 || nc >= grid[nr].length) continue;
+      if (seen.has(`${nr},${nc}`)) continue;
+      frontier.push([Math.max(cost, grid[nr][nc]), nr, nc]);
+    }
+  }
+
+  return -1;
+}"),
     ],
     check: Check(
       signature: "export function swimInWater(grid: number[][]): number",
@@ -2659,56 +2659,7 @@ export function run(): [string, string, string][] {
 pub fn nc123_alien_dictionary() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The words are the input but the graph is over letters. Two adjacent words agree up to their first difference, and that difference is the only ordering they establish — everything after it says nothing at all. Then it is a topological sort, with two distinct ways to fail: a cycle, and a word followed by its own prefix.", "export function alienOrder(words: string[]): string {
-  const letters = new Set<string>();
-  for (const word of words) for (const letter of word) letters.add(letter);
-
-  const waiting = new Map<string, number>();
-  const unlocks = new Map<string, string[]>();
-  for (const letter of letters) {
-    waiting.set(letter, 0);
-    unlocks.set(letter, []);
-  }
-
-  // Two adjacent words agree up to their first difference, and that difference
-  // is the only thing they say about the alphabet -- everything after it is
-  // unordered. The one case with no letters to compare is a word followed by a
-  // prefix of itself, which no alphabet can explain.
-  for (let i = 0; i + 1 < words.length; i++) {
-    const first = words[i];
-    const second = words[i + 1];
-    const shared = Math.min(first.length, second.length);
-    let split = -1;
-    for (let j = 0; j < shared; j++) {
-      if (first[j] !== second[j]) {
-        split = j;
-        break;
-      }
-    }
-    if (split === -1) {
-      if (first.length > second.length) return \"\";
-      continue;
-    }
-    unlocks.get(first[split])!.push(second[split]);
-    waiting.set(second[split], waiting.get(second[split])! + 1);
-  }
-
-  const ready = [...letters].filter((letter) => waiting.get(letter) === 0);
-  const order: string[] = [];
-  while (ready.length) {
-    const letter = ready.pop()!;
-    order.push(letter);
-    for (const following of unlocks.get(letter)!) {
-      waiting.set(following, waiting.get(following)! - 1);
-      if (waiting.get(following) === 0) ready.push(following);
-    }
-  }
-
-  // Short means the leftovers all depend on each other: the ordering the words
-  // describe is contradictory, so no alphabet satisfies it.
-  return order.length === letters.size ? order.join(\"\") : \"\";
-}"),
-      #("Solution 2 · Dfs postorder", "Record a letter only once everything that must follow it has been recorded, and prepend rather than append — that is what puts it back in front of them. The in-progress set is the cycle check, exactly as in Course Schedule: a letter met again on the current path contradicts itself.", "export function alienOrder(words: string[]): string {
+      #("DFS Topological Sort", "O(C) time · O(V+E) space", "Record a letter only once everything that must follow it has been recorded, and prepend rather than append — that is what puts it back in front of them. The in-progress set is the cycle check, exactly as in Course Schedule: a letter met again on the current path contradicts itself.", "export function alienOrder(words: string[]): string {
   const letters = new Set<string>();
   for (const word of words) for (const letter of word) letters.add(letter);
 
@@ -2760,6 +2711,55 @@ pub fn nc123_alien_dictionary() -> Embedded {
 
   return order.reverse().join(\"\");
 }"),
+      #("Topological Sort", "O(C) time · O(V+E) space", "The words are the input but the graph is over letters. Two adjacent words agree up to their first difference, and that difference is the only ordering they establish — everything after it says nothing at all. Then it is a topological sort, with two distinct ways to fail: a cycle, and a word followed by its own prefix.", "export function alienOrder(words: string[]): string {
+  const letters = new Set<string>();
+  for (const word of words) for (const letter of word) letters.add(letter);
+
+  const waiting = new Map<string, number>();
+  const unlocks = new Map<string, string[]>();
+  for (const letter of letters) {
+    waiting.set(letter, 0);
+    unlocks.set(letter, []);
+  }
+
+  // Two adjacent words agree up to their first difference, and that difference
+  // is the only thing they say about the alphabet -- everything after it is
+  // unordered. The one case with no letters to compare is a word followed by a
+  // prefix of itself, which no alphabet can explain.
+  for (let i = 0; i + 1 < words.length; i++) {
+    const first = words[i];
+    const second = words[i + 1];
+    const shared = Math.min(first.length, second.length);
+    let split = -1;
+    for (let j = 0; j < shared; j++) {
+      if (first[j] !== second[j]) {
+        split = j;
+        break;
+      }
+    }
+    if (split === -1) {
+      if (first.length > second.length) return \"\";
+      continue;
+    }
+    unlocks.get(first[split])!.push(second[split]);
+    waiting.set(second[split], waiting.get(second[split])! + 1);
+  }
+
+  const ready = [...letters].filter((letter) => waiting.get(letter) === 0);
+  const order: string[] = [];
+  while (ready.length) {
+    const letter = ready.pop()!;
+    order.push(letter);
+    for (const following of unlocks.get(letter)!) {
+      waiting.set(following, waiting.get(following)! - 1);
+      if (waiting.get(following) === 0) ready.push(following);
+    }
+  }
+
+  // Short means the leftovers all depend on each other: the ordering the words
+  // describe is contradictory, so no alphabet satisfies it.
+  return order.length === letters.size ? order.join(\"\") : \"\";
+}"),
     ],
     check: Check(
       signature: "export function alienOrder(words: string[]): string",
@@ -2788,34 +2788,7 @@ export function run(): [string, string, string][] {
 pub fn nc124_cheapest_flights() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The stop limit is what stops this being plain Dijkstra: cheapest-so-far no longer settles a city, because a costlier route with fewer stops may still be the one that gets through. Bellman-Ford handles it by construction — one round is one flight — provided each round reads a snapshot of the last, or two flights leak into a single round.", "export function findCheapestPrice(
-  n: number,
-  flights: number[][],
-  src: number,
-  dst: number,
-  k: number,
-): number {
-  // Bellman-Ford, stopped after k+1 rounds -- one round is one flight, so the
-  // round count *is* the stop limit. Each round reads the previous round's
-  // costs from a snapshot rather than from the table being written; without
-  // that, two flights could be taken within a single round and the limit would
-  // leak.
-  let costs = new Map<number, number>([[src, 0]]);
-
-  for (let round = 0; round <= k; round++) {
-    const previous = new Map(costs);
-    for (const [origin, destination, price] of flights) {
-      if (!previous.has(origin)) continue;
-      const total = previous.get(origin)! + price;
-      if (!costs.has(destination) || total < costs.get(destination)!) {
-        costs.set(destination, total);
-      }
-    }
-  }
-
-  return costs.get(dst) ?? -1;
-}"),
-      #("Solution 2 · Breadth first", "Breadth-first by number of flights taken, which makes the stop limit the depth limit — the same bound Bellman-Ford gets from its round count, arrived at from the other direction. The cheapest-so-far table is what stops it exploding: a city is expanded again only when this route reached it for less.", "export function findCheapestPrice(
+      #("BFS", "O(k·E) time · O(V+E) space", "Breadth-first by number of flights taken, which makes the stop limit the depth limit — the same bound Bellman-Ford gets from its round count, arrived at from the other direction. The cheapest-so-far table is what stops it exploding: a city is expanded again only when this route reached it for less.", "export function findCheapestPrice(
   n: number,
   flights: number[][],
   src: number,
@@ -2851,6 +2824,33 @@ pub fn nc124_cheapest_flights() -> Embedded {
 
   return best.get(dst) ?? -1;
 }"),
+      #("Bellman-Ford", "O(k·E) time · O(V) space", "The stop limit is what stops this being plain Dijkstra: cheapest-so-far no longer settles a city, because a costlier route with fewer stops may still be the one that gets through. Bellman-Ford handles it by construction — one round is one flight — provided each round reads a snapshot of the last, or two flights leak into a single round.", "export function findCheapestPrice(
+  n: number,
+  flights: number[][],
+  src: number,
+  dst: number,
+  k: number,
+): number {
+  // Bellman-Ford, stopped after k+1 rounds -- one round is one flight, so the
+  // round count *is* the stop limit. Each round reads the previous round's
+  // costs from a snapshot rather than from the table being written; without
+  // that, two flights could be taken within a single round and the limit would
+  // leak.
+  let costs = new Map<number, number>([[src, 0]]);
+
+  for (let round = 0; round <= k; round++) {
+    const previous = new Map(costs);
+    for (const [origin, destination, price] of flights) {
+      if (!previous.has(origin)) continue;
+      const total = previous.get(origin)! + price;
+      if (!costs.has(destination) || total < costs.get(destination)!) {
+        costs.set(destination, total);
+      }
+    }
+  }
+
+  return costs.get(dst) ?? -1;
+}"),
     ],
     check: Check(
       signature: "export function findCheapestPrice(",
@@ -2879,7 +2879,28 @@ export function run(): [string, string, string][] {
 pub fn nc125_reverse_linked_list() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "One pass, three references: where you came from, where you are, and where you were going. Losing the look-ahead is the classic bug — once the link has been overwritten, the rest of the list is unreachable. In a language with cons lists the same thing is an accumulator you prepend to, which is the *same* rewiring written as a value.", "export class ListNode {
+      #("Recursion", "O(n) time · O(n) space", "Reverse the rest, then hook the current node onto its end. The new head comes back unchanged through every frame, which is why it is returned rather than tracked — and `head.next.next = head` is the whole rewiring, done on the way back out. O(n) stack against the loop's O(1).", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function reverseList(head: ListNode | null): ListNode | null {
+  // Reverse the rest, then hook the current node onto its end. The new head
+  // comes back unchanged through every frame, which is why it is returned
+  // rather than tracked -- and head.next.next = head is the whole rewiring,
+  // done on the way back out. O(n) stack, against the loop's O(1).
+  if (head === null || head.next === null) return head;
+  const reversedRest = reverseList(head.next);
+  head.next.next = head;
+  head.next = null;
+  return reversedRest;
+}"),
+      #("Iterative", "O(n) time · O(1) space", "One pass, three references: where you came from, where you are, and where you were going. Losing the look-ahead is the classic bug — once the link has been overwritten, the rest of the list is unreachable. In a language with cons lists the same thing is an accumulator you prepend to, which is the *same* rewiring written as a value.", "export class ListNode {
   val: number;
   next: ListNode | null;
 
@@ -2902,27 +2923,6 @@ export function reverseList(head: ListNode | null): ListNode | null {
     head = following;
   }
   return previous;
-}"),
-      #("Solution 2 · By recursion", "Reverse the rest, then hook the current node onto its end. The new head comes back unchanged through every frame, which is why it is returned rather than tracked — and `head.next.next = head` is the whole rewiring, done on the way back out. O(n) stack against the loop's O(1).", "export class ListNode {
-  val: number;
-  next: ListNode | null;
-
-  constructor(val = 0, next: ListNode | null = null) {
-    this.val = val;
-    this.next = next;
-  }
-}
-
-export function reverseList(head: ListNode | null): ListNode | null {
-  // Reverse the rest, then hook the current node onto its end. The new head
-  // comes back unchanged through every frame, which is why it is returned
-  // rather than tracked -- and head.next.next = head is the whole rewiring,
-  // done on the way back out. O(n) stack, against the loop's O(1).
-  if (head === null || head.next === null) return head;
-  const reversedRest = reverseList(head.next);
-  head.next.next = head;
-  head.next = null;
-  return reversedRest;
 }"),
     ],
     check: Check(
@@ -2974,7 +2974,30 @@ export function run(): [string, string, string][] {
 pub fn nc126_merge_two_sorted_lists() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.", "export class ListNode {
+      #("Recursion", "O(n+m) time · O(n+m) space", "The same merge with the return value doing the joining: no dummy, no tail reference. One frame per node is the cost, and it is exactly what the loop trades away.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function mergeTwoLists(list1: ListNode | null, list2: ListNode | null): ListNode | null {
+  // Take the smaller head and let the recursion produce the rest. No dummy and
+  // no tail pointer -- the return value is the join -- at the cost of a frame
+  // per node.
+  if (list1 === null) return list2;
+  if (list2 === null) return list1;
+  if (list1.val <= list2.val) {
+    list1.next = mergeTwoLists(list1.next, list2);
+    return list1;
+  }
+  list2.next = mergeTwoLists(list1, list2.next);
+  return list2;
+}"),
+      #("Iterative", "O(n+m) time · O(1) space", "Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.", "export class ListNode {
   val: number;
   next: ListNode | null;
 
@@ -3005,29 +3028,6 @@ export function mergeTwoLists(list1: ListNode | null, list2: ListNode | null): L
   // Whichever list is left is already sorted and already linked.
   tail.next = list1 !== null ? list1 : list2;
   return dummy.next;
-}"),
-      #("Solution 2 · By recursion", "The same merge with the return value doing the joining: no dummy, no tail reference. One frame per node is the cost, and it is exactly what the loop trades away.", "export class ListNode {
-  val: number;
-  next: ListNode | null;
-
-  constructor(val = 0, next: ListNode | null = null) {
-    this.val = val;
-    this.next = next;
-  }
-}
-
-export function mergeTwoLists(list1: ListNode | null, list2: ListNode | null): ListNode | null {
-  // Take the smaller head and let the recursion produce the rest. No dummy and
-  // no tail pointer -- the return value is the join -- at the cost of a frame
-  // per node.
-  if (list1 === null) return list2;
-  if (list2 === null) return list1;
-  if (list1.val <= list2.val) {
-    list1.next = mergeTwoLists(list1.next, list2);
-    return list1;
-  }
-  list2.next = mergeTwoLists(list1, list2.next);
-  return list2;
 }"),
     ],
     check: Check(
@@ -3079,7 +3079,39 @@ export function run(): [string, string, string][] {
 pub fn nc127_reorder_list() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.", "export class ListNode {
+      #("Two Pointers", "O(n) time · O(n) space", "Collect the nodes into an array, then relink them by index from both ends. O(n) extra space against the in-place version's O(1) — but random access is precisely what a linked list lacks, so this makes visible what the midpoint-and-reverse dance is buying.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function reorderList(head: ListNode | null): ListNode | null {
+  // Collect the nodes into an array first, then relink them by index from both
+  // ends. O(n) extra space against the in-place version's O(1) -- but random
+  // access is exactly what a linked list lacks, so this makes visible what the
+  // midpoint-and-reverse dance is buying.
+  const nodes: ListNode[] = [];
+  for (let node = head; node !== null; node = node.next) nodes.push(node);
+  if (nodes.length === 0) return head;
+
+  let low = 0;
+  let high = nodes.length - 1;
+  while (low < high) {
+    nodes[low].next = nodes[high];
+    low++;
+    if (low === high) break;
+    nodes[high].next = nodes[low];
+    high--;
+  }
+  nodes[low].next = null;
+
+  return head;
+}"),
+      #("Fast & Slow Pointers", "O(n) time · O(1) space", "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.", "export class ListNode {
   val: number;
   next: ListNode | null;
 
@@ -3124,38 +3156,6 @@ export function reorderList(head: ListNode | null): ListNode | null {
     first = firstNext;
     second = secondNext;
   }
-
-  return head;
-}"),
-      #("Solution 2 · Via array", "Collect the nodes into an array, then relink them by index from both ends. O(n) extra space against the in-place version's O(1) — but random access is precisely what a linked list lacks, so this makes visible what the midpoint-and-reverse dance is buying.", "export class ListNode {
-  val: number;
-  next: ListNode | null;
-
-  constructor(val = 0, next: ListNode | null = null) {
-    this.val = val;
-    this.next = next;
-  }
-}
-
-export function reorderList(head: ListNode | null): ListNode | null {
-  // Collect the nodes into an array first, then relink them by index from both
-  // ends. O(n) extra space against the in-place version's O(1) -- but random
-  // access is exactly what a linked list lacks, so this makes visible what the
-  // midpoint-and-reverse dance is buying.
-  const nodes: ListNode[] = [];
-  for (let node = head; node !== null; node = node.next) nodes.push(node);
-  if (nodes.length === 0) return head;
-
-  let low = 0;
-  let high = nodes.length - 1;
-  while (low < high) {
-    nodes[low].next = nodes[high];
-    low++;
-    if (low === high) break;
-    nodes[high].next = nodes[low];
-    high--;
-  }
-  nodes[low].next = null;
 
   return head;
 }"),
@@ -3218,7 +3218,34 @@ export function run(): [string, string, string][] {
 pub fn nc128_remove_nth_from_end() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Two walkers n apart. When the leading one runs off the end, the trailing one is on the node to change — the length is never computed, which is the point: one pass instead of two. Opening the gap can fail, and that failure is exactly the \"n is longer than the list\" case.", "export class ListNode {
+      #("Two Pass", "O(n) time · O(1) space", "Count first, then remove by position. Two passes rather than one, and it says outright what the gap encodes: nth from the end is length minus n from the front. Where a list cannot be walked twice — a stream, say — that is the assumption that fails.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function removeNthFromEnd(head: ListNode | null, n: number): ListNode | null {
+  // Count first, then walk to the position. Two passes rather than one, and it
+  // says outright what the two-pointer version encodes in a gap: nth from the
+  // end is length minus n from the front. Where a list cannot be walked twice
+  // -- a stream, say -- that is exactly the assumption that fails.
+  let length = 0;
+  for (let node = head; node !== null; node = node.next) length++;
+
+  const index = length - n;
+  if (index < 0) return head;
+
+  const dummy = new ListNode(0, head);
+  let before = dummy;
+  for (let i = 0; i < index; i++) before = before.next!;
+  before.next = before.next!.next;
+  return dummy.next;
+}"),
+      #("Two Pointers", "O(n) time · O(1) space", "Two walkers n apart. When the leading one runs off the end, the trailing one is on the node to change — the length is never computed, which is the point: one pass instead of two. Opening the gap can fail, and that failure is exactly the \"n is longer than the list\" case.", "export class ListNode {
   val: number;
   next: ListNode | null;
 
@@ -3248,33 +3275,6 @@ export function removeNthFromEnd(head: ListNode | null, n: number): ListNode | n
   }
 
   behind.next = behind.next!.next;
-  return dummy.next;
-}"),
-      #("Solution 2 · By length", "Count first, then remove by position. Two passes rather than one, and it says outright what the gap encodes: nth from the end is length minus n from the front. Where a list cannot be walked twice — a stream, say — that is the assumption that fails.", "export class ListNode {
-  val: number;
-  next: ListNode | null;
-
-  constructor(val = 0, next: ListNode | null = null) {
-    this.val = val;
-    this.next = next;
-  }
-}
-
-export function removeNthFromEnd(head: ListNode | null, n: number): ListNode | null {
-  // Count first, then walk to the position. Two passes rather than one, and it
-  // says outright what the two-pointer version encodes in a gap: nth from the
-  // end is length minus n from the front. Where a list cannot be walked twice
-  // -- a stream, say -- that is exactly the assumption that fails.
-  let length = 0;
-  for (let node = head; node !== null; node = node.next) length++;
-
-  const index = length - n;
-  if (index < 0) return head;
-
-  const dummy = new ListNode(0, head);
-  let before = dummy;
-  for (let i = 0; i < index; i++) before = before.next!;
-  before.next = before.next!.next;
   return dummy.next;
 }"),
     ],
@@ -3328,38 +3328,7 @@ export function run(): [string, string, string][] {
 pub fn nc129_copy_random_list() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.", "export class Node {
-  val: number;
-  next: Node | null;
-  random: Node | null;
-
-  constructor(val = 0, next: Node | null = null, random: Node | null = null) {
-    this.val = val;
-    this.next = next;
-    this.random = random;
-  }
-}
-
-export function copyRandomList(head: Node | null): Node | null {
-  // One pass to create every copy, a second to wire them up. Resolving a link
-  // on first sight cannot work: it may point at a node not yet copied, which is
-  // the whole difficulty of the problem -- and a map from original node to copy
-  // is what removes it.
-  const copies = new Map<Node, Node>();
-
-  for (let node = head; node !== null; node = node.next) {
-    copies.set(node, new Node(node.val));
-  }
-
-  for (let node = head; node !== null; node = node.next) {
-    const copy = copies.get(node)!;
-    copy.next = node.next === null ? null : copies.get(node.next)!;
-    copy.random = node.random === null ? null : copies.get(node.random)!;
-  }
-
-  return head === null ? null : copies.get(head)!;
-}"),
-      #("Solution 2 · Interleaved", "The list itself replaces the map: each copy is spliced in directly after its original, so \"the copy of X\" is always X.next — no lookup and no O(n) table. Three passes instead of two, and the last one has to unweave the lists again, restoring the original exactly as it was.", "export class Node {
+      #("Interleaved Copies", "O(n) time · O(1) extra space", "The list itself replaces the map: each copy is spliced in directly after its original, so \"the copy of X\" is always X.next — no lookup and no O(n) table. Three passes instead of two, and the last one has to unweave the lists again, restoring the original exactly as it was.", "export class Node {
   val: number;
   next: Node | null;
   random: Node | null;
@@ -3394,6 +3363,37 @@ export function copyRandomList(head: Node | null): Node | null {
   }
 
   return copy;
+}"),
+      #("Hash Map", "O(n) time · O(n) space", "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.", "export class Node {
+  val: number;
+  next: Node | null;
+  random: Node | null;
+
+  constructor(val = 0, next: Node | null = null, random: Node | null = null) {
+    this.val = val;
+    this.next = next;
+    this.random = random;
+  }
+}
+
+export function copyRandomList(head: Node | null): Node | null {
+  // One pass to create every copy, a second to wire them up. Resolving a link
+  // on first sight cannot work: it may point at a node not yet copied, which is
+  // the whole difficulty of the problem -- and a map from original node to copy
+  // is what removes it.
+  const copies = new Map<Node, Node>();
+
+  for (let node = head; node !== null; node = node.next) {
+    copies.set(node, new Node(node.val));
+  }
+
+  for (let node = head; node !== null; node = node.next) {
+    const copy = copies.get(node)!;
+    copy.next = node.next === null ? null : copies.get(node.next)!;
+    copy.random = node.random === null ? null : copies.get(node.random)!;
+  }
+
+  return head === null ? null : copies.get(head)!;
 }"),
     ],
     check: Check(
@@ -3459,16 +3459,7 @@ export function run(): [string, string, string][] {
 pub fn nc12_best_time_stock() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Carry the cheapest price seen so far; today's best sale is today's price against that minimum. One pass, two variables.", "export function maxProfit(prices: number[]): number {
-  let lowest = Infinity;
-  let profit = 0;
-  for (const price of prices) {
-    lowest = Math.min(lowest, price);
-    profit = Math.max(profit, price - lowest);
-  }
-  return profit;
-}"),
-      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
 Every buy day against every later sell day. O(n^2), and the problem statement written out.", "export function maxProfit(prices: number[]): number {
   let profit = 0;
@@ -3476,6 +3467,15 @@ Every buy day against every later sell day. O(n^2), and the problem statement wr
     for (let sell = buy + 1; sell < prices.length; sell++) {
       profit = Math.max(profit, prices[sell] - prices[buy]);
     }
+  }
+  return profit;
+}"),
+      #("Greedy", "O(n) time · O(1) space", "Carry the cheapest price seen so far; today's best sale is today's price against that minimum. One pass, two variables.", "export function maxProfit(prices: number[]): number {
+  let lowest = Infinity;
+  let profit = 0;
+  for (const price of prices) {
+    lowest = Math.min(lowest, price);
+    profit = Math.max(profit, price - lowest);
   }
   return profit;
 }"),
@@ -3504,7 +3504,7 @@ export function run(): [string, string, string][] {
 pub fn nc130_add_two_numbers() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The digits arrive least significant first, which is exactly the order addition wants — no reversing and no length matching. The case worth writing down is the carry outliving both numbers: 5 + 5 produces a digit neither input has a node for.", "export class ListNode {
+      #("Simulation", "O(n+m) time · O(n+m) space", "The digits arrive least significant first, which is exactly the order addition wants — no reversing and no length matching. The case worth writing down is the carry outliving both numbers: 5 + 5 produces a digit neither input has a node for.", "export class ListNode {
   val: number;
   next: ListNode | null;
 
@@ -3540,7 +3540,7 @@ export function addTwoNumbers(l1: ListNode | null, l2: ListNode | null): ListNod
 
   return dummy.next;
 }"),
-      #("Solution 2 · Via digits array", "Read both lists into arrays, add positionally, then rebuild. The same arithmetic with the carry handled after the fact rather than during the walk — which is what makes clear that the single-pass version is doing two things at once. Converting to whole numbers instead would be simpler and quietly wrong: a long list overflows a double.", "export class ListNode {
+      #("Solution 2 · Via digits array", "", "Read both lists into arrays, add positionally, then rebuild. The same arithmetic with the carry handled after the fact rather than during the walk — which is what makes clear that the single-pass version is doing two things at once. Converting to whole numbers instead would be simpler and quietly wrong: a long list overflows a double.", "export class ListNode {
   val: number;
   next: ListNode | null;
 
@@ -3630,7 +3630,29 @@ export function run(): [string, string, string][] {
 pub fn nc131_linked_list_cycle() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Floyd's tortoise and hare. One walker takes single steps, the other double; inside a loop the fast one gains a place per step on the slow one, so it must land on it. Outside one, it runs off the end first. Constant memory and nothing is marked — that is the whole result.", "export class ListNode {
+      #("Hash Set", "O(n) time · O(n) space", "Remember every node visited and stop when one repeats. Obvious and correct, at O(n) memory — which is exactly what the two-walker version removes. Note that it is the *nodes* that go in the set, not their values: repeated values are ordinary, repeated nodes are the cycle.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function hasCycle(head: ListNode | null): boolean {
+  // Remember every node visited and stop when one repeats. Obvious, correct,
+  // and O(n) memory -- which is the whole cost the two-pointer version removes.
+  // Note that it is the *nodes* that go in the set, not their values: repeated
+  // values are ordinary, repeated nodes are the cycle.
+  const seen = new Set<ListNode>();
+  for (let node = head; node !== null; node = node.next) {
+    if (seen.has(node)) return true;
+    seen.add(node);
+  }
+  return false;
+}"),
+      #("Fast & Slow Pointers", "O(n) time · O(1) space", "Floyd's tortoise and hare. One walker takes single steps, the other double; inside a loop the fast one gains a place per step on the slow one, so it must land on it. Outside one, it runs off the end first. Constant memory and nothing is marked — that is the whole result.", "export class ListNode {
   val: number;
   next: ListNode | null;
 
@@ -3652,28 +3674,6 @@ export function hasCycle(head: ListNode | null): boolean {
     slow = slow!.next;
     fast = fast.next.next;
     if (slow === fast) return true;
-  }
-  return false;
-}"),
-      #("Solution 2 · Seen set", "Remember every node visited and stop when one repeats. Obvious and correct, at O(n) memory — which is exactly what the two-walker version removes. Note that it is the *nodes* that go in the set, not their values: repeated values are ordinary, repeated nodes are the cycle.", "export class ListNode {
-  val: number;
-  next: ListNode | null;
-
-  constructor(val = 0, next: ListNode | null = null) {
-    this.val = val;
-    this.next = next;
-  }
-}
-
-export function hasCycle(head: ListNode | null): boolean {
-  // Remember every node visited and stop when one repeats. Obvious, correct,
-  // and O(n) memory -- which is the whole cost the two-pointer version removes.
-  // Note that it is the *nodes* that go in the set, not their values: repeated
-  // values are ordinary, repeated nodes are the cycle.
-  const seen = new Set<ListNode>();
-  for (let node = head; node !== null; node = node.next) {
-    if (seen.has(node)) return true;
-    seen.add(node);
   }
   return false;
 }"),
@@ -3724,7 +3724,25 @@ export function run(): [string, string, string][] {
 pub fn nc132_find_the_duplicate() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Read the array as a linked list: position i points at position nums[i]. Every value is a valid position and one repeats, so two positions point at the same place — the list has a cycle, and the duplicate is its entrance. Then it is Floyd's twice: once to meet inside the loop, once to find where it begins.", "export function findDuplicate(nums: number[]): number {
+      #("Binary Search", "O(n log n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Binary search over the *values*, not the positions. For a candidate v, count how many numbers are at most v: with no duplicate that count is exactly v, so a count running ahead says the repeat is at or below v. O(n log n), but it needs no insight about cycles.", "export function findDuplicate(nums: number[]): number {
+  // Binary search over the *values*, not the positions. For a candidate v,
+  // count how many numbers are at most v: with no duplicate that count is
+  // exactly v, so a count that runs ahead says the repeat is at or below v.
+  // O(n log n) against Floyd's O(n), but it needs no insight about cycles --
+  // only that the pigeonhole is what makes the count informative.
+  let low = 1;
+  let high = nums.length - 1;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    const seen = nums.filter((value) => value <= middle).length;
+    if (seen > middle) high = middle;
+    else low = middle + 1;
+  }
+  return low;
+}"),
+      #("Fast & Slow Pointers", "O(n) time · O(1) space", "Read the array as a linked list: position i points at position nums[i]. Every value is a valid position and one repeats, so two positions point at the same place — the list has a cycle, and the duplicate is its entrance. Then it is Floyd's twice: once to meet inside the loop, once to find where it begins.", "export function findDuplicate(nums: number[]): number {
   // Read the array as a linked list: position i points at position nums[i].
   // Every value is a valid position and one value repeats, so two positions
   // point at the same place -- the list has a cycle, and the duplicate is its
@@ -3744,24 +3762,6 @@ pub fn nc132_find_the_duplicate() -> Embedded {
     fast = nums[fast];
   }
   return slow;
-}"),
-      #("Solution 2 · Counting", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
-
-Binary search over the *values*, not the positions. For a candidate v, count how many numbers are at most v: with no duplicate that count is exactly v, so a count running ahead says the repeat is at or below v. O(n log n), but it needs no insight about cycles.", "export function findDuplicate(nums: number[]): number {
-  // Binary search over the *values*, not the positions. For a candidate v,
-  // count how many numbers are at most v: with no duplicate that count is
-  // exactly v, so a count that runs ahead says the repeat is at or below v.
-  // O(n log n) against Floyd's O(n), but it needs no insight about cycles --
-  // only that the pigeonhole is what makes the count informative.
-  let low = 1;
-  let high = nums.length - 1;
-  while (low < high) {
-    const middle = Math.floor((low + high) / 2);
-    const seen = nums.filter((value) => value <= middle).length;
-    if (seen > middle) high = middle;
-    else low = middle + 1;
-  }
-  return low;
 }"),
     ],
     check: Check(
@@ -3790,7 +3790,7 @@ export function run(): [string, string, string][] {
 pub fn nc133_lru_cache() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A map alone gives the first and a list alone gives the second — the structure is whatever supplies both. Where the language's map already remembers insertion order, deleting a key and putting it back *is* the recency list.", "export class LRUCache {
+      #("Nifty Python · Dict Order", "O(1) per operation · O(capacity) space", "Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A map alone gives the first and a list alone gives the second — the structure is whatever supplies both. Where the language's map already remembers insertion order, deleting a key and putting it back *is* the recency list.", "export class LRUCache {
   capacity: number;
   entries: Map<number, number>;
 
@@ -3819,7 +3819,7 @@ pub fn nc133_lru_cache() -> Embedded {
     }
   }
 }"),
-      #("Solution 2 · Linked nodes", "The structure the problem is really about: a doubly linked list of keys, newest first, plus a map from key to its node. The map makes finding a node O(1) and the back-pointers make unlinking it O(1) — neither alone is enough, which is the entire point.", "type Entry = { key: number; value: number; prev: Entry | null; next: Entry | null };
+      #("Design", "O(1) per operation · O(capacity) space", "The structure the problem is really about: a doubly linked list of keys, newest first, plus a map from key to its node. The map makes finding a node O(1) and the back-pointers make unlinking it O(1) — neither alone is enough, which is the entire point.", "type Entry = { key: number; value: number; prev: Entry | null; next: Entry | null };
 
 export class LRUCache {
   capacity: number;
@@ -3930,7 +3930,7 @@ export function run(): [string, string, string][] {
 pub fn nc134_merge_k_sorted_lists() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.", "export class ListNode {
+      #("Divide & Conquer", "O(n log k) time · O(k) space", "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.", "export class ListNode {
   val: number;
   next: ListNode | null;
 
@@ -3975,7 +3975,7 @@ function merge(first: ListNode | null, second: ListNode | null): ListNode | null
   tail.next = first !== null ? first : second;
   return dummy.next;
 }"),
-      #("Solution 2 · Smallest head", "The heap solution with the heap spelled out as a scan, for languages that have no priority queue: O(k) per element rather than O(log k), which is the entire difference the heap makes. What it does not need is any pairing structure — it works on lists arriving one at a time.", "export class ListNode {
+      #("Solution 2 · Smallest head", "", "The heap solution with the heap spelled out as a scan, for languages that have no priority queue: O(k) per element rather than O(log k), which is the entire difference the heap makes. What it does not need is any pairing structure — it works on lists arriving one at a time.", "export class ListNode {
   val: number;
   next: ListNode | null;
 
@@ -4062,7 +4062,44 @@ export function run(): [string, string, string][] {
 pub fn nc135_reverse_k_group() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Look ahead k nodes *before* reversing anything. That check is the whole difficulty: once the rewiring starts there is no way to tell how far it got, so a short final group would be reversed by mistake.", "export class ListNode {
+      #("Two Pass", "O(n) time · O(1) space", "Count once, then reverse exactly length / k groups. One length calculation instead of a look-ahead per group — and it makes the boundary explicit: everything past the last whole group is untouched, however long it is.", "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function reverseKGroup(head: ListNode | null, k: number): ListNode | null {
+  // Count once, then reverse exactly length / k groups. One length calculation
+  // instead of a look-ahead per group -- and it makes the boundary explicit:
+  // everything past the last whole group is untouched, however long it is.
+  let length = 0;
+  for (let n = head; n !== null; n = n.next) length++;
+
+  const dummy = new ListNode(0, head);
+  let before = dummy;
+  let node = head;
+
+  for (let group = 0; group < Math.floor(length / k); group++) {
+    const first = node!;
+    let previous: ListNode | null = null;
+    for (let i = 0; i < k; i++) {
+      const following: ListNode | null = node!.next;
+      node!.next = previous;
+      previous = node;
+      node = following;
+    }
+    before.next = previous;
+    first.next = node;
+    before = first;
+  }
+
+  return dummy.next;
+}"),
+      #("Linked List", "O(n) time · O(1) space", "Look ahead k nodes *before* reversing anything. That check is the whole difficulty: once the rewiring starts there is no way to tell how far it got, so a short final group would be reversed by mistake.", "export class ListNode {
   val: number;
   next: ListNode | null;
 
@@ -4099,43 +4136,6 @@ export function reverseKGroup(head: ListNode | null, k: number): ListNode | null
     before.next = previous;
     before = first;
   }
-}"),
-      #("Solution 2 · Count first", "Count once, then reverse exactly length / k groups. One length calculation instead of a look-ahead per group — and it makes the boundary explicit: everything past the last whole group is untouched, however long it is.", "export class ListNode {
-  val: number;
-  next: ListNode | null;
-
-  constructor(val = 0, next: ListNode | null = null) {
-    this.val = val;
-    this.next = next;
-  }
-}
-
-export function reverseKGroup(head: ListNode | null, k: number): ListNode | null {
-  // Count once, then reverse exactly length / k groups. One length calculation
-  // instead of a look-ahead per group -- and it makes the boundary explicit:
-  // everything past the last whole group is untouched, however long it is.
-  let length = 0;
-  for (let n = head; n !== null; n = n.next) length++;
-
-  const dummy = new ListNode(0, head);
-  let before = dummy;
-  let node = head;
-
-  for (let group = 0; group < Math.floor(length / k); group++) {
-    const first = node!;
-    let previous: ListNode | null = null;
-    for (let i = 0; i < k; i++) {
-      const following: ListNode | null = node!.next;
-      node!.next = previous;
-      previous = node;
-      node = following;
-    }
-    before.next = previous;
-    first.next = node;
-    before = first;
-  }
-
-  return dummy.next;
 }"),
     ],
     check: Check(
@@ -4192,30 +4192,7 @@ export function run(): [string, string, string][] {
 pub fn nc136_invert_binary_tree() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Swap the children, then invert each of them — the swap and the recursion are the same line. The order does not matter: swapping before or after recursing gives the same tree, which is why this is the shortest tree problem there is.", "export class TreeNode {
-  val: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-
-  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
-    this.val = val;
-    this.left = left;
-    this.right = right;
-  }
-}
-
-export function invertTree(root: TreeNode | null): TreeNode | null {
-  // Swap the children, then invert each of them. The swap and the recursion are
-  // the same two lines, which is why this is the shortest tree problem there is
-  // -- and why the order does not matter: swapping before or after recursing
-  // gives the same tree.
-  if (root === null) return null;
-  const left = invertTree(root.left);
-  root.left = invertTree(root.right);
-  root.right = left;
-  return root;
-}"),
-      #("Solution 2 · By rebuilding", "Write the tree out pre-order with a marker for every empty child, then read it back taking the first subtree as the *right* child. The inversion happens entirely in the reading — nothing is ever swapped. Longer than the direct recursion, and worth having because the same flatten/rebuild pair is all [[nc150_serialize_deserialize]] is.", "export class TreeNode {
+      #("Flatten & Rebuild", "O(n) time · O(n) space", "Write the tree out pre-order with a marker for every empty child, then read it back taking the first subtree as the *right* child. The inversion happens entirely in the reading — nothing is ever swapped. Longer than the direct recursion, and worth having because the same flatten/rebuild pair is all [[nc150_serialize_deserialize]] is.", "export class TreeNode {
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
@@ -4254,6 +4231,29 @@ function rebuild(tokens: (number | null)[], cursor: { at: number }): TreeNode | 
   const first = rebuild(tokens, cursor);
   const second = rebuild(tokens, cursor);
   return new TreeNode(value, second, first);
+}"),
+      #("DFS", "O(n) time · O(h) space", "Swap the children, then invert each of them — the swap and the recursion are the same line. The order does not matter: swapping before or after recursing gives the same tree, which is why this is the shortest tree problem there is.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function invertTree(root: TreeNode | null): TreeNode | null {
+  // Swap the children, then invert each of them. The swap and the recursion are
+  // the same two lines, which is why this is the shortest tree problem there is
+  // -- and why the order does not matter: swapping before or after recursing
+  // gives the same tree.
+  if (root === null) return null;
+  const left = invertTree(root.left);
+  root.left = invertTree(root.right);
+  root.right = left;
+  return root;
 }"),
     ],
     check: Check(
@@ -4336,26 +4336,7 @@ export function run(): [string, string, string][] {
 pub fn nc137_maximum_depth() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "One more than the deeper of the two children, with an empty tree at zero. The whole problem is that base case; everything else is the definition of depth read aloud.", "export class TreeNode {
-  val: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-
-  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
-    this.val = val;
-    this.left = left;
-    this.right = right;
-  }
-}
-
-export function maxDepth(root: TreeNode | null): number {
-  // One more than the deeper of the two children, with an empty tree at zero.
-  // The whole problem is that base case: everything else is the definition of
-  // depth read aloud.
-  if (root === null) return 0;
-  return 1 + Math.max(maxDepth(root.left), maxDepth(root.right));
-}"),
-      #("Solution 2 · By levels", "Count the levels instead of measuring the branches: take the whole frontier, replace it with all its children, and add one. No recursion and no stack — which is what makes this the version that survives a tree deep enough to overflow one.", "export class TreeNode {
+      #("BFS", "O(n) time · O(n) space", "Count the levels instead of measuring the branches: take the whole frontier, replace it with all its children, and add one. No recursion and no stack — which is what makes this the version that survives a tree deep enough to overflow one.", "export class TreeNode {
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
@@ -4381,6 +4362,25 @@ export function maxDepth(root: TreeNode | null): number {
     );
   }
   return depth;
+}"),
+      #("DFS", "O(n) time · O(h) space", "One more than the deeper of the two children, with an empty tree at zero. The whole problem is that base case; everything else is the definition of depth read aloud.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function maxDepth(root: TreeNode | null): number {
+  // One more than the deeper of the two children, with an empty tree at zero.
+  // The whole problem is that base case: everything else is the definition of
+  // depth read aloud.
+  if (root === null) return 0;
+  return 1 + Math.max(maxDepth(root.left), maxDepth(root.right));
 }"),
     ],
     check: Check(
@@ -4463,7 +4463,35 @@ export function run(): [string, string, string][] {
 pub fn nc138_diameter_of_binary_tree() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "One walk doing two jobs: each call *returns* its own height, and on the way past it *records* the path through that node — left height plus right height. The answer is the largest such path, so it is never returned, only tracked. That split between return and record is the pattern, and it comes back in [[nc149_max_path_sum]].", "export class TreeNode {
+      #("Brute Force", "O(n²) time · O(n) space", "Ask every node how tall its two sides are and keep the largest sum. Correct and obvious, but height is recomputed from scratch at every node, so a balanced tree costs O(n log n) and a spindly one O(n²) — exactly what returning the height alongside the answer avoids.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function diameterOfBinaryTree(root: TreeNode | null): number {
+  // Ask every node how tall its two sides are and keep the largest sum. Correct
+  // and obvious, but height is recomputed from scratch at every node, so a
+  // balanced tree costs O(n log n) and a spindly one O(n^2) -- which is exactly
+  // what returning the height alongside the answer avoids.
+  if (root === null) return 0;
+  return Math.max(
+    height(root.left) + height(root.right),
+    diameterOfBinaryTree(root.left),
+    diameterOfBinaryTree(root.right),
+  );
+}
+
+function height(node: TreeNode | null): number {
+  return node === null ? 0 : 1 + Math.max(height(node.left), height(node.right));
+}"),
+      #("DFS", "O(n) time · O(h) space", "One walk doing two jobs: each call *returns* its own height, and on the way past it *records* the path through that node — left height plus right height. The answer is the largest such path, so it is never returned, only tracked. That split between return and record is the pattern, and it comes back in [[nc149_max_path_sum]].", "export class TreeNode {
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
@@ -4492,34 +4520,6 @@ function measure(node: TreeNode | null): [number, number] {
     1 + Math.max(leftHeight, rightHeight),
     Math.max(leftHeight + rightHeight, leftWidest, rightWidest),
   ];
-}"),
-      #("Solution 2 · Height per node", "Ask every node how tall its two sides are and keep the largest sum. Correct and obvious, but height is recomputed from scratch at every node, so a balanced tree costs O(n log n) and a spindly one O(n²) — exactly what returning the height alongside the answer avoids.", "export class TreeNode {
-  val: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-
-  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
-    this.val = val;
-    this.left = left;
-    this.right = right;
-  }
-}
-
-export function diameterOfBinaryTree(root: TreeNode | null): number {
-  // Ask every node how tall its two sides are and keep the largest sum. Correct
-  // and obvious, but height is recomputed from scratch at every node, so a
-  // balanced tree costs O(n log n) and a spindly one O(n^2) -- which is exactly
-  // what returning the height alongside the answer avoids.
-  if (root === null) return 0;
-  return Math.max(
-    height(root.left) + height(root.right),
-    diameterOfBinaryTree(root.left),
-    diameterOfBinaryTree(root.right),
-  );
-}
-
-function height(node: TreeNode | null): number {
-  return node === null ? 0 : 1 + Math.max(height(node.left), height(node.right));
 }"),
     ],
     check: Check(
@@ -4603,34 +4603,7 @@ export function run(): [string, string, string][] {
 pub fn nc139_balanced_binary_tree() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Height and balance in one walk. A subtree reports its height, or reports that something below it is already unbalanced — and once that happens nothing above needs measuring. Using -1 as the \"not balanced\" height is what lets a single return value carry both answers.", "export class TreeNode {
-  val: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-
-  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
-    this.val = val;
-    this.left = left;
-    this.right = right;
-  }
-}
-
-export function isBalanced(root: TreeNode | null): boolean {
-  // Height and balance in one walk. A subtree reports its height, or reports
-  // that something below it is already unbalanced -- and once that happens
-  // nothing above needs measuring at all. Using -1 as the \"not balanced\" height
-  // is what lets a single return value carry both answers.
-  return measure(root) >= 0;
-}
-
-function measure(node: TreeNode | null): number {
-  if (node === null) return 0;
-  const left = measure(node.left);
-  const right = measure(node.right);
-  if (left < 0 || right < 0 || Math.abs(left - right) > 1) return -1;
-  return 1 + Math.max(left, right);
-}"),
-      #("Solution 2 · Height per node", "The definition read literally: every node's two sides differ by at most one, and both sides are themselves balanced. It recomputes height at every node, so the work is O(n²) on a spindly tree — the price of separating the two questions the single-pass version answers together.", "export class TreeNode {
+      #("Brute Force", "O(n²) time · O(n) space", "The definition read literally: every node's two sides differ by at most one, and both sides are themselves balanced. It recomputes height at every node, so the work is O(n²) on a spindly tree — the price of separating the two questions the single-pass version answers together.", "export class TreeNode {
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
@@ -4657,6 +4630,33 @@ export function isBalanced(root: TreeNode | null): boolean {
 
 function height(node: TreeNode | null): number {
   return node === null ? 0 : 1 + Math.max(height(node.left), height(node.right));
+}"),
+      #("DFS", "O(n) time · O(h) space", "Height and balance in one walk. A subtree reports its height, or reports that something below it is already unbalanced — and once that happens nothing above needs measuring. Using -1 as the \"not balanced\" height is what lets a single return value carry both answers.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function isBalanced(root: TreeNode | null): boolean {
+  // Height and balance in one walk. A subtree reports its height, or reports
+  // that something below it is already unbalanced -- and once that happens
+  // nothing above needs measuring at all. Using -1 as the \"not balanced\" height
+  // is what lets a single return value carry both answers.
+  return measure(root) >= 0;
+}
+
+function measure(node: TreeNode | null): number {
+  if (node === null) return 0;
+  const left = measure(node.left);
+  const right = measure(node.right);
+  if (left < 0 || right < 0 || Math.abs(left - right) > 1) return -1;
+  return 1 + Math.max(left, right);
 }"),
     ],
     check: Check(
@@ -4740,7 +4740,19 @@ export function run(): [string, string, string][] {
 pub fn nc13_longest_substring() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.", "export function lengthOfLongestSubstring(s: string): number {
+      #("Nifty Python · str.find", "O(n²) time · O(1) space", "No set and no map: ask the string itself whether this character already appeared inside the current window, and if so restart just past it.", "export function lengthOfLongestSubstring(s: string): number {
+  let longest = 0;
+  let start = 0;
+
+  for (let right = 0; right < s.length; right++) {
+    const found = s.slice(start, right).indexOf(s[right]);
+    if (found !== -1) start = start + found + 1;
+    longest = Math.max(longest, right - start + 1);
+  }
+
+  return longest;
+}"),
+      #("Sliding Window", "O(n) time · O(n) space", "Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.", "export function lengthOfLongestSubstring(s: string): number {
   const window = new Set<string>();
   let left = 0;
   let longest = 0;
@@ -4752,18 +4764,6 @@ pub fn nc13_longest_substring() -> Embedded {
     }
     window.add(s[right]);
     longest = Math.max(longest, right - left + 1);
-  }
-
-  return longest;
-}"),
-      #("Solution 2 · Index scan", "No set and no map: ask the string itself whether this character already appeared inside the current window, and if so restart just past it.", "export function lengthOfLongestSubstring(s: string): number {
-  let longest = 0;
-  let start = 0;
-
-  for (let right = 0; right < s.length; right++) {
-    const found = s.slice(start, right).indexOf(s[right]);
-    if (found !== -1) start = start + found + 1;
-    longest = Math.max(longest, right - start + 1);
   }
 
   return longest;
@@ -4794,29 +4794,7 @@ export function run(): [string, string, string][] {
 pub fn nc140_same_tree() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Walk both trees in step. Two empties match, an empty and a node never do, and two nodes match when their values do and both pairs of children do. The same shape is what [[nc141_subtree_of_another_tree]] is built from, which is why it is worth writing out rather than leaning on the language's equality.", "export class TreeNode {
-  val: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-
-  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
-    this.val = val;
-    this.left = left;
-    this.right = right;
-  }
-}
-
-export function isSameTree(p: TreeNode | null, q: TreeNode | null): boolean {
-  // Walk both trees in step. Two empties match, an empty and a node never do,
-  // and two nodes match when their values do and both pairs of children do. The
-  // same shape is what Subtree of Another Tree and Symmetric Tree are built
-  // from, which is why it is worth writing out rather than comparing
-  // serialisations.
-  if (p === null && q === null) return true;
-  if (p === null || q === null) return false;
-  return p.val === q.val && isSameTree(p.left, q.left) && isSameTree(p.right, q.right);
-}"),
-      #("Solution 2 · By serialising", "Turn each tree into a string and compare those. It works *only* because the serialisation records the empty children: without a marker for them, different trees flatten to the same sequence — the same trap [[nc150_serialize_deserialize]] turns on.", "export class TreeNode {
+      #("Serialisation", "O(n) time · O(n) space", "Turn each tree into a string and compare those. It works *only* because the serialisation records the empty children: without a marker for them, different trees flatten to the same sequence — the same trap [[nc150_serialize_deserialize]] turns on.", "export class TreeNode {
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
@@ -4839,6 +4817,28 @@ export function isSameTree(p: TreeNode | null, q: TreeNode | null): boolean {
 function serialise(node: TreeNode | null): string {
   if (node === null) return \"#\";
   return \"(\" + node.val + serialise(node.left) + serialise(node.right) + \")\";
+}"),
+      #("DFS", "O(n) time · O(h) space", "Walk both trees in step. Two empties match, an empty and a node never do, and two nodes match when their values do and both pairs of children do. The same shape is what [[nc141_subtree_of_another_tree]] is built from, which is why it is worth writing out rather than leaning on the language's equality.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function isSameTree(p: TreeNode | null, q: TreeNode | null): boolean {
+  // Walk both trees in step. Two empties match, an empty and a node never do,
+  // and two nodes match when their values do and both pairs of children do. The
+  // same shape is what Subtree of Another Tree and Symmetric Tree are built
+  // from, which is why it is worth writing out rather than comparing
+  // serialisations.
+  if (p === null && q === null) return true;
+  if (p === null || q === null) return false;
+  return p.val === q.val && isSameTree(p.left, q.left) && isSameTree(p.right, q.right);
 }"),
     ],
     check: Check(
@@ -4922,7 +4922,7 @@ export function run(): [string, string, string][] {
 pub fn nc141_subtree_of_another_tree() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Try to match at every node. The two questions are kept apart on purpose: \"are these two trees identical\" is the whole of the work, and \"is it a subtree\" is that question asked once per node. O(n·m) in the worst case, and a partial match that fails deep is what makes it so.", "export class TreeNode {
+      #("DFS", "O(n·m) time · O(n+m) space", "Try to match at every node. The two questions are kept apart on purpose: \"are these two trees identical\" is the whole of the work, and \"is it a subtree\" is that question asked once per node. O(n·m) in the worst case, and a partial match that fails deep is what makes it so.", "export class TreeNode {
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
@@ -4949,7 +4949,7 @@ function same(a: TreeNode | null, b: TreeNode | null): boolean {
   if (a === null || b === null) return false;
   return a.val === b.val && same(a.left, b.left) && same(a.right, b.right);
 }"),
-      #("Solution 2 · By serialising", "Serialise both trees and ask whether one string contains the other — an O(n·m) tree comparison turned into substring search. It is only sound because the serialisation marks the empty children: without them \"2\" inside \"12\" would match, and so would a subtree that starts the same way but is missing a child.", "export class TreeNode {
+      #("Serialisation", "O(n+m) time · O(n+m) space", "Serialise both trees and ask whether one string contains the other — an O(n·m) tree comparison turned into substring search. It is only sound because the serialisation marks the empty children: without them \"2\" inside \"12\" would match, and so would a subtree that starts the same way but is missing a child.", "export class TreeNode {
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
@@ -5056,32 +5056,7 @@ export function run(): [string, string, string][] {
 pub fn nc142_lowest_common_ancestor_bst() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The ordering does all the work. Both targets below the current value means go left, both above means go right, and anything else means this node is the split point — which is the answer. No searching for either node first, and no comparing of paths.", "export class TreeNode {
-  val: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-
-  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
-    this.val = val;
-    this.left = left;
-    this.right = right;
-  }
-}
-
-export function lowestCommonAncestor(root: TreeNode | null, p: number, q: number): number {
-  // The ordering does all the work. If both targets are below the current value
-  // go left, if both are above go right, and otherwise this node is the split
-  // point -- which is the answer. No searching for either node first, and no
-  // comparing of paths.
-  let node = root;
-  while (node !== null) {
-    if (p < node.val && q < node.val) node = node.left;
-    else if (p > node.val && q > node.val) node = node.right;
-    else return node.val;
-  }
-  return -1;
-}"),
-      #("Solution 2 · By paths", "Find the path from the root to each target, then take the last node they share. It ignores the ordering entirely, which is why it is the version that also works on a plain binary tree — at the cost of two searches and two stored paths rather than one walk and nothing.", "export class TreeNode {
+      #("Path Comparison", "O(n) time · O(n) space", "Find the path from the root to each target, then take the last node they share. It ignores the ordering entirely, which is why it is the version that also works on a plain binary tree — at the cost of two searches and two stored paths rather than one walk and nothing.", "export class TreeNode {
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
@@ -5116,6 +5091,31 @@ function path(node: TreeNode | null, target: number): number[] {
     if (found.length > 0) return [node.val, ...found];
   }
   return [];
+}"),
+      #("BST Walk", "O(h) time · O(1) space", "The ordering does all the work. Both targets below the current value means go left, both above means go right, and anything else means this node is the split point — which is the answer. No searching for either node first, and no comparing of paths.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function lowestCommonAncestor(root: TreeNode | null, p: number, q: number): number {
+  // The ordering does all the work. If both targets are below the current value
+  // go left, if both are above go right, and otherwise this node is the split
+  // point -- which is the answer. No searching for either node first, and no
+  // comparing of paths.
+  let node = root;
+  while (node !== null) {
+    if (p < node.val && q < node.val) node = node.left;
+    else if (p > node.val && q > node.val) node = node.right;
+    else return node.val;
+  }
+  return -1;
 }"),
     ],
     check: Check(
@@ -5201,34 +5201,7 @@ export function run(): [string, string, string][] {
 pub fn nc143_level_order_traversal() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Take the whole frontier at once rather than one node at a time: everything on it is the current level, and its children are the next. That is what makes the grouping fall out without tracking any depth — a plain queue gives the right order but no idea where each level ends.", "export class TreeNode {
-  val: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-
-  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
-    this.val = val;
-    this.left = left;
-    this.right = right;
-  }
-}
-
-export function levelOrder(root: TreeNode | null): number[][] {
-  // Take the whole frontier at once rather than one node at a time: everything
-  // on it is the current level, and its children are the next. That is what
-  // makes the grouping fall out without tracking any depth -- a plain queue
-  // would give the right order but no idea where each level ends.
-  const levels: number[][] = [];
-  let frontier = root === null ? [] : [root];
-  while (frontier.length > 0) {
-    levels.push(frontier.map((node) => node.val));
-    frontier = frontier.flatMap((node) =>
-      [node.left, node.right].filter((child): child is TreeNode => child !== null),
-    );
-  }
-  return levels;
-}"),
-      #("Solution 2 · By depth", "Walk depth-first and file each value under its depth. The traversal order is wrong for the answer, but appending to the right bucket puts it right — and within a level, left is still visited before right, which is all the ordering the answer needs.", "export class TreeNode {
+      #("DFS", "O(n) time · O(n) space", "Walk depth-first and file each value under its depth. The traversal order is wrong for the answer, but appending to the right bucket puts it right — and within a level, left is still visited before right, which is all the ordering the answer needs.", "export class TreeNode {
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
@@ -5256,6 +5229,33 @@ function collect(node: TreeNode | null, depth: number, levels: number[][]): void
   levels[depth].push(node.val);
   collect(node.left, depth + 1, levels);
   collect(node.right, depth + 1, levels);
+}"),
+      #("BFS", "O(n) time · O(n) space", "Take the whole frontier at once rather than one node at a time: everything on it is the current level, and its children are the next. That is what makes the grouping fall out without tracking any depth — a plain queue gives the right order but no idea where each level ends.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function levelOrder(root: TreeNode | null): number[][] {
+  // Take the whole frontier at once rather than one node at a time: everything
+  // on it is the current level, and its children are the next. That is what
+  // makes the grouping fall out without tracking any depth -- a plain queue
+  // would give the right order but no idea where each level ends.
+  const levels: number[][] = [];
+  let frontier = root === null ? [] : [root];
+  while (frontier.length > 0) {
+    levels.push(frontier.map((node) => node.val));
+    frontier = frontier.flatMap((node) =>
+      [node.left, node.right].filter((child): child is TreeNode => child !== null),
+    );
+  }
+  return levels;
 }"),
     ],
     check: Check(
@@ -5338,34 +5338,7 @@ export function run(): [string, string, string][] {
 pub fn nc144_right_side_view() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The last value on each level, which is what \"seen from the right\" means once the question is asked level by level. Walking down the right children alone is the tempting wrong answer: where the right side is short, a node further left is the one that shows.", "export class TreeNode {
-  val: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-
-  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
-    this.val = val;
-    this.left = left;
-    this.right = right;
-  }
-}
-
-export function rightSideView(root: TreeNode | null): number[] {
-  // The last value on each level, which is what \"seen from the right\" means
-  // once the question is asked level by level. Walking down the right children
-  // alone is the tempting wrong answer: where the right side is short, a node
-  // further left is the one that shows.
-  const seen: number[] = [];
-  let frontier = root === null ? [] : [root];
-  while (frontier.length > 0) {
-    seen.push(frontier[frontier.length - 1].val);
-    frontier = frontier.flatMap((node) =>
-      [node.left, node.right].filter((child): child is TreeNode => child !== null),
-    );
-  }
-  return seen;
-}"),
-      #("Solution 2 · Right first", "Depth-first, visiting the right child first, and recording a value only when its depth is met for the first time. No frontier at all — being first to reach a depth is the same thing as being rightmost on it, given that order of visiting.", "export class TreeNode {
+      #("DFS", "O(n) time · O(h) space", "Depth-first, visiting the right child first, and recording a value only when its depth is met for the first time. No frontier at all — being first to reach a depth is the same thing as being rightmost on it, given that order of visiting.", "export class TreeNode {
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
@@ -5392,6 +5365,33 @@ function look(node: TreeNode | null, depth: number, seen: number[]): void {
   if (depth === seen.length) seen.push(node.val);
   look(node.right, depth + 1, seen);
   look(node.left, depth + 1, seen);
+}"),
+      #("BFS", "O(n) time · O(n) space", "The last value on each level, which is what \"seen from the right\" means once the question is asked level by level. Walking down the right children alone is the tempting wrong answer: where the right side is short, a node further left is the one that shows.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function rightSideView(root: TreeNode | null): number[] {
+  // The last value on each level, which is what \"seen from the right\" means
+  // once the question is asked level by level. Walking down the right children
+  // alone is the tempting wrong answer: where the right side is short, a node
+  // further left is the one that shows.
+  const seen: number[] = [];
+  let frontier = root === null ? [] : [root];
+  while (frontier.length > 0) {
+    seen.push(frontier[frontier.length - 1].val);
+    frontier = frontier.flatMap((node) =>
+      [node.left, node.right].filter((child): child is TreeNode => child !== null),
+    );
+  }
+  return seen;
 }"),
     ],
     check: Check(
@@ -5474,7 +5474,33 @@ export function run(): [string, string, string][] {
 pub fn nc145_count_good_nodes() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Carry the largest value seen on the way down. A node is good when nothing above it is bigger, so the check needs no knowledge of the tree below — which is what makes one pass enough. The root is always good, and passing its own value down as the initial maximum is what says so.", "export class TreeNode {
+      #("Full-Path DFS", "O(n·h) time · O(h²) space", "Carry the whole path instead of just its maximum, and take the maximum at each node. The same answer for O(depth) memory per node rather than one number — worth writing once, because it makes plain that the running maximum is a fold of the path, not a separate idea.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function goodNodes(root: TreeNode | null): number {
+  // Carry the whole path instead of just its maximum, and take the maximum at
+  // each node. The same answer for O(depth) memory per node rather than one
+  // number -- the version worth writing once, because it makes plain that the
+  // running maximum is a fold of the path, not a separate idea.
+  return count(root, []);
+}
+
+function count(node: TreeNode | null, above: number[]): number {
+  if (node === null) return 0;
+  const here = above.every((other) => other <= node.val) ? 1 : 0;
+  const below = [...above, node.val];
+  return here + count(node.left, below) + count(node.right, below);
+}"),
+      #("DFS", "O(n) time · O(h) space", "Carry the largest value seen on the way down. A node is good when nothing above it is bigger, so the check needs no knowledge of the tree below — which is what makes one pass enough. The root is always good, and passing its own value down as the initial maximum is what says so.", "export class TreeNode {
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
@@ -5500,32 +5526,6 @@ function count(node: TreeNode | null, largest: number): number {
   const here = node.val >= largest ? 1 : 0;
   const next = Math.max(largest, node.val);
   return here + count(node.left, next) + count(node.right, next);
-}"),
-      #("Solution 2 · By path", "Carry the whole path instead of just its maximum, and take the maximum at each node. The same answer for O(depth) memory per node rather than one number — worth writing once, because it makes plain that the running maximum is a fold of the path, not a separate idea.", "export class TreeNode {
-  val: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-
-  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
-    this.val = val;
-    this.left = left;
-    this.right = right;
-  }
-}
-
-export function goodNodes(root: TreeNode | null): number {
-  // Carry the whole path instead of just its maximum, and take the maximum at
-  // each node. The same answer for O(depth) memory per node rather than one
-  // number -- the version worth writing once, because it makes plain that the
-  // running maximum is a fold of the path, not a separate idea.
-  return count(root, []);
-}
-
-function count(node: TreeNode | null, above: number[]): number {
-  if (node === null) return 0;
-  const here = above.every((other) => other <= node.val) ? 1 : 0;
-  const below = [...above, node.val];
-  return here + count(node.left, below) + count(node.right, below);
 }"),
     ],
     check: Check(
@@ -5609,33 +5609,7 @@ export function run(): [string, string, string][] {
 pub fn nc146_validate_bst() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Check against a range, not against the parent. A node can be larger than its own parent and still break the order, because the constraint comes from an ancestor further up — and that is the whole difficulty. Going left tightens the upper bound, going right the lower one.", "export class TreeNode {
-  val: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-
-  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
-    this.val = val;
-    this.left = left;
-    this.right = right;
-  }
-}
-
-export function isValidBST(root: TreeNode | null): boolean {
-  // Check against a range, not against the parent. A node can be larger than
-  // its own parent and still break the order, because the constraint comes from
-  // an ancestor further up -- and that is the whole difficulty. Going left
-  // tightens the upper bound, going right the lower one.
-  return within(root, null, null);
-}
-
-function within(node: TreeNode | null, low: number | null, high: number | null): boolean {
-  if (node === null) return true;
-  if (low !== null && node.val <= low) return false;
-  if (high !== null && node.val >= high) return false;
-  return within(node.left, low, node.val) && within(node.right, node.val, high);
-}"),
-      #("Solution 2 · In order", "A binary search tree is exactly a tree whose in-order walk is strictly increasing — the definition, restated so that no bounds have to be threaded anywhere. The cost is the list: O(n) memory against the range check's O(depth).", "export class TreeNode {
+      #("In-Order Traversal", "O(n) time · O(n) space", "A binary search tree is exactly a tree whose in-order walk is strictly increasing — the definition, restated so that no bounds have to be threaded anywhere. The cost is the list: O(n) memory against the range check's O(depth).", "export class TreeNode {
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
@@ -5662,6 +5636,32 @@ function inOrder(node: TreeNode | null, values: number[]): void {
   inOrder(node.left, values);
   values.push(node.val);
   inOrder(node.right, values);
+}"),
+      #("DFS", "O(n) time · O(h) space", "Check against a range, not against the parent. A node can be larger than its own parent and still break the order, because the constraint comes from an ancestor further up — and that is the whole difficulty. Going left tightens the upper bound, going right the lower one.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function isValidBST(root: TreeNode | null): boolean {
+  // Check against a range, not against the parent. A node can be larger than
+  // its own parent and still break the order, because the constraint comes from
+  // an ancestor further up -- and that is the whole difficulty. Going left
+  // tightens the upper bound, going right the lower one.
+  return within(root, null, null);
+}
+
+function within(node: TreeNode | null, low: number | null, high: number | null): boolean {
+  if (node === null) return true;
+  if (low !== null && node.val <= low) return false;
+  if (high !== null && node.val >= high) return false;
+  return within(node.left, low, node.val) && within(node.right, node.val, high);
 }"),
     ],
     check: Check(
@@ -5746,38 +5746,7 @@ export function run(): [string, string, string][] {
 pub fn nc147_kth_smallest_bst() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "An in-order walk of a search tree visits the values in order, so the answer is the kth thing it reaches. Stopping there is the point: the tree below the kth value is never touched, which is what separates this from sorting everything.", "export class TreeNode {
-  val: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-
-  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
-    this.val = val;
-    this.left = left;
-    this.right = right;
-  }
-}
-
-export function kthSmallest(root: TreeNode | null, k: number): number {
-  // An in-order walk of a search tree visits the values in order, so the answer
-  // is the kth thing it reaches. Stopping there is the point: the tree below
-  // the kth value is never touched, which is what separates this from sorting
-  // everything. The explicit stack is what makes stopping possible -- a
-  // recursive walk would have to run to the end.
-  const stack: TreeNode[] = [];
-  let node = root;
-  while (stack.length > 0 || node !== null) {
-    while (node !== null) {
-      stack.push(node);
-      node = node.left;
-    }
-    const current = stack.pop()!;
-    if (--k === 0) return current.val;
-    node = current.right;
-  }
-  return -1;
-}"),
-      #("Solution 2 · By counting", "Count the left subtree and decide which way to go — fewer than k on the left means the answer is this node or to its right. It descends one path instead of walking in order, and it is the version that adapts when the tree stores its own subtree sizes, which turns the whole thing into O(depth).", "export class TreeNode {
+      #("Subtree Counting", "O(n·h) time · O(h) space", "Count the left subtree and decide which way to go — fewer than k on the left means the answer is this node or to its right. It descends one path instead of walking in order, and it is the version that adapts when the tree stores its own subtree sizes, which turns the whole thing into O(depth).", "export class TreeNode {
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
@@ -5810,6 +5779,37 @@ export function kthSmallest(root: TreeNode | null, k: number): number {
 
 function size(node: TreeNode | null): number {
   return node === null ? 0 : 1 + size(node.left) + size(node.right);
+}"),
+      #("Iterative In-Order", "O(h+k) time · O(h) space", "An in-order walk of a search tree visits the values in order, so the answer is the kth thing it reaches. Stopping there is the point: the tree below the kth value is never touched, which is what separates this from sorting everything.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function kthSmallest(root: TreeNode | null, k: number): number {
+  // An in-order walk of a search tree visits the values in order, so the answer
+  // is the kth thing it reaches. Stopping there is the point: the tree below
+  // the kth value is never touched, which is what separates this from sorting
+  // everything. The explicit stack is what makes stopping possible -- a
+  // recursive walk would have to run to the end.
+  const stack: TreeNode[] = [];
+  let node = root;
+  while (stack.length > 0 || node !== null) {
+    while (node !== null) {
+      stack.push(node);
+      node = node.left;
+    }
+    const current = stack.pop()!;
+    if (--k === 0) return current.val;
+    node = current.right;
+  }
+  return -1;
 }"),
     ],
     check: Check(
@@ -5895,7 +5895,7 @@ export function run(): [string, string, string][] {
 pub fn nc148_build_tree_preorder_inorder() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Pre-order names the root; in-order says how much of the rest belongs to each side. Neither traversal alone determines a tree, and this is precisely why together they do — the split point found in the in-order list is the size of the left subtree, which is what carves up the pre-order list too.", "export class TreeNode {
+      #("Recursion", "O(n²) time · O(n²) space", "Pre-order names the root; in-order says how much of the rest belongs to each side. Neither traversal alone determines a tree, and this is precisely why together they do — the split point found in the in-order list is the size of the left subtree, which is what carves up the pre-order list too.", "export class TreeNode {
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
@@ -5922,7 +5922,7 @@ export function buildTree(preorder: number[], inorder: number[]): TreeNode | nul
     buildTree(preorder.slice(split + 1), inorder.slice(split + 1)),
   );
 }"),
-      #("Solution 2 · By bounds", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+      #("Hash Map", "O(n) time · O(n) space", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
 
 The same construction without slicing anything: a map from value to its in-order position, plus a low and a high bound saying which slice each call owns. Building the map once turns the repeated search for the root — the hidden O(n) inside the slicing version — into a lookup.", "export class TreeNode {
   val: number;
@@ -6043,40 +6043,7 @@ export function run(): [string, string, string][] {
 pub fn nc149_max_path_sum() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Two different quantities, which is the whole trick. What a node *returns* is the best path that can continue upwards, so at most one of its children. What it *records* is the best path through it, which may use both. A negative branch is dropped rather than added, because a path is allowed to stop. Same shape as [[nc138_diameter_of_binary_tree]].", "export class TreeNode {
-  val: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-
-  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
-    this.val = val;
-    this.left = left;
-    this.right = right;
-  }
-}
-
-export function maxPathSum(root: TreeNode | null): number {
-  // Two different quantities, which is the whole trick. What a node *returns*
-  // is the best path that can continue upwards -- so at most one of its
-  // children. What it *records* is the best path through it, which may use
-  // both. A negative branch is dropped rather than added, because a path is
-  // allowed to stop.
-  if (root === null) return 0;
-  return walk(root)[1];
-}
-
-function walk(node: TreeNode | null): [number, number] {
-  if (node === null) return [0, -Infinity];
-  const [leftUp, leftBest] = walk(node.left);
-  const [rightUp, rightBest] = walk(node.right);
-  const leftGain = Math.max(leftUp, 0);
-  const rightGain = Math.max(rightUp, 0);
-  return [
-    node.val + Math.max(leftGain, rightGain),
-    Math.max(node.val + leftGain + rightGain, leftBest, rightBest),
-  ];
-}"),
-      #("Solution 2 · All paths", "Every path through every node, measured outright: for each node, take the best downward run on each side and add them. It recomputes those runs from scratch at every node, so it is O(n²) on a spindly tree — the cost of asking the two questions separately instead of returning both from one walk.", "export class TreeNode {
+      #("Brute Force", "O(n²) time · O(n) space", "Every path through every node, measured outright: for each node, take the best downward run on each side and add them. It recomputes those runs from scratch at every node, so it is O(n²) on a spindly tree — the cost of asking the two questions separately instead of returning both from one walk.", "export class TreeNode {
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
@@ -6108,6 +6075,39 @@ function candidates(node: TreeNode | null): number[] {
 function downwards(node: TreeNode | null): number {
   if (node === null) return 0;
   return node.val + Math.max(downwards(node.left), downwards(node.right), 0);
+}"),
+      #("DFS", "O(n) time · O(h) space", "Two different quantities, which is the whole trick. What a node *returns* is the best path that can continue upwards, so at most one of its children. What it *records* is the best path through it, which may use both. A negative branch is dropped rather than added, because a path is allowed to stop. Same shape as [[nc138_diameter_of_binary_tree]].", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function maxPathSum(root: TreeNode | null): number {
+  // Two different quantities, which is the whole trick. What a node *returns*
+  // is the best path that can continue upwards -- so at most one of its
+  // children. What it *records* is the best path through it, which may use
+  // both. A negative branch is dropped rather than added, because a path is
+  // allowed to stop.
+  if (root === null) return 0;
+  return walk(root)[1];
+}
+
+function walk(node: TreeNode | null): [number, number] {
+  if (node === null) return [0, -Infinity];
+  const [leftUp, leftBest] = walk(node.left);
+  const [rightUp, rightBest] = walk(node.right);
+  const leftGain = Math.max(leftUp, 0);
+  const rightGain = Math.max(rightUp, 0);
+  return [
+    node.val + Math.max(leftGain, rightGain),
+    Math.max(node.val + leftGain + rightGain, leftBest, rightBest),
+  ];
 }"),
     ],
     check: Check(
@@ -6191,7 +6191,27 @@ export function run(): [string, string, string][] {
 pub fn nc14_character_replacement() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "A window can be made uniform with k changes when its size minus its most-frequent-character count is at most k. Grow the right edge, shrink from the left when that breaks, and the biggest valid window is the answer.", "export function characterReplacement(s: string, k: number): number {
+      #("Per-Letter Window", "O(26·n) time · O(1) space", "One sweep per letter, asking a much simpler question each time: how long a window can I hold if *this* is the letter I keep? No running frequency map and no max-count bookkeeping — 26 easy passes instead of one subtle one.", "const ALPHABET = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";
+
+export function characterReplacement(s: string, k: number): number {
+  let longest = 0;
+
+  for (const target of ALPHABET) {
+    let left = 0;
+    let others = 0;
+    for (let right = 0; right < s.length; right++) {
+      if (s[right] !== target) others++;
+      while (others > k) {
+        if (s[left] !== target) others--;
+        left++;
+      }
+      longest = Math.max(longest, right - left + 1);
+    }
+  }
+
+  return longest;
+}"),
+      #("Sliding Window", "O(n) time · O(1) space", "A window can be made uniform with k changes when its size minus its most-frequent-character count is at most k. Grow the right edge, shrink from the left when that breaks, and the biggest valid window is the answer.", "export function characterReplacement(s: string, k: number): number {
   const counts = new Map<string, number>();
   let left = 0;
   let maxCount = 0;
@@ -6208,26 +6228,6 @@ pub fn nc14_character_replacement() -> Embedded {
     }
 
     longest = Math.max(longest, right - left + 1);
-  }
-
-  return longest;
-}"),
-      #("Solution 2 · Per character", "One sweep per letter, asking a much simpler question each time: how long a window can I hold if *this* is the letter I keep? No running frequency map and no max-count bookkeeping — 26 easy passes instead of one subtle one.", "const ALPHABET = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\";
-
-export function characterReplacement(s: string, k: number): number {
-  let longest = 0;
-
-  for (const target of ALPHABET) {
-    let left = 0;
-    let others = 0;
-    for (let right = 0; right < s.length; right++) {
-      if (s[right] !== target) others++;
-      while (others > k) {
-        if (s[left] !== target) others--;
-        left++;
-      }
-      longest = Math.max(longest, right - left + 1);
-    }
   }
 
   return longest;
@@ -6257,52 +6257,7 @@ export function run(): [string, string, string][] {
 pub fn nc150_serialize_deserialize() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Pre-order with a marker for every empty child. Recording the empties is what makes the format unambiguous — a pre-order list of values alone matches many different trees — and it is also what lets the reader work with no length information at all: it stops as soon as it has consumed a whole subtree.", "export class TreeNode {
-  val: number;
-  left: TreeNode | null;
-  right: TreeNode | null;
-
-  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
-    this.val = val;
-    this.left = left;
-    this.right = right;
-  }
-}
-
-export function serialize(root: TreeNode | null): string {
-  // Pre-order with a marker for every empty child. Recording the empties is
-  // what makes the format unambiguous -- a pre-order list of values alone
-  // matches many different trees -- and it is also what lets the reader work
-  // without any length information: it stops as soon as it has consumed a whole
-  // subtree.
-  const parts: string[] = [];
-  write(root, parts);
-  return parts.join(\",\");
-}
-
-export function deserialize(data: string): TreeNode | null {
-  return read(data.split(\",\"), { at: 0 });
-}
-
-function write(node: TreeNode | null, parts: string[]): void {
-  if (node === null) {
-    parts.push(\"#\");
-    return;
-  }
-  parts.push(String(node.val));
-  write(node.left, parts);
-  write(node.right, parts);
-}
-
-function read(parts: string[], cursor: { at: number }): TreeNode | null {
-  const token = parts[cursor.at++];
-  if (token === \"#\" || token === undefined) return null;
-  const node = new TreeNode(Number(token));
-  node.left = read(parts, cursor);
-  node.right = read(parts, cursor);
-  return node;
-}"),
-      #("Solution 2 · Post order", "Post-order instead of pre-order, still with a marker for every empty child. The root is then the *last* token, so the reader works backwards — and reading backwards means taking the right subtree before the left. The format is what decides the parse direction, and nothing else about the two versions differs.", "export class TreeNode {
+      #("Post-Order DFS", "O(n) time · O(n) space", "Post-order instead of pre-order, still with a marker for every empty child. The root is then the *last* token, so the reader works backwards — and reading backwards means taking the right subtree before the left. The format is what decides the parse direction, and nothing else about the two versions differs.", "export class TreeNode {
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
@@ -6346,6 +6301,51 @@ function read(parts: string[], cursor: { at: number }): TreeNode | null {
   const node = new TreeNode(Number(token));
   node.right = read(parts, cursor);
   node.left = read(parts, cursor);
+  return node;
+}"),
+      #("Pre-Order DFS", "O(n) time · O(n) space", "Pre-order with a marker for every empty child. Recording the empties is what makes the format unambiguous — a pre-order list of values alone matches many different trees — and it is also what lets the reader work with no length information at all: it stops as soon as it has consumed a whole subtree.", "export class TreeNode {
+  val: number;
+  left: TreeNode | null;
+  right: TreeNode | null;
+
+  constructor(val = 0, left: TreeNode | null = null, right: TreeNode | null = null) {
+    this.val = val;
+    this.left = left;
+    this.right = right;
+  }
+}
+
+export function serialize(root: TreeNode | null): string {
+  // Pre-order with a marker for every empty child. Recording the empties is
+  // what makes the format unambiguous -- a pre-order list of values alone
+  // matches many different trees -- and it is also what lets the reader work
+  // without any length information: it stops as soon as it has consumed a whole
+  // subtree.
+  const parts: string[] = [];
+  write(root, parts);
+  return parts.join(\",\");
+}
+
+export function deserialize(data: string): TreeNode | null {
+  return read(data.split(\",\"), { at: 0 });
+}
+
+function write(node: TreeNode | null, parts: string[]): void {
+  if (node === null) {
+    parts.push(\"#\");
+    return;
+  }
+  parts.push(String(node.val));
+  write(node.left, parts);
+  write(node.right, parts);
+}
+
+function read(parts: string[], cursor: { at: number }): TreeNode | null {
+  const token = parts[cursor.at++];
+  if (token === \"#\" || token === undefined) return null;
+  const node = new TreeNode(Number(token));
+  node.left = read(parts, cursor);
+  node.right = read(parts, cursor);
   return node;
 }"),
     ],
@@ -6440,7 +6440,19 @@ export function run(): [string, string, string][] {
 pub fn nc15_permutation_in_string() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "A permutation of s1 is any window of length |s1| in s2 with identical character counts. Slide one character at a time, adding the entering character and removing the leaving one, so each step is O(1) rather than a recount.", "export function checkInclusion(s1: string, s2: string): boolean {
+      #("Brute Force", "O(n·m log m) time · O(m) space", "Every window of the right length, sorted and compared against the sorted needle. Slower than sliding counts, but there is no incremental state to get wrong: the whole method is \"is this window an anagram?\".", "export function checkInclusion(s1: string, s2: string): boolean {
+  if (s1.length > s2.length) return false;
+
+  const needle = [...s1].sort().join(\"\");
+  for (let start = 0; start + s1.length <= s2.length; start++) {
+    if ([...s2.slice(start, start + s1.length)].sort().join(\"\") === needle) {
+      return true;
+    }
+  }
+
+  return false;
+}"),
+      #("Sliding Window", "O(26·n) time · O(1) space", "A permutation of s1 is any window of length |s1| in s2 with identical character counts. Slide one character at a time, adding the entering character and removing the leaving one, so each step is O(1) rather than a recount.", "export function checkInclusion(s1: string, s2: string): boolean {
   if (s1.length > s2.length) return false;
 
   // Fixed 26-slot tallies, compared slot by slot as the window slides.
@@ -6460,18 +6472,6 @@ pub fn nc15_permutation_in_string() -> Embedded {
     window[slot(s2[i])]++;
     window[slot(s2[i - s1.length])]--;
     if (matches()) return true;
-  }
-
-  return false;
-}"),
-      #("Solution 2 · Sorted windows", "Every window of the right length, sorted and compared against the sorted needle. Slower than sliding counts, but there is no incremental state to get wrong: the whole method is \"is this window an anagram?\".", "export function checkInclusion(s1: string, s2: string): boolean {
-  if (s1.length > s2.length) return false;
-
-  const needle = [...s1].sort().join(\"\");
-  for (let start = 0; start + s1.length <= s2.length; start++) {
-    if ([...s2.slice(start, start + s1.length)].sort().join(\"\") === needle) {
-      return true;
-    }
   }
 
   return false;
@@ -6501,7 +6501,15 @@ export function run(): [string, string, string][] {
 pub fn nc16_valid_parentheses() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "On every opener, push the closer you expect; on every closer, it must match the top. Valid means never mismatching and finishing with an empty stack — both halves are needed.", "export function isValid(s: string): boolean {
+      #("Nifty Python · Replace", "O(n²) time · O(n) space", "No stack: strip every matched pair, over and over, until nothing more can go. Whatever survives is unmatched. It is also why \"([)]\" fails — neither pair is ever adjacent.", "export function isValid(s: string): boolean {
+  let previous = \"\";
+  while (previous !== s) {
+    previous = s;
+    s = s.replaceAll(\"()\", \"\").replaceAll(\"[]\", \"\").replaceAll(\"{}\", \"\");
+  }
+  return s === \"\";
+}"),
+      #("Stack", "O(n) time · O(n) space", "On every opener, push the closer you expect; on every closer, it must match the top. Valid means never mismatching and finishing with an empty stack — both halves are needed.", "export function isValid(s: string): boolean {
   const closerFor: Record<string, string> = { \"(\": \")\", \"[\": \"]\", \"{\": \"}\" };
   const stack: string[] = [];
   for (const char of s) {
@@ -6512,14 +6520,6 @@ pub fn nc16_valid_parentheses() -> Embedded {
     }
   }
   return stack.length === 0;
-}"),
-      #("Solution 2 · Reduction", "No stack: strip every matched pair, over and over, until nothing more can go. Whatever survives is unmatched. It is also why \"([)]\" fails — neither pair is ever adjacent.", "export function isValid(s: string): boolean {
-  let previous = \"\";
-  while (previous !== s) {
-    previous = s;
-    s = s.replaceAll(\"()\", \"\").replaceAll(\"[]\", \"\").replaceAll(\"{}\", \"\");
-  }
-  return s === \"\";
 }"),
     ],
     check: Check(
@@ -6548,7 +6548,29 @@ export function run(): [string, string, string][] {
 pub fn nc17_min_stack() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.", "export class MinStack {
+      #("Pair Stack", "O(1) per operation · O(n) space", "Each entry carries the minimum of everything at or below it, so getMin is a peek. One structure instead of two, at the cost of a second number per value.", "export class MinStack {
+  private entries: [number, number][] = [];
+
+  push(val: number): void {
+    const smallest = this.entries.length === 0
+      ? val
+      : Math.min(val, this.entries[this.entries.length - 1][1]);
+    this.entries.push([val, smallest]);
+  }
+
+  pop(): void {
+    this.entries.pop();
+  }
+
+  top(): number {
+    return this.entries[this.entries.length - 1][0];
+  }
+
+  getMin(): number {
+    return this.entries[this.entries.length - 1][1];
+  }
+}"),
+      #("Two Stacks", "O(1) per operation · O(n) space", "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.", "export class MinStack {
   private values: number[] = [];
   private minimums: number[] = [];
 
@@ -6571,28 +6593,6 @@ pub fn nc17_min_stack() -> Embedded {
 
   getMin(): number {
     return this.minimums[this.minimums.length - 1];
-  }
-}"),
-      #("Solution 2 · Pair stack", "Each entry carries the minimum of everything at or below it, so getMin is a peek. One structure instead of two, at the cost of a second number per value.", "export class MinStack {
-  private entries: [number, number][] = [];
-
-  push(val: number): void {
-    const smallest = this.entries.length === 0
-      ? val
-      : Math.min(val, this.entries[this.entries.length - 1][1]);
-    this.entries.push([val, smallest]);
-  }
-
-  pop(): void {
-    this.entries.pop();
-  }
-
-  top(): number {
-    return this.entries[this.entries.length - 1][0];
-  }
-
-  getMin(): number {
-    return this.entries[this.entries.length - 1][1];
   }
 }"),
     ],
@@ -6641,7 +6641,17 @@ export function run(): [string, string, string][] {
 pub fn nc18_daily_temperatures() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "A stack of days still waiting for something warmer, kept in decreasing temperature order. Each new day resolves and pops every colder day below it, so every day is pushed once and popped once — O(n).", "export function dailyTemperatures(temperatures: number[]): number[] {
+      #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+For each day, scan forward until it gets warmer. O(n^2) — the monotonic stack exists only to avoid rescanning the same cold stretch once per day.", "export function dailyTemperatures(temperatures: number[]): number[] {
+  return temperatures.map((temp, i) => {
+    for (let j = i + 1; j < temperatures.length; j++) {
+      if (temperatures[j] > temp) return j - i;
+    }
+    return 0;
+  });
+}"),
+      #("Monotonic Stack", "O(n) time · O(n) space", "A stack of days still waiting for something warmer, kept in decreasing temperature order. Each new day resolves and pops every colder day below it, so every day is pushed once and popped once — O(n).", "export function dailyTemperatures(temperatures: number[]): number[] {
   const result = new Array(temperatures.length).fill(0);
   const stack: number[] = []; // indices, temperatures decreasing
 
@@ -6654,16 +6664,6 @@ pub fn nc18_daily_temperatures() -> Embedded {
   }
 
   return result;
-}"),
-      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-For each day, scan forward until it gets warmer. O(n^2) — the monotonic stack exists only to avoid rescanning the same cold stretch once per day.", "export function dailyTemperatures(temperatures: number[]): number[] {
-  return temperatures.map((temp, i) => {
-    for (let j = i + 1; j < temperatures.length; j++) {
-      if (temperatures[j] > temp) return j - i;
-    }
-    return 0;
-  });
 }"),
     ],
     check: Check(
@@ -6694,7 +6694,20 @@ export function run(): [string, string, string][] {
 pub fn nc19_binary_search() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+      #("Recursive Binary Search", "O(log n) time · O(log n) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The same halving as recursion. The bounds are arguments rather than mutated locals, which makes each step's invariant easier to see.", "export function search(nums: number[], target: number): number {
+  return halve(nums, target, 0, nums.length - 1);
+}
+
+function halve(nums: number[], target: number, lo: number, hi: number): number {
+  if (lo > hi) return -1;
+  const mid = (lo + hi) >> 1;
+  if (nums[mid] === target) return mid;
+  if (nums[mid] < target) return halve(nums, target, mid + 1, hi);
+  return halve(nums, target, lo, mid - 1);
+}"),
+      #("Binary Search", "O(log n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
 Worth writing until the bounds are automatic: this is the search every rotated-array problem is built on top of.", "export function search(nums: number[], target: number): number {
   let left = 0;
@@ -6709,19 +6722,6 @@ Worth writing until the bounds are automatic: this is the search every rotated-a
     }
   }
   return -1;
-}"),
-      #("Solution 2 · Recursive", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
-
-The same halving as recursion. The bounds are arguments rather than mutated locals, which makes each step's invariant easier to see.", "export function search(nums: number[], target: number): number {
-  return halve(nums, target, 0, nums.length - 1);
-}
-
-function halve(nums: number[], target: number, lo: number, hi: number): number {
-  if (lo > hi) return -1;
-  const mid = (lo + hi) >> 1;
-  if (nums[mid] === target) return mid;
-  if (nums[mid] < target) return halve(nums, target, mid + 1, hi);
-  return halve(nums, target, lo, mid - 1);
 }"),
     ],
     check: Check(
@@ -6749,7 +6749,15 @@ export function run(): [string, string, string][] {
 pub fn nc20_find_min_rotated() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+      #("Linear Scan", "O(n) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+O(n) rather than O(log n), but it makes the shape obvious: a rotated sorted array drops in value exactly once, and that drop is the minimum. No drop means it was never rotated, so the head wins.", "export function findMin(nums: number[]): number {
+  for (let i = 1; i < nums.length; i++) {
+    if (nums[i] < nums[i - 1]) return nums[i];
+  }
+  return nums[0];
+}"),
+      #("Binary Search", "O(log n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
 The minimum is the one place order breaks. Compare the midpoint against a boundary: a segment that still looks sorted cannot hold the break, so the answer is in the other half.", "export function findMin(nums: number[]): number {
   let left = 0;
@@ -6767,14 +6775,6 @@ The minimum is the one place order breaks. Compare the midpoint against a bounda
   }
 
   return nums[left];
-}"),
-      #("Solution 2 · Linear scan", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-O(n) rather than O(log n), but it makes the shape obvious: a rotated sorted array drops in value exactly once, and that drop is the minimum. No drop means it was never rotated, so the head wins.", "export function findMin(nums: number[]): number {
-  for (let i = 1; i < nums.length; i++) {
-    if (nums[i] < nums[i - 1]) return nums[i];
-  }
-  return nums[0];
 }"),
     ],
     check: Check(
@@ -6802,7 +6802,35 @@ export function run(): [string, string, string][] {
 pub fn nc21_search_rotated() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+      #("Pivot + Binary Search", "O(n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Two plain steps instead of one clever one: find where the rotation wrapped, which leaves two ordinary sorted runs, then search each. Nothing has to reason mid-search about which half is sorted.", "export function search(nums: number[], target: number): number {
+  const pivot = rotationPoint(nums);
+  const found = binarySearch(nums, target, 0, pivot - 1);
+  if (found !== -1) return found;
+  return binarySearch(nums, target, pivot, nums.length - 1);
+}
+
+function rotationPoint(nums: number[]): number {
+  for (let i = 1; i < nums.length; i++) {
+    if (nums[i] < nums[i - 1]) return i;
+  }
+  return 0;
+}
+
+function binarySearch(nums: number[], target: number, lo: number, hi: number): number {
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (nums[mid] === target) return mid;
+    if (nums[mid] < target) {
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return -1;
+}"),
+      #("Binary Search", "O(log n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
 The twist: after a rotation, one half around the midpoint is always sorted. Work out which, then use its endpoints to decide whether the target lies inside it.", "export function search(nums: number[], target: number): number {
   let left = 0;
@@ -6831,34 +6859,6 @@ The twist: after a rotation, one half around the midpoint is always sorted. Work
 
   return -1;
 }"),
-      #("Solution 2 · Find pivot", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
-
-Two plain steps instead of one clever one: find where the rotation wrapped, which leaves two ordinary sorted runs, then search each. Nothing has to reason mid-search about which half is sorted.", "export function search(nums: number[], target: number): number {
-  const pivot = rotationPoint(nums);
-  const found = binarySearch(nums, target, 0, pivot - 1);
-  if (found !== -1) return found;
-  return binarySearch(nums, target, pivot, nums.length - 1);
-}
-
-function rotationPoint(nums: number[]): number {
-  for (let i = 1; i < nums.length; i++) {
-    if (nums[i] < nums[i - 1]) return i;
-  }
-  return 0;
-}
-
-function binarySearch(nums: number[], target: number, lo: number, hi: number): number {
-  while (lo <= hi) {
-    const mid = (lo + hi) >> 1;
-    if (nums[mid] === target) return mid;
-    if (nums[mid] < target) {
-      lo = mid + 1;
-    } else {
-      hi = mid - 1;
-    }
-  }
-  return -1;
-}"),
     ],
     check: Check(
       signature: "export function search(nums: number[], target: number): number",
@@ -6885,24 +6885,7 @@ export function run(): [string, string, string][] {
 pub fn nc22_encode_decode() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Length-prefix each string: its length, a delimiter, then the string itself. Decoding reads a number and then takes exactly that many characters, so nothing inside a payload can ever be mistaken for structure — the delimiter appearing in the data is harmless, because the decoder was never scanning for it.", "
-export function encode(strs: string[]): string {
-  return strs.map((s) => `${s.length}#${s}`).join(\"\");
-}
-
-export function decode(s: string): string[] {
-  const out: string[] = [];
-  let i = 0;
-  while (i < s.length) {
-    const hashAt = s.indexOf(\"#\", i);
-    const length = Number(s.slice(i, hashAt));
-    const start = hashAt + 1;
-    out.push(s.slice(start, start + length));
-    i = start + length;
-  }
-  return out;
-}"),
-      #("Solution 2 · Escaping", "The other honest answer: pick a separator and make it safe by escaping it, and escaping the escape. Note the leading separator rather than a join — without it, [] and [\"\"] both encode to the empty string, which is the case that catches most first attempts.", "
+      #("Separator + Escaping", "O(n) time · O(n) space", "The other honest answer: pick a separator and make it safe by escaping it, and escaping the escape. Note the leading separator rather than a join — without it, [] and [\"\"] both encode to the empty string, which is the case that catches most first attempts.", "
 const SEPARATOR = \"|\";
 const ESCAPE = \"\\\\\";
 
@@ -6937,6 +6920,23 @@ export function decode(s: string): string[] {
     }
   }
   out.push(current);
+  return out;
+}"),
+      #("Length Prefix", "O(n) time · O(n) space", "Length-prefix each string: its length, a delimiter, then the string itself. Decoding reads a number and then takes exactly that many characters, so nothing inside a payload can ever be mistaken for structure — the delimiter appearing in the data is harmless, because the decoder was never scanning for it.", "
+export function encode(strs: string[]): string {
+  return strs.map((s) => `${s.length}#${s}`).join(\"\");
+}
+
+export function decode(s: string): string[] {
+  const out: string[] = [];
+  let i = 0;
+  while (i < s.length) {
+    const hashAt = s.indexOf(\"#\", i);
+    const length = Number(s.slice(i, hashAt));
+    const start = hashAt + 1;
+    out.push(s.slice(start, start + length));
+    i = start + length;
+  }
   return out;
 }"),
     ],
@@ -6979,24 +6979,7 @@ export function run(): [string, string, string][] {
 pub fn nc23_valid_sudoku() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "One pass, one set. Each filled cell contributes three signatures — this value in this row, in this column, in this box — and the first one already present is the duplicate. Nothing has to be gathered up first, and the scan stops the moment it fails.", "export function isValidSudoku(board: string[][]): boolean {
-  const seen = new Set<string>();
-  for (let r = 0; r < board.length; r++) {
-    for (let c = 0; c < board[r].length; c++) {
-      const value = board[r][c];
-      if (value === \".\") continue;
-      const keys = [
-        `${value} row ${r}`,
-        `${value} col ${c}`,
-        `${value} box ${Math.floor(r / 3) * 3 + Math.floor(c / 3)}`,
-      ];
-      if (keys.some((key) => seen.has(key))) return false;
-      for (const key of keys) seen.add(key);
-    }
-  }
-  return true;
-}"),
-      #("Solution 2 · By unit", "Turn the board into the 27 things being constrained — nine rows, nine columns, nine boxes — and the problem collapses to \"does any of these contain a repeat?\". More passes than the signature set, but the constraint is stated once and the box arithmetic is confined to building the units.", "export function isValidSudoku(board: string[][]): boolean {
+      #("Check Each Unit", "O(9²) time · O(9²) space", "Turn the board into the 27 things being constrained — nine rows, nine columns, nine boxes — and the problem collapses to \"does any of these contain a repeat?\". More passes than the signature set, but the constraint is stated once and the box arithmetic is confined to building the units.", "export function isValidSudoku(board: string[][]): boolean {
   return units(board).every(noDuplicates);
 }
 
@@ -7018,6 +7001,23 @@ function units(board: string[][]): string[][] {
 function noDuplicates(unit: string[]): boolean {
   const filled = unit.filter((value) => value !== \".\");
   return filled.length === new Set(filled).size;
+}"),
+      #("One Pass + Seen Set", "O(9²) time · O(9²) space", "One pass, one set. Each filled cell contributes three signatures — this value in this row, in this column, in this box — and the first one already present is the duplicate. Nothing has to be gathered up first, and the scan stops the moment it fails.", "export function isValidSudoku(board: string[][]): boolean {
+  const seen = new Set<string>();
+  for (let r = 0; r < board.length; r++) {
+    for (let c = 0; c < board[r].length; c++) {
+      const value = board[r][c];
+      if (value === \".\") continue;
+      const keys = [
+        `${value} row ${r}`,
+        `${value} col ${c}`,
+        `${value} box ${Math.floor(r / 3) * 3 + Math.floor(c / 3)}`,
+      ];
+      if (keys.some((key) => seen.has(key))) return false;
+      for (const key of keys) seen.add(key);
+    }
+  }
+  return true;
 }"),
     ],
     check: Check(
@@ -7068,7 +7068,24 @@ export function run(): [string, string, string][] {
 pub fn nc24_trapping_rain_water() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Two pointers, moving whichever side is shorter. The trick is that the shorter side alone decides how much water sits above it: whatever is on the far side is at least as tall, so the running maximum behind the short pointer is the water level, and there is no need to know the far maximum exactly. One pass, no extra arrays.", "export function trap(height: number[]): number {
+      #("Prefix Maxima", "O(n) time · O(n) space", "State the definition and compute it. Water above a position is min(tallest to its left, tallest to its right) minus its own height, so build both running maxima and sum the differences. Two extra arrays against the two-pointer version's none, but the formula is right there in the code.", "export function trap(height: number[]): number {
+  const left: number[] = [];
+  let best = 0;
+  for (const h of height) {
+    best = Math.max(best, h);
+    left.push(best);
+  }
+
+  const right = new Array<number>(height.length);
+  best = 0;
+  for (let i = height.length - 1; i >= 0; i--) {
+    best = Math.max(best, height[i]);
+    right[i] = best;
+  }
+
+  return height.reduce((total, h, i) => total + Math.min(left[i], right[i]) - h, 0);
+}"),
+      #("Two Pointers", "O(n) time · O(1) space", "Two pointers, moving whichever side is shorter. The trick is that the shorter side alone decides how much water sits above it: whatever is on the far side is at least as tall, so the running maximum behind the short pointer is the water level, and there is no need to know the far maximum exactly. One pass, no extra arrays.", "export function trap(height: number[]): number {
   let left = 0;
   let right = height.length - 1;
   let leftMax = 0;
@@ -7088,23 +7105,6 @@ pub fn nc24_trapping_rain_water() -> Embedded {
   }
 
   return total;
-}"),
-      #("Solution 2 · Prefix maxima", "State the definition and compute it. Water above a position is min(tallest to its left, tallest to its right) minus its own height, so build both running maxima and sum the differences. Two extra arrays against the two-pointer version's none, but the formula is right there in the code.", "export function trap(height: number[]): number {
-  const left: number[] = [];
-  let best = 0;
-  for (const h of height) {
-    best = Math.max(best, h);
-    left.push(best);
-  }
-
-  const right = new Array<number>(height.length);
-  best = 0;
-  for (let i = height.length - 1; i >= 0; i--) {
-    best = Math.max(best, height[i]);
-    right[i] = best;
-  }
-
-  return height.reduce((total, h, i) => total + Math.min(left[i], right[i]) - h, 0);
 }"),
     ],
     check: Check(
@@ -7134,37 +7134,7 @@ export function run(): [string, string, string][] {
 pub fn nc25_min_window_substring() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Count what is still missing, not what is present. Every character the window takes in decrements its requirement, and only a character that was actually still needed moves the counter — so \"missing == 0\" is a single integer test rather than a map comparison. Once the window is valid, shrink from the left until it stops being valid, recording the best as you go.", "export function minWindow(s: string, t: string): string {
-  if (s === \"\" || t === \"\") return \"\";
-
-  const need = new Map<string, number>();
-  for (const c of t) need.set(c, (need.get(c) ?? 0) + 1);
-
-  let missing = t.length;
-  let left = 0;
-  let bestStart = 0;
-  let bestLength = 0;
-
-  for (let right = 0; right < s.length; right++) {
-    const c = s[right];
-    if ((need.get(c) ?? 0) > 0) missing--;
-    need.set(c, (need.get(c) ?? 0) - 1);
-
-    while (missing === 0) {
-      if (bestLength === 0 || right - left + 1 < bestLength) {
-        bestStart = left;
-        bestLength = right - left + 1;
-      }
-      const leaving = s[left];
-      need.set(leaving, (need.get(leaving) ?? 0) + 1);
-      if ((need.get(leaving) ?? 0) > 0) missing++;
-      left++;
-    }
-  }
-
-  return s.slice(bestStart, bestStart + bestLength);
-}"),
-      #("Solution 2 · Filtered positions", "Two changes from the counting version, both worth knowing. First, throw away every position whose character is not in the needle: for a long haystack and a short needle, that is nearly the whole walk gone. Second, track how many distinct requirements are fully covered rather than how many characters remain — the counter only moves when a count crosses its requirement.", "export function minWindow(s: string, t: string): string {
+      #("Filtered Sliding Window", "O(n+m) time · O(n) space", "Two changes from the counting version, both worth knowing. First, throw away every position whose character is not in the needle: for a long haystack and a short needle, that is nearly the whole walk gone. Second, track how many distinct requirements are fully covered rather than how many characters remain — the counter only moves when a count crosses its requirement.", "export function minWindow(s: string, t: string): string {
   if (s === \"\" || t === \"\") return \"\";
 
   const need = new Map<string, number>();
@@ -7202,6 +7172,36 @@ pub fn nc25_min_window_substring() -> Embedded {
 
   return s.slice(bestStart, bestStart + bestLength);
 }"),
+      #("Sliding Window", "O(n+m) time · O(1) space", "Count what is still missing, not what is present. Every character the window takes in decrements its requirement, and only a character that was actually still needed moves the counter — so \"missing == 0\" is a single integer test rather than a map comparison. Once the window is valid, shrink from the left until it stops being valid, recording the best as you go.", "export function minWindow(s: string, t: string): string {
+  if (s === \"\" || t === \"\") return \"\";
+
+  const need = new Map<string, number>();
+  for (const c of t) need.set(c, (need.get(c) ?? 0) + 1);
+
+  let missing = t.length;
+  let left = 0;
+  let bestStart = 0;
+  let bestLength = 0;
+
+  for (let right = 0; right < s.length; right++) {
+    const c = s[right];
+    if ((need.get(c) ?? 0) > 0) missing--;
+    need.set(c, (need.get(c) ?? 0) - 1);
+
+    while (missing === 0) {
+      if (bestLength === 0 || right - left + 1 < bestLength) {
+        bestStart = left;
+        bestLength = right - left + 1;
+      }
+      const leaving = s[left];
+      need.set(leaving, (need.get(leaving) ?? 0) + 1);
+      if ((need.get(leaving) ?? 0) > 0) missing++;
+      left++;
+    }
+  }
+
+  return s.slice(bestStart, bestStart + bestLength);
+}"),
     ],
     check: Check(
       signature: "export function minWindow(s: string, t: string): string",
@@ -7230,7 +7230,33 @@ export function run(): [string, string, string][] {
 pub fn nc26_sliding_window_maximum() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Cut the array into blocks of k and pre-compute, within each block, the running maximum forwards and backwards. Any window of width k straddles at most one block boundary, so it is exactly a suffix of one block and a prefix of the next — one max from each, and the whole thing is O(n) with no queue at all.", "export function maxSlidingWindow(nums: number[], k: number): number[] {
+      #("Brute Force", "O(n·k) time · O(k) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every window, maximised. O(n·k) rather than O(n), which is exactly the rescanning the other two variants exist to avoid.", "export function maxSlidingWindow(nums: number[], k: number): number[] {
+  if (k <= 0 || nums.length < k) return [];
+  const out: number[] = [];
+  for (let i = 0; i + k <= nums.length; i++) out.push(Math.max(...nums.slice(i, i + k)));
+  return out;
+}"),
+      #("Monotonic Deque", "O(n) time · O(k) space", "The classic answer. Hold the indices whose value could still be the maximum, kept in decreasing order: a new value pops every smaller one off the back, because they can never win again while it is in the window. The front is always the answer, and the front leaves once it falls out of range. Each index is pushed and popped once.", "export function maxSlidingWindow(nums: number[], k: number): number[] {
+  if (k <= 0) return [];
+
+  // Indices, their values decreasing. `head` rather than shift(), which would
+  // make every expiry O(n) and quietly undo the point of the deque.
+  const window: number[] = [];
+  let head = 0;
+  const out: number[] = [];
+
+  for (let i = 0; i < nums.length; i++) {
+    while (window.length > head && nums[window[window.length - 1]] <= nums[i]) window.pop();
+    window.push(i);
+    if (window[head] <= i - k) head++;
+    if (i >= k - 1) out.push(nums[window[head]]);
+  }
+
+  return out;
+}"),
+      #("Prefix & Suffix Maxima", "O(n) time · O(n) space", "Cut the array into blocks of k and pre-compute, within each block, the running maximum forwards and backwards. Any window of width k straddles at most one block boundary, so it is exactly a suffix of one block and a prefix of the next — one max from each, and the whole thing is O(n) with no queue at all.", "export function maxSlidingWindow(nums: number[], k: number): number[] {
   if (k <= 0 || nums.length < k) return [];
 
   const n = nums.length;
@@ -7248,32 +7274,6 @@ pub fn nc26_sliding_window_maximum() -> Embedded {
   // covered by a suffix of one block and a prefix of the next.
   const out: number[] = [];
   for (let i = 0; i + k <= n; i++) out.push(Math.max(right[i], left[i + k - 1]));
-  return out;
-}"),
-      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-Every window, maximised. O(n·k) rather than O(n), which is exactly the rescanning the other two variants exist to avoid.", "export function maxSlidingWindow(nums: number[], k: number): number[] {
-  if (k <= 0 || nums.length < k) return [];
-  const out: number[] = [];
-  for (let i = 0; i + k <= nums.length; i++) out.push(Math.max(...nums.slice(i, i + k)));
-  return out;
-}"),
-      #("Solution 3 · Monotonic deque", "The classic answer. Hold the indices whose value could still be the maximum, kept in decreasing order: a new value pops every smaller one off the back, because they can never win again while it is in the window. The front is always the answer, and the front leaves once it falls out of range. Each index is pushed and popped once.", "export function maxSlidingWindow(nums: number[], k: number): number[] {
-  if (k <= 0) return [];
-
-  // Indices, their values decreasing. `head` rather than shift(), which would
-  // make every expiry O(n) and quietly undo the point of the deque.
-  const window: number[] = [];
-  let head = 0;
-  const out: number[] = [];
-
-  for (let i = 0; i < nums.length; i++) {
-    while (window.length > head && nums[window[window.length - 1]] <= nums[i]) window.pop();
-    window.push(i);
-    if (window[head] <= i - k) head++;
-    if (i >= k - 1) out.push(nums[window[head]]);
-  }
-
   return out;
 }"),
     ],
@@ -7304,30 +7304,7 @@ export function run(): [string, string, string][] {
 pub fn nc27_eval_rpn() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "A stack is the whole evaluator. Numbers go on; an operator takes the top two off and puts its result back. The one detail worth remembering is the order — the value popped first is the right operand — and that the division truncates towards zero, which is not what a flooring division does for negatives.", "const OPERATORS = new Set([\"+\", \"-\", \"*\", \"/\"]);
-
-export function evalRPN(tokens: string[]): number {
-  const stack: number[] = [];
-  for (const token of tokens) {
-    if (OPERATORS.has(token) && stack.length >= 2) {
-      const b = stack.pop()!;
-      const a = stack.pop()!;
-      stack.push(apply(token, a, b));
-    } else {
-      stack.push(Number(token));
-    }
-  }
-  return stack.length ? stack[stack.length - 1] : 0;
-}
-
-function apply(operator: string, a: number, b: number): number {
-  if (operator === \"+\") return a + b;
-  if (operator === \"-\") return a - b;
-  if (operator === \"*\") return a * b;
-  // trunc, not floor: the problem wants -3 / 2 to be -1.
-  return Math.trunc(a / b);
-}"),
-      #("Solution 2 · Recursive", "The same grammar, read as a recursive descent instead of a loop. The last token is the outermost operator; each operator asks for its right operand first, because that is what sits nearer the end. What the stack version stores in a list, this one stores in the call stack.", "const OPERATORS = new Set([\"+\", \"-\", \"*\", \"/\"]);
+      #("Recursion", "O(n) time · O(n) space", "The same grammar, read as a recursive descent instead of a loop. The last token is the outermost operator; each operator asks for its right operand first, because that is what sits nearer the end. What the stack version stores in a list, this one stores in the call stack.", "const OPERATORS = new Set([\"+\", \"-\", \"*\", \"/\"]);
 
 export function evalRPN(tokens: string[]): number {
   return take(tokens, tokens.length - 1)[0];
@@ -7348,6 +7325,29 @@ function apply(operator: string, a: number, b: number): number {
   if (operator === \"+\") return a + b;
   if (operator === \"-\") return a - b;
   if (operator === \"*\") return a * b;
+  return Math.trunc(a / b);
+}"),
+      #("Stack", "O(n) time · O(n) space", "A stack is the whole evaluator. Numbers go on; an operator takes the top two off and puts its result back. The one detail worth remembering is the order — the value popped first is the right operand — and that the division truncates towards zero, which is not what a flooring division does for negatives.", "const OPERATORS = new Set([\"+\", \"-\", \"*\", \"/\"]);
+
+export function evalRPN(tokens: string[]): number {
+  const stack: number[] = [];
+  for (const token of tokens) {
+    if (OPERATORS.has(token) && stack.length >= 2) {
+      const b = stack.pop()!;
+      const a = stack.pop()!;
+      stack.push(apply(token, a, b));
+    } else {
+      stack.push(Number(token));
+    }
+  }
+  return stack.length ? stack[stack.length - 1] : 0;
+}
+
+function apply(operator: string, a: number, b: number): number {
+  if (operator === \"+\") return a + b;
+  if (operator === \"-\") return a - b;
+  if (operator === \"*\") return a * b;
+  // trunc, not floor: the problem wants -3 / 2 to be -1.
   return Math.trunc(a / b);
 }"),
     ],
@@ -7377,7 +7377,24 @@ export function run(): [string, string, string][] {
 pub fn nc28_generate_parentheses() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Backtracking with two counters and one rule each: an opener is legal while any are left, a closer only while more are outstanding than openers. Nothing invalid is ever built, so there is no filtering step — every leaf reached with both counters at zero is an answer.", "export function generateParenthesis(n: number): string[] {
+      #("Divide & Conquer", "O(4ⁿ/√n) time · O(4ⁿ/√n) space", "Structure instead of search. Every non-empty balanced string is \"(\" + A + \")\" + B for exactly one split: A is what the first bracket encloses, B is what follows it. Enumerating the splits enumerates the strings, and there is no validity rule anywhere — the shape of the recursion is the rule.", "export function generateParenthesis(n: number): string[] {
+  return compose(n);
+}
+
+// Every non-empty balanced string is \"(\" + A + \")\" + B for exactly one split: A
+// is whatever the first bracket encloses, B is whatever follows it. Enumerating
+// the splits enumerates the strings, with no validity rule to check at all.
+function compose(n: number): string[] {
+  if (n <= 0) return [\"\"];
+  const out: string[] = [];
+  for (let inner = 0; inner < n; inner++) {
+    for (const a of compose(inner)) {
+      for (const b of compose(n - 1 - inner)) out.push(`(${a})${b}`);
+    }
+  }
+  return out;
+}"),
+      #("Backtracking", "O(4ⁿ/√n) time · O(n) space", "Backtracking with two counters and one rule each: an opener is legal while any are left, a closer only while more are outstanding than openers. Nothing invalid is ever built, so there is no filtering step — every leaf reached with both counters at zero is an answer.", "export function generateParenthesis(n: number): string[] {
   const out: string[] = [];
 
   // Two counters, one rule each: an opener is legal while any are left, and a
@@ -7393,23 +7410,6 @@ pub fn nc28_generate_parentheses() -> Embedded {
   };
 
   build(n, n, \"\");
-  return out;
-}"),
-      #("Solution 2 · By composition", "Structure instead of search. Every non-empty balanced string is \"(\" + A + \")\" + B for exactly one split: A is what the first bracket encloses, B is what follows it. Enumerating the splits enumerates the strings, and there is no validity rule anywhere — the shape of the recursion is the rule.", "export function generateParenthesis(n: number): string[] {
-  return compose(n);
-}
-
-// Every non-empty balanced string is \"(\" + A + \")\" + B for exactly one split: A
-// is whatever the first bracket encloses, B is whatever follows it. Enumerating
-// the splits enumerates the strings, with no validity rule to check at all.
-function compose(n: number): string[] {
-  if (n <= 0) return [\"\"];
-  const out: string[] = [];
-  for (let inner = 0; inner < n; inner++) {
-    for (const a of compose(inner)) {
-      for (const b of compose(n - 1 - inner)) out.push(`(${a})${b}`);
-    }
-  }
   return out;
 }"),
     ],
@@ -7441,7 +7441,24 @@ export function run(): [string, string, string][] {
 pub fn nc29_car_fleet() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Sort from the front backwards and carry the arrival time of the fleet ahead. A car that would arrive later than that fleet can never catch it, so it starts a new one and becomes the time to beat; anything else merges. Comparing times as distance × speed cross-multiplied keeps the whole thing in integers.", "export function carFleet(target: number, position: number[], speed: number[]): number {
+      #("Brute Force", "O(n²) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+A car leads a fleet exactly when it arrives strictly later than every car ahead of it. Checking that directly needs no sort and no running state — O(n²), and it is the definition the sorted scan is a consequence of.", "export function carFleet(target: number, position: number[], speed: number[]): number {
+  const cars = position.map((pos, i) => [pos, speed[i]] as [number, number]);
+  return cars.filter((car) => leads(car, cars, target)).length;
+}
+
+// A car leads a fleet exactly when it arrives strictly later than every car
+// ahead of it; anything else means it catches one of them and merges. No
+// sorting, no running state -- O(n^2), and the definition rather than a
+// consequence of it.
+function leads(car: [number, number], cars: [number, number][], target: number): boolean {
+  const [pos, spd] = car;
+  return cars
+    .filter(([otherPos]) => otherPos > pos)
+    .every(([otherPos, otherSpeed]) => (target - pos) * otherSpeed > (target - otherPos) * spd);
+}"),
+      #("Sort + Greedy", "O(n log n) time · O(n) space", "Sort from the front backwards and carry the arrival time of the fleet ahead. A car that would arrive later than that fleet can never catch it, so it starts a new one and becomes the time to beat; anything else merges. Comparing times as distance × speed cross-multiplied keeps the whole thing in integers.", "export function carFleet(target: number, position: number[], speed: number[]): number {
   const cars = position.map((pos, i) => [pos, speed[i]] as [number, number]);
   cars.sort((a, b) => b[0] - a[0]);
 
@@ -7461,23 +7478,6 @@ pub fn nc29_car_fleet() -> Embedded {
   }
 
   return fleets;
-}"),
-      #("Solution 2 · Pairwise", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-A car leads a fleet exactly when it arrives strictly later than every car ahead of it. Checking that directly needs no sort and no running state — O(n²), and it is the definition the sorted scan is a consequence of.", "export function carFleet(target: number, position: number[], speed: number[]): number {
-  const cars = position.map((pos, i) => [pos, speed[i]] as [number, number]);
-  return cars.filter((car) => leads(car, cars, target)).length;
-}
-
-// A car leads a fleet exactly when it arrives strictly later than every car
-// ahead of it; anything else means it catches one of them and merges. No
-// sorting, no running state -- O(n^2), and the definition rather than a
-// consequence of it.
-function leads(car: [number, number], cars: [number, number][], target: number): boolean {
-  const [pos, spd] = car;
-  return cars
-    .filter(([otherPos]) => otherPos > pos)
-    .every(([otherPos, otherSpeed]) => (target - pos) * otherSpeed > (target - otherPos) * spd);
 }"),
     ],
     check: Check(
@@ -7507,7 +7507,25 @@ export function run(): [string, string, string][] {
 pub fn nc30_largest_rectangle() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "A monotonic stack of (starting index, height), heights increasing. A shorter bar arriving means every taller entry can never extend further, so each is closed off and measured — and the earliest position they reached back to becomes the new bar's own start, because it can extend back over all of them. Whatever is left at the end was never cut off, so it runs to the far edge.", "export function largestRectangleArea(heights: number[]): number {
+      #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every rectangle is some bar taken as far as it will go, so take each bar and walk outwards while the neighbours are at least as tall. O(n²), and it makes plain what the stack is actually computing: the two boundaries where a bar stops fitting.", "export function largestRectangleArea(heights: number[]): number {
+  let best = 0;
+
+  for (let i = 0; i < heights.length; i++) {
+    // How far this bar's own height can spread in each direction. O(n^2), and
+    // the definition of the answer: every rectangle is some bar taken as far as
+    // it will go.
+    let left = i;
+    while (left > 0 && heights[left - 1] >= heights[i]) left--;
+    let right = i;
+    while (right + 1 < heights.length && heights[right + 1] >= heights[i]) right++;
+    best = Math.max(best, heights[i] * (right - left + 1));
+  }
+
+  return best;
+}"),
+      #("Monotonic Stack", "O(n) time · O(n) space", "A monotonic stack of (starting index, height), heights increasing. A shorter bar arriving means every taller entry can never extend further, so each is closed off and measured — and the earliest position they reached back to becomes the new bar's own start, because it can extend back over all of them. Whatever is left at the end was never cut off, so it runs to the far edge.", "export function largestRectangleArea(heights: number[]): number {
   const stack: [number, number][] = [];
   let best = 0;
 
@@ -7527,24 +7545,6 @@ pub fn nc30_largest_rectangle() -> Embedded {
   // Whatever survives was never cut off, so it runs to the far end.
   for (const [from, tall] of stack) {
     best = Math.max(best, tall * (heights.length - from));
-  }
-
-  return best;
-}"),
-      #("Solution 2 · Expand from each bar", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-Every rectangle is some bar taken as far as it will go, so take each bar and walk outwards while the neighbours are at least as tall. O(n²), and it makes plain what the stack is actually computing: the two boundaries where a bar stops fitting.", "export function largestRectangleArea(heights: number[]): number {
-  let best = 0;
-
-  for (let i = 0; i < heights.length; i++) {
-    // How far this bar's own height can spread in each direction. O(n^2), and
-    // the definition of the answer: every rectangle is some bar taken as far as
-    // it will go.
-    let left = i;
-    while (left > 0 && heights[left - 1] >= heights[i]) left--;
-    let right = i;
-    while (right + 1 < heights.length && heights[right + 1] >= heights[i]) right++;
-    best = Math.max(best, heights[i] * (right - left + 1));
   }
 
   return best;
@@ -7577,7 +7577,24 @@ export function run(): [string, string, string][] {
 pub fn nc31_search_2d_matrix() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+      #("Staircase Search", "O(m+n) time · O(1) space", "Start at the top-right corner and every step is forced: a value too big rules out its whole column, a value too small rules out its whole row. O(m + n) rather than O(log mn), but it never uses the fact that the rows do not overlap, so it still works on a matrix that is merely sorted along both axes.", "export function searchMatrix(matrix: number[][], target: number): boolean {
+  if (matrix.length === 0 || matrix[0].length === 0) return false;
+
+  // From the top-right corner every step is forced: too big and the whole
+  // column is too big, so drop it; too small and the whole row is too small, so
+  // drop that. O(m + n), and it never uses the fact that rows do not overlap --
+  // it works on any matrix sorted along both axes.
+  let row = 0;
+  let column = matrix[0].length - 1;
+  while (row < matrix.length && column >= 0) {
+    const value = matrix[row][column];
+    if (value === target) return true;
+    if (value > target) column--;
+    else row++;
+  }
+  return false;
+}"),
+      #("Binary Search", "O(log(m·n)) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
 Twice: the rows do not overlap, so which row a value could be in is itself a halving question — compare the target against a row's first and last entries — and then the row is an ordinary sorted array.", "export function searchMatrix(matrix: number[][], target: number): boolean {
   // The rows are sorted and do not overlap, so the row a value could live in is
@@ -7602,23 +7619,6 @@ function contains(row: number[], target: number): boolean {
     if (row[mid] === target) return true;
     if (row[mid] < target) low = mid + 1;
     else high = mid - 1;
-  }
-  return false;
-}"),
-      #("Solution 2 · Staircase", "Start at the top-right corner and every step is forced: a value too big rules out its whole column, a value too small rules out its whole row. O(m + n) rather than O(log mn), but it never uses the fact that the rows do not overlap, so it still works on a matrix that is merely sorted along both axes.", "export function searchMatrix(matrix: number[][], target: number): boolean {
-  if (matrix.length === 0 || matrix[0].length === 0) return false;
-
-  // From the top-right corner every step is forced: too big and the whole
-  // column is too big, so drop it; too small and the whole row is too small, so
-  // drop that. O(m + n), and it never uses the fact that rows do not overlap --
-  // it works on any matrix sorted along both axes.
-  let row = 0;
-  let column = matrix[0].length - 1;
-  while (row < matrix.length && column >= 0) {
-    const value = matrix[row][column];
-    if (value === target) return true;
-    if (value > target) column--;
-    else row++;
   }
   return false;
 }"),
@@ -7652,7 +7652,19 @@ export function run(): [string, string, string][] {
 pub fn nc32_koko_bananas() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+      #("Brute Force", "O(n·m) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Try 1, then 2, then 3, and stop at the first speed that fits. O(max pile) calls to the same feasibility check the halving version makes O(log max pile) of — worth writing once, because getting the check right is most of the problem.", "export function minEatingSpeed(piles: number[], h: number): number {
+  const highest = Math.max(...piles);
+  let speed = 1;
+  while (speed < highest && hours(piles, speed) > h) speed++;
+  return speed;
+}
+
+function hours(piles: number[], speed: number): number {
+  return piles.reduce((total, pile) => total + Math.ceil(pile / speed), 0);
+}"),
+      #("Binary Search", "O(n log m) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
 The search space is the answer, not the input. What makes it work is that feasibility is monotone: if a speed finishes in time then so does every faster one, so \"the smallest speed that works\" is a boundary to halve towards.", "export function minEatingSpeed(piles: number[], h: number): number {
   // The search space is the answer, not the input. Feasibility is monotone --
@@ -7669,18 +7681,6 @@ The search space is the answer, not the input. What makes it work is that feasib
 }
 
 // A pile never shares an hour with another, so each costs ceil(pile / speed).
-function hours(piles: number[], speed: number): number {
-  return piles.reduce((total, pile) => total + Math.ceil(pile / speed), 0);
-}"),
-      #("Solution 2 · Linear scan", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-Try 1, then 2, then 3, and stop at the first speed that fits. O(max pile) calls to the same feasibility check the halving version makes O(log max pile) of — worth writing once, because getting the check right is most of the problem.", "export function minEatingSpeed(piles: number[], h: number): number {
-  const highest = Math.max(...piles);
-  let speed = 1;
-  while (speed < highest && hours(piles, speed) > h) speed++;
-  return speed;
-}
-
 function hours(piles: number[], speed: number): number {
   return piles.reduce((total, pile) => total + Math.ceil(pile / speed), 0);
 }"),
@@ -7712,7 +7712,24 @@ export function run(): [string, string, string][] {
 pub fn nc33_time_map() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+      #("Linear Scan", "O(n) per operation · O(n) space", "Store newest first and the lookup is the first entry old enough — one `find`, no split arithmetic. O(n) per lookup against the halving version's O(log n), which for a key with a handful of versions is the faster of the two in practice.", "export class TimeMap {
+  private store = new Map<string, [number, string][]>();
+
+  set(key: string, value: string, timestamp: number): void {
+    this.store.set(key, [[timestamp, value], ...(this.store.get(key) ?? [])]);
+  }
+
+  get(key: string, timestamp: number): string {
+    // Newest first, so the first entry old enough is the answer. O(n) per
+    // lookup against the halving version's O(log n), but there is no split
+    // arithmetic to get wrong.
+    for (const [stamp, value] of this.store.get(key) ?? []) {
+      if (stamp <= timestamp) return value;
+    }
+    return \"\";
+  }
+}"),
+      #("Binary Search", "O(log n) per get · O(n) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
 Timestamps only ever increase, so each key's history is already sorted and needs no sorting on write. The lookup is \"newest entry at or before this time\", which is a halving question: keep the candidate, then keep looking on the newer side for a better one.", "export class TimeMap {
   private store = new Map<string, [number, string][]>();
@@ -7742,23 +7759,6 @@ Timestamps only ever increase, so each key's history is already sorted and needs
       }
     }
     return best;
-  }
-}"),
-      #("Solution 2 · Linear scan", "Store newest first and the lookup is the first entry old enough — one `find`, no split arithmetic. O(n) per lookup against the halving version's O(log n), which for a key with a handful of versions is the faster of the two in practice.", "export class TimeMap {
-  private store = new Map<string, [number, string][]>();
-
-  set(key: string, value: string, timestamp: number): void {
-    this.store.set(key, [[timestamp, value], ...(this.store.get(key) ?? [])]);
-  }
-
-  get(key: string, timestamp: number): string {
-    // Newest first, so the first entry old enough is the answer. O(n) per
-    // lookup against the halving version's O(log n), but there is no split
-    // arithmetic to get wrong.
-    for (const [stamp, value] of this.store.get(key) ?? []) {
-      if (stamp <= timestamp) return value;
-    }
-    return \"\";
   }
 }"),
     ],
@@ -7806,7 +7806,16 @@ export function run(): [string, string, string][] {
 pub fn nc34_median_two_sorted() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Merging, but stopping at the middle and keeping only the last two values seen. The merged array is never built, so it is O(m + n) time and O(1) space. The two values are what makes the even case work: the median is then the average of the middle pair.", "export function findMedianSortedArrays(nums1: number[], nums2: number[]): number {
+      #("Sorting", "O((m+n) log (m+n)) time · O(m+n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Concatenate, sort, take the middle. O((m+n) log(m+n)) and it throws away the fact that both inputs were already sorted — but the indexing is worth seeing once, because averaging positions n/2 and (n-1)/2 handles both parities in one expression.", "export function findMedianSortedArrays(nums1: number[], nums2: number[]): number {
+  const merged = [...nums1, ...nums2].sort((a, b) => a - b);
+  if (merged.length === 0) return 0;
+  // One expression for both parities: for an odd length the two indices are the
+  // same element, so the average of it with itself is itself.
+  return (merged[Math.floor(merged.length / 2)] + merged[Math.floor((merged.length - 1) / 2)]) / 2;
+}"),
+      #("Two Pointers", "O(m+n) time · O(1) space", "Merging, but stopping at the middle and keeping only the last two values seen. The merged array is never built, so it is O(m + n) time and O(1) space. The two values are what makes the even case work: the median is then the average of the middle pair.", "export function findMedianSortedArrays(nums1: number[], nums2: number[]): number {
   const total = nums1.length + nums2.length;
   if (total === 0) return 0;
 
@@ -7827,16 +7836,7 @@ pub fn nc34_median_two_sorted() -> Embedded {
 
   return total % 2 === 1 ? current : (previous + current) / 2;
 }"),
-      #("Solution 2 · Concat sort", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-Concatenate, sort, take the middle. O((m+n) log(m+n)) and it throws away the fact that both inputs were already sorted — but the indexing is worth seeing once, because averaging positions n/2 and (n-1)/2 handles both parities in one expression.", "export function findMedianSortedArrays(nums1: number[], nums2: number[]): number {
-  const merged = [...nums1, ...nums2].sort((a, b) => a - b);
-  if (merged.length === 0) return 0;
-  // One expression for both parities: for an odd length the two indices are the
-  // same element, so the average of it with itself is itself.
-  return (merged[Math.floor(merged.length / 2)] + merged[Math.floor((merged.length - 1) / 2)]) / 2;
-}"),
-      #("Solution 3 · Partition search", "The O(log min(m, n)) answer, and the reason the problem is rated hard. Do not look for the median: look for a cut through both arrays with exactly half the elements to its left. Such a cut is correct when both left-hand values are no bigger than both right-hand values, and that condition is monotone in where you cut the shorter array — so halve on the cut position.", "export function findMedianSortedArrays(nums1: number[], nums2: number[]): number {
+      #("Binary Search", "O(log min(m,n)) time · O(1) space", "The O(log min(m, n)) answer, and the reason the problem is rated hard. Do not look for the median: look for a cut through both arrays with exactly half the elements to its left. Such a cut is correct when both left-hand values are no bigger than both right-hand values, and that condition is monotone in where you cut the shorter array — so halve on the cut position.", "export function findMedianSortedArrays(nums1: number[], nums2: number[]): number {
   // Always halve the shorter side, so the search is O(log min(m, n)).
   let a = nums1;
   let b = nums2;
@@ -7900,7 +7900,20 @@ export function run(): [string, string, string][] {
 pub fn nc35_insert_interval() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The input is already sorted, which turns the problem into a three-way split: everything that finishes before the new interval starts passes through untouched, everything that touches it collapses into one, and everything after it passes through too. One pass, no sorting.", "export function insert(intervals: number[][], newInterval: number[]): number[][] {
+      #("Sort + Merge", "O(n log n) time · O(n) space", "Drop the new interval on the end and run the general merge. It throws away the sortedness — O(n log n) rather than O(n) — but it is a solution you already have rather than a three-way split to get right, and that trade is often the correct one under time pressure.", "export function insert(intervals: number[][], newInterval: number[]): number[][] {
+  // Drop the new interval on the end and run the general merge. Throws away the
+  // fact that the input was sorted -- O(n log n) rather than O(n) -- but it
+  // reuses a solution you already have rather than a three-way split.
+  const sorted = [...intervals, newInterval].sort((a, b) => a[0] - b[0]);
+  const out: number[][] = [];
+  for (const [start, end] of sorted) {
+    const last = out[out.length - 1];
+    if (last && start <= last[1]) last[1] = Math.max(last[1], end);
+    else out.push([start, end]);
+  }
+  return out;
+}"),
+      #("Intervals", "O(n) time · O(n) space", "The input is already sorted, which turns the problem into a three-way split: everything that finishes before the new interval starts passes through untouched, everything that touches it collapses into one, and everything after it passes through too. One pass, no sorting.", "export function insert(intervals: number[][], newInterval: number[]): number[][] {
   let [start, end] = newInterval;
   const out: number[][] = [];
   let i = 0;
@@ -7918,19 +7931,6 @@ pub fn nc35_insert_interval() -> Embedded {
 
   out.push([start, end]);
   return out.concat(intervals.slice(i));
-}"),
-      #("Solution 2 · Merge after append", "Drop the new interval on the end and run the general merge. It throws away the sortedness — O(n log n) rather than O(n) — but it is a solution you already have rather than a three-way split to get right, and that trade is often the correct one under time pressure.", "export function insert(intervals: number[][], newInterval: number[]): number[][] {
-  // Drop the new interval on the end and run the general merge. Throws away the
-  // fact that the input was sorted -- O(n log n) rather than O(n) -- but it
-  // reuses a solution you already have rather than a three-way split.
-  const sorted = [...intervals, newInterval].sort((a, b) => a[0] - b[0]);
-  const out: number[][] = [];
-  for (const [start, end] of sorted) {
-    const last = out[out.length - 1];
-    if (last && start <= last[1]) last[1] = Math.max(last[1], end);
-    else out.push([start, end]);
-  }
-  return out;
 }"),
     ],
     check: Check(
@@ -7960,18 +7960,7 @@ export function run(): [string, string, string][] {
 pub fn nc36_merge_intervals() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Sort by start and the problem collapses: an interval can only ever overlap the one currently being built, because anything it could have overlapped earlier was already absorbed into that. So a single pass either extends the interval in hand or begins a new one.", "export function merge(intervals: number[][]): number[][] {
-  // Sorted by start, an interval can only ever overlap the one being built, so
-  // a single pass is enough: extend it, or begin a new one.
-  const out: number[][] = [];
-  for (const [start, end] of [...intervals].sort((a, b) => a[0] - b[0])) {
-    const last = out[out.length - 1];
-    if (last && start <= last[1]) last[1] = Math.max(last[1], end);
-    else out.push([start, end]);
-  }
-  return out;
-}"),
-      #("Solution 2 · Sweep counts", "Forget the intervals and keep only their edges: +1 where one opens, −1 where one closes. A merged interval runs from the edge that lifts the running count off zero to the edge that drops it back. Ordering opens before closes at the same coordinate is what makes touching intervals join.", "export function merge(intervals: number[][]): number[][] {
+      #("Sweep Line", "O(n log n) time · O(n) space", "Forget the intervals and keep only their edges: +1 where one opens, −1 where one closes. A merged interval runs from the edge that lifts the running count off zero to the edge that drops it back. Ordering opens before closes at the same coordinate is what makes touching intervals join.", "export function merge(intervals: number[][]): number[][] {
   // Forget the intervals and keep only their edges: +1 where one opens, -1
   // where one closes. A merged interval runs from the edge that lifts the
   // running count off zero to the edge that drops it back.
@@ -7990,6 +7979,17 @@ pub fn nc36_merge_intervals() -> Embedded {
     if (depth === 0) start = position;
     depth += delta;
     if (depth === 0) out.push([start, position]);
+  }
+  return out;
+}"),
+      #("Intervals", "O(n log n) time · O(n) space", "Sort by start and the problem collapses: an interval can only ever overlap the one currently being built, because anything it could have overlapped earlier was already absorbed into that. So a single pass either extends the interval in hand or begins a new one.", "export function merge(intervals: number[][]): number[][] {
+  // Sorted by start, an interval can only ever overlap the one being built, so
+  // a single pass is enough: extend it, or begin a new one.
+  const out: number[][] = [];
+  for (const [start, end] of [...intervals].sort((a, b) => a[0] - b[0])) {
+    const last = out[out.length - 1];
+    if (last && start <= last[1]) last[1] = Math.max(last[1], end);
+    else out.push([start, end]);
   }
   return out;
 }"),
@@ -8020,21 +8020,7 @@ export function run(): [string, string, string][] {
 pub fn nc37_non_overlapping() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Greedy on the end time. Among intervals competing for the same space, keeping the one that finishes earliest leaves the most room for whatever comes next and can never be worse — which is the exchange argument that makes the greedy correct, and the reason sorting by start is the classic wrong first answer.", "export function eraseOverlapIntervals(intervals: number[][]): number {
-  // Greedy on the end: among any set of intervals competing for the same space,
-  // keeping the one that finishes earliest leaves the most room for whatever
-  // comes next, and can never be worse.
-  let removed = 0;
-  let lastEnd = -Infinity;
-
-  for (const [start, end] of [...intervals].sort((a, b) => a[1] - b[1])) {
-    if (start >= lastEnd) lastEnd = end;
-    else removed++;
-  }
-
-  return removed;
-}"),
-      #("Solution 2 · By start", "Sorted by start instead. On an overlap one of the two has to go, and dropping whichever ends later is always at least as good — so the greedy choice is made at the moment of the clash rather than baked into the sort order. Same answer, and it needs the running end to be lowered rather than replaced.", "export function eraseOverlapIntervals(intervals: number[][]): number {
+      #("Greedy by Start", "O(n log n) time · O(n) space", "Sorted by start instead. On an overlap one of the two has to go, and dropping whichever ends later is always at least as good — so the greedy choice is made at the moment of the clash rather than baked into the sort order. Same answer, and it needs the running end to be lowered rather than replaced.", "export function eraseOverlapIntervals(intervals: number[][]): number {
   // Sorted by start instead: on an overlap you must drop one of the two, and
   // dropping whichever ends later is always at least as good. Same greedy
   // argument, made at the moment of the clash rather than in the sort order.
@@ -8050,6 +8036,20 @@ pub fn nc37_non_overlapping() -> Embedded {
       removed++;
       lastEnd = Math.min(lastEnd, end);
     }
+  }
+
+  return removed;
+}"),
+      #("Greedy", "O(n log n) time · O(n) space", "Greedy on the end time. Among intervals competing for the same space, keeping the one that finishes earliest leaves the most room for whatever comes next and can never be worse — which is the exchange argument that makes the greedy correct, and the reason sorting by start is the classic wrong first answer.", "export function eraseOverlapIntervals(intervals: number[][]): number {
+  // Greedy on the end: among any set of intervals competing for the same space,
+  // keeping the one that finishes earliest leaves the most room for whatever
+  // comes next, and can never be worse.
+  let removed = 0;
+  let lastEnd = -Infinity;
+
+  for (const [start, end] of [...intervals].sort((a, b) => a[1] - b[1])) {
+    if (start >= lastEnd) lastEnd = end;
+    else removed++;
   }
 
   return removed;
@@ -8081,14 +8081,7 @@ export function run(): [string, string, string][] {
 pub fn nc38_meeting_rooms() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Sorted by start, the only meeting a given one can clash with is the one immediately before it: anything earlier started earlier still, so it would have clashed with that one first. The whole check is then adjacent pairs.", "export function canAttendMeetings(intervals: number[][]): boolean {
-  // Sorted by start, the only meeting a given one can clash with is the one
-  // immediately before it -- anything earlier started earlier still and would
-  // have clashed with that one first.
-  const ordered = [...intervals].sort((a, b) => a[0] - b[0]);
-  return ordered.every((meeting, i) => i === 0 || ordered[i - 1][1] <= meeting[0]);
-}"),
-      #("Solution 2 · Pairwise", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
 Every pair, checked. Worth writing once for the overlap test itself: two intervals overlap when each starts before the other ends, which is far easier to get right than trying to enumerate the ways they miss.", "export function canAttendMeetings(intervals: number[][]): boolean {
   // Every pair, checked. Two intervals overlap when each starts before the
@@ -8102,6 +8095,13 @@ Every pair, checked. Worth writing once for the overlap test itself: two interva
     }
   }
   return true;
+}"),
+      #("Sorting", "O(n log n) time · O(n) space", "Sorted by start, the only meeting a given one can clash with is the one immediately before it: anything earlier started earlier still, so it would have clashed with that one first. The whole check is then adjacent pairs.", "export function canAttendMeetings(intervals: number[][]): boolean {
+  // Sorted by start, the only meeting a given one can clash with is the one
+  // immediately before it -- anything earlier started earlier still and would
+  // have clashed with that one first.
+  const ordered = [...intervals].sort((a, b) => a[0] - b[0]);
+  return ordered.every((meeting, i) => i === 0 || ordered[i - 1][1] <= meeting[0]);
 }"),
     ],
     check: Check(
@@ -8131,7 +8131,20 @@ export function run(): [string, string, string][] {
 pub fn nc39_meeting_rooms_ii() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Rooms needed is the most meetings ever running at once, so the meetings stop mattering and only their edges do: +1 at a start, −1 at an end, and the answer is how high the running count gets. Closes come before opens at the same time here — a room freed at that moment can be reused — which is the opposite of what merging intervals wants.", "export function minMeetingRooms(intervals: number[][]): number {
+      #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+The busiest moment is always the start of some meeting, so only n moments are worth testing at all. Count how many meetings cover each and take the largest: no sort, no edge bookkeeping, and it makes clear what the sweep is measuring.", "export function minMeetingRooms(intervals: number[][]): number {
+  // The busiest moment is always the start of some meeting, so there are only n
+  // moments worth testing. Count how many meetings cover each one and take the
+  // largest -- O(n^2), and it needs no sort and no edge bookkeeping.
+  let best = 0;
+  for (const [start] of intervals) {
+    const running = intervals.filter(([s, e]) => s <= start && start < e).length;
+    best = Math.max(best, running);
+  }
+  return best;
+}"),
+      #("Sweep Line", "O(n log n) time · O(n) space", "Rooms needed is the most meetings ever running at once, so the meetings stop mattering and only their edges do: +1 at a start, −1 at an end, and the answer is how high the running count gets. Closes come before opens at the same time here — a room freed at that moment can be reused — which is the opposite of what merging intervals wants.", "export function minMeetingRooms(intervals: number[][]): number {
   // Rooms needed is the most meetings ever running at once, so the meetings
   // themselves stop mattering -- only their edges do. Walk the edges in time
   // order and watch how high the count gets.
@@ -8149,19 +8162,6 @@ pub fn nc39_meeting_rooms_ii() -> Embedded {
   for (const [, delta] of edges) {
     depth += delta;
     best = Math.max(best, depth);
-  }
-  return best;
-}"),
-      #("Solution 2 · Count at each start", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-The busiest moment is always the start of some meeting, so only n moments are worth testing at all. Count how many meetings cover each and take the largest: no sort, no edge bookkeeping, and it makes clear what the sweep is measuring.", "export function minMeetingRooms(intervals: number[][]): number {
-  // The busiest moment is always the start of some meeting, so there are only n
-  // moments worth testing. Count how many meetings cover each one and take the
-  // largest -- O(n^2), and it needs no sort and no edge bookkeeping.
-  let best = 0;
-  for (const [start] of intervals) {
-    const running = intervals.filter(([s, e]) => s <= start && start < e).length;
-    best = Math.max(best, running);
   }
   return best;
 }"),
@@ -8192,7 +8192,7 @@ export function run(): [string, string, string][] {
 pub fn nc40_min_interval() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #("Brute Force", "O(n·q) time · O(n+q) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
 For each query, the smallest interval containing it. O(q·n), and the definition — worth having before the clever version, because it is what you check the clever version against.", "export function minInterval(intervals: number[][], queries: number[]): number[] {
   return queries.map((query) => {
@@ -8202,7 +8202,7 @@ For each query, the smallest interval containing it. O(q·n), and the definition
     return lengths.length ? Math.min(...lengths) : -1;
   });
 }"),
-      #("Solution 2 · Offline by length", "Answer each query once and never revisit it. Taking the intervals shortest first means the first interval to cover a query is already its answer, so a query leaves the pool the moment it is settled and the pool only shrinks. Reordering the work so each answer is final is the technique here, and it generalises well beyond this problem.", "export function minInterval(intervals: number[][], queries: number[]): number[] {
+      #("Greedy", "O(n log n + n·q) time · O(n+q) space", "Answer each query once and never revisit it. Taking the intervals shortest first means the first interval to cover a query is already its answer, so a query leaves the pool the moment it is settled and the pool only shrinks. Reordering the work so each answer is final is the technique here, and it generalises well beyond this problem.", "export function minInterval(intervals: number[][], queries: number[]): number[] {
   // Answer each query once, and never revisit it. Taking the intervals shortest
   // first means the first interval to cover a query is already its answer, so
   // every query leaves the pool the moment it is settled and the pool only ever
@@ -8250,21 +8250,7 @@ export function run(): [string, string, string][] {
 pub fn nc41_maximum_subarray() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Kadane. At each position the best subarray ending here either extends the one ending just before it or starts fresh — and the choice is decided by a single question: has the running total gone negative? A negative prefix can only hurt whatever follows, so it is dropped. Note the answer is not clamped at zero: an all-negative array's answer is its least bad element.", "export function maxSubArray(nums: number[]): number {
-  if (nums.length === 0) return 0;
-
-  // Kadane: at each position the best subarray ending here either extends the
-  // one ending just before it or starts fresh. A running total that has gone
-  // negative can only hurt whatever follows, so it is dropped.
-  let here = nums[0];
-  let best = nums[0];
-  for (const n of nums.slice(1)) {
-    here = Math.max(n, here + n);
-    best = Math.max(best, here);
-  }
-  return best;
-}"),
-      #("Solution 2 · Prefix minimum", "The same answer from prefix sums. The sum from i to j is prefix[j] − prefix[i−1], so the best subarray ending at j is prefix[j] minus the smallest prefix seen before it. One pass carrying that minimum. Worth knowing because the prefix framing generalises to problems Kadane cannot touch — subarrays summing to k, divisible by k, and so on.", "export function maxSubArray(nums: number[]): number {
+      #("Prefix Sums", "O(n) time · O(1) space", "The same answer from prefix sums. The sum from i to j is prefix[j] − prefix[i−1], so the best subarray ending at j is prefix[j] minus the smallest prefix seen before it. One pass carrying that minimum. Worth knowing because the prefix framing generalises to problems Kadane cannot touch — subarrays summing to k, divisible by k, and so on.", "export function maxSubArray(nums: number[]): number {
   if (nums.length === 0) return 0;
 
   // The sum from i to j is prefix[j] - prefix[i-1], so the best subarray ending
@@ -8277,6 +8263,20 @@ pub fn nc41_maximum_subarray() -> Embedded {
     running += n;
     best = Math.max(best, running - smallest);
     smallest = Math.min(smallest, running);
+  }
+  return best;
+}"),
+      #("Kadane", "O(n) time · O(1) space", "Kadane. At each position the best subarray ending here either extends the one ending just before it or starts fresh — and the choice is decided by a single question: has the running total gone negative? A negative prefix can only hurt whatever follows, so it is dropped. Note the answer is not clamped at zero: an all-negative array's answer is its least bad element.", "export function maxSubArray(nums: number[]): number {
+  if (nums.length === 0) return 0;
+
+  // Kadane: at each position the best subarray ending here either extends the
+  // one ending just before it or starts fresh. A running total that has gone
+  // negative can only hurt whatever follows, so it is dropped.
+  let here = nums[0];
+  let best = nums[0];
+  for (const n of nums.slice(1)) {
+    here = Math.max(n, here + n);
+    best = Math.max(best, here);
   }
   return best;
 }"),
@@ -8308,18 +8308,7 @@ export function run(): [string, string, string][] {
 pub fn nc42_jump_game() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Only one number matters: the furthest index reachable so far. Walk forward extending it, and the moment the walk gets past it nothing further is reachable. No search, no visited set — the reachable set from the left is always a prefix, which is what collapses the whole problem to one integer.", "export function canJump(nums: number[]): boolean {
-  // Only one number matters: the furthest index reachable so far. Walk forward
-  // and extend it; the moment the walk gets past it, nothing further is
-  // reachable.
-  let reach = 0;
-  for (let i = 0; i < nums.length; i++) {
-    if (i > reach) return false;
-    reach = Math.max(reach, i + nums[i]);
-  }
-  return reach >= nums.length - 1;
-}"),
-      #("Solution 2 · Backwards", "Walk backwards carrying the leftmost index known to reach the end. Any index that can reach *that* can reach the end, so it becomes the new goal — and the answer is whether the goal walks all the way back to zero. The same greedy from the other side, and often the easier one to convince yourself of.", "export function canJump(nums: number[]): boolean {
+      #("Backwards Greedy", "O(n) time · O(1) space", "Walk backwards carrying the leftmost index known to reach the end. Any index that can reach *that* can reach the end, so it becomes the new goal — and the answer is whether the goal walks all the way back to zero. The same greedy from the other side, and often the easier one to convince yourself of.", "export function canJump(nums: number[]): boolean {
   if (nums.length === 0) return true;
 
   // Walk backwards carrying the leftmost index known to reach the end. Any
@@ -8329,6 +8318,17 @@ pub fn nc42_jump_game() -> Embedded {
     if (i + nums[i] >= goal) goal = i;
   }
   return goal === 0;
+}"),
+      #("Greedy", "O(n) time · O(1) space", "Only one number matters: the furthest index reachable so far. Walk forward extending it, and the moment the walk gets past it nothing further is reachable. No search, no visited set — the reachable set from the left is always a prefix, which is what collapses the whole problem to one integer.", "export function canJump(nums: number[]): boolean {
+  // Only one number matters: the furthest index reachable so far. Walk forward
+  // and extend it; the moment the walk gets past it, nothing further is
+  // reachable.
+  let reach = 0;
+  for (let i = 0; i < nums.length; i++) {
+    if (i > reach) return false;
+    reach = Math.max(reach, i + nums[i]);
+  }
+  return reach >= nums.length - 1;
 }"),
     ],
     check: Check(
@@ -8358,7 +8358,23 @@ export function run(): [string, string, string][] {
 pub fn nc43_jump_game_ii() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Breadth-first search without a queue. Everything reachable in k jumps is a contiguous window, so the levels of the search are just ranges: when the walk reaches the current window's end, one more jump is spent and the next window runs to the furthest index seen so far. Recognising that the frontier stays contiguous is the whole trick.", "export function jump(nums: number[]): number {
+      #("Reverse Greedy", "O(n²) time · O(1) space", "From the goal, step back to the earliest index that can reach it. Taking the earliest can never cost more jumps — anything later is reachable from it too — so the choice is safe at every step. O(n²), and it makes the greedy argument visible in a way the window version hides.", "export function jump(nums: number[]): number {
+  if (nums.length <= 1) return 0;
+
+  // From the goal, step back to the *earliest* index that can reach it: taking
+  // the earliest can never cost more jumps, and it is the only choice that is
+  // obviously safe. O(n^2), and it makes the greedy argument visible.
+  let goal = nums.length - 1;
+  let jumps = 0;
+  while (goal > 0) {
+    const found = nums.findIndex((jumpLength, i) => i + jumpLength >= goal);
+    if (found === -1) break;
+    goal = found;
+    jumps++;
+  }
+  return jumps;
+}"),
+      #("Greedy", "O(n) time · O(1) space", "Breadth-first search without a queue. Everything reachable in k jumps is a contiguous window, so the levels of the search are just ranges: when the walk reaches the current window's end, one more jump is spent and the next window runs to the furthest index seen so far. Recognising that the frontier stays contiguous is the whole trick.", "export function jump(nums: number[]): number {
   // Breadth-first search without a queue. Everything reachable in k jumps forms
   // a contiguous window; when the walk reaches that window's end, one more jump
   // is spent and the next window runs to the furthest index seen.
@@ -8374,22 +8390,6 @@ pub fn nc43_jump_game_ii() -> Embedded {
     }
   }
 
-  return jumps;
-}"),
-      #("Solution 2 · Reverse greedy", "From the goal, step back to the earliest index that can reach it. Taking the earliest can never cost more jumps — anything later is reachable from it too — so the choice is safe at every step. O(n²), and it makes the greedy argument visible in a way the window version hides.", "export function jump(nums: number[]): number {
-  if (nums.length <= 1) return 0;
-
-  // From the goal, step back to the *earliest* index that can reach it: taking
-  // the earliest can never cost more jumps, and it is the only choice that is
-  // obviously safe. O(n^2), and it makes the greedy argument visible.
-  let goal = nums.length - 1;
-  let jumps = 0;
-  while (goal > 0) {
-    const found = nums.findIndex((jumpLength, i) => i + jumpLength >= goal);
-    if (found === -1) break;
-    goal = found;
-    jumps++;
-  }
   return jumps;
 }"),
     ],
@@ -8420,29 +8420,7 @@ export function run(): [string, string, string][] {
 pub fn nc44_gas_station() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Two facts do all the work. If the total gas falls short of the total cost, no start works at all. And if the tank runs dry travelling from i to j, no station between them can start either — each would begin with even less — so the search jumps straight to j+1 rather than restarting at i+1. Together they turn an O(n²) search into one pass.", "export function canCompleteCircuit(gas: number[], cost: number[]): number {
-  if (gas.length === 0) return -1;
-
-  // Two facts do all the work. If the total gas is short of the total cost no
-  // start works at all; and if the tank runs dry between i and j, no station in
-  // between can start either, so the search jumps straight to j + 1.
-  let total = 0;
-  let tank = 0;
-  let start = 0;
-
-  for (let i = 0; i < gas.length; i++) {
-    const diff = gas[i] - cost[i];
-    total += diff;
-    tank += diff;
-    if (tank < 0) {
-      start = i + 1;
-      tank = 0;
-    }
-  }
-
-  return total >= 0 ? start : -1;
-}"),
-      #("Solution 2 · Try each start", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #("Brute Force", "O(n²) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
 Drive the whole loop from each start and watch the tank. O(n²), and the thing worth extracting from it: the single pass is not a different algorithm, it is this one with the starts that cannot possibly work skipped.", "export function canCompleteCircuit(gas: number[], cost: number[]): number {
   // Drive the whole loop from each start and see whether the tank ever goes
@@ -8464,6 +8442,28 @@ Drive the whole loop from each start and watch the tank. O(n²), and the thing w
   }
 
   return -1;
+}"),
+      #("Greedy", "O(n) time · O(1) space", "Two facts do all the work. If the total gas falls short of the total cost, no start works at all. And if the tank runs dry travelling from i to j, no station between them can start either — each would begin with even less — so the search jumps straight to j+1 rather than restarting at i+1. Together they turn an O(n²) search into one pass.", "export function canCompleteCircuit(gas: number[], cost: number[]): number {
+  if (gas.length === 0) return -1;
+
+  // Two facts do all the work. If the total gas is short of the total cost no
+  // start works at all; and if the tank runs dry between i and j, no station in
+  // between can start either, so the search jumps straight to j + 1.
+  let total = 0;
+  let tank = 0;
+  let start = 0;
+
+  for (let i = 0; i < gas.length; i++) {
+    const diff = gas[i] - cost[i];
+    total += diff;
+    tank += diff;
+    if (tank < 0) {
+      start = i + 1;
+      tank = 0;
+    }
+  }
+
+  return total >= 0 ? start : -1;
 }"),
     ],
     check: Check(
@@ -8493,7 +8493,26 @@ export function run(): [string, string, string][] {
 pub fn nc45_hand_of_straights() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The smallest card left has no smaller neighbour to hide behind, so whatever group it belongs to must begin with it. That removes all choice, which is exactly what makes a greedy correct here. Every copy of that smallest card needs its own group and they are indistinguishable, so all of them are taken in one step.", "export function isNStraightHand(hand: number[], groupSize: number): boolean {
+      #("Sorting", "O(n²) time · O(n) space", "No counts at all: sort, then peel one full run off the front, removing each card as it is used. Slower, since every removal is a list walk, but the only thing you have to believe is the same greedy claim — a group begins with the smallest card left.", "export function isNStraightHand(hand: number[], groupSize: number): boolean {
+  if (groupSize <= 0 || hand.length % groupSize !== 0) return false;
+
+  // No counts: sort, then peel one full run off the front at a time, removing
+  // each card as it is used. Slower -- every removal is an array walk -- but the
+  // only thing to believe is that a group must begin with the smallest card
+  // left.
+  const cards = [...hand].sort((a, b) => a - b);
+  while (cards.length) {
+    const smallest = cards[0];
+    for (let card = smallest; card < smallest + groupSize; card++) {
+      const at = cards.indexOf(card);
+      if (at === -1) return false;
+      cards.splice(at, 1);
+    }
+  }
+
+  return true;
+}"),
+      #("Greedy", "O(n log n) time · O(n) space", "The smallest card left has no smaller neighbour to hide behind, so whatever group it belongs to must begin with it. That removes all choice, which is exactly what makes a greedy correct here. Every copy of that smallest card needs its own group and they are indistinguishable, so all of them are taken in one step.", "export function isNStraightHand(hand: number[], groupSize: number): boolean {
   if (groupSize <= 0 || hand.length % groupSize !== 0) return false;
 
   const counts = new Map<number, number>();
@@ -8510,25 +8529,6 @@ pub fn nc45_hand_of_straights() -> Embedded {
       const available = counts.get(card) ?? 0;
       if (available < copies) return false;
       counts.set(card, available - copies);
-    }
-  }
-
-  return true;
-}"),
-      #("Solution 2 · Sorted consume", "No counts at all: sort, then peel one full run off the front, removing each card as it is used. Slower, since every removal is a list walk, but the only thing you have to believe is the same greedy claim — a group begins with the smallest card left.", "export function isNStraightHand(hand: number[], groupSize: number): boolean {
-  if (groupSize <= 0 || hand.length % groupSize !== 0) return false;
-
-  // No counts: sort, then peel one full run off the front at a time, removing
-  // each card as it is used. Slower -- every removal is an array walk -- but the
-  // only thing to believe is that a group must begin with the smallest card
-  // left.
-  const cards = [...hand].sort((a, b) => a - b);
-  while (cards.length) {
-    const smallest = cards[0];
-    for (let card = smallest; card < smallest + groupSize; card++) {
-      const at = cards.indexOf(card);
-      if (at === -1) return false;
-      cards.splice(at, 1);
     }
   }
 
@@ -8562,7 +8562,14 @@ export function run(): [string, string, string][] {
 pub fn nc46_merge_triplets() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Merging takes componentwise maxima, and a max never comes back down. So any triplet with a component above the target is permanently poisonous and must be discarded; and once discarded, every remaining triplet can be merged freely, because a max can only help. The answer is then just whether their maximum is the target.", "export function mergeTriplets(triplets: number[][], target: number[]): boolean {
+      #("Coverage Check", "O(n) time · O(n) space", "Same filter, different question: rather than merging the survivors, ask whether each of the three positions is hit exactly by some survivor. It is the same condition — a componentwise max equals the target exactly when every component is attained somewhere — but arrived at without computing the merge.", "export function mergeTriplets(triplets: number[][], target: number[]): boolean {
+  // Ask a different question: is each of the three positions hit exactly by
+  // some usable triplet? The answer is yes exactly when all three are covered
+  // -- the same condition, arrived at without taking maxima.
+  const usable = triplets.filter((t) => t.every((value, i) => value <= target[i]));
+  return target.every((value, i) => usable.some((t) => t[i] === value));
+}"),
+      #("Greedy", "O(n) time · O(1) space", "Merging takes componentwise maxima, and a max never comes back down. So any triplet with a component above the target is permanently poisonous and must be discarded; and once discarded, every remaining triplet can be merged freely, because a max can only help. The answer is then just whether their maximum is the target.", "export function mergeTriplets(triplets: number[][], target: number[]): boolean {
   // A triplet with any component above the target can never be used: merging
   // takes maxima, so that component would be stuck too high forever. Throw
   // those away and the rest can all be merged, because a max only ever helps.
@@ -8573,13 +8580,6 @@ pub fn nc46_merge_triplets() -> Embedded {
     }
   }
   return best.every((value, i) => value === target[i]);
-}"),
-      #("Solution 2 · Track positions", "Same filter, different question: rather than merging the survivors, ask whether each of the three positions is hit exactly by some survivor. It is the same condition — a componentwise max equals the target exactly when every component is attained somewhere — but arrived at without computing the merge.", "export function mergeTriplets(triplets: number[][], target: number[]): boolean {
-  // Ask a different question: is each of the three positions hit exactly by
-  // some usable triplet? The answer is yes exactly when all three are covered
-  // -- the same condition, arrived at without taking maxima.
-  const usable = triplets.filter((t) => t.every((value, i) => value <= target[i]));
-  return target.every((value, i) => usable.some((t) => t[i] === value));
 }"),
     ],
     check: Check(
@@ -8609,7 +8609,23 @@ export function run(): [string, string, string][] {
 pub fn nc47_partition_labels() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "A piece can only end where every character inside it has run out, so map each character to its last position first. Then sweep, pushing the piece's end out to the furthest last-position seen; when the walk catches up with that end, nothing inside can reappear and the piece is closed.", "export function partitionLabels(s: string): number[] {
+      #("Brute Force", "O(n³) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Grow the piece one character at a time until nothing inside it also appears in the tail. No last-position map — the tail is asked directly — so it is far slower, but it is the condition stated outright rather than pre-computed.", "export function partitionLabels(s: string): number[] {
+  // Grow the piece one character at a time until nothing inside it also appears
+  // in what is left. No last-position map -- the tail is asked directly -- which
+  // is far slower but is the condition stated outright.
+  const out: number[] = [];
+  let rest = s;
+  while (rest.length) {
+    let size = 1;
+    while ([...rest.slice(0, size)].some((c) => rest.slice(size).includes(c))) size++;
+    out.push(size);
+    rest = rest.slice(size);
+  }
+  return out;
+}"),
+      #("Greedy", "O(n) time · O(1) space", "A piece can only end where every character inside it has run out, so map each character to its last position first. Then sweep, pushing the piece's end out to the furthest last-position seen; when the walk catches up with that end, nothing inside can reappear and the piece is closed.", "export function partitionLabels(s: string): number[] {
   // Overwriting as we go leaves each character mapped to its last position.
   const last = new Map<string, number>();
   for (let i = 0; i < s.length; i++) last.set(s[i], i);
@@ -8628,22 +8644,6 @@ pub fn nc47_partition_labels() -> Embedded {
     }
   }
 
-  return out;
-}"),
-      #("Solution 2 · Expand end", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-Grow the piece one character at a time until nothing inside it also appears in the tail. No last-position map — the tail is asked directly — so it is far slower, but it is the condition stated outright rather than pre-computed.", "export function partitionLabels(s: string): number[] {
-  // Grow the piece one character at a time until nothing inside it also appears
-  // in what is left. No last-position map -- the tail is asked directly -- which
-  // is far slower but is the condition stated outright.
-  const out: number[] = [];
-  let rest = s;
-  while (rest.length) {
-    let size = 1;
-    while ([...rest.slice(0, size)].some((c) => rest.slice(size).includes(c))) size++;
-    out.push(size);
-    rest = rest.slice(size);
-  }
   return out;
 }"),
     ],
@@ -8673,7 +8673,23 @@ export function run(): [string, string, string][] {
 pub fn nc48_valid_parenthesis_string() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Do not guess what each star should be — carry the range of open counts still possible. Low is the count if every star so far were a closer, high if every one were an opener. High going negative means even the most generous reading has too many closers, so bail; low is clamped at zero because a star can always be nothing. Valid exactly when low reaches zero at the end.", "export function checkValidString(s: string): boolean {
+      #("Two Passes", "O(n) time · O(n) space", "Two one-sided checks instead of a range. Left to right with every star an opener asks whether there are ever too many closers; right to left with every star a closer asks whether there are ever too many openers. Passing both is exactly the condition — and each pass is the ordinary balance check you already know.", "export function checkValidString(s: string): boolean {
+  // Two one-sided checks. Left to right with every star an opener asks whether
+  // there are ever too many closers; right to left with every star a closer
+  // asks whether there are ever too many openers. Passing both is exactly the
+  // condition, and each pass is the ordinary balance check.
+  return neverNegative(s, \"(\") && neverNegative([...s].reverse().join(\"\"), \")\");
+}
+
+function neverNegative(s: string, credit: string): boolean {
+  let balance = 0;
+  for (const c of s) {
+    balance += c === credit || c === \"*\" ? 1 : -1;
+    if (balance < 0) return false;
+  }
+  return true;
+}"),
+      #("Greedy", "O(n) time · O(1) space", "Do not guess what each star should be — carry the range of open counts still possible. Low is the count if every star so far were a closer, high if every one were an opener. High going negative means even the most generous reading has too many closers, so bail; low is clamped at zero because a star can always be nothing. Valid exactly when low reaches zero at the end.", "export function checkValidString(s: string): boolean {
   // Rather than guessing what each star should be, carry the *range* of open
   // counts still possible: low if every star so far were a closer, high if
   // every one were an opener. High going negative means even the most generous
@@ -8697,22 +8713,6 @@ pub fn nc48_valid_parenthesis_string() -> Embedded {
   }
 
   return low === 0;
-}"),
-      #("Solution 2 · Two passes", "Two one-sided checks instead of a range. Left to right with every star an opener asks whether there are ever too many closers; right to left with every star a closer asks whether there are ever too many openers. Passing both is exactly the condition — and each pass is the ordinary balance check you already know.", "export function checkValidString(s: string): boolean {
-  // Two one-sided checks. Left to right with every star an opener asks whether
-  // there are ever too many closers; right to left with every star a closer
-  // asks whether there are ever too many openers. Passing both is exactly the
-  // condition, and each pass is the ordinary balance check.
-  return neverNegative(s, \"(\") && neverNegative([...s].reverse().join(\"\"), \")\");
-}
-
-function neverNegative(s: string, credit: string): boolean {
-  let balance = 0;
-  for (const c of s) {
-    balance += c === credit || c === \"*\" ? 1 : -1;
-    if (balance < 0) return false;
-  }
-  return true;
 }"),
     ],
     check: Check(
@@ -8744,17 +8744,17 @@ export function run(): [string, string, string][] {
 pub fn nc49_single_number() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "XOR is its own inverse and does not care about order, so every value appearing twice cancels itself out wherever the two copies happen to sit, and the lone one is what is left. Constant space, one pass, and no reliance on the values being small or positive.", "export function singleNumber(nums: number[]): number {
-  // XOR is its own inverse and does not care about order, so every value that
-  // appears twice cancels itself out and only the lone one survives.
-  return nums.reduce((result, n) => result ^ n, 0);
-}"),
-      #("Solution 2 · Sum of uniques", "Twice the sum of the distinct values counts every pair twice and the lone value twice; subtracting the real total leaves the lone value. No bit tricks, but it leans harder on the promise that everything else appears exactly twice — three copies of something and it is wrong.", "export function singleNumber(nums: number[]): number {
+      #("Math", "O(n) time · O(n) space", "Twice the sum of the distinct values counts every pair twice and the lone value twice; subtracting the real total leaves the lone value. No bit tricks, but it leans harder on the promise that everything else appears exactly twice — three copies of something and it is wrong.", "export function singleNumber(nums: number[]): number {
   // Twice the sum of the distinct values counts every pair twice and the lone
   // value twice; subtracting the real total leaves the lone value. No bit
   // tricks, but it leans harder on the promise that everything else is a pair.
   const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
   return 2 * sum([...new Set(nums)]) - sum(nums);
+}"),
+      #("Bit Manipulation", "O(n) time · O(1) space", "XOR is its own inverse and does not care about order, so every value appearing twice cancels itself out wherever the two copies happen to sit, and the lone one is what is left. Constant space, one pass, and no reliance on the values being small or positive.", "export function singleNumber(nums: number[]): number {
+  // XOR is its own inverse and does not care about order, so every value that
+  // appears twice cancels itself out and only the lone one survives.
+  return nums.reduce((result, n) => result ^ n, 0);
 }"),
     ],
     check: Check(
@@ -8783,17 +8783,7 @@ export function run(): [string, string, string][] {
 pub fn nc50_number_of_one_bits() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "n & (n − 1) clears the lowest set bit and touches nothing else, so the loop runs once per one bit rather than once per bit position. Worth having in the fingers: the same trick tests for powers of two, and shows up in half the bit problems there are.", "export function hammingWeight(n: number): number {
-  // n & (n - 1) clears the lowest set bit and nothing else, so the loop runs
-  // once per one bit rather than once per bit position.
-  let count = 0;
-  while (n !== 0) {
-    n &= n - 1;
-    count++;
-  }
-  return count;
-}"),
-      #("Solution 2 · Shift and test", "One step per bit position rather than per set bit: 32 iterations whatever the input, but nothing to remember beyond \"look at the bottom bit, shift\". In a fixed-width language mind the shift — an arithmetic right shift on a negative number never terminates.", "export function hammingWeight(n: number): number {
+      #("Shift & Test", "O(log n) time · O(1) space", "One step per bit position rather than per set bit: 32 iterations whatever the input, but nothing to remember beyond \"look at the bottom bit, shift\". In a fixed-width language mind the shift — an arithmetic right shift on a negative number never terminates.", "export function hammingWeight(n: number): number {
   // One step per bit position rather than per set bit: 32 iterations whatever
   // the input, but nothing to remember beyond \"look at the bottom bit, shift\".
   // >>> rather than >>, so the sign bit does not shift in forever.
@@ -8801,6 +8791,16 @@ pub fn nc50_number_of_one_bits() -> Embedded {
   while (n > 0) {
     count += n & 1;
     n >>>= 1;
+  }
+  return count;
+}"),
+      #("Bit Manipulation", "O(k) time · O(1) space", "n & (n − 1) clears the lowest set bit and touches nothing else, so the loop runs once per one bit rather than once per bit position. Worth having in the fingers: the same trick tests for powers of two, and shows up in half the bit problems there are.", "export function hammingWeight(n: number): number {
+  // n & (n - 1) clears the lowest set bit and nothing else, so the loop runs
+  // once per one bit rather than once per bit position.
+  let count = 0;
+  while (n !== 0) {
+    n &= n - 1;
+    count++;
   }
   return count;
 }"),
@@ -8831,15 +8831,7 @@ export function run(): [string, string, string][] {
 pub fn nc51_counting_bits() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Every number is some smaller number with one more bit stuck on the end, so count(i) is count(i >> 1) plus that last bit. Each answer costs a single lookup into what has already been computed, which is what makes the whole array O(n) rather than O(n log n).", "export function countBits(n: number): number[] {
-  // Every number is some smaller number with one extra bit on the end:
-  // count(i) is count(i >> 1) plus whatever that last bit is. Each answer costs
-  // one lookup, so the whole array is O(n).
-  const counts = new Array<number>(n + 1).fill(0);
-  for (let i = 1; i <= n; i++) counts[i] = counts[i >> 1] + (i & 1);
-  return counts;
-}"),
-      #("Solution 2 · Popcount each", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #("Bit Manipulation", "O(n log n) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
 Each number counted from scratch with the clear-lowest-bit trick. O(n log n), and it remembers nothing between numbers — which is precisely the redundancy the dynamic version exploits.", "export function countBits(n: number): number[] {
   return Array.from({ length: n + 1 }, (_, i) => popcount(i));
@@ -8855,6 +8847,14 @@ function popcount(n: number): number {
     count++;
   }
   return count;
+}"),
+      #("Bottom-Up DP", "O(n) time · O(n) space", "Every number is some smaller number with one more bit stuck on the end, so count(i) is count(i >> 1) plus that last bit. Each answer costs a single lookup into what has already been computed, which is what makes the whole array O(n) rather than O(n log n).", "export function countBits(n: number): number[] {
+  // Every number is some smaller number with one extra bit on the end:
+  // count(i) is count(i >> 1) plus whatever that last bit is. Each answer costs
+  // one lookup, so the whole array is O(n).
+  const counts = new Array<number>(n + 1).fill(0);
+  for (let i = 1; i <= n; i++) counts[i] = counts[i >> 1] + (i & 1);
+  return counts;
 }"),
     ],
     check: Check(
@@ -8882,7 +8882,15 @@ export function run(): [string, string, string][] {
 pub fn nc52_reverse_bits() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Peel the bottom bit off the input and push it onto the bottom of the result: the first bit out is the last bit in. Fixed at 32 rounds, because the width is part of the problem rather than a property of the value — stopping when the input hits zero silently drops the leading zeros that should have become trailing ones.", "export function reverseBits(n: number): number {
+      #("Nifty Python · Strings", "O(1) time · O(1) space", "Write the number in binary, pad to the full width, reverse the text, read it back. Slower and it allocates, but the explicit padding makes the thing the bit version keeps implicit — that the width is 32, not however many bits this value happens to need — impossible to forget.", "export function reverseBits(n: number): number {
+  // Write the number out in binary, pad to the full width, reverse the text,
+  // read it back. Slower and allocates, but the padding makes the thing the bit
+  // version keeps implicit -- that the width is 32, not however many bits this
+  // particular value happens to need -- impossible to forget.
+  const bits = (n >>> 0).toString(2).padStart(32, \"0\");
+  return parseInt([...bits].reverse().join(\"\"), 2);
+}"),
+      #("Bit Manipulation", "O(1) time · O(1) space", "Peel the bottom bit off the input and push it onto the bottom of the result: the first bit out is the last bit in. Fixed at 32 rounds, because the width is part of the problem rather than a property of the value — stopping when the input hits zero silently drops the leading zeros that should have become trailing ones.", "export function reverseBits(n: number): number {
   // Peel the bottom bit off the input and push it onto the bottom of the
   // result: the first bit out is the last bit in. Fixed at 32 rounds, because
   // the width is part of the problem rather than a property of the value.
@@ -8895,14 +8903,6 @@ pub fn nc52_reverse_bits() -> Embedded {
     n >>>= 1;
   }
   return reversed >>> 0;
-}"),
-      #("Solution 2 · Via binary string", "Write the number in binary, pad to the full width, reverse the text, read it back. Slower and it allocates, but the explicit padding makes the thing the bit version keeps implicit — that the width is 32, not however many bits this value happens to need — impossible to forget.", "export function reverseBits(n: number): number {
-  // Write the number out in binary, pad to the full width, reverse the text,
-  // read it back. Slower and allocates, but the padding makes the thing the bit
-  // version keeps implicit -- that the width is 32, not however many bits this
-  // particular value happens to need -- impossible to forget.
-  const bits = (n >>> 0).toString(2).padStart(32, \"0\");
-  return parseInt([...bits].reverse().join(\"\"), 2);
 }"),
     ],
     check: Check(
@@ -8930,21 +8930,21 @@ export function run(): [string, string, string][] {
 pub fn nc53_missing_number() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "XOR every value against every index it should have had. Each present number meets its own index and cancels, so the missing one leaves its index without a partner and that index survives. No sum, so nothing can overflow.", "export function missingNumber(nums: number[]): number {
-  // XOR every value against every index it should have had. Each present number
-  // meets its own index and cancels; the missing one has an index with no
-  // partner, so that index is what survives.
-  let result = nums.length;
-  for (let i = 0; i < nums.length; i++) result ^= i ^ nums[i];
-  return result;
-}"),
-      #("Solution 2 · Gauss sum", "The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap between that and the actual total is the missing value. Shorter than the XOR version, and the trade worth knowing: in a fixed-width language it overflows on inputs the XOR version handles without complaint.", "export function missingNumber(nums: number[]): number {
+      #("Math", "O(n) time · O(1) space", "The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap between that and the actual total is the missing value. Shorter than the XOR version, and the trade worth knowing: in a fixed-width language it overflows on inputs the XOR version handles without complaint.", "export function missingNumber(nums: number[]): number {
   // The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap
   // between that and the actual total is the missing value. One multiplication
   // instead of a pass of XORs -- but it overflows on inputs the XOR version
   // handles fine, which is the trade worth knowing.
   const n = nums.length;
   return (n * (n + 1)) / 2 - nums.reduce((a, b) => a + b, 0);
+}"),
+      #("Bit Manipulation", "O(n) time · O(1) space", "XOR every value against every index it should have had. Each present number meets its own index and cancels, so the missing one leaves its index without a partner and that index survives. No sum, so nothing can overflow.", "export function missingNumber(nums: number[]): number {
+  // XOR every value against every index it should have had. Each present number
+  // meets its own index and cancels; the missing one has an index with no
+  // partner, so that index is what survives.
+  let result = nums.length;
+  for (let i = 0; i < nums.length; i++) result ^= i ^ nums[i];
+  return result;
 }"),
     ],
     check: Check(
@@ -8974,21 +8974,7 @@ export function run(): [string, string, string][] {
 pub fn nc54_sum_of_two_integers() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Addition without +. XOR is addition that forgets to carry; AND finds exactly the places a carry was owed, and shifting it left one puts it where it belongs. Repeat until nothing is owed. In an arbitrary-precision language the negatives are the difficulty: mask to 32 bits so the carry loop terminates, then read the sign bit back by hand.", "export function getSum(a: number, b: number): number {
-  // Addition without +. XOR is addition that forgets to carry; AND finds
-  // exactly the places a carry was owed, and shifting it left one puts it where
-  // it belongs. Repeat until nothing is owed.
-  //
-  // No masking here: JavaScript's bitwise operators already work on signed
-  // 32-bit values, so two's complement comes out right on its own.
-  while (b !== 0) {
-    const carry = (a & b) << 1;
-    a = a ^ b;
-    b = carry;
-  }
-  return a;
-}"),
-      #("Solution 2 · Full adder", "The same addition written as hardware: thirty-two full adders in a row, each taking two input bits and a carry and producing a sum bit and a carry out. Slower than the XOR loop, which stops as soon as no carries remain, but it is where the XOR loop comes from — and it never uses arithmetic at all.", "export function getSum(a: number, b: number): number {
+      #("Full Adder", "O(1) time · O(1) space", "The same addition written as hardware: thirty-two full adders in a row, each taking two input bits and a carry and producing a sum bit and a carry out. Slower than the XOR loop, which stops as soon as no carries remain, but it is where the XOR loop comes from — and it never uses arithmetic at all.", "export function getSum(a: number, b: number): number {
   // The same addition written as hardware: thirty-two full adders in a row,
   // each taking two input bits and a carry and producing a sum bit and a carry
   // out. Slower than the XOR loop, which stops as soon as no carries are left,
@@ -9005,6 +8991,20 @@ pub fn nc54_sum_of_two_integers() -> Embedded {
   }
 
   return result;
+}"),
+      #("Bit Manipulation", "O(1) time · O(1) space", "Addition without +. XOR is addition that forgets to carry; AND finds exactly the places a carry was owed, and shifting it left one puts it where it belongs. Repeat until nothing is owed. In an arbitrary-precision language the negatives are the difficulty: mask to 32 bits so the carry loop terminates, then read the sign bit back by hand.", "export function getSum(a: number, b: number): number {
+  // Addition without +. XOR is addition that forgets to carry; AND finds
+  // exactly the places a carry was owed, and shifting it left one puts it where
+  // it belongs. Repeat until nothing is owed.
+  //
+  // No masking here: JavaScript's bitwise operators already work on signed
+  // 32-bit values, so two's complement comes out right on its own.
+  while (b !== 0) {
+    const carry = (a & b) << 1;
+    a = a ^ b;
+    b = carry;
+  }
+  return a;
 }"),
     ],
     check: Check(
@@ -9035,7 +9035,18 @@ export function run(): [string, string, string][] {
 pub fn nc55_reverse_integer() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Peel a digit off the bottom of the input and push it onto the bottom of the result. The whole difficulty is that the test has to happen *before* the multiply: in a fixed-width language the multiply is the moment the value would be lost, so checking afterwards is checking a number that no longer exists.", "const LARGEST = 2147483647;
+      #("Nifty Python · Strings", "O(log n) time · O(log n) space", "Reverse the digits as text and read them back. It cannot overflow along the way, so the range check is a plain comparison at the end — which is honest here and dishonest in C, and worth being able to say which language you are in when you offer it.", "const LARGEST = 2147483647;
+const SMALLEST = -2147483648;
+
+export function reverse(x: number): number {
+  // Reversing the text cannot overflow here, so the range check is a plain
+  // comparison at the end rather than a guard inside the loop -- which is only
+  // safe because the value is not held in 32 bits along the way.
+  const magnitude = Number([...String(Math.abs(x))].reverse().join(\"\"));
+  const result = x < 0 ? -magnitude : magnitude;
+  return result > LARGEST || result < SMALLEST ? 0 : result;
+}"),
+      #("Math", "O(log n) time · O(1) space", "Peel a digit off the bottom of the input and push it onto the bottom of the result. The whole difficulty is that the test has to happen *before* the multiply: in a fixed-width language the multiply is the moment the value would be lost, so checking afterwards is checking a number that no longer exists.", "const LARGEST = 2147483647;
 const SMALLEST = -2147483648;
 
 export function reverse(x: number): number {
@@ -9054,17 +9065,6 @@ export function reverse(x: number): number {
 
   const signed = result * sign;
   return signed > LARGEST || signed < SMALLEST ? 0 : signed;
-}"),
-      #("Solution 2 · Via string", "Reverse the digits as text and read them back. It cannot overflow along the way, so the range check is a plain comparison at the end — which is honest here and dishonest in C, and worth being able to say which language you are in when you offer it.", "const LARGEST = 2147483647;
-const SMALLEST = -2147483648;
-
-export function reverse(x: number): number {
-  // Reversing the text cannot overflow here, so the range check is a plain
-  // comparison at the end rather than a guard inside the loop -- which is only
-  // safe because the value is not held in 32 bits along the way.
-  const magnitude = Number([...String(Math.abs(x))].reverse().join(\"\"));
-  const result = x < 0 ? -magnitude : magnitude;
-  return result > LARGEST || result < SMALLEST ? 0 : result;
 }"),
     ],
     check: Check(
@@ -9095,15 +9095,7 @@ export function run(): [string, string, string][] {
 pub fn nc56_rotate_image() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "A quarter turn is two reflections: through the main diagonal, then through the vertical centre line. Both are trivial to write and neither needs index arithmetic, which is why this beats memorising the four-way element cycle — and why it is easy to get the direction right by reasoning rather than recall.", "export function rotate(matrix: number[][]): number[][] {
-  // A quarter turn is a reflection through the main diagonal followed by a
-  // reflection through the vertical centre line. Two easy operations instead of
-  // one four-way element cycle, and neither needs index arithmetic.
-  if (matrix.length === 0) return [];
-  const transposed = matrix[0].map((_, c) => matrix.map((row) => row[c]));
-  return transposed.map((row) => row.reverse());
-}"),
-      #("Solution 2 · By index", "Straight from where each element lands: after a clockwise quarter turn the entry at (row, column) came from (n − 1 − column, row). Deriving that mapping once, on paper, is the surest way to stop guessing which way round the rotation goes.", "export function rotate(matrix: number[][]): number[][] {
+      #("Index Mapping", "O(n²) time · O(n²) space", "Straight from where each element lands: after a clockwise quarter turn the entry at (row, column) came from (n − 1 − column, row). Deriving that mapping once, on paper, is the surest way to stop guessing which way round the rotation goes.", "export function rotate(matrix: number[][]): number[][] {
   // Straight from where each element lands: after a clockwise quarter turn the
   // entry at (row, column) came from (n - 1 - column, row). Writing the mapping
   // out once is the surest way not to get the direction backwards.
@@ -9111,6 +9103,14 @@ pub fn nc56_rotate_image() -> Embedded {
   return Array.from({ length: n }, (_, r) =>
     Array.from({ length: n }, (_, c) => matrix[n - 1 - c][r]),
   );
+}"),
+      #("Nifty Python · Zip", "O(n²) time · O(n²) space", "A quarter turn is two reflections: through the main diagonal, then through the vertical centre line. Both are trivial to write and neither needs index arithmetic, which is why this beats memorising the four-way element cycle — and why it is easy to get the direction right by reasoning rather than recall.", "export function rotate(matrix: number[][]): number[][] {
+  // A quarter turn is a reflection through the main diagonal followed by a
+  // reflection through the vertical centre line. Two easy operations instead of
+  // one four-way element cycle, and neither needs index arithmetic.
+  if (matrix.length === 0) return [];
+  const transposed = matrix[0].map((_, c) => matrix.map((row) => row[c]));
+  return transposed.map((row) => row.reverse());
 }"),
     ],
     check: Check(
@@ -9139,7 +9139,7 @@ export function run(): [string, string, string][] {
 pub fn nc57_spiral_matrix() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Take the top row, then turn the problem ninety degrees and do it again. Rotating what is left anticlockwise puts the column you would have walked down next along the top, so there is only ever one move to make and no boundary bookkeeping at all.", "export function spiralOrder(matrix: number[][]): number[] {
+      #("Nifty Python · Rotate", "O(m·n·min(m,n)) time · O(m·n) space", "Take the top row, then turn the problem ninety degrees and do it again. Rotating what is left anticlockwise puts the column you would have walked down next along the top, so there is only ever one move to make and no boundary bookkeeping at all.", "export function spiralOrder(matrix: number[][]): number[] {
   // Take the top row, then turn the problem ninety degrees and do it again.
   // Rotating what is left anticlockwise puts the column you would have walked
   // down next along the top, so there is only ever one move to make.
@@ -9152,7 +9152,7 @@ pub fn nc57_spiral_matrix() -> Embedded {
   }
   return out;
 }"),
-      #("Solution 2 · Boundaries", "Four boundaries closing in, each side walked and then retired. The two guards are the whole difficulty: on a single remaining row the top and bottom edges are the same edge, and on a single column the left and right are, so walking both emits those cells twice.", "export function spiralOrder(matrix: number[][]): number[] {
+      #("Simulation", "O(m·n) time · O(1) space", "Four boundaries closing in, each side walked and then retired. The two guards are the whole difficulty: on a single remaining row the top and bottom edges are the same edge, and on a single column the left and right are, so walking both emits those cells twice.", "export function spiralOrder(matrix: number[][]): number[] {
   if (matrix.length === 0) return [];
 
   // Four boundaries closing in. Each side is walked and then retired, and the
@@ -9206,7 +9206,21 @@ export function run(): [string, string, string][] {
 pub fn nc58_set_matrix_zeroes() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Two passes, and they cannot be one: a zero written as you go is indistinguishable from a zero that was already there, so the grid would clear itself entirely. Record which rows and columns are doomed first, then apply. Recognising why one pass fails is the point of the problem.", "export function setZeroes(matrix: number[][]): number[][] {
+      #("Brute Force", "O(m·n·(m+n)) time · O(m·n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+The condition stated outright: a cell clears exactly when its own row holds a zero or its own column does. Nothing recorded, nothing ordered, so the two-pass trap cannot arise — at the cost of rescanning a row and a column for every cell.", "export function setZeroes(matrix: number[][]): number[][] {
+  if (matrix.length === 0) return [];
+
+  // The condition stated outright: a cell is cleared exactly when its own row
+  // holds a zero or its own column does. Nothing is recorded and nothing is
+  // ordered, so the two-pass trap cannot arise -- at the cost of rescanning a
+  // row and a column for every single cell.
+  const columns = matrix[0].map((_, c) => matrix.map((row) => row[c]));
+  return matrix.map((row) =>
+    row.map((value, c) => (row.includes(0) || columns[c].includes(0) ? 0 : value)),
+  );
+}"),
+      #("Hash Set", "O(m·n) time · O(m·n) space", "Two passes, and they cannot be one: a zero written as you go is indistinguishable from a zero that was already there, so the grid would clear itself entirely. Record which rows and columns are doomed first, then apply. Recognising why one pass fails is the point of the problem.", "export function setZeroes(matrix: number[][]): number[][] {
   // Two passes, and they cannot be one: writing a zero as you find it would be
   // indistinguishable from a zero that was already there, and the whole grid
   // would clear. So record which rows and columns are doomed first, then apply.
@@ -9223,20 +9237,6 @@ pub fn nc58_set_matrix_zeroes() -> Embedded {
 
   return matrix.map((row, r) =>
     row.map((value, c) => (rows.has(r) || columns.has(c) ? 0 : value)),
-  );
-}"),
-      #("Solution 2 · By scanning", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-The condition stated outright: a cell clears exactly when its own row holds a zero or its own column does. Nothing recorded, nothing ordered, so the two-pass trap cannot arise — at the cost of rescanning a row and a column for every cell.", "export function setZeroes(matrix: number[][]): number[][] {
-  if (matrix.length === 0) return [];
-
-  // The condition stated outright: a cell is cleared exactly when its own row
-  // holds a zero or its own column does. Nothing is recorded and nothing is
-  // ordered, so the two-pass trap cannot arise -- at the cost of rescanning a
-  // row and a column for every single cell.
-  const columns = matrix[0].map((_, c) => matrix.map((row) => row[c]));
-  return matrix.map((row) =>
-    row.map((value, c) => (row.includes(0) || columns[c].includes(0) ? 0 : value)),
   );
 }"),
     ],
@@ -9267,28 +9267,7 @@ export function run(): [string, string, string][] {
 pub fn nc59_happy_number() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The sequence must repeat: sums of squared digits are bounded, so only finitely many values are reachable and the walk has to revisit one. That turns \"does it loop?\" into a set lookup, and the answer is whether the value it settles on is 1.", "export function isHappy(n: number): boolean {
-  // The sequence has to repeat eventually -- squares of digits are bounded, so
-  // there are only finitely many values it can reach. Remembering what has been
-  // seen turns \"does it loop?\" into a set lookup.
-  const seen = new Set<number>();
-  while (n !== 1 && !seen.has(n)) {
-    seen.add(n);
-    n = squareDigits(n);
-  }
-  return n === 1;
-}
-
-function squareDigits(n: number): number {
-  let total = 0;
-  while (n > 0) {
-    const digit = n % 10;
-    total += digit * digit;
-    n = Math.floor(n / 10);
-  }
-  return total;
-}"),
-      #("Solution 2 · Floyd cycle", "The same question with no memory at all. One pointer steps once per round, another twice, and they meet inside whatever cycle exists — meeting at 1 means the cycle is the fixed point, meeting anywhere else means it is not. Constant space, and the same trick that finds a cycle in a linked list.", "export function isHappy(n: number): boolean {
+      #("Fast & Slow Pointers", "O(log n) time · O(1) space", "The same question with no memory at all. One pointer steps once per round, another twice, and they meet inside whatever cycle exists — meeting at 1 means the cycle is the fixed point, meeting anywhere else means it is not. Constant space, and the same trick that finds a cycle in a linked list.", "export function isHappy(n: number): boolean {
   // The same question with no memory at all: run one pointer at single speed
   // and another at double, and they meet inside whatever cycle exists. Meeting
   // at 1 means the cycle is the fixed point; meeting anywhere else means it is
@@ -9300,6 +9279,27 @@ function squareDigits(n: number): number {
     fast = squareDigits(squareDigits(fast));
   }
   return slow === 1;
+}
+
+function squareDigits(n: number): number {
+  let total = 0;
+  while (n > 0) {
+    const digit = n % 10;
+    total += digit * digit;
+    n = Math.floor(n / 10);
+  }
+  return total;
+}"),
+      #("Hash Set", "O(log n) time · O(log n) space", "The sequence must repeat: sums of squared digits are bounded, so only finitely many values are reachable and the walk has to revisit one. That turns \"does it loop?\" into a set lookup, and the answer is whether the value it settles on is 1.", "export function isHappy(n: number): boolean {
+  // The sequence has to repeat eventually -- squares of digits are bounded, so
+  // there are only finitely many values it can reach. Remembering what has been
+  // seen turns \"does it loop?\" into a set lookup.
+  const seen = new Set<number>();
+  while (n !== 1 && !seen.has(n)) {
+    seen.add(n);
+    n = squareDigits(n);
+  }
+  return n === 1;
 }
 
 function squareDigits(n: number): number {
@@ -9339,7 +9339,14 @@ export function run(): [string, string, string][] {
 pub fn nc60_plus_one() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Adding one is a carry that starts at 1 and dies as soon as a digit below nine absorbs it. The only case worth care is when it never does — all nines — and the number grows a digit at the front.", "export function plusOne(digits: number[]): number[] {
+      #("Nifty Python · Big Int", "O(n²) time · O(n) space", "Fold the digits into a number, add one, take it apart again. Shorter, and safe in a language with arbitrary-precision integers; in one without, this is exactly the version that breaks, and being handed digits rather than a number is the problem telling you so.", "export function plusOne(digits: number[]): number[] {
+  // Fold the digits into a number, add one, take it apart again. Shorter, and
+  // it works right up until the number is longer than the language's integers
+  // -- which is exactly why the problem hands you digits in the first place.
+  const value = digits.reduce((acc, digit) => acc * 10 + digit, 0) + 1;
+  return [...String(value)].map(Number);
+}"),
+      #("Math", "O(n) time · O(n) space", "Adding one is a carry that starts at 1 and dies as soon as a digit below nine absorbs it. The only case worth care is when it never does — all nines — and the number grows a digit at the front.", "export function plusOne(digits: number[]): number[] {
   // Adding one is a carry that starts at 1 and dies as soon as a digit below
   // nine absorbs it. The only interesting case is when it never does, and the
   // number grows a digit.
@@ -9352,13 +9359,6 @@ pub fn nc60_plus_one() -> Embedded {
   }
   if (carry) out.push(carry);
   return out.reverse();
-}"),
-      #("Solution 2 · Via number", "Fold the digits into a number, add one, take it apart again. Shorter, and safe in a language with arbitrary-precision integers; in one without, this is exactly the version that breaks, and being handed digits rather than a number is the problem telling you so.", "export function plusOne(digits: number[]): number[] {
-  // Fold the digits into a number, add one, take it apart again. Shorter, and
-  // it works right up until the number is longer than the language's integers
-  // -- which is exactly why the problem hands you digits in the first place.
-  const value = digits.reduce((acc, digit) => acc * 10 + digit, 0) + 1;
-  return [...String(value)].map(Number);
 }"),
     ],
     check: Check(
@@ -9388,7 +9388,14 @@ export function run(): [string, string, string][] {
 pub fn nc61_pow() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Halving the exponent halves the work: x^n is (x^(n/2))², with one extra multiplication when n is odd. O(log n) multiplications rather than n. A negative exponent is one reciprocal at the end, and the recursion bottoms out at n = 0 returning 1.", "export function myPow(x: number, n: number): number {
+      #("Brute Force", "O(n) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Multiply n times. Fine for small exponents, and it makes the saving obvious: the fast version does about log₂(n) multiplications where this one does n — thirty against a billion.", "export function myPow(x: number, n: number): number {
+  let magnitude = 1;
+  for (let i = 0; i < Math.abs(n); i++) magnitude *= x;
+  return n < 0 ? 1 / magnitude : magnitude;
+}"),
+      #("Binary Exponentiation", "O(log n) time · O(log n) space", "Halving the exponent halves the work: x^n is (x^(n/2))², with one extra multiplication when n is odd. O(log n) multiplications rather than n. A negative exponent is one reciprocal at the end, and the recursion bottoms out at n = 0 returning 1.", "export function myPow(x: number, n: number): number {
   return n < 0 ? 1 / power(x, -n) : power(x, n);
 }
 
@@ -9398,13 +9405,6 @@ function power(x: number, n: number): number {
   if (n === 0) return 1;
   const half = power(x, Math.floor(n / 2));
   return n % 2 === 0 ? half * half : half * half * x;
-}"),
-      #("Solution 2 · Repeated multiplication", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-Multiply n times. Fine for small exponents, and it makes the saving obvious: the fast version does about log₂(n) multiplications where this one does n — thirty against a billion.", "export function myPow(x: number, n: number): number {
-  let magnitude = 1;
-  for (let i = 0; i < Math.abs(n); i++) magnitude *= x;
-  return n < 0 ? 1 / magnitude : magnitude;
 }"),
     ],
     check: Check(
@@ -9435,32 +9435,7 @@ export function run(): [string, string, string][] {
 pub fn nc62_multiply_strings() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Long multiplication with the carrying postponed. Digit i of one number times digit j of the other always lands at position i + j, so every product drops straight into its slot and the carries are settled in one sweep at the end. Deferring the carry is what keeps the inner loop free of bookkeeping.", "export function multiply(num1: string, num2: string): string {
-  if (num1 === \"0\" || num2 === \"0\") return \"0\";
-
-  const a = [...num1].reverse().map(Number);
-  const b = [...num2].reverse().map(Number);
-
-  // Long multiplication with the carrying postponed. Digit i of one number
-  // times digit j of the other always lands at position i + j, so every product
-  // can be dropped straight into its slot and the carries settled in one sweep
-  // at the end.
-  const slots = new Array<number>(a.length + b.length).fill(0);
-  for (let i = 0; i < a.length; i++) {
-    for (let j = 0; j < b.length; j++) slots[i + j] += a[i] * b[j];
-  }
-
-  let carry = 0;
-  const digits: number[] = [];
-  for (const slot of slots) {
-    const total = slot + carry;
-    digits.push(total % 10);
-    carry = Math.floor(total / 10);
-  }
-
-  return digits.reverse().join(\"\").replace(/^0+/, \"\") || \"0\";
-}"),
-      #("Solution 2 · Partial sums", "Long multiplication exactly as taught: one partial product per digit of the second number, each shifted left by its position, all added up. It needs string addition as well as string multiplication — which is why the accumulating version exists, and why writing add once is worth it anyway.", "export function multiply(num1: string, num2: string): string {
+      #("Simulation", "O(n·(m+n)) time · O(m+n) space", "Long multiplication exactly as taught: one partial product per digit of the second number, each shifted left by its position, all added up. It needs string addition as well as string multiplication — which is why the accumulating version exists, and why writing add once is worth it anyway.", "export function multiply(num1: string, num2: string): string {
   if (num1 === \"0\" || num2 === \"0\") return \"0\";
 
   // Long multiplication exactly as taught: one partial product per digit of the
@@ -9500,6 +9475,31 @@ function add(left: string, right: string): string {
   }
   return out.reverse().join(\"\").replace(/^0+/, \"\") || \"0\";
 }"),
+      #("Math", "O(m·n) time · O(m+n) space", "Long multiplication with the carrying postponed. Digit i of one number times digit j of the other always lands at position i + j, so every product drops straight into its slot and the carries are settled in one sweep at the end. Deferring the carry is what keeps the inner loop free of bookkeeping.", "export function multiply(num1: string, num2: string): string {
+  if (num1 === \"0\" || num2 === \"0\") return \"0\";
+
+  const a = [...num1].reverse().map(Number);
+  const b = [...num2].reverse().map(Number);
+
+  // Long multiplication with the carrying postponed. Digit i of one number
+  // times digit j of the other always lands at position i + j, so every product
+  // can be dropped straight into its slot and the carries settled in one sweep
+  // at the end.
+  const slots = new Array<number>(a.length + b.length).fill(0);
+  for (let i = 0; i < a.length; i++) {
+    for (let j = 0; j < b.length; j++) slots[i + j] += a[i] * b[j];
+  }
+
+  let carry = 0;
+  const digits: number[] = [];
+  for (const slot of slots) {
+    const total = slot + carry;
+    digits.push(total % 10);
+    carry = Math.floor(total / 10);
+  }
+
+  return digits.reverse().join(\"\").replace(/^0+/, \"\") || \"0\";
+}"),
     ],
     check: Check(
       signature: "export function multiply(num1: string, num2: string): string",
@@ -9528,36 +9528,7 @@ export function run(): [string, string, string][] {
 pub fn nc63_detect_squares() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Choosing the corner diagonally opposite fixes the entire square: the other two corners can only be at (x, py) and (px, y). So the scan is over stored points that share neither coordinate and sit on a true diagonal, and the three corner counts multiply — a repeated point genuinely forms a separate square.", "export class DetectSquares {
-  private counts = new Map<string, number>();
-
-  add(point: number[]): void {
-    const key = `${point[0]},${point[1]}`;
-    this.counts.set(key, (this.counts.get(key) ?? 0) + 1);
-  }
-
-  count(point: number[]): number {
-    const [x, y] = point;
-    let total = 0;
-
-    // Pick the corner diagonally opposite: that one choice fixes the whole
-    // square, because the other two corners must be at (x, py) and (px, y). A
-    // valid diagonal partner shares neither coordinate and sits on a true
-    // diagonal, and duplicates multiply rather than repeat.
-    for (const [key, copies] of this.counts) {
-      const [px, py] = key.split(\",\").map(Number);
-      if (px === x || py === y || Math.abs(px - x) !== Math.abs(py - y)) continue;
-      total += copies * this.at(x, py) * this.at(px, y);
-    }
-
-    return total;
-  }
-
-  private at(x: number, y: number): number {
-    return this.counts.get(`${x},${y}`) ?? 0;
-  }
-}"),
-      #("Solution 2 · By side length", "Choose the corner directly above or below instead. That fixes the side length rather than the square, so there are two candidates to check per partner — the remaining corners can be to the left or to the right. Same complexity, and a useful reminder that which corner you pivot on changes how much is determined.", "export class DetectSquares {
+      #("Side Length Scan", "O(n) per count · O(n) space", "Choose the corner directly above or below instead. That fixes the side length rather than the square, so there are two candidates to check per partner — the remaining corners can be to the left or to the right. Same complexity, and a useful reminder that which corner you pivot on changes how much is determined.", "export class DetectSquares {
   private counts = new Map<string, number>();
 
   add(point: number[]): void {
@@ -9579,6 +9550,35 @@ pub fn nc63_detect_squares() -> Embedded {
       for (const column of [x + side, x - side]) {
         total += copies * this.at(column, y) * this.at(column, py);
       }
+    }
+
+    return total;
+  }
+
+  private at(x: number, y: number): number {
+    return this.counts.get(`${x},${y}`) ?? 0;
+  }
+}"),
+      #("Hash Map", "O(n) per count · O(n) space", "Choosing the corner diagonally opposite fixes the entire square: the other two corners can only be at (x, py) and (px, y). So the scan is over stored points that share neither coordinate and sit on a true diagonal, and the three corner counts multiply — a repeated point genuinely forms a separate square.", "export class DetectSquares {
+  private counts = new Map<string, number>();
+
+  add(point: number[]): void {
+    const key = `${point[0]},${point[1]}`;
+    this.counts.set(key, (this.counts.get(key) ?? 0) + 1);
+  }
+
+  count(point: number[]): number {
+    const [x, y] = point;
+    let total = 0;
+
+    // Pick the corner diagonally opposite: that one choice fixes the whole
+    // square, because the other two corners must be at (x, py) and (px, y). A
+    // valid diagonal partner shares neither coordinate and sits on a true
+    // diagonal, and duplicates multiply rather than repeat.
+    for (const [key, copies] of this.counts) {
+      const [px, py] = key.split(\",\").map(Number);
+      if (px === x || py === y || Math.abs(px - x) !== Math.abs(py - y)) continue;
+      total += copies * this.at(x, py) * this.at(px, y);
     }
 
     return total;
@@ -9641,16 +9641,7 @@ export function run(): [string, string, string][] {
 pub fn nc64_climbing_stairs() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The last move was either one step or two, so the ways to reach step n are the ways to reach n−1 plus the ways to reach n−2 — Fibonacci with a staircase painted on it. Only the last two values ever matter, so two variables replace the whole table.", "export function climbStairs(n: number): number {
-  // The last move was either one step or two, so the ways to reach step n are
-  // the ways to reach n-1 plus the ways to reach n-2 -- Fibonacci with a
-  // staircase painted on it. Only the last two values matter.
-  let previous = 0;
-  let current = 1;
-  for (let i = 0; i < n; i++) [previous, current] = [current, previous + current];
-  return current;
-}"),
-      #("Solution 2 · Memoised", "The same recurrence from the top down, with a cache. Heavier than the rolling pair, but it is the shape you reach for first when the recurrence is not obviously a straight line — and the memo is the entire difference between O(n) and O(2ⁿ).", "export function climbStairs(n: number): number {
+      #("Top-Down Memo", "O(n) time · O(n) space", "The same recurrence from the top down, with a cache. Heavier than the rolling pair, but it is the shape you reach for first when the recurrence is not obviously a straight line — and the memo is the entire difference between O(n) and O(2ⁿ).", "export function climbStairs(n: number): number {
   const memo = new Map<number, number>();
 
   // The same recurrence from the top down, with a cache. Slower and heavier
@@ -9664,6 +9655,15 @@ pub fn nc64_climbing_stairs() -> Embedded {
   };
 
   return ways(n);
+}"),
+      #("Space-Saving DP", "O(n) time · O(1) space", "The last move was either one step or two, so the ways to reach step n are the ways to reach n−1 plus the ways to reach n−2 — Fibonacci with a staircase painted on it. Only the last two values ever matter, so two variables replace the whole table.", "export function climbStairs(n: number): number {
+  // The last move was either one step or two, so the ways to reach step n are
+  // the ways to reach n-1 plus the ways to reach n-2 -- Fibonacci with a
+  // staircase painted on it. Only the last two values matter.
+  let previous = 0;
+  let current = 1;
+  for (let i = 0; i < n; i++) [previous, current] = [current, previous + current];
+  return current;
 }"),
     ],
     check: Check(
@@ -9693,16 +9693,7 @@ export function run(): [string, string, string][] {
 pub fn nc65_min_cost_climbing_stairs() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Cost to stand on each step, carried forward: getting here means having paid for one of the two steps below, whichever was cheaper. Two variables again, because nothing older than two steps back can matter. Either of the first two steps is a legal start, which is what the final min covers.", "export function minCostClimbingStairs(cost: number[]): number {
-  // Cost to stand on each step, carried forward: getting here means having paid
-  // for one of the two steps below, whichever was cheaper. Two variables again,
-  // because nothing older than two steps back can matter.
-  let oneBack = 0;
-  let twoBack = 0;
-  for (const price of cost) [oneBack, twoBack] = [price + Math.min(oneBack, twoBack), oneBack];
-  return Math.min(oneBack, twoBack);
-}"),
-      #("Solution 2 · From the top", "The same recurrence read the other way: not \"what did it cost to get here\" but \"what will it cost to finish from here\". Walking backwards, each step's answer is its own price plus the cheaper of the two ahead. Worth writing both — one direction is usually far easier to state than the other, and which one varies by problem.", "export function minCostClimbingStairs(cost: number[]): number {
+      #("Backward DP", "O(n) time · O(1) space", "The same recurrence read the other way: not \"what did it cost to get here\" but \"what will it cost to finish from here\". Walking backwards, each step's answer is its own price plus the cheaper of the two ahead. Worth writing both — one direction is usually far easier to state than the other, and which one varies by problem.", "export function minCostClimbingStairs(cost: number[]): number {
   // The same recurrence read the other way: instead of \"what did it cost to get
   // here\", ask \"what will it cost to finish from here\". Walking backwards, the
   // answer at each step is its own price plus the cheaper of the two ahead, and
@@ -9713,6 +9704,15 @@ pub fn nc65_min_cost_climbing_stairs() -> Embedded {
     [oneAhead, twoAhead] = [cost[i] + Math.min(oneAhead, twoAhead), oneAhead];
   }
   return Math.min(oneAhead, twoAhead);
+}"),
+      #("Space-Saving DP", "O(n) time · O(1) space", "Cost to stand on each step, carried forward: getting here means having paid for one of the two steps below, whichever was cheaper. Two variables again, because nothing older than two steps back can matter. Either of the first two steps is a legal start, which is what the final min covers.", "export function minCostClimbingStairs(cost: number[]): number {
+  // Cost to stand on each step, carried forward: getting here means having paid
+  // for one of the two steps below, whichever was cheaper. Two variables again,
+  // because nothing older than two steps back can matter.
+  let oneBack = 0;
+  let twoBack = 0;
+  for (const price of cost) [oneBack, twoBack] = [price + Math.min(oneBack, twoBack), oneBack];
+  return Math.min(oneBack, twoBack);
 }"),
     ],
     check: Check(
@@ -9742,16 +9742,7 @@ export function run(): [string, string, string][] {
 pub fn nc66_house_robber() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "At each house the choice is take it and add what was safe two houses back, or skip it and keep the best so far. Both of those are one number, so the whole table collapses to a pair of running values.", "export function rob(nums: number[]): number {
-  // At each house the choice is take it and add what was safe two houses back,
-  // or skip it and keep the best so far. Both answers are one number, so the
-  // whole table collapses to a pair.
-  let best = 0;
-  let previous = 0;
-  for (const value of nums) [best, previous] = [Math.max(best, previous + value), best];
-  return best;
-}"),
-      #("Solution 2 · Memoised", "The same choice written as a recursion from the front: rob this house and skip the next, or skip this one. Exponential without the cache and linear with it — which is the lesson, because the rolling pair hides that the problem ever had a tree of choices at all.", "export function rob(nums: number[]): number {
+      #("Top-Down Memo", "O(n) time · O(n) space", "The same choice written as a recursion from the front: rob this house and skip the next, or skip this one. Exponential without the cache and linear with it — which is the lesson, because the rolling pair hides that the problem ever had a tree of choices at all.", "export function rob(nums: number[]): number {
   const memo = new Map<number, number>();
 
   // The same choice written as a recursion from the front: rob this house and
@@ -9767,6 +9758,15 @@ pub fn nc66_house_robber() -> Embedded {
   };
 
   return best(0);
+}"),
+      #("Space-Saving DP", "O(n) time · O(1) space", "At each house the choice is take it and add what was safe two houses back, or skip it and keep the best so far. Both of those are one number, so the whole table collapses to a pair of running values.", "export function rob(nums: number[]): number {
+  // At each house the choice is take it and add what was safe two houses back,
+  // or skip it and keep the best so far. Both answers are one number, so the
+  // whole table collapses to a pair.
+  let best = 0;
+  let previous = 0;
+  for (const value of nums) [best, previous] = [Math.max(best, previous + value), best];
+  return best;
 }"),
     ],
     check: Check(
@@ -9796,22 +9796,7 @@ export function run(): [string, string, string][] {
 pub fn nc67_house_robber_ii() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The circle matters through exactly one constraint: the first and last houses are neighbours, so at most one of them is robbed. Ruling each out in turn leaves two ordinary straight-line problems, and the answer is the better of the two — reusing a solved problem rather than inventing a circular recurrence.", "export function rob(nums: number[]): number {
-  // The circle only matters through one constraint: the first and last houses
-  // are neighbours, so at most one of them is robbed. Ruling each out in turn
-  // leaves two ordinary straight-line problems, and the answer is the better.
-  if (nums.length === 0) return 0;
-  if (nums.length === 1) return nums[0];
-  return Math.max(straight(nums.slice(1)), straight(nums.slice(0, -1)));
-}
-
-function straight(nums: number[]): number {
-  let best = 0;
-  let previous = 0;
-  for (const value of nums) [best, previous] = [Math.max(best, previous + value), best];
-  return best;
-}"),
-      #("Solution 2 · Both at once", "One pass carrying both stories at the same time: the run allowed to take the first house, and the run that is not. Neither ever consults the other, so this is exactly the two-pass version interleaved — worth knowing when the input can only be walked once.", "export function rob(nums: number[]): number {
+      #("One-Pass DP", "O(n) time · O(1) space", "One pass carrying both stories at the same time: the run allowed to take the first house, and the run that is not. Neither ever consults the other, so this is exactly the two-pass version interleaved — worth knowing when the input can only be walked once.", "export function rob(nums: number[]): number {
   if (nums.length === 0) return 0;
   if (nums.length === 1) return nums[0];
 
@@ -9833,6 +9818,21 @@ function straight(nums: number[]): number {
 function step(state: [number, number], value: number): [number, number] {
   const [best, previous] = state;
   return [Math.max(best, previous + value), best];
+}"),
+      #("Space-Saving DP", "O(n) time · O(n) space", "The circle matters through exactly one constraint: the first and last houses are neighbours, so at most one of them is robbed. Ruling each out in turn leaves two ordinary straight-line problems, and the answer is the better of the two — reusing a solved problem rather than inventing a circular recurrence.", "export function rob(nums: number[]): number {
+  // The circle only matters through one constraint: the first and last houses
+  // are neighbours, so at most one of them is robbed. Ruling each out in turn
+  // leaves two ordinary straight-line problems, and the answer is the better.
+  if (nums.length === 0) return 0;
+  if (nums.length === 1) return nums[0];
+  return Math.max(straight(nums.slice(1)), straight(nums.slice(0, -1)));
+}
+
+function straight(nums: number[]): number {
+  let best = 0;
+  let previous = 0;
+  for (const value of nums) [best, previous] = [Math.max(best, previous + value), best];
+  return best;
 }"),
     ],
     check: Check(
@@ -9862,7 +9862,23 @@ export function run(): [string, string, string][] {
 pub fn nc68_longest_palindrome() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Every palindrome has a centre, and there are only 2n of them — n characters and n gaps between them. Growing outwards from each is O(n²) with no table at all. The gaps are what people forget: without them, every even-length palindrome is invisible.", "export function longestPalindrome(s: string): string {
+      #("Brute Force", "O(n³) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every start with every length, each checked against its own reverse. O(n³), and the thing centre expansion optimises: it never re-checks the inside of a palindrome it has already grown through.", "export function longestPalindrome(s: string): string {
+  // Every start with every length. O(n^3) once the palindrome check is counted
+  // -- the definition, and what centre expansion is an optimisation of.
+  let best = \"\";
+  for (let start = 0; start < s.length; start++) {
+    for (let end = start + 1; end <= s.length; end++) {
+      const candidate = s.slice(start, end);
+      if (candidate.length > best.length && candidate === [...candidate].reverse().join(\"\")) {
+        best = candidate;
+      }
+    }
+  }
+  return best;
+}"),
+      #("Centre Expansion", "O(n²) time · O(1) space", "Every palindrome has a centre, and there are only 2n of them — n characters and n gaps between them. Growing outwards from each is O(n²) with no table at all. The gaps are what people forget: without them, every even-length palindrome is invisible.", "export function longestPalindrome(s: string): string {
   // Every palindrome has a centre, and there are only 2n of them -- n single
   // characters and n gaps between them. Growing outwards from each is O(n^2)
   // total and needs no table.
@@ -9891,22 +9907,6 @@ function expand(s: string, left: number, right: number): [number, number] {
     right++;
   }
   return [left + 1, right - left - 1];
-}"),
-      #("Solution 2 · Brute force", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-Every start with every length, each checked against its own reverse. O(n³), and the thing centre expansion optimises: it never re-checks the inside of a palindrome it has already grown through.", "export function longestPalindrome(s: string): string {
-  // Every start with every length. O(n^3) once the palindrome check is counted
-  // -- the definition, and what centre expansion is an optimisation of.
-  let best = \"\";
-  for (let start = 0; start < s.length; start++) {
-    for (let end = start + 1; end <= s.length; end++) {
-      const candidate = s.slice(start, end);
-      if (candidate.length > best.length && candidate === [...candidate].reverse().join(\"\")) {
-        best = candidate;
-      }
-    }
-  }
-  return best;
 }"),
     ],
     check: Check(
@@ -9937,25 +9937,7 @@ export function run(): [string, string, string][] {
 pub fn nc69_palindromic_substrings() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The same 2n centres as finding the longest one, except that here every successful widening is itself an answer. So the count is how many times the expansion succeeded rather than how far it got — one line different, same scan.", "export function countSubstrings(s: string): number {
-  // Same 2n centres as finding the longest one, except that here every
-  // successful widening is itself an answer, so the count is how many times the
-  // expansion succeeded rather than how far it got.
-  let total = 0;
-  for (let i = 0; i < s.length; i++) total += grow(s, i, i) + grow(s, i, i + 1);
-  return total;
-}
-
-function grow(s: string, left: number, right: number): number {
-  let count = 0;
-  while (left >= 0 && right < s.length && s[left] === s[right]) {
-    count++;
-    left--;
-    right++;
-  }
-  return count;
-}"),
-      #("Solution 2 · Dp table", "A table over spans: s[i..j] is a palindrome when its ends match and the span inside already was. That dependency forces the fill order — shortest spans first — which is the only real content of the outer loop and the thing to get right.", "export function countSubstrings(s: string): number {
+      #("Bottom-Up DP", "O(n²) time · O(n²) space", "A table over spans: s[i..j] is a palindrome when its ends match and the span inside already was. That dependency forces the fill order — shortest spans first — which is the only real content of the outer loop and the thing to get right.", "export function countSubstrings(s: string): number {
   // The table says whether s[i..j] is a palindrome. It is when its ends match
   // and whatever is between them already was -- so the spans have to be filled
   // shortest first, which is the whole reason for the outer loop over length.
@@ -9974,6 +9956,24 @@ function grow(s: string, left: number, right: number): number {
   }
 
   return total;
+}"),
+      #("Centre Expansion", "O(n²) time · O(1) space", "The same 2n centres as finding the longest one, except that here every successful widening is itself an answer. So the count is how many times the expansion succeeded rather than how far it got — one line different, same scan.", "export function countSubstrings(s: string): number {
+  // Same 2n centres as finding the longest one, except that here every
+  // successful widening is itself an answer, so the count is how many times the
+  // expansion succeeded rather than how far it got.
+  let total = 0;
+  for (let i = 0; i < s.length; i++) total += grow(s, i, i) + grow(s, i, i + 1);
+  return total;
+}
+
+function grow(s: string, left: number, right: number): number {
+  let count = 0;
+  while (left >= 0 && right < s.length && s[left] === s[right]) {
+    count++;
+    left--;
+    right++;
+  }
+  return count;
 }"),
     ],
     check: Check(
@@ -10003,26 +10003,7 @@ export function run(): [string, string, string][] {
 pub fn nc70_decode_ways() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Two rolling counts. The ways to decode up to here are the ways up to the previous character, if this one can stand alone, plus the ways up to the one before that, if this one and its predecessor read as 10 to 26. A leading zero kills the first branch; anything outside that range kills the second.", "export function numDecodings(s: string): number {
-  if (s.length === 0) return 0;
-
-  // Two rolling counts. The ways to decode up to here are the ways up to the
-  // previous character (if this one can stand alone) plus the ways up to the
-  // one before that (if this one and its predecessor form a legal pair). A
-  // leading zero kills the first branch; anything outside 10..26 the second.
-  let twoBack = 1;
-  let oneBack = 1;
-
-  for (let i = 0; i < s.length; i++) {
-    const alone = s[i] === \"0\" ? 0 : oneBack;
-    const pair = i > 0 ? Number(s.slice(i - 1, i + 1)) : 0;
-    const paired = i > 0 && pair >= 10 && pair <= 26 ? twoBack : 0;
-    [twoBack, oneBack] = [oneBack, alone + paired];
-  }
-
-  return oneBack;
-}"),
-      #("Solution 2 · Memoised", "The same two choices as a recursion from the front: take one character, or take two if they form a legal pair. Reaching the end is one complete decoding, which is why the base case returns 1 and not 0 — the single most common place to get this problem wrong.", "export function numDecodings(s: string): number {
+      #("Top-Down Memo", "O(n) time · O(n) space", "The same two choices as a recursion from the front: take one character, or take two if they form a legal pair. Reaching the end is one complete decoding, which is why the base case returns 1 and not 0 — the single most common place to get this problem wrong.", "export function numDecodings(s: string): number {
   if (s.length === 0) return 0;
 
   const memo = new Map<number, number>();
@@ -10043,6 +10024,25 @@ pub fn nc70_decode_ways() -> Embedded {
   };
 
   return ways(0);
+}"),
+      #("Space-Saving DP", "O(n) time · O(1) space", "Two rolling counts. The ways to decode up to here are the ways up to the previous character, if this one can stand alone, plus the ways up to the one before that, if this one and its predecessor read as 10 to 26. A leading zero kills the first branch; anything outside that range kills the second.", "export function numDecodings(s: string): number {
+  if (s.length === 0) return 0;
+
+  // Two rolling counts. The ways to decode up to here are the ways up to the
+  // previous character (if this one can stand alone) plus the ways up to the
+  // one before that (if this one and its predecessor form a legal pair). A
+  // leading zero kills the first branch; anything outside 10..26 the second.
+  let twoBack = 1;
+  let oneBack = 1;
+
+  for (let i = 0; i < s.length; i++) {
+    const alone = s[i] === \"0\" ? 0 : oneBack;
+    const pair = i > 0 ? Number(s.slice(i - 1, i + 1)) : 0;
+    const paired = i > 0 && pair >= 10 && pair <= 26 ? twoBack : 0;
+    [twoBack, oneBack] = [oneBack, alone + paired];
+  }
+
+  return oneBack;
 }"),
     ],
     check: Check(
@@ -10074,23 +10074,7 @@ export function run(): [string, string, string][] {
 pub fn nc71_coin_change() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Build up from zero: the cheapest way to make a target is one coin more than the cheapest way to make what is left after removing some coin. Leaving unreachable amounts simply absent from the table saves inventing a sentinel for infinity and the comparisons that go with it.", "export function coinChange(coins: number[], amount: number): number {
-  // Build up from zero: the cheapest way to make a target is one coin more than
-  // the cheapest way to make what is left after removing some coin. An amount
-  // with no entry is simply unreachable, which saves inventing a sentinel for
-  // infinity.
-  const table = new Map<number, number>([[0, 0]]);
-
-  for (let target = 1; target <= amount; target++) {
-    const options = coins
-      .filter((coin) => coin <= target && table.has(target - coin))
-      .map((coin) => table.get(target - coin)!);
-    if (options.length) table.set(target, Math.min(...options) + 1);
-  }
-
-  return table.get(amount) ?? -1;
-}"),
-      #("Solution 2 · Breadth first", "The amounts reachable with k coins are one level of a breadth-first search from zero, so the first level containing the target is the answer. Same bound as the table, but it stops the moment it arrives rather than filling in every amount below the target — and it makes clear why the answer is a shortest path.", "export function coinChange(coins: number[], amount: number): number {
+      #("BFS", "O(amount·coins) time · O(amount) space", "The amounts reachable with k coins are one level of a breadth-first search from zero, so the first level containing the target is the answer. Same bound as the table, but it stops the moment it arrives rather than filling in every amount below the target — and it makes clear why the answer is a shortest path.", "export function coinChange(coins: number[], amount: number): number {
   if (amount === 0) return 0;
 
   // The amounts reachable with k coins form one level of a breadth-first search
@@ -10118,6 +10102,22 @@ pub fn nc71_coin_change() -> Embedded {
   }
 
   return -1;
+}"),
+      #("Bottom-Up DP", "O(amount·coins) time · O(amount) space", "Build up from zero: the cheapest way to make a target is one coin more than the cheapest way to make what is left after removing some coin. Leaving unreachable amounts simply absent from the table saves inventing a sentinel for infinity and the comparisons that go with it.", "export function coinChange(coins: number[], amount: number): number {
+  // Build up from zero: the cheapest way to make a target is one coin more than
+  // the cheapest way to make what is left after removing some coin. An amount
+  // with no entry is simply unreachable, which saves inventing a sentinel for
+  // infinity.
+  const table = new Map<number, number>([[0, 0]]);
+
+  for (let target = 1; target <= amount; target++) {
+    const options = coins
+      .filter((coin) => coin <= target && table.has(target - coin))
+      .map((coin) => table.get(target - coin)!);
+    if (options.length) table.set(target, Math.min(...options) + 1);
+  }
+
+  return table.get(amount) ?? -1;
 }"),
     ],
     check: Check(
@@ -10147,7 +10147,24 @@ export function run(): [string, string, string][] {
 pub fn nc72_maximum_product_subarray() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "A negative number turns the best running product into the worst and the worst into the best, so both have to be carried. Zero resets them, which falls out for free from taking the element itself as one of the candidates rather than special-casing it.", "export function maxProduct(nums: number[]): number {
+      #("Prefix & Suffix Products", "O(n) time · O(n) space", "A different argument entirely: the best subarray always runs to one end of the zero-free block it sits in, so running products swept from both directions — reset at each zero — cover every candidate. No min to track, and the reason it works is worth being able to state.", "export function maxProduct(nums: number[]): number {
+  if (nums.length === 0) return 0;
+  // A different argument entirely: the best subarray always runs to one end of
+  // the block it sits in, so sweeping running products from both directions --
+  // resetting at every zero -- is enough.
+  return Math.max(sweep(nums), sweep([...nums].reverse()));
+}
+
+function sweep(nums: number[]): number {
+  let running = 1;
+  let best = -Infinity;
+  for (const n of nums) {
+    running = running === 0 ? n : running * n;
+    best = Math.max(best, running);
+  }
+  return best;
+}"),
+      #("Space-Saving DP", "O(n) time · O(1) space", "A negative number turns the best running product into the worst and the worst into the best, so both have to be carried. Zero resets them, which falls out for free from taking the element itself as one of the candidates rather than special-casing it.", "export function maxProduct(nums: number[]): number {
   if (nums.length === 0) return 0;
 
   // A negative number turns the best running product into the worst and the
@@ -10164,23 +10181,6 @@ pub fn nc72_maximum_product_subarray() -> Embedded {
     best = Math.max(best, high);
   }
 
-  return best;
-}"),
-      #("Solution 2 · Prefix and suffix", "A different argument entirely: the best subarray always runs to one end of the zero-free block it sits in, so running products swept from both directions — reset at each zero — cover every candidate. No min to track, and the reason it works is worth being able to state.", "export function maxProduct(nums: number[]): number {
-  if (nums.length === 0) return 0;
-  // A different argument entirely: the best subarray always runs to one end of
-  // the block it sits in, so sweeping running products from both directions --
-  // resetting at every zero -- is enough.
-  return Math.max(sweep(nums), sweep([...nums].reverse()));
-}
-
-function sweep(nums: number[]): number {
-  let running = 1;
-  let best = -Infinity;
-  for (const n of nums) {
-    running = running === 0 ? n : running * n;
-    best = Math.max(best, running);
-  }
   return best;
 }"),
     ],
@@ -10212,25 +10212,7 @@ export function run(): [string, string, string][] {
 pub fn nc73_word_break() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Reachable positions rather than a table of booleans: position 0 is reachable, and a position becomes reachable when some dictionary word bridges the gap from one already reached. The answer is whether the end is reachable.", "export function wordBreak(s: string, wordDict: string[]): boolean {
-  const words = new Set(wordDict);
-
-  // Reachable positions rather than a table of booleans: start at 0, and a
-  // position is reachable when some word in the dictionary bridges the gap from
-  // a position already reached.
-  const reached = new Set([0]);
-  for (let end = 1; end <= s.length; end++) {
-    for (let start = 0; start < end; start++) {
-      if (reached.has(start) && words.has(s.slice(start, end))) {
-        reached.add(end);
-        break;
-      }
-    }
-  }
-
-  return reached.has(s.length);
-}"),
-      #("Solution 2 · Memoised", "Top-down: from this position, does a dictionary word start here and leave a suffix that also breaks? Without the cache the same suffix is asked about once per way of reaching it, which is where the exponential blow-up on inputs like \"aaaa…b\" comes from.", "export function wordBreak(s: string, wordDict: string[]): boolean {
+      #("Top-Down Memo", "O(n³) time · O(n) space", "Top-down: from this position, does a dictionary word start here and leave a suffix that also breaks? Without the cache the same suffix is asked about once per way of reaching it, which is where the exponential blow-up on inputs like \"aaaa…b\" comes from.", "export function wordBreak(s: string, wordDict: string[]): boolean {
   const words = new Set(wordDict);
   const memo = new Map<number, boolean>();
 
@@ -10251,6 +10233,24 @@ pub fn nc73_word_break() -> Embedded {
   };
 
   return breaks(0);
+}"),
+      #("Bottom-Up DP", "O(n³) time · O(n) space", "Reachable positions rather than a table of booleans: position 0 is reachable, and a position becomes reachable when some dictionary word bridges the gap from one already reached. The answer is whether the end is reachable.", "export function wordBreak(s: string, wordDict: string[]): boolean {
+  const words = new Set(wordDict);
+
+  // Reachable positions rather than a table of booleans: start at 0, and a
+  // position is reachable when some word in the dictionary bridges the gap from
+  // a position already reached.
+  const reached = new Set([0]);
+  for (let end = 1; end <= s.length; end++) {
+    for (let start = 0; start < end; start++) {
+      if (reached.has(start) && words.has(s.slice(start, end))) {
+        reached.add(end);
+        break;
+      }
+    }
+  }
+
+  return reached.has(s.length);
 }"),
     ],
     check: Check(
@@ -10280,7 +10280,7 @@ export function run(): [string, string, string][] {
 pub fn nc74_longest_increasing_subsequence() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The longest subsequence ending at each position: one plus the best of every earlier position holding a smaller value. O(n²), and the version to reach for first because the recurrence is stated directly rather than encoded.", "export function lengthOfLIS(nums: number[]): number {
+      #("Bottom-Up DP", "O(n²) time · O(n) space", "The longest subsequence ending at each position: one plus the best of every earlier position holding a smaller value. O(n²), and the version to reach for first because the recurrence is stated directly rather than encoded.", "export function lengthOfLIS(nums: number[]): number {
   // The longest subsequence ending at each position: one plus the best of every
   // earlier position holding a smaller value. Building the answers in order
   // means every \"earlier position\" is already known.
@@ -10296,7 +10296,7 @@ pub fn nc74_longest_increasing_subsequence() -> Embedded {
 
   return best;
 }"),
-      #("Solution 2 · Patience", "Patience sorting. Keep the smallest value that a subsequence of each length can end with; that list stays sorted, so each number either extends it or replaces the first entry it is no bigger than — a halving search, giving O(n log n). Note what the list is not: it is not the answer subsequence, only its length is meaningful.", "export function lengthOfLIS(nums: number[]): number {
+      #("Patience Sorting", "O(n log n) time · O(n) space", "Patience sorting. Keep the smallest value that a subsequence of each length can end with; that list stays sorted, so each number either extends it or replaces the first entry it is no bigger than — a halving search, giving O(n log n). Note what the list is not: it is not the answer subsequence, only its length is meaningful.", "export function lengthOfLIS(nums: number[]): number {
   // Patience sorting. Keep the smallest value that any subsequence of each
   // length ends with; that list is always sorted, so each number either extends
   // it or replaces the first entry it is no bigger than -- found by halving.
@@ -10345,27 +10345,7 @@ export function run(): [string, string, string][] {
 pub fn nc75_partition_equal_subset() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Subset sum in disguise: an equal split exists exactly when some subset adds to half the total, and an odd total rules it out before any work. Carrying the set of reachable sums needs no ordering and no table, and duplicates cost nothing because a set collapses them.", "export function canPartition(nums: number[]): boolean {
-  const total = nums.reduce((a, b) => a + b, 0);
-  if (total % 2 !== 0) return false;
-
-  // Subset sum in disguise: an equal split exists exactly when some subset adds
-  // up to half the total. Carry the set of sums reachable so far and widen it by
-  // each number -- no ordering, no table, and duplicates cost nothing because a
-  // set collapses them.
-  const half = total / 2;
-  let reachable = new Set([0]);
-  for (const n of nums) {
-    const widened = new Set(reachable);
-    for (const reached of reachable) {
-      if (reached + n <= half) widened.add(reached + n);
-    }
-    reachable = widened;
-  }
-
-  return reachable.has(half);
-}"),
-      #("Solution 2 · Memoised", "Take this number or leave it, keyed by how much is still owed and how far along the list you are. As a recursion it is obviously a search over subsets, which the reachable-sums version hides — and the cache is what stops it enumerating all 2ⁿ of them.", "export function canPartition(nums: number[]): boolean {
+      #("Top-Down Memo", "O(n·sum) time · O(n·sum) space", "Take this number or leave it, keyed by how much is still owed and how far along the list you are. As a recursion it is obviously a search over subsets, which the reachable-sums version hides — and the cache is what stops it enumerating all 2ⁿ of them.", "export function canPartition(nums: number[]): boolean {
   const total = nums.reduce((a, b) => a + b, 0);
   if (total % 2 !== 0) return false;
 
@@ -10385,6 +10365,26 @@ pub fn nc75_partition_equal_subset() -> Embedded {
   };
 
   return reachable(0, total / 2);
+}"),
+      #("Bottom-Up DP", "O(n·sum) time · O(sum) space", "Subset sum in disguise: an equal split exists exactly when some subset adds to half the total, and an odd total rules it out before any work. Carrying the set of reachable sums needs no ordering and no table, and duplicates cost nothing because a set collapses them.", "export function canPartition(nums: number[]): boolean {
+  const total = nums.reduce((a, b) => a + b, 0);
+  if (total % 2 !== 0) return false;
+
+  // Subset sum in disguise: an equal split exists exactly when some subset adds
+  // up to half the total. Carry the set of sums reachable so far and widen it by
+  // each number -- no ordering, no table, and duplicates cost nothing because a
+  // set collapses them.
+  const half = total / 2;
+  let reachable = new Set([0]);
+  for (const n of nums) {
+    const widened = new Set(reachable);
+    for (const reached of reachable) {
+      if (reached + n <= half) widened.add(reached + n);
+    }
+    reachable = widened;
+  }
+
+  return reachable.has(half);
 }"),
     ],
     check: Check(
@@ -10414,7 +10414,27 @@ export function run(): [string, string, string][] {
 pub fn nc76_kth_largest_stream() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Only the k largest values can ever be the answer, so everything else is discarded on arrival and the store never grows past k. That is exactly the shape a bounded min-heap gives you: the smallest thing in it is the answer, and anything smaller than that never gets in. The other thing to get right is that there is no answer at all until k values have arrived.", "export class KthLargest {
+      #("Brute Force", "O(n log n) per add · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Keep the whole stream and sort on demand. Wrong for a real stream — memory grows without bound and every query costs a sort — but it is the definition, and it is what the bounded version has to be checked against.", "export class KthLargest {
+  private k: number;
+  private seen: number[];
+
+  constructor(k: number, nums: number[]) {
+    this.k = k;
+    this.seen = [...nums];
+  }
+
+  // Keep the whole stream and sort on demand. Wrong for a real stream -- memory
+  // grows without bound and every query costs a sort -- but it is the
+  // definition, and it is what the bounded structure has to be checked against.
+  add(value: number): number | null {
+    this.seen.push(value);
+    if (this.seen.length < this.k) return null;
+    return [...this.seen].sort((a, b) => b - a)[this.k - 1];
+  }
+}"),
+      #("Heap", "O(log k) per add · O(k) space", "Only the k largest values can ever be the answer, so everything else is discarded on arrival and the store never grows past k. That is exactly the shape a bounded min-heap gives you: the smallest thing in it is the answer, and anything smaller than that never gets in. The other thing to get right is that there is no answer at all until k values have arrived.", "export class KthLargest {
   private k: number;
   // Only the k largest values can ever be the answer, so everything else is
   // discarded on arrival. A real min-heap makes that O(log k); JavaScript has
@@ -10433,26 +10453,6 @@ pub fn nc76_kth_largest_stream() -> Embedded {
       .slice(0, this.k)
       .sort((a, b) => a - b);
     return this.largest.length === this.k ? this.largest[0] : null;
-  }
-}"),
-      #("Solution 2 · Keep everything", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-Keep the whole stream and sort on demand. Wrong for a real stream — memory grows without bound and every query costs a sort — but it is the definition, and it is what the bounded version has to be checked against.", "export class KthLargest {
-  private k: number;
-  private seen: number[];
-
-  constructor(k: number, nums: number[]) {
-    this.k = k;
-    this.seen = [...nums];
-  }
-
-  // Keep the whole stream and sort on demand. Wrong for a real stream -- memory
-  // grows without bound and every query costs a sort -- but it is the
-  // definition, and it is what the bounded structure has to be checked against.
-  add(value: number): number | null {
-    this.seen.push(value);
-    if (this.seen.length < this.k) return null;
-    return [...this.seen].sort((a, b) => b - a)[this.k - 1];
   }
 }"),
     ],
@@ -10492,26 +10492,7 @@ export function run(): [string, string, string][] {
 pub fn nc77_last_stone_weight() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Always the two heaviest, so the collection has to give up its maximum over and over — which is exactly what a heap is for, and why this problem exists. Keeping the stones sorted is the same idea at a worse constant; the operation being asked for is what matters.", "export function lastStoneWeight(stones: number[]): number {
-  // Always the two heaviest, so the collection has to give up its maximum over
-  // and over -- which is what a heap is for. Kept sorted descending here, since
-  // JavaScript has no heap in the standard library.
-  const remaining = [...stones].sort((a, b) => b - a);
-
-  while (remaining.length > 1) {
-    const heaviest = remaining.shift()!;
-    const following = remaining.shift()!;
-    if (heaviest !== following) {
-      const left = heaviest - following;
-      let at = remaining.findIndex((stone) => stone < left);
-      if (at === -1) at = remaining.length;
-      remaining.splice(at, 0, left);
-    }
-  }
-
-  return remaining.length ? remaining[0] : 0;
-}"),
-      #("Solution 2 · Find max each round", "No ordering kept at all: scan for the heaviest, remove it, scan again. O(n) per round rather than O(log n), and worth writing precisely because it makes the interface obvious — the only thing the problem ever asks of the collection is \"give me the largest\".", "export function lastStoneWeight(stones: number[]): number {
+      #("Brute Force", "O(n²) time · O(n) space", "No ordering kept at all: scan for the heaviest, remove it, scan again. O(n) per round rather than O(log n), and worth writing precisely because it makes the interface obvious — the only thing the problem ever asks of the collection is \"give me the largest\".", "export function lastStoneWeight(stones: number[]): number {
   // No ordering kept at all: scan for the heaviest, remove it, scan again. O(n)
   // per round against a heap's O(log n) -- worse, but it makes clear that the
   // only operation the problem needs is \"give me the largest\", which is exactly
@@ -10531,6 +10512,25 @@ function takeMax(stones: number[]): number {
   const largest = Math.max(...stones);
   stones.splice(stones.indexOf(largest), 1);
   return largest;
+}"),
+      #("Heap", "O(n log n) time · O(n) space", "Always the two heaviest, so the collection has to give up its maximum over and over — which is exactly what a heap is for, and why this problem exists. Keeping the stones sorted is the same idea at a worse constant; the operation being asked for is what matters.", "export function lastStoneWeight(stones: number[]): number {
+  // Always the two heaviest, so the collection has to give up its maximum over
+  // and over -- which is what a heap is for. Kept sorted descending here, since
+  // JavaScript has no heap in the standard library.
+  const remaining = [...stones].sort((a, b) => b - a);
+
+  while (remaining.length > 1) {
+    const heaviest = remaining.shift()!;
+    const following = remaining.shift()!;
+    if (heaviest !== following) {
+      const left = heaviest - following;
+      let at = remaining.findIndex((stone) => stone < left);
+      if (at === -1) at = remaining.length;
+      remaining.splice(at, 0, left);
+    }
+  }
+
+  return remaining.length ? remaining[0] : 0;
 }"),
     ],
     check: Check(
@@ -10560,7 +10560,7 @@ export function run(): [string, string, string][] {
 pub fn nc78_k_closest_points() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Sort by *squared* distance, not distance: the square root is monotonic so it cannot change the order, and skipping it keeps everything in integers with no rounding to argue about. Recognising that a monotonic transform can be dropped is worth more than the sort itself.", "export function kClosest(points: number[][], k: number): number[][] {
+      #("Sorting", "O(n log n) time · O(n) space", "Sort by *squared* distance, not distance: the square root is monotonic so it cannot change the order, and skipping it keeps everything in integers with no rounding to argue about. Recognising that a monotonic transform can be dropped is worth more than the sort itself.", "export function kClosest(points: number[][], k: number): number[][] {
   // Sorting by *squared* distance rather than distance: the square root is
   // monotonic, so it cannot change the order, and skipping it keeps everything
   // in integers with no rounding to argue about.
@@ -10570,7 +10570,7 @@ pub fn nc78_k_closest_points() -> Embedded {
 function squared(point: number[]): number {
   return point[0] * point[0] + point[1] * point[1];
 }"),
-      #("Solution 2 · Select k times", "Pull the nearest point out k times rather than ordering everything. O(n·k) against a full sort's O(n log n), so it wins exactly when k is small — the same argument that makes a bounded heap of size k the textbook answer here.", "export function kClosest(points: number[][], k: number): number[][] {
+      #("Heap", "O(n log k) time · O(k) space", "Pull the nearest point out k times rather than ordering everything. O(n·k) against a full sort's O(n log n), so it wins exactly when k is small — the same argument that makes a bounded heap of size k the textbook answer here.", "export function kClosest(points: number[][], k: number): number[][] {
   // Pull the nearest point out k times rather than ordering everything. O(n·k)
   // against a full sort's O(n log n), so it wins exactly when k is small --
   // which is the same reason a bounded heap beats a sort on this problem.
@@ -10622,13 +10622,13 @@ export function run(): [string, string, string][] {
 pub fn nc79_kth_largest_array() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Sorting answers every k at once, which is more than was asked but is the version nobody gets wrong. O(n log n), and usually the right thing to write first before offering anything cleverer.", "export function findKthLargest(nums: number[], k: number): number | null {
+      #("Sorting", "O(n log n) time · O(n) space", "Sorting answers every k at once, which is more than was asked but is the version nobody gets wrong. O(n log n), and usually the right thing to write first before offering anything cleverer.", "export function findKthLargest(nums: number[], k: number): number | null {
   // Sorting answers every k at once, which is more than asked for but is the
   // version nobody gets wrong. O(n log n).
   if (k < 1 || k > nums.length) return null;
   return [...nums].sort((a, b) => b - a)[k - 1];
 }"),
-      #("Solution 2 · Quickselect", "Partition around a pivot, then recurse only into the side that must contain the answer. Expected O(n), because the work halves each time instead of being done on both halves — the same saving binary search makes over a scan. Worst case is still O(n²) on adversarial pivots, which is worth saying out loud.", "export function findKthLargest(nums: number[], k: number): number | null {
+      #("Quickselect", "O(n) average time · O(n) space", "Partition around a pivot, then recurse only into the side that must contain the answer. Expected O(n), because the work halves each time instead of being done on both halves — the same saving binary search makes over a scan. Worst case is still O(n²) on adversarial pivots, which is worth saying out loud.", "export function findKthLargest(nums: number[], k: number): number | null {
   if (k < 1 || k > nums.length) return null;
   return select(nums, k);
 }
@@ -10676,24 +10676,7 @@ export function run(): [string, string, string][] {
 pub fn nc80_task_scheduler() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Lay the most frequent task out first with gaps of n between its copies. That skeleton is (busiest − 1) frames of n+1 slots plus a final row of every task tied for busiest — and everything else either drops into an idle slot or has already pushed the total past the skeleton, in which case nothing idles and the answer is simply the number of tasks. Hence the max of the two.", "export function leastInterval(tasks: string[], n: number): number {
-  if (tasks.length === 0) return 0;
-
-  const counts = new Map<string, number>();
-  for (const task of tasks) counts.set(task, (counts.get(task) ?? 0) + 1);
-
-  const frequencies = [...counts.values()];
-  const busiest = Math.max(...frequencies);
-  const ties = frequencies.filter((count) => count === busiest).length;
-
-  // Lay the most frequent task out first with gaps of n between its copies.
-  // That skeleton is (busiest - 1) full frames of n + 1 slots, plus the final
-  // row of every task tied for busiest. Everything else either fits into an
-  // idle slot or has already pushed the total past the skeleton -- in which
-  // case no idling happens and the answer is just the number of tasks.
-  return Math.max(tasks.length, (busiest - 1) * (n + 1) + ties);
-}"),
-      #("Solution 2 · Simulate", "Run the schedule instead of computing it: each round runs the n+1 most frequent tasks still outstanding, which is the greedy choice and needs the collection to give up its largest values over and over. The trap is the finished tasks — a task at zero is not an idle slot, and counting it as one inflates the answer.", "export function leastInterval(tasks: string[], n: number): number {
+      #("Simulation", "O(n·k log k) time · O(k) space", "Run the schedule instead of computing it: each round runs the n+1 most frequent tasks still outstanding, which is the greedy choice and needs the collection to give up its largest values over and over. The trap is the finished tasks — a task at zero is not an idle slot, and counting it as one inflates the answer.", "export function leastInterval(tasks: string[], n: number): number {
   // Run the schedule instead of computing it. Each round runs the n + 1 most
   // frequent tasks still outstanding -- the greedy choice, and it needs the
   // collection to hand back its largest values over and over, exactly the
@@ -10715,6 +10698,23 @@ pub fn nc80_task_scheduler() -> Embedded {
     // The last round costs only as many ticks as it actually uses.
     elapsed += remaining.some((count) => count > 0) ? n + 1 : running.length;
   }
+}"),
+      #("Greedy", "O(n) time · O(k) space", "Lay the most frequent task out first with gaps of n between its copies. That skeleton is (busiest − 1) frames of n+1 slots plus a final row of every task tied for busiest — and everything else either drops into an idle slot or has already pushed the total past the skeleton, in which case nothing idles and the answer is simply the number of tasks. Hence the max of the two.", "export function leastInterval(tasks: string[], n: number): number {
+  if (tasks.length === 0) return 0;
+
+  const counts = new Map<string, number>();
+  for (const task of tasks) counts.set(task, (counts.get(task) ?? 0) + 1);
+
+  const frequencies = [...counts.values()];
+  const busiest = Math.max(...frequencies);
+  const ties = frequencies.filter((count) => count === busiest).length;
+
+  // Lay the most frequent task out first with gaps of n between its copies.
+  // That skeleton is (busiest - 1) full frames of n + 1 slots, plus the final
+  // row of every task tied for busiest. Everything else either fits into an
+  // idle slot or has already pushed the total past the skeleton -- in which
+  // case no idling happens and the answer is just the number of tasks.
+  return Math.max(tasks.length, (busiest - 1) * (n + 1) + ties);
 }"),
     ],
     check: Check(
@@ -10744,7 +10744,7 @@ export function run(): [string, string, string][] {
 pub fn nc81_design_twitter() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "A counter standing in for time is the whole design: it orders tweets across every user without any real timestamps. Then the feed is a filter over one global timeline — simple, correct, and the wrong shape at scale, since it walks every tweet ever posted to produce ten.", "export class Twitter {
+      #("Design", "O(all tweets) per feed · O(all tweets) space", "A counter standing in for time is the whole design: it orders tweets across every user without any real timestamps. Then the feed is a filter over one global timeline — simple, correct, and the wrong shape at scale, since it walks every tweet ever posted to produce ten.", "export class Twitter {
   // The clock only ever increases, so it orders tweets across every user
   // without any real timestamps being involved.
   private clock = 0;
@@ -10780,7 +10780,7 @@ pub fn nc81_design_twitter() -> Embedded {
     return this.following.get(userId)!;
   }
 }"),
-      #("Solution 2 · Merge per user", "Store tweets per author and the feed becomes a k-way merge over the timelines being followed — and since only the ten newest are wanted, a heap over the heads of those k lists produces them without touching the rest. This is the version that survives a follow-up about scale.", "export class Twitter {
+      #("Heap", "O(followees) per feed · O(all tweets) space", "Store tweets per author and the feed becomes a k-way merge over the timelines being followed — and since only the ten newest are wanted, a heap over the heads of those k lists produces them without touching the rest. This is the version that survives a follow-up about scale.", "export class Twitter {
   private clock = 0;
   private tweets = new Map<number, [number, number][]>();
   private following = new Map<number, Set<number>>();
@@ -10880,7 +10880,25 @@ export function run(): [string, string, string][] {
 pub fn nc82_find_median_stream() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Split the values into a smaller half and a larger half, and the median is always sitting at one or both of the two inner ends. Each half only ever has to surrender its extreme value, which is exactly a heap — a max-heap below, a min-heap above. The whole difficulty is the rebalancing rule: sizes within one, and nothing below bigger than anything above.", "export class MedianFinder {
+      #("Sorted List", "O(n) per operation · O(n) space", "One sorted list, kept in order on insertion, and the median is a lookup. Easier to believe and easier to write, at the cost of an O(n) insert where two heaps pay O(log n) — the trade that decides which one belongs in a streaming answer.", "export class MedianFinder {
+  private values: number[] = [];
+
+  // One sorted array, kept in order on insertion. Simpler to believe than two
+  // halves, and the median is then just a lookup -- at the cost of an O(n)
+  // insert where the two-heap version pays O(log n).
+  addNum(value: number): void {
+    let at = this.values.findIndex((existing) => existing > value);
+    if (at === -1) at = this.values.length;
+    this.values.splice(at, 0, value);
+  }
+
+  findMedian(): number {
+    const n = this.values.length;
+    if (n === 0) return 0;
+    return (this.values[Math.floor(n / 2)] + this.values[Math.floor((n - 1) / 2)]) / 2;
+  }
+}"),
+      #("Two Heaps", "O(log n) per operation · O(n) space", "Split the values into a smaller half and a larger half, and the median is always sitting at one or both of the two inner ends. Each half only ever has to surrender its extreme value, which is exactly a heap — a max-heap below, a min-heap above. The whole difficulty is the rebalancing rule: sizes within one, and nothing below bigger than anything above.", "export class MedianFinder {
   // `lower` is the smaller half, largest first; `upper` is the larger half,
   // smallest first. The median is always at one or both of those two heads.
   // A real pair of heaps makes each insert O(log n); JavaScript has no heap in
@@ -10912,24 +10930,6 @@ pub fn nc82_find_median_stream() -> Embedded {
     if (this.lower.length === 0) return 0;
     if (this.lower.length > this.upper.length) return this.lower[0];
     return (this.lower[0] + this.upper[0]) / 2;
-  }
-}"),
-      #("Solution 2 · Sorted list", "One sorted list, kept in order on insertion, and the median is a lookup. Easier to believe and easier to write, at the cost of an O(n) insert where two heaps pay O(log n) — the trade that decides which one belongs in a streaming answer.", "export class MedianFinder {
-  private values: number[] = [];
-
-  // One sorted array, kept in order on insertion. Simpler to believe than two
-  // halves, and the median is then just a lookup -- at the cost of an O(n)
-  // insert where the two-heap version pays O(log n).
-  addNum(value: number): void {
-    let at = this.values.findIndex((existing) => existing > value);
-    if (at === -1) at = this.values.length;
-    this.values.splice(at, 0, value);
-  }
-
-  findMedian(): number {
-    const n = this.values.length;
-    if (n === 0) return 0;
-    return (this.values[Math.floor(n / 2)] + this.values[Math.floor((n - 1) / 2)]) / 2;
   }
 }"),
     ],
@@ -10974,15 +10974,7 @@ export function run(): [string, string, string][] {
 pub fn nc83_subsets() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Every element is either in or out, independently, so the subsets of a list are the subsets of its tail twice over — once with the head added and once without. That recursion is the whole answer, and it is also why there are exactly 2ⁿ of them.", "export function subsets(nums: number[]): number[][] {
-  // Every element is either in or out, independently, so the subsets of a list
-  // are the subsets of its tail twice over: once with the head added and once
-  // without. That is the whole recursion, and it is why there are 2^n of them.
-  if (nums.length === 0) return [[]];
-  const without = subsets(nums.slice(1));
-  return [...without.map((subset) => [nums[0], ...subset]), ...without];
-}"),
-      #("Solution 2 · Bitmask", "The in-or-out choices *are* the bits of a number, so counting from 0 to 2ⁿ−1 enumerates every subset exactly once with no recursion at all. It also gives every subset a stable index, which matters the moment subsets have to be compared, cached or keyed on.", "export function subsets(nums: number[]): number[][] {
+      #("Bit Manipulation", "O(n·2ⁿ) time · O(n·2ⁿ) space", "The in-or-out choices *are* the bits of a number, so counting from 0 to 2ⁿ−1 enumerates every subset exactly once with no recursion at all. It also gives every subset a stable index, which matters the moment subsets have to be compared, cached or keyed on.", "export function subsets(nums: number[]): number[][] {
   // The in-or-out choices *are* the bits of a number, so counting from 0 to
   // 2^n - 1 enumerates every subset exactly once with no recursion at all.
   // Worth knowing: it also gives every subset a stable index, which matters
@@ -10990,6 +10982,14 @@ pub fn nc83_subsets() -> Embedded {
   return Array.from({ length: 1 << nums.length }, (_, mask) =>
     nums.filter((_value, i) => (mask >> i) & 1),
   );
+}"),
+      #("Recursion", "O(n·2ⁿ) time · O(n·2ⁿ) space", "Every element is either in or out, independently, so the subsets of a list are the subsets of its tail twice over — once with the head added and once without. That recursion is the whole answer, and it is also why there are exactly 2ⁿ of them.", "export function subsets(nums: number[]): number[][] {
+  // Every element is either in or out, independently, so the subsets of a list
+  // are the subsets of its tail twice over: once with the head added and once
+  // without. That is the whole recursion, and it is why there are 2^n of them.
+  if (nums.length === 0) return [[]];
+  const without = subsets(nums.slice(1));
+  return [...without.map((subset) => [nums[0], ...subset]), ...without];
 }"),
     ],
     check: Check(
@@ -11024,26 +11024,7 @@ export function run(): [string, string, string][] {
 pub fn nc84_combination_sum() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Each step either takes the current candidate again — reuse is allowed — or drops it for good. Never returning to a dropped candidate is what stops the same combination appearing in several orders, so there is no deduplication anywhere. That constraint doing the work is the pattern to carry to the harder variants.", "export function combinationSum(candidates: number[], target: number): number[][] {
-  return build(candidates, target);
-}
-
-// Each step either takes the current candidate again -- reuse is allowed -- or
-// drops it for good. Never going back to a dropped candidate is what stops the
-// same combination appearing in several orders, so no deduplication is needed.
-function build(candidates: number[], target: number): number[][] {
-  if (target === 0) return [[]];
-  if (candidates.length === 0) return [];
-
-  const first = candidates[0];
-  if (first > target || first <= 0) return build(candidates.slice(1), target);
-
-  return [
-    ...build(candidates, target - first).map((rest) => [first, ...rest]),
-    ...build(candidates.slice(1), target),
-  ];
-}"),
-      #("Solution 2 · By target", "Bottom-up: the combinations making a target are every combination making a smaller amount with one more candidate added. Requiring the added candidate to be no smaller than the combination's largest plays the same role the index does in the recursion — it fixes one order per combination.", "export function combinationSum(candidates: number[], target: number): number[][] {
+      #("Bottom-Up DP", "O(t·2ᵗ) time · O(t·2ᵗ) space", "Bottom-up: the combinations making a target are every combination making a smaller amount with one more candidate added. Requiring the added candidate to be no smaller than the combination's largest plays the same role the index does in the recursion — it fixes one order per combination.", "export function combinationSum(candidates: number[], target: number): number[][] {
   const usable = candidates.filter((c) => c > 0).sort((a, b) => a - b);
 
   // Bottom-up instead of by recursion: the combinations making a target are
@@ -11066,6 +11047,25 @@ function build(candidates: number[], target: number): number[][] {
   }
 
   return table.get(target) ?? [];
+}"),
+      #("Backtracking", "O(2ᵗ) time · O(t) space", "Each step either takes the current candidate again — reuse is allowed — or drops it for good. Never returning to a dropped candidate is what stops the same combination appearing in several orders, so there is no deduplication anywhere. That constraint doing the work is the pattern to carry to the harder variants.", "export function combinationSum(candidates: number[], target: number): number[][] {
+  return build(candidates, target);
+}
+
+// Each step either takes the current candidate again -- reuse is allowed -- or
+// drops it for good. Never going back to a dropped candidate is what stops the
+// same combination appearing in several orders, so no deduplication is needed.
+function build(candidates: number[], target: number): number[][] {
+  if (target === 0) return [[]];
+  if (candidates.length === 0) return [];
+
+  const first = candidates[0];
+  if (first > target || first <= 0) return build(candidates.slice(1), target);
+
+  return [
+    ...build(candidates, target - first).map((rest) => [first, ...rest]),
+    ...build(candidates.slice(1), target),
+  ];
 }"),
     ],
     check: Check(
@@ -11100,16 +11100,7 @@ export function run(): [string, string, string][] {
 pub fn nc85_permutations() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Pick each element in turn as the first, then permute what is left. Removing the chosen element from the remainder is exactly what a \"used\" set does in an in-place version; here the remainder is simply a shorter list, and nothing has to be undone afterwards.", "export function permute(nums: number[]): number[][] {
-  // Pick each element in turn as the first, then permute what is left. Removing
-  // the chosen element from the remainder is what the \"used\" set does in an
-  // in-place version -- here the remainder is simply a shorter array.
-  if (nums.length === 0) return [[]];
-  return nums.flatMap((value, i) =>
-    permute([...nums.slice(0, i), ...nums.slice(i + 1)]).map((tail) => [value, ...tail]),
-  );
-}"),
-      #("Solution 2 · Insert everywhere", "Build up rather than choose: every permutation of n elements is a permutation of n−1 with the new element wedged into one of its n positions. No recursion into a shrinking remainder, and it explains the factorial directly — one more choice of position at every step.", "export function permute(nums: number[]): number[][] {
+      #("Iterative Insertion", "O(n·n!) time · O(n·n!) space", "Build up rather than choose: every permutation of n elements is a permutation of n−1 with the new element wedged into one of its n positions. No recursion into a shrinking remainder, and it explains the factorial directly — one more choice of position at every step.", "export function permute(nums: number[]): number[][] {
   // Build up instead of choosing: every permutation of n elements is a
   // permutation of n-1 with the new element wedged into one of its n positions.
   // No recursion into a shrinking remainder, and it explains the factorial
@@ -11125,6 +11116,15 @@ pub fn nc85_permutations() -> Embedded {
     );
   }
   return permutations;
+}"),
+      #("Backtracking", "O(n·n!) time · O(n·n!) space", "Pick each element in turn as the first, then permute what is left. Removing the chosen element from the remainder is exactly what a \"used\" set does in an in-place version; here the remainder is simply a shorter list, and nothing has to be undone afterwards.", "export function permute(nums: number[]): number[][] {
+  // Pick each element in turn as the first, then permute what is left. Removing
+  // the chosen element from the remainder is what the \"used\" set does in an
+  // in-place version -- here the remainder is simply a shorter array.
+  if (nums.length === 0) return [[]];
+  return nums.flatMap((value, i) =>
+    permute([...nums.slice(0, i), ...nums.slice(i + 1)]).map((tail) => [value, ...tail]),
+  );
 }"),
     ],
     check: Check(
@@ -11156,26 +11156,7 @@ export function run(): [string, string, string][] {
 pub fn nc86_subsets_ii() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Sorting puts equal values next to each other, which is what makes the duplicate rule expressible at all: when a value is skipped, skip *every* copy of it at once. Skipping one copy and keeping the next rebuilds the same subset from a different copy, which is exactly the repeat you are trying to avoid.", "export function subsetsWithDup(nums: number[]): number[][] {
-  return build([...nums].sort((a, b) => a - b));
-}
-
-// Sorting puts equal values next to each other, which is what makes the
-// duplicate rule expressible: when the head is skipped, skip *every* copy of it
-// at once. Skipping one copy and keeping the next would rebuild the same subset
-// by a different route.
-function build(sorted: number[]): number[][] {
-  if (sorted.length === 0) return [[]];
-
-  const first = sorted[0];
-  const withFirst = build(sorted.slice(1)).map((subset) => [first, ...subset]);
-
-  let past = 1;
-  while (past < sorted.length && sorted[past] === first) past++;
-
-  return [...withFirst, ...build(sorted.slice(past))];
-}"),
-      #("Solution 2 · By counts", "A different framing: the choice is not per *element* but per distinct *value* — how many copies to take, from none up to however many exist. Duplicates then cannot arise, so there is no skipping rule to remember and nothing to sort for correctness.", "export function subsetsWithDup(nums: number[]): number[][] {
+      #("Counting", "O(n·2ⁿ) time · O(n·2ⁿ) space", "A different framing: the choice is not per *element* but per distinct *value* — how many copies to take, from none up to however many exist. Duplicates then cannot arise, so there is no skipping rule to remember and nothing to sort for correctness.", "export function subsetsWithDup(nums: number[]): number[][] {
   // A different framing: the answer is not a choice per *element* but a choice
   // per distinct *value* -- how many copies of it to take, from none up to
   // however many there are. Duplicates then cannot arise at all, so there is no
@@ -11193,6 +11174,25 @@ function build(sorted: number[]): number[][] {
     );
   }
   return subsets;
+}"),
+      #("Backtracking", "O(n·2ⁿ) time · O(n·2ⁿ) space", "Sorting puts equal values next to each other, which is what makes the duplicate rule expressible at all: when a value is skipped, skip *every* copy of it at once. Skipping one copy and keeping the next rebuilds the same subset from a different copy, which is exactly the repeat you are trying to avoid.", "export function subsetsWithDup(nums: number[]): number[][] {
+  return build([...nums].sort((a, b) => a - b));
+}
+
+// Sorting puts equal values next to each other, which is what makes the
+// duplicate rule expressible: when the head is skipped, skip *every* copy of it
+// at once. Skipping one copy and keeping the next would rebuild the same subset
+// by a different route.
+function build(sorted: number[]): number[][] {
+  if (sorted.length === 0) return [[]];
+
+  const first = sorted[0];
+  const withFirst = build(sorted.slice(1)).map((subset) => [first, ...subset]);
+
+  let past = 1;
+  while (past < sorted.length && sorted[past] === first) past++;
+
+  return [...withFirst, ...build(sorted.slice(past))];
 }"),
     ],
     check: Check(
@@ -11227,29 +11227,7 @@ export function run(): [string, string, string][] {
 pub fn nc87_combination_sum_ii() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Each candidate is used at most once, so taking one moves past it. The duplicate rule is the same as Subsets II — skipping a value means skipping every copy of it — and that shared rule is the reason to drill the two problems together.", "export function combinationSum2(candidates: number[], target: number): number[][] {
-  return build([...candidates].sort((a, b) => a - b), target);
-}
-
-// Each candidate is used at most once, so taking one moves past it. The
-// duplicate rule is the same as in Subsets II: skipping a value means skipping
-// every copy of it, otherwise the same combination is rebuilt from a different
-// copy of the same number.
-function build(sorted: number[], target: number): number[][] {
-  if (target === 0) return [[]];
-  if (sorted.length === 0) return [];
-
-  const first = sorted[0];
-  if (first > target) return [];
-
-  const withFirst = build(sorted.slice(1), target - first).map((rest) => [first, ...rest]);
-
-  let past = 1;
-  while (past < sorted.length && sorted[past] === first) past++;
-
-  return [...withFirst, ...build(sorted.slice(past), target)];
-}"),
-      #("Solution 2 · Dedupe at the end", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #("Brute Force", "O(n·4ⁿ) time · O(n·2ⁿ) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
 Generate every subset that hits the target and collapse the repeats afterwards. Correct, and exponentially wasteful on inputs with many equal values — which is precisely the cost the skipping rule avoids.", "export function combinationSum2(candidates: number[], target: number): number[][] {
   // Generate every subset that hits the target and collapse the repeats
@@ -11274,6 +11252,28 @@ function everySubset(sorted: number[]): number[][] {
   if (sorted.length === 0) return [[]];
   const without = everySubset(sorted.slice(1));
   return [...without.map((subset) => [sorted[0], ...subset]), ...without];
+}"),
+      #("Backtracking", "O(2ⁿ) time · O(n²) space", "Each candidate is used at most once, so taking one moves past it. The duplicate rule is the same as Subsets II — skipping a value means skipping every copy of it — and that shared rule is the reason to drill the two problems together.", "export function combinationSum2(candidates: number[], target: number): number[][] {
+  return build([...candidates].sort((a, b) => a - b), target);
+}
+
+// Each candidate is used at most once, so taking one moves past it. The
+// duplicate rule is the same as in Subsets II: skipping a value means skipping
+// every copy of it, otherwise the same combination is rebuilt from a different
+// copy of the same number.
+function build(sorted: number[], target: number): number[][] {
+  if (target === 0) return [[]];
+  if (sorted.length === 0) return [];
+
+  const first = sorted[0];
+  if (first > target) return [];
+
+  const withFirst = build(sorted.slice(1), target - first).map((rest) => [first, ...rest]);
+
+  let past = 1;
+  while (past < sorted.length && sorted[past] === first) past++;
+
+  return [...withFirst, ...build(sorted.slice(past), target)];
 }"),
     ],
     check: Check(
@@ -11308,7 +11308,7 @@ export function run(): [string, string, string][] {
 pub fn nc88_word_search() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Depth-first from every square, with the path so far in a set so no letter is reused within one attempt. The set has to be per-path, not global: a square rejected on one route must still be available on another, and that distinction is the whole difference between backtracking and plain search.", "export function exist(board: string[][], word: string): boolean {
+      #("Backtracking", "O(m·n·4ᴸ) time · O(L²) space", "Depth-first from every square, with the path so far in a set so no letter is reused within one attempt. The set has to be per-path, not global: a square rejected on one route must still be available on another, and that distinction is the whole difference between backtracking and plain search.", "export function exist(board: string[][], word: string): boolean {
   if (word === \"\") return true;
   if (board.length === 0) return false;
 
@@ -11338,7 +11338,7 @@ pub fn nc88_word_search() -> Embedded {
   }
   return false;
 }"),
-      #("Solution 2 · Prune by counts", "Two cheap checks before any searching. If the board does not hold enough copies of some letter, no search can succeed at all. And starting from whichever end of the word is rarer on the board begins from fewer squares — the branching factor at the root is what dominates, so halving it there is worth more than any saving deeper in.", "export function exist(board: string[][], word: string): boolean {
+      #("Pruned Backtracking", "O(m·n·4ᴸ) time · O(L²) space", "Two cheap checks before any searching. If the board does not hold enough copies of some letter, no search can succeed at all. And starting from whichever end of the word is rarer on the board begins from fewer squares — the branching factor at the root is what dominates, so halving it there is worth more than any saving deeper in.", "export function exist(board: string[][], word: string): boolean {
   if (word === \"\") return true;
   if (board.length === 0) return false;
 
@@ -11414,7 +11414,7 @@ export function run(): [string, string, string][] {
 pub fn nc89_palindrome_partitioning() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Every partition begins with some palindromic prefix, so the only choice at each step is how long that prefix is. Cutting there and recursing on the rest reaches each partition exactly once, in order, with nothing to deduplicate.", "export function partition(s: string): string[][] {
+      #("Backtracking", "O(n·2ⁿ) time · O(n·2ⁿ) space", "Every partition begins with some palindromic prefix, so the only choice at each step is how long that prefix is. Cutting there and recursing on the rest reaches each partition exactly once, in order, with nothing to deduplicate.", "export function partition(s: string): string[][] {
   return build(s);
 }
 
@@ -11432,7 +11432,7 @@ function build(remaining: string): string[][] {
   }
   return out;
 }"),
-      #("Solution 2 · With table", "Work out which spans are palindromes once, up front, instead of re-testing the same prefix on every branch. The search then becomes pure choice — a table lookup where there was a linear scan. Precomputing the predicate rather than the answer is a move worth having.", "export function partition(s: string): string[][] {
+      #("DP + Backtracking", "O(n·2ⁿ) time · O(n·2ⁿ) space", "Work out which spans are palindromes once, up front, instead of re-testing the same prefix on every branch. The search then becomes pure choice — a table lookup where there was a linear scan. Precomputing the predicate rather than the answer is a move worth having.", "export function partition(s: string): string[][] {
   const n = s.length;
 
   // Work out which spans are palindromes once, up front, rather than re-testing
@@ -11490,27 +11490,7 @@ export function run(): [string, string, string][] {
 pub fn nc90_letter_combinations() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "One choice per digit, independently, so the answer is the cross product of the letter sets. There is no pruning and no constraint between choices — which makes this the cleanest place to see what backtracking degenerates to when nothing can fail.", "const KEYPAD: Record<string, string> = {
-  \"2\": \"abc\", \"3\": \"def\", \"4\": \"ghi\", \"5\": \"jkl\",
-  \"6\": \"mno\", \"7\": \"pqrs\", \"8\": \"tuv\", \"9\": \"wxyz\",
-};
-
-export function letterCombinations(digits: string): string[] {
-  if (digits === \"\") return [];
-  return build(digits);
-}
-
-// One choice per digit, independently -- so the answer is the cross product of
-// the letter sets. Written as a recursion here: pick a letter for the first
-// digit, then every combination of the rest.
-function build(digits: string): string[] {
-  if (digits === \"\") return [\"\"];
-  const tails = build(digits.slice(1));
-  return [...(KEYPAD[digits[0]] ?? \"\")].flatMap((letter) =>
-    tails.map((tail) => letter + tail),
-  );
-}"),
-      #("Solution 2 · Iterative product", "The same cross product built by folding rather than recursing: hold every combination of the digits so far and extend each by every letter of the next. No call stack, and the growth is visible in the code — the list multiplies in size at each step.", "const KEYPAD: Record<string, string> = {
+      #("Iterative", "O(n·4ⁿ) time · O(n·4ⁿ) space", "The same cross product built by folding rather than recursing: hold every combination of the digits so far and extend each by every letter of the next. No call stack, and the growth is visible in the code — the list multiplies in size at each step.", "const KEYPAD: Record<string, string> = {
   \"2\": \"abc\", \"3\": \"def\", \"4\": \"ghi\", \"5\": \"jkl\",
   \"6\": \"mno\", \"7\": \"pqrs\", \"8\": \"tuv\", \"9\": \"wxyz\",
 };
@@ -11529,6 +11509,26 @@ export function letterCombinations(digits: string): string[] {
     );
   }
   return combinations;
+}"),
+      #("Recursion", "O(n·4ⁿ) time · O(n·4ⁿ) space", "One choice per digit, independently, so the answer is the cross product of the letter sets. There is no pruning and no constraint between choices — which makes this the cleanest place to see what backtracking degenerates to when nothing can fail.", "const KEYPAD: Record<string, string> = {
+  \"2\": \"abc\", \"3\": \"def\", \"4\": \"ghi\", \"5\": \"jkl\",
+  \"6\": \"mno\", \"7\": \"pqrs\", \"8\": \"tuv\", \"9\": \"wxyz\",
+};
+
+export function letterCombinations(digits: string): string[] {
+  if (digits === \"\") return [];
+  return build(digits);
+}
+
+// One choice per digit, independently -- so the answer is the cross product of
+// the letter sets. Written as a recursion here: pick a letter for the first
+// digit, then every combination of the rest.
+function build(digits: string): string[] {
+  if (digits === \"\") return [\"\"];
+  const tails = build(digits.slice(1));
+  return [...(KEYPAD[digits[0]] ?? \"\")].flatMap((letter) =>
+    tails.map((tail) => letter + tail),
+  );
 }"),
     ],
     check: Check(
@@ -11559,7 +11559,37 @@ export function run(): [string, string, string][] {
 pub fn nc91_n_queens() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "One queen per row, so the only choice is the column. A diagonal is identified by row − column and an anti-diagonal by row + column, which turns \"is this square attacked?\" into three set lookups — and lets the search abandon an entire subtree the moment one of them fails.", "export function solveNQueens(n: number): string[][] {
+      #("Brute Force", "O(n²·n!) time · O(n) space", "One queen per row with no two sharing a column *is* a permutation of the columns, so the row and column rules hold by construction and only the diagonals are left. Generating all n! and filtering is far slower than pruning as you go — it explores arrangements a backtracker abandons at the second queen — but it names what the search space actually is.", "export function solveNQueens(n: number): string[][] {
+  // One queen per row with no two sharing a column *is* a permutation of the
+  // columns, so the row and column rules are satisfied by construction and only
+  // the diagonals are left to test. Generating all n! and filtering is far
+  // slower than pruning as you go -- it explores arrangements a backtracker
+  // would have abandoned at the second queen -- but it names what the search
+  // space actually is.
+  return permutations(Array.from({ length: n }, (_, i) => i))
+    .filter(noDiagonalClash)
+    .map((chosen) => chosen.map((c) => \".\".repeat(c) + \"Q\" + \".\".repeat(n - c - 1)));
+}
+
+function permutations(values: number[]): number[][] {
+  if (values.length === 0) return [[]];
+  return values.flatMap((value, i) =>
+    permutations([...values.slice(0, i), ...values.slice(i + 1)]).map((tail) => [
+      value,
+      ...tail,
+    ]),
+  );
+}
+
+function noDiagonalClash(chosen: number[]): boolean {
+  for (let a = 0; a < chosen.length; a++) {
+    for (let b = a + 1; b < chosen.length; b++) {
+      if (Math.abs(a - b) === Math.abs(chosen[a] - chosen[b])) return false;
+    }
+  }
+  return true;
+}"),
+      #("Backtracking", "O(n!) time · O(n²) space", "One queen per row, so the only choice is the column. A diagonal is identified by row − column and an anti-diagonal by row + column, which turns \"is this square attacked?\" into three set lookups — and lets the search abandon an entire subtree the moment one of them fails.", "export function solveNQueens(n: number): string[][] {
   const boards: string[][] = [];
 
   // One queen per row, so the only choice is which column. A diagonal is
@@ -11594,36 +11624,6 @@ pub fn nc91_n_queens() -> Embedded {
   place(0, [], new Set(), new Set(), new Set());
   return boards;
 }"),
-      #("Solution 2 · Filter permutations", "One queen per row with no two sharing a column *is* a permutation of the columns, so the row and column rules hold by construction and only the diagonals are left. Generating all n! and filtering is far slower than pruning as you go — it explores arrangements a backtracker abandons at the second queen — but it names what the search space actually is.", "export function solveNQueens(n: number): string[][] {
-  // One queen per row with no two sharing a column *is* a permutation of the
-  // columns, so the row and column rules are satisfied by construction and only
-  // the diagonals are left to test. Generating all n! and filtering is far
-  // slower than pruning as you go -- it explores arrangements a backtracker
-  // would have abandoned at the second queen -- but it names what the search
-  // space actually is.
-  return permutations(Array.from({ length: n }, (_, i) => i))
-    .filter(noDiagonalClash)
-    .map((chosen) => chosen.map((c) => \".\".repeat(c) + \"Q\" + \".\".repeat(n - c - 1)));
-}
-
-function permutations(values: number[]): number[][] {
-  if (values.length === 0) return [[]];
-  return values.flatMap((value, i) =>
-    permutations([...values.slice(0, i), ...values.slice(i + 1)]).map((tail) => [
-      value,
-      ...tail,
-    ]),
-  );
-}
-
-function noDiagonalClash(chosen: number[]): boolean {
-  for (let a = 0; a < chosen.length; a++) {
-    for (let b = a + 1; b < chosen.length; b++) {
-      if (Math.abs(a - b) === Math.abs(chosen[a] - chosen[b])) return false;
-    }
-  }
-  return true;
-}"),
     ],
     check: Check(
       signature: "export function solveNQueens(n: number): string[][]",
@@ -11653,7 +11653,7 @@ export function run(): [string, string, string][] {
 pub fn nc92_unique_paths() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Only right and down moves, so the ways to reach a square are the ways to reach the one above plus the one to its left. Rows fill top to bottom and only the previous row is ever needed, so one row of counters does for the whole grid.", "export function uniquePaths(m: number, n: number): number {
+      #("Space-Saving DP", "O(m·n) time · O(n) space", "Only right and down moves, so the ways to reach a square are the ways to reach the one above plus the one to its left. Rows fill top to bottom and only the previous row is ever needed, so one row of counters does for the whole grid.", "export function uniquePaths(m: number, n: number): number {
   if (m <= 0 || n <= 0) return 0;
 
   // Only right and down moves, so the ways to reach a square are the ways to
@@ -11667,7 +11667,7 @@ pub fn nc92_unique_paths() -> Embedded {
 
   return row[n - 1];
 }"),
-      #("Solution 2 · Pascal", "There is no grid at all. Every path is exactly m−1 downs and n−1 rights in some order, so the count is the number of ways to choose which of the m+n−2 moves are downs — a binomial coefficient. Multiplying and dividing in step keeps every intermediate an exact integer, which is what makes it safe without big numbers.", "export function uniquePaths(m: number, n: number): number {
+      #("Math", "O(min(m,n)) time · O(1) space", "There is no grid at all. Every path is exactly m−1 downs and n−1 rights in some order, so the count is the number of ways to choose which of the m+n−2 moves are downs — a binomial coefficient. Multiplying and dividing in step keeps every intermediate an exact integer, which is what makes it safe without big numbers.", "export function uniquePaths(m: number, n: number): number {
   if (m <= 0 || n <= 0) return 0;
 
   // Every path is exactly m-1 downs and n-1 rights in some order, so the count
@@ -11709,23 +11709,7 @@ export function run(): [string, string, string][] {
 pub fn nc93_longest_common_subsequence() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Compare the two current characters: equal means both are used and the answer is one more than the rest; different means the best of dropping one or the other. Filled row by row, only the previous row is ever needed. This recurrence is the backbone of edit distance and distinct subsequences too.", "export function longestCommonSubsequence(text1: string, text2: string): number {
-  // Compare the last characters: equal means both are used and the answer is
-  // one more than the rest, different means the best of dropping one or the
-  // other. Filled row by row, only the previous row is ever needed.
-  let previous = new Array<number>(text2.length + 1).fill(0);
-
-  for (const a of text1) {
-    const row = new Array<number>(text2.length + 1).fill(0);
-    for (let j = 1; j <= text2.length; j++) {
-      row[j] = a === text2[j - 1] ? previous[j - 1] + 1 : Math.max(previous[j], row[j - 1]);
-    }
-    previous = row;
-  }
-
-  return previous[text2.length];
-}"),
-      #("Solution 2 · Memoised", "The same recurrence from the front with a cache. Written this way the choice is explicit — match and advance both, or give up one character from one side — which the rolling row hides behind its indices. Usually the version to write first, then flatten.", "export function longestCommonSubsequence(text1: string, text2: string): number {
+      #("Top-Down Memo", "O(m·n) time · O(m·n) space", "The same recurrence from the front with a cache. Written this way the choice is explicit — match and advance both, or give up one character from one side — which the rolling row hides behind its indices. Usually the version to write first, then flatten.", "export function longestCommonSubsequence(text1: string, text2: string): number {
   const memo = new Map<string, number>();
 
   // The same recurrence from the front, with a cache. Written this way the
@@ -11746,6 +11730,22 @@ pub fn nc93_longest_common_subsequence() -> Embedded {
   };
 
   return best(0, 0);
+}"),
+      #("Space-Saving DP", "O(m·n) time · O(n) space", "Compare the two current characters: equal means both are used and the answer is one more than the rest; different means the best of dropping one or the other. Filled row by row, only the previous row is ever needed. This recurrence is the backbone of edit distance and distinct subsequences too.", "export function longestCommonSubsequence(text1: string, text2: string): number {
+  // Compare the last characters: equal means both are used and the answer is
+  // one more than the rest, different means the best of dropping one or the
+  // other. Filled row by row, only the previous row is ever needed.
+  let previous = new Array<number>(text2.length + 1).fill(0);
+
+  for (const a of text1) {
+    const row = new Array<number>(text2.length + 1).fill(0);
+    for (let j = 1; j <= text2.length; j++) {
+      row[j] = a === text2[j - 1] ? previous[j - 1] + 1 : Math.max(previous[j], row[j - 1]);
+    }
+    previous = row;
+  }
+
+  return previous[text2.length];
 }"),
     ],
     check: Check(
@@ -11775,22 +11775,7 @@ export function run(): [string, string, string][] {
 pub fn nc94_coin_change_ii() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Combinations, not permutations, and that is decided entirely by the loop order. Coins on the outside means each coin is considered once and for all before the next is looked at, so 1+2 and 2+1 can never both be counted. Swapping the two loops silently counts orderings instead — the single most instructive bug in this problem.", "export function change(amount: number, coins: number[]): number {
-  // Combinations, not permutations -- which is entirely decided by the loop
-  // order. Coins on the outside means each coin is considered once and for all
-  // before the next is looked at, so 1+2 and 2+1 can never both be counted.
-  // Swapping the loops would count orderings instead.
-  const ways = new Array<number>(amount + 1).fill(0);
-  ways[0] = 1;
-
-  for (const coin of coins) {
-    if (coin <= 0) continue;
-    for (let target = coin; target <= amount; target++) ways[target] += ways[target - coin];
-  }
-
-  return ways[amount];
-}"),
-      #("Solution 2 · By coin recursion", "The same rule stated as a choice rather than a loop order: use this coin again, or set it aside for good. Setting it aside permanently is what fixes one order per combination — the identical constraint the outer loop encodes, made visible.", "export function change(amount: number, coins: number[]): number {
+      #("Top-Down Memo", "O(n·t) time · O(n·t) space", "The same rule stated as a choice rather than a loop order: use this coin again, or set it aside for good. Setting it aside permanently is what fixes one order per combination — the identical constraint the outer loop encodes, made visible.", "export function change(amount: number, coins: number[]): number {
   const usable = coins.filter((coin) => coin > 0);
   const memo = new Map<string, number>();
 
@@ -11809,6 +11794,21 @@ pub fn nc94_coin_change_ii() -> Embedded {
   };
 
   return ways(0, amount);
+}"),
+      #("Bottom-Up DP", "O(n·t) time · O(t) space", "Combinations, not permutations, and that is decided entirely by the loop order. Coins on the outside means each coin is considered once and for all before the next is looked at, so 1+2 and 2+1 can never both be counted. Swapping the two loops silently counts orderings instead — the single most instructive bug in this problem.", "export function change(amount: number, coins: number[]): number {
+  // Combinations, not permutations -- which is entirely decided by the loop
+  // order. Coins on the outside means each coin is considered once and for all
+  // before the next is looked at, so 1+2 and 2+1 can never both be counted.
+  // Swapping the loops would count orderings instead.
+  const ways = new Array<number>(amount + 1).fill(0);
+  ways[0] = 1;
+
+  for (const coin of coins) {
+    if (coin <= 0) continue;
+    for (let target = coin; target <= amount; target++) ways[target] += ways[target - coin];
+  }
+
+  return ways[amount];
 }"),
     ],
     check: Check(
@@ -11838,7 +11838,7 @@ export function run(): [string, string, string][] {
 pub fn nc95_target_sum() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "The only state that matters is the running total, not which signs produced it. Carrying a map from reachable total to how many ways reach it means different sign choices landing on the same total merge — which is exactly what turns an exponential search into a polynomial one.", "export function findTargetSumWays(nums: number[], target: number): number {
+      #("Bottom-Up DP", "O(n·S) time · O(S) space", "The only state that matters is the running total, not which signs produced it. Carrying a map from reachable total to how many ways reach it means different sign choices landing on the same total merge — which is exactly what turns an exponential search into a polynomial one.", "export function findTargetSumWays(nums: number[], target: number): number {
   // The state that matters is only the running total, not which signs produced
   // it -- so carry a map from reachable total to how many ways reach it, and
   // widen it by each number twice, once added and once subtracted. Different
@@ -11857,7 +11857,7 @@ pub fn nc95_target_sum() -> Embedded {
 
   return totals.get(target) ?? 0;
 }"),
-      #("Solution 2 · As subset sum", "Rewrite the problem. If P is the set given a plus and N the set given a minus then P − N = target and P + N = total, so P = (total + target)/2. A sign-assignment question becomes \"how many subsets sum to a fixed value\" — a knapsack, with no negative totals to track at all. Reformulating rather than optimising is the move.", "export function findTargetSumWays(nums: number[], target: number): number {
+      #("Subset Sum", "O(n·S) time · O(S) space", "Rewrite the problem. If P is the set given a plus and N the set given a minus then P − N = target and P + N = total, so P = (total + target)/2. A sign-assignment question becomes \"how many subsets sum to a fixed value\" — a knapsack, with no negative totals to track at all. Reformulating rather than optimising is the move.", "export function findTargetSumWays(nums: number[], target: number): number {
   // Rewrite the problem. If P is the set given a plus and N the set given a
   // minus, then P - N = target and P + N = total, so P = (total + target) / 2.
   // That turns a sign-assignment question into \"how many subsets sum to a fixed
@@ -11909,22 +11909,7 @@ export function run(): [string, string, string][] {
 pub fn nc96_stock_with_cooldown() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Three states rather than one number: holding, just sold (so today is the cooldown), and free to act. Each day depends only on yesterday, so it is three rolling values — and the cooldown is expressed simply by \"free\" never reading \"sold\" from the same day. Naming the states is most of the work.", "export function maxProfit(prices: number[]): number {
-  // Three states rather than one number: holding a share, having just sold (so
-  // today is the cooldown), and free to act. Each day's states depend only on
-  // yesterday's, so the whole thing is three rolling values -- and the cooldown
-  // is expressed simply by \"free\" never reading \"sold\" from the same day.
-  let hold = -Infinity;
-  let sold = -Infinity;
-  let rest = 0;
-
-  for (const price of prices) {
-    [hold, sold, rest] = [Math.max(hold, rest - price), hold + price, Math.max(rest, sold)];
-  }
-
-  return Math.max(sold, rest, 0);
-}"),
-      #("Solution 2 · Memoised", "The same three states as an explicit choice each day: buy, sell, or do nothing. After selling the recursion skips a day, which puts the cooldown where it actually happens rather than encoding it in which value gets read.", "export function maxProfit(prices: number[]): number {
+      #("Top-Down Memo", "O(n) time · O(n) space", "The same three states as an explicit choice each day: buy, sell, or do nothing. After selling the recursion skips a day, which puts the cooldown where it actually happens rather than encoding it in which value gets read.", "export function maxProfit(prices: number[]): number {
   const memo = new Map<string, number>();
 
   // The same three states as an explicit choice at each day: buy, sell, or do
@@ -11944,6 +11929,21 @@ pub fn nc96_stock_with_cooldown() -> Embedded {
   };
 
   return best(0, false);
+}"),
+      #("State Machine DP", "O(n) time · O(1) space", "Three states rather than one number: holding, just sold (so today is the cooldown), and free to act. Each day depends only on yesterday, so it is three rolling values — and the cooldown is expressed simply by \"free\" never reading \"sold\" from the same day. Naming the states is most of the work.", "export function maxProfit(prices: number[]): number {
+  // Three states rather than one number: holding a share, having just sold (so
+  // today is the cooldown), and free to act. Each day's states depend only on
+  // yesterday's, so the whole thing is three rolling values -- and the cooldown
+  // is expressed simply by \"free\" never reading \"sold\" from the same day.
+  let hold = -Infinity;
+  let sold = -Infinity;
+  let rest = 0;
+
+  for (const price of prices) {
+    [hold, sold, rest] = [Math.max(hold, rest - price), hold + price, Math.max(rest, sold)];
+  }
+
+  return Math.max(sold, rest, 0);
 }"),
     ],
     check: Check(
@@ -11973,7 +11973,7 @@ export function run(): [string, string, string][] {
 pub fn nc97_interleaving_string() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "How much of each source has been used is the entire state — the position in the target is their sum, so it never has to be tracked. That collapse from three indices to two is what makes the table two-dimensional, and spotting it is the problem.", "export function isInterleave(s1: string, s2: string, s3: string): boolean {
+      #("Top-Down Memo", "O(m·n) time · O(m·n) space", "How much of each source has been used is the entire state — the position in the target is their sum, so it never has to be tracked. That collapse from three indices to two is what makes the table two-dimensional, and spotting it is the problem.", "export function isInterleave(s1: string, s2: string, s3: string): boolean {
   if (s1.length + s2.length !== s3.length) return false;
 
   const memo = new Map<string, boolean>();
@@ -11997,7 +11997,7 @@ pub fn nc97_interleaving_string() -> Embedded {
 
   return works(0, 0);
 }"),
-      #("Solution 2 · Rolling row", "Bottom-up over the same two-index state. Row i says which prefixes of s2 pair with the first i characters of s1, and each row depends only on the one above and itself to the left, so a single row suffices. Note the length check first: without it the recursion can succeed on a target that is too short.", "export function isInterleave(s1: string, s2: string, s3: string): boolean {
+      #("Space-Saving DP", "O(m·n) time · O(n) space", "Bottom-up over the same two-index state. Row i says which prefixes of s2 pair with the first i characters of s1, and each row depends only on the one above and itself to the left, so a single row suffices. Note the length check first: without it the recursion can succeed on a target that is too short.", "export function isInterleave(s1: string, s2: string, s3: string): boolean {
   if (s1.length + s2.length !== s3.length) return false;
 
   // Bottom-up over the same two-index state. Row i says which prefixes of s2
@@ -12045,38 +12045,7 @@ export function run(): [string, string, string][] {
 pub fn nc98_longest_increasing_path() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Strictly increasing means the moves can never form a cycle, so the grid is a directed acyclic graph and the longest path from each square is well-defined. That is what makes caching sound — with cycles, a memo on an in-progress square would be reading an answer that does not exist yet.", "export function longestIncreasingPath(matrix: number[][]): number {
-  if (matrix.length === 0 || matrix[0].length === 0) return 0;
-
-  const memo = new Map<string, number>();
-
-  // Strictly increasing means the moves can never form a cycle -- the grid is a
-  // directed acyclic graph -- so the longest path from each square is
-  // well-defined and can simply be cached. Without that guarantee memoisation
-  // would be unsound, which is the fact the problem is really testing.
-  const longest = (r: number, c: number): number => {
-    const key = `${r},${c}`;
-    if (!memo.has(key)) {
-      let best = 1;
-      for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const nr = r + dr;
-        const nc = c + dc;
-        if (nr >= 0 && nr < matrix.length && nc >= 0 && nc < matrix[0].length) {
-          if (matrix[nr][nc] > matrix[r][c]) best = Math.max(best, 1 + longest(nr, nc));
-        }
-      }
-      memo.set(key, best);
-    }
-    return memo.get(key)!;
-  };
-
-  let best = 0;
-  for (let r = 0; r < matrix.length; r++) {
-    for (let c = 0; c < matrix[0].length; c++) best = Math.max(best, longest(r, c));
-  }
-  return best;
-}"),
-      #("Solution 2 · By value order", "The same acyclicity used the other way round: walk the squares from largest value to smallest and everything a square can move to is already settled. Sorting by value *is* a topological order, so the graph never has to be built.", "export function longestIncreasingPath(matrix: number[][]): number {
+      #("Sort + DP", "O(m·n log(m·n)) time · O(m·n) space", "The same acyclicity used the other way round: walk the squares from largest value to smallest and everything a square can move to is already settled. Sorting by value *is* a topological order, so the graph never has to be built.", "export function longestIncreasingPath(matrix: number[][]): number {
   if (matrix.length === 0 || matrix[0].length === 0) return 0;
 
   // The same acyclicity used the other way round: process the squares from
@@ -12107,6 +12076,37 @@ pub fn nc98_longest_increasing_path() -> Embedded {
 
   return best;
 }"),
+      #("DFS + Memo", "O(m·n) time · O(m·n) space", "Strictly increasing means the moves can never form a cycle, so the grid is a directed acyclic graph and the longest path from each square is well-defined. That is what makes caching sound — with cycles, a memo on an in-progress square would be reading an answer that does not exist yet.", "export function longestIncreasingPath(matrix: number[][]): number {
+  if (matrix.length === 0 || matrix[0].length === 0) return 0;
+
+  const memo = new Map<string, number>();
+
+  // Strictly increasing means the moves can never form a cycle -- the grid is a
+  // directed acyclic graph -- so the longest path from each square is
+  // well-defined and can simply be cached. Without that guarantee memoisation
+  // would be unsound, which is the fact the problem is really testing.
+  const longest = (r: number, c: number): number => {
+    const key = `${r},${c}`;
+    if (!memo.has(key)) {
+      let best = 1;
+      for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nr = r + dr;
+        const nc = c + dc;
+        if (nr >= 0 && nr < matrix.length && nc >= 0 && nc < matrix[0].length) {
+          if (matrix[nr][nc] > matrix[r][c]) best = Math.max(best, 1 + longest(nr, nc));
+        }
+      }
+      memo.set(key, best);
+    }
+    return memo.get(key)!;
+  };
+
+  let best = 0;
+  for (let r = 0; r < matrix.length; r++) {
+    for (let c = 0; c < matrix[0].length; c++) best = Math.max(best, longest(r, c));
+  }
+  return best;
+}"),
     ],
     check: Check(
       signature: "export function longestIncreasingPath(matrix: number[][]): number",
@@ -12134,25 +12134,7 @@ export function run(): [string, string, string][] {
 pub fn nc99_distinct_subsequences() -> Embedded {
   Embedded(
     solutions: [
-      #("Solution 1", "Row j counts the ways to build the first j characters of the target from the source seen so far, and a new source character extends a count at j−1 into one at j when it matches. In a mutable array the row must be swept right to left, or one source character gets used twice; building a fresh row removes the hazard entirely.", "export function numDistinct(s: string, t: string): number {
-  // Row j counts the ways to build the first j characters of t out of the
-  // source seen so far. A new source character can extend a count at j-1 into
-  // one at j, but only if it matches t[j-1].
-  //
-  // The row must be swept right to left: left to right, an update at j-1 feeds
-  // straight into j and the same source character gets used twice.
-  const row = new Array<number>(t.length + 1).fill(0);
-  row[0] = 1;
-
-  for (const c of s) {
-    for (let j = t.length; j >= 1; j--) {
-      if (c === t[j - 1]) row[j] += row[j - 1];
-    }
-  }
-
-  return row[t.length];
-}"),
-      #("Solution 2 · Memoised", "The choice written out: on a match, use this source character or skip it; otherwise skip. Running out of target is one complete subsequence, which is why the base case returns 1 and not 0 — the usual place this one goes wrong.", "export function numDistinct(s: string, t: string): number {
+      #("Top-Down Memo", "O(m·n) time · O(m·n) space", "The choice written out: on a match, use this source character or skip it; otherwise skip. Running out of target is one complete subsequence, which is why the base case returns 1 and not 0 — the usual place this one goes wrong.", "export function numDistinct(s: string, t: string): number {
   const memo = new Map<string, number>();
 
   // The choice written out: when the characters match, either use this source
@@ -12172,6 +12154,24 @@ pub fn nc99_distinct_subsequences() -> Embedded {
   };
 
   return ways(0, 0);
+}"),
+      #("Space-Saving DP", "O(m·n) time · O(n) space", "Row j counts the ways to build the first j characters of the target from the source seen so far, and a new source character extends a count at j−1 into one at j when it matches. In a mutable array the row must be swept right to left, or one source character gets used twice; building a fresh row removes the hazard entirely.", "export function numDistinct(s: string, t: string): number {
+  // Row j counts the ways to build the first j characters of t out of the
+  // source seen so far. A new source character can extend a count at j-1 into
+  // one at j, but only if it matches t[j-1].
+  //
+  // The row must be swept right to left: left to right, an update at j-1 feeds
+  // straight into j and the same source character gets used twice.
+  const row = new Array<number>(t.length + 1).fill(0);
+  row[0] = 1;
+
+  for (const c of s) {
+    for (let j = t.length; j >= 1; j--) {
+      if (c === t[j - 1]) row[j] += row[j - 1];
+    }
+  }
+
+  return row[t.length];
 }"),
     ],
     check: Check(

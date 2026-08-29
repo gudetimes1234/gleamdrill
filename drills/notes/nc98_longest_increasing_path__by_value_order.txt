@@ -1,1 +1,4 @@
+@kind Sort + DP
+@big-o O(m·n log(m·n)) time · O(m·n) space
+@order 1
 The same acyclicity used the other way round: walk the squares from largest value to smallest and everything a square can move to is already settled. Sorting by value *is* a topological order, so the graph never has to be built.

@@ -1,1 +1,4 @@
+@kind Centre Expansion
+@big-o O(n²) time · O(1) space
+@order 2
 Every palindrome has a centre, and there are only 2n of them — n characters and n gaps between them. Growing outwards from each is O(n²) with no table at all. The gaps are what people forget: without them, every even-length palindrome is invisible.

@@ -1,1 +1,4 @@
+@kind Top-Down Memo
+@big-o O(m·n) time · O(m·n) space
+@order 1
 The same three edits as an explicit choice from the front. Running out of one word costs whatever remains of the other, since every leftover character must be inserted or deleted — the base case that the table encodes in its first row and column.

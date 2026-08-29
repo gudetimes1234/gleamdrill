@@ -1,0 +1,5 @@
+@kind Brute Force
+@big-o O(n²) time · O(1) space
+@order 1
+@shared/brute-force-baseline
+Compare every pair. Nothing extra to hold, nothing clever to remember — and a thousand times slower the moment the list gets long.

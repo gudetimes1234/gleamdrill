@@ -1,1 +1,4 @@
+@kind Manual Loops
+@big-o O(n²) time · O(n) space
+@order 1
 Every slice spelled out as a loop. The slices are better in real code; writing them this way once makes the step and the negative bounds obvious.

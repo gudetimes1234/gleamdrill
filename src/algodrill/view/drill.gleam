@@ -617,9 +617,26 @@ fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
         [attribute.class("answer-content answer-side")],
         list.flatten([
           [
-            html.div([attribute.class("answer-label")], [
-              html.text(solution.label),
-            ]),
+            html.div(
+              [attribute.class("answer-header")],
+              list.flatten([
+                [
+                  html.div([attribute.class("answer-label")], [
+                    html.text(solution.label),
+                  ]),
+                ],
+                // Annotated content carries a Big-O line; older content shows
+                // nothing rather than an empty badge.
+                case solution.complexity {
+                  "" -> []
+                  complexity -> [
+                    html.span([attribute.class("answer-complexity")], [
+                      html.text(complexity),
+                    ]),
+                  ]
+                },
+              ]),
+            ),
           ],
           // Solutions written before their note exists simply have none; an
           // empty div would still draw its margins.

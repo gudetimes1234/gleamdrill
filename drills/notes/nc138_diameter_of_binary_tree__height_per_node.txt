@@ -1,1 +1,4 @@
+@kind Brute Force
+@big-o O(n²) time · O(n) space
+@order 1
 Ask every node how tall its two sides are and keep the largest sum. Correct and obvious, but height is recomputed from scratch at every node, so a balanced tree costs O(n log n) and a spindly one O(n²) — exactly what returning the height alongside the answer avoids.

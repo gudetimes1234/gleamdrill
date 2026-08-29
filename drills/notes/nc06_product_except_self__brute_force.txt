@@ -1,2 +1,5 @@
+@kind Brute Force
+@big-o O(n²) time · O(1) space
+@order 1
 @shared/brute-force-baseline
 For each slot, multiply everything that is not in it. O(n^2), and exactly what the prefix/suffix pass replaces.

@@ -114,6 +114,18 @@ solution share a single write-up. A note starting with `@shared/<name>` pulls in
 for keeping a brute force around — and then adds its own line, so the technique
 is written once and the specifics stay per variant.
 
+A note can also open with directive lines, which are metadata rather than
+prose: `@kind` names the technique and becomes the solution's button label
+("Brute Force", "Hash Map", "Nifty Python"), `@big-o` is the complexity badge
+("O(n²) time · O(1) space"), and `@order` places the variant — solutions are
+shown worst runtime first, the accepted canonical version last. Unannotated
+notes fall back to the old "Solution N · Variant" labels and no badge, so
+annotation can land language by language. The Python catalogue is annotated;
+**TODO: sweep the Gleam, TypeScript and Elixir variants** (their extra stems —
+`__bucket_sort` and friends — still need directives, and each language wants
+its own normalized-vs-idiomatic alternates the way Python has "Nifty Python"
+variants).
+
 The alternates are the point of having more than one: they are chosen to reach
 for a *different* technique rather than reword the same one — sorting instead
 of a set, two pointers instead of a hash map, fixed count arrays instead of a

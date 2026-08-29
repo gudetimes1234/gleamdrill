@@ -1,1 +1,4 @@
+@kind One-Pass DP
+@big-o O(n) time · O(1) space
+@order 1
 One pass carrying both stories at the same time: the run allowed to take the first house, and the run that is not. Neither ever consults the other, so this is exactly the two-pass version interleaved — worth knowing when the input can only be walked once.

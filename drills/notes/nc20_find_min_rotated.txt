@@ -1,2 +1,5 @@
+@kind Binary Search
+@big-o O(log n) time · O(1) space
+@order 2
 @shared/binary-search-halving
 The minimum is the one place order breaks. Compare the midpoint against a boundary: a segment that still looks sorted cannot hold the break, so the answer is in the other half.

@@ -1,1 +1,4 @@
+@kind Trie
+@big-o O(total letters) per search · O(total letters) space
+@order 2
 A dot has to try every child, which turns the lookup from a walk into a search. The trie is what keeps that search from being over the whole dictionary: a branch that cannot match is abandoned at the first letter, so shared prefixes are explored once rather than once per word.

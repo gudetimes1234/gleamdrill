@@ -1,1 +1,4 @@
+@kind Bottom-Up DP
+@big-o O(n³) time · O(n²) space
+@order 1
 The same recurrence filled by hand, shortest spans first — because a span needs both of the shorter spans a chosen last balloon splits it into. Writing the loop order out makes that dependency visible where the recursion leaves it implicit.

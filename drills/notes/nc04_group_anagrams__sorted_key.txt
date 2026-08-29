@@ -1,2 +1,5 @@
+@kind Sorted Key
+@big-o O(n·k log k) time · O(n·k) space
+@order 1
 @shared/canonical-key
 The sorted word itself is the key. Shorter than tallying letters, and it works for any alphabet rather than just a-z.

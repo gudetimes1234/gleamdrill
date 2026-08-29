@@ -1,1 +1,4 @@
+@kind Quickselect
+@big-o O(n) average time · O(n) space
+@order 2
 Partition around a pivot, then recurse only into the side that must contain the answer. Expected O(n), because the work halves each time instead of being done on both halves — the same saving binary search makes over a scan. Worst case is still O(n²) on adversarial pivots, which is worth saying out loud.

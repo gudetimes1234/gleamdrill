@@ -1,1 +1,4 @@
+@kind Top-Down Memo
+@big-o O(m·n) time · O(m·n) space
+@order 1
 The choice written out: on a match, use this source character or skip it; otherwise skip. Running out of target is one complete subsequence, which is why the base case returns 1 and not 0 — the usual place this one goes wrong.

@@ -1,1 +1,4 @@
+@kind Bit Manipulation
+@big-o O(n) time · O(1) space
+@order 2
 XOR is its own inverse and does not care about order, so every value appearing twice cancels itself out wherever the two copies happen to sit, and the lone one is what is left. Constant space, one pass, and no reliance on the values being small or positive.

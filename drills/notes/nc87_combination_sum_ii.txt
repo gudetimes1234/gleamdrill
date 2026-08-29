@@ -1,1 +1,4 @@
+@kind Backtracking
+@big-o O(2ⁿ) time · O(n²) space
+@order 2
 Each candidate is used at most once, so taking one moves past it. The duplicate rule is the same as Subsets II — skipping a value means skipping every copy of it — and that shared rule is the reason to drill the two problems together.

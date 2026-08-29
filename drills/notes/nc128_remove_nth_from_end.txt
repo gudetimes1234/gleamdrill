@@ -1,1 +1,4 @@
+@kind Two Pointers
+@big-o O(n) time · O(1) space
+@order 2
 Two walkers n apart. When the leading one runs off the end, the trailing one is on the node to change — the length is never computed, which is the point: one pass instead of two. Opening the gap can fail, and that failure is exactly the "n is longer than the list" case.

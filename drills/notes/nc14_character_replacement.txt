@@ -1,1 +1,4 @@
+@kind Sliding Window
+@big-o O(n) time · O(1) space
+@order 2
 A window can be made uniform with k changes when its size minus its most-frequent-character count is at most k. Grow the right edge, shrink from the left when that breaks, and the biggest valid window is the answer.

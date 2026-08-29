@@ -1,1 +1,4 @@
+@kind Hierholzer
+@big-o O(E log E) time · O(E) space
+@order 2
 Hierholzer's algorithm. Take the smallest unused ticket every time and never look back — an airport is only recorded once it has no tickets left, so the dead end the greedy choice walks into is exactly where the route has to *end*, and recording it first is what puts it last. Nothing is ever undone, which is the whole difference from the backtracking version.

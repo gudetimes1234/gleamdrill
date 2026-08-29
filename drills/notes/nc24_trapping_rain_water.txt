@@ -1,1 +1,4 @@
+@kind Two Pointers
+@big-o O(n) time · O(1) space
+@order 3
 Two pointers, moving whichever side is shorter. The trick is that the shorter side alone decides how much water sits above it: whatever is on the far side is at least as tall, so the running maximum behind the short pointer is the water level, and there is no need to know the far maximum exactly. One pass, no extra arrays.

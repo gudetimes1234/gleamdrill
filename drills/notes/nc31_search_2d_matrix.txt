@@ -1,2 +1,5 @@
+@kind Binary Search
+@big-o O(log(m·n)) time · O(1) space
+@order 2
 @shared/binary-search-halving
 Twice: the rows do not overlap, so which row a value could be in is itself a halving question — compare the target against a row's first and last entries — and then the row is an ordinary sorted array.

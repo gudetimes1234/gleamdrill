@@ -1,2 +1,5 @@
+@kind Sorting
+@big-o O(n log n) time · O(n) space
+@order 1
 @shared/sorting-instead-of-hashing
 Straight sort by frequency: O(n log n) rather than the bucket version's O(n), but it is the version you can write without thinking.

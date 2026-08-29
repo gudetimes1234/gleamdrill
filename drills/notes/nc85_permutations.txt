@@ -1,1 +1,4 @@
+@kind Backtracking
+@big-o O(n·n!) time · O(n·n!) space
+@order 2
 Pick each element in turn as the first, then permute what is left. Removing the chosen element from the remainder is exactly what a "used" set does in an in-place version; here the remainder is simply a shorter list, and nothing has to be undone afterwards.

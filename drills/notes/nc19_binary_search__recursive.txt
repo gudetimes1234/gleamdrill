@@ -1,2 +1,5 @@
+@kind Recursive Binary Search
+@big-o O(log n) time · O(log n) space
+@order 1
 @shared/binary-search-halving
 The same halving as recursion. The bounds are arguments rather than mutated locals, which makes each step's invariant easier to see.

@@ -1,1 +1,4 @@
+@kind Subtree Counting
+@big-o O(n·h) time · O(h) space
+@order 1
 Count the left subtree and decide which way to go — fewer than k on the left means the answer is this node or to its right. It descends one path instead of walking in order, and it is the version that adapts when the tree stores its own subtree sizes, which turns the whole thing into O(depth).

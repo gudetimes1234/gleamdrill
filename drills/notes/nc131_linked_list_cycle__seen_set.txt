@@ -1,1 +1,4 @@
+@kind Hash Set
+@big-o O(n) time · O(n) space
+@order 1
 Remember every node visited and stop when one repeats. Obvious and correct, at O(n) memory — which is exactly what the two-walker version removes. Note that it is the *nodes* that go in the set, not their values: repeated values are ordinary, repeated nodes are the cycle.

@@ -1,1 +1,4 @@
+@kind Nifty Python · Replace
+@big-o O(n²) time · O(n) space
+@order 1
 No stack: strip every matched pair, over and over, until nothing more can go. Whatever survives is unmatched. It is also why "([)]" fails — neither pair is ever adjacent.

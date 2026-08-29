@@ -1,1 +1,4 @@
+@kind Top-Down Memo
+@big-o O(n) time · O(n) space
+@order 1
 The same three states as an explicit choice each day: buy, sell, or do nothing. After selling the recursion skips a day, which puts the cooldown where it actually happens rather than encoding it in which value gets read.

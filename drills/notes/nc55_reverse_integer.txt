@@ -1,1 +1,4 @@
+@kind Math
+@big-o O(log n) time · O(1) space
+@order 2
 Peel a digit off the bottom of the input and push it onto the bottom of the result. The whole difficulty is that the test has to happen *before* the multiply: in a fixed-width language the multiply is the moment the value would be lost, so checking afterwards is checking a number that no longer exists.

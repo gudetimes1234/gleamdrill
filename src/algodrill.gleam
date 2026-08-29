@@ -436,8 +436,18 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             "Escape" -> #(m, run_effect(browser.blur_active))
             _ -> #(m, effect.none())
           }
-        // A focused button activates natively; stay out of its way.
-        "control" -> #(m, effect.none())
+        // A focused button activates natively; stay out of its way — except
+        // for Escape, which activates nothing and would otherwise die on
+        // whichever button was clicked last (grade, reveal, run).
+        "control" ->
+          case key.key {
+            "Escape" ->
+              case keys.dispatch(m, key) {
+                Ok(resolved) -> handle(m, resolved)
+                Error(Nil) -> #(m, effect.none())
+              }
+            _ -> #(m, effect.none())
+          }
         _ ->
           case keys.dispatch(m, key) {
             Ok(resolved) -> handle(m, resolved)

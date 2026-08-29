@@ -1,1 +1,4 @@
+@kind Bottom-Up DP
+@big-o O(n·t) time · O(t) space
+@order 2
 Combinations, not permutations, and that is decided entirely by the loop order. Coins on the outside means each coin is considered once and for all before the next is looked at, so 1+2 and 2+1 can never both be counted. Swapping the two loops silently counts orderings instead — the single most instructive bug in this problem.

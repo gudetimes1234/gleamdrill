@@ -1,1 +1,4 @@
+@kind Prefix Maxima
+@big-o O(n) time · O(n) space
+@order 2
 State the definition and compute it. Water above a position is min(tallest to its left, tallest to its right) minus its own height, so build both running maxima and sum the differences. Two extra arrays against the two-pointer version's none, but the formula is right there in the code.

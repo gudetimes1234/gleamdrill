@@ -1,2 +1,5 @@
+@kind Brute Force
+@big-o O(n³) time · O(n) space
+@order 1
 @shared/brute-force-baseline
 Every triple, checked. Sorting first means each triple comes out in ascending order, so collapsing the duplicates that repeated values produce is plain equality — no set needed.

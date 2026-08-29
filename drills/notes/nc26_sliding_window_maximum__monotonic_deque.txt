@@ -1,1 +1,4 @@
+@kind Monotonic Deque
+@big-o O(n) time · O(k) space
+@order 2
 The classic answer. Hold the indices whose value could still be the maximum, kept in decreasing order: a new value pops every smaller one off the back, because they can never win again while it is in the window. The front is always the answer, and the front leaves once it falls out of range. Each index is pushed and popped once.

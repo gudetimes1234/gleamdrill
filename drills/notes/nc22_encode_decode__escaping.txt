@@ -1,1 +1,4 @@
+@kind Separator + Escaping
+@big-o O(n) time · O(n) space
+@order 1
 The other honest answer: pick a separator and make it safe by escaping it, and escaping the escape. Note the leading separator rather than a join — without it, [] and [""] both encode to the empty string, which is the case that catches most first attempts.

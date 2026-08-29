@@ -1,1 +1,4 @@
+@kind Nifty Python · Strings
+@big-o O(1) time · O(1) space
+@order 1
 Write the number in binary, pad to the full width, reverse the text, read it back. Slower and it allocates, but the explicit padding makes the thing the bit version keeps implicit — that the width is 32, not however many bits this value happens to need — impossible to forget.

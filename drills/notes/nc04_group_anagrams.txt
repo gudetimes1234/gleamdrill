@@ -1,2 +1,5 @@
+@kind Count Key
+@big-o O(n·k) time · O(n·k) space
+@order 2
 @shared/canonical-key
 Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len) to build against sorting's O(len log len); the sorted word needs no assumption about the alphabet.

@@ -1,1 +1,4 @@
+@kind Linked List
+@big-o O(n) time · O(1) space
+@order 2
 Look ahead k nodes *before* reversing anything. That check is the whole difficulty: once the rewiring starts there is no way to tell how far it got, so a short final group would be reversed by mistake.

@@ -1,1 +1,4 @@
+@kind Bottom-Up DP
+@big-o O(n³) time · O(n) space
+@order 2
 Reachable positions rather than a table of booleans: position 0 is reachable, and a position becomes reachable when some dictionary word bridges the gap from one already reached. The answer is whether the end is reachable.

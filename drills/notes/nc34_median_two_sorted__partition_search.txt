@@ -1,1 +1,4 @@
+@kind Binary Search
+@big-o O(log min(m,n)) time · O(1) space
+@order 3
 The O(log min(m, n)) answer, and the reason the problem is rated hard. Do not look for the median: look for a cut through both arrays with exactly half the elements to its left. Such a cut is correct when both left-hand values are no bigger than both right-hand values, and that condition is monotone in where you cut the shorter array — so halve on the cut position.

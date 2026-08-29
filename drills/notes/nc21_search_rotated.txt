@@ -1,2 +1,5 @@
+@kind Binary Search
+@big-o O(log n) time · O(1) space
+@order 2
 @shared/binary-search-halving
 The twist: after a rotation, one half around the midpoint is always sorted. Work out which, then use its endpoints to decide whether the target lies inside it.

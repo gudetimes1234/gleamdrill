@@ -1,1 +1,4 @@
+@kind Bit Manipulation
+@big-o O(n·2ⁿ) time · O(n·2ⁿ) space
+@order 1
 The in-or-out choices *are* the bits of a number, so counting from 0 to 2ⁿ−1 enumerates every subset exactly once with no recursion at all. It also gives every subset a stable index, which matters the moment subsets have to be compared, cached or keyed on.

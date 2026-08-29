@@ -1,1 +1,4 @@
+@kind Greedy
+@big-o O(n) time · O(1) space
+@order 2
 A piece can only end where every character inside it has run out, so map each character to its last position first. Then sweep, pushing the piece's end out to the furthest last-position seen; when the walk catches up with that end, nothing inside can reappear and the piece is closed.

@@ -1,2 +1,5 @@
+@kind Brute Force
+@big-o O(n²) time · O(1) space
+@order 1
 @shared/brute-force-baseline
 Every pair, checked. Worth writing once for the overlap test itself: two intervals overlap when each starts before the other ends, which is far easier to get right than trying to enumerate the ways they miss.

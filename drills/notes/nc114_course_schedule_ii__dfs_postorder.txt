@@ -1,1 +1,4 @@
+@kind DFS Postorder
+@big-o O(V+E) time · O(V+E) space
+@order 1
 Record a course only after everything it depends on has been recorded. That post-order is a valid schedule by construction, with no indegrees to maintain — and it comes out reversed, which is the tell that it was built from the dependencies up.

@@ -1,2 +1,5 @@
+@kind Brute Force
+@big-o O(n·k) time · O(k) space
+@order 1
 @shared/brute-force-baseline
 Every window, maximised. O(n·k) rather than O(n), which is exactly the rescanning the other two variants exist to avoid.

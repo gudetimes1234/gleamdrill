@@ -1,1 +1,4 @@
+@kind Full-Path DFS
+@big-o O(n·h) time · O(h²) space
+@order 1
 Carry the whole path instead of just its maximum, and take the maximum at each node. The same answer for O(depth) memory per node rather than one number — worth writing once, because it makes plain that the running maximum is a fold of the path, not a separate idea.

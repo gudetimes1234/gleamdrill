@@ -1,1 +1,4 @@
+@kind Sorting
+@big-o O(n log n) time · O(n) space
+@order 2
 Sorted by start, the only meeting a given one can clash with is the one immediately before it: anything earlier started earlier still, so it would have clashed with that one first. The whole check is then adjacent pairs.

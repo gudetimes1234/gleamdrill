@@ -1,1 +1,4 @@
+@kind Top-Down Memo
+@big-o O(n) time · O(n) space
+@order 1
 The same choice written as a recursion from the front: rob this house and skip the next, or skip this one. Exponential without the cache and linear with it — which is the lesson, because the rolling pair hides that the problem ever had a tree of choices at all.

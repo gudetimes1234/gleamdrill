@@ -1,1 +1,4 @@
+@kind State Machine DP
+@big-o O(n) time · O(1) space
+@order 2
 Three states rather than one number: holding, just sold (so today is the cooldown), and free to act. Each day depends only on yesterday, so it is three rolling values — and the cooldown is expressed simply by "free" never reading "sold" from the same day. Naming the states is most of the work.

@@ -1,2 +1,5 @@
+@kind Brute Force
+@big-o O(n²) time · O(n) space
+@order 1
 @shared/brute-force-baseline
 Drive the whole loop from each start and watch the tank. O(n²), and the thing worth extracting from it: the single pass is not a different algorithm, it is this one with the starts that cannot possibly work skipped.

@@ -1,1 +1,4 @@
+@kind Recursion
+@big-o O(2ⁿ) time · O(n²) space
+@order 1
 The same rules with no table at all, which is shorter and far easier to trust. It is exponential on patterns like "a*a*a*a*b", where the same suffix is reached along many different splits — so write this first, get it right, and add the cache afterwards.

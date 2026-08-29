@@ -1,1 +1,4 @@
+@kind Pre-Order DFS
+@big-o O(n) time · O(n) space
+@order 2
 Pre-order with a marker for every empty child. Recording the empties is what makes the format unambiguous — a pre-order list of values alone matches many different trees — and it is also what lets the reader work with no length information at all: it stops as soon as it has consumed a whole subtree.

@@ -1,1 +1,4 @@
+@kind Kruskal
+@big-o O(n² log n) time · O(n²) space
+@order 1
 Every edge, cheapest first, kept only when it joins two pieces that are not already connected — union-find is what makes that test cheap. The trade against Prim's is the sort, but Kruskal never looks at the points themselves, only at the edge list, which is why it is the one that generalises to a sparse graph.

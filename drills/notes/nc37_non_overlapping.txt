@@ -1,1 +1,4 @@
+@kind Greedy
+@big-o O(n log n) time · O(n) space
+@order 2
 Greedy on the end time. Among intervals competing for the same space, keeping the one that finishes earliest leaves the most room for whatever comes next and can never be worse — which is the exchange argument that makes the greedy correct, and the reason sorting by start is the classic wrong first answer.

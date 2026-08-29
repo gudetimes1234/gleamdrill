@@ -1,1 +1,4 @@
+@kind Brute Force
+@big-o O(n²) time · O(n) space
+@order 1
 No ordering kept at all: scan for the heaviest, remove it, scan again. O(n) per round rather than O(log n), and worth writing precisely because it makes the interface obvious — the only thing the problem ever asks of the collection is "give me the largest".

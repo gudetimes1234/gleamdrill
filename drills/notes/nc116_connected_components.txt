@@ -1,1 +1,4 @@
+@kind Union-Find
+@big-o O(E·α(V)) time · O(V) space
+@order 2
 Start at n components and subtract a merge for every edge that actually joins two different ones. No adjacency list, no traversal — the count falls straight out of how many merges happened.

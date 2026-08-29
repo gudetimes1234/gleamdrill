@@ -1,1 +1,4 @@
+@kind Two Pointers
+@big-o O(n) time · O(1) space
+@order 2
 Start at both ends. The area is capped by the shorter line, so moving the taller one in can never help — always move the shorter, and track the best area seen.

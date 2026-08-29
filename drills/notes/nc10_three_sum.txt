@@ -1,1 +1,4 @@
+@kind Sort + Two Pointers
+@big-o O(n²) time · O(1) extra space
+@order 2
 Sort, fix one number, then run the two-pointer scan on the remainder looking for its negation. Sorting is what makes the duplicate triples skippable: equal values are adjacent, so stepping past them is a while loop, not a set.

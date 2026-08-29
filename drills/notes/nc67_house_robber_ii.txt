@@ -1,1 +1,4 @@
+@kind Space-Saving DP
+@big-o O(n) time · O(n) space
+@order 2
 The circle matters through exactly one constraint: the first and last houses are neighbours, so at most one of them is robbed. Ruling each out in turn leaves two ordinary straight-line problems, and the answer is the better of the two — reusing a solved problem rather than inventing a circular recurrence.

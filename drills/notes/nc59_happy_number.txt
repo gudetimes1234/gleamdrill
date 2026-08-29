@@ -1,1 +1,4 @@
+@kind Hash Set
+@big-o O(log n) time · O(log n) space
+@order 2
 The sequence must repeat: sums of squared digits are bounded, so only finitely many values are reachable and the walk has to revisit one. That turns "does it loop?" into a set lookup, and the answer is whether the value it settles on is 1.

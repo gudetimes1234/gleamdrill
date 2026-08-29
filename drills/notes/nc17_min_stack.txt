@@ -1,1 +1,4 @@
+@kind Two Stacks
+@big-o O(1) per operation · O(n) space
+@order 2
 The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.

@@ -1,1 +1,4 @@
+@kind Brute Force
+@big-o O(n²) time · O(n) space
+@order 1
 Every path through every node, measured outright: for each node, take the best downward run on each side and add them. It recomputes those runs from scratch at every node, so it is O(n²) on a spindly tree — the cost of asking the two questions separately instead of returning both from one walk.

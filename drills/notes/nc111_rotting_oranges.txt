@@ -1,1 +1,4 @@
+@kind Multi-Source BFS
+@big-o O(m·n) time · O(m·n) space
+@order 2
 Multi-source breadth-first search: every rotten orange is on the frontier at minute zero, so each wave of the search *is* one minute and the number of waves is the answer. A separate search per source would give distances from each and then still need combining. Any fresh orange left unreached is what makes the answer -1.

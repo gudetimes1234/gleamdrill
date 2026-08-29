@@ -1,2 +1,5 @@
+@kind Brute Force
+@big-o O(n²) time · O(n) space
+@order 1
 @shared/brute-force-baseline
 Try removing each edge, latest first, and keep the first removal that leaves a tree. O(n^2) against near-linear, but it needs no new structure and it is the specification read literally.

@@ -1,1 +1,4 @@
+@kind Sliding Window
+@big-o O(n) time · O(n) space
+@order 2
 Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.

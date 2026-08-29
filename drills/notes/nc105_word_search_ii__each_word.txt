@@ -1,2 +1,5 @@
+@kind Backtracking
+@big-o O(W·m·n·4ᴸ) time · O(L²) space
+@order 1
 @shared/brute-force-baseline
 Word Search, once per word. Correct, and it redoes the search for every shared prefix — a hundred words beginning "ab" each re-walk that "ab" from every square. Worth writing to feel the repetition the trie removes.

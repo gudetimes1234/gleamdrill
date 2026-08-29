@@ -1,1 +1,4 @@
+@kind Sliding Window
+@big-o O(26·n) time · O(1) space
+@order 2
 A permutation of s1 is any window of length |s1| in s2 with identical character counts. Slide one character at a time, adding the entering character and removing the leaving one, so each step is O(1) rather than a recount.

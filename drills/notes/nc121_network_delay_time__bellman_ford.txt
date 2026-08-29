@@ -1,1 +1,4 @@
+@kind Bellman-Ford
+@big-o O(V·E) time · O(V) space
+@order 1
 No choosing what to settle next: relax every edge, n-1 times over, and the times settle by themselves — a shortest path is at most n-1 edges long, and each round fixes at least one more of them. Slower at O(V·E), and worth knowing because it survives negative weights.

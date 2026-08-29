@@ -1,1 +1,4 @@
+@kind BFS
+@big-o O(n·k²) time · O(n·k) space
+@order 2
 Shortest path on an unweighted graph, so breadth-first — but the graph is never built. Two words are neighbours when they share a wildcard pattern like "*ot", so bucketing every word under each of its patterns gives the adjacency in linear time.

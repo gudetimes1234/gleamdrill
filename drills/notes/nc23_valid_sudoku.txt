@@ -1,1 +1,4 @@
+@kind One Pass + Seen Set
+@big-o O(9²) time · O(9²) space
+@order 2
 One pass, one set. Each filled cell contributes three signatures — this value in this row, in this column, in this box — and the first one already present is the duplicate. Nothing has to be gathered up first, and the scan stops the moment it fails.

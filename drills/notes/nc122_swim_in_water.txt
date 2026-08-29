@@ -1,1 +1,4 @@
+@kind Dijkstra
+@big-o O(n² log n) time · O(n²) space
+@order 2
 Dijkstra's, with the cost of a path redefined from the sum of its steps to the largest step in it — the water only has to rise once. Everything else about the algorithm is untouched, which is the point: the shortest-path machinery works for any cost that only grows along a path.

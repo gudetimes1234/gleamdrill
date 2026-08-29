@@ -1,1 +1,4 @@
+@kind Brute Force
+@big-o O(m²·n²) time · O(m·n) space
+@order 1
 The literal reading: from every cell, search downhill and see which oceans it reaches. O(cells) searches over O(cells) each, against two searches total — and the two are answering the same question, which is what makes the reversal legitimate rather than a trick.

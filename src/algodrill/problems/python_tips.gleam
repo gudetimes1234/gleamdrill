@@ -59,7 +59,7 @@ fn drill(title: String, prompt: String, e: Embedded) -> Problem {
     title: title,
     prompt: prompt,
     approach: approaches.for_title(title),
-    solutions: list.map(e.solutions, fn(s) { Solution(label: s.0, note: s.1, code: s.2) }),
+    solutions: list.map(e.solutions, fn(s) { Solution(label: s.0, complexity: s.1, note: s.2, code: s.3) }),
     language: Python,
     check: Some(e.check),
     quiz: None,

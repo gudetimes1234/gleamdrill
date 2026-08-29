@@ -1,1 +1,4 @@
+@kind Top-Down Memo
+@big-o O(m·n) time · O(m·n) space
+@order 2
 A star binds to the character *before* it, so the pattern is read two symbols at a time. Given "x*": either skip the pair entirely — zero copies — or, if x matches here, consume one character of the text and stay on the same pair. Everything else is a single-character match. Getting the zero-copies branch right is most of the problem.

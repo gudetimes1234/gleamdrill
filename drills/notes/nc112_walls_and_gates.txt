@@ -1,1 +1,4 @@
+@kind Multi-Source BFS
+@big-o O(m·n) time · O(m·n) space
+@order 2
 The same multi-source wave as rotting oranges, writing the wave number into the cell instead of counting waves. Starting from every gate at once is what makes the first arrival at a room its nearest gate — no comparison between gates is ever needed.

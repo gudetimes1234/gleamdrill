@@ -1,1 +1,4 @@
+@kind Top-Down Memo
+@big-o O(n) time · O(n) space
+@order 1
 The same two choices as a recursion from the front: take one character, or take two if they form a legal pair. Reaching the end is one complete decoding, which is why the base case returns 1 and not 0 — the single most common place to get this problem wrong.

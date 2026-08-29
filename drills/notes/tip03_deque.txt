@@ -1,1 +1,4 @@
+@kind Nifty Python · deque
+@big-o O(V+E) time · O(V) space
+@order 2
 Lists pop from the front in O(n); `collections.deque` does it in O(1). Any queue-shaped algorithm — breadth-first search above all — wants a deque: append to the right, `popleft` from the left.

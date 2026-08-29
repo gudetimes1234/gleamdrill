@@ -1,0 +1,4 @@
+@kind Brute Force
+@big-o O(n²) time · O(1) space
+@order 1
+Water above a bar rises to the shorter of the tallest wall on each side. Compute both walls from scratch for every bar — a full scan left and right each time is what costs the square.

@@ -1,1 +1,4 @@
+@kind BST Walk
+@big-o O(h) time · O(1) space
+@order 2
 The ordering does all the work. Both targets below the current value means go left, both above means go right, and anything else means this node is the split point — which is the answer. No searching for either node first, and no comparing of paths.

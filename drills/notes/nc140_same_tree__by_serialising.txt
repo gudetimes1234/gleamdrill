@@ -1,1 +1,4 @@
+@kind Serialisation
+@big-o O(n) time · O(n) space
+@order 1
 Turn each tree into a string and compare those. It works *only* because the serialisation records the empty children: without a marker for them, different trees flatten to the same sequence — the same trap [[nc150_serialize_deserialize]] turns on.

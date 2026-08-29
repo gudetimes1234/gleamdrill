@@ -1,2 +1,5 @@
+@kind Sorting
+@big-o O(n log n) time · O(n) space
+@order 1
 @shared/canonical-key
 Sorted letters are the canonical form, so the whole check is one equality. No counting to get wrong.

@@ -1,2 +1,5 @@
+@kind Sorting
+@big-o O((m+n) log (m+n)) time · O(m+n) space
+@order 1
 @shared/brute-force-baseline
 Concatenate, sort, take the middle. O((m+n) log(m+n)) and it throws away the fact that both inputs were already sorted — but the indexing is worth seeing once, because averaging positions n/2 and (n-1)/2 handles both parities in one expression.

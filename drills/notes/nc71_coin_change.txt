@@ -1,1 +1,4 @@
+@kind Bottom-Up DP
+@big-o O(amount·coins) time · O(amount) space
+@order 2
 Build up from zero: the cheapest way to make a target is one coin more than the cheapest way to make what is left after removing some coin. Leaving unreachable amounts simply absent from the table saves inventing a sentinel for infinity and the comparisons that go with it.

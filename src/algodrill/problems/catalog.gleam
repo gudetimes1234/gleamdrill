@@ -826,7 +826,7 @@ pub fn category(
   label: String,
   language: Language,
   lookup: fn(String) ->
-    Result(#(List(#(String, String, String)), Option(Check)), Nil),
+    Result(#(List(#(String, String, String, String)), Option(Check)), Nil),
 ) -> Category {
   Category(
     label,
@@ -848,7 +848,7 @@ fn build(
   drill: Drill,
   language: Language,
   lookup: fn(String) ->
-    Result(#(List(#(String, String, String)), Option(Check)), Nil),
+    Result(#(List(#(String, String, String, String)), Option(Check)), Nil),
 ) -> Result(Problem, Nil) {
   use #(solutions, check) <- result.map(lookup(drill.stem))
   Problem(
@@ -856,7 +856,7 @@ fn build(
     prompt: drill.prompt,
     approach: approaches.for_title(drill.title),
     solutions: list.map(solutions, fn(s) {
-      Solution(label: s.0, note: s.1, code: s.2)
+      Solution(label: s.0, complexity: s.1, note: s.2, code: s.3)
     }),
     language: language,
     check: check,

@@ -1,1 +1,4 @@
+@kind Bit Manipulation
+@big-o O(1) time · O(1) space
+@order 2
 Addition without +. XOR is addition that forgets to carry; AND finds exactly the places a carry was owed, and shifting it left one puts it where it belongs. Repeat until nothing is owed. In an arbitrary-precision language the negatives are the difficulty: mask to 32 bits so the carry loop terminates, then read the sign bit back by hand.

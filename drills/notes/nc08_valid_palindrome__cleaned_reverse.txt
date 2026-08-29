@@ -1,1 +1,4 @@
+@kind Nifty Python · Reverse
+@big-o O(n) time · O(n) space
+@order 1
 Strip, then compare against the reverse. Allocates a second string instead of converging two pointers, but it is one line of intent.

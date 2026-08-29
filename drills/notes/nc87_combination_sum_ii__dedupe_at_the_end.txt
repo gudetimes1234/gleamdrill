@@ -1,2 +1,5 @@
+@kind Brute Force
+@big-o O(n·4ⁿ) time · O(n·2ⁿ) space
+@order 1
 @shared/brute-force-baseline
 Generate every subset that hits the target and collapse the repeats afterwards. Correct, and exponentially wasteful on inputs with many equal values — which is precisely the cost the skipping rule avoids.

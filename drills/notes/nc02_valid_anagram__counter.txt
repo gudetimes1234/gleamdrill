@@ -1,0 +1,4 @@
+@kind Nifty Python
+@big-o O(n) time · O(1) space
+@order 3
+Counter builds both frequency maps and == compares them — the whole count-and-compare idea as one expression. The space stays O(1) for the same reason as the hand-rolled map: at most 26 distinct keys.

@@ -1,1 +1,4 @@
+@kind Decorate-Sort-Undecorate
+@big-o O(n log n) time · O(n) space
+@order 1
 Decorate, sort, undecorate: attach the sort key to each item, sort the pairs, then strip it. `key=` is this pattern built into sorted().

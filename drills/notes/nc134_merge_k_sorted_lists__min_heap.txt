@@ -1,1 +1,4 @@
+@kind Heap
+@big-o O(n log k) time · O(k) space
+@order 1
 Take the smallest head across all the lists, over and over — the heap is what makes "smallest of k" cost O(log k) instead of a scan of k. The tie-break in the heap entry matters: two equal values would otherwise send the comparison on to the nodes themselves, which have no ordering.
