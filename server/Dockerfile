@@ -43,4 +43,8 @@ EXPOSE 8080
 
 # `run` is the shipment's own entrypoint verb; it boots the release and stays
 # in the foreground, which is what the platform expects.
-CMD ["./entrypoint.sh", "run"]
+#
+# Invoked through `sh` on purpose: the script Gleam generates opens with SPDX
+# comments and carries no shebang, so exec-ing it directly fails with
+# "Exec format error" (ENOEXEC) however executable its mode bits are.
+CMD ["sh", "./entrypoint.sh", "run"]
