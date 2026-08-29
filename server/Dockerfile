@@ -15,6 +15,10 @@ FROM ghcr.io/gleam-lang/gleam:v1.18.1-elixir-alpine AS build
 
 RUN apk add --no-cache build-base
 
+# The Argon2 NIF is an Elixir package, so its build shells out to `mix` -- which
+# stops to ask "Shall I install Hex?" and fails the build non-interactively.
+RUN mix local.hex --force && mix local.rebar --force
+
 WORKDIR /build
 COPY fsrs ./fsrs
 COPY server ./server
