@@ -144,8 +144,11 @@ $(RUNTIME_DIR)/gleam_wasm_bg.wasm:
 	curl -sSfL $(TARBALL_URL) | tar -xz -C $(RUNTIME_DIR)
 	rm -f $(RUNTIME_DIR)/.gitignore $(RUNTIME_DIR)/README.md $(RUNTIME_DIR)/package.json $(RUNTIME_DIR)/*.d.ts
 
+# The stdlib SOURCE, keyed by module name: the wasm compiler has no dependency
+# support, so the worker writes these into its virtual filesystem each session.
+# The generator writes $(RUNTIME_DIR)/stdlib.js itself and pins the same version.
 $(RUNTIME_DIR)/stdlib.js: build/packages/gleam_stdlib/src
-	node scripts/build-stdlib-bundle.js build/packages/gleam_stdlib/src $@
+	cd drills && gleam run -m bundle_stdlib
 
 $(RUNTIME_DIR)/precompiled/gleam.mjs: build/dev/javascript/prelude.mjs
 	mkdir -p $(RUNTIME_DIR)/precompiled
