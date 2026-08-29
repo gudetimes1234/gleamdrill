@@ -1,0 +1,42 @@
+# Build the app and run the fast tests. The four-language drill verifiers that
+# `make verify` also runs are deliberately left out: they take minutes and need
+# python3 and elixir as well. Run those locally before touching drill content.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Gleam is pinned to the same version as the Makefile and the
+      # server/Dockerfile base image: the browser runtime vendored under
+      # assets/gleam-runtime is that compiler, built to wasm.
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27"
+          gleam-version: "1.18.1"
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install --frozen-lockfile
+
+      # The real integration check: regenerates the embedded drill content,
+      # bundles the three workers, then builds the app.
+      - name: Build
+        run: make build
+
+      # The scheduler is shared by the server and the app, so it is tested on
+      # both targets. Identical results are what licenses sharing one module.
+      - name: Scheduler tests
+        run: make fsrs-test
+
+      # The app's decoders against captured server responses.
+      - name: App tests
+        run: make app-test

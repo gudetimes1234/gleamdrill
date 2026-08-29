@@ -1,0 +1,19 @@
+# Allow-list, because the excludes vastly outnumber the includes: the repo is
+# 278M but the two images between them need only `dist/` and the two Gleam
+# source trees. Sending the rest costs a multi-second upload on every build.
+*
+
+!fsrs
+!server
+!dist
+!deploy
+
+# Build output inside the allowed trees. `fsrs/build` and `server/build` are
+# stale host artifacts; the image compiles its own.
+fsrs/build
+server/build
+
+# Real secrets, untracked and gitignored. Must never reach an image layer.
+server/.env
+
+**/.git

@@ -1,0 +1,45 @@
+# The front door. Serves the built app and proxies the API, so the browser only
+# ever talks to one origin: no CORS preflight, and no backend URL baked into the
+# artifact. See `apiBase()` in src/algodrill/ffi.mjs, which falls back to
+# `location.origin` precisely because of this.
+#
+# Both knobs are env-driven so one file covers every deployment:
+#   PORT          the platform's port (Railway injects it)
+#   API_UPSTREAM  where the backend lives: `api:8080` under compose,
+#                 `api.railway.internal:8080` on Railway
+
+{
+	admin off
+	# Railway and every other platform here terminate TLS at their edge.
+	auto_https off
+}
+
+:{$PORT:8080} {
+	encode zstd gzip
+
+	# The two paths the backend owns. Everything else is static.
+	handle /api/* {
+		reverse_proxy {$API_UPSTREAM:api:8080}
+	}
+
+	handle /health {
+		reverse_proxy {$API_UPSTREAM:api:8080}
+	}
+
+	handle {
+		root * /srv
+
+		# The runtime directories are version-stamped (assets/gleam-runtime/1.18.1,
+		# assets/python-runtime/3.14.3), so a given URL can never change contents.
+		@versioned path /gleam-runtime/* /python-runtime/*
+		header @versioned Cache-Control "public, max-age=31536000, immutable"
+
+		# The shell must never be cached: it is how a new bundle is discovered.
+		header /index.html Cache-Control "no-cache"
+
+		# `{path}.html` reproduces the `cleanUrls` Vercel used to provide; the
+		# final fallback is the SPA shell.
+		try_files {path} {path}.html /index.html
+		file_server
+	}
+}

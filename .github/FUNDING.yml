@@ -1,0 +1,6 @@
+# Drives the "Sponsor" button on the repository page.
+#
+# The `github` entry stays inert until GitHub Sponsors approves the account;
+# Liberapay shows up as soon as this file lands.
+github: [gudetimes1234]
+liberapay: gudetimes1234

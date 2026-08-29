@@ -1,0 +1,59 @@
+# The whole stack on one port. Works with `podman compose` and `docker compose`
+# alike; image names are fully qualified because Podman has no implicit Docker
+# Hub default and will otherwise stop to ask.
+#
+#   cp .env.example .env   # then fill in SECRET_KEY_BASE
+#   podman compose up --build
+#
+# Only `web` publishes a port. The browser reaches the API through Caddy at
+# /api/*, which is what keeps this a single origin.
+
+services:
+  db:
+    image: docker.io/library/postgres:17-alpine
+    environment:
+      POSTGRES_USER: algodrill
+      POSTGRES_PASSWORD: algodrill
+      POSTGRES_DB: algodrill
+    volumes:
+      - algodrill-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U algodrill -d algodrill"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    environment:
+      DATABASE_URL: postgres://algodrill:algodrill@db:5432/algodrill
+      # 64 characters minimum: the server halts rather than start with a weak
+      # one. See server/src/server/config.gleam.
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?set SECRET_KEY_BASE in .env, 64+ chars}
+      # Same-origin means the browser sends no preflight, but the server still
+      # requires this to be set, so it names the origin Caddy answers on.
+      ALLOWED_ORIGIN: http://localhost:8080
+      PORT: "8080"
+      BIND: 0.0.0.0
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/web.Dockerfile
+    environment:
+      API_UPSTREAM: api:8080
+      PORT: "8080"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  algodrill-db:
