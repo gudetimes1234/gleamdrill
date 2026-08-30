@@ -7,7 +7,8 @@ import algodrill/legacy
 import algodrill/local
 import algodrill/model.{
   type Model, type Msg, Account, AuthCompleted, AuthForm, AuthRoute,
-  AwaitingGrade, DraftSaveTicked, DraftSynced, DrillRoute, EditorChanged,
+  AwaitingGrade, CardSuspended, DraftSaveTicked, DraftSynced, DrillRoute,
+  EditorChanged, MenuSuspendedAtCursor,
   EditorFocusRequested, ExamSampled, ExitConfirmed, Guest, HelpToggled,
   HistoryLoaded, InsightsLoaded, KeyPressed, MenuActivated, MenuCursorJumped,
   MenuCursorMoved, MenuPaneFocused, MenuRoute, MenuToggledAtCursor, Model,
@@ -27,8 +28,8 @@ import algodrill/model.{
   UserClickedStats, UserClickedStudy, UserClickedSubcategory, UserClosedDetail,
   UserDismissedNotice, UserDismissedUpgradePrompt, UserGraded, UserOpenedDetail,
   UserPickedChoice, UserSearched, UserSubmittedAnswer, UserSubmittedAuth,
-  UserToggledAuthMode, UserToggledProblem, UserToggledSide,
-  UserToggledSolution,
+  UserToggledAuthMode, UserToggledLanguage, UserToggledProblem,
+  UserToggledSide, UserToggledSolution, UserToggledSuspend,
 }
 import algodrill/problem.{type ProblemRef, ProblemRef}
 import algodrill/problems
@@ -68,6 +69,7 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
       ..base,
       editor_keymap: preferences.editor_keymap,
       side_collapsed: preferences.side_collapsed,
+      muted_languages: preferences.muted_languages,
     )
 
   case session.load_token() {
@@ -289,6 +291,28 @@ fn focus_pane(m: Model, direction: Int) -> #(Model, Effect(Msg)) {
 }
 
 /// Enter or Space on the cursor row.
+/// The ProblemRef under the menu cursor, when the focused pane holds one.
+fn cursor_ref(m: Model) -> Result(ProblemRef, Nil) {
+  case searching(m) {
+    True -> {
+      let hits = problems.search_refs(string.trim(m.search))
+      case list.drop(hits, int.clamp(m.nav.search, 0, list.length(hits) - 1)) {
+        [ref, ..] -> Ok(ref)
+        [] -> Error(Nil)
+      }
+    }
+    False ->
+      case pane_rows(m, m.nav.focus) {
+        ToggleRows(refs) ->
+          case list.drop(refs, cursor_in(m, m.nav.focus)) {
+            [ref, ..] -> Ok(ref)
+            [] -> Error(Nil)
+          }
+        ChoiceRows(_) -> Error(Nil)
+      }
+  }
+}
+
 fn activate_cursor(m: Model) -> #(Model, Effect(Msg)) {
   case searching(m) {
     True -> {
@@ -484,6 +508,14 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     MenuToggledAtCursor -> activate_cursor(m)
 
+    // `z` in the browser: park the cursor row's card. Only rows with a card
+    // react — an unseen problem has nothing to suspend.
+    MenuSuspendedAtCursor ->
+      case cursor_ref(m) {
+        Ok(ref) -> handle(m, UserToggledSuspend(ref))
+        Error(Nil) -> #(m, effect.none())
+      }
+
     QuizMoved(delta) ->
       case m.graded, current_quiz(m) {
         False, Ok(quiz) -> {
@@ -639,6 +671,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           ..model.default(),
           editor_keymap: m.editor_keymap,
           side_collapsed: m.side_collapsed,
+          muted_languages: m.muted_languages,
           boot: Syncing,
         )
       #(guest, effect.batch([session.clear_token(), store.load_state(guest)]))
@@ -679,6 +712,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           ..model.default(),
           editor_keymap: m.editor_keymap,
           side_collapsed: m.side_collapsed,
+          muted_languages: m.muted_languages,
           boot: Syncing,
         )
       #(
@@ -722,9 +756,13 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         [] -> #(
           Model(
             ..m,
-            notice: Some(
-              "Nothing to study right now. Come back when cards are due, or pick problems by hand.",
-            ),
+            notice: Some(case model.hidden_by_filter(m) {
+              0 ->
+                "Nothing to study right now. Come back when cards are due, or pick problems by hand."
+              hidden ->
+                int.to_string(hidden)
+                <> " due card(s) are hidden by the language filter."
+            }),
           ),
           effect.none(),
         )
@@ -1088,24 +1126,44 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UserSearched(query) -> #(Model(..m, search: query), effect.none())
 
-    UserChangedKeymap(mode) -> #(
-      Model(..m, editor_keymap: mode),
-      session.save_preferences(session.Preferences(
-        editor_keymap: mode,
-        side_collapsed: m.side_collapsed,
-      )),
-    )
+    UserChangedKeymap(mode) -> {
+      let m = Model(..m, editor_keymap: mode)
+      #(m, save_preferences(m))
+    }
 
     UserToggledSide -> {
-      let collapsed = !m.side_collapsed
-      #(
-        Model(..m, side_collapsed: collapsed),
-        session.save_preferences(session.Preferences(
-          editor_keymap: m.editor_keymap,
-          side_collapsed: collapsed,
-        )),
-      )
+      let m = Model(..m, side_collapsed: !m.side_collapsed)
+      #(m, save_preferences(m))
     }
+
+    UserToggledLanguage(tag) -> {
+      let muted = case list.contains(m.muted_languages, tag) {
+        True -> list.filter(m.muted_languages, fn(t) { t != tag })
+        False -> [tag, ..m.muted_languages]
+      }
+      let m = Model(..m, muted_languages: muted)
+      #(m, save_preferences(m))
+    }
+
+    UserToggledSuspend(ref) ->
+      case model.card_for(m, ref) {
+        None -> #(m, effect.none())
+        Some(state) -> #(m, store.set_suspended(m, ref, !state.suspended))
+      }
+
+    CardSuspended(Ok(outcome)) -> #(
+      Model(
+        ..m,
+        now: outcome.now,
+        today: outcome.today,
+        cards: dict.insert(m.cards, outcome.card.problem, outcome.card),
+      ),
+      effect.none(),
+    )
+    CardSuspended(Error(failure)) -> #(
+      Model(..m, notice: Some(api.error_message(failure))),
+      effect.none(),
+    )
 
     EditorChanged(text) -> {
       // Study-rep typing is throwaway in memory as well as on disk: updating
@@ -1285,7 +1343,13 @@ fn apply_state(m: Model, state: api.BootState) -> Model {
 /// no catalogue: cards only exist once reviewed, so "never seen" is a question
 /// only this bundle can answer.
 fn build_queue(m: Model) -> List(ProblemRef) {
-  let catalogue = problems.all_refs()
+  // The filter narrows the sitting; it never touches the schedule. Muted
+  // languages simply wait, and FSRS reschedules from real elapsed time.
+  let catalogue =
+    problems.all_refs()
+    |> list.filter(fn(ref) {
+      !model.language_muted(m, problems.language_tag(ref.category))
+    })
 
   let due =
     catalogue
@@ -1383,6 +1447,14 @@ fn problem_kind(ref: ProblemRef) -> ProblemKind {
 /// A run abandoned mid-flight leaves a possibly-wedged worker behind, and its
 /// stale timeout would blame the *next* problem's code for the hang. Replace
 /// the worker and clear the run so neither can happen.
+fn save_preferences(m: Model) -> Effect(Msg) {
+  session.save_preferences(session.Preferences(
+    editor_keymap: m.editor_keymap,
+    side_collapsed: m.side_collapsed,
+    muted_languages: m.muted_languages,
+  ))
+}
+
 fn abandon_run(m: Model) -> #(Model, Effect(Msg)) {
   case m.run, current_language(m) {
     Running(_, _), Ok(language) -> #(

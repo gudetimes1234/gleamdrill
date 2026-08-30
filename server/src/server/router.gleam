@@ -18,6 +18,7 @@ pub fn handle(request: wisp.Request, context: Context) -> wisp.Response {
     ["api", "me"] -> accounts.me(request, context)
 
     ["api", "state"] -> study.state(request, context)
+    ["api", "cards"] -> study.suspend(request, context)
     ["api", "reviews"] -> study.review(request, context)
     ["api", "drafts"] -> study.draft(request, context)
     ["api", "settings"] -> study.settings(request, context)

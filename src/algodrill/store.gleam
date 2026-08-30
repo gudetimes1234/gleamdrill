@@ -15,6 +15,7 @@ import algodrill/api
 import algodrill/browser
 import algodrill/local
 import algodrill/model.{
+  CardSuspended,
   type Model, type Msg, Account, DraftSynced, Guest, HistoryLoaded,
   InsightsLoaded, ReviewRecorded, StateLoaded, StatsLoaded,
 }
@@ -82,6 +83,43 @@ pub fn record_review(m: Model, review: api.Review) -> Effect(Msg) {
               today: local.today(updated, m.settings, now, day),
             )),
           )
+      })
+    }
+  }
+}
+
+/// Parks or resumes one card, producing the same {now, card, today} fold a
+/// review does. Guest failures surface like any other failed write.
+pub fn set_suspended(
+  m: Model,
+  problem: ProblemRef,
+  suspended: Bool,
+) -> Effect(Msg) {
+  case m.mode {
+    Account(token) ->
+      api.patch_card(base(), token, problem, suspended, CardSuspended)
+    Guest -> {
+      use dispatch <- effect.from
+      let now = timestamp.system_time()
+      let day = local.current_day(m.settings)
+      let store = local.load()
+      dispatch(case local.set_suspended(store, problem, suspended) {
+        Error(Nil) ->
+          CardSuspended(
+            Error(api.Rejected("That problem has no scheduled card to suspend.")),
+          )
+        Ok(#(updated, card)) ->
+          case local.save_cards(updated) {
+            Error(Nil) -> CardSuspended(Error(storage_full()))
+            Ok(Nil) ->
+              CardSuspended(
+                Ok(api.ReviewOutcome(
+                  now:,
+                  card:,
+                  today: local.today(updated, m.settings, now, day),
+                )),
+              )
+          }
       })
     }
   }

@@ -11,7 +11,7 @@ import algodrill/api.{type ReviewRow, type Stats}
 import algodrill/insights.{type Analysis, type CardInsight}
 import algodrill/model.{
   type Model, type Msg, UserClickedBackToStudy, UserClosedDetail,
-  UserOpenedDetail,
+  UserOpenedDetail, UserToggledSuspend,
 }
 import algodrill/problem.{type ProblemRef}
 import algodrill/problems
@@ -304,6 +304,7 @@ fn detail_overlay(m: Model) -> Element(Msg) {
                 <> problem.subcategory,
               ),
             ]),
+            suspend_control(m, problem),
             case rows {
               None ->
                 html.p([attribute.class("study-summary")], [
@@ -316,6 +317,27 @@ fn detail_overlay(m: Model) -> Element(Msg) {
               Some(reviews) -> timeline(m, problem, reviews)
             },
           ]),
+        ],
+      )
+  }
+}
+
+/// Park/resume from the card's own history view. stop_propagation: the
+/// overlay's backdrop click closes it, and this button must not.
+fn suspend_control(m: Model, problem: ProblemRef) -> Element(Msg) {
+  case model.card_for(m, problem) {
+    None -> element.none()
+    Some(state) ->
+      html.button(
+        [
+          attribute.class("study-secondary detail-suspend"),
+          event.on_click(UserToggledSuspend(problem)) |> event.stop_propagation,
+        ],
+        [
+          html.text(case state.suspended {
+            True -> "\u{25b8} Resume scheduling"
+            False -> "\u{23f8} Pause scheduling"
+          }),
         ],
       )
   }

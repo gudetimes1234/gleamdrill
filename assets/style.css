@@ -250,6 +250,34 @@ gleam-editor .cm-scroller {
     opacity: 0.75;
 }
 
+.badge-paused {
+    color: var(--text-secondary);
+    border-color: var(--border);
+    opacity: 0.8;
+}
+
+/* Park/resume on a browse row. Small and quiet; the row's real action is
+   selection, and this must read as an aside. */
+.suspend-toggle {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 6px;
+    margin-left: 4px;
+    border-radius: var(--radius-sm);
+}
+
+.suspend-toggle:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.detail-suspend {
+    margin: 8px 0;
+}
+
 .search-results {
     background: var(--bg-secondary);
     border: 1px solid var(--border);
@@ -1586,6 +1614,41 @@ gleam-editor .cm-editor {
 .study-count-label {
     font-size: 12px;
     color: var(--text-secondary);
+}
+
+/* The language mood dial: pressed chips feed today's queue, muted ones sit
+   out. Deliberately quiet — a filter, not a call to action. */
+.language-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 4px 0 2px;
+}
+
+.language-chip {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.language-chip.muted {
+    border-color: var(--border);
+    color: var(--text-secondary);
+    opacity: 0.55;
+    text-decoration: line-through;
+}
+
+.study-hidden-hint {
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    text-align: center;
 }
 
 .study-summary {

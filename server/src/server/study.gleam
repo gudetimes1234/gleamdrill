@@ -174,6 +174,38 @@ pub fn load_cards(
   |> result.map_error(database_error)
 }
 
+/// Parks or resumes one card. Only a card that exists — i.e. has been
+/// reviewed at least once — can be suspended: an unseen problem is managed by
+/// simply not studying it, so a missing row is the caller's 404, not an
+/// upsert.
+pub fn set_suspended(
+  db: pog.Connection,
+  user_id: String,
+  problem: ProblemRef,
+  suspended: Bool,
+) -> Result(Option(CardRecord), StudyError) {
+  pog.query(
+    "update cards set suspended = $5
+     where user_id = $1::uuid
+       and category = $2 and subcategory = $3 and title = $4
+     returning " <> card_columns,
+  )
+  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(pog.text(problem.category))
+  |> pog.parameter(pog.text(problem.subcategory))
+  |> pog.parameter(pog.text(problem.title))
+  |> pog.parameter(pog.bool(suspended))
+  |> pog.returning(card_decoder())
+  |> pog.execute(db)
+  |> result.map(fn(returned) {
+    case returned.rows {
+      [card, ..] -> Some(card)
+      [] -> None
+    }
+  })
+  |> result.map_error(database_error)
+}
+
 /// Cards are created lazily, on first review, rather than seeding ~1200 rows
 /// per user up front for problems they may never open.
 ///

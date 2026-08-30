@@ -292,6 +292,29 @@ pub fn post_review(
   )
 }
 
+/// Parks or resumes one card. Answers the same shape as a review, so callers
+/// fold it with the same decoder.
+pub fn patch_card(
+  base: String,
+  token: String,
+  problem: ProblemRef,
+  suspended: Bool,
+  handler: fn(Result(ReviewOutcome, ApiError)) -> message,
+) -> Effect(message) {
+  send(
+    base,
+    http.Patch,
+    "/api/cards",
+    Some(token),
+    Some(json.object(
+      ref_fields(problem)
+      |> list.append([#("suspended", json.bool(suspended))]),
+    )),
+    review_outcome_decoder(),
+    handler,
+  )
+}
+
 pub fn put_draft(
   base: String,
   token: String,

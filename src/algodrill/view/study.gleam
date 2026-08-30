@@ -10,6 +10,7 @@ import algodrill/model.{
   UserClickedSignOut, UserClickedStartExam, UserClickedStats, UserClickedStudy,
   UserDismissedUpgradePrompt,
 }
+import algodrill/problems
 import algodrill/view/banner
 import algodrill/view/links
 import fsrs
@@ -23,9 +24,13 @@ import lustre/element/html
 import lustre/event
 
 pub fn view(m: Model) -> Element(Msg) {
-  let due = m.today.due_now
-  let fresh = m.today.new_remaining
+  // Filtered client-side: the server's due_now knows nothing about the
+  // device's language filter, and the client holds every card anyway.
+  let due = model.due_ready(m)
+  let fresh = model.new_ready(m)
   let ready = due + fresh
+  let hidden = model.hidden_by_filter(m)
+  let all_filtered = ready == 0 && hidden_everything(m)
 
   html.div([attribute.class("study-screen")], [
     banner.storage_warning(m),
@@ -42,8 +47,22 @@ pub fn view(m: Model) -> Element(Msg) {
       count("New", fresh, "new"),
       count("Done today", m.today.reviews_done, "done"),
     ]),
+    language_chips(m),
+    case hidden {
+      0 -> element.none()
+      _ ->
+        html.p([attribute.class("study-hidden-hint")], [
+          html.text(
+            int.to_string(hidden)
+            <> " due card(s) hidden by the language filter \u{2014} they wait without penalty.",
+          ),
+        ])
+    },
     html.p([attribute.class("study-summary")], [
       html.text(case ready, m.today.reviews_done {
+        // Filtered-empty is its own state: not "done", just muted away.
+        0, _ if all_filtered ->
+          "Everything left today is muted \u{2014} unmute a chip to study."
         0, 0 -> "Nothing scheduled today. Pick problems by hand to get started."
         0, _ ->
           "You're done for today. Anything you drill now counts as extra practice."
@@ -144,13 +163,57 @@ fn week() -> List(Int) {
 
 /// Cards falling due `offset` days from now. Anything already overdue counts
 /// against today, which is where it will actually be studied.
+/// True when the filter alone explains the empty queue: unmuting would serve
+/// something today.
+fn hidden_everything(m: Model) -> Bool {
+  model.hidden_by_filter(m) > 0
+  || {
+    list.length(m.muted_languages) == 5
+    && m.today.new_remaining > 0
+  }
+}
+
 fn due_on(m: Model, offset: Int) -> Int {
-  use total, _problem, state <- dict.fold(m.cards, 0)
+  use total, problem, state <- dict.fold(m.cards, 0)
   let days = int.max(0, fsrs.interval_seconds(state.card, m.now) / 86_400)
-  case days == offset && !state.suspended {
+  let muted = model.language_muted(m, problems.language_tag(problem.category))
+  case days == offset && !state.suspended && !muted {
     True -> total + 1
     False -> total
   }
+}
+
+/// One chip per language: pressed = in today's queue, muted = excluded. A
+/// mood dial, not schedule state — flipping a chip never touches a card.
+fn language_chips(m: Model) -> Element(Msg) {
+  let languages = [
+    #("py", "Python"),
+    #("gl", "Gleam"),
+    #("ts", "TypeScript"),
+    #("ex", "Elixir"),
+    #("sd", "System Design"),
+  ]
+  html.div(
+    [attribute.class("language-chips")],
+    list.map(languages, fn(entry) {
+      let #(tag, label) = entry
+      let muted = model.language_muted(m, tag)
+      html.button(
+        [
+          attribute.classes([
+            #("language-chip", True),
+            #("muted", muted),
+          ]),
+          attribute.title(case muted {
+            True -> label <> " is excluded from the study queue"
+            False -> label <> " is in the study queue"
+          }),
+          event.on_click(model.UserToggledLanguage(tag)),
+        ],
+        [html.text(label)],
+      )
+    }),
+  )
 }
 
 /// A day with no cards still gets a sliver of bar, so the row reads as seven

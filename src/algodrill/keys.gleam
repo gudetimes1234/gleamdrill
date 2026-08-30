@@ -10,7 +10,7 @@
 
 import algodrill/model.{
   type Key, type Model, type Msg, AuthRoute, AwaitingGrade, DrillRoute,
-  EditorFocusRequested, HelpToggled, MenuActivated, MenuCursorJumped,
+  EditorFocusRequested, HelpToggled, MenuActivated, MenuSuspendedAtCursor, MenuCursorJumped,
   MenuCursorMoved, MenuPaneFocused, MenuRoute, MenuToggledAtCursor, QuizMoved,
   ReportRoute, SearchFocusRequested, StatsActivated, StatsCursorMoved,
   StatsRoute, StudyRoute, UserClickedBackToStudy, UserClickedBrowse,
@@ -136,6 +136,12 @@ fn menu_bindings(m: Model) -> List(Binding) {
         UserClickedSelectAll,
       ),
       Binding(["c"], "clear", "Clear the selection", UserClickedClearSelection),
+      Binding(
+        ["z"],
+        "pause",
+        "Pause or resume the cursor row's card",
+        MenuSuspendedAtCursor,
+      ),
       Binding(
         ["d"],
         "drill",

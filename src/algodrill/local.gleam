@@ -258,6 +258,26 @@ pub fn put_draft(local: Local, problem: ProblemRef, body: String) -> Local {
 ///
 /// `day_start` is passed in rather than read from a clock so this stays pure;
 /// the caller gets it from `browser.study_day_start`.
+/// Parks or resumes one card. No review row, no history entry: suspension is
+/// schedule state, not study activity. Missing card -> Error(Nil), mirroring
+/// the server's 404.
+pub fn set_suspended(
+  local: Local,
+  problem: problem.ProblemRef,
+  suspended: Bool,
+) -> Result(#(Local, api.CardState), Nil) {
+  case dict.get(local.cards, problem) {
+    Error(Nil) -> Error(Nil)
+    Ok(state) -> {
+      let updated = api.CardState(..state, suspended:)
+      Ok(#(
+        Local(..local, cards: dict.insert(local.cards, problem, updated)),
+        updated,
+      ))
+    }
+  }
+}
+
 pub fn today(
   local: Local,
   settings: Settings,

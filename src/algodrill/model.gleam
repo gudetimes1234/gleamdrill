@@ -1,4 +1,5 @@
 import algodrill/api.{type ApiError, type CardState, type Settings, type User}
+import algodrill/problems
 import algodrill/problem.{type ProblemRef}
 import fsrs
 import gleam/dict.{type Dict}
@@ -250,6 +251,8 @@ pub type Model {
     editor_keymap: String,
     /// Whether the drill's prompt column is collapsed to a slim rail.
     side_collapsed: Bool,
+    /// Language tags excluded from today's study queue (device preference).
+    muted_languages: List(String),
     /// Quiz option currently picked, before Submit is pressed.
     choice: Option(Int),
     /// Whether the current quiz question has been submitted and graded.
@@ -305,6 +308,7 @@ pub fn default() -> Model {
     next_run_id: 1,
     editor_keymap: "default",
     side_collapsed: False,
+    muted_languages: [],
     choice: None,
     graded: False,
     exam_answers: [],
@@ -376,9 +380,51 @@ pub fn run_failed(run: RunState) -> Bool {
 /// the daily budget rather than because a date passed.
 pub fn is_due(model: Model, problem: ProblemRef) -> Bool {
   case card_for(model, problem) {
-    option.Some(state) -> fsrs.is_due(state.card, model.now)
+    // A suspended card is parked: not due, not queued, not counted. The
+    // schema always had the flag; every reader goes through here.
+    option.Some(state) -> !state.suspended && fsrs.is_due(state.card, model.now)
     None -> False
   }
+}
+
+/// Whether the study filter mutes a language today (tag as produced by
+/// problems.language_tag). Muting is a device preference, not schedule state:
+/// the card keeps its due date and FSRS reschedules from real elapsed time
+/// whenever it is finally reviewed.
+pub fn language_muted(model: Model, tag: String) -> Bool {
+  list.contains(model.muted_languages, tag)
+}
+
+/// Due cards today's filter would serve: is_due already excludes suspended.
+pub fn due_ready(m: Model) -> Int {
+  problems.all_refs()
+  |> list.filter(fn(ref) {
+    is_due(m, ref)
+    && !language_muted(m, problems.language_tag(ref.category))
+  })
+  |> list.length
+  |> int.min(m.today.reviews_remaining)
+}
+
+/// New cards today's filter would introduce, within the daily budget.
+pub fn new_ready(m: Model) -> Int {
+  problems.all_refs()
+  |> list.filter(fn(ref) {
+    card_for(m, ref) == None
+    && !language_muted(m, problems.language_tag(ref.category))
+  })
+  |> list.length
+  |> int.min(m.today.new_remaining)
+}
+
+/// Due cards the language filter is currently hiding.
+pub fn hidden_by_filter(m: Model) -> Int {
+  problems.all_refs()
+  |> list.filter(fn(ref) {
+    is_due(m, ref)
+    && language_muted(m, problems.language_tag(ref.category))
+  })
+  |> list.length
 }
 
 pub type Msg {
@@ -449,6 +495,10 @@ pub type Msg {
   UserClickedStopRun
   UserClickedRetryRuntime(String)
   UserToggledSide
+  UserToggledLanguage(String)
+  UserToggledSuspend(ProblemRef)
+  MenuSuspendedAtCursor
+  CardSuspended(Result(api.ReviewOutcome, ApiError))
   RunnerReady(language: String)
   RunnerFailed(language: String, message: String)
   RunFinished(id: Int, outcome: RunOutcome, stdout: String)

@@ -765,6 +765,77 @@ check("Esc closes the detail", !(await page.isVisible(".detail-card")));
 await page.keyboard.press("Escape");
 await page.waitForSelector(".study-screen", { timeout: 10000 });
 
+// ---------------------------------------------------------------- act 7b
+act = "07b-queue-management";
+console.log(act);
+exercises("UserToggledLanguage", "UserToggledSuspend", "MenuSuspendedAtCursor");
+
+// The language filter: chips on the study screen gate what a sitting serves.
+check("five language chips render", (await page.$$(".language-chip")).length === 5);
+await page.click('.language-chip:text-is("TypeScript")');
+await page.waitForTimeout(300);
+check("a muted chip shows it", (await page.$$(".language-chip.muted")).length === 1);
+for (const label of ["Python", "Gleam", "Elixir", "System Design"]) {
+  await page.click(`.language-chip:text-is("${label}")`);
+  await page.waitForTimeout(150);
+}
+check("muting every language empties the queue",
+  await page.$eval(".study-start", (b) => b.disabled));
+await capture("all-muted", "Every language muted: nothing to study, honestly");
+for (const label of ["Python", "Gleam", "TypeScript", "Elixir", "System Design"]) {
+  await page.click(`.language-chip:text-is("${label}")`);
+  await page.waitForTimeout(150);
+}
+check("unmuting restores the queue",
+  !(await page.$eval(".study-start", (b) => b.disabled)));
+
+// Suspend from the stats detail: park a reviewed card without lying to FSRS.
+// The last chip click left a button focused, and focused buttons own the
+// keyboard; hand it back before pressing t.
+await page.evaluate(() => document.activeElement?.blur());
+await page.keyboard.press("t");
+await page.waitForSelector(".stats-tiles", { timeout: 10000 });
+await page.keyboard.press("j");
+await page.keyboard.press("Enter");
+await page.waitForSelector(".detail-card", { timeout: 8000 });
+await page.click(".detail-suspend");
+await page.waitForTimeout(400);
+check("the detail button flips to resume",
+  (await page.textContent(".detail-suspend")).includes("Resume"));
+await capture("suspended-detail", "Paused from the history overlay");
+await page.keyboard.press("Escape");
+await page.waitForTimeout(300);
+await page.keyboard.press("Escape");
+await page.waitForSelector(".study-screen", { timeout: 10000 });
+
+// The browse row shows the parked card and can flip it back.
+await page.click("text=Browse problems");
+await page.waitForSelector(".menu-container", { timeout: 10000 });
+await page.click('.pane-item:text-is("Python")');
+await page.waitForTimeout(300);
+await page.click('.pane-item:text-is("Arrays & Hashing")');
+await page.waitForTimeout(300);
+check("a parked card is badged in the browser",
+  (await page.$$(".badge-paused")).length >= 1);
+await capture("paused-badge", "Browse row: paused badge and the park toggle");
+await page.click(".suspend-toggle");
+await page.waitForTimeout(400);
+check("the row toggle resumes it", (await page.$$(".badge-paused")).length === 0);
+
+// And z parks the cursor row from the keyboard. Blur first: the toggle
+// button still holds focus and focused buttons own the keyboard.
+await page.evaluate(() => document.activeElement?.blur());
+await page.keyboard.press("l");
+await page.keyboard.press("l");
+await page.keyboard.press("z");
+await page.waitForTimeout(400);
+check("z pauses the cursor row's card",
+  (await page.$$(".badge-paused")).length === 1);
+await page.keyboard.press("z");
+await page.waitForTimeout(400);
+check("z resumes it too", (await page.$$(".badge-paused")).length === 0);
+await goHome();
+
 // ---------------------------------------------------------------- act 8
 act = "08-upgrade";
 console.log(act);
@@ -967,7 +1038,8 @@ const declared = [
   "UserClickedStartDrill", "UserClickedExitDrill", "ExitConfirmed",
   "UserToggledSolution", "UserClickedNext", "UserSearched", "UserChangedKeymap",
   "UserClickedRun", "UserClickedStopRun", "UserClickedRetryRuntime",
-  "UserToggledSide", "UserPickedChoice", "UserSubmittedAnswer",
+  "UserToggledSide", "UserToggledLanguage", "UserToggledSuspend",
+  "MenuSuspendedAtCursor", "UserPickedChoice", "UserSubmittedAnswer",
   "UserClickedStartExam", "UserClickedExitReport",
   "KeyPressed", "HelpToggled", "MenuCursorMoved", "MenuPaneFocused",
   "MenuCursorJumped", "MenuActivated", "MenuToggledAtCursor", "QuizMoved",

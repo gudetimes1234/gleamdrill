@@ -24,11 +24,16 @@ const preferences_key = "algoDrill.prefs.v1"
 
 /// Settings that belong to this browser rather than to the account.
 pub type Preferences {
-  Preferences(editor_keymap: String, side_collapsed: Bool)
+  Preferences(
+    editor_keymap: String,
+    side_collapsed: Bool,
+    /// Language tags kept out of the study queue on this device.
+    muted_languages: List(String),
+  )
 }
 
 pub fn default_preferences() -> Preferences {
-  Preferences(editor_keymap: "default", side_collapsed: False)
+  Preferences(editor_keymap: "default", side_collapsed: False, muted_languages: [])
 }
 
 pub fn load_token() -> Option(String) {
@@ -69,9 +74,15 @@ pub fn load_preferences() -> Preferences {
             False,
             decode.bool,
           )
+          use muted <- decode.optional_field(
+            "mutedLanguages",
+            [],
+            decode.list(decode.string),
+          )
           decode.success(Preferences(
             editor_keymap: keymap,
             side_collapsed: collapsed,
+            muted_languages: muted,
           ))
         })
         |> result.replace_error(Nil)
@@ -88,6 +99,7 @@ pub fn save_preferences(preferences: Preferences) -> Effect(message) {
       json.object([
         #("editorKeymap", json.string(preferences.editor_keymap)),
         #("sideCollapsed", json.bool(preferences.side_collapsed)),
+        #("mutedLanguages", json.array(preferences.muted_languages, json.string)),
       ]),
     ),
   )

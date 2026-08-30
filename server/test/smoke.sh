@@ -102,6 +102,16 @@ R=$(curl -s -X POST "$B/api/reviews" -H "$FA" -H "$CT" -d "{$REF,\"rating\":4,\"
 check "a later revealed review is coerced to Again" 1 "$(echo "$R" | j "['card']['state']")"
 check "back to the first learning step" 0 "$(echo "$R" | j "['card']['step']")"
 
+echo "== suspend"
+R=$(curl -s -X PATCH "$B/api/cards" -H "$AUTH" -H "$CT" -d "{$REF,\"suspended\":true}")
+check "a card can be parked" True "$(echo "$R" | j "['card']['suspended']")"
+check "a parked card leaves the due count" 0 "$(echo "$R" | j "['today']['dueNow']")"
+R=$(curl -s -X PATCH "$B/api/cards" -H "$AUTH" -H "$CT" -d "{$REF,\"suspended\":false}")
+check "and can be resumed" False "$(echo "$R" | j "['card']['suspended']")"
+check "an unseen problem has no card to park" 404 "$(status -X PATCH "$B/api/cards" -H "$AUTH" -H "$CT" -d "{\"category\":\"NeetCode 150\",\"subcategory\":\"Nope\",\"title\":\"Nope\",\"suspended\":true}")"
+check "parking without a token is 401" 401 "$(status -X PATCH "$B/api/cards" -H "$CT" -d "{$REF,\"suspended\":true}")"
+check "a body without the flag is 422" 422 "$(status -X PATCH "$B/api/cards" -H "$AUTH" -H "$CT" -d "{$REF}")"
+
 echo "== drafts"
 check "a draft saves" 204 "$(status -X PUT "$B/api/drafts" -H "$AUTH" -H "$CT" -d "{$REF,\"body\":\"def f(): pass\"}")"
 S=$(curl -s "$B/api/state" -H "$AUTH")

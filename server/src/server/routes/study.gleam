@@ -93,6 +93,62 @@ pub fn review(request: wisp.Request, context: Context) -> wisp.Response {
   }
 }
 
+/// Parks or resumes one card: PATCH /api/cards with a problem reference and
+/// `suspended`. Answers the same {now, card, today} shape as a review, so the
+/// client folds it with the same code.
+pub fn suspend(request: wisp.Request, context: Context) -> wisp.Response {
+  use <- wisp.require_method(request, http.Patch)
+  use user <- web.require_user(request, context)
+  use body <- wisp.require_json(request)
+
+  case decode.run(body, suspend_decoder()) {
+    Error(_) ->
+      web.error(
+        422,
+        "invalid_body",
+        "Expected a problem reference and suspended: true or false.",
+      )
+    Ok(#(problem, suspended)) -> {
+      let now = timestamp.system_time()
+      let outcome = {
+        use settings <- result.try(study.load_settings(context.db, user.id))
+        use card <- result.try(study.set_suspended(
+          context.db,
+          user.id,
+          problem,
+          suspended,
+        ))
+        use today <- result.try(study.today(context.db, user.id, settings, now))
+        Ok(#(card, today))
+      }
+
+      case outcome {
+        Error(failure) -> study_error(failure)
+        Ok(#(None, _)) ->
+          web.error(
+            404,
+            "unknown_card",
+            "That problem has no scheduled card to suspend.",
+          )
+        Ok(#(Some(card), today)) ->
+          web.json_ok(
+            json.object([
+              #("now", json.float(fsrs.to_epoch(now))),
+              #("card", card_json(card)),
+              #("today", today_json(today)),
+            ]),
+          )
+      }
+    }
+  }
+}
+
+fn suspend_decoder() -> decode.Decoder(#(study.ProblemRef, Bool)) {
+  use problem <- decode.then(problem_decoder())
+  use suspended <- decode.field("suspended", decode.bool)
+  decode.success(#(problem, suspended))
+}
+
 pub fn stats(request: wisp.Request, context: Context) -> wisp.Response {
   use <- wisp.require_method(request, http.Get)
   use user <- web.require_user(request, context)

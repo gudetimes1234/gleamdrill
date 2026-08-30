@@ -2,7 +2,7 @@ import algodrill/model.{
   type Model, type Msg, UserChangedIterations, UserClickedBreadcrumb,
   UserClickedCategory, UserClickedClearSelection, UserClickedSelectAll,
   UserClickedStartDrill, UserClickedStartExam, UserClickedSubcategory,
-  UserSearched, UserToggledProblem,
+  UserSearched, UserToggledProblem, UserToggledSuspend,
 }
 import algodrill/problem.{type Problem, type ProblemRef, ProblemRef}
 import algodrill/problems
@@ -375,8 +375,33 @@ fn problem_item(
       on_activate_key(UserToggledProblem(ref)),
       ..extra
     ],
-    [html.text(ref.title), status_badge(m, ref)],
+    [html.text(ref.title), status_badge(m, ref), suspend_toggle(m, ref)],
   )
+}
+
+/// Park/resume for rows that have a card. stop_propagation: the row's own
+/// click is selection, and suspending must not also toggle that.
+fn suspend_toggle(m: Model, ref: ProblemRef) -> Element(Msg) {
+  case model.card_for(m, ref) {
+    None -> element.none()
+    Some(state) ->
+      html.button(
+        [
+          attribute.class("suspend-toggle"),
+          attribute.title(case state.suspended {
+            True -> "Resume scheduling"
+            False -> "Pause scheduling"
+          }),
+          event.on_click(UserToggledSuspend(ref)) |> event.stop_propagation,
+        ],
+        [
+          html.text(case state.suspended {
+            True -> "\u{25b8}"
+            False -> "\u{23f8}"
+          }),
+        ],
+      )
+  }
 }
 
 /// The badge now reports where a problem sits in the schedule rather than a
@@ -387,13 +412,19 @@ fn status_badge(m: Model, ref: ProblemRef) -> Element(Msg) {
     None -> element.none()
     Some(state) -> {
       let #(class, label) = case
+        state.suspended,
         fsrs.is_due(state.card, m.now),
         state.card.state
       {
-        True, _ -> #("badge badge-due", "due")
-        False, fsrs.Learning(_) -> #("badge badge-learning", "learning")
-        False, fsrs.Relearning(_) -> #("badge badge-learning", "relearning")
-        False, fsrs.Review -> #(
+        // Parked: the schedule is on hold, whatever the dates say.
+        True, _, _ -> #("badge badge-paused", "paused")
+        False, True, _ -> #("badge badge-due", "due")
+        False, False, fsrs.Learning(_) -> #("badge badge-learning", "learning")
+        False, False, fsrs.Relearning(_) -> #(
+          "badge badge-learning",
+          "relearning",
+        )
+        False, False, fsrs.Review -> #(
           "badge badge-scheduled",
           format.interval(fsrs.interval_seconds(state.card, m.now)),
         )
