@@ -54,6 +54,10 @@ pub type ReviewInput {
     auto_failed: Bool,
     /// The solution was revealed before answering.
     revealed: Bool,
+    /// A hand-picked practice sitting: the rating stands as sent. Only the
+    /// scheduled study queue is held to the coercion below; the log records
+    /// auto_failed/revealed truthfully either way.
+    practice: Bool,
   )
 }
 
@@ -368,7 +372,9 @@ pub fn record_review(
     // only worth optimising against if it cannot be flattered. The log's
     // `revealed`/`auto_failed` columns record the truth in every case.
     let first = before.memory == None
-    let rating = case !first && { input.auto_failed || input.revealed } {
+    let rating = case
+      !first && !input.practice && { input.auto_failed || input.revealed }
+    {
       True -> fsrs.Again
       False -> input.rating
     }

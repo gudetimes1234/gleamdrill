@@ -147,6 +147,10 @@ pub type Review {
     duration_ms: Option(Int),
     auto_failed: Bool,
     revealed: Bool,
+    /// True for a hand-picked (non-study-queue) sitting: practice grades
+    /// freely, so the server must not coerce the rating. The log still
+    /// records auto_failed/revealed truthfully.
+    practice: Bool,
   )
 }
 
@@ -610,6 +614,7 @@ fn review_json(review: Review) -> Json {
       }),
       #("autoFailed", json.bool(review.auto_failed)),
       #("revealed", json.bool(review.revealed)),
+      #("practice", json.bool(review.practice)),
     ]),
   )
 }

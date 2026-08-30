@@ -21,6 +21,25 @@ pub fn view(m: Model) -> Element(Msg) {
     html.span([attribute.class("statusbar-context")], [
       html.text(keys.context_label(m)),
     ]),
+    // The `,` leader: pressed once, the next key works no matter which
+    // button stole focus. The chip lights while armed.
+    html.span(
+      [
+        attribute.classes([
+          #("leader-chip", True),
+          #("leader-armed", m.leader_armed),
+        ]),
+        attribute.title(
+          "Press , then a key to use a shortcut even while a button has focus",
+        ),
+      ],
+      [
+        html.text(case m.leader_armed {
+          True -> ", \u{2026}"
+          False -> ","
+        }),
+      ],
+    ),
     html.div(
       [attribute.class("statusbar-hints")],
       keys.bindings(m)

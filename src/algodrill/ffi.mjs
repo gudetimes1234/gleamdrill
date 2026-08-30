@@ -107,7 +107,7 @@ export function timeZone() {
 // in Firefox, and the browser must not see either when the app is handling it.
 const APP_KEYS = new Set([
   "j", "k", "h", "l", "g", "G", "x", "a", "c", "d", "s", "n", "r", "b", "t",
-  "i", "e", "z", "?", "/", "1", "2", "3", "4", "Enter", " ",
+  "i", "e", "z", ",", "?", "/", "1", "2", "3", "4", "Enter", " ",
 ]);
 
 export function onKey(callback) {

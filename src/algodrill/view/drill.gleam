@@ -133,8 +133,23 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
               ]),
               ..answer_panel(m, current)
             ]),
-            run_bar(m, current),
-            ..results_only(m, current)
+            ..list.flatten([
+              // Its own pane, right under the code it narrates: watching
+              // what your program prints is half of debugging it.
+              case current.check {
+                Some(_) -> [
+                  html.section([attribute.class("panel output-below")], [
+                    html.h3([attribute.class("panel-title")], [
+                      html.text("Output"),
+                    ]),
+                    output_panel(m),
+                  ]),
+                ]
+                None -> []
+              },
+              [run_bar(m, current)],
+              results_only(m, current),
+            ])
           ]
         }),
       ],
@@ -325,9 +340,6 @@ fn expanded_panels(
         ]),
       ]),
       panel("Tests", [tests_panel(m)]),
-      // Its own pane rather than a section buried in the results: watching
-      // what your program prints is half of debugging it.
-      panel("Output", [output_panel(m)]),
     ]
     None -> []
   }
@@ -499,7 +511,8 @@ fn grade_buttons(m: Model, current: Problem) -> Element(Msg) {
     Error(Nil) -> True
   }
   let forced =
-    !free
+    m.studying
+    && !free
     && {
       model.run_failed(m.run) || model.answer_revealed(m, current.approach)
     }

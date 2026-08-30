@@ -514,23 +514,50 @@ await page.waitForSelector(".study-screen", { timeout: 10000 });
 await page.click("text=Browse problems");
 await page.waitForSelector(".menu-container", { timeout: 10000 });
 await openByHand("Python", "Arrays & Hashing", "Contains Duplicate");
-check("a later review requires a run before grading",
+check("a later review still requires a run before grading",
   (await page.textContent(".grade-hint").catch(() => "")).includes("Run the tests"));
 await capture("gated", "Second review: grading waits for a run");
 await waitForRunnable();
 await page.click(".run-button");
 await verdict();
-check("a failed later run offers only Again",
+// A manual reopen is practice: self-graded, never coerced.
+check("a failed manual run still offers every grade",
+  JSON.stringify(await gradeLabels()) === ALL_FOUR,
+  JSON.stringify(await gradeLabels()));
+await capture("manual-free", "Manual later review, failed run: still every grade");
+dialogs.length = 0;
+await page.click("text=Exit");
+await page.waitForTimeout(800);
+
+// The honesty rule lives in the scheduled queue: seed a card due in the
+// past so Study now serves a later review through the scheduled path.
+await page.evaluate(() => {
+  const longAgo = Math.floor(Date.now() / 1000) - 10 * 86400;
+  localStorage.setItem("algoDrill.guest.cards.v1", JSON.stringify([{
+    category: "NeetCode 150", subcategory: "Arrays & Hashing",
+    title: "Contains Duplicate",
+    state: 2, step: null, stability: 30, difficulty: 5,
+    due: longAgo + 86400, lastReview: longAgo, introducedAt: longAgo,
+    reps: 1, lapses: 0, suspended: false,
+  }]));
+});
+await goHome();
+await page.click(".study-start");
+await page.waitForSelector(".run-bar", { timeout: 30000 });
+await waitForRunnable();
+await page.click(".run-button");
+await verdict();
+check("a failed run in the study queue offers only Again",
   JSON.stringify(await gradeLabels()) === '["Again"]',
   JSON.stringify(await gradeLabels()));
-await capture("forced-again", "Second review, failed run: the one honest answer");
+await capture("forced-again", "Scheduled review, failed run: the one honest answer");
 
-// A passing later run keeps the full choice — until the pseudocode hint is
-// revealed, which counts as seeing the answer.
+// A passing scheduled run keeps the full choice — until the pseudocode hint
+// is revealed, which counts as seeing the answer.
 await setCode("def containsDuplicate(nums):\n    return len(set(nums)) != len(nums)");
 await page.click(".run-button");
 await verdict();
-check("a passing later run offers every grade",
+check("a passing scheduled run offers every grade",
   JSON.stringify(await gradeLabels()) === ALL_FOUR,
   JSON.stringify(await gradeLabels()));
 for (let i = 0; i < 3; i++) {
@@ -540,10 +567,11 @@ for (let i = 0; i < 3; i++) {
 check("revealing the pseudocode leaves the one honest answer",
   JSON.stringify(await gradeLabels()) === '["Again"]',
   JSON.stringify(await gradeLabels()));
-await capture("hint-honesty", "Pseudocode revealed on a later review: Again only");
+await capture("hint-honesty", "Pseudocode revealed on a scheduled review: Again only");
 dialogs.length = 0;
-await page.click("text=Exit");
-await page.waitForTimeout(800);
+await page.keyboard.press("Escape");
+await page.waitForTimeout(600);
+await page.evaluate(() => localStorage.clear());
 
 // ---------------------------------------------------------------- act 4c
 act = "04c-run-controls";
@@ -825,9 +853,12 @@ check("unmuting restores the queue",
   !(await page.$eval(".study-start", (b) => b.disabled)));
 
 // Suspend from the stats detail: park a reviewed card without lying to FSRS.
-// The last chip click left a button focused, and focused buttons own the
-// keyboard; hand it back before pressing t.
-await page.evaluate(() => document.activeElement?.blur());
+// The last chip click left a button focused and buttons swallow keys — the
+// , leader is the rescue: press it, then the key works regardless of focus.
+await page.keyboard.press(",");
+await page.waitForTimeout(200);
+check("the statusbar shows the armed leader",
+  (await page.$$(".leader-chip.leader-armed")).length === 1);
 await page.keyboard.press("t");
 await page.waitForSelector(".stats-tiles", { timeout: 10000 });
 await page.keyboard.press("j");

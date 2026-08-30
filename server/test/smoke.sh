@@ -86,6 +86,19 @@ check "a revealed solution forces Again too" 3 "$(echo "$R" | j "['card']['state
 check "a rating outside 1-4 is 422" 422 "$(status -X POST "$B/api/reviews" -H "$AUTH" -H "$CT" -d "{$REF,\"rating\":9}")"
 check "reviewing without a token is 401" 401 "$(status -X POST "$B/api/reviews" -H "$CT" -d "{$REF,\"rating\":3}")"
 
+echo "== practice sittings grade freely"
+PE="practice-$RANDOM$RANDOM@example.com"
+PT=$(curl -s -X POST "$B/api/auth/signup" -H "$CT" -d "{\"email\":\"$PE\",\"password\":\"$PW\"}" | j "['token']")
+PA="authorization: Bearer $PT"
+R=$(curl -s -X POST "$B/api/reviews" -H "$PA" -H "$CT" -d "{$REF,\"rating\":3}")
+check "the practice account's first review lands" 1 "$(echo "$R" | j "['card']['state']")"
+R=$(curl -s -X POST "$B/api/reviews" -H "$PA" -H "$CT" -d "{$REF,\"rating\":4,\"autoFailed\":true,\"practice\":true}")
+check "practice keeps its rating despite a failed harness" 2 "$(echo "$R" | j "['card']['state']")"
+R=$(curl -s -X POST "$B/api/reviews" -H "$PA" -H "$CT" -d "{$REF,\"rating\":4,\"revealed\":true,\"practice\":true}")
+check "practice keeps its rating despite a reveal" 2 "$(echo "$R" | j "['card']['state']")"
+R=$(curl -s -X POST "$B/api/reviews" -H "$PA" -H "$CT" -d "{$REF,\"rating\":4,\"autoFailed\":true}")
+check "without the flag the coercion still bites" 3 "$(echo "$R" | j "['card']['state']")"
+
 echo "== the first encounter grades freely"
 FE="first-$RANDOM$RANDOM@example.com"
 FET=$(curl -s -X POST "$B/api/auth/signup" -H "$CT" -d "{\"email\":\"$FE\",\"password\":\"$PW\"}" | j "['token']")

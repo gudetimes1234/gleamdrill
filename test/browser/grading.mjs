@@ -4,12 +4,11 @@
 //   - the backend on :1637          (make server-dev)
 //   - the app on :4173              (make build, then make serve-dist)
 //
-// Two acts on the same problem. The first encounter must grade freely — all
-// four buttons from the moment the drill opens, revealing the solution
-// included, because that is how you learn something you have never seen. The
-// second review is reached by re-opening the problem manually (a manual drill
-// posts a review regardless of due dates, so no waiting), and there the
-// honesty rules bite: run required, failed run or reveal forces a lone Again.
+// Three acts. The first encounter grades freely — all four buttons from the
+// moment the drill opens, revealing the solution included. A later MANUAL
+// reopen is practice and also grades freely (failed run and reveal included),
+// every loop. The honesty rule lives in the scheduled study queue alone:
+// there a failed run or reveal still forces a lone Again.
 import { chromium } from "playwright-core";
 
 const APP = process.env.APP ?? "http://localhost:4173";
@@ -104,7 +103,7 @@ check("Good schedules no sooner than Hard",
 await page.click(".grade-good");
 await page.waitForTimeout(2000);
 
-console.log("== second review: honesty is enforced");
+console.log("== second review, manual reopen: practice grades freely");
 await page.goto(APP, { waitUntil: "networkidle" });
 await page.waitForSelector(".study-screen", { timeout: 15000 });
 await page.click("text=Browse problems");
@@ -122,22 +121,20 @@ check("a later review requires a run before grading",
   (await page.textContent(".grade-hint").catch(() => "")).includes("Run the tests"));
 
 await runTests();
-check("a failed later run offers only Again",
-  JSON.stringify(await labels()) === '["Again"]', JSON.stringify(await labels()));
+check("a failed manual run still offers every grade",
+  JSON.stringify(await labels()) === ALL_FOUR, JSON.stringify(await labels()));
 
 await typeSolution("def containsDuplicate(nums):\n    return len(set(nums)) != len(nums)");
 await runTests();
-check("a passing later run offers all four",
+check("a passing manual run offers all four",
   JSON.stringify(await labels()) === ALL_FOUR, JSON.stringify(await labels()));
 
 await page.click(".solution-button");
 await page.waitForTimeout(400);
-check("revealing on a later review collapses to Again",
-  JSON.stringify(await labels()) === '["Again"]', JSON.stringify(await labels()));
+check("revealing on a manual review keeps the choice",
+  JSON.stringify(await labels()) === ALL_FOUR, JSON.stringify(await labels()));
 await page.click(".solution-button");
 await page.waitForTimeout(400);
-check("hiding it again restores the choice",
-  JSON.stringify(await labels()) === ALL_FOUR, JSON.stringify(await labels()));
 
 await page.click(".grade-good");
 await page.waitForTimeout(2000);
@@ -145,6 +142,38 @@ await page.goto(APP, { waitUntil: "networkidle" });
 await page.waitForSelector(".study-screen", { timeout: 15000 });
 const counts = await page.$$eval(".study-count-value", (n) => n.map((e) => e.textContent));
 check("both reviews were recorded", counts[2] === "2", `reviews done = ${counts[2]}`);
+
+console.log("== the study queue keeps the honesty rule");
+// Sign out to guest and seed one card due in the past, so Study now serves a
+// LATER review through the scheduled path (the only place coercion applies).
+await page.click("text=Sign out");
+await page.waitForSelector(".guest-strip", { timeout: 10000 });
+await page.evaluate(() => {
+  const longAgo = Math.floor(Date.now() / 1000) - 10 * 86400;
+  localStorage.setItem("algoDrill.guest.cards.v1", JSON.stringify([{
+    category: "NeetCode 150", subcategory: "Arrays & Hashing",
+    title: "Contains Duplicate",
+    state: 2, step: null, stability: 30, difficulty: 5,
+    due: longAgo + 86400, lastReview: longAgo, introducedAt: longAgo,
+    reps: 1, lapses: 0, suspended: false,
+  }]));
+});
+await page.goto(APP, { waitUntil: "networkidle" });
+await page.waitForSelector(".study-screen", { timeout: 15000 });
+await page.click(".study-start");
+await page.waitForSelector(".run-bar", { timeout: 20000 });
+await runTests();
+check("a failed run in the study queue forces Again",
+  JSON.stringify(await labels()) === '["Again"]', JSON.stringify(await labels()));
+await typeSolution("def containsDuplicate(nums):\n    return len(set(nums)) != len(nums)");
+await runTests();
+check("a passing study run restores the choice",
+  JSON.stringify(await labels()) === ALL_FOUR, JSON.stringify(await labels()));
+await page.click(".solution-button");
+await page.waitForTimeout(400);
+check("revealing in the study queue collapses to Again",
+  JSON.stringify(await labels()) === '["Again"]', JSON.stringify(await labels()));
+await page.evaluate(() => localStorage.clear());
 
 check("no uncaught JavaScript errors", errors.length === 0, errors.slice(0, 2).join(" | "));
 await browser.close();

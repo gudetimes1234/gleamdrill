@@ -36,7 +36,9 @@ pub fn view(m: Model) -> Element(Msg) {
             ),
             html.p([attribute.class("help-footnote")], [
               html.text(
-                "In the editor, only Ctrl+Enter (run) is claimed \u{2014} its "
+                "Clicked a button and the keys went dead? Press , then the "
+                <> "key \u{2014} the leader works whatever has focus. "
+                <> "In the editor, only Ctrl+Enter (run) is claimed \u{2014} its "
                 <> "vim and emacs keymaps keep everything else. Ctrl+F finds "
                 <> "in your code; Tab indents, and Esc then Tab moves focus "
                 <> "out. Esc leaves the search box.",

@@ -453,39 +453,27 @@ fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     // --- keyboard ---
-    KeyPressed(key) ->
-      case key.editing {
-        // The editor's own keymaps own the keyboard; the one thing the app
-        // claims there is Ctrl+Enter, so write -> run -> grade needs no mouse.
-        "editor" ->
-          case key.ctrl && key.key == "Enter" && m.route == DrillRoute {
-            True -> handle(m, UserClickedRun)
-            False -> #(m, effect.none())
-          }
-        // Inputs keep their keys; Escape hands focus back to the app.
-        "input" ->
-          case key.key {
-            "Escape" -> #(m, run_effect(browser.blur_active))
-            _ -> #(m, effect.none())
-          }
-        // A focused button activates natively; stay out of its way — except
-        // for Escape, which activates nothing and would otherwise die on
-        // whichever button was clicked last (grade, reveal, run).
-        "control" ->
-          case key.key {
-            "Escape" ->
-              case keys.dispatch(m, key) {
+    KeyPressed(key) -> {
+      // The `,` leader: one-shot rescue for keys a focused button would
+      // otherwise swallow. Arms from anywhere but the editor and inputs;
+      // the next key routes through the app's table regardless of focus.
+      let leader_capable = key.editing != "editor" && key.editing != "input"
+      case m.leader_armed, key.key == "," && leader_capable {
+        False, True -> #(Model(..m, leader_armed: True), effect.none())
+        True, _ -> {
+          let m = Model(..m, leader_armed: False)
+          case leader_capable && key.key != "," && key.key != "Escape" {
+            True ->
+              case keys.dispatch(m, model.Key(..key, editing: "none")) {
                 Ok(resolved) -> handle(m, resolved)
                 Error(Nil) -> #(m, effect.none())
               }
-            _ -> #(m, effect.none())
+            False -> #(m, effect.none())
           }
-        _ ->
-          case keys.dispatch(m, key) {
-            Ok(resolved) -> handle(m, resolved)
-            Error(Nil) -> #(m, effect.none())
-          }
+        }
+        False, False -> handle_key(m, key)
       }
+    }
 
     HelpToggled -> #(Model(..m, help_open: !m.help_open), effect.none())
 
@@ -888,6 +876,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               Ok(current) -> model.answer_revealed(m, current.approach)
               Error(Nil) -> m.revealed_solution != None
             },
+            // A hand-picked sitting is practice: self-graded, uncoerced.
+            practice: !m.studying,
             ),
           ),
         )
@@ -1092,6 +1082,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                 duration_ms: Some(browser.now_ms() - m.opened_at_ms),
                 auto_failed: !right,
                 revealed: False,
+                // The exam is an assessment, not practice: coercion applies.
+                practice: False,
               ),
             ),
           )
@@ -1478,6 +1470,41 @@ fn save_preferences(m: Model) -> Effect(Msg) {
     side_collapsed: m.side_collapsed,
     muted_languages: m.muted_languages,
   ))
+}
+
+fn handle_key(m: Model, key: model.Key) -> #(Model, Effect(Msg)) {
+  case key.editing {
+        // The editor's own keymaps own the keyboard; the one thing the app
+        // claims there is Ctrl+Enter, so write -> run -> grade needs no mouse.
+        "editor" ->
+          case key.ctrl && key.key == "Enter" && m.route == DrillRoute {
+            True -> handle(m, UserClickedRun)
+            False -> #(m, effect.none())
+          }
+        // Inputs keep their keys; Escape hands focus back to the app.
+        "input" ->
+          case key.key {
+            "Escape" -> #(m, run_effect(browser.blur_active))
+            _ -> #(m, effect.none())
+          }
+        // A focused button activates natively; stay out of its way — except
+        // for Escape, which activates nothing and would otherwise die on
+        // whichever button was clicked last (grade, reveal, run).
+        "control" ->
+          case key.key {
+            "Escape" ->
+              case keys.dispatch(m, key) {
+                Ok(resolved) -> handle(m, resolved)
+                Error(Nil) -> #(m, effect.none())
+              }
+            _ -> #(m, effect.none())
+          }
+        _ ->
+          case keys.dispatch(m, key) {
+            Ok(resolved) -> handle(m, resolved)
+            Error(Nil) -> #(m, effect.none())
+          }
+      }
 }
 
 fn abandon_run(m: Model) -> #(Model, Effect(Msg)) {

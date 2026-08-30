@@ -2193,6 +2193,23 @@ gleam-editor .cm-editor {
     letter-spacing: 0.08em;
 }
 
+/* The , leader chip: quiet until armed, accent while the one-shot waits. */
+.leader-chip {
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0 6px;
+    margin: 0 8px;
+}
+
+.leader-chip.leader-armed {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
 .statusbar-hints {
     display: flex;
     align-items: stretch;

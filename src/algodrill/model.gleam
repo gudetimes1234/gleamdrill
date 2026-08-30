@@ -253,6 +253,9 @@ pub type Model {
     editor_keymap: String,
     /// Whether the drill's prompt column is collapsed to a slim rail.
     side_collapsed: Bool,
+    /// One-shot leader: `,` was pressed, so the next key dispatches through
+    /// the app's key table even if a button holds focus.
+    leader_armed: Bool,
     /// Language tags excluded from today's study queue (device preference).
     muted_languages: List(String),
     /// Quiz option currently picked, before Submit is pressed.
@@ -311,6 +314,7 @@ pub fn default() -> Model {
     next_run_id: 1,
     editor_keymap: "default",
     side_collapsed: False,
+    leader_armed: False,
     muted_languages: [],
     choice: None,
     graded: False,

@@ -556,12 +556,14 @@ fn review_decoder() -> decode.Decoder(study.ReviewInput) {
   )
   use auto_failed <- decode.optional_field("autoFailed", False, decode.bool)
   use revealed <- decode.optional_field("revealed", False, decode.bool)
+  use practice <- decode.optional_field("practice", False, decode.bool)
   decode.success(study.ReviewInput(
     problem:,
     rating:,
     duration_ms:,
     auto_failed:,
     revealed:,
+    practice:,
   ))
 }
 

@@ -133,7 +133,9 @@ pub fn record(
   // something you have never seen, so the self-grade stands. The log still
   // records `revealed`/`auto_failed` truthfully either way.
   let first = before.memory == None
-  let rating = case !first && { review.auto_failed || review.revealed } {
+  let rating = case
+    !first && !review.practice && { review.auto_failed || review.revealed }
+  {
     True -> fsrs.Again
     False -> review.rating
   }
