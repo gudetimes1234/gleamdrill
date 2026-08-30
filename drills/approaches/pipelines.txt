@@ -1,0 +1,8 @@
+== nudge
+Written with nested calls, this reads inside-out: the first thing that happens is buried deepest. What operator turns the same five transformations into a top-to-bottom recipe, and what's the telltale sign code wants it?
+== steps
+- Start from the input: title |> string.trim.
+- Keep piping: |> string.lowercase, |> string.split(" ") — each result feeds the next call's first argument.
+- Drop the empty words with |> list.filter(fn(w) { w != "" }) — double spaces would otherwise leave empty segments.
+- Finish with |> string.join("-") and the slug falls out; the function body is one expression.
+- The telltale sign: if you're naming throwaway intermediate variables, the code probably wants to be a pipeline.

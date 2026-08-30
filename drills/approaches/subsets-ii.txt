@@ -1,0 +1,18 @@
+== nudge
+The plain subsets recursion suddenly produces repeats — trace how the same subset gets built twice when two equal values sit in the list. What arrangement of the input makes "skip this value entirely" even expressible?
+== steps
+- Sort first, so equal values become adjacent — that is what makes the duplicate rule sayable at all.
+- Recurse as in Subsets: either take the head and recurse on the tail, or skip the head.
+- The one change: when skipping the head, jump past every copy of it at once.
+- Skipping one copy while keeping the next is exactly how the same subset gets built by two routes.
+- Base case: the empty list yields the empty subset.
+- Follow-up framing that avoids the rule entirely: per distinct value, choose how many copies (0 up to its count) to include.
+== pseudocode
+sort nums
+function build(nums):
+    if nums is empty: return [[]]
+    first = nums[0]
+    with_first = prepend first to each of build(nums past index 0)
+    past = index of the first value different from first
+    without = build(nums from past onward)
+    return with_first + without

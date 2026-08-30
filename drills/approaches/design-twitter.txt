@@ -1,0 +1,23 @@
+== nudge
+Four operations, but only the feed is hard. Ordering tweets across many users needs some notion of time — what is the cheapest thing that can stand in for a clock? And where can tweets live so ten recent ones are findable?
+== steps
+- Keep a counter that increments on every post — it totally orders tweets across all users with no real timestamps.
+- Store each tweet as (clock, author, id) in one global list; store follows as a map from user to a set of followees.
+- follow adds to the set; unfollow discards, tolerating users never seen before.
+- For the feed, form the visible set (the user plus followees), walk the global list newest-first keeping visible tweets, and stop at ten.
+- Scaling follow-up: per-author tweet lists turn the feed into a k-way merge of the followees' lists, which a heap resolves in about ten steps instead of walking every tweet ever posted.
+== pseudocode
+post(user, tweet_id):
+    tweets.add((clock, user, tweet_id))
+    clock = clock + 1
+
+follow(a, b): following[a].add(b)
+unfollow(a, b): following[a].discard(b)
+
+feed(user):
+    visible = following[user] plus user
+    result = []
+    for (time, author, id) in tweets newest first:
+        if author in visible: result.add(id)
+        if result.size == 10: break
+    return result

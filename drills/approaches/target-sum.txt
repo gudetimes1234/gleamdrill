@@ -1,0 +1,17 @@
+== nudge
+There are 2 to the n sign patterns, but after k numbers how many genuinely different positions can you be in? When two different histories land in the same place, do you ever need to keep them apart?
+== steps
+- Track a map from reachable running total to how many sign assignments reach it, starting at {0: 1}.
+- For each number, build the next map: every (total, count) pair contributes count to total + n and count to total - n.
+- Let collisions merge by adding counts — different sign choices landing on the same total are interchangeable from here on, and that merging is what keeps the work polynomial.
+- The answer is the count stored at target, or 0 if the target was never reached.
+- Follow-up: rewrite the problem — if P is the sum of the plus-signed numbers then P - N = target and P + N = total, so P = (total + target) / 2 and the whole thing is a subset-sum count (impossible when that value is odd or negative).
+== pseudocode
+totals = {0: 1}
+for n in nums:
+    next = empty map
+    for (total, count) in totals:
+        next[total + n] = next[total + n] + count
+        next[total - n] = next[total - n] + count
+    totals = next
+return totals[target] if present else 0

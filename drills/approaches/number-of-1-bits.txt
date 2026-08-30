@@ -1,0 +1,14 @@
+== nudge
+You could inspect all 32 bit positions one by one — but do the zeros deserve any of your time? Is there a way to jump straight from one set bit to the next?
+== steps
+- Loop while n is nonzero, counting one iteration per set bit.
+- Each round, replace n with n AND (n - 1): that clears the lowest set bit and touches nothing else.
+- Return the count — the loop ran once per 1 bit, not once per bit position.
+- Keep the trick in your fingers: n AND (n - 1) == 0 is also the power-of-two test.
+- The plain alternative — shift right and test the bottom bit 32 times — works everywhere but always costs 32 steps, and the sign bit needs care on a right shift.
+== pseudocode
+count = 0
+while n != 0:
+    n = n AND (n - 1)
+    count += 1
+return count

@@ -1,0 +1,22 @@
+== nudge
+At any moment you can only see the two front nodes. Why is comparing just those two enough to decide the next node of the answer? And what awkwardness appears when the answer has no first node to attach anything to yet?
+== steps
+- Create a dummy head with a tail pointer at it — this removes the special case of choosing the first node separately.
+- While both lists are non-empty, compare the two front values.
+- Splice the smaller front node onto tail — sortedness guarantees it precedes everything still remaining in either list.
+- Advance the list the node came from, and advance tail to the node just attached.
+- When one list empties, attach the other whole — it is already sorted and already linked.
+- Return dummy.next.
+== pseudocode
+dummy = new node
+tail = dummy
+while a != null and b != null:
+    if a.value <= b.value:
+        tail.next = a
+        a = a.next
+    else:
+        tail.next = b
+        b = b.next
+    tail = tail.next
+tail.next = a if a != null else b
+return dummy.next

@@ -1,0 +1,21 @@
+== nudge
+Every candidate rectangle is really one bar stretched as wide as its own height allows. For a given bar, what finally stops it stretching in each direction — and could a single sweep discover both of its walls?
+== steps
+- Sweep the bars keeping a stack of (start index, height) entries with heights increasing.
+- A new bar shorter than the stack's top closes the taller entries: pop each one, and its rectangle is its height times (current index minus its start).
+- The new bar inherits the start of the last entry it popped — it would have fit under every one of them, so it extends that far left.
+- Push (inherited start, height) and track the best area throughout.
+- After the sweep, anything still stacked was never cut off: close each at width n minus its start.
+== pseudocode
+stack = empty   // (start, height), heights increasing
+best = 0
+for i in 0..n-1:
+    start = i
+    while stack not empty and stack.top.height > heights[i]:
+        (s, h) = stack.pop()
+        best = max(best, h * (i - s))
+        start = s
+    stack.push((start, heights[i]))
+for (s, h) in stack:
+    best = max(best, h * (n - s))
+return best

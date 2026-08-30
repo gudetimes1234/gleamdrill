@@ -412,8 +412,8 @@ check("Esc exits the sitting (with the confirm)", dialogs.length > 0);
 act = "04-python-drill";
 console.log(act);
 exercises("UserClickedStudy", "UserClickedRun", "UserGraded",
-  "UserToggledSolution", "UserChangedKeymap", "UserClickedExitDrill",
-  "ExitConfirmed");
+  "UserToggledSolution", "UserRevealedHint", "UserChangedKeymap",
+  "UserClickedExitDrill", "ExitConfirmed");
 
 await freshGuest();
 await page.click(".study-start");
@@ -426,6 +426,24 @@ check("a first encounter grades freely from the start",
   JSON.stringify(await gradeLabels()));
 check("the output pane starts empty",
   (await page.textContent(".output-empty")).includes("Nothing printed"));
+check("the approach starts unrevealed",
+  (await page.$$(".approach-nudge, .approach-steps, .approach-pseudocode")).length === 0
+    && await page.isVisible(".hint-button"));
+await page.keyboard.press("a");
+await page.waitForTimeout(300);
+check("a reveals the nudge first", await page.isVisible(".approach-nudge"));
+await page.keyboard.press("a");
+await page.waitForTimeout(300);
+check("then the steps, as a list", (await page.$$(".approach-steps li")).length >= 3);
+check("the pseudocode button warns before it spoils",
+  await page.isVisible(".hint-warning"));
+await page.keyboard.press("a");
+await page.waitForTimeout(300);
+check("then the pseudocode", await page.isVisible(".approach-pseudocode"));
+check("a first encounter still grades freely after the whole ladder",
+  JSON.stringify(await gradeLabels()) === ALL_FOUR,
+  JSON.stringify(await gradeLabels()));
+await capture("hints", "The full hint ladder: nudge, steps, pseudocode");
 await capture("idle", "First encounter: full grade bar before any run, empty output pane");
 
 // The starter stub fails — and on a first encounter that still grades freely.
@@ -506,6 +524,23 @@ check("a failed later run offers only Again",
   JSON.stringify(await gradeLabels()) === '["Again"]',
   JSON.stringify(await gradeLabels()));
 await capture("forced-again", "Second review, failed run: the one honest answer");
+
+// A passing later run keeps the full choice — until the pseudocode hint is
+// revealed, which counts as seeing the answer.
+await setCode("def containsDuplicate(nums):\n    return len(set(nums)) != len(nums)");
+await page.click(".run-button");
+await verdict();
+check("a passing later run offers every grade",
+  JSON.stringify(await gradeLabels()) === ALL_FOUR,
+  JSON.stringify(await gradeLabels()));
+for (let i = 0; i < 3; i++) {
+  await page.keyboard.press("a");
+  await page.waitForTimeout(200);
+}
+check("revealing the pseudocode leaves the one honest answer",
+  JSON.stringify(await gradeLabels()) === '["Again"]',
+  JSON.stringify(await gradeLabels()));
+await capture("hint-honesty", "Pseudocode revealed on a later review: Again only");
 dialogs.length = 0;
 await page.click("text=Exit");
 await page.waitForTimeout(800);
@@ -1036,7 +1071,8 @@ const declared = [
   "UserClickedSubcategory", "UserClickedBreadcrumb", "UserToggledProblem",
   "UserClickedSelectAll", "UserClickedClearSelection", "UserChangedIterations",
   "UserClickedStartDrill", "UserClickedExitDrill", "ExitConfirmed",
-  "UserToggledSolution", "UserClickedNext", "UserSearched", "UserChangedKeymap",
+  "UserToggledSolution", "UserRevealedHint", "UserClickedNext", "UserSearched",
+  "UserChangedKeymap",
   "UserClickedRun", "UserClickedStopRun", "UserClickedRetryRuntime",
   "UserToggledSide", "UserToggledLanguage", "UserToggledSuspend",
   "MenuSuspendedAtCursor", "UserPickedChoice", "UserSubmittedAnswer",

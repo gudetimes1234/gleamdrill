@@ -1,0 +1,8 @@
+== nudge
+There is no loop keyword coming to save you. A Gleam list can only ever be one of two shapes — which two? — and once you name them in a case expression, what does "the rest of the work" become?
+== steps
+- Write every list function as a case over [] and [head, ..tail]; recursion on the tail replaces the loop.
+- length: [] is 0; [_, ..rest] is 1 + length(rest).
+- last: the last element matters, so add the third classic pattern [only] between the other two.
+- last on [] is Error(Nil), [only] is Ok(only), and [_, ..rest] just recurses — the answer lives at the end.
+- Check each case body only handles its own shape; the compiler's exhaustiveness check does the rest.

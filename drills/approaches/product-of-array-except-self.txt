@@ -1,0 +1,19 @@
+== nudge
+Division is off the table, so stop thinking about undoing a total. Standing at one position, what two pieces of information — taken together — completely determine its answer? Could each piece be accumulated as you sweep past?
+== steps
+- See each answer as (product of everything left of i) times (product of everything right of i).
+- Forward pass: write into result[i] the running product of everything before i.
+- Backward pass: carry a running suffix product and multiply it into result[i].
+- Start both running products at 1 so the two ends come out right.
+- Counting only the output array as free, this is already O(1) extra space — the classic follow-up answers itself.
+== pseudocode
+result = array of n ones
+prefix = 1
+for i in 0..n-1:
+    result[i] = prefix
+    prefix *= nums[i]
+suffix = 1
+for i in n-1..0:
+    result[i] *= suffix
+    suffix *= nums[i]
+return result

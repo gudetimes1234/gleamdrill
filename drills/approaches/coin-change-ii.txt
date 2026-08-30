@@ -1,0 +1,16 @@
+== nudge
+What separates this from plain coin change — what goes wrong if 1+2 and 2+1 are both counted? Whatever counting scheme you choose has to make that double-count structurally impossible, not filter it out afterwards.
+== steps
+- Keep ways[t] = the number of combinations making total t, with ways[0] = 1 for the empty combination.
+- Put the coins on the OUTER loop: settle everything one coin contributes before the next coin is even looked at.
+- For each coin, sweep t upward from coin to amount, adding ways[t - coin] into ways[t].
+- Coin-outermost is what counts combinations: every combination is only ever built in coin order, so 1+2 and 2+1 collapse into one.
+- Follow-up: swapping the loops (amount outer) silently counts permutations instead — know which question is being asked.
+- As a recursion the same rule reads: at each coin, either use it again or set it aside for good.
+== pseudocode
+ways = array of amount+1 zeros
+ways[0] = 1
+for coin in coins:
+    for t in coin..amount:
+        ways[t] = ways[t] + ways[t - coin]
+return ways[amount]

@@ -1,0 +1,20 @@
+== nudge
+Standing to the right of the tree, exactly one node per level shows. Which one — and why is it not simply whatever hangs off the right children? Try restating the problem level by level.
+== steps
+- Walk the tree level by level with a whole-frontier loop, exactly as in Level Order Traversal.
+- From each level keep only the last node's value — that is what the right side sees.
+- Build the next frontier from all children, left to right, skipping empties.
+- Repeat until the frontier empties; the kept values, top to bottom, are the answer.
+- Beware the tempting wrong answer of following right children only: where the right side is short, a node further left is the one that shows.
+- Depth-first alternative: visit the right child first and record the first value reached at each new depth — first to a depth is rightmost on it.
+== pseudocode
+seen = []
+frontier = [root] if root != null else []
+while frontier is not empty:
+    seen.add(value of last node in frontier)
+    next = []
+    for node in frontier:
+        if node.left != null: next.add(node.left)
+        if node.right != null: next.add(node.right)
+    frontier = next
+return seen

@@ -1,0 +1,8 @@
+== nudge
+One function cares only about how the string starts; the other needs to look at individual characters. Gleam's case can match more of a string than you might expect — and when it can't, what turns a string into something the list functions can chew on?
+== steps
+- strip_comment: case on the string itself with prefix patterns — "# " <> rest binds everything after the prefix directly.
+- Order the branches from most to least specific ("# " before "#"), with a catch-all returning the line unchanged.
+- initials: split the name on " " to get words.
+- list.filter_map with string.to_graphemes plus list.first grabs each word's first character and drops empty words in the same pass.
+- Concatenate and uppercase the collected letters.

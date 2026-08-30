@@ -1,0 +1,20 @@
+== nudge
+A permutation scrambles order but preserves something else entirely — what? And since every candidate inside s2 must have exactly s1's length, how many candidates are there really, and how cheaply can you move from one to the next?
+== steps
+- If s1 is longer than s2, return false outright.
+- Build a frequency map of s1 and another of s2's first |s1| characters.
+- Equal maps means a permutation is already found.
+- Slide the fixed-width window one step at a time: count the entering character in, count the leaving one out, dropping entries that reach zero, and compare maps again.
+- Follow-up: instead of comparing whole maps each slide, maintain one integer — how many of the 26 letter counts currently match — and each slide becomes O(1).
+== pseudocode
+if length(s1) > length(s2): return false
+need = counts of s1
+window = counts of first length(s1) characters of s2
+if window == need: return true
+for i in length(s1)..length(s2)-1:
+    window[s2[i]] += 1
+    old = s2[i - length(s1)]
+    window[old] -= 1
+    if window[old] == 0: remove old from window
+    if window == need: return true
+return false

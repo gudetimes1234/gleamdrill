@@ -1,0 +1,20 @@
+== nudge
+Two jobs hide in this one: something to measure, then something to select by that measurement. The measuring part you know — but before reaching for sorting, ask how large the measured numbers can possibly get. Does that bound suggest somewhere to file things?
+== steps
+- Count each value's frequency with a map.
+- Notice no frequency can exceed n, so frequencies themselves can index an array of n+1 buckets.
+- Drop each distinct value into the bucket for its count.
+- Walk the buckets from highest frequency down, collecting values until you have k — O(n) overall.
+- Follow-up: when k is much smaller than n, a heap of size k gives O(n log k); sorting the (value, count) pairs is the simple O(n log n) baseline.
+== pseudocode
+counts = empty map
+for value in nums:
+    counts[value] += 1
+buckets = array of n+1 empty lists
+for (value, freq) in counts:
+    buckets[freq].append(value)
+result = []
+for freq from n down to 1:
+    for value in buckets[freq]:
+        result.append(value)
+        if size(result) == k: return result

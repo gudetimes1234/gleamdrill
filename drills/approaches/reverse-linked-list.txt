@@ -1,0 +1,17 @@
+== nudge
+Every node points forward and you want them all pointing back. The moment you flip one node's link, what have you just lost — and what must you have saved before touching anything?
+== steps
+- Keep two references: previous (starting empty) and the current node.
+- Before changing anything, save current's next — once the link is overwritten, the rest of the list is unreachable.
+- Point current's link back at previous.
+- Slide both forward: previous becomes current, current becomes the saved next.
+- When current runs out, previous is the new head — return it.
+- Follow-up: the recursive version reverses the tail then hooks the next node back; in a cons-list language the same rewiring is an accumulator you prepend to — a value instead of a mutation.
+== pseudocode
+previous = null
+while head != null:
+    following = head.next
+    head.next = previous
+    previous = head
+    head = following
+return previous

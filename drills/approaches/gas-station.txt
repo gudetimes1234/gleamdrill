@@ -1,0 +1,21 @@
+== nudge
+Trying every start is quadratic. When an attempt starting at station i runs dry at station j, what does that failure tell you about every station in between? And is there a one-number test for whether any start can work at all?
+== steps
+- Sum gas[i] - cost[i] over the whole circle as you go; a negative grand total means no start works — return -1.
+- Walk once with a running tank, adding each station's surplus or deficit.
+- When the tank goes negative at station i, no station between the current candidate and i can work either — each would arrive with even less fuel — so jump the candidate straight to i + 1 and reset the tank to zero.
+- Those two facts together turn the quadratic search over starts into a single pass.
+- Skip any second lap to verify: a non-negative grand total already guarantees the surviving candidate completes the circle.
+== pseudocode
+total = 0
+tank = 0
+start = 0
+for i in 0..n-1:
+    diff = gas[i] - cost[i]
+    total = total + diff
+    tank = tank + diff
+    if tank < 0:
+        start = i + 1
+        tank = 0
+if total >= 0: return start
+return -1

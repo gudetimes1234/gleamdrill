@@ -1,0 +1,23 @@
+== nudge
+You could run the single-word grid search once per word — where exactly does that repeat work? Many of the words open with the same letters; what would let one walk of the board serve all of them at once?
+== steps
+- Build one trie of every word, and mark each word's final node with the word itself.
+- From every cell, walk the board and the trie together: a step is legal only if the cell's letter is a child of the current trie node.
+- Record a word the moment its marker node is reached, and keep walking — longer words may continue through it.
+- Carry the cells used on the current path so no cell repeats within one word; a fresh path from another start gets a fresh set.
+- Collect results in a set, since the same word can be traced from several places.
+- Optimisation follow-up: prune found words (or emptied nodes) out of the trie so exhausted branches stop being explored.
+== pseudocode
+build trie of words; each complete word's node stores that word
+
+function walk(r, c, node, used):
+    if (r, c) outside grid or (r, c) in used: return
+    letter = board[r][c]
+    if letter not in node.children: return
+    child = node.children[letter]
+    if child stores a word: found.add(that word)
+    for (dr, dc) in four directions:
+        walk(r + dr, c + dc, child, used plus (r, c))
+
+for each cell (r, c): walk(r, c, trie root, empty set)
+return found as a list

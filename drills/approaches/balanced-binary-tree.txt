@@ -1,0 +1,19 @@
+== nudge
+Checking balance at every node by measuring heights fresh asks the same subtree the same question over and over. Could the height computation itself carry the verdict — and once one subtree has failed, what is left to measure?
+== steps
+- Write one walk that reports a subtree's height, with a twist: -1 means something below is already unbalanced.
+- Base case: an empty subtree has height 0.
+- Measure both children; if either reports -1, pass -1 straight up without measuring anything else.
+- If the two heights differ by more than one, this node breaks the rule — report -1.
+- Otherwise report 1 plus the larger height.
+- The tree is balanced when the root's report is not -1; the sentinel-in-the-return trick is the same move as the diameter walk.
+== pseudocode
+measure(node):
+    if node == null: return 0
+    left = measure(node.left)
+    right = measure(node.right)
+    if left == -1 or right == -1: return -1
+    if abs(left - right) > 1: return -1
+    return 1 + max(left, right)
+
+return measure(root) != -1

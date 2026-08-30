@@ -1,0 +1,7 @@
+== nudge
+A grouping problem, and the only real friction is the first word of each length: something has to exist before you can append to it. What removes the "is the key there yet?" dance entirely?
+== steps
+- Create collections.defaultdict(list) — first touch of any key materialises an empty list.
+- Walk the words in order, appending each to groups[len(word)] — one append per item, and appending preserves input order for free.
+- Convert with dict(groups) at the end, as the prompt asks.
+- File the pattern: defaultdict(int) for counters, defaultdict(set) for unique membership.

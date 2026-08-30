@@ -64,11 +64,20 @@ pub type Quiz {
   )
 }
 
+/// One rung of the approach hint ladder, revealed in order: a vague nudge,
+/// then the plan as steps, then (for code drills) language-neutral
+/// pseudocode. Revealing the pseudocode counts as seeing the answer.
+pub type ApproachStage {
+  Nudge(String)
+  Steps(List(String))
+  Pseudocode(String)
+}
+
 pub type Problem {
   Problem(
     title: String,
     prompt: String,
-    approach: String,
+    approach: List(ApproachStage),
     solutions: List(Solution),
     language: Language,
     check: Option(Check),

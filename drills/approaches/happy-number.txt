@@ -1,0 +1,22 @@
+== nudge
+Follow the sequence a few steps for an unhappy number. What must eventually happen, and why can the walk not wander off forever? Name that behaviour and this joins a family of problems you already know how to solve.
+== steps
+- Notice sums of squared digits are bounded, so only finitely many values are reachable — an unhappy walk must eventually revisit a value and loop.
+- That makes this cycle detection wearing a numeric costume.
+- Write the step helper: peel digits with mod 10 and integer division by 10, summing the squares.
+- Keep a set of values already seen and iterate until you reach 1 (happy) or a repeat (trapped in the loop).
+- Follow-up: Floyd's slow and fast pointers do it in constant space — they meet at 1 for a happy number and inside the other cycle otherwise.
+== pseudocode
+squareDigits(n):
+    total = 0
+    while n > 0:
+        digit = n mod 10
+        total = total + digit * digit
+        n = n / 10   // integer division
+    return total
+
+seen = empty set
+while n != 1 and n not in seen:
+    seen.add(n)
+    n = squareDigits(n)
+return n == 1

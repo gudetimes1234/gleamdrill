@@ -1,0 +1,15 @@
+== nudge
+Every route into a square arrives from only two directions. If you knew how many ways reach each of those two neighbours, what would that tell you — and does the whole grid ever need to be in memory at once? This is a counting problem, not a pathfinding one.
+== steps
+- Define ways(r, c) as the number of paths reaching that square: it is the ways to reach the square above plus the ways to reach the one on the left.
+- Seed the top row with 1s — there is exactly one way along the top edge.
+- Fill row by row; only the row above is ever read, so keep a single row of counters.
+- Update the row in place left to right: adding the value on the left into a cell turns "row above" into "row here".
+- After m - 1 sweeps the last entry is the answer.
+- Follow-up: there is no grid at all — every path is m - 1 downs and n - 1 rights in some order, so the count is the binomial coefficient C(m + n - 2, m - 1).
+== pseudocode
+row = array of n ones
+repeat m - 1 times:
+    for c in 1..n-1:
+        row[c] = row[c] + row[c-1]
+return row[n-1]

@@ -1,0 +1,11 @@
+== nudge
+Closeness is an ordering problem in disguise — but does the ordering key have to be the true distance? What does computing the square root buy you here, and what does it cost?
+== steps
+- Rank points by squared distance x*x + y*y: the square root is monotonic, so dropping it cannot change the order, and everything stays in exact integers with nothing to round.
+- Sort all points by that key and take the first k — O(n log n).
+- The answer may be in any order, so no tie-breaking rules are needed.
+- Follow-up when k is much smaller than n: scan once keeping a max-heap of size k on squared distance, evicting the farthest — O(n log k).
+- Deeper follow-up: quickselect partitions around a pivot distance for expected O(n).
+== pseudocode
+sort points by (x*x + y*y)
+return the first k points

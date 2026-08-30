@@ -1,0 +1,23 @@
+== nudge
+Two forces pull at the window: it must grow until it holds everything t asks for, then prove itself by shrinking. The expensive part is knowing when it qualifies — what single number could announce "the window is complete" without re-checking every character each time?
+== steps
+- Count the characters t needs into a map, and set missing to t's length.
+- Sweep the right edge over s; when an arriving character is still genuinely needed (its count is positive), decrement missing. Decrement its count either way — negative counts just record surplus.
+- The moment missing reaches zero, the window is valid.
+- While it stays valid, record the window if it is the shortest yet, then release the left character: bump its count back up, and if that count goes positive the window has broken — missing returns to one.
+- Keep growing after each break; at the end return the shortest window recorded, or the empty string if none ever qualified.
+== pseudocode
+need = counts of t
+missing = length(t)
+left = 0
+best = none
+for right in 0..n-1:
+    if need[s[right]] > 0: missing -= 1
+    need[s[right]] -= 1
+    while missing == 0:
+        if best is none or right - left + 1 < width(best):
+            best = (left, right)
+        need[s[left]] += 1
+        if need[s[left]] > 0: missing += 1
+        left += 1
+return substring at best, or ""

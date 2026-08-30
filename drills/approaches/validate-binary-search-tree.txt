@@ -1,0 +1,18 @@
+== nudge
+Comparing each node with its parent feels sufficient — is it? A node can be larger than its parent and still sit on the wrong side of something higher up. What knowledge about allowed values would have to travel down the tree with you to catch that?
+== steps
+- Validate each node against a range of allowed values, not against its parent alone.
+- Start at the root with both bounds open — no limit on either side.
+- Recurse left with the upper bound tightened to the node's value; recurse right with the lower bound tightened.
+- Fail a node the moment it is at or beyond either bound — equal values are invalid too.
+- An empty subtree is trivially valid; the tree is valid when every node passes.
+- Alternative worth knowing: an in-order walk of a valid BST is strictly increasing, so walk in order and check each value beats the previous one.
+== pseudocode
+function valid(node, low, high):
+    if node is null: return true
+    if low is set and node.val <= low: return false
+    if high is set and node.val >= high: return false
+    return valid(node.left, low, node.val)
+       and valid(node.right, node.val, high)
+
+return valid(root, unset, unset)

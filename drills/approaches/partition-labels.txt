@@ -1,0 +1,21 @@
+== nudge
+A cut is legal only when nothing to its left ever appears again to its right. What single fact about each character decides that — and how would you know, mid-walk, that you are finally allowed to cut?
+== steps
+- First pass: map each character to its LAST position in the string (overwriting as you go leaves exactly that).
+- Sweep left to right, growing the current piece's required end: the furthest last-position of any character seen inside the piece.
+- When the walk's index catches up with that end, nothing inside the piece can reappear later — close it there.
+- Record the piece's length and start the next piece at the following index.
+- Closing at the earliest legal point every time is what makes the number of pieces maximal.
+== pseudocode
+last = empty map
+for i in 0..n-1:
+    last[s[i]] = i
+sizes = []
+start = 0
+end = 0
+for i in 0..n-1:
+    end = max(end, last[s[i]])
+    if i == end:
+        sizes.add(end - start + 1)
+        start = i + 1
+return sizes

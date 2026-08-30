@@ -1,0 +1,19 @@
+== nudge
+This is a counting problem: ask how the last character of a prefix could have been decoded — how many ways can that final piece end? And before writing anything, ask what a zero is allowed to do in this encoding.
+== steps
+- Count decodings of prefixes with two rolling values: the ways ending one character back and two characters back.
+- Extend each new character two ways: standing alone (adds the one-back count) or pairing with its predecessor (adds the two-back count).
+- Gate each branch: standing alone is invalid for "0", and a pair counts only when it reads as 10 through 26.
+- Treat zeros as the whole difficulty — a zero can never stand alone, and only 10 or 20 can absorb one.
+- Seed both counts at 1, not 0: the empty prefix is one complete decoding, and that base case is where correctness lives.
+- Roll the pair through the string; the final one-back value is the answer.
+== pseudocode
+two_back, one_back = 1, 1
+for i in 0..n-1:
+    alone = one_back if s[i] != "0" else 0
+    paired = 0
+    if i > 0:
+        pair = the two characters s[i-1], s[i] read as a number
+        if 10 <= pair <= 26: paired = two_back
+    two_back, one_back = one_back, alone + paired
+return one_back

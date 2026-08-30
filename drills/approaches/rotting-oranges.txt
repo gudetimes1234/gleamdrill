@@ -1,0 +1,25 @@
+== nudge
+The rot spreads from many places at once, and the clock ticks for all of them together. What kind of search moves in synchronized waves — and what does one wave correspond to here?
+== steps
+- Scan the grid once, collecting every rotten orange into the starting frontier and counting the fresh ones.
+- Search breadth-first from all the rotten sources at once — seeding them together at minute zero is what makes each wave one minute.
+- For each wave, rot every fresh neighbour of the frontier, mark it seen, and decrement the fresh count; the newly rotted cells form the next frontier.
+- Count a minute only when a wave actually rotted something; stop when a wave changes nothing or no fresh orange remains.
+- If fresh oranges survive at the end, some were unreachable — answer -1.
+- One search per source would give a distance from each source and still need combining; the multi-source frontier yields each orange's earliest rot time directly.
+== pseudocode
+frontier = every rotten cell
+fresh = count of fresh cells
+minutes = 0
+while frontier not empty and fresh > 0:
+    next = []
+    for (r, c) in frontier:
+        for each in-bounds neighbour (nr, nc):
+            if grid[nr][nc] is fresh and (nr, nc) not seen:
+                mark (nr, nc) seen
+                fresh -= 1
+                next.push((nr, nc))
+    if next is empty: break
+    frontier = next
+    minutes += 1
+return minutes if fresh == 0 else -1

@@ -1,0 +1,22 @@
+== nudge
+Two questions must both be answered in O(1): where does this key live, and which key has waited longest untouched? No single structure you would reach for answers both. What combination might — or does your language's map already keep a secret that helps?
+== steps
+- Keep a map whose iteration order is insertion order (or the classic pairing: a hash map into the nodes of a doubly linked list).
+- On get of a missing key, return -1.
+- On get of a present key, delete it and re-insert it — re-insertion makes it the newest, which is the recency bump; then return the value.
+- On put of an existing key, delete the old entry first so the fresh insert lands at the newest position.
+- After inserting, if the size exceeds capacity, evict the first key in iteration order — that is the least recently used.
+- Follow-up: without an insertion-ordered map, move a key's list node to the tail on every use and evict from the head — same O(1) operations, more wiring.
+== pseudocode
+get(key):
+    if key not in entries: return -1
+    value = entries.remove(key)
+    entries[key] = value
+    return value
+
+put(key, value):
+    if key in entries:
+        entries.remove(key)
+    entries[key] = value
+    if size(entries) > capacity:
+        entries.remove(oldest key in entries)

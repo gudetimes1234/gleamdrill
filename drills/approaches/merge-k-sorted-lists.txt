@@ -1,0 +1,30 @@
+== nudge
+You already own the two-list merge; the trap is in how you scale it to k. If you fold the lists in one at a time, what work does the growing result force you to repeat — and how could the same merges be arranged so nothing is walked too often?
+== steps
+- Drop the empty lists; if nothing remains, return null.
+- Reuse the two-list merge (dummy head, take the smaller front) as the inner routine.
+- Merge the lists in pairs: each round halves how many lists remain, with any odd one carried over.
+- Repeat rounds until one list remains — each element moves once per round and there are log k rounds: O(n log k).
+- Name the trap being avoided: folding lists in one at a time re-walks the growing result every merge, O(k*n).
+- Follow-up: a min-heap of the k front nodes reaches the same O(n log k) — and is the version that still works when the lists arrive as streams.
+== pseudocode
+lists = the non-null heads
+if lists is empty: return null
+while len(lists) > 1:
+    merged = []
+    for i = 0, 2, 4, ... while i < len(lists):
+        if i + 1 < len(lists):
+            merged.add(merge(lists[i], lists[i + 1]))
+        else:
+            merged.add(lists[i])
+    lists = merged
+return lists[0]
+
+merge(a, b):
+    dummy = new node
+    tail = dummy
+    while a != null and b != null:
+        splice the smaller front onto tail, advance that list
+        tail = tail.next
+    tail.next = whichever list remains
+    return dummy.next

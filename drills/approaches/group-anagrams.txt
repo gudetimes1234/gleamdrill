@@ -1,0 +1,16 @@
+== nudge
+A bucketing problem: every word belongs to exactly one group, so what do all the words in one group share that no outsider has? If you could write that shared thing down as a label, where would you file each word?
+== steps
+- Give every word a signature that comes out identical exactly for anagrams.
+- Use the tally of each letter — a 26-slot count — as that signature; building it is O(length) per word.
+- Keep a map from signature to a list of words, appending each word to its bucket.
+- Return the map's values: each bucket is one finished group.
+- Follow-up: sorting each word's letters also makes a valid key, at O(L log L) per word instead of O(L).
+== pseudocode
+groups = empty map from key to list
+for word in strs:
+    key = array of 26 zeros
+    for ch in word:
+        key[letter_index(ch)] += 1
+    groups[key].append(word)
+return values(groups)

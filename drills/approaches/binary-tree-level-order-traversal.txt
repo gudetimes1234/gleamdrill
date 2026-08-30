@@ -1,0 +1,20 @@
+== nudge
+The values are easy to visit; the hard part is knowing where one level ends and the next begins. What if you never held single nodes at all — what larger unit of the tree could you process whole, so the boundaries come for free?
+== steps
+- Hold the current level as one whole list of nodes — the frontier — starting with just the root, or nothing for an empty tree.
+- Each round, record the values of every node on the frontier as one output level.
+- Build the next frontier from all the children of the current one, left to right, skipping empties.
+- Repeat until the frontier is empty, then return the collected levels.
+- Contrast with the trap: a one-node-at-a-time queue gives the right order but no idea where each level ends — the whole-frontier step is what makes the grouping free.
+- Depth-first works too, if each value is filed under its depth in a list of lists.
+== pseudocode
+levels = []
+frontier = [root] if root != null else []
+while frontier is not empty:
+    levels.add(values of every node in frontier)
+    next = []
+    for node in frontier:
+        if node.left != null: next.add(node.left)
+        if node.right != null: next.add(node.right)
+    frontier = next
+return levels

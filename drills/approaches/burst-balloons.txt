@@ -1,0 +1,23 @@
+== nudge
+The natural question — which balloon to burst first — tangles every choice with its ever-shifting neighbours. Is there a different question to ask about a span of balloons whose answer does not depend on anything outside it?
+== steps
+- Pad the array with a 1 at each end so every balloon always has two neighbours and the edge cases vanish.
+- For a span (left, right) whose two boundary balloons are unburst, ask which balloon inside is burst LAST, not first.
+- The last balloon still has the span's two boundaries as neighbours — untouched by definition — so its coins are balloons[left] * balloons[last] * balloons[right], a known value.
+- Bursting it last also splits the span into two independent subproblems, (left, last) and (last, right); add their best values.
+- Take the max over every choice of last, memoise on (left, right), and let a span with nothing inside be worth 0.
+- Know why "first" fails: the first balloon's future neighbours depend on choices made on the other side, so the recursion never closes.
+== pseudocode
+balloons = [1] + nums + [1]
+memo = empty map
+best(left, right):
+    if right - left < 2: return 0
+    if (left, right) not in memo:
+        top = 0
+        for last in left+1 .. right-1:
+            coins = balloons[left] * balloons[last] * balloons[right]
+                    + best(left, last) + best(last, right)
+            top = max(top, coins)
+        memo[(left, right)] = top
+    return memo[(left, right)]
+return best(0, len(balloons) - 1)

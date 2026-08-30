@@ -1,0 +1,18 @@
+== nudge
+It looks like a shortest-path grid problem, yet adding up step costs is wrong here — the water only has to rise once. What should the "cost" of a path mean instead, and does your favourite shortest-path algorithm actually care?
+== steps
+- Redefine a path's cost as the largest depth along it rather than the sum — and change nothing else about Dijkstra.
+- Start a min-heap holding the top-left cell at cost equal to its own depth.
+- Pop the cheapest cell; the first time the bottom-right corner pops, its cost is the answer.
+- Otherwise skip it if already settled, mark it, and push each unvisited neighbour at cost max(current cost, neighbour depth).
+- Alternative worth naming: reachability is monotone in time, so binary search the answer, with each probe a plain flood fill asking "passable yet?".
+== pseudocode
+seen = empty set
+heap = [(grid[0][0], 0, 0)]
+while heap not empty:
+    (cost, r, c) = heap.pop_min()
+    if (r, c) is the bottom-right corner: return cost
+    if (r, c) in seen: continue
+    seen.add((r, c))
+    for each in-bounds neighbour (nr, nc) not in seen:
+        heap.push((max(cost, grid[nr][nc]), nr, nc))

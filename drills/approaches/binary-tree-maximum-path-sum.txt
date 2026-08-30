@@ -1,0 +1,20 @@
+== nudge
+A path may bend through a node and use both its arms — but what is it no longer allowed to do once it continues up to the parent? There are two different bests hiding at every node: which one gets returned, and which one only recorded?
+== steps
+- Compute two things per node: the best path that can continue upward (node plus at most one child) and the best path bending through it (node plus both children).
+- Recurse into both children first, getting each child's extendable sum and its best-anywhere sum.
+- Clamp a negative child sum to zero — a path is allowed to stop rather than absorb a loss.
+- Return the node's value plus the larger clamped gain; record the node's value plus both clamped gains against the best seen so far.
+- The answer is the best recorded anywhere, which may be a single node when every value is negative.
+== pseudocode
+function walk(node):
+    if node is null: return (0, -infinity)
+    (left_up, left_best) = walk(node.left)
+    (right_up, right_best) = walk(node.right)
+    left_gain = max(left_up, 0)
+    right_gain = max(right_up, 0)
+    up = node.val + max(left_gain, right_gain)
+    through = node.val + left_gain + right_gain
+    return (up, max(through, left_best, right_best))
+
+answer = second component of walk(root)

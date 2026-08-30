@@ -1,0 +1,23 @@
+== nudge
+Two different questions are tangled here: whether two trees match exactly, and where to stand while asking. What happens if you refuse to tangle them and solve each one alone?
+== steps
+- Write (or reuse) Same Tree: two empties match, an empty against a node fails, and two nodes need equal values plus matching child pairs.
+- Handle the edges: an empty subRoot is a subtree of anything; an empty root contains nothing.
+- At each node of the main tree ask "identical from here?" — if yes, done.
+- Otherwise recurse into the left and right children and accept either.
+- Know the cost: O(n*m) worst case, driven by partial matches that fail deep.
+- Follow-up: serialise both trees and run substring search to collapse it — sound only if the serialisation marks empty children, or false matches slip through.
+== pseudocode
+isSubtree(root, subRoot):
+    if subRoot == null: return true
+    if root == null: return false
+    if same(root, subRoot): return true
+    return isSubtree(root.left, subRoot)
+        or isSubtree(root.right, subRoot)
+
+same(a, b):
+    if a == null and b == null: return true
+    if a == null or b == null: return false
+    return a.value == b.value
+       and same(a.left, b.left)
+       and same(a.right, b.right)

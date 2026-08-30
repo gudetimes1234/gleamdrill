@@ -1,0 +1,21 @@
+== nudge
+Push, pop, and top are free — retrieving the minimum in O(1) is the intruder. When you push a value, what one extra fact could you freeze alongside it, so that popping never forces you to recount what remains?
+== steps
+- Keep a second stack of minimums rising and falling in step with the main one.
+- On push, also push min(new value, top of the min stack) — the minimum of everything at or below this entry.
+- On pop, pop both stacks together; the previous minimum simply resurfaces.
+- getMin is the min stack's top, so all four operations are O(1).
+- Variant worth knowing: storing (value, min-so-far) pairs in one stack is the same idea with the bookkeeping fused into each entry.
+== pseudocode
+push(v):
+    stack.push(v)
+    if mins is empty: mins.push(v)
+    else: mins.push(min(v, mins.top))
+
+pop():
+    stack.pop()
+    mins.pop()
+
+top(): return stack.top
+
+getMin(): return mins.top

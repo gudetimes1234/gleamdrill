@@ -1,0 +1,12 @@
+== nudge
+Every value has a twin except one, and you're allowed no extra space. Is there an operation under which a pair of equal values wipes itself out — no matter how far apart the two copies sit?
+== steps
+- Start an accumulator at 0.
+- XOR every value into it: XOR is its own inverse and ignores order, so both copies of any pair cancel wherever they sit.
+- Return the accumulator — the lone value is all that survives.
+- If asked for an alternative: twice the sum of the distinct values minus the actual total gives the same answer, but it needs a set (extra space) and leans on every other value appearing exactly twice.
+== pseudocode
+result = 0
+for n in nums:
+    result = result XOR n
+return result

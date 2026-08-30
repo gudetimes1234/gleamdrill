@@ -1,0 +1,19 @@
+== nudge
+A subsequence may skip whatever it likes, so a "best so far" for the whole prefix says too little. What is the right thing to know at each position — something anchored to that position itself?
+== steps
+- Define, per position, the length of the longest increasing subsequence ending exactly there.
+- Compute it as one plus the best answer among earlier positions holding a smaller value; no such position means length 1.
+- Process left to right so every earlier position is already answered, keeping the running maximum as the result.
+- Name the cost — O(n^2) — because the classic follow-up asks for better.
+- For O(n log n), keep the smallest value a subsequence of each length can end with; that list stays sorted, so each number is placed by binary search (patience sorting).
+- Be ready to say that the sorted list is not an answer subsequence — only its length means anything.
+== pseudocode
+endings = []   -- (value, length) for each position so far
+best = 0
+for n in nums:
+    longest = 0
+    for (value, length) in endings:
+        if value < n and length > longest: longest = length
+    endings.add((n, longest + 1))
+    best = max(best, longest + 1)
+return best

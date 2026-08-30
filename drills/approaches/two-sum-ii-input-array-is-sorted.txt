@@ -1,0 +1,15 @@
+== nudge
+The first Two Sum paid for its speed with extra memory; this one hands you sorted order instead. If some candidate pair sums too small, which end of the array is it safe to give up on — and why can that never skip the answer?
+== steps
+- Start one pointer at each end of the array.
+- Sum the two pointed-at values; equal to target means done — return the two positions, 1-indexed as asked.
+- Too small: move the left pointer right, the only move that can raise the sum.
+- Too big: move the right pointer left.
+- The pointers meet without a hit only if no pair exists — O(n) time, O(1) space, no map anywhere.
+== pseudocode
+left, right = 0, n - 1
+while left < right:
+    total = numbers[left] + numbers[right]
+    if total == target: return [left + 1, right + 1]
+    if total < target: left += 1
+    else: right -= 1

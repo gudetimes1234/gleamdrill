@@ -1,0 +1,27 @@
+== nudge
+The format is yours to choose — so what information, exactly, must the string carry for one and only one tree to match it? A list of values alone fits many shapes; what is it missing?
+== steps
+- Serialize with a pre-order walk, writing each value and a marker (say "#") for every empty child.
+- Join the tokens with a separator that cannot appear inside a value, such as a comma.
+- Deserialize by consuming tokens in the same pre-order: a marker means an empty subtree, anything else becomes a node.
+- After making a node, recursively read its left subtree then its right, sharing one cursor over the token list.
+- No length bookkeeping is needed — the markers tell the reader exactly when a subtree ends.
+- Follow-up: post-order works just as well read from the end, and level-order with markers is the BFS flavour some interviewers prefer.
+== pseudocode
+function write(node, parts):
+    if node is null:
+        parts.add("#")
+        return
+    parts.add(node.val as text)
+    write(node.left, parts)
+    write(node.right, parts)
+
+serialize(root): write then join parts with ","
+
+function read(tokens, cursor):
+    token = tokens[cursor]; advance cursor
+    if token == "#": return null
+    node = new node(token as number)
+    node.left = read(tokens, cursor)
+    node.right = read(tokens, cursor)
+    return node

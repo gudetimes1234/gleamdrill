@@ -1,0 +1,23 @@
+== nudge
+With no edges at all the answer is obvious. What does each edge do to that obvious answer — and do all of the edges actually do it?
+== steps
+- Start from the no-edge answer: n nodes means n components.
+- Process each edge with union-find: find the root of both endpoints.
+- If the roots differ, the edge genuinely merges two components — union them and count one merge.
+- If the roots match, the edge lies inside one component and changes nothing.
+- Answer n minus the number of real merges — no adjacency list, no traversal.
+- The traversal version is island-counting over an adjacency list; the contrast worth stating is that union-find takes edges as they arrive, while the traversal needs the whole graph first.
+== pseudocode
+parent[node] = node, for every node
+
+function find(node):
+    while parent[node] != node: node = parent[node]
+    return node
+
+merges = 0
+for (a, b) in edges:
+    rootA, rootB = find(a), find(b)
+    if rootA != rootB:
+        parent[rootA] = rootB
+        merges += 1
+return n - merges

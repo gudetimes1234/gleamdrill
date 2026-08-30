@@ -1,0 +1,17 @@
+== nudge
+Multiplying x by itself n times is the obvious loop. If someone handed you x to the power n/2 for free, how much work would be left — and what does that say about the total number of multiplications really needed?
+== steps
+- Recurse on half the exponent: compute half = power(x, n / 2) once and square it.
+- When n is odd, multiply in one extra x.
+- Bottom the recursion out at n == 0, returning 1.
+- Handle a negative exponent with a single reciprocal at the top — 1 / power(x, -n) — not inside the recursion.
+- Compute half once and reuse it: calling power twice rebuilds the full O(n) tree and forfeits the O(log n).
+== pseudocode
+power(x, n):
+    if n == 0: return 1
+    half = power(x, n / 2)   // integer division
+    if n is odd: return half * half * x
+    return half * half
+
+if n < 0: return 1 / power(x, -n)
+return power(x, n)

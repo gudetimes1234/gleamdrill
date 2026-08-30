@@ -1,0 +1,22 @@
+== nudge
+A tree plus one extra edge — so exactly one loop hides in the edge list. Adding edges one at a time, what moment would tell you an edge did no useful work?
+== steps
+- Grow the graph edge by edge with union-find: every node points toward a parent, and a root is a node that is its own parent.
+- For each edge, find the root of both endpoints by walking parent pointers upward.
+- Different roots: the edge joins two components — merge them by pointing one root at the other.
+- Same root: the endpoints were already connected, so this edge closes the cycle — record it.
+- Processing edges in the given order is what makes the recorded edge the last removable one, which is what the problem asks for.
+- The brute-force reading — delete each edge in turn and test whether a tree remains — is the honest O(n^2) baseline worth naming before beating it.
+== pseudocode
+parent[node] = node, for every node
+
+function find(node):
+    while parent[node] != node: node = parent[node]
+    return node
+
+answer = none
+for (a, b) in edges:
+    rootA, rootB = find(a), find(b)
+    if rootA == rootB: answer = (a, b)
+    else: parent[rootA] = rootB
+return answer

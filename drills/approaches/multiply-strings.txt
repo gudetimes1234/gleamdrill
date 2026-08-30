@@ -1,0 +1,23 @@
+== nudge
+How did you multiply two big numbers on paper in school? Before reaching for anything clever, ask where the product of one digit from each number always ends up — and whether the carrying really has to happen during the multiplication.
+== steps
+- Handle "0" times anything up front, then reverse both strings into digit arrays so index equals place value.
+- Allocate a result array of len(a) + len(b) slots — a product can never need more digits than that.
+- Nested loop: add digit i times digit j straight into slot i + j, with no carrying yet — deferring the carry is what keeps this inner loop clean.
+- Do one sweep over the slots afterwards: each slot keeps total mod 10 and passes total div 10 on as carry.
+- Reverse the digits into a string and strip leading zeros, keeping at least one digit.
+== pseudocode
+if num1 == "0" or num2 == "0": return "0"
+a = digits of num1, lowest place first
+b = digits of num2, lowest place first
+slots = array of (len(a) + len(b)) zeros
+for i in 0..len(a)-1:
+    for j in 0..len(b)-1:
+        slots[i + j] += a[i] * b[j]
+carry = 0
+digits = []
+for slot in slots:
+    total = slot + carry
+    digits.append(total mod 10)
+    carry = total div 10
+return digits reversed, joined, leading zeros stripped

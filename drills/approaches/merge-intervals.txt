@@ -1,0 +1,18 @@
+== nudge
+Unsorted, any interval might overlap any other, anywhere. What ordering would guarantee that each interval can only ever interact with one candidate — and which candidate would that be?
+== steps
+- Sort the intervals by start.
+- Walk them once, keeping the interval currently being built as the last entry of the output.
+- If the next interval starts at or before the built one's end, it overlaps — extend the built end to the larger of the two.
+- Otherwise the built interval is finished; append the next one as a fresh start.
+- Why one candidate suffices: anything the next interval could have overlapped earlier was already absorbed into the one being built.
+- Follow-up framing: keep only the edges, +1 at each start and -1 at each end, and cut wherever the running count returns to zero.
+== pseudocode
+sort intervals by start
+out = []
+for [start, end] in intervals:
+    if out is not empty and start <= out.last.end:
+        out.last.end = max(out.last.end, end)
+    else:
+        out.add([start, end])
+return out

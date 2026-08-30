@@ -243,6 +243,8 @@ pub type Model {
     opened_at_ms: Int,
     draft: String,
     revealed_solution: Option(Int),
+    /// How many rungs of the approach hint ladder are shown, top down.
+    hints_revealed: Int,
     runtimes: List(#(String, RuntimeState)),
     run: RunState,
     drafts: List(#(ProblemRef, String)),
@@ -301,6 +303,7 @@ pub fn default() -> Model {
     opened_at_ms: 0,
     draft: "",
     revealed_solution: None,
+    hints_revealed: 0,
     runtimes: [],
     run: RunIdle,
     drafts: [],
@@ -367,6 +370,29 @@ pub fn first_encounter(model: Model, problem: ProblemRef) -> Bool {
 ///
 /// Lives here because both the update loop (what to send the server) and the
 /// drill view (which buttons to offer) need it, and two copies drifted once.
+/// Whether the revealed hint rungs include the pseudocode stage — the point
+/// past which the hints have given the answer away.
+pub fn pseudocode_revealed(
+  m: Model,
+  stages: List(problem.ApproachStage),
+) -> Bool {
+  stages
+  |> list.take(m.hints_revealed)
+  |> list.any(fn(stage) {
+    case stage {
+      problem.Pseudocode(_) -> True
+      _ -> False
+    }
+  })
+}
+
+/// The one definition of "the answer was seen": a flipped solution or the
+/// pseudocode hint. Feeds the review's `revealed` flag (which both stores
+/// coerce on) and the grade bar's forced-Again rule.
+pub fn answer_revealed(m: Model, stages: List(problem.ApproachStage)) -> Bool {
+  m.revealed_solution != option.None || pseudocode_revealed(m, stages)
+}
+
 pub fn run_failed(run: RunState) -> Bool {
   case run {
     Ran(Cases(cases), _) -> cases == [] || !list.all(cases, fn(c) { c.passed })
@@ -486,6 +512,7 @@ pub type Msg {
   UserClickedExitDrill
   ExitConfirmed(Bool)
   UserToggledSolution(Int)
+  UserRevealedHint
   UserClickedNext
   UserSearched(String)
   UserChangedKeymap(String)

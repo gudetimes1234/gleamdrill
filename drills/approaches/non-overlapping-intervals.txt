@@ -1,0 +1,19 @@
+== nudge
+Flip the objective: removing the fewest intervals is the same as keeping the most. When several intervals fight over the same stretch, which single property of an interval decides which one is safest to keep?
+== steps
+- Reframe as keeping the largest non-overlapping set — the classic activity-selection greedy.
+- Sort by END time, not start.
+- Sweep, keeping an interval whenever it starts at or after the end of the last one kept; count everything else as removed.
+- The exchange argument: the interval finishing earliest leaves the most room for everything after it, so keeping it can never be worse.
+- Touching at a point does not overlap here, so the keep test is start >= last kept end.
+- Know why sorting by start is the natural wrong answer — it keeps whichever came first, which may be a very long interval that smothers many others.
+== pseudocode
+sort intervals by end
+removed = 0
+last_end = -infinity
+for [start, end] in intervals:
+    if start >= last_end:
+        last_end = end
+    else:
+        removed = removed + 1
+return removed

@@ -1,0 +1,15 @@
+== nudge
+A mirror image swaps left and right — at every depth, not just the top. Once you have fixed a single node, look at what remains on each side. Does it resemble the problem you started with?
+== steps
+- Base case: an empty tree inverts to itself — return null.
+- Swap the node's two children.
+- Invert each child recursively; swapping before or after recursing gives the same tree, so the order does not matter.
+- Return the root.
+- Keep the shape in mind: nearly every tree problem is this same walk with different work done at the node.
+== pseudocode
+invert(node):
+    if node == null: return null
+    swapped = node.left
+    node.left = invert(node.right)
+    node.right = invert(swapped)
+    return node

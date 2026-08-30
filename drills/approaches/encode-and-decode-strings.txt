@@ -1,0 +1,24 @@
+== nudge
+Any encoding is legal, so the real question lives on the decoding side: reading one long string, how does the decoder know where each piece stops — whatever characters the pieces contain? What could the encoder write down in advance to settle that?
+== steps
+- Prefix each string with its length and a fixed marker, like 5#hello, then concatenate all the framed pieces.
+- To decode, read digits up to the marker to recover the next length.
+- Take exactly that many characters as the next string; the content may contain the marker itself and it does not matter, because you never scan inside a piece.
+- Jump past the piece and repeat until the input is exhausted.
+- Follow-up: a plain separator only works with escaping, and any scheme must tell an empty list apart from a list holding one empty string.
+== pseudocode
+encode(strs):
+    out = ""
+    for s in strs:
+        out += length(s) + "#" + s
+    return out
+
+decode(data):
+    out = []
+    i = 0
+    while i < length(data):
+        j = position of "#" at or after i
+        len = number written in data[i..j-1]
+        out.append(data[j+1 .. j+len])
+        i = j + 1 + len
+    return out

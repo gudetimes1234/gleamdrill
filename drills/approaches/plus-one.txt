@@ -1,0 +1,19 @@
+== nudge
+This is grade-school addition with the smallest possible second operand. Where does the work begin, why does it usually stop almost immediately — and what is the one input shape that refuses to let it stop?
+== steps
+- Walk the digits from the right end with a carry that starts at 1.
+- At each digit take digit + carry: write sum mod 10 and carry the integer quotient.
+- The carry dies at the first digit below nine — from there the remaining digits are copied unchanged.
+- Handle all nines: the carry survives the whole walk and the number grows a new leading 1.
+- Follow-up: folding the digits into one integer and adding 1 works only until the number outgrows the language's integers — which is exactly why the input is a list of digits.
+== pseudocode
+out = []
+carry = 1
+for digit in digits from last to first:
+    total = digit + carry
+    out.add(total mod 10)
+    carry = total / 10   // integer division
+if carry > 0:
+    out.add(carry)
+reverse out
+return out

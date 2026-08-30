@@ -98,10 +98,14 @@ than claiming a complexity it does not have, and the representation changes to
 suit: linked lists are real nodes in Python and TypeScript, cons lists in Gleam
 and Elixir.
 
-Every drill carries a required signature, a starter stub, a collapsed
-**Approach** write-up ("this is a sliding-window problem…"), at least two
-reference **solutions**, and a test harness with per-case expected-vs-actual
-results. Compile errors underline the offending line; runaway code is
+Every drill carries a required signature, a starter stub, a progressive
+**Approach** hint ladder — a vague nudge, then the plan as numbered steps,
+then language-neutral pseudocode, each revealed on demand (`a`), with the
+pseudocode counting as seeing the answer — at least two reference
+**solutions**, and a test harness with per-case expected-vs-actual results.
+The ladders live in `drills/approaches/<slug>.txt` (sections split by
+`== nudge` / `== steps` / `== pseudocode`; `MANIFEST` is the census) and are
+embedded by the generator like the notes. Compile errors underline the offending line; runaway code is
 terminated by a timeout. Anything your code prints is captured and shown under
 **Output** — on a pass, on a failure, and on a crash, since printing and then
 crashing is when you most want to read it.

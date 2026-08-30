@@ -1,0 +1,18 @@
+== nudge
+Fewest steps smells like a breadth-first search. What does "everything reachable in exactly k jumps" look like for this array — and does that shape let you drop the queue and the visited set entirely?
+== steps
+- See the BFS levels: everything reachable in k jumps is a contiguous window of indices, so the frontier is just a range.
+- Walk the array once, tracking the current window's end and the furthest index anything seen so far can reach.
+- When the walk reaches the window's end, one jump is spent and the next window runs to that furthest index.
+- Stop the walk at the second-to-last index — arriving at the end must not charge an extra jump.
+- Return the jump count: no queue, no visited set, one pass.
+== pseudocode
+jumps = 0
+window_end = 0
+furthest = 0
+for i in 0..n-2:
+    furthest = max(furthest, i + nums[i])
+    if i == window_end:
+        jumps = jumps + 1
+        window_end = furthest
+return jumps

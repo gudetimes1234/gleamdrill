@@ -1,0 +1,15 @@
+== nudge
+Suppose today were the day you sold. What single fact about the past would tell you your profit on the spot? If that fact can be carried along as you walk, how many passes does this problem really need?
+== steps
+- Sweep the prices once, left to right.
+- Carry the cheapest price seen so far — the best possible buy for a sale today.
+- At each day, compute price minus that minimum and keep the best profit seen.
+- Update the minimum before taking the difference; buying and selling on the same day just yields zero, which is harmless.
+- If prices only ever fall, the answer stays 0 — no transaction beats not trading.
+== pseudocode
+lowest = infinity
+profit = 0
+for price in prices:
+    lowest = min(lowest, price)
+    profit = max(profit, price - lowest)
+return profit

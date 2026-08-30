@@ -1,0 +1,14 @@
+== nudge
+The question is really "have I seen this value before?" — asked once per element. What structure answers that in O(1), and what's the cost of not having one?
+== steps
+- Create an empty set of seen values.
+- Walk the array once; for each value, ask the set whether it's already there.
+- If it is, stop — the answer is true, no need to know where or how many.
+- Otherwise add the value and keep walking.
+- Fall off the end: every value was new, answer false.
+== pseudocode
+seen = empty set
+for value in nums:
+    if value in seen: return true
+    seen.add(value)
+return false

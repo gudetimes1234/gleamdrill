@@ -1,0 +1,8 @@
+== nudge
+The value might be there, it might not — and case expressions are off the table. Can the pipeline itself say "transform it if present, fall back if not", one small function per clause of that sentence?
+== steps
+- dict.get returns a Result; convert it with option.from_result to enter Option territory.
+- option.map applies the "if present" transformation — append " (configured)" to the raw value — and skips it on None.
+- option.unwrap supplies the fallback, "8080 (default)", collapsing the Option back to a plain String.
+- Chain all three with |> so the maybe-missing value flows straight through, then prepend "port: " to the result.
+- Reach for this shape whenever the code is a straight pipeline over one maybe-missing value; a case expression would say the same thing in twice the lines.

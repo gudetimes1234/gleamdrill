@@ -616,6 +616,52 @@ details.approach[open] summary.panel-title {
     color: var(--text-primary);
 }
 
+.approach-nudge {
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+.approach-steps {
+    padding-left: 20px;
+    margin: 0 0 10px;
+}
+
+.approach-steps li + li {
+    margin-top: 6px;
+}
+
+.approach-pseudocode {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    overflow-x: auto;
+    white-space: pre;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+.hint-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.hint-button {
+    font-size: 12px;
+    padding: 6px 12px;
+}
+
+.hint-warning {
+    color: var(--warning);
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-style: italic;
+}
+
 .solution-button.revealed {
     border-color: var(--success);
     color: var(--success);

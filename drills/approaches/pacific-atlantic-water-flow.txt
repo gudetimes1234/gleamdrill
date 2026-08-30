@@ -1,0 +1,24 @@
+== nudge
+Asked cell by cell, "can water get from here to both oceans?" repeats the same searching over and over. Is there a direction to run the question in that needs only two searches in total?
+== steps
+- Reverse the question: instead of water flowing downhill from every cell, let each ocean climb uphill from its border.
+- Seed one frontier with every Pacific-edge cell (top row plus left column) and another with every Atlantic-edge cell (bottom row plus right column).
+- From each seed set, search into neighbours whose height is greater than or equal to the current cell — uphill is the flow rule reversed.
+- Record the set of cells each ocean reaches.
+- Intersect the two sets and report the shared cells in row-major order.
+== pseudocode
+function reach(starts):
+    reached = empty set
+    frontier = starts
+    while frontier not empty:
+        (r, c) = frontier.pop()
+        if (r, c) in reached: continue
+        reached.add((r, c))
+        for each in-bounds neighbour (nr, nc):
+            if heights[nr][nc] >= heights[r][c]:
+                frontier.push((nr, nc))
+    return reached
+
+pacific = reach(every cell on the top row or left column)
+atlantic = reach(every cell on the bottom row or right column)
+return sort(intersection(pacific, atlantic))

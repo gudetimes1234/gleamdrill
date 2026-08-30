@@ -1,0 +1,16 @@
+== nudge
+Read the guarantees again: sorted rows that never overlap. What does that make the matrix as a whole, once you squint past the grid shape — and how many comparisons should a structure like that really cost?
+== steps
+- Binary search over the rows first: compare the target against a middle row's first and last values.
+- A row whose last value is too small sends the search below it; one whose first value is too big sends it above.
+- Landing on the one row that could contain the target, binary search inside it — O(log m + log n) total.
+- Alternative with the same bound: treat the grid as one flat sorted array of m*n values, mapping position p to matrix[p div n][p mod n] and halving once.
+- Follow-up: the staircase walk from the top-right corner discards a whole row or column per step, runs O(m + n), and does not even need the rows to be non-overlapping.
+== pseudocode
+low, high = 0, m - 1
+while low <= high:
+    mid = (low + high) div 2
+    if last of matrix[mid] < target: low = mid + 1
+    else if first of matrix[mid] > target: high = mid - 1
+    else: return binary_search(matrix[mid], target)
+return false

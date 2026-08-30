@@ -1,0 +1,19 @@
+== nudge
+Without the dot this is a structure you already know. What does one wildcard character force the lookup to become — and what keeps that from degenerating into checking every stored word?
+== steps
+- Store the words in a trie: letter-to-child maps with an end-of-word flag; addWord is the plain insert.
+- Search recursively over the pattern: a literal letter follows its single child or fails immediately.
+- A dot tries every child of the current node against the rest of the pattern, succeeding if any does.
+- When the pattern is exhausted, succeed only if the current node's end-of-word flag is set.
+- The trie's payoff is pruning: a branch dies at the first letter that cannot match, so shared prefixes are explored once instead of once per word.
+- Cheap alternative worth naming: bucket words by length and scan the matching bucket — a pattern can only match words of its own length.
+== pseudocode
+search(node, pattern):
+    if pattern is empty: return node.terminal
+    letter = pattern[0]; rest = pattern[1 ..]
+    if letter == ".":
+        for child in values of node.children:
+            if search(child, rest): return true
+        return false
+    if letter not in node.children: return false
+    return search(node.children[letter], rest)

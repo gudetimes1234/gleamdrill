@@ -1,0 +1,17 @@
+== nudge
+Either traversal alone matches many different trees, yet together they pin down exactly one. What does the very first entry of one list tell you outright — and what does locating that value in the other list divide in two?
+== steps
+- Take the first preorder value: it is the root of the whole tree.
+- Find that value in the inorder list — everything before it is the left subtree, everything after is the right.
+- The left chunk's size also says how to split the rest of the preorder list between the two subtrees.
+- Recurse on each preorder-slice and inorder-slice pair; an empty slice is an empty subtree.
+- Follow-up: searching the inorder list is a hidden O(n) per node — precompute a value-to-index map and pass boundary indices instead of slicing for O(n) overall.
+== pseudocode
+function build(preorder, inorder):
+    if preorder is empty: return null
+    root_val = preorder[0]
+    split = position of root_val in inorder
+    node = new node(root_val)
+    node.left = build(preorder[1 .. split], inorder[0 .. split - 1])
+    node.right = build(preorder[split + 1 ..], inorder[split + 1 ..])
+    return node

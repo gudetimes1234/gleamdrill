@@ -1,0 +1,17 @@
+== nudge
+A quarter turn feels like fiddly index gymnastics — unless it can be built out of simpler motions you already know. Which two mirror flips, composed, make a 90-degree turn?
+== steps
+- Decompose the turn into two reflections: flip across the main diagonal (transpose), then flip each row (a reflection through the vertical centre line).
+- Both operations are a couple of lines and need no index arithmetic — which beats memorising the four-way element cycle.
+- In place: swap matrix[r][c] with matrix[c][r] for every c > r, then reverse each row.
+- Sanity-check the direction on a 2x2 example — the same two flips in the other order turn it anticlockwise.
+- Follow-up: to derive the direct mapping instead, the entry at (row, column) after a clockwise turn came from (n - 1 - column, row).
+== pseudocode
+// reflect through the main diagonal
+for r in 0..n-1:
+    for c in r+1..n-1:
+        swap matrix[r][c], matrix[c][r]
+// reflect through the vertical centre line
+for each row in matrix:
+    reverse the row
+return matrix

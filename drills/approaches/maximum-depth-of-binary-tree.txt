@@ -1,0 +1,11 @@
+== nudge
+Try to define the depth of a tree in one sentence, using only the depths of smaller trees. Whatever sentence you write down is nearly the whole program. What is the depth of nothing at all?
+== steps
+- Base case: an empty tree has depth 0 — the whole problem lives in that line.
+- Recursively compute the depth of the left subtree and of the right subtree.
+- Return 1 plus the larger of the two.
+- Follow-up: a breadth-first level count gives the same number without recursion — what a tree deep enough to overflow the call stack needs.
+== pseudocode
+depth(node):
+    if node == null: return 0
+    return 1 + max(depth(node.left), depth(node.right))

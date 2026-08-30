@@ -1,0 +1,7 @@
+== nudge
+Concatenating with += in a loop looks harmless. But strings are immutable — so what does each += actually do to everything built so far, and what does that add up to across the loop?
+== steps
+- Recognise the trap: every += copies the whole string built so far, so the loop is O(n squared).
+- Collect the pieces in a list instead — appending to a list is O(1).
+- Append each character's uppercased form as you walk the input.
+- Join once at the end with "".join(parts) — one O(n) pass builds the final string.

@@ -1,0 +1,28 @@
+== nudge
+The input is words, but is the ordering really about words? Compare two neighbours in the sorted list — how much of them actually says anything about the alphabet?
+== steps
+- Build a graph over letters, not words: for each adjacent pair of words, find their first differing position.
+- Take exactly one edge from that difference — earlier letter before later letter — because everything after it says nothing.
+- If a pair never differs and the first word is longer, that is a word followed by its own prefix, which no alphabet can explain — return "".
+- Topologically sort the letter graph: count incoming edges per letter, start from the zero-count letters, and release dependents as letters are emitted.
+- If fewer letters come out than exist, the constraints form a cycle — the words contradict each other, return "".
+- Otherwise join the emitted letters into the alphabet.
+== pseudocode
+letters = every letter appearing in any word
+waiting[letter] = 0 and unlocks[letter] = [] for each letter
+for each adjacent pair (first, second) in words:
+    i = first position where they differ, if any
+    if i exists:
+        unlocks[first[i]].add(second[i])
+        waiting[second[i]] += 1
+    else if len(first) > len(second): return ""
+
+ready = letters with waiting == 0
+order = []
+while ready not empty:
+    letter = ready.pop()
+    order.add(letter)
+    for next in unlocks[letter]:
+        waiting[next] -= 1
+        if waiting[next] == 0: ready.push(next)
+return join(order) if len(order) == len(letters) else ""

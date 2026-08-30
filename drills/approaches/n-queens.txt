@@ -1,0 +1,21 @@
+== nudge
+n queens on n rows means one queen per row — so what is the only real decision at each level? And when two queens share a diagonal, what simple arithmetic relation between their coordinates gives it away?
+== steps
+- Place queens row by row, so the only choice per row is the column.
+- Keep three sets of threatened lines: columns, diagonals keyed by row - column, anti-diagonals keyed by row + column.
+- A square is safe exactly when its column and both diagonal keys are absent from all three sets — three lookups, no board scan.
+- On placing a queen, add its three keys and recurse into the next row; the branch dies the moment no column in a row is safe.
+- On reaching row n, render the chosen columns into board strings and record the solution.
+- Follow-up: an arrangement with no shared column is a permutation of columns, so filtering permutations by the two diagonal checks is a legitimate slower alternative.
+== pseudocode
+function place(row, chosen, cols, diags, antis):
+    if row == n:
+        boards.add(render each column in chosen as a board row)
+        return
+    for col in 0 .. n - 1:
+        if col in cols or row - col in diags or row + col in antis: continue
+        place(row + 1, chosen + [col],
+              cols plus col, diags plus row - col, antis plus row + col)
+
+place(0, [], empty set, empty set, empty set)
+return boards

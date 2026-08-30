@@ -1,0 +1,21 @@
+== nudge
+Generating every string of brackets and filtering would mostly produce garbage — could you build only the valid ones instead? Mid-construction, what two numbers tell you exactly which characters are still allowed to come next?
+== steps
+- Build strings one character at a time, tracking how many openers and closers remain to be placed.
+- An opener is legal whenever any openers remain.
+- A closer is legal only while more closers than openers remain — that surplus is exactly the count of currently unclosed openers.
+- When both counters hit zero the string is complete and valid by construction: record it.
+- Recurse on each legal choice, undoing the partial addition on the way back.
+- Follow-up: every balanced string is "(" A ")" B for a unique split, so composing smaller answers enumerates the same set — and the count is the nth Catalan number.
+== pseudocode
+out = []
+build(open_left, close_left, current):
+    if open_left == 0 and close_left == 0:
+        out.append(current)
+        return
+    if open_left > 0:
+        build(open_left - 1, close_left, current + "(")
+    if close_left > open_left:
+        build(open_left, close_left - 1, current + ")")
+build(n, n, "")
+return out

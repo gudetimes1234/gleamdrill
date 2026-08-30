@@ -1,0 +1,14 @@
+== nudge
+For each element there is exactly one question to ask, and it is asked independently of every other element. What is that question — and what does its independence tell you about how many answers must exist?
+== steps
+- Frame it per element: each one is in or out, independently, which is why there are 2^n subsets.
+- Recurse on the tail: the subsets of a list are the subsets of its tail twice over — once with the head added, once without.
+- Base case: the empty list has exactly one subset, the empty set.
+- Combine by prepending the head to every tail-subset and concatenating with the untouched tail-subsets.
+- Follow-up: the in-or-out choices are the bits of a number, so counting from 0 to 2^n - 1 and mapping set bits to elements enumerates the same thing with no recursion at all.
+== pseudocode
+function subsets(nums):
+    if nums is empty: return [[]]
+    rest = subsets(nums without its first element)
+    with_first = prepend nums[0] to each subset in rest
+    return with_first + rest

@@ -1,0 +1,20 @@
+== nudge
+A tree is two properties at once — but must you test both? Count what a tree of n nodes always has, and ask what verifying that count buys you.
+== steps
+- Check the edge count first: a tree on n nodes has exactly n - 1 edges, so any other count fails immediately.
+- With the count right, connected and acyclic imply each other — verify just one, and connectivity is the easier pick.
+- Build an adjacency list with each edge entered in both directions.
+- Traverse from node 0 with a stack and a seen set, collecting every node reached.
+- Answer true exactly when the traversal reached all n nodes.
+- Union-find gets both properties in a single pass instead: an edge landing inside a component is a cycle, and n - 1 successful merges means one component.
+== pseudocode
+if number of edges != n - 1: return false
+adjacency from edges, both directions
+seen = empty set
+stack = [0]
+while stack not empty:
+    node = stack.pop()
+    if node in seen: continue
+    seen.add(node)
+    for neighbour in adjacency[node]: stack.push(neighbour)
+return len(seen) == n

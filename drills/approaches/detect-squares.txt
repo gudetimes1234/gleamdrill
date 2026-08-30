@@ -1,0 +1,22 @@
+== nudge
+A square has four corners, but how many of them do you actually get to choose? Given the query point, which single other corner would pin down the whole square — and what does that reduce the counting to?
+== steps
+- Store added points in a map from (x, y) to how many copies sit there — duplicates matter.
+- add is just an increment of that count.
+- For count, loop over every stored point as the candidate corner diagonally opposite the query.
+- A valid diagonal partner shares neither coordinate with the query and satisfies |px - x| == |py - y| — a true diagonal.
+- That choice forces the other two corners to (x, py) and (px, y); add copies(diagonal) times copies(x, py) times copies(px, y) to the total.
+- Duplicated points multiply rather than repeat: two points at the same spot really do make two squares.
+== pseudocode
+counts = empty map
+
+add(point):
+    counts[point] += 1
+
+count(x, y):
+    total = 0
+    for each (px, py) with c copies in counts:
+        if px == x or py == y: continue
+        if abs(px - x) != abs(py - y): continue
+        total += c * counts[(x, py)] * counts[(px, y)]
+    return total

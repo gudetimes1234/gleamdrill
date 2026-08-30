@@ -1,0 +1,8 @@
+== nudge
+All three of these walk a list while carrying some running state. That shape has a name and a single library function — what are its two ingredients, and which variant do you need when the intermediate values are the answer?
+== steps
+- Name the two ingredients for each function: an initial accumulator and a function combining accumulator with element — that pair is the whole fold.
+- max: an empty list has no max, so case first; on [first, ..rest], fold rest starting from first, keeping the larger each step.
+- count_if: fold from 0, adding 1 whenever the predicate holds.
+- running_total: list.scan is fold that keeps every intermediate accumulator — fold from 0 with addition and the running totals fall out.
+- No hand-written recursion anywhere: if you typed a case over [head, ..tail], back up.

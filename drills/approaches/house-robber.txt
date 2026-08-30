@@ -1,0 +1,13 @@
+== nudge
+At each house there are only two futures, and each is summarized by a single number you could already know. What two questions about the earlier houses would decide this house instantly?
+== steps
+- Frame the choice at each house: rob it — its value plus the best from two houses back — or skip it and keep the best so far.
+- Notice both inputs are single numbers, so the whole table collapses to a rolling pair.
+- Walk the houses once, updating best = max(best so far, two-back best + value).
+- Shift the pair each step: the old best becomes the new two-back.
+- If asked where the recurrence comes from, write the recursion: a tree of rob-or-skip choices that the cache flattens from O(2^n) to O(n).
+== pseudocode
+best, previous = 0, 0
+for value in houses:
+    best, previous = max(best, previous + value), best
+return best

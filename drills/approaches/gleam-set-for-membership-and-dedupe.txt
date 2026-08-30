@@ -1,0 +1,8 @@
+== nudge
+"Have I seen this before?" asked once per element — a list answers that slowly, something else answers it fast. And since the output must keep first-seen order, how many things does the fold have to carry?
+== steps
+- Answer membership with gleam/set, not a list — set.contains is effectively O(1) where list.contains is O(n).
+- Fold over the items carrying a pair #(kept, seen): the deduped list so far plus the set of values already seen.
+- When set.contains says the item is old, pass the accumulator through unchanged.
+- When it's new, prepend it to kept and insert it into seen.
+- Prepending built kept backwards, so list.reverse it at the end to restore first-seen order.

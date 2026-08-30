@@ -1,0 +1,8 @@
+== nudge
+A counting problem, and the sticking point is incrementing a key that may not exist yet. Is there a dict operation that hands you "what's there, if anything" and stores whatever you answer — so the get-then-insert dance disappears?
+== steps
+- Normalise first, as a pipeline: string.lowercase, string.split on " ", list.filter out the empty strings.
+- Fold the words over dict.new() as the accumulator.
+- Inside the fold, dict.upsert(counts, word, fn) — the callback receives Some(current) or None and stores what it returns.
+- The callback body is one line: option.unwrap(n, 0) + 1 — absent reads as 0, then increment.
+- The whole function is one pipeline ending in the fold; no case expressions needed.

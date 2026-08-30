@@ -1,0 +1,20 @@
+== nudge
+Counting from the end of a list you can only walk forwards — that is the whole difficulty. Could two walkers, arranged just so, turn "nth from the end" into "when the other one finishes"? And which node do you actually need to be standing on to make the change?
+== steps
+- Put a dummy node in front of the head — removing the first node then needs no special case.
+- Start two pointers at the dummy and advance the leading one n steps.
+- Advance both together until the leader's next is null; the trailer now sits on the node just before the doomed one.
+- Bypass the doomed node: trailer.next = trailer.next.next.
+- Return dummy.next, which is right even when the head itself was removed.
+- The two-pass alternative — count the length, then walk to node length - n — gives the same answer; the held gap is what makes it one pass.
+== pseudocode
+dummy = new node with next = head
+behind = dummy
+ahead = dummy
+repeat n times:
+    ahead = ahead.next
+while ahead.next != null:
+    behind = behind.next
+    ahead = ahead.next
+behind.next = behind.next.next
+return dummy.next

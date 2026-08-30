@@ -1,0 +1,20 @@
+== nudge
+One independent choice per digit, and no way for a choice to ever be wrong. What does the size of the answer have to be, then — and what does a backtracking search collapse into when no branch can fail?
+== steps
+- Map each digit to its keypad letters.
+- Handle the empty input first: no digits means no combinations, not one empty string.
+- Recurse: build every combination of the remaining digits, then attach each letter of the first digit to the front of each tail.
+- Base case: no digits left yields one empty string — the seed the letters accumulate onto.
+- Name what this is: a plain cross product of the letter sets, backtracking with nothing to prune.
+- Follow-up: an iterative fold builds the same product with no call stack — start from one empty string and expand through each digit in turn.
+== pseudocode
+if digits is empty: return []
+
+function build(digits):
+    if digits is empty: return [""]
+    tails = build(digits after the first)
+    result = []
+    for letter in keypad[digits[0]]:
+        for tail in tails:
+            result.add(letter + tail)
+    return result

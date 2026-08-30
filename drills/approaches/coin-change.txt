@@ -1,0 +1,19 @@
+== nudge
+Grabbing the biggest coin first fails on some denominations — try making 6 from coins 1, 3, 4. If you somehow knew the fewest coins for every smaller amount, how would this amount's answer follow?
+== steps
+- Build a table from zero upward: amount 0 costs zero coins.
+- For each amount up to the target, try every coin: the cheapest way here is one coin more than the cheapest way to make the amount minus that coin.
+- Store entries only for reachable amounts — a gap in the table is cleaner than inventing an infinity sentinel.
+- An amount whose every coin-predecessor is missing gets no entry and stays unreachable.
+- Answer the target's entry, or -1 when it has none.
+- Say the reframe out loud: this is breadth-first search from zero with coins as edges, so the answer is a shortest path.
+== pseudocode
+table = {0: 0}
+for target in 1..amount:
+    best = none
+    for coin in coins:
+        if coin <= target and (target - coin) in table:
+            best = min(best, table[target - coin] + 1)
+    if best is not none:
+        table[target] = best
+return table[amount] if amount in table else -1

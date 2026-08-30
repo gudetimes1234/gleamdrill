@@ -27,7 +27,8 @@ import algodrill/model.{
   UserClickedStartDrill, UserClickedStartExam, UserClickedStopRun,
   UserClickedStats, UserClickedStudy, UserClickedSubcategory, UserClosedDetail,
   UserDismissedNotice, UserDismissedUpgradePrompt, UserGraded, UserOpenedDetail,
-  UserPickedChoice, UserSearched, UserSubmittedAnswer, UserSubmittedAuth,
+  UserPickedChoice, UserRevealedHint, UserSearched, UserSubmittedAnswer,
+  UserSubmittedAuth,
   UserToggledAuthMode, UserToggledLanguage, UserToggledProblem,
   UserToggledSide, UserToggledSolution, UserToggledSuspend,
 }
@@ -409,6 +410,13 @@ fn with_prefetch(pair: #(Model, Effect(Msg))) -> #(Model, Effect(Msg)) {
         _ -> pair
       }
     _, _ -> pair
+  }
+}
+
+fn current_problem(m: Model) -> Result(problem.Problem, Nil) {
+  case model.current_ref(m) {
+    Ok(ref) -> problems.find(ref.category, ref.subcategory, ref.title)
+    Error(Nil) -> Error(Nil)
   }
 }
 
@@ -876,7 +884,10 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               rating:,
               duration_ms: Some(browser.now_ms() - m.opened_at_ms),
               auto_failed: model.run_failed(m.run),
-              revealed: m.revealed_solution != None,
+              revealed: case current_problem(m) {
+              Ok(current) -> model.answer_revealed(m, current.approach)
+              Error(Nil) -> m.revealed_solution != None
+            },
             ),
           ),
         )
@@ -985,6 +996,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               studying: False,
               draft: draft_for(m, first),
               revealed_solution: None,
+              hints_revealed: 0,
               run: RunIdle,
               // Without this a reveal-only drill -- Elixir has no harness at
               // all -- would sit forever on "run the tests to grade this" with
@@ -1027,6 +1039,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             choice: None,
             graded: False,
             revealed_solution: None,
+            hints_revealed: 0,
             run: RunIdle,
             draft: "",
           ),
@@ -1113,6 +1126,17 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(reset_home(m), abandoned)
     }
     ExitConfirmed(False) -> #(m, effect.none())
+
+    UserRevealedHint -> {
+      let cap = case current_problem(m) {
+        Ok(current) -> list.length(current.approach)
+        Error(Nil) -> 0
+      }
+      #(
+        Model(..m, hints_revealed: int.min(m.hints_revealed + 1, cap)),
+        effect.none(),
+      )
+    }
 
     UserToggledSolution(index) -> {
       let revealed = case m.revealed_solution {
@@ -1394,6 +1418,7 @@ fn open_first(m: Model, queue: List(ProblemRef)) -> Model {
           False -> draft_for(m, first)
         },
         revealed_solution: None,
+        hints_revealed: 0,
         run: RunIdle,
         grading: initial_grading(m, first),
         opened_at_ms: browser.now_ms(),
@@ -1507,6 +1532,7 @@ fn advance_inner(m: Model) -> #(Model, Effect(Msg)) {
           current_iteration: iteration,
           problem_index: index,
           revealed_solution: None,
+          hints_revealed: 0,
           run: RunIdle,
           grading: NotGrading,
           opened_at_ms: browser.now_ms(),
@@ -1587,6 +1613,7 @@ fn reset_to_menu(m: Model) -> Model {
     current_iteration: 1,
     draft: "",
     revealed_solution: None,
+    hints_revealed: 0,
     run: RunIdle,
     choice: None,
     graded: False,

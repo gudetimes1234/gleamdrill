@@ -1,0 +1,8 @@
+== nudge
+Breadth-first search is queue-shaped: add at one end, remove from the other. What does removing from the front of a plain Python list actually cost, and what would that silently do to the whole traversal?
+== steps
+- Use collections.deque as the queue — list.pop(0) is O(n) and quietly turns BFS quadratic; popleft is O(1).
+- Start with deque([start]) and a seen set containing start; mark nodes seen when they are enqueued, not when dequeued.
+- Loop while the queue is nonempty: popleft a node and record it in the visit order.
+- For each unseen neighbour, add it to seen and append it on the right.
+- Return the visit order once the queue drains.

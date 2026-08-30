@@ -1,0 +1,8 @@
+== nudge
+Plain recursion piles up stack frames because work is left waiting after each call returns. Where else could the work-in-progress live — and what does the call have to look like for the compiler to turn the recursion into a loop?
+== steps
+- Split each function in two: a public wrapper that supplies the starting value, and a private helper carrying the work-in-progress as an extra argument.
+- Make the recursive call the LAST thing the helper does — that tail position is what lets the compiler compile it to a loop with no stack growth.
+- reverse: accumulator starts at [], and prepending each head builds the list backwards, which is exactly reversed.
+- sum: accumulator starts at 0 and each step adds the head.
+- On [], the helper just returns the accumulator — the answer was built on the way down, not the way back up.

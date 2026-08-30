@@ -1,0 +1,19 @@
+== nudge
+Cheapest path — so reach for the usual algorithm? Careful: what does the stop limit do to the claim that a city's cheapest fare can be settled once and reused?
+== steps
+- Notice why plain Dijkstra breaks: a costlier route with fewer stops may be the only one that still gets through, so cheapest-so-far can no longer settle a city.
+- Use Bellman-Ford, which settles nothing and relaxes edges in rounds — one round means one flight taken.
+- Start with only the source known, at cost 0.
+- Run k + 1 rounds; in each, relax every flight, improving the destination's cost from the origin's cost plus the fare.
+- Read each round from a snapshot of the previous round's costs — reading the table being written lets two flights leak into one round and breaks the limit.
+- Answer the destination's cost after the rounds, or -1 if it never received one.
+== pseudocode
+costs = {src: 0}
+repeat k + 1 times:
+    previous = copy of costs
+    for (origin, destination, price) in flights:
+        if origin in previous:
+            total = previous[origin] + price
+            if destination not in costs or total < costs[destination]:
+                costs[destination] = total
+return costs[dst] if dst in costs else -1

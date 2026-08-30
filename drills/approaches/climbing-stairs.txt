@@ -1,0 +1,13 @@
+== nudge
+Stand at the top and ask what the very last move could have been. If you already knew the answer for every shorter staircase, how would those answers combine?
+== steps
+- Split on the last move: it was one step or two, so the ways to reach step n are the ways to reach n - 1 plus the ways to reach n - 2.
+- Anchor the bases: one way to stand at the bottom, one way to reach step 1.
+- Notice only the last two values ever matter, so carry two variables and roll them forward n times — no table.
+- Name the sequence: it is Fibonacci with a staircase painted on it.
+- Write the top-down version once too: the same recurrence with a cache, where the memo is the whole difference between O(n) and O(2^n).
+== pseudocode
+previous, current = 0, 1
+repeat n times:
+    previous, current = current, previous + current
+return current

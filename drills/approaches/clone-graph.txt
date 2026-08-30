@@ -1,0 +1,27 @@
+== nudge
+Copying a node means copying its neighbours, which means copying their neighbours — and this graph has cycles. What single piece of bookkeeping stops the copy from chasing its own tail forever?
+== steps
+- Keep a set of nodes already handled and consult it before doing anything; a node found there is skipped, which is exactly what terminates a cycle.
+- Traverse from the start node — breadth-first or depth-first makes no difference — pushing each reached node's neighbours onto the frontier.
+- Only nodes reachable from the start belong in the copy, and the traversal decides that for free.
+- Renumber the reached nodes by ascending original index, mapping each old index to a new one.
+- Rebuild the adjacency list under the new numbering, dropping any neighbour that was never reached.
+== pseudocode
+reached = empty set
+frontier = [start]
+while frontier not empty:
+    node = frontier.pop()
+    if node in reached: continue
+    reached.add(node)
+    for n in adjacency[node]: frontier.push(n)
+
+ordered = sort(reached)
+for i in 0..len(ordered)-1: numbering[ordered[i]] = i
+
+copy = []
+for node in ordered:
+    row = []
+    for n in adjacency[node]:
+        if n in reached: row.add(numbering[n])
+    copy.add(row)
+return copy

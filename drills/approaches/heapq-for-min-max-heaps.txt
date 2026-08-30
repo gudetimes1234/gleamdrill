@@ -1,0 +1,7 @@
+== nudge
+You repeatedly need the smallest of a changing collection — sorting everything each time is overkill. What structure is built for exactly that ask, and what do you do when the same library only leans one way?
+== steps
+- Copy the list and heapq.heapify it — O(n), and it turns a plain list into a min-heap in place.
+- kSmallest: heappop k times; each pop is O(log n) and they come out in order.
+- kLargest: Python has no max-heap, so negate every value on the way in, heapify, pop k times, and negate again on the way out.
+- Keep the costs straight: heapify O(n), push and pop O(log n) each.

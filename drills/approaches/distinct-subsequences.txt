@@ -1,0 +1,16 @@
+== nudge
+Feed the source string through one character at a time. When a new character arrives, which partial spellings of the target does it help — and how would you count them without ever listing them?
+== steps
+- Keep row[j] = the number of ways to build the first j characters of t from the source read so far, with row[0] = 1 (one way to build nothing).
+- Read s one character at a time: a character equal to t[j-1] extends every way of building j - 1 characters into a way of building j, so row[j] += row[j-1].
+- Sweep j from len(t) DOWN to 1 — right to left — so the character's own update at j - 1 is not read back at j, which would use one source character twice in a single subsequence.
+- After the whole source is read, row[len(t)] is the answer.
+- Follow-up: the top-down twin is "skip or match" — at (i, j) count the ways skipping s[i], plus (when the characters match) the ways using it — memoised on the two indices.
+== pseudocode
+row = array of len(t)+1 zeros
+row[0] = 1
+for c in s:
+    for j from len(t) down to 1:
+        if c == t[j-1]:
+            row[j] = row[j] + row[j-1]
+return row[len(t)]

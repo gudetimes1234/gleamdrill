@@ -1,0 +1,17 @@
+== nudge
+Half of this problem is deciding which characters even count. Once only the meaningful ones remain, what is the most direct way to check symmetry — and can you do it without building a cleaned copy at all?
+== steps
+- Set one pointer at each end of the raw string.
+- Advance each pointer past characters that are not letters or digits.
+- Compare the two survivors lowercased; a mismatch is an immediate false.
+- Move both pointers inward and repeat until they cross.
+- Follow-up: building the cleaned string and comparing it with its reverse is the same complexity — the pointers only save the extra copy, so pick whichever reads better.
+== pseudocode
+left, right = 0, n - 1
+while left < right:
+    while left < right and not alnum(s[left]):  left += 1
+    while left < right and not alnum(s[right]): right -= 1
+    if lower(s[left]) != lower(s[right]): return false
+    left += 1
+    right -= 1
+return true

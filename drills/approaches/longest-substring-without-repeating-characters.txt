@@ -1,0 +1,19 @@
+== nudge
+A substring is a window, and the rule only ever breaks when the window grows. When the newest character is one the window already holds, how much of the window is actually poisoned — and what is the least you must discard to fix it?
+== steps
+- Slide a window over the string, with a set of the characters currently inside it.
+- Advance the right edge one character at a time.
+- While the arriving character is already in the set, evict from the left: remove s[left] and step left forward.
+- Add the new character, then record the window size if it is the widest yet.
+- Follow-up: remembering each character's last index lets the left edge jump straight past the repeat instead of evicting one at a time — same O(n), fewer steps.
+== pseudocode
+window = empty set
+left = 0
+longest = 0
+for right in 0..n-1:
+    while s[right] in window:
+        window.remove(s[left])
+        left += 1
+    window.add(s[right])
+    longest = max(longest, right - left + 1)
+return longest

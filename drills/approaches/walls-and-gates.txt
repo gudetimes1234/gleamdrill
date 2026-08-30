@@ -1,0 +1,17 @@
+== nudge
+Every room wants its nearest gate, but searching outward from each room repeats a full sweep per room. Who else could do the searching — and if they all start at once, what does being reached first mean?
+== steps
+- Run one breadth-first search seeded with every gate at once, all at distance zero.
+- Pop a cell and look at its four neighbours; an empty room still holding the infinity marker gets the popped cell's distance plus one.
+- Let the written distance double as the visited mark — a room already filled is never touched again.
+- Because all gates start together, the first arrival at a room is from its nearest gate, so no value is ever revised.
+- Walls and unreachable rooms are simply never written to; they keep their original values.
+== pseudocode
+frontier = queue of every gate cell
+while frontier not empty:
+    (r, c) = frontier.pop_front()
+    for each in-bounds neighbour (nr, nc):
+        if rooms[nr][nc] == INFINITY:
+            rooms[nr][nc] = rooms[r][c] + 1
+            frontier.push_back((nr, nc))
+return rooms

@@ -1,0 +1,21 @@
+== nudge
+A star means nothing on its own — it modifies the character before it. If you read the pattern with that in mind, how many symbols do you consume per decision, and what choices does a starred pair leave open?
+== steps
+- Let works(i, j) mean: does the pattern from j onward match the text from i onward? Memoise on the pair.
+- At each state compute whether a single character matches here: i in bounds and p[j] equal to s[i] or to the dot.
+- If the NEXT pattern symbol is a star, treat p[j] plus the star as one unit with two branches: skip the pair entirely for zero copies, or — if it matches here — consume one text character and stay on the same pair.
+- Otherwise it is a plain single-character match: match here and recurse on (i+1, j+1).
+- Base case: pattern exhausted is a match only when the text is exhausted too.
+- Do not drop the zero-copies branch — it is what lets "c*a*b" match "aab", and it is where this problem is usually got wrong.
+== pseudocode
+memo = empty map
+works(i, j):
+    if j >= len(p): return i >= len(s)
+    if (i, j) not in memo:
+        here = i < len(s) and (p[j] == s[i] or p[j] == ".")
+        if j + 1 < len(p) and p[j+1] == "*":
+            memo[(i, j)] = works(i, j + 2) or (here and works(i + 1, j))
+        else:
+            memo[(i, j)] = here and works(i + 1, j + 1)
+    return memo[(i, j)]
+return works(0, 0)

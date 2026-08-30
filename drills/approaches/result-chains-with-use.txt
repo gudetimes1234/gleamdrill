@@ -1,0 +1,7 @@
+== nudge
+Three things can go wrong here, one after another. Write it with case expressions and you get a pyramid that drifts off the right edge — what does Gleam offer to flatten "try this, and if it worked, keep going"?
+== steps
+- Chain each fallible step with use x <- result.try(...): it binds the Ok value and continues, or short-circuits the whole function with the Error.
+- Parse port with use port <- result.try(int.parse(port)), then timeout the same way — each line reads like a straight assignment.
+- Validate the host with a final case: "" is Error(Nil), anything else builds Ok(Config(host, port, timeout)).
+- Read the idiom as early-return for Results — the failure paths are all invisible plumbing.

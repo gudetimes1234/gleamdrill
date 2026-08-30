@@ -1,0 +1,18 @@
+== nudge
+Three separate rules — but look closer and each is the same kind of rule about the same kind of unit. What single question, asked once per filled cell, covers its row, its column, and its box together? And notice what is not being asked: nothing about whether the puzzle can be finished.
+== steps
+- Walk every cell, skipping empties — only filled cells can break a rule.
+- For each digit, form three signatures: (value, row), (value, column), and (value, box), where the box is named by (row div 3, column div 3).
+- Keep one set of every signature seen so far; meeting a signature twice means the same digit twice in one unit — return false.
+- Otherwise add all three signatures and continue.
+- Finish the sweep clean and the board is valid, solvable or not.
+== pseudocode
+seen = empty set
+for r in 0..8:
+    for c in 0..8:
+        if board[r][c] == ".": continue
+        v = board[r][c]
+        for key in [(v, "row", r), (v, "col", c), (v, "box", r div 3, c div 3)]:
+            if key in seen: return false
+            seen.add(key)
+return true

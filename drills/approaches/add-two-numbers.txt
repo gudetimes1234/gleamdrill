@@ -1,0 +1,25 @@
+== nudge
+How did you add multi-digit numbers in school — starting from which end, carrying what along? Now look at the order these digits arrive in. How much of the work has the problem already done for you?
+== steps
+- Walk both lists together, building the result behind a dummy head — least-significant-first is exactly the order addition wants, so no reversing and no length matching.
+- Loop while either list has digits or a carry remains — 5 + 5 needs a node neither input has.
+- Each round, sum the carry plus whichever front digits exist, advancing only the non-empty lists.
+- The new digit is the sum mod 10; the new carry is the sum divided by 10.
+- Append the digit as a new node and advance the tail.
+- Return dummy.next.
+== pseudocode
+dummy = new node
+tail = dummy
+carry = 0
+while a != null or b != null or carry > 0:
+    total = carry
+    if a != null:
+        total += a.value
+        a = a.next
+    if b != null:
+        total += b.value
+        b = b.next
+    carry = total / 10
+    tail.next = new node(total mod 10)
+    tail = tail.next
+return dummy.next

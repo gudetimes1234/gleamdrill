@@ -1,0 +1,21 @@
+== nudge
+Peeling digits off one number and pushing them onto another is the easy part. The whole problem is the 32-bit boundary: at what exact moment would the value be destroyed, and is a check after that moment worth anything?
+== steps
+- Record the sign and work with the absolute value.
+- Loop while digits remain: peel the bottom digit with mod 10, push it with result = result * 10 + digit, drop it with integer division.
+- Test for overflow BEFORE the multiply: if result already exceeds MAX div 10, the next push cannot fit — return 0.
+- The order matters because in a fixed-width language the multiply is where the value is lost; checking afterwards inspects a number that no longer exists.
+- Reapply the sign and do a final range check against the signed 32-bit bounds, returning 0 outside them.
+== pseudocode
+MAX = 2147483647
+MIN = -2147483648
+sign = -1 if x < 0 else 1
+remaining = abs(x)
+result = 0
+while remaining != 0:
+    if result > MAX div 10: return 0
+    result = result * 10 + (remaining mod 10)
+    remaining = remaining div 10
+result = result * sign
+if result > MAX or result < MIN: return 0
+return result

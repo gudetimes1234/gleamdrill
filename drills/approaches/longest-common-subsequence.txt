@@ -1,0 +1,18 @@
+== nudge
+Compare just the current character of each string. What can you say about the answer when they are equal — and when they differ, which string would you shorten? One small decision, asked over and over, is the whole problem.
+== steps
+- Define lcs(i, j) over prefixes: the LCS length of the first i characters of text1 and the first j of text2.
+- Equal current characters are both used: the answer is 1 plus the LCS with both shortened.
+- Different characters mean one of them is dead weight: take the best of dropping the last character of one string or the other.
+- Base case: any empty prefix has LCS 0, which fills the first row and column of the table.
+- Fill row by row; only the previous row is ever read, so two rows of length len(text2) + 1 suffice.
+- Follow-up: this recurrence is the backbone of the whole category — edit distance and distinct subsequences are the same table with different costs.
+== pseudocode
+previous = array of len(text2)+1 zeros
+for each character a in text1:
+    row = array of len(text2)+1 zeros
+    for j in 1..len(text2):
+        if a == text2[j-1]: row[j] = previous[j-1] + 1
+        else:               row[j] = max(previous[j], row[j-1])
+    previous = row
+return previous[len(text2)]

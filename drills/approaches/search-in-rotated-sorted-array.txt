@@ -1,0 +1,26 @@
+== nudge
+Log-time search wants sorted order, and the rotation seems to have broken it. But how broken is it really? Cut the array at any midpoint and look hard at the two halves — what is always true of at least one of them?
+== steps
+- Run a standard binary search loop with left and right bounds; return mid the moment it holds the target.
+- At each mid, decide which half is sorted: nums[left] <= nums[mid] means the left half is, otherwise the right half is.
+- If the sorted half's endpoints bracket the target, search inside it.
+- Otherwise the target can only live in the other half — search there.
+- Shrink the bounds accordingly and repeat; when they cross, return -1.
+- Follow-up worth knowing: find the rotation pivot with one binary search, then run a plain binary search in the correct half — two searches instead of one.
+== pseudocode
+left = 0
+right = n - 1
+while left <= right:
+    mid = (left + right) / 2
+    if nums[mid] == target: return mid
+    if nums[left] <= nums[mid]:
+        if nums[left] <= target and target < nums[mid]:
+            right = mid - 1
+        else:
+            left = mid + 1
+    else:
+        if nums[mid] < target and target <= nums[right]:
+            left = mid + 1
+        else:
+            right = mid - 1
+return -1

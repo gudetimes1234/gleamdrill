@@ -1,0 +1,20 @@
+== nudge
+Every ticket must be used exactly once, while airports may repeat freely — is that a walk over nodes or over edges? And when greedily taking the smallest destination strands you somewhere, what must that dead end be?
+== steps
+- Group the tickets by origin and sort each destination list, so the alphabetically smallest unused ticket is always the one taken.
+- Walk greedily with a stack: from the airport on top, follow and consume its smallest remaining ticket.
+- When the top airport has no tickets left, pop it onto the route — an airport is recorded only once its tickets are exhausted.
+- Trust the dead end: the place the greedy walk gets stuck is exactly where the itinerary has to end, so recording at exhaustion builds the route back to front.
+- Reverse the recorded route for the answer.
+- Backtracking — take a ticket, recurse, undo on failure — finds the same itinerary at exponential cost; this walk (Hierholzer's) never undoes anything.
+== pseudocode
+destinations[origin] = sorted list of destinations of origin's tickets
+route = []
+stack = ["JFK"]
+while stack not empty:
+    airport = stack.top()
+    if destinations[airport] not empty:
+        stack.push(remove first element of destinations[airport])
+    else:
+        route.add(stack.pop())
+return reverse(route)

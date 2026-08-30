@@ -1,0 +1,19 @@
+== nudge
+When are two strings made of exactly the same material? This is a counting problem in disguise — what one fact about each character would you need from both strings, and what is the cheapest disqualifier you can check before doing any real work?
+== steps
+- If the lengths differ, return false before counting anything.
+- Build a character-to-count map from the first string.
+- Walk the second string, decrementing each character's count.
+- Fail the moment a character is missing from the map or its count drops below zero.
+- Reaching the end means every count balanced out — return true.
+- If the interviewer prefers it simple: sort both strings and compare, at O(n log n) against the map's O(n).
+== pseudocode
+if length(s) != length(t): return false
+count = empty map
+for ch in s:
+    count[ch] += 1
+for ch in t:
+    if ch not in count: return false
+    count[ch] -= 1
+    if count[ch] < 0: return false
+return true

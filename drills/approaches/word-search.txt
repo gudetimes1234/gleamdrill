@@ -1,0 +1,20 @@
+== nudge
+A path through the grid can fail late and force you to unwind. What must be remembered while you are still on a path — and what must be forgotten the moment you back out of a dead end?
+== steps
+- Try a depth-first walk from every cell of the grid.
+- At each step fail fast: out of bounds, already used on this path, or the letter does not match the next character.
+- Keep the used-cell set per path, not global — a cell rejected on one route must stay available to another, which is the whole difference between backtracking and plain search.
+- Succeed the moment the last character matches, and propagate true straight up.
+- On a dead end, undo the cell's used mark (or let a per-call copy of the set fall away) and try the next direction or starting cell.
+- Pruning follow-up: check the board has enough of each letter before searching, and start from whichever end of the word has the rarer letter.
+== pseudocode
+function walk(r, c, remaining, used):
+    if (r, c) outside grid or (r, c) in used: return false
+    if board[r][c] != remaining[0]: return false
+    if remaining has one character: return true
+    used = used plus (r, c)
+    for (dr, dc) in four directions:
+        if walk(r + dr, c + dc, remaining[1 ..], used): return true
+    return false
+
+return true if walk(r, c, word, empty set) succeeds for any cell (r, c)

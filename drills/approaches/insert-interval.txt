@@ -1,0 +1,24 @@
+== nudge
+The list arrives sorted and non-overlapping — that is a gift, not a detail. Relative to the new interval, what three kinds of interval does the list split into, and which kind actually requires any work?
+== steps
+- Copy across every interval that ends before the new one starts — untouched.
+- Absorb the touching run: while an interval starts at or before the new end, widen the new interval to the smaller start and larger end, consuming it.
+- Append the (possibly widened) new interval once.
+- Append everything remaining — it all starts after the new end, also untouched.
+- One pass, no sorting: only the middle run ever collapses, into a single interval spanning the lot.
+- Follow-up: appending the new interval and re-running a full merge also works, but it throws away the sortedness you were handed.
+== pseudocode
+out = []
+i = 0
+while i < n and intervals[i].end < new.start:
+    out.add(intervals[i])
+    i = i + 1
+while i < n and intervals[i].start <= new.end:
+    new.start = min(new.start, intervals[i].start)
+    new.end = max(new.end, intervals[i].end)
+    i = i + 1
+out.add(new)
+while i < n:
+    out.add(intervals[i])
+    i = i + 1
+return out

@@ -1,0 +1,19 @@
+== nudge
+Two rules changed at once: candidates may repeat, and each may be used at most once. One of those changes you have already tamed in another drill — which one, and what did it demand of the input first?
+== steps
+- Sort the candidates so equal values sit next to each other.
+- Take the first candidate by subtracting it from the target and recursing past it — single use means taking always advances.
+- When skipping, skip every copy of that value at once — the Subsets II rule, and the reason to drill the two together.
+- Base cases: target 0 yields the empty combination; an empty list yields nothing, and a first candidate above the target ends the branch outright since sorted input means nothing later fits either.
+- Follow-up: generating everything and deduplicating afterwards is correct but exponentially wasteful when many values are equal.
+== pseudocode
+sort candidates
+function build(candidates, target):
+    if target == 0: return [[]]
+    if candidates is empty or candidates[0] > target: return []
+    first = candidates[0]
+    with_first = prepend first to each of
+        build(candidates past index 0, target - first)
+    past = index after the last copy of first
+    without = build(candidates from past onward, target)
+    return with_first + without

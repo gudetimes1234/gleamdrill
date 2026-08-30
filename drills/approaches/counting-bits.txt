@@ -1,0 +1,13 @@
+== nudge
+You need a bit count for every number up to n. Counting each one from scratch works — but by the time you reach i, you've already counted a lot of smaller numbers. How is i built out of one of them?
+== steps
+- Allocate an array of n + 1 zeros; index 0 is already correct.
+- See each i as a smaller number with one extra bit on the end: drop the last bit with i >> 1, and that count is already in the array.
+- Fill left to right: counts[i] = counts[i >> 1] + (i AND 1).
+- Return the array — each entry cost one lookup, so the whole thing is O(n) instead of an O(n log n) sweep of per-number popcounts.
+- If asked for a variant recurrence: counts[i] = counts[i AND (i - 1)] + 1 leans on clearing the lowest set bit instead.
+== pseudocode
+counts = array of (n + 1) zeros
+for i in 1..n:
+    counts[i] = counts[i >> 1] + (i AND 1)
+return counts

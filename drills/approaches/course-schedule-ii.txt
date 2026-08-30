@@ -1,0 +1,21 @@
+== nudge
+You have already decided whether all the courses can be taken. What did that decision process throw away that this problem wants kept?
+== steps
+- Run the same ready-list process as Course Schedule: count each course's unmet prerequisites and list what it unlocks.
+- Queue the courses with no outstanding prerequisites.
+- Append each course to the answer as it leaves the queue — the departure order is a topological order.
+- Decrement each dependent's counter as its prerequisite is taken; any counter hitting zero joins the queue.
+- If the order comes out shorter than numCourses, a cycle blocked the rest — return the empty list.
+- Depth-first search yields an order too: record a course only after everything it depends on (post-order), then reverse the record.
+== pseudocode
+waiting[c] = number of prerequisites of c, for every course
+unlocks[p] = list of courses that require p
+ready = queue of courses with waiting == 0
+order = []
+while ready not empty:
+    course = ready.pop_front()
+    order.add(course)
+    for next in unlocks[course]:
+        waiting[next] -= 1
+        if waiting[next] == 0: ready.push_back(next)
+return order if len(order) == numCourses else []

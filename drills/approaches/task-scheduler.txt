@@ -1,0 +1,14 @@
+== nudge
+One task dominates the timeline: the one that repeats most. If you laid out only that task with its cooldowns, what shape would the schedule take — and where would everything else have to go?
+== steps
+- Count how many times each task occurs; find the busiest count and how many tasks tie for it.
+- Lay the busiest task out first: (busiest - 1) frames of n + 1 slots each, plus a final row of every task tied for busiest.
+- Every other task either drops into an idle slot of that skeleton, or there are so many tasks that nothing idles at all and they simply extend the line.
+- So the answer is the larger of the skeleton size and the plain number of tasks — no schedule ever built.
+- Follow-up: simulating with a max-heap of remaining counts plus a cooldown queue gives the same answer in O(total intervals), and also produces an actual schedule.
+== pseudocode
+counts = frequency of each task
+busiest = max of counts
+ties = how many counts equal busiest
+skeleton = (busiest - 1) * (n + 1) + ties
+return max(number of tasks, skeleton)

@@ -17,7 +17,7 @@ import algodrill/model.{
   UserClickedClearSelection, UserClickedExitDrill, UserClickedExitReport,
   UserClickedNext, UserClickedRun, UserClickedSelectAll, UserClickedStartDrill,
   UserClickedStartExam, UserClickedStats, UserClickedStudy, UserClosedDetail,
-  UserGraded, UserPickedChoice, UserSearched, UserSubmittedAnswer,
+  UserGraded, UserPickedChoice, UserRevealedHint, UserSearched, UserSubmittedAnswer,
   UserToggledSide, UserToggledSolution,
 }
 import algodrill/problem
@@ -212,6 +212,7 @@ fn code_bindings(m: Model) -> List(Binding) {
     runnable,
     [
       Binding(["i", "e"], "edit", "Focus the editor", EditorFocusRequested),
+      Binding(["a"], "hint", "Reveal the next approach hint", UserRevealedHint),
       Binding(
         ["p"],
         "prompt",

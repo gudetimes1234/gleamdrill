@@ -1,0 +1,20 @@
+== nudge
+A plain copy walk stumbles on the extra link: it can point at a node you have not reached yet, so it cannot be resolved on first sight. What would let you look up "the copy of that node" later, whenever the link finally makes sense?
+== steps
+- Make one pass creating a copy of every node, recording original to copy in a map; seed the map with null mapping to null so empty links resolve themselves.
+- Make a second pass wiring the copies: copy.next = map[original.next] and copy.random = map[original.random].
+- Return the map entry for the head.
+- Recognise the shape: this is Clone Graph on a list — a node-to-copy map whenever links can point anywhere.
+- Follow-up, O(1) extra space: splice each copy in right after its original so the interleaved list is the map, wire the randoms through it, then unweave in a third pass.
+== pseudocode
+copies = map with copies[null] = null
+node = head
+while node != null:
+    copies[node] = new node(node.value)
+    node = node.next
+node = head
+while node != null:
+    copies[node].next = copies[node.next]
+    copies[node].random = copies[node.random]
+    node = node.next
+return copies[head]

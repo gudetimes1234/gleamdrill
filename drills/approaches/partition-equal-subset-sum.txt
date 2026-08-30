@@ -1,0 +1,18 @@
+== nudge
+Forget "two subsets" — once one subset is chosen, the other is whatever remains. What single number must the chosen subset hit, and when is hitting it impossible before any work at all?
+== steps
+- Reduce to subset sum: an equal split exists exactly when some subset reaches half the total.
+- Check parity first: an odd total rules the split out immediately.
+- Carry the set of sums reachable so far, starting from {0}.
+- For each number, widen the set with every existing sum plus that number, discarding anything past half.
+- Answer whether half landed in the set — no ordering needed and no 2-D table; the set collapses duplicates for free.
+- The take-it-or-leave-it recursion states the same search and makes the underlying 2^n visible; the reachable set is its collapsed form.
+== pseudocode
+total = sum(nums)
+if total is odd: return false
+half = total / 2
+reachable = {0}
+for n in nums:
+    for s in a copy of reachable:
+        if s + n <= half: reachable.add(s + n)
+return half in reachable

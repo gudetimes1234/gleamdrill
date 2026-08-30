@@ -1,0 +1,25 @@
+== nudge
+Three numbers is one number too many for any pair trick you know — unless you hold one of them still. What does the problem become once one value is fixed? And what would make the "no duplicate triples" rule cheap instead of painful?
+== steps
+- Sort the array — duplicates become neighbours and pair-finding gets a structure to lean on.
+- Walk each index i as the fixed first value; skip it when it equals the value before it (that triple family is already done).
+- For each fixed value, solve Two Sum II on the rest: left pointer just after i, right pointer at the end, target -(nums[i]).
+- Sum too small — move left up. Too big — move right down. A hit — record it, then advance left past every duplicate of its value.
+- Stop each scan when the pointers meet; stop everything when i's value goes positive (three positives cannot sum to zero).
+- If the interviewer bans sorting: fix one value, find the pair with a hash set instead — same O(n²), but duplicate-skipping needs a set of seen triples.
+== pseudocode
+sort(nums)
+result = []
+for i in 0..n-1:
+    if i > 0 and nums[i] == nums[i-1]: continue
+    left, right = i+1, n-1
+    while left < right:
+        total = nums[i] + nums[left] + nums[right]
+        if total < 0:      left += 1
+        else if total > 0: right -= 1
+        else:
+            result.add([nums[i], nums[left], nums[right]])
+            left += 1
+            while left < right and nums[left] == nums[left-1]:
+                left += 1
+return result

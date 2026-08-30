@@ -1,0 +1,15 @@
+== nudge
+The running-best trick from maximum-sum subarrays stumbles here: what does multiplying by a negative number do to "best so far"? What second value would you have to carry for that reversal to become good news?
+== steps
+- Carry two running products, the highest and the lowest ending at the current element — a negative value swaps their roles, so today's minimum is tomorrow's maximum in waiting.
+- At each element, form three candidates: the element alone, element times the previous high, element times the previous low.
+- Take the max of the three as the new high and the min as the new low.
+- Let including the element alone handle zeros — both tracks reset with no special case.
+- Track the best high ever seen; that is the answer.
+== pseudocode
+high = low = best = nums[0]
+for n in rest of nums:
+    candidates = (n, high * n, low * n)
+    high, low = max(candidates), min(candidates)
+    best = max(best, high)
+return best

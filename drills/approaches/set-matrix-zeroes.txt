@@ -1,0 +1,21 @@
+== nudge
+Try clearing cells as you scan and watch what happens — can you still tell your own zeroes from the originals? What is the least you need to remember before any writing becomes safe?
+== steps
+- See why one pass fails: a zero you write is indistinguishable from a zero that was already there, and the whole grid clears itself.
+- First pass: scan the grid, recording which rows and which columns contain an original zero (two sets).
+- Second pass: rewrite every cell to zero when its row or column is marked, leaving the rest untouched.
+- That is O(m + n) extra space and no cascade is possible.
+- Follow-up: for O(1) extra space, store the marks in the grid's own first row and first column (plus one flag for the first column itself) and clear those two last.
+== pseudocode
+rows = empty set
+columns = empty set
+for r in 0..m-1:
+    for c in 0..n-1:
+        if matrix[r][c] == 0:
+            rows.add(r)
+            columns.add(c)
+for r in 0..m-1:
+    for c in 0..n-1:
+        if r in rows or c in columns:
+            matrix[r][c] = 0
+return matrix

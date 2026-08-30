@@ -1,0 +1,27 @@
+== nudge
+insert, search, startsWith — two of those are nearly the same question. What single piece of per-node information separates a stored prefix from a stored word? And what do many words with the same opening letters share that a flat store would duplicate?
+== steps
+- Give each node a map from letter to child node plus a flag meaning "a word ends here".
+- Insert by walking letter by letter, creating missing children as you go, and set the flag on the final node.
+- Answer both queries by walking the letters and failing the moment a letter has no child.
+- search additionally demands the final node's flag; startsWith is satisfied by merely arriving.
+- Alternative: a hash set of every word plus every prefix answers both queries in one lookup each, but stores O(total letters) of text instead of sharing prefixes.
+== pseudocode
+node: children (map letter -> node), terminal (flag)
+
+insert(word):
+    node = root
+    for letter in word:
+        if letter not in node.children: node.children[letter] = new node
+        node = node.children[letter]
+    node.terminal = true
+
+walk(letters):
+    node = root
+    for letter in letters:
+        if letter not in node.children: return null
+        node = node.children[letter]
+    return node
+
+search(word): node = walk(word); return node is not null and node.terminal
+startsWith(prefix): return walk(prefix) is not null

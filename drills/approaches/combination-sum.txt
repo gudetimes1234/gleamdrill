@@ -1,0 +1,17 @@
+== nudge
+Reuse is allowed, which threatens to produce the same combination in many different orders. What discipline about which candidates are still available makes each combination reachable exactly one way?
+== steps
+- At each step face the first remaining candidate with two moves: take it again (reuse allowed, shrinking the target) or drop it for good.
+- Never return to a dropped candidate — that ordering is what stops one combination appearing in several orders, so no dedup pass is needed.
+- Base cases: target 0 yields one empty combination; no candidates left yields nothing.
+- Prune a candidate larger than the remaining target by dropping straight to the next.
+- Note the pattern: killing duplicates by construction rather than by filtering afterwards is what the harder variants all build on.
+== pseudocode
+function build(candidates, target):
+    if target == 0: return [[]]
+    if candidates is empty: return []
+    first = candidates[0]
+    if first > target: return build(candidates past first, target)
+    with_first = prepend first to each of build(candidates, target - first)
+    without = build(candidates past first, target)
+    return with_first + without

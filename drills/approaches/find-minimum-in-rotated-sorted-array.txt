@@ -1,0 +1,19 @@
+== nudge
+The array was sorted once and still mostly is — order breaks in exactly one place, and that place is what you are hunting. Can comparing two positions tell you which side of the break you are on, without scanning anything?
+== steps
+- Keep two indexes, left and right, spanning the whole array.
+- Compare the middle value with the value at right — the right end is the boundary that reveals which half is sorted.
+- If the middle value is greater than the right value, the break (and the minimum) lies strictly to the right: move left to mid + 1.
+- Otherwise the right half is sorted, so the minimum is at mid or before it: move right to mid — mid may itself be the minimum, so do not skip it.
+- When left meets right, that position holds the minimum.
+- Classic follow-up — duplicates allowed: equal middle and right values are ambiguous, so shrink right by one and accept an O(n) worst case.
+== pseudocode
+left = 0
+right = n - 1
+while left < right:
+    mid = (left + right) / 2
+    if nums[mid] > nums[right]:
+        left = mid + 1
+    else:
+        right = mid
+return nums[left]

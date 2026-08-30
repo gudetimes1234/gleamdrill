@@ -1,0 +1,20 @@
+== nudge
+One running profit number cannot remember whether you currently own a share or are serving the cooldown. What are the distinct situations you could be in at the close of a day — and how much of yesterday does today actually need?
+== steps
+- Name three end-of-day states: holding a share, having just sold today, and resting (free to act).
+- Write each day's transitions from yesterday: hold is max(hold, rest - price), sold is hold + price, rest is max(rest, sold).
+- Notice the cooldown lives in one asymmetry — today's hold reads rest, never sold, so buying the day after a sale is impossible by construction.
+- Each day depends only on yesterday, so three rolling values replace any table; start hold and sold at minus infinity (unreachable) and rest at 0.
+- The answer is the best of sold and rest at the end — never end the run holding — with 0 as the floor for doing nothing.
+== pseudocode
+hold = -infinity
+sold = -infinity
+rest = 0
+for price in prices:
+    new_hold = max(hold, rest - price)
+    new_sold = hold + price
+    new_rest = max(rest, sold)
+    hold = new_hold
+    sold = new_sold
+    rest = new_rest
+return max(sold, rest, 0)

@@ -1,0 +1,17 @@
+== nudge
+How much does the circle actually change? Exactly one pair of houses became neighbours that were not before — what case split would make that new constraint vanish?
+== steps
+- Reduce the circle to its one constraint: the first and last houses are now adjacent, so at most one of them is robbed.
+- Case one: rule out the first house and rob houses 1..n-1 as an ordinary row.
+- Case two: rule out the last house and rob houses 0..n-2 as an ordinary row.
+- Solve both cases with the straight-line House Robber pair you already have, and answer the better one — reusing a solved problem beats inventing a circular recurrence.
+- Guard the tiny inputs: a single house is just its own value, since excluding it from both cases would wrongly answer 0.
+== pseudocode
+if length == 1: return houses[0]
+return max(straight(houses without last), straight(houses without first))
+
+function straight(values):
+    best, previous = 0, 0
+    for value in values:
+        best, previous = max(best, previous + value), best
+    return best

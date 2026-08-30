@@ -1,0 +1,22 @@
+== nudge
+One source, weighted links, "how long until it arrives" — which family of graph problem is that? And once every node has an arrival time, which single number answers "when has everyone heard?"
+== steps
+- Model it as single-source shortest paths from k; the answer is the largest of the per-node arrival times.
+- Build an adjacency list of outgoing edges with their travel times.
+- Run Dijkstra: keep a min-heap of tentative arrival times and always pop the smallest.
+- Popping a node settles it for good — sound only because no edge is negative — so skip anything popped twice.
+- Relax each outgoing edge of a settled node by pushing the neighbour's candidate time; stale heap entries are left in and skipped on the way out, cheaper than rewriting them.
+- If fewer than n nodes settled, some node never hears the signal — return -1; otherwise return the largest settled time.
+- If edge weights could be negative, switch to Bellman-Ford — relax every edge n - 1 times, choosing nothing — the slower one that survives.
+== pseudocode
+edges[origin] = list of (destination, weight)
+settled = empty map
+heap = [(0, k)]
+while heap not empty:
+    (time, node) = heap.pop_min()
+    if node in settled: continue
+    settled[node] = time
+    for (next, weight) in edges[node]:
+        if next not in settled:
+            heap.push((time + weight, next))
+return max value in settled if len(settled) == n else -1

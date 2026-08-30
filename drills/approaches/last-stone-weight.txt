@@ -1,0 +1,16 @@
+== nudge
+Strip away the story: which single operation does the bag of stones have to support, over and over, until almost nothing is left? Name that operation and the right structure names itself.
+== steps
+- Put all stones into a structure that surrenders its maximum cheaply — a max-heap.
+- While at least two stones remain, pop the two heaviest.
+- If they differ, push back the difference; equal stones destroy each other.
+- When the loop ends, return the lone survivor, or 0 if the heap is empty.
+- If the library only offers a min-heap, negate values going in and coming out.
+- Alternatives that make the same point: a sorted list is the same idea at a worse constant, and scanning for the max each round is O(n) per smash.
+== pseudocode
+heap = max-heap of stones
+while heap.size > 1:
+    a = heap.pop()
+    b = heap.pop()
+    if a != b: heap.push(a - b)
+return heap.top if heap not empty else 0

@@ -1,0 +1,15 @@
+== nudge
+The merge operation only ever pushes values up, never down. Which triplets are ruined forever the moment you touch them — and once those are out of the room, is there any reason left to be picky?
+== steps
+- Notice a merge takes componentwise maxima, and a maximum never comes back down.
+- Discard every triplet with ANY component above the target: using one would overshoot that component permanently.
+- Every survivor can be merged freely — each of its components only pushes toward the target, never past it.
+- Fold the survivors into one running componentwise maximum.
+- Return whether that maximum equals the target exactly: every target component must actually be supplied by some survivor.
+== pseudocode
+best = [0, 0, 0]
+for triplet in triplets:
+    if triplet[0] <= target[0] and triplet[1] <= target[1] and triplet[2] <= target[2]:
+        for i in 0..2:
+            best[i] = max(best[i], triplet[i])
+return best == target

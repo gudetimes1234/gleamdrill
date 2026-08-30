@@ -1,0 +1,19 @@
+== nudge
+The tree already encodes something about order — what does a particular way of walking it hand you for free? And once the kth thing has been reached, why keep walking at all?
+== steps
+- Walk the tree in order — left subtree, node, right subtree — since a BST yields its values sorted that way.
+- Use an explicit stack so the walk can stop mid-flight; a plain recursive walk would have to run to the end.
+- Slide left from the current node, pushing every node passed.
+- Pop a node, count it, and return its value the moment the count hits k; otherwise step into its right child and slide left again.
+- Follow-up: if the tree is queried often, store subtree sizes in each node and descend one path comparing k against the left subtree's size — O(depth) per query.
+== pseudocode
+stack = empty
+node = root
+while stack not empty or node is not null:
+    while node is not null:
+        stack.push(node)
+        node = node.left
+    node = stack.pop()
+    k = k - 1
+    if k == 0: return node.val
+    node = node.right

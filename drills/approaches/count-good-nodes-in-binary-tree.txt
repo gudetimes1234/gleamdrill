@@ -1,0 +1,16 @@
+== nudge
+Whether a node is good depends only on the trip taken to reach it, never on anything beneath it. What single piece of that trip's history is enough to carry along — and what should it start as so the root judges itself correctly?
+== steps
+- Walk the tree carrying one extra argument: the largest value on the path so far.
+- Start at the root with the root's own value as the initial maximum — that is what makes the root always good.
+- At each node, count 1 when its value is at least the carried maximum, else 0.
+- Update the maximum with the node's value before descending.
+- Return this node's count plus the counts from both children, with empty subtrees contributing 0 — one pass is enough because the test never looks down.
+== pseudocode
+count(node, largest):
+    if node == null: return 0
+    here = 1 if node.value >= largest else 0
+    largest = max(largest, node.value)
+    return here + count(node.left, largest) + count(node.right, largest)
+
+answer = count(root, root.value) if root != null else 0

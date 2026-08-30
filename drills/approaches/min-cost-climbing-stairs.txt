@@ -1,0 +1,13 @@
+== nudge
+Standing on any step, the money already spent got you there in one of two ways. If you knew the cheapest way to stand on each earlier step, what would standing here cost?
+== steps
+- Define, per step, the cheapest total paid to stand on it: its own price plus the cheaper of the two answers below.
+- Start both rolling values at 0 — beginning on step 0 or step 1 costs nothing until you step off it.
+- Walk the cost array once: standing here costs this step's price plus min(one step back, two steps back).
+- Finish with the min of the last two values, since the top is reached from either of the final two steps — that min is what makes both starts legal.
+- Know the reverse reading too: what it costs to finish from each step gives the same answer and is often the easier direction to state.
+== pseudocode
+one_back, two_back = 0, 0
+for price in cost:
+    one_back, two_back = price + min(one_back, two_back), one_back
+return min(one_back, two_back)

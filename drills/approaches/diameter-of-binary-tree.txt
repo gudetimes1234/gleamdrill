@@ -1,0 +1,19 @@
+== nudge
+The longest path bends through some node, joining a walk down its left side to a walk down its right. Measuring that at every node from scratch is quadratic — what could each subtree hand its parent so that one walk answers everything?
+== steps
+- See what a path through a node costs: its left height plus its right height, counted in edges.
+- Give each call two jobs: return the subtree's height, and record the best path seen anywhere so far.
+- Base case: an empty subtree has height 0 and no path.
+- At each node, take the children's heights; return 1 + the larger, and offer left + right as a diameter candidate.
+- Keep the widest candidate across all nodes — the answer is recorded on the way past, never returned up.
+- Name the trap being avoided: calling a separate height() at every node is the O(n squared) version.
+== pseudocode
+measure(node):
+    if node == null: return (0, 0)
+    (leftHeight, leftWidest) = measure(node.left)
+    (rightHeight, rightWidest) = measure(node.right)
+    height = 1 + max(leftHeight, rightHeight)
+    widest = max(leftHeight + rightHeight, leftWidest, rightWidest)
+    return (height, widest)
+
+answer = widest of measure(root)

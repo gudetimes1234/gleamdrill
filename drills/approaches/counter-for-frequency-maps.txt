@@ -1,0 +1,7 @@
+== nudge
+Both functions are the same counting question asked twice. Before hand-rolling a dict with get-or-default bookkeeping, ask whether the standard library already ships the counting idiom whole.
+== steps
+- Build collections.Counter(nums) once — feed it any iterable and it is a dict of value to count.
+- topTwo: Counter.most_common(2) hands back the (value, count) pairs already ordered.
+- countOf: index the Counter directly — a missing key reads as 0, so there is no KeyError and no .get dance.
+- Remember what you skipped: no manual "if key in dict" bookkeeping anywhere.

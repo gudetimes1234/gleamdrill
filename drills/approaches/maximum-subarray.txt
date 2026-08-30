@@ -1,0 +1,15 @@
+== nudge
+Instead of hunting for the best subarray anywhere, ask a smaller question at each position: what is the best subarray that ends exactly here? How does that answer relate to the one just before it — and when is a running start worth abandoning?
+== steps
+- Track two numbers: here, the best sum of a subarray ending at the current position, and best, the best seen anywhere.
+- At each element choose between extending the run (here + n) and starting fresh at n — whichever is larger.
+- See what the choice really tests: a running total that has gone negative can only hurt whatever follows.
+- Update best after every element, and do not clamp at zero — an all-negative array's answer is its largest single element.
+- Follow-up: the prefix-sum framing says the same thing — the best subarray ending at j is prefix[j] minus the smallest prefix before it.
+== pseudocode
+here = nums[0]
+best = nums[0]
+for n in nums[1..]:
+    here = max(n, here + n)
+    best = max(best, here)
+return best

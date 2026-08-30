@@ -1,0 +1,32 @@
+== nudge
+The target order alternates front, back, front, back. Squint at that pattern: it looks like two simpler lists being interleaved. Which two lists — and what smaller jobs, each one familiar on its own, would produce them?
+== steps
+- Split the job into three independent sub-problems: find the middle, reverse the back half, weave the halves together — none needs to know about the others.
+- Find the middle with slow and fast pointers, then cut the list there by setting the first half's tail link to null.
+- Reverse the second half with the standard three-reference loop.
+- Weave: alternately take one node from the first half and one from the reversed second half, fixing links as you go.
+- The second half is never longer, so loop while it still has nodes.
+- Follow-up: copying the nodes into an array and relinking by index also works, at O(n) extra space — the in-place version is what avoids that.
+== pseudocode
+slow = head, fast = head.next
+while fast != null and fast.next != null:
+    slow = slow.next
+    fast = fast.next.next
+second = slow.next
+slow.next = null
+
+previous = null
+while second != null:
+    following = second.next
+    second.next = previous
+    previous = second
+    second = following
+
+first = head, second = previous
+while second != null:
+    firstNext = first.next
+    secondNext = second.next
+    first.next = second
+    second.next = firstNext
+    first = firstNext
+    second = secondNext

@@ -1,0 +1,19 @@
+== nudge
+The median only ever cares about the middle — the value or two at the inner edge of each half. What kind of structure gives up its extreme value cheaply, and how would two of them, facing each other, be kept in balance?
+== steps
+- Keep the smaller half in a max-heap and the larger half in a min-heap; the median lives at their roots.
+- Route every new value through the lower heap: push it there, then move the lower heap's maximum into the upper heap — that enforces the order invariant.
+- If the upper heap outgrows the lower, move its minimum back down; sizes stay within one, with the lower heap allowed the extra element.
+- Report the lower root alone when the count is odd, the average of the two roots when even.
+- With a min-heap-only library, store the lower half negated.
+- Follow-up: a sorted list with binary-search insertion is O(n) per add; the two heaps make adds O(log n) and the median O(1).
+== pseudocode
+add(value):
+    lower.push(value)          -- max-heap, smaller half
+    upper.push(lower.pop())    -- min-heap, larger half
+    if upper.size > lower.size:
+        lower.push(upper.pop())
+
+median():
+    if lower.size > upper.size: return lower.top
+    return (lower.top + upper.top) / 2

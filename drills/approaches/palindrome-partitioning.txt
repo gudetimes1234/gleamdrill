@@ -1,0 +1,18 @@
+== nudge
+Every valid partition has to start somewhere — what is the only decision actually available at the front of the string? Once that decision is made, what does the rest of the problem look like?
+== steps
+- Frame the choice: every partition begins with some palindromic prefix, so the only decision at each step is how long that prefix is.
+- For each possible prefix length, test whether that prefix is a palindrome and skip the lengths that are not.
+- Cut there and recurse on the remainder, prepending the prefix to each partition of the rest.
+- Base case: the empty string has one partition, the empty list — this reaches every partition exactly once, with nothing to dedupe.
+- Follow-up: precompute which spans are palindromes in a table so the test inside the search becomes a lookup instead of a scan.
+== pseudocode
+function build(remaining):
+    if remaining is empty: return [[]]
+    result = []
+    for size in 1 .. length(remaining):
+        prefix = first size characters of remaining
+        if prefix reads the same reversed:
+            for rest in build(remaining after the prefix):
+                result.add([prefix] + rest)
+    return result

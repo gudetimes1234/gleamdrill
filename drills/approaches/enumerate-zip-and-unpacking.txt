@@ -1,0 +1,7 @@
+== nudge
+Both loops are tempting to write with range(len(...)). What do you actually need in each — the index alongside the value, or two sequences walking in lockstep — and which builtins hand you exactly that?
+== steps
+- firstIndexOf: loop for i, value in enumerate(nums) — index and value arrive together, already named.
+- Return i at the first match; return -1 after the loop falls through.
+- dotProduct: zip(a, b) walks both sequences in lockstep, yielding pairs.
+- Unpack each pair as x, y right in the for clause and sum the products — no [0]/[1] indexing, no range(len(...)) anywhere.

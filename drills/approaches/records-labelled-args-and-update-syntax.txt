@@ -1,0 +1,7 @@
+== nudge
+Records never change in place, yet the game clearly needs a player's score to go up. What does "modify a field" mean in a language where nothing mutates — and what syntax says it without re-listing every field?
+== steps
+- Define Player with labelled fields, and have new_player construct it with labelled arguments — Player(name: name, level: 1, ...) reads like documentation.
+- add_points: return Player(..player, points: player.points + n) — a copy with one field swapped, everything else carried over.
+- level_up: same update syntax, changing the fields the level-up touches.
+- Remember every update returns a NEW record; the original is untouched, so callers must use the return value.

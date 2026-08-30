@@ -1,0 +1,24 @@
+== nudge
+Without stars this is a single counter. Each star could push that counter either way — must you branch on every one, or can all the readings still alive be summarised in something smaller?
+== steps
+- Carry a range instead of one counter: low is the open count if every star so far closed or vanished, high if every star opened.
+- On "(" increment both; on ")" decrement both; on a star, decrement low and increment high — one character spanning all three readings.
+- If high ever goes negative, fail: even reading every star as an opener leaves too many closers.
+- Clamp low at zero — a star can always be nothing, and a negative open count is meaningless.
+- The string is valid exactly when low reaches zero at the end: some reading closes everything.
+- Follow-up: the two-pass alternative — left to right treating stars as openers, right to left treating them as closers — proves the same thing without the range.
+== pseudocode
+low = 0
+high = 0
+for c in s:
+    if c == "(":
+        low = low + 1
+        high = high + 1
+    else if c == ")":
+        low = max(low - 1, 0)
+        high = high - 1
+    else:
+        low = max(low - 1, 0)
+        high = high + 1
+    if high < 0: return false
+return low == 0

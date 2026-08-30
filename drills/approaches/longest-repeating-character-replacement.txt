@@ -1,0 +1,22 @@
+== nudge
+In any stretch you keep, one letter survives and everything else gets repainted. Given some candidate window, how many changes would it actually need — and at what moment does that number outrun the budget k?
+== steps
+- Slide a window, keeping a count of each letter inside it.
+- A window is fixable when its size minus the count of its most frequent letter is at most k.
+- Grow the right edge, updating that letter's count and the largest count seen.
+- When the window breaks the rule, shrink one step from the left.
+- The answer is the largest window that was ever valid.
+- Subtlety worth saying aloud: the tracked max count can go stale as the window shrinks, and that is safe — a stale max only stops the window growing, and only windows bigger than the best so far can improve the answer.
+== pseudocode
+count = empty map
+left = 0
+best_freq = 0
+longest = 0
+for right in 0..n-1:
+    count[s[right]] += 1
+    best_freq = max(best_freq, count[s[right]])
+    while (right - left + 1) - best_freq > k:
+        count[s[left]] -= 1
+        left += 1
+    longest = max(longest, right - left + 1)
+return longest

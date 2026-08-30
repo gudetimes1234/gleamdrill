@@ -1,0 +1,30 @@
+== nudge
+One-letter changes quietly link the words into something searchable, and "shortest sequence" should tell you how to search it. The real cost question: how do you find a word's neighbours without comparing every pair?
+== steps
+- If endWord is not in the list, answer 0 before doing anything.
+- Build neighbour buckets instead of a graph: file each word under each of its wildcard patterns (hot under *ot, h*t, ho*) — words sharing a pattern differ by one letter.
+- Breadth-first search from beginWord, counting levels; start the count at 1 because the answer counts words, not changes.
+- To expand a word, form each of its patterns and take every unseen word in those buckets.
+- Mark words seen as they are queued so nothing is processed twice.
+- Return the level at which endWord is dequeued; an exhausted search means no ladder exists — return 0.
+- The bucket trick is the transferable part: comparing every pair of words costs O(n^2) before the search even starts.
+== pseudocode
+words = set(wordList)
+if endWord not in words: return 0
+for word in words:
+    for i in 0..len(word)-1:
+        buckets[word with position i replaced by *].add(word)
+
+seen = {beginWord}
+frontier = queue([beginWord])
+steps = 1
+while frontier not empty:
+    for each word in the current level of frontier:
+        if word == endWord: return steps
+        for i in 0..len(word)-1:
+            for neighbour in buckets[word with position i replaced by *]:
+                if neighbour not in seen:
+                    seen.add(neighbour)
+                    frontier.push(neighbour)
+    steps += 1
+return 0

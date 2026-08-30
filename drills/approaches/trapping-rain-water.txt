@@ -1,0 +1,21 @@
+== nudge
+Forget the shapes of the pools. Stand on a single bar and ask: what must the water level directly above this spot be? What two facts about the rest of the skyline decide it — and could those facts be carried along rather than recomputed?
+== steps
+- Water above index i is min(tallest bar to its left, tallest bar to its right) minus height[i].
+- The direct reading: precompute running maxima from each side, then sum that formula — two passes, O(n) extra space.
+- The one-pass version: pointers at both ends, each carrying the running maximum of its own side.
+- Always step the side whose current bar is shorter — on that side its own running max already fixes the water level, whatever stands between the pointers.
+- Before stepping, add that side's max minus its height to the total; stop when the pointers meet.
+== pseudocode
+left, right = 0, n - 1
+left_max = right_max = total = 0
+while left < right:
+    if height[left] < height[right]:
+        left_max = max(left_max, height[left])
+        total += left_max - height[left]
+        left += 1
+    else:
+        right_max = max(right_max, height[right])
+        total += right_max - height[right]
+        right -= 1
+return total

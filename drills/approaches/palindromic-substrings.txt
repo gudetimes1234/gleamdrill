@@ -1,0 +1,21 @@
+== nudge
+You have grown palindromes outward from their centres before, to find the longest. What small change turns that measuring tool into a counting one?
+== steps
+- Reuse the 2n centres: every character, and every gap between characters for the even lengths.
+- Expand from each centre while the end characters match — but now each successful widening is itself one palindromic substring.
+- Count the widenings instead of measuring how far the biggest one got.
+- Sum the counts over all centres for the answer — the same O(n^2) walk with different bookkeeping.
+- The table alternative says s[i..j] is a palindrome when its ends match and the inside already was, which forces filling spans shortest first.
+== pseudocode
+total = 0
+for i in 0..n-1:
+    total += grow(s, i, i) + grow(s, i, i + 1)
+return total
+
+function grow(s, left, right):
+    count = 0
+    while left >= 0 and right < len(s) and s[left] == s[right]:
+        count += 1
+        left -= 1
+        right += 1
+    return count

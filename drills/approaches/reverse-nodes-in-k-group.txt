@@ -1,0 +1,27 @@
+== nudge
+Reversing k nodes is a drill you already own; the real question hides at the end of the list. By the time you discover a group is short, what damage has already been done — and when did you actually need to know?
+== steps
+- Anchor a dummy before the head and keep a pointer, before, at the node just ahead of the current group.
+- Look ahead k nodes first; if the walk hits null, fewer than k remain — return dummy.next with the tail untouched.
+- Reverse the k nodes with the standard loop, seeding previous with the node after the group so the reversed block comes out pre-connected to the rest.
+- Reconnect the front: before.next = the group's new first node; the group's old first node is now its last.
+- Move before to that old first node and repeat for the next group.
+- Alternative: count the whole length up front — one counting pass replaces a look-ahead per group and answers the same question.
+== pseudocode
+dummy = new node with next = head
+before = dummy
+loop:
+    after = before
+    repeat k times:
+        after = after.next
+        if after == null: return dummy.next
+    node = before.next
+    previous = after.next
+    first = node
+    repeat k times:
+        following = node.next
+        node.next = previous
+        previous = node
+        node = following
+    before.next = previous
+    before = first

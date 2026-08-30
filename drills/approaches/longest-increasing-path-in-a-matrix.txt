@@ -1,0 +1,20 @@
+== nudge
+Longest path in a general graph is famously hard, so what does "strictly increasing" buy you here? And once each square's answer is a fixed fact, what stops you from ever computing it twice?
+== steps
+- Notice a strictly increasing walk can never return to a square: no cycles, so the grid is a directed acyclic graph and "longest path starting here" is a well-defined number per square.
+- Write longest(r, c): 1 plus the best longest(neighbour) over the four neighbours holding a strictly greater value, or just 1 if none do.
+- Cache each square's answer — without the acyclicity guarantee that memoisation would be unsound, which is the fact this problem is really testing.
+- Skip the visited set entirely: the strict inequality already prevents revisits.
+- The answer is the maximum of longest over every square.
+- Follow-up: an iterative version sorts the squares by value and fills answers in that order — a topological order obtained without ever building the graph.
+== pseudocode
+memo = empty map
+longest(r, c):
+    if (r, c) not in memo:
+        best = 1
+        for (nr, nc) in the four neighbours of (r, c) inside the grid:
+            if matrix[nr][nc] > matrix[r][c]:
+                best = max(best, 1 + longest(nr, nc))
+        memo[(r, c)] = best
+    return memo[(r, c)]
+return max of longest(r, c) over every square

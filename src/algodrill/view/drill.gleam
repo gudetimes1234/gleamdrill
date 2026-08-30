@@ -5,7 +5,7 @@ import algodrill/model.{
   RuntimeLoading, RuntimeNotLoaded, RuntimeReady, SubmittingGrade, TimedOut,
   UserChangedKeymap, UserClickedExitDrill, UserClickedNext,
   UserClickedRetryRuntime, UserClickedRun, UserClickedStopRun, UserGraded,
-  UserPickedChoice, UserSubmittedAnswer, UserToggledSide, UserToggledSolution,
+  UserPickedChoice, UserRevealedHint, UserSubmittedAnswer, UserToggledSide, UserToggledSolution,
 }
 import algodrill/problem.{
   type Problem, type ProblemRef, type Quiz, type Solution,
@@ -311,13 +311,8 @@ fn expanded_panels(
     ])
 
   let approach = case current.approach {
-    "" -> []
-    text -> [
-      html.details([attribute.class("panel approach")], [
-        html.summary([attribute.class("panel-title")], [html.text("Approach")]),
-        html.div([attribute.class("approach-text")], [html.text(text)]),
-      ]),
-    ]
+    [] -> []
+    stages -> [approach_panel(m, stages)]
   }
 
   // Output rides with the checkable panes: a drill that cannot run cannot
@@ -504,7 +499,10 @@ fn grade_buttons(m: Model, current: Problem) -> Element(Msg) {
     Error(Nil) -> True
   }
   let forced =
-    !free && { model.run_failed(m.run) || m.revealed_solution != None }
+    !free
+    && {
+      model.run_failed(m.run) || model.answer_revealed(m, current.approach)
+    }
 
   html.div([attribute.class("grade-bar")], case forced {
     True -> [grade_button(m, fsrs.Again, "Again", "again")]
@@ -784,6 +782,79 @@ fn first_lines(message: String) -> String {
   |> string.split("\n")
   |> list.take(3)
   |> string.join("\n")
+}
+
+/// The hint ladder: rungs reveal one at a time, vaguest first. The last rung
+/// is pseudocode and revealing it counts as seeing the answer, which the
+/// button says out loud before it is pressed.
+fn approach_panel(
+  m: Model,
+  stages: List(problem.ApproachStage),
+) -> Element(Msg) {
+  let total = list.length(stages)
+  let shown = int.min(m.hints_revealed, total)
+  let revealed =
+    stages
+    |> list.take(shown)
+    |> list.map(approach_stage)
+
+  let control = case list.drop(stages, shown) {
+    [] -> []
+    [next, ..] -> [
+      html.button(
+        [attribute.class("btn-secondary hint-button"), event.on_click(UserRevealedHint)],
+        [
+          html.text(
+            case next {
+              problem.Nudge(_) -> "Show hint"
+              problem.Steps(_) -> "Show the steps"
+              problem.Pseudocode(_) -> "Show pseudocode"
+            }
+            <> " ("
+            <> int.to_string(shown + 1)
+            <> "/"
+            <> int.to_string(total)
+            <> ")",
+          ),
+        ],
+      ),
+      ..case next {
+        // Fair warning before the rung that gives the answer away.
+        problem.Pseudocode(_) -> [
+          html.span([attribute.class("hint-warning")], [
+            html.text("counts as seeing the answer"),
+          ]),
+        ]
+        _ -> []
+      }
+    ]
+  }
+
+  html.section(
+    [attribute.class("panel approach")],
+    [
+      html.h3([attribute.class("panel-title")], [html.text("Approach")]),
+      ..list.append(revealed, [
+        html.div([attribute.class("hint-controls")], control),
+      ])
+    ],
+  )
+}
+
+fn approach_stage(stage: problem.ApproachStage) -> Element(Msg) {
+  case stage {
+    problem.Nudge(text) ->
+      html.p([attribute.class("approach-nudge")], [html.text(text)])
+    problem.Steps(items) ->
+      html.ol(
+        [attribute.class("approach-steps")],
+        list.map(items, fn(item) { html.li([], [html.text(item)]) }),
+      )
+    problem.Pseudocode(code) ->
+      html.pre([attribute.class("approach-pseudocode")], [
+        html.code([], [html.text(code)]),
+      ])
+  }
 }
 
 fn panel(title: String, contents: List(Element(Msg))) -> Element(Msg) {

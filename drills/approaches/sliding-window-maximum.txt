@@ -1,0 +1,21 @@
+== nudge
+Adding to a running maximum is trivial — it is the element leaving the window that ruins everything, because dropping the champion tells you nothing about the runner-up. What extra record, prepared ahead of time or kept as you go, would let a maximum survive removals?
+== steps
+- Cut the array into blocks of width k, then precompute two arrays: left[i], the running max from each block's start forward, and right[i], the running max from each block's end backward.
+- Observe that any window of width k straddles at most one block boundary.
+- So every window is a suffix of one block plus a prefix of the next, and its maximum is max(right[start], left[start + k - 1]).
+- Emit that value for each start — three plain O(n) passes, no clever data structure.
+- Follow-up: the other classic O(n) answer is a deque of indices kept in decreasing value order — evict the front when it leaves the window, pop the back while smaller than the newcomer, and the front is always the answer.
+== pseudocode
+left = array of n
+right = array of n
+for i in 0..n-1:
+    if i mod k == 0: left[i] = nums[i]
+    else: left[i] = max(left[i-1], nums[i])
+for i in n-1..0:
+    if i == n-1 or (i+1) mod k == 0: right[i] = nums[i]
+    else: right[i] = max(right[i+1], nums[i])
+answer = []
+for start in 0..n-k:
+    answer.append(max(right[start], left[start + k - 1]))
+return answer

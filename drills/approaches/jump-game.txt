@@ -1,0 +1,14 @@
+== nudge
+Do you really need to track every index you could land on? Think about the shape of the reachable set — could it compress to a single number, and what would falling outside it mean?
+== steps
+- Notice everything reachable from the start forms a prefix of the array, so one number describes it: the furthest index reachable so far.
+- Walk left to right; the moment the current index is beyond that reach, stop — nothing past it can ever be reached, return false.
+- Otherwise extend the reach with i + nums[i].
+- Return true once the reach covers the last index.
+- Follow-up: walking backwards works too — carry the leftmost index known to reach the end and check whether it makes it to zero.
+== pseudocode
+reach = 0
+for i in 0..n-1:
+    if i > reach: return false
+    reach = max(reach, i + nums[i])
+return reach >= n - 1

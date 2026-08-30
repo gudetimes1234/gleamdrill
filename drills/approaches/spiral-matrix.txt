@@ -1,0 +1,15 @@
+== nudge
+Walk the top edge, then look hard at what remains. Does the leftover have a familiar shape — and could a change of viewpoint turn "now go down the right side" into the very move you just made?
+== steps
+- Emit the entire first row into the output.
+- Rotate the remaining rows a quarter turn anticlockwise: the column you would have walked down is now the top row.
+- Repeat until nothing is left — there is only ever one move to make.
+- Build the anticlockwise turn as a transpose of the remainder with the row order then reversed.
+- Follow-up: the boundary version tracks four edges closing inward; its traps are the single remaining row or column, where the top and bottom edges are the same edge and a careless walk emits it twice.
+== pseudocode
+out = []
+while matrix is not empty:
+    out.extend(first row of matrix)
+    rest = matrix without its first row
+    matrix = transpose(rest) with its rows in reverse order   // quarter turn anticlockwise
+return out

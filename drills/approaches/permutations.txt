@@ -1,0 +1,16 @@
+== nudge
+Order matters now, so in-or-out is the wrong question. If you decide only what comes first, what remains to be decided — and how does that shape of decision explain the factorial count?
+== steps
+- Pick each element in turn as the first of the permutation.
+- Recurse on what remains after removing the chosen element, and prepend the choice to each result.
+- Base case: an empty list has exactly one permutation, the empty one.
+- In-place variant: a "used" set, or swapping the choice into position, plays the role of removing the chosen element.
+- Follow-up: the other direction works too — every permutation of n elements is a permutation of n - 1 with the new element wedged into one of n positions, which explains n! outright.
+== pseudocode
+function permute(nums):
+    if nums is empty: return [[]]
+    result = []
+    for each value at index i in nums:
+        for tail in permute(nums without index i):
+            result.add([value] + tail)
+    return result

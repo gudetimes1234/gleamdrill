@@ -1,0 +1,8 @@
+== nudge
+Four string functions and not a loop in sight — s[a:b:step] can express all of them. Which start, stop, and step does each one need, and which edge case does the notation not handle for you?
+== steps
+- reversedString: s[::-1] — the famous step of -1 walks the whole string backwards.
+- everySecond: s[::2] takes the characters at even indices.
+- lastN: s[-n:] counts from the end, but guard n <= 0 yourself first and return "" — a negative index of 0 does not mean "last zero characters".
+- trimEnds: s[1:-1] drops the first and last character in one slice.
+- Remember slices never mutate — every one of these returns a new sequence, and [:] alone is the idiomatic copy.

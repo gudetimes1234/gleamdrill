@@ -1,0 +1,22 @@
+== nudge
+The median only cares about what sits at the middle of the combined order. Do you actually need the whole merged array — or even half of it stored — to know what is there? And how much of the merge do you really have to run?
+== steps
+- Compute the combined length; the median involves the value at position total / 2, and the one before it when the total is even.
+- Merge with two indexes, but never build the merged array — each step just take whichever front value is smaller.
+- Keep only the last two values taken, and stop after total / 2 + 1 values.
+- For an odd total the answer is the last value taken; for an even total, the average of the last two.
+- Interview follow-up — O(log(min(m, n))): binary search a cut through the shorter array so both left sides together hold half the elements and every left value is <= every right value; the median falls out of the four values around the cut.
+== pseudocode
+total = len(a) + len(b)
+i = 0, j = 0
+previous = 0, current = 0
+repeat total / 2 + 1 times:
+    previous = current
+    if i < len(a) and (j >= len(b) or a[i] <= b[j]):
+        current = a[i]
+        i += 1
+    else:
+        current = b[j]
+        j += 1
+if total is odd: return current
+return (previous + current) / 2

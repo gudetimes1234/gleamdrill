@@ -1,0 +1,26 @@
+== nudge
+Each key accumulates a history, and get asks about a moment in the past. What does the guarantee that timestamps only ever increase hand you for free at write time — and what kind of lookup does that gift make possible at read time?
+== steps
+- Keep a map from key to a list of (timestamp, value) pairs.
+- On set, append to the key's list — timestamps only increase, so the list stays sorted with no sorting.
+- On get, fetch the key's history; no history means the answer is the empty string.
+- Binary search the history for the newest entry at or before the asked timestamp.
+- When the middle entry qualifies, record its value as the best so far and keep searching the newer side for a better one; otherwise search the older side.
+- Return the recorded value, or the empty string when nothing qualified.
+== pseudocode
+set(key, value, timestamp):
+    store[key].append((timestamp, value))
+
+get(key, timestamp):
+    history = store[key], or empty list
+    low = 0
+    high = len(history) - 1
+    best = ""
+    while low <= high:
+        mid = (low + high) / 2
+        if history[mid].time <= timestamp:
+            best = history[mid].value
+            low = mid + 1
+        else:
+            high = mid - 1
+    return best

@@ -1,0 +1,21 @@
+== nudge
+When exactly can a set of courses not be finished? Think about what the prerequisite pairs draw, and what shape in that drawing leaves some course forever unstartable.
+== steps
+- Recognize the question as cycle detection: every course can be finished exactly when the prerequisite graph is acyclic.
+- Build, per course, a count of unmet prerequisites and a list of the courses it unlocks.
+- Queue every course whose count is zero — those can be taken immediately.
+- Repeatedly take a course off the queue, count it as taken, and decrement each dependent's counter, queueing any that reach zero.
+- Answer true when the number taken equals numCourses; a stall with courses left over means they wait on each other in a circle.
+- Depth-first search answers it too but needs three node states, not two — a node re-met on the current path is a cycle, one finished down an earlier branch is fine.
+== pseudocode
+waiting[c] = number of prerequisites of c, for every course
+unlocks[p] = list of courses that require p
+ready = queue of courses with waiting == 0
+taken = 0
+while ready not empty:
+    course = ready.pop_front()
+    taken += 1
+    for next in unlocks[course]:
+        waiting[next] -= 1
+        if waiting[next] == 0: ready.push_back(next)
+return taken == numCourses

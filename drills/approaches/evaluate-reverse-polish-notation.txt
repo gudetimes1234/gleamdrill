@@ -1,0 +1,18 @@
+== nudge
+This notation was invented so that by the time an operator arrives, its inputs are already sitting somewhere convenient, fully evaluated. Where would they be sitting — and in what order do they come back out?
+== steps
+- Walk the tokens, keeping evaluated numbers on a stack.
+- A number: push it.
+- An operator: pop twice — the first value popped is the RIGHT operand, the second the left — apply, and push the result.
+- Make division truncate toward zero rather than floor; with a negative operand those differ, so divide the magnitudes and reapply the sign.
+- The single value left on the stack at the end is the answer.
+== pseudocode
+stack = empty
+for token in tokens:
+    if token is an operator:
+        b = stack.pop()
+        a = stack.pop()
+        stack.push(apply(token, a, b))   // "/" truncates toward zero
+    else:
+        stack.push(number(token))
+return stack.top

@@ -1,0 +1,17 @@
+== nudge
+Every added value asks the same question about the k largest seen so far. How much of the stream do you actually need to remember to keep answering it — and which single remembered value is the answer?
+== steps
+- Keep only the k largest values seen, in a min-heap capped at size k; its root is the kth largest.
+- Build by heapifying the initial list, then popping until at most k values remain.
+- On add, push the new value, then pop once if the heap exceeds k — whatever falls out can never be the answer.
+- Report the heap's root, noting there is no kth largest at all until k values have arrived.
+- Each add costs O(log k) and memory stays O(k) however long the stream runs — keeping everything and sorting per query is the trap.
+== pseudocode
+constructor(k, nums):
+    heap = min-heap of nums
+    while heap.size > k: heap.pop()
+
+add(value):
+    heap.push(value)
+    if heap.size > k: heap.pop()
+    return heap.top

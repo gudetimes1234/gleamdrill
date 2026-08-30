@@ -1,0 +1,16 @@
+== nudge
+One comparison against one well-chosen element — how much of the array can that single answer eliminate? And what promise about your two boundary markers must survive every iteration for the loop to be correct?
+== steps
+- Keep inclusive bounds left and right around the region that could still hold the target.
+- Probe the middle, computed as left + (right - left) div 2 so fixed-width languages cannot overflow.
+- A match returns the index; a smaller middle means the target can only be right of mid, a larger one only left.
+- Move the losing bound past mid — never onto it, or the loop can stall forever.
+- Bounds crossing means the region is empty: return -1. O(log n) because the region halves every step.
+== pseudocode
+left, right = 0, n - 1
+while left <= right:
+    mid = left + (right - left) div 2
+    if nums[mid] == target: return mid
+    if nums[mid] < target: left = mid + 1
+    else: right = mid - 1
+return -1

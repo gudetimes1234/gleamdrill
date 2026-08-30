@@ -1,0 +1,17 @@
+== nudge
+Following the links, only two futures exist: fall off the end, or go round forever. The obvious fix is to remember every node you have visited — but what does that cost, and could motion alone reveal that you are circling?
+== steps
+- Start two pointers at the head: slow steps one node at a time, fast steps two.
+- Loop while fast and fast.next exist, advancing both each round.
+- Compare node identity, never values — it is nodes that repeat, not what they hold.
+- If slow and fast are ever the same node, there is a cycle: return true; if fast runs off the end, return false.
+- Why the meeting is guaranteed: inside a loop, fast gains one place on slow every step, so it must land exactly on it.
+- The set-of-visited-nodes version answers it too, at O(n) memory — that contrast is why the two-pointer version is worth knowing.
+== pseudocode
+slow = head
+fast = head
+while fast != null and fast.next != null:
+    slow = slow.next
+    fast = fast.next.next
+    if slow is fast: return true
+return false

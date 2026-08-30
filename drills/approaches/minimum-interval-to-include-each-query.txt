@@ -1,0 +1,20 @@
+== nudge
+Answering the queries in the order they arrive is the trap here. What is the plain-definition answer for a single query — and if repeating that per query is too slow, must the queries be handled in their given order at all?
+== steps
+- Start from the definition: for one query, scan every interval that contains it and keep the smallest length end - start + 1, or -1 if none does.
+- Repeat per query and collect the answers in input order — the O(n times q) baseline, and the thing to check anything cleverer against.
+- Follow-up: sort the queries by value, admit intervals into a min-heap keyed by length as their starts pass, and pop whatever has already ended — each interval enters and leaves the heap once.
+- Other follow-up: hand intervals out shortest first — the first interval to cover a query is already that query's final answer, so a settled query leaves the pool for good.
+- Either faster route answers queries out of order, so scatter the answers back to their input positions at the end.
+== pseudocode
+answers = []
+for query in queries:
+    best = infinity
+    for [start, end] in intervals:
+        if start <= query and query <= end:
+            best = min(best, end - start + 1)
+    if best == infinity:
+        answers.add(-1)
+    else:
+        answers.add(best)
+return answers

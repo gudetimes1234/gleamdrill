@@ -1,0 +1,21 @@
+== nudge
+You are not assigning rooms — you are measuring something. At the busiest single moment of the day, how many meetings are running at once? What is the smallest kind of event you need to notice to track that number?
+== steps
+- Reframe: the rooms needed equal the maximum number of meetings ever running simultaneously.
+- Forget the meetings themselves and keep only their edges: a +1 event at each start, a -1 at each end.
+- Sort every edge by time and sweep, maintaining a running depth and its high-water mark.
+- Tie-break deliberately: a room freed exactly as another meeting starts is reusable, so ends sort before starts at the same time (-1 before +1) — the opposite of what merging intervals wants.
+- Return the high-water mark.
+- Follow-up: two sorted arrays of starts and ends with two pointers, or a min-heap of end times, reach the same number.
+== pseudocode
+edges = []
+for [start, end] in intervals:
+    edges.add((start, +1))
+    edges.add((end, -1))
+sort edges by time, with -1 before +1 on ties
+depth = 0
+best = 0
+for (time, delta) in edges:
+    depth = depth + delta
+    best = max(best, depth)
+return best

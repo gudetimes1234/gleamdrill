@@ -1,0 +1,7 @@
+== nudge
+You want the list ordered by something other than the values themselves. Where does that "something" plug into the sort — and how do you say "this field ascending, that field descending" in one go?
+== steps
+- Pass a key function: it maps each element to what it should be compared by, and the sort orders by that.
+- sortByLength: sorted(words, key=len) — a bare builtin is a perfectly good key.
+- sortPairs: return a tuple from the key, (name, -score) — tuples compare field by field, and negating a number flips just that field to descending.
+- Keep the pair straight: sort mutates the list in place, sorted returns a new one — these prompts want sorted.

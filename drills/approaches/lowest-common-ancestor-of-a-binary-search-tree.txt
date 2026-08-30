@@ -1,0 +1,18 @@
+== nudge
+This is not just any tree — every node states a fact about everything beneath it. Standing at the root with two target values in hand, what does that fact already tell you, before you go looking for either one?
+== steps
+- Start a single pointer at the root; neither target is ever searched for.
+- If both values are smaller than the current node's, the split lies to the left — move left.
+- If both are larger, move right.
+- Otherwise the targets part ways here (or one equals this node, which counts as its own descendant) — this node is the answer.
+- Iterate rather than recurse: the walk is O(h) time with O(1) space.
+- Follow-up: on a plain binary tree the ordering is gone — the fallback is finding both root-to-node paths and comparing where they diverge.
+== pseudocode
+node = root
+while node != null:
+    if p < node.value and q < node.value:
+        node = node.left
+    else if p > node.value and q > node.value:
+        node = node.right
+    else:
+        return node.value

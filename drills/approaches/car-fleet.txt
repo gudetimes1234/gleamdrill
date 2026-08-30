@@ -1,0 +1,18 @@
+== nudge
+Positions and speeds are a distraction until you ask one question per car: when would it reach the target if nothing were in the way? Once every car is a single number, which neighbour decides whether it stays independent — and in what order should you meet the cars?
+== steps
+- Sort the cars by starting position, closest to the target first.
+- Walk that order carrying the unhindered arrival time of the fleet ahead.
+- A car whose own arrival time is at most the lead fleet's catches it and joins — its speed stops mattering from then on.
+- A car arriving strictly later can never catch up: count a new fleet and make its time the new lead time.
+- Compare arrival times cross-multiplied — distance times the other's speed on each side — so the arithmetic stays in integers.
+== pseudocode
+cars = (position, speed) pairs sorted by position, descending
+fleets = 0
+lead_dist, lead_speed = 0, 1
+for (pos, spd) in cars:
+    dist = target - pos
+    if dist * lead_speed > lead_dist * spd:
+        fleets += 1
+        lead_dist, lead_speed = dist, spd
+return fleets

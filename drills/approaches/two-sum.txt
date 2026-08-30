@@ -1,0 +1,15 @@
+== nudge
+For each number you visit, you already know exactly what its partner must be. Have you perhaps walked past that partner already — and what would let you ask that question in O(1) instead of rescanning?
+== steps
+- Walk the array once, carrying a map from each value seen so far to its index.
+- At each number, compute the complement: target minus this number.
+- Look the complement up in the map; a hit means done — return its stored index and the current one.
+- Otherwise record this number's index and move on; recording after the lookup is what stops an element pairing with itself.
+- Know the brute force this beats: checking every pair is O(n squared), the one-pass map is O(n).
+== pseudocode
+seen = empty map
+for i in 0..n-1:
+    complement = target - nums[i]
+    if complement in seen:
+        return [seen[complement], i]
+    seen[nums[i]] = i

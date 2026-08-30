@@ -1,0 +1,18 @@
+== nudge
+Sorting would answer this instantly, and the O(n) requirement exists precisely to ban it. What would let you ask "is this number present?" in constant time — and among all the numbers, which ones are the only sensible places for a run to begin?
+== steps
+- Put every number into a set for O(1) membership tests.
+- Only start counting at numbers with no predecessor — where num - 1 is absent from the set.
+- From each such start, walk forward while num + length is present, counting as you go.
+- Track the longest run seen.
+- Trust the accounting: every number is visited at most twice across all walks, so the nested-looking loop is still O(n).
+== pseudocode
+present = set of nums
+longest = 0
+for num in present:
+    if num - 1 in present: continue
+    length = 1
+    while num + length in present:
+        length += 1
+    longest = max(longest, length)
+return longest

@@ -1,0 +1,14 @@
+== nudge
+Checking every pair of meetings is quadratic. Is there an ordering under which a clash, if one exists at all, is forced to show up between neighbours?
+== steps
+- Sort the meetings by start time.
+- Check only adjacent pairs: each meeting must start at or after the previous one ends.
+- Why that suffices: any meeting earlier than the previous one began earlier still, so it would have clashed with the previous one first.
+- Mind the boundary: a meeting ending exactly as the next begins is fine, so the failing condition is previous end strictly greater than next start.
+- Worth memorising the general test while you are here: two intervals overlap when each starts before the other ends.
+== pseudocode
+sort intervals by start
+for i in 1..n-1:
+    if intervals[i-1].end > intervals[i].start:
+        return false
+return true

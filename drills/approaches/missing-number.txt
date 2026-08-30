@@ -1,0 +1,13 @@
+== nudge
+The numbers 0 to n, with one absent. If every present value could somehow meet the index it belongs to, they would all pair off — what operation makes each pairing vanish, and what would the one unpaired thing leave behind?
+== steps
+- Start the result at n — the one index the loop below never visits.
+- Walk the array, XOR-ing both the index and the value at it into the result.
+- Every present number meets its own index and the pair cancels; the missing number's index has no partner, so it survives as the answer.
+- Return the result.
+- If asked for the arithmetic version: expected sum n(n + 1)/2 minus the actual sum reads better, but the intermediate can overflow in a fixed-width language where the XOR cannot.
+== pseudocode
+result = n
+for i in 0..n-1:
+    result = result XOR i XOR nums[i]
+return result

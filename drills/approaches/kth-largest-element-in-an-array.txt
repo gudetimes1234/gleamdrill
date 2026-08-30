@@ -1,0 +1,11 @@
+== nudge
+Duplicates count separately, so this is a position in sorted order — but must the whole array end up sorted for one position to be known? Start from the version nobody gets wrong, then ask what it overworks.
+== steps
+- Guard against k outside 1..n.
+- Sort descending and return the element at index k - 1 — O(n log n), answers every k at once, hard to get wrong.
+- Follow-up: quickselect partitions around a pivot and recurses only into the side that must hold index k — expected O(n) because the work halves instead of doubling, worst case still quadratic.
+- Second follow-up: a min-heap of size k gives O(n log k), the answer when the data streams and cannot be sorted in place.
+== pseudocode
+if k < 1 or k > length(nums): return none
+sort nums descending
+return nums[k - 1]

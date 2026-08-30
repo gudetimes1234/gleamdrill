@@ -1,0 +1,20 @@
+== nudge
+The constraints ban everything a duplicate hunt normally leans on: no sorting, no marking, no extra space. But notice that every value is also a legal position in the array. If each cell is read as pointing somewhere, what shape does the repeated value force — and where have you dealt with that shape before?
+== steps
+- Read position i as a node linked to position nums[i]; because one value repeats, two positions point at the same place, so this implicit list has a cycle.
+- The duplicate value is the cycle's entrance — the position several links converge on.
+- Run Floyd phase one: slow hops once (slow = nums[slow]), fast hops twice; loop until they meet inside the cycle.
+- Run Floyd phase two: restart one pointer at position 0, hop both once per step; where they meet is the entrance — return it.
+- Confirm the constraints hold: the array is never written, and only two indexes are carried.
+- Follow-up: binary search on the value range also works — count how many numbers are at most v; that count exceeds v exactly when the duplicate is at or below v. O(n log n), still O(1) space.
+== pseudocode
+slow = nums[0]
+fast = nums[nums[0]]
+while slow != fast:
+    slow = nums[slow]
+    fast = nums[nums[fast]]
+slow = 0
+while slow != fast:
+    slow = nums[slow]
+    fast = nums[fast]
+return slow

@@ -1,0 +1,23 @@
+== nudge
+You already know how to find every island — this problem has only changed what it wants to know about each one. What number should each traversal hand back now?
+== steps
+- Sweep every cell; a land cell not yet seen starts a fresh island traversal.
+- Flood that island — stack or recursion — marking each cell seen and counting it toward the island's area.
+- Push the four orthogonal neighbours of each cell; water, out-of-bounds, and already-seen cells are skipped when popped.
+- Keep the largest area across all traversals; a grid with no land answers 0 with no special case.
+- Written recursively, the area is the return value — 1 plus the four neighbour calls — with no counter at all.
+== pseudocode
+seen = empty set
+best = 0
+for each cell (r, c) where grid[r][c] == 1:
+    if (r, c) in seen: continue
+    area = 0
+    stack = [(r, c)]
+    while stack not empty:
+        (cr, cc) = stack.pop()
+        if (cr, cc) is out of bounds, water, or in seen: continue
+        seen.add((cr, cc))
+        area += 1
+        push the 4 neighbours of (cr, cc) onto stack
+    best = max(best, area)
+return best

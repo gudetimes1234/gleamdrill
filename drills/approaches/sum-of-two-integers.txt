@@ -1,0 +1,19 @@
+== nudge
+Addition without + sounds impossible until you split what addition does into two jobs. Column by column, what happens in the columns that don't overflow — and separately, where do the carries go? Which bitwise operators do those two jobs?
+== steps
+- XOR the two numbers: that is addition with the carries forgotten.
+- AND the two numbers and shift left one: that is exactly the carries, moved to the column they are owed to.
+- Loop: replace a with the XOR and b with the shifted carry, until the carry is zero; a is the sum.
+- In a fixed-width language this just works; with arbitrary-precision integers (Python), mask both values and every intermediate to 32 bits or a negative's carry never dies out.
+- After masking, read the sign back by hand: a 32-bit pattern above the signed maximum is a negative number.
+== pseudocode
+MASK = 0xFFFFFFFF
+MAX_SIGNED = 0x7FFFFFFF
+a = a AND MASK
+b = b AND MASK
+while b != 0:
+    carry = ((a AND b) << 1) AND MASK
+    a = (a XOR b) AND MASK
+    b = carry
+if a <= MAX_SIGNED: return a
+return -((a XOR MASK) + 1)

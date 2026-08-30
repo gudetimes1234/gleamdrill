@@ -1,0 +1,20 @@
+== nudge
+You are asked for the smallest speed that works. If some speed gets Koko done in time, what do you immediately know about every faster speed? What kind of search does that one-way structure invite — and over what range?
+== steps
+- Write the feasibility check first: at speed k, a pile costs ceil(pile / k) hours because piles never share an hour; sum the costs and compare with h.
+- Notice the check is monotone — if a speed finishes in time, every faster speed does too.
+- Binary search on the answer, not the input: low starts at 1, high at the largest pile.
+- Test the midpoint speed; if it finishes within h hours, the answer is mid or slower, so pull high down to mid.
+- Otherwise mid is too slow — push low to mid + 1.
+- When low meets high, that speed is the smallest that works — return it.
+== pseudocode
+low = 1
+high = max(piles)
+while low < high:
+    mid = (low + high) / 2
+    hours = 0
+    for pile in piles:
+        hours += ceil(pile / mid)
+    if hours <= h: high = mid
+    else:          low = mid + 1
+return low
