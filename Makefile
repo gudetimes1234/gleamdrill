@@ -4,12 +4,25 @@ TARBALL_URL     := https://github.com/gleam-lang/gleam/releases/download/v$(GLEA
 BRYTHON_VERSION := 3.14.3
 PY_RUNTIME_DIR  := assets/python-runtime/$(BRYTHON_VERSION)
 
-.PHONY: dev build deploy vendor content verify worker clean-vendor \
-        fsrs-test fsrs-vectors server-dev server-test server-smoke \
-        app-test api-fixtures e2e tour serve-dist up down down-clean
+.PHONY: dev dev-app dev-api build deploy vendor content verify worker \
+        clean-vendor fsrs-test fsrs-vectors server-dev server-test \
+        server-smoke app-test api-fixtures e2e tour serve-dist up down \
+        down-clean
 
+# The whole dev stack in one terminal: frontend on :1234, backend on :1637.
+# The app on :1234 points at 127.0.0.1:1637 (ffi.mjs apiBase), so the frontend
+# alone shows the Offline screen to a signed-in user. Ctrl+C stops both.
 dev: vendor content worker
+	@$(MAKE) -j2 --no-print-directory dev-app dev-api
+
+# Frontend only — guest mode works; signed in, boot needs the backend.
+dev-app:
 	gleam run -m lustre/dev start
+
+# Backend only — needs server/.env (see server/.env.example) and Postgres.
+dev-api:
+	@[ -f server/.env ] || { echo "server/.env missing — copy server/.env.example and fill it in"; exit 1; }
+	cd server && set -a && . ./.env; set +a; gleam run
 
 build: vendor content worker
 	gleam run -m lustre/dev build
@@ -97,8 +110,7 @@ tour:
 
 # The backend. Needs the environment from server/.env.example; `server-dev`
 # reads server/.env if it exists.
-server-dev:
-	cd server && set -a && [ -f .env ] && . ./.env; set +a; gleam run
+server-dev: dev-api
 
 server-test:
 	cd server && gleam test

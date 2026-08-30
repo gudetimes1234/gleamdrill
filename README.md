@@ -176,8 +176,9 @@ from the list the app embeds. They need `python3`, `bun` and `elixir` on PATH.
 ## Develop / ship
 
 ```sh
-make dev           # vendor + generate + worker bundles + dev server
-make server-dev    # the backend, reading server/.env
+make dev           # the whole stack: frontend on :1234 + backend on :1637
+make dev-app       # frontend only (guest mode works; signed-in needs the api)
+make dev-api       # backend only, reading server/.env
 make verify        # every solution variant, plus the scheduler and API tests
 make build         # minified bundle -> dist/
 make up            # the whole stack in containers, on :8080
@@ -212,7 +213,7 @@ in, then:
 
 ```sh
 createdb algodrill_dev
-make server-dev        # migrates at boot, then listens
+make dev-api           # migrates at boot, then listens (server-dev is an alias)
 make server-smoke      # 58 checks against it
 ```
 
