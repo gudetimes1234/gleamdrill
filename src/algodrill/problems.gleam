@@ -1,6 +1,4 @@
-import algodrill/problem.{
-  type Category, type Problem, type ProblemRef, ProblemRef,
-}
+import algodrill/problem.{type Category, type Problem, type ProblemRef}
 import algodrill/problems/neetcode_elixir
 import algodrill/problems/neetcode_gleam
 import algodrill/problems/neetcode_python
@@ -9,6 +7,7 @@ import algodrill/problems/system_design
 import gleam/list
 import gleam/result
 import gleam/string
+import wire.{ProblemRef}
 
 /// Memoised: see problems_ffi.mjs. Deterministic, so the first call builds and
 /// every later one is free.

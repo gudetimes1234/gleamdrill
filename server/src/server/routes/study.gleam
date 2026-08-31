@@ -7,12 +7,13 @@ import gleam/http
 import gleam/int
 import gleam/json.{type Json}
 import gleam/list
-import gleam/option.{type Option, None, Some}
+import gleam/option.{None, Some}
 import gleam/result
-import gleam/time/timestamp.{type Timestamp}
+import gleam/time/timestamp
 import server/auth.{type User}
-import server/study.{type CardRecord, type Settings, type Today, ProblemRef}
+import server/study.{type CardRecord, type Settings}
 import server/web.{type Context}
+import wire
 import wisp
 
 /// Everything the app needs to start, in one request.
@@ -229,7 +230,7 @@ pub fn history(request: wisp.Request, context: Context) -> wisp.Response {
         study.history(
           context.db,
           user.id,
-          study.ProblemRef(category:, subcategory:, title:),
+          wire.ProblemRef(category:, subcategory:, title:),
         )
       {
         Error(failure) -> study_error(failure)
@@ -247,63 +248,6 @@ pub fn history(request: wisp.Request, context: Context) -> wisp.Response {
         "Expected category, subcategory and title query parameters.",
       )
   }
-}
-
-fn insights_json(insights: study.Insights) -> Json {
-  json.object([
-    #(
-      "cleanSolves",
-      json.array(insights.clean_solves, fn(solve) {
-        json.object(
-          ref_json_fields(solve.problem)
-          |> list.append([
-            #("at", json.float(fsrs.to_epoch(solve.at))),
-            #("durationMs", json.int(solve.duration_ms)),
-          ]),
-        )
-      }),
-    ),
-    #(
-      "reveals",
-      json.array(insights.reveals, fn(reveal) {
-        json.object(
-          ref_json_fields(reveal.problem)
-          |> list.append([#("count", json.int(reveal.count))]),
-        )
-      }),
-    ),
-    #(
-      "calibration",
-      json.array(insights.calibration, fn(row) {
-        json.object([
-          #("rating", json.int(row.rating)),
-          #("total", json.int(row.next_total)),
-          #("passed", json.int(row.next_passed)),
-        ])
-      }),
-    ),
-  ])
-}
-
-fn review_row_json(row: study.ReviewRow) -> Json {
-  json.object([
-    #("at", json.float(fsrs.to_epoch(row.at))),
-    #("rating", json.int(row.rating)),
-    #("durationMs", nullable_int(row.duration_ms)),
-    #("revealed", json.bool(row.revealed)),
-    #("autoFailed", json.bool(row.auto_failed)),
-    #("stateBefore", json.int(row.state_before)),
-    #("scheduledDays", json.int(row.scheduled_days)),
-    #("stabilityAfter", nullable_float(row.stability_after)),
-  ])
-}
-
-fn ref_json_fields(problem: study.ProblemRef) -> List(#(String, Json)) {
-  [
-    #("category", json.string(problem.category)),
-    #("subcategory", json.string(problem.subcategory)),
-    #("title", json.string(problem.title)),
-  ]
 }
 
 pub fn draft(request: wisp.Request, context: Context) -> wisp.Response {
@@ -409,171 +353,45 @@ fn fuzz_sample() -> Float {
 
 // --- encoding --------------------------------------------------------------
 
-fn accounts_user_json(user: User) -> Json {
-  json.object([
-    #("id", json.string(user.id)),
-    #("email", json.string(user.email)),
-  ])
-}
-
+/// A stored card minus the database id, which never crosses the wire. This is
+/// the only shape difference between what the server keeps and what it sends,
+/// and it is why `CardRecord` is not itself a wire type.
 fn card_json(record: CardRecord) -> Json {
-  let card = record.card
-  json.object([
-    #("category", json.string(record.problem.category)),
-    #("subcategory", json.string(record.problem.subcategory)),
-    #("title", json.string(record.problem.title)),
-    #("state", json.int(study.state_code(card.state))),
-    #("step", nullable_int(study.state_step(card.state))),
-    #(
-      "stability",
-      nullable_float(option.map(card.memory, fn(m) { m.stability })),
-    ),
-    #(
-      "difficulty",
-      nullable_float(option.map(card.memory, fn(m) { m.difficulty })),
-    ),
-    #("due", json.float(fsrs.to_epoch(card.due))),
-    #("lastReview", nullable_epoch(card.last_review)),
-    #("introducedAt", nullable_epoch(record.introduced_at)),
-    #("reps", json.int(record.reps)),
-    #("lapses", json.int(record.lapses)),
-    #("suspended", json.bool(record.suspended)),
-  ])
-}
-
-fn draft_json(entry: #(study.ProblemRef, String)) -> Json {
-  let #(problem, body) = entry
-  json.object([
-    #("category", json.string(problem.category)),
-    #("subcategory", json.string(problem.subcategory)),
-    #("title", json.string(problem.title)),
-    #("body", json.string(body)),
-  ])
-}
-
-fn today_json(today: Today) -> Json {
-  json.object([
-    #("dayStart", json.float(fsrs.to_epoch(today.day_start))),
-    #("dayEnd", json.float(fsrs.to_epoch(today.day_end))),
-    #("reviewsDone", json.int(today.reviews_done)),
-    #("newIntroduced", json.int(today.new_introduced)),
-    #("reviewsRemaining", json.int(today.reviews_remaining)),
-    #("newRemaining", json.int(today.new_remaining)),
-    #("dueNow", json.int(today.due_now)),
-  ])
-}
-
-fn stats_json(stats: study.Stats) -> Json {
-  json.object([
-    #("totalReviews", json.int(stats.total_reviews)),
-    #("matureReviews", json.int(stats.mature_reviews)),
-    #("matureCorrect", json.int(stats.mature_correct)),
-    #("streakDays", json.int(stats.streak_days)),
-    #(
-      "stateCounts",
-      json.array(stats.state_counts, fn(entry) {
-        json.object([
-          #("state", json.int(entry.0)),
-          #("count", json.int(entry.1)),
-        ])
-      }),
-    ),
-    #(
-      "history",
-      json.array(stats.history, fn(day) {
-        json.object([
-          #("daysAgo", json.int(day.days_ago)),
-          #("total", json.int(day.total)),
-          #("correct", json.int(day.correct)),
-        ])
-      }),
-    ),
-    #(
-      "forecast",
-      json.array(stats.forecast, fn(entry) {
-        json.object([
-          #("daysAhead", json.int(entry.0)),
-          #("count", json.int(entry.1)),
-        ])
-      }),
-    ),
-  ])
-}
-
-fn settings_json(settings: Settings) -> Json {
-  let scheduler = settings.scheduler
-  json.object([
-    #("parameters", json.array(scheduler.parameters, json.float)),
-    #("desiredRetention", json.float(scheduler.desired_retention)),
-    #("learningSteps", json.array(scheduler.learning_steps, json.int)),
-    #("relearningSteps", json.array(scheduler.relearning_steps, json.int)),
-    #("maximumInterval", json.int(scheduler.maximum_interval)),
-    #("enableFuzz", json.bool(scheduler.enable_fuzz)),
-    #("newPerDay", json.int(settings.new_per_day)),
-    #("reviewsPerDay", json.int(settings.reviews_per_day)),
-    #("dayStartHour", json.int(settings.day_start_hour)),
-    #("timezone", json.string(settings.timezone)),
-  ])
-}
-
-fn nullable_int(value: Option(Int)) -> Json {
-  case value {
-    Some(value) -> json.int(value)
-    None -> json.null()
-  }
-}
-
-fn nullable_float(value: Option(Float)) -> Json {
-  case value {
-    Some(value) -> json.float(value)
-    None -> json.null()
-  }
-}
-
-fn nullable_epoch(value: Option(Timestamp)) -> Json {
-  case value {
-    Some(moment) -> json.float(fsrs.to_epoch(moment))
-    None -> json.null()
-  }
-}
-
-// --- decoding --------------------------------------------------------------
-
-fn problem_decoder() -> decode.Decoder(study.ProblemRef) {
-  use category <- decode.field("category", decode.string)
-  use subcategory <- decode.field("subcategory", decode.string)
-  use title <- decode.field("title", decode.string)
-  decode.success(ProblemRef(category:, subcategory:, title:))
-}
-
-fn review_decoder() -> decode.Decoder(study.ReviewInput) {
-  use problem <- decode.then(problem_decoder())
-  use rating <- decode.field("rating", rating_decoder())
-  use duration_ms <- decode.optional_field(
-    "durationMs",
-    None,
-    decode.optional(decode.int),
-  )
-  use auto_failed <- decode.optional_field("autoFailed", False, decode.bool)
-  use revealed <- decode.optional_field("revealed", False, decode.bool)
-  use practice <- decode.optional_field("practice", False, decode.bool)
-  decode.success(study.ReviewInput(
-    problem:,
-    rating:,
-    duration_ms:,
-    auto_failed:,
-    revealed:,
-    practice:,
+  wire.card_to_json(wire.CardState(
+    problem: record.problem,
+    card: record.card,
+    reps: record.reps,
+    lapses: record.lapses,
+    suspended: record.suspended,
+    introduced_at: record.introduced_at,
   ))
 }
 
-fn rating_decoder() -> decode.Decoder(fsrs.Rating) {
-  use value <- decode.then(decode.int)
-  case fsrs.rating_from_int(value) {
-    Ok(rating) -> decode.success(rating)
-    Error(Nil) -> decode.failure(fsrs.Good, "Rating")
-  }
-}
+const accounts_user_json = wire.user_to_json
+
+const draft_json = wire.draft_to_json
+
+const today_json = wire.today_to_json
+
+const stats_json = wire.stats_to_json
+
+const settings_json = wire.settings_to_json
+
+const insights_json = wire.insights_to_json
+
+const review_row_json = wire.review_row_to_json
+
+// --- decoding --------------------------------------------------------------
+
+const problem_decoder = wire.ref_decoder
+
+const review_decoder = wire.review_decoder
+
+const lenient_float = wire.lenient_float
+
+const draft_decoder = wire.draft_decoder
+
+const settings_decoder = wire.settings_decoder
 
 fn import_decoder() -> decode.Decoder(
   #(
@@ -601,17 +419,6 @@ fn import_decoder() -> decode.Decoder(
     decode.list(draft_decoder()),
   )
   decode.success(#(solved, cards, drafts))
-}
-
-/// Accepts a JSON number whether or not it carries a decimal point.
-///
-/// This is not defensiveness, it is a real cross-target difference: the app
-/// runs on the JavaScript target, and `JSON.stringify` renders a whole float
-/// as `1787788818`, not `1787788818.0`. Erlang keeps the decimal, which is why
-/// server-to-client never hits this. Every float the *client* sends has to
-/// tolerate both, and epoch seconds land on a whole number regularly.
-fn lenient_float() -> decode.Decoder(Float) {
-  decode.one_of(decode.float, [decode.int |> decode.map(int.to_float)])
 }
 
 fn import_card_decoder() -> decode.Decoder(study.ImportCard) {
@@ -648,42 +455,6 @@ fn import_card_decoder() -> decode.Decoder(study.ImportCard) {
     reps: int.max(0, reps),
     lapses: int.max(0, lapses),
     introduced_at: option.map(introduced_at, fsrs.from_epoch),
-  ))
-}
-
-fn draft_decoder() -> decode.Decoder(#(study.ProblemRef, String)) {
-  use problem <- decode.then(problem_decoder())
-  use body <- decode.field("body", decode.string)
-  decode.success(#(problem, body))
-}
-
-fn settings_decoder() -> decode.Decoder(Settings) {
-  use parameters <- decode.field("parameters", decode.list(lenient_float()))
-  use desired_retention <- decode.field("desiredRetention", lenient_float())
-  use learning_steps <- decode.field("learningSteps", decode.list(decode.int))
-  use relearning_steps <- decode.field(
-    "relearningSteps",
-    decode.list(decode.int),
-  )
-  use maximum_interval <- decode.field("maximumInterval", decode.int)
-  use enable_fuzz <- decode.field("enableFuzz", decode.bool)
-  use new_per_day <- decode.field("newPerDay", decode.int)
-  use reviews_per_day <- decode.field("reviewsPerDay", decode.int)
-  use day_start_hour <- decode.field("dayStartHour", decode.int)
-  use timezone <- decode.field("timezone", decode.string)
-  decode.success(study.Settings(
-    scheduler: fsrs.Config(
-      parameters:,
-      desired_retention:,
-      learning_steps:,
-      relearning_steps:,
-      maximum_interval:,
-      enable_fuzz:,
-    ),
-    new_per_day:,
-    reviews_per_day:,
-    day_start_hour:,
-    timezone:,
   ))
 }
 

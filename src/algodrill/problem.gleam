@@ -1,4 +1,5 @@
 import gleam/option.{type Option}
+import wire
 
 /// Identifies one drill in the catalogue.
 ///
@@ -6,11 +7,15 @@ import gleam/option.{type Option}
 /// is the whole key -- it is what localStorage, the server's `cards` table and
 /// the scheduler all agree on.
 ///
-/// It lives here rather than in `model` because the API layer needs it too,
-/// and `model` depends on the API layer for its messages.
-pub type ProblemRef {
-  ProblemRef(category: String, subcategory: String, title: String)
-}
+/// Defined in `wire` and aliased here, because it is the one catalogue type
+/// that also crosses to the server: the same three strings key the `cards`
+/// table. Aliased rather than moved so the app keeps looking for it where it
+/// always has. The alias is transparent, so a `wire.ProblemRef` and a
+/// `problem.ProblemRef` are the same type -- but the *constructor* is only
+/// `wire.ProblemRef`, which is why the handful of modules that build one
+/// import it from there.
+pub type ProblemRef =
+  wire.ProblemRef
 
 pub type Language {
   Python

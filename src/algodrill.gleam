@@ -31,7 +31,7 @@ import algodrill/model.{
   UserToggledAuthMode, UserToggledLanguage, UserToggledProblem, UserToggledSide,
   UserToggledSolution, UserToggledSuspend,
 }
-import algodrill/problem.{type ProblemRef, ProblemRef}
+import algodrill/problem.{type ProblemRef}
 import algodrill/problems
 import algodrill/runner
 import algodrill/session
@@ -53,6 +53,7 @@ import gleam/string
 import lustre
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
+import wire.{ProblemRef}
 
 pub fn main() {
   editor.register()
@@ -866,7 +867,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           Model(..m, grading: SubmittingGrade),
           store.record_review(
             m,
-            api.Review(
+            wire.Review(
               problem: ref,
               rating:,
               duration_ms: Some(browser.now_ms() - m.opened_at_ms),
@@ -1072,7 +1073,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             // explanation is worth reading before moving on.
             store.record_review(
               m,
-              api.Review(
+              wire.Review(
                 problem: ref,
                 rating: case right {
                   True -> fsrs.Good

@@ -1,0 +1,18 @@
+name = "wire"
+version = "1.0.0"
+description = "The AlgoDrill client/server wire format: one encoder and one decoder per payload."
+
+# Deliberately no `target` key, for the same reason as ../fsrs: this package is
+# compiled to Erlang by the server and to JavaScript by the app, from the same
+# source. That is the whole point -- the shapes below used to be written twice,
+# by hand, and only captured fixtures stood between a rename on one side and a
+# blank screen on the other. Run its tests both ways; see `make wire-test`.
+
+[dependencies]
+gleam_stdlib = ">= 0.44.0 and < 2.0.0"
+gleam_time = ">= 1.10.0 and < 2.0.0"
+gleam_json = ">= 3.1.0 and < 4.0.0"
+fsrs = { path = "../fsrs" }
+
+[dev-dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"

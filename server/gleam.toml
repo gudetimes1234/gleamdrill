@@ -22,5 +22,8 @@ simplifile = ">= 2.0.0 and < 3.0.0"
 # The scheduler is shared with the browser app; see ../fsrs.
 fsrs = { path = "../fsrs" }
 
+# The wire format, shared verbatim with the browser app. See ../wire.
+wire = { path = "../wire" }
+
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"

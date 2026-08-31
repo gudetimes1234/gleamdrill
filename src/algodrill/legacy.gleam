@@ -10,7 +10,7 @@
 //// Only `.v4` and `.v3` are read. `.v2` and the original key predate drafts
 //// and attempts entirely, so there is nothing in them to import.
 
-import algodrill/problem.{type ProblemRef, ProblemRef}
+import algodrill/problem.{type ProblemRef}
 import gleam/dynamic/decode.{type Decoder}
 import gleam/json
 import gleam/list
@@ -18,6 +18,7 @@ import gleam/option.{type Option, None, Some}
 import gleam/result
 import lustre/effect.{type Effect}
 import plinth/javascript/storage
+import wire.{ProblemRef}
 
 const key_v4 = "algoDrillState.v4"
 

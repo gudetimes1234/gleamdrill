@@ -10,6 +10,7 @@ import gleeunit/should
 import server/auth
 import server/study
 import server/web
+import wire
 import wisp
 import wisp/simulate
 
@@ -163,7 +164,7 @@ pub fn default_settings_are_the_documented_values_test() {
 // --- helpers ---------------------------------------------------------------
 
 fn tally(days_ago: Int) -> study.DayTally {
-  study.DayTally(days_ago:, total: 1, correct: 1)
+  wire.DayTally(days_ago:, total: 1, correct: 1)
 }
 
 fn authorized(value: String) -> wisp.Request {

@@ -23,6 +23,7 @@ import gleam/dict
 import gleam/int
 import gleam/time/timestamp
 import lustre/effect.{type Effect}
+import wire
 
 pub fn load_state(m: Model) -> Effect(Msg) {
   case m.mode {
@@ -35,11 +36,11 @@ pub fn load_state(m: Model) -> Effect(Msg) {
       let day = local.current_day(settings)
       dispatch(
         StateLoaded(
-          Ok(api.BootState(
+          Ok(wire.BootState(
             now:,
             // A guest has no account, so there is no email to show. The view
             // branches on `mode`, not on this.
-            user: api.User(id: "", email: ""),
+            user: wire.User(id: "", email: ""),
             settings:,
             cards: dict.values(store.cards),
             drafts: store.drafts,
@@ -76,7 +77,7 @@ pub fn record_review(m: Model, review: api.Review) -> Effect(Msg) {
         Error(Nil) -> ReviewRecorded(Error(storage_full()))
         Ok(Nil) ->
           ReviewRecorded(
-            Ok(api.ReviewOutcome(
+            Ok(wire.ReviewOutcome(
               now:,
               card:,
               today: local.today(updated, m.settings, now, day),
@@ -112,7 +113,7 @@ pub fn set_suspended(
             Error(Nil) -> CardSuspended(Error(storage_full()))
             Ok(Nil) ->
               CardSuspended(
-                Ok(api.ReviewOutcome(
+                Ok(wire.ReviewOutcome(
                   now:,
                   card:,
                   today: local.today(updated, m.settings, now, day),

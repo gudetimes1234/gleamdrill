@@ -1,5 +1,5 @@
 {
- "now": 1787870700.101383,
+ "now": 1788195485.3146234,
  "user": {
   "id": "00000000-0000-0000-0000-000000000000",
   "email": "drills@example.com"
@@ -52,12 +52,12 @@
    "step": 1,
    "stability": 2.3065,
    "difficulty": 2.118103970459015,
-   "due": 1787871300.024488,
-   "lastReview": 1787870700.024488,
-   "introducedAt": 1787870700.026213,
+   "due": 1788196085.240066,
+   "lastReview": 1788195485.240066,
    "reps": 1,
    "lapses": 0,
-   "suspended": false
+   "suspended": false,
+   "introducedAt": 1788195485.241759
   }
  ],
  "drafts": [
@@ -69,8 +69,8 @@
   }
  ],
  "today": {
-  "dayStart": 1787803200.0,
-  "dayEnd": 1787889600.0,
+  "dayStart": 1788148800.0,
+  "dayEnd": 1788235200.0,
   "reviewsDone": 1,
   "newIntroduced": 1,
   "reviewsRemaining": 99,

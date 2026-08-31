@@ -4,7 +4,7 @@ import algodrill/model.{
   UserClickedStartDrill, UserClickedStartExam, UserClickedSubcategory,
   UserSearched, UserToggledProblem, UserToggledSuspend,
 }
-import algodrill/problem.{type Problem, type ProblemRef, ProblemRef}
+import algodrill/problem.{type Problem, type ProblemRef}
 import algodrill/problems
 import algodrill/view/format
 import fsrs
@@ -18,6 +18,7 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/element/keyed
 import lustre/event
+import wire.{ProblemRef}
 
 pub fn view(m: Model) -> Element(Msg) {
   let listed_problems = case m.selected_category, m.selected_subcategory {

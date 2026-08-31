@@ -60,6 +60,11 @@ jobs:
       - name: Scheduler tests
         run: make fsrs-test
 
+      # The wire format is shared the same way. Every payload round-trips
+      # through its own encoder and decoder, on both targets.
+      - name: Wire format tests
+        run: make wire-test
+
       # The app's decoders against captured server responses.
       - name: App tests
         run: make app-test

@@ -17,6 +17,11 @@ rsvp = ">= 2.0.0 and < 3.0.0"
 # decide it for real. See ../fsrs.
 fsrs = { path = "fsrs" }
 
+# The client/server wire format, shared verbatim with the backend. Every
+# payload has one encoder and one decoder, compiled to both targets from one
+# source. See ../wire.
+wire = { path = "wire" }
+
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
 simplifile = ">= 2.0.0 and < 3.0.0"

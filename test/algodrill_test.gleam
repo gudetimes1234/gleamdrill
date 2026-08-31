@@ -28,6 +28,7 @@ import gleam/string
 import gleam/time/timestamp
 import gleeunit
 import simplifile
+import wire
 
 pub fn main() -> Nil {
   gleeunit.main()
@@ -194,7 +195,7 @@ fn guest_settings() -> api.Settings {
 }
 
 fn answer(problem: problem.ProblemRef, rating: fsrs.Rating) -> api.Review {
-  api.Review(
+  wire.Review(
     problem:,
     rating:,
     duration_ms: None,
@@ -205,7 +206,7 @@ fn answer(problem: problem.ProblemRef, rating: fsrs.Rating) -> api.Review {
 }
 
 fn a_problem(title: String) -> problem.ProblemRef {
-  problem.ProblemRef("NeetCode 150 · Python", "Arrays & Hashing", title)
+  wire.ProblemRef("NeetCode 150 · Python", "Arrays & Hashing", title)
 }
 
 /// The whole promise of guest mode: the same answers produce the same card as
@@ -248,7 +249,7 @@ pub fn first_encounter_grades_freely_test() -> Nil {
     local.record(
       local.empty(),
       guest_settings(),
-      api.Review(
+      wire.Review(
         problem: a_problem("Contains Duplicate"),
         rating: fsrs.Easy,
         duration_ms: None,
@@ -287,7 +288,7 @@ pub fn later_reviews_enforce_honesty_test() -> Nil {
     local.record(
       store,
       settings,
-      api.Review(
+      wire.Review(
         problem:,
         rating: fsrs.Easy,
         duration_ms: None,
@@ -447,7 +448,7 @@ pub fn an_overdue_card_counts_as_due_test() -> Nil {
 }
 
 pub fn streaks_count_consecutive_days_test() -> Nil {
-  let tally = fn(days_ago) { api.DayTally(days_ago:, total: 1, correct: 1) }
+  let tally = fn(days_ago) { wire.DayTally(days_ago:, total: 1, correct: 1) }
 
   assert local.streak([]) == 0
   assert local.streak([tally(0)]) == 1
@@ -513,11 +514,11 @@ pub fn drafts_evict_oldest_first_test() -> Nil {
 // exercises the whole pipeline with no storage and no server.
 
 fn solve(title: String, at: Int, ms: Int) -> api.CleanSolve {
-  api.CleanSolve(problem: a_problem(title), at: at_epoch(at), duration_ms: ms)
+  wire.CleanSolve(problem: a_problem(title), at: at_epoch(at), duration_ms: ms)
 }
 
 fn card_named(title: String) -> api.CardState {
-  api.CardState(
+  wire.CardState(
     problem: a_problem(title),
     card: fsrs.new_card(at_epoch(1_800_000_000)),
     reps: 1,
@@ -559,7 +560,7 @@ pub fn the_headline_counts_fluent_cards_and_recent_crossings_test() -> Nil {
       #(a_problem("Unseen"), card_named("Unseen")),
     ])
   let data =
-    api.Insights(
+    wire.Insights(
       clean_solves: [
         // Crossed the line two days ago.
         solve("Fast, fresh", 1_800_000_000 + 28 * day, 60_000),
@@ -581,8 +582,8 @@ pub fn the_headline_counts_fluent_cards_and_recent_crossings_test() -> Nil {
 pub fn calibration_flags_optimistic_easy_pressing_test() -> Nil {
   let rows = fn(easy_passed) {
     [
-      api.Calibration(rating: fsrs.Good, total: 10, passed: 9),
-      api.Calibration(rating: fsrs.Easy, total: 10, passed: easy_passed),
+      wire.Calibration(rating: fsrs.Good, total: 10, passed: 9),
+      wire.Calibration(rating: fsrs.Easy, total: 10, passed: easy_passed),
     ]
   }
   let assert Some(warning) = insights.calibration_view(rows(6)).verdict
@@ -591,7 +592,7 @@ pub fn calibration_flags_optimistic_easy_pressing_test() -> Nil {
   assert string.contains(fine, "line up")
   // Below the sample floor, no verdict at all: five reviews prove nothing.
   assert insights.calibration_view([
-      api.Calibration(rating: fsrs.Easy, total: 2, passed: 0),
+      wire.Calibration(rating: fsrs.Easy, total: 2, passed: 0),
     ]).verdict
     == None
 }
@@ -607,7 +608,7 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
     local.record(
       local.empty(),
       settings,
-      api.Review(
+      wire.Review(
         problem:,
         rating: fsrs.Good,
         duration_ms: Some(150_000),
@@ -623,7 +624,7 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
     local.record(
       store,
       settings,
-      api.Review(
+      wire.Review(
         problem:,
         rating: fsrs.Good,
         duration_ms: Some(20_000),
@@ -639,7 +640,7 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
     local.record(
       store,
       settings,
-      api.Review(
+      wire.Review(
         problem:,
         rating: fsrs.Good,
         duration_ms: Some(90_000),
@@ -775,7 +776,7 @@ pub fn guest_and_server_calibration_agree_test() -> Nil {
     local.record(
       local.empty(),
       settings,
-      api.Review(
+      wire.Review(
         problem:,
         rating: fsrs.Good,
         duration_ms: Some(150_000),
@@ -791,7 +792,7 @@ pub fn guest_and_server_calibration_agree_test() -> Nil {
     local.record(
       store,
       settings,
-      api.Review(
+      wire.Review(
         problem:,
         rating: fsrs.Good,
         duration_ms: None,
@@ -807,7 +808,7 @@ pub fn guest_and_server_calibration_agree_test() -> Nil {
     local.record(
       store,
       settings,
-      api.Review(
+      wire.Review(
         problem:,
         rating: fsrs.Good,
         duration_ms: Some(90_000),

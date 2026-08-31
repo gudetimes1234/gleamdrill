@@ -14,12 +14,18 @@ import gleam/result
 import gleam/string
 import gleam/time/timestamp.{type Timestamp}
 import pog
+import wire
 
 /// The app's problem key. `category` already encodes the language
 /// ("NeetCode 150 - Python"), so this needs no language field.
-pub type ProblemRef {
-  ProblemRef(category: String, subcategory: String, title: String)
-}
+///
+/// This and the payload types below are aliases into `wire`, the package the
+/// browser app compiles against too. They used to be declared here and again
+/// there, by hand, with only captured fixtures to notice when the two parted
+/// company -- which they had: `rating` crossed as an `Int` from this side and
+/// was modelled as an `fsrs.Rating` on the other.
+pub type ProblemRef =
+  wire.ProblemRef
 
 pub type CardRecord {
   CardRecord(
@@ -35,31 +41,15 @@ pub type CardRecord {
   )
 }
 
-pub type Settings {
-  Settings(
-    scheduler: fsrs.Config,
-    new_per_day: Int,
-    reviews_per_day: Int,
-    day_start_hour: Int,
-    timezone: String,
-  )
-}
+pub type Settings =
+  wire.Settings
 
-pub type ReviewInput {
-  ReviewInput(
-    problem: ProblemRef,
-    rating: fsrs.Rating,
-    duration_ms: Option(Int),
-    /// The test harness rejected the solution.
-    auto_failed: Bool,
-    /// The solution was revealed before answering.
-    revealed: Bool,
-    /// A hand-picked practice sitting: the rating stands as sent. Only the
-    /// scheduled study queue is held to the coercion below; the log records
-    /// auto_failed/revealed truthfully either way.
-    practice: Bool,
-  )
-}
+/// A review as the client submits it. Field-for-field the wire shape, so it
+/// is that shape: `practice` means the rating stands as sent, and only the
+/// scheduled study queue is held to the coercion below. The log records
+/// auto_failed/revealed truthfully either way.
+pub type ReviewInput =
+  wire.Review
 
 pub type StudyError {
   StudyDatabaseError(String)
@@ -68,13 +58,7 @@ pub type StudyError {
 // --- settings --------------------------------------------------------------
 
 pub fn default_settings() -> Settings {
-  Settings(
-    scheduler: fsrs.default_config(),
-    new_per_day: 10,
-    reviews_per_day: 100,
-    day_start_hour: 4,
-    timezone: "UTC",
-  )
+  wire.default_settings()
 }
 
 pub fn load_settings(
@@ -141,7 +125,7 @@ fn settings_decoder() -> decode.Decoder(Settings) {
   use reviews_per_day <- decode.field(7, decode.int)
   use day_start_hour <- decode.field(8, decode.int)
   use timezone <- decode.field(9, decode.string)
-  decode.success(Settings(
+  decode.success(wire.Settings(
     scheduler: fsrs.Config(
       parameters:,
       desired_retention:,
@@ -291,7 +275,7 @@ fn card_decoder() -> decode.Decoder(CardRecord) {
 
   decode.success(CardRecord(
     id:,
-    problem: ProblemRef(category:, subcategory:, title:),
+    problem: wire.ProblemRef(category:, subcategory:, title:),
     card: fsrs.Card(
       state: state_from(state, step),
       memory: memory_from(stability, difficulty),
@@ -305,30 +289,11 @@ fn card_decoder() -> decode.Decoder(CardRecord) {
   ))
 }
 
-pub fn state_code(state: fsrs.State) -> Int {
-  case state {
-    fsrs.Learning(_) -> 1
-    fsrs.Review -> 2
-    fsrs.Relearning(_) -> 3
-  }
-}
+pub const state_code = wire.state_code
 
-pub fn state_step(state: fsrs.State) -> Option(Int) {
-  case state {
-    fsrs.Learning(step) | fsrs.Relearning(step) -> Some(step)
-    fsrs.Review -> None
-  }
-}
+pub const state_step = wire.state_step
 
-fn state_from(code: Int, step: Option(Int)) -> fsrs.State {
-  case code, step {
-    2, _ -> fsrs.Review
-    3, Some(step) -> fsrs.Relearning(step)
-    3, None -> fsrs.Relearning(0)
-    _, Some(step) -> fsrs.Learning(step)
-    _, None -> fsrs.Learning(0)
-  }
-}
+const state_from = wire.state_from
 
 /// Stability and difficulty are always written together, so either both are
 /// present or the card has never been reviewed.
@@ -474,7 +439,7 @@ pub fn load_drafts(
     use subcategory <- decode.field(1, decode.string)
     use title <- decode.field(2, decode.string)
     use body <- decode.field(3, decode.string)
-    decode.success(#(ProblemRef(category:, subcategory:, title:), body))
+    decode.success(#(wire.ProblemRef(category:, subcategory:, title:), body))
   })
   |> pog.execute(db)
   |> result.map(fn(returned) { returned.rows })
@@ -527,17 +492,8 @@ fn flatten_transaction_error(
 /// database (cards are created on first review). So the server owns the
 /// scheduling of known cards and the daily allowance, and the client picks
 /// which unseen problems to spend that allowance on.
-pub type Today {
-  Today(
-    day_start: Timestamp,
-    day_end: Timestamp,
-    reviews_done: Int,
-    new_introduced: Int,
-    reviews_remaining: Int,
-    new_remaining: Int,
-    due_now: Int,
-  )
-}
+pub type Today =
+  wire.Today
 
 /// The study day runs from `day_start_hour` local time to the same hour the
 /// next day -- Anki's 4am rollover, so a late-night session counts toward the
@@ -592,7 +548,7 @@ pub fn today(
       Error(Nil) ->
         Error(StudyDatabaseError("day bounds query returned no row"))
       Ok(#(day_start, day_end, reviews_done, new_introduced, due_now)) ->
-        Ok(Today(
+        Ok(wire.Today(
           day_start: fsrs.from_epoch(day_start),
           day_end: fsrs.from_epoch(day_end),
           reviews_done:,
@@ -636,26 +592,11 @@ fn int_max(value: Int, floor: Int) -> Int {
 /// The rollover and timezone maths has already been applied when producing
 /// them, so the client can render a heatmap and count a streak with plain
 /// integer arithmetic instead of reimplementing a calendar.
-pub type DayTally {
-  DayTally(days_ago: Int, total: Int, correct: Int)
-}
+pub type DayTally =
+  wire.DayTally
 
-pub type Stats {
-  Stats(
-    total_reviews: Int,
-    /// Reviews of cards that had already graduated -- Anki's "true retention".
-    /// Learning-phase answers are excluded because a card you are still
-    /// drilling for the first time says nothing about long-term recall.
-    mature_reviews: Int,
-    mature_correct: Int,
-    /// Card counts keyed by state code.
-    state_counts: List(#(Int, Int)),
-    history: List(DayTally),
-    /// #(days from today, cards due that day) for the next month.
-    forecast: List(#(Int, Int)),
-    streak_days: Int,
-  )
-}
+pub type Stats =
+  wire.Stats
 
 pub fn stats(
   db: pog.Connection,
@@ -668,7 +609,7 @@ pub fn stats(
   use forecast <- result.try(due_forecast(db, user_id, settings))
 
   let #(total_reviews, mature_reviews, mature_correct) = totals
-  Ok(Stats(
+  Ok(wire.Stats(
     total_reviews:,
     mature_reviews:,
     mature_correct:,
@@ -775,7 +716,7 @@ fn review_history(
     use days_ago <- decode.field(0, decode.int)
     use total <- decode.field(1, decode.int)
     use correct <- decode.field(2, decode.int)
-    decode.success(DayTally(days_ago:, total:, correct:))
+    decode.success(wire.DayTally(days_ago:, total:, correct:))
   })
   |> pog.execute(db)
   |> result.map(fn(returned) { returned.rows })
@@ -968,42 +909,21 @@ fn seed_card(
 /// One solution-from-memory: a review that passed with no reveal and no
 /// harness failure, with how long it took. The client folds these into
 /// fluency tiers; the cap of five per card bounds the payload.
-pub type CleanSolve {
-  CleanSolve(problem: ProblemRef, at: Timestamp, duration_ms: Int)
-}
-
-pub type RevealCount {
-  RevealCount(problem: ProblemRef, count: Int)
-}
+pub type CleanSolve =
+  wire.CleanSolve
 
 /// For each grade pressed, what happened at that card's NEXT review. Easy
 /// scoring below Good is the signature of optimistic Easy-pressing, which is
 /// exactly what this exists to surface.
-pub type CalibrationRow {
-  CalibrationRow(rating: Int, next_total: Int, next_passed: Int)
-}
+pub type Calibration =
+  wire.Calibration
 
-pub type Insights {
-  Insights(
-    clean_solves: List(CleanSolve),
-    reveals: List(RevealCount),
-    calibration: List(CalibrationRow),
-  )
-}
+pub type Insights =
+  wire.Insights
 
 /// One row of a card's review log, for the per-problem timeline.
-pub type ReviewRow {
-  ReviewRow(
-    at: Timestamp,
-    rating: Int,
-    duration_ms: Option(Int),
-    revealed: Bool,
-    auto_failed: Bool,
-    state_before: Int,
-    scheduled_days: Int,
-    stability_after: Option(Float),
-  )
-}
+pub type ReviewRow =
+  wire.ReviewRow
 
 pub fn insights(
   db: pog.Connection,
@@ -1012,7 +932,7 @@ pub fn insights(
   use clean_solves <- result.try(clean_solves(db, user_id))
   use reveals <- result.try(reveal_counts(db, user_id))
   use calibration <- result.try(calibration(db, user_id))
-  Ok(Insights(clean_solves:, reveals:, calibration:))
+  Ok(wire.Insights(clean_solves:, reveals:, calibration:))
 }
 
 /// The last five clean solves per card, oldest first. Five is enough for a
@@ -1047,8 +967,8 @@ fn clean_solves(
     use title <- decode.field(2, decode.string)
     use at <- decode.field(3, decode.float)
     use duration_ms <- decode.field(4, decode.int)
-    decode.success(CleanSolve(
-      problem: ProblemRef(category:, subcategory:, title:),
+    decode.success(wire.CleanSolve(
+      problem: wire.ProblemRef(category:, subcategory:, title:),
       at: fsrs.from_epoch(at),
       duration_ms:,
     ))
@@ -1061,7 +981,7 @@ fn clean_solves(
 fn reveal_counts(
   db: pog.Connection,
   user_id: String,
-) -> Result(List(RevealCount), StudyError) {
+) -> Result(List(#(wire.ProblemRef, Int)), StudyError) {
   pog.query(
     "select c.category, c.subcategory, c.title, count(*)::int
        from reviews r
@@ -1075,10 +995,7 @@ fn reveal_counts(
     use subcategory <- decode.field(1, decode.string)
     use title <- decode.field(2, decode.string)
     use count <- decode.field(3, decode.int)
-    decode.success(RevealCount(
-      problem: ProblemRef(category:, subcategory:, title:),
-      count:,
-    ))
+    decode.success(#(wire.ProblemRef(category:, subcategory:, title:), count))
   })
   |> pog.execute(db)
   |> result.map(fn(returned) { returned.rows })
@@ -1088,7 +1005,7 @@ fn reveal_counts(
 fn calibration(
   db: pog.Connection,
   user_id: String,
-) -> Result(List(CalibrationRow), StudyError) {
+) -> Result(List(wire.Calibration), StudyError) {
   pog.query(
     "select rating, count(*)::int,
             count(*) filter (where next_pass)::int
@@ -1107,9 +1024,13 @@ fn calibration(
   |> pog.parameter(pog.text(user_id))
   |> pog.returning({
     use rating <- decode.field(0, decode.int)
-    use next_total <- decode.field(1, decode.int)
-    use next_passed <- decode.field(2, decode.int)
-    decode.success(CalibrationRow(rating:, next_total:, next_passed:))
+    use total <- decode.field(1, decode.int)
+    use passed <- decode.field(2, decode.int)
+    // `group by rating` can only yield what the insert accepted, so an
+    // unrecognised code is impossible rather than merely unlikely -- but the
+    // wire type is an fsrs.Rating, so it still has to be named.
+    let rating = result.unwrap(fsrs.rating_from_int(rating), fsrs.Good)
+    decode.success(wire.Calibration(rating:, total:, passed:))
   })
   |> pog.execute(db)
   |> result.map(fn(returned) { returned.rows })
@@ -1144,7 +1065,10 @@ pub fn history(
     use state_before <- decode.field(5, decode.int)
     use scheduled_days <- decode.field(6, decode.int)
     use stability_after <- decode.field(7, decode.optional(decode.float))
-    decode.success(ReviewRow(
+    // The column is constrained to 1-4 by the insert; `Good` is unreachable
+    // rather than a guess.
+    let rating = result.unwrap(fsrs.rating_from_int(rating), fsrs.Good)
+    decode.success(wire.ReviewRow(
       at: fsrs.from_epoch(at),
       rating:,
       duration_ms:,

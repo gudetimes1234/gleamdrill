@@ -20,10 +20,12 @@ import gleam/list
 import gleam/result
 import gleam/string
 import pog
+import wire
 
-pub type User {
-  User(id: String, email: String)
-}
+/// The authenticated account. Aliased into `wire` because it is also what
+/// `/api/me` and every session response send back.
+pub type User =
+  wire.User
 
 pub type AuthError {
   /// Deliberately covers "no such account" and "wrong password" both.
@@ -215,7 +217,7 @@ fn find_credentials(
     use id <- decode.field(0, decode.string)
     use email <- decode.field(1, decode.string)
     use hash <- decode.field(2, decode.string)
-    decode.success(#(User(id:, email:), hash))
+    decode.success(#(wire.User(id:, email:), hash))
   })
   |> pog.execute(db)
   |> result.map_error(database_error)
@@ -340,7 +342,7 @@ pub fn prune_sessions(db: pog.Connection) -> Result(Nil, AuthError) {
 fn user_decoder() -> decode.Decoder(User) {
   use id <- decode.field(0, decode.string)
   use email <- decode.field(1, decode.string)
-  decode.success(User(id:, email:))
+  decode.success(wire.User(id:, email:))
 }
 
 fn first_row(

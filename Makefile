@@ -7,7 +7,7 @@ PY_RUNTIME_DIR  := assets/python-runtime/$(BRYTHON_VERSION)
 .PHONY: dev dev-app dev-api build deploy vendor content verify worker \
         clean-vendor fsrs-test fsrs-vectors server-dev server-test \
         server-smoke app-test api-fixtures e2e tour serve-dist up down \
-        down-clean check-versions check-format
+        down-clean check-versions check-format wire-test
 
 # The whole dev stack in one terminal: frontend on :1234, backend on :1637.
 # The app on :1234 points at 127.0.0.1:1637 (ffi.mjs apiBase), so the frontend
@@ -65,6 +65,12 @@ verify: content fsrs-test app-test
 fsrs-test:
 	cd fsrs && gleam test
 	cd fsrs && gleam test --target javascript
+
+# The wire format is shared the same way, and for the same reason: every
+# payload round-trips through its own encoder and decoder on both targets.
+wire-test:
+	cd wire && gleam test
+	cd wire && gleam test --target javascript
 
 # Rebuilds test/vectors.gleam from the reference py-fsrs package. A diff here
 # means upstream FSRS changed; read it before committing.
@@ -143,6 +149,7 @@ check-format:
 	gleam format --check src test
 	cd server && gleam format --check src test
 	cd fsrs && gleam format --check src test
+	cd wire && gleam format --check src test
 	cd drills && gleam format --check src
 
 # The workers are separate JS entry points: their Gleam logic is compiled,

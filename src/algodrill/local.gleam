@@ -16,7 +16,7 @@
 //// makes the arithmetic testable under `gleam test`, where there is no
 //// `localStorage` at all.
 
-import algodrill/api.{type CardState, type Settings, CardState}
+import algodrill/api.{type CardState, type Settings}
 import algodrill/browser
 import algodrill/model
 import algodrill/problem.{type ProblemRef}
@@ -30,6 +30,7 @@ import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/time/timestamp.{type Timestamp}
 import plinth/javascript/storage
+import wire
 
 /// Split across keys so that saving a draft on every keystroke pause does not
 /// rewrite the whole card store.
@@ -143,7 +144,7 @@ pub fn record(
   let after = fsrs.review(before, rating, now, settings.scheduler, fuzz)
 
   let updated =
-    CardState(
+    wire.CardState(
       problem: review.problem,
       card: after,
       reps: case existing {
@@ -165,7 +166,7 @@ pub fn record(
         Error(Nil) -> False
       },
       introduced_at: case existing {
-        Ok(CardState(introduced_at: Some(at), ..)) -> Some(at)
+        Ok(wire.CardState(introduced_at: Some(at), ..)) -> Some(at)
         _ -> Some(now)
       },
     )
@@ -174,7 +175,7 @@ pub fn record(
     tally(local.history, day_index, rating != fsrs.Again, was_mature)
 
   let logged =
-    api.ReviewRow(
+    wire.ReviewRow(
       at: now,
       rating:,
       duration_ms: review.duration_ms,
@@ -271,7 +272,7 @@ pub fn set_suspended(
   case dict.get(local.cards, problem) {
     Error(Nil) -> Error(Nil)
     Ok(state) -> {
-      let updated = api.CardState(..state, suspended:)
+      let updated = wire.CardState(..state, suspended:)
       Ok(#(
         Local(..local, cards: dict.insert(local.cards, problem, updated)),
         updated,
@@ -308,7 +309,7 @@ pub fn today(
       }
     })
 
-  api.Today(
+  wire.Today(
     day_start: boundary,
     day_end: fsrs.from_epoch(int.to_float(day_start + 86_400)),
     reviews_done:,
@@ -332,7 +333,7 @@ pub fn stats(local: Local, now: Timestamp, day: StudyDay) -> api.Stats {
   let history =
     local.history.days
     |> list.map(fn(day) {
-      api.DayTally(
+      wire.DayTally(
         days_ago: today_index - day.day,
         total: day.total,
         correct: day.correct,
@@ -340,7 +341,7 @@ pub fn stats(local: Local, now: Timestamp, day: StudyDay) -> api.Stats {
     })
     |> list.filter(fn(day) { day.days_ago >= 0 })
 
-  api.Stats(
+  wire.Stats(
     total_reviews: local.history.total_reviews,
     mature_reviews: local.history.mature_reviews,
     mature_correct: local.history.mature_correct,
@@ -544,7 +545,7 @@ fn draft_decoder() -> Decoder(#(ProblemRef, String)) {
   use subcategory <- decode.field("subcategory", decode.string)
   use title <- decode.field("title", decode.string)
   use body <- decode.field("body", decode.string)
-  decode.success(#(problem.ProblemRef(category:, subcategory:, title:), body))
+  decode.success(#(wire.ProblemRef(category:, subcategory:, title:), body))
 }
 
 fn history_json(history: History) -> Json {
@@ -633,7 +634,7 @@ pub fn seed_from_legacy(
           dict.insert(
             cards,
             problem,
-            CardState(
+            wire.CardState(
               problem:,
               card: fsrs.Card(
                 state: fsrs.Review,
@@ -678,7 +679,7 @@ pub fn insights(local: Local) -> api.Insights {
         row.duration_ms
       {
         True, Some(duration_ms) ->
-          Ok(api.CleanSolve(problem:, at: row.at, duration_ms:))
+          Ok(wire.CleanSolve(problem:, at: row.at, duration_ms:))
         _, _ -> Error(Nil)
       }
     })
@@ -702,7 +703,11 @@ pub fn insights(local: Local) -> api.Insights {
     })
     |> dict.to_list
 
-  api.Insights(clean_solves:, reveals:, calibration: calibration(chronological))
+  wire.Insights(
+    clean_solves:,
+    reveals:,
+    calibration: calibration(chronological),
+  )
 }
 
 /// For each grade pressed, what the card's next review did — the guest
@@ -727,7 +732,7 @@ fn calibration(
     case nexts {
       [] -> Error(Nil)
       _ ->
-        Ok(api.Calibration(
+        Ok(wire.Calibration(
           rating:,
           total: list.length(nexts),
           passed: list.count(nexts, fn(pair) {
@@ -781,5 +786,5 @@ fn log_row_decoder() -> Decoder(#(ProblemRef, api.ReviewRow)) {
   use subcategory <- decode.field("subcategory", decode.string)
   use title <- decode.field("title", decode.string)
   use row <- decode.then(api.review_row_decoder())
-  decode.success(#(problem.ProblemRef(category:, subcategory:, title:), row))
+  decode.success(#(wire.ProblemRef(category:, subcategory:, title:), row))
 }
