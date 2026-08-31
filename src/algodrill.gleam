@@ -643,16 +643,23 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     StateLoaded(Ok(state)) -> {
       let loaded = apply_state(m, state)
+      // The dashboard reports a streak and an estimate of how long today's
+      // queue will take, both of which need the stats and insights payloads.
+      // Fetched after the screen is already up rather than before it, so a
+      // slow round trip delays a tile and not the first paint.
+      let dashboard =
+        effect.batch([store.load_stats(loaded), store.load_insights(loaded)])
       case m.mode, legacy.pending() {
         // A guest adopts the pre-account blob locally at boot instead; there
         // is nothing to send anywhere.
-        Guest, _ | _, None -> #(loaded, effect.none())
+        Guest, _ | _, None -> #(loaded, dashboard)
         Account(token), Some(old) ->
           case legacy.is_empty(old) {
-            True -> #(loaded, legacy.mark_imported())
+            True -> #(loaded, effect.batch([dashboard, legacy.mark_imported()]))
             False -> #(
               loaded,
               effect.batch([
+                dashboard,
                 api.import_legacy(
                   api_base(),
                   token,

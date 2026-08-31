@@ -212,6 +212,39 @@ pub fn calibration_view(rows: List(api.Calibration)) -> CalibrationView {
   )
 }
 
+/// What a card is likely to cost, in milliseconds.
+///
+/// A card with clean solves behind it is worth its own median. One without --
+/// never seen, or never yet solved cleanly -- gets `unseen_ms`, because the
+/// alternative is counting it as free, and the cards you have not cracked are
+/// the expensive ones. An estimate that flatters the queue is worse than none.
+pub const unseen_ms = 480_000
+
+/// Roughly how long today's queue will take.
+///
+/// The point is that a card count is not a workload: a problem typed from
+/// memory is minutes, so "23 cards" and "about two hours" are the same fact
+/// and only one of them can be acted on.
+pub fn queue_estimate_ms(analysis: Analysis, queue: List(ProblemRef)) -> Int {
+  let known =
+    analysis.cards
+    |> list.filter_map(fn(card: CardInsight) {
+      case card.fluency_ms {
+        Some(ms) -> Ok(#(card.problem, ms))
+        None -> Error(Nil)
+      }
+    })
+    |> dict.from_list
+
+  list.fold(queue, 0, fn(total, problem) {
+    total
+    + case dict.get(known, problem) {
+      Ok(ms) -> ms
+      Error(Nil) -> unseen_ms
+    }
+  })
+}
+
 /// "2m41s" — solve times deserve seconds, unlike scheduling intervals.
 pub fn duration_label(ms: Int) -> String {
   let seconds = ms / 1000

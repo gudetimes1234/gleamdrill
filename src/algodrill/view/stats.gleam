@@ -57,6 +57,7 @@ fn body(m: Model, stats: Stats, analysis: Analysis) -> Element(Msg) {
     tier_bar(analysis),
     calibration_panel(m),
     problem_lists(m, analysis),
+    section("Where your cards are", state_bars(stats)),
     section("Reviews per day", heatmap(stats)),
     section("Due in the next 30 days", forecast(stats)),
   ])
@@ -555,6 +556,61 @@ fn forecast(stats: Stats) -> Element(Msg) {
       ])
     }),
   )
+}
+
+/// How many cards sit in each scheduler phase.
+///
+/// The server has always sent this and nothing ever drew it -- the CSS for
+/// these bars was written and then left unused. It answers a question the tier
+/// chart cannot: tiers say how well you know things, this says how much of the
+/// deck the scheduler still considers unsettled.
+fn state_bars(stats: Stats) -> Element(Msg) {
+  let counts = stats.state_counts
+  let total =
+    list.fold(counts, 0, fn(sum, entry: #(Int, Int)) { sum + entry.1 })
+
+  case total {
+    0 ->
+      html.div([attribute.class("pane-empty")], [
+        html.text("No cards yet."),
+      ])
+    _ ->
+      html.div(
+        [attribute.class("state-bars")],
+        list.map(
+          [#(1, "Learning"), #(2, "Review"), #(3, "Relearning")],
+          fn(row) {
+            let #(code, label) = row
+            let count = case
+              list.find(counts, fn(e: #(Int, Int)) { e.0 == code })
+            {
+              Ok(found) -> found.1
+              Error(Nil) -> 0
+            }
+            html.div([attribute.class("state-row")], [
+              html.span([attribute.class("state-label")], [html.text(label)]),
+              html.div([attribute.class("state-track")], [
+                html.div(
+                  [
+                    attribute.class(
+                      "state-fill state-fill-" <> int.to_string(code),
+                    ),
+                    attribute.style(
+                      "width",
+                      int.to_string(count * 100 / total) <> "%",
+                    ),
+                  ],
+                  [],
+                ),
+              ]),
+              html.span([attribute.class("state-count")], [
+                html.text(int.to_string(count)),
+              ]),
+            ])
+          },
+        ),
+      )
+  }
 }
 
 fn section(title: String, contents: Element(Msg)) -> Element(Msg) {

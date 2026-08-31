@@ -4,12 +4,14 @@
 //// click away, but the first question the app answers is "what should I drill
 //// right now", which is the whole point of adding a scheduler.
 
+import algodrill/insights
 import algodrill/model.{
   type Model, type Msg, Guest, PromptShowing, Registering, SigningIn,
   UserClickedBrowse, UserClickedMergeGuest, UserClickedSettings,
   UserClickedSignIn, UserClickedSignOut, UserClickedStartExam, UserClickedStats,
   UserClickedStudy, UserDismissedUpgradePrompt,
 }
+import algodrill/problem
 import algodrill/problems
 import algodrill/queue
 import algodrill/view/banner
@@ -48,6 +50,7 @@ pub fn view(m: Model) -> Element(Msg) {
       count("New", fresh, "new"),
       count("Done today", m.today.reviews_done, "done"),
     ]),
+    estimate(m),
     language_chips(m),
     case hidden {
       0 -> element.none()
@@ -94,6 +97,7 @@ pub fn view(m: Model) -> Element(Msg) {
         [html.text("System design exam")],
       ),
     ]),
+    queue_preview(m),
     forecast(m),
     footer(),
   ])
@@ -212,6 +216,89 @@ fn language_chips(m: Model) -> Element(Msg) {
       )
     }),
   )
+}
+
+/// How long today's queue is likely to take, and the streak it continues.
+///
+/// A card count is not a workload here: a problem typed from memory is
+/// minutes, so "12 cards" is only actionable once it also says "about an
+/// hour". Both halves need payloads that arrive after boot, so each is omitted
+/// until it can be answered rather than shown as a zero.
+fn estimate(m: Model) -> Element(Msg) {
+  let ready = queue.due_count(m) + queue.new_count(m)
+  let minutes = case ready, m.insights {
+    0, _ -> None
+    _, Some(data) ->
+      Some(insights.queue_estimate_ms(
+        insights.analyse(data, m.cards, m.now),
+        queue.build(m),
+      ))
+    _, None -> None
+  }
+  let streak = case m.stats {
+    Some(stats) if stats.streak_days > 0 -> Some(stats.streak_days)
+    _ -> None
+  }
+
+  case minutes, streak {
+    None, None -> element.none()
+    _, _ ->
+      html.div([attribute.class("study-estimate")], [
+        case minutes {
+          Some(ms) ->
+            html.span([attribute.class("study-estimate-time")], [
+              html.text("about " <> insights.duration_label(ms)),
+            ])
+          None -> element.none()
+        },
+        case streak {
+          Some(days) ->
+            html.span([attribute.class("study-estimate-streak")], [
+              html.text(int.to_string(days) <> " day streak"),
+            ])
+          None -> element.none()
+        },
+      ])
+  }
+}
+
+/// What "Study now" is actually about to serve.
+///
+/// Pressing it used to be a leap of faith. Collapsed by default because the
+/// answer is usually "fine" and the list can be long.
+fn queue_preview(m: Model) -> Element(Msg) {
+  case queue.build(m) {
+    [] -> element.none()
+    upcoming ->
+      html.details([attribute.class("study-preview")], [
+        html.summary([attribute.class("study-preview-summary")], [
+          html.text(
+            "What's in the queue ("
+            <> int.to_string(list.length(upcoming))
+            <> ")",
+          ),
+        ]),
+        html.ul(
+          [attribute.class("study-preview-list")],
+          list.map(upcoming, fn(ref: problem.ProblemRef) {
+            html.li([attribute.class("study-preview-item")], [
+              html.span([attribute.class("study-preview-tag")], [
+                html.text(problems.language_tag(ref.category)),
+              ]),
+              html.span([attribute.class("study-preview-title")], [
+                html.text(ref.title),
+              ]),
+              html.span([attribute.class("study-preview-state")], [
+                html.text(case model.card_for(m, ref) {
+                  Some(_) -> "due"
+                  None -> "new"
+                }),
+              ]),
+            ])
+          }),
+        ),
+      ])
+  }
 }
 
 /// A day with no cards still gets a sliver of bar, so the row reads as seven
