@@ -20,7 +20,11 @@ RUN apk add --no-cache build-base
 RUN mix local.hex --force && mix local.rebar --force
 
 WORKDIR /build
+# Both path dependencies of server/gleam.toml. Miss one and
+# `gleam export erlang-shipment` below fails on a path it cannot canonicalise --
+# which is exactly how the wire package broke four Railway deploys.
 COPY fsrs ./fsrs
+COPY wire ./wire
 COPY server ./server
 
 WORKDIR /build/server

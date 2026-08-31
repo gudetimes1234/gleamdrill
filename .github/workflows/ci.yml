@@ -150,3 +150,14 @@ jobs:
       - name: Server log
         if: failure()
         run: cat /tmp/server.log || echo "(the server never started)"
+
+      # Both images, from the repository root, which is the context Railway
+      # uses. Until this existed a Dockerfile change was unverifiable until
+      # production tried it: adding the `wire` package to server/gleam.toml
+      # without adding it to .dockerignore and server/Dockerfile broke four
+      # consecutive api deploys while every other check stayed green, because
+      # `gleam build` runs against a checkout where the package is simply there.
+      - name: Images build
+        run: |
+          docker build -f server/Dockerfile -t algodrill-api-ci .
+          docker build -f deploy/web.Dockerfile -t algodrill-web-ci .
