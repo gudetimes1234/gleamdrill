@@ -29,7 +29,23 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
 page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
 
+// A browser with no stored preferences meets the first-run language picker
+// before the study screen exists. These suites are about what comes after it,
+// so answer it with everything selected -- the state they were written against.
+const answerPickerIfShown = async () => {
+  await page.waitForSelector(".study-screen, .picker-screen", { timeout: 20000 });
+  if (await page.isVisible(".picker-screen")) {
+    for (const n of [1, 2, 3, 4, 5]) {
+      await page.click(`.picker-option:nth-child(${n})`);
+      await page.waitForTimeout(120);
+    }
+    await page.click(".picker-start");
+    await page.waitForSelector(".study-screen", { timeout: 20000 });
+  }
+};
+
 await page.goto(APP, { waitUntil: "networkidle" });
+await answerPickerIfShown();
 
 console.log(`== sign up (${EMAIL})`);
 // The app now opens in guest mode, so the form is reached deliberately.
@@ -89,6 +105,7 @@ check("advances to the next problem after grading",
 
 console.log("== the review reached the server");
 await page.goto(APP, { waitUntil: "networkidle" });
+await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 15000 });
 const after = await page.$$eval(".study-count-value", (n) => n.map((e) => e.textContent));
 check("the session survived a reload (still signed in)", true);
@@ -118,6 +135,7 @@ check("a drilled problem now carries a schedule badge",
 
 console.log("== sign out");
 await page.goto(APP, { waitUntil: "networkidle" });
+await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 10000 });
 await page.click("text=Sign out");
 await page.waitForSelector(".guest-strip", { timeout: 10000 });

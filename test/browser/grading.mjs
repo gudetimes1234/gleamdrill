@@ -60,7 +60,23 @@ const typeSolution = async (code) => {
 };
 
 
+// A browser with no stored preferences meets the first-run language picker
+// before the study screen exists. These suites are about what comes after it,
+// so answer it with everything selected -- the state they were written against.
+const answerPickerIfShown = async () => {
+  await page.waitForSelector(".study-screen, .picker-screen", { timeout: 20000 });
+  if (await page.isVisible(".picker-screen")) {
+    for (const n of [1, 2, 3, 4, 5]) {
+      await page.click(`.picker-option:nth-child(${n})`);
+      await page.waitForTimeout(120);
+    }
+    await page.click(".picker-start");
+    await page.waitForSelector(".study-screen", { timeout: 20000 });
+  }
+};
+
 await page.goto(APP, { waitUntil: "networkidle" });
+await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 15000 });
 await page.click("text=Create account");
 await page.waitForSelector(".auth-card");
@@ -105,6 +121,7 @@ await page.waitForTimeout(2000);
 
 console.log("== second review, manual reopen: practice grades freely");
 await page.goto(APP, { waitUntil: "networkidle" });
+await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 15000 });
 await page.click("text=Browse problems");
 await page.waitForSelector(".menu-container", { timeout: 10000 });
@@ -139,6 +156,7 @@ await page.waitForTimeout(400);
 await page.click(".grade-good");
 await page.waitForTimeout(2000);
 await page.goto(APP, { waitUntil: "networkidle" });
+await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 15000 });
 const counts = await page.$$eval(".study-count-value", (n) => n.map((e) => e.textContent));
 check("both reviews were recorded", counts[2] === "2", `reviews done = ${counts[2]}`);
@@ -159,6 +177,7 @@ await page.evaluate(() => {
   }]));
 });
 await page.goto(APP, { waitUntil: "networkidle" });
+await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 15000 });
 await page.click(".study-start");
 await page.waitForSelector(".run-bar", { timeout: 20000 });

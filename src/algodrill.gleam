@@ -684,6 +684,9 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           editor_keymap: m.editor_keymap,
           side_collapsed: m.side_collapsed,
           muted_languages: m.muted_languages,
+          // An expired session drops you to guest; it does not un-ask the
+          // language question this browser has already answered.
+          languages_chosen: m.languages_chosen,
           boot: Syncing,
         )
       #(guest, effect.batch([session.clear_token(), store.load_state(guest)]))
@@ -725,6 +728,10 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           editor_keymap: m.editor_keymap,
           side_collapsed: m.side_collapsed,
           muted_languages: m.muted_languages,
+          // Signing out is not a factory reset of this browser. Without this
+          // it sends someone who has already chosen their languages back to
+          // the first-run picker.
+          languages_chosen: m.languages_chosen,
           boot: Syncing,
         )
       #(

@@ -83,15 +83,37 @@ const capture = async (label, note) => {
   return name;
 };
 
+// Several steps clear localStorage and come back through here, which now means
+// meeting the first-run picker. Answering it is part of getting home.
 const goHome = async () => {
   await page.goto(APP, { waitUntil: "networkidle" });
+  await page.waitForSelector(".study-screen, .picker-screen", { timeout: 20000 });
+  if (await page.isVisible(".picker-screen")) {
+    for (const n of [1, 2, 3, 4, 5]) {
+      await page.click(`.picker-option:nth-child(${n})`);
+      await page.waitForTimeout(120);
+    }
+    await page.click(".picker-start");
+  }
   await page.waitForSelector(".study-screen", { timeout: 20000 });
 };
 
-const freshGuest = async () => {
+// A browser with no preferences meets the language picker before anything
+// else, so answering it is part of arriving.
+// Defaults to every language, which is the state the rest of the tour assumes:
+// nothing muted, the whole catalogue in play. Acts that care about a narrower
+// choice pass their own.
+const freshGuest = async (languages = [1, 2, 3, 4, 5]) => {
   await page.goto(APP, { waitUntil: "domcontentloaded" });
   await page.evaluate(() => localStorage.clear());
-  await goHome();
+  await page.goto(APP, { waitUntil: "networkidle" });
+  await page.waitForSelector(".picker-screen", { timeout: 20000 });
+  for (const n of languages) {
+    await page.click(`.picker-option:nth-child(${n})`);
+    await page.waitForTimeout(120);
+  }
+  await page.click(".picker-start");
+  await page.waitForSelector(".study-screen", { timeout: 20000 });
 };
 
 /// Waits out a lazy runtime download. The run button stays disabled until the
@@ -175,6 +197,45 @@ const gradeWhatever = async () => {
 console.log(`screenshots -> ${SHOTS}\n`);
 
 // ---------------------------------------------------------------- act 1
+act = "00-first-run-picker";
+console.log(act);
+exercises("PickerToggledLanguage", "PickerConfirmed");
+await page.goto(APP, { waitUntil: "domcontentloaded" });
+await page.evaluate(() => localStorage.clear());
+await page.goto(APP, { waitUntil: "networkidle" });
+await page.waitForSelector(".picker-screen", { timeout: 20000 });
+check("a browser with no preferences is asked which languages to drill",
+  await page.isVisible(".picker-screen"));
+check("nothing is pre-selected",
+  (await page.$$(".picker-option.picked")).length === 0);
+check("starting is refused until something is chosen",
+  await page.isDisabled(".picker-start"));
+await capture("picker-empty", "First run: the language choice, nothing assumed");
+
+await page.click(".picker-option:nth-child(2)");
+await page.waitForTimeout(200);
+await page.click(".picker-option:nth-child(3)");
+await page.waitForTimeout(200);
+check("two languages tick", (await page.$$(".picker-option.picked")).length === 2);
+check("starting is now allowed", !(await page.isDisabled(".picker-start")));
+await capture("picker-chosen", "Two languages chosen; new cards will alternate");
+
+await page.click(".picker-start");
+await page.waitForSelector(".study-screen", { timeout: 20000 });
+const chosenChips = await page.$$eval(".language-chip",
+  (n) => n.filter((e) => !e.className.includes("muted")).map((e) => e.textContent.trim()));
+check("the choice becomes the study filter",
+  JSON.stringify(chosenChips) === '["Gleam","TypeScript"]', JSON.stringify(chosenChips));
+const queueTags = await page.$$eval(".study-preview-item .study-preview-tag",
+  (n) => n.map((e) => e.textContent.trim()));
+check("new cards alternate between the chosen languages",
+  new Set(queueTags).size === 2, JSON.stringify(queueTags));
+
+await page.reload({ waitUntil: "networkidle" });
+await page.waitForSelector(".study-screen", { timeout: 20000 });
+check("the picker does not ask twice", await page.isVisible(".study-screen"));
+
+// ---------------------------------------------------------------- act 2
 act = "01-guest-arrival";
 console.log(act);
 await freshGuest();
@@ -770,6 +831,60 @@ check("the report returns to where the exam started",
   await page.isVisible(".study-screen").catch(() => false));
 
 // ---------------------------------------------------------------- act 7
+act = "06b-settings";
+console.log(act);
+exercises("UserClickedSettings", "UserChangedSetting",
+  "UserClickedDeviceTimezone", "UserToggledLanguage");
+
+await freshGuest();
+await page.click('button:text-is("Settings")');
+await page.waitForSelector(".settings-screen", { timeout: 10000 });
+check("settings opens", await page.isVisible(".settings-screen"));
+check("both stores are represented",
+  (await page.$$(".settings-section")).length === 3);
+const beforeSave = await page.evaluate(
+  () => localStorage.getItem("algoDrill.guest.settings.v1"));
+check("nothing is written before an edit", beforeSave === null);
+await capture("settings", "Settings: account data and device preferences, labelled");
+
+const dailyInputs = await page.$$(".settings-input");
+await dailyInputs[0].fill("3");
+await dailyInputs[0].press("Enter");
+await page.waitForTimeout(300);
+const savedSettings = await page.evaluate(
+  () => JSON.parse(localStorage.getItem("algoDrill.guest.settings.v1") ?? "null"));
+check("editing persists for a guest", savedSettings?.newPerDay === 3,
+  JSON.stringify(savedSettings));
+
+await dailyInputs[0].fill("9999");
+await dailyInputs[0].press("Enter");
+await page.waitForTimeout(300);
+const clamped = await page.evaluate(
+  () => JSON.parse(localStorage.getItem("algoDrill.guest.settings.v1") ?? "null"));
+check("out-of-range clamps to the server's own bound", clamped?.newPerDay === 100,
+  String(clamped?.newPerDay));
+
+await page.click(".settings-timezone .btn-secondary");
+await page.waitForTimeout(300);
+const zoned = await page.evaluate(
+  () => JSON.parse(localStorage.getItem("algoDrill.guest.settings.v1") ?? "null"));
+check("the timezone button adopts this device's zone",
+  typeof zoned?.timezone === "string" && zoned.timezone !== "UTC", zoned?.timezone);
+
+await page.click(".settings-screen .language-chip:nth-child(2)");
+await page.waitForTimeout(200);
+exercises("UserChangedKeymap");
+await page.click('.settings-screen .keymap-option:text-is("Vim")');
+await page.waitForTimeout(200);
+check("device preferences save from here too",
+  (await page.evaluate(() => JSON.parse(
+    localStorage.getItem("algoDrill.prefs.v1") ?? "{}"))).editorKeymap === "vim");
+
+await page.keyboard.press("Escape");
+await page.waitForSelector(".study-screen", { timeout: 10000 });
+check("Escape leaves settings", await page.isVisible(".study-screen"));
+
+// ---------------------------------------------------------------- act 7
 act = "07-stats";
 console.log(act);
 exercises("UserClickedStats", "UserClickedBackToStudy", "StatsCursorMoved",
@@ -1108,6 +1223,8 @@ const declared = [
   "UserToggledSide", "UserToggledLanguage", "UserToggledSuspend",
   "MenuSuspendedAtCursor", "UserPickedChoice", "UserSubmittedAnswer",
   "UserClickedStartExam", "UserClickedExitReport",
+  "PickerToggledLanguage", "PickerConfirmed",
+  "UserClickedSettings", "UserChangedSetting", "UserClickedDeviceTimezone",
   "KeyPressed", "HelpToggled", "MenuCursorMoved", "MenuPaneFocused",
   "MenuCursorJumped", "MenuActivated", "MenuToggledAtCursor", "QuizMoved",
   "EditorFocusRequested", "SearchFocusRequested", "StatsCursorMoved",

@@ -53,14 +53,32 @@ const solve = async () => {
 };
 
 console.log("== no account required");
+// A browser with no stored preferences meets the first-run language picker
+// before the study screen exists. These suites are about what comes after it,
+// so answer it with everything selected -- the state they were written against.
+const answerPickerIfShown = async () => {
+  await page.waitForSelector(".study-screen, .picker-screen", { timeout: 20000 });
+  if (await page.isVisible(".picker-screen")) {
+    for (const n of [1, 2, 3, 4, 5]) {
+      await page.click(`.picker-option:nth-child(${n})`);
+      await page.waitForTimeout(120);
+    }
+    await page.click(".picker-start");
+    await page.waitForSelector(".study-screen", { timeout: 20000 });
+  }
+};
+
 await page.goto(APP, { waitUntil: "networkidle" });
+await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 15000 });
 check("lands on the study screen, not a sign-in wall", true);
 check("says where the data lives",
   (await page.textContent(".guest-strip-text")).includes("only in this browser"));
 check("offers a way to sign in", await page.isVisible("text=Create account"));
 const counts = await page.$$eval(".study-count-value", (n) => n.map((e) => e.textContent));
-check("new cards are available to a guest", counts[1] === "10", `got ${counts[1]}`);
+// The default new-card budget. Deliberately small: a card here is a problem
+// typed from memory, so a flashcard-sized limit is a workload nobody clears.
+check("new cards are available to a guest", counts[1] === "5", `got ${counts[1]}`);
 
 console.log("== a guest can reach the form and come back");
 await page.click("text=Sign in");
@@ -89,10 +107,11 @@ check("grading advances", await page.isVisible(".run-bar"));
 
 console.log("== progress survives a reload");
 await page.goto(APP, { waitUntil: "networkidle" });
+await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 15000 });
 const after = await page.$$eval(".study-count-value", (n) => n.map((e) => e.textContent));
 check("the review is still counted", after[2] === "1", `got ${after[2]}`);
-check("the new-card budget went down", after[1] === "9", `got ${after[1]}`);
+check("the new-card budget went down", after[1] === "4", `got ${after[1]}`);
 const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("algoDrill.guest.cards.v1") ?? "[]"));
 check("exactly one card was stored", stored.length === 1, `got ${stored.length}`);
 check("with the scheduling it earned",
@@ -138,11 +157,13 @@ await page.evaluate(() => {
   localStorage.setItem("algoDrill.guest.cards.v1", JSON.stringify(cards));
 });
 await page.goto(APP, { waitUntil: "networkidle" });
+await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 15000 });
 await page.click(".study-start");
 await page.waitForSelector(".run-bar", { timeout: 20000 });
 await runAndGrade();
 await page.goto(APP, { waitUntil: "networkidle" });
+await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 15000 });
 check("the prompt appears once there is something to lose",
   await page.isVisible(".upgrade-prompt"));
