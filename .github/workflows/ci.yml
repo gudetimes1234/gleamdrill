@@ -25,7 +25,14 @@ jobs:
           # Some transitive Erlang dependencies (hpack, glisten) build with it.
           rebar3-version: "3"
 
+      # Pinned, because `make worker` minifies the three worker bundles with
+      # whatever bun is on PATH and the output differs between bun versions.
+      # dist/ is committed, so an unpinned bun makes the staleness check below
+      # fail on nothing but minifier drift. Kept in step with the local
+      # toolchain by `make check-versions`.
       - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
 
       - run: bun install --frozen-lockfile
 
@@ -106,6 +113,11 @@ jobs:
           otp-version: "27"
           gleam-version: "1.18.1"
           rebar3-version: "3"
+          # Argon2 comes from `antigone` -> `comeonin`, which is an Elixir
+          # package, so building the server needs an Elixir toolchain. This is
+          # why server/Dockerfile uses the `-elixir` image rather than plain
+          # Gleam; the same requirement applies here.
+          elixir-version: "1.18"
 
       # The app half of the tree is not built here, but `server` path-depends
       # on ../fsrs, which is why the whole repo is checked out.
@@ -137,4 +149,4 @@ jobs:
 
       - name: Server log
         if: failure()
-        run: cat /tmp/server.log
+        run: cat /tmp/server.log || echo "(the server never started)"

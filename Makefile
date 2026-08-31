@@ -2,6 +2,10 @@ GLEAM_VERSION   := 1.18.1
 RUNTIME_DIR     := assets/gleam-runtime/$(GLEAM_VERSION)
 TARBALL_URL     := https://github.com/gleam-lang/gleam/releases/download/v$(GLEAM_VERSION)/gleam-v$(GLEAM_VERSION)-browser.tar.gz
 BRYTHON_VERSION := 3.14.3
+# `make worker` minifies with whatever bun is on PATH, and the output differs
+# between bun versions. dist/ is committed and CI checks it is current, so the
+# local bun and the one in ci.yml have to agree.
+BUN_VERSION     := 1.3.14
 PY_RUNTIME_DIR  := assets/python-runtime/$(BRYTHON_VERSION)
 
 .PHONY: dev dev-app dev-api build deploy vendor content verify worker \

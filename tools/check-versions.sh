@@ -15,9 +15,11 @@ cd "$(dirname "$0")/.."
 
 gleam_version=$(sed -n 's/^GLEAM_VERSION[[:space:]]*:=[[:space:]]*//p' Makefile)
 brython_version=$(sed -n 's/^BRYTHON_VERSION[[:space:]]*:=[[:space:]]*//p' Makefile)
+bun_version=$(sed -n 's/^BUN_VERSION[[:space:]]*:=[[:space:]]*//p' Makefile)
 
 [ -n "$gleam_version" ] || { echo "cannot read GLEAM_VERSION from Makefile"; exit 1; }
 [ -n "$brython_version" ] || { echo "cannot read BRYTHON_VERSION from Makefile"; exit 1; }
+[ -n "$bun_version" ] || { echo "cannot read BUN_VERSION from Makefile"; exit 1; }
 
 status=0
 
@@ -41,6 +43,22 @@ expect drills/src/bundle_stdlib.gleam "const runtime_version = \"$gleam_version\
 echo "Brython $brython_version (from Makefile BRYTHON_VERSION)"
 expect package.json                  "\"brython\": \"$brython_version\""        "package.json dependency"
 expect src/algodrill/runner.gleam    "pub const python_version = \"$brython_version\"" "runner.gleam python_version"
+
+echo "Bun $bun_version (from Makefile BUN_VERSION)"
+expect .github/workflows/ci.yml "bun-version: \"$bun_version\"" "ci.yml setup-bun"
+
+# The bundles in dist/ were minified by whichever bun ran `make worker`, so a
+# local bun that disagrees with the pin produces a diff CI reads as staleness.
+# Warn rather than fail: not every task in this repo rebuilds dist.
+if command -v bun > /dev/null 2>&1; then
+  installed=$(bun --version 2>/dev/null)
+  if [ "$installed" = "$bun_version" ]; then
+    printf '  ok    %-40s bun %s on PATH\n' "local toolchain" "$installed"
+  else
+    printf '  warn  %-40s local bun is %s; `make worker` output will differ\n' \
+      "local toolchain" "$installed"
+  fi
+fi
 
 # server/Dockerfile names the image twice (build stage and runtime stage); a
 # half-done bump is the likeliest mistake, so count rather than just match.
