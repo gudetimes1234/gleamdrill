@@ -1,0 +1,30 @@
+# Nothing watched the dependency tree before this. Gleam packages are absent on
+# purpose: Dependabot has no Hex-for-Gleam ecosystem, so `manifest.toml` is
+# still bumped by hand with `gleam update`.
+version: 2
+
+updates:
+  # The CI workflow pins actions by major tag; these are the updates that
+  # silently stop mattering until a runner image drops support.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "ci"
+
+  # CodeMirror, Sucrase and Brython. Brython is deliberately excluded: its
+  # version is pinned in four places at once (see tools/check-versions.sh) and
+  # bumping it means re-vendoring the runtime, which is not a one-line PR.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "brython"
+    groups:
+      codemirror:
+        patterns:
+          - "@codemirror/*"
+          - "@lezer/*"

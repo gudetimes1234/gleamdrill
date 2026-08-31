@@ -3,7 +3,8 @@
 Spaced-repetition drilling for algorithm problems, with **live in-browser
 checking in three languages**: drill what the scheduler says is due, type each
 solution from memory (vim or emacs keybindings if you like), run it against
-real test cases, grade yourself.
+real test cases, grade yourself. A multiple-choice **System Design** category
+— with a scored exam mode — runs on the same scheduler.
 
 **No account needed to start.** Open it and you are studying, with the full
 scheduler running locally — an account moves that progress off this browser
@@ -13,7 +14,9 @@ until you sign up.
 **It drives like a TUI.** Vim-style keys everywhere outside the editor —
 `hjkl` panes and cursors, `space` select, `d` drill, `/` search, `1-4` to
 grade (Anki's own bindings), `Ctrl+Enter` to run from inside the editor, `?`
-for the cheatsheet. A tmux-style status bar shows the live bindings for
+for the cheatsheet. A `,` leader re-dispatches the next key through the same
+binding table when a button has stolen focus; the status bar's leader chip
+lights while it is armed. A tmux-style status bar shows the live bindings for
 wherever you are; every hint is also clickable. One binding table drives the
 dispatcher, the status bar and the help overlay, so the keys can never drift
 from their own documentation. Inside the editor nothing is intercepted except
@@ -22,10 +25,11 @@ Ctrl+Enter — its vim and emacs keymaps keep the keyboard.
 **Grading is free the first time, honest after.** The first encounter of a
 problem shows all four grades from the moment it opens — revealing the
 solution is how you learn something new, exactly like flipping a fresh Anki
-card. From the second review on, a run is required, and a failed harness or a
-revealed solution forces Again (enforced server-side; the log records the
-truth either way). Study reps always start from the starter stub — your last
-answer is never sitting in the editor.
+card. From the second scheduled review on, a run is required, and a failed
+harness or a revealed solution forces Again (enforced server-side; the log
+records the truth either way). A reveal-only drill has nothing to run, so it
+grades freely every time. Study reps always start from the starter stub —
+your last answer is never sitting in the editor.
 
 **Progress is measured against the promise.** The stats screen leads with the
 number that matters — *problems you can write from memory in under three
@@ -38,16 +42,19 @@ for guests too.
 Scheduling is **FSRS-6** — the algorithm Anki uses by default. Every drill you
 answer is recorded against your account and the scheduler decides when that
 problem comes back: minutes if you failed it, months once it is solid. Grading
-is half automatic and half yours: failing the test harness (or revealing a
-solution) forces `Again` with no way to flatter it, and only a genuine pass
-lets you choose between Hard, Good and Easy, because the harness cannot tell
-fluent from ground-out.
+is half automatic and half yours: in a scheduled sitting, failing the test
+harness (or revealing a solution) forces `Again` with no way to flatter it,
+and only a genuine pass lets you choose between Hard, Good and Easy, because
+the harness cannot tell fluent from ground-out.
 
-You can still pick problems by hand. Repetitions interleave: choosing three
-problems and five reps gives you five passes over all three, not five copies of
-the first — so by the time a problem comes round again you have had to actually
-reload it. Scheduled sittings are a single pass, since FSRS decides the spacing
-rather than the sitting doing it.
+You can still pick problems by hand. A hand-picked sitting is **practice**:
+self-graded and uncoerced — the Again-forcing above is for the scheduled queue,
+where flattering yourself costs you — and the log flags it `practice` either
+way. Repetitions interleave: choosing three problems and five reps gives you
+five passes over all three, not five copies of the first — so by the time a
+problem comes round again you have had to actually reload it. Scheduled
+sittings are a single pass, since FSRS decides the spacing rather than the
+sitting doing it.
 
 Built in [Gleam](https://gleam.run) end to end: a [Lustre](https://lustre.build)
 app on the JavaScript target with a CodeMirror 6 editor, a
@@ -76,12 +83,13 @@ practice.
 
 | Category | Language | Drills | Solutions | Runnable tests |
 |---|---|---|---|---|
-| NeetCode 150 | Python | 150 | 305 | yes |
+| NeetCode 150 | Python | 150 | 309 | yes |
 | NeetCode 150 (Gleam) | Gleam | 150 | 301 | yes |
 | NeetCode 150 (TypeScript) | TypeScript | 150 | 302 | yes |
 | NeetCode 150 (Elixir) | Elixir | 150 | 302 | no — reveal-only |
 | Python Tips / Idioms | Python | 8 | 16 | yes |
 | Gleam Tips / Idioms | Gleam | 10 | 20 | yes |
+| System Design | — (multiple choice) | 20 | — | self-grading |
 
 All eighteen NeetCode categories are in, in NeetCode's own order: Arrays &
 Hashing, Two Pointers, Sliding Window, Stack, Binary Search, Linked List, Trees,
@@ -90,6 +98,20 @@ Programming, 2-D Dynamic Programming, Greedy, Intervals, Math & Geometry and Bit
 Manipulation. `src/algodrill/problems/catalog.gleam` is the one ordered listing —
 one line per problem, not one per problem per language — and each language
 builds its view of it, skipping any drill it has no source for.
+
+Beyond code: **System Design** is a multiple-choice category drawn from
+*Acing the System Design Interview* — nine sections mirroring the exam
+report's scoring buckets, each question carrying an explanation and a page
+reference. A quiz grades itself on submit: right is Good, wrong is Again,
+recorded against the same scheduler, and there is no Hard/Easy judgement to
+ask for. The **system design exam** samples forty questions — an equal slice
+of each section, shuffled, so no section is double-sampled at another's
+expense — and ends with the score broken down by section, so a weak total
+points at a chapter to reread. Two authoring rules keep the score honest:
+every distractor is something the book actually discusses (an absurd option
+turns a four-way question into a two-way one), and the correct answer is
+spread evenly across the four positions. Sections with no questions written
+yet are dropped from the menu rather than shown as dead ends.
 
 Every problem carries at least two solutions taking genuinely different
 approaches, each with its own write-up. Where a language cannot do a thing —
@@ -155,7 +177,8 @@ drills/                 a Gleam project: reference solutions + harnesses for
                         (gleam run -m generate | bundle_stdlib | solutions)
 assets/gleam-runtime/   vendored wasm compiler + stdlib   (make vendor)
 assets/python-runtime/  vendored Brython                  (make vendor)
-dist/                   committed build output — what Vercel serves
+dist/                   committed build output — what the web image serves
+                        (deploy/web.Dockerfile copies it verbatim)
 ```
 
 `fsrs/` being shared is the load-bearing decision. The server schedules with it
@@ -199,6 +222,9 @@ make api-fixtures  # recapture those responses from a running backend
 make server-test   # backend unit tests
 make server-smoke  # the whole HTTP surface against a running backend
 make e2e           # a real browser against a built app + running backend
+make tour          # every route and state, photographed — layout's only check
+make check-versions  # the pinned Gleam/Brython versions agree everywhere
+make check-format    # gleam format --check across all four projects
 ```
 
 `make e2e` needs chromium (set `CHROMIUM` if it is not at `/usr/bin/chromium`),
@@ -218,7 +244,7 @@ in, then:
 ```sh
 createdb algodrill_dev
 make dev-api           # migrates at boot, then listens (server-dev is an alias)
-make server-smoke      # 58 checks against it
+make server-smoke      # 95 checks against it
 ```
 
 The schema is created by migrations embedded in `server/src/server/migrations.gleam`
@@ -233,7 +259,7 @@ source tree. They apply once each, in order, inside a transaction.
 start with anything shorter than 64 characters.
 
 ```sh
-make up            # podman compose up --build
+make up            # docker compose up --build (COMPOSE="podman compose" for Podman)
 make down          # stop
 make down-clean    # stop and drop the database volume
 ```
@@ -325,3 +351,11 @@ and the time it takes to keep adding problems in every language.
 
 Not donating is completely fine. Filing a bug, fixing a test case, or adding a
 problem is worth just as much.
+
+## License
+
+[MIT](LICENSE).
+
+The vendored runtimes under `assets/` and `dist/` are third-party and keep
+their own licences: the Gleam compiler (Apache-2.0), Brython (BSD-3-Clause),
+and the CodeMirror and Sucrase packages listed in `package.json` (MIT).

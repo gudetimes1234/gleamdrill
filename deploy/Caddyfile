@@ -29,13 +29,30 @@
 	handle {
 		root * /srv
 
+		# Cheap headers only. A real Content-Security-Policy is deliberately
+		# absent: the Gleam compiler is wasm (needs wasm-unsafe-eval) and
+		# Brython evaluates the Python it is handed, so a policy tight enough
+		# to be worth having takes its own pass and its own testing.
+		header {
+			Referrer-Policy "strict-origin-when-cross-origin"
+			X-Content-Type-Options "nosniff"
+			# The app is never meant to be framed; drills are typed into it.
+			Content-Security-Policy "frame-ancestors 'none'"
+			-Server
+		}
+
 		# The runtime directories are version-stamped (assets/gleam-runtime/1.18.1,
 		# assets/python-runtime/3.14.3), so a given URL can never change contents.
 		@versioned path /gleam-runtime/* /python-runtime/*
 		header @versioned Cache-Control "public, max-age=31536000, immutable"
 
 		# The shell must never be cached: it is how a new bundle is discovered.
-		header /index.html Cache-Control "no-cache"
+		# `/` has to be matched explicitly as well as `/index.html` -- header
+		# matchers see the request path, and `try_files` rewrites to the shell
+		# only afterwards, so a bare `/` (which is how everyone actually
+		# arrives) missed this rule entirely.
+		@shell path / /index.html
+		header @shell Cache-Control "no-cache"
 
 		# `{path}.html` reproduces the `cleanUrls` Vercel used to provide; the
 		# final fallback is the SPA shell.
