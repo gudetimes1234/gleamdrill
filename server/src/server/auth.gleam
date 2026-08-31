@@ -11,7 +11,6 @@
 ////   * Login attempts are throttled per IP *and* per email.
 
 import antigone
-import fsrs
 import gleam/bit_array
 import gleam/bool
 import gleam/crypto
@@ -151,18 +150,40 @@ fn insert_user(
   |> result.try(first_row(_, DatabaseError("insert returned no user")))
 }
 
+/// Seed a new account's settings from `wire.default_settings()`.
+///
+/// Written out rather than left to the column defaults in migration 1. Those
+/// defaults are a second copy of the same numbers, and a second copy is a
+/// second answer: after the app's default new-card limit dropped to 5 the
+/// table still said 10, so a guest studying 5 a day silently got 10 the moment
+/// they made an account. The columns keep their defaults as a backstop for
+/// anything inserting directly, but this is the authority.
 fn insert_default_settings(
   db: pog.Connection,
   user_id: String,
   timezone: String,
 ) -> Result(Nil, AuthError) {
+  let defaults = wire.default_settings()
+  let scheduler = defaults.scheduler
   pog.query(
-    "insert into settings (user_id, parameters, timezone)
-     values ($1::uuid, $2, $3)",
+    "insert into settings
+       (user_id, parameters, timezone, desired_retention, learning_steps,
+        relearning_steps, maximum_interval, enable_fuzz, new_per_day,
+        reviews_per_day, day_start_hour)
+     values ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
   )
   |> pog.parameter(pog.text(user_id))
-  |> pog.parameter(pog.array(pog.float, fsrs.default_parameters))
+  |> pog.parameter(pog.array(pog.float, scheduler.parameters))
+  // The browser's zone, captured at signup -- not a default.
   |> pog.parameter(pog.text(timezone))
+  |> pog.parameter(pog.float(scheduler.desired_retention))
+  |> pog.parameter(pog.array(pog.int, scheduler.learning_steps))
+  |> pog.parameter(pog.array(pog.int, scheduler.relearning_steps))
+  |> pog.parameter(pog.int(scheduler.maximum_interval))
+  |> pog.parameter(pog.bool(scheduler.enable_fuzz))
+  |> pog.parameter(pog.int(defaults.new_per_day))
+  |> pog.parameter(pog.int(defaults.reviews_per_day))
+  |> pog.parameter(pog.int(defaults.day_start_hour))
   |> pog.execute(db)
   |> result.replace(Nil)
   |> result.map_error(database_error)

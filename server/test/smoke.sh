@@ -60,7 +60,20 @@ echo "== boot state"
 S=$(curl -s "$B/api/state" -H "$AUTH")
 check "starts with no cards" 0 "$(echo "$S" | j "len(d['cards'])")"
 check "ships 21 FSRS parameters" 21 "$(echo "$S" | j "len(d['settings']['parameters'])")"
-check "new-card budget is 10" 10 "$(echo "$S" | j "['today']['newRemaining']")"
+# A new account must start on the same numbers the app and guest mode use.
+# These lived twice -- once in wire.default_settings and once as column
+# defaults in migration 1 -- and drifted the moment one of them changed, so a
+# guest studying 5 new a day silently got 10 on signing up.
+check "a new account starts on the documented new-card limit" 5 \
+  "$(echo "$S" | j "['settings']['newPerDay']")"
+check "and the documented review limit" 100 \
+  "$(echo "$S" | j "['settings']['reviewsPerDay']")"
+check "and the documented rollover hour" 4 \
+  "$(echo "$S" | j "['settings']['dayStartHour']")"
+check "and the documented retention target" 0.9 \
+  "$(echo "$S" | j "['settings']['desiredRetention']")"
+check "the day's new-card budget matches the limit" 5 \
+  "$(echo "$S" | j "['today']['newRemaining']")"
 check "nothing is due" 0 "$(echo "$S" | j "['today']['dueNow']")"
 
 echo "== scheduling"
