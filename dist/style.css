@@ -1484,6 +1484,115 @@ gleam-editor .cm-editor {
     }
 }
 
+/* ---------- Settings ---------- */
+
+.settings-screen {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 28px 20px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Which store a setting lands in is not cosmetic -- account settings follow
+   you between browsers and device ones do not -- so each group says so. */
+.settings-section-note {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.settings-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.settings-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.settings-row:last-child {
+    border-bottom: none;
+}
+
+.settings-label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.settings-label-text {
+    color: var(--text-primary);
+}
+
+.settings-help {
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.6;
+    max-width: 46ch;
+}
+
+.settings-input {
+    flex: 0 0 auto;
+    width: 96px;
+    padding: 8px 10px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 14px;
+    text-align: right;
+}
+
+.settings-input:focus-visible {
+    outline: 1px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.settings-timezone {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.settings-timezone-value {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+@media (max-width: 700px) {
+    .settings-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .settings-input {
+        width: 100%;
+        text-align: left;
+    }
+
+    .settings-timezone {
+        justify-content: flex-start;
+    }
+}
+
 /* ---------- First-run picker ---------- */
 
 .picker-screen {

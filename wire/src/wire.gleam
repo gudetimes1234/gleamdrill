@@ -183,7 +183,11 @@ pub type Review {
 pub fn default_settings() -> Settings {
   Settings(
     scheduler: fsrs.default_config(),
-    new_per_day: 10,
+    // Low on purpose. A card here is a problem typed from memory, minutes not
+    // seconds, so a flashcard-sized default is a daily workload nobody clears
+    // -- and a limit that never binds is a decoration. The settings screen is
+    // where someone who wants more says so.
+    new_per_day: 5,
     reviews_per_day: 100,
     day_start_hour: 4,
     timezone: "UTC",

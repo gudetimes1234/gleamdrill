@@ -16,7 +16,8 @@ import algodrill/browser
 import algodrill/local
 import algodrill/model.{
   type Model, type Msg, Account, CardSuspended, DraftSynced, Guest,
-  HistoryLoaded, InsightsLoaded, ReviewRecorded, StateLoaded, StatsLoaded,
+  HistoryLoaded, InsightsLoaded, ReviewRecorded, SettingsSaved, StateLoaded,
+  StatsLoaded,
 }
 import algodrill/problem.{type ProblemRef}
 import gleam/dict
@@ -31,7 +32,9 @@ pub fn load_state(m: Model) -> Effect(Msg) {
     Guest -> {
       use dispatch <- effect.from
       let store = local.load()
-      let settings = api.default_settings()
+      // Read, not defaulted. This line used to hardcode the defaults, so a
+      // guest's settings survived exactly until the next page load.
+      let settings = local.load_settings()
       let now = timestamp.system_time()
       let day = local.current_day(settings)
       dispatch(
@@ -134,6 +137,24 @@ pub fn save_draft(m: Model, problem: ProblemRef, body: String) -> Effect(Msg) {
       dispatch(
         DraftSynced(case local.save_drafts(updated) {
           Ok(Nil) -> Ok(Nil)
+          Error(Nil) -> Error(storage_full())
+        }),
+      )
+    }
+  }
+}
+
+/// Persist the scheduler settings. Same shape as `save_draft`, with one
+/// difference worth naming: the server answers with the settings it stored, so
+/// the guest branch has to dispatch what it just wrote rather than `Nil`.
+pub fn save_settings(m: Model, settings: api.Settings) -> Effect(Msg) {
+  case m.mode {
+    Account(token) -> api.put_settings(base(), token, settings, SettingsSaved)
+    Guest -> {
+      use dispatch <- effect.from
+      dispatch(
+        SettingsSaved(case local.save_settings(settings) {
+          Ok(Nil) -> Ok(settings)
           Error(Nil) -> Error(storage_full())
         }),
       )

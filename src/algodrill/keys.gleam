@@ -13,13 +13,13 @@ import algodrill/model.{
   EditorFocusRequested, HelpToggled, MenuActivated, MenuCursorJumped,
   MenuCursorMoved, MenuPaneFocused, MenuRoute, MenuSuspendedAtCursor,
   MenuToggledAtCursor, PickerConfirmed, PickerRoute, QuizMoved, ReportRoute,
-  SearchFocusRequested, StatsActivated, StatsCursorMoved, StatsRoute, StudyRoute,
-  UserClickedBackToStudy, UserClickedBrowse, UserClickedClearSelection,
-  UserClickedExitDrill, UserClickedExitReport, UserClickedNext, UserClickedRun,
-  UserClickedSelectAll, UserClickedStartDrill, UserClickedStartExam,
-  UserClickedStats, UserClickedStudy, UserClosedDetail, UserGraded,
-  UserPickedChoice, UserRevealedHint, UserSearched, UserSubmittedAnswer,
-  UserToggledSide, UserToggledSolution,
+  SearchFocusRequested, SettingsRoute, StatsActivated, StatsCursorMoved,
+  StatsRoute, StudyRoute, UserClickedBackToStudy, UserClickedBrowse,
+  UserClickedClearSelection, UserClickedExitDrill, UserClickedExitReport,
+  UserClickedNext, UserClickedRun, UserClickedSelectAll, UserClickedStartDrill,
+  UserClickedStartExam, UserClickedStats, UserClickedStudy, UserClosedDetail,
+  UserGraded, UserPickedChoice, UserRevealedHint, UserSearched,
+  UserSubmittedAnswer, UserToggledSide, UserToggledSolution,
 }
 import algodrill/problem
 import algodrill/problems
@@ -93,6 +93,15 @@ pub fn bindings(m: Model) -> List(Binding) {
         // yet, and dismissing it would leave the queue unanswered.
         PickerRoute -> [
           Binding(["Enter"], "start", "Start studying", PickerConfirmed),
+          help_binding(),
+        ]
+        SettingsRoute -> [
+          Binding(
+            ["Escape", "b"],
+            "back",
+            "Back to study",
+            UserClickedBackToStudy,
+          ),
           help_binding(),
         ]
         AuthRoute -> []
@@ -326,6 +335,7 @@ pub fn context_label(m: Model) -> String {
     StatsRoute -> "STATS"
     ReportRoute -> "REPORT"
     PickerRoute -> "SETUP"
+    SettingsRoute -> "SETTINGS"
     AuthRoute -> "SIGN IN"
   }
 }

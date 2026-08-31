@@ -6,9 +6,9 @@
 
 import algodrill/model.{
   type Model, type Msg, Guest, PromptShowing, Registering, SigningIn,
-  UserClickedBrowse, UserClickedMergeGuest, UserClickedSignIn,
-  UserClickedSignOut, UserClickedStartExam, UserClickedStats, UserClickedStudy,
-  UserDismissedUpgradePrompt,
+  UserClickedBrowse, UserClickedMergeGuest, UserClickedSettings,
+  UserClickedSignIn, UserClickedSignOut, UserClickedStartExam, UserClickedStats,
+  UserClickedStudy, UserDismissedUpgradePrompt,
 }
 import algodrill/problems
 import algodrill/queue
@@ -237,6 +237,7 @@ fn account_controls(m: Model) -> Element(Msg) {
     Guest -> [
       html.span([attribute.class("study-email")], [html.text("Guest")]),
       text_button("Stats", UserClickedStats),
+      text_button("Settings", UserClickedSettings),
       text_button("Sign in", UserClickedSignIn(SigningIn)),
       text_button("Create account", UserClickedSignIn(Registering)),
     ]
@@ -248,6 +249,7 @@ fn account_controls(m: Model) -> Element(Msg) {
         }),
       ]),
       text_button("Stats", UserClickedStats),
+      text_button("Settings", UserClickedSettings),
       text_button("Sign out", UserClickedSignOut),
     ]
   })

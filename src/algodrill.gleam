@@ -7,30 +7,32 @@ import algodrill/legacy
 import algodrill/local
 import algodrill/model.{
   type Model, type Msg, Account, AuthCompleted, AuthForm, AuthRoute,
-  AwaitingGrade, CardSuspended, DraftSaveTicked, DraftSynced, DrillRoute,
-  EditorChanged, EditorFocusRequested, ExamSampled, ExitConfirmed, Guest,
-  HelpToggled, HistoryLoaded, InsightsLoaded, KeyPressed, MenuActivated,
-  MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
-  MenuSuspendedAtCursor, MenuToggledAtCursor, Model, NotGrading, NotStarted,
-  PickerConfirmed, PickerRoute, PickerToggledLanguage, PromptDismissed,
-  QuizMoved, Ran, Registering, ReportRoute, ReviewRecorded, RunFinished, RunIdle,
-  RunTimedOut, RunnerFailed, RunnerReady, Running, RuntimeFailed,
-  RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded, RuntimeReady,
-  SearchFocusRequested, SignOutCompleted, SigningIn, StateImported, StateLoaded,
-  StatsActivated, StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute,
-  SubmittingGrade, SyncFailed, Synced, Syncing, TimedOut, UserChangedAuthEmail,
+  AwaitingGrade, CardSuspended, DayStartHour, DesiredRetention, DraftSaveTicked,
+  DraftSynced, DrillRoute, EditorChanged, EditorFocusRequested, ExamSampled,
+  ExitConfirmed, Guest, HelpToggled, HistoryLoaded, InsightsLoaded, KeyPressed,
+  MenuActivated, MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
+  MenuSuspendedAtCursor, MenuToggledAtCursor, Model, NewPerDay, NotGrading,
+  NotStarted, PickerConfirmed, PickerRoute, PickerToggledLanguage,
+  PromptDismissed, QuizMoved, Ran, Registering, ReportRoute, ReviewRecorded,
+  ReviewsPerDay, RunFinished, RunIdle, RunTimedOut, RunnerFailed, RunnerReady,
+  Running, RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded,
+  RuntimeReady, SearchFocusRequested, SettingsRoute, SettingsSaved,
+  SignOutCompleted, SigningIn, StateImported, StateLoaded, StatsActivated,
+  StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute, SubmittingGrade,
+  SyncFailed, Synced, Syncing, TimedOut, UserChangedAuthEmail,
   UserChangedAuthPassword, UserChangedIterations, UserChangedKeymap,
-  UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
-  UserClickedCategory, UserClickedClearSelection, UserClickedExitDrill,
-  UserClickedExitReport, UserClickedMergeGuest, UserClickedNext,
-  UserClickedRetryRuntime, UserClickedRun, UserClickedSelectAll,
-  UserClickedSignIn, UserClickedSignOut, UserClickedStartDrill,
-  UserClickedStartExam, UserClickedStats, UserClickedStopRun, UserClickedStudy,
-  UserClickedSubcategory, UserClosedDetail, UserDismissedNotice,
-  UserDismissedUpgradePrompt, UserGraded, UserOpenedDetail, UserPickedChoice,
-  UserRevealedHint, UserSearched, UserSubmittedAnswer, UserSubmittedAuth,
-  UserToggledAuthMode, UserToggledLanguage, UserToggledProblem, UserToggledSide,
-  UserToggledSolution, UserToggledSuspend,
+  UserChangedSetting, UserClickedBackToStudy, UserClickedBreadcrumb,
+  UserClickedBrowse, UserClickedCategory, UserClickedClearSelection,
+  UserClickedDeviceTimezone, UserClickedExitDrill, UserClickedExitReport,
+  UserClickedMergeGuest, UserClickedNext, UserClickedRetryRuntime,
+  UserClickedRun, UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
+  UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
+  UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
+  UserClosedDetail, UserDismissedNotice, UserDismissedUpgradePrompt, UserGraded,
+  UserOpenedDetail, UserPickedChoice, UserRevealedHint, UserSearched,
+  UserSubmittedAnswer, UserSubmittedAuth, UserToggledAuthMode,
+  UserToggledLanguage, UserToggledProblem, UserToggledSide, UserToggledSolution,
+  UserToggledSuspend,
 }
 import algodrill/problem.{type ProblemRef}
 import algodrill/problems
@@ -44,11 +46,13 @@ import algodrill/view/help
 import algodrill/view/menu
 import algodrill/view/picker
 import algodrill/view/report
+import algodrill/view/settings
 import algodrill/view/stats
 import algodrill/view/statusbar
 import algodrill/view/study
 import fsrs
 import gleam/dict
+import gleam/float
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
@@ -1156,6 +1160,31 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(m, save_preferences(m))
     }
 
+    UserClickedSettings -> #(Model(..m, route: SettingsRoute), effect.none())
+
+    // Committed on blur or Enter, so this fires once per edit rather than per
+    // keystroke, and saving immediately is affordable.
+    UserChangedSetting(field, raw) -> {
+      let settings = apply_setting(m.settings, field, raw)
+      let m = Model(..m, settings:)
+      #(m, store.save_settings(m, settings))
+    }
+
+    UserClickedDeviceTimezone -> {
+      let settings = wire.Settings(..m.settings, timezone: browser.time_zone())
+      let m = Model(..m, settings:)
+      #(m, store.save_settings(m, settings))
+    }
+
+    // The server answers with what it stored, so this is the authoritative
+    // copy -- it may differ from what was sent if a bound was hit.
+    SettingsSaved(Ok(settings)) -> #(Model(..m, settings:), effect.none())
+
+    SettingsSaved(Error(error)) -> #(
+      Model(..m, notice: Some(api.error_message(error))),
+      effect.none(),
+    )
+
     // The picker collects what you want; `muted_languages` stores what you do
     // not, so the inversion happens once, here, on confirm.
     PickerToggledLanguage(tag) -> {
@@ -1392,6 +1421,64 @@ fn apply_state(m: Model, state: api.BootState) -> Model {
     // the threshold in a previous session should still be told.
     upgrade_prompt: escalate(m),
   )
+}
+
+/// Parse one settings input and clamp it into range.
+///
+/// The bounds mirror `validate_settings` in the server's routes/study.gleam.
+/// Clamping rather than rejecting is deliberate: these come from a number
+/// input whose own min/max the browser already shows, so a value outside them
+/// is a typo, and snapping it is friendlier than an error. Unparseable text
+/// leaves the setting alone.
+fn apply_setting(
+  settings: api.Settings,
+  field: model.SettingField,
+  raw: String,
+) -> api.Settings {
+  case field {
+    NewPerDay ->
+      case int.parse(raw) {
+        Ok(value) ->
+          wire.Settings(..settings, new_per_day: int.clamp(value, 0, 100))
+        Error(Nil) -> settings
+      }
+    ReviewsPerDay ->
+      case int.parse(raw) {
+        Ok(value) ->
+          wire.Settings(..settings, reviews_per_day: int.clamp(value, 0, 500))
+        Error(Nil) -> settings
+      }
+    DayStartHour ->
+      case int.parse(raw) {
+        Ok(value) ->
+          wire.Settings(..settings, day_start_hour: int.clamp(value, 0, 23))
+        Error(Nil) -> settings
+      }
+    DesiredRetention ->
+      case float.parse(raw) {
+        Ok(value) ->
+          wire.Settings(
+            ..settings,
+            scheduler: fsrs.Config(
+              ..settings.scheduler,
+              desired_retention: float.clamp(value, 0.7, 0.99),
+            ),
+          )
+        // An integer in a step-0.01 field: "1" should mean 1.0, not nothing.
+        Error(Nil) ->
+          case int.parse(raw) {
+            Ok(whole) ->
+              wire.Settings(
+                ..settings,
+                scheduler: fsrs.Config(
+                  ..settings.scheduler,
+                  desired_retention: float.clamp(int.to_float(whole), 0.7, 0.99),
+                ),
+              )
+            Error(Nil) -> settings
+          }
+      }
+  }
 }
 
 /// Starts a sitting on the given list of problems.
@@ -1725,6 +1812,7 @@ fn view(m: Model) -> Element(Msg) {
       let screen = case m.route {
         AuthRoute -> auth.view(m)
         PickerRoute -> picker.view(m)
+        SettingsRoute -> settings.view(m)
         StudyRoute -> study.view(m)
         StatsRoute -> stats.view(m)
         DrillRoute ->

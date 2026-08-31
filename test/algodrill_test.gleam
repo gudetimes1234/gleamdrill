@@ -710,6 +710,7 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
     model.Model(..base, route: model.StatsRoute),
     model.Model(..base, route: model.ReportRoute),
     model.Model(..base, route: model.PickerRoute),
+    model.Model(..base, route: model.SettingsRoute),
   ]
   use m <- list.each(contexts)
   let table = keys.bindings(m)

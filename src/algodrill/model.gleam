@@ -15,6 +15,8 @@ pub type Route {
   /// The one-off first-run language choice. Shown instead of the study screen
   /// until it is answered, and never again afterwards.
   PickerRoute
+  /// The scheduler knobs, plus the device preferences that sit beside them.
+  SettingsRoute
   /// The scheduler's home: what is due, what is new, and a button to begin.
   StudyRoute
   /// The manual three-pane browser, kept for picking problems by hand.
@@ -439,6 +441,16 @@ pub fn language_muted(model: Model, tag: String) -> Bool {
 // of its filter -- now live in `algodrill/queue`, so what the dashboard shows
 // and what "Study now" serves cannot drift apart.
 
+/// Which scheduler knob a settings input is editing. One message with a field
+/// tag rather than four near-identical variants, because every one of them is
+/// the same parse-clamp-save.
+pub type SettingField {
+  NewPerDay
+  ReviewsPerDay
+  DayStartHour
+  DesiredRetention
+}
+
 pub type Msg {
   // --- keyboard ---
   KeyPressed(Key)
@@ -509,6 +521,13 @@ pub type Msg {
   UserClickedRetryRuntime(String)
   UserToggledSide
   UserToggledLanguage(String)
+  UserClickedSettings
+  /// A settings input committed (on blur or Enter), carrying its raw text.
+  UserChangedSetting(SettingField, String)
+  /// Adopt the timezone this browser reports, which is the only way to change
+  /// it after signup.
+  UserClickedDeviceTimezone
+  SettingsSaved(Result(Settings, ApiError))
   /// Tick or untick one language in the first-run picker.
   PickerToggledLanguage(String)
   /// Accept the picker's selection and go study.

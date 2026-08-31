@@ -155,7 +155,7 @@ pub fn normalise_email_is_idempotent_test() {
 /// unnoticed before the shared `wire` package lands.
 pub fn default_settings_are_the_documented_values_test() {
   let settings = study.default_settings()
-  settings.new_per_day |> should.equal(10)
+  settings.new_per_day |> should.equal(5)
   settings.reviews_per_day |> should.equal(100)
   settings.day_start_hour |> should.equal(4)
   settings.timezone |> should.equal("UTC")

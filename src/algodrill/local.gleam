@@ -44,6 +44,11 @@ const flags_key = "algoDrill.guest.flags.v1"
 
 const reviews_key = "algoDrill.guest.reviews.v1"
 
+/// A guest's scheduler settings. Its own key rather than a field on `Local`
+/// because it is read at boot, before anything else is loaded, and written
+/// only from the settings screen -- neither path wants the card store.
+const settings_key = "algoDrill.guest.settings.v1"
+
 /// The review log is a ring buffer: the insight screens read backwards from
 /// now, and two thousand reviews is over a year of heavy use in ~250KB.
 const review_log_limit = 2000
@@ -475,6 +480,20 @@ pub fn dismiss_prompt() -> Result(Nil, Nil) {
   )
 }
 
+/// This browser's scheduler settings, or the defaults if it has never had any.
+///
+/// Guest settings used to be re-defaulted on every page load, which meant the
+/// settings screen appeared to work and then silently forgot. Every other
+/// guest path already reads `Model.settings`; only boot needed fixing.
+pub fn load_settings() -> wire.Settings {
+  read(settings_key, wire.settings_decoder())
+  |> option.unwrap(wire.default_settings())
+}
+
+pub fn save_settings(settings: wire.Settings) -> Result(Nil, Nil) {
+  write(settings_key, json.to_string(wire.settings_to_json(settings)))
+}
+
 pub fn save_cards(local: Local) -> Result(Nil, Nil) {
   write(
     cards_key,
@@ -501,7 +520,14 @@ pub fn clear() -> Nil {
     Error(Nil) -> Nil
     Ok(local) -> {
       list.each(
-        [cards_key, drafts_key, history_key, flags_key, reviews_key],
+        [
+          cards_key,
+          drafts_key,
+          history_key,
+          flags_key,
+          reviews_key,
+          settings_key,
+        ],
         fn(key) { storage.remove_item(local, key) },
       )
     }
