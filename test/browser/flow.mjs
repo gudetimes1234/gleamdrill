@@ -67,7 +67,8 @@ check("shows the signed-in email",
 
 const counts = await page.$$eval(".study-count-value", (n) => n.map((e) => e.textContent));
 check("due starts at 0", counts[0] === "0", `got ${counts[0]}`);
-check("new budget starts at 10", counts[1] === "10", `got ${counts[1]}`);
+// The server-side default, seeded from wire.default_settings() at signup.
+check("new budget starts at the account default", counts[1] === "5", `got ${counts[1]}`);
 check("forecast renders 7 days",
   (await page.$$(".forecast-day")).length === 7);
 
@@ -110,7 +111,7 @@ await page.waitForSelector(".study-screen", { timeout: 15000 });
 const after = await page.$$eval(".study-count-value", (n) => n.map((e) => e.textContent));
 check("the session survived a reload (still signed in)", true);
 check("a review was recorded today", after[2] === "1", `got ${after[2]}`);
-check("the new-card budget went down", after[1] === "9", `got ${after[1]}`);
+check("the new-card budget went down", after[1] === "4", `got ${after[1]}`);
 
 console.log("== stats");
 await page.click("text=Stats");
