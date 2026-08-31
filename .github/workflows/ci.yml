@@ -29,10 +29,31 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
+      # That same version is pinned in eight places by hand. Checked first
+      # because everything below builds against whatever it says.
+      - name: Version pins agree
+        run: make check-versions
+
       # The real integration check: regenerates the embedded drill content,
       # bundles the three workers, then builds the app.
       - name: Build
         run: make build
+
+      # `dist/` is committed and the web image copies it verbatim rather than
+      # building it (deploy/web.Dockerfile), so a stale commit ships silently.
+      # The build above just regenerated it; if that changed anything, the
+      # commit was stale.
+      - name: dist/ is current
+        run: |
+          if ! git diff --quiet -- dist/; then
+            echo "::error::dist/ is stale. Run 'make build' and commit the result."
+            git diff --stat -- dist/
+            exit 1
+          fi
+
+      # Runs after the build because `make content` formats what it generates.
+      - name: Formatting
+        run: make check-format
 
       # The scheduler is shared by the server and the app, so it is tested on
       # both targets. Identical results are what licenses sharing one module.
@@ -42,3 +63,73 @@ jobs:
       # The app's decoders against captured server responses.
       - name: App tests
         run: make app-test
+
+  # Nothing here ran in CI before: the backend was never so much as
+  # type-checked. It holds every account and enforces the grading rule, so it
+  # gets its own job with a real database behind it.
+  server:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: algodrill
+          POSTGRES_PASSWORD: algodrill
+          POSTGRES_DB: algodrill_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U algodrill -d algodrill_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgres://algodrill:algodrill@127.0.0.1:5432/algodrill_ci
+      # CI-only, and the server refuses to boot on anything shorter than 64.
+      SECRET_KEY_BASE: github-actions-ci-secret-key-base-not-a-real-secret-000000000000000000
+      ALLOWED_ORIGIN: http://localhost:1234
+      PORT: "1637"
+      BIND: 127.0.0.1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27"
+          gleam-version: "1.18.1"
+          rebar3-version: "3"
+
+      # The app half of the tree is not built here, but `server` path-depends
+      # on ../fsrs, which is why the whole repo is checked out.
+      - name: Build
+        run: cd server && gleam build
+
+      - name: Unit tests
+        run: make server-test
+
+      # Migrations run on boot, so starting the server is itself the migration
+      # test. Backgrounded, then waited on rather than slept.
+      - name: Start server
+        run: |
+          cd server && gleam run > /tmp/server.log 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:1637/health > /dev/null; then
+              echo "server up"; exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::server did not come up"
+          cat /tmp/server.log
+          exit 1
+
+      # 95 checks against the real HTTP surface: status codes, JSON shapes,
+      # CORS, the auth boundary.
+      - name: Smoke tests
+        run: make server-smoke
+
+      - name: Server log
+        if: failure()
+        run: cat /tmp/server.log

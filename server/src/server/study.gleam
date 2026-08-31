@@ -188,12 +188,10 @@ pub fn set_suspended(
   problem: ProblemRef,
   suspended: Bool,
 ) -> Result(Option(CardRecord), StudyError) {
-  pog.query(
-    "update cards set suspended = $5
+  pog.query("update cards set suspended = $5
      where user_id = $1::uuid
        and category = $2 and subcategory = $3 and title = $4
-     returning " <> card_columns,
-  )
+     returning " <> card_columns)
   |> pog.parameter(pog.text(user_id))
   |> pog.parameter(pog.text(problem.category))
   |> pog.parameter(pog.text(problem.subcategory))
@@ -684,7 +682,11 @@ pub fn stats(
 /// Consecutive study days ending today, or ending yesterday if today has no
 /// reviews yet -- a streak should not appear broken just because you have not
 /// sat down yet.
-fn streak(history: List(DayTally)) -> Int {
+///
+/// Public only so `server_test` can reach it: the off-by-one between "today"
+/// and "yesterday" is the kind of thing that breaks twice a year and never in
+/// a way anyone notices.
+pub fn streak(history: List(DayTally)) -> Int {
   let days =
     history |> list.map(fn(day) { day.days_ago }) |> list.sort(int.compare)
   case days {
