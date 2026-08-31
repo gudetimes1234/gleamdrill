@@ -124,6 +124,15 @@ pub fn language_entries() -> List(#(String, String)) {
   #(label_for(category), category.name)
 }
 
+/// The study filter's rows: language tag and display label, in catalogue
+/// order. Derived from the content the same way `language_entries` is, so a
+/// new category appears in the first-run picker and the study chips at once
+/// rather than needing a hardcoded list edited in two views.
+pub fn language_options() -> List(#(String, String)) {
+  use category <- list.map(all())
+  #(language_tag(category.name), label_for(category))
+}
+
 fn label_for(category: Category) -> String {
   case first_language(category) {
     Ok(problem.Concept) | Error(Nil) -> category.name

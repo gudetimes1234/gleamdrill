@@ -11,6 +11,7 @@ import algodrill/model.{
   UserDismissedUpgradePrompt,
 }
 import algodrill/problems
+import algodrill/queue
 import algodrill/view/banner
 import algodrill/view/links
 import fsrs
@@ -26,10 +27,10 @@ import lustre/event
 pub fn view(m: Model) -> Element(Msg) {
   // Filtered client-side: the server's due_now knows nothing about the
   // device's language filter, and the client holds every card anyway.
-  let due = model.due_ready(m)
-  let fresh = model.new_ready(m)
+  let due = queue.due_count(m)
+  let fresh = queue.new_count(m)
   let ready = due + fresh
-  let hidden = model.hidden_by_filter(m)
+  let hidden = queue.hidden_count(m)
   let all_filtered = ready == 0 && hidden_everything(m)
 
   html.div([attribute.class("study-screen")], [
@@ -166,7 +167,7 @@ fn week() -> List(Int) {
 /// True when the filter alone explains the empty queue: unmuting would serve
 /// something today.
 fn hidden_everything(m: Model) -> Bool {
-  model.hidden_by_filter(m) > 0
+  queue.hidden_count(m) > 0
   || { list.length(m.muted_languages) == 5 && m.today.new_remaining > 0 }
 }
 

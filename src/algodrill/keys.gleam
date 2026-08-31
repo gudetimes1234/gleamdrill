@@ -12,8 +12,8 @@ import algodrill/model.{
   type Key, type Model, type Msg, AuthRoute, AwaitingGrade, DrillRoute,
   EditorFocusRequested, HelpToggled, MenuActivated, MenuCursorJumped,
   MenuCursorMoved, MenuPaneFocused, MenuRoute, MenuSuspendedAtCursor,
-  MenuToggledAtCursor, QuizMoved, ReportRoute, SearchFocusRequested,
-  StatsActivated, StatsCursorMoved, StatsRoute, StudyRoute,
+  MenuToggledAtCursor, PickerConfirmed, PickerRoute, QuizMoved, ReportRoute,
+  SearchFocusRequested, StatsActivated, StatsCursorMoved, StatsRoute, StudyRoute,
   UserClickedBackToStudy, UserClickedBrowse, UserClickedClearSelection,
   UserClickedExitDrill, UserClickedExitReport, UserClickedNext, UserClickedRun,
   UserClickedSelectAll, UserClickedStartDrill, UserClickedStartExam,
@@ -86,6 +86,13 @@ pub fn bindings(m: Model) -> List(Binding) {
             "Leave the report",
             UserClickedExitReport,
           ),
+          help_binding(),
+        ]
+        // The picker is a single deliberate choice, so it gets Enter to
+        // confirm and nothing else. No Escape: there is nowhere to escape to
+        // yet, and dismissing it would leave the queue unanswered.
+        PickerRoute -> [
+          Binding(["Enter"], "start", "Start studying", PickerConfirmed),
           help_binding(),
         ]
         AuthRoute -> []
@@ -318,6 +325,7 @@ pub fn context_label(m: Model) -> String {
       }
     StatsRoute -> "STATS"
     ReportRoute -> "REPORT"
+    PickerRoute -> "SETUP"
     AuthRoute -> "SIGN IN"
   }
 }

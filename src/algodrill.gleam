@@ -12,17 +12,18 @@ import algodrill/model.{
   HelpToggled, HistoryLoaded, InsightsLoaded, KeyPressed, MenuActivated,
   MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
   MenuSuspendedAtCursor, MenuToggledAtCursor, Model, NotGrading, NotStarted,
-  PromptDismissed, QuizMoved, Ran, Registering, ReportRoute, ReviewRecorded,
-  RunFinished, RunIdle, RunTimedOut, RunnerFailed, RunnerReady, Running,
-  RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded,
-  RuntimeReady, SearchFocusRequested, SignOutCompleted, SigningIn, StateImported,
-  StateLoaded, StatsActivated, StatsCursorMoved, StatsLoaded, StatsRoute,
-  StudyRoute, SubmittingGrade, SyncFailed, Synced, Syncing, TimedOut,
-  UserChangedAuthEmail, UserChangedAuthPassword, UserChangedIterations,
-  UserChangedKeymap, UserClickedBackToStudy, UserClickedBreadcrumb,
-  UserClickedBrowse, UserClickedCategory, UserClickedClearSelection,
-  UserClickedExitDrill, UserClickedExitReport, UserClickedMergeGuest,
-  UserClickedNext, UserClickedRetryRuntime, UserClickedRun, UserClickedSelectAll,
+  PickerConfirmed, PickerRoute, PickerToggledLanguage, PromptDismissed,
+  QuizMoved, Ran, Registering, ReportRoute, ReviewRecorded, RunFinished, RunIdle,
+  RunTimedOut, RunnerFailed, RunnerReady, Running, RuntimeFailed,
+  RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded, RuntimeReady,
+  SearchFocusRequested, SignOutCompleted, SigningIn, StateImported, StateLoaded,
+  StatsActivated, StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute,
+  SubmittingGrade, SyncFailed, Synced, Syncing, TimedOut, UserChangedAuthEmail,
+  UserChangedAuthPassword, UserChangedIterations, UserChangedKeymap,
+  UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
+  UserClickedCategory, UserClickedClearSelection, UserClickedExitDrill,
+  UserClickedExitReport, UserClickedMergeGuest, UserClickedNext,
+  UserClickedRetryRuntime, UserClickedRun, UserClickedSelectAll,
   UserClickedSignIn, UserClickedSignOut, UserClickedStartDrill,
   UserClickedStartExam, UserClickedStats, UserClickedStopRun, UserClickedStudy,
   UserClickedSubcategory, UserClosedDetail, UserDismissedNotice,
@@ -33,6 +34,7 @@ import algodrill/model.{
 }
 import algodrill/problem.{type ProblemRef}
 import algodrill/problems
+import algodrill/queue
 import algodrill/runner
 import algodrill/session
 import algodrill/store
@@ -40,6 +42,7 @@ import algodrill/view/auth
 import algodrill/view/drill
 import algodrill/view/help
 import algodrill/view/menu
+import algodrill/view/picker
 import algodrill/view/report
 import algodrill/view/stats
 import algodrill/view/statusbar
@@ -71,6 +74,7 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
       editor_keymap: preferences.editor_keymap,
       side_collapsed: preferences.side_collapsed,
       muted_languages: preferences.muted_languages,
+      languages_chosen: preferences.languages_chosen,
     )
 
   case session.load_token() {
@@ -748,11 +752,11 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     // --- the scheduler ---
     UserClickedStudy ->
-      case build_queue(m) {
+      case queue.build(m) {
         [] -> #(
           Model(
             ..m,
-            notice: Some(case model.hidden_by_filter(m) {
+            notice: Some(case queue.hidden_count(m) {
               0 ->
                 "Nothing to study right now. Come back when cards are due, or pick problems by hand."
               hidden ->
@@ -1152,6 +1156,37 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(m, save_preferences(m))
     }
 
+    // The picker collects what you want; `muted_languages` stores what you do
+    // not, so the inversion happens once, here, on confirm.
+    PickerToggledLanguage(tag) -> {
+      let picked = case list.contains(m.picked_languages, tag) {
+        True -> list.filter(m.picked_languages, fn(t) { t != tag })
+        False -> [tag, ..m.picked_languages]
+      }
+      #(Model(..m, picked_languages: picked), effect.none())
+    }
+
+    PickerConfirmed ->
+      case m.picked_languages {
+        // The button is disabled in this state; the guard is here so the
+        // keyboard cannot get past it either.
+        [] -> #(m, effect.none())
+        picked -> {
+          let muted =
+            problems.language_options()
+            |> list.map(fn(option) { option.0 })
+            |> list.filter(fn(tag) { !list.contains(picked, tag) })
+          let m =
+            Model(
+              ..m,
+              muted_languages: muted,
+              languages_chosen: True,
+              route: StudyRoute,
+            )
+          #(m, save_preferences(m))
+        }
+      }
+
     UserToggledLanguage(tag) -> {
       let muted = case list.contains(m.muted_languages, tag) {
         True -> list.filter(m.muted_languages, fn(t) { t != tag })
@@ -1345,50 +1380,18 @@ fn apply_state(m: Model, state: api.BootState) -> Model {
     ),
     today: state.today,
     drafts: state.drafts,
-    route: StudyRoute,
+    // The one place that decides where boot lands. A browser that has never
+    // answered the language question goes to the picker instead of the study
+    // screen, because the queue it would otherwise build is one language deep
+    // by accident rather than by choice.
+    route: case m.languages_chosen {
+      True -> StudyRoute
+      False -> PickerRoute
+    },
     // Evaluated on every load, not only after a review: a guest who crossed
     // the threshold in a previous session should still be told.
     upgrade_prompt: escalate(m),
   )
-}
-
-/// Today's queue: everything due, oldest first, then new problems in
-/// catalogue order — each capped by the daily budget the server reports.
-///
-/// New problems are chosen here rather than server-side because the server has
-/// no catalogue: cards only exist once reviewed, so "never seen" is a question
-/// only this bundle can answer.
-fn build_queue(m: Model) -> List(ProblemRef) {
-  // The filter narrows the sitting; it never touches the schedule. Muted
-  // languages simply wait, and FSRS reschedules from real elapsed time.
-  let catalogue =
-    problems.all_refs()
-    |> list.filter(fn(ref) {
-      !model.language_muted(m, problems.language_tag(ref.category))
-    })
-
-  let due =
-    catalogue
-    |> list.filter(fn(ref) { model.is_due(m, ref) })
-    |> list.sort(fn(a, b) { int.compare(due_seconds(m, a), due_seconds(m, b)) })
-    |> list.take(m.today.reviews_remaining)
-
-  let fresh =
-    catalogue
-    |> list.filter(fn(ref) { model.card_for(m, ref) == None })
-    |> list.take(m.today.new_remaining)
-
-  list.append(due, fresh)
-}
-
-/// How overdue a card is, for ordering. Missing cards sort last; they are
-/// filtered out before this is used, so the fallback is only a total-function
-/// requirement.
-fn due_seconds(m: Model, ref: ProblemRef) -> Int {
-  case model.card_for(m, ref) {
-    Some(state) -> fsrs.interval_seconds(state.card, m.now)
-    None -> 0
-  }
 }
 
 /// Starts a sitting on the given list of problems.
@@ -1460,15 +1463,16 @@ fn problem_kind(ref: ProblemRef) -> ProblemKind {
   }
 }
 
-/// Move to the next problem in the sitting, or end it.
-/// A run abandoned mid-flight leaves a possibly-wedged worker behind, and its
-/// stale timeout would blame the *next* problem's code for the hang. Replace
-/// the worker and clear the run so neither can happen.
+/// Persist the settings that belong to this browser rather than the account.
+///
+/// Written whole every time, so every caller must pass a model that already
+/// holds the change it wants saved.
 fn save_preferences(m: Model) -> Effect(Msg) {
   session.save_preferences(session.Preferences(
     editor_keymap: m.editor_keymap,
     side_collapsed: m.side_collapsed,
     muted_languages: m.muted_languages,
+    languages_chosen: m.languages_chosen,
   ))
 }
 
@@ -1720,6 +1724,7 @@ fn view(m: Model) -> Element(Msg) {
     Synced -> {
       let screen = case m.route {
         AuthRoute -> auth.view(m)
+        PickerRoute -> picker.view(m)
         StudyRoute -> study.view(m)
         StatsRoute -> stats.view(m)
         DrillRoute ->

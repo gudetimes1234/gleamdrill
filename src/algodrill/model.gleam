@@ -1,6 +1,5 @@
 import algodrill/api.{type ApiError, type CardState, type Settings, type User}
 import algodrill/problem.{type ProblemRef}
-import algodrill/problems
 import fsrs
 import gleam/dict.{type Dict}
 import gleam/int
@@ -13,6 +12,9 @@ import gleam/time/timestamp.{type Timestamp}
 pub type Route {
   /// Shown whenever there is no valid session. Everything else is behind it.
   AuthRoute
+  /// The one-off first-run language choice. Shown instead of the study screen
+  /// until it is answered, and never again afterwards.
+  PickerRoute
   /// The scheduler's home: what is due, what is new, and a button to begin.
   StudyRoute
   /// The manual three-pane browser, kept for picking problems by hand.
@@ -258,6 +260,12 @@ pub type Model {
     leader_armed: Bool,
     /// Language tags excluded from today's study queue (device preference).
     muted_languages: List(String),
+    /// Whether the first-run picker has been answered on this device.
+    languages_chosen: Bool,
+    /// Language tags ticked in the first-run picker, before it is confirmed.
+    /// Separate from `muted_languages` because the picker collects what you
+    /// want and the queue stores what you do not.
+    picked_languages: List(String),
     /// Quiz option currently picked, before Submit is pressed.
     choice: Option(Int),
     /// Whether the current quiz question has been submitted and graded.
@@ -316,6 +324,8 @@ pub fn default() -> Model {
     side_collapsed: False,
     leader_armed: False,
     muted_languages: [],
+    languages_chosen: False,
+    picked_languages: [],
     choice: None,
     graded: False,
     exam_answers: [],
@@ -425,35 +435,9 @@ pub fn language_muted(model: Model, tag: String) -> Bool {
   list.contains(model.muted_languages, tag)
 }
 
-/// Due cards today's filter would serve: is_due already excludes suspended.
-pub fn due_ready(m: Model) -> Int {
-  problems.all_refs()
-  |> list.filter(fn(ref) {
-    is_due(m, ref) && !language_muted(m, problems.language_tag(ref.category))
-  })
-  |> list.length
-  |> int.min(m.today.reviews_remaining)
-}
-
-/// New cards today's filter would introduce, within the daily budget.
-pub fn new_ready(m: Model) -> Int {
-  problems.all_refs()
-  |> list.filter(fn(ref) {
-    card_for(m, ref) == None
-    && !language_muted(m, problems.language_tag(ref.category))
-  })
-  |> list.length
-  |> int.min(m.today.new_remaining)
-}
-
-/// Due cards the language filter is currently hiding.
-pub fn hidden_by_filter(m: Model) -> Int {
-  problems.all_refs()
-  |> list.filter(fn(ref) {
-    is_due(m, ref) && language_muted(m, problems.language_tag(ref.category))
-  })
-  |> list.length
-}
+// The queue these counts used to describe -- and their three separate copies
+// of its filter -- now live in `algodrill/queue`, so what the dashboard shows
+// and what "Study now" serves cannot drift apart.
 
 pub type Msg {
   // --- keyboard ---
@@ -525,6 +509,10 @@ pub type Msg {
   UserClickedRetryRuntime(String)
   UserToggledSide
   UserToggledLanguage(String)
+  /// Tick or untick one language in the first-run picker.
+  PickerToggledLanguage(String)
+  /// Accept the picker's selection and go study.
+  PickerConfirmed
   UserToggledSuspend(ProblemRef)
   MenuSuspendedAtCursor
   CardSuspended(Result(api.ReviewOutcome, ApiError))

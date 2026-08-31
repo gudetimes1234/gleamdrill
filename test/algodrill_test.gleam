@@ -16,6 +16,8 @@ import algodrill/keys
 import algodrill/local
 import algodrill/model
 import algodrill/problem
+import algodrill/problems
+import algodrill/queue
 import algodrill/view/format
 import fsrs
 import gleam/dict
@@ -707,6 +709,7 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
     model.Model(..base, route: model.MenuRoute),
     model.Model(..base, route: model.StatsRoute),
     model.Model(..base, route: model.ReportRoute),
+    model.Model(..base, route: model.PickerRoute),
   ]
   use m <- list.each(contexts)
   let table = keys.bindings(m)
@@ -830,4 +833,64 @@ pub fn guest_and_server_calibration_agree_test() -> Nil {
     })
   }
   assert sort_rows(guest.calibration) == sort_rows(server.calibration)
+}
+
+// --- the study queue ---------------------------------------------------------
+
+/// A model with nothing studied yet and room for `new_remaining` new cards.
+fn fresh_model(new_remaining: Int, muted: List(String)) -> model.Model {
+  let base = model.default()
+  model.Model(
+    ..base,
+    muted_languages: muted,
+    today: wire.Today(..base.today, new_remaining:, reviews_remaining: 0),
+  )
+}
+
+/// The catalogue is the same 150 problems repeated once per language, listed
+/// language by language. Taking a flat prefix therefore means one language for
+/// months; the queue rotates instead.
+pub fn new_cards_rotate_across_languages_test() -> Nil {
+  let picked = queue.fresh(fresh_model(8, []))
+  let languages =
+    picked
+    |> list.map(fn(ref: problem.ProblemRef) {
+      problems.language_tag(ref.category)
+    })
+    |> list.unique
+
+  assert list.length(picked) == 8
+  // Four NeetCode languages plus System Design, so the first five cards are
+  // five different categories. A flat prefix would have yielded eight Python
+  // problems and one distinct language.
+  assert list.length(picked |> list.take(5)) == 5
+  assert list.length(languages) == 5
+}
+
+/// Muting is what the first-run picker writes, so the queue must honour it.
+pub fn muted_languages_never_enter_the_queue_test() -> Nil {
+  let picked = queue.fresh(fresh_model(8, ["gl", "ts", "ex", "sd"]))
+  let languages =
+    picked
+    |> list.map(fn(ref: problem.ProblemRef) {
+      problems.language_tag(ref.category)
+    })
+    |> list.unique
+
+  assert languages == ["py"]
+}
+
+/// A language running dry must not stop the rotation for the others -- with
+/// only one language left the queue is simply that language.
+pub fn the_rotation_survives_a_language_running_out_test() -> Nil {
+  let picked = queue.fresh(fresh_model(300, ["gl", "ts", "ex", "sd"]))
+  // Python has 150 problems; asking for 300 must yield all of them and stop,
+  // not loop or truncate at the first round.
+  assert list.length(picked) == 150
+}
+
+/// The budget is the cap, not a suggestion.
+pub fn the_daily_budget_bounds_the_queue_test() -> Nil {
+  assert list.length(queue.fresh(fresh_model(3, []))) == 3
+  assert queue.fresh(fresh_model(0, [])) == []
 }

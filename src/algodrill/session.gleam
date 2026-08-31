@@ -29,14 +29,23 @@ pub type Preferences {
     side_collapsed: Bool,
     /// Language tags kept out of the study queue on this device.
     muted_languages: List(String),
+    /// Whether the first-run picker has been answered.
+    ///
+    /// `muted_languages` cannot answer this on its own: an empty list means
+    /// both "never chose" and "chose all of them". Without a separate flag the
+    /// picker would either never appear or appear forever.
+    languages_chosen: Bool,
   )
 }
 
+/// Used only when this browser has no stored preferences at all -- which is
+/// what makes `languages_chosen: False` right here and wrong in the decoder.
 pub fn default_preferences() -> Preferences {
   Preferences(
     editor_keymap: "default",
     side_collapsed: False,
     muted_languages: [],
+    languages_chosen: False,
   )
 }
 
@@ -83,10 +92,19 @@ pub fn load_preferences() -> Preferences {
             [],
             decode.list(decode.string),
           )
+          // True, unlike `default_preferences`: a blob written before this
+          // field existed belongs to someone already using the app, and
+          // showing them a first-run picker would be a lie.
+          use chosen <- decode.optional_field(
+            "languagesChosen",
+            True,
+            decode.bool,
+          )
           decode.success(Preferences(
             editor_keymap: keymap,
             side_collapsed: collapsed,
             muted_languages: muted,
+            languages_chosen: chosen,
           ))
         })
         |> result.replace_error(Nil)
@@ -107,6 +125,7 @@ pub fn save_preferences(preferences: Preferences) -> Effect(message) {
           "mutedLanguages",
           json.array(preferences.muted_languages, json.string),
         ),
+        #("languagesChosen", json.bool(preferences.languages_chosen)),
       ]),
     ),
   )

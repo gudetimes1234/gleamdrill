@@ -1484,6 +1484,105 @@ gleam-editor .cm-editor {
     }
 }
 
+/* ---------- First-run picker ---------- */
+
+.picker-screen {
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 48px 20px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.picker-question {
+    font-size: 20px;
+    color: var(--text-primary);
+}
+
+.picker-explainer {
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+
+.picker-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+/* A row rather than a chip: this is a considered choice, not a filter being
+   flicked on and off, so it gets the width to say so. */
+.picker-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color var(--ease), background var(--ease);
+}
+
+.picker-option:hover {
+    border-color: var(--accent);
+}
+
+.picker-option.picked {
+    border-color: var(--accent);
+    background: var(--bg-raised);
+}
+
+.picker-check {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--bg-primary);
+    font-size: 12px;
+}
+
+.picker-option.picked .picker-check {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.picker-actions {
+    margin-top: 10px;
+}
+
+.picker-start {
+    width: 100%;
+    padding: 14px;
+}
+
+.picker-start:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.picker-hint {
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-align: center;
+}
+
+@media (max-width: 700px) {
+    .picker-screen {
+        padding: 28px 16px 48px;
+    }
+}
+
 /* ==========================================================================
    Accounts and scheduling
    ========================================================================== */
