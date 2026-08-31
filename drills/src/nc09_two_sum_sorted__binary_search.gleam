@@ -9,7 +9,11 @@ pub fn two_sum_sorted(
   walk(numbers, 1, target)
 }
 
-fn walk(numbers: List(Int), index: Int, target: Int) -> Result(#(Int, Int), Nil) {
+fn walk(
+  numbers: List(Int),
+  index: Int,
+  target: Int,
+) -> Result(#(Int, Int), Nil) {
   case numbers {
     [] -> Error(Nil)
     [n, ..rest] ->

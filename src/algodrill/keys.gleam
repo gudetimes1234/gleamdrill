@@ -10,14 +10,15 @@
 
 import algodrill/model.{
   type Key, type Model, type Msg, AuthRoute, AwaitingGrade, DrillRoute,
-  EditorFocusRequested, HelpToggled, MenuActivated, MenuSuspendedAtCursor, MenuCursorJumped,
-  MenuCursorMoved, MenuPaneFocused, MenuRoute, MenuToggledAtCursor, QuizMoved,
-  ReportRoute, SearchFocusRequested, StatsActivated, StatsCursorMoved,
-  StatsRoute, StudyRoute, UserClickedBackToStudy, UserClickedBrowse,
-  UserClickedClearSelection, UserClickedExitDrill, UserClickedExitReport,
-  UserClickedNext, UserClickedRun, UserClickedSelectAll, UserClickedStartDrill,
-  UserClickedStartExam, UserClickedStats, UserClickedStudy, UserClosedDetail,
-  UserGraded, UserPickedChoice, UserRevealedHint, UserSearched, UserSubmittedAnswer,
+  EditorFocusRequested, HelpToggled, MenuActivated, MenuCursorJumped,
+  MenuCursorMoved, MenuPaneFocused, MenuRoute, MenuSuspendedAtCursor,
+  MenuToggledAtCursor, QuizMoved, ReportRoute, SearchFocusRequested,
+  StatsActivated, StatsCursorMoved, StatsRoute, StudyRoute,
+  UserClickedBackToStudy, UserClickedBrowse, UserClickedClearSelection,
+  UserClickedExitDrill, UserClickedExitReport, UserClickedNext, UserClickedRun,
+  UserClickedSelectAll, UserClickedStartDrill, UserClickedStartExam,
+  UserClickedStats, UserClickedStudy, UserClosedDetail, UserGraded,
+  UserPickedChoice, UserRevealedHint, UserSearched, UserSubmittedAnswer,
   UserToggledSide, UserToggledSolution,
 }
 import algodrill/problem

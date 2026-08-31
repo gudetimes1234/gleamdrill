@@ -167,10 +167,7 @@ fn week() -> List(Int) {
 /// something today.
 fn hidden_everything(m: Model) -> Bool {
   model.hidden_by_filter(m) > 0
-  || {
-    list.length(m.muted_languages) == 5
-    && m.today.new_remaining > 0
-  }
+  || { list.length(m.muted_languages) == 5 && m.today.new_remaining > 0 }
 }
 
 fn due_on(m: Model, offset: Int) -> Int {

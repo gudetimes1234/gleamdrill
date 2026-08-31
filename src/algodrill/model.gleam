@@ -1,6 +1,6 @@
 import algodrill/api.{type ApiError, type CardState, type Settings, type User}
-import algodrill/problems
 import algodrill/problem.{type ProblemRef}
+import algodrill/problems
 import fsrs
 import gleam/dict.{type Dict}
 import gleam/int
@@ -429,8 +429,7 @@ pub fn language_muted(model: Model, tag: String) -> Bool {
 pub fn due_ready(m: Model) -> Int {
   problems.all_refs()
   |> list.filter(fn(ref) {
-    is_due(m, ref)
-    && !language_muted(m, problems.language_tag(ref.category))
+    is_due(m, ref) && !language_muted(m, problems.language_tag(ref.category))
   })
   |> list.length
   |> int.min(m.today.reviews_remaining)
@@ -451,8 +450,7 @@ pub fn new_ready(m: Model) -> Int {
 pub fn hidden_by_filter(m: Model) -> Int {
   problems.all_refs()
   |> list.filter(fn(ref) {
-    is_due(m, ref)
-    && language_muted(m, problems.language_tag(ref.category))
+    is_due(m, ref) && language_muted(m, problems.language_tag(ref.category))
   })
   |> list.length
 }

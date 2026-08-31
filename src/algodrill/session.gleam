@@ -33,7 +33,11 @@ pub type Preferences {
 }
 
 pub fn default_preferences() -> Preferences {
-  Preferences(editor_keymap: "default", side_collapsed: False, muted_languages: [])
+  Preferences(
+    editor_keymap: "default",
+    side_collapsed: False,
+    muted_languages: [],
+  )
 }
 
 pub fn load_token() -> Option(String) {
@@ -99,7 +103,10 @@ pub fn save_preferences(preferences: Preferences) -> Effect(message) {
       json.object([
         #("editorKeymap", json.string(preferences.editor_keymap)),
         #("sideCollapsed", json.bool(preferences.side_collapsed)),
-        #("mutedLanguages", json.array(preferences.muted_languages, json.string)),
+        #(
+          "mutedLanguages",
+          json.array(preferences.muted_languages, json.string),
+        ),
       ]),
     ),
   )

@@ -35,8 +35,20 @@ deploy: build
 
 # Regenerates src/algodrill/problems/embedded*.gleam from the drill sources,
 # plus the two generated verifiers `verify` runs.
+#
+# The generator emits unformatted source, so it is formatted here rather than
+# exempted from `gleam format --check` -- same as `fsrs-vectors` does for
+# test/vectors.gleam. Without this every `make content` would break the CI
+# format gate. Drill sources live inside these files as string literals, which
+# the formatter does not touch, so the built bundle is unaffected.
 content:
 	cd drills && gleam run -m generate
+	gleam format \
+	  src/algodrill/problems/embedded.gleam \
+	  src/algodrill/problems/embedded_python.gleam \
+	  src/algodrill/problems/embedded_ts.gleam \
+	  src/algodrill/problems/embedded_elixir.gleam \
+	  src/algodrill/problems/approaches.gleam
 
 # Runs every solution variant — primaries and alternates, all four languages —
 # against its harness, then the scheduler's conformance suite. A new alternate

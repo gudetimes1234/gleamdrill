@@ -8,29 +8,28 @@ import algodrill/local
 import algodrill/model.{
   type Model, type Msg, Account, AuthCompleted, AuthForm, AuthRoute,
   AwaitingGrade, CardSuspended, DraftSaveTicked, DraftSynced, DrillRoute,
-  EditorChanged, MenuSuspendedAtCursor,
-  EditorFocusRequested, ExamSampled, ExitConfirmed, Guest, HelpToggled,
-  HistoryLoaded, InsightsLoaded, KeyPressed, MenuActivated, MenuCursorJumped,
-  MenuCursorMoved, MenuPaneFocused, MenuRoute, MenuToggledAtCursor, Model,
-  NotGrading, NotStarted, PromptDismissed, QuizMoved, Ran, Registering,
-  ReportRoute, ReviewRecorded, RunFinished, RunIdle, RunTimedOut, RunnerFailed,
-  RunnerReady, Running, RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading,
-  RuntimeNotLoaded, RuntimeReady, SearchFocusRequested, SignOutCompleted, SigningIn, StateImported,
+  EditorChanged, EditorFocusRequested, ExamSampled, ExitConfirmed, Guest,
+  HelpToggled, HistoryLoaded, InsightsLoaded, KeyPressed, MenuActivated,
+  MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
+  MenuSuspendedAtCursor, MenuToggledAtCursor, Model, NotGrading, NotStarted,
+  PromptDismissed, QuizMoved, Ran, Registering, ReportRoute, ReviewRecorded,
+  RunFinished, RunIdle, RunTimedOut, RunnerFailed, RunnerReady, Running,
+  RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded,
+  RuntimeReady, SearchFocusRequested, SignOutCompleted, SigningIn, StateImported,
   StateLoaded, StatsActivated, StatsCursorMoved, StatsLoaded, StatsRoute,
   StudyRoute, SubmittingGrade, SyncFailed, Synced, Syncing, TimedOut,
   UserChangedAuthEmail, UserChangedAuthPassword, UserChangedIterations,
   UserChangedKeymap, UserClickedBackToStudy, UserClickedBreadcrumb,
   UserClickedBrowse, UserClickedCategory, UserClickedClearSelection,
   UserClickedExitDrill, UserClickedExitReport, UserClickedMergeGuest,
-  UserClickedNext, UserClickedRetryRuntime, UserClickedRun,
-  UserClickedSelectAll, UserClickedSignIn, UserClickedSignOut,
-  UserClickedStartDrill, UserClickedStartExam, UserClickedStopRun,
-  UserClickedStats, UserClickedStudy, UserClickedSubcategory, UserClosedDetail,
-  UserDismissedNotice, UserDismissedUpgradePrompt, UserGraded, UserOpenedDetail,
-  UserPickedChoice, UserRevealedHint, UserSearched, UserSubmittedAnswer,
-  UserSubmittedAuth,
-  UserToggledAuthMode, UserToggledLanguage, UserToggledProblem,
-  UserToggledSide, UserToggledSolution, UserToggledSuspend,
+  UserClickedNext, UserClickedRetryRuntime, UserClickedRun, UserClickedSelectAll,
+  UserClickedSignIn, UserClickedSignOut, UserClickedStartDrill,
+  UserClickedStartExam, UserClickedStats, UserClickedStopRun, UserClickedStudy,
+  UserClickedSubcategory, UserClosedDetail, UserDismissedNotice,
+  UserDismissedUpgradePrompt, UserGraded, UserOpenedDetail, UserPickedChoice,
+  UserRevealedHint, UserSearched, UserSubmittedAnswer, UserSubmittedAuth,
+  UserToggledAuthMode, UserToggledLanguage, UserToggledProblem, UserToggledSide,
+  UserToggledSolution, UserToggledSuspend,
 }
 import algodrill/problem.{type ProblemRef, ProblemRef}
 import algodrill/problems
@@ -873,11 +872,11 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               duration_ms: Some(browser.now_ms() - m.opened_at_ms),
               auto_failed: model.run_failed(m.run),
               revealed: case current_problem(m) {
-              Ok(current) -> model.answer_revealed(m, current.approach)
-              Error(Nil) -> m.revealed_solution != None
-            },
-            // A hand-picked sitting is practice: self-graded, uncoerced.
-            practice: !m.studying,
+                Ok(current) -> model.answer_revealed(m, current.approach)
+                Error(Nil) -> m.revealed_solution != None
+              },
+              // A hand-picked sitting is practice: self-graded, uncoerced.
+              practice: !m.studying,
             ),
           ),
         )
@@ -1474,37 +1473,37 @@ fn save_preferences(m: Model) -> Effect(Msg) {
 
 fn handle_key(m: Model, key: model.Key) -> #(Model, Effect(Msg)) {
   case key.editing {
-        // The editor's own keymaps own the keyboard; the one thing the app
-        // claims there is Ctrl+Enter, so write -> run -> grade needs no mouse.
-        "editor" ->
-          case key.ctrl && key.key == "Enter" && m.route == DrillRoute {
-            True -> handle(m, UserClickedRun)
-            False -> #(m, effect.none())
-          }
-        // Inputs keep their keys; Escape hands focus back to the app.
-        "input" ->
-          case key.key {
-            "Escape" -> #(m, run_effect(browser.blur_active))
-            _ -> #(m, effect.none())
-          }
-        // A focused button activates natively; stay out of its way — except
-        // for Escape, which activates nothing and would otherwise die on
-        // whichever button was clicked last (grade, reveal, run).
-        "control" ->
-          case key.key {
-            "Escape" ->
-              case keys.dispatch(m, key) {
-                Ok(resolved) -> handle(m, resolved)
-                Error(Nil) -> #(m, effect.none())
-              }
-            _ -> #(m, effect.none())
-          }
-        _ ->
+    // The editor's own keymaps own the keyboard; the one thing the app
+    // claims there is Ctrl+Enter, so write -> run -> grade needs no mouse.
+    "editor" ->
+      case key.ctrl && key.key == "Enter" && m.route == DrillRoute {
+        True -> handle(m, UserClickedRun)
+        False -> #(m, effect.none())
+      }
+    // Inputs keep their keys; Escape hands focus back to the app.
+    "input" ->
+      case key.key {
+        "Escape" -> #(m, run_effect(browser.blur_active))
+        _ -> #(m, effect.none())
+      }
+    // A focused button activates natively; stay out of its way — except
+    // for Escape, which activates nothing and would otherwise die on
+    // whichever button was clicked last (grade, reveal, run).
+    "control" ->
+      case key.key {
+        "Escape" ->
           case keys.dispatch(m, key) {
             Ok(resolved) -> handle(m, resolved)
             Error(Nil) -> #(m, effect.none())
           }
+        _ -> #(m, effect.none())
       }
+    _ ->
+      case keys.dispatch(m, key) {
+        Ok(resolved) -> handle(m, resolved)
+        Error(Nil) -> #(m, effect.none())
+      }
+  }
 }
 
 fn abandon_run(m: Model) -> #(Model, Effect(Msg)) {

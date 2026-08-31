@@ -5,7 +5,8 @@ import algodrill/model.{
   RuntimeLoading, RuntimeNotLoaded, RuntimeReady, SubmittingGrade, TimedOut,
   UserChangedKeymap, UserClickedExitDrill, UserClickedNext,
   UserClickedRetryRuntime, UserClickedRun, UserClickedStopRun, UserGraded,
-  UserPickedChoice, UserRevealedHint, UserSubmittedAnswer, UserToggledSide, UserToggledSolution,
+  UserPickedChoice, UserRevealedHint, UserSubmittedAnswer, UserToggledSide,
+  UserToggledSolution,
 }
 import algodrill/problem.{
   type Problem, type ProblemRef, type Quiz, type Solution,
@@ -369,9 +370,12 @@ fn output_panel(m: Model) -> Element(Msg) {
             html.text("Nothing printed yet."),
           ])
         text ->
-          html.pre([attribute.class("results-stdout output-pane output-stale")], [
-            html.text(text),
-          ])
+          html.pre(
+            [attribute.class("results-stdout output-pane output-stale")],
+            [
+              html.text(text),
+            ],
+          )
       }
     RunIdle ->
       html.div([attribute.class("output-empty")], [
@@ -513,9 +517,7 @@ fn grade_buttons(m: Model, current: Problem) -> Element(Msg) {
   let forced =
     m.studying
     && !free
-    && {
-      model.run_failed(m.run) || model.answer_revealed(m, current.approach)
-    }
+    && { model.run_failed(m.run) || model.answer_revealed(m, current.approach) }
 
   html.div([attribute.class("grade-bar")], case forced {
     True -> [grade_button(m, fsrs.Again, "Again", "again")]
@@ -815,7 +817,10 @@ fn approach_panel(
     [] -> []
     [next, ..] -> [
       html.button(
-        [attribute.class("btn-secondary hint-button"), event.on_click(UserRevealedHint)],
+        [
+          attribute.class("btn-secondary hint-button"),
+          event.on_click(UserRevealedHint),
+        ],
         [
           html.text(
             case next {
@@ -843,15 +848,12 @@ fn approach_panel(
     ]
   }
 
-  html.section(
-    [attribute.class("panel approach")],
-    [
-      html.h3([attribute.class("panel-title")], [html.text("Approach")]),
-      ..list.append(revealed, [
-        html.div([attribute.class("hint-controls")], control),
-      ])
-    ],
-  )
+  html.section([attribute.class("panel approach")], [
+    html.h3([attribute.class("panel-title")], [html.text("Approach")]),
+    ..list.append(revealed, [
+      html.div([attribute.class("hint-controls")], control),
+    ])
+  ])
 }
 
 fn approach_stage(stage: problem.ApproachStage) -> Element(Msg) {

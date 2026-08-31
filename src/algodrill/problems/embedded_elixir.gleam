@@ -4,36 +4,55 @@
 
 pub fn nc01_contains_duplicate() -> List(#(String, String, String, String)) {
   [
-    #("Sorting", "O(n log n) time · O(n) space", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+    #(
+      "Sorting",
+      "O(n log n) time · O(n) space",
+      "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
 
-Duplicates land next to each other, so comparing neighbouring pairs is enough.", "defmodule Solution do
+Duplicates land next to each other, so comparing neighbouring pairs is enough.",
+      "defmodule Solution do
   def contains_duplicate?(nums) do
     nums
     |> Enum.sort()
     |> Enum.chunk_every(2, 1, :discard)
     |> Enum.any?(fn [a, b] -> a == b end)
   end
-end"),
-    #("Hash Set", "O(n) time · O(n) space", "A set answers the whole question. Walk once, and the moment a value is already in the set you are done — no need to finish the pass, and no need to know where the duplicate was.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Hash Set",
+      "O(n) time · O(n) space",
+      "A set answers the whole question. Walk once, and the moment a value is already in the set you are done — no need to finish the pass, and no need to know where the duplicate was.",
+      "defmodule Solution do
   def contains_duplicate?(nums) do
     MapSet.size(MapSet.new(nums)) != length(nums)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc02_valid_anagram() -> List(#(String, String, String, String)) {
   [
-    #("Sorting", "O(n log n) time · O(n) space", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+    #(
+      "Sorting",
+      "O(n log n) time · O(n) space",
+      "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
 
-Sorted letters are the canonical form, so the whole check is one equality. No counting to get wrong.", "defmodule Solution do
+Sorted letters are the canonical form, so the whole check is one equality. No counting to get wrong.",
+      "defmodule Solution do
   def anagram?(s, t) do
     sorted(s) == sorted(t)
   end
 
   defp sorted(word), do: word |> String.graphemes() |> Enum.sort()
-end"),
-    #("Count Map", "O(n) time · O(1) space", "Two strings are anagrams exactly when every character occurs the same number of times in both, so build a count per string and compare the two maps.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Count Map",
+      "O(n) time · O(1) space",
+      "Two strings are anagrams exactly when every character occurs the same number of times in both, so build a count per string and compare the two maps.",
+      "defmodule Solution do
   def anagram?(s, t) do
     frequencies(s) == frequencies(t)
   end
@@ -41,15 +60,20 @@ end"),
   defp frequencies(word) do
     word |> String.graphemes() |> Enum.frequencies()
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc03_two_sum() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n²) time · O(1) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every ordered pair, checked, stopping at the first hit.", "defmodule Solution do
+Every ordered pair, checked, stopping at the first hit.",
+      "defmodule Solution do
   def two_sum(nums, target) do
     indexed = Enum.with_index(nums)
 
@@ -60,8 +84,13 @@ Every ordered pair, checked, stopping at the first hit.", "defmodule Solution do
       end)
     end)
   end
-end"),
-    #("Hash Map", "O(n) time · O(n) space", "Every number seen so far is already in the map, so the complement is one lookup away — one pass, O(1) per step, and the map hands back the index for free.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Hash Map",
+      "O(n) time · O(n) space",
+      "Every number seen so far is already in the map, so the complement is one lookup away — one pass, O(1) per step, and the map hands back the index for free.",
+      "defmodule Solution do
   def two_sum(nums, target) do
     find_pair(Enum.with_index(nums), target, %{})
   end
@@ -75,36 +104,51 @@ end"),
       :error -> find_pair(rest, target, Map.put(seen, n, i))
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc04_group_anagrams() -> List(#(String, String, String, String)) {
   [
-    #("Count Key", "O(n·k) time · O(n·k) space", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+    #(
+      "Count Key",
+      "O(n·k) time · O(n·k) space",
+      "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
 
-Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len) to build against sorting's O(len log len); the sorted word needs no assumption about the alphabet.", "defmodule Solution do
+Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len) to build against sorting's O(len log len); the sorted word needs no assumption about the alphabet.",
+      "defmodule Solution do
   def group_anagrams(strs) do
     strs
     |> Enum.group_by(fn s -> s |> String.graphemes() |> Enum.sort() end)
     |> Map.values()
   end
-end"),
-    #("Solution 2 · Count key", "", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+end",
+    ),
+    #(
+      "Solution 2 · Count key",
+      "",
+      "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
 
-A letter tally is anagram-invariant too, and costs O(len) to build rather than O(len log len).", "defmodule Solution do
+A letter tally is anagram-invariant too, and costs O(len) to build rather than O(len log len).",
+      "defmodule Solution do
   def group_anagrams(strs) do
     strs
     |> Enum.group_by(fn s -> s |> String.graphemes() |> Enum.frequencies() end)
     |> Map.values()
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc05_top_k_frequent() -> List(#(String, String, String, String)) {
   [
-    #("Bucket Sort", "O(n) time · O(n) space", "Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.", "defmodule Solution do
+    #(
+      "Bucket Sort",
+      "O(n) time · O(n) space",
+      "Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.",
+      "defmodule Solution do
   def top_k_frequent(nums, k) do
     nums
     |> Enum.frequencies()
@@ -112,8 +156,13 @@ pub fn nc05_top_k_frequent() -> List(#(String, String, String, String)) {
     |> Enum.take(k)
     |> Enum.map(fn {num, _count} -> num end)
   end
-end"),
-    #("Solution 2 · Bucket sort", "", "A count can never exceed the input length, so one bucket per frequency covers every possibility. Reading the buckets downwards gives the answer in O(n) and replaces the comparison sort entirely.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Solution 2 · Bucket sort",
+      "",
+      "A count can never exceed the input length, so one bucket per frequency covers every possibility. Reading the buckets downwards gives the answer in O(n) and replaces the comparison sort entirely.",
+      "defmodule Solution do
   def top_k_frequent(nums, k) do
     buckets =
       nums
@@ -124,15 +173,20 @@ end"),
     |> Enum.flat_map(fn count -> Map.get(buckets, count, []) end)
     |> Enum.take(k)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc06_product_except_self() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n²) time · O(1) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-For each slot, multiply everything that is not in it. O(n^2), and exactly what the prefix/suffix pass replaces.", "defmodule Solution do
+For each slot, multiply everything that is not in it. O(n^2), and exactly what the prefix/suffix pass replaces.",
+      "defmodule Solution do
   def product_except_self(nums) do
     indexed = Enum.with_index(nums)
 
@@ -143,8 +197,13 @@ For each slot, multiply everything that is not in it. O(n^2), and exactly what t
       |> Enum.product()
     end)
   end
-end"),
-    #("Prefix & Suffix Products", "O(n) time · O(1) extra space", "The answer at each slot is everything before it times everything after it. One forward pass builds the prefixes, one reverse pass folds in the suffixes — and no division, so a zero in the input costs nothing special.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Prefix & Suffix Products",
+      "O(n) time · O(1) extra space",
+      "The answer at each slot is everything before it times everything after it. One forward pass builds the prefixes, one reverse pass folds in the suffixes — and no division, so a zero in the input costs nothing special.",
+      "defmodule Solution do
   def product_except_self(nums) do
     prefixes = nums |> Enum.scan(1, &(&1 * &2)) |> then(&[1 | Enum.drop(&1, -1)])
 
@@ -157,15 +216,20 @@ end"),
 
     Enum.zip_with(prefixes, suffixes, &(&1 * &2))
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc07_longest_consecutive() -> List(#(String, String, String, String)) {
   [
-    #("Sorting", "O(n log n) time · O(n) space", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+    #(
+      "Sorting",
+      "O(n log n) time · O(n) space",
+      "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
 
-Runs are contiguous once sorted, so one pass counting steps of exactly one finds the longest. Duplicates neither extend a run nor break it, which is the only case worth care.", "defmodule Solution do
+Runs are contiguous once sorted, so one pass counting steps of exactly one finds the longest. Duplicates neither extend a run nor break it, which is the only case worth care.",
+      "defmodule Solution do
   def longest_consecutive(nums) do
     case Enum.sort(nums) do
       [] ->
@@ -184,8 +248,13 @@ Runs are contiguous once sorted, so one pass counting steps of exactly one finds
         best
     end
   end
-end"),
-    #("Hash Set", "O(n) time · O(n) space", "Put everything in a set, then only start counting at numbers with no predecessor. That guard is what keeps it O(n): every run is walked exactly once instead of once per member.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Hash Set",
+      "O(n) time · O(n) space",
+      "Put everything in a set, then only start counting at numbers with no predecessor. That guard is what keeps it O(n): every run is walked exactly once instead of once per member.",
+      "defmodule Solution do
   def longest_consecutive(nums) do
     all = MapSet.new(nums)
 
@@ -199,13 +268,18 @@ end"),
   defp run_length(all, n, count) do
     if MapSet.member?(all, n), do: run_length(all, n + 1, count + 1), else: count
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc08_valid_palindrome() -> List(#(String, String, String, String)) {
   [
-    #("Two Pointers", "O(n) time · O(1) space", "Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.", "defmodule Solution do
+    #(
+      "Two Pointers",
+      "O(n) time · O(1) space",
+      "Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.",
+      "defmodule Solution do
   def palindrome?(s) do
     cleaned = clean(s)
     cleaned == Enum.reverse(cleaned)
@@ -217,8 +291,13 @@ pub fn nc08_valid_palindrome() -> List(#(String, String, String, String)) {
     |> String.graphemes()
     |> Enum.filter(&(&1 =~ ~r/^[a-z0-9]$/))
   end
-end"),
-    #("Solution 2 · Two pointers", "", "Compare inwards from both ends, skipping anything that is not alphanumeric as you go. No second string is built.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Solution 2 · Two pointers",
+      "",
+      "Compare inwards from both ends, skipping anything that is not alphanumeric as you go. No second string is built.",
+      "defmodule Solution do
   def palindrome?(s) do
     cleaned =
       s
@@ -234,15 +313,20 @@ end"),
   defp converge([a | forward], [b | backward], remaining) do
     a == b and converge(forward, backward, remaining - 1)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc09_two_sum_sorted() -> List(#(String, String, String, String)) {
   [
-    #("Binary Search", "O(n log n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+    #(
+      "Binary Search",
+      "O(n log n) time · O(1) space",
+      "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-Fix each number in turn and search the tail for its complement, rather than converging two pointers. O(n log n), and it reuses a search you already know instead of a second pointer discipline.", "defmodule Solution do
+Fix each number in turn and search the tail for its complement, rather than converging two pointers. O(n log n), and it reuses a search you already know instead of a second pointer discipline.",
+      "defmodule Solution do
   def two_sum_sorted(numbers, target) do
     tuple = List.to_tuple(numbers)
 
@@ -265,10 +349,15 @@ Fix each number in turn and search the tail for its complement, rather than conv
       _ -> search(tuple, wanted, low, mid - 1)
     end
   end
-end"),
-    #("Two Pointers", "O(n) time · O(1) space", "Sorted input plus a pointer at each end. A sum that is too small can only be fixed by raising the low end, one that is too large by lowering the high end, so neither pointer ever needs to go back. They meet in O(n) with no extra memory.
+end",
+    ),
+    #(
+      "Two Pointers",
+      "O(n) time · O(1) space",
+      "Sorted input plus a pointer at each end. A sum that is too small can only be fixed by raising the low end, one that is too large by lowering the high end, so neither pointer ever needs to go back. They meet in O(n) with no extra memory.
 
-Positions are 1-based here, which is the only trap.", "defmodule Solution do
+Positions are 1-based here, which is the only trap.",
+      "defmodule Solution do
   def two_sum_sorted(numbers, target) do
     converge(numbers, Enum.reverse(numbers), 1, length(numbers), target)
   end
@@ -282,13 +371,18 @@ Positions are 1-based here, which is the only trap.", "defmodule Solution do
       _ -> converge([a | left], right, low, high - 1, target)
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc100_edit_distance() -> List(#(String, String, String, String)) {
   [
-    #("Top-Down Memo", "O(m·n) time · O(m·n) space", "The same three edits as an explicit choice from the front. Running out of one word costs whatever remains of the other, since every leftover character must be inserted or deleted — the base case that the table encodes in its first row and column.", "defmodule Solution do
+    #(
+      "Top-Down Memo",
+      "O(m·n) time · O(m·n) space",
+      "The same three edits as an explicit choice from the front. Running out of one word costs whatever remains of the other, since every leftover character must be inserted or deleted — the base case that the table encodes in its first row and column.",
+      "defmodule Solution do
   def min_distance(word1, word2) do
     a = word1 |> String.graphemes() |> List.to_tuple()
     b = word2 |> String.graphemes() |> List.to_tuple()
@@ -319,8 +413,13 @@ pub fn nc100_edit_distance() -> List(#(String, String, String, String)) {
         end
     end
   end
-end"),
-    #("Space-Saving DP", "O(m·n) time · O(n) space", "Three edits, three neighbours in the table: replace from the diagonal, delete from above, insert from the left. Equal characters cost nothing and take the diagonal outright. The first row and column are the cost of building a string from nothing, which is simply its length.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Space-Saving DP",
+      "O(m·n) time · O(n) space",
+      "Three edits, three neighbours in the table: replace from the diagonal, delete from above, insert from the left. Equal characters cost nothing and take the diagonal outright. The first row and column are the cost of building a string from nothing, which is simply its length.",
+      "defmodule Solution do
   # Three edits, three neighbours in the table: replace comes from the diagonal,
   # delete from above, insert from the left. Equal characters cost nothing and
   # take the diagonal outright -- the whole algorithm is those four lines. The
@@ -349,13 +448,18 @@ end"),
 
     [cost_so_far | built]
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc101_burst_balloons() -> List(#(String, String, String, String)) {
   [
-    #("Bottom-Up DP", "O(n³) time · O(n²) space", "The same recurrence filled by hand, shortest spans first — because a span needs both of the shorter spans a chosen last balloon splits it into. Writing the loop order out makes that dependency visible where the recursion leaves it implicit.", "defmodule Solution do
+    #(
+      "Bottom-Up DP",
+      "O(n³) time · O(n²) space",
+      "The same recurrence filled by hand, shortest spans first — because a span needs both of the shorter spans a chosen last balloon splits it into. Writing the loop order out makes that dependency visible where the recursion leaves it implicit.",
+      "defmodule Solution do
   def max_coins(nums) do
     balloons = List.to_tuple([1] ++ nums ++ [1])
     n = tuple_size(balloons)
@@ -388,8 +492,13 @@ pub fn nc101_burst_balloons() -> List(#(String, String, String, String)) {
 
     Map.get(table, {0, n - 1}, 0)
   end
-end"),
-    #("Top-Down Memo", "O(n³) time · O(n²) space", "Ask which balloon is burst *last* in a span, not first. The last one still has both span boundaries as neighbours — they are untouched by definition — so its value is known and the two sides become independent subproblems. Asking \"first\" leaves neighbours that depend on the other side and the recursion never closes. Padding with a 1 at each end removes the edge cases.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Top-Down Memo",
+      "O(n³) time · O(n²) space",
+      "Ask which balloon is burst *last* in a span, not first. The last one still has both span boundaries as neighbours — they are untouched by definition — so its value is known and the two sides become independent subproblems. Asking \"first\" leaves neighbours that depend on the other side and the recursion never closes. Padding with a 1 at each end removes the edge cases.",
+      "defmodule Solution do
   # Padding with a 1 at each end removes the edge cases: every balloon then has
   # a neighbour on both sides whatever happens.
   def max_coins(nums) do
@@ -422,13 +531,20 @@ end"),
         {best, Map.put(memo, {left, right}, best)}
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
-pub fn nc102_regular_expression_matching() -> List(#(String, String, String, String)) {
+pub fn nc102_regular_expression_matching() -> List(
+  #(String, String, String, String),
+) {
   [
-    #("Recursion", "O(2ⁿ) time · O(n²) space", "The same rules with no table at all, which is shorter and far easier to trust. It is exponential on patterns like \"a*a*a*a*b\", where the same suffix is reached along many different splits — so write this first, get it right, and add the cache afterwards.", "defmodule Solution do
+    #(
+      "Recursion",
+      "O(2ⁿ) time · O(n²) space",
+      "The same rules with no table at all, which is shorter and far easier to trust. It is exponential on patterns like \"a*a*a*a*b\", where the same suffix is reached along many different splits — so write this first, get it right, and add the cache afterwards.",
+      "defmodule Solution do
   def is_match(s, p), do: matches(String.graphemes(s), String.graphemes(p))
 
   # The same rules with no table at all -- just pattern matching on the two
@@ -452,8 +568,13 @@ pub fn nc102_regular_expression_matching() -> List(#(String, String, String, Str
     do: matches(tail, rest)
 
   defp matches(_text, _pattern), do: false
-end"),
-    #("Top-Down Memo", "O(m·n) time · O(m·n) space", "A star binds to the character *before* it, so the pattern is read two symbols at a time. Given \"x*\": either skip the pair entirely — zero copies — or, if x matches here, consume one character of the text and stay on the same pair. Everything else is a single-character match. Getting the zero-copies branch right is most of the problem.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Top-Down Memo",
+      "O(m·n) time · O(m·n) space",
+      "A star binds to the character *before* it, so the pattern is read two symbols at a time. Given \"x*\": either skip the pair entirely — zero copies — or, if x matches here, consume one character of the text and stay on the same pair. Everything else is a single-character match. Getting the zero-copies branch right is most of the problem.",
+      "defmodule Solution do
   def is_match(s, p) do
     text = s |> String.graphemes() |> List.to_tuple()
     pattern = p |> String.graphemes() |> List.to_tuple()
@@ -491,13 +612,18 @@ end"),
         {answer, Map.put(memo, {i, j}, answer)}
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc103_implement_trie() -> List(#(String, String, String, String)) {
   [
-    #("Hash Set", "O(k²) per insert · O(total prefixes) space", "Two sets — the whole words, and every prefix of every word — and both questions answer in one lookup. Correct and shorter, at the cost of storing O(total letters) strings rather than sharing them. That shared storage is precisely what a trie is for, so this is the version that shows what is being bought.", "defmodule Solution do
+    #(
+      "Hash Set",
+      "O(k²) per insert · O(total prefixes) space",
+      "Two sets — the whole words, and every prefix of every word — and both questions answer in one lookup. Correct and shorter, at the cost of storing O(total letters) strings rather than sharing them. That shared storage is precisely what a trie is for, so this is the version that shows what is being bought.",
+      "defmodule Solution do
   # Two sets: the whole words, and every prefix of every word. Both questions
   # then answer in one lookup, at the cost of storing O(total letters) strings
   # rather than sharing them -- which is precisely the memory a trie exists to
@@ -516,8 +642,13 @@ pub fn nc103_implement_trie() -> List(#(String, String, String, String)) {
   def search(trie, word), do: MapSet.member?(trie.words, word)
 
   def starts_with(trie, prefix), do: MapSet.member?(trie.prefixes, prefix)
-end"),
-    #("Trie", "O(k) per operation · O(total letters) space", "One node per prefix, with a flag marking which prefixes are whole words. That flag is the entire difference between search and startsWith — without it, \"app\" and \"apple\" are indistinguishable once both are stored. The other detail worth keeping: the empty prefix always exists, because the root does.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Trie",
+      "O(k) per operation · O(total letters) space",
+      "One node per prefix, with a flag marking which prefixes are whole words. That flag is the entire difference between search and startsWith — without it, \"app\" and \"apple\" are indistinguishable once both are stored. The other detail worth keeping: the empty prefix always exists, because the root does.",
+      "defmodule Solution do
   # One node per prefix; `terminal` marks the prefixes that are whole words.
   # Without that flag \"app\" and \"apple\" are indistinguishable once both are
   # stored, which is the entire difference between search and starts_with.
@@ -549,13 +680,18 @@ end"),
       :error -> nil
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc104_word_dictionary() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n·k) per search · O(total letters) space", "Bucket the words by length and compare position by position. A pattern can only match words of its own length, so that one check throws away most of the collection before any character is compared — often enough on its own, and it needs no tree at all.", "defmodule Solution do
+    #(
+      "Brute Force",
+      "O(n·k) per search · O(total letters) space",
+      "Bucket the words by length and compare position by position. A pattern can only match words of its own length, so that one check throws away most of the collection before any character is compared — often enough on its own, and it needs no tree at all.",
+      "defmodule Solution do
   # Words bucketed by length. A pattern can only match words of its own length,
   # so that one check throws away most of the collection before any character is
   # compared.
@@ -579,8 +715,13 @@ pub fn nc104_word_dictionary() -> List(#(String, String, String, String)) {
       |> Enum.all?(fn {p, c} -> p == \".\" or p == c end)
     end)
   end
-end"),
-    #("Trie", "O(total letters) per search · O(total letters) space", "A dot has to try every child, which turns the lookup from a walk into a search. The trie is what keeps that search from being over the whole dictionary: a branch that cannot match is abandoned at the first letter, so shared prefixes are explored once rather than once per word.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Trie",
+      "O(total letters) per search · O(total letters) space",
+      "A dot has to try every child, which turns the lookup from a walk into a search. The trie is what keeps that search from being over the whole dictionary: a branch that cannot match is abandoned at the first letter, so shared prefixes are explored once rather than once per word.",
+      "defmodule Solution do
   def new, do: %{children: %{}, terminal: false}
 
   def add_word(store, word), do: add(store, String.graphemes(word))
@@ -609,15 +750,20 @@ end"),
       :error -> false
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc105_word_search_ii() -> List(#(String, String, String, String)) {
   [
-    #("Backtracking", "O(W·m·n·4ᴸ) time · O(L²) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Backtracking",
+      "O(W·m·n·4ᴸ) time · O(L²) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Word Search, once per word. Correct, and it redoes the search for every shared prefix — a hundred words beginning \"ab\" each re-walk that \"ab\" from every square. Worth writing to feel the repetition the trie removes.", "defmodule Solution do
+Word Search, once per word. Correct, and it redoes the search for every shared prefix — a hundred words beginning \"ab\" each re-walk that \"ab\" from every square. Worth writing to feel the repetition the trie removes.",
+      "defmodule Solution do
   def find_words([], _words), do: []
   def find_words([[] | _], _words), do: []
 
@@ -651,8 +797,13 @@ Word Search, once per word. Correct, and it redoes the search for every shared p
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
-    #("Trie", "O(m·n·4ᴸ) time · O(total letters) space", "Build one trie of all the words and walk it *alongside* the board. Searching for each word separately re-walks every shared prefix once per word; the trie walks each prefix once and abandons a square the moment no word continues that way. That is where nearly all the saving is, and it is the reason this problem exists rather than being Word Search in a loop.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Trie",
+      "O(m·n·4ᴸ) time · O(total letters) space",
+      "Build one trie of all the words and walk it *alongside* the board. Searching for each word separately re-walks every shared prefix once per word; the trie walks each prefix once and abandons a square the moment no word continues that way. That is where nearly all the saving is, and it is the reason this problem exists rather than being Word Search in a loop.",
+      "defmodule Solution do
   def find_words([], _words), do: []
   def find_words([[] | _], _words), do: []
 
@@ -702,13 +853,18 @@ end"),
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc106_number_of_islands() -> List(#(String, String, String, String)) {
   [
-    #("Union-Find", "O(m·n·α(m·n)) time · O(m·n) space", "The same count without recursing: join each land cell to the land above and to its left, and the answer is the number of land cells minus the number of joins that actually merged two components. Worth having because a deep enough grid overflows the recursive walk, and because union-find can take cells as they arrive rather than needing the whole grid first.", "defmodule Solution do
+    #(
+      "Union-Find",
+      "O(m·n·α(m·n)) time · O(m·n) space",
+      "The same count without recursing: join each land cell to the land above and to its left, and the answer is the number of land cells minus the number of joins that actually merged two components. Worth having because a deep enough grid overflows the recursive walk, and because union-find can take cells as they arrive rather than needing the whole grid first.",
+      "defmodule Solution do
   # Union-find instead of flood fill: every square starts as its own island and
   # each adjacency merges two. Only right and down are needed -- every pair of
   # neighbours is reached once that way -- and the answer is how many roots are
@@ -744,8 +900,13 @@ pub fn nc106_number_of_islands() -> List(#(String, String, String, String)) {
     root_b = find(parents, b)
     if root_a == root_b, do: parents, else: Map.put(parents, root_a, root_b)
   end
-end"),
-    #("DFS", "O(m·n) time · O(m·n) space", "The grid is the graph: cells are nodes, the four neighbours are the edges, and nothing is ever built. Walk out from each unvisited land cell, mark everything it reaches, and add one — the traversal itself does the counting, which is why the answer needs no extra bookkeeping.", "defmodule Solution do
+end",
+    ),
+    #(
+      "DFS",
+      "O(m·n) time · O(m·n) space",
+      "The grid is the graph: cells are nodes, the four neighbours are the edges, and nothing is ever built. Walk out from each unvisited land cell, mark everything it reaches, and add one — the traversal itself does the counting, which is why the answer needs no extra bookkeeping.",
+      "defmodule Solution do
   # Counting connected components: start a search at every piece of land not
   # already reached, and each search that has to be started is one more island.
   # Marking as you go is what stops a component being counted once per square.
@@ -776,13 +937,18 @@ end"),
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc107_clone_graph() -> List(#(String, String, String, String)) {
   [
-    #("DFS", "O(V log V + E) time · O(V+E) space", "Same map, depth-first instead of breadth-first — proof that the traversal order is irrelevant here. The copy is created and registered *before* its neighbours are visited, which is the ordering that makes a cycle find the half-built copy instead of recursing into it.", "defmodule Solution do
+    #(
+      "DFS",
+      "O(V log V + E) time · O(V+E) space",
+      "Same map, depth-first instead of breadth-first — proof that the traversal order is irrelevant here. The copy is created and registered *before* its neighbours are visited, which is the ordering that makes a cycle find the half-built copy instead of recursing into it.",
+      "defmodule Solution do
   def clone_graph(_adjacency, start) when start < 0, do: []
 
   def clone_graph(adjacency, start) do
@@ -818,8 +984,13 @@ pub fn nc107_clone_graph() -> List(#(String, String, String, String)) {
       |> Enum.map(&Map.fetch!(numbering, &1))
     end)
   end
-end"),
-    #("BFS", "O(V log V + E) time · O(V+E) space", "The map from original node to its copy is the whole problem. Consulting it before copying anything is what makes a cycle terminate: a node already in the map is returned rather than copied again. Without that check any cycle recurses forever.", "defmodule Solution do
+end",
+    ),
+    #(
+      "BFS",
+      "O(V log V + E) time · O(V+E) space",
+      "The map from original node to its copy is the whole problem. Consulting it before copying anything is what makes a cycle terminate: a node already in the map is returned rather than copied again. Without that check any cycle recurses forever.",
+      "defmodule Solution do
   def clone_graph(_adjacency, start) when start < 0, do: []
 
   def clone_graph(adjacency, start) do
@@ -860,13 +1031,18 @@ end"),
       |> Enum.map(&Map.fetch!(numbering, &1))
     end)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc108_max_area_of_island() -> List(#(String, String, String, String)) {
   [
-    #("BFS", "O(m·n) time · O(m·n) space", "The same areas found wave by wave. Nothing is gained over the depth-first version here, but the frontier is explicit rather than living on the call stack, which is what a grid deep enough to overflow the stack needs.", "defmodule Solution do
+    #(
+      "BFS",
+      "O(m·n) time · O(m·n) space",
+      "The same areas found wave by wave. Nothing is gained over the depth-first version here, but the frontier is explicit rather than living on the call stack, which is what a grid deep enough to overflow the stack needs.",
+      "defmodule Solution do
   # Breadth-first instead. For a component's *size* the traversal order does not
   # matter at all -- either visits every square exactly once -- so the choice is
   # about the machine: a queue keeps the memory proportional to the frontier
@@ -909,8 +1085,13 @@ pub fn nc108_max_area_of_island() -> List(#(String, String, String, String)) {
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
-    #("DFS", "O(m·n) time · O(m·n) space", "Number of Islands with the count replaced by a size. Depth-first suits it because the size falls out of the return value — one for this cell plus whatever the four neighbours return — rather than needing a counter threaded through the walk.", "defmodule Solution do
+end",
+    ),
+    #(
+      "DFS",
+      "O(m·n) time · O(m·n) space",
+      "Number of Islands with the count replaced by a size. Depth-first suits it because the size falls out of the return value — one for this cell plus whatever the four neighbours return — rather than needing a counter threaded through the walk.",
+      "defmodule Solution do
   # The same component search as counting islands, except each search reports
   # how much it covered rather than just that it happened.
   def max_area_of_island(grid) do
@@ -943,13 +1124,18 @@ end"),
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc109_pacific_atlantic() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(m²·n²) time · O(m·n) space", "The literal reading: from every cell, search downhill and see which oceans it reaches. O(cells) searches over O(cells) each, against two searches total — and the two are answering the same question, which is what makes the reversal legitimate rather than a trick.", "defmodule Solution do
+    #(
+      "Brute Force",
+      "O(m²·n²) time · O(m·n) space",
+      "The literal reading: from every cell, search downhill and see which oceans it reaches. O(cells) searches over O(cells) each, against two searches total — and the two are answering the same question, which is what makes the reversal legitimate rather than a trick.",
+      "defmodule Solution do
   def pacific_atlantic([]), do: []
   def pacific_atlantic([[] | _]), do: []
 
@@ -1003,8 +1189,13 @@ pub fn nc109_pacific_atlantic() -> List(#(String, String, String, String)) {
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
-    #("BFS", "O(m·n log(m·n)) time · O(m·n) space", "Reverse the question. Asking of each cell whether water can get from there to both oceans repeats the same searches over and over; asking instead which cells an ocean could reach if water flowed uphill is two searches from the borders, and the answer is where the two sets meet. Flipping a search to start from the goal is the idea worth taking away.", "defmodule Solution do
+end",
+    ),
+    #(
+      "BFS",
+      "O(m·n log(m·n)) time · O(m·n) space",
+      "Reverse the question. Asking of each cell whether water can get from there to both oceans repeats the same searches over and over; asking instead which cells an ocean could reach if water flowed uphill is two searches from the borders, and the answer is where the two sets meet. Flipping a search to start from the goal is the idea worth taking away.",
+      "defmodule Solution do
   def pacific_atlantic([]), do: []
   def pacific_atlantic([[] | _]), do: []
 
@@ -1054,15 +1245,20 @@ end"),
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc10_three_sum() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n³) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n³) time · O(n) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every triple, checked. Sorting first means each triple comes out in ascending order, so collapsing the duplicates that repeated values produce is plain equality — no set needed.", "defmodule Solution do
+Every triple, checked. Sorting first means each triple comes out in ascending order, so collapsing the duplicates that repeated values produce is plain equality — no set needed.",
+      "defmodule Solution do
   def three_sum(nums) do
     indexed = nums |> Enum.sort() |> Enum.with_index()
 
@@ -1076,8 +1272,13 @@ Every triple, checked. Sorting first means each triple comes out in ascending or
 
     Enum.uniq(triples)
   end
-end"),
-    #("Sort + Two Pointers", "O(n²) time · O(1) extra space", "Sort, fix one number, then run the two-pointer scan on the remainder looking for its negation. Sorting is what makes the duplicate triples skippable: equal values are adjacent, so stepping past them is a while loop, not a set.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Sort + Two Pointers",
+      "O(n²) time · O(1) extra space",
+      "Sort, fix one number, then run the two-pointer scan on the remainder looking for its negation. Sorting is what makes the duplicate triples skippable: equal values are adjacent, so stepping past them is a while loop, not a set.",
+      "defmodule Solution do
   def three_sum(nums) do
     sorted = Enum.sort(nums)
 
@@ -1106,13 +1307,18 @@ end"),
         pairs_summing_to([a | left], right, remaining - 1, target)
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc110_surrounded_regions() -> List(#(String, String, String, String)) {
   [
-    #("Per-Region DFS", "O(m·n) time · O(m·n) space", "The direct reading: gather each region, then flip it only if no cell in it sits on the border. Honest, and it makes explicit what the border-first version is exploiting — but it has to collect the whole region before it can decide anything about it.", "defmodule Solution do
+    #(
+      "Per-Region DFS",
+      "O(m·n) time · O(m·n) space",
+      "The direct reading: gather each region, then flip it only if no cell in it sits on the border. Honest, and it makes explicit what the border-first version is exploiting — but it has to collect the whole region before it can decide anything about it.",
+      "defmodule Solution do
   def solve([]), do: []
   def solve([[] | _] = board), do: board
 
@@ -1165,8 +1371,13 @@ pub fn nc110_surrounded_regions() -> List(#(String, String, String, String)) {
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
-    #("Boundary DFS", "O(m·n) time · O(m·n) space", "Easier backwards. Rather than finding the surrounded regions, mark the ones that are not — everything reachable from a border O — and flip whatever is left. That side-steps having to notice mid-traversal that a region touches the edge, and costs one pass from the border rather than one per region.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Boundary DFS",
+      "O(m·n) time · O(m·n) space",
+      "Easier backwards. Rather than finding the surrounded regions, mark the ones that are not — everything reachable from a border O — and flip whatever is left. That side-steps having to notice mid-traversal that a region touches the edge, and costs one pass from the border rather than one per region.",
+      "defmodule Solution do
   def solve([]), do: []
   def solve([[] | _] = board), do: board
 
@@ -1208,13 +1419,18 @@ end"),
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc111_rotting_oranges() -> List(#(String, String, String, String)) {
   [
-    #("Simulation", "O(m·n·(m+n)) time · O(m·n) space", "Rebuild the grid one minute at a time, exactly as described. The same complexity as the wave search, and it makes the equivalence visible: a round of simulation and a level of breadth-first search are the same step written two ways.", "defmodule Solution do
+    #(
+      "Simulation",
+      "O(m·n·(m+n)) time · O(m·n) space",
+      "Rebuild the grid one minute at a time, exactly as described. The same complexity as the wave search, and it makes the equivalence visible: a round of simulation and a level of breadth-first search are the same step written two ways.",
+      "defmodule Solution do
   def oranges_rotting(grid) do
     board =
       for {row, r} <- Enum.with_index(grid),
@@ -1246,8 +1462,13 @@ pub fn nc111_rotting_oranges() -> List(#(String, String, String, String)) {
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
-    #("Multi-Source BFS", "O(m·n) time · O(m·n) space", "Multi-source breadth-first search: every rotten orange is on the frontier at minute zero, so each wave of the search *is* one minute and the number of waves is the answer. A separate search per source would give distances from each and then still need combining. Any fresh orange left unreached is what makes the answer -1.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Multi-Source BFS",
+      "O(m·n) time · O(m·n) space",
+      "Multi-source breadth-first search: every rotten orange is on the frontier at minute zero, so each wave of the search *is* one minute and the number of waves is the answer. A separate search per source would give distances from each and then still need combining. Any fresh orange left unreached is what makes the answer -1.",
+      "defmodule Solution do
   # Breadth-first from *every* rotten orange at once, which is what makes the
   # level count a time: all the sources start at minute zero together, so each
   # wave of the search is one minute. A separate search per source would give
@@ -1282,13 +1503,18 @@ end"),
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc112_walls_and_gates() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(m²·n²) time · O(m·n) space", "A search outward from each empty room until it meets a gate. One full search per room for an answer the single multi-source pass already has, which is the cost the wave avoids — but it is the version that says the problem statement outright.", "defmodule Solution do
+    #(
+      "Brute Force",
+      "O(m²·n²) time · O(m·n) space",
+      "A search outward from each empty room until it meets a gate. One full search per room for an answer the single multi-source pass already has, which is the cost the wave avoids — but it is the version that says the problem statement outright.",
+      "defmodule Solution do
   @infinity 2_147_483_647
 
   # One search per empty room, looking for the nearest gate. The answer is the
@@ -1330,8 +1556,13 @@ pub fn nc112_walls_and_gates() -> List(#(String, String, String, String)) {
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
-    #("Multi-Source BFS", "O(m·n) time · O(m·n) space", "The same multi-source wave as rotting oranges, writing the wave number into the cell instead of counting waves. Starting from every gate at once is what makes the first arrival at a room its nearest gate — no comparison between gates is ever needed.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Multi-Source BFS",
+      "O(m·n) time · O(m·n) space",
+      "The same multi-source wave as rotting oranges, writing the wave number into the cell instead of counting waves. Starting from every gate at once is what makes the first arrival at a room its nearest gate — no comparison between gates is ever needed.",
+      "defmodule Solution do
   @infinity 2_147_483_647
 
   # One breadth-first search starting from *all* the gates at once, rather than
@@ -1370,13 +1601,18 @@ end"),
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc113_course_schedule() -> List(#(String, String, String, String)) {
   [
-    #("DFS Colouring", "O(V+E) time · O(V+E) space", "Depth-first needs three states, not two. \"Seen\" is not enough: a node reached again down a *different* branch is fine, while one reached again while still on the current path is a cycle. The in-progress set is exactly what tells those apart.", "defmodule Solution do
+    #(
+      "DFS Colouring",
+      "O(V+E) time · O(V+E) space",
+      "Depth-first needs three states, not two. \"Seen\" is not enough: a node reached again down a *different* branch is fine, while one reached again while still on the current path is a cycle. The in-progress set is exactly what tells those apart.",
+      "defmodule Solution do
   def can_finish(num_courses, prerequisites) do
     needs =
       Enum.reduce(prerequisites, %{}, fn [course, prereq], acc ->
@@ -1421,8 +1657,13 @@ pub fn nc113_course_schedule() -> List(#(String, String, String, String)) {
         end
     end
   end
-end"),
-    #("Topological Sort", "O(V+E) time · O(V+E) space", "\"Can every course be finished\" is \"is this graph acyclic\". Kahn's algorithm takes whatever has no outstanding prerequisites, releases what depended on it, and stalls exactly when a cycle remains — so the cycle check is the algorithm running out of work early, not a separate test.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Topological Sort",
+      "O(V+E) time · O(V+E) space",
+      "\"Can every course be finished\" is \"is this graph acyclic\". Kahn's algorithm takes whatever has no outstanding prerequisites, releases what depended on it, and stalls exactly when a cycle remains — so the cycle check is the algorithm running out of work early, not a separate test.",
+      "defmodule Solution do
   # Kahn's algorithm. Courses with nothing outstanding can be taken now; taking
   # one releases whatever depended on it. If the process stalls with courses
   # left, those courses depend on each other in a circle -- a cycle is exactly
@@ -1455,13 +1696,18 @@ end"),
 
     take(rest ++ freed, waiting, unlocks, taken + 1)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc114_course_schedule_ii() -> List(#(String, String, String, String)) {
   [
-    #("DFS Postorder", "O(V+E) time · O(V+E) space", "Record a course only after everything it depends on has been recorded. That post-order is a valid schedule by construction, with no indegrees to maintain — and it comes out reversed, which is the tell that it was built from the dependencies up.", "defmodule Solution do
+    #(
+      "DFS Postorder",
+      "O(V+E) time · O(V+E) space",
+      "Record a course only after everything it depends on has been recorded. That post-order is a valid schedule by construction, with no indegrees to maintain — and it comes out reversed, which is the tell that it was built from the dependencies up.",
+      "defmodule Solution do
   def find_order(num_courses, prerequisites) do
     needs =
       Enum.reduce(prerequisites, %{}, fn [course, prereq], acc ->
@@ -1509,8 +1755,13 @@ pub fn nc114_course_schedule_ii() -> List(#(String, String, String, String)) {
         end
     end
   end
-end"),
-    #("Topological Sort", "O(V+E) time · O(V+E) space", "The same computation as deciding whether it is possible — the order courses come off the ready list is the answer. Detecting the cycle and producing the schedule are not two passes.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Topological Sort",
+      "O(V+E) time · O(V+E) space",
+      "The same computation as deciding whether it is possible — the order courses come off the ready list is the answer. Detecting the cycle and producing the schedule are not two passes.",
+      "defmodule Solution do
   # The same Kahn's algorithm as deciding whether it is possible -- except the
   # order courses come off the ready list *is* the answer. Detecting the cycle
   # and producing the schedule are the same computation.
@@ -1544,15 +1795,20 @@ end"),
 
     take(rest ++ freed, waiting, unlocks, [course | order])
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc115_redundant_connection() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n²) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n²) time · O(n) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Try removing each edge, latest first, and keep the first removal that leaves a tree. O(n^2) against near-linear, but it needs no new structure and it is the specification read literally.", "defmodule Solution do
+Try removing each edge, latest first, and keep the first removal that leaves a tree. O(n^2) against near-linear, but it needs no new structure and it is the specification read literally.",
+      "defmodule Solution do
   # Try removing each edge, latest first, and keep the first removal that leaves
   # a tree. O(n^2) against union-find's near-linear, but it needs no new
   # structure -- and it says the specification outright: the answer is the last
@@ -1597,8 +1853,13 @@ Try removing each edge, latest first, and keep the first removal that leaves a t
       walk(Map.get(adjacency, node, []) ++ rest, adjacency, MapSet.put(seen, node))
     end
   end
-end"),
-    #("Union-Find", "O(n·α(n)) time · O(n) space", "n nodes and n edges means exactly one cycle, and union-find finds it the moment an edge joins two nodes already connected. Processing the edges in the order given is what makes the first such edge the *last* removable one, which is what the problem asks for.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Union-Find",
+      "O(n·α(n)) time · O(n) space",
+      "n nodes and n edges means exactly one cycle, and union-find finds it the moment an edge joins two nodes already connected. Processing the edges in the order given is what makes the first such edge the *last* removable one, which is what the problem asks for.",
+      "defmodule Solution do
   # n nodes and n edges means exactly one cycle. Union-find spots it the moment
   # an edge joins two nodes already connected -- and because the edges are
   # processed in order, the first such edge is the last one that could be
@@ -1622,13 +1883,18 @@ end"),
       parent -> find(parents, parent)
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc116_connected_components() -> List(#(String, String, String, String)) {
   [
-    #("DFS", "O(V+E) time · O(V+E) space", "One search per unvisited node, exactly as with islands on a grid — the same counting idea with an adjacency list instead of coordinates. The contrast with union-find is the point: this needs the whole graph up front, the other can take edges as they arrive.", "defmodule Solution do
+    #(
+      "DFS",
+      "O(V+E) time · O(V+E) space",
+      "One search per unvisited node, exactly as with islands on a grid — the same counting idea with an adjacency list instead of coordinates. The contrast with union-find is the point: this needs the whole graph up front, the other can take edges as they arrive.",
+      "defmodule Solution do
   # One search per unvisited node, exactly as with islands on a grid -- the same
   # counting-components idea with an adjacency list instead of coordinates.
   # Worth seeing side by side with union-find: this one needs the whole graph up
@@ -1658,8 +1924,13 @@ pub fn nc116_connected_components() -> List(#(String, String, String, String)) {
       walk(Map.get(adjacency, node, []) ++ rest, adjacency, MapSet.put(seen, node))
     end
   end
-end"),
-    #("Union-Find", "O(E·α(V)) time · O(V) space", "Start at n components and subtract a merge for every edge that actually joins two different ones. No adjacency list, no traversal — the count falls straight out of how many merges happened.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Union-Find",
+      "O(E·α(V)) time · O(V) space",
+      "Start at n components and subtract a merge for every edge that actually joins two different ones. No adjacency list, no traversal — the count falls straight out of how many merges happened.",
+      "defmodule Solution do
   # Start with n components and merge: every edge whose ends are not already
   # together removes one. No traversal, no adjacency list -- the count falls
   # straight out of how many merges actually happened.
@@ -1683,13 +1954,18 @@ end"),
       parent -> find(parents, parent)
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc117_graph_valid_tree() -> List(#(String, String, String, String)) {
   [
-    #("Union-Find", "O(n·α(n)) time · O(n) space", "Both conditions from one pass. An edge inside a component is a cycle, so if none is, the graph is a forest — and a forest with n-1 merges is a single tree. No adjacency list and no traversal.", "defmodule Solution do
+    #(
+      "Union-Find",
+      "O(n·α(n)) time · O(n) space",
+      "Both conditions from one pass. An edge inside a component is a cycle, so if none is, the graph is a forest — and a forest with n-1 merges is a single tree. No adjacency list and no traversal.",
+      "defmodule Solution do
   def valid_tree(n, edges) do
     if n <= 0 do
       edges == []
@@ -1720,8 +1996,13 @@ pub fn nc117_graph_valid_tree() -> List(#(String, String, String, String)) {
       parent -> find(parents, parent)
     end
   end
-end"),
-    #("DFS", "O(n) time · O(n) space", "A tree is connected *and* acyclic, but with exactly n-1 edges either condition implies the other, so the edge count plus one of them is enough. Here it is the count plus reachability. The n = 0 case has to be stated separately, since the n-1 count says otherwise.", "defmodule Solution do
+end",
+    ),
+    #(
+      "DFS",
+      "O(n) time · O(n) space",
+      "A tree is connected *and* acyclic, but with exactly n-1 edges either condition implies the other, so the edge count plus one of them is enough. Here it is the count plus reachability. The n = 0 case has to be stated separately, since the n-1 count says otherwise.",
+      "defmodule Solution do
   def valid_tree(n, edges) do
     cond do
       # A graph with no nodes at all is vacuously a tree, provided it has no
@@ -1755,13 +2036,18 @@ end"),
       walk(Map.get(adjacency, node, []) ++ rest, adjacency, MapSet.put(seen, node))
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc118_word_ladder() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n²·k) time · O(n·k) space", "Neighbours found by comparing against every remaining word. Simpler to state, and O(n) comparisons per expansion instead of a constant number of lookups — which is exactly the cost the wildcard buckets remove.", "defmodule Solution do
+    #(
+      "Brute Force",
+      "O(n²·k) time · O(n·k) space",
+      "Neighbours found by comparing against every remaining word. Simpler to state, and O(n) comparisons per expansion instead of a constant number of lookups — which is exactly the cost the wildcard buckets remove.",
+      "defmodule Solution do
   def ladder_length(begin_word, end_word, word_list) do
     words = MapSet.new(word_list)
 
@@ -1798,8 +2084,13 @@ pub fn nc118_word_ladder() -> List(#(String, String, String, String)) {
     length(a) == length(b) and
       Enum.count(Enum.zip(a, b), fn {x, y} -> x != y end) == 1
   end
-end"),
-    #("BFS", "O(n·k²) time · O(n·k) space", "Shortest path on an unweighted graph, so breadth-first — but the graph is never built. Two words are neighbours when they share a wildcard pattern like \"*ot\", so bucketing every word under each of its patterns gives the adjacency in linear time.", "defmodule Solution do
+end",
+    ),
+    #(
+      "BFS",
+      "O(n·k²) time · O(n·k) space",
+      "Shortest path on an unweighted graph, so breadth-first — but the graph is never built. Two words are neighbours when they share a wildcard pattern like \"*ot\", so bucketing every word under each of its patterns gives the adjacency in linear time.",
+      "defmodule Solution do
   def ladder_length(begin_word, end_word, word_list) do
     words = MapSet.new(word_list)
 
@@ -1850,15 +2141,20 @@ end"),
       search(next, seen, buckets, end_word, steps + 1)
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc119_reconstruct_itinerary() -> List(#(String, String, String, String)) {
   [
-    #("Backtracking", "O(E!) time · O(E²) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Backtracking",
+      "O(E!) time · O(E²) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every ticket used, smallest option first, undoing a choice that leads nowhere. Because the options are sorted, the first complete itinerary found is already the smallest — no candidates to compare. Exponential in the worst case, which is precisely what Hierholzer's one-pass walk removes.", "defmodule Solution do
+Every ticket used, smallest option first, undoing a choice that leads nowhere. Because the options are sorted, the first complete itinerary found is already the smallest — no candidates to compare. Exponential in the worst case, which is precisely what Hierholzer's one-pass walk removes.",
+      "defmodule Solution do
   # Every ticket used, smallest option first, undoing a choice that leads
   # nowhere. Because the options are sorted, the first complete itinerary found
   # is the smallest one -- no comparing of candidates. Exponential in the worst
@@ -1895,8 +2191,13 @@ Every ticket used, smallest option first, undoing a choice that leads nowhere. B
       )
     end)
   end
-end"),
-    #("Hierholzer", "O(E log E) time · O(E) space", "Hierholzer's algorithm. Take the smallest unused ticket every time and never look back — an airport is only recorded once it has no tickets left, so the dead end the greedy choice walks into is exactly where the route has to *end*, and recording it first is what puts it last. Nothing is ever undone, which is the whole difference from the backtracking version.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Hierholzer",
+      "O(E log E) time · O(E) space",
+      "Hierholzer's algorithm. Take the smallest unused ticket every time and never look back — an airport is only recorded once it has no tickets left, so the dead end the greedy choice walks into is exactly where the route has to *end*, and recording it first is what puts it last. Nothing is ever undone, which is the whole difference from the backtracking version.",
+      "defmodule Solution do
   # Hierholzer's algorithm. Take the smallest unused ticket every time and never
   # look back: an airport is only recorded once it has no tickets left, so the
   # dead end the greedy choice walks into is exactly where the route has to
@@ -1925,15 +2226,20 @@ end"),
         {destinations, [airport | route]}
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc11_container_water() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n²) time · O(1) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every pair of lines, measured. O(n^2), but it makes what the two-pointer sweep is maximising explicit: shorter line times distance.", "defmodule Solution do
+Every pair of lines, measured. O(n^2), but it makes what the two-pointer sweep is maximising explicit: shorter line times distance.",
+      "defmodule Solution do
   def max_area(heights) do
     indexed = Enum.with_index(heights)
 
@@ -1945,8 +2251,13 @@ Every pair of lines, measured. O(n^2), but it makes what the two-pointer sweep i
 
     Enum.max([0 | areas])
   end
-end"),
-    #("Two Pointers", "O(n) time · O(1) space", "Start at both ends. The area is capped by the shorter line, so moving the taller one in can never help — always move the shorter, and track the best area seen.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Two Pointers",
+      "O(n) time · O(1) space",
+      "Start at both ends. The area is capped by the shorter line, so moving the taller one in can never help — always move the shorter, and track the best area seen.",
+      "defmodule Solution do
   def max_area(heights) do
     converge(heights, Enum.reverse(heights), length(heights) - 1, 0)
   end
@@ -1963,13 +2274,20 @@ end"),
       converge([a | left], right, width - 1, best)
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
-pub fn nc120_min_cost_connect_points() -> List(#(String, String, String, String)) {
+pub fn nc120_min_cost_connect_points() -> List(
+  #(String, String, String, String),
+) {
   [
-    #("Kruskal", "O(n² log n) time · O(n²) space", "Every edge, cheapest first, kept only when it joins two pieces that are not already connected — union-find is what makes that test cheap. The trade against Prim's is the sort, but Kruskal never looks at the points themselves, only at the edge list, which is why it is the one that generalises to a sparse graph.", "defmodule Solution do
+    #(
+      "Kruskal",
+      "O(n² log n) time · O(n²) space",
+      "Every edge, cheapest first, kept only when it joins two pieces that are not already connected — union-find is what makes that test cheap. The trade against Prim's is the sort, but Kruskal never looks at the points themselves, only at the edge list, which is why it is the one that generalises to a sparse graph.",
+      "defmodule Solution do
   # Kruskal's algorithm: every edge, cheapest first, kept only when it joins two
   # pieces that are not already connected. Union-find is what makes that test
   # cheap. The trade against Prim's is the sort -- O(n^2 log n) edges here
@@ -2005,8 +2323,13 @@ pub fn nc120_min_cost_connect_points() -> List(#(String, String, String, String)
   end
 
   defp distance([ax, ay], [bx, by]), do: abs(ax - bx) + abs(ay - by)
-end"),
-    #("Prim", "O(n²) time · O(n) space", "Prim's algorithm. Each outside point remembers only its distance to the tree so far, so adding one is a pass to find the nearest and a pass to update — O(n^2), which is what a complete graph costs anyway, and it needs no heap. Taking the cheapest edge is safe because the cheapest edge leaving any set of points is in some minimum spanning tree.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Prim",
+      "O(n²) time · O(n) space",
+      "Prim's algorithm. Each outside point remembers only its distance to the tree so far, so adding one is a pass to find the nearest and a pass to update — O(n^2), which is what a complete graph costs anyway, and it needs no heap. Taking the cheapest edge is safe because the cheapest edge leaving any set of points is in some minimum spanning tree.",
+      "defmodule Solution do
   # Prim's algorithm. Each outside point remembers only its distance to the tree
   # so far, so adding a point is one pass to find the nearest and one pass to
   # update -- O(n^2) total, which is what a complete graph costs anyway, and it
@@ -2033,13 +2356,18 @@ end"),
   end
 
   defp distance([ax, ay], [bx, by]), do: abs(ax - bx) + abs(ay - by)
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc121_network_delay_time() -> List(#(String, String, String, String)) {
   [
-    #("Bellman-Ford", "O(V·E) time · O(V) space", "No choosing what to settle next: relax every edge, n-1 times over, and the times settle by themselves — a shortest path is at most n-1 edges long, and each round fixes at least one more of them. Slower at O(V·E), and worth knowing because it survives negative weights.", "defmodule Solution do
+    #(
+      "Bellman-Ford",
+      "O(V·E) time · O(V) space",
+      "No choosing what to settle next: relax every edge, n-1 times over, and the times settle by themselves — a shortest path is at most n-1 edges long, and each round fixes at least one more of them. Slower at O(V·E), and worth knowing because it survives negative weights.",
+      "defmodule Solution do
   # Bellman-Ford. No choosing what to settle next: relax every edge, n-1 times
   # over, and the times settle by themselves -- a shortest path is at most n-1
   # edges long, and each round fixes at least one more of them. Slower than
@@ -2065,8 +2393,13 @@ pub fn nc121_network_delay_time() -> List(#(String, String, String, String)) {
 
     if map_size(settled) == n, do: Enum.max(Map.values(settled)), else: -1
   end
-end"),
-    #("Dijkstra", "O(E log V) time · O(V+E) space", "Dijkstra's algorithm. Taking the smallest tentative arrival settles that node for good, because any other route to it would have to start with an edge at least as long. That argument is exactly where a negative edge would break it — which is the reason to know Bellman-Ford as well.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Dijkstra",
+      "O(E log V) time · O(V+E) space",
+      "Dijkstra's algorithm. Taking the smallest tentative arrival settles that node for good, because any other route to it would have to start with an edge at least as long. That argument is exactly where a negative edge would break it — which is the reason to know Bellman-Ford as well.",
+      "defmodule Solution do
   def network_delay_time(times, n, k) do
     edges =
       Enum.reduce(times, %{}, fn [origin, destination, weight], acc ->
@@ -2104,15 +2437,20 @@ end"),
       settle(edges, rest ++ reached, settled)
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc122_swim_in_water() -> List(#(String, String, String, String)) {
   [
-    #("Binary Search", "O(n² log n) time · O(n²) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+    #(
+      "Binary Search",
+      "O(n² log n) time · O(n²) space",
+      "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-Reachability at time t is monotone: once the corner can be reached, it stays reachable as the water rises. That is the shape binary search needs, and it turns the question from \"what is the cheapest path\" into \"is it possible yet\", answered by a plain flood fill.", "defmodule Solution do
+Reachability at time t is monotone: once the corner can be reached, it stays reachable as the water rises. That is the shape binary search needs, and it turns the question from \"what is the cheapest path\" into \"is it possible yet\", answered by a plain flood fill.",
+      "defmodule Solution do
   def swim_in_water([]), do: 0
 
   def swim_in_water(grid) do
@@ -2158,8 +2496,13 @@ Reachability at time t is monotone: once the corner can be reached, it stays rea
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
-    #("Dijkstra", "O(n² log n) time · O(n²) space", "Dijkstra's, with the cost of a path redefined from the sum of its steps to the largest step in it — the water only has to rise once. Everything else about the algorithm is untouched, which is the point: the shortest-path machinery works for any cost that only grows along a path.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Dijkstra",
+      "O(n² log n) time · O(n²) space",
+      "Dijkstra's, with the cost of a path redefined from the sum of its steps to the largest step in it — the water only has to rise once. Everything else about the algorithm is untouched, which is the point: the shortest-path machinery works for any cost that only grows along a path.",
+      "defmodule Solution do
   def swim_in_water([]), do: 0
 
   def swim_in_water(grid) do
@@ -2207,13 +2550,18 @@ end"),
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc123_alien_dictionary() -> List(#(String, String, String, String)) {
   [
-    #("DFS Topological Sort", "O(C) time · O(V+E) space", "Record a letter only once everything that must follow it has been recorded, and prepend rather than append — that is what puts it back in front of them. The in-progress set is the cycle check, exactly as in Course Schedule: a letter met again on the current path contradicts itself.", "defmodule Solution do
+    #(
+      "DFS Topological Sort",
+      "O(C) time · O(V+E) space",
+      "Record a letter only once everything that must follow it has been recorded, and prepend rather than append — that is what puts it back in front of them. The in-progress set is the cycle check, exactly as in Course Schedule: a letter met again on the current path contradicts itself.",
+      "defmodule Solution do
   def alien_order(words) do
     letters =
       Enum.reduce(words, MapSet.new(), fn word, acc ->
@@ -2292,8 +2640,13 @@ pub fn nc123_alien_dictionary() -> List(#(String, String, String, String)) {
 
   defp difference([_ | _], []), do: :contradiction
   defp difference(_, _), do: nil
-end"),
-    #("Topological Sort", "O(C) time · O(V+E) space", "The words are the input but the graph is over letters. Two adjacent words agree up to their first difference, and that difference is the only ordering they establish — everything after it says nothing at all. Then it is a topological sort, with two distinct ways to fail: a cycle, and a word followed by its own prefix.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Topological Sort",
+      "O(C) time · O(V+E) space",
+      "The words are the input but the graph is over letters. Two adjacent words agree up to their first difference, and that difference is the only ordering they establish — everything after it says nothing at all. Then it is a topological sort, with two distinct ways to fail: a cycle, and a word followed by its own prefix.",
+      "defmodule Solution do
   def alien_order(words) do
     letters =
       Enum.reduce(words, MapSet.new(), fn word, acc ->
@@ -2359,13 +2712,18 @@ end"),
 
     take(rest ++ freed, waiting, unlocks, [letter | order])
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc124_cheapest_flights() -> List(#(String, String, String, String)) {
   [
-    #("BFS", "O(k·E) time · O(V+E) space", "Breadth-first by number of flights taken, which makes the stop limit the depth limit — the same bound Bellman-Ford gets from its round count, arrived at from the other direction. The cheapest-so-far table is what stops it exploding: a city is expanded again only when this route reached it for less.", "defmodule Solution do
+    #(
+      "BFS",
+      "O(k·E) time · O(V+E) space",
+      "Breadth-first by number of flights taken, which makes the stop limit the depth limit — the same bound Bellman-Ford gets from its round count, arrived at from the other direction. The cheapest-so-far table is what stops it exploding: a city is expanded again only when this route reached it for less.",
+      "defmodule Solution do
   # Breadth-first by number of flights taken, which makes the stop limit the
   # depth limit -- the same bound Bellman-Ford gets from its round count. The
   # cheapest-so-far table is what stops it exploding: a city is only expanded
@@ -2393,8 +2751,13 @@ pub fn nc124_cheapest_flights() -> List(#(String, String, String, String)) {
 
     Map.get(best, dst, -1)
   end
-end"),
-    #("Bellman-Ford", "O(k·E) time · O(V) space", "The stop limit is what stops this being plain Dijkstra: cheapest-so-far no longer settles a city, because a costlier route with fewer stops may still be the one that gets through. Bellman-Ford handles it by construction — one round is one flight — provided each round reads a snapshot of the last, or two flights leak into a single round.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Bellman-Ford",
+      "O(k·E) time · O(V) space",
+      "The stop limit is what stops this being plain Dijkstra: cheapest-so-far no longer settles a city, because a costlier route with fewer stops may still be the one that gets through. Bellman-Ford handles it by construction — one round is one flight — provided each round reads a snapshot of the last, or two flights leak into a single round.",
+      "defmodule Solution do
   # Bellman-Ford, stopped after k+1 rounds -- one round is one flight, so the
   # round count *is* the stop limit. Each round reads the previous round's costs
   # from a snapshot rather than from the table being written; without that, two
@@ -2421,13 +2784,18 @@ end"),
 
     Map.get(costs, dst, -1)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc125_reverse_linked_list() -> List(#(String, String, String, String)) {
   [
-    #("Iterative", "O(n) time · O(1) space", "One pass, three references: where you came from, where you are, and where you were going. Losing the look-ahead is the classic bug — once the link has been overwritten, the rest of the list is unreachable. In a language with cons lists the same thing is an accumulator you prepend to, which is the *same* rewiring written as a value.", "defmodule Solution do
+    #(
+      "Iterative",
+      "O(n) time · O(1) space",
+      "One pass, three references: where you came from, where you are, and where you were going. Losing the look-ahead is the classic bug — once the link has been overwritten, the rest of the list is unreachable. In a language with cons lists the same thing is an accumulator you prepend to, which is the *same* rewiring written as a value.",
+      "defmodule Solution do
   # The accumulator *is* the reversed list being built, and prepending to it is
   # exactly the pointer rewiring the imperative version does one node at a time.
   # Nothing is ever traversed twice, so it is one pass and no extra memory
@@ -2436,19 +2804,29 @@ pub fn nc125_reverse_linked_list() -> List(#(String, String, String, String)) {
 
   defp walk([], reversed), do: reversed
   defp walk([head | tail], reversed), do: walk(tail, [head | reversed])
-end"),
-    #("Solution 2 · By folding", "", "The accumulator, named by the standard library instead of written out. Worth putting next to the hand-written loop: a left fold that prepends is the definition of reversing, which is why the built-in exists at all.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Solution 2 · By folding",
+      "",
+      "The accumulator, named by the standard library instead of written out. Worth putting next to the hand-written loop: a left fold that prepends is the definition of reversing, which is why the built-in exists at all.",
+      "defmodule Solution do
   # The same accumulator, named by the standard library instead of written out.
   # Worth putting next to the hand-written loop: a left fold that prepends is
   # the definition of reversing, which is why Enum.reverse exists at all.
   def reverse_list(values), do: Enum.reduce(values, [], &[&1 | &2])
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc126_merge_two_sorted_lists() -> List(#(String, String, String, String)) {
   [
-    #("Iterative", "O(n+m) time · O(1) space", "Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.", "defmodule Solution do
+    #(
+      "Iterative",
+      "O(n+m) time · O(1) space",
+      "Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.",
+      "defmodule Solution do
   # Take the smaller head and recurse on the rest. Because both inputs are
   # already sorted, whichever head is smaller is smaller than everything still
   # to come -- no comparison beyond the two fronts is ever needed.
@@ -2460,8 +2838,13 @@ pub fn nc126_merge_two_sorted_lists() -> List(#(String, String, String, String))
       do: [a | merge_two_lists(a_rest, second)],
       else: [b | merge_two_lists(first, b_rest)]
   end
-end"),
-    #("Solution 2 · Iterative", "", "The same merge with the recursion turned into a loop: build the answer backwards in an accumulator and reverse once at the end. That accumulator is the functional twin of the dummy head, and the reversal costs one extra pass rather than one extra frame per node.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Solution 2 · Iterative",
+      "",
+      "The same merge with the recursion turned into a loop: build the answer backwards in an accumulator and reverse once at the end. That accumulator is the functional twin of the dummy head, and the reversal costs one extra pass rather than one extra frame per node.",
+      "defmodule Solution do
   # The same merge with the recursion turned into a loop: build the answer
   # backwards in an accumulator and reverse once at the end. That accumulator is
   # the functional equivalent of the dummy head the imperative version keeps,
@@ -2476,13 +2859,18 @@ end"),
       do: step(a_rest, second, [a | merged]),
       else: step(first, b_rest, [b | merged])
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc127_reorder_list() -> List(#(String, String, String, String)) {
   [
-    #("Fast & Slow Pointers", "O(n) time · O(1) space", "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.", "defmodule Solution do
+    #(
+      "Fast & Slow Pointers",
+      "O(n) time · O(1) space",
+      "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.",
+      "defmodule Solution do
   # Three separate steps, each of which is its own drill: find the middle,
   # reverse the back half, then interleave. That decomposition is the whole
   # trick -- none of the three needs to know about the others.
@@ -2495,8 +2883,13 @@ pub fn nc127_reorder_list() -> List(#(String, String, String, String)) {
   defp interleave([], rest), do: rest
   defp interleave(rest, []), do: rest
   defp interleave([a | a_rest], [b | b_rest]), do: [a, b | interleave(a_rest, b_rest)]
-end"),
-    #("Solution 2 · From both ends", "", "Take from the front, then from the back, until they meet. Reads exactly like the specification and needs no midpoint and no reversal — but reaching the back is a full walk of what is left each time, so it is O(n²) where the split-and-reverse version is O(n).", "defmodule Solution do
+end",
+    ),
+    #(
+      "Solution 2 · From both ends",
+      "",
+      "Take from the front, then from the back, until they meet. Reads exactly like the specification and needs no midpoint and no reversal — but reaching the back is a full walk of what is left each time, so it is O(n²) where the split-and-reverse version is O(n).",
+      "defmodule Solution do
   # Take from the front, then from the back, until they meet. Reads exactly like
   # the specification and needs no midpoint and no reversal -- but each \"take
   # from the back\" is a full walk of what is left, so it is O(n^2) where the
@@ -2510,13 +2903,18 @@ end"),
     {middle, [last]} = Enum.split(rest, length(rest) - 1)
     take_ends(middle, [last, first | out])
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc128_remove_nth_from_end() -> List(#(String, String, String, String)) {
   [
-    #("Two Pass", "O(n) time · O(1) space", "Count first, then remove by position. Two passes rather than one, and it says outright what the gap encodes: nth from the end is length minus n from the front. Where a list cannot be walked twice — a stream, say — that is the assumption that fails.", "defmodule Solution do
+    #(
+      "Two Pass",
+      "O(n) time · O(1) space",
+      "Count first, then remove by position. Two passes rather than one, and it says outright what the gap encodes: nth from the end is length minus n from the front. Where a list cannot be walked twice — a stream, say — that is the assumption that fails.",
+      "defmodule Solution do
   # Count first, then drop by position. Two passes rather than one, and it says
   # outright what the two-walker version encodes in a gap: nth from the end is
   # length minus n from the front. Where a list cannot be walked twice -- a
@@ -2528,8 +2926,13 @@ pub fn nc128_remove_nth_from_end() -> List(#(String, String, String, String)) {
       do: values,
       else: List.delete_at(values, index)
   end
-end"),
-    #("Two Pointers", "O(n) time · O(1) space", "Two walkers n apart. When the leading one runs off the end, the trailing one is on the node to change — the length is never computed, which is the point: one pass instead of two. Opening the gap can fail, and that failure is exactly the \"n is longer than the list\" case.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Two Pointers",
+      "O(n) time · O(1) space",
+      "Two walkers n apart. When the leading one runs off the end, the trailing one is on the node to change — the length is never computed, which is the point: one pass instead of two. Opening the gap can fail, and that failure is exactly the \"n is longer than the list\" case.",
+      "defmodule Solution do
   # Two walkers n apart. When the leading one runs off the end, the trailing one
   # is sitting on the node to drop -- the length is never computed, which is the
   # point: one pass instead of two. Opening the gap can fail, and that failure
@@ -2549,13 +2952,18 @@ end"),
   # The leading walker is spent, so the trailing one is on the doomed node.
   defp advance([_dropped | rest], [], kept), do: Enum.reverse(kept) ++ rest
   defp advance([], _ahead, kept), do: Enum.reverse(kept)
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc129_copy_random_list() -> List(#(String, String, String, String)) {
   [
-    #("Hash Map", "O(n) time · O(n) space", "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.", "defmodule Solution do
+    #(
+      "Hash Map",
+      "O(n) time · O(n) space",
+      "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.",
+      "defmodule Solution do
   @moduledoc \"\"\"
   Nodes arrive as {id, value, random_id}, where the ids are arbitrary and a
   random_id of -1 means no link. The copy is returned as {value, random} with
@@ -2577,10 +2985,15 @@ pub fn nc129_copy_random_list() -> List(#(String, String, String, String)) {
       {value, Map.get(places, random, -1)}
     end)
   end
-end"),
-    #("Solution 2 · By searching", "", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+end",
+    ),
+    #(
+      "Solution 2 · By searching",
+      "",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-The same translation without the map: for each link, search for the node it names. O(n²) against O(n), and the contrast is the lesson — the map is not an optimisation bolted on afterwards, it is the same lookup, paid for once instead of once per node.", "defmodule Solution do
+The same translation without the map: for each link, search for the node it names. O(n²) against O(n), and the contrast is the lesson — the map is not an optimisation bolted on afterwards, it is the same lookup, paid for once instead of once per node.",
+      "defmodule Solution do
   # The same translation without the map: for each link, search the list for the
   # node it names. O(n^2) against O(n), and the contrast is the lesson -- the
   # map is not an optimisation bolted on afterwards, it is the same lookup the
@@ -2596,15 +3009,20 @@ The same translation without the map: for each link, search for the node it name
   defp position_of([{id, _value, _random} | _rest], id, at), do: at
 
   defp position_of([_node | rest], id, at), do: position_of(rest, id, at + 1)
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc12_best_time_stock() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n²) time · O(1) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every buy day against every later sell day. O(n^2), and the problem statement written out.", "defmodule Solution do
+Every buy day against every later sell day. O(n^2), and the problem statement written out.",
+      "defmodule Solution do
   def max_profit(prices) do
     indexed = Enum.with_index(prices)
 
@@ -2616,8 +3034,13 @@ Every buy day against every later sell day. O(n^2), and the problem statement wr
 
     Enum.max([0 | profits])
   end
-end"),
-    #("Greedy", "O(n) time · O(1) space", "Carry the cheapest price seen so far; today's best sale is today's price against that minimum. One pass, two variables.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Greedy",
+      "O(n) time · O(1) space",
+      "Carry the cheapest price seen so far; today's best sale is today's price against that minimum. One pass, two variables.",
+      "defmodule Solution do
   def max_profit(prices) do
     {_lowest, profit} =
       Enum.reduce(prices, {nil, 0}, fn price, {lowest, profit} ->
@@ -2627,13 +3050,18 @@ end"),
 
     profit
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc130_add_two_numbers() -> List(#(String, String, String, String)) {
   [
-    #("Nifty Python · Big Ints", "O(n+m) time · O(n+m) space", "Turn both lists into whole numbers, add, take the sum apart again. It reads well, and it is safe here only because this language's integers are arbitrary precision — which is precisely why the problem is posed as a list of digits in languages where they are not.", "defmodule Solution do
+    #(
+      "Nifty Python · Big Ints",
+      "O(n+m) time · O(n+m) space",
+      "Turn both lists into whole numbers, add, take the sum apart again. It reads well, and it is safe here only because this language's integers are arbitrary precision — which is precisely why the problem is posed as a list of digits in languages where they are not.",
+      "defmodule Solution do
   # Turn both lists into whole numbers, add, and take the sum apart again. It
   # reads well and is fine in Elixir, whose integers are arbitrary precision --
   # but it is the version that breaks the moment the language has a fixed-width
@@ -2648,8 +3076,13 @@ pub fn nc130_add_two_numbers() -> List(#(String, String, String, String)) {
 
   defp to_digits(number) when number < 10, do: [number]
   defp to_digits(number), do: [rem(number, 10) | to_digits(div(number, 10))]
-end"),
-    #("Simulation", "O(n+m) time · O(n+m) space", "The digits arrive least significant first, which is exactly the order addition wants — no reversing and no length matching. The case worth writing down is the carry outliving both numbers: 5 + 5 produces a digit neither input has a node for.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Simulation",
+      "O(n+m) time · O(n+m) space",
+      "The digits arrive least significant first, which is exactly the order addition wants — no reversing and no length matching. The case worth writing down is the carry outliving both numbers: 5 + 5 produces a digit neither input has a node for.",
+      "defmodule Solution do
   # Both numbers arrive least significant digit first, which is exactly the
   # order addition wants -- no reversing, no length matching, just carry along.
   # The carry outliving both lists is the case worth writing down: 5 + 5 is two
@@ -2668,13 +3101,18 @@ end"),
 
   defp split([]), do: {0, []}
   defp split([head | tail]), do: {head, tail}
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc131_linked_list_cycle() -> List(#(String, String, String, String)) {
   [
-    #("Hash Set", "O(n) time · O(n) space", "Remember every node visited and stop when one repeats. Obvious and correct, at O(n) memory — which is exactly what the two-walker version removes. Note that it is the *nodes* that go in the set, not their values: repeated values are ordinary, repeated nodes are the cycle.", "defmodule Solution do
+    #(
+      "Hash Set",
+      "O(n) time · O(n) space",
+      "Remember every node visited and stop when one repeats. Obvious and correct, at O(n) memory — which is exactly what the two-walker version removes. Note that it is the *nodes* that go in the set, not their values: repeated values are ordinary, repeated nodes are the cycle.",
+      "defmodule Solution do
   def has_cycle([]), do: false
   def has_cycle(next), do: walk(List.to_tuple(next), 0, MapSet.new())
 
@@ -2688,8 +3126,13 @@ pub fn nc131_linked_list_cycle() -> List(#(String, String, String, String)) {
       do: true,
       else: walk(links, elem(links, at), MapSet.put(seen, at))
   end
-end"),
-    #("Fast & Slow Pointers", "O(n) time · O(1) space", "Floyd's tortoise and hare. One walker takes single steps, the other double; inside a loop the fast one gains a place per step on the slow one, so it must land on it. Outside one, it runs off the end first. Constant memory and nothing is marked — that is the whole result.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Fast & Slow Pointers",
+      "O(n) time · O(1) space",
+      "Floyd's tortoise and hare. One walker takes single steps, the other double; inside a loop the fast one gains a place per step on the slow one, so it must land on it. Outside one, it runs off the end first. Constant memory and nothing is marked — that is the whole result.",
+      "defmodule Solution do
   @moduledoc \"\"\"
   The list arrives as its links rather than its values: `next` holds, for each
   node, the index of the one after it, or -1 for the end. An immutable list
@@ -2723,15 +3166,20 @@ end"),
 
   defp step(_links, from) when from < 0, do: -1
   defp step(links, from), do: elem(links, from)
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc132_find_the_duplicate() -> List(#(String, String, String, String)) {
   [
-    #("Binary Search", "O(n log n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+    #(
+      "Binary Search",
+      "O(n log n) time · O(1) space",
+      "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-Binary search over the *values*, not the positions. For a candidate v, count how many numbers are at most v: with no duplicate that count is exactly v, so a count running ahead says the repeat is at or below v. O(n log n), but it needs no insight about cycles.", "defmodule Solution do
+Binary search over the *values*, not the positions. For a candidate v, count how many numbers are at most v: with no duplicate that count is exactly v, so a count running ahead says the repeat is at or below v. O(n log n), but it needs no insight about cycles.",
+      "defmodule Solution do
   # Binary search over the *values*, not the positions. For a candidate v, count
   # how many numbers are at most v: with no duplicate that count is exactly v,
   # so a count that runs ahead says the repeat is at or below v. O(n log n)
@@ -2749,8 +3197,13 @@ Binary search over the *values*, not the positions. For a candidate v, count how
       do: search(nums, low, middle),
       else: search(nums, middle + 1, high)
   end
-end"),
-    #("Fast & Slow Pointers", "O(n) time · O(1) space", "Read the array as a linked list: position i points at position nums[i]. Every value is a valid position and one repeats, so two positions point at the same place — the list has a cycle, and the duplicate is its entrance. Then it is Floyd's twice: once to meet inside the loop, once to find where it begins.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Fast & Slow Pointers",
+      "O(n) time · O(1) space",
+      "Read the array as a linked list: position i points at position nums[i]. Every value is a valid position and one repeats, so two positions point at the same place — the list has a cycle, and the duplicate is its entrance. Then it is Floyd's twice: once to meet inside the loop, once to find where it begins.",
+      "defmodule Solution do
   # Read the list as a linked list: position i points at position nums[i].
   # Because every value is a valid position and one value repeats, two positions
   # point at the same place -- so the list has a cycle, and the duplicate is its
@@ -2775,13 +3228,18 @@ end"),
   defp entrance(values, from_start, from_meeting) do
     entrance(values, elem(values, from_start), elem(values, from_meeting))
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc133_lru_cache() -> List(#(String, String, String, String)) {
   [
-    #("Nifty Python · Dict Order", "O(1) per operation · O(capacity) space", "Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A map alone gives the first and a list alone gives the second — the structure is whatever supplies both. Where the language's map already remembers insertion order, deleting a key and putting it back *is* the recency list.", "defmodule Solution do
+    #(
+      "Nifty Python · Dict Order",
+      "O(1) per operation · O(capacity) space",
+      "Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A map alone gives the first and a list alone gives the second — the structure is whatever supplies both. Where the language's map already remembers insertion order, deleting a key and putting it back *is* the recency list.",
+      "defmodule Solution do
   def new(capacity), do: %{capacity: capacity, entries: %{}, recent: []}
 
   @doc \"\"\"
@@ -2814,8 +3272,13 @@ pub fn nc133_lru_cache() -> List(#(String, String, String, String)) {
   # what a real implementation does by unlinking and relinking a node; here it
   # costs a walk, which is the price of having no back-pointers.
   defp touch(recent, key), do: [key | Enum.reject(recent, &(&1 == key))]
-end"),
-    #("Solution 2 · Timestamps", "", "No recency order at all — just a counter, bumped on every use. Eviction becomes a scan for the smallest stamp, trading the reordering walk for a search. Worth seeing because it makes plain that \"least recently used\" is a minimum, not a position.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Solution 2 · Timestamps",
+      "",
+      "No recency order at all — just a counter, bumped on every use. Eviction becomes a scan for the smallest stamp, trading the reordering walk for a search. Worth seeing because it makes plain that \"least recently used\" is a minimum, not a position.",
+      "defmodule Solution do
   def new(capacity), do: %{capacity: capacity, clock: 0, entries: %{}}
 
   def get(cache, key) do
@@ -2852,13 +3315,18 @@ end"),
 
     key
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc134_merge_k_sorted_lists() -> List(#(String, String, String, String)) {
   [
-    #("Divide & Conquer", "O(n log k) time · O(k) space", "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.", "defmodule Solution do
+    #(
+      "Divide & Conquer",
+      "O(n log k) time · O(k) space",
+      "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.",
+      "defmodule Solution do
   # Merge in pairs, halving the number of lists each round. Folding them in one
   # at a time re-walks the growing result every time -- O(k*n) -- while pairing
   # gives O(n log k) for the same merges, because each element is copied only
@@ -2878,8 +3346,13 @@ pub fn nc134_merge_k_sorted_lists() -> List(#(String, String, String, String)) {
       do: [a | merge(a_rest, second)],
       else: [b | merge(first, b_rest)]
   end
-end"),
-    #("Solution 2 · Smallest head", "", "The heap solution with the heap spelled out as a scan, for languages that have no priority queue: O(k) per element rather than O(log k), which is the entire difference the heap makes. What it does not need is any pairing structure — it works on lists arriving one at a time.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Solution 2 · Smallest head",
+      "",
+      "The heap solution with the heap spelled out as a scan, for languages that have no priority queue: O(k) per element rather than O(log k), which is the entire difference the heap makes. What it does not need is any pairing structure — it works on lists arriving one at a time.",
+      "defmodule Solution do
   # Take the smallest head across all the lists, over and over. This is the heap
   # solution with the heap spelled out as a scan, since Elixir has no priority
   # queue: O(k) per element rather than O(log k), which is the entire difference
@@ -2909,13 +3382,18 @@ end"),
       _ -> take_smallest([remainder | rest], [taken | out])
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc135_reverse_k_group() -> List(#(String, String, String, String)) {
   [
-    #("Two Pass", "O(n) time · O(1) space", "Count once, then reverse exactly length / k groups. One length calculation instead of a look-ahead per group — and it makes the boundary explicit: everything past the last whole group is untouched, however long it is.", "defmodule Solution do
+    #(
+      "Two Pass",
+      "O(n) time · O(1) space",
+      "Count once, then reverse exactly length / k groups. One length calculation instead of a look-ahead per group — and it makes the boundary explicit: everything past the last whole group is untouched, however long it is.",
+      "defmodule Solution do
   def reverse_k_group(values, k) when k <= 1, do: values
 
   def reverse_k_group(values, k) do
@@ -2934,8 +3412,13 @@ pub fn nc135_reverse_k_group() -> List(#(String, String, String, String)) {
     {group, rest} = Enum.split(values, k)
     Enum.reverse(group) ++ reverse_runs(rest, k)
   end
-end"),
-    #("Linked List", "O(n) time · O(1) space", "Look ahead k nodes *before* reversing anything. That check is the whole difficulty: once the rewiring starts there is no way to tell how far it got, so a short final group would be reversed by mistake.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Linked List",
+      "O(n) time · O(1) space",
+      "Look ahead k nodes *before* reversing anything. That check is the whole difficulty: once the rewiring starts there is no way to tell how far it got, so a short final group would be reversed by mistake.",
+      "defmodule Solution do
   # Reverse each full run of k and leave a short tail alone. Checking that k
   # nodes are actually there *before* reversing is the whole difficulty -- the
   # imperative version has to walk ahead and come back, because once it starts
@@ -2950,13 +3433,18 @@ end"),
       do: values,
       else: Enum.reverse(group) ++ in_groups(rest, k)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc136_invert_binary_tree() -> List(#(String, String, String, String)) {
   [
-    #("Flatten & Rebuild", "O(n) time · O(n) space", "Write the tree out pre-order with a marker for every empty child, then read it back taking the first subtree as the *right* child. The inversion happens entirely in the reading — nothing is ever swapped. Longer than the direct recursion, and worth having because the same flatten/rebuild pair is all [[nc150_serialize_deserialize]] is.", "defmodule Solution do
+    #(
+      "Flatten & Rebuild",
+      "O(n) time · O(n) space",
+      "Write the tree out pre-order with a marker for every empty child, then read it back taking the first subtree as the *right* child. The inversion happens entirely in the reading — nothing is ever swapped. Longer than the direct recursion, and worth having because the same flatten/rebuild pair is all [[nc150_serialize_deserialize]] is.",
+      "defmodule Solution do
   # Write the tree out pre-order with a marker for every empty child, then read
   # it back taking the first subtree as the *right* child. The inversion happens
   # entirely in the reading -- nothing is ever swapped. Longer than the direct
@@ -2978,8 +3466,13 @@ pub fn nc136_invert_binary_tree() -> List(#(String, String, String, String)) {
     {second, after_second} = rebuild(after_first)
     {{value, second, first}, after_second}
   end
-end"),
-    #("DFS", "O(n) time · O(h) space", "Swap the children, then invert each of them — the swap and the recursion are the same line. The order does not matter: swapping before or after recursing gives the same tree, which is why this is the shortest tree problem there is.", "defmodule Solution do
+end",
+    ),
+    #(
+      "DFS",
+      "O(n) time · O(h) space",
+      "Swap the children, then invert each of them — the swap and the recursion are the same line. The order does not matter: swapping before or after recursing gives the same tree, which is why this is the shortest tree problem there is.",
+      "defmodule Solution do
   @moduledoc \"\"\"
   A tree is `nil` for empty, or `{value, left, right}` for a node.
   \"\"\"
@@ -2991,13 +3484,18 @@ end"),
   def invert_tree(nil), do: nil
 
   def invert_tree({value, left, right}), do: {value, invert_tree(right), invert_tree(left)}
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc137_maximum_depth() -> List(#(String, String, String, String)) {
   [
-    #("BFS", "O(n) time · O(n) space", "Count the levels instead of measuring the branches: take the whole frontier, replace it with all its children, and add one. No recursion and no stack — which is what makes this the version that survives a tree deep enough to overflow one.", "defmodule Solution do
+    #(
+      "BFS",
+      "O(n) time · O(n) space",
+      "Count the levels instead of measuring the branches: take the whole frontier, replace it with all its children, and add one. No recursion and no stack — which is what makes this the version that survives a tree deep enough to overflow one.",
+      "defmodule Solution do
   # Count the levels instead of measuring the branches: take the whole frontier,
   # replace it with all its children, and add one. No recursion down the tree
   # and no stack -- which is what makes this the version that survives a tree
@@ -3012,20 +3510,32 @@ pub fn nc137_maximum_depth() -> List(#(String, String, String, String)) {
     |> Enum.flat_map(fn {_value, left, right} -> Enum.reject([left, right], &is_nil/1) end)
     |> descend(depth + 1)
   end
-end"),
-    #("DFS", "O(n) time · O(h) space", "One more than the deeper of the two children, with an empty tree at zero. The whole problem is that base case; everything else is the definition of depth read aloud.", "defmodule Solution do
+end",
+    ),
+    #(
+      "DFS",
+      "O(n) time · O(h) space",
+      "One more than the deeper of the two children, with an empty tree at zero. The whole problem is that base case; everything else is the definition of depth read aloud.",
+      "defmodule Solution do
   # One more than the deeper of the two children, with an empty tree at zero.
   # The whole problem is that base case: everything else is the definition of
   # depth read aloud.
   def max_depth(nil), do: 0
   def max_depth({_value, left, right}), do: 1 + max(max_depth(left), max_depth(right))
-end"),
+end",
+    ),
   ]
 }
 
-pub fn nc138_diameter_of_binary_tree() -> List(#(String, String, String, String)) {
+pub fn nc138_diameter_of_binary_tree() -> List(
+  #(String, String, String, String),
+) {
   [
-    #("Brute Force", "O(n²) time · O(n) space", "Ask every node how tall its two sides are and keep the largest sum. Correct and obvious, but height is recomputed from scratch at every node, so a balanced tree costs O(n log n) and a spindly one O(n²) — exactly what returning the height alongside the answer avoids.", "defmodule Solution do
+    #(
+      "Brute Force",
+      "O(n²) time · O(n) space",
+      "Ask every node how tall its two sides are and keep the largest sum. Correct and obvious, but height is recomputed from scratch at every node, so a balanced tree costs O(n log n) and a spindly one O(n²) — exactly what returning the height alongside the answer avoids.",
+      "defmodule Solution do
   # Ask every node how tall its two sides are and keep the largest sum. Correct
   # and obvious, but height is recomputed from scratch at every node, so a
   # balanced tree costs O(n log n) and a spindly one O(n^2) -- which is exactly
@@ -3042,8 +3552,13 @@ pub fn nc138_diameter_of_binary_tree() -> List(#(String, String, String, String)
 
   defp height(nil), do: 0
   defp height({_value, left, right}), do: 1 + max(height(left), height(right))
-end"),
-    #("DFS", "O(n) time · O(h) space", "One walk doing two jobs: each call *returns* its own height, and on the way past it *records* the path through that node — left height plus right height. The answer is the largest such path, so it is never returned, only tracked. That split between return and record is the pattern, and it comes back in [[nc149_max_path_sum]].", "defmodule Solution do
+end",
+    ),
+    #(
+      "DFS",
+      "O(n) time · O(h) space",
+      "One walk doing two jobs: each call *returns* its own height, and on the way past it *records* the path through that node — left height plus right height. The answer is the largest such path, so it is never returned, only tracked. That split between return and record is the pattern, and it comes back in [[nc149_max_path_sum]].",
+      "defmodule Solution do
   # One walk, doing two jobs: each call returns its own height, and on the way
   # past it records the path *through* that node -- left height plus right
   # height. The answer is the largest such path, so it is never returned, only
@@ -3063,13 +3578,18 @@ end"),
     {1 + max(left_height, right_height),
      Enum.max([left_height + right_height, left_widest, right_widest])}
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc139_balanced_binary_tree() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n²) time · O(n) space", "The definition read literally: every node's two sides differ by at most one, and both sides are themselves balanced. It recomputes height at every node, so the work is O(n²) on a spindly tree — the price of separating the two questions the single-pass version answers together.", "defmodule Solution do
+    #(
+      "Brute Force",
+      "O(n²) time · O(n) space",
+      "The definition read literally: every node's two sides differ by at most one, and both sides are themselves balanced. It recomputes height at every node, so the work is O(n²) on a spindly tree — the price of separating the two questions the single-pass version answers together.",
+      "defmodule Solution do
   # The definition read literally: every node's two sides differ by at most one,
   # and both sides are themselves balanced. It recomputes height at every node,
   # so the work is O(n^2) on a spindly tree -- the price of separating the two
@@ -3082,8 +3602,13 @@ pub fn nc139_balanced_binary_tree() -> List(#(String, String, String, String)) {
 
   defp height(nil), do: 0
   defp height({_value, left, right}), do: 1 + max(height(left), height(right))
-end"),
-    #("DFS", "O(n) time · O(h) space", "Height and balance in one walk. A subtree reports its height, or reports that something below it is already unbalanced — and once that happens nothing above needs measuring. Using -1 as the \"not balanced\" height is what lets a single return value carry both answers.", "defmodule Solution do
+end",
+    ),
+    #(
+      "DFS",
+      "O(n) time · O(h) space",
+      "Height and balance in one walk. A subtree reports its height, or reports that something below it is already unbalanced — and once that happens nothing above needs measuring. Using -1 as the \"not balanced\" height is what lets a single return value carry both answers.",
+      "defmodule Solution do
   # Height and balance in one walk. A subtree reports its height, or reports
   # that something below it is already unbalanced -- and once that happens
   # nothing above needs measuring at all. Using -1 as the \"not balanced\" height
@@ -3100,13 +3625,18 @@ end"),
       do: -1,
       else: 1 + max(left_height, right_height)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc13_longest_substring() -> List(#(String, String, String, String)) {
   [
-    #("Sliding Window", "O(n) time · O(n) space", "Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.", "defmodule Solution do
+    #(
+      "Sliding Window",
+      "O(n) time · O(n) space",
+      "Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.",
+      "defmodule Solution do
   def length_of_longest_substring(s) do
     {_last_seen, _start, best} =
       s
@@ -3125,8 +3655,13 @@ pub fn nc13_longest_substring() -> List(#(String, String, String, String)) {
 
     best
   end
-end"),
-    #("Solution 2 · Shrinking window", "", "The window itself is the bookkeeping: on a repeat, drop everything up to and including the earlier copy. No last-seen map at all, at the cost of scanning the window on each repeat.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Solution 2 · Shrinking window",
+      "",
+      "The window itself is the bookkeeping: on a repeat, drop everything up to and including the earlier copy. No last-seen map at all, at the cost of scanning the window on each repeat.",
+      "defmodule Solution do
   def length_of_longest_substring(s) do
     {_window, best} =
       s
@@ -3143,13 +3678,18 @@ end"),
   defp drop_through([g | rest], g), do: rest
   defp drop_through([_other | rest], g), do: drop_through(rest, g)
   defp drop_through([], _g), do: []
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc140_same_tree() -> List(#(String, String, String, String)) {
   [
-    #("Serialisation", "O(n) time · O(n) space", "Turn each tree into a string and compare those. It works *only* because the serialisation records the empty children: without a marker for them, different trees flatten to the same sequence — the same trap [[nc150_serialize_deserialize]] turns on.", "defmodule Solution do
+    #(
+      "Serialisation",
+      "O(n) time · O(n) space",
+      "Turn each tree into a string and compare those. It works *only* because the serialisation records the empty children: without a marker for them, different trees flatten to the same sequence — the same trap [[nc150_serialize_deserialize]] turns on.",
+      "defmodule Solution do
   # Turn each tree into a string and compare those. It works only because the
   # serialisation records the empty children too: without a marker for them,
   # different trees flatten to the same sequence -- the same trap Serialize and
@@ -3161,8 +3701,13 @@ pub fn nc140_same_tree() -> List(#(String, String, String, String)) {
   defp serialise({value, left, right}) do
     \"(\" <> Integer.to_string(value) <> serialise(left) <> serialise(right) <> \")\"
   end
-end"),
-    #("DFS", "O(n) time · O(h) space", "Walk both trees in step. Two empties match, an empty and a node never do, and two nodes match when their values do and both pairs of children do. The same shape is what [[nc141_subtree_of_another_tree]] is built from, which is why it is worth writing out rather than leaning on the language's equality.", "defmodule Solution do
+end",
+    ),
+    #(
+      "DFS",
+      "O(n) time · O(h) space",
+      "Walk both trees in step. Two empties match, an empty and a node never do, and two nodes match when their values do and both pairs of children do. The same shape is what [[nc141_subtree_of_another_tree]] is built from, which is why it is worth writing out rather than leaning on the language's equality.",
+      "defmodule Solution do
   # Walk both trees in step. Two empties match, an empty and a node never do,
   # and two nodes match when their values do and both pairs of children do.
   # Elixir's structural equality would answer this in one character -- the point
@@ -3175,13 +3720,20 @@ end"),
   end
 
   def is_same_tree(_first, _second), do: false
-end"),
+end",
+    ),
   ]
 }
 
-pub fn nc141_subtree_of_another_tree() -> List(#(String, String, String, String)) {
+pub fn nc141_subtree_of_another_tree() -> List(
+  #(String, String, String, String),
+) {
   [
-    #("DFS", "O(n·m) time · O(n+m) space", "Try to match at every node. The two questions are kept apart on purpose: \"are these two trees identical\" is the whole of the work, and \"is it a subtree\" is that question asked once per node. O(n·m) in the worst case, and a partial match that fails deep is what makes it so.", "defmodule Solution do
+    #(
+      "DFS",
+      "O(n·m) time · O(n+m) space",
+      "Try to match at every node. The two questions are kept apart on purpose: \"are these two trees identical\" is the whole of the work, and \"is it a subtree\" is that question asked once per node. O(n·m) in the worst case, and a partial match that fails deep is what makes it so.",
+      "defmodule Solution do
   # Try to match at every node. The two questions are kept apart on purpose:
   # \"are these two trees identical\" is the whole of the work, and \"is it a
   # subtree\" is that question asked once per node. O(n*m) in the worst case, and
@@ -3200,8 +3752,13 @@ pub fn nc141_subtree_of_another_tree() -> List(#(String, String, String, String)
   end
 
   defp same(_first, _second), do: false
-end"),
-    #("Serialisation", "O(n+m) time · O(n+m) space", "Serialise both trees and ask whether one string contains the other — an O(n·m) tree comparison turned into substring search. It is only sound because the serialisation marks the empty children: without them \"2\" inside \"12\" would match, and so would a subtree that starts the same way but is missing a child.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Serialisation",
+      "O(n+m) time · O(n+m) space",
+      "Serialise both trees and ask whether one string contains the other — an O(n·m) tree comparison turned into substring search. It is only sound because the serialisation marks the empty children: without them \"2\" inside \"12\" would match, and so would a subtree that starts the same way but is missing a child.",
+      "defmodule Solution do
   # Serialise both trees and ask whether one string contains the other. That
   # turns an O(n*m) tree comparison into substring search, which is linear with
   # the right algorithm. It is only sound because the serialisation marks the
@@ -3214,13 +3771,20 @@ end"),
   defp serialise({value, left, right}) do
     \"(\" <> Integer.to_string(value) <> serialise(left) <> serialise(right) <> \")\"
   end
-end"),
+end",
+    ),
   ]
 }
 
-pub fn nc142_lowest_common_ancestor_bst() -> List(#(String, String, String, String)) {
+pub fn nc142_lowest_common_ancestor_bst() -> List(
+  #(String, String, String, String),
+) {
   [
-    #("Path Comparison", "O(n) time · O(n) space", "Find the path from the root to each target, then take the last node they share. It ignores the ordering entirely, which is why it is the version that also works on a plain binary tree — at the cost of two searches and two stored paths rather than one walk and nothing.", "defmodule Solution do
+    #(
+      "Path Comparison",
+      "O(n) time · O(n) space",
+      "Find the path from the root to each target, then take the last node they share. It ignores the ordering entirely, which is why it is the version that also works on a plain binary tree — at the cost of two searches and two stored paths rather than one walk and nothing.",
+      "defmodule Solution do
   # Find the path from the root to each target, then take the last node they
   # share. It ignores the ordering entirely, which is why it is the version that
   # also works on a plain binary tree -- at the cost of two searches and two
@@ -3249,8 +3813,13 @@ pub fn nc142_lowest_common_ancestor_bst() -> List(#(String, String, String, Stri
         [value | found]
     end
   end
-end"),
-    #("BST Walk", "O(h) time · O(1) space", "The ordering does all the work. Both targets below the current value means go left, both above means go right, and anything else means this node is the split point — which is the answer. No searching for either node first, and no comparing of paths.", "defmodule Solution do
+end",
+    ),
+    #(
+      "BST Walk",
+      "O(h) time · O(1) space",
+      "The ordering does all the work. Both targets below the current value means go left, both above means go right, and anything else means this node is the split point — which is the answer. No searching for either node first, and no comparing of paths.",
+      "defmodule Solution do
   # The ordering does all the work. If both targets are below the current value
   # go left, if both are above go right, and otherwise this node is the split
   # point -- which is the answer. No searching for either node first, and no
@@ -3264,13 +3833,18 @@ end"),
       true -> value
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc143_level_order_traversal() -> List(#(String, String, String, String)) {
   [
-    #("DFS", "O(n) time · O(n) space", "Walk depth-first and file each value under its depth. The traversal order is wrong for the answer, but appending to the right bucket puts it right — and within a level, left is still visited before right, which is all the ordering the answer needs.", "defmodule Solution do
+    #(
+      "DFS",
+      "O(n) time · O(n) space",
+      "Walk depth-first and file each value under its depth. The traversal order is wrong for the answer, but appending to the right bucket puts it right — and within a level, left is still visited before right, which is all the ordering the answer needs.",
+      "defmodule Solution do
   # Walk depth-first and file each value under its depth. The traversal order is
   # wrong for the answer, but appending to the right bucket puts it right -- and
   # within a level, left is still visited before right, which is all the
@@ -3288,8 +3862,13 @@ pub fn nc143_level_order_traversal() -> List(#(String, String, String, String)) 
     levels = Map.update(levels, depth, [value], &[value | &1])
     collect(right, depth + 1, collect(left, depth + 1, levels))
   end
-end"),
-    #("BFS", "O(n) time · O(n) space", "Take the whole frontier at once rather than one node at a time: everything on it is the current level, and its children are the next. That is what makes the grouping fall out without tracking any depth — a plain queue gives the right order but no idea where each level ends.", "defmodule Solution do
+end",
+    ),
+    #(
+      "BFS",
+      "O(n) time · O(n) space",
+      "Take the whole frontier at once rather than one node at a time: everything on it is the current level, and its children are the next. That is what makes the grouping fall out without tracking any depth — a plain queue gives the right order but no idea where each level ends.",
+      "defmodule Solution do
   # Take the whole frontier at once rather than one node at a time: everything
   # on it is the current level, and its children are the next. That is what
   # makes the grouping fall out without tracking any depth -- a plain queue
@@ -3306,13 +3885,18 @@ end"),
     |> Enum.flat_map(fn {_value, left, right} -> Enum.reject([left, right], &is_nil/1) end)
     |> descend([values | levels])
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc144_right_side_view() -> List(#(String, String, String, String)) {
   [
-    #("DFS", "O(n) time · O(h) space", "Depth-first, visiting the right child first, and recording a value only when its depth is met for the first time. No frontier at all — being first to reach a depth is the same thing as being rightmost on it, given that order of visiting.", "defmodule Solution do
+    #(
+      "DFS",
+      "O(n) time · O(h) space",
+      "Depth-first, visiting the right child first, and recording a value only when its depth is met for the first time. No frontier at all — being first to reach a depth is the same thing as being rightmost on it, given that order of visiting.",
+      "defmodule Solution do
   # Depth-first, visiting the right child first, and recording a value only when
   # its depth is met for the first time. No frontier at all: being first to
   # reach a depth is the same thing as being rightmost on it, given that order
@@ -3330,8 +3914,13 @@ pub fn nc144_right_side_view() -> List(#(String, String, String, String)) {
     seen = Map.put_new(seen, depth, value)
     look(left, depth + 1, look(right, depth + 1, seen))
   end
-end"),
-    #("BFS", "O(n) time · O(n) space", "The last value on each level, which is what \"seen from the right\" means once the question is asked level by level. Walking down the right children alone is the tempting wrong answer: where the right side is short, a node further left is the one that shows.", "defmodule Solution do
+end",
+    ),
+    #(
+      "BFS",
+      "O(n) time · O(n) space",
+      "The last value on each level, which is what \"seen from the right\" means once the question is asked level by level. Walking down the right children alone is the tempting wrong answer: where the right side is short, a node further left is the one that shows.",
+      "defmodule Solution do
   # The last value on each level, which is what \"seen from the right\" means once
   # the question is asked level by level. Walking down the right children alone
   # is the tempting wrong answer: where the right side is short, a node further
@@ -3348,13 +3937,18 @@ end"),
     |> Enum.flat_map(fn {_value, left, right} -> Enum.reject([left, right], &is_nil/1) end)
     |> descend([rightmost | seen])
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc145_count_good_nodes() -> List(#(String, String, String, String)) {
   [
-    #("Full-Path DFS", "O(n·h) time · O(h²) space", "Carry the whole path instead of just its maximum, and take the maximum at each node. The same answer for O(depth) memory per node rather than one number — worth writing once, because it makes plain that the running maximum is a fold of the path, not a separate idea.", "defmodule Solution do
+    #(
+      "Full-Path DFS",
+      "O(n·h) time · O(h²) space",
+      "Carry the whole path instead of just its maximum, and take the maximum at each node. The same answer for O(depth) memory per node rather than one number — worth writing once, because it makes plain that the running maximum is a fold of the path, not a separate idea.",
+      "defmodule Solution do
   # Carry the whole path instead of just its maximum, and take the maximum at
   # each node. The same answer for O(depth) memory per node rather than one
   # integer -- the version worth writing once, because it makes plain that the
@@ -3368,8 +3962,13 @@ pub fn nc145_count_good_nodes() -> List(#(String, String, String, String)) {
     below = [value | above]
     here + count(left, below) + count(right, below)
   end
-end"),
-    #("DFS", "O(n) time · O(h) space", "Carry the largest value seen on the way down. A node is good when nothing above it is bigger, so the check needs no knowledge of the tree below — which is what makes one pass enough. The root is always good, and passing its own value down as the initial maximum is what says so.", "defmodule Solution do
+end",
+    ),
+    #(
+      "DFS",
+      "O(n) time · O(h) space",
+      "Carry the largest value seen on the way down. A node is good when nothing above it is bigger, so the check needs no knowledge of the tree below — which is what makes one pass enough. The root is always good, and passing its own value down as the initial maximum is what says so.",
+      "defmodule Solution do
   # Carry the largest value seen on the way down. A node is good when nothing
   # above it is bigger, so the check needs no knowledge of the tree below --
   # which is what makes one pass enough. The root is always good, and passing
@@ -3384,13 +3983,18 @@ end"),
     below = max(largest, value)
     here + count(left, below) + count(right, below)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc146_validate_bst() -> List(#(String, String, String, String)) {
   [
-    #("In-Order Traversal", "O(n) time · O(n) space", "A binary search tree is exactly a tree whose in-order walk is strictly increasing — the definition, restated so that no bounds have to be threaded anywhere. The cost is the list: O(n) memory against the range check's O(depth).", "defmodule Solution do
+    #(
+      "In-Order Traversal",
+      "O(n) time · O(n) space",
+      "A binary search tree is exactly a tree whose in-order walk is strictly increasing — the definition, restated so that no bounds have to be threaded anywhere. The cost is the list: O(n) memory against the range check's O(depth).",
+      "defmodule Solution do
   # A binary search tree is exactly a tree whose in-order walk is strictly
   # increasing -- that is the definition, restated so that no bounds have to be
   # threaded anywhere. The cost is the list: O(n) memory against the range
@@ -3405,8 +4009,13 @@ pub fn nc146_validate_bst() -> List(#(String, String, String, String)) {
   defp in_order({value, left, right}, after_it) do
     in_order(left, [value | in_order(right, after_it)])
   end
-end"),
-    #("DFS", "O(n) time · O(h) space", "Check against a range, not against the parent. A node can be larger than its own parent and still break the order, because the constraint comes from an ancestor further up — and that is the whole difficulty. Going left tightens the upper bound, going right the lower one.", "defmodule Solution do
+end",
+    ),
+    #(
+      "DFS",
+      "O(n) time · O(h) space",
+      "Check against a range, not against the parent. A node can be larger than its own parent and still break the order, because the constraint comes from an ancestor further up — and that is the whole difficulty. Going left tightens the upper bound, going right the lower one.",
+      "defmodule Solution do
   # Check against a range, not against the parent. A node can be larger than its
   # own parent and still break the order, because the constraint comes from an
   # ancestor further up -- and that is the whole difficulty. Going left tightens
@@ -3425,13 +4034,18 @@ end"),
 
   defp below?(_value, nil), do: true
   defp below?(value, high), do: value < high
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc147_kth_smallest_bst() -> List(#(String, String, String, String)) {
   [
-    #("Subtree Counting", "O(n·h) time · O(h) space", "Count the left subtree and decide which way to go — fewer than k on the left means the answer is this node or to its right. It descends one path instead of walking in order, and it is the version that adapts when the tree stores its own subtree sizes, which turns the whole thing into O(depth).", "defmodule Solution do
+    #(
+      "Subtree Counting",
+      "O(n·h) time · O(h) space",
+      "Count the left subtree and decide which way to go — fewer than k on the left means the answer is this node or to its right. It descends one path instead of walking in order, and it is the version that adapts when the tree stores its own subtree sizes, which turns the whole thing into O(depth).",
+      "defmodule Solution do
   # Count the left subtree and decide which way to go -- fewer than k on the
   # left means the answer is this node or to its right. It descends one path
   # instead of walking in order, and it is the version that adapts when the tree
@@ -3450,8 +4064,13 @@ pub fn nc147_kth_smallest_bst() -> List(#(String, String, String, String)) {
 
   defp size(nil), do: 0
   defp size({_value, left, right}), do: 1 + size(left) + size(right)
-end"),
-    #("Iterative In-Order", "O(h+k) time · O(h) space", "An in-order walk of a search tree visits the values in order, so the answer is the kth thing it reaches. Stopping there is the point: the tree below the kth value is never touched, which is what separates this from sorting everything.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Iterative In-Order",
+      "O(h+k) time · O(h) space",
+      "An in-order walk of a search tree visits the values in order, so the answer is the kth thing it reaches. Stopping there is the point: the tree below the kth value is never touched, which is what separates this from sorting everything.",
+      "defmodule Solution do
   # An in-order walk of a search tree visits the values in order, so the answer
   # is the kth thing it reaches. Stopping there is the point: the tree below the
   # kth value is never touched, which is what separates this from sorting
@@ -3472,13 +4091,20 @@ end"),
       {:remaining, left_over} -> take(right, left_over - 1)
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
-pub fn nc148_build_tree_preorder_inorder() -> List(#(String, String, String, String)) {
+pub fn nc148_build_tree_preorder_inorder() -> List(
+  #(String, String, String, String),
+) {
   [
-    #("Recursion", "O(n²) time · O(n²) space", "Pre-order names the root; in-order says how much of the rest belongs to each side. Neither traversal alone determines a tree, and this is precisely why together they do — the split point found in the in-order list is the size of the left subtree, which is what carves up the pre-order list too.", "defmodule Solution do
+    #(
+      "Recursion",
+      "O(n²) time · O(n²) space",
+      "Pre-order names the root; in-order says how much of the rest belongs to each side. Neither traversal alone determines a tree, and this is precisely why together they do — the split point found in the in-order list is the size of the left subtree, which is what carves up the pre-order list too.",
+      "defmodule Solution do
   # Pre-order names the root; in-order says how much of the rest belongs to each
   # side. Neither traversal alone determines a tree, and this is why together
   # they do -- the split point found in the in-order list is exactly the size of
@@ -3491,10 +4117,15 @@ pub fn nc148_build_tree_preorder_inorder() -> List(#(String, String, String, Str
     {left_in, right_in} = Enum.split(inorder, left_size)
     {root, build_tree(left_pre, left_in), build_tree(right_pre, Enum.drop(right_in, 1))}
   end
-end"),
-    #("Hash Map", "O(n) time · O(n) space", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+end",
+    ),
+    #(
+      "Hash Map",
+      "O(n) time · O(n) space",
+      "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
 
-The same construction without slicing anything: a map from value to its in-order position, plus a low and a high bound saying which slice each call owns. Building the map once turns the repeated search for the root — the hidden O(n) inside the slicing version — into a lookup.", "defmodule Solution do
+The same construction without slicing anything: a map from value to its in-order position, plus a low and a high bound saying which slice each call owns. Building the map once turns the repeated search for the root — the hidden O(n) inside the slicing version — into a lookup.",
+      "defmodule Solution do
   # The same construction without slicing anything: a map from value to its
   # in-order position, plus a low and a high bound saying which slice each call
   # owns. Building the map once turns the repeated search for the root -- the
@@ -3514,13 +4145,18 @@ The same construction without slicing anything: a map from value to its in-order
     {right, after_right} = take(after_left, places, split + 1, high)
     {{root, left, right}, after_right}
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc149_max_path_sum() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n²) time · O(n) space", "Every path through every node, measured outright: for each node, take the best downward run on each side and add them. It recomputes those runs from scratch at every node, so it is O(n²) on a spindly tree — the cost of asking the two questions separately instead of returning both from one walk.", "defmodule Solution do
+    #(
+      "Brute Force",
+      "O(n²) time · O(n) space",
+      "Every path through every node, measured outright: for each node, take the best downward run on each side and add them. It recomputes those runs from scratch at every node, so it is O(n²) on a spindly tree — the cost of asking the two questions separately instead of returning both from one walk.",
+      "defmodule Solution do
   # Every path through every node, measured outright: for each node, take the
   # best downward run on each side and add them. It recomputes those runs from
   # scratch at every node, so it is O(n^2) on a spindly tree -- the cost of
@@ -3544,8 +4180,13 @@ pub fn nc149_max_path_sum() -> List(#(String, String, String, String)) {
   defp downwards({value, left, right}) do
     value + Enum.max([downwards(left), downwards(right), 0])
   end
-end"),
-    #("DFS", "O(n) time · O(h) space", "Two different quantities, which is the whole trick. What a node *returns* is the best path that can continue upwards, so at most one of its children. What it *records* is the best path through it, which may use both. A negative branch is dropped rather than added, because a path is allowed to stop. Same shape as [[nc138_diameter_of_binary_tree]].", "defmodule Solution do
+end",
+    ),
+    #(
+      "DFS",
+      "O(n) time · O(h) space",
+      "Two different quantities, which is the whole trick. What a node *returns* is the best path that can continue upwards, so at most one of its children. What it *records* is the best path through it, which may use both. A negative branch is dropped rather than added, because a path is allowed to stop. Same shape as [[nc138_diameter_of_binary_tree]].",
+      "defmodule Solution do
   # Two different quantities, which is the whole trick. What a node *returns* is
   # the best path that can continue upwards -- so at most one of its children.
   # What it *records* is the best path through it, which may use both. A
@@ -3569,13 +4210,18 @@ end"),
     {value + max(left_gain, right_gain),
      Enum.max([value + left_gain + right_gain, left_best, right_best])}
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc14_character_replacement() -> List(#(String, String, String, String)) {
   [
-    #("Per-Letter Window", "O(26·n) time · O(1) space", "One sweep per letter, asking a much simpler question each time: how long a window can I hold if *this* is the letter I keep? No running frequency map and no max-count bookkeeping — 26 easy passes instead of one subtle one.", "defmodule Solution do
+    #(
+      "Per-Letter Window",
+      "O(26·n) time · O(1) space",
+      "One sweep per letter, asking a much simpler question each time: how long a window can I hold if *this* is the letter I keep? No running frequency map and no max-count bookkeeping — 26 easy passes instead of one subtle one.",
+      "defmodule Solution do
   @alphabet String.graphemes(\"ABCDEFGHIJKLMNOPQRSTUVWXYZ\")
 
   def character_replacement(s, k) do
@@ -3597,8 +4243,13 @@ pub fn nc14_character_replacement() -> List(#(String, String, String, String)) {
   end
 
   defp shrink(left, size, others, _target, _k), do: {left, size, others}
-end"),
-    #("Sliding Window", "O(n) time · O(1) space", "A window can be made uniform with k changes when its size minus its most-frequent-character count is at most k. Grow the right edge, shrink from the left when that breaks, and the biggest valid window is the answer.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Sliding Window",
+      "O(n) time · O(1) space",
+      "A window can be made uniform with k changes when its size minus its most-frequent-character count is at most k. Grow the right edge, shrink from the left when that breaks, and the biggest valid window is the answer.",
+      "defmodule Solution do
   def character_replacement(s, k) do
     {_counts, _window, best} =
       s
@@ -3624,13 +4275,18 @@ end"),
       {counts, window}
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc150_serialize_deserialize() -> List(#(String, String, String, String)) {
   [
-    #("Post-Order DFS", "O(n) time · O(n) space", "Post-order instead of pre-order, still with a marker for every empty child. The root is then the *last* token, so the reader works backwards — and reading backwards means taking the right subtree before the left. The format is what decides the parse direction, and nothing else about the two versions differs.", "defmodule Solution do
+    #(
+      "Post-Order DFS",
+      "O(n) time · O(n) space",
+      "Post-order instead of pre-order, still with a marker for every empty child. The root is then the *last* token, so the reader works backwards — and reading backwards means taking the right subtree before the left. The format is what decides the parse direction, and nothing else about the two versions differs.",
+      "defmodule Solution do
   # Post-order instead of pre-order, still with a marker for every empty child.
   # The root is then the *last* token rather than the first, so the reader works
   # backwards -- and reading backwards means taking the right subtree before the
@@ -3657,8 +4313,13 @@ pub fn nc150_serialize_deserialize() -> List(#(String, String, String, String)) 
     {left, after_left} = rebuild(after_right)
     {{String.to_integer(head), left, right}, after_left}
   end
-end"),
-    #("Pre-Order DFS", "O(n) time · O(n) space", "Pre-order with a marker for every empty child. Recording the empties is what makes the format unambiguous — a pre-order list of values alone matches many different trees — and it is also what lets the reader work with no length information at all: it stops as soon as it has consumed a whole subtree.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Pre-Order DFS",
+      "O(n) time · O(n) space",
+      "Pre-order with a marker for every empty child. Recording the empties is what makes the format unambiguous — a pre-order list of values alone matches many different trees — and it is also what lets the reader work with no length information at all: it stops as soon as it has consumed a whole subtree.",
+      "defmodule Solution do
   # Pre-order with a marker for every empty child. Recording the empties is what
   # makes the format unambiguous -- a pre-order list of values alone matches
   # many different trees -- and it is also what lets the reader work without any
@@ -3684,13 +4345,18 @@ end"),
     {right, after_right} = rebuild(after_left)
     {{String.to_integer(head), left, right}, after_right}
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc15_permutation_in_string() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n·m log m) time · O(m) space", "Every window of the right length, sorted and compared against the sorted needle. Slower than sliding counts, but there is no incremental state to get wrong: the whole method is \"is this window an anagram?\".", "defmodule Solution do
+    #(
+      "Brute Force",
+      "O(n·m log m) time · O(m) space",
+      "Every window of the right length, sorted and compared against the sorted needle. Slower than sliding counts, but there is no incremental state to get wrong: the whole method is \"is this window an anagram?\".",
+      "defmodule Solution do
   def inclusion?(s1, s2) do
     needle = s1 |> String.graphemes() |> Enum.sort()
     size = length(needle)
@@ -3702,8 +4368,13 @@ pub fn nc15_permutation_in_string() -> List(#(String, String, String, String)) {
       true -> graphemes |> Enum.chunk_every(size, 1, :discard) |> Enum.any?(&(Enum.sort(&1) == needle))
     end
   end
-end"),
-    #("Sliding Window", "O(26·n) time · O(1) space", "A permutation of s1 is any window of length |s1| in s2 with identical character counts. Slide one character at a time, adding the entering character and removing the leaving one, so each step is O(1) rather than a recount.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Sliding Window",
+      "O(26·n) time · O(1) space",
+      "A permutation of s1 is any window of length |s1| in s2 with identical character counts. Slide one character at a time, adding the entering character and removing the leaving one, so each step is O(1) rather than a recount.",
+      "defmodule Solution do
   def inclusion?(s1, s2) do
     need = s1 |> String.graphemes() |> Enum.frequencies()
     size = String.length(s1)
@@ -3729,13 +4400,18 @@ end"),
 
     slide(oldest, upcoming, window, need)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc16_valid_parentheses() -> List(#(String, String, String, String)) {
   [
-    #("Nifty Python · Replace", "O(n²) time · O(n) space", "No stack: strip every matched pair, over and over, until nothing more can go. Whatever survives is unmatched. It is also why \"([)]\" fails — neither pair is ever adjacent.", "defmodule Solution do
+    #(
+      "Nifty Python · Replace",
+      "O(n²) time · O(n) space",
+      "No stack: strip every matched pair, over and over, until nothing more can go. Whatever survives is unmatched. It is also why \"([)]\" fails — neither pair is ever adjacent.",
+      "defmodule Solution do
   def valid?(s) do
     reduce(s) == \"\"
   end
@@ -3744,8 +4420,13 @@ pub fn nc16_valid_parentheses() -> List(#(String, String, String, String)) {
     smaller = s |> String.replace(\"()\", \"\") |> String.replace(\"[]\", \"\") |> String.replace(\"{}\", \"\")
     if smaller == s, do: s, else: reduce(smaller)
   end
-end"),
-    #("Stack", "O(n) time · O(n) space", "On every opener, push the closer you expect; on every closer, it must match the top. Valid means never mismatching and finishing with an empty stack — both halves are needed.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Stack",
+      "O(n) time · O(n) space",
+      "On every opener, push the closer you expect; on every closer, it must match the top. Valid means never mismatching and finishing with an empty stack — both halves are needed.",
+      "defmodule Solution do
   @closers %{\"(\" => \")\", \"[\" => \"]\", \"{\" => \"}\"}
 
   def valid?(s) do
@@ -3761,13 +4442,18 @@ end"),
       _ -> false
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc17_min_stack() -> List(#(String, String, String, String)) {
   [
-    #("Two Stacks", "O(1) per operation · O(n) space", "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.", "defmodule Solution do
+    #(
+      "Two Stacks",
+      "O(1) per operation · O(n) space",
+      "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.",
+      "defmodule Solution do
   # Immutable, so the \"stack\" is a value that each operation returns a new
   # version of. Each entry carries the minimum of everything at or below it.
   def new, do: []
@@ -3790,8 +4476,13 @@ pub fn nc17_min_stack() -> List(#(String, String, String, String)) {
 
   def get_min([{_value, minimum} | _]), do: minimum
   def get_min([]), do: nil
-end"),
-    #("Solution 2 · Two stacks", "", "Values in one stack, running minimums in a parallel one. The two concerns stay separate, which is what makes adding a max stack a copy-paste.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Solution 2 · Two stacks",
+      "",
+      "Values in one stack, running minimums in a parallel one. The two concerns stay separate, which is what makes adding a max stack a copy-paste.",
+      "defmodule Solution do
   # Values in one list, running minimums in a parallel one. The two concerns
   # stay separate, which is what makes adding a max stack a copy-paste.
   def new, do: {[], []}
@@ -3814,15 +4505,20 @@ end"),
 
   def get_min({_values, [minimum | _]}), do: minimum
   def get_min({_values, []}), do: nil
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc18_daily_temperatures() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n²) time · O(1) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-For each day, scan forward until it gets warmer. O(n^2) — the monotonic stack exists only to avoid rescanning the same cold stretch once per day.", "defmodule Solution do
+For each day, scan forward until it gets warmer. O(n^2) — the monotonic stack exists only to avoid rescanning the same cold stretch once per day.",
+      "defmodule Solution do
   def daily_temperatures(temps) do
     temps
     |> Enum.with_index()
@@ -3833,8 +4529,13 @@ For each day, scan forward until it gets warmer. O(n^2) — the monotonic stack 
       end
     end)
   end
-end"),
-    #("Monotonic Stack", "O(n) time · O(n) space", "A stack of days still waiting for something warmer, kept in decreasing temperature order. Each new day resolves and pops every colder day below it, so every day is pushed once and popped once — O(n).", "defmodule Solution do
+end",
+    ),
+    #(
+      "Monotonic Stack",
+      "O(n) time · O(n) space",
+      "A stack of days still waiting for something warmer, kept in decreasing temperature order. Each new day resolves and pops every colder day below it, so every day is pushed once and popped once — O(n).",
+      "defmodule Solution do
   def daily_temperatures(temps) do
     {answers, _stack} =
       temps
@@ -3852,15 +4553,20 @@ end"),
   end
 
   defp resolve(answers, stack, _temp, _i), do: {answers, stack}
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc19_binary_search() -> List(#(String, String, String, String)) {
   [
-    #("Binary Search", "O(log n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+    #(
+      "Binary Search",
+      "O(log n) time · O(1) space",
+      "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-Worth writing until the bounds are automatic: this is the search every rotated-array problem is built on top of.", "defmodule Solution do
+Worth writing until the bounds are automatic: this is the search every rotated-array problem is built on top of.",
+      "defmodule Solution do
   def search(nums, target) do
     halve(List.to_tuple(nums), target, 0, length(nums) - 1)
   end
@@ -3876,22 +4582,32 @@ Worth writing until the bounds are automatic: this is the search every rotated-a
       _ -> halve(tuple, target, low, mid - 1)
     end
   end
-end"),
-    #("Solution 2 · First match scan", "", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+end",
+    ),
+    #(
+      "Solution 2 · First match scan",
+      "",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-A plain indexed scan. O(n), so it fails the stated requirement — but it is what the halving has to beat, and it shows exactly what the sortedness buys.", "defmodule Solution do
+A plain indexed scan. O(n), so it fails the stated requirement — but it is what the halving has to beat, and it shows exactly what the sortedness buys.",
+      "defmodule Solution do
   def search(nums, target) do
     Enum.find_index(nums, &(&1 == target))
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc20_find_min_rotated() -> List(#(String, String, String, String)) {
   [
-    #("Linear Scan", "O(n) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Linear Scan",
+      "O(n) time · O(1) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-O(n) rather than O(log n), but it makes the shape obvious: a rotated sorted array drops in value exactly once, and that drop is the minimum. No drop means it was never rotated, so the head wins.", "defmodule Solution do
+O(n) rather than O(log n), but it makes the shape obvious: a rotated sorted array drops in value exactly once, and that drop is the minimum. No drop means it was never rotated, so the head wins.",
+      "defmodule Solution do
   def find_min([]), do: nil
 
   def find_min([head | rest]) do
@@ -3905,10 +4621,15 @@ O(n) rather than O(log n), but it makes the shape obvious: a rotated sorted arra
   defp scan([n | rest], previous, head) do
     if n < previous, do: n, else: scan(rest, n, head)
   end
-end"),
-    #("Binary Search", "O(log n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+end",
+    ),
+    #(
+      "Binary Search",
+      "O(log n) time · O(1) space",
+      "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-The minimum is the one place order breaks. Compare the midpoint against a boundary: a segment that still looks sorted cannot hold the break, so the answer is in the other half.", "defmodule Solution do
+The minimum is the one place order breaks. Compare the midpoint against a boundary: a segment that still looks sorted cannot hold the break, so the answer is in the other half.",
+      "defmodule Solution do
   def find_min([]), do: nil
 
   def find_min(nums) do
@@ -3929,15 +4650,20 @@ The minimum is the one place order breaks. Compare the midpoint against a bounda
       narrow(tuple, low, mid)
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc21_search_rotated() -> List(#(String, String, String, String)) {
   [
-    #("Pivot + Binary Search", "O(n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+    #(
+      "Pivot + Binary Search",
+      "O(n) time · O(1) space",
+      "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-Two plain steps instead of one clever one: find where the rotation wrapped, which leaves two ordinary sorted runs, then search each. Nothing has to reason mid-search about which half is sorted.", "defmodule Solution do
+Two plain steps instead of one clever one: find where the rotation wrapped, which leaves two ordinary sorted runs, then search each. Nothing has to reason mid-search about which half is sorted.",
+      "defmodule Solution do
   def search_rotated(nums, target) do
     tuple = List.to_tuple(nums)
     pivot = rotation_point(nums)
@@ -3971,10 +4697,15 @@ Two plain steps instead of one clever one: find where the rotation wrapped, whic
       _ -> search(tuple, target, low, mid - 1)
     end
   end
-end"),
-    #("Binary Search", "O(log n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+end",
+    ),
+    #(
+      "Binary Search",
+      "O(log n) time · O(1) space",
+      "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-The twist: after a rotation, one half around the midpoint is always sorted. Work out which, then use its endpoints to decide whether the target lies inside it.", "defmodule Solution do
+The twist: after a rotation, one half around the midpoint is always sorted. Work out which, then use its endpoints to decide whether the target lies inside it.",
+      "defmodule Solution do
   def search_rotated(nums, target) do
     halve(List.to_tuple(nums), target, 0, length(nums) - 1)
   end
@@ -4001,13 +4732,18 @@ The twist: after a rotation, one half around the midpoint is always sorted. Work
           else: halve(tuple, target, low, mid - 1)
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc22_encode_decode() -> List(#(String, String, String, String)) {
   [
-    #("Separator + Escaping", "O(n) time · O(n) space", "The other honest answer: pick a separator and make it safe by escaping it, and escaping the escape. Note the leading separator rather than a join — without it, [] and [\"\"] both encode to the empty string, which is the case that catches most first attempts.", "
+    #(
+      "Separator + Escaping",
+      "O(n) time · O(n) space",
+      "The other honest answer: pick a separator and make it safe by escaping it, and escaping the escape. Note the leading separator rather than a join — without it, [] and [\"\"] both encode to the empty string, which is the case that catches most first attempts.",
+      "
 defmodule Solution do
   @separator \"|\"
   @escape \"\\\\\"
@@ -4038,8 +4774,13 @@ defmodule Solution do
     do: unescape(rest, \"\", [current | acc])
 
   defp unescape([g | rest], current, acc), do: unescape(rest, current <> g, acc)
-end"),
-    #("Length Prefix", "O(n) time · O(n) space", "Length-prefix each string: its length, a delimiter, then the string itself. Decoding reads a number and then takes exactly that many characters, so nothing inside a payload can ever be mistaken for structure — the delimiter appearing in the data is harmless, because the decoder was never scanning for it.", "
+end",
+    ),
+    #(
+      "Length Prefix",
+      "O(n) time · O(n) space",
+      "Length-prefix each string: its length, a delimiter, then the string itself. Decoding reads a number and then takes exactly that many characters, so nothing inside a payload can ever be mistaken for structure — the delimiter appearing in the data is harmless, because the decoder was never scanning for it.",
+      "
 defmodule Solution do
   def encode(strs) do
     Enum.map_join(strs, fn s -> \"#{String.length(s)}##{s}\" end)
@@ -4054,13 +4795,18 @@ defmodule Solution do
     length = String.to_integer(digits)
     read(String.slice(tail, length..-1//1), [String.slice(tail, 0, length) | acc])
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc23_valid_sudoku() -> List(#(String, String, String, String)) {
   [
-    #("Check Each Unit", "O(9²) time · O(9²) space", "Turn the board into the 27 things being constrained — nine rows, nine columns, nine boxes — and the problem collapses to \"does any of these contain a repeat?\". More passes than the signature set, but the constraint is stated once and the box arithmetic is confined to building the units.", "defmodule Solution do
+    #(
+      "Check Each Unit",
+      "O(9²) time · O(9²) space",
+      "Turn the board into the 27 things being constrained — nine rows, nine columns, nine boxes — and the problem collapses to \"does any of these contain a repeat?\". More passes than the signature set, but the constraint is stated once and the box arithmetic is confined to building the units.",
+      "defmodule Solution do
   def valid_sudoku?(board), do: Enum.all?(units(board), &no_duplicates?/1)
 
   defp units(board), do: board ++ transpose(board) ++ boxes(board)
@@ -4082,8 +4828,13 @@ pub fn nc23_valid_sudoku() -> List(#(String, String, String, String)) {
     filled = Enum.reject(unit, &(&1 == \".\"))
     length(filled) == MapSet.size(MapSet.new(filled))
   end
-end"),
-    #("One Pass + Seen Set", "O(9²) time · O(9²) space", "One pass, one set. Each filled cell contributes three signatures — this value in this row, in this column, in this box — and the first one already present is the duplicate. Nothing has to be gathered up first, and the scan stops the moment it fails.", "defmodule Solution do
+end",
+    ),
+    #(
+      "One Pass + Seen Set",
+      "O(9²) time · O(9²) space",
+      "One pass, one set. Each filled cell contributes three signatures — this value in this row, in this column, in this box — and the first one already present is the duplicate. Nothing has to be gathered up first, and the scan stops the moment it fails.",
+      "defmodule Solution do
   def valid_sudoku?(board) do
     board
     |> filled_cells()
@@ -4113,13 +4864,18 @@ end"),
       |> Enum.map(fn {value, c} -> {r, c, value} end)
     end)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc24_trapping_rain_water() -> List(#(String, String, String, String)) {
   [
-    #("Prefix Maxima", "O(n) time · O(n) space", "State the definition and compute it. Water above a position is min(tallest to its left, tallest to its right) minus its own height, so build both running maxima and sum the differences. Two extra arrays against the two-pointer version's none, but the formula is right there in the code.", "defmodule Solution do
+    #(
+      "Prefix Maxima",
+      "O(n) time · O(n) space",
+      "State the definition and compute it. Water above a position is min(tallest to its left, tallest to its right) minus its own height, so build both running maxima and sum the differences. Two extra arrays against the two-pointer version's none, but the formula is right there in the code.",
+      "defmodule Solution do
   def trap(height) do
     left = running_max(height)
     right = height |> Enum.reverse() |> running_max() |> Enum.reverse()
@@ -4130,8 +4886,13 @@ pub fn nc24_trapping_rain_water() -> List(#(String, String, String, String)) {
   end
 
   defp running_max(values), do: Enum.scan(values, 0, &max/2)
-end"),
-    #("Two Pointers", "O(n) time · O(1) space", "Two pointers, moving whichever side is shorter. The trick is that the shorter side alone decides how much water sits above it: whatever is on the far side is at least as tall, so the running maximum behind the short pointer is the water level, and there is no need to know the far maximum exactly. One pass, no extra arrays.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Two Pointers",
+      "O(n) time · O(1) space",
+      "Two pointers, moving whichever side is shorter. The trick is that the shorter side alone decides how much water sits above it: whatever is on the far side is at least as tall, so the running maximum behind the short pointer is the water level, and there is no need to know the far maximum exactly. One pass, no extra arrays.",
+      "defmodule Solution do
   def trap(height) do
     walk(height, Enum.reverse(height), length(height) - 1, 0, 0, 0)
   end
@@ -4152,13 +4913,18 @@ end"),
       walk(front, back_rest, remaining - 1, left_max, right_max, total + right_max - r)
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc25_min_window_substring() -> List(#(String, String, String, String)) {
   [
-    #("Filtered Sliding Window", "O(n+m) time · O(n) space", "Two changes from the counting version, both worth knowing. First, throw away every position whose character is not in the needle: for a long haystack and a short needle, that is nearly the whole walk gone. Second, track how many distinct requirements are fully covered rather than how many characters remain — the counter only moves when a count crosses its requirement.", "defmodule Solution do
+    #(
+      "Filtered Sliding Window",
+      "O(n+m) time · O(n) space",
+      "Two changes from the counting version, both worth knowing. First, throw away every position whose character is not in the needle: for a long haystack and a short needle, that is nearly the whole walk gone. Second, track how many distinct requirements are fully covered rather than how many characters remain — the counter only moves when a count crosses its requirement.",
+      "defmodule Solution do
   def min_window(\"\", _t), do: \"\"
   def min_window(_s, \"\"), do: \"\"
 
@@ -4222,8 +4988,13 @@ pub fn nc25_min_window_substring() -> List(#(String, String, String, String)) {
       best
     )
   end
-end"),
-    #("Sliding Window", "O(n+m) time · O(1) space", "Count what is still missing, not what is present. Every character the window takes in decrements its requirement, and only a character that was actually still needed moves the counter — so \"missing == 0\" is a single integer test rather than a map comparison. Once the window is valid, shrink from the left until it stops being valid, recording the best as you go.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Sliding Window",
+      "O(n+m) time · O(1) space",
+      "Count what is still missing, not what is present. Every character the window takes in decrements its requirement, and only a character that was actually still needed moves the counter — so \"missing == 0\" is a single integer test rather than a map comparison. Once the window is valid, shrink from the left until it stops being valid, recording the best as you go.",
+      "defmodule Solution do
   def min_window(\"\", _t), do: \"\"
   def min_window(_s, \"\"), do: \"\"
 
@@ -4279,15 +5050,20 @@ end"),
       best
     )
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc26_sliding_window_maximum() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n·k) time · O(k) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n·k) time · O(k) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every window, maximised. O(n·k) rather than O(n), which is exactly the rescanning the other two variants exist to avoid.", "defmodule Solution do
+Every window, maximised. O(n·k) rather than O(n), which is exactly the rescanning the other two variants exist to avoid.",
+      "defmodule Solution do
   def max_sliding_window(_nums, k) when k <= 0, do: []
 
   def max_sliding_window(nums, k) do
@@ -4295,8 +5071,13 @@ Every window, maximised. O(n·k) rather than O(n), which is exactly the rescanni
     |> Enum.chunk_every(k, 1, :discard)
     |> Enum.map(&Enum.max/1)
   end
-end"),
-    #("Monotonic Deque", "O(n) time · O(k) space", "The classic answer. Hold the indices whose value could still be the maximum, kept in decreasing order: a new value pops every smaller one off the back, because they can never win again while it is in the window. The front is always the answer, and the front leaves once it falls out of range. Each index is pushed and popped once.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Monotonic Deque",
+      "O(n) time · O(k) space",
+      "The classic answer. Hold the indices whose value could still be the maximum, kept in decreasing order: a new value pops every smaller one off the back, because they can never win again while it is in the window. The front is always the answer, and the front leaves once it falls out of range. Each index is pushed and popped once.",
+      "defmodule Solution do
   def max_sliding_window(_nums, k) when k <= 0, do: []
 
   def max_sliding_window(nums, k) do
@@ -4341,8 +5122,13 @@ end"),
     {:value, index} = :queue.peek(window)
     index
   end
-end"),
-    #("Prefix & Suffix Maxima", "O(n) time · O(n) space", "Cut the array into blocks of k and pre-compute, within each block, the running maximum forwards and backwards. Any window of width k straddles at most one block boundary, so it is exactly a suffix of one block and a prefix of the next — one max from each, and the whole thing is O(n) with no queue at all.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Prefix & Suffix Maxima",
+      "O(n) time · O(n) space",
+      "Cut the array into blocks of k and pre-compute, within each block, the running maximum forwards and backwards. Any window of width k straddles at most one block boundary, so it is exactly a suffix of one block and a prefix of the next — one max from each, and the whole thing is O(n) with no queue at all.",
+      "defmodule Solution do
   def max_sliding_window(_nums, k) when k <= 0, do: []
 
   def max_sliding_window(nums, k) do
@@ -4363,13 +5149,18 @@ end"),
   # Seeded with the first element rather than zero: the values can be negative.
   defp running_max([]), do: []
   defp running_max([first | rest]), do: [first | Enum.scan(rest, first, &max/2)]
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc27_eval_rpn() -> List(#(String, String, String, String)) {
   [
-    #("Recursion", "O(n) time · O(n) space", "The same grammar, read as a recursive descent instead of a loop. The last token is the outermost operator; each operator asks for its right operand first, because that is what sits nearer the end. What the stack version stores in a list, this one stores in the call stack.", "defmodule Solution do
+    #(
+      "Recursion",
+      "O(n) time · O(n) space",
+      "The same grammar, read as a recursive descent instead of a loop. The last token is the outermost operator; each operator asks for its right operand first, because that is what sits nearer the end. What the stack version stores in a list, this one stores in the call stack.",
+      "defmodule Solution do
   def eval_rpn(tokens) do
     {value, _rest} = take(Enum.reverse(tokens))
     value
@@ -4392,8 +5183,13 @@ pub fn nc27_eval_rpn() -> List(#(String, String, String, String)) {
   defp apply_operator(\"-\", a, b), do: a - b
   defp apply_operator(\"*\", a, b), do: a * b
   defp apply_operator(\"/\", a, b), do: div(a, b)
-end"),
-    #("Stack", "O(n) time · O(n) space", "A stack is the whole evaluator. Numbers go on; an operator takes the top two off and puts its result back. The one detail worth remembering is the order — the value popped first is the right operand — and that the division truncates towards zero, which is not what a flooring division does for negatives.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Stack",
+      "O(n) time · O(n) space",
+      "A stack is the whole evaluator. Numbers go on; an operator takes the top two off and puts its result back. The one detail worth remembering is the order — the value popped first is the right operand — and that the division truncates towards zero, which is not what a flooring division does for negatives.",
+      "defmodule Solution do
   def eval_rpn(tokens) do
     case Enum.reduce(tokens, [], &step/2) do
       [answer | _] -> answer
@@ -4408,13 +5204,18 @@ end"),
   defp step(\"*\", [b, a | rest]), do: [a * b | rest]
   defp step(\"/\", [b, a | rest]), do: [div(a, b) | rest]
   defp step(token, stack), do: [String.to_integer(token) | stack]
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc28_generate_parentheses() -> List(#(String, String, String, String)) {
   [
-    #("Divide & Conquer", "O(4ⁿ/√n) time · O(4ⁿ/√n) space", "Structure instead of search. Every non-empty balanced string is \"(\" + A + \")\" + B for exactly one split: A is what the first bracket encloses, B is what follows it. Enumerating the splits enumerates the strings, and there is no validity rule anywhere — the shape of the recursion is the rule.", "defmodule Solution do
+    #(
+      "Divide & Conquer",
+      "O(4ⁿ/√n) time · O(4ⁿ/√n) space",
+      "Structure instead of search. Every non-empty balanced string is \"(\" + A + \")\" + B for exactly one split: A is what the first bracket encloses, B is what follows it. Enumerating the splits enumerates the strings, and there is no validity rule anywhere — the shape of the recursion is the rule.",
+      "defmodule Solution do
   def generate_parenthesis(n), do: compose(n)
 
   # Every non-empty balanced string is \"(\" <> a <> \")\" <> b for exactly one
@@ -4429,8 +5230,13 @@ pub fn nc28_generate_parentheses() -> List(#(String, String, String, String)) {
         b <- compose(n - 1 - inner),
         do: \"(\" <> a <> \")\" <> b
   end
-end"),
-    #("Backtracking", "O(4ⁿ/√n) time · O(n) space", "Backtracking with two counters and one rule each: an opener is legal while any are left, a closer only while more are outstanding than openers. Nothing invalid is ever built, so there is no filtering step — every leaf reached with both counters at zero is an answer.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Backtracking",
+      "O(4ⁿ/√n) time · O(n) space",
+      "Backtracking with two counters and one rule each: an opener is legal while any are left, a closer only while more are outstanding than openers. Nothing invalid is ever built, so there is no filtering step — every leaf reached with both counters at zero is an answer.",
+      "defmodule Solution do
   def generate_parenthesis(n), do: Enum.reverse(build(n, n, \"\", []))
 
   # Two counters, one rule each: an opener is legal while any are left, and a
@@ -4442,15 +5248,20 @@ end"),
     acc = if open > 0, do: build(open - 1, close, current <> \"(\", acc), else: acc
     if close > open, do: build(open, close - 1, current <> \")\", acc), else: acc
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc29_car_fleet() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n²) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n²) time · O(n) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-A car leads a fleet exactly when it arrives strictly later than every car ahead of it. Checking that directly needs no sort and no running state — O(n²), and it is the definition the sorted scan is a consequence of.", "defmodule Solution do
+A car leads a fleet exactly when it arrives strictly later than every car ahead of it. Checking that directly needs no sort and no running state — O(n²), and it is the definition the sorted scan is a consequence of.",
+      "defmodule Solution do
   def car_fleet(target, position, speed) do
     cars = Enum.zip(position, speed)
     Enum.count(cars, &leads?(&1, cars, target))
@@ -4467,8 +5278,13 @@ A car leads a fleet exactly when it arrives strictly later than every car ahead 
       (target - pos) * other_speed > (target - other_pos) * spd
     end)
   end
-end"),
-    #("Sort + Greedy", "O(n log n) time · O(n) space", "Sort from the front backwards and carry the arrival time of the fleet ahead. A car that would arrive later than that fleet can never catch it, so it starts a new one and becomes the time to beat; anything else merges. Comparing times as distance × speed cross-multiplied keeps the whole thing in integers.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Sort + Greedy",
+      "O(n log n) time · O(n) space",
+      "Sort from the front backwards and carry the arrival time of the fleet ahead. A car that would arrive later than that fleet can never catch it, so it starts a new one and becomes the time to beat; anything else merges. Comparing times as distance × speed cross-multiplied keeps the whole thing in integers.",
+      "defmodule Solution do
   def car_fleet(target, position, speed) do
     {fleets, _lead_distance, _lead_speed} =
       position
@@ -4488,15 +5304,20 @@ end"),
 
     fleets
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc30_largest_rectangle() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n²) time · O(1) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every rectangle is some bar taken as far as it will go, so take each bar and walk outwards while the neighbours are at least as tall. O(n²), and it makes plain what the stack is actually computing: the two boundaries where a bar stops fitting.", "defmodule Solution do
+Every rectangle is some bar taken as far as it will go, so take each bar and walk outwards while the neighbours are at least as tall. O(n²), and it makes plain what the stack is actually computing: the two boundaries where a bar stops fitting.",
+      "defmodule Solution do
   def largest_rectangle_area(heights) do
     indexed = Enum.with_index(heights)
 
@@ -4520,8 +5341,13 @@ Every rectangle is some bar taken as far as it will go, so take each bar and wal
       max(best, h * (left + right + 1))
     end)
   end
-end"),
-    #("Monotonic Stack", "O(n) time · O(n) space", "A monotonic stack of (starting index, height), heights increasing. A shorter bar arriving means every taller entry can never extend further, so each is closed off and measured — and the earliest position they reached back to becomes the new bar's own start, because it can extend back over all of them. Whatever is left at the end was never cut off, so it runs to the far edge.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Monotonic Stack",
+      "O(n) time · O(n) space",
+      "A monotonic stack of (starting index, height), heights increasing. A shorter bar arriving means every taller entry can never extend further, so each is closed off and measured — and the earliest position they reached back to becomes the new bar's own start, because it can extend back over all of them. Whatever is left at the end was never cut off, so it runs to the far edge.",
+      "defmodule Solution do
   def largest_rectangle_area(heights) do
     n = length(heights)
 
@@ -4545,13 +5371,18 @@ end"),
   end
 
   defp close_taller(stack, _height, _index, best, start), do: {stack, best, start}
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc31_search_2d_matrix() -> List(#(String, String, String, String)) {
   [
-    #("Staircase Search", "O(m+n) time · O(1) space", "Start at the top-right corner and every step is forced: a value too big rules out its whole column, a value too small rules out its whole row. O(m + n) rather than O(log mn), but it never uses the fact that the rows do not overlap, so it still works on a matrix that is merely sorted along both axes.", "defmodule Solution do
+    #(
+      "Staircase Search",
+      "O(m+n) time · O(1) space",
+      "Start at the top-right corner and every step is forced: a value too big rules out its whole column, a value too small rules out its whole row. O(m + n) rather than O(log mn), but it never uses the fact that the rows do not overlap, so it still works on a matrix that is merely sorted along both axes.",
+      "defmodule Solution do
   def search_matrix([], _target), do: false
   def search_matrix([[] | _], _target), do: false
 
@@ -4576,10 +5407,15 @@ pub fn nc31_search_2d_matrix() -> List(#(String, String, String, String)) {
       true -> walk(below, column, target)
     end
   end
-end"),
-    #("Binary Search", "O(log(m·n)) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+end",
+    ),
+    #(
+      "Binary Search",
+      "O(log(m·n)) time · O(1) space",
+      "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-Twice: the rows do not overlap, so which row a value could be in is itself a halving question — compare the target against a row's first and last entries — and then the row is an ordinary sorted array.", "defmodule Solution do
+Twice: the rows do not overlap, so which row a value could be in is itself a halving question — compare the target against a row's first and last entries — and then the row is an ordinary sorted array.",
+      "defmodule Solution do
   def search_matrix(matrix, target) do
     case find_row(List.to_tuple(matrix), target, 0, length(matrix) - 1) do
       nil -> false
@@ -4613,15 +5449,20 @@ Twice: the rows do not overlap, so which row a value could be in is itself a hal
       true -> contains?(row, target, low, mid - 1)
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc32_koko_bananas() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n·m) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n·m) time · O(1) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Try 1, then 2, then 3, and stop at the first speed that fits. O(max pile) calls to the same feasibility check the halving version makes O(log max pile) of — worth writing once, because getting the check right is most of the problem.", "defmodule Solution do
+Try 1, then 2, then 3, and stop at the first speed that fits. O(max pile) calls to the same feasibility check the halving version makes O(log max pile) of — worth writing once, because getting the check right is most of the problem.",
+      "defmodule Solution do
   def min_eating_speed(piles, h), do: climb(piles, h, 1, Enum.max(piles))
 
   defp climb(piles, h, speed, highest) do
@@ -4633,10 +5474,15 @@ Try 1, then 2, then 3, and stop at the first speed that fits. O(max pile) calls 
   defp hours(piles, speed) do
     Enum.reduce(piles, 0, fn pile, total -> total + div(pile + speed - 1, speed) end)
   end
-end"),
-    #("Binary Search", "O(n log m) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+end",
+    ),
+    #(
+      "Binary Search",
+      "O(n log m) time · O(1) space",
+      "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-The search space is the answer, not the input. What makes it work is that feasibility is monotone: if a speed finishes in time then so does every faster one, so \"the smallest speed that works\" is a boundary to halve towards.", "defmodule Solution do
+The search space is the answer, not the input. What makes it work is that feasibility is monotone: if a speed finishes in time then so does every faster one, so \"the smallest speed that works\" is a boundary to halve towards.",
+      "defmodule Solution do
   def min_eating_speed(piles, h), do: search(piles, h, 1, Enum.max(piles))
 
   # The search space is the answer, not the input. Feasibility is monotone -- if
@@ -4656,13 +5502,18 @@ The search space is the answer, not the input. What makes it work is that feasib
   defp hours(piles, speed) do
     Enum.reduce(piles, 0, fn pile, total -> total + div(pile + speed - 1, speed) end)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc33_time_map() -> List(#(String, String, String, String)) {
   [
-    #("Linear Scan", "O(n) per operation · O(n) space", "Store newest first and the lookup is the first entry old enough — one `find`, no split arithmetic. O(n) per lookup against the halving version's O(log n), which for a key with a handful of versions is the faster of the two in practice.", "defmodule Solution do
+    #(
+      "Linear Scan",
+      "O(n) per operation · O(n) space",
+      "Store newest first and the lookup is the first entry old enough — one `find`, no split arithmetic. O(n) per lookup against the halving version's O(log n), which for a key with a handful of versions is the faster of the two in practice.",
+      "defmodule Solution do
   def new, do: %{}
 
   def set(store, key, value, timestamp) do
@@ -4677,10 +5528,15 @@ pub fn nc33_time_map() -> List(#(String, String, String, String)) {
     |> Map.get(key, [])
     |> Enum.find_value(\"\", fn {stamp, value} -> if stamp <= timestamp, do: value end)
   end
-end"),
-    #("Binary Search", "O(log n) per get · O(n) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+end",
+    ),
+    #(
+      "Binary Search",
+      "O(log n) per get · O(n) space",
+      "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-Timestamps only ever increase, so each key's history is already sorted and needs no sorting on write. The lookup is \"newest entry at or before this time\", which is a halving question: keep the candidate, then keep looking on the newer side for a better one.", "defmodule Solution do
+Timestamps only ever increase, so each key's history is already sorted and needs no sorting on write. The lookup is \"newest entry at or before this time\", which is a halving question: keep the candidate, then keep looking on the newer side for a better one.",
+      "defmodule Solution do
   # Immutable, so the store is a value that set returns a new version of.
   def new, do: %{}
 
@@ -4714,15 +5570,20 @@ Timestamps only ever increase, so each key's history is already sorted and needs
       newest_at_most(history, timestamp, mid + 1, high)
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc34_median_two_sorted() -> List(#(String, String, String, String)) {
   [
-    #("Sorting", "O((m+n) log (m+n)) time · O(m+n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Sorting",
+      "O((m+n) log (m+n)) time · O(m+n) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Concatenate, sort, take the middle. O((m+n) log(m+n)) and it throws away the fact that both inputs were already sorted — but the indexing is worth seeing once, because averaging positions n/2 and (n-1)/2 handles both parities in one expression.", "defmodule Solution do
+Concatenate, sort, take the middle. O((m+n) log(m+n)) and it throws away the fact that both inputs were already sorted — but the indexing is worth seeing once, because averaging positions n/2 and (n-1)/2 handles both parities in one expression.",
+      "defmodule Solution do
   def find_median_sorted_arrays([], []), do: 0.0
 
   def find_median_sorted_arrays(nums1, nums2) do
@@ -4733,8 +5594,13 @@ Concatenate, sort, take the middle. O((m+n) log(m+n)) and it throws away the fac
     # the same element, so the average of it with itself is itself.
     (Enum.at(merged, div(total, 2)) + Enum.at(merged, div(total - 1, 2))) / 2
   end
-end"),
-    #("Two Pointers", "O(m+n) time · O(1) space", "Merging, but stopping at the middle and keeping only the last two values seen. The merged array is never built, so it is O(m + n) time and O(1) space. The two values are what makes the even case work: the median is then the average of the middle pair.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Two Pointers",
+      "O(m+n) time · O(1) space",
+      "Merging, but stopping at the middle and keeping only the last two values seen. The merged array is never built, so it is O(m + n) time and O(1) space. The two values are what makes the even case work: the median is then the average of the middle pair.",
+      "defmodule Solution do
   def find_median_sorted_arrays([], []), do: 0.0
 
   def find_median_sorted_arrays(nums1, nums2) do
@@ -4757,8 +5623,13 @@ end"),
 
   defp advance(a, [y | rest], steps, _previous, current),
     do: advance(a, rest, steps - 1, current, y)
-end"),
-    #("Binary Search", "O(log min(m,n)) time · O(1) space", "The O(log min(m, n)) answer, and the reason the problem is rated hard. Do not look for the median: look for a cut through both arrays with exactly half the elements to its left. Such a cut is correct when both left-hand values are no bigger than both right-hand values, and that condition is monotone in where you cut the shorter array — so halve on the cut position.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Binary Search",
+      "O(log min(m,n)) time · O(1) space",
+      "The O(log min(m, n)) answer, and the reason the problem is rated hard. Do not look for the median: look for a cut through both arrays with exactly half the elements to its left. Such a cut is correct when both left-hand values are no bigger than both right-hand values, and that condition is monotone in where you cut the shorter array — so halve on the cut position.",
+      "defmodule Solution do
   def find_median_sorted_arrays([], []), do: 0.0
 
   def find_median_sorted_arrays(nums1, nums2) do
@@ -4812,13 +5683,18 @@ end"),
   defp smaller(:positive, y), do: y
   defp smaller(x, :positive), do: x
   defp smaller(x, y), do: min(x, y)
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc35_insert_interval() -> List(#(String, String, String, String)) {
   [
-    #("Sort + Merge", "O(n log n) time · O(n) space", "Drop the new interval on the end and run the general merge. It throws away the sortedness — O(n log n) rather than O(n) — but it is a solution you already have rather than a three-way split to get right, and that trade is often the correct one under time pressure.", "defmodule Solution do
+    #(
+      "Sort + Merge",
+      "O(n log n) time · O(n) space",
+      "Drop the new interval on the end and run the general merge. It throws away the sortedness — O(n log n) rather than O(n) — but it is a solution you already have rather than a three-way split to get right, and that trade is often the correct one under time pressure.",
+      "defmodule Solution do
   # Drop the new interval on the end and run the general merge. Throws away the
   # fact that the input was sorted -- O(n log n) rather than O(n) -- but it
   # reuses a solution you already have rather than a three-way split.
@@ -4831,8 +5707,13 @@ pub fn nc35_insert_interval() -> List(#(String, String, String, String)) {
     end)
     |> Enum.reverse()
   end
-end"),
-    #("Intervals", "O(n) time · O(n) space", "The input is already sorted, which turns the problem into a three-way split: everything that finishes before the new interval starts passes through untouched, everything that touches it collapses into one, and everything after it passes through too. One pass, no sorting.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Intervals",
+      "O(n) time · O(n) space",
+      "The input is already sorted, which turns the problem into a three-way split: everything that finishes before the new interval starts passes through untouched, everything that touches it collapses into one, and everything after it passes through too. One pass, no sorting.",
+      "defmodule Solution do
   def insert(intervals, {start, finish}) do
     # The input is already sorted, so the list falls into three runs: everything
     # that finishes before the new one starts, everything that touches it, and
@@ -4847,13 +5728,18 @@ end"),
 
     before ++ [merged] ++ later
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc36_merge_intervals() -> List(#(String, String, String, String)) {
   [
-    #("Sweep Line", "O(n log n) time · O(n) space", "Forget the intervals and keep only their edges: +1 where one opens, −1 where one closes. A merged interval runs from the edge that lifts the running count off zero to the edge that drops it back. Ordering opens before closes at the same coordinate is what makes touching intervals join.", "defmodule Solution do
+    #(
+      "Sweep Line",
+      "O(n log n) time · O(n) space",
+      "Forget the intervals and keep only their edges: +1 where one opens, −1 where one closes. A merged interval runs from the edge that lifts the running count off zero to the edge that drops it back. Ordering opens before closes at the same coordinate is what makes touching intervals join.",
+      "defmodule Solution do
   # Forget the intervals and keep only their edges: +1 where one opens, -1 where
   # one closes. A merged interval runs from the edge that lifts the running
   # count off zero to the edge that drops it back.
@@ -4874,8 +5760,13 @@ pub fn nc36_merge_intervals() -> List(#(String, String, String, String)) {
 
     Enum.reverse(done)
   end
-end"),
-    #("Intervals", "O(n log n) time · O(n) space", "Sort by start and the problem collapses: an interval can only ever overlap the one currently being built, because anything it could have overlapped earlier was already absorbed into that. So a single pass either extends the interval in hand or begins a new one.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Intervals",
+      "O(n log n) time · O(n) space",
+      "Sort by start and the problem collapses: an interval can only ever overlap the one currently being built, because anything it could have overlapped earlier was already absorbed into that. So a single pass either extends the interval in hand or begins a new one.",
+      "defmodule Solution do
   # Sorted by start, an interval can only ever overlap the one being built, so a
   # single reduce is enough: extend it, or begin a new one.
   def merge(intervals) do
@@ -4887,13 +5778,18 @@ end"),
     end)
     |> Enum.reverse()
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc37_non_overlapping() -> List(#(String, String, String, String)) {
   [
-    #("Greedy by Start", "O(n log n) time · O(n) space", "Sorted by start instead. On an overlap one of the two has to go, and dropping whichever ends later is always at least as good — so the greedy choice is made at the moment of the clash rather than baked into the sort order. Same answer, and it needs the running end to be lowered rather than replaced.", "defmodule Solution do
+    #(
+      "Greedy by Start",
+      "O(n log n) time · O(n) space",
+      "Sorted by start instead. On an overlap one of the two has to go, and dropping whichever ends later is always at least as good — so the greedy choice is made at the moment of the clash rather than baked into the sort order. Same answer, and it needs the running end to be lowered rather than replaced.",
+      "defmodule Solution do
   # Sorted by start instead: on an overlap you must drop one of the two, and
   # dropping whichever ends later is always at least as good. Same greedy
   # argument, made at the moment of the clash rather than in the sort order.
@@ -4911,8 +5807,13 @@ pub fn nc37_non_overlapping() -> List(#(String, String, String, String)) {
 
     removed
   end
-end"),
-    #("Greedy", "O(n log n) time · O(n) space", "Greedy on the end time. Among intervals competing for the same space, keeping the one that finishes earliest leaves the most room for whatever comes next and can never be worse — which is the exchange argument that makes the greedy correct, and the reason sorting by start is the classic wrong first answer.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Greedy",
+      "O(n log n) time · O(n) space",
+      "Greedy on the end time. Among intervals competing for the same space, keeping the one that finishes earliest leaves the most room for whatever comes next and can never be worse — which is the exchange argument that makes the greedy correct, and the reason sorting by start is the classic wrong first answer.",
+      "defmodule Solution do
   # Greedy on the end: among any set of intervals competing for the same space,
   # keeping the one that finishes earliest leaves the most room for whatever
   # comes next, and can never be worse.
@@ -4928,15 +5829,20 @@ end"),
 
     removed
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc38_meeting_rooms() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n²) time · O(1) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every pair, checked. Worth writing once for the overlap test itself: two intervals overlap when each starts before the other ends, which is far easier to get right than trying to enumerate the ways they miss.", "defmodule Solution do
+Every pair, checked. Worth writing once for the overlap test itself: two intervals overlap when each starts before the other ends, which is far easier to get right than trying to enumerate the ways they miss.",
+      "defmodule Solution do
   # Every pair, checked. Two intervals overlap when each starts before the other
   # ends -- the condition worth being able to write from memory, since it is
   # easier to get right than its negation.
@@ -4949,8 +5855,13 @@ Every pair, checked. Worth writing once for the overlap test itself: two interva
 
     Enum.all?(pairs, fn {{s1, e1}, {s2, e2}} -> not (s1 < e2 and s2 < e1) end)
   end
-end"),
-    #("Sorting", "O(n log n) time · O(n) space", "Sorted by start, the only meeting a given one can clash with is the one immediately before it: anything earlier started earlier still, so it would have clashed with that one first. The whole check is then adjacent pairs.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Sorting",
+      "O(n log n) time · O(n) space",
+      "Sorted by start, the only meeting a given one can clash with is the one immediately before it: anything earlier started earlier still, so it would have clashed with that one first. The whole check is then adjacent pairs.",
+      "defmodule Solution do
   # Sorted by start, the only meeting a given one can clash with is the one
   # immediately before it -- anything earlier started earlier still and would
   # have clashed with that one first.
@@ -4960,15 +5871,20 @@ end"),
     |> Enum.chunk_every(2, 1, :discard)
     |> Enum.all?(fn [{_s1, e1}, {s2, _e2}] -> e1 <= s2 end)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc39_meeting_rooms_ii() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n²) time · O(1) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-The busiest moment is always the start of some meeting, so only n moments are worth testing at all. Count how many meetings cover each and take the largest: no sort, no edge bookkeeping, and it makes clear what the sweep is measuring.", "defmodule Solution do
+The busiest moment is always the start of some meeting, so only n moments are worth testing at all. Count how many meetings cover each and take the largest: no sort, no edge bookkeeping, and it makes clear what the sweep is measuring.",
+      "defmodule Solution do
   # The busiest moment is always the start of some meeting, so there are only n
   # moments worth testing. Count how many meetings cover each one and take the
   # largest -- O(n^2), and it needs no sort and no edge bookkeeping.
@@ -4978,8 +5894,13 @@ The busiest moment is always the start of some meeting, so only n moments are wo
       max(best, running)
     end)
   end
-end"),
-    #("Sweep Line", "O(n log n) time · O(n) space", "Rooms needed is the most meetings ever running at once, so the meetings stop mattering and only their edges do: +1 at a start, −1 at an end, and the answer is how high the running count gets. Closes come before opens at the same time here — a room freed at that moment can be reused — which is the opposite of what merging intervals wants.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Sweep Line",
+      "O(n log n) time · O(n) space",
+      "Rooms needed is the most meetings ever running at once, so the meetings stop mattering and only their edges do: +1 at a start, −1 at an end, and the answer is how high the running count gets. Closes come before opens at the same time here — a room freed at that moment can be reused — which is the opposite of what merging intervals wants.",
+      "defmodule Solution do
   # Rooms needed is the most meetings ever running at once, so the meetings
   # themselves stop mattering -- only their edges do. Walk the edges in time
   # order and watch how high the count gets.
@@ -4997,15 +5918,20 @@ end"),
 
     best
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc40_min_interval() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n·q) time · O(n+q) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n·q) time · O(n+q) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-For each query, the smallest interval containing it. O(q·n), and the definition — worth having before the clever version, because it is what you check the clever version against.", "defmodule Solution do
+For each query, the smallest interval containing it. O(q·n), and the definition — worth having before the clever version, because it is what you check the clever version against.",
+      "defmodule Solution do
   def min_interval(intervals, queries) do
     Enum.map(queries, fn query ->
       intervals
@@ -5017,8 +5943,13 @@ For each query, the smallest interval containing it. O(q·n), and the definition
       end
     end)
   end
-end"),
-    #("Greedy", "O(n log n + n·q) time · O(n+q) space", "Answer each query once and never revisit it. Taking the intervals shortest first means the first interval to cover a query is already its answer, so a query leaves the pool the moment it is settled and the pool only shrinks. Reordering the work so each answer is final is the technique here, and it generalises well beyond this problem.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Greedy",
+      "O(n log n + n·q) time · O(n+q) space",
+      "Answer each query once and never revisit it. Taking the intervals shortest first means the first interval to cover a query is already its answer, so a query leaves the pool the moment it is settled and the pool only shrinks. Reordering the work so each answer is final is the technique here, and it generalises well beyond this problem.",
+      "defmodule Solution do
   # Answer each query once, and never revisit it. Taking the intervals shortest
   # first means the first interval to cover a query is already its answer, so
   # every query leaves the pool the moment it is settled and the pool only ever
@@ -5048,13 +5979,18 @@ end"),
 
     Enum.map(0..(length(queries) - 1)//1, &Map.fetch!(answers, &1))
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc41_maximum_subarray() -> List(#(String, String, String, String)) {
   [
-    #("Prefix Sums", "O(n) time · O(1) space", "The same answer from prefix sums. The sum from i to j is prefix[j] − prefix[i−1], so the best subarray ending at j is prefix[j] minus the smallest prefix seen before it. One pass carrying that minimum. Worth knowing because the prefix framing generalises to problems Kadane cannot touch — subarrays summing to k, divisible by k, and so on.", "defmodule Solution do
+    #(
+      "Prefix Sums",
+      "O(n) time · O(1) space",
+      "The same answer from prefix sums. The sum from i to j is prefix[j] − prefix[i−1], so the best subarray ending at j is prefix[j] minus the smallest prefix seen before it. One pass carrying that minimum. Worth knowing because the prefix framing generalises to problems Kadane cannot touch — subarrays summing to k, divisible by k, and so on.",
+      "defmodule Solution do
   def max_sub_array([]), do: 0
 
   # The sum from i to j is prefix[j] - prefix[i-1], so the best subarray ending
@@ -5071,8 +6007,13 @@ pub fn nc41_maximum_subarray() -> List(#(String, String, String, String)) {
 
     best
   end
-end"),
-    #("Kadane", "O(n) time · O(1) space", "Kadane. At each position the best subarray ending here either extends the one ending just before it or starts fresh — and the choice is decided by a single question: has the running total gone negative? A negative prefix can only hurt whatever follows, so it is dropped. Note the answer is not clamped at zero: an all-negative array's answer is its least bad element.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Kadane",
+      "O(n) time · O(1) space",
+      "Kadane. At each position the best subarray ending here either extends the one ending just before it or starts fresh — and the choice is decided by a single question: has the running total gone negative? A negative prefix can only hurt whatever follows, so it is dropped. Note the answer is not clamped at zero: an all-negative array's answer is its least bad element.",
+      "defmodule Solution do
   def max_sub_array([]), do: 0
 
   # Kadane: at each position the best subarray ending here either extends the
@@ -5087,13 +6028,18 @@ end"),
 
     best
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc42_jump_game() -> List(#(String, String, String, String)) {
   [
-    #("Backwards Greedy", "O(n) time · O(1) space", "Walk backwards carrying the leftmost index known to reach the end. Any index that can reach *that* can reach the end, so it becomes the new goal — and the answer is whether the goal walks all the way back to zero. The same greedy from the other side, and often the easier one to convince yourself of.", "defmodule Solution do
+    #(
+      "Backwards Greedy",
+      "O(n) time · O(1) space",
+      "Walk backwards carrying the leftmost index known to reach the end. Any index that can reach *that* can reach the end, so it becomes the new goal — and the answer is whether the goal walks all the way back to zero. The same greedy from the other side, and often the easier one to convince yourself of.",
+      "defmodule Solution do
   def can_jump([]), do: true
 
   # Walk backwards carrying the leftmost index known to reach the end. Any index
@@ -5109,8 +6055,13 @@ pub fn nc42_jump_game() -> List(#(String, String, String, String)) {
 
     goal == 0
   end
-end"),
-    #("Greedy", "O(n) time · O(1) space", "Only one number matters: the furthest index reachable so far. Walk forward extending it, and the moment the walk gets past it nothing further is reachable. No search, no visited set — the reachable set from the left is always a prefix, which is what collapses the whole problem to one integer.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Greedy",
+      "O(n) time · O(1) space",
+      "Only one number matters: the furthest index reachable so far. Walk forward extending it, and the moment the walk gets past it nothing further is reachable. No search, no visited set — the reachable set from the left is always a prefix, which is what collapses the whole problem to one integer.",
+      "defmodule Solution do
   # Only one number matters: the furthest index reachable so far. Walk forward
   # and extend it; the moment the walk gets past it, nothing further is
   # reachable and the value stops changing.
@@ -5124,13 +6075,18 @@ end"),
 
     reach >= length(nums) - 1
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc43_jump_game_ii() -> List(#(String, String, String, String)) {
   [
-    #("Reverse Greedy", "O(n²) time · O(1) space", "From the goal, step back to the earliest index that can reach it. Taking the earliest can never cost more jumps — anything later is reachable from it too — so the choice is safe at every step. O(n²), and it makes the greedy argument visible in a way the window version hides.", "defmodule Solution do
+    #(
+      "Reverse Greedy",
+      "O(n²) time · O(1) space",
+      "From the goal, step back to the earliest index that can reach it. Taking the earliest can never cost more jumps — anything later is reachable from it too — so the choice is safe at every step. O(n²), and it makes the greedy argument visible in a way the window version hides.",
+      "defmodule Solution do
   def jump(nums) when length(nums) <= 1, do: 0
 
   def jump(nums), do: walk(Enum.with_index(nums), length(nums) - 1, 0)
@@ -5146,8 +6102,13 @@ pub fn nc43_jump_game_ii() -> List(#(String, String, String, String)) {
       nil -> jumps
     end
   end
-end"),
-    #("Greedy", "O(n) time · O(1) space", "Breadth-first search without a queue. Everything reachable in k jumps is a contiguous window, so the levels of the search are just ranges: when the walk reaches the current window's end, one more jump is spent and the next window runs to the furthest index seen so far. Recognising that the frontier stays contiguous is the whole trick.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Greedy",
+      "O(n) time · O(1) space",
+      "Breadth-first search without a queue. Everything reachable in k jumps is a contiguous window, so the levels of the search are just ranges: when the walk reaches the current window's end, one more jump is spent and the next window runs to the furthest index seen so far. Recognising that the frontier stays contiguous is the whole trick.",
+      "defmodule Solution do
   # Breadth-first search without a queue. Everything reachable in k jumps forms
   # a contiguous window; when the walk reaches that window's end, one more jump
   # is spent and the next window runs to the furthest index seen so far.
@@ -5171,15 +6132,20 @@ end"),
 
     jumps
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc44_gas_station() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n²) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n²) time · O(n) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Drive the whole loop from each start and watch the tank. O(n²), and the thing worth extracting from it: the single pass is not a different algorithm, it is this one with the starts that cannot possibly work skipped.", "defmodule Solution do
+Drive the whole loop from each start and watch the tank. O(n²), and the thing worth extracting from it: the single pass is not a different algorithm, it is this one with the starts that cannot possibly work skipped.",
+      "defmodule Solution do
   # Drive the whole loop from each start and see whether the tank ever goes
   # negative. O(n^2) -- the definition, and what the single pass replaces.
   def can_complete_circuit(gas, cost) do
@@ -5195,8 +6161,13 @@ Drive the whole loop from each start and watch the tank. O(n²), and the thing w
       if tank + diff < 0, do: {:halt, :dry}, else: {:cont, tank + diff}
     end) != :dry
   end
-end"),
-    #("Greedy", "O(n) time · O(1) space", "Two facts do all the work. If the total gas falls short of the total cost, no start works at all. And if the tank runs dry travelling from i to j, no station between them can start either — each would begin with even less — so the search jumps straight to j+1 rather than restarting at i+1. Together they turn an O(n²) search into one pass.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Greedy",
+      "O(n) time · O(1) space",
+      "Two facts do all the work. If the total gas falls short of the total cost, no start works at all. And if the tank runs dry travelling from i to j, no station between them can start either — each would begin with even less — so the search jumps straight to j+1 rather than restarting at i+1. Together they turn an O(n²) search into one pass.",
+      "defmodule Solution do
   def can_complete_circuit([], _cost), do: -1
 
   # Two facts do all the work. If the total gas is short of the total cost no
@@ -5216,13 +6187,18 @@ end"),
 
     if total >= 0, do: start, else: -1
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc45_hand_of_straights() -> List(#(String, String, String, String)) {
   [
-    #("Sorting", "O(n²) time · O(n) space", "No counts at all: sort, then peel one full run off the front, removing each card as it is used. Slower, since every removal is a list walk, but the only thing you have to believe is the same greedy claim — a group begins with the smallest card left.", "defmodule Solution do
+    #(
+      "Sorting",
+      "O(n²) time · O(n) space",
+      "No counts at all: sort, then peel one full run off the front, removing each card as it is used. Slower, since every removal is a list walk, but the only thing you have to believe is the same greedy claim — a group begins with the smallest card left.",
+      "defmodule Solution do
   def is_n_straight_hand(hand, group_size)
       when group_size <= 0 or rem(length(hand), max(group_size, 1)) != 0,
       do: false
@@ -5249,8 +6225,13 @@ pub fn nc45_hand_of_straights() -> List(#(String, String, String, String)) {
       do: peel(List.delete(cards, wanted), wanted + 1, remaining - 1),
       else: :impossible
   end
-end"),
-    #("Greedy", "O(n log n) time · O(n) space", "The smallest card left has no smaller neighbour to hide behind, so whatever group it belongs to must begin with it. That removes all choice, which is exactly what makes a greedy correct here. Every copy of that smallest card needs its own group and they are indistinguishable, so all of them are taken in one step.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Greedy",
+      "O(n log n) time · O(n) space",
+      "The smallest card left has no smaller neighbour to hide behind, so whatever group it belongs to must begin with it. That removes all choice, which is exactly what makes a greedy correct here. Every copy of that smallest card needs its own group and they are indistinguishable, so all of them are taken in one step.",
+      "defmodule Solution do
   def is_n_straight_hand(hand, group_size)
       when group_size <= 0 or rem(length(hand), max(group_size, 1)) != 0,
       do: false
@@ -5290,13 +6271,18 @@ end"),
       counts -> {:cont, counts}
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc46_merge_triplets() -> List(#(String, String, String, String)) {
   [
-    #("Coverage Check", "O(n) time · O(n) space", "Same filter, different question: rather than merging the survivors, ask whether each of the three positions is hit exactly by some survivor. It is the same condition — a componentwise max equals the target exactly when every component is attained somewhere — but arrived at without computing the merge.", "defmodule Solution do
+    #(
+      "Coverage Check",
+      "O(n) time · O(n) space",
+      "Same filter, different question: rather than merging the survivors, ask whether each of the three positions is hit exactly by some survivor. It is the same condition — a componentwise max equals the target exactly when every component is attained somewhere — but arrived at without computing the merge.",
+      "defmodule Solution do
   # Ask a different question: is each of the three positions hit exactly by some
   # usable triplet? The answer is yes exactly when all three are covered -- the
   # same condition, arrived at without taking maxima.
@@ -5307,8 +6293,13 @@ pub fn nc46_merge_triplets() -> List(#(String, String, String, String)) {
       Enum.any?(usable, fn {_, b, _} -> b == tb end) and
       Enum.any?(usable, fn {_, _, c} -> c == tc end)
   end
-end"),
-    #("Greedy", "O(n) time · O(1) space", "Merging takes componentwise maxima, and a max never comes back down. So any triplet with a component above the target is permanently poisonous and must be discarded; and once discarded, every remaining triplet can be merged freely, because a max can only help. The answer is then just whether their maximum is the target.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Greedy",
+      "O(n) time · O(1) space",
+      "Merging takes componentwise maxima, and a max never comes back down. So any triplet with a component above the target is permanently poisonous and must be discarded; and once discarded, every remaining triplet can be merged freely, because a max can only help. The answer is then just whether their maximum is the target.",
+      "defmodule Solution do
   # A triplet with any component above the target can never be used: merging
   # takes maxima, so that component would be stuck too high forever. Throw those
   # away and the rest can all be merged, because a max only ever helps.
@@ -5320,15 +6311,20 @@ end"),
     end)
     |> Kernel.==(target)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc47_partition_labels() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n³) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n³) time · O(n) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Grow the piece one character at a time until nothing inside it also appears in the tail. No last-position map — the tail is asked directly — so it is far slower, but it is the condition stated outright rather than pre-computed.", "defmodule Solution do
+Grow the piece one character at a time until nothing inside it also appears in the tail. No last-position map — the tail is asked directly — so it is far slower, but it is the condition stated outright rather than pre-computed.",
+      "defmodule Solution do
   def partition_labels(s), do: cut(String.graphemes(s), [])
 
   defp cut([], acc), do: Enum.reverse(acc)
@@ -5346,8 +6342,13 @@ Grow the piece one character at a time until nothing inside it also appears in t
     tail = Enum.drop(rest, size)
     if Enum.any?(prefix, &(&1 in tail)), do: grow(rest, size + 1), else: size
   end
-end"),
-    #("Greedy", "O(n) time · O(1) space", "A piece can only end where every character inside it has run out, so map each character to its last position first. Then sweep, pushing the piece's end out to the furthest last-position seen; when the walk catches up with that end, nothing inside can reappear and the piece is closed.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Greedy",
+      "O(n) time · O(1) space",
+      "A piece can only end where every character inside it has run out, so map each character to its last position first. Then sweep, pushing the piece's end out to the furthest last-position seen; when the walk catches up with that end, nothing inside can reappear and the piece is closed.",
+      "defmodule Solution do
   def partition_labels(s) do
     graphemes = String.graphemes(s)
 
@@ -5373,13 +6374,20 @@ end"),
 
     Enum.reverse(parts)
   end
-end"),
+end",
+    ),
   ]
 }
 
-pub fn nc48_valid_parenthesis_string() -> List(#(String, String, String, String)) {
+pub fn nc48_valid_parenthesis_string() -> List(
+  #(String, String, String, String),
+) {
   [
-    #("Two Passes", "O(n) time · O(n) space", "Two one-sided checks instead of a range. Left to right with every star an opener asks whether there are ever too many closers; right to left with every star a closer asks whether there are ever too many openers. Passing both is exactly the condition — and each pass is the ordinary balance check you already know.", "defmodule Solution do
+    #(
+      "Two Passes",
+      "O(n) time · O(n) space",
+      "Two one-sided checks instead of a range. Left to right with every star an opener asks whether there are ever too many closers; right to left with every star a closer asks whether there are ever too many openers. Passing both is exactly the condition — and each pass is the ordinary balance check you already know.",
+      "defmodule Solution do
   # Two one-sided checks. Left to right with every star an opener asks whether
   # there are ever too many closers; right to left with every star a closer asks
   # whether there are ever too many openers. Passing both is exactly the
@@ -5395,8 +6403,13 @@ pub fn nc48_valid_parenthesis_string() -> List(#(String, String, String, String)
       if balance < 0, do: {:halt, :negative}, else: {:cont, balance}
     end) != :negative
   end
-end"),
-    #("Greedy", "O(n) time · O(1) space", "Do not guess what each star should be — carry the range of open counts still possible. Low is the count if every star so far were a closer, high if every one were an opener. High going negative means even the most generous reading has too many closers, so bail; low is clamped at zero because a star can always be nothing. Valid exactly when low reaches zero at the end.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Greedy",
+      "O(n) time · O(1) space",
+      "Do not guess what each star should be — carry the range of open counts still possible. Low is the count if every star so far were a closer, high if every one were an opener. High going negative means even the most generous reading has too many closers, so bail; low is clamped at zero because a star can always be nothing. Valid exactly when low reaches zero at the end.",
+      "defmodule Solution do
   # Rather than guessing what each star should be, carry the *range* of open
   # counts still possible: low if every star so far were a closer, high if every
   # one were an opener. High going negative means even the most generous reading
@@ -5420,33 +6433,48 @@ end"),
       {low, _high} -> low == 0
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc49_single_number() -> List(#(String, String, String, String)) {
   [
-    #("Math", "O(n) time · O(n) space", "Twice the sum of the distinct values counts every pair twice and the lone value twice; subtracting the real total leaves the lone value. No bit tricks, but it leans harder on the promise that everything else appears exactly twice — three copies of something and it is wrong.", "defmodule Solution do
+    #(
+      "Math",
+      "O(n) time · O(n) space",
+      "Twice the sum of the distinct values counts every pair twice and the lone value twice; subtracting the real total leaves the lone value. No bit tricks, but it leans harder on the promise that everything else appears exactly twice — three copies of something and it is wrong.",
+      "defmodule Solution do
   # Twice the sum of the distinct values counts every pair twice and the lone
   # value twice; subtracting the real total leaves the lone value. No bit
   # tricks, but it leans harder on the promise that everything else is a pair.
   def single_number(nums) do
     2 * (nums |> Enum.uniq() |> Enum.sum()) - Enum.sum(nums)
   end
-end"),
-    #("Bit Manipulation", "O(n) time · O(1) space", "XOR is its own inverse and does not care about order, so every value appearing twice cancels itself out wherever the two copies happen to sit, and the lone one is what is left. Constant space, one pass, and no reliance on the values being small or positive.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Bit Manipulation",
+      "O(n) time · O(1) space",
+      "XOR is its own inverse and does not care about order, so every value appearing twice cancels itself out wherever the two copies happen to sit, and the lone one is what is left. Constant space, one pass, and no reliance on the values being small or positive.",
+      "defmodule Solution do
   import Bitwise
 
   # XOR is its own inverse and does not care about order, so every value that
   # appears twice cancels itself out and only the lone one survives.
   def single_number(nums), do: Enum.reduce(nums, 0, &bxor/2)
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc50_number_of_one_bits() -> List(#(String, String, String, String)) {
   [
-    #("Shift & Test", "O(log n) time · O(1) space", "One step per bit position rather than per set bit: 32 iterations whatever the input, but nothing to remember beyond \"look at the bottom bit, shift\". In a fixed-width language mind the shift — an arithmetic right shift on a negative number never terminates.", "defmodule Solution do
+    #(
+      "Shift & Test",
+      "O(log n) time · O(1) space",
+      "One step per bit position rather than per set bit: 32 iterations whatever the input, but nothing to remember beyond \"look at the bottom bit, shift\". In a fixed-width language mind the shift — an arithmetic right shift on a negative number never terminates.",
+      "defmodule Solution do
   import Bitwise
 
   # One step per bit position rather than per set bit: 32 iterations whatever
@@ -5455,23 +6483,33 @@ pub fn nc50_number_of_one_bits() -> List(#(String, String, String, String)) {
 
   defp count(n, total) when n <= 0, do: total
   defp count(n, total), do: count(n >>> 1, total + (n &&& 1))
-end"),
-    #("Bit Manipulation", "O(k) time · O(1) space", "n & (n − 1) clears the lowest set bit and touches nothing else, so the loop runs once per one bit rather than once per bit position. Worth having in the fingers: the same trick tests for powers of two, and shows up in half the bit problems there are.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Bit Manipulation",
+      "O(k) time · O(1) space",
+      "n & (n − 1) clears the lowest set bit and touches nothing else, so the loop runs once per one bit rather than once per bit position. Worth having in the fingers: the same trick tests for powers of two, and shows up in half the bit problems there are.",
+      "defmodule Solution do
   import Bitwise
 
   # n &&& (n - 1) clears the lowest set bit and nothing else, so the recursion
   # runs once per one bit rather than once per bit position.
   def hamming_weight(0), do: 0
   def hamming_weight(n), do: 1 + hamming_weight(n &&& (n - 1))
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc51_counting_bits() -> List(#(String, String, String, String)) {
   [
-    #("Bit Manipulation", "O(n log n) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Bit Manipulation",
+      "O(n log n) time · O(n) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Each number counted from scratch with the clear-lowest-bit trick. O(n log n), and it remembers nothing between numbers — which is precisely the redundancy the dynamic version exploits.", "defmodule Solution do
+Each number counted from scratch with the clear-lowest-bit trick. O(n log n), and it remembers nothing between numbers — which is precisely the redundancy the dynamic version exploits.",
+      "defmodule Solution do
   import Bitwise
 
   def count_bits(n), do: Enum.map(0..n//1, &popcount/1)
@@ -5481,8 +6519,13 @@ Each number counted from scratch with the clear-lowest-bit trick. O(n log n), an
   # between numbers -- which is exactly what the other one exploits.
   defp popcount(0), do: 0
   defp popcount(n), do: 1 + popcount(n &&& (n - 1))
-end"),
-    #("Bottom-Up DP", "O(n) time · O(n) space", "Every number is some smaller number with one more bit stuck on the end, so count(i) is count(i >> 1) plus that last bit. Each answer costs a single lookup into what has already been computed, which is what makes the whole array O(n) rather than O(n log n).", "defmodule Solution do
+end",
+    ),
+    #(
+      "Bottom-Up DP",
+      "O(n) time · O(n) space",
+      "Every number is some smaller number with one more bit stuck on the end, so count(i) is count(i >> 1) plus that last bit. Each answer costs a single lookup into what has already been computed, which is what makes the whole array O(n) rather than O(n log n).",
+      "defmodule Solution do
   import Bitwise
 
   # Every number is some smaller number with one extra bit on the end: count(i)
@@ -5497,13 +6540,18 @@ end"),
 
     Enum.map(0..n//1, &Map.fetch!(counts, &1))
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc52_reverse_bits() -> List(#(String, String, String, String)) {
   [
-    #("Nifty Python · Strings", "O(1) time · O(1) space", "Write the number in binary, pad to the full width, reverse the text, read it back. Slower and it allocates, but the explicit padding makes the thing the bit version keeps implicit — that the width is 32, not however many bits this value happens to need — impossible to forget.", "defmodule Solution do
+    #(
+      "Nifty Python · Strings",
+      "O(1) time · O(1) space",
+      "Write the number in binary, pad to the full width, reverse the text, read it back. Slower and it allocates, but the explicit padding makes the thing the bit version keeps implicit — that the width is 32, not however many bits this value happens to need — impossible to forget.",
+      "defmodule Solution do
   # Write the number out in binary, pad to the full width, reverse the text,
   # read it back. Slower and allocates, but the padding makes the thing the bit
   # version keeps implicit -- that the width is 32, not however many bits this
@@ -5515,8 +6563,13 @@ pub fn nc52_reverse_bits() -> List(#(String, String, String, String)) {
     |> String.reverse()
     |> String.to_integer(2)
   end
-end"),
-    #("Bit Manipulation", "O(1) time · O(1) space", "Peel the bottom bit off the input and push it onto the bottom of the result: the first bit out is the last bit in. Fixed at 32 rounds, because the width is part of the problem rather than a property of the value — stopping when the input hits zero silently drops the leading zeros that should have become trailing ones.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Bit Manipulation",
+      "O(1) time · O(1) space",
+      "Peel the bottom bit off the input and push it onto the bottom of the result: the first bit out is the last bit in. Fixed at 32 rounds, because the width is part of the problem rather than a property of the value — stopping when the input hits zero silently drops the leading zeros that should have become trailing ones.",
+      "defmodule Solution do
   import Bitwise
 
   # Peel the bottom bit off the input and push it onto the bottom of the result:
@@ -5530,13 +6583,18 @@ end"),
 
     reversed
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc53_missing_number() -> List(#(String, String, String, String)) {
   [
-    #("Math", "O(n) time · O(1) space", "The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap between that and the actual total is the missing value. Shorter than the XOR version, and the trade worth knowing: in a fixed-width language it overflows on inputs the XOR version handles without complaint.", "defmodule Solution do
+    #(
+      "Math",
+      "O(n) time · O(1) space",
+      "The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap between that and the actual total is the missing value. Shorter than the XOR version, and the trade worth knowing: in a fixed-width language it overflows on inputs the XOR version handles without complaint.",
+      "defmodule Solution do
   # The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap
   # between that and the actual total is the missing value. One multiplication
   # instead of a pass of XORs -- but in a fixed-width language it overflows on
@@ -5545,8 +6603,13 @@ pub fn nc53_missing_number() -> List(#(String, String, String, String)) {
     n = length(nums)
     div(n * (n + 1), 2) - Enum.sum(nums)
   end
-end"),
-    #("Bit Manipulation", "O(n) time · O(1) space", "XOR every value against every index it should have had. Each present number meets its own index and cancels, so the missing one leaves its index without a partner and that index survives. No sum, so nothing can overflow.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Bit Manipulation",
+      "O(n) time · O(1) space",
+      "XOR every value against every index it should have had. Each present number meets its own index and cancels, so the missing one leaves its index without a partner and that index survives. No sum, so nothing can overflow.",
+      "defmodule Solution do
   import Bitwise
 
   # XOR every value against every index it should have had. Each present number
@@ -5557,13 +6620,18 @@ end"),
     |> Enum.with_index()
     |> Enum.reduce(length(nums), fn {n, i}, acc -> bxor(bxor(acc, n), i) end)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc54_sum_of_two_integers() -> List(#(String, String, String, String)) {
   [
-    #("Full Adder", "O(1) time · O(1) space", "The same addition written as hardware: thirty-two full adders in a row, each taking two input bits and a carry and producing a sum bit and a carry out. Slower than the XOR loop, which stops as soon as no carries remain, but it is where the XOR loop comes from — and it never uses arithmetic at all.", "defmodule Solution do
+    #(
+      "Full Adder",
+      "O(1) time · O(1) space",
+      "The same addition written as hardware: thirty-two full adders in a row, each taking two input bits and a carry and producing a sum bit and a carry out. Slower than the XOR loop, which stops as soon as no carries remain, but it is where the XOR loop comes from — and it never uses arithmetic at all.",
+      "defmodule Solution do
   import Bitwise
 
   @mask 0xFFFFFFFF
@@ -5584,8 +6652,13 @@ pub fn nc54_sum_of_two_integers() -> List(#(String, String, String, String)) {
 
     if result <= @largest, do: result, else: bnot(bxor(result, @mask))
   end
-end"),
-    #("Bit Manipulation", "O(1) time · O(1) space", "Addition without +. XOR is addition that forgets to carry; AND finds exactly the places a carry was owed, and shifting it left one puts it where it belongs. Repeat until nothing is owed. In an arbitrary-precision language the negatives are the difficulty: mask to 32 bits so the carry loop terminates, then read the sign bit back by hand.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Bit Manipulation",
+      "O(1) time · O(1) space",
+      "Addition without +. XOR is addition that forgets to carry; AND finds exactly the places a carry was owed, and shifting it left one puts it where it belongs. Repeat until nothing is owed. In an arbitrary-precision language the negatives are the difficulty: mask to 32 bits so the carry loop terminates, then read the sign bit back by hand.",
+      "defmodule Solution do
   import Bitwise
 
   @mask 0xFFFFFFFF
@@ -5605,13 +6678,18 @@ end"),
   defp add(a, 0), do: a
 
   defp add(a, b), do: add(bxor(a, b) &&& @mask, (a &&& b) <<< 1 &&& @mask)
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc55_reverse_integer() -> List(#(String, String, String, String)) {
   [
-    #("Nifty Python · Strings", "O(log n) time · O(log n) space", "Reverse the digits as text and read them back. It cannot overflow along the way, so the range check is a plain comparison at the end — which is honest here and dishonest in C, and worth being able to say which language you are in when you offer it.", "defmodule Solution do
+    #(
+      "Nifty Python · Strings",
+      "O(log n) time · O(log n) space",
+      "Reverse the digits as text and read them back. It cannot overflow along the way, so the range check is a plain comparison at the end — which is honest here and dishonest in C, and worth being able to say which language you are in when you offer it.",
+      "defmodule Solution do
   @largest 2_147_483_647
   @smallest -2_147_483_648
 
@@ -5625,8 +6703,13 @@ pub fn nc55_reverse_integer() -> List(#(String, String, String, String)) {
     result = if x < 0, do: -magnitude, else: magnitude
     if result > @largest or result < @smallest, do: 0, else: result
   end
-end"),
-    #("Math", "O(log n) time · O(1) space", "Peel a digit off the bottom of the input and push it onto the bottom of the result. The whole difficulty is that the test has to happen *before* the multiply: in a fixed-width language the multiply is the moment the value would be lost, so checking afterwards is checking a number that no longer exists.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Math",
+      "O(log n) time · O(1) space",
+      "Peel a digit off the bottom of the input and push it onto the bottom of the result. The whole difficulty is that the test has to happen *before* the multiply: in a fixed-width language the multiply is the moment the value would be lost, so checking afterwards is checking a number that no longer exists.",
+      "defmodule Solution do
   @largest 2_147_483_647
   @smallest -2_147_483_648
 
@@ -5646,13 +6729,18 @@ end"),
       do: 0,
       else: build(div(remaining, 10), result * 10 + rem(remaining, 10))
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc56_rotate_image() -> List(#(String, String, String, String)) {
   [
-    #("Index Mapping", "O(n²) time · O(n²) space", "Straight from where each element lands: after a clockwise quarter turn the entry at (row, column) came from (n − 1 − column, row). Deriving that mapping once, on paper, is the surest way to stop guessing which way round the rotation goes.", "defmodule Solution do
+    #(
+      "Index Mapping",
+      "O(n²) time · O(n²) space",
+      "Straight from where each element lands: after a clockwise quarter turn the entry at (row, column) came from (n − 1 − column, row). Deriving that mapping once, on paper, is the surest way to stop guessing which way round the rotation goes.",
+      "defmodule Solution do
   # Straight from where each element lands: after a clockwise quarter turn the
   # entry at (row, column) came from (n - 1 - column, row). Writing the mapping
   # out once is the surest way not to get the direction backwards.
@@ -5666,8 +6754,13 @@ pub fn nc56_rotate_image() -> List(#(String, String, String, String)) {
       for c <- 0..(n - 1)//1, do: rows |> elem(n - 1 - c) |> elem(r)
     end
   end
-end"),
-    #("Nifty Python · Zip", "O(n²) time · O(n²) space", "A quarter turn is two reflections: through the main diagonal, then through the vertical centre line. Both are trivial to write and neither needs index arithmetic, which is why this beats memorising the four-way element cycle — and why it is easy to get the direction right by reasoning rather than recall.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Nifty Python · Zip",
+      "O(n²) time · O(n²) space",
+      "A quarter turn is two reflections: through the main diagonal, then through the vertical centre line. Both are trivial to write and neither needs index arithmetic, which is why this beats memorising the four-way element cycle — and why it is easy to get the direction right by reasoning rather than recall.",
+      "defmodule Solution do
   # A quarter turn is a reflection through the main diagonal followed by a
   # reflection through the vertical centre line. Two easy operations instead of
   # one four-way element cycle, and neither needs index arithmetic.
@@ -5678,13 +6771,18 @@ end"),
     |> Enum.zip_with(& &1)
     |> Enum.map(&Enum.reverse/1)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc57_spiral_matrix() -> List(#(String, String, String, String)) {
   [
-    #("Nifty Python · Rotate", "O(m·n·min(m,n)) time · O(m·n) space", "Take the top row, then turn the problem ninety degrees and do it again. Rotating what is left anticlockwise puts the column you would have walked down next along the top, so there is only ever one move to make and no boundary bookkeeping at all.", "defmodule Solution do
+    #(
+      "Nifty Python · Rotate",
+      "O(m·n·min(m,n)) time · O(m·n) space",
+      "Take the top row, then turn the problem ninety degrees and do it again. Rotating what is left anticlockwise puts the column you would have walked down next along the top, so there is only ever one move to make and no boundary bookkeeping at all.",
+      "defmodule Solution do
   # Take the top row, then turn the problem ninety degrees and do it again.
   # Rotating what is left anticlockwise puts the column you would have walked
   # down next along the top, so there is only ever one move to make.
@@ -5700,8 +6798,13 @@ pub fn nc57_spiral_matrix() -> List(#(String, String, String, String)) {
     |> Enum.zip_with(& &1)
     |> Enum.reverse()
   end
-end"),
-    #("Simulation", "O(m·n) time · O(1) space", "Four boundaries closing in, each side walked and then retired. The two guards are the whole difficulty: on a single remaining row the top and bottom edges are the same edge, and on a single column the left and right are, so walking both emits those cells twice.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Simulation",
+      "O(m·n) time · O(1) space",
+      "Four boundaries closing in, each side walked and then retired. The two guards are the whole difficulty: on a single remaining row the top and bottom edges are the same edge, and on a single column the left and right are, so walking both emits those cells twice.",
+      "defmodule Solution do
   def spiral_order([]), do: []
 
   # Four boundaries closing in. Each side is walked and then retired, and the
@@ -5740,15 +6843,20 @@ end"),
   end
 
   defp at(rows, r, c), do: rows |> elem(r) |> elem(c)
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc58_set_matrix_zeroes() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(m·n·(m+n)) time · O(m·n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(m·n·(m+n)) time · O(m·n) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-The condition stated outright: a cell clears exactly when its own row holds a zero or its own column does. Nothing recorded, nothing ordered, so the two-pass trap cannot arise — at the cost of rescanning a row and a column for every cell.", "defmodule Solution do
+The condition stated outright: a cell clears exactly when its own row holds a zero or its own column does. Nothing recorded, nothing ordered, so the two-pass trap cannot arise — at the cost of rescanning a row and a column for every cell.",
+      "defmodule Solution do
   def set_zeroes([]), do: []
 
   # The condition stated outright: a cell is cleared exactly when its own row
@@ -5766,8 +6874,13 @@ The condition stated outright: a cell clears exactly when its own row holds a ze
       end)
     end)
   end
-end"),
-    #("Hash Set", "O(m·n) time · O(m·n) space", "Two passes, and they cannot be one: a zero written as you go is indistinguishable from a zero that was already there, so the grid would clear itself entirely. Record which rows and columns are doomed first, then apply. Recognising why one pass fails is the point of the problem.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Hash Set",
+      "O(m·n) time · O(m·n) space",
+      "Two passes, and they cannot be one: a zero written as you go is indistinguishable from a zero that was already there, so the grid would clear itself entirely. Record which rows and columns are doomed first, then apply. Recognising why one pass fails is the point of the problem.",
+      "defmodule Solution do
   # Two passes, and they cannot be one: writing a zero as you find it would be
   # indistinguishable from a zero that was already there, and the whole grid
   # would clear. So record which rows and columns are doomed first, then apply.
@@ -5795,13 +6908,18 @@ end"),
       end)
     end)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc59_happy_number() -> List(#(String, String, String, String)) {
   [
-    #("Fast & Slow Pointers", "O(log n) time · O(1) space", "The same question with no memory at all. One pointer steps once per round, another twice, and they meet inside whatever cycle exists — meeting at 1 means the cycle is the fixed point, meeting anywhere else means it is not. Constant space, and the same trick that finds a cycle in a linked list.", "defmodule Solution do
+    #(
+      "Fast & Slow Pointers",
+      "O(log n) time · O(1) space",
+      "The same question with no memory at all. One pointer steps once per round, another twice, and they meet inside whatever cycle exists — meeting at 1 means the cycle is the fixed point, meeting anywhere else means it is not. Constant space, and the same trick that finds a cycle in a linked list.",
+      "defmodule Solution do
   # The same question with no memory at all: run one pointer at single speed and
   # another at double, and they meet inside whatever cycle exists. Meeting at 1
   # means the cycle is the fixed point; meeting anywhere else means it is not.
@@ -5815,8 +6933,13 @@ pub fn nc59_happy_number() -> List(#(String, String, String, String)) {
 
   defp square_digits(0), do: 0
   defp square_digits(n), do: rem(n, 10) * rem(n, 10) + square_digits(div(n, 10))
-end"),
-    #("Hash Set", "O(log n) time · O(log n) space", "The sequence must repeat: sums of squared digits are bounded, so only finitely many values are reachable and the walk has to revisit one. That turns \"does it loop?\" into a set lookup, and the answer is whether the value it settles on is 1.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Hash Set",
+      "O(log n) time · O(log n) space",
+      "The sequence must repeat: sums of squared digits are bounded, so only finitely many values are reachable and the walk has to revisit one. That turns \"does it loop?\" into a set lookup, and the answer is whether the value it settles on is 1.",
+      "defmodule Solution do
   # The sequence has to repeat eventually -- squares of digits are bounded, so
   # there are only finitely many values it can reach. Remembering what has been
   # seen turns \"does it loop?\" into a set lookup.
@@ -5832,13 +6955,18 @@ end"),
 
   defp square_digits(0), do: 0
   defp square_digits(n), do: rem(n, 10) * rem(n, 10) + square_digits(div(n, 10))
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc60_plus_one() -> List(#(String, String, String, String)) {
   [
-    #("Nifty Python · Big Int", "O(n²) time · O(n) space", "Fold the digits into a number, add one, take it apart again. Shorter, and safe in a language with arbitrary-precision integers; in one without, this is exactly the version that breaks, and being handed digits rather than a number is the problem telling you so.", "defmodule Solution do
+    #(
+      "Nifty Python · Big Int",
+      "O(n²) time · O(n) space",
+      "Fold the digits into a number, add one, take it apart again. Shorter, and safe in a language with arbitrary-precision integers; in one without, this is exactly the version that breaks, and being handed digits rather than a number is the problem telling you so.",
+      "defmodule Solution do
   # Fold the digits into a number, add one, take it apart again. Shorter, and in
   # Elixir it is even safe -- integers are arbitrary precision. In a language
   # where they are not, this is exactly the version that breaks, and handing you
@@ -5847,8 +6975,13 @@ pub fn nc60_plus_one() -> List(#(String, String, String, String)) {
     value = Enum.reduce(digits, 0, fn digit, acc -> acc * 10 + digit end)
     Integer.digits(value + 1)
   end
-end"),
-    #("Math", "O(n) time · O(n) space", "Adding one is a carry that starts at 1 and dies as soon as a digit below nine absorbs it. The only case worth care is when it never does — all nines — and the number grows a digit at the front.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Math",
+      "O(n) time · O(n) space",
+      "Adding one is a carry that starts at 1 and dies as soon as a digit below nine absorbs it. The only case worth care is when it never does — all nines — and the number grows a digit at the front.",
+      "defmodule Solution do
   # Adding one is a carry that starts at 1 and dies as soon as a digit below
   # nine absorbs it. The only interesting case is when it never does, and the
   # number grows a digit.
@@ -5863,21 +6996,31 @@ end"),
 
     if carry == 0, do: out, else: [carry | out]
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc61_pow() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n) time · O(1) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Multiply n times. Fine for small exponents, and it makes the saving obvious: the fast version does about log₂(n) multiplications where this one does n — thirty against a billion.", "defmodule Solution do
+Multiply n times. Fine for small exponents, and it makes the saving obvious: the fast version does about log₂(n) multiplications where this one does n — thirty against a billion.",
+      "defmodule Solution do
   def my_pow(x, n) do
     magnitude = Enum.reduce(1..abs(n)//1, 1.0, fn _, acc -> acc * x end)
     if n < 0, do: 1 / magnitude, else: magnitude
   end
-end"),
-    #("Binary Exponentiation", "O(log n) time · O(log n) space", "Halving the exponent halves the work: x^n is (x^(n/2))², with one extra multiplication when n is odd. O(log n) multiplications rather than n. A negative exponent is one reciprocal at the end, and the recursion bottoms out at n = 0 returning 1.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Binary Exponentiation",
+      "O(log n) time · O(log n) space",
+      "Halving the exponent halves the work: x^n is (x^(n/2))², with one extra multiplication when n is odd. O(log n) multiplications rather than n. A negative exponent is one reciprocal at the end, and the recursion bottoms out at n = 0 returning 1.",
+      "defmodule Solution do
   def my_pow(x, n) when n < 0, do: 1 / power(x, -n)
   def my_pow(x, n), do: power(x, n)
 
@@ -5889,13 +7032,18 @@ end"),
     half = power(x, div(n, 2))
     if rem(n, 2) == 0, do: half * half, else: half * half * x
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc62_multiply_strings() -> List(#(String, String, String, String)) {
   [
-    #("Simulation", "O(n·(m+n)) time · O(m+n) space", "Long multiplication exactly as taught: one partial product per digit of the second number, each shifted left by its position, all added up. It needs string addition as well as string multiplication — which is why the accumulating version exists, and why writing add once is worth it anyway.", "defmodule Solution do
+    #(
+      "Simulation",
+      "O(n·(m+n)) time · O(m+n) space",
+      "Long multiplication exactly as taught: one partial product per digit of the second number, each shifted left by its position, all added up. It needs string addition as well as string multiplication — which is why the accumulating version exists, and why writing add once is worth it anyway.",
+      "defmodule Solution do
   def multiply(\"0\", _num2), do: \"0\"
   def multiply(_num1, \"0\"), do: \"0\"
 
@@ -5957,8 +7105,13 @@ pub fn nc62_multiply_strings() -> List(#(String, String, String, String)) {
       text -> text
     end
   end
-end"),
-    #("Math", "O(m·n) time · O(m+n) space", "Long multiplication with the carrying postponed. Digit i of one number times digit j of the other always lands at position i + j, so every product drops straight into its slot and the carries are settled in one sweep at the end. Deferring the carry is what keeps the inner loop free of bookkeeping.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Math",
+      "O(m·n) time · O(m+n) space",
+      "Long multiplication with the carrying postponed. Digit i of one number times digit j of the other always lands at position i + j, so every product drops straight into its slot and the carries are settled in one sweep at the end. Deferring the carry is what keeps the inner loop free of bookkeeping.",
+      "defmodule Solution do
   def multiply(\"0\", _num2), do: \"0\"
   def multiply(_num1, \"0\"), do: \"0\"
 
@@ -5994,13 +7147,18 @@ end"),
   defp reversed_digits(text) do
     text |> String.graphemes() |> Enum.reverse() |> Enum.map(&String.to_integer/1)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc63_detect_squares() -> List(#(String, String, String, String)) {
   [
-    #("Side Length Scan", "O(n) per count · O(n) space", "Choose the corner directly above or below instead. That fixes the side length rather than the square, so there are two candidates to check per partner — the remaining corners can be to the left or to the right. Same complexity, and a useful reminder that which corner you pivot on changes how much is determined.", "defmodule Solution do
+    #(
+      "Side Length Scan",
+      "O(n) per count · O(n) space",
+      "Choose the corner directly above or below instead. That fixes the side length rather than the square, so there are two candidates to check per partner — the remaining corners can be to the left or to the right. Same complexity, and a useful reminder that which corner you pivot on changes how much is determined.",
+      "defmodule Solution do
   def new, do: %{}
 
   def add(counts, {x, y}), do: Map.update(counts, {x, y}, 1, &(&1 + 1))
@@ -6025,8 +7183,13 @@ pub fn nc63_detect_squares() -> List(#(String, String, String, String)) {
   defp pair(counts, column, low, high) do
     Map.get(counts, {column, low}, 0) * Map.get(counts, {column, high}, 0)
   end
-end"),
-    #("Hash Map", "O(n) per count · O(n) space", "Choosing the corner diagonally opposite fixes the entire square: the other two corners can only be at (x, py) and (px, y). So the scan is over stored points that share neither coordinate and sit on a true diagonal, and the three corner counts multiply — a repeated point genuinely forms a separate square.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Hash Map",
+      "O(n) per count · O(n) space",
+      "Choosing the corner diagonally opposite fixes the entire square: the other two corners can only be at (x, py) and (px, y). So the scan is over stored points that share neither coordinate and sit on a true diagonal, and the three corner counts multiply — a repeated point genuinely forms a separate square.",
+      "defmodule Solution do
   # Immutable, so the store is a value that add returns a new version of.
   def new, do: %{}
 
@@ -6045,13 +7208,18 @@ end"),
       end
     end)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc64_climbing_stairs() -> List(#(String, String, String, String)) {
   [
-    #("Top-Down Memo", "O(n) time · O(n) space", "The same recurrence from the top down, with a cache. Heavier than the rolling pair, but it is the shape you reach for first when the recurrence is not obviously a straight line — and the memo is the entire difference between O(n) and O(2ⁿ).", "defmodule Solution do
+    #(
+      "Top-Down Memo",
+      "O(n) time · O(n) space",
+      "The same recurrence from the top down, with a cache. Heavier than the rolling pair, but it is the shape you reach for first when the recurrence is not obviously a straight line — and the memo is the entire difference between O(n) and O(2ⁿ).",
+      "defmodule Solution do
   def climb_stairs(n) do
     {answer, _memo} = ways(n, %{})
     answer
@@ -6074,8 +7242,13 @@ pub fn nc64_climbing_stairs() -> List(#(String, String, String, String)) {
         {a + b, Map.put(memo, n, a + b)}
     end
   end
-end"),
-    #("Space-Saving DP", "O(n) time · O(1) space", "The last move was either one step or two, so the ways to reach step n are the ways to reach n−1 plus the ways to reach n−2 — Fibonacci with a staircase painted on it. Only the last two values ever matter, so two variables replace the whole table.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Space-Saving DP",
+      "O(n) time · O(1) space",
+      "The last move was either one step or two, so the ways to reach step n are the ways to reach n−1 plus the ways to reach n−2 — Fibonacci with a staircase painted on it. Only the last two values ever matter, so two variables replace the whole table.",
+      "defmodule Solution do
   # The last move was either one step or two, so the ways to reach step n are
   # the ways to reach n-1 plus the ways to reach n-2 -- Fibonacci with a
   # staircase painted on it. Only the last two values matter.
@@ -6087,13 +7260,20 @@ end"),
 
     current
   end
-end"),
+end",
+    ),
   ]
 }
 
-pub fn nc65_min_cost_climbing_stairs() -> List(#(String, String, String, String)) {
+pub fn nc65_min_cost_climbing_stairs() -> List(
+  #(String, String, String, String),
+) {
   [
-    #("Backward DP", "O(n) time · O(1) space", "The same recurrence read the other way: not \"what did it cost to get here\" but \"what will it cost to finish from here\". Walking backwards, each step's answer is its own price plus the cheaper of the two ahead. Worth writing both — one direction is usually far easier to state than the other, and which one varies by problem.", "defmodule Solution do
+    #(
+      "Backward DP",
+      "O(n) time · O(1) space",
+      "The same recurrence read the other way: not \"what did it cost to get here\" but \"what will it cost to finish from here\". Walking backwards, each step's answer is its own price plus the cheaper of the two ahead. Worth writing both — one direction is usually far easier to state than the other, and which one varies by problem.",
+      "defmodule Solution do
   # The same recurrence read the other way: instead of \"what did it cost to get
   # here\", ask \"what will it cost to finish from here\". Walking backwards, the
   # answer at each step is its own price plus the cheaper of the two ahead, and
@@ -6108,8 +7288,13 @@ pub fn nc65_min_cost_climbing_stairs() -> List(#(String, String, String, String)
 
     min(one_ahead, two_ahead)
   end
-end"),
-    #("Space-Saving DP", "O(n) time · O(1) space", "Cost to stand on each step, carried forward: getting here means having paid for one of the two steps below, whichever was cheaper. Two variables again, because nothing older than two steps back can matter. Either of the first two steps is a legal start, which is what the final min covers.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Space-Saving DP",
+      "O(n) time · O(1) space",
+      "Cost to stand on each step, carried forward: getting here means having paid for one of the two steps below, whichever was cheaper. Two variables again, because nothing older than two steps back can matter. Either of the first two steps is a legal start, which is what the final min covers.",
+      "defmodule Solution do
   # Cost to stand on each step, carried forward: getting here means having paid
   # for one of the two steps below, whichever was cheaper. Two variables again,
   # because nothing older than two steps back can matter.
@@ -6121,13 +7306,18 @@ end"),
 
     min(one_back, two_back)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc66_house_robber() -> List(#(String, String, String, String)) {
   [
-    #("Top-Down Memo", "O(n) time · O(n) space", "The same choice written as a recursion from the front: rob this house and skip the next, or skip this one. Exponential without the cache and linear with it — which is the lesson, because the rolling pair hides that the problem ever had a tree of choices at all.", "defmodule Solution do
+    #(
+      "Top-Down Memo",
+      "O(n) time · O(n) space",
+      "The same choice written as a recursion from the front: rob this house and skip the next, or skip this one. Exponential without the cache and linear with it — which is the lesson, because the rolling pair hides that the problem ever had a tree of choices at all.",
+      "defmodule Solution do
   def rob(nums) do
     {best, _memo} = from(0, List.to_tuple(nums), length(nums), %{})
     best
@@ -6151,8 +7341,13 @@ pub fn nc66_house_robber() -> List(#(String, String, String, String)) {
         {best, Map.put(memo, index, best)}
     end
   end
-end"),
-    #("Space-Saving DP", "O(n) time · O(1) space", "At each house the choice is take it and add what was safe two houses back, or skip it and keep the best so far. Both of those are one number, so the whole table collapses to a pair of running values.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Space-Saving DP",
+      "O(n) time · O(1) space",
+      "At each house the choice is take it and add what was safe two houses back, or skip it and keep the best so far. Both of those are one number, so the whole table collapses to a pair of running values.",
+      "defmodule Solution do
   # At each house the choice is take it and add what was safe two houses back,
   # or skip it and keep the best so far. Both answers are one number, so the
   # whole table collapses to a pair.
@@ -6164,13 +7359,18 @@ end"),
 
     best
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc67_house_robber_ii() -> List(#(String, String, String, String)) {
   [
-    #("One-Pass DP", "O(n) time · O(1) space", "One pass carrying both stories at the same time: the run allowed to take the first house, and the run that is not. Neither ever consults the other, so this is exactly the two-pass version interleaved — worth knowing when the input can only be walked once.", "defmodule Solution do
+    #(
+      "One-Pass DP",
+      "O(n) time · O(1) space",
+      "One pass carrying both stories at the same time: the run allowed to take the first house, and the run that is not. Neither ever consults the other, so this is exactly the two-pass version interleaved — worth knowing when the input can only be walked once.",
+      "defmodule Solution do
   def rob([]), do: 0
   def rob([only]), do: only
 
@@ -6195,8 +7395,13 @@ pub fn nc67_house_robber_ii() -> List(#(String, String, String, String)) {
   end
 
   defp step({best, previous}, value), do: {max(best, previous + value), best}
-end"),
-    #("Space-Saving DP", "O(n) time · O(n) space", "The circle matters through exactly one constraint: the first and last houses are neighbours, so at most one of them is robbed. Ruling each out in turn leaves two ordinary straight-line problems, and the answer is the better of the two — reusing a solved problem rather than inventing a circular recurrence.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Space-Saving DP",
+      "O(n) time · O(n) space",
+      "The circle matters through exactly one constraint: the first and last houses are neighbours, so at most one of them is robbed. Ruling each out in turn leaves two ordinary straight-line problems, and the answer is the better of the two — reusing a solved problem rather than inventing a circular recurrence.",
+      "defmodule Solution do
   def rob([]), do: 0
   def rob([only]), do: only
 
@@ -6215,15 +7420,20 @@ end"),
 
     best
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc68_longest_palindrome() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n³) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n³) time · O(n) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every start with every length, each checked against its own reverse. O(n³), and the thing centre expansion optimises: it never re-checks the inside of a palindrome it has already grown through.", "defmodule Solution do
+Every start with every length, each checked against its own reverse. O(n³), and the thing centre expansion optimises: it never re-checks the inside of a palindrome it has already grown through.",
+      "defmodule Solution do
   # Every start with every length. O(n^3) once the palindrome check is counted
   # -- the definition, and what centre expansion is an optimisation of.
   def longest_palindrome(\"\"), do: \"\"
@@ -6241,8 +7451,13 @@ Every start with every length, each checked against its own reverse. O(n³), and
            else: best
     end
   end
-end"),
-    #("Centre Expansion", "O(n²) time · O(1) space", "Every palindrome has a centre, and there are only 2n of them — n characters and n gaps between them. Growing outwards from each is O(n²) with no table at all. The gaps are what people forget: without them, every even-length palindrome is invisible.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Centre Expansion",
+      "O(n²) time · O(1) space",
+      "Every palindrome has a centre, and there are only 2n of them — n characters and n gaps between them. Growing outwards from each is O(n²) with no table at all. The gaps are what people forget: without them, every even-length palindrome is invisible.",
+      "defmodule Solution do
   def longest_palindrome(\"\"), do: \"\"
 
   # Every palindrome has a centre, and there are only 2n of them -- n single
@@ -6273,13 +7488,18 @@ end"),
       {left + 1, right - left - 1}
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc69_palindromic_substrings() -> List(#(String, String, String, String)) {
   [
-    #("Bottom-Up DP", "O(n²) time · O(n²) space", "A table over spans: s[i..j] is a palindrome when its ends match and the span inside already was. That dependency forces the fill order — shortest spans first — which is the only real content of the outer loop and the thing to get right.", "defmodule Solution do
+    #(
+      "Bottom-Up DP",
+      "O(n²) time · O(n²) space",
+      "A table over spans: s[i..j] is a palindrome when its ends match and the span inside already was. That dependency forces the fill order — shortest spans first — which is the only real content of the outer loop and the thing to get right.",
+      "defmodule Solution do
   def count_substrings(\"\"), do: 0
 
   # The table says whether s[i..j] is a palindrome. It is when its ends match
@@ -6300,8 +7520,13 @@ pub fn nc69_palindromic_substrings() -> List(#(String, String, String, String)) 
 
     total
   end
-end"),
-    #("Centre Expansion", "O(n²) time · O(1) space", "The same 2n centres as finding the longest one, except that here every successful widening is itself an answer. So the count is how many times the expansion succeeded rather than how far it got — one line different, same scan.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Centre Expansion",
+      "O(n²) time · O(1) space",
+      "The same 2n centres as finding the longest one, except that here every successful widening is itself an answer. So the count is how many times the expansion succeeded rather than how far it got — one line different, same scan.",
+      "defmodule Solution do
   def count_substrings(\"\"), do: 0
 
   # Same 2n centres as finding the longest one, except that here every
@@ -6321,13 +7546,18 @@ end"),
       do: 1 + grow(chars, n, left - 1, right + 1),
       else: 0
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc70_decode_ways() -> List(#(String, String, String, String)) {
   [
-    #("Top-Down Memo", "O(n) time · O(n) space", "The same two choices as a recursion from the front: take one character, or take two if they form a legal pair. Reaching the end is one complete decoding, which is why the base case returns 1 and not 0 — the single most common place to get this problem wrong.", "defmodule Solution do
+    #(
+      "Top-Down Memo",
+      "O(n) time · O(n) space",
+      "The same two choices as a recursion from the front: take one character, or take two if they form a legal pair. Reaching the end is one complete decoding, which is why the base case returns 1 and not 0 — the single most common place to get this problem wrong.",
+      "defmodule Solution do
   def num_decodings(\"\"), do: 0
 
   def num_decodings(s) do
@@ -6368,8 +7598,13 @@ pub fn nc70_decode_ways() -> List(#(String, String, String, String)) {
     value = String.to_integer(first <> second)
     value >= 10 and value <= 26
   end
-end"),
-    #("Space-Saving DP", "O(n) time · O(1) space", "Two rolling counts. The ways to decode up to here are the ways up to the previous character, if this one can stand alone, plus the ways up to the one before that, if this one and its predecessor read as 10 to 26. A leading zero kills the first branch; anything outside that range kills the second.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Space-Saving DP",
+      "O(n) time · O(1) space",
+      "Two rolling counts. The ways to decode up to here are the ways up to the previous character, if this one can stand alone, plus the ways up to the one before that, if this one and its predecessor read as 10 to 26. A leading zero kills the first branch; anything outside that range kills the second.",
+      "defmodule Solution do
   def num_decodings(\"\"), do: 0
 
   # Two rolling counts. The ways to decode up to here are the ways up to the
@@ -6394,13 +7629,18 @@ end"),
     value = String.to_integer(first <> second)
     value >= 10 and value <= 26
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc71_coin_change() -> List(#(String, String, String, String)) {
   [
-    #("BFS", "O(amount·coins) time · O(amount) space", "The amounts reachable with k coins are one level of a breadth-first search from zero, so the first level containing the target is the answer. Same bound as the table, but it stops the moment it arrives rather than filling in every amount below the target — and it makes clear why the answer is a shortest path.", "defmodule Solution do
+    #(
+      "BFS",
+      "O(amount·coins) time · O(amount) space",
+      "The amounts reachable with k coins are one level of a breadth-first search from zero, so the first level containing the target is the answer. Same bound as the table, but it stops the moment it arrives rather than filling in every amount below the target — and it makes clear why the answer is a shortest path.",
+      "defmodule Solution do
   def coin_change(_coins, 0), do: 0
 
   # The amounts reachable with k coins form one level of a breadth-first search
@@ -6424,8 +7664,13 @@ pub fn nc71_coin_change() -> List(#(String, String, String, String)) {
       walk(coins, amount, fresh, MapSet.union(seen, MapSet.new(fresh)), used + 1)
     end
   end
-end"),
-    #("Bottom-Up DP", "O(amount·coins) time · O(amount) space", "Build up from zero: the cheapest way to make a target is one coin more than the cheapest way to make what is left after removing some coin. Leaving unreachable amounts simply absent from the table saves inventing a sentinel for infinity and the comparisons that go with it.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Bottom-Up DP",
+      "O(amount·coins) time · O(amount) space",
+      "Build up from zero: the cheapest way to make a target is one coin more than the cheapest way to make what is left after removing some coin. Leaving unreachable amounts simply absent from the table saves inventing a sentinel for infinity and the comparisons that go with it.",
+      "defmodule Solution do
   # Build up from zero: the cheapest way to make a target is one coin more than
   # the cheapest way to make what is left after removing some coin. An amount
   # with no entry is simply unreachable, which saves inventing a sentinel for
@@ -6448,13 +7693,20 @@ end"),
 
     Map.get(table, amount, -1)
   end
-end"),
+end",
+    ),
   ]
 }
 
-pub fn nc72_maximum_product_subarray() -> List(#(String, String, String, String)) {
+pub fn nc72_maximum_product_subarray() -> List(
+  #(String, String, String, String),
+) {
   [
-    #("Prefix & Suffix Products", "O(n) time · O(n) space", "A different argument entirely: the best subarray always runs to one end of the zero-free block it sits in, so running products swept from both directions — reset at each zero — cover every candidate. No min to track, and the reason it works is worth being able to state.", "defmodule Solution do
+    #(
+      "Prefix & Suffix Products",
+      "O(n) time · O(n) space",
+      "A different argument entirely: the best subarray always runs to one end of the zero-free block it sits in, so running products swept from both directions — reset at each zero — cover every candidate. No min to track, and the reason it works is worth being able to state.",
+      "defmodule Solution do
   def max_product([]), do: 0
 
   # A different argument entirely: the best subarray always runs to one end of
@@ -6471,8 +7723,13 @@ pub fn nc72_maximum_product_subarray() -> List(#(String, String, String, String)
 
     best
   end
-end"),
-    #("Space-Saving DP", "O(n) time · O(1) space", "A negative number turns the best running product into the worst and the worst into the best, so both have to be carried. Zero resets them, which falls out for free from taking the element itself as one of the candidates rather than special-casing it.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Space-Saving DP",
+      "O(n) time · O(1) space",
+      "A negative number turns the best running product into the worst and the worst into the best, so both have to be carried. Zero resets them, which falls out for free from taking the element itself as one of the candidates rather than special-casing it.",
+      "defmodule Solution do
   def max_product([]), do: 0
 
   # A negative number turns the best running product into the worst and the
@@ -6488,13 +7745,18 @@ end"),
 
     best
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc73_word_break() -> List(#(String, String, String, String)) {
   [
-    #("Top-Down Memo", "O(n³) time · O(n) space", "Top-down: from this position, does a dictionary word start here and leave a suffix that also breaks? Without the cache the same suffix is asked about once per way of reaching it, which is where the exponential blow-up on inputs like \"aaaa…b\" comes from.", "defmodule Solution do
+    #(
+      "Top-Down Memo",
+      "O(n³) time · O(n) space",
+      "Top-down: from this position, does a dictionary word start here and leave a suffix that also breaks? Without the cache the same suffix is asked about once per way of reaching it, which is where the exponential blow-up on inputs like \"aaaa…b\" comes from.",
+      "defmodule Solution do
   def word_break(s, word_dict) do
     {answer, _memo} = from(0, String.length(s), s, MapSet.new(word_dict), %{})
     answer
@@ -6527,8 +7789,13 @@ pub fn nc73_word_break() -> List(#(String, String, String, String)) {
         {found, Map.put(memo, start, found)}
     end
   end
-end"),
-    #("Bottom-Up DP", "O(n³) time · O(n) space", "Reachable positions rather than a table of booleans: position 0 is reachable, and a position becomes reachable when some dictionary word bridges the gap from one already reached. The answer is whether the end is reachable.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Bottom-Up DP",
+      "O(n³) time · O(n) space",
+      "Reachable positions rather than a table of booleans: position 0 is reachable, and a position becomes reachable when some dictionary word bridges the gap from one already reached. The answer is whether the end is reachable.",
+      "defmodule Solution do
   # Reachable positions rather than a table of booleans: start at 0, and a
   # position is reachable when some word in the dictionary bridges the gap from
   # a position already reached.
@@ -6549,13 +7816,20 @@ end"),
 
     MapSet.member?(reached, n)
   end
-end"),
+end",
+    ),
   ]
 }
 
-pub fn nc74_longest_increasing_subsequence() -> List(#(String, String, String, String)) {
+pub fn nc74_longest_increasing_subsequence() -> List(
+  #(String, String, String, String),
+) {
   [
-    #("Bottom-Up DP", "O(n²) time · O(n) space", "The longest subsequence ending at each position: one plus the best of every earlier position holding a smaller value. O(n²), and the version to reach for first because the recurrence is stated directly rather than encoded.", "defmodule Solution do
+    #(
+      "Bottom-Up DP",
+      "O(n²) time · O(n) space",
+      "The longest subsequence ending at each position: one plus the best of every earlier position holding a smaller value. O(n²), and the version to reach for first because the recurrence is stated directly rather than encoded.",
+      "defmodule Solution do
   # The longest subsequence ending at each position: one plus the best of every
   # earlier position holding a smaller value. Building the answers in order
   # means every \"earlier position\" is already known.
@@ -6574,8 +7848,13 @@ pub fn nc74_longest_increasing_subsequence() -> List(#(String, String, String, S
 
     best
   end
-end"),
-    #("Patience Sorting", "O(n log n) time · O(n) space", "Patience sorting. Keep the smallest value that a subsequence of each length can end with; that list stays sorted, so each number either extends it or replaces the first entry it is no bigger than — a halving search, giving O(n log n). Note what the list is not: it is not the answer subsequence, only its length is meaningful.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Patience Sorting",
+      "O(n log n) time · O(n) space",
+      "Patience sorting. Keep the smallest value that a subsequence of each length can end with; that list stays sorted, so each number either extends it or replaces the first entry it is no bigger than — a halving search, giving O(n log n). Note what the list is not: it is not the answer subsequence, only its length is meaningful.",
+      "defmodule Solution do
   # Patience sorting. Keep the smallest value that any subsequence of each
   # length ends with; that list is always sorted, so each number either extends
   # it or replaces the first entry it is no bigger than. The list is not the
@@ -6593,13 +7872,18 @@ end"),
       do: Enum.reverse([n | seen]) ++ rest,
       else: place(rest, n, [first | seen])
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc75_partition_equal_subset() -> List(#(String, String, String, String)) {
   [
-    #("Top-Down Memo", "O(n·sum) time · O(n·sum) space", "Take this number or leave it, keyed by how much is still owed and how far along the list you are. As a recursion it is obviously a search over subsets, which the reachable-sums version hides — and the cache is what stops it enumerating all 2ⁿ of them.", "defmodule Solution do
+    #(
+      "Top-Down Memo",
+      "O(n·sum) time · O(n·sum) space",
+      "Take this number or leave it, keyed by how much is still owed and how far along the list you are. As a recursion it is obviously a search over subsets, which the reachable-sums version hides — and the cache is what stops it enumerating all 2ⁿ of them.",
+      "defmodule Solution do
   def can_partition(nums) do
     total = Enum.sum(nums)
 
@@ -6633,8 +7917,13 @@ pub fn nc75_partition_equal_subset() -> List(#(String, String, String, String)) 
         {answer, Map.put(memo, {index, owed}, answer)}
     end
   end
-end"),
-    #("Bottom-Up DP", "O(n·sum) time · O(sum) space", "Subset sum in disguise: an equal split exists exactly when some subset adds to half the total, and an odd total rules it out before any work. Carrying the set of reachable sums needs no ordering and no table, and duplicates cost nothing because a set collapses them.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Bottom-Up DP",
+      "O(n·sum) time · O(sum) space",
+      "Subset sum in disguise: an equal split exists exactly when some subset adds to half the total, and an odd total rules it out before any work. Carrying the set of reachable sums needs no ordering and no table, and duplicates cost nothing because a set collapses them.",
+      "defmodule Solution do
   # Subset sum in disguise: an equal split exists exactly when some subset adds
   # up to half the total. Carry the set of sums reachable so far and widen it by
   # each number -- no ordering, no table, and duplicates cost nothing because a
@@ -6659,15 +7948,20 @@ end"),
       MapSet.member?(reachable, half)
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc76_kth_largest_stream() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n log n) per add · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n log n) per add · O(n) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Keep the whole stream and sort on demand. Wrong for a real stream — memory grows without bound and every query costs a sort — but it is the definition, and it is what the bounded version has to be checked against.", "defmodule Solution do
+Keep the whole stream and sort on demand. Wrong for a real stream — memory grows without bound and every query costs a sort — but it is the definition, and it is what the bounded version has to be checked against.",
+      "defmodule Solution do
   def new(k, nums), do: {k, nums}
 
   def add({k, seen}, value), do: {k, [value | seen]}
@@ -6677,8 +7971,13 @@ Keep the whole stream and sort on demand. Wrong for a real stream — memory gro
   # definition, and it is what the bounded structure has to be checked against.
   def kth({k, seen}) when length(seen) < k, do: nil
   def kth({k, seen}), do: seen |> Enum.sort(:desc) |> Enum.at(k - 1)
-end"),
-    #("Heap", "O(log k) per add · O(k) space", "Only the k largest values can ever be the answer, so everything else is discarded on arrival and the store never grows past k. That is exactly the shape a bounded min-heap gives you: the smallest thing in it is the answer, and anything smaller than that never gets in. The other thing to get right is that there is no answer at all until k values have arrived.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Heap",
+      "O(log k) per add · O(k) space",
+      "Only the k largest values can ever be the answer, so everything else is discarded on arrival and the store never grows past k. That is exactly the shape a bounded min-heap gives you: the smallest thing in it is the answer, and anything smaller than that never gets in. The other thing to get right is that there is no answer at all until k values have arrived.",
+      "defmodule Solution do
   # Immutable, so the store is a value that add returns a new version of.
   def new(k, nums), do: {k, keep_top(nums, k)}
 
@@ -6695,13 +7994,18 @@ end"),
   defp keep_top(values, k) do
     values |> Enum.sort(:desc) |> Enum.take(k) |> Enum.sort()
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc77_last_stone_weight() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n²) time · O(n) space", "No ordering kept at all: scan for the heaviest, remove it, scan again. O(n) per round rather than O(log n), and worth writing precisely because it makes the interface obvious — the only thing the problem ever asks of the collection is \"give me the largest\".", "defmodule Solution do
+    #(
+      "Brute Force",
+      "O(n²) time · O(n) space",
+      "No ordering kept at all: scan for the heaviest, remove it, scan again. O(n) per round rather than O(log n), and worth writing precisely because it makes the interface obvious — the only thing the problem ever asks of the collection is \"give me the largest\".",
+      "defmodule Solution do
   # No ordering kept at all: scan for the heaviest, remove it, scan again. O(n)
   # per round against the sorted version's O(n log n) once -- worse overall, but
   # it makes clear that the only operation the problem needs is \"give me the
@@ -6722,8 +8026,13 @@ pub fn nc77_last_stone_weight() -> List(#(String, String, String, String)) {
       remainder -> smash([remainder | remaining])
     end
   end
-end"),
-    #("Heap", "O(n log n) time · O(n) space", "Always the two heaviest, so the collection has to give up its maximum over and over — which is exactly what a heap is for, and why this problem exists. Keeping the stones sorted is the same idea at a worse constant; the operation being asked for is what matters.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Heap",
+      "O(n log n) time · O(n) space",
+      "Always the two heaviest, so the collection has to give up its maximum over and over — which is exactly what a heap is for, and why this problem exists. Keeping the stones sorted is the same idea at a worse constant; the operation being asked for is what matters.",
+      "defmodule Solution do
   # Always the two heaviest, so the collection has to give up its maximum over
   # and over -- which is what a heap is for. Kept sorted descending here, so the
   # two heaviest are the first two and the remainder goes back in order.
@@ -6738,13 +8047,18 @@ end"),
       remainder -> smash(Enum.sort([remainder | rest], :desc))
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc78_k_closest_points() -> List(#(String, String, String, String)) {
   [
-    #("Sorting", "O(n log n) time · O(n) space", "Sort by *squared* distance, not distance: the square root is monotonic so it cannot change the order, and skipping it keeps everything in integers with no rounding to argue about. Recognising that a monotonic transform can be dropped is worth more than the sort itself.", "defmodule Solution do
+    #(
+      "Sorting",
+      "O(n log n) time · O(n) space",
+      "Sort by *squared* distance, not distance: the square root is monotonic so it cannot change the order, and skipping it keeps everything in integers with no rounding to argue about. Recognising that a monotonic transform can be dropped is worth more than the sort itself.",
+      "defmodule Solution do
   # Sorting by *squared* distance rather than distance: the square root is
   # monotonic, so it cannot change the order, and skipping it keeps everything
   # in integers with no rounding to argue about.
@@ -6753,8 +8067,13 @@ pub fn nc78_k_closest_points() -> List(#(String, String, String, String)) {
     |> Enum.sort_by(fn {x, y} -> x * x + y * y end)
     |> Enum.take(k)
   end
-end"),
-    #("Heap", "O(n log k) time · O(k) space", "Pull the nearest point out k times rather than ordering everything. O(n·k) against a full sort's O(n log n), so it wins exactly when k is small — the same argument that makes a bounded heap of size k the textbook answer here.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Heap",
+      "O(n log k) time · O(k) space",
+      "Pull the nearest point out k times rather than ordering everything. O(n·k) against a full sort's O(n log n), so it wins exactly when k is small — the same argument that makes a bounded heap of size k the textbook answer here.",
+      "defmodule Solution do
   # Pull the nearest point out k times rather than ordering everything. O(n*k)
   # against a full sort's O(n log n), so it wins exactly when k is small --
   # which is the same reason a bounded heap beats a sort on this problem.
@@ -6767,20 +8086,30 @@ end"),
     nearest = Enum.min_by(points, fn {x, y} -> x * x + y * y end)
     take(List.delete(points, nearest), remaining - 1, [nearest | taken])
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc79_kth_largest_array() -> List(#(String, String, String, String)) {
   [
-    #("Sorting", "O(n log n) time · O(n) space", "Sorting answers every k at once, which is more than was asked but is the version nobody gets wrong. O(n log n), and usually the right thing to write first before offering anything cleverer.", "defmodule Solution do
+    #(
+      "Sorting",
+      "O(n log n) time · O(n) space",
+      "Sorting answers every k at once, which is more than was asked but is the version nobody gets wrong. O(n log n), and usually the right thing to write first before offering anything cleverer.",
+      "defmodule Solution do
   # Sorting answers every k at once, which is more than asked for but is the
   # version nobody gets wrong. O(n log n).
   def find_kth_largest(nums, k) when k < 1 or k > length(nums), do: nil
 
   def find_kth_largest(nums, k), do: nums |> Enum.sort(:desc) |> Enum.at(k - 1)
-end"),
-    #("Quickselect", "O(n) average time · O(n) space", "Partition around a pivot, then recurse only into the side that must contain the answer. Expected O(n), because the work halves each time instead of being done on both halves — the same saving binary search makes over a scan. Worst case is still O(n²) on adversarial pivots, which is worth saying out loud.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Quickselect",
+      "O(n) average time · O(n) space",
+      "Partition around a pivot, then recurse only into the side that must contain the answer. Expected O(n), because the work halves each time instead of being done on both halves — the same saving binary search makes over a scan. Worst case is still O(n²) on adversarial pivots, which is worth saying out loud.",
+      "defmodule Solution do
   def find_kth_largest(nums, k) when k < 1 or k > length(nums), do: nil
 
   def find_kth_largest(nums, k), do: select(nums, k)
@@ -6801,13 +8130,18 @@ end"),
       true -> select(smaller, k - above - 1 - length(equal))
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc80_task_scheduler() -> List(#(String, String, String, String)) {
   [
-    #("Simulation", "O(n·k log k) time · O(k) space", "Run the schedule instead of computing it: each round runs the n+1 most frequent tasks still outstanding, which is the greedy choice and needs the collection to give up its largest values over and over. The trap is the finished tasks — a task at zero is not an idle slot, and counting it as one inflates the answer.", "defmodule Solution do
+    #(
+      "Simulation",
+      "O(n·k log k) time · O(k) space",
+      "Run the schedule instead of computing it: each round runs the n+1 most frequent tasks still outstanding, which is the greedy choice and needs the collection to give up its largest values over and over. The trap is the finished tasks — a task at zero is not an idle slot, and counting it as one inflates the answer.",
+      "defmodule Solution do
   # Run the schedule instead of computing it. Each round runs the n + 1 most
   # frequent tasks still outstanding -- the greedy choice, and it needs the
   # collection to hand back its largest values over and over, exactly the heap's
@@ -6832,8 +8166,13 @@ pub fn nc80_task_scheduler() -> List(#(String, String, String, String)) {
           else: elapsed + length(running)
     end
   end
-end"),
-    #("Greedy", "O(n) time · O(k) space", "Lay the most frequent task out first with gaps of n between its copies. That skeleton is (busiest − 1) frames of n+1 slots plus a final row of every task tied for busiest — and everything else either drops into an idle slot or has already pushed the total past the skeleton, in which case nothing idles and the answer is simply the number of tasks. Hence the max of the two.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Greedy",
+      "O(n) time · O(k) space",
+      "Lay the most frequent task out first with gaps of n between its copies. That skeleton is (busiest − 1) frames of n+1 slots plus a final row of every task tied for busiest — and everything else either drops into an idle slot or has already pushed the total past the skeleton, in which case nothing idles and the answer is simply the number of tasks. Hence the max of the two.",
+      "defmodule Solution do
   def least_interval([], _n), do: 0
 
   def least_interval(tasks, n) do
@@ -6848,13 +8187,18 @@ end"),
     # case no idling happens and the answer is just the number of tasks.
     max(length(tasks), (busiest - 1) * (n + 1) + ties)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc81_design_twitter() -> List(#(String, String, String, String)) {
   [
-    #("Design", "O(all tweets) per feed · O(all tweets) space", "A counter standing in for time is the whole design: it orders tweets across every user without any real timestamps. Then the feed is a filter over one global timeline — simple, correct, and the wrong shape at scale, since it walks every tweet ever posted to produce ten.", "defmodule Solution do
+    #(
+      "Design",
+      "O(all tweets) per feed · O(all tweets) space",
+      "A counter standing in for time is the whole design: it orders tweets across every user without any real timestamps. Then the feed is a filter over one global timeline — simple, correct, and the wrong shape at scale, since it walks every tweet ever posted to produce ten.",
+      "defmodule Solution do
   # The clock only ever increases, so it orders tweets across every user without
   # any real timestamps being involved.
   def new, do: %{clock: 0, tweets: [], following: %{}}
@@ -6888,8 +8232,13 @@ pub fn nc81_design_twitter() -> List(#(String, String, String, String)) {
   end
 
   defp followees(twitter, user), do: Map.get(twitter.following, user, MapSet.new())
-end"),
-    #("Heap", "O(followees) per feed · O(all tweets) space", "Store tweets per author and the feed becomes a k-way merge over the timelines being followed — and since only the ten newest are wanted, a heap over the heads of those k lists produces them without touching the rest. This is the version that survives a follow-up about scale.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Heap",
+      "O(followees) per feed · O(all tweets) space",
+      "Store tweets per author and the feed becomes a k-way merge over the timelines being followed — and since only the ten newest are wanted, a heap over the heads of those k lists produces them without touching the rest. This is the version that survives a follow-up about scale.",
+      "defmodule Solution do
   def new, do: %{clock: 0, tweets: %{}, following: %{}}
 
   # Tweets stored per author rather than in one global list, newest first.
@@ -6924,13 +8273,18 @@ end"),
   end
 
   defp followees(twitter, user), do: Map.get(twitter.following, user, MapSet.new())
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc82_find_median_stream() -> List(#(String, String, String, String)) {
   [
-    #("Sorted List", "O(n) per operation · O(n) space", "One sorted list, kept in order on insertion, and the median is a lookup. Easier to believe and easier to write, at the cost of an O(n) insert where two heaps pay O(log n) — the trade that decides which one belongs in a streaming answer.", "defmodule Solution do
+    #(
+      "Sorted List",
+      "O(n) per operation · O(n) space",
+      "One sorted list, kept in order on insertion, and the median is a lookup. Easier to believe and easier to write, at the cost of an O(n) insert where two heaps pay O(log n) — the trade that decides which one belongs in a streaming answer.",
+      "defmodule Solution do
   def new, do: []
 
   # One sorted list, kept in order on insertion. Simpler to believe than two
@@ -6944,8 +8298,13 @@ pub fn nc82_find_median_stream() -> List(#(String, String, String, String)) {
     n = length(values)
     (Enum.at(values, div(n, 2)) + Enum.at(values, div(n - 1, 2))) / 2
   end
-end"),
-    #("Two Heaps", "O(log n) per operation · O(n) space", "Split the values into a smaller half and a larger half, and the median is always sitting at one or both of the two inner ends. Each half only ever has to surrender its extreme value, which is exactly a heap — a max-heap below, a min-heap above. The whole difficulty is the rebalancing rule: sizes within one, and nothing below bigger than anything above.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Two Heaps",
+      "O(log n) per operation · O(n) space",
+      "Split the values into a smaller half and a larger half, and the median is always sitting at one or both of the two inner ends. Each half only ever has to surrender its extreme value, which is exactly a heap — a max-heap below, a min-heap above. The whole difficulty is the rebalancing rule: sizes within one, and nothing below bigger than anything above.",
+      "defmodule Solution do
   # `lower` is the smaller half, largest first; `upper` is the larger half,
   # smallest first. The median is always at one or both of those two heads --
   # each half only ever has to give up its extreme value, which is exactly what
@@ -6984,13 +8343,18 @@ end"),
         {lower, upper}
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc83_subsets() -> List(#(String, String, String, String)) {
   [
-    #("Bit Manipulation", "O(n·2ⁿ) time · O(n·2ⁿ) space", "The in-or-out choices *are* the bits of a number, so counting from 0 to 2ⁿ−1 enumerates every subset exactly once with no recursion at all. It also gives every subset a stable index, which matters the moment subsets have to be compared, cached or keyed on.", "defmodule Solution do
+    #(
+      "Bit Manipulation",
+      "O(n·2ⁿ) time · O(n·2ⁿ) space",
+      "The in-or-out choices *are* the bits of a number, so counting from 0 to 2ⁿ−1 enumerates every subset exactly once with no recursion at all. It also gives every subset a stable index, which matters the moment subsets have to be compared, cached or keyed on.",
+      "defmodule Solution do
   import Bitwise
 
   # The in-or-out choices *are* the bits of a number, so counting from 0 to
@@ -7004,8 +8368,13 @@ pub fn nc83_subsets() -> List(#(String, String, String, String)) {
       for {value, i} <- indexed, (mask >>> i &&& 1) == 1, do: value
     end
   end
-end"),
-    #("Recursion", "O(n·2ⁿ) time · O(n·2ⁿ) space", "Every element is either in or out, independently, so the subsets of a list are the subsets of its tail twice over — once with the head added and once without. That recursion is the whole answer, and it is also why there are exactly 2ⁿ of them.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Recursion",
+      "O(n·2ⁿ) time · O(n·2ⁿ) space",
+      "Every element is either in or out, independently, so the subsets of a list are the subsets of its tail twice over — once with the head added and once without. That recursion is the whole answer, and it is also why there are exactly 2ⁿ of them.",
+      "defmodule Solution do
   # Every element is either in or out, independently, so the subsets of a list
   # are the subsets of its tail twice over: once with the head added and once
   # without. That is the whole recursion, and it is why there are 2^n of them.
@@ -7015,13 +8384,18 @@ end"),
     without = subsets(rest)
     Enum.map(without, &[first | &1]) ++ without
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc84_combination_sum() -> List(#(String, String, String, String)) {
   [
-    #("Bottom-Up DP", "O(t·2ᵗ) time · O(t·2ᵗ) space", "Bottom-up: the combinations making a target are every combination making a smaller amount with one more candidate added. Requiring the added candidate to be no smaller than the combination's largest plays the same role the index does in the recursion — it fixes one order per combination.", "defmodule Solution do
+    #(
+      "Bottom-Up DP",
+      "O(t·2ᵗ) time · O(t·2ᵗ) space",
+      "Bottom-up: the combinations making a target are every combination making a smaller amount with one more candidate added. Requiring the added candidate to be no smaller than the combination's largest plays the same role the index does in the recursion — it fixes one order per combination.",
+      "defmodule Solution do
   # Bottom-up instead of by recursion: the combinations making a target are
   # every combination making a smaller amount with one more candidate added.
   # Requiring each added candidate to be no smaller than the combination's
@@ -7051,8 +8425,13 @@ pub fn nc84_combination_sum() -> List(#(String, String, String, String)) {
 
     Map.get(table, target, [])
   end
-end"),
-    #("Backtracking", "O(2ᵗ) time · O(t) space", "Each step either takes the current candidate again — reuse is allowed — or drops it for good. Never returning to a dropped candidate is what stops the same combination appearing in several orders, so there is no deduplication anywhere. That constraint doing the work is the pattern to carry to the harder variants.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Backtracking",
+      "O(2ᵗ) time · O(t) space",
+      "Each step either takes the current candidate again — reuse is allowed — or drops it for good. Never returning to a dropped candidate is what stops the same combination appearing in several orders, so there is no deduplication anywhere. That constraint doing the work is the pattern to carry to the harder variants.",
+      "defmodule Solution do
   def combination_sum(candidates, target), do: build(candidates, target)
 
   # Each step either takes the current candidate again -- reuse is allowed -- or
@@ -7068,13 +8447,18 @@ end"),
       Enum.map(build(candidates, target - first), &[first | &1]) ++ build(rest, target)
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc85_permutations() -> List(#(String, String, String, String)) {
   [
-    #("Iterative Insertion", "O(n·n!) time · O(n·n!) space", "Build up rather than choose: every permutation of n elements is a permutation of n−1 with the new element wedged into one of its n positions. No recursion into a shrinking remainder, and it explains the factorial directly — one more choice of position at every step.", "defmodule Solution do
+    #(
+      "Iterative Insertion",
+      "O(n·n!) time · O(n·n!) space",
+      "Build up rather than choose: every permutation of n elements is a permutation of n−1 with the new element wedged into one of its n positions. No recursion into a shrinking remainder, and it explains the factorial directly — one more choice of position at every step.",
+      "defmodule Solution do
   # Build up instead of choosing: every permutation of n elements is a
   # permutation of n-1 with the new element wedged into one of its n positions.
   # No recursion into a shrinking remainder, and it explains the factorial
@@ -7086,8 +8470,13 @@ pub fn nc85_permutations() -> List(#(String, String, String, String)) {
           do: List.insert_at(permutation, at, value)
     end)
   end
-end"),
-    #("Backtracking", "O(n·n!) time · O(n·n!) space", "Pick each element in turn as the first, then permute what is left. Removing the chosen element from the remainder is exactly what a \"used\" set does in an in-place version; here the remainder is simply a shorter list, and nothing has to be undone afterwards.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Backtracking",
+      "O(n·n!) time · O(n·n!) space",
+      "Pick each element in turn as the first, then permute what is left. Removing the chosen element from the remainder is exactly what a \"used\" set does in an in-place version; here the remainder is simply a shorter list, and nothing has to be undone afterwards.",
+      "defmodule Solution do
   # Pick each element in turn as the first, then permute what is left. Removing
   # the chosen element from the remainder is what the \"used\" set does in an
   # in-place version -- here the remainder is simply a shorter list.
@@ -7098,13 +8487,18 @@ end"),
         tail <- permute(List.delete_at(nums, i)),
         do: [value | tail]
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc86_subsets_ii() -> List(#(String, String, String, String)) {
   [
-    #("Counting", "O(n·2ⁿ) time · O(n·2ⁿ) space", "A different framing: the choice is not per *element* but per distinct *value* — how many copies to take, from none up to however many exist. Duplicates then cannot arise, so there is no skipping rule to remember and nothing to sort for correctness.", "defmodule Solution do
+    #(
+      "Counting",
+      "O(n·2ⁿ) time · O(n·2ⁿ) space",
+      "A different framing: the choice is not per *element* but per distinct *value* — how many copies to take, from none up to however many exist. Duplicates then cannot arise, so there is no skipping rule to remember and nothing to sort for correctness.",
+      "defmodule Solution do
   # A different framing: the answer is not a choice per *element* but a choice
   # per distinct *value* -- how many copies of it to take, from none up to
   # however many there are. Duplicates then cannot arise at all, so there is no
@@ -7119,8 +8513,13 @@ pub fn nc86_subsets_ii() -> List(#(String, String, String, String)) {
           do: subset ++ List.duplicate(value, taken)
     end)
   end
-end"),
-    #("Backtracking", "O(n·2ⁿ) time · O(n·2ⁿ) space", "Sorting puts equal values next to each other, which is what makes the duplicate rule expressible at all: when a value is skipped, skip *every* copy of it at once. Skipping one copy and keeping the next rebuilds the same subset from a different copy, which is exactly the repeat you are trying to avoid.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Backtracking",
+      "O(n·2ⁿ) time · O(n·2ⁿ) space",
+      "Sorting puts equal values next to each other, which is what makes the duplicate rule expressible at all: when a value is skipped, skip *every* copy of it at once. Skipping one copy and keeping the next rebuilds the same subset from a different copy, which is exactly the repeat you are trying to avoid.",
+      "defmodule Solution do
   def subsets_with_dup(nums), do: build(Enum.sort(nums))
 
   # Sorting puts equal values next to each other, which is what makes the
@@ -7133,15 +8532,20 @@ end"),
     with_first = Enum.map(build(rest), &[first | &1])
     with_first ++ build(Enum.drop_while(rest, &(&1 == first)))
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc87_combination_sum_ii() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n·4ⁿ) time · O(n·2ⁿ) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+    #(
+      "Brute Force",
+      "O(n·4ⁿ) time · O(n·2ⁿ) space",
+      "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Generate every subset that hits the target and collapse the repeats afterwards. Correct, and exponentially wasteful on inputs with many equal values — which is precisely the cost the skipping rule avoids.", "defmodule Solution do
+Generate every subset that hits the target and collapse the repeats afterwards. Correct, and exponentially wasteful on inputs with many equal values — which is precisely the cost the skipping rule avoids.",
+      "defmodule Solution do
   # Generate every subset that hits the target and collapse the repeats
   # afterwards. Correct, and exponentially wasteful on inputs with many equal
   # values -- which is exactly why the skipping rule is worth getting right.
@@ -7159,8 +8563,13 @@ Generate every subset that hits the target and collapse the repeats afterwards. 
     without = every_subset(rest)
     Enum.map(without, &[first | &1]) ++ without
   end
-end"),
-    #("Backtracking", "O(2ⁿ) time · O(n²) space", "Each candidate is used at most once, so taking one moves past it. The duplicate rule is the same as Subsets II — skipping a value means skipping every copy of it — and that shared rule is the reason to drill the two problems together.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Backtracking",
+      "O(2ⁿ) time · O(n²) space",
+      "Each candidate is used at most once, so taking one moves past it. The duplicate rule is the same as Subsets II — skipping a value means skipping every copy of it — and that shared rule is the reason to drill the two problems together.",
+      "defmodule Solution do
   def combination_sum2(candidates, target), do: build(Enum.sort(candidates), target)
 
   # Each candidate is used at most once, so taking one moves past it. The
@@ -7178,13 +8587,18 @@ end"),
         build(Enum.drop_while(rest, &(&1 == first)), target)
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc88_word_search() -> List(#(String, String, String, String)) {
   [
-    #("Backtracking", "O(m·n·4ᴸ) time · O(L²) space", "Depth-first from every square, with the path so far in a set so no letter is reused within one attempt. The set has to be per-path, not global: a square rejected on one route must still be available on another, and that distinction is the whole difference between backtracking and plain search.", "defmodule Solution do
+    #(
+      "Backtracking",
+      "O(m·n·4ᴸ) time · O(L²) space",
+      "Depth-first from every square, with the path so far in a set so no letter is reused within one attempt. The set has to be per-path, not global: a square rejected on one route must still be available on another, and that distinction is the whole difference between backtracking and plain search.",
+      "defmodule Solution do
   def exist(_board, \"\"), do: true
   def exist([], _word), do: false
 
@@ -7215,8 +8629,13 @@ pub fn nc88_word_search() -> List(#(String, String, String, String)) {
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
-    #("Pruned Backtracking", "O(m·n·4ᴸ) time · O(L²) space", "Two cheap checks before any searching. If the board does not hold enough copies of some letter, no search can succeed at all. And starting from whichever end of the word is rarer on the board begins from fewer squares — the branching factor at the root is what dominates, so halving it there is worth more than any saving deeper in.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Pruned Backtracking",
+      "O(m·n·4ᴸ) time · O(L²) space",
+      "Two cheap checks before any searching. If the board does not hold enough copies of some letter, no search can succeed at all. And starting from whichever end of the word is rarer on the board begins from fewer squares — the branching factor at the root is what dominates, so halving it there is worth more than any saving deeper in.",
+      "defmodule Solution do
   def exist(_board, \"\"), do: true
   def exist([], _word), do: false
 
@@ -7264,13 +8683,18 @@ end"),
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc89_palindrome_partitioning() -> List(#(String, String, String, String)) {
   [
-    #("Backtracking", "O(n·2ⁿ) time · O(n·2ⁿ) space", "Every partition begins with some palindromic prefix, so the only choice at each step is how long that prefix is. Cutting there and recursing on the rest reaches each partition exactly once, in order, with nothing to deduplicate.", "defmodule Solution do
+    #(
+      "Backtracking",
+      "O(n·2ⁿ) time · O(n·2ⁿ) space",
+      "Every partition begins with some palindromic prefix, so the only choice at each step is how long that prefix is. Cutting there and recursing on the rest reaches each partition exactly once, in order, with nothing to deduplicate.",
+      "defmodule Solution do
   def partition(s), do: build(String.graphemes(s))
 
   # Every partition starts with some palindromic prefix, so the choice at each
@@ -7285,8 +8709,13 @@ pub fn nc89_palindrome_partitioning() -> List(#(String, String, String, String))
         rest <- build(Enum.drop(remaining, size)),
         do: [Enum.join(prefix) | rest]
   end
-end"),
-    #("DP + Backtracking", "O(n·2ⁿ) time · O(n·2ⁿ) space", "Work out which spans are palindromes once, up front, instead of re-testing the same prefix on every branch. The search then becomes pure choice — a table lookup where there was a linear scan. Precomputing the predicate rather than the answer is a move worth having.", "defmodule Solution do
+end",
+    ),
+    #(
+      "DP + Backtracking",
+      "O(n·2ⁿ) time · O(n·2ⁿ) space",
+      "Work out which spans are palindromes once, up front, instead of re-testing the same prefix on every branch. The search then becomes pure choice — a table lookup where there was a linear scan. Precomputing the predicate rather than the answer is a move worth having.",
+      "defmodule Solution do
   def partition(\"\"), do: [[]]
 
   def partition(s) do
@@ -7315,13 +8744,18 @@ end"),
         rest <- build(s, finish + 1, n, table),
         do: [String.slice(s, start, finish - start + 1) | rest]
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc90_letter_combinations() -> List(#(String, String, String, String)) {
   [
-    #("Iterative", "O(n·4ⁿ) time · O(n·4ⁿ) space", "The same cross product built by folding rather than recursing: hold every combination of the digits so far and extend each by every letter of the next. No call stack, and the growth is visible in the code — the list multiplies in size at each step.", "defmodule Solution do
+    #(
+      "Iterative",
+      "O(n·4ⁿ) time · O(n·4ⁿ) space",
+      "The same cross product built by folding rather than recursing: hold every combination of the digits so far and extend each by every letter of the next. No call stack, and the growth is visible in the code — the list multiplies in size at each step.",
+      "defmodule Solution do
   @keypad %{
     \"2\" => \"abc\", \"3\" => \"def\", \"4\" => \"ghi\", \"5\" => \"jkl\",
     \"6\" => \"mno\", \"7\" => \"pqrs\", \"8\" => \"tuv\", \"9\" => \"wxyz\"
@@ -7342,8 +8776,13 @@ pub fn nc90_letter_combinations() -> List(#(String, String, String, String)) {
           do: prefix <> letter
     end)
   end
-end"),
-    #("Recursion", "O(n·4ⁿ) time · O(n·4ⁿ) space", "One choice per digit, independently, so the answer is the cross product of the letter sets. There is no pruning and no constraint between choices — which makes this the cleanest place to see what backtracking degenerates to when nothing can fail.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Recursion",
+      "O(n·4ⁿ) time · O(n·4ⁿ) space",
+      "One choice per digit, independently, so the answer is the cross product of the letter sets. There is no pruning and no constraint between choices — which makes this the cleanest place to see what backtracking degenerates to when nothing can fail.",
+      "defmodule Solution do
   @keypad %{
     \"2\" => \"abc\", \"3\" => \"def\", \"4\" => \"ghi\", \"5\" => \"jkl\",
     \"6\" => \"mno\", \"7\" => \"pqrs\", \"8\" => \"tuv\", \"9\" => \"wxyz\"
@@ -7364,13 +8803,18 @@ end"),
         tail <- tails,
         do: letter <> tail
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc91_n_queens() -> List(#(String, String, String, String)) {
   [
-    #("Brute Force", "O(n²·n!) time · O(n) space", "One queen per row with no two sharing a column *is* a permutation of the columns, so the row and column rules hold by construction and only the diagonals are left. Generating all n! and filtering is far slower than pruning as you go — it explores arrangements a backtracker abandons at the second queen — but it names what the search space actually is.", "defmodule Solution do
+    #(
+      "Brute Force",
+      "O(n²·n!) time · O(n) space",
+      "One queen per row with no two sharing a column *is* a permutation of the columns, so the row and column rules hold by construction and only the diagonals are left. Generating all n! and filtering is far slower than pruning as you go — it explores arrangements a backtracker abandons at the second queen — but it names what the search space actually is.",
+      "defmodule Solution do
   # One queen per row with no two sharing a column *is* a permutation of the
   # columns, so the row and column rules are satisfied by construction and only
   # the diagonals are left to test. Generating all n! and filtering is far
@@ -7408,8 +8852,13 @@ pub fn nc91_n_queens() -> List(#(String, String, String, String)) {
       String.duplicate(\".\", column) <> \"Q\" <> String.duplicate(\".\", n - column - 1)
     end)
   end
-end"),
-    #("Backtracking", "O(n!) time · O(n²) space", "One queen per row, so the only choice is the column. A diagonal is identified by row − column and an anti-diagonal by row + column, which turns \"is this square attacked?\" into three set lookups — and lets the search abandon an entire subtree the moment one of them fails.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Backtracking",
+      "O(n!) time · O(n²) space",
+      "One queen per row, so the only choice is the column. A diagonal is identified by row − column and an anti-diagonal by row + column, which turns \"is this square attacked?\" into three set lookups — and lets the search abandon an entire subtree the moment one of them fails.",
+      "defmodule Solution do
   def solve_n_queens(n) do
     n
     |> place(0, [], MapSet.new(), MapSet.new(), MapSet.new())
@@ -7444,13 +8893,18 @@ end"),
       String.duplicate(\".\", column) <> \"Q\" <> String.duplicate(\".\", n - column - 1)
     end)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc92_unique_paths() -> List(#(String, String, String, String)) {
   [
-    #("Space-Saving DP", "O(m·n) time · O(n) space", "Only right and down moves, so the ways to reach a square are the ways to reach the one above plus the one to its left. Rows fill top to bottom and only the previous row is ever needed, so one row of counters does for the whole grid.", "defmodule Solution do
+    #(
+      "Space-Saving DP",
+      "O(m·n) time · O(n) space",
+      "Only right and down moves, so the ways to reach a square are the ways to reach the one above plus the one to its left. Rows fill top to bottom and only the previous row is ever needed, so one row of counters does for the whole grid.",
+      "defmodule Solution do
   def unique_paths(m, n) when m <= 0 or n <= 0, do: 0
 
   # Only right and down moves, so the ways to reach a square are the ways to
@@ -7472,8 +8926,13 @@ pub fn nc92_unique_paths() -> List(#(String, String, String, String)) {
     {out, _} = Enum.map_reduce(row, 0, fn value, running -> {running + value, running + value} end)
     out
   end
-end"),
-    #("Math", "O(min(m,n)) time · O(1) space", "There is no grid at all. Every path is exactly m−1 downs and n−1 rights in some order, so the count is the number of ways to choose which of the m+n−2 moves are downs — a binomial coefficient. Multiplying and dividing in step keeps every intermediate an exact integer, which is what makes it safe without big numbers.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Math",
+      "O(min(m,n)) time · O(1) space",
+      "There is no grid at all. Every path is exactly m−1 downs and n−1 rights in some order, so the count is the number of ways to choose which of the m+n−2 moves are downs — a binomial coefficient. Multiplying and dividing in step keeps every intermediate an exact integer, which is what makes it safe without big numbers.",
+      "defmodule Solution do
   def unique_paths(m, n) when m <= 0 or n <= 0, do: 0
 
   # Every path is exactly m-1 downs and n-1 rights in some order, so the count
@@ -7486,13 +8945,20 @@ end"),
 
     Enum.reduce(1..downs//1, 1, fn i, acc -> div(acc * (total - downs + i), i) end)
   end
-end"),
+end",
+    ),
   ]
 }
 
-pub fn nc93_longest_common_subsequence() -> List(#(String, String, String, String)) {
+pub fn nc93_longest_common_subsequence() -> List(
+  #(String, String, String, String),
+) {
   [
-    #("Top-Down Memo", "O(m·n) time · O(m·n) space", "The same recurrence from the front with a cache. Written this way the choice is explicit — match and advance both, or give up one character from one side — which the rolling row hides behind its indices. Usually the version to write first, then flatten.", "defmodule Solution do
+    #(
+      "Top-Down Memo",
+      "O(m·n) time · O(m·n) space",
+      "The same recurrence from the front with a cache. Written this way the choice is explicit — match and advance both, or give up one character from one side — which the rolling row hides behind its indices. Usually the version to write first, then flatten.",
+      "defmodule Solution do
   def longest_common_subsequence(text1, text2) do
     a = text1 |> String.graphemes() |> List.to_tuple()
     b = text2 |> String.graphemes() |> List.to_tuple()
@@ -7524,8 +8990,13 @@ pub fn nc93_longest_common_subsequence() -> List(#(String, String, String, Strin
         {best, Map.put(memo, {i, j}, best)}
     end
   end
-end"),
-    #("Space-Saving DP", "O(m·n) time · O(n) space", "Compare the two current characters: equal means both are used and the answer is one more than the rest; different means the best of dropping one or the other. Filled row by row, only the previous row is ever needed. This recurrence is the backbone of edit distance and distinct subsequences too.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Space-Saving DP",
+      "O(m·n) time · O(n) space",
+      "Compare the two current characters: equal means both are used and the answer is one more than the rest; different means the best of dropping one or the other. Filled row by row, only the previous row is ever needed. This recurrence is the backbone of edit distance and distinct subsequences too.",
+      "defmodule Solution do
   # Compare the last characters: equal means both are used and the answer is one
   # more than the rest, different means the best of dropping one or the other.
   # Filled row by row, only the previous row is ever needed.
@@ -7556,13 +9027,18 @@ end"),
 
     Enum.reverse(built)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc94_coin_change_ii() -> List(#(String, String, String, String)) {
   [
-    #("Top-Down Memo", "O(n·t) time · O(n·t) space", "The same rule stated as a choice rather than a loop order: use this coin again, or set it aside for good. Setting it aside permanently is what fixes one order per combination — the identical constraint the outer loop encodes, made visible.", "defmodule Solution do
+    #(
+      "Top-Down Memo",
+      "O(n·t) time · O(n·t) space",
+      "The same rule stated as a choice rather than a loop order: use this coin again, or set it aside for good. Setting it aside permanently is what fixes one order per combination — the identical constraint the outer loop encodes, made visible.",
+      "defmodule Solution do
   def change(amount, coins) do
     usable = Enum.filter(coins, &(&1 > 0))
     {ways, _memo} = from(usable, amount, %{})
@@ -7588,8 +9064,13 @@ pub fn nc94_coin_change_ii() -> List(#(String, String, String, String)) {
         {using + skipping, Map.put(memo, key, using + skipping)}
     end
   end
-end"),
-    #("Bottom-Up DP", "O(n·t) time · O(t) space", "Combinations, not permutations, and that is decided entirely by the loop order. Coins on the outside means each coin is considered once and for all before the next is looked at, so 1+2 and 2+1 can never both be counted. Swapping the two loops silently counts orderings instead — the single most instructive bug in this problem.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Bottom-Up DP",
+      "O(n·t) time · O(t) space",
+      "Combinations, not permutations, and that is decided entirely by the loop order. Coins on the outside means each coin is considered once and for all before the next is looked at, so 1+2 and 2+1 can never both be counted. Swapping the two loops silently counts orderings instead — the single most instructive bug in this problem.",
+      "defmodule Solution do
   # Combinations, not permutations -- which is entirely decided by the loop
   # order. Coins on the outside means each coin is considered once and for all
   # before the next is looked at, so 1+2 and 2+1 can never both be counted.
@@ -7608,13 +9089,18 @@ end"),
     end)
     |> Map.get(amount, 0)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc95_target_sum() -> List(#(String, String, String, String)) {
   [
-    #("Bottom-Up DP", "O(n·S) time · O(S) space", "The only state that matters is the running total, not which signs produced it. Carrying a map from reachable total to how many ways reach it means different sign choices landing on the same total merge — which is exactly what turns an exponential search into a polynomial one.", "defmodule Solution do
+    #(
+      "Bottom-Up DP",
+      "O(n·S) time · O(S) space",
+      "The only state that matters is the running total, not which signs produced it. Carrying a map from reachable total to how many ways reach it means different sign choices landing on the same total merge — which is exactly what turns an exponential search into a polynomial one.",
+      "defmodule Solution do
   # The state that matters is only the running total, not which signs produced
   # it -- so carry a map from reachable total to how many ways reach it, and
   # widen it by each number twice, once added and once subtracted. Different
@@ -7631,8 +9117,13 @@ pub fn nc95_target_sum() -> List(#(String, String, String, String)) {
     end)
     |> Map.get(target, 0)
   end
-end"),
-    #("Subset Sum", "O(n·S) time · O(S) space", "Rewrite the problem. If P is the set given a plus and N the set given a minus then P − N = target and P + N = total, so P = (total + target)/2. A sign-assignment question becomes \"how many subsets sum to a fixed value\" — a knapsack, with no negative totals to track at all. Reformulating rather than optimising is the move.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Subset Sum",
+      "O(n·S) time · O(S) space",
+      "Rewrite the problem. If P is the set given a plus and N the set given a minus then P − N = target and P + N = total, so P = (total + target)/2. A sign-assignment question becomes \"how many subsets sum to a fixed value\" — a knapsack, with no negative totals to track at all. Reformulating rather than optimising is the move.",
+      "defmodule Solution do
   # Rewrite the problem. If P is the set given a plus and N the set given a
   # minus, then P - N = target and P + N = total, so P = (total + target) / 2.
   # That turns a sign-assignment question into \"how many subsets sum to a fixed
@@ -7657,13 +9148,18 @@ end"),
       |> Map.get(goal, 0)
     end
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc96_stock_with_cooldown() -> List(#(String, String, String, String)) {
   [
-    #("Top-Down Memo", "O(n) time · O(n) space", "The same three states as an explicit choice each day: buy, sell, or do nothing. After selling the recursion skips a day, which puts the cooldown where it actually happens rather than encoding it in which value gets read.", "defmodule Solution do
+    #(
+      "Top-Down Memo",
+      "O(n) time · O(n) space",
+      "The same three states as an explicit choice each day: buy, sell, or do nothing. After selling the recursion skips a day, which puts the cooldown where it actually happens rather than encoding it in which value gets read.",
+      "defmodule Solution do
   def max_profit(prices) do
     {best, _memo} = from(0, length(prices), false, List.to_tuple(prices), %{})
     best
@@ -7696,8 +9192,13 @@ pub fn nc96_stock_with_cooldown() -> List(#(String, String, String, String)) {
         {best, Map.put(memo, {day, holding}, best)}
     end
   end
-end"),
-    #("State Machine DP", "O(n) time · O(1) space", "Three states rather than one number: holding, just sold (so today is the cooldown), and free to act. Each day depends only on yesterday, so it is three rolling values — and the cooldown is expressed simply by \"free\" never reading \"sold\" from the same day. Naming the states is most of the work.", "defmodule Solution do
+end",
+    ),
+    #(
+      "State Machine DP",
+      "O(n) time · O(1) space",
+      "Three states rather than one number: holding, just sold (so today is the cooldown), and free to act. Each day depends only on yesterday, so it is three rolling values — and the cooldown is expressed simply by \"free\" never reading \"sold\" from the same day. Naming the states is most of the work.",
+      "defmodule Solution do
   @impossible -1_000_000_000
 
   # Three states rather than one number: holding a share, having just sold (so
@@ -7712,13 +9213,18 @@ end"),
 
     max(max(sold, rest), 0)
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc97_interleaving_string() -> List(#(String, String, String, String)) {
   [
-    #("Top-Down Memo", "O(m·n) time · O(m·n) space", "How much of each source has been used is the entire state — the position in the target is their sum, so it never has to be tracked. That collapse from three indices to two is what makes the table two-dimensional, and spotting it is the problem.", "defmodule Solution do
+    #(
+      "Top-Down Memo",
+      "O(m·n) time · O(m·n) space",
+      "How much of each source has been used is the entire state — the position in the target is their sum, so it never has to be tracked. That collapse from three indices to two is what makes the table two-dimensional, and spotting it is the problem.",
+      "defmodule Solution do
   def is_interleave(s1, s2, s3) do
     if String.length(s1) + String.length(s2) != String.length(s3) do
       false
@@ -7761,8 +9267,13 @@ pub fn nc97_interleaving_string() -> List(#(String, String, String, String)) {
         {answer, Map.put(memo, {i, j}, answer)}
     end
   end
-end"),
-    #("Space-Saving DP", "O(m·n) time · O(n) space", "Bottom-up over the same two-index state. Row i says which prefixes of s2 pair with the first i characters of s1, and each row depends only on the one above and itself to the left, so a single row suffices. Note the length check first: without it the recursion can succeed on a target that is too short.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Space-Saving DP",
+      "O(m·n) time · O(n) space",
+      "Bottom-up over the same two-index state. Row i says which prefixes of s2 pair with the first i characters of s1, and each row depends only on the one above and itself to the left, so a single row suffices. Note the length check first: without it the recursion can succeed on a target that is too short.",
+      "defmodule Solution do
   # Bottom-up over the same two-index state. Row i says which prefixes of s2 can
   # pair with the first i characters of s1; each row depends only on the one
   # above and on itself to the left, so one row suffices.
@@ -7805,13 +9316,18 @@ end"),
 
     [head | row]
   end
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc98_longest_increasing_path() -> List(#(String, String, String, String)) {
   [
-    #("Sort + DP", "O(m·n log(m·n)) time · O(m·n) space", "The same acyclicity used the other way round: walk the squares from largest value to smallest and everything a square can move to is already settled. Sorting by value *is* a topological order, so the graph never has to be built.", "defmodule Solution do
+    #(
+      "Sort + DP",
+      "O(m·n log(m·n)) time · O(m·n) space",
+      "The same acyclicity used the other way round: walk the squares from largest value to smallest and everything a square can move to is already settled. Sorting by value *is* a topological order, so the graph never has to be built.",
+      "defmodule Solution do
   def longest_increasing_path([]), do: 0
   def longest_increasing_path([[] | _]), do: 0
 
@@ -7849,8 +9365,13 @@ pub fn nc98_longest_increasing_path() -> List(#(String, String, String, String))
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
-    #("DFS + Memo", "O(m·n) time · O(m·n) space", "Strictly increasing means the moves can never form a cycle, so the grid is a directed acyclic graph and the longest path from each square is well-defined. That is what makes caching sound — with cycles, a memo on an in-progress square would be reading an answer that does not exist yet.", "defmodule Solution do
+end",
+    ),
+    #(
+      "DFS + Memo",
+      "O(m·n) time · O(m·n) space",
+      "Strictly increasing means the moves can never form a cycle, so the grid is a directed acyclic graph and the longest path from each square is well-defined. That is what makes caching sound — with cycles, a memo on an in-progress square would be reading an answer that does not exist yet.",
+      "defmodule Solution do
   def longest_increasing_path([]), do: 0
   def longest_increasing_path([[] | _]), do: 0
 
@@ -7899,13 +9420,18 @@ end"),
   end
 
   defp neighbours({r, c}), do: [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
-end"),
+end",
+    ),
   ]
 }
 
 pub fn nc99_distinct_subsequences() -> List(#(String, String, String, String)) {
   [
-    #("Top-Down Memo", "O(m·n) time · O(m·n) space", "The choice written out: on a match, use this source character or skip it; otherwise skip. Running out of target is one complete subsequence, which is why the base case returns 1 and not 0 — the usual place this one goes wrong.", "defmodule Solution do
+    #(
+      "Top-Down Memo",
+      "O(m·n) time · O(m·n) space",
+      "The choice written out: on a match, use this source character or skip it; otherwise skip. Running out of target is one complete subsequence, which is why the base case returns 1 and not 0 — the usual place this one goes wrong.",
+      "defmodule Solution do
   def num_distinct(s, t) do
     source = s |> String.graphemes() |> List.to_tuple()
     target = t |> String.graphemes() |> List.to_tuple()
@@ -7936,8 +9462,13 @@ pub fn nc99_distinct_subsequences() -> List(#(String, String, String, String)) {
         {skipping + using, Map.put(memo, {i, j}, skipping + using)}
     end
   end
-end"),
-    #("Space-Saving DP", "O(m·n) time · O(n) space", "Row j counts the ways to build the first j characters of the target from the source seen so far, and a new source character extends a count at j−1 into one at j when it matches. In a mutable array the row must be swept right to left, or one source character gets used twice; building a fresh row removes the hazard entirely.", "defmodule Solution do
+end",
+    ),
+    #(
+      "Space-Saving DP",
+      "O(m·n) time · O(n) space",
+      "Row j counts the ways to build the first j characters of the target from the source seen so far, and a new source character extends a count at j−1 into one at j when it matches. In a mutable array the row must be swept right to left, or one source character gets used twice; building a fresh row removes the hazard entirely.",
+      "defmodule Solution do
   # Row j counts the ways to build the first j characters of t out of the source
   # seen so far. A new source character can extend a count at j-1 into one at j,
   # but only if it matches t[j-1].
@@ -7969,11 +9500,14 @@ end"),
         end)
     ]
   end
-end"),
+end",
+    ),
   ]
 }
 
-pub fn by_stem(stem: String) -> Result(List(#(String, String, String, String)), Nil) {
+pub fn by_stem(
+  stem: String,
+) -> Result(List(#(String, String, String, String)), Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
     "nc02_valid_anagram" -> Ok(nc02_valid_anagram())
@@ -7986,7 +9520,8 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String, String)), 
     "nc09_two_sum_sorted" -> Ok(nc09_two_sum_sorted())
     "nc100_edit_distance" -> Ok(nc100_edit_distance())
     "nc101_burst_balloons" -> Ok(nc101_burst_balloons())
-    "nc102_regular_expression_matching" -> Ok(nc102_regular_expression_matching())
+    "nc102_regular_expression_matching" ->
+      Ok(nc102_regular_expression_matching())
     "nc103_implement_trie" -> Ok(nc103_implement_trie())
     "nc104_word_dictionary" -> Ok(nc104_word_dictionary())
     "nc105_word_search_ii" -> Ok(nc105_word_search_ii())
@@ -8036,7 +9571,8 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String, String)), 
     "nc145_count_good_nodes" -> Ok(nc145_count_good_nodes())
     "nc146_validate_bst" -> Ok(nc146_validate_bst())
     "nc147_kth_smallest_bst" -> Ok(nc147_kth_smallest_bst())
-    "nc148_build_tree_preorder_inorder" -> Ok(nc148_build_tree_preorder_inorder())
+    "nc148_build_tree_preorder_inorder" ->
+      Ok(nc148_build_tree_preorder_inorder())
     "nc149_max_path_sum" -> Ok(nc149_max_path_sum())
     "nc14_character_replacement" -> Ok(nc14_character_replacement())
     "nc150_serialize_deserialize" -> Ok(nc150_serialize_deserialize())
@@ -8099,7 +9635,8 @@ pub fn by_stem(stem: String) -> Result(List(#(String, String, String, String)), 
     "nc71_coin_change" -> Ok(nc71_coin_change())
     "nc72_maximum_product_subarray" -> Ok(nc72_maximum_product_subarray())
     "nc73_word_break" -> Ok(nc73_word_break())
-    "nc74_longest_increasing_subsequence" -> Ok(nc74_longest_increasing_subsequence())
+    "nc74_longest_increasing_subsequence" ->
+      Ok(nc74_longest_increasing_subsequence())
     "nc75_partition_equal_subset" -> Ok(nc75_partition_equal_subset())
     "nc76_kth_largest_stream" -> Ok(nc76_kth_largest_stream())
     "nc77_last_stone_weight" -> Ok(nc77_last_stone_weight())

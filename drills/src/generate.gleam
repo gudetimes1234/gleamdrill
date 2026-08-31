@@ -167,7 +167,8 @@ fn generate_typescript() {
       let sources = variant_sources(module, sources, "ts/solutions/", ".ts")
       let assert Ok(harness) =
         simplifile.read("ts/harnesses/" <> module <> ".ts")
-      let assert Ok(primary) = simplifile.read("ts/solutions/" <> module <> ".ts")
+      let assert Ok(primary) =
+        simplifile.read("ts/solutions/" <> module <> ".ts")
       let #(sig, stub) = typescript_surface(primary)
       drill_function(module, sources, sig, stub, string.trim_end(harness))
     })
@@ -385,7 +386,8 @@ fn generate_approaches() {
 
   let missing =
     list.filter(entries, fn(slug) {
-      simplifile.read("approaches/" <> slug <> ".txt") == Error(simplifile.Enoent)
+      simplifile.read("approaches/" <> slug <> ".txt")
+      == Error(simplifile.Enoent)
     })
   case missing {
     [] -> Nil
@@ -398,11 +400,16 @@ fn generate_approaches() {
   let arms =
     entries
     |> list.filter(fn(slug) {
-      simplifile.read("approaches/" <> slug <> ".txt") != Error(simplifile.Enoent)
+      simplifile.read("approaches/" <> slug <> ".txt")
+      != Error(simplifile.Enoent)
     })
     |> list.map(fn(slug) {
       let assert Ok(text) = simplifile.read("approaches/" <> slug <> ".txt")
-      "    \"" <> slug <> "\" -> [\n" <> approach_stages(slug, text) <> "    ]\n"
+      "    \""
+      <> slug
+      <> "\" -> [\n"
+      <> approach_stages(slug, text)
+      <> "    ]\n"
     })
     |> string.concat
 

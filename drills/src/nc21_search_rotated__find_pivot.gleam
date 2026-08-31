@@ -30,7 +30,11 @@ fn walk(nums: List(Int), previous: Int, index: Int) -> Int {
   }
 }
 
-fn binary_search(nums: List(Int), target: Int, offset: Int) -> Result(Int, Nil) {
+fn binary_search(
+  nums: List(Int),
+  target: Int,
+  offset: Int,
+) -> Result(Int, Nil) {
   case nums {
     [] -> Error(Nil)
     _ -> {

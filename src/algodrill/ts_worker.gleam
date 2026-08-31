@@ -97,7 +97,8 @@ fn scannable_lines(
     [line, ..rest] -> {
       let keep = !in_template && !in_comment
       let backticks =
-        list.length(string.split(line, "`")) - 1
+        list.length(string.split(line, "`"))
+        - 1
         - { list.length(string.split(line, "\\`")) - 1 }
       let in_template = case backticks % 2 {
         0 -> in_template

@@ -15,9 +15,8 @@ import algodrill/api
 import algodrill/browser
 import algodrill/local
 import algodrill/model.{
-  CardSuspended,
-  type Model, type Msg, Account, DraftSynced, Guest, HistoryLoaded,
-  InsightsLoaded, ReviewRecorded, StateLoaded, StatsLoaded,
+  type Model, type Msg, Account, CardSuspended, DraftSynced, Guest,
+  HistoryLoaded, InsightsLoaded, ReviewRecorded, StateLoaded, StatsLoaded,
 }
 import algodrill/problem.{type ProblemRef}
 import gleam/dict

@@ -7,31 +7,51 @@ import algodrill/problems/embedded.{type Embedded, Embedded}
 pub fn nc01_contains_duplicate() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Compare every pair. Nothing extra to hold, nothing clever to remember — and a thousand times slower the moment the list gets long.", "def containsDuplicate(nums):
+Compare every pair. Nothing extra to hold, nothing clever to remember — and a thousand times slower the moment the list gets long.",
+        "def containsDuplicate(nums):
     for i in range(len(nums)):
         for j in range(i + 1, len(nums)):
             if nums[i] == nums[j]:
                 return True
-    return False"),
-      #("Sorting", "O(n log n) time · O(n) space", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+    return False",
+      ),
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
 
-Duplicates land next to each other, so comparing neighbouring pairs is enough.", "def containsDuplicate(nums):
+Duplicates land next to each other, so comparing neighbouring pairs is enough.",
+        "def containsDuplicate(nums):
     ordered = sorted(nums)
     for i in range(1, len(ordered)):
         if ordered[i] == ordered[i - 1]:
             return True
-    return False"),
-      #("Hash Set", "O(n) time · O(n) space", "A set answers the whole question. Walk once, and the moment a value is already in the set you are done — no need to finish the pass, and no need to know where the duplicate was.", "def containsDuplicate(nums):
+    return False",
+      ),
+      #(
+        "Hash Set",
+        "O(n) time · O(n) space",
+        "A set answers the whole question. Walk once, and the moment a value is already in the set you are done — no need to finish the pass, and no need to know where the duplicate was.",
+        "def containsDuplicate(nums):
     seen = set()
     for num in nums:
         if num in seen:
             return True
         seen.add(num)
-    return False"),
-      #("Nifty Python", "O(n) time · O(n) space", "set(nums) drops the duplicates, so the lengths differ exactly when one existed. Same set idea as the loop, but the whole pass is built in — it just cannot stop early on the first hit.", "def containsDuplicate(nums):
-    return len(set(nums)) != len(nums)"),
+    return False",
+      ),
+      #(
+        "Nifty Python",
+        "O(n) time · O(n) space",
+        "set(nums) drops the duplicates, so the lengths differ exactly when one existed. Same set idea as the loop, but the whole pass is built in — it just cannot stop early on the first hit.",
+        "def containsDuplicate(nums):
+    return len(set(nums)) != len(nums)",
+      ),
     ],
     check: Check(
       signature: "def containsDuplicate(nums):",
@@ -56,11 +76,20 @@ __case__(\"containsDuplicate([])\", False, containsDuplicate([]))",
 pub fn nc02_valid_anagram() -> Embedded {
   Embedded(
     solutions: [
-      #("Sorting", "O(n log n) time · O(n) space", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
 
-Sorted letters are the canonical form, so the whole check is one equality. No counting to get wrong.", "def isAnagram(s, t):
-    return sorted(s) == sorted(t)"),
-      #("Count Map", "O(n) time · O(1) space", "Two strings are anagrams exactly when every character occurs the same number of times in both, so build a count per string and compare the two maps.", "def isAnagram(s, t):
+Sorted letters are the canonical form, so the whole check is one equality. No counting to get wrong.",
+        "def isAnagram(s, t):
+    return sorted(s) == sorted(t)",
+      ),
+      #(
+        "Count Map",
+        "O(n) time · O(1) space",
+        "Two strings are anagrams exactly when every character occurs the same number of times in both, so build a count per string and compare the two maps.",
+        "def isAnagram(s, t):
     if len(s) != len(t):
         return False
 
@@ -75,11 +104,17 @@ Sorted letters are the canonical form, so the whole check is one equality. No co
         if count[char] < 0:
             return False
 
-    return True"),
-      #("Nifty Python", "O(n) time · O(1) space", "Counter builds both frequency maps and == compares them — the whole count-and-compare idea as one expression. The space stays O(1) for the same reason as the hand-rolled map: at most 26 distinct keys.", "from collections import Counter
+    return True",
+      ),
+      #(
+        "Nifty Python",
+        "O(n) time · O(1) space",
+        "Counter builds both frequency maps and == compares them — the whole count-and-compare idea as one expression. The space stays O(1) for the same reason as the hand-rolled map: at most 26 distinct keys.",
+        "from collections import Counter
 
 def isAnagram(s, t):
-    return Counter(s) == Counter(t)"),
+    return Counter(s) == Counter(t)",
+      ),
     ],
     check: Check(
       signature: "def isAnagram(s, t):",
@@ -105,17 +140,26 @@ __case__(\"isAnagram('a', 'ab')\", False, isAnagram(\"a\", \"ab\"))",
 pub fn nc03_two_sum() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every ordered pair, checked, stopping at the first hit.", "def twoSum(nums, target):
+Every ordered pair, checked, stopping at the first hit.",
+        "def twoSum(nums, target):
     for i in range(len(nums)):
         for j in range(i + 1, len(nums)):
             if nums[i] + nums[j] == target:
                 return [i, j]
-    return []"),
-      #("Sort + Two Pointers", "O(n log n) time · O(n) space", "Sorted input plus a pointer at each end. A sum that is too small can only be fixed by raising the low end, one that is too large by lowering the high end, so neither pointer ever needs to go back. They meet in O(n) with no extra memory.
+    return []",
+      ),
+      #(
+        "Sort + Two Pointers",
+        "O(n log n) time · O(n) space",
+        "Sorted input plus a pointer at each end. A sum that is too small can only be fixed by raising the low end, one that is too large by lowering the high end, so neither pointer ever needs to go back. They meet in O(n) with no extra memory.
 
-Sorting loses the original positions, which is the whole difficulty here: carry each number's index alongside it and report those at the end.", "def twoSum(nums, target):
+Sorting loses the original positions, which is the whole difficulty here: carry each number's index alongside it and report those at the end.",
+        "def twoSum(nums, target):
     ordered = sorted((num, i) for i, num in enumerate(nums))
     left, right = 0, len(ordered) - 1
 
@@ -128,15 +172,21 @@ Sorting loses the original positions, which is the whole difficulty here: carry 
         else:
             right -= 1
 
-    return []"),
-      #("Hash Map", "O(n) time · O(n) space", "Every number seen so far is already in the map, so the complement is one lookup away — one pass, O(1) per step, and the map hands back the index for free.", "def twoSum(nums, target):
+    return []",
+      ),
+      #(
+        "Hash Map",
+        "O(n) time · O(n) space",
+        "Every number seen so far is already in the map, so the complement is one lookup away — one pass, O(1) per step, and the map hands back the index for free.",
+        "def twoSum(nums, target):
     seen = {}
     for i, num in enumerate(nums):
         complement = target - num
         if complement in seen:
             return [seen[complement], i]
         seen[num] = i
-    return []"),
+    return []",
+      ),
     ],
     check: Check(
       signature: "def twoSum(nums, target):",
@@ -162,18 +212,27 @@ __case__(\"twoSum([1, 2], 7)\", [], twoSum([1, 2], 7))",
 pub fn nc04_group_anagrams() -> Embedded {
   Embedded(
     solutions: [
-      #("Sorted Key", "O(n·k log k) time · O(n·k) space", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+      #(
+        "Sorted Key",
+        "O(n·k log k) time · O(n·k) space",
+        "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
 
-The sorted word itself is the key. Shorter than tallying letters, and it works for any alphabet rather than just a-z.", "from collections import defaultdict
+The sorted word itself is the key. Shorter than tallying letters, and it works for any alphabet rather than just a-z.",
+        "from collections import defaultdict
 
 def groupAnagrams(strs):
     groups = defaultdict(list)
     for s in strs:
         groups[\"\".join(sorted(s))].append(s)
-    return list(groups.values())"),
-      #("Count Key", "O(n·k) time · O(n·k) space", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+    return list(groups.values())",
+      ),
+      #(
+        "Count Key",
+        "O(n·k) time · O(n·k) space",
+        "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
 
-Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len) to build against sorting's O(len log len); the sorted word needs no assumption about the alphabet.", "from collections import defaultdict
+Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len) to build against sorting's O(len log len); the sorted word needs no assumption about the alphabet.",
+        "from collections import defaultdict
 
 def groupAnagrams(strs):
     groups = defaultdict(list)
@@ -182,7 +241,8 @@ def groupAnagrams(strs):
         for c in s:
             key[ord(c) - ord('a')] += 1
         groups[tuple(key)].append(s)
-    return list(groups.values())"),
+    return list(groups.values())",
+      ),
     ],
     check: Check(
       signature: "def groupAnagrams(strs):",
@@ -208,22 +268,36 @@ __case__(\"groupAnagrams(['a'])\", [[\"a\"]], sorted(groupAnagrams([\"a\"])))",
 pub fn nc05_top_k_frequent() -> Embedded {
   Embedded(
     solutions: [
-      #("Sorting", "O(n log n) time · O(n) space", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
 
-Straight sort by frequency: O(n log n) rather than the bucket version's O(n), but it is the version you can write without thinking.", "def topKFrequent(nums, k):
+Straight sort by frequency: O(n log n) rather than the bucket version's O(n), but it is the version you can write without thinking.",
+        "def topKFrequent(nums, k):
     counts = {}
     for num in nums:
         counts[num] = counts.get(num, 0) + 1
 
     ordered = sorted(counts.items(), key=lambda entry: entry[1], reverse=True)
-    return [num for num, _ in ordered[:k]]"),
-      #("Nifty Python · Heap", "O(n log k) time · O(n) space", "A heap of size k keeps only the candidates that can still win: O(n + k log n), and the win is largest when k is much smaller than n.", "import heapq
+    return [num for num, _ in ordered[:k]]",
+      ),
+      #(
+        "Nifty Python · Heap",
+        "O(n log k) time · O(n) space",
+        "A heap of size k keeps only the candidates that can still win: O(n + k log n), and the win is largest when k is much smaller than n.",
+        "import heapq
 from collections import Counter
 
 def topKFrequent(nums, k):
     counts = Counter(nums)
-    return heapq.nlargest(k, counts.keys(), key=counts.get)"),
-      #("Bucket Sort", "O(n) time · O(n) space", "Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.", "from collections import Counter
+    return heapq.nlargest(k, counts.keys(), key=counts.get)",
+      ),
+      #(
+        "Bucket Sort",
+        "O(n) time · O(n) space",
+        "Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.",
+        "from collections import Counter
 
 def topKFrequent(nums, k):
     counts = Counter(nums)
@@ -237,7 +311,8 @@ def topKFrequent(nums, k):
             result.append(num)
             if len(result) == k:
                 return result
-    return result"),
+    return result",
+      ),
     ],
     check: Check(
       signature: "def topKFrequent(nums, k):",
@@ -262,9 +337,13 @@ __case__(\"topKFrequent([5, 5, 4, 4, 4, 3], 1)\", [4], topKFrequent([5, 5, 4, 4,
 pub fn nc06_product_except_self() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-For each slot, multiply everything that is not in it. O(n^2), and exactly what the prefix/suffix pass replaces.", "def productExceptSelf(nums):
+For each slot, multiply everything that is not in it. O(n^2), and exactly what the prefix/suffix pass replaces.",
+        "def productExceptSelf(nums):
     result = []
     for i in range(len(nums)):
         product = 1
@@ -272,8 +351,13 @@ For each slot, multiply everything that is not in it. O(n^2), and exactly what t
             if i != j:
                 product *= num
         result.append(product)
-    return result"),
-      #("Prefix & Suffix Products", "O(n) time · O(1) extra space", "The answer at each slot is everything before it times everything after it. One forward pass builds the prefixes, one reverse pass folds in the suffixes — and no division, so a zero in the input costs nothing special.", "def productExceptSelf(nums):
+    return result",
+      ),
+      #(
+        "Prefix & Suffix Products",
+        "O(n) time · O(1) extra space",
+        "The answer at each slot is everything before it times everything after it. One forward pass builds the prefixes, one reverse pass folds in the suffixes — and no division, so a zero in the input costs nothing special.",
+        "def productExceptSelf(nums):
     n = len(nums)
     result = [1] * n
 
@@ -287,7 +371,8 @@ For each slot, multiply everything that is not in it. O(n^2), and exactly what t
         result[i] *= suffix
         suffix *= nums[i]
 
-    return result"),
+    return result",
+      ),
     ],
     check: Check(
       signature: "def productExceptSelf(nums):",
@@ -312,9 +397,13 @@ __case__(\"productExceptSelf([2, 3])\", [3, 2], productExceptSelf([2, 3]))",
 pub fn nc07_longest_consecutive() -> Embedded {
   Embedded(
     solutions: [
-      #("Sorting", "O(n log n) time · O(n) space", "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
 
-Runs are contiguous once sorted, so one pass counting steps of exactly one finds the longest. Duplicates neither extend a run nor break it, which is the only case worth care.", "def longestConsecutive(nums):
+Runs are contiguous once sorted, so one pass counting steps of exactly one finds the longest. Duplicates neither extend a run nor break it, which is the only case worth care.",
+        "def longestConsecutive(nums):
     if not nums:
         return 0
 
@@ -332,8 +421,13 @@ Runs are contiguous once sorted, so one pass counting steps of exactly one finds
         else:
             run = 1
 
-    return longest"),
-      #("Hash Set", "O(n) time · O(n) space", "Put everything in a set, then only start counting at numbers with no predecessor. That guard is what keeps it O(n): every run is walked exactly once instead of once per member.", "def longestConsecutive(nums):
+    return longest",
+      ),
+      #(
+        "Hash Set",
+        "O(n) time · O(n) space",
+        "Put everything in a set, then only start counting at numbers with no predecessor. That guard is what keeps it O(n): every run is walked exactly once instead of once per member.",
+        "def longestConsecutive(nums):
     num_set = set(nums)
     longest = 0
 
@@ -345,7 +439,8 @@ Runs are contiguous once sorted, so one pass counting steps of exactly one finds
                 length += 1
             longest = max(longest, length)
 
-    return longest"),
+    return longest",
+      ),
     ],
     check: Check(
       signature: "def longestConsecutive(nums):",
@@ -370,10 +465,19 @@ __case__(\"longestConsecutive([])\", 0, longestConsecutive([]))",
 pub fn nc08_valid_palindrome() -> Embedded {
   Embedded(
     solutions: [
-      #("Nifty Python · Reverse", "O(n) time · O(n) space", "Strip, then compare against the reverse. Allocates a second string instead of converging two pointers, but it is one line of intent.", "def isPalindrome(s):
+      #(
+        "Nifty Python · Reverse",
+        "O(n) time · O(n) space",
+        "Strip, then compare against the reverse. Allocates a second string instead of converging two pointers, but it is one line of intent.",
+        "def isPalindrome(s):
     cleaned = [c.lower() for c in s if c.isalnum()]
-    return cleaned == cleaned[::-1]"),
-      #("Two Pointers", "O(n) time · O(1) space", "Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.", "def isPalindrome(s):
+    return cleaned == cleaned[::-1]",
+      ),
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.",
+        "def isPalindrome(s):
     left, right = 0, len(s) - 1
 
     while left < right:
@@ -388,7 +492,8 @@ pub fn nc08_valid_palindrome() -> Embedded {
         left += 1
         right -= 1
 
-    return True"),
+    return True",
+      ),
     ],
     check: Check(
       signature: "def isPalindrome(s):",
@@ -414,9 +519,13 @@ __case__(\"isPalindrome('0P')\", False, isPalindrome(\"0P\"))",
 pub fn nc09_two_sum_sorted() -> Embedded {
   Embedded(
     solutions: [
-      #("Binary Search", "O(n log n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+      #(
+        "Binary Search",
+        "O(n log n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-Fix each number in turn and search the tail for its complement, rather than converging two pointers. O(n log n), and it reuses a search you already know instead of a second pointer discipline.", "def twoSum(numbers, target):
+Fix each number in turn and search the tail for its complement, rather than converging two pointers. O(n log n), and it reuses a search you already know instead of a second pointer discipline.",
+        "def twoSum(numbers, target):
     for i, number in enumerate(numbers):
         wanted = target - number
         lo, hi = i + 1, len(numbers) - 1
@@ -428,10 +537,15 @@ Fix each number in turn and search the tail for its complement, rather than conv
                 lo = mid + 1
             else:
                 hi = mid - 1
-    return []"),
-      #("Two Pointers", "O(n) time · O(1) space", "Sorted input plus a pointer at each end. A sum that is too small can only be fixed by raising the low end, one that is too large by lowering the high end, so neither pointer ever needs to go back. They meet in O(n) with no extra memory.
+    return []",
+      ),
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Sorted input plus a pointer at each end. A sum that is too small can only be fixed by raising the low end, one that is too large by lowering the high end, so neither pointer ever needs to go back. They meet in O(n) with no extra memory.
 
-Positions are 1-based here, which is the only trap.", "def twoSum(numbers, target):
+Positions are 1-based here, which is the only trap.",
+        "def twoSum(numbers, target):
     left, right = 0, len(numbers) - 1
 
     while left < right:
@@ -443,7 +557,8 @@ Positions are 1-based here, which is the only trap.", "def twoSum(numbers, targe
         else:
             right -= 1
 
-    return []"),
+    return []",
+      ),
     ],
     check: Check(
       signature: "def twoSum(numbers, target):",
@@ -469,7 +584,11 @@ __case__(\"twoSum([1, 2, 3], 100)\", [], twoSum([1, 2, 3], 100))",
 pub fn nc100_edit_distance() -> Embedded {
   Embedded(
     solutions: [
-      #("Top-Down Memo", "O(m·n) time · O(m·n) space", "The same three edits as an explicit choice from the front. Running out of one word costs whatever remains of the other, since every leftover character must be inserted or deleted — the base case that the table encodes in its first row and column.", "def minDistance(word1, word2):
+      #(
+        "Top-Down Memo",
+        "O(m·n) time · O(m·n) space",
+        "The same three edits as an explicit choice from the front. Running out of one word costs whatever remains of the other, since every leftover character must be inserted or deleted — the base case that the table encodes in its first row and column.",
+        "def minDistance(word1, word2):
     memo = {}
 
     # The same three edits as an explicit choice from the front. Running out of
@@ -487,8 +606,13 @@ pub fn nc100_edit_distance() -> Embedded {
                 memo[(i, j)] = 1 + min(cost(i + 1, j + 1), cost(i + 1, j), cost(i, j + 1))
         return memo[(i, j)]
 
-    return cost(0, 0)"),
-      #("Space-Saving DP", "O(m·n) time · O(n) space", "Three edits, three neighbours in the table: replace from the diagonal, delete from above, insert from the left. Equal characters cost nothing and take the diagonal outright. The first row and column are the cost of building a string from nothing, which is simply its length.", "def minDistance(word1, word2):
+    return cost(0, 0)",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Three edits, three neighbours in the table: replace from the diagonal, delete from above, insert from the left. Equal characters cost nothing and take the diagonal outright. The first row and column are the cost of building a string from nothing, which is simply its length.",
+        "def minDistance(word1, word2):
     # Three edits, three neighbours in the table: replace comes from the
     # diagonal, delete from above, insert from the left. Equal characters cost
     # nothing and take the diagonal outright -- the whole algorithm is those
@@ -502,7 +626,8 @@ pub fn nc100_edit_distance() -> Embedded {
             row[j] = previous[j - 1] if a == b else 1 + min(previous[j - 1], previous[j], row[j - 1])
         previous = row
 
-    return previous[len(word2)]"),
+    return previous[len(word2)]",
+      ),
     ],
     check: Check(
       signature: "def minDistance(word1, word2):",
@@ -530,7 +655,11 @@ __case__(\"minDistance('kitten', 'sitting')\", 3, minDistance('kitten', 'sitting
 pub fn nc101_burst_balloons() -> Embedded {
   Embedded(
     solutions: [
-      #("Bottom-Up DP", "O(n³) time · O(n²) space", "The same recurrence filled by hand, shortest spans first — because a span needs both of the shorter spans a chosen last balloon splits it into. Writing the loop order out makes that dependency visible where the recursion leaves it implicit.", "def maxCoins(nums):
+      #(
+        "Bottom-Up DP",
+        "O(n³) time · O(n²) space",
+        "The same recurrence filled by hand, shortest spans first — because a span needs both of the shorter spans a chosen last balloon splits it into. Writing the loop order out makes that dependency visible where the recursion leaves it implicit.",
+        "def maxCoins(nums):
     balloons = [1] + list(nums) + [1]
     n = len(balloons)
     table = [[0] * n for _ in range(n)]
@@ -549,8 +678,13 @@ pub fn nc101_burst_balloons() -> Embedded {
                 for last in range(left + 1, right)
             )
 
-    return table[0][n - 1]"),
-      #("Top-Down Memo", "O(n³) time · O(n²) space", "Ask which balloon is burst *last* in a span, not first. The last one still has both span boundaries as neighbours — they are untouched by definition — so its value is known and the two sides become independent subproblems. Asking \"first\" leaves neighbours that depend on the other side and the recursion never closes. Padding with a 1 at each end removes the edge cases.", "def maxCoins(nums):
+    return table[0][n - 1]",
+      ),
+      #(
+        "Top-Down Memo",
+        "O(n³) time · O(n²) space",
+        "Ask which balloon is burst *last* in a span, not first. The last one still has both span boundaries as neighbours — they are untouched by definition — so its value is known and the two sides become independent subproblems. Asking \"first\" leaves neighbours that depend on the other side and the recursion never closes. Padding with a 1 at each end removes the edge cases.",
+        "def maxCoins(nums):
     # Padding with a 1 at each end removes the edge cases: every balloon then
     # has a neighbour on both sides whatever happens.
     balloons = [1] + list(nums) + [1]
@@ -573,7 +707,8 @@ pub fn nc101_burst_balloons() -> Embedded {
             )
         return memo[(left, right)]
 
-    return best(0, len(balloons) - 1)"),
+    return best(0, len(balloons) - 1)",
+      ),
     ],
     check: Check(
       signature: "def maxCoins(nums):",
@@ -600,7 +735,11 @@ __case__(\"maxCoins([1, 2, 3, 4])\", 40, maxCoins([1, 2, 3, 4]))",
 pub fn nc102_regular_expression_matching() -> Embedded {
   Embedded(
     solutions: [
-      #("Recursion", "O(2ⁿ) time · O(n²) space", "The same rules with no table at all, which is shorter and far easier to trust. It is exponential on patterns like \"a*a*a*a*b\", where the same suffix is reached along many different splits — so write this first, get it right, and add the cache afterwards.", "def isMatch(s, p):
+      #(
+        "Recursion",
+        "O(2ⁿ) time · O(n²) space",
+        "The same rules with no table at all, which is shorter and far easier to trust. It is exponential on patterns like \"a*a*a*a*b\", where the same suffix is reached along many different splits — so write this first, get it right, and add the cache afterwards.",
+        "def isMatch(s, p):
     # The same rules with no table at all. Shorter and easier to trust, and
     # exponential on patterns like \"a*a*a*a*b\" where the same suffix is reached
     # along many different splits. Worth writing first, then adding the cache
@@ -613,8 +752,13 @@ pub fn nc102_regular_expression_matching() -> Embedded {
     if len(p) >= 2 and p[1] == \"*\":
         return isMatch(s, p[2:]) or (here and isMatch(s[1:], p))
 
-    return here and isMatch(s[1:], p[1:])"),
-      #("Top-Down Memo", "O(m·n) time · O(m·n) space", "A star binds to the character *before* it, so the pattern is read two symbols at a time. Given \"x*\": either skip the pair entirely — zero copies — or, if x matches here, consume one character of the text and stay on the same pair. Everything else is a single-character match. Getting the zero-copies branch right is most of the problem.", "def isMatch(s, p):
+    return here and isMatch(s[1:], p[1:])",
+      ),
+      #(
+        "Top-Down Memo",
+        "O(m·n) time · O(m·n) space",
+        "A star binds to the character *before* it, so the pattern is read two symbols at a time. Given \"x*\": either skip the pair entirely — zero copies — or, if x matches here, consume one character of the text and stay on the same pair. Everything else is a single-character match. Getting the zero-copies branch right is most of the problem.",
+        "def isMatch(s, p):
     memo = {}
 
     # A star binds to the character *before* it, so the pattern has to be read
@@ -632,7 +776,8 @@ pub fn nc102_regular_expression_matching() -> Embedded {
                 memo[(i, j)] = here and works(i + 1, j + 1)
         return memo[(i, j)]
 
-    return works(0, 0)"),
+    return works(0, 0)",
+      ),
     ],
     check: Check(
       signature: "def isMatch(s, p):",
@@ -662,7 +807,11 @@ __case__(\"isMatch('abc', 'abc')\", True, isMatch('abc', 'abc'))",
 pub fn nc103_implement_trie() -> Embedded {
   Embedded(
     solutions: [
-      #("Hash Set", "O(k²) per insert · O(total prefixes) space", "Two sets — the whole words, and every prefix of every word — and both questions answer in one lookup. Correct and shorter, at the cost of storing O(total letters) strings rather than sharing them. That shared storage is precisely what a trie is for, so this is the version that shows what is being bought.", "class Trie:
+      #(
+        "Hash Set",
+        "O(k²) per insert · O(total prefixes) space",
+        "Two sets — the whole words, and every prefix of every word — and both questions answer in one lookup. Correct and shorter, at the cost of storing O(total letters) strings rather than sharing them. That shared storage is precisely what a trie is for, so this is the version that shows what is being bought.",
+        "class Trie:
     def __init__(self):
         # Two sets: the whole words, and every prefix of every word. Both
         # questions then answer in one lookup, at the cost of storing O(total
@@ -681,8 +830,13 @@ pub fn nc103_implement_trie() -> Embedded {
         return word in self.words
 
     def startsWith(self, prefix):
-        return prefix in self.prefixes"),
-      #("Trie", "O(k) per operation · O(total letters) space", "One node per prefix, with a flag marking which prefixes are whole words. That flag is the entire difference between search and startsWith — without it, \"app\" and \"apple\" are indistinguishable once both are stored. The other detail worth keeping: the empty prefix always exists, because the root does.", "class Trie:
+        return prefix in self.prefixes",
+      ),
+      #(
+        "Trie",
+        "O(k) per operation · O(total letters) space",
+        "One node per prefix, with a flag marking which prefixes are whole words. That flag is the entire difference between search and startsWith — without it, \"app\" and \"apple\" are indistinguishable once both are stored. The other detail worth keeping: the empty prefix always exists, because the root does.",
+        "class Trie:
     def __init__(self):
         # One node per prefix; `terminal` marks the prefixes that are whole
         # words. Without that flag \"app\" and \"apple\" are indistinguishable once
@@ -710,7 +864,8 @@ pub fn nc103_implement_trie() -> Embedded {
             if letter not in node.children:
                 return None
             node = node.children[letter]
-        return node"),
+        return node",
+      ),
     ],
     check: Check(
       signature: "class Trie:
@@ -759,7 +914,11 @@ __case__(\"startsWith('') on an empty trie\", True, Trie().startsWith(\"\"))",
 pub fn nc104_word_dictionary() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n·k) per search · O(total letters) space", "Bucket the words by length and compare position by position. A pattern can only match words of its own length, so that one check throws away most of the collection before any character is compared — often enough on its own, and it needs no tree at all.", "class WordDictionary:
+      #(
+        "Brute Force",
+        "O(n·k) per search · O(total letters) space",
+        "Bucket the words by length and compare position by position. A pattern can only match words of its own length, so that one check throws away most of the collection before any character is compared — often enough on its own, and it needs no tree at all.",
+        "class WordDictionary:
     def __init__(self):
         # Words bucketed by length. A pattern can only match words of its own
         # length, so that one check throws away most of the collection before
@@ -776,8 +935,13 @@ pub fn nc104_word_dictionary() -> Embedded {
         return any(
             all(p == \".\" or p == c for p, c in zip(word, candidate))
             for candidate in self.byLength.get(len(word), [])
-        )"),
-      #("Trie", "O(total letters) per search · O(total letters) space", "A dot has to try every child, which turns the lookup from a walk into a search. The trie is what keeps that search from being over the whole dictionary: a branch that cannot match is abandoned at the first letter, so shared prefixes are explored once rather than once per word.", "class WordDictionary:
+        )",
+      ),
+      #(
+        "Trie",
+        "O(total letters) per search · O(total letters) space",
+        "A dot has to try every child, which turns the lookup from a walk into a search. The trie is what keeps that search from being over the whole dictionary: a branch that cannot match is abandoned at the first letter, so shared prefixes are explored once rather than once per word.",
+        "class WordDictionary:
     def __init__(self):
         self.children = {}
         self.terminal = False
@@ -797,7 +961,8 @@ pub fn nc104_word_dictionary() -> Embedded {
         letter, rest = word[0], word[1:]
         if letter == \".\":
             return any(child.search(rest) for child in self.children.values())
-        return letter in self.children and self.children[letter].search(rest)"),
+        return letter in self.children and self.children[letter].search(rest)",
+      ),
     ],
     check: Check(
       signature: "class WordDictionary:
@@ -838,9 +1003,13 @@ __case__(\"search('....') -- too long\", False, __d__.search(\"....\"))",
 pub fn nc105_word_search_ii() -> Embedded {
   Embedded(
     solutions: [
-      #("Backtracking", "O(W·m·n·4ᴸ) time · O(L²) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Backtracking",
+        "O(W·m·n·4ᴸ) time · O(L²) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Word Search, once per word. Correct, and it redoes the search for every shared prefix — a hundred words beginning \"ab\" each re-walk that \"ab\" from every square. Worth writing to feel the repetition the trie removes.", "def findWords(board, words):
+Word Search, once per word. Correct, and it redoes the search for every shared prefix — a hundred words beginning \"ab\" each re-walk that \"ab\" from every square. Worth writing to feel the repetition the trie removes.",
+        "def findWords(board, words):
     if not board or not board[0]:
         return []
 
@@ -867,8 +1036,13 @@ Word Search, once per word. Correct, and it redoes the search for every shared p
             for c in range(len(board[0]))
         )
 
-    return [word for word in words if exists(word)]"),
-      #("Trie", "O(m·n·4ᴸ) time · O(total letters) space", "Build one trie of all the words and walk it *alongside* the board. Searching for each word separately re-walks every shared prefix once per word; the trie walks each prefix once and abandons a square the moment no word continues that way. That is where nearly all the saving is, and it is the reason this problem exists rather than being Word Search in a loop.", "def findWords(board, words):
+    return [word for word in words if exists(word)]",
+      ),
+      #(
+        "Trie",
+        "O(m·n·4ᴸ) time · O(total letters) space",
+        "Build one trie of all the words and walk it *alongside* the board. Searching for each word separately re-walks every shared prefix once per word; the trie walks each prefix once and abandons a square the moment no word continues that way. That is where nearly all the saving is, and it is the reason this problem exists rather than being Word Search in a loop.",
+        "def findWords(board, words):
     if not board or not board[0]:
         return []
 
@@ -901,7 +1075,8 @@ Word Search, once per word. Correct, and it redoes the search for every shared p
         for c in range(len(board[0])):
             walk(r, c, trie, set())
 
-    return list(found)"),
+    return list(found)",
+      ),
     ],
     check: Check(
       signature: "def findWords(board, words):",
@@ -930,7 +1105,11 @@ __case__(\"findWords([], ['a'])\", [], sorted(findWords([], [\"a\"])))",
 pub fn nc106_number_of_islands() -> Embedded {
   Embedded(
     solutions: [
-      #("Union-Find", "O(m·n·α(m·n)) time · O(m·n) space", "The same count without recursing: join each land cell to the land above and to its left, and the answer is the number of land cells minus the number of joins that actually merged two components. Worth having because a deep enough grid overflows the recursive walk, and because union-find can take cells as they arrive rather than needing the whole grid first.", "def numIslands(grid):
+      #(
+        "Union-Find",
+        "O(m·n·α(m·n)) time · O(m·n) space",
+        "The same count without recursing: join each land cell to the land above and to its left, and the answer is the number of land cells minus the number of joins that actually merged two components. Worth having because a deep enough grid overflows the recursive walk, and because union-find can take cells as they arrive rather than needing the whole grid first.",
+        "def numIslands(grid):
     land = {
         (r, c)
         for r, row in enumerate(grid)
@@ -958,8 +1137,13 @@ pub fn nc106_number_of_islands() -> Embedded {
                 if a != b:
                     parents[a] = b
 
-    return len({find(at) for at in land})"),
-      #("DFS", "O(m·n) time · O(m·n) space", "The grid is the graph: cells are nodes, the four neighbours are the edges, and nothing is ever built. Walk out from each unvisited land cell, mark everything it reaches, and add one — the traversal itself does the counting, which is why the answer needs no extra bookkeeping.", "def numIslands(grid):
+    return len({find(at) for at in land})",
+      ),
+      #(
+        "DFS",
+        "O(m·n) time · O(m·n) space",
+        "The grid is the graph: cells are nodes, the four neighbours are the edges, and nothing is ever built. Walk out from each unvisited land cell, mark everything it reaches, and add one — the traversal itself does the counting, which is why the answer needs no extra bookkeeping.",
+        "def numIslands(grid):
     land = {
         (r, c)
         for r, row in enumerate(grid)
@@ -986,7 +1170,8 @@ pub fn nc106_number_of_islands() -> Embedded {
             seen.add((r, c))
             stack.extend([(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)])
 
-    return count"),
+    return count",
+      ),
     ],
     check: Check(
       signature: "def numIslands(grid):",
@@ -1016,7 +1201,11 @@ __case__(\"numIslands(diagonal squares are separate)\", 2, numIslands(__board__(
 pub fn nc107_clone_graph() -> Embedded {
   Embedded(
     solutions: [
-      #("DFS", "O(V log V + E) time · O(V+E) space", "Same map, depth-first instead of breadth-first — proof that the traversal order is irrelevant here. The copy is created and registered *before* its neighbours are visited, which is the ordering that makes a cycle find the half-built copy instead of recursing into it.", "def cloneGraph(adjacency, start):
+      #(
+        "DFS",
+        "O(V log V + E) time · O(V+E) space",
+        "Same map, depth-first instead of breadth-first — proof that the traversal order is irrelevant here. The copy is created and registered *before* its neighbours are visited, which is the ordering that makes a cycle find the half-built copy instead of recursing into it.",
+        "def cloneGraph(adjacency, start):
     if not (0 <= start < len(adjacency)):
         return []
 
@@ -1041,8 +1230,13 @@ def renumber(adjacency, reached):
     numbering = {node: i for i, node in enumerate(ordered)}
     return [
         [numbering[n] for n in adjacency[node] if n in numbering] for node in ordered
-    ]"),
-      #("BFS", "O(V log V + E) time · O(V+E) space", "The map from original node to its copy is the whole problem. Consulting it before copying anything is what makes a cycle terminate: a node already in the map is returned rather than copied again. Without that check any cycle recurses forever.", "def cloneGraph(adjacency, start):
+    ]",
+      ),
+      #(
+        "BFS",
+        "O(V log V + E) time · O(V+E) space",
+        "The map from original node to its copy is the whole problem. Consulting it before copying anything is what makes a cycle terminate: a node already in the map is returned rather than copied again. Without that check any cycle recurses forever.",
+        "def cloneGraph(adjacency, start):
     if not (0 <= start < len(adjacency)):
         return []
 
@@ -1070,7 +1264,8 @@ def renumber(adjacency, reached):
     numbering = {node: i for i, node in enumerate(ordered)}
     return [
         [numbering[n] for n in adjacency[node] if n in numbering] for node in ordered
-    ]"),
+    ]",
+      ),
     ],
     check: Check(
       signature: "def cloneGraph(adjacency, start):
@@ -1103,7 +1298,11 @@ __case__(\"cloneGraph([[],[]], 1) -- only the reachable part\", [[]], cloneGraph
 pub fn nc108_max_area_of_island() -> Embedded {
   Embedded(
     solutions: [
-      #("BFS", "O(m·n) time · O(m·n) space", "The same areas found wave by wave. Nothing is gained over the depth-first version here, but the frontier is explicit rather than living on the call stack, which is what a grid deep enough to overflow the stack needs.", "from collections import deque
+      #(
+        "BFS",
+        "O(m·n) time · O(m·n) space",
+        "The same areas found wave by wave. Nothing is gained over the depth-first version here, but the frontier is explicit rather than living on the call stack, which is what a grid deep enough to overflow the stack needs.",
+        "from collections import deque
 
 
 def maxAreaOfIsland(grid):
@@ -1136,8 +1335,13 @@ def maxAreaOfIsland(grid):
             frontier.extend([(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)])
         best = max(best, area)
 
-    return best"),
-      #("DFS", "O(m·n) time · O(m·n) space", "Number of Islands with the count replaced by a size. Depth-first suits it because the size falls out of the return value — one for this cell plus whatever the four neighbours return — rather than needing a counter threaded through the walk.", "def maxAreaOfIsland(grid):
+    return best",
+      ),
+      #(
+        "DFS",
+        "O(m·n) time · O(m·n) space",
+        "Number of Islands with the count replaced by a size. Depth-first suits it because the size falls out of the return value — one for this cell plus whatever the four neighbours return — rather than needing a counter threaded through the walk.",
+        "def maxAreaOfIsland(grid):
     land = {
         (r, c)
         for r, row in enumerate(grid)
@@ -1164,7 +1368,8 @@ def maxAreaOfIsland(grid):
             stack.extend([(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)])
         best = max(best, area)
 
-    return best"),
+    return best",
+      ),
     ],
     check: Check(
       signature: "def maxAreaOfIsland(grid):",
@@ -1191,7 +1396,11 @@ __case__(\"maxAreaOfIsland([[1,1,1],[1,1,1]])\", 6, maxAreaOfIsland([[1, 1, 1], 
 pub fn nc109_pacific_atlantic() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(m²·n²) time · O(m·n) space", "The literal reading: from every cell, search downhill and see which oceans it reaches. O(cells) searches over O(cells) each, against two searches total — and the two are answering the same question, which is what makes the reversal legitimate rather than a trick.", "from collections import deque
+      #(
+        "Brute Force",
+        "O(m²·n²) time · O(m·n) space",
+        "The literal reading: from every cell, search downhill and see which oceans it reaches. O(cells) searches over O(cells) each, against two searches total — and the two are answering the same question, which is what makes the reversal legitimate rather than a trick.",
+        "from collections import deque
 
 
 def pacificAtlantic(heights):
@@ -1226,8 +1435,13 @@ def pacificAtlantic(heights):
                 if any(rr == rows - 1 or cc == columns - 1 for rr, cc in reached):
                     out.append((r, c))
 
-    return sorted(out)"),
-      #("BFS", "O(m·n log(m·n)) time · O(m·n) space", "Reverse the question. Asking of each cell whether water can get from there to both oceans repeats the same searches over and over; asking instead which cells an ocean could reach if water flowed uphill is two searches from the borders, and the answer is where the two sets meet. Flipping a search to start from the goal is the idea worth taking away.", "from collections import deque
+    return sorted(out)",
+      ),
+      #(
+        "BFS",
+        "O(m·n log(m·n)) time · O(m·n) space",
+        "Reverse the question. Asking of each cell whether water can get from there to both oceans repeats the same searches over and over; asking instead which cells an ocean could reach if water flowed uphill is two searches from the borders, and the answer is where the two sets meet. Flipping a search to start from the goal is the idea worth taking away.",
+        "from collections import deque
 
 
 def pacificAtlantic(heights):
@@ -1257,7 +1471,8 @@ def pacificAtlantic(heights):
     pacific = [(0, c) for c in range(columns)] + [(r, 0) for r in range(rows)]
     atlantic = [(rows - 1, c) for c in range(columns)] + [(r, columns - 1) for r in range(rows)]
 
-    return sorted(uphill(pacific) & uphill(atlantic))"),
+    return sorted(uphill(pacific) & uphill(atlantic))",
+      ),
     ],
     check: Check(
       signature: "def pacificAtlantic(heights):",
@@ -1285,9 +1500,13 @@ __case__(\"pacificAtlantic([[1,1],[1,1]])\", [(0, 0), (0, 1), (1, 0), (1, 1)], s
 pub fn nc10_three_sum() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n³) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n³) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every triple, checked. Sorting first means each triple comes out in ascending order, so collapsing the duplicates that repeated values produce is plain equality — no set needed.", "def threeSum(nums):
+Every triple, checked. Sorting first means each triple comes out in ascending order, so collapsing the duplicates that repeated values produce is plain equality — no set needed.",
+        "def threeSum(nums):
     ordered = sorted(nums)
     result = []
 
@@ -1298,8 +1517,13 @@ Every triple, checked. Sorting first means each triple comes out in ascending or
                 if sum(triple) == 0 and triple not in result:
                     result.append(triple)
 
-    return result"),
-      #("Sort + Two Pointers", "O(n²) time · O(1) extra space", "Sort, fix one number, then run the two-pointer scan on the remainder looking for its negation. Sorting is what makes the duplicate triples skippable: equal values are adjacent, so stepping past them is a while loop, not a set.", "def threeSum(nums):
+    return result",
+      ),
+      #(
+        "Sort + Two Pointers",
+        "O(n²) time · O(1) extra space",
+        "Sort, fix one number, then run the two-pointer scan on the remainder looking for its negation. Sorting is what makes the duplicate triples skippable: equal values are adjacent, so stepping past them is a while loop, not a set.",
+        "def threeSum(nums):
     nums.sort()
     result = []
 
@@ -1320,7 +1544,8 @@ Every triple, checked. Sorting first means each triple comes out in ascending or
                 while left < right and nums[left] == nums[left - 1]:
                     left += 1
 
-    return result"),
+    return result",
+      ),
     ],
     check: Check(
       signature: "def threeSum(nums):",
@@ -1345,7 +1570,11 @@ __case__(\"threeSum([0, 0, 0])\", [[0, 0, 0]], threeSum([0, 0, 0]))",
 pub fn nc110_surrounded_regions() -> Embedded {
   Embedded(
     solutions: [
-      #("Per-Region DFS", "O(m·n) time · O(m·n) space", "The direct reading: gather each region, then flip it only if no cell in it sits on the border. Honest, and it makes explicit what the border-first version is exploiting — but it has to collect the whole region before it can decide anything about it.", "def solve(board):
+      #(
+        "Per-Region DFS",
+        "O(m·n) time · O(m·n) space",
+        "The direct reading: gather each region, then flip it only if no cell in it sits on the border. Honest, and it makes explicit what the border-first version is exploiting — but it has to collect the whole region before it can decide anything about it.",
+        "def solve(board):
     if not board or not board[0]:
         return board
 
@@ -1382,8 +1611,13 @@ pub fn nc110_surrounded_regions() -> Embedded {
     return [
         [\"X\" if (r, c) in doomed else value for c, value in enumerate(row)]
         for r, row in enumerate(board)
-    ]"),
-      #("Boundary DFS", "O(m·n) time · O(m·n) space", "Easier backwards. Rather than finding the surrounded regions, mark the ones that are not — everything reachable from a border O — and flip whatever is left. That side-steps having to notice mid-traversal that a region touches the edge, and costs one pass from the border rather than one per region.", "def solve(board):
+    ]",
+      ),
+      #(
+        "Boundary DFS",
+        "O(m·n) time · O(m·n) space",
+        "Easier backwards. Rather than finding the surrounded regions, mark the ones that are not — everything reachable from a border O — and flip whatever is left. That side-steps having to notice mid-traversal that a region touches the edge, and costs one pass from the border rather than one per region.",
+        "def solve(board):
     if not board or not board[0]:
         return board
 
@@ -1413,7 +1647,8 @@ pub fn nc110_surrounded_regions() -> Embedded {
     return [
         [\"X\" if value == \"O\" and (r, c) not in safe else value for c, value in enumerate(row)]
         for r, row in enumerate(board)
-    ]"),
+    ]",
+      ),
     ],
     check: Check(
       signature: "def solve(board):",
@@ -1443,7 +1678,11 @@ __case__(\"solve(a region reaching the border)\", [\"XOX\", \"XOX\", \"XXX\"], _
 pub fn nc111_rotting_oranges() -> Embedded {
   Embedded(
     solutions: [
-      #("Simulation", "O(m·n·(m+n)) time · O(m·n) space", "Rebuild the grid one minute at a time, exactly as described. The same complexity as the wave search, and it makes the equivalence visible: a round of simulation and a level of breadth-first search are the same step written two ways.", "def orangesRotting(grid):
+      #(
+        "Simulation",
+        "O(m·n·(m+n)) time · O(m·n) space",
+        "Rebuild the grid one minute at a time, exactly as described. The same complexity as the wave search, and it makes the equivalence visible: a round of simulation and a level of breadth-first search are the same step written two ways.",
+        "def orangesRotting(grid):
     board = [list(row) for row in grid]
     minutes = 0
 
@@ -1470,8 +1709,13 @@ pub fn nc111_rotting_oranges() -> Embedded {
             # never will.
             return -1 if any(1 in row for row in board) else minutes
         board = following
-        minutes += 1"),
-      #("Multi-Source BFS", "O(m·n) time · O(m·n) space", "Multi-source breadth-first search: every rotten orange is on the frontier at minute zero, so each wave of the search *is* one minute and the number of waves is the answer. A separate search per source would give distances from each and then still need combining. Any fresh orange left unreached is what makes the answer -1.", "from collections import deque
+        minutes += 1",
+      ),
+      #(
+        "Multi-Source BFS",
+        "O(m·n) time · O(m·n) space",
+        "Multi-source breadth-first search: every rotten orange is on the frontier at minute zero, so each wave of the search *is* one minute and the number of waves is the answer. A separate search per source would give distances from each and then still need combining. Any fresh orange left unreached is what makes the answer -1.",
+        "from collections import deque
 
 
 def orangesRotting(grid):
@@ -1506,7 +1750,8 @@ def orangesRotting(grid):
         rotten = following
         minutes += 1
 
-    return minutes if fresh == 0 else -1"),
+    return minutes if fresh == 0 else -1",
+      ),
     ],
     check: Check(
       signature: "def orangesRotting(grid):",
@@ -1534,7 +1779,11 @@ __case__(\"orangesRotting([[0]])\", 0, orangesRotting([[0]]))",
 pub fn nc112_walls_and_gates() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(m²·n²) time · O(m·n) space", "A search outward from each empty room until it meets a gate. One full search per room for an answer the single multi-source pass already has, which is the cost the wave avoids — but it is the version that says the problem statement outright.", "from collections import deque
+      #(
+        "Brute Force",
+        "O(m²·n²) time · O(m·n) space",
+        "A search outward from each empty room until it meets a gate. One full search per room for an answer the single multi-source pass already has, which is the cost the wave avoids — but it is the version that says the problem statement outright.",
+        "from collections import deque
 
 INFINITY = 2147483647
 
@@ -1570,8 +1819,13 @@ def wallsAndGates(rooms):
     return [
         [nearest((r, c)) if value == INFINITY else value for c, value in enumerate(row)]
         for r, row in enumerate(rooms)
-    ]"),
-      #("Multi-Source BFS", "O(m·n) time · O(m·n) space", "The same multi-source wave as rotting oranges, writing the wave number into the cell instead of counting waves. Starting from every gate at once is what makes the first arrival at a room its nearest gate — no comparison between gates is ever needed.", "from collections import deque
+    ]",
+      ),
+      #(
+        "Multi-Source BFS",
+        "O(m·n) time · O(m·n) space",
+        "The same multi-source wave as rotting oranges, writing the wave number into the cell instead of counting waves. Starting from every gate at once is what makes the first arrival at a room its nearest gate — no comparison between gates is ever needed.",
+        "from collections import deque
 
 INFINITY = 2147483647
 
@@ -1598,7 +1852,8 @@ def wallsAndGates(rooms):
                 board[nr][nc] = board[r][c] + 1
                 frontier.append((nr, nc))
 
-    return board"),
+    return board",
+      ),
     ],
     check: Check(
       signature: "def wallsAndGates(rooms):",
@@ -1627,7 +1882,11 @@ __case__(\"wallsAndGates(no gate at all)\", [[__inf__, __inf__]], wallsAndGates(
 pub fn nc113_course_schedule() -> Embedded {
   Embedded(
     solutions: [
-      #("DFS Colouring", "O(V+E) time · O(V+E) space", "Depth-first needs three states, not two. \"Seen\" is not enough: a node reached again down a *different* branch is fine, while one reached again while still on the current path is a cycle. The in-progress set is exactly what tells those apart.", "def canFinish(numCourses, prerequisites):
+      #(
+        "DFS Colouring",
+        "O(V+E) time · O(V+E) space",
+        "Depth-first needs three states, not two. \"Seen\" is not enough: a node reached again down a *different* branch is fine, while one reached again while still on the current path is a cycle. The in-progress set is exactly what tells those apart.",
+        "def canFinish(numCourses, prerequisites):
     needs = {c: [] for c in range(numCourses)}
     for course, prereq in prerequisites:
         needs[course].append(prereq)
@@ -1652,8 +1911,13 @@ pub fn nc113_course_schedule() -> Embedded {
         done.add(course)
         return True
 
-    return all(visit(course) for course in range(numCourses))"),
-      #("Topological Sort", "O(V+E) time · O(V+E) space", "\"Can every course be finished\" is \"is this graph acyclic\". Kahn's algorithm takes whatever has no outstanding prerequisites, releases what depended on it, and stalls exactly when a cycle remains — so the cycle check is the algorithm running out of work early, not a separate test.", "from collections import deque
+    return all(visit(course) for course in range(numCourses))",
+      ),
+      #(
+        "Topological Sort",
+        "O(V+E) time · O(V+E) space",
+        "\"Can every course be finished\" is \"is this graph acyclic\". Kahn's algorithm takes whatever has no outstanding prerequisites, releases what depended on it, and stalls exactly when a cycle remains — so the cycle check is the algorithm running out of work early, not a separate test.",
+        "from collections import deque
 
 
 def canFinish(numCourses, prerequisites):
@@ -1679,7 +1943,8 @@ def canFinish(numCourses, prerequisites):
             if waiting[following] == 0:
                 ready.append(following)
 
-    return taken == numCourses"),
+    return taken == numCourses",
+      ),
     ],
     check: Check(
       signature: "def canFinish(numCourses, prerequisites):",
@@ -1707,7 +1972,11 @@ __case__(\"canFinish(3, [[0,1],[1,2],[2,0]])\", False, canFinish(3, [[0, 1], [1,
 pub fn nc114_course_schedule_ii() -> Embedded {
   Embedded(
     solutions: [
-      #("DFS Postorder", "O(V+E) time · O(V+E) space", "Record a course only after everything it depends on has been recorded. That post-order is a valid schedule by construction, with no indegrees to maintain — and it comes out reversed, which is the tell that it was built from the dependencies up.", "def findOrder(numCourses, prerequisites):
+      #(
+        "DFS Postorder",
+        "O(V+E) time · O(V+E) space",
+        "Record a course only after everything it depends on has been recorded. That post-order is a valid schedule by construction, with no indegrees to maintain — and it comes out reversed, which is the tell that it was built from the dependencies up.",
+        "def findOrder(numCourses, prerequisites):
     needs = {c: [] for c in range(numCourses)}
     for course, prereq in prerequisites:
         needs[course].append(prereq)
@@ -1736,8 +2005,13 @@ pub fn nc114_course_schedule_ii() -> Embedded {
 
     if not all(visit(course) for course in range(numCourses)):
         return []
-    return order"),
-      #("Topological Sort", "O(V+E) time · O(V+E) space", "The same computation as deciding whether it is possible — the order courses come off the ready list is the answer. Detecting the cycle and producing the schedule are not two passes.", "from collections import deque
+    return order",
+      ),
+      #(
+        "Topological Sort",
+        "O(V+E) time · O(V+E) space",
+        "The same computation as deciding whether it is possible — the order courses come off the ready list is the answer. Detecting the cycle and producing the schedule are not two passes.",
+        "from collections import deque
 
 
 def findOrder(numCourses, prerequisites):
@@ -1763,7 +2037,8 @@ def findOrder(numCourses, prerequisites):
                 ready.append(following)
 
     # Stalled with courses left, so no order exists at all.
-    return order if len(order) == numCourses else []"),
+    return order if len(order) == numCourses else []",
+      ),
     ],
     check: Check(
       signature: "def findOrder(numCourses, prerequisites):",
@@ -1801,9 +2076,13 @@ __case__(\"findOrder(0, [])\", [], findOrder(0, []))",
 pub fn nc115_redundant_connection() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Try removing each edge, latest first, and keep the first removal that leaves a tree. O(n^2) against near-linear, but it needs no new structure and it is the specification read literally.", "def findRedundantConnection(edges):
+Try removing each edge, latest first, and keep the first removal that leaves a tree. O(n^2) against near-linear, but it needs no new structure and it is the specification read literally.",
+        "def findRedundantConnection(edges):
     # Try removing each edge, latest first, and keep the first removal that
     # leaves a tree. O(n^2) against union-find's near-linear, but it needs no
     # new structure -- and it says the specification outright: the answer is the
@@ -1839,8 +2118,13 @@ def isTree(edges, nodes):
         seen.add(node)
         stack.extend(adjacency[node])
 
-    return len(seen) == len(nodes)"),
-      #("Union-Find", "O(n·α(n)) time · O(n) space", "n nodes and n edges means exactly one cycle, and union-find finds it the moment an edge joins two nodes already connected. Processing the edges in the order given is what makes the first such edge the *last* removable one, which is what the problem asks for.", "def findRedundantConnection(edges):
+    return len(seen) == len(nodes)",
+      ),
+      #(
+        "Union-Find",
+        "O(n·α(n)) time · O(n) space",
+        "n nodes and n edges means exactly one cycle, and union-find finds it the moment an edge joins two nodes already connected. Processing the edges in the order given is what makes the first such edge the *last* removable one, which is what the problem asks for.",
+        "def findRedundantConnection(edges):
     # n nodes and n edges means exactly one cycle. Union-find spots it the
     # moment an edge joins two nodes already connected -- and because the edges
     # are processed in order, the first such edge is the last one that could be
@@ -1860,7 +2144,8 @@ def isTree(edges, nodes):
         else:
             parents[rootA] = rootB
 
-    return list(found) if found else []"),
+    return list(found) if found else []",
+      ),
     ],
     check: Check(
       signature: "def findRedundantConnection(edges):",
@@ -1885,7 +2170,11 @@ __case__(\"findRedundantConnection([[1,2],[2,1]])\", [2, 1], list(findRedundantC
 pub fn nc116_connected_components() -> Embedded {
   Embedded(
     solutions: [
-      #("DFS", "O(V+E) time · O(V+E) space", "One search per unvisited node, exactly as with islands on a grid — the same counting idea with an adjacency list instead of coordinates. The contrast with union-find is the point: this needs the whole graph up front, the other can take edges as they arrive.", "def countComponents(n, edges):
+      #(
+        "DFS",
+        "O(V+E) time · O(V+E) space",
+        "One search per unvisited node, exactly as with islands on a grid — the same counting idea with an adjacency list instead of coordinates. The contrast with union-find is the point: this needs the whole graph up front, the other can take edges as they arrive.",
+        "def countComponents(n, edges):
     adjacency = {node: [] for node in range(n)}
     for a, b in edges:
         adjacency[a].append(b)
@@ -1910,8 +2199,13 @@ pub fn nc116_connected_components() -> Embedded {
             seen.add(current)
             stack.extend(adjacency[current])
 
-    return count"),
-      #("Union-Find", "O(E·α(V)) time · O(V) space", "Start at n components and subtract a merge for every edge that actually joins two different ones. No adjacency list, no traversal — the count falls straight out of how many merges happened.", "def countComponents(n, edges):
+    return count",
+      ),
+      #(
+        "Union-Find",
+        "O(E·α(V)) time · O(V) space",
+        "Start at n components and subtract a merge for every edge that actually joins two different ones. No adjacency list, no traversal — the count falls straight out of how many merges happened.",
+        "def countComponents(n, edges):
     # Start with n components and merge: every edge whose ends are not already
     # together removes one. No traversal, no adjacency list -- the count falls
     # straight out of how many merges actually happened.
@@ -1929,7 +2223,8 @@ pub fn nc116_connected_components() -> Embedded {
             parents[rootA] = rootB
             merges += 1
 
-    return n - merges"),
+    return n - merges",
+      ),
     ],
     check: Check(
       signature: "def countComponents(n, edges):",
@@ -1957,7 +2252,11 @@ __case__(\"countComponents(4, [[0,1],[1,0]])\", 3, countComponents(4, [[0, 1], [
 pub fn nc117_graph_valid_tree() -> Embedded {
   Embedded(
     solutions: [
-      #("Union-Find", "O(n·α(n)) time · O(n) space", "Both conditions from one pass. An edge inside a component is a cycle, so if none is, the graph is a forest — and a forest with n-1 merges is a single tree. No adjacency list and no traversal.", "def validTree(n, edges):
+      #(
+        "Union-Find",
+        "O(n·α(n)) time · O(n) space",
+        "Both conditions from one pass. An edge inside a component is a cycle, so if none is, the graph is a forest — and a forest with n-1 merges is a single tree. No adjacency list and no traversal.",
+        "def validTree(n, edges):
     if n <= 0:
         return not edges
 
@@ -1979,8 +2278,13 @@ pub fn nc117_graph_valid_tree() -> Embedded {
         parents[rootA] = rootB
         merges += 1
 
-    return merges == n - 1"),
-      #("DFS", "O(n) time · O(n) space", "A tree is connected *and* acyclic, but with exactly n-1 edges either condition implies the other, so the edge count plus one of them is enough. Here it is the count plus reachability. The n = 0 case has to be stated separately, since the n-1 count says otherwise.", "def validTree(n, edges):
+    return merges == n - 1",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(n) space",
+        "A tree is connected *and* acyclic, but with exactly n-1 edges either condition implies the other, so the edge count plus one of them is enough. Here it is the count plus reachability. The n = 0 case has to be stated separately, since the n-1 count says otherwise.",
+        "def validTree(n, edges):
     # A graph with no nodes at all is vacuously a tree, provided it has no edges
     # either -- worth stating, because the n-1 edge count says otherwise.
     if n <= 0:
@@ -2007,7 +2311,8 @@ pub fn nc117_graph_valid_tree() -> Embedded {
         seen.add(node)
         stack.extend(adjacency[node])
 
-    return len(seen) == n"),
+    return len(seen) == n",
+      ),
     ],
     check: Check(
       signature: "def validTree(n, edges):",
@@ -2035,7 +2340,11 @@ __case__(\"validTree(4, [[0,1],[2,3]]) -- two trees\", False, validTree(4, [[0, 
 pub fn nc118_word_ladder() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²·k) time · O(n·k) space", "Neighbours found by comparing against every remaining word. Simpler to state, and O(n) comparisons per expansion instead of a constant number of lookups — which is exactly the cost the wildcard buckets remove.", "from collections import deque
+      #(
+        "Brute Force",
+        "O(n²·k) time · O(n·k) space",
+        "Neighbours found by comparing against every remaining word. Simpler to state, and O(n) comparisons per expansion instead of a constant number of lookups — which is exactly the cost the wildcard buckets remove.",
+        "from collections import deque
 
 
 def ladderLength(beginWord, endWord, wordList):
@@ -2067,8 +2376,13 @@ def ladderLength(beginWord, endWord, wordList):
 
 
 def differsByOne(a, b):
-    return len(a) == len(b) and sum(x != y for x, y in zip(a, b)) == 1"),
-      #("BFS", "O(n·k²) time · O(n·k) space", "Shortest path on an unweighted graph, so breadth-first — but the graph is never built. Two words are neighbours when they share a wildcard pattern like \"*ot\", so bucketing every word under each of its patterns gives the adjacency in linear time.", "from collections import defaultdict, deque
+    return len(a) == len(b) and sum(x != y for x, y in zip(a, b)) == 1",
+      ),
+      #(
+        "BFS",
+        "O(n·k²) time · O(n·k) space",
+        "Shortest path on an unweighted graph, so breadth-first — but the graph is never built. Two words are neighbours when they share a wildcard pattern like \"*ot\", so bucketing every word under each of its patterns gives the adjacency in linear time.",
+        "from collections import defaultdict, deque
 
 
 def ladderLength(beginWord, endWord, wordList):
@@ -2101,7 +2415,8 @@ def ladderLength(beginWord, endWord, wordList):
                         frontier.append(neighbour)
         steps += 1
 
-    return 0"),
+    return 0",
+      ),
     ],
     check: Check(
       signature: "def ladderLength(beginWord, endWord, wordList):",
@@ -2128,9 +2443,13 @@ __case__(\"ladderLength('hot','dog', ['hot','dog']) -- no bridge\", 0, ladderLen
 pub fn nc119_reconstruct_itinerary() -> Embedded {
   Embedded(
     solutions: [
-      #("Backtracking", "O(E!) time · O(E²) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Backtracking",
+        "O(E!) time · O(E²) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every ticket used, smallest option first, undoing a choice that leads nowhere. Because the options are sorted, the first complete itinerary found is already the smallest — no candidates to compare. Exponential in the worst case, which is precisely what Hierholzer's one-pass walk removes.", "def findItinerary(tickets):
+Every ticket used, smallest option first, undoing a choice that leads nowhere. Because the options are sorted, the first complete itinerary found is already the smallest — no candidates to compare. Exponential in the worst case, which is precisely what Hierholzer's one-pass walk removes.",
+        "def findItinerary(tickets):
     destinations = {}
     for origin, destination in tickets:
         destinations.setdefault(origin, []).append(destination)
@@ -2153,8 +2472,13 @@ Every ticket used, smallest option first, undoing a choice that leads nowhere. B
                 return found
         return None
 
-    return extend(\"JFK\", [\"JFK\"], len(tickets)) or []"),
-      #("Hierholzer", "O(E log E) time · O(E) space", "Hierholzer's algorithm. Take the smallest unused ticket every time and never look back — an airport is only recorded once it has no tickets left, so the dead end the greedy choice walks into is exactly where the route has to *end*, and recording it first is what puts it last. Nothing is ever undone, which is the whole difference from the backtracking version.", "def findItinerary(tickets):
+    return extend(\"JFK\", [\"JFK\"], len(tickets)) or []",
+      ),
+      #(
+        "Hierholzer",
+        "O(E log E) time · O(E) space",
+        "Hierholzer's algorithm. Take the smallest unused ticket every time and never look back — an airport is only recorded once it has no tickets left, so the dead end the greedy choice walks into is exactly where the route has to *end*, and recording it first is what puts it last. Nothing is ever undone, which is the whole difference from the backtracking version.",
+        "def findItinerary(tickets):
     destinations = {}
     for origin, destination in tickets:
         destinations.setdefault(origin, []).append(destination)
@@ -2176,7 +2500,8 @@ Every ticket used, smallest option first, undoing a choice that leads nowhere. B
         else:
             route.append(stack.pop())
 
-    return route[::-1]"),
+    return route[::-1]",
+      ),
     ],
     check: Check(
       signature: "def findItinerary(tickets):",
@@ -2202,15 +2527,24 @@ __case__(\"findItinerary([])\", [\"JFK\"], findItinerary([]))",
 pub fn nc11_container_water() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every pair of lines, measured. O(n^2), but it makes what the two-pointer sweep is maximising explicit: shorter line times distance.", "def maxArea(height):
+Every pair of lines, measured. O(n^2), but it makes what the two-pointer sweep is maximising explicit: shorter line times distance.",
+        "def maxArea(height):
     best = 0
     for left in range(len(height)):
         for right in range(left + 1, len(height)):
             best = max(best, (right - left) * min(height[left], height[right]))
-    return best"),
-      #("Two Pointers", "O(n) time · O(1) space", "Start at both ends. The area is capped by the shorter line, so moving the taller one in can never help — always move the shorter, and track the best area seen.", "def maxArea(height):
+    return best",
+      ),
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Start at both ends. The area is capped by the shorter line, so moving the taller one in can never help — always move the shorter, and track the best area seen.",
+        "def maxArea(height):
     left, right = 0, len(height) - 1
     best = 0
 
@@ -2223,7 +2557,8 @@ Every pair of lines, measured. O(n^2), but it makes what the two-pointer sweep i
         else:
             right -= 1
 
-    return best"),
+    return best",
+      ),
     ],
     check: Check(
       signature: "def maxArea(height):",
@@ -2247,7 +2582,11 @@ __case__(\"maxArea([1, 1])\", 1, maxArea([1, 1]))",
 pub fn nc120_min_cost_connect_points() -> Embedded {
   Embedded(
     solutions: [
-      #("Kruskal", "O(n² log n) time · O(n²) space", "Every edge, cheapest first, kept only when it joins two pieces that are not already connected — union-find is what makes that test cheap. The trade against Prim's is the sort, but Kruskal never looks at the points themselves, only at the edge list, which is why it is the one that generalises to a sparse graph.", "def minCostConnectPoints(points):
+      #(
+        "Kruskal",
+        "O(n² log n) time · O(n²) space",
+        "Every edge, cheapest first, kept only when it joins two pieces that are not already connected — union-find is what makes that test cheap. The trade against Prim's is the sort, but Kruskal never looks at the points themselves, only at the edge list, which is why it is the one that generalises to a sparse graph.",
+        "def minCostConnectPoints(points):
     # Kruskal's algorithm: every edge, cheapest first, kept only when it joins
     # two pieces that are not already connected. Union-find is what makes that
     # test cheap. The trade against Prim's is the sort -- O(n^2 log n) edges
@@ -2278,8 +2617,13 @@ pub fn nc120_min_cost_connect_points() -> Embedded {
 
 
 def distance(a, b):
-    return abs(a[0] - b[0]) + abs(a[1] - b[1])"),
-      #("Prim", "O(n²) time · O(n) space", "Prim's algorithm. Each outside point remembers only its distance to the tree so far, so adding one is a pass to find the nearest and a pass to update — O(n^2), which is what a complete graph costs anyway, and it needs no heap. Taking the cheapest edge is safe because the cheapest edge leaving any set of points is in some minimum spanning tree.", "def minCostConnectPoints(points):
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])",
+      ),
+      #(
+        "Prim",
+        "O(n²) time · O(n) space",
+        "Prim's algorithm. Each outside point remembers only its distance to the tree so far, so adding one is a pass to find the nearest and a pass to update — O(n^2), which is what a complete graph costs anyway, and it needs no heap. Taking the cheapest edge is safe because the cheapest edge leaving any set of points is in some minimum spanning tree.",
+        "def minCostConnectPoints(points):
     if not points:
         return 0
 
@@ -2304,7 +2648,8 @@ def distance(a, b):
 
 
 def distance(a, b):
-    return abs(a[0] - b[0]) + abs(a[1] - b[1])"),
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])",
+      ),
     ],
     check: Check(
       signature: "def minCostConnectPoints(points):
@@ -2336,7 +2681,11 @@ __case__(\"minCostConnectPoints([[0,0],[0,5]])\", 5, minCostConnectPoints([[0, 0
 pub fn nc121_network_delay_time() -> Embedded {
   Embedded(
     solutions: [
-      #("Bellman-Ford", "O(V·E) time · O(V) space", "No choosing what to settle next: relax every edge, n-1 times over, and the times settle by themselves — a shortest path is at most n-1 edges long, and each round fixes at least one more of them. Slower at O(V·E), and worth knowing because it survives negative weights.", "def networkDelayTime(times, n, k):
+      #(
+        "Bellman-Ford",
+        "O(V·E) time · O(V) space",
+        "No choosing what to settle next: relax every edge, n-1 times over, and the times settle by themselves — a shortest path is at most n-1 edges long, and each round fixes at least one more of them. Slower at O(V·E), and worth knowing because it survives negative weights.",
+        "def networkDelayTime(times, n, k):
     # Bellman-Ford. No choosing what to settle next: relax every edge, n-1
     # times over, and the times settle by themselves -- a shortest path is at
     # most n-1 edges long, and each round fixes at least one more of them.
@@ -2351,8 +2700,13 @@ pub fn nc121_network_delay_time() -> Embedded {
                 if destination not in settled or arrival < settled[destination]:
                     settled[destination] = arrival
 
-    return max(settled.values()) if len(settled) == n else -1"),
-      #("Dijkstra", "O(E log V) time · O(V+E) space", "Dijkstra's algorithm. Taking the smallest tentative arrival settles that node for good, because any other route to it would have to start with an edge at least as long. That argument is exactly where a negative edge would break it — which is the reason to know Bellman-Ford as well.", "import heapq
+    return max(settled.values()) if len(settled) == n else -1",
+      ),
+      #(
+        "Dijkstra",
+        "O(E log V) time · O(V+E) space",
+        "Dijkstra's algorithm. Taking the smallest tentative arrival settles that node for good, because any other route to it would have to start with an edge at least as long. That argument is exactly where a negative edge would break it — which is the reason to know Bellman-Ford as well.",
+        "import heapq
 
 
 def networkDelayTime(times, n, k):
@@ -2377,7 +2731,8 @@ def networkDelayTime(times, n, k):
                 heapq.heappush(frontier, (at + weight, destination))
 
     # Every node has to have heard the signal, and the answer is the last one to.
-    return max(settled.values()) if len(settled) == n else -1"),
+    return max(settled.values()) if len(settled) == n else -1",
+      ),
     ],
     check: Check(
       signature: "def networkDelayTime(times, n, k):",
@@ -2404,9 +2759,13 @@ __case__(\"networkDelayTime(the long way round is shorter, 3, 1)\", 3, networkDe
 pub fn nc122_swim_in_water() -> Embedded {
   Embedded(
     solutions: [
-      #("Binary Search", "O(n² log n) time · O(n²) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+      #(
+        "Binary Search",
+        "O(n² log n) time · O(n²) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-Reachability at time t is monotone: once the corner can be reached, it stays reachable as the water rises. That is the shape binary search needs, and it turns the question from \"what is the cheapest path\" into \"is it possible yet\", answered by a plain flood fill.", "def swimInWater(grid):
+Reachability at time t is monotone: once the corner can be reached, it stays reachable as the water rises. That is the shape binary search needs, and it turns the question from \"what is the cheapest path\" into \"is it possible yet\", answered by a plain flood fill.",
+        "def swimInWater(grid):
     if not grid:
         return 0
 
@@ -2443,8 +2802,13 @@ Reachability at time t is monotone: once the corner can be reached, it stays rea
             high = middle
         else:
             low = middle + 1
-    return low"),
-      #("Dijkstra", "O(n² log n) time · O(n²) space", "Dijkstra's, with the cost of a path redefined from the sum of its steps to the largest step in it — the water only has to rise once. Everything else about the algorithm is untouched, which is the point: the shortest-path machinery works for any cost that only grows along a path.", "import heapq
+    return low",
+      ),
+      #(
+        "Dijkstra",
+        "O(n² log n) time · O(n²) space",
+        "Dijkstra's, with the cost of a path redefined from the sum of its steps to the largest step in it — the water only has to rise once. Everything else about the algorithm is untouched, which is the point: the shortest-path machinery works for any cost that only grows along a path.",
+        "import heapq
 
 
 def swimInWater(grid):
@@ -2472,7 +2836,8 @@ def swimInWater(grid):
             if 0 <= nr < n and 0 <= nc < len(grid[nr]) and (nr, nc) not in seen:
                 heapq.heappush(frontier, (max(cost, grid[nr][nc]), nr, nc))
 
-    return -1"),
+    return -1",
+      ),
     ],
     check: Check(
       signature: "def swimInWater(grid):",
@@ -2498,7 +2863,11 @@ __case__(\"swimInWater([[3,2],[1,0]]) -- the start is the deepest cell\", 3, swi
 pub fn nc123_alien_dictionary() -> Embedded {
   Embedded(
     solutions: [
-      #("DFS Topological Sort", "O(C) time · O(V+E) space", "Record a letter only once everything that must follow it has been recorded, and prepend rather than append — that is what puts it back in front of them. The in-progress set is the cycle check, exactly as in Course Schedule: a letter met again on the current path contradicts itself.", "def alienOrder(words):
+      #(
+        "DFS Topological Sort",
+        "O(C) time · O(V+E) space",
+        "Record a letter only once everything that must follow it has been recorded, and prepend rather than append — that is what puts it back in front of them. The in-progress set is the cycle check, exactly as in Course Schedule: a letter met again on the current path contradicts itself.",
+        "def alienOrder(words):
     letters = {letter for word in words for letter in word}
 
     after = {letter: [] for letter in letters}
@@ -2535,8 +2904,13 @@ pub fn nc123_alien_dictionary() -> Embedded {
         if not visit(letter):
             return \"\"
 
-    return \"\".join(reversed(order))"),
-      #("Topological Sort", "O(C) time · O(V+E) space", "The words are the input but the graph is over letters. Two adjacent words agree up to their first difference, and that difference is the only ordering they establish — everything after it says nothing at all. Then it is a topological sort, with two distinct ways to fail: a cycle, and a word followed by its own prefix.", "def alienOrder(words):
+    return \"\".join(reversed(order))",
+      ),
+      #(
+        "Topological Sort",
+        "O(C) time · O(V+E) space",
+        "The words are the input but the graph is over letters. Two adjacent words agree up to their first difference, and that difference is the only ordering they establish — everything after it says nothing at all. Then it is a topological sort, with two distinct ways to fail: a cycle, and a word followed by its own prefix.",
+        "def alienOrder(words):
     letters = {letter for word in words for letter in word}
 
     # Two adjacent words agree up to their first difference, and that difference
@@ -2567,7 +2941,8 @@ pub fn nc123_alien_dictionary() -> Embedded {
 
     # Short means the leftovers all depend on each other: the ordering the words
     # describe is contradictory, so no alphabet satisfies it.
-    return \"\".join(order) if len(order) == len(letters) else \"\""),
+    return \"\".join(order) if len(order) == len(letters) else \"\"",
+      ),
     ],
     check: Check(
       signature: "def alienOrder(words):",
@@ -2595,7 +2970,11 @@ __case__(\"alienOrder(['x','y','z'])\", \"xyz\", alienOrder([\"x\", \"y\", \"z\"
 pub fn nc124_cheapest_flights() -> Embedded {
   Embedded(
     solutions: [
-      #("BFS", "O(k·E) time · O(V+E) space", "Breadth-first by number of flights taken, which makes the stop limit the depth limit — the same bound Bellman-Ford gets from its round count, arrived at from the other direction. The cheapest-so-far table is what stops it exploding: a city is expanded again only when this route reached it for less.", "def findCheapestPrice(n, flights, src, dst, k):
+      #(
+        "BFS",
+        "O(k·E) time · O(V+E) space",
+        "Breadth-first by number of flights taken, which makes the stop limit the depth limit — the same bound Bellman-Ford gets from its round count, arrived at from the other direction. The cheapest-so-far table is what stops it exploding: a city is expanded again only when this route reached it for less.",
+        "def findCheapestPrice(n, flights, src, dst, k):
     outgoing = {}
     for origin, destination, price in flights:
         outgoing.setdefault(origin, []).append((destination, price))
@@ -2618,8 +2997,13 @@ pub fn nc124_cheapest_flights() -> Embedded {
         if not frontier:
             break
 
-    return best.get(dst, -1)"),
-      #("Bellman-Ford", "O(k·E) time · O(V) space", "The stop limit is what stops this being plain Dijkstra: cheapest-so-far no longer settles a city, because a costlier route with fewer stops may still be the one that gets through. Bellman-Ford handles it by construction — one round is one flight — provided each round reads a snapshot of the last, or two flights leak into a single round.", "def findCheapestPrice(n, flights, src, dst, k):
+    return best.get(dst, -1)",
+      ),
+      #(
+        "Bellman-Ford",
+        "O(k·E) time · O(V) space",
+        "The stop limit is what stops this being plain Dijkstra: cheapest-so-far no longer settles a city, because a costlier route with fewer stops may still be the one that gets through. Bellman-Ford handles it by construction — one round is one flight — provided each round reads a snapshot of the last, or two flights leak into a single round.",
+        "def findCheapestPrice(n, flights, src, dst, k):
     # Bellman-Ford, stopped after k+1 rounds -- one round is one flight, so the
     # round count *is* the stop limit. Each round reads the previous round's
     # costs from a snapshot rather than from the table being written; without
@@ -2634,7 +3018,8 @@ pub fn nc124_cheapest_flights() -> Embedded {
                 if destination not in costs or total < costs[destination]:
                     costs[destination] = total
 
-    return costs.get(dst, -1)"),
+    return costs.get(dst, -1)",
+      ),
     ],
     check: Check(
       signature: "def findCheapestPrice(n, flights, src, dst, k):",
@@ -2662,7 +3047,11 @@ __case__(\"findCheapestPrice(5, cheapest route needs the third hop, 0, 2, 2)\", 
 pub fn nc125_reverse_linked_list() -> Embedded {
   Embedded(
     solutions: [
-      #("Recursion", "O(n) time · O(n) space", "Reverse the rest, then hook the current node onto its end. The new head comes back unchanged through every frame, which is why it is returned rather than tracked — and `head.next.next = head` is the whole rewiring, done on the way back out. O(n) stack against the loop's O(1).", "class ListNode:
+      #(
+        "Recursion",
+        "O(n) time · O(n) space",
+        "Reverse the rest, then hook the current node onto its end. The new head comes back unchanged through every frame, which is why it is returned rather than tracked — and `head.next.next = head` is the whole rewiring, done on the way back out. O(n) stack against the loop's O(1).",
+        "class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
@@ -2678,8 +3067,13 @@ def reverseList(head):
     reversed_rest = reverseList(head.next)
     head.next.next = head
     head.next = None
-    return reversed_rest"),
-      #("Iterative", "O(n) time · O(1) space", "One pass, three references: where you came from, where you are, and where you were going. Losing the look-ahead is the classic bug — once the link has been overwritten, the rest of the list is unreachable. In a language with cons lists the same thing is an accumulator you prepend to, which is the *same* rewiring written as a value.", "class ListNode:
+    return reversed_rest",
+      ),
+      #(
+        "Iterative",
+        "O(n) time · O(1) space",
+        "One pass, three references: where you came from, where you are, and where you were going. Losing the look-ahead is the classic bug — once the link has been overwritten, the rest of the list is unreachable. In a language with cons lists the same thing is an accumulator you prepend to, which is the *same* rewiring written as a value.",
+        "class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
@@ -2696,7 +3090,8 @@ def reverseList(head):
         head.next = previous
         previous = head
         head = following
-    return previous"),
+    return previous",
+      ),
     ],
     check: Check(
       signature: "class ListNode:
@@ -2742,7 +3137,11 @@ __case__(\"reverseList([7])\", [7], __values__(reverseList(__chain__([7]))))",
 pub fn nc126_merge_two_sorted_lists() -> Embedded {
   Embedded(
     solutions: [
-      #("Recursion", "O(n+m) time · O(n+m) space", "The same merge with the return value doing the joining: no dummy, no tail reference. One frame per node is the cost, and it is exactly what the loop trades away.", "class ListNode:
+      #(
+        "Recursion",
+        "O(n+m) time · O(n+m) space",
+        "The same merge with the return value doing the joining: no dummy, no tail reference. One frame per node is the cost, and it is exactly what the loop trades away.",
+        "class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
@@ -2760,8 +3159,13 @@ def mergeTwoLists(list1, list2):
         list1.next = mergeTwoLists(list1.next, list2)
         return list1
     list2.next = mergeTwoLists(list1, list2.next)
-    return list2"),
-      #("Iterative", "O(n+m) time · O(1) space", "Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.", "class ListNode:
+    return list2",
+      ),
+      #(
+        "Iterative",
+        "O(n+m) time · O(1) space",
+        "Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.",
+        "class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
@@ -2784,7 +3188,8 @@ def mergeTwoLists(list1, list2):
 
     # Whichever list is left is already sorted and already linked.
     tail.next = list1 if list1 is not None else list2
-    return dummy.next"),
+    return dummy.next",
+      ),
     ],
     check: Check(
       signature: "class ListNode:
@@ -2830,7 +3235,11 @@ __case__(\"mergeTwoLists([5], [1,2,3])\", [1, 2, 3, 5], __values__(mergeTwoLists
 pub fn nc127_reorder_list() -> Embedded {
   Embedded(
     solutions: [
-      #("Two Pointers", "O(n) time · O(n) space", "Collect the nodes into an array, then relink them by index from both ends. O(n) extra space against the in-place version's O(1) — but random access is precisely what a linked list lacks, so this makes visible what the midpoint-and-reverse dance is buying.", "class ListNode:
+      #(
+        "Two Pointers",
+        "O(n) time · O(n) space",
+        "Collect the nodes into an array, then relink them by index from both ends. O(n) extra space against the in-place version's O(1) — but random access is precisely what a linked list lacks, so this makes visible what the midpoint-and-reverse dance is buying.",
+        "class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
@@ -2858,8 +3267,13 @@ def reorderList(head):
 
     if nodes:
         nodes[low].next = None
-    return head"),
-      #("Fast & Slow Pointers", "O(n) time · O(1) space", "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.", "class ListNode:
+    return head",
+      ),
+      #(
+        "Fast & Slow Pointers",
+        "O(n) time · O(1) space",
+        "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.",
+        "class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
@@ -2893,7 +3307,8 @@ def reorderList(head):
         second.next = first_next
         first, second = first_next, second_next
 
-    return head"),
+    return head",
+      ),
     ],
     check: Check(
       signature: "class ListNode:
@@ -2947,7 +3362,11 @@ __case__(\"reorderList([])\", [], __reordered__([]))",
 pub fn nc128_remove_nth_from_end() -> Embedded {
   Embedded(
     solutions: [
-      #("Two Pass", "O(n) time · O(1) space", "Count first, then remove by position. Two passes rather than one, and it says outright what the gap encodes: nth from the end is length minus n from the front. Where a list cannot be walked twice — a stream, say — that is the assumption that fails.", "class ListNode:
+      #(
+        "Two Pass",
+        "O(n) time · O(1) space",
+        "Count first, then remove by position. Two passes rather than one, and it says outright what the gap encodes: nth from the end is length minus n from the front. Where a list cannot be walked twice — a stream, say — that is the assumption that fails.",
+        "class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
@@ -2972,8 +3391,13 @@ def removeNthFromEnd(head, n):
     for _ in range(index):
         before = before.next
     before.next = before.next.next
-    return dummy.next"),
-      #("Two Pointers", "O(n) time · O(1) space", "Two walkers n apart. When the leading one runs off the end, the trailing one is on the node to change — the length is never computed, which is the point: one pass instead of two. Opening the gap can fail, and that failure is exactly the \"n is longer than the list\" case.", "class ListNode:
+    return dummy.next",
+      ),
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Two walkers n apart. When the leading one runs off the end, the trailing one is on the node to change — the length is never computed, which is the point: one pass instead of two. Opening the gap can fail, and that failure is exactly the \"n is longer than the list\" case.",
+        "class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
@@ -2996,7 +3420,8 @@ def removeNthFromEnd(head, n):
         behind, ahead = behind.next, ahead.next
 
     behind.next = behind.next.next
-    return dummy.next"),
+    return dummy.next",
+      ),
     ],
     check: Check(
       signature: "class ListNode:
@@ -3043,7 +3468,11 @@ __case__(\"removeNthFromEnd([1,2,3], 5) -- nothing to remove\", [1, 2, 3], __val
 pub fn nc129_copy_random_list() -> Embedded {
   Embedded(
     solutions: [
-      #("Interleaved Copies", "O(n) time · O(1) extra space", "The list itself replaces the map: each copy is spliced in directly after its original, so \"the copy of X\" is always X.next — no lookup and no O(n) table. Three passes instead of two, and the last one has to unweave the lists again, restoring the original exactly as it was.", "class Node:
+      #(
+        "Interleaved Copies",
+        "O(n) time · O(1) extra space",
+        "The list itself replaces the map: each copy is spliced in directly after its original, so \"the copy of X\" is always X.next — no lookup and no O(n) table. Three passes instead of two, and the last one has to unweave the lists again, restoring the original exactly as it was.",
+        "class Node:
     def __init__(self, val=0, next=None, random=None):
         self.val = val
         self.next = next
@@ -3075,8 +3504,13 @@ def copyRandomList(head):
         node.next = original_next
         node = original_next
 
-    return copy"),
-      #("Hash Map", "O(n) time · O(n) space", "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.", "class Node:
+    return copy",
+      ),
+      #(
+        "Hash Map",
+        "O(n) time · O(n) space",
+        "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.",
+        "class Node:
     def __init__(self, val=0, next=None, random=None):
         self.val = val
         self.next = next
@@ -3101,7 +3535,8 @@ def copyRandomList(head):
         copies[node].random = copies[node.random]
         node = node.next
 
-    return copies[head]"),
+    return copies[head]",
+      ),
     ],
     check: Check(
       signature: "class Node:
@@ -3164,15 +3599,24 @@ __case__(\"copyRandomList([])\", [], __copied__([]))",
 pub fn nc12_best_time_stock() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every buy day against every later sell day. O(n^2), and the problem statement written out.", "def maxProfit(prices):
+Every buy day against every later sell day. O(n^2), and the problem statement written out.",
+        "def maxProfit(prices):
     profit = 0
     for buy in range(len(prices)):
         for sell in range(buy + 1, len(prices)):
             profit = max(profit, prices[sell] - prices[buy])
-    return profit"),
-      #("Greedy", "O(n) time · O(1) space", "Carry the cheapest price seen so far; today's best sale is today's price against that minimum. One pass, two variables.", "def maxProfit(prices):
+    return profit",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Carry the cheapest price seen so far; today's best sale is today's price against that minimum. One pass, two variables.",
+        "def maxProfit(prices):
     lowest = float('inf')
     profit = 0
 
@@ -3180,7 +3624,8 @@ Every buy day against every later sell day. O(n^2), and the problem statement wr
         lowest = min(lowest, price)
         profit = max(profit, price - lowest)
 
-    return profit"),
+    return profit",
+      ),
     ],
     check: Check(
       signature: "def maxProfit(prices):",
@@ -3205,7 +3650,11 @@ __case__(\"maxProfit([])\", 0, maxProfit([]))",
 pub fn nc130_add_two_numbers() -> Embedded {
   Embedded(
     solutions: [
-      #("Nifty Python · Big Ints", "O(n+m) time · O(n+m) space", "Turn both lists into whole numbers, add, take the sum apart again. It reads well, and it is safe here only because this language's integers are arbitrary precision — which is precisely why the problem is posed as a list of digits in languages where they are not.", "class ListNode:
+      #(
+        "Nifty Python · Big Ints",
+        "O(n+m) time · O(n+m) space",
+        "Turn both lists into whole numbers, add, take the sum apart again. It reads well, and it is safe here only because this language's integers are arbitrary precision — which is precisely why the problem is posed as a list of digits in languages where they are not.",
+        "class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
@@ -3235,8 +3684,13 @@ def value(node):
         total += node.val * place
         place *= 10
         node = node.next
-    return total"),
-      #("Simulation", "O(n+m) time · O(n+m) space", "The digits arrive least significant first, which is exactly the order addition wants — no reversing and no length matching. The case worth writing down is the carry outliving both numbers: 5 + 5 produces a digit neither input has a node for.", "class ListNode:
+    return total",
+      ),
+      #(
+        "Simulation",
+        "O(n+m) time · O(n+m) space",
+        "The digits arrive least significant first, which is exactly the order addition wants — no reversing and no length matching. The case worth writing down is the carry outliving both numbers: 5 + 5 produces a digit neither input has a node for.",
+        "class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
@@ -3261,7 +3715,8 @@ def addTwoNumbers(l1, l2):
         tail.next = ListNode(digit)
         tail = tail.next
 
-    return dummy.next"),
+    return dummy.next",
+      ),
     ],
     check: Check(
       signature: "class ListNode:
@@ -3308,7 +3763,11 @@ __case__(\"addTwoNumbers([1,2], [3,4,5]) -- different lengths\", [4, 6, 5], __va
 pub fn nc131_linked_list_cycle() -> Embedded {
   Embedded(
     solutions: [
-      #("Hash Set", "O(n) time · O(n) space", "Remember every node visited and stop when one repeats. Obvious and correct, at O(n) memory — which is exactly what the two-walker version removes. Note that it is the *nodes* that go in the set, not their values: repeated values are ordinary, repeated nodes are the cycle.", "class ListNode:
+      #(
+        "Hash Set",
+        "O(n) time · O(n) space",
+        "Remember every node visited and stop when one repeats. Obvious and correct, at O(n) memory — which is exactly what the two-walker version removes. Note that it is the *nodes* that go in the set, not their values: repeated values are ordinary, repeated nodes are the cycle.",
+        "class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
@@ -3325,8 +3784,13 @@ def hasCycle(head):
             return True
         seen.add(id(head))
         head = head.next
-    return False"),
-      #("Fast & Slow Pointers", "O(n) time · O(1) space", "Floyd's tortoise and hare. One walker takes single steps, the other double; inside a loop the fast one gains a place per step on the slow one, so it must land on it. Outside one, it runs off the end first. Constant memory and nothing is marked — that is the whole result.", "class ListNode:
+    return False",
+      ),
+      #(
+        "Fast & Slow Pointers",
+        "O(n) time · O(1) space",
+        "Floyd's tortoise and hare. One walker takes single steps, the other double; inside a loop the fast one gains a place per step on the slow one, so it must land on it. Outside one, it runs off the end first. Constant memory and nothing is marked — that is the whole result.",
+        "class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
@@ -3343,7 +3807,8 @@ def hasCycle(head):
         slow, fast = slow.next, fast.next.next
         if slow is fast:
             return True
-    return False"),
+    return False",
+      ),
     ],
     check: Check(
       signature: "class ListNode:
@@ -3387,9 +3852,13 @@ __case__(\"hasCycle([1,2], tail -> index 0)\", True, hasCycle(__chain__([1, 2], 
 pub fn nc132_find_the_duplicate() -> Embedded {
   Embedded(
     solutions: [
-      #("Binary Search", "O(n log n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+      #(
+        "Binary Search",
+        "O(n log n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-Binary search over the *values*, not the positions. For a candidate v, count how many numbers are at most v: with no duplicate that count is exactly v, so a count running ahead says the repeat is at or below v. O(n log n), but it needs no insight about cycles.", "def findDuplicate(nums):
+Binary search over the *values*, not the positions. For a candidate v, count how many numbers are at most v: with no duplicate that count is exactly v, so a count running ahead says the repeat is at or below v. O(n log n), but it needs no insight about cycles.",
+        "def findDuplicate(nums):
     # Binary search over the *values*, not the positions. For a candidate v,
     # count how many numbers are at most v: with no duplicate that count is
     # exactly v, so a count that runs ahead says the repeat is at or below v.
@@ -3402,8 +3871,13 @@ Binary search over the *values*, not the positions. For a candidate v, count how
             high = middle
         else:
             low = middle + 1
-    return low"),
-      #("Fast & Slow Pointers", "O(n) time · O(1) space", "Read the array as a linked list: position i points at position nums[i]. Every value is a valid position and one repeats, so two positions point at the same place — the list has a cycle, and the duplicate is its entrance. Then it is Floyd's twice: once to meet inside the loop, once to find where it begins.", "def findDuplicate(nums):
+    return low",
+      ),
+      #(
+        "Fast & Slow Pointers",
+        "O(n) time · O(1) space",
+        "Read the array as a linked list: position i points at position nums[i]. Every value is a valid position and one repeats, so two positions point at the same place — the list has a cycle, and the duplicate is its entrance. Then it is Floyd's twice: once to meet inside the loop, once to find where it begins.",
+        "def findDuplicate(nums):
     # Read the array as a linked list: position i points at position nums[i].
     # Every value is a valid position and one value repeats, so two positions
     # point at the same place -- the list has a cycle, and the duplicate is its
@@ -3417,7 +3891,8 @@ Binary search over the *values*, not the positions. For a candidate v, count how
     slow = 0
     while slow != fast:
         slow, fast = nums[slow], nums[fast]
-    return slow"),
+    return slow",
+      ),
     ],
     check: Check(
       signature: "def findDuplicate(nums):",
@@ -3444,7 +3919,11 @@ __case__(\"findDuplicate([1,4,4,2,4])\", 4, findDuplicate([1, 4, 4, 2, 4]))",
 pub fn nc133_lru_cache() -> Embedded {
   Embedded(
     solutions: [
-      #("Nifty Python · Dict Order", "O(1) per operation · O(capacity) space", "Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A map alone gives the first and a list alone gives the second — the structure is whatever supplies both. Where the language's map already remembers insertion order, deleting a key and putting it back *is* the recency list.", "class LRUCache:
+      #(
+        "Nifty Python · Dict Order",
+        "O(1) per operation · O(capacity) space",
+        "Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A map alone gives the first and a list alone gives the second — the structure is whatever supplies both. Where the language's map already remembers insertion order, deleting a key and putting it back *is* the recency list.",
+        "class LRUCache:
     def __init__(self, capacity):
         # A plain dict, leaning on the fact that Python dicts remember insertion
         # order: deleting a key and putting it back makes it the newest, so the
@@ -3466,8 +3945,13 @@ pub fn nc133_lru_cache() -> Embedded {
         self.entries[key] = value
         if len(self.entries) > self.capacity:
             oldest = next(iter(self.entries))
-            del self.entries[oldest]"),
-      #("Design", "O(1) per operation · O(capacity) space", "The structure the problem is really about: a doubly linked list of keys, newest first, plus a map from key to its node. The map makes finding a node O(1) and the back-pointers make unlinking it O(1) — neither alone is enough, which is the entire point.", "class LRUCache:
+            del self.entries[oldest]",
+      ),
+      #(
+        "Design",
+        "O(1) per operation · O(capacity) space",
+        "The structure the problem is really about: a doubly linked list of keys, newest first, plus a map from key to its node. The map makes finding a node O(1) and the back-pointers make unlinking it O(1) — neither alone is enough, which is the entire point.",
+        "class LRUCache:
     def __init__(self, capacity):
         # A doubly linked list of keys, newest at the head, plus a map from key
         # to its node. The map makes finding a node O(1) and the back-pointers
@@ -3506,7 +3990,8 @@ pub fn nc133_lru_cache() -> Embedded {
 
     def unlink(self, node):
         node[\"prev\"][\"next\"] = node[\"next\"]
-        node[\"next\"][\"prev\"] = node[\"prev\"]"),
+        node[\"next\"][\"prev\"] = node[\"prev\"]",
+      ),
     ],
     check: Check(
       signature: "class LRUCache:
@@ -3553,7 +4038,11 @@ __case__(\"get(5) after put(5,5) then put(5,9) -- an update, not an insert\", 9,
 pub fn nc134_merge_k_sorted_lists() -> Embedded {
   Embedded(
     solutions: [
-      #("Heap", "O(n log k) time · O(k) space", "Take the smallest head across all the lists, over and over — the heap is what makes \"smallest of k\" cost O(log k) instead of a scan of k. The tie-break in the heap entry matters: two equal values would otherwise send the comparison on to the nodes themselves, which have no ordering.", "import heapq
+      #(
+        "Heap",
+        "O(n log k) time · O(k) space",
+        "Take the smallest head across all the lists, over and over — the heap is what makes \"smallest of k\" cost O(log k) instead of a scan of k. The tie-break in the heap entry matters: two equal values would otherwise send the comparison on to the nodes themselves, which have no ordering.",
+        "import heapq
 
 
 class ListNode:
@@ -3580,8 +4069,13 @@ def mergeKLists(lists):
             heapq.heappush(frontier, (node.next.val, i, node.next))
 
     tail.next = None
-    return dummy.next"),
-      #("Divide & Conquer", "O(n log k) time · O(k) space", "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.", "class ListNode:
+    return dummy.next",
+      ),
+      #(
+        "Divide & Conquer",
+        "O(n log k) time · O(k) space",
+        "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.",
+        "class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
@@ -3618,7 +4112,8 @@ def merge(first, second):
             tail.next, second = second, second.next
         tail = tail.next
     tail.next = first if first is not None else second
-    return dummy.next"),
+    return dummy.next",
+      ),
     ],
     check: Check(
       signature: "class ListNode:
@@ -3673,7 +4168,11 @@ __case__(\"mergeKLists([[2,2],[2]]) -- ties everywhere\", [2, 2, 2], __merged__(
 pub fn nc135_reverse_k_group() -> Embedded {
   Embedded(
     solutions: [
-      #("Two Pass", "O(n) time · O(1) space", "Count once, then reverse exactly length / k groups. One length calculation instead of a look-ahead per group — and it makes the boundary explicit: everything past the last whole group is untouched, however long it is.", "class ListNode:
+      #(
+        "Two Pass",
+        "O(n) time · O(1) space",
+        "Count once, then reverse exactly length / k groups. One length calculation instead of a look-ahead per group — and it makes the boundary explicit: everything past the last whole group is untouched, however long it is.",
+        "class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
@@ -3703,8 +4202,13 @@ def reverseKGroup(head, k):
         first.next = node
         before = first
 
-    return dummy.next"),
-      #("Linked List", "O(n) time · O(1) space", "Look ahead k nodes *before* reversing anything. That check is the whole difficulty: once the rewiring starts there is no way to tell how far it got, so a short final group would be reversed by mistake.", "class ListNode:
+    return dummy.next",
+      ),
+      #(
+        "Linked List",
+        "O(n) time · O(1) space",
+        "Look ahead k nodes *before* reversing anything. That check is the whole difficulty: once the rewiring starts there is no way to tell how far it got, so a short final group would be reversed by mistake.",
+        "class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
@@ -3732,7 +4236,8 @@ def reverseKGroup(head, k):
             previous, node = node, following
 
         before.next = previous
-        before = first"),
+        before = first",
+      ),
     ],
     check: Check(
       signature: "class ListNode:
@@ -3783,7 +4288,11 @@ __case__(\"reverseKGroup([], 2)\", [], __grouped__([], 2))",
 pub fn nc136_invert_binary_tree() -> Embedded {
   Embedded(
     solutions: [
-      #("Flatten & Rebuild", "O(n) time · O(n) space", "Write the tree out pre-order with a marker for every empty child, then read it back taking the first subtree as the *right* child. The inversion happens entirely in the reading — nothing is ever swapped. Longer than the direct recursion, and worth having because the same flatten/rebuild pair is all [[nc150_serialize_deserialize]] is.", "class TreeNode:
+      #(
+        "Flatten & Rebuild",
+        "O(n) time · O(n) space",
+        "Write the tree out pre-order with a marker for every empty child, then read it back taking the first subtree as the *right* child. The inversion happens entirely in the reading — nothing is ever swapped. Longer than the direct recursion, and worth having because the same flatten/rebuild pair is all [[nc150_serialize_deserialize]] is.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -3817,8 +4326,13 @@ def rebuild(tokens, at):
         return None
     first = rebuild(tokens, at)
     second = rebuild(tokens, at)
-    return TreeNode(value, second, first)"),
-      #("DFS", "O(n) time · O(h) space", "Swap the children, then invert each of them — the swap and the recursion are the same line. The order does not matter: swapping before or after recursing gives the same tree, which is why this is the shortest tree problem there is.", "class TreeNode:
+    return TreeNode(value, second, first)",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Swap the children, then invert each of them — the swap and the recursion are the same line. The order does not matter: swapping before or after recursing gives the same tree, which is why this is the shortest tree problem there is.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -3833,7 +4347,8 @@ def invertTree(root):
     if root is None:
         return None
     root.left, root.right = invertTree(root.right), invertTree(root.left)
-    return root"),
+    return root",
+      ),
     ],
     check: Check(
       signature: "class TreeNode:
@@ -3906,7 +4421,11 @@ __case__(\"invertTree twice is the original\", [1, 2], __levels__(invertTree(inv
 pub fn nc137_maximum_depth() -> Embedded {
   Embedded(
     solutions: [
-      #("BFS", "O(n) time · O(n) space", "Count the levels instead of measuring the branches: take the whole frontier, replace it with all its children, and add one. No recursion and no stack — which is what makes this the version that survives a tree deep enough to overflow one.", "class TreeNode:
+      #(
+        "BFS",
+        "O(n) time · O(n) space",
+        "Count the levels instead of measuring the branches: take the whole frontier, replace it with all its children, and add one. No recursion and no stack — which is what makes this the version that survives a tree deep enough to overflow one.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -3928,8 +4447,13 @@ def maxDepth(root):
             for child in (node.left, node.right)
             if child is not None
         ]
-    return depth"),
-      #("DFS", "O(n) time · O(h) space", "One more than the deeper of the two children, with an empty tree at zero. The whole problem is that base case; everything else is the definition of depth read aloud.", "class TreeNode:
+    return depth",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "One more than the deeper of the two children, with an empty tree at zero. The whole problem is that base case; everything else is the definition of depth read aloud.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -3942,7 +4466,8 @@ def maxDepth(root):
     # depth read aloud.
     if root is None:
         return 0
-    return 1 + max(maxDepth(root.left), maxDepth(root.right))"),
+    return 1 + max(maxDepth(root.left), maxDepth(root.right))",
+      ),
     ],
     check: Check(
       signature: "class TreeNode:
@@ -4015,7 +4540,11 @@ __case__(\"maxDepth(a spindly tree)\", 3, maxDepth(__build__([1, 2, None, 3])))"
 pub fn nc138_diameter_of_binary_tree() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²) time · O(n) space", "Ask every node how tall its two sides are and keep the largest sum. Correct and obvious, but height is recomputed from scratch at every node, so a balanced tree costs O(n log n) and a spindly one O(n²) — exactly what returning the height alongside the answer avoids.", "class TreeNode:
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "Ask every node how tall its two sides are and keep the largest sum. Correct and obvious, but height is recomputed from scratch at every node, so a balanced tree costs O(n log n) and a spindly one O(n²) — exactly what returning the height alongside the answer avoids.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -4037,8 +4566,13 @@ def diameterOfBinaryTree(root):
 
 
 def height(node):
-    return 0 if node is None else 1 + max(height(node.left), height(node.right))"),
-      #("DFS", "O(n) time · O(h) space", "One walk doing two jobs: each call *returns* its own height, and on the way past it *records* the path through that node — left height plus right height. The answer is the largest such path, so it is never returned, only tracked. That split between return and record is the pattern, and it comes back in [[nc149_max_path_sum]].", "class TreeNode:
+    return 0 if node is None else 1 + max(height(node.left), height(node.right))",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "One walk doing two jobs: each call *returns* its own height, and on the way past it *records* the path through that node — left height plus right height. The answer is the largest such path, so it is never returned, only tracked. That split between return and record is the pattern, and it comes back in [[nc149_max_path_sum]].",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -4062,7 +4596,8 @@ def measure(node):
     return (
         1 + max(leftHeight, rightHeight),
         max(leftHeight + rightHeight, leftWidest, rightWidest),
-    )"),
+    )",
+      ),
     ],
     check: Check(
       signature: "class TreeNode:
@@ -4141,7 +4676,11 @@ __case__(\"diameterOfBinaryTree(widest path misses the root)\", 4, diameterOfBin
 pub fn nc139_balanced_binary_tree() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²) time · O(n) space", "The definition read literally: every node's two sides differ by at most one, and both sides are themselves balanced. It recomputes height at every node, so the work is O(n²) on a spindly tree — the price of separating the two questions the single-pass version answers together.", "class TreeNode:
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "The definition read literally: every node's two sides differ by at most one, and both sides are themselves balanced. It recomputes height at every node, so the work is O(n²) on a spindly tree — the price of separating the two questions the single-pass version answers together.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -4163,8 +4702,13 @@ def isBalanced(root):
 
 
 def height(node):
-    return 0 if node is None else 1 + max(height(node.left), height(node.right))"),
-      #("DFS", "O(n) time · O(h) space", "Height and balance in one walk. A subtree reports its height, or reports that something below it is already unbalanced — and once that happens nothing above needs measuring. Using -1 as the \"not balanced\" height is what lets a single return value carry both answers.", "class TreeNode:
+    return 0 if node is None else 1 + max(height(node.left), height(node.right))",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Height and balance in one walk. A subtree reports its height, or reports that something below it is already unbalanced — and once that happens nothing above needs measuring. Using -1 as the \"not balanced\" height is what lets a single return value carry both answers.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -4185,7 +4729,8 @@ def measure(node):
     left, right = measure(node.left), measure(node.right)
     if left < 0 or right < 0 or abs(left - right) > 1:
         return -1
-    return 1 + max(left, right)"),
+    return 1 + max(left, right)",
+      ),
     ],
     check: Check(
       signature: "class TreeNode:
@@ -4264,7 +4809,11 @@ __case__(\"isBalanced(balanced at the root, not below)\", False, isBalanced(__bu
 pub fn nc13_longest_substring() -> Embedded {
   Embedded(
     solutions: [
-      #("Nifty Python · str.find", "O(n²) time · O(1) space", "No set and no map: ask the string itself whether this character already appeared inside the current window, and if so restart just past it.", "def lengthOfLongestSubstring(s):
+      #(
+        "Nifty Python · str.find",
+        "O(n²) time · O(1) space",
+        "No set and no map: ask the string itself whether this character already appeared inside the current window, and if so restart just past it.",
+        "def lengthOfLongestSubstring(s):
     longest = 0
     start = 0
 
@@ -4274,8 +4823,13 @@ pub fn nc13_longest_substring() -> Embedded {
             start = found + 1
         longest = max(longest, right - start + 1)
 
-    return longest"),
-      #("Sliding Window", "O(n) time · O(n) space", "Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.", "def lengthOfLongestSubstring(s):
+    return longest",
+      ),
+      #(
+        "Sliding Window",
+        "O(n) time · O(n) space",
+        "Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.",
+        "def lengthOfLongestSubstring(s):
     window = set()
     left = 0
     longest = 0
@@ -4287,7 +4841,8 @@ pub fn nc13_longest_substring() -> Embedded {
         window.add(s[right])
         longest = max(longest, right - left + 1)
 
-    return longest"),
+    return longest",
+      ),
     ],
     check: Check(
       signature: "def lengthOfLongestSubstring(s):",
@@ -4313,7 +4868,11 @@ __case__(\"lengthOfLongestSubstring('')\", 0, lengthOfLongestSubstring(\"\"))",
 pub fn nc140_same_tree() -> Embedded {
   Embedded(
     solutions: [
-      #("Serialisation", "O(n) time · O(n) space", "Turn each tree into a string and compare those. It works *only* because the serialisation records the empty children: without a marker for them, different trees flatten to the same sequence — the same trap [[nc150_serialize_deserialize]] turns on.", "class TreeNode:
+      #(
+        "Serialisation",
+        "O(n) time · O(n) space",
+        "Turn each tree into a string and compare those. It works *only* because the serialisation records the empty children: without a marker for them, different trees flatten to the same sequence — the same trap [[nc150_serialize_deserialize]] turns on.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -4331,8 +4890,13 @@ def isSameTree(p, q):
 def serialise(node):
     if node is None:
         return \"#\"
-    return \"(\" + str(node.val) + serialise(node.left) + serialise(node.right) + \")\""),
-      #("DFS", "O(n) time · O(h) space", "Walk both trees in step. Two empties match, an empty and a node never do, and two nodes match when their values do and both pairs of children do. The same shape is what [[nc141_subtree_of_another_tree]] is built from, which is why it is worth writing out rather than leaning on the language's equality.", "class TreeNode:
+    return \"(\" + str(node.val) + serialise(node.left) + serialise(node.right) + \")\"",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Walk both trees in step. Two empties match, an empty and a node never do, and two nodes match when their values do and both pairs of children do. The same shape is what [[nc141_subtree_of_another_tree]] is built from, which is why it is worth writing out rather than leaning on the language's equality.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -4349,7 +4913,8 @@ def isSameTree(p, q):
         return True
     if p is None or q is None:
         return False
-    return p.val == q.val and isSameTree(p.left, q.left) and isSameTree(p.right, q.right)"),
+    return p.val == q.val and isSameTree(p.left, q.left) and isSameTree(p.right, q.right)",
+      ),
     ],
     check: Check(
       signature: "class TreeNode:
@@ -4423,7 +4988,11 @@ __case__(\"isSameTree([1,2,1], [1,1,2]) -- children swapped\", False, isSameTree
 pub fn nc141_subtree_of_another_tree() -> Embedded {
   Embedded(
     solutions: [
-      #("DFS", "O(n·m) time · O(n+m) space", "Try to match at every node. The two questions are kept apart on purpose: \"are these two trees identical\" is the whole of the work, and \"is it a subtree\" is that question asked once per node. O(n·m) in the worst case, and a partial match that fails deep is what makes it so.", "class TreeNode:
+      #(
+        "DFS",
+        "O(n·m) time · O(n+m) space",
+        "Try to match at every node. The two questions are kept apart on purpose: \"are these two trees identical\" is the whole of the work, and \"is it a subtree\" is that question asked once per node. O(n·m) in the worst case, and a partial match that fails deep is what makes it so.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -4447,8 +5016,13 @@ def same(a, b):
         return True
     if a is None or b is None:
         return False
-    return a.val == b.val and same(a.left, b.left) and same(a.right, b.right)"),
-      #("Serialisation", "O(n+m) time · O(n+m) space", "Serialise both trees and ask whether one string contains the other — an O(n·m) tree comparison turned into substring search. It is only sound because the serialisation marks the empty children: without them \"2\" inside \"12\" would match, and so would a subtree that starts the same way but is missing a child.", "class TreeNode:
+    return a.val == b.val and same(a.left, b.left) and same(a.right, b.right)",
+      ),
+      #(
+        "Serialisation",
+        "O(n+m) time · O(n+m) space",
+        "Serialise both trees and ask whether one string contains the other — an O(n·m) tree comparison turned into substring search. It is only sound because the serialisation marks the empty children: without them \"2\" inside \"12\" would match, and so would a subtree that starts the same way but is missing a child.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -4467,7 +5041,8 @@ def isSubtree(root, subRoot):
 def serialise(node):
     if node is None:
         return \"#\"
-    return \"(\" + str(node.val) + serialise(node.left) + serialise(node.right) + \")\""),
+    return \"(\" + str(node.val) + serialise(node.left) + serialise(node.right) + \")\"",
+      ),
     ],
     check: Check(
       signature: "class TreeNode:
@@ -4546,7 +5121,11 @@ __case__(\"isSubtree([1], []) -- the empty tree is in everything\", True, isSubt
 pub fn nc142_lowest_common_ancestor_bst() -> Embedded {
   Embedded(
     solutions: [
-      #("Path Comparison", "O(n) time · O(n) space", "Find the path from the root to each target, then take the last node they share. It ignores the ordering entirely, which is why it is the version that also works on a plain binary tree — at the cost of two searches and two stored paths rather than one walk and nothing.", "class TreeNode:
+      #(
+        "Path Comparison",
+        "O(n) time · O(n) space",
+        "Find the path from the root to each target, then take the last node they share. It ignores the ordering entirely, which is why it is the version that also works on a plain binary tree — at the cost of two searches and two stored paths rather than one walk and nothing.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -4576,8 +5155,13 @@ def path(node, target):
         found = path(side, target)
         if found:
             return [node.val] + found
-    return []"),
-      #("BST Walk", "O(h) time · O(1) space", "The ordering does all the work. Both targets below the current value means go left, both above means go right, and anything else means this node is the split point — which is the answer. No searching for either node first, and no comparing of paths.", "class TreeNode:
+    return []",
+      ),
+      #(
+        "BST Walk",
+        "O(h) time · O(1) space",
+        "The ordering does all the work. Both targets below the current value means go left, both above means go right, and anything else means this node is the split point — which is the answer. No searching for either node first, and no comparing of paths.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -4597,7 +5181,8 @@ def lowestCommonAncestor(root, p, q):
             node = node.right
         else:
             return node.val
-    return -1"),
+    return -1",
+      ),
     ],
     check: Check(
       signature: "class TreeNode:
@@ -4673,7 +5258,11 @@ __case__(\"lowestCommonAncestor([1], 1, 1)\", 1, lowestCommonAncestor(__build__(
 pub fn nc143_level_order_traversal() -> Embedded {
   Embedded(
     solutions: [
-      #("DFS", "O(n) time · O(n) space", "Walk depth-first and file each value under its depth. The traversal order is wrong for the answer, but appending to the right bucket puts it right — and within a level, left is still visited before right, which is all the ordering the answer needs.", "class TreeNode:
+      #(
+        "DFS",
+        "O(n) time · O(n) space",
+        "Walk depth-first and file each value under its depth. The traversal order is wrong for the answer, but appending to the right bucket puts it right — and within a level, left is still visited before right, which is all the ordering the answer needs.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -4695,8 +5284,13 @@ def collect(node, depth, levels):
         return
     levels.setdefault(depth, []).append(node.val)
     collect(node.left, depth + 1, levels)
-    collect(node.right, depth + 1, levels)"),
-      #("BFS", "O(n) time · O(n) space", "Take the whole frontier at once rather than one node at a time: everything on it is the current level, and its children are the next. That is what makes the grouping fall out without tracking any depth — a plain queue gives the right order but no idea where each level ends.", "class TreeNode:
+    collect(node.right, depth + 1, levels)",
+      ),
+      #(
+        "BFS",
+        "O(n) time · O(n) space",
+        "Take the whole frontier at once rather than one node at a time: everything on it is the current level, and its children are the next. That is what makes the grouping fall out without tracking any depth — a plain queue gives the right order but no idea where each level ends.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -4718,7 +5312,8 @@ def levelOrder(root):
             for child in (node.left, node.right)
             if child is not None
         ]
-    return levels"),
+    return levels",
+      ),
     ],
     check: Check(
       signature: "class TreeNode:
@@ -4791,7 +5386,11 @@ __case__(\"levelOrder(missing left children)\", [[1], [3], [4]], levelOrder(__bu
 pub fn nc144_right_side_view() -> Embedded {
   Embedded(
     solutions: [
-      #("DFS", "O(n) time · O(h) space", "Depth-first, visiting the right child first, and recording a value only when its depth is met for the first time. No frontier at all — being first to reach a depth is the same thing as being rightmost on it, given that order of visiting.", "class TreeNode:
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Depth-first, visiting the right child first, and recording a value only when its depth is met for the first time. No frontier at all — being first to reach a depth is the same thing as being rightmost on it, given that order of visiting.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -4814,8 +5413,13 @@ def look(node, depth, seen):
     if depth == len(seen):
         seen.append(node.val)
     look(node.right, depth + 1, seen)
-    look(node.left, depth + 1, seen)"),
-      #("BFS", "O(n) time · O(n) space", "The last value on each level, which is what \"seen from the right\" means once the question is asked level by level. Walking down the right children alone is the tempting wrong answer: where the right side is short, a node further left is the one that shows.", "class TreeNode:
+    look(node.left, depth + 1, seen)",
+      ),
+      #(
+        "BFS",
+        "O(n) time · O(n) space",
+        "The last value on each level, which is what \"seen from the right\" means once the question is asked level by level. Walking down the right children alone is the tempting wrong answer: where the right side is short, a node further left is the one that shows.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -4837,7 +5441,8 @@ def rightSideView(root):
             for child in (node.left, node.right)
             if child is not None
         ]
-    return seen"),
+    return seen",
+      ),
     ],
     check: Check(
       signature: "class TreeNode:
@@ -4910,7 +5515,11 @@ __case__(\"rightSideView(the right side runs out)\", [1, 3, 4], rightSideView(__
 pub fn nc145_count_good_nodes() -> Embedded {
   Embedded(
     solutions: [
-      #("Full-Path DFS", "O(n·h) time · O(h²) space", "Carry the whole path instead of just its maximum, and take the maximum at each node. The same answer for O(depth) memory per node rather than one number — worth writing once, because it makes plain that the running maximum is a fold of the path, not a separate idea.", "class TreeNode:
+      #(
+        "Full-Path DFS",
+        "O(n·h) time · O(h²) space",
+        "Carry the whole path instead of just its maximum, and take the maximum at each node. The same answer for O(depth) memory per node rather than one number — worth writing once, because it makes plain that the running maximum is a fold of the path, not a separate idea.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -4930,8 +5539,13 @@ def count(node, above):
         return 0
     here = 1 if all(other <= node.val for other in above) else 0
     below = above + [node.val]
-    return here + count(node.left, below) + count(node.right, below)"),
-      #("DFS", "O(n) time · O(h) space", "Carry the largest value seen on the way down. A node is good when nothing above it is bigger, so the check needs no knowledge of the tree below — which is what makes one pass enough. The root is always good, and passing its own value down as the initial maximum is what says so.", "class TreeNode:
+    return here + count(node.left, below) + count(node.right, below)",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Carry the largest value seen on the way down. A node is good when nothing above it is bigger, so the check needs no knowledge of the tree below — which is what makes one pass enough. The root is always good, and passing its own value down as the initial maximum is what says so.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -4953,7 +5567,8 @@ def count(node, largest):
         return 0
     here = 1 if node.val >= largest else 0
     largest = max(largest, node.val)
-    return here + count(node.left, largest) + count(node.right, largest)"),
+    return here + count(node.left, largest) + count(node.right, largest)",
+      ),
     ],
     check: Check(
       signature: "class TreeNode:
@@ -5032,7 +5647,11 @@ __case__(\"goodNodes([3,3,None,4,2])\", 3, goodNodes(__build__([3, 3, None, 4, 2
 pub fn nc146_validate_bst() -> Embedded {
   Embedded(
     solutions: [
-      #("In-Order Traversal", "O(n) time · O(n) space", "A binary search tree is exactly a tree whose in-order walk is strictly increasing — the definition, restated so that no bounds have to be threaded anywhere. The cost is the list: O(n) memory against the range check's O(depth).", "class TreeNode:
+      #(
+        "In-Order Traversal",
+        "O(n) time · O(n) space",
+        "A binary search tree is exactly a tree whose in-order walk is strictly increasing — the definition, restated so that no bounds have to be threaded anywhere. The cost is the list: O(n) memory against the range check's O(depth).",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -5054,8 +5673,13 @@ def inOrder(node, values):
         return
     inOrder(node.left, values)
     values.append(node.val)
-    inOrder(node.right, values)"),
-      #("DFS", "O(n) time · O(h) space", "Check against a range, not against the parent. A node can be larger than its own parent and still break the order, because the constraint comes from an ancestor further up — and that is the whole difficulty. Going left tightens the upper bound, going right the lower one.", "class TreeNode:
+    inOrder(node.right, values)",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Check against a range, not against the parent. A node can be larger than its own parent and still break the order, because the constraint comes from an ancestor further up — and that is the whole difficulty. Going left tightens the upper bound, going right the lower one.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -5077,7 +5701,8 @@ def within(node, low, high):
         return False
     if high is not None and node.val >= high:
         return False
-    return within(node.left, low, node.val) and within(node.right, node.val, high)"),
+    return within(node.left, low, node.val) and within(node.right, node.val, high)",
+      ),
     ],
     check: Check(
       signature: "class TreeNode:
@@ -5157,7 +5782,11 @@ __case__(\"isValidBST([2,2]) -- equal values are not allowed\", False, isValidBS
 pub fn nc147_kth_smallest_bst() -> Embedded {
   Embedded(
     solutions: [
-      #("Subtree Counting", "O(n·h) time · O(h) space", "Count the left subtree and decide which way to go — fewer than k on the left means the answer is this node or to its right. It descends one path instead of walking in order, and it is the version that adapts when the tree stores its own subtree sizes, which turns the whole thing into O(depth).", "class TreeNode:
+      #(
+        "Subtree Counting",
+        "O(n·h) time · O(h) space",
+        "Count the left subtree and decide which way to go — fewer than k on the left means the answer is this node or to its right. It descends one path instead of walking in order, and it is the version that adapts when the tree stores its own subtree sizes, which turns the whole thing into O(depth).",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -5184,8 +5813,13 @@ def kthSmallest(root, k):
 
 
 def size(node):
-    return 0 if node is None else 1 + size(node.left) + size(node.right)"),
-      #("Iterative In-Order", "O(h+k) time · O(h) space", "An in-order walk of a search tree visits the values in order, so the answer is the kth thing it reaches. Stopping there is the point: the tree below the kth value is never touched, which is what separates this from sorting everything.", "class TreeNode:
+    return 0 if node is None else 1 + size(node.left) + size(node.right)",
+      ),
+      #(
+        "Iterative In-Order",
+        "O(h+k) time · O(h) space",
+        "An in-order walk of a search tree visits the values in order, so the answer is the kth thing it reaches. Stopping there is the point: the tree below the kth value is never touched, which is what separates this from sorting everything.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -5208,7 +5842,8 @@ def kthSmallest(root, k):
         if k == 0:
             return node.val
         node = node.right
-    return -1"),
+    return -1",
+      ),
     ],
     check: Check(
       signature: "class TreeNode:
@@ -5284,7 +5919,11 @@ __case__(\"kthSmallest([7], 1)\", 7, kthSmallest(__build__([7]), 1))",
 pub fn nc148_build_tree_preorder_inorder() -> Embedded {
   Embedded(
     solutions: [
-      #("Recursion", "O(n²) time · O(n²) space", "Pre-order names the root; in-order says how much of the rest belongs to each side. Neither traversal alone determines a tree, and this is precisely why together they do — the split point found in the in-order list is the size of the left subtree, which is what carves up the pre-order list too.", "class TreeNode:
+      #(
+        "Recursion",
+        "O(n²) time · O(n²) space",
+        "Pre-order names the root; in-order says how much of the rest belongs to each side. Neither traversal alone determines a tree, and this is precisely why together they do — the split point found in the in-order list is the size of the left subtree, which is what carves up the pre-order list too.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -5305,10 +5944,15 @@ def buildTree(preorder, inorder):
         root,
         buildTree(preorder[1 : split + 1], inorder[:split]),
         buildTree(preorder[split + 1 :], inorder[split + 1 :]),
-    )"),
-      #("Hash Map", "O(n) time · O(n) space", "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+    )",
+      ),
+      #(
+        "Hash Map",
+        "O(n) time · O(n) space",
+        "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
 
-The same construction without slicing anything: a map from value to its in-order position, plus a low and a high bound saying which slice each call owns. Building the map once turns the repeated search for the root — the hidden O(n) inside the slicing version — into a lookup.", "class TreeNode:
+The same construction without slicing anything: a map from value to its in-order position, plus a low and a high bound saying which slice each call owns. Building the map once turns the repeated search for the root — the hidden O(n) inside the slicing version — into a lookup.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -5334,7 +5978,8 @@ def take(preorder, at, places, low, high):
         root,
         take(preorder, at, places, low, split - 1),
         take(preorder, at, places, split + 1, high),
-    )"),
+    )",
+      ),
     ],
     check: Check(
       signature: "class TreeNode:
@@ -5408,7 +6053,11 @@ __case__(\"buildTree([1,2,3], [1,2,3]) -- leaning right\", [1, None, 2, None, 3]
 pub fn nc149_max_path_sum() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²) time · O(n) space", "Every path through every node, measured outright: for each node, take the best downward run on each side and add them. It recomputes those runs from scratch at every node, so it is O(n²) on a spindly tree — the cost of asking the two questions separately instead of returning both from one walk.", "class TreeNode:
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "Every path through every node, measured outright: for each node, take the best downward run on each side and add them. It recomputes those runs from scratch at every node, so it is O(n²) on a spindly tree — the cost of asking the two questions separately instead of returning both from one walk.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -5435,8 +6084,13 @@ def candidates(node):
 def downwards(node):
     if node is None:
         return 0
-    return node.val + max(downwards(node.left), downwards(node.right), 0)"),
-      #("DFS", "O(n) time · O(h) space", "Two different quantities, which is the whole trick. What a node *returns* is the best path that can continue upwards, so at most one of its children. What it *records* is the best path through it, which may use both. A negative branch is dropped rather than added, because a path is allowed to stop. Same shape as [[nc138_diameter_of_binary_tree]].", "class TreeNode:
+    return node.val + max(downwards(node.left), downwards(node.right), 0)",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Two different quantities, which is the whole trick. What a node *returns* is the best path that can continue upwards, so at most one of its children. What it *records* is the best path through it, which may use both. A negative branch is dropped rather than added, because a path is allowed to stop. Same shape as [[nc138_diameter_of_binary_tree]].",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -5463,7 +6117,8 @@ def walk(node):
     return (
         node.val + max(leftGain, rightGain),
         max(node.val + leftGain + rightGain, leftBest, rightBest),
-    )"),
+    )",
+      ),
     ],
     check: Check(
       signature: "class TreeNode:
@@ -5542,7 +6197,11 @@ __case__(\"maxPathSum([0])\", 0, maxPathSum(__build__([0])))",
 pub fn nc14_character_replacement() -> Embedded {
   Embedded(
     solutions: [
-      #("Per-Letter Window", "O(26·n) time · O(1) space", "One sweep per letter, asking a much simpler question each time: how long a window can I hold if *this* is the letter I keep? No running frequency map and no max-count bookkeeping — 26 easy passes instead of one subtle one.", "ALPHABET = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\"
+      #(
+        "Per-Letter Window",
+        "O(26·n) time · O(1) space",
+        "One sweep per letter, asking a much simpler question each time: how long a window can I hold if *this* is the letter I keep? No running frequency map and no max-count bookkeeping — 26 easy passes instead of one subtle one.",
+        "ALPHABET = \"ABCDEFGHIJKLMNOPQRSTUVWXYZ\"
 
 def characterReplacement(s, k):
     longest = 0
@@ -5559,8 +6218,13 @@ def characterReplacement(s, k):
                 left += 1
             longest = max(longest, right - left + 1)
 
-    return longest"),
-      #("Sliding Window", "O(n) time · O(1) space", "A window can be made uniform with k changes when its size minus its most-frequent-character count is at most k. Grow the right edge, shrink from the left when that breaks, and the biggest valid window is the answer.", "def characterReplacement(s, k):
+    return longest",
+      ),
+      #(
+        "Sliding Window",
+        "O(n) time · O(1) space",
+        "A window can be made uniform with k changes when its size minus its most-frequent-character count is at most k. Grow the right edge, shrink from the left when that breaks, and the biggest valid window is the answer.",
+        "def characterReplacement(s, k):
     count = {}
     left = 0
     max_count = 0
@@ -5576,7 +6240,8 @@ def characterReplacement(s, k):
 
         longest = max(longest, right - left + 1)
 
-    return longest"),
+    return longest",
+      ),
     ],
     check: Check(
       signature: "def characterReplacement(s, k):",
@@ -5601,7 +6266,11 @@ __case__(\"characterReplacement('AAAA', 0)\", 4, characterReplacement(\"AAAA\", 
 pub fn nc150_serialize_deserialize() -> Embedded {
   Embedded(
     solutions: [
-      #("Post-Order DFS", "O(n) time · O(n) space", "Post-order instead of pre-order, still with a marker for every empty child. The root is then the *last* token, so the reader works backwards — and reading backwards means taking the right subtree before the left. The format is what decides the parse direction, and nothing else about the two versions differs.", "class TreeNode:
+      #(
+        "Post-Order DFS",
+        "O(n) time · O(n) space",
+        "Post-order instead of pre-order, still with a marker for every empty child. The root is then the *last* token, so the reader works backwards — and reading backwards means taking the right subtree before the left. The format is what decides the parse direction, and nothing else about the two versions differs.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -5640,8 +6309,13 @@ def read(parts, at):
     node = TreeNode(int(token))
     node.right = read(parts, at)
     node.left = read(parts, at)
-    return node"),
-      #("Pre-Order DFS", "O(n) time · O(n) space", "Pre-order with a marker for every empty child. Recording the empties is what makes the format unambiguous — a pre-order list of values alone matches many different trees — and it is also what lets the reader work with no length information at all: it stops as soon as it has consumed a whole subtree.", "class TreeNode:
+    return node",
+      ),
+      #(
+        "Pre-Order DFS",
+        "O(n) time · O(n) space",
+        "Pre-order with a marker for every empty child. Recording the empties is what makes the format unambiguous — a pre-order list of values alone matches many different trees — and it is also what lets the reader work with no length information at all: it stops as soon as it has consumed a whole subtree.",
+        "class TreeNode:
     def __init__(self, val=0, left=None, right=None):
         self.val = val
         self.left = left
@@ -5680,7 +6354,8 @@ def read(parts, at):
     node = TreeNode(int(token))
     node.left = read(parts, at)
     node.right = read(parts, at)
-    return node"),
+    return node",
+      ),
     ],
     check: Check(
       signature: "class TreeNode:
@@ -5773,7 +6448,11 @@ __case__(\"deserialize(serialize([-1,-2,-3])) -- negatives survive\", [-1, -2, -
 pub fn nc15_permutation_in_string() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n·m log m) time · O(m) space", "Every window of the right length, sorted and compared against the sorted needle. Slower than sliding counts, but there is no incremental state to get wrong: the whole method is \"is this window an anagram?\".", "def checkInclusion(s1, s2):
+      #(
+        "Brute Force",
+        "O(n·m log m) time · O(m) space",
+        "Every window of the right length, sorted and compared against the sorted needle. Slower than sliding counts, but there is no incremental state to get wrong: the whole method is \"is this window an anagram?\".",
+        "def checkInclusion(s1, s2):
     if len(s1) > len(s2):
         return False
 
@@ -5784,8 +6463,13 @@ pub fn nc15_permutation_in_string() -> Embedded {
         if sorted(s2[start:start + size]) == needle:
             return True
 
-    return False"),
-      #("Sliding Window", "O(26·n) time · O(1) space", "A permutation of s1 is any window of length |s1| in s2 with identical character counts. Slide one character at a time, adding the entering character and removing the leaving one, so each step is O(1) rather than a recount.", "from collections import Counter
+    return False",
+      ),
+      #(
+        "Sliding Window",
+        "O(26·n) time · O(1) space",
+        "A permutation of s1 is any window of length |s1| in s2 with identical character counts. Slide one character at a time, adding the entering character and removing the leaving one, so each step is O(1) rather than a recount.",
+        "from collections import Counter
 
 def checkInclusion(s1, s2):
     if len(s1) > len(s2):
@@ -5806,7 +6490,8 @@ def checkInclusion(s1, s2):
         if window == need:
             return True
 
-    return False"),
+    return False",
+      ),
     ],
     check: Check(
       signature: "def checkInclusion(s1, s2):",
@@ -5831,13 +6516,22 @@ __case__(\"checkInclusion('adc', 'dcda')\", True, checkInclusion(\"adc\", \"dcda
 pub fn nc16_valid_parentheses() -> Embedded {
   Embedded(
     solutions: [
-      #("Nifty Python · Replace", "O(n²) time · O(n) space", "No stack: strip every matched pair, over and over, until nothing more can go. Whatever survives is unmatched. It is also why \"([)]\" fails — neither pair is ever adjacent.", "def isValid(s):
+      #(
+        "Nifty Python · Replace",
+        "O(n²) time · O(n) space",
+        "No stack: strip every matched pair, over and over, until nothing more can go. Whatever survives is unmatched. It is also why \"([)]\" fails — neither pair is ever adjacent.",
+        "def isValid(s):
     previous = None
     while previous != s:
         previous = s
         s = s.replace(\"()\", \"\").replace(\"[]\", \"\").replace(\"{}\", \"\")
-    return s == \"\""),
-      #("Stack", "O(n) time · O(n) space", "On every opener, push the closer you expect; on every closer, it must match the top. Valid means never mismatching and finishing with an empty stack — both halves are needed.", "def isValid(s):
+    return s == \"\"",
+      ),
+      #(
+        "Stack",
+        "O(n) time · O(n) space",
+        "On every opener, push the closer you expect; on every closer, it must match the top. Valid means never mismatching and finishing with an empty stack — both halves are needed.",
+        "def isValid(s):
     pairs = {')': '(', ']': '[', '}': '{'}
     stack = []
 
@@ -5848,7 +6542,8 @@ pub fn nc16_valid_parentheses() -> Embedded {
         else:
             stack.append(char)
 
-    return not stack"),
+    return not stack",
+      ),
     ],
     check: Check(
       signature: "def isValid(s):",
@@ -5875,7 +6570,11 @@ __case__(\"isValid('(')\", False, isValid(\"(\"))",
 pub fn nc17_min_stack() -> Embedded {
   Embedded(
     solutions: [
-      #("Pair Stack", "O(1) per operation · O(n) space", "Each entry carries the minimum of everything at or below it, so getMin is a peek. One structure instead of two, at the cost of a second number per value.", "class MinStack:
+      #(
+        "Pair Stack",
+        "O(1) per operation · O(n) space",
+        "Each entry carries the minimum of everything at or below it, so getMin is a peek. One structure instead of two, at the cost of a second number per value.",
+        "class MinStack:
     # Each entry carries the minimum of everything at or below it, so getMin is
     # a peek. One list instead of two, at the cost of storing a second int per
     # value.
@@ -5894,8 +6593,13 @@ pub fn nc17_min_stack() -> Embedded {
         return self.entries[-1][0]
 
     def getMin(self):
-        return self.entries[-1][1]"),
-      #("Two Stacks", "O(1) per operation · O(n) space", "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.", "class MinStack:
+        return self.entries[-1][1]",
+      ),
+      #(
+        "Two Stacks",
+        "O(1) per operation · O(n) space",
+        "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.",
+        "class MinStack:
     def __init__(self):
         self.stack = []
         self.mins = []
@@ -5913,7 +6617,8 @@ pub fn nc17_min_stack() -> Embedded {
         return self.stack[-1]
 
     def getMin(self):
-        return self.mins[-1]"),
+        return self.mins[-1]",
+      ),
     ],
     check: Check(
       signature: "class MinStack:
@@ -5957,9 +6662,13 @@ __case__(\"getMin() after pop()\", -2, __stack__.getMin())",
 pub fn nc18_daily_temperatures() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-For each day, scan forward until it gets warmer. O(n^2) — the monotonic stack exists only to avoid rescanning the same cold stretch once per day.", "def dailyTemperatures(temperatures):
+For each day, scan forward until it gets warmer. O(n^2) — the monotonic stack exists only to avoid rescanning the same cold stretch once per day.",
+        "def dailyTemperatures(temperatures):
     result = []
     for i, temp in enumerate(temperatures):
         days = 0
@@ -5968,8 +6677,13 @@ For each day, scan forward until it gets warmer. O(n^2) — the monotonic stack 
                 days = j - i
                 break
         result.append(days)
-    return result"),
-      #("Monotonic Stack", "O(n) time · O(n) space", "A stack of days still waiting for something warmer, kept in decreasing temperature order. Each new day resolves and pops every colder day below it, so every day is pushed once and popped once — O(n).", "def dailyTemperatures(temperatures):
+    return result",
+      ),
+      #(
+        "Monotonic Stack",
+        "O(n) time · O(n) space",
+        "A stack of days still waiting for something warmer, kept in decreasing temperature order. Each new day resolves and pops every colder day below it, so every day is pushed once and popped once — O(n).",
+        "def dailyTemperatures(temperatures):
     result = [0] * len(temperatures)
     stack = []  # (index, temp) — monotonically decreasing
 
@@ -5979,7 +6693,8 @@ For each day, scan forward until it gets warmer. O(n^2) — the monotonic stack 
             result[prev_index] = i - prev_index
         stack.append((i, temp))
 
-    return result"),
+    return result",
+      ),
     ],
     check: Check(
       signature: "def dailyTemperatures(temperatures):",
@@ -6004,9 +6719,13 @@ __case__(\"dailyTemperatures([30, 30, 30])\", [0, 0, 0], dailyTemperatures([30, 
 pub fn nc19_binary_search() -> Embedded {
   Embedded(
     solutions: [
-      #("Recursive Binary Search", "O(log n) time · O(log n) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+      #(
+        "Recursive Binary Search",
+        "O(log n) time · O(log n) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-The same halving as recursion. The bounds are arguments rather than mutated locals, which makes each step's invariant easier to see.", "def search(nums, target):
+The same halving as recursion. The bounds are arguments rather than mutated locals, which makes each step's invariant easier to see.",
+        "def search(nums, target):
     return halve(nums, target, 0, len(nums) - 1)
 
 def halve(nums, target, lo, hi):
@@ -6018,10 +6737,15 @@ def halve(nums, target, lo, hi):
         return mid
     if nums[mid] < target:
         return halve(nums, target, mid + 1, hi)
-    return halve(nums, target, lo, mid - 1)"),
-      #("Binary Search", "O(log n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+    return halve(nums, target, lo, mid - 1)",
+      ),
+      #(
+        "Binary Search",
+        "O(log n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-Worth writing until the bounds are automatic: this is the search every rotated-array problem is built on top of.", "def search(nums, target):
+Worth writing until the bounds are automatic: this is the search every rotated-array problem is built on top of.",
+        "def search(nums, target):
     left, right = 0, len(nums) - 1
 
     while left <= right:
@@ -6033,7 +6757,8 @@ Worth writing until the bounds are automatic: this is the search every rotated-a
         else:
             right = mid - 1
 
-    return -1"),
+    return -1",
+      ),
     ],
     check: Check(
       signature: "def search(nums, target):",
@@ -6059,16 +6784,25 @@ __case__(\"search([], 1)\", -1, search([], 1))",
 pub fn nc20_find_min_rotated() -> Embedded {
   Embedded(
     solutions: [
-      #("Linear Scan", "O(n) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Linear Scan",
+        "O(n) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-O(n) rather than O(log n), but it makes the shape obvious: a rotated sorted array drops in value exactly once, and that drop is the minimum. No drop means it was never rotated, so the head wins.", "def findMin(nums):
+O(n) rather than O(log n), but it makes the shape obvious: a rotated sorted array drops in value exactly once, and that drop is the minimum. No drop means it was never rotated, so the head wins.",
+        "def findMin(nums):
     for i in range(1, len(nums)):
         if nums[i] < nums[i - 1]:
             return nums[i]
-    return nums[0]"),
-      #("Binary Search", "O(log n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+    return nums[0]",
+      ),
+      #(
+        "Binary Search",
+        "O(log n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-The minimum is the one place order breaks. Compare the midpoint against a boundary: a segment that still looks sorted cannot hold the break, so the answer is in the other half.", "def findMin(nums):
+The minimum is the one place order breaks. Compare the midpoint against a boundary: a segment that still looks sorted cannot hold the break, so the answer is in the other half.",
+        "def findMin(nums):
     left, right = 0, len(nums) - 1
 
     while left < right:
@@ -6078,7 +6812,8 @@ The minimum is the one place order breaks. Compare the midpoint against a bounda
         else:
             right = mid
 
-    return nums[left]"),
+    return nums[left]",
+      ),
     ],
     check: Check(
       signature: "def findMin(nums):",
@@ -6104,9 +6839,13 @@ __case__(\"findMin([2, 1])\", 1, findMin([2, 1]))",
 pub fn nc21_search_rotated() -> Embedded {
   Embedded(
     solutions: [
-      #("Pivot + Binary Search", "O(n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+      #(
+        "Pivot + Binary Search",
+        "O(n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-Two plain steps instead of one clever one: find where the rotation wrapped, which leaves two ordinary sorted runs, then search each. Nothing has to reason mid-search about which half is sorted.", "def search(nums, target):
+Two plain steps instead of one clever one: find where the rotation wrapped, which leaves two ordinary sorted runs, then search each. Nothing has to reason mid-search about which half is sorted.",
+        "def search(nums, target):
     pivot = rotationPoint(nums)
     found = binarySearch(nums, target, 0, pivot - 1)
     if found != -1:
@@ -6128,10 +6867,15 @@ def binarySearch(nums, target, lo, hi):
             lo = mid + 1
         else:
             hi = mid - 1
-    return -1"),
-      #("Binary Search", "O(log n) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+    return -1",
+      ),
+      #(
+        "Binary Search",
+        "O(log n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-The twist: after a rotation, one half around the midpoint is always sorted. Work out which, then use its endpoints to decide whether the target lies inside it.", "def search(nums, target):
+The twist: after a rotation, one half around the midpoint is always sorted. Work out which, then use its endpoints to decide whether the target lies inside it.",
+        "def search(nums, target):
     left, right = 0, len(nums) - 1
 
     while left <= right:
@@ -6150,7 +6894,8 @@ The twist: after a rotation, one half around the midpoint is always sorted. Work
             else:
                 right = mid - 1
 
-    return -1"),
+    return -1",
+      ),
     ],
     check: Check(
       signature: "def search(nums, target):",
@@ -6176,7 +6921,11 @@ __case__(\"search([4, 5, 6, 7, 0, 1, 2], 6)\", 2, search([4, 5, 6, 7, 0, 1, 2], 
 pub fn nc22_encode_decode() -> Embedded {
   Embedded(
     solutions: [
-      #("Separator + Escaping", "O(n) time · O(n) space", "The other honest answer: pick a separator and make it safe by escaping it, and escaping the escape. Note the leading separator rather than a join — without it, [] and [\"\"] both encode to the empty string, which is the case that catches most first attempts.", "
+      #(
+        "Separator + Escaping",
+        "O(n) time · O(n) space",
+        "The other honest answer: pick a separator and make it safe by escaping it, and escaping the escape. Note the leading separator rather than a join — without it, [] and [\"\"] both encode to the empty string, which is the case that catches most first attempts.",
+        "
 SEPARATOR = \"|\"
 ESCAPE = \"\\\\\"
 
@@ -6208,8 +6957,13 @@ def decode(s):
             current.append(s[i])
             i += 1
     out.append(\"\".join(current))
-    return out"),
-      #("Length Prefix", "O(n) time · O(n) space", "Length-prefix each string: its length, a delimiter, then the string itself. Decoding reads a number and then takes exactly that many characters, so nothing inside a payload can ever be mistaken for structure — the delimiter appearing in the data is harmless, because the decoder was never scanning for it.", "
+    return out",
+      ),
+      #(
+        "Length Prefix",
+        "O(n) time · O(n) space",
+        "Length-prefix each string: its length, a delimiter, then the string itself. Decoding reads a number and then takes exactly that many characters, so nothing inside a payload can ever be mistaken for structure — the delimiter appearing in the data is harmless, because the decoder was never scanning for it.",
+        "
 def encode(strs):
     return \"\".join(\"%d#%s\" % (len(s), s) for s in strs)
 
@@ -6223,7 +6977,8 @@ def decode(s):
         start = hash_at + 1
         out.append(s[start:start + length])
         i = start + length
-    return out"),
+    return out",
+      ),
     ],
     check: Check(
       signature: "def encode(strs):
@@ -6259,7 +7014,11 @@ __case__(\"decode(encode(['\\\\\\\\', '|', '#']))\", [\"\\\\\", \"|\", \"#\"], _
 pub fn nc23_valid_sudoku() -> Embedded {
   Embedded(
     solutions: [
-      #("Check Each Unit", "O(9²) time · O(9²) space", "Turn the board into the 27 things being constrained — nine rows, nine columns, nine boxes — and the problem collapses to \"does any of these contain a repeat?\". More passes than the signature set, but the constraint is stated once and the box arithmetic is confined to building the units.", "def isValidSudoku(board):
+      #(
+        "Check Each Unit",
+        "O(9²) time · O(9²) space",
+        "Turn the board into the 27 things being constrained — nine rows, nine columns, nine boxes — and the problem collapses to \"does any of these contain a repeat?\". More passes than the signature set, but the constraint is stated once and the box arithmetic is confined to building the units.",
+        "def isValidSudoku(board):
     return all(noDuplicates(unit) for unit in units(board))
 
 
@@ -6276,8 +7035,13 @@ def units(board):
 
 def noDuplicates(unit):
     filled = [value for value in unit if value != \".\"]
-    return len(filled) == len(set(filled))"),
-      #("One Pass + Seen Set", "O(9²) time · O(9²) space", "One pass, one set. Each filled cell contributes three signatures — this value in this row, in this column, in this box — and the first one already present is the duplicate. Nothing has to be gathered up first, and the scan stops the moment it fails.", "def isValidSudoku(board):
+    return len(filled) == len(set(filled))",
+      ),
+      #(
+        "One Pass + Seen Set",
+        "O(9²) time · O(9²) space",
+        "One pass, one set. Each filled cell contributes three signatures — this value in this row, in this column, in this box — and the first one already present is the duplicate. Nothing has to be gathered up first, and the scan stops the moment it fails.",
+        "def isValidSudoku(board):
     seen = set()
     for r, row in enumerate(board):
         for c, value in enumerate(row):
@@ -6291,7 +7055,8 @@ def noDuplicates(unit):
             if any(key in seen for key in keys):
                 return False
             seen.update(keys)
-    return True"),
+    return True",
+      ),
     ],
     check: Check(
       signature: "def isValidSudoku(board):",
@@ -6340,14 +7105,23 @@ __case__(\"isValidSudoku(empty board)\", True, isValidSudoku([[\".\"] * 9 for _ 
 pub fn nc24_trapping_rain_water() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²) time · O(1) space", "Water above a bar rises to the shorter of the tallest wall on each side. Compute both walls from scratch for every bar — a full scan left and right each time is what costs the square.", "def trap(height):
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "Water above a bar rises to the shorter of the tallest wall on each side. Compute both walls from scratch for every bar — a full scan left and right each time is what costs the square.",
+        "def trap(height):
     total = 0
     for i in range(len(height)):
         left_max = max(height[: i + 1])
         right_max = max(height[i:])
         total += min(left_max, right_max) - height[i]
-    return total"),
-      #("Prefix Maxima", "O(n) time · O(n) space", "State the definition and compute it. Water above a position is min(tallest to its left, tallest to its right) minus its own height, so build both running maxima and sum the differences. Two extra arrays against the two-pointer version's none, but the formula is right there in the code.", "def trap(height):
+    return total",
+      ),
+      #(
+        "Prefix Maxima",
+        "O(n) time · O(n) space",
+        "State the definition and compute it. Water above a position is min(tallest to its left, tallest to its right) minus its own height, so build both running maxima and sum the differences. Two extra arrays against the two-pointer version's none, but the formula is right there in the code.",
+        "def trap(height):
     left = []
     best = 0
     for h in height:
@@ -6360,8 +7134,13 @@ pub fn nc24_trapping_rain_water() -> Embedded {
         best = max(best, height[i])
         right[i] = best
 
-    return sum(min(left[i], right[i]) - height[i] for i in range(len(height)))"),
-      #("Two Pointers", "O(n) time · O(1) space", "Two pointers, moving whichever side is shorter. The trick is that the shorter side alone decides how much water sits above it: whatever is on the far side is at least as tall, so the running maximum behind the short pointer is the water level, and there is no need to know the far maximum exactly. One pass, no extra arrays.", "def trap(height):
+    return sum(min(left[i], right[i]) - height[i] for i in range(len(height)))",
+      ),
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Two pointers, moving whichever side is shorter. The trick is that the shorter side alone decides how much water sits above it: whatever is on the far side is at least as tall, so the running maximum behind the short pointer is the water level, and there is no need to know the far maximum exactly. One pass, no extra arrays.",
+        "def trap(height):
     left, right = 0, len(height) - 1
     left_max = right_max = total = 0
 
@@ -6375,7 +7154,8 @@ pub fn nc24_trapping_rain_water() -> Embedded {
             total += right_max - height[right]
             right -= 1
 
-    return total"),
+    return total",
+      ),
     ],
     check: Check(
       signature: "def trap(height):",
@@ -6403,7 +7183,11 @@ __case__(\"trap([5, 4, 3, 2, 1])\", 0, trap([5, 4, 3, 2, 1]))",
 pub fn nc25_min_window_substring() -> Embedded {
   Embedded(
     solutions: [
-      #("Filtered Sliding Window", "O(n+m) time · O(n) space", "Two changes from the counting version, both worth knowing. First, throw away every position whose character is not in the needle: for a long haystack and a short needle, that is nearly the whole walk gone. Second, track how many distinct requirements are fully covered rather than how many characters remain — the counter only moves when a count crosses its requirement.", "def minWindow(s, t):
+      #(
+        "Filtered Sliding Window",
+        "O(n+m) time · O(n) space",
+        "Two changes from the counting version, both worth knowing. First, throw away every position whose character is not in the needle: for a long haystack and a short needle, that is nearly the whole walk gone. Second, track how many distinct requirements are fully covered rather than how many characters remain — the counter only moves when a count crosses its requirement.",
+        "def minWindow(s, t):
     if not s or not t:
         return \"\"
 
@@ -6436,8 +7220,13 @@ pub fn nc25_min_window_substring() -> Embedded {
                 satisfied -= 1
             left += 1
 
-    return s[best_start:best_start + best_length]"),
-      #("Sliding Window", "O(n+m) time · O(1) space", "Count what is still missing, not what is present. Every character the window takes in decrements its requirement, and only a character that was actually still needed moves the counter — so \"missing == 0\" is a single integer test rather than a map comparison. Once the window is valid, shrink from the left until it stops being valid, recording the best as you go.", "def minWindow(s, t):
+    return s[best_start:best_start + best_length]",
+      ),
+      #(
+        "Sliding Window",
+        "O(n+m) time · O(1) space",
+        "Count what is still missing, not what is present. Every character the window takes in decrements its requirement, and only a character that was actually still needed moves the counter — so \"missing == 0\" is a single integer test rather than a map comparison. Once the window is valid, shrink from the left until it stops being valid, recording the best as you go.",
+        "def minWindow(s, t):
     if not s or not t:
         return \"\"
 
@@ -6462,7 +7251,8 @@ pub fn nc25_min_window_substring() -> Embedded {
                 missing += 1
             left += 1
 
-    return s[best_start:best_start + best_length]"),
+    return s[best_start:best_start + best_length]",
+      ),
     ],
     check: Check(
       signature: "def minWindow(s, t):",
@@ -6490,13 +7280,22 @@ __case__(\"minWindow('aaflslflsldkalskaaa', 'aaa')\", \"aaa\", minWindow(\"aafls
 pub fn nc26_sliding_window_maximum() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n·k) time · O(k) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n·k) time · O(k) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every window, maximised. O(n·k) rather than O(n), which is exactly the rescanning the other two variants exist to avoid.", "def maxSlidingWindow(nums, k):
+Every window, maximised. O(n·k) rather than O(n), which is exactly the rescanning the other two variants exist to avoid.",
+        "def maxSlidingWindow(nums, k):
     if k <= 0 or len(nums) < k:
         return []
-    return [max(nums[i:i + k]) for i in range(len(nums) - k + 1)]"),
-      #("Monotonic Deque", "O(n) time · O(k) space", "The classic answer. Hold the indices whose value could still be the maximum, kept in decreasing order: a new value pops every smaller one off the back, because they can never win again while it is in the window. The front is always the answer, and the front leaves once it falls out of range. Each index is pushed and popped once.", "from collections import deque
+    return [max(nums[i:i + k]) for i in range(len(nums) - k + 1)]",
+      ),
+      #(
+        "Monotonic Deque",
+        "O(n) time · O(k) space",
+        "The classic answer. Hold the indices whose value could still be the maximum, kept in decreasing order: a new value pops every smaller one off the back, because they can never win again while it is in the window. The front is always the answer, and the front leaves once it falls out of range. Each index is pushed and popped once.",
+        "from collections import deque
 
 
 def maxSlidingWindow(nums, k):
@@ -6515,8 +7314,13 @@ def maxSlidingWindow(nums, k):
         if i >= k - 1:
             out.append(nums[window[0]])
 
-    return out"),
-      #("Prefix & Suffix Maxima", "O(n) time · O(n) space", "Cut the array into blocks of k and pre-compute, within each block, the running maximum forwards and backwards. Any window of width k straddles at most one block boundary, so it is exactly a suffix of one block and a prefix of the next — one max from each, and the whole thing is O(n) with no queue at all.", "def maxSlidingWindow(nums, k):
+    return out",
+      ),
+      #(
+        "Prefix & Suffix Maxima",
+        "O(n) time · O(n) space",
+        "Cut the array into blocks of k and pre-compute, within each block, the running maximum forwards and backwards. Any window of width k straddles at most one block boundary, so it is exactly a suffix of one block and a prefix of the next — one max from each, and the whole thing is O(n) with no queue at all.",
+        "def maxSlidingWindow(nums, k):
     if k <= 0 or len(nums) < k:
         return []
 
@@ -6531,7 +7335,8 @@ def maxSlidingWindow(nums, k):
 
     # Every window of width k straddles at most one block boundary, so it is
     # covered by a suffix of one block and a prefix of the next.
-    return [max(right[i], left[i + k - 1]) for i in range(n - k + 1)]"),
+    return [max(right[i], left[i + k - 1]) for i in range(n - k + 1)]",
+      ),
     ],
     check: Check(
       signature: "def maxSlidingWindow(nums, k):",
@@ -6559,7 +7364,11 @@ __case__(\"maxSlidingWindow([-7, -8, 7, 5, 7, 1, 6, 0], 4)\", [7, 7, 7, 7, 7], m
 pub fn nc27_eval_rpn() -> Embedded {
   Embedded(
     solutions: [
-      #("Recursion", "O(n) time · O(n) space", "The same grammar, read as a recursive descent instead of a loop. The last token is the outermost operator; each operator asks for its right operand first, because that is what sits nearer the end. What the stack version stores in a list, this one stores in the call stack.", "OPERATORS = \"+-*/\"
+      #(
+        "Recursion",
+        "O(n) time · O(n) space",
+        "The same grammar, read as a recursive descent instead of a loop. The last token is the outermost operator; each operator asks for its right operand first, because that is what sits nearer the end. What the stack version stores in a list, this one stores in the call stack.",
+        "OPERATORS = \"+-*/\"
 
 
 def evalRPN(tokens):
@@ -6587,8 +7396,13 @@ def apply(operator, a, b):
     if operator == \"*\":
         return a * b
     quotient = abs(a) // abs(b)
-    return -quotient if (a < 0) != (b < 0) else quotient"),
-      #("Stack", "O(n) time · O(n) space", "A stack is the whole evaluator. Numbers go on; an operator takes the top two off and puts its result back. The one detail worth remembering is the order — the value popped first is the right operand — and that the division truncates towards zero, which is not what a flooring division does for negatives.", "OPERATORS = \"+-*/\"
+    return -quotient if (a < 0) != (b < 0) else quotient",
+      ),
+      #(
+        "Stack",
+        "O(n) time · O(n) space",
+        "A stack is the whole evaluator. Numbers go on; an operator takes the top two off and puts its result back. The one detail worth remembering is the order — the value popped first is the right operand — and that the division truncates towards zero, which is not what a flooring division does for negatives.",
+        "OPERATORS = \"+-*/\"
 
 
 def evalRPN(tokens):
@@ -6612,7 +7426,8 @@ def apply(operator, a, b):
         return a * b
     # // floors, so -3 // 2 is -2; the problem wants truncation towards zero.
     quotient = abs(a) // abs(b)
-    return -quotient if (a < 0) != (b < 0) else quotient"),
+    return -quotient if (a < 0) != (b < 0) else quotient",
+      ),
     ],
     check: Check(
       signature: "def evalRPN(tokens):
@@ -6644,7 +7459,11 @@ __case__(\"evalRPN(the long one)\", 22, evalRPN([\"10\", \"6\", \"9\", \"3\", \"
 pub fn nc28_generate_parentheses() -> Embedded {
   Embedded(
     solutions: [
-      #("Divide & Conquer", "O(4ⁿ/√n) time · O(4ⁿ/√n) space", "Structure instead of search. Every non-empty balanced string is \"(\" + A + \")\" + B for exactly one split: A is what the first bracket encloses, B is what follows it. Enumerating the splits enumerates the strings, and there is no validity rule anywhere — the shape of the recursion is the rule.", "def generateParenthesis(n):
+      #(
+        "Divide & Conquer",
+        "O(4ⁿ/√n) time · O(4ⁿ/√n) space",
+        "Structure instead of search. Every non-empty balanced string is \"(\" + A + \")\" + B for exactly one split: A is what the first bracket encloses, B is what follows it. Enumerating the splits enumerates the strings, and there is no validity rule anywhere — the shape of the recursion is the rule.",
+        "def generateParenthesis(n):
     return compose(n)
 
 
@@ -6659,8 +7478,13 @@ def compose(n):
         for inner in range(n)
         for a in compose(inner)
         for b in compose(n - 1 - inner)
-    ]"),
-      #("Backtracking", "O(4ⁿ/√n) time · O(n) space", "Backtracking with two counters and one rule each: an opener is legal while any are left, a closer only while more are outstanding than openers. Nothing invalid is ever built, so there is no filtering step — every leaf reached with both counters at zero is an answer.", "def generateParenthesis(n):
+    ]",
+      ),
+      #(
+        "Backtracking",
+        "O(4ⁿ/√n) time · O(n) space",
+        "Backtracking with two counters and one rule each: an opener is legal while any are left, a closer only while more are outstanding than openers. Nothing invalid is ever built, so there is no filtering step — every leaf reached with both counters at zero is an answer.",
+        "def generateParenthesis(n):
     out = []
 
     # Two counters, one rule each: an opener is legal while any are left, and a
@@ -6680,7 +7504,8 @@ def compose(n):
             current.pop()
 
     build(n, n, [])
-    return out"),
+    return out",
+      ),
     ],
     check: Check(
       signature: "def generateParenthesis(n):",
@@ -6710,9 +7535,13 @@ __case__(\"generateParenthesis(4) count\", 14, len(__sorted__(4)))",
 pub fn nc29_car_fleet() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-A car leads a fleet exactly when it arrives strictly later than every car ahead of it. Checking that directly needs no sort and no running state — O(n²), and it is the definition the sorted scan is a consequence of.", "def carFleet(target, position, speed):
+A car leads a fleet exactly when it arrives strictly later than every car ahead of it. Checking that directly needs no sort and no running state — O(n²), and it is the definition the sorted scan is a consequence of.",
+        "def carFleet(target, position, speed):
     cars = list(zip(position, speed))
     return sum(1 for car in cars if leads(car, cars, target))
 
@@ -6727,8 +7556,13 @@ def leads(car, cars, target):
         (target - pos) * other_speed > (target - other_pos) * spd
         for other_pos, other_speed in cars
         if other_pos > pos
-    )"),
-      #("Sort + Greedy", "O(n log n) time · O(n) space", "Sort from the front backwards and carry the arrival time of the fleet ahead. A car that would arrive later than that fleet can never catch it, so it starts a new one and becomes the time to beat; anything else merges. Comparing times as distance × speed cross-multiplied keeps the whole thing in integers.", "def carFleet(target, position, speed):
+    )",
+      ),
+      #(
+        "Sort + Greedy",
+        "O(n log n) time · O(n) space",
+        "Sort from the front backwards and carry the arrival time of the fleet ahead. A car that would arrive later than that fleet can never catch it, so it starts a new one and becomes the time to beat; anything else merges. Comparing times as distance × speed cross-multiplied keeps the whole thing in integers.",
+        "def carFleet(target, position, speed):
     cars = sorted(zip(position, speed), reverse=True)
 
     fleets = 0
@@ -6742,7 +7576,8 @@ def leads(car, cars, target):
             fleets += 1
             lead_distance, lead_speed = distance, spd
 
-    return fleets"),
+    return fleets",
+      ),
     ],
     check: Check(
       signature: "def carFleet(target, position, speed):",
@@ -6770,9 +7605,13 @@ __case__(\"carFleet(10, [0, 4, 2], [2, 1, 3])\", 1, carFleet(10, [0, 4, 2], [2, 
 pub fn nc30_largest_rectangle() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every rectangle is some bar taken as far as it will go, so take each bar and walk outwards while the neighbours are at least as tall. O(n²), and it makes plain what the stack is actually computing: the two boundaries where a bar stops fitting.", "def largestRectangleArea(heights):
+Every rectangle is some bar taken as far as it will go, so take each bar and walk outwards while the neighbours are at least as tall. O(n²), and it makes plain what the stack is actually computing: the two boundaries where a bar stops fitting.",
+        "def largestRectangleArea(heights):
     best = 0
 
     for i, h in enumerate(heights):
@@ -6787,8 +7626,13 @@ Every rectangle is some bar taken as far as it will go, so take each bar and wal
             right += 1
         best = max(best, h * (right - left + 1))
 
-    return best"),
-      #("Monotonic Stack", "O(n) time · O(n) space", "A monotonic stack of (starting index, height), heights increasing. A shorter bar arriving means every taller entry can never extend further, so each is closed off and measured — and the earliest position they reached back to becomes the new bar's own start, because it can extend back over all of them. Whatever is left at the end was never cut off, so it runs to the far edge.", "def largestRectangleArea(heights):
+    return best",
+      ),
+      #(
+        "Monotonic Stack",
+        "O(n) time · O(n) space",
+        "A monotonic stack of (starting index, height), heights increasing. A shorter bar arriving means every taller entry can never extend further, so each is closed off and measured — and the earliest position they reached back to becomes the new bar's own start, because it can extend back over all of them. Whatever is left at the end was never cut off, so it runs to the far edge.",
+        "def largestRectangleArea(heights):
     stack = []
     best = 0
 
@@ -6807,7 +7651,8 @@ Every rectangle is some bar taken as far as it will go, so take each bar and wal
     for from_index, tall in stack:
         best = max(best, tall * (len(heights) - from_index))
 
-    return best"),
+    return best",
+      ),
     ],
     check: Check(
       signature: "def largestRectangleArea(heights):",
@@ -6835,7 +7680,11 @@ __case__(\"largestRectangleArea([4, 2, 0, 3, 2, 5])\", 6, largestRectangleArea([
 pub fn nc31_search_2d_matrix() -> Embedded {
   Embedded(
     solutions: [
-      #("Staircase Search", "O(m+n) time · O(1) space", "Start at the top-right corner and every step is forced: a value too big rules out its whole column, a value too small rules out its whole row. O(m + n) rather than O(log mn), but it never uses the fact that the rows do not overlap, so it still works on a matrix that is merely sorted along both axes.", "def searchMatrix(matrix, target):
+      #(
+        "Staircase Search",
+        "O(m+n) time · O(1) space",
+        "Start at the top-right corner and every step is forced: a value too big rules out its whole column, a value too small rules out its whole row. O(m + n) rather than O(log mn), but it never uses the fact that the rows do not overlap, so it still works on a matrix that is merely sorted along both axes.",
+        "def searchMatrix(matrix, target):
     if not matrix or not matrix[0]:
         return False
 
@@ -6852,10 +7701,15 @@ pub fn nc31_search_2d_matrix() -> Embedded {
             column -= 1
         else:
             row += 1
-    return False"),
-      #("Binary Search", "O(log(m·n)) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+    return False",
+      ),
+      #(
+        "Binary Search",
+        "O(log(m·n)) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-Twice: the rows do not overlap, so which row a value could be in is itself a halving question — compare the target against a row's first and last entries — and then the row is an ordinary sorted array.", "def searchMatrix(matrix, target):
+Twice: the rows do not overlap, so which row a value could be in is itself a halving question — compare the target against a row's first and last entries — and then the row is an ordinary sorted array.",
+        "def searchMatrix(matrix, target):
     # The rows are sorted and do not overlap, so the row a value could live in
     # is itself found by halving: compare the target against a row's ends.
     low, high = 0, len(matrix) - 1
@@ -6880,7 +7734,8 @@ def contains(row, target):
             low = mid + 1
         else:
             high = mid - 1
-    return False"),
+    return False",
+      ),
     ],
     check: Check(
       signature: "def searchMatrix(matrix, target):
@@ -6915,9 +7770,13 @@ __case__(\"searchMatrix([[1], [3], [5]], 5)\", True, searchMatrix([[1], [3], [5]
 pub fn nc32_koko_bananas() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n·m) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n·m) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Try 1, then 2, then 3, and stop at the first speed that fits. O(max pile) calls to the same feasibility check the halving version makes O(log max pile) of — worth writing once, because getting the check right is most of the problem.", "def minEatingSpeed(piles, h):
+Try 1, then 2, then 3, and stop at the first speed that fits. O(max pile) calls to the same feasibility check the halving version makes O(log max pile) of — worth writing once, because getting the check right is most of the problem.",
+        "def minEatingSpeed(piles, h):
     highest = max(piles)
     speed = 1
     while speed < highest and hours(piles, speed) > h:
@@ -6926,10 +7785,15 @@ Try 1, then 2, then 3, and stop at the first speed that fits. O(max pile) calls 
 
 
 def hours(piles, speed):
-    return sum((pile + speed - 1) // speed for pile in piles)"),
-      #("Binary Search", "O(n log m) time · O(1) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+    return sum((pile + speed - 1) // speed for pile in piles)",
+      ),
+      #(
+        "Binary Search",
+        "O(n log m) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-The search space is the answer, not the input. What makes it work is that feasibility is monotone: if a speed finishes in time then so does every faster one, so \"the smallest speed that works\" is a boundary to halve towards.", "def minEatingSpeed(piles, h):
+The search space is the answer, not the input. What makes it work is that feasibility is monotone: if a speed finishes in time then so does every faster one, so \"the smallest speed that works\" is a boundary to halve towards.",
+        "def minEatingSpeed(piles, h):
     # The search space is the answer, not the input. Feasibility is monotone --
     # if a speed finishes in time then so does every faster one -- which is
     # exactly the property halving needs.
@@ -6945,7 +7809,8 @@ The search space is the answer, not the input. What makes it work is that feasib
 
 # A pile never shares an hour with another, so each costs ceil(pile / speed).
 def hours(piles, speed):
-    return sum((pile + speed - 1) // speed for pile in piles)"),
+    return sum((pile + speed - 1) // speed for pile in piles)",
+      ),
     ],
     check: Check(
       signature: "def minEatingSpeed(piles, h):
@@ -6978,7 +7843,11 @@ __case__(\"minEatingSpeed([1, 1, 1, 10], 4)\", 10, minEatingSpeed([1, 1, 1, 10],
 pub fn nc33_time_map() -> Embedded {
   Embedded(
     solutions: [
-      #("Linear Scan", "O(n) per operation · O(n) space", "Store newest first and the lookup is the first entry old enough — one `find`, no split arithmetic. O(n) per lookup against the halving version's O(log n), which for a key with a handful of versions is the faster of the two in practice.", "class TimeMap:
+      #(
+        "Linear Scan",
+        "O(n) per operation · O(n) space",
+        "Store newest first and the lookup is the first entry old enough — one `find`, no split arithmetic. O(n) per lookup against the halving version's O(log n), which for a key with a handful of versions is the faster of the two in practice.",
+        "class TimeMap:
     def __init__(self):
         self.store = {}
 
@@ -6992,10 +7861,15 @@ pub fn nc33_time_map() -> Embedded {
         for stamp, value in self.store.get(key, []):
             if stamp <= timestamp:
                 return value
-        return \"\""),
-      #("Binary Search", "O(log n) per get · O(n) space", "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+        return \"\"",
+      ),
+      #(
+        "Binary Search",
+        "O(log n) per get · O(n) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
 
-Timestamps only ever increase, so each key's history is already sorted and needs no sorting on write. The lookup is \"newest entry at or before this time\", which is a halving question: keep the candidate, then keep looking on the newer side for a better one.", "class TimeMap:
+Timestamps only ever increase, so each key's history is already sorted and needs no sorting on write. The lookup is \"newest entry at or before this time\", which is a halving question: keep the candidate, then keep looking on the newer side for a better one.",
+        "class TimeMap:
     def __init__(self):
         self.store = {}
 
@@ -7017,7 +7891,8 @@ Timestamps only ever increase, so each key's history is already sorted and needs
                 low = mid + 1
             else:
                 high = mid - 1
-        return best"),
+        return best",
+      ),
     ],
     check: Check(
       signature: "class TimeMap:
@@ -7060,16 +7935,25 @@ __case__(\"get('missing', 1)\", \"\", __store__.get(\"missing\", 1))",
 pub fn nc34_median_two_sorted() -> Embedded {
   Embedded(
     solutions: [
-      #("Sorting", "O((m+n) log (m+n)) time · O(m+n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Sorting",
+        "O((m+n) log (m+n)) time · O(m+n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Concatenate, sort, take the middle. O((m+n) log(m+n)) and it throws away the fact that both inputs were already sorted — but the indexing is worth seeing once, because averaging positions n/2 and (n-1)/2 handles both parities in one expression.", "def findMedianSortedArrays(nums1, nums2):
+Concatenate, sort, take the middle. O((m+n) log(m+n)) and it throws away the fact that both inputs were already sorted — but the indexing is worth seeing once, because averaging positions n/2 and (n-1)/2 handles both parities in one expression.",
+        "def findMedianSortedArrays(nums1, nums2):
     merged = sorted(nums1 + nums2)
     if not merged:
         return 0.0
     # One expression for both parities: for an odd length the two indices are
     # the same element, so the average of it with itself is itself.
-    return (merged[len(merged) // 2] + merged[(len(merged) - 1) // 2]) / 2"),
-      #("Two Pointers", "O(m+n) time · O(1) space", "Merging, but stopping at the middle and keeping only the last two values seen. The merged array is never built, so it is O(m + n) time and O(1) space. The two values are what makes the even case work: the median is then the average of the middle pair.", "def findMedianSortedArrays(nums1, nums2):
+    return (merged[len(merged) // 2] + merged[(len(merged) - 1) // 2]) / 2",
+      ),
+      #(
+        "Two Pointers",
+        "O(m+n) time · O(1) space",
+        "Merging, but stopping at the middle and keeping only the last two values seen. The merged array is never built, so it is O(m + n) time and O(1) space. The two values are what makes the even case work: the median is then the average of the middle pair.",
+        "def findMedianSortedArrays(nums1, nums2):
     total = len(nums1) + len(nums2)
     if total == 0:
         return 0.0
@@ -7089,8 +7973,13 @@ Concatenate, sort, take the middle. O((m+n) log(m+n)) and it throws away the fac
 
     if total % 2 == 1:
         return float(current)
-    return (previous + current) / 2"),
-      #("Binary Search", "O(log min(m,n)) time · O(1) space", "The O(log min(m, n)) answer, and the reason the problem is rated hard. Do not look for the median: look for a cut through both arrays with exactly half the elements to its left. Such a cut is correct when both left-hand values are no bigger than both right-hand values, and that condition is monotone in where you cut the shorter array — so halve on the cut position.", "def findMedianSortedArrays(nums1, nums2):
+    return (previous + current) / 2",
+      ),
+      #(
+        "Binary Search",
+        "O(log min(m,n)) time · O(1) space",
+        "The O(log min(m, n)) answer, and the reason the problem is rated hard. Do not look for the median: look for a cut through both arrays with exactly half the elements to its left. Such a cut is correct when both left-hand values are no bigger than both right-hand values, and that condition is monotone in where you cut the shorter array — so halve on the cut position.",
+        "def findMedianSortedArrays(nums1, nums2):
     # Always halve the shorter side, so the search is O(log min(m, n)).
     if len(nums1) > len(nums2):
         nums1, nums2 = nums2, nums1
@@ -7122,7 +8011,8 @@ Concatenate, sort, take the middle. O((m+n) log(m+n)) and it throws away the fac
         else:
             low = cut1 + 1
 
-    return 0.0"),
+    return 0.0",
+      ),
     ],
     check: Check(
       signature: "def findMedianSortedArrays(nums1, nums2):",
@@ -7151,7 +8041,11 @@ __case__(\"findMedianSortedArrays([1, 3, 5, 7], [2, 4, 6])\", 4.0, findMedianSor
 pub fn nc35_insert_interval() -> Embedded {
   Embedded(
     solutions: [
-      #("Sort + Merge", "O(n log n) time · O(n) space", "Drop the new interval on the end and run the general merge. It throws away the sortedness — O(n log n) rather than O(n) — but it is a solution you already have rather than a three-way split to get right, and that trade is often the correct one under time pressure.", "def insert(intervals, newInterval):
+      #(
+        "Sort + Merge",
+        "O(n log n) time · O(n) space",
+        "Drop the new interval on the end and run the general merge. It throws away the sortedness — O(n log n) rather than O(n) — but it is a solution you already have rather than a three-way split to get right, and that trade is often the correct one under time pressure.",
+        "def insert(intervals, newInterval):
     # Drop the new interval on the end and run the general merge. Throws away
     # the fact that the input was sorted -- O(n log n) rather than O(n) -- but
     # it reuses a solution you already have rather than a three-way split.
@@ -7161,8 +8055,13 @@ pub fn nc35_insert_interval() -> Embedded {
             out[-1][1] = max(out[-1][1], end)
         else:
             out.append([start, end])
-    return out"),
-      #("Intervals", "O(n) time · O(n) space", "The input is already sorted, which turns the problem into a three-way split: everything that finishes before the new interval starts passes through untouched, everything that touches it collapses into one, and everything after it passes through too. One pass, no sorting.", "def insert(intervals, newInterval):
+    return out",
+      ),
+      #(
+        "Intervals",
+        "O(n) time · O(n) space",
+        "The input is already sorted, which turns the problem into a three-way split: everything that finishes before the new interval starts passes through untouched, everything that touches it collapses into one, and everything after it passes through too. One pass, no sorting.",
+        "def insert(intervals, newInterval):
     start, end = newInterval
     out = []
     i = 0
@@ -7180,7 +8079,8 @@ pub fn nc35_insert_interval() -> Embedded {
         i += 1
 
     out.append([start, end])
-    return out + intervals[i:]"),
+    return out + intervals[i:]",
+      ),
     ],
     check: Check(
       signature: "def insert(intervals, newInterval):",
@@ -7208,7 +8108,11 @@ __case__(\"insert([[3, 5]], [1, 2])\", [[1, 2], [3, 5]], insert([[3, 5]], [1, 2]
 pub fn nc36_merge_intervals() -> Embedded {
   Embedded(
     solutions: [
-      #("Sweep Line", "O(n log n) time · O(n) space", "Forget the intervals and keep only their edges: +1 where one opens, −1 where one closes. A merged interval runs from the edge that lifts the running count off zero to the edge that drops it back. Ordering opens before closes at the same coordinate is what makes touching intervals join.", "def merge(intervals):
+      #(
+        "Sweep Line",
+        "O(n log n) time · O(n) space",
+        "Forget the intervals and keep only their edges: +1 where one opens, −1 where one closes. A merged interval runs from the edge that lifts the running count off zero to the edge that drops it back. Ordering opens before closes at the same coordinate is what makes touching intervals join.",
+        "def merge(intervals):
     # Forget the intervals and keep only their edges: +1 where one opens, -1
     # where one closes. A merged interval runs from the edge that lifts the
     # running count off zero to the edge that drops it back.
@@ -7230,8 +8134,13 @@ pub fn nc36_merge_intervals() -> Embedded {
         depth += delta
         if depth == 0:
             out.append([start, position])
-    return out"),
-      #("Intervals", "O(n log n) time · O(n) space", "Sort by start and the problem collapses: an interval can only ever overlap the one currently being built, because anything it could have overlapped earlier was already absorbed into that. So a single pass either extends the interval in hand or begins a new one.", "def merge(intervals):
+    return out",
+      ),
+      #(
+        "Intervals",
+        "O(n log n) time · O(n) space",
+        "Sort by start and the problem collapses: an interval can only ever overlap the one currently being built, because anything it could have overlapped earlier was already absorbed into that. So a single pass either extends the interval in hand or begins a new one.",
+        "def merge(intervals):
     # Sorted by start, an interval can only ever overlap the one being built, so
     # a single pass is enough: extend it, or begin a new one.
     out = []
@@ -7240,7 +8149,8 @@ pub fn nc36_merge_intervals() -> Embedded {
             out[-1][1] = max(out[-1][1], end)
         else:
             out.append([start, end])
-    return out"),
+    return out",
+      ),
     ],
     check: Check(
       signature: "def merge(intervals):",
@@ -7267,7 +8177,11 @@ __case__(\"merge([[1, 4], [2, 3]])\", [[1, 4]], merge([[1, 4], [2, 3]]))",
 pub fn nc37_non_overlapping() -> Embedded {
   Embedded(
     solutions: [
-      #("Greedy by Start", "O(n log n) time · O(n) space", "Sorted by start instead. On an overlap one of the two has to go, and dropping whichever ends later is always at least as good — so the greedy choice is made at the moment of the clash rather than baked into the sort order. Same answer, and it needs the running end to be lowered rather than replaced.", "def eraseOverlapIntervals(intervals):
+      #(
+        "Greedy by Start",
+        "O(n log n) time · O(n) space",
+        "Sorted by start instead. On an overlap one of the two has to go, and dropping whichever ends later is always at least as good — so the greedy choice is made at the moment of the clash rather than baked into the sort order. Same answer, and it needs the running end to be lowered rather than replaced.",
+        "def eraseOverlapIntervals(intervals):
     # Sorted by start instead: on an overlap you must drop one of the two, and
     # dropping whichever ends later is always at least as good. Same greedy
     # argument, made at the moment of the clash rather than in the sort order.
@@ -7281,8 +8195,13 @@ pub fn nc37_non_overlapping() -> Embedded {
             removed += 1
             last_end = min(last_end, end)
 
-    return removed"),
-      #("Greedy", "O(n log n) time · O(n) space", "Greedy on the end time. Among intervals competing for the same space, keeping the one that finishes earliest leaves the most room for whatever comes next and can never be worse — which is the exchange argument that makes the greedy correct, and the reason sorting by start is the classic wrong first answer.", "def eraseOverlapIntervals(intervals):
+    return removed",
+      ),
+      #(
+        "Greedy",
+        "O(n log n) time · O(n) space",
+        "Greedy on the end time. Among intervals competing for the same space, keeping the one that finishes earliest leaves the most room for whatever comes next and can never be worse — which is the exchange argument that makes the greedy correct, and the reason sorting by start is the classic wrong first answer.",
+        "def eraseOverlapIntervals(intervals):
     # Greedy on the end: among any set of intervals competing for the same
     # space, keeping the one that finishes earliest leaves the most room for
     # whatever comes next, and can never be worse.
@@ -7295,7 +8214,8 @@ pub fn nc37_non_overlapping() -> Embedded {
         else:
             removed += 1
 
-    return removed"),
+    return removed",
+      ),
     ],
     check: Check(
       signature: "def eraseOverlapIntervals(intervals):",
@@ -7322,9 +8242,13 @@ __case__(\"eraseOverlapIntervals([[1, 100], [11, 22], [1, 11], [2, 12]])\", 2, e
 pub fn nc38_meeting_rooms() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every pair, checked. Worth writing once for the overlap test itself: two intervals overlap when each starts before the other ends, which is far easier to get right than trying to enumerate the ways they miss.", "def canAttendMeetings(intervals):
+Every pair, checked. Worth writing once for the overlap test itself: two intervals overlap when each starts before the other ends, which is far easier to get right than trying to enumerate the ways they miss.",
+        "def canAttendMeetings(intervals):
     # Every pair, checked. Two intervals overlap when each starts before the
     # other ends -- the condition worth being able to write from memory, since
     # it is easier to get right than its negation.
@@ -7333,13 +8257,19 @@ Every pair, checked. Worth writing once for the overlap test itself: two interva
             a, b = intervals[i], intervals[j]
             if a[0] < b[1] and b[0] < a[1]:
                 return False
-    return True"),
-      #("Sorting", "O(n log n) time · O(n) space", "Sorted by start, the only meeting a given one can clash with is the one immediately before it: anything earlier started earlier still, so it would have clashed with that one first. The whole check is then adjacent pairs.", "def canAttendMeetings(intervals):
+    return True",
+      ),
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sorted by start, the only meeting a given one can clash with is the one immediately before it: anything earlier started earlier still, so it would have clashed with that one first. The whole check is then adjacent pairs.",
+        "def canAttendMeetings(intervals):
     # Sorted by start, the only meeting a given one can clash with is the one
     # immediately before it -- anything earlier started earlier still and would
     # have clashed with that one first.
     ordered = sorted(intervals)
-    return all(ordered[i - 1][1] <= ordered[i][0] for i in range(1, len(ordered)))"),
+    return all(ordered[i - 1][1] <= ordered[i][0] for i in range(1, len(ordered)))",
+      ),
     ],
     check: Check(
       signature: "def canAttendMeetings(intervals):",
@@ -7367,9 +8297,13 @@ __case__(\"canAttendMeetings([[5, 10], [1, 6]])\", False, canAttendMeetings([[5,
 pub fn nc39_meeting_rooms_ii() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-The busiest moment is always the start of some meeting, so only n moments are worth testing at all. Count how many meetings cover each and take the largest: no sort, no edge bookkeeping, and it makes clear what the sweep is measuring.", "def minMeetingRooms(intervals):
+The busiest moment is always the start of some meeting, so only n moments are worth testing at all. Count how many meetings cover each and take the largest: no sort, no edge bookkeeping, and it makes clear what the sweep is measuring.",
+        "def minMeetingRooms(intervals):
     # The busiest moment is always the start of some meeting, so there are only
     # n moments worth testing. Count how many meetings cover each one and take
     # the largest -- O(n^2), and it needs no sort and no edge bookkeeping.
@@ -7377,8 +8311,13 @@ The busiest moment is always the start of some meeting, so only n moments are wo
     for start, _end in intervals:
         running = sum(1 for s, e in intervals if s <= start < e)
         best = max(best, running)
-    return best"),
-      #("Sweep Line", "O(n log n) time · O(n) space", "Rooms needed is the most meetings ever running at once, so the meetings stop mattering and only their edges do: +1 at a start, −1 at an end, and the answer is how high the running count gets. Closes come before opens at the same time here — a room freed at that moment can be reused — which is the opposite of what merging intervals wants.", "def minMeetingRooms(intervals):
+    return best",
+      ),
+      #(
+        "Sweep Line",
+        "O(n log n) time · O(n) space",
+        "Rooms needed is the most meetings ever running at once, so the meetings stop mattering and only their edges do: +1 at a start, −1 at an end, and the answer is how high the running count gets. Closes come before opens at the same time here — a room freed at that moment can be reused — which is the opposite of what merging intervals wants.",
+        "def minMeetingRooms(intervals):
     # Rooms needed is the most meetings ever running at once, so the meetings
     # themselves stop mattering -- only their edges do. Walk the edges in time
     # order and watch how high the count gets.
@@ -7396,7 +8335,8 @@ The busiest moment is always the start of some meeting, so only n moments are wo
     for _position, delta in edges:
         depth += delta
         best = max(best, depth)
-    return best"),
+    return best",
+      ),
     ],
     check: Check(
       signature: "def minMeetingRooms(intervals):",
@@ -7423,15 +8363,24 @@ __case__(\"minMeetingRooms(six overlapping meetings)\", 4, minMeetingRooms([[1, 
 pub fn nc40_min_interval() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n·q) time · O(n+q) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n·q) time · O(n+q) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-For each query, the smallest interval containing it. O(q·n), and the definition — worth having before the clever version, because it is what you check the clever version against.", "def minInterval(intervals, queries):
+For each query, the smallest interval containing it. O(q·n), and the definition — worth having before the clever version, because it is what you check the clever version against.",
+        "def minInterval(intervals, queries):
     out = []
     for query in queries:
         lengths = [end - start + 1 for start, end in intervals if start <= query <= end]
         out.append(min(lengths) if lengths else -1)
-    return out"),
-      #("Greedy", "O(n log n + n·q) time · O(n+q) space", "Answer each query once and never revisit it. Taking the intervals shortest first means the first interval to cover a query is already its answer, so a query leaves the pool the moment it is settled and the pool only shrinks. Reordering the work so each answer is final is the technique here, and it generalises well beyond this problem.", "def minInterval(intervals, queries):
+    return out",
+      ),
+      #(
+        "Greedy",
+        "O(n log n + n·q) time · O(n+q) space",
+        "Answer each query once and never revisit it. Taking the intervals shortest first means the first interval to cover a query is already its answer, so a query leaves the pool the moment it is settled and the pool only shrinks. Reordering the work so each answer is final is the technique here, and it generalises well beyond this problem.",
+        "def minInterval(intervals, queries):
     # Answer each query once, and never revisit it. Taking the intervals
     # shortest first means the first interval to cover a query is already its
     # answer, so every query leaves the pool the moment it is settled and the
@@ -7448,8 +8397,13 @@ For each query, the smallest interval containing it. O(q·n), and the definition
                 still_waiting.append((index, query))
         waiting = still_waiting
 
-    return answers"),
-      #("Heap", "O(n log n + q log q) time · O(n+q) space", "The O((n + q) log n) answer. Walk the queries in time order, letting in every interval that has started by now, and keep the live ones in a heap ordered by length. The shortest on top is the answer once anything already ended has been discarded — and an interval ends only once, so that discarding is amortised free.", "import heapq
+    return answers",
+      ),
+      #(
+        "Heap",
+        "O(n log n + q log q) time · O(n+q) space",
+        "The O((n + q) log n) answer. Walk the queries in time order, letting in every interval that has started by now, and keep the live ones in a heap ordered by length. The shortest on top is the answer once anything already ended has been discarded — and an interval ends only once, so that discarding is amortised free.",
+        "import heapq
 
 
 def minInterval(intervals, queries):
@@ -7472,7 +8426,8 @@ def minInterval(intervals, queries):
             heapq.heappop(heap)
         answers[query] = heap[0][0] if heap else -1
 
-    return [answers[query] for query in queries]"),
+    return [answers[query] for query in queries]",
+      ),
     ],
     check: Check(
       signature: "def minInterval(intervals, queries):",
@@ -7499,7 +8454,11 @@ __case__(\"minInterval([[1, 3]], [0, 4])\", [-1, -1], minInterval([[1, 3]], [0, 
 pub fn nc41_maximum_subarray() -> Embedded {
   Embedded(
     solutions: [
-      #("Prefix Sums", "O(n) time · O(1) space", "The same answer from prefix sums. The sum from i to j is prefix[j] − prefix[i−1], so the best subarray ending at j is prefix[j] minus the smallest prefix seen before it. One pass carrying that minimum. Worth knowing because the prefix framing generalises to problems Kadane cannot touch — subarrays summing to k, divisible by k, and so on.", "def maxSubArray(nums):
+      #(
+        "Prefix Sums",
+        "O(n) time · O(1) space",
+        "The same answer from prefix sums. The sum from i to j is prefix[j] − prefix[i−1], so the best subarray ending at j is prefix[j] minus the smallest prefix seen before it. One pass carrying that minimum. Worth knowing because the prefix framing generalises to problems Kadane cannot touch — subarrays summing to k, divisible by k, and so on.",
+        "def maxSubArray(nums):
     if not nums:
         return 0
 
@@ -7513,8 +8472,13 @@ pub fn nc41_maximum_subarray() -> Embedded {
         running += n
         best = max(best, running - smallest)
         smallest = min(smallest, running)
-    return best"),
-      #("Kadane", "O(n) time · O(1) space", "Kadane. At each position the best subarray ending here either extends the one ending just before it or starts fresh — and the choice is decided by a single question: has the running total gone negative? A negative prefix can only hurt whatever follows, so it is dropped. Note the answer is not clamped at zero: an all-negative array's answer is its least bad element.", "def maxSubArray(nums):
+    return best",
+      ),
+      #(
+        "Kadane",
+        "O(n) time · O(1) space",
+        "Kadane. At each position the best subarray ending here either extends the one ending just before it or starts fresh — and the choice is decided by a single question: has the running total gone negative? A negative prefix can only hurt whatever follows, so it is dropped. Note the answer is not clamped at zero: an all-negative array's answer is its least bad element.",
+        "def maxSubArray(nums):
     if not nums:
         return 0
 
@@ -7525,7 +8489,8 @@ pub fn nc41_maximum_subarray() -> Embedded {
     for n in nums[1:]:
         here = max(n, here + n)
         best = max(best, here)
-    return best"),
+    return best",
+      ),
     ],
     check: Check(
       signature: "def maxSubArray(nums):",
@@ -7553,7 +8518,11 @@ __case__(\"maxSubArray([])\", 0, maxSubArray([]))",
 pub fn nc42_jump_game() -> Embedded {
   Embedded(
     solutions: [
-      #("Backwards Greedy", "O(n) time · O(1) space", "Walk backwards carrying the leftmost index known to reach the end. Any index that can reach *that* can reach the end, so it becomes the new goal — and the answer is whether the goal walks all the way back to zero. The same greedy from the other side, and often the easier one to convince yourself of.", "def canJump(nums):
+      #(
+        "Backwards Greedy",
+        "O(n) time · O(1) space",
+        "Walk backwards carrying the leftmost index known to reach the end. Any index that can reach *that* can reach the end, so it becomes the new goal — and the answer is whether the goal walks all the way back to zero. The same greedy from the other side, and often the easier one to convince yourself of.",
+        "def canJump(nums):
     if not nums:
         return True
 
@@ -7563,8 +8532,13 @@ pub fn nc42_jump_game() -> Embedded {
     for i in range(len(nums) - 1, -1, -1):
         if i + nums[i] >= goal:
             goal = i
-    return goal == 0"),
-      #("Greedy", "O(n) time · O(1) space", "Only one number matters: the furthest index reachable so far. Walk forward extending it, and the moment the walk gets past it nothing further is reachable. No search, no visited set — the reachable set from the left is always a prefix, which is what collapses the whole problem to one integer.", "def canJump(nums):
+    return goal == 0",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Only one number matters: the furthest index reachable so far. Walk forward extending it, and the moment the walk gets past it nothing further is reachable. No search, no visited set — the reachable set from the left is always a prefix, which is what collapses the whole problem to one integer.",
+        "def canJump(nums):
     # Only one number matters: the furthest index reachable so far. Walk forward
     # and extend it; the moment the walk gets past it, nothing further is
     # reachable.
@@ -7573,7 +8547,8 @@ pub fn nc42_jump_game() -> Embedded {
         if i > reach:
             return False
         reach = max(reach, i + jump)
-    return reach >= len(nums) - 1"),
+    return reach >= len(nums) - 1",
+      ),
     ],
     check: Check(
       signature: "def canJump(nums):",
@@ -7601,7 +8576,11 @@ __case__(\"canJump([2, 0, 0])\", True, canJump([2, 0, 0]))",
 pub fn nc43_jump_game_ii() -> Embedded {
   Embedded(
     solutions: [
-      #("Reverse Greedy", "O(n²) time · O(1) space", "From the goal, step back to the earliest index that can reach it. Taking the earliest can never cost more jumps — anything later is reachable from it too — so the choice is safe at every step. O(n²), and it makes the greedy argument visible in a way the window version hides.", "def jump(nums):
+      #(
+        "Reverse Greedy",
+        "O(n²) time · O(1) space",
+        "From the goal, step back to the earliest index that can reach it. Taking the earliest can never cost more jumps — anything later is reachable from it too — so the choice is safe at every step. O(n²), and it makes the greedy argument visible in a way the window version hides.",
+        "def jump(nums):
     if len(nums) <= 1:
         return 0
 
@@ -7618,8 +8597,13 @@ pub fn nc43_jump_game_ii() -> Embedded {
                 break
         else:
             break
-    return jumps"),
-      #("Greedy", "O(n) time · O(1) space", "Breadth-first search without a queue. Everything reachable in k jumps is a contiguous window, so the levels of the search are just ranges: when the walk reaches the current window's end, one more jump is spent and the next window runs to the furthest index seen so far. Recognising that the frontier stays contiguous is the whole trick.", "def jump(nums):
+    return jumps",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Breadth-first search without a queue. Everything reachable in k jumps is a contiguous window, so the levels of the search are just ranges: when the walk reaches the current window's end, one more jump is spent and the next window runs to the furthest index seen so far. Recognising that the frontier stays contiguous is the whole trick.",
+        "def jump(nums):
     # Breadth-first search without a queue. Everything reachable in k jumps
     # forms a contiguous window; when the walk reaches that window's end, one
     # more jump is spent and the next window runs to the furthest index seen.
@@ -7633,7 +8617,8 @@ pub fn nc43_jump_game_ii() -> Embedded {
             jumps += 1
             window_end = furthest
 
-    return jumps"),
+    return jumps",
+      ),
     ],
     check: Check(
       signature: "def jump(nums):",
@@ -7661,9 +8646,13 @@ __case__(\"jump([1, 1, 1, 1])\", 3, jump([1, 1, 1, 1]))",
 pub fn nc44_gas_station() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Drive the whole loop from each start and watch the tank. O(n²), and the thing worth extracting from it: the single pass is not a different algorithm, it is this one with the starts that cannot possibly work skipped.", "def canCompleteCircuit(gas, cost):
+Drive the whole loop from each start and watch the tank. O(n²), and the thing worth extracting from it: the single pass is not a different algorithm, it is this one with the starts that cannot possibly work skipped.",
+        "def canCompleteCircuit(gas, cost):
     # Drive the whole loop from each start and see whether the tank ever goes
     # negative. O(n^2) -- the definition, and what the single pass replaces.
     diffs = [g - c for g, c in zip(gas, cost)]
@@ -7679,8 +8668,13 @@ Drive the whole loop from each start and watch the tank. O(n²), and the thing w
         if survives:
             return start
 
-    return -1"),
-      #("Greedy", "O(n) time · O(1) space", "Two facts do all the work. If the total gas falls short of the total cost, no start works at all. And if the tank runs dry travelling from i to j, no station between them can start either — each would begin with even less — so the search jumps straight to j+1 rather than restarting at i+1. Together they turn an O(n²) search into one pass.", "def canCompleteCircuit(gas, cost):
+    return -1",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Two facts do all the work. If the total gas falls short of the total cost, no start works at all. And if the tank runs dry travelling from i to j, no station between them can start either — each would begin with even less — so the search jumps straight to j+1 rather than restarting at i+1. Together they turn an O(n²) search into one pass.",
+        "def canCompleteCircuit(gas, cost):
     if not gas:
         return -1
 
@@ -7699,7 +8693,8 @@ Drive the whole loop from each start and watch the tank. O(n²), and the thing w
             start = i + 1
             tank = 0
 
-    return start if total >= 0 else -1"),
+    return start if total >= 0 else -1",
+      ),
     ],
     check: Check(
       signature: "def canCompleteCircuit(gas, cost):",
@@ -7727,7 +8722,11 @@ __case__(\"canCompleteCircuit([3, 1, 1], [1, 2, 2])\", 0, canCompleteCircuit([3,
 pub fn nc45_hand_of_straights() -> Embedded {
   Embedded(
     solutions: [
-      #("Sorting", "O(n²) time · O(n) space", "No counts at all: sort, then peel one full run off the front, removing each card as it is used. Slower, since every removal is a list walk, but the only thing you have to believe is the same greedy claim — a group begins with the smallest card left.", "def isNStraightHand(hand, groupSize):
+      #(
+        "Sorting",
+        "O(n²) time · O(n) space",
+        "No counts at all: sort, then peel one full run off the front, removing each card as it is used. Slower, since every removal is a list walk, but the only thing you have to believe is the same greedy claim — a group begins with the smallest card left.",
+        "def isNStraightHand(hand, groupSize):
     if groupSize <= 0 or len(hand) % groupSize != 0:
         return False
 
@@ -7743,8 +8742,13 @@ pub fn nc45_hand_of_straights() -> Embedded {
                 return False
             cards.remove(card)
 
-    return True"),
-      #("Greedy", "O(n log n) time · O(n) space", "The smallest card left has no smaller neighbour to hide behind, so whatever group it belongs to must begin with it. That removes all choice, which is exactly what makes a greedy correct here. Every copy of that smallest card needs its own group and they are indistinguishable, so all of them are taken in one step.", "from collections import Counter
+    return True",
+      ),
+      #(
+        "Greedy",
+        "O(n log n) time · O(n) space",
+        "The smallest card left has no smaller neighbour to hide behind, so whatever group it belongs to must begin with it. That removes all choice, which is exactly what makes a greedy correct here. Every copy of that smallest card needs its own group and they are indistinguishable, so all of them are taken in one step.",
+        "from collections import Counter
 
 
 def isNStraightHand(hand, groupSize):
@@ -7766,7 +8770,8 @@ def isNStraightHand(hand, groupSize):
                 return False
             counts[card] -= copies
 
-    return True"),
+    return True",
+      ),
     ],
     check: Check(
       signature: "def isNStraightHand(hand, groupSize):",
@@ -7794,13 +8799,22 @@ __case__(\"isNStraightHand([8, 10, 12], 3)\", False, isNStraightHand([8, 10, 12]
 pub fn nc46_merge_triplets() -> Embedded {
   Embedded(
     solutions: [
-      #("Coverage Check", "O(n) time · O(n) space", "Same filter, different question: rather than merging the survivors, ask whether each of the three positions is hit exactly by some survivor. It is the same condition — a componentwise max equals the target exactly when every component is attained somewhere — but arrived at without computing the merge.", "def mergeTriplets(triplets, target):
+      #(
+        "Coverage Check",
+        "O(n) time · O(n) space",
+        "Same filter, different question: rather than merging the survivors, ask whether each of the three positions is hit exactly by some survivor. It is the same condition — a componentwise max equals the target exactly when every component is attained somewhere — but arrived at without computing the merge.",
+        "def mergeTriplets(triplets, target):
     # Ask a different question: is each of the three positions hit exactly by
     # some usable triplet? The answer is yes exactly when all three are covered
     # -- the same condition, arrived at without taking maxima.
     usable = [t for t in triplets if all(t[i] <= target[i] for i in range(3))]
-    return all(any(t[i] == target[i] for t in usable) for i in range(3))"),
-      #("Greedy", "O(n) time · O(1) space", "Merging takes componentwise maxima, and a max never comes back down. So any triplet with a component above the target is permanently poisonous and must be discarded; and once discarded, every remaining triplet can be merged freely, because a max can only help. The answer is then just whether their maximum is the target.", "def mergeTriplets(triplets, target):
+    return all(any(t[i] == target[i] for t in usable) for i in range(3))",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Merging takes componentwise maxima, and a max never comes back down. So any triplet with a component above the target is permanently poisonous and must be discarded; and once discarded, every remaining triplet can be merged freely, because a max can only help. The answer is then just whether their maximum is the target.",
+        "def mergeTriplets(triplets, target):
     # A triplet with any component above the target can never be used: merging
     # takes maxima, so that component would be stuck too high forever. Throw
     # those away and the rest can all be merged, because a max only ever helps.
@@ -7808,7 +8822,8 @@ pub fn nc46_merge_triplets() -> Embedded {
     for triplet in triplets:
         if all(triplet[i] <= target[i] for i in range(3)):
             best = [max(best[i], triplet[i]) for i in range(3)]
-    return best == list(target)"),
+    return best == list(target)",
+      ),
     ],
     check: Check(
       signature: "def mergeTriplets(triplets, target):",
@@ -7836,9 +8851,13 @@ __case__(\"mergeTriplets([[1, 2, 3]], [3, 2, 1])\", False, mergeTriplets([[1, 2,
 pub fn nc47_partition_labels() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n³) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n³) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Grow the piece one character at a time until nothing inside it also appears in the tail. No last-position map — the tail is asked directly — so it is far slower, but it is the condition stated outright rather than pre-computed.", "def partitionLabels(s):
+Grow the piece one character at a time until nothing inside it also appears in the tail. No last-position map — the tail is asked directly — so it is far slower, but it is the condition stated outright rather than pre-computed.",
+        "def partitionLabels(s):
     # Grow the piece one character at a time until nothing inside it also
     # appears in what is left. No last-position map -- the tail is asked
     # directly -- which is far slower but is the condition stated outright.
@@ -7850,8 +8869,13 @@ Grow the piece one character at a time until nothing inside it also appears in t
             size += 1
         out.append(size)
         rest = rest[size:]
-    return out"),
-      #("Greedy", "O(n) time · O(1) space", "A piece can only end where every character inside it has run out, so map each character to its last position first. Then sweep, pushing the piece's end out to the furthest last-position seen; when the walk catches up with that end, nothing inside can reappear and the piece is closed.", "def partitionLabels(s):
+    return out",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "A piece can only end where every character inside it has run out, so map each character to its last position first. Then sweep, pushing the piece's end out to the furthest last-position seen; when the walk catches up with that end, nothing inside can reappear and the piece is closed.",
+        "def partitionLabels(s):
     # Overwriting as we go leaves each character mapped to its last position.
     last = {c: i for i, c in enumerate(s)}
 
@@ -7867,7 +8891,8 @@ Grow the piece one character at a time until nothing inside it also appears in t
             out.append(end - start + 1)
             start = i + 1
 
-    return out"),
+    return out",
+      ),
     ],
     check: Check(
       signature: "def partitionLabels(s):",
@@ -7894,7 +8919,11 @@ __case__(\"partitionLabels('abc')\", [1, 1, 1], partitionLabels('abc'))",
 pub fn nc48_valid_parenthesis_string() -> Embedded {
   Embedded(
     solutions: [
-      #("Two Passes", "O(n) time · O(n) space", "Two one-sided checks instead of a range. Left to right with every star an opener asks whether there are ever too many closers; right to left with every star a closer asks whether there are ever too many openers. Passing both is exactly the condition — and each pass is the ordinary balance check you already know.", "def checkValidString(s):
+      #(
+        "Two Passes",
+        "O(n) time · O(n) space",
+        "Two one-sided checks instead of a range. Left to right with every star an opener asks whether there are ever too many closers; right to left with every star a closer asks whether there are ever too many openers. Passing both is exactly the condition — and each pass is the ordinary balance check you already know.",
+        "def checkValidString(s):
     # Two one-sided checks. Left to right with every star an opener asks whether
     # there are ever too many closers; right to left with every star a closer
     # asks whether there are ever too many openers. Passing both is exactly the
@@ -7908,8 +8937,13 @@ def neverNegative(s, credit):
         balance += 1 if c == credit or c == \"*\" else -1
         if balance < 0:
             return False
-    return True"),
-      #("Greedy", "O(n) time · O(1) space", "Do not guess what each star should be — carry the range of open counts still possible. Low is the count if every star so far were a closer, high if every one were an opener. High going negative means even the most generous reading has too many closers, so bail; low is clamped at zero because a star can always be nothing. Valid exactly when low reaches zero at the end.", "def checkValidString(s):
+    return True",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Do not guess what each star should be — carry the range of open counts still possible. Low is the count if every star so far were a closer, high if every one were an opener. High going negative means even the most generous reading has too many closers, so bail; low is clamped at zero because a star can always be nothing. Valid exactly when low reaches zero at the end.",
+        "def checkValidString(s):
     # Rather than guessing what each star should be, carry the *range* of open
     # counts still possible: low if every star so far were a closer, high if
     # every one were an opener. High going negative means even the most generous
@@ -7927,7 +8961,8 @@ def neverNegative(s, credit):
         if high < 0:
             return False
 
-    return low == 0"),
+    return low == 0",
+      ),
     ],
     check: Check(
       signature: "def checkValidString(s):",
@@ -7957,18 +8992,28 @@ __case__(\"checkValidString('(*()')\", True, checkValidString('(*()'))",
 pub fn nc49_single_number() -> Embedded {
   Embedded(
     solutions: [
-      #("Math", "O(n) time · O(n) space", "Twice the sum of the distinct values counts every pair twice and the lone value twice; subtracting the real total leaves the lone value. No bit tricks, but it leans harder on the promise that everything else appears exactly twice — three copies of something and it is wrong.", "def singleNumber(nums):
+      #(
+        "Math",
+        "O(n) time · O(n) space",
+        "Twice the sum of the distinct values counts every pair twice and the lone value twice; subtracting the real total leaves the lone value. No bit tricks, but it leans harder on the promise that everything else appears exactly twice — three copies of something and it is wrong.",
+        "def singleNumber(nums):
     # Twice the sum of the distinct values counts every pair twice and the lone
     # value twice; subtracting the real total leaves the lone value. No bit
     # tricks, but it leans harder on the promise that everything else is a pair.
-    return 2 * sum(set(nums)) - sum(nums)"),
-      #("Bit Manipulation", "O(n) time · O(1) space", "XOR is its own inverse and does not care about order, so every value appearing twice cancels itself out wherever the two copies happen to sit, and the lone one is what is left. Constant space, one pass, and no reliance on the values being small or positive.", "def singleNumber(nums):
+    return 2 * sum(set(nums)) - sum(nums)",
+      ),
+      #(
+        "Bit Manipulation",
+        "O(n) time · O(1) space",
+        "XOR is its own inverse and does not care about order, so every value appearing twice cancels itself out wherever the two copies happen to sit, and the lone one is what is left. Constant space, one pass, and no reliance on the values being small or positive.",
+        "def singleNumber(nums):
     # XOR is its own inverse and does not care about order, so every value that
     # appears twice cancels itself out and only the lone one survives.
     result = 0
     for n in nums:
         result ^= n
-    return result"),
+    return result",
+      ),
     ],
     check: Check(
       signature: "def singleNumber(nums):",
@@ -7995,22 +9040,32 @@ __case__(\"singleNumber([0, 1, 1])\", 0, singleNumber([0, 1, 1]))",
 pub fn nc50_number_of_one_bits() -> Embedded {
   Embedded(
     solutions: [
-      #("Shift & Test", "O(log n) time · O(1) space", "One step per bit position rather than per set bit: 32 iterations whatever the input, but nothing to remember beyond \"look at the bottom bit, shift\". In a fixed-width language mind the shift — an arithmetic right shift on a negative number never terminates.", "def hammingWeight(n):
+      #(
+        "Shift & Test",
+        "O(log n) time · O(1) space",
+        "One step per bit position rather than per set bit: 32 iterations whatever the input, but nothing to remember beyond \"look at the bottom bit, shift\". In a fixed-width language mind the shift — an arithmetic right shift on a negative number never terminates.",
+        "def hammingWeight(n):
     # One step per bit position rather than per set bit: 32 iterations whatever
     # the input, but nothing to remember beyond \"look at the bottom bit, shift\".
     count = 0
     while n > 0:
         count += n & 1
         n >>= 1
-    return count"),
-      #("Bit Manipulation", "O(k) time · O(1) space", "n & (n − 1) clears the lowest set bit and touches nothing else, so the loop runs once per one bit rather than once per bit position. Worth having in the fingers: the same trick tests for powers of two, and shows up in half the bit problems there are.", "def hammingWeight(n):
+    return count",
+      ),
+      #(
+        "Bit Manipulation",
+        "O(k) time · O(1) space",
+        "n & (n − 1) clears the lowest set bit and touches nothing else, so the loop runs once per one bit rather than once per bit position. Worth having in the fingers: the same trick tests for powers of two, and shows up in half the bit problems there are.",
+        "def hammingWeight(n):
     # n & (n - 1) clears the lowest set bit and nothing else, so the loop runs
     # once per one bit rather than once per bit position.
     count = 0
     while n:
         n &= n - 1
         count += 1
-    return count"),
+    return count",
+      ),
     ],
     check: Check(
       signature: "def hammingWeight(n):",
@@ -8037,9 +9092,13 @@ __case__(\"hammingWeight(1)\", 1, hammingWeight(1))",
 pub fn nc51_counting_bits() -> Embedded {
   Embedded(
     solutions: [
-      #("Bit Manipulation", "O(n log n) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Bit Manipulation",
+        "O(n log n) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Each number counted from scratch with the clear-lowest-bit trick. O(n log n), and it remembers nothing between numbers — which is precisely the redundancy the dynamic version exploits.", "def countBits(n):
+Each number counted from scratch with the clear-lowest-bit trick. O(n log n), and it remembers nothing between numbers — which is precisely the redundancy the dynamic version exploits.",
+        "def countBits(n):
     return [popcount(i) for i in range(n + 1)]
 
 
@@ -8051,15 +9110,21 @@ def popcount(n):
     while n:
         n &= n - 1
         count += 1
-    return count"),
-      #("Bottom-Up DP", "O(n) time · O(n) space", "Every number is some smaller number with one more bit stuck on the end, so count(i) is count(i >> 1) plus that last bit. Each answer costs a single lookup into what has already been computed, which is what makes the whole array O(n) rather than O(n log n).", "def countBits(n):
+    return count",
+      ),
+      #(
+        "Bottom-Up DP",
+        "O(n) time · O(n) space",
+        "Every number is some smaller number with one more bit stuck on the end, so count(i) is count(i >> 1) plus that last bit. Each answer costs a single lookup into what has already been computed, which is what makes the whole array O(n) rather than O(n log n).",
+        "def countBits(n):
     # Every number is some smaller number with one extra bit on the end:
     # count(i) is count(i >> 1) plus whatever that last bit is. Each answer
     # costs one lookup, so the whole array is O(n).
     counts = [0] * (n + 1)
     for i in range(1, n + 1):
         counts[i] = counts[i >> 1] + (i & 1)
-    return counts"),
+    return counts",
+      ),
     ],
     check: Check(
       signature: "def countBits(n):",
@@ -8085,13 +9150,22 @@ __case__(\"countBits(8)\", [0, 1, 1, 2, 1, 2, 2, 3, 1], countBits(8))",
 pub fn nc52_reverse_bits() -> Embedded {
   Embedded(
     solutions: [
-      #("Nifty Python · Strings", "O(1) time · O(1) space", "Write the number in binary, pad to the full width, reverse the text, read it back. Slower and it allocates, but the explicit padding makes the thing the bit version keeps implicit — that the width is 32, not however many bits this value happens to need — impossible to forget.", "def reverseBits(n):
+      #(
+        "Nifty Python · Strings",
+        "O(1) time · O(1) space",
+        "Write the number in binary, pad to the full width, reverse the text, read it back. Slower and it allocates, but the explicit padding makes the thing the bit version keeps implicit — that the width is 32, not however many bits this value happens to need — impossible to forget.",
+        "def reverseBits(n):
     # Write the number out in binary, pad to the full width, reverse the text,
     # read it back. Slower and allocates, but the padding makes the thing the
     # bit version keeps implicit -- that the width is 32, not however many bits
     # this particular value happens to need -- impossible to forget.
-    return int(format(n, \"032b\")[::-1], 2)"),
-      #("Bit Manipulation", "O(1) time · O(1) space", "Peel the bottom bit off the input and push it onto the bottom of the result: the first bit out is the last bit in. Fixed at 32 rounds, because the width is part of the problem rather than a property of the value — stopping when the input hits zero silently drops the leading zeros that should have become trailing ones.", "def reverseBits(n):
+    return int(format(n, \"032b\")[::-1], 2)",
+      ),
+      #(
+        "Bit Manipulation",
+        "O(1) time · O(1) space",
+        "Peel the bottom bit off the input and push it onto the bottom of the result: the first bit out is the last bit in. Fixed at 32 rounds, because the width is part of the problem rather than a property of the value — stopping when the input hits zero silently drops the leading zeros that should have become trailing ones.",
+        "def reverseBits(n):
     # Peel the bottom bit off the input and push it onto the bottom of the
     # result: the first bit out is the last bit in. Fixed at 32 rounds, because
     # the width is part of the problem rather than a property of the value.
@@ -8099,7 +9173,8 @@ pub fn nc52_reverse_bits() -> Embedded {
     for _ in range(32):
         reversed_bits = (reversed_bits << 1) | (n & 1)
         n >>= 1
-    return reversed_bits"),
+    return reversed_bits",
+      ),
     ],
     check: Check(
       signature: "def reverseBits(n):",
@@ -8125,21 +9200,31 @@ __case__(\"reverseBits(1)\", 2147483648, reverseBits(1))",
 pub fn nc53_missing_number() -> Embedded {
   Embedded(
     solutions: [
-      #("Math", "O(n) time · O(1) space", "The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap between that and the actual total is the missing value. Shorter than the XOR version, and the trade worth knowing: in a fixed-width language it overflows on inputs the XOR version handles without complaint.", "def missingNumber(nums):
+      #(
+        "Math",
+        "O(n) time · O(1) space",
+        "The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap between that and the actual total is the missing value. Shorter than the XOR version, and the trade worth knowing: in a fixed-width language it overflows on inputs the XOR version handles without complaint.",
+        "def missingNumber(nums):
     # The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap
     # between that and the actual total is the missing value. One multiplication
     # instead of a pass of XORs -- but in a fixed-width language it overflows on
     # inputs the XOR version handles fine, which is the trade worth knowing.
     n = len(nums)
-    return n * (n + 1) // 2 - sum(nums)"),
-      #("Bit Manipulation", "O(n) time · O(1) space", "XOR every value against every index it should have had. Each present number meets its own index and cancels, so the missing one leaves its index without a partner and that index survives. No sum, so nothing can overflow.", "def missingNumber(nums):
+    return n * (n + 1) // 2 - sum(nums)",
+      ),
+      #(
+        "Bit Manipulation",
+        "O(n) time · O(1) space",
+        "XOR every value against every index it should have had. Each present number meets its own index and cancels, so the missing one leaves its index without a partner and that index survives. No sum, so nothing can overflow.",
+        "def missingNumber(nums):
     # XOR every value against every index it should have had. Each present
     # number meets its own index and cancels; the missing one has an index with
     # no partner, so that index is what survives.
     result = len(nums)
     for i, n in enumerate(nums):
         result ^= i ^ n
-    return result"),
+    return result",
+      ),
     ],
     check: Check(
       signature: "def missingNumber(nums):",
@@ -8167,7 +9252,11 @@ __case__(\"missingNumber([])\", 0, missingNumber([]))",
 pub fn nc54_sum_of_two_integers() -> Embedded {
   Embedded(
     solutions: [
-      #("Full Adder", "O(1) time · O(1) space", "The same addition written as hardware: thirty-two full adders in a row, each taking two input bits and a carry and producing a sum bit and a carry out. Slower than the XOR loop, which stops as soon as no carries remain, but it is where the XOR loop comes from — and it never uses arithmetic at all.", "MASK = 0xFFFFFFFF
+      #(
+        "Full Adder",
+        "O(1) time · O(1) space",
+        "The same addition written as hardware: thirty-two full adders in a row, each taking two input bits and a carry and producing a sum bit and a carry out. Slower than the XOR loop, which stops as soon as no carries remain, but it is where the XOR loop comes from — and it never uses arithmetic at all.",
+        "MASK = 0xFFFFFFFF
 LARGEST = 0x7FFFFFFF
 
 
@@ -8186,8 +9275,13 @@ def getSum(a, b):
         result |= (xor ^ carry) << i
         carry = (x & y) | (carry & xor)
 
-    return result if result <= LARGEST else ~(result ^ MASK)"),
-      #("Bit Manipulation", "O(1) time · O(1) space", "Addition without +. XOR is addition that forgets to carry; AND finds exactly the places a carry was owed, and shifting it left one puts it where it belongs. Repeat until nothing is owed. In an arbitrary-precision language the negatives are the difficulty: mask to 32 bits so the carry loop terminates, then read the sign bit back by hand.", "MASK = 0xFFFFFFFF
+    return result if result <= LARGEST else ~(result ^ MASK)",
+      ),
+      #(
+        "Bit Manipulation",
+        "O(1) time · O(1) space",
+        "Addition without +. XOR is addition that forgets to carry; AND finds exactly the places a carry was owed, and shifting it left one puts it where it belongs. Repeat until nothing is owed. In an arbitrary-precision language the negatives are the difficulty: mask to 32 bits so the carry loop terminates, then read the sign bit back by hand.",
+        "MASK = 0xFFFFFFFF
 LARGEST = 0x7FFFFFFF
 
 
@@ -8204,7 +9298,8 @@ def getSum(a, b):
 
     # Python integers are arbitrary precision, so negatives have to be put back
     # by hand: a 32-bit pattern above the signed maximum is a negative number.
-    return a if a <= LARGEST else ~(a ^ MASK)"),
+    return a if a <= LARGEST else ~(a ^ MASK)",
+      ),
     ],
     check: Check(
       signature: "def getSum(a, b):",
@@ -8233,7 +9328,11 @@ __case__(\"getSum(5, -3)\", 2, getSum(5, -3))",
 pub fn nc55_reverse_integer() -> Embedded {
   Embedded(
     solutions: [
-      #("Nifty Python · Strings", "O(log n) time · O(log n) space", "Reverse the digits as text and read them back. It cannot overflow along the way, so the range check is a plain comparison at the end — which is honest here and dishonest in C, and worth being able to say which language you are in when you offer it.", "LARGEST = 2147483647
+      #(
+        "Nifty Python · Strings",
+        "O(log n) time · O(log n) space",
+        "Reverse the digits as text and read them back. It cannot overflow along the way, so the range check is a plain comparison at the end — which is honest here and dishonest in C, and worth being able to say which language you are in when you offer it.",
+        "LARGEST = 2147483647
 SMALLEST = -2147483648
 
 
@@ -8243,8 +9342,13 @@ def reverse(x):
     # safe because the value is not held in 32 bits along the way.
     magnitude = int(str(abs(x))[::-1])
     result = -magnitude if x < 0 else magnitude
-    return 0 if result > LARGEST or result < SMALLEST else result"),
-      #("Math", "O(log n) time · O(1) space", "Peel a digit off the bottom of the input and push it onto the bottom of the result. The whole difficulty is that the test has to happen *before* the multiply: in a fixed-width language the multiply is the moment the value would be lost, so checking afterwards is checking a number that no longer exists.", "LARGEST = 2147483647
+    return 0 if result > LARGEST or result < SMALLEST else result",
+      ),
+      #(
+        "Math",
+        "O(log n) time · O(1) space",
+        "Peel a digit off the bottom of the input and push it onto the bottom of the result. The whole difficulty is that the test has to happen *before* the multiply: in a fixed-width language the multiply is the moment the value would be lost, so checking afterwards is checking a number that no longer exists.",
+        "LARGEST = 2147483647
 SMALLEST = -2147483648
 
 
@@ -8263,7 +9367,8 @@ def reverse(x):
         remaining //= 10
 
     result *= sign
-    return 0 if result > LARGEST or result < SMALLEST else result"),
+    return 0 if result > LARGEST or result < SMALLEST else result",
+      ),
     ],
     check: Check(
       signature: "def reverse(x):",
@@ -8292,17 +9397,27 @@ __case__(\"reverse(1463847412)\", 2147483641, reverse(1463847412))",
 pub fn nc56_rotate_image() -> Embedded {
   Embedded(
     solutions: [
-      #("Index Mapping", "O(n²) time · O(n²) space", "Straight from where each element lands: after a clockwise quarter turn the entry at (row, column) came from (n − 1 − column, row). Deriving that mapping once, on paper, is the surest way to stop guessing which way round the rotation goes.", "def rotate(matrix):
+      #(
+        "Index Mapping",
+        "O(n²) time · O(n²) space",
+        "Straight from where each element lands: after a clockwise quarter turn the entry at (row, column) came from (n − 1 − column, row). Deriving that mapping once, on paper, is the surest way to stop guessing which way round the rotation goes.",
+        "def rotate(matrix):
     # Straight from where each element lands: after a clockwise quarter turn the
     # entry at (row, column) came from (n - 1 - column, row). Writing the mapping
     # out once is the surest way not to get the direction backwards.
     n = len(matrix)
-    return [[matrix[n - 1 - c][r] for c in range(n)] for r in range(n)]"),
-      #("Nifty Python · Zip", "O(n²) time · O(n²) space", "A quarter turn is two reflections: through the main diagonal, then through the vertical centre line. Both are trivial to write and neither needs index arithmetic, which is why this beats memorising the four-way element cycle — and why it is easy to get the direction right by reasoning rather than recall.", "def rotate(matrix):
+    return [[matrix[n - 1 - c][r] for c in range(n)] for r in range(n)]",
+      ),
+      #(
+        "Nifty Python · Zip",
+        "O(n²) time · O(n²) space",
+        "A quarter turn is two reflections: through the main diagonal, then through the vertical centre line. Both are trivial to write and neither needs index arithmetic, which is why this beats memorising the four-way element cycle — and why it is easy to get the direction right by reasoning rather than recall.",
+        "def rotate(matrix):
     # A quarter turn is a reflection through the main diagonal followed by a
     # reflection through the vertical centre line. Two easy operations instead
     # of one four-way element cycle, and neither needs index arithmetic.
-    return [list(row)[::-1] for row in zip(*matrix)]"),
+    return [list(row)[::-1] for row in zip(*matrix)]",
+      ),
     ],
     check: Check(
       signature: "def rotate(matrix):",
@@ -8329,7 +9444,11 @@ __case__(\"rotate(4x4)\", [[15, 13, 2, 5], [14, 3, 4, 1], [12, 6, 8, 9], [16, 7,
 pub fn nc57_spiral_matrix() -> Embedded {
   Embedded(
     solutions: [
-      #("Nifty Python · Rotate", "O(m·n·min(m,n)) time · O(m·n) space", "Take the top row, then turn the problem ninety degrees and do it again. Rotating what is left anticlockwise puts the column you would have walked down next along the top, so there is only ever one move to make and no boundary bookkeeping at all.", "def spiralOrder(matrix):
+      #(
+        "Nifty Python · Rotate",
+        "O(m·n·min(m,n)) time · O(m·n) space",
+        "Take the top row, then turn the problem ninety degrees and do it again. Rotating what is left anticlockwise puts the column you would have walked down next along the top, so there is only ever one move to make and no boundary bookkeeping at all.",
+        "def spiralOrder(matrix):
     # Take the top row, then turn the problem ninety degrees and do it again.
     # Rotating what is left anticlockwise puts the column you would have walked
     # down next along the top, so there is only ever one move to make.
@@ -8337,8 +9456,13 @@ pub fn nc57_spiral_matrix() -> Embedded {
     while matrix:
         out.extend(matrix[0])
         matrix = [list(row) for row in zip(*matrix[1:])][::-1]
-    return out"),
-      #("Simulation", "O(m·n) time · O(1) space", "Four boundaries closing in, each side walked and then retired. The two guards are the whole difficulty: on a single remaining row the top and bottom edges are the same edge, and on a single column the left and right are, so walking both emits those cells twice.", "def spiralOrder(matrix):
+    return out",
+      ),
+      #(
+        "Simulation",
+        "O(m·n) time · O(1) space",
+        "Four boundaries closing in, each side walked and then retired. The two guards are the whole difficulty: on a single remaining row the top and bottom edges are the same edge, and on a single column the left and right are, so walking both emits those cells twice.",
+        "def spiralOrder(matrix):
     if not matrix:
         return []
 
@@ -8363,7 +9487,8 @@ pub fn nc57_spiral_matrix() -> Embedded {
                 out.append(matrix[r][left])
         top, bottom, left, right = top + 1, bottom - 1, left + 1, right - 1
 
-    return out"),
+    return out",
+      ),
     ],
     check: Check(
       signature: "def spiralOrder(matrix):",
@@ -8391,9 +9516,13 @@ __case__(\"spiralOrder([[1], [2], [3]])\", [1, 2, 3], spiralOrder([[1], [2], [3]
 pub fn nc58_set_matrix_zeroes() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(m·n·(m+n)) time · O(m·n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(m·n·(m+n)) time · O(m·n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-The condition stated outright: a cell clears exactly when its own row holds a zero or its own column does. Nothing recorded, nothing ordered, so the two-pass trap cannot arise — at the cost of rescanning a row and a column for every cell.", "def setZeroes(matrix):
+The condition stated outright: a cell clears exactly when its own row holds a zero or its own column does. Nothing recorded, nothing ordered, so the two-pass trap cannot arise — at the cost of rescanning a row and a column for every cell.",
+        "def setZeroes(matrix):
     # The condition stated outright: a cell is cleared exactly when its own row
     # holds a zero or its own column does. Nothing is recorded and nothing is
     # ordered, so the two-pass trap cannot arise -- at the cost of rescanning a
@@ -8402,8 +9531,13 @@ The condition stated outright: a cell clears exactly when its own row holds a ze
     return [
         [0 if 0 in row or 0 in columns[c] else value for c, value in enumerate(row)]
         for row in matrix
-    ]"),
-      #("Hash Set", "O(m·n) time · O(m·n) space", "Two passes, and they cannot be one: a zero written as you go is indistinguishable from a zero that was already there, so the grid would clear itself entirely. Record which rows and columns are doomed first, then apply. Recognising why one pass fails is the point of the problem.", "def setZeroes(matrix):
+    ]",
+      ),
+      #(
+        "Hash Set",
+        "O(m·n) time · O(m·n) space",
+        "Two passes, and they cannot be one: a zero written as you go is indistinguishable from a zero that was already there, so the grid would clear itself entirely. Record which rows and columns are doomed first, then apply. Recognising why one pass fails is the point of the problem.",
+        "def setZeroes(matrix):
     # Two passes, and they cannot be one: writing a zero as you find it would be
     # indistinguishable from a zero that was already there, and the whole grid
     # would clear. So record which rows and columns are doomed first, then apply.
@@ -8418,7 +9552,8 @@ The condition stated outright: a cell clears exactly when its own row holds a ze
     return [
         [0 if r in rows or c in columns else value for c, value in enumerate(row)]
         for r, row in enumerate(matrix)
-    ]"),
+    ]",
+      ),
     ],
     check: Check(
       signature: "def setZeroes(matrix):",
@@ -8446,7 +9581,11 @@ __case__(\"setZeroes([[1, 2], [3, 4]])\", [[1, 2], [3, 4]], setZeroes([[1, 2], [
 pub fn nc59_happy_number() -> Embedded {
   Embedded(
     solutions: [
-      #("Fast & Slow Pointers", "O(log n) time · O(1) space", "The same question with no memory at all. One pointer steps once per round, another twice, and they meet inside whatever cycle exists — meeting at 1 means the cycle is the fixed point, meeting anywhere else means it is not. Constant space, and the same trick that finds a cycle in a linked list.", "def isHappy(n):
+      #(
+        "Fast & Slow Pointers",
+        "O(log n) time · O(1) space",
+        "The same question with no memory at all. One pointer steps once per round, another twice, and they meet inside whatever cycle exists — meeting at 1 means the cycle is the fixed point, meeting anywhere else means it is not. Constant space, and the same trick that finds a cycle in a linked list.",
+        "def isHappy(n):
     # The same question with no memory at all: run one pointer at single speed
     # and another at double, and they meet inside whatever cycle exists. Meeting
     # at 1 means the cycle is the fixed point; meeting anywhere else means it is
@@ -8465,8 +9604,13 @@ def squareDigits(n):
         digit = n % 10
         total += digit * digit
         n //= 10
-    return total"),
-      #("Hash Set", "O(log n) time · O(log n) space", "The sequence must repeat: sums of squared digits are bounded, so only finitely many values are reachable and the walk has to revisit one. That turns \"does it loop?\" into a set lookup, and the answer is whether the value it settles on is 1.", "def isHappy(n):
+    return total",
+      ),
+      #(
+        "Hash Set",
+        "O(log n) time · O(log n) space",
+        "The sequence must repeat: sums of squared digits are bounded, so only finitely many values are reachable and the walk has to revisit one. That turns \"does it loop?\" into a set lookup, and the answer is whether the value it settles on is 1.",
+        "def isHappy(n):
     # The sequence has to repeat eventually -- squares of digits are bounded, so
     # there are only finitely many values it can reach. Remembering what has
     # been seen turns \"does it loop?\" into a set lookup.
@@ -8483,7 +9627,8 @@ def squareDigits(n):
         digit = n % 10
         total += digit * digit
         n //= 10
-    return total"),
+    return total",
+      ),
     ],
     check: Check(
       signature: "def isHappy(n):
@@ -8516,7 +9661,11 @@ __case__(\"isHappy(100)\", True, isHappy(100))",
 pub fn nc60_plus_one() -> Embedded {
   Embedded(
     solutions: [
-      #("Nifty Python · Big Int", "O(n²) time · O(n) space", "Fold the digits into a number, add one, take it apart again. Shorter, and safe in a language with arbitrary-precision integers; in one without, this is exactly the version that breaks, and being handed digits rather than a number is the problem telling you so.", "def plusOne(digits):
+      #(
+        "Nifty Python · Big Int",
+        "O(n²) time · O(n) space",
+        "Fold the digits into a number, add one, take it apart again. Shorter, and safe in a language with arbitrary-precision integers; in one without, this is exactly the version that breaks, and being handed digits rather than a number is the problem telling you so.",
+        "def plusOne(digits):
     # Fold the digits into a number, add one, take it apart again. Shorter, and
     # in Python it is even safe -- integers are arbitrary precision. In a
     # language where they are not, this is exactly the version that breaks, and
@@ -8524,8 +9673,13 @@ pub fn nc60_plus_one() -> Embedded {
     value = 0
     for digit in digits:
         value = value * 10 + digit
-    return [int(c) for c in str(value + 1)]"),
-      #("Math", "O(n) time · O(n) space", "Adding one is a carry that starts at 1 and dies as soon as a digit below nine absorbs it. The only case worth care is when it never does — all nines — and the number grows a digit at the front.", "def plusOne(digits):
+    return [int(c) for c in str(value + 1)]",
+      ),
+      #(
+        "Math",
+        "O(n) time · O(n) space",
+        "Adding one is a carry that starts at 1 and dies as soon as a digit below nine absorbs it. The only case worth care is when it never does — all nines — and the number grows a digit at the front.",
+        "def plusOne(digits):
     # Adding one is a carry that starts at 1 and dies as soon as a digit below
     # nine absorbs it. The only interesting case is when it never does, and the
     # number grows a digit.
@@ -8538,7 +9692,8 @@ pub fn nc60_plus_one() -> Embedded {
 
     if carry:
         out.append(carry)
-    return out[::-1]"),
+    return out[::-1]",
+      ),
     ],
     check: Check(
       signature: "def plusOne(digits):",
@@ -8566,14 +9721,23 @@ __case__(\"plusOne([1, 9, 9])\", [2, 0, 0], plusOne([1, 9, 9]))",
 pub fn nc61_pow() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n) time · O(1) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Multiply n times. Fine for small exponents, and it makes the saving obvious: the fast version does about log₂(n) multiplications where this one does n — thirty against a billion.", "def myPow(x, n):
+Multiply n times. Fine for small exponents, and it makes the saving obvious: the fast version does about log₂(n) multiplications where this one does n — thirty against a billion.",
+        "def myPow(x, n):
     magnitude = 1.0
     for _ in range(abs(n)):
         magnitude *= x
-    return 1 / magnitude if n < 0 else magnitude"),
-      #("Binary Exponentiation", "O(log n) time · O(log n) space", "Halving the exponent halves the work: x^n is (x^(n/2))², with one extra multiplication when n is odd. O(log n) multiplications rather than n. A negative exponent is one reciprocal at the end, and the recursion bottoms out at n = 0 returning 1.", "def myPow(x, n):
+    return 1 / magnitude if n < 0 else magnitude",
+      ),
+      #(
+        "Binary Exponentiation",
+        "O(log n) time · O(log n) space",
+        "Halving the exponent halves the work: x^n is (x^(n/2))², with one extra multiplication when n is odd. O(log n) multiplications rather than n. A negative exponent is one reciprocal at the end, and the recursion bottoms out at n = 0 returning 1.",
+        "def myPow(x, n):
     if n < 0:
         return 1 / power(x, -n)
     return power(x, n)
@@ -8585,7 +9749,8 @@ def power(x, n):
     if n == 0:
         return 1.0
     half = power(x, n // 2)
-    return half * half * x if n % 2 else half * half"),
+    return half * half * x if n % 2 else half * half",
+      ),
     ],
     check: Check(
       signature: "def myPow(x, n):
@@ -8619,7 +9784,11 @@ __case__(\"myPow(0.0, 5)\", 0.0, myPow(0.0, 5))",
 pub fn nc62_multiply_strings() -> Embedded {
   Embedded(
     solutions: [
-      #("Simulation", "O(n·(m+n)) time · O(m+n) space", "Long multiplication exactly as taught: one partial product per digit of the second number, each shifted left by its position, all added up. It needs string addition as well as string multiplication — which is why the accumulating version exists, and why writing add once is worth it anyway.", "def multiply(num1, num2):
+      #(
+        "Simulation",
+        "O(n·(m+n)) time · O(m+n) space",
+        "Long multiplication exactly as taught: one partial product per digit of the second number, each shifted left by its position, all added up. It needs string addition as well as string multiplication — which is why the accumulating version exists, and why writing add once is worth it anyway.",
+        "def multiply(num1, num2):
     if num1 == \"0\" or num2 == \"0\":
         return \"0\"
 
@@ -8659,8 +9828,13 @@ def add(left, right):
             j -= 1
         out.append(total % 10)
         carry = total // 10
-    return \"\".join(str(d) for d in reversed(out)).lstrip(\"0\") or \"0\""),
-      #("Math", "O(m·n) time · O(m+n) space", "Long multiplication with the carrying postponed. Digit i of one number times digit j of the other always lands at position i + j, so every product drops straight into its slot and the carries are settled in one sweep at the end. Deferring the carry is what keeps the inner loop free of bookkeeping.", "def multiply(num1, num2):
+    return \"\".join(str(d) for d in reversed(out)).lstrip(\"0\") or \"0\"",
+      ),
+      #(
+        "Math",
+        "O(m·n) time · O(m+n) space",
+        "Long multiplication with the carrying postponed. Digit i of one number times digit j of the other always lands at position i + j, so every product drops straight into its slot and the carries are settled in one sweep at the end. Deferring the carry is what keeps the inner loop free of bookkeeping.",
+        "def multiply(num1, num2):
     if num1 == \"0\" or num2 == \"0\":
         return \"0\"
 
@@ -8683,7 +9857,8 @@ def add(left, right):
         digits.append(total % 10)
         carry = total // 10
 
-    return \"\".join(str(d) for d in reversed(digits)).lstrip(\"0\") or \"0\""),
+    return \"\".join(str(d) for d in reversed(digits)).lstrip(\"0\") or \"0\"",
+      ),
     ],
     check: Check(
       signature: "def multiply(num1, num2):",
@@ -8711,7 +9886,11 @@ __case__(\"multiply('123456789', '987654321')\", '121932631112635269', multiply(
 pub fn nc63_detect_squares() -> Embedded {
   Embedded(
     solutions: [
-      #("Side Length Scan", "O(n) per count · O(n) space", "Choose the corner directly above or below instead. That fixes the side length rather than the square, so there are two candidates to check per partner — the remaining corners can be to the left or to the right. Same complexity, and a useful reminder that which corner you pivot on changes how much is determined.", "class DetectSquares:
+      #(
+        "Side Length Scan",
+        "O(n) per count · O(n) space",
+        "Choose the corner directly above or below instead. That fixes the side length rather than the square, so there are two candidates to check per partner — the remaining corners can be to the left or to the right. Same complexity, and a useful reminder that which corner you pivot on changes how much is determined.",
+        "class DetectSquares:
     def __init__(self):
         self.counts = {}
 
@@ -8737,8 +9916,13 @@ pub fn nc63_detect_squares() -> Embedded {
                     * self.counts.get((column, py), 0)
                 )
 
-        return total"),
-      #("Hash Map", "O(n) per count · O(n) space", "Choosing the corner diagonally opposite fixes the entire square: the other two corners can only be at (x, py) and (px, y). So the scan is over stored points that share neither coordinate and sit on a true diagonal, and the three corner counts multiply — a repeated point genuinely forms a separate square.", "class DetectSquares:
+        return total",
+      ),
+      #(
+        "Hash Map",
+        "O(n) per count · O(n) space",
+        "Choosing the corner diagonally opposite fixes the entire square: the other two corners can only be at (x, py) and (px, y). So the scan is over stored points that share neither coordinate and sit on a true diagonal, and the three corner counts multiply — a repeated point genuinely forms a separate square.",
+        "class DetectSquares:
     def __init__(self):
         self.counts = {}
 
@@ -8759,7 +9943,8 @@ pub fn nc63_detect_squares() -> Embedded {
                 continue
             total += copies * self.counts.get((x, py), 0) * self.counts.get((px, y), 0)
 
-        return total"),
+        return total",
+      ),
     ],
     check: Check(
       signature: "class DetectSquares:
@@ -8808,7 +9993,11 @@ __case__(\"count([0, 0]) on the unit square\", 1, __unit__.count([0, 0]))",
 pub fn nc64_climbing_stairs() -> Embedded {
   Embedded(
     solutions: [
-      #("Top-Down Memo", "O(n) time · O(n) space", "The same recurrence from the top down, with a cache. Heavier than the rolling pair, but it is the shape you reach for first when the recurrence is not obviously a straight line — and the memo is the entire difference between O(n) and O(2ⁿ).", "def climbStairs(n):
+      #(
+        "Top-Down Memo",
+        "O(n) time · O(n) space",
+        "The same recurrence from the top down, with a cache. Heavier than the rolling pair, but it is the shape you reach for first when the recurrence is not obviously a straight line — and the memo is the entire difference between O(n) and O(2ⁿ).",
+        "def climbStairs(n):
     memo = {}
 
     # The same recurrence from the top down, with a cache. Slower and heavier
@@ -8822,15 +10011,21 @@ pub fn nc64_climbing_stairs() -> Embedded {
             memo[k] = ways(k - 1) + ways(k - 2)
         return memo[k]
 
-    return ways(n)"),
-      #("Space-Saving DP", "O(n) time · O(1) space", "The last move was either one step or two, so the ways to reach step n are the ways to reach n−1 plus the ways to reach n−2 — Fibonacci with a staircase painted on it. Only the last two values ever matter, so two variables replace the whole table.", "def climbStairs(n):
+    return ways(n)",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "The last move was either one step or two, so the ways to reach step n are the ways to reach n−1 plus the ways to reach n−2 — Fibonacci with a staircase painted on it. Only the last two values ever matter, so two variables replace the whole table.",
+        "def climbStairs(n):
     # The last move was either one step or two, so the ways to reach step n are
     # the ways to reach n-1 plus the ways to reach n-2 -- Fibonacci with a
     # staircase painted on it. Only the last two values matter.
     previous, current = 0, 1
     for _ in range(n):
         previous, current = current, previous + current
-    return current"),
+    return current",
+      ),
     ],
     check: Check(
       signature: "def climbStairs(n):",
@@ -8858,7 +10053,11 @@ __case__(\"climbStairs(45)\", 1836311903, climbStairs(45))",
 pub fn nc65_min_cost_climbing_stairs() -> Embedded {
   Embedded(
     solutions: [
-      #("Backward DP", "O(n) time · O(1) space", "The same recurrence read the other way: not \"what did it cost to get here\" but \"what will it cost to finish from here\". Walking backwards, each step's answer is its own price plus the cheaper of the two ahead. Worth writing both — one direction is usually far easier to state than the other, and which one varies by problem.", "def minCostClimbingStairs(cost):
+      #(
+        "Backward DP",
+        "O(n) time · O(1) space",
+        "The same recurrence read the other way: not \"what did it cost to get here\" but \"what will it cost to finish from here\". Walking backwards, each step's answer is its own price plus the cheaper of the two ahead. Worth writing both — one direction is usually far easier to state than the other, and which one varies by problem.",
+        "def minCostClimbingStairs(cost):
     # The same recurrence read the other way: instead of \"what did it cost to
     # get here\", ask \"what will it cost to finish from here\". Walking backwards,
     # the answer at each step is its own price plus the cheaper of the two
@@ -8866,15 +10065,21 @@ pub fn nc65_min_cost_climbing_stairs() -> Embedded {
     one_ahead, two_ahead = 0, 0
     for price in reversed(cost):
         one_ahead, two_ahead = price + min(one_ahead, two_ahead), one_ahead
-    return min(one_ahead, two_ahead)"),
-      #("Space-Saving DP", "O(n) time · O(1) space", "Cost to stand on each step, carried forward: getting here means having paid for one of the two steps below, whichever was cheaper. Two variables again, because nothing older than two steps back can matter. Either of the first two steps is a legal start, which is what the final min covers.", "def minCostClimbingStairs(cost):
+    return min(one_ahead, two_ahead)",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "Cost to stand on each step, carried forward: getting here means having paid for one of the two steps below, whichever was cheaper. Two variables again, because nothing older than two steps back can matter. Either of the first two steps is a legal start, which is what the final min covers.",
+        "def minCostClimbingStairs(cost):
     # Cost to stand on each step, carried forward: getting here means having
     # paid for one of the two steps below, whichever was cheaper. Two variables
     # again, because nothing older than two steps back can matter.
     one_back, two_back = 0, 0
     for price in cost:
         one_back, two_back = price + min(one_back, two_back), one_back
-    return min(one_back, two_back)"),
+    return min(one_back, two_back)",
+      ),
     ],
     check: Check(
       signature: "def minCostClimbingStairs(cost):",
@@ -8902,7 +10107,11 @@ __case__(\"minCostClimbingStairs([])\", 0, minCostClimbingStairs([]))",
 pub fn nc66_house_robber() -> Embedded {
   Embedded(
     solutions: [
-      #("Top-Down Memo", "O(n) time · O(n) space", "The same choice written as a recursion from the front: rob this house and skip the next, or skip this one. Exponential without the cache and linear with it — which is the lesson, because the rolling pair hides that the problem ever had a tree of choices at all.", "def rob(nums):
+      #(
+        "Top-Down Memo",
+        "O(n) time · O(n) space",
+        "The same choice written as a recursion from the front: rob this house and skip the next, or skip this one. Exponential without the cache and linear with it — which is the lesson, because the rolling pair hides that the problem ever had a tree of choices at all.",
+        "def rob(nums):
     memo = {}
 
     # The same choice written as a recursion from the front: rob this house and
@@ -8916,15 +10125,21 @@ pub fn nc66_house_robber() -> Embedded {
             memo[index] = max(nums[index] + best(index + 2), best(index + 1))
         return memo[index]
 
-    return best(0)"),
-      #("Space-Saving DP", "O(n) time · O(1) space", "At each house the choice is take it and add what was safe two houses back, or skip it and keep the best so far. Both of those are one number, so the whole table collapses to a pair of running values.", "def rob(nums):
+    return best(0)",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "At each house the choice is take it and add what was safe two houses back, or skip it and keep the best so far. Both of those are one number, so the whole table collapses to a pair of running values.",
+        "def rob(nums):
     # At each house the choice is take it and add what was safe two houses back,
     # or skip it and keep the best so far. Both answers are one number, so the
     # whole table collapses to a pair.
     best, previous = 0, 0
     for value in nums:
         best, previous = max(best, previous + value), best
-    return best"),
+    return best",
+      ),
     ],
     check: Check(
       signature: "def rob(nums):",
@@ -8952,7 +10167,11 @@ __case__(\"rob([1, 2])\", 2, rob([1, 2]))",
 pub fn nc67_house_robber_ii() -> Embedded {
   Embedded(
     solutions: [
-      #("One-Pass DP", "O(n) time · O(1) space", "One pass carrying both stories at the same time: the run allowed to take the first house, and the run that is not. Neither ever consults the other, so this is exactly the two-pass version interleaved — worth knowing when the input can only be walked once.", "def rob(nums):
+      #(
+        "One-Pass DP",
+        "O(n) time · O(1) space",
+        "One pass carrying both stories at the same time: the run allowed to take the first house, and the run that is not. Neither ever consults the other, so this is exactly the two-pass version interleaved — worth knowing when the input can only be walked once.",
+        "def rob(nums):
     if not nums:
         return 0
     if len(nums) == 1:
@@ -8976,8 +10195,13 @@ pub fn nc67_house_robber_ii() -> Embedded {
 
 def step(state, value):
     best, previous = state
-    return max(best, previous + value), best"),
-      #("Space-Saving DP", "O(n) time · O(n) space", "The circle matters through exactly one constraint: the first and last houses are neighbours, so at most one of them is robbed. Ruling each out in turn leaves two ordinary straight-line problems, and the answer is the better of the two — reusing a solved problem rather than inventing a circular recurrence.", "def rob(nums):
+    return max(best, previous + value), best",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(n) space",
+        "The circle matters through exactly one constraint: the first and last houses are neighbours, so at most one of them is robbed. Ruling each out in turn leaves two ordinary straight-line problems, and the answer is the better of the two — reusing a solved problem rather than inventing a circular recurrence.",
+        "def rob(nums):
     # The circle only matters through one constraint: the first and last houses
     # are neighbours, so at most one of them is robbed. Ruling each out in turn
     # leaves two ordinary straight-line problems, and the answer is the better.
@@ -8992,7 +10216,8 @@ def straight(nums):
     best, previous = 0, 0
     for value in nums:
         best, previous = max(best, previous + value), best
-    return best"),
+    return best",
+      ),
     ],
     check: Check(
       signature: "def rob(nums):
@@ -9025,9 +10250,13 @@ __case__(\"rob([1, 2])\", 2, rob([1, 2]))",
 pub fn nc68_longest_palindrome() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n³) time · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n³) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Every start with every length, each checked against its own reverse. O(n³), and the thing centre expansion optimises: it never re-checks the inside of a palindrome it has already grown through.", "def longestPalindrome(s):
+Every start with every length, each checked against its own reverse. O(n³), and the thing centre expansion optimises: it never re-checks the inside of a palindrome it has already grown through.",
+        "def longestPalindrome(s):
     # Every start with every length. O(n^3) once the palindrome check is counted
     # -- the definition, and what centre expansion is an optimisation of.
     best = \"\"
@@ -9036,8 +10265,13 @@ Every start with every length, each checked against its own reverse. O(n³), and
             candidate = s[start:end]
             if len(candidate) > len(best) and candidate == candidate[::-1]:
                 best = candidate
-    return best"),
-      #("Centre Expansion", "O(n²) time · O(1) space", "Every palindrome has a centre, and there are only 2n of them — n characters and n gaps between them. Growing outwards from each is O(n²) with no table at all. The gaps are what people forget: without them, every even-length palindrome is invisible.", "def longestPalindrome(s):
+    return best",
+      ),
+      #(
+        "Centre Expansion",
+        "O(n²) time · O(1) space",
+        "Every palindrome has a centre, and there are only 2n of them — n characters and n gaps between them. Growing outwards from each is O(n²) with no table at all. The gaps are what people forget: without them, every even-length palindrome is invisible.",
+        "def longestPalindrome(s):
     # Every palindrome has a centre, and there are only 2n of them -- n single
     # characters and n gaps between them. Growing outwards from each is O(n^2)
     # total and needs no table.
@@ -9059,7 +10293,8 @@ def expand(s, left, right):
     while left >= 0 and right < len(s) and s[left] == s[right]:
         left -= 1
         right += 1
-    return left + 1, right - left - 1"),
+    return left + 1, right - left - 1",
+      ),
     ],
     check: Check(
       signature: "def longestPalindrome(s):
@@ -9093,7 +10328,11 @@ __case__(\"longestPalindrome('abb')\", 'bb', longestPalindrome('abb'))",
 pub fn nc69_palindromic_substrings() -> Embedded {
   Embedded(
     solutions: [
-      #("Bottom-Up DP", "O(n²) time · O(n²) space", "A table over spans: s[i..j] is a palindrome when its ends match and the span inside already was. That dependency forces the fill order — shortest spans first — which is the only real content of the outer loop and the thing to get right.", "def countSubstrings(s):
+      #(
+        "Bottom-Up DP",
+        "O(n²) time · O(n²) space",
+        "A table over spans: s[i..j] is a palindrome when its ends match and the span inside already was. That dependency forces the fill order — shortest spans first — which is the only real content of the outer loop and the thing to get right.",
+        "def countSubstrings(s):
     # The table says whether s[i..j] is a palindrome. It is when its ends match
     # and whatever is between them already was -- so the spans have to be filled
     # shortest first, which is the whole reason for the outer loop over length.
@@ -9109,8 +10348,13 @@ pub fn nc69_palindromic_substrings() -> Embedded {
             if table[(i, j)]:
                 total += 1
 
-    return total"),
-      #("Centre Expansion", "O(n²) time · O(1) space", "The same 2n centres as finding the longest one, except that here every successful widening is itself an answer. So the count is how many times the expansion succeeded rather than how far it got — one line different, same scan.", "def countSubstrings(s):
+    return total",
+      ),
+      #(
+        "Centre Expansion",
+        "O(n²) time · O(1) space",
+        "The same 2n centres as finding the longest one, except that here every successful widening is itself an answer. So the count is how many times the expansion succeeded rather than how far it got — one line different, same scan.",
+        "def countSubstrings(s):
     # Same 2n centres as finding the longest one, except that here every
     # successful widening is itself an answer, so the count is how many times
     # the expansion succeeded rather than how far it got.
@@ -9126,7 +10370,8 @@ def grow(s, left, right):
         count += 1
         left -= 1
         right += 1
-    return count"),
+    return count",
+      ),
     ],
     check: Check(
       signature: "def countSubstrings(s):
@@ -9159,7 +10404,11 @@ __case__(\"countSubstrings('abccba')\", 9, countSubstrings('abccba'))",
 pub fn nc70_decode_ways() -> Embedded {
   Embedded(
     solutions: [
-      #("Top-Down Memo", "O(n) time · O(n) space", "The same two choices as a recursion from the front: take one character, or take two if they form a legal pair. Reaching the end is one complete decoding, which is why the base case returns 1 and not 0 — the single most common place to get this problem wrong.", "def numDecodings(s):
+      #(
+        "Top-Down Memo",
+        "O(n) time · O(n) space",
+        "The same two choices as a recursion from the front: take one character, or take two if they form a legal pair. Reaching the end is one complete decoding, which is why the base case returns 1 and not 0 — the single most common place to get this problem wrong.",
+        "def numDecodings(s):
     if not s:
         return 0
 
@@ -9180,8 +10429,13 @@ pub fn nc70_decode_ways() -> Embedded {
             memo[i] = total
         return memo[i]
 
-    return ways(0)"),
-      #("Space-Saving DP", "O(n) time · O(1) space", "Two rolling counts. The ways to decode up to here are the ways up to the previous character, if this one can stand alone, plus the ways up to the one before that, if this one and its predecessor read as 10 to 26. A leading zero kills the first branch; anything outside that range kills the second.", "def numDecodings(s):
+    return ways(0)",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "Two rolling counts. The ways to decode up to here are the ways up to the previous character, if this one can stand alone, plus the ways up to the one before that, if this one and its predecessor read as 10 to 26. A leading zero kills the first branch; anything outside that range kills the second.",
+        "def numDecodings(s):
     if not s:
         return 0
 
@@ -9195,7 +10449,8 @@ pub fn nc70_decode_ways() -> Embedded {
         paired = two_back if i > 0 and 10 <= int(s[i - 1:i + 1]) <= 26 else 0
         two_back, one_back = one_back, alone + paired
 
-    return one_back"),
+    return one_back",
+      ),
     ],
     check: Check(
       signature: "def numDecodings(s):",
@@ -9225,7 +10480,11 @@ __case__(\"numDecodings('11106')\", 2, numDecodings('11106'))",
 pub fn nc71_coin_change() -> Embedded {
   Embedded(
     solutions: [
-      #("BFS", "O(amount·coins) time · O(amount) space", "The amounts reachable with k coins are one level of a breadth-first search from zero, so the first level containing the target is the answer. Same bound as the table, but it stops the moment it arrives rather than filling in every amount below the target — and it makes clear why the answer is a shortest path.", "def coinChange(coins, amount):
+      #(
+        "BFS",
+        "O(amount·coins) time · O(amount) space",
+        "The amounts reachable with k coins are one level of a breadth-first search from zero, so the first level containing the target is the answer. Same bound as the table, but it stops the moment it arrives rather than filling in every amount below the target — and it makes clear why the answer is a shortest path.",
+        "def coinChange(coins, amount):
     if amount == 0:
         return 0
 
@@ -9250,8 +10509,13 @@ pub fn nc71_coin_change() -> Embedded {
                     following.append(nxt)
         frontier = following
 
-    return -1"),
-      #("Bottom-Up DP", "O(amount·coins) time · O(amount) space", "Build up from zero: the cheapest way to make a target is one coin more than the cheapest way to make what is left after removing some coin. Leaving unreachable amounts simply absent from the table saves inventing a sentinel for infinity and the comparisons that go with it.", "def coinChange(coins, amount):
+    return -1",
+      ),
+      #(
+        "Bottom-Up DP",
+        "O(amount·coins) time · O(amount) space",
+        "Build up from zero: the cheapest way to make a target is one coin more than the cheapest way to make what is left after removing some coin. Leaving unreachable amounts simply absent from the table saves inventing a sentinel for infinity and the comparisons that go with it.",
+        "def coinChange(coins, amount):
     # Build up from zero: the cheapest way to make a target is one coin more
     # than the cheapest way to make what is left after removing some coin. An
     # amount with no entry is simply unreachable, which saves inventing a
@@ -9263,7 +10527,8 @@ pub fn nc71_coin_change() -> Embedded {
         if options:
             table[target] = min(options) + 1
 
-    return table.get(amount, -1)"),
+    return table.get(amount, -1)",
+      ),
     ],
     check: Check(
       signature: "def coinChange(coins, amount):",
@@ -9291,7 +10556,11 @@ __case__(\"coinChange([2, 5, 10, 1], 27)\", 4, coinChange([2, 5, 10, 1], 27))",
 pub fn nc72_maximum_product_subarray() -> Embedded {
   Embedded(
     solutions: [
-      #("Prefix & Suffix Products", "O(n) time · O(n) space", "A different argument entirely: the best subarray always runs to one end of the zero-free block it sits in, so running products swept from both directions — reset at each zero — cover every candidate. No min to track, and the reason it works is worth being able to state.", "def maxProduct(nums):
+      #(
+        "Prefix & Suffix Products",
+        "O(n) time · O(n) space",
+        "A different argument entirely: the best subarray always runs to one end of the zero-free block it sits in, so running products swept from both directions — reset at each zero — cover every candidate. No min to track, and the reason it works is worth being able to state.",
+        "def maxProduct(nums):
     if not nums:
         return 0
     # A different argument entirely: the best subarray always runs to one end of
@@ -9306,8 +10575,13 @@ def sweep(nums):
     for n in nums:
         running = n if running == 0 else running * n
         best = max(best, running)
-    return best"),
-      #("Space-Saving DP", "O(n) time · O(1) space", "A negative number turns the best running product into the worst and the worst into the best, so both have to be carried. Zero resets them, which falls out for free from taking the element itself as one of the candidates rather than special-casing it.", "def maxProduct(nums):
+    return best",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "A negative number turns the best running product into the worst and the worst into the best, so both have to be carried. Zero resets them, which falls out for free from taking the element itself as one of the candidates rather than special-casing it.",
+        "def maxProduct(nums):
     if not nums:
         return 0
 
@@ -9320,7 +10594,8 @@ def sweep(nums):
         high, low = max(candidates), min(candidates)
         best = max(best, high)
 
-    return best"),
+    return best",
+      ),
     ],
     check: Check(
       signature: "def maxProduct(nums):",
@@ -9349,7 +10624,11 @@ __case__(\"maxProduct([])\", 0, maxProduct([]))",
 pub fn nc73_word_break() -> Embedded {
   Embedded(
     solutions: [
-      #("Top-Down Memo", "O(n³) time · O(n) space", "Top-down: from this position, does a dictionary word start here and leave a suffix that also breaks? Without the cache the same suffix is asked about once per way of reaching it, which is where the exponential blow-up on inputs like \"aaaa…b\" comes from.", "def wordBreak(s, wordDict):
+      #(
+        "Top-Down Memo",
+        "O(n³) time · O(n) space",
+        "Top-down: from this position, does a dictionary word start here and leave a suffix that also breaks? Without the cache the same suffix is asked about once per way of reaching it, which is where the exponential blow-up on inputs like \"aaaa…b\" comes from.",
+        "def wordBreak(s, wordDict):
     words = set(wordDict)
     memo = {}
 
@@ -9367,8 +10646,13 @@ pub fn nc73_word_break() -> Embedded {
             )
         return memo[start]
 
-    return breaks(0)"),
-      #("Bottom-Up DP", "O(n³) time · O(n) space", "Reachable positions rather than a table of booleans: position 0 is reachable, and a position becomes reachable when some dictionary word bridges the gap from one already reached. The answer is whether the end is reachable.", "def wordBreak(s, wordDict):
+    return breaks(0)",
+      ),
+      #(
+        "Bottom-Up DP",
+        "O(n³) time · O(n) space",
+        "Reachable positions rather than a table of booleans: position 0 is reachable, and a position becomes reachable when some dictionary word bridges the gap from one already reached. The answer is whether the end is reachable.",
+        "def wordBreak(s, wordDict):
     words = set(wordDict)
 
     # Reachable positions rather than a table of booleans: start at 0, and a
@@ -9379,7 +10663,8 @@ pub fn nc73_word_break() -> Embedded {
         if any(start in reached and s[start:end] in words for start in range(end)):
             reached.add(end)
 
-    return len(s) in reached"),
+    return len(s) in reached",
+      ),
     ],
     check: Check(
       signature: "def wordBreak(s, wordDict):",
@@ -9407,7 +10692,11 @@ __case__(\"wordBreak('aaaaaaa', ['aaa', 'aaaa'])\", True, wordBreak('aaaaaaa', [
 pub fn nc74_longest_increasing_subsequence() -> Embedded {
   Embedded(
     solutions: [
-      #("Bottom-Up DP", "O(n²) time · O(n) space", "The longest subsequence ending at each position: one plus the best of every earlier position holding a smaller value. O(n²), and the version to reach for first because the recurrence is stated directly rather than encoded.", "def lengthOfLIS(nums):
+      #(
+        "Bottom-Up DP",
+        "O(n²) time · O(n) space",
+        "The longest subsequence ending at each position: one plus the best of every earlier position holding a smaller value. O(n²), and the version to reach for first because the recurrence is stated directly rather than encoded.",
+        "def lengthOfLIS(nums):
     # The longest subsequence ending at each position: one plus the best of
     # every earlier position holding a smaller value. Building the answers in
     # order means every \"earlier position\" is already known.
@@ -9419,8 +10708,13 @@ pub fn nc74_longest_increasing_subsequence() -> Embedded {
         endings.append((n, here))
         best = max(best, here)
 
-    return best"),
-      #("Patience Sorting", "O(n log n) time · O(n) space", "Patience sorting. Keep the smallest value that a subsequence of each length can end with; that list stays sorted, so each number either extends it or replaces the first entry it is no bigger than — a halving search, giving O(n log n). Note what the list is not: it is not the answer subsequence, only its length is meaningful.", "from bisect import bisect_left
+    return best",
+      ),
+      #(
+        "Patience Sorting",
+        "O(n log n) time · O(n) space",
+        "Patience sorting. Keep the smallest value that a subsequence of each length can end with; that list stays sorted, so each number either extends it or replaces the first entry it is no bigger than — a halving search, giving O(n log n). Note what the list is not: it is not the answer subsequence, only its length is meaningful.",
+        "from bisect import bisect_left
 
 
 def lengthOfLIS(nums):
@@ -9435,7 +10729,8 @@ def lengthOfLIS(nums):
             tails.append(n)
         else:
             tails[at] = n
-    return len(tails)"),
+    return len(tails)",
+      ),
     ],
     check: Check(
       signature: "def lengthOfLIS(nums):",
@@ -9463,7 +10758,11 @@ __case__(\"lengthOfLIS([4, 10, 4, 3, 8, 9])\", 3, lengthOfLIS([4, 10, 4, 3, 8, 9
 pub fn nc75_partition_equal_subset() -> Embedded {
   Embedded(
     solutions: [
-      #("Top-Down Memo", "O(n·sum) time · O(n·sum) space", "Take this number or leave it, keyed by how much is still owed and how far along the list you are. As a recursion it is obviously a search over subsets, which the reachable-sums version hides — and the cache is what stops it enumerating all 2ⁿ of them.", "def canPartition(nums):
+      #(
+        "Top-Down Memo",
+        "O(n·sum) time · O(n·sum) space",
+        "Take this number or leave it, keyed by how much is still owed and how far along the list you are. As a recursion it is obviously a search over subsets, which the reachable-sums version hides — and the cache is what stops it enumerating all 2ⁿ of them.",
+        "def canPartition(nums):
     total = sum(nums)
     if total % 2:
         return False
@@ -9484,8 +10783,13 @@ pub fn nc75_partition_equal_subset() -> Embedded {
             )
         return memo[(index, owed)]
 
-    return reachable(0, total // 2)"),
-      #("Bottom-Up DP", "O(n·sum) time · O(sum) space", "Subset sum in disguise: an equal split exists exactly when some subset adds to half the total, and an odd total rules it out before any work. Carrying the set of reachable sums needs no ordering and no table, and duplicates cost nothing because a set collapses them.", "def canPartition(nums):
+    return reachable(0, total // 2)",
+      ),
+      #(
+        "Bottom-Up DP",
+        "O(n·sum) time · O(sum) space",
+        "Subset sum in disguise: an equal split exists exactly when some subset adds to half the total, and an odd total rules it out before any work. Carrying the set of reachable sums needs no ordering and no table, and duplicates cost nothing because a set collapses them.",
+        "def canPartition(nums):
     total = sum(nums)
     if total % 2:
         return False
@@ -9499,7 +10803,8 @@ pub fn nc75_partition_equal_subset() -> Embedded {
     for n in nums:
         reachable |= {reached + n for reached in reachable if reached + n <= half}
 
-    return half in reachable"),
+    return half in reachable",
+      ),
     ],
     check: Check(
       signature: "def canPartition(nums):",
@@ -9527,9 +10832,13 @@ __case__(\"canPartition([3, 3, 3, 4, 5])\", True, canPartition([3, 3, 3, 4, 5]))
 pub fn nc76_kth_largest_stream() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n log n) per add · O(n) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n log n) per add · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Keep the whole stream and sort on demand. Wrong for a real stream — memory grows without bound and every query costs a sort — but it is the definition, and it is what the bounded version has to be checked against.", "class KthLargest:
+Keep the whole stream and sort on demand. Wrong for a real stream — memory grows without bound and every query costs a sort — but it is the definition, and it is what the bounded version has to be checked against.",
+        "class KthLargest:
     def __init__(self, k, nums):
         self.k = k
         self.seen = list(nums)
@@ -9541,8 +10850,13 @@ Keep the whole stream and sort on demand. Wrong for a real stream — memory gro
         self.seen.append(value)
         if len(self.seen) < self.k:
             return None
-        return sorted(self.seen, reverse=True)[self.k - 1]"),
-      #("Heap", "O(log k) per add · O(k) space", "Only the k largest values can ever be the answer, so everything else is discarded on arrival and the store never grows past k. That is exactly the shape a bounded min-heap gives you: the smallest thing in it is the answer, and anything smaller than that never gets in. The other thing to get right is that there is no answer at all until k values have arrived.", "import heapq
+        return sorted(self.seen, reverse=True)[self.k - 1]",
+      ),
+      #(
+        "Heap",
+        "O(log k) per add · O(k) space",
+        "Only the k largest values can ever be the answer, so everything else is discarded on arrival and the store never grows past k. That is exactly the shape a bounded min-heap gives you: the smallest thing in it is the answer, and anything smaller than that never gets in. The other thing to get right is that there is no answer at all until k values have arrived.",
+        "import heapq
 
 
 class KthLargest:
@@ -9560,7 +10874,8 @@ class KthLargest:
         heapq.heappush(self.heap, value)
         if len(self.heap) > self.k:
             heapq.heappop(self.heap)
-        return self.heap[0] if len(self.heap) == self.k else None"),
+        return self.heap[0] if len(self.heap) == self.k else None",
+      ),
     ],
     check: Check(
       signature: "class KthLargest:
@@ -9594,7 +10909,11 @@ __case__(\"k = 2 over [] then 5, 5\", [None, 5], __stream__(2, [], [5, 5]))",
 pub fn nc77_last_stone_weight() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²) time · O(n) space", "No ordering kept at all: scan for the heaviest, remove it, scan again. O(n) per round rather than O(log n), and worth writing precisely because it makes the interface obvious — the only thing the problem ever asks of the collection is \"give me the largest\".", "def lastStoneWeight(stones):
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "No ordering kept at all: scan for the heaviest, remove it, scan again. O(n) per round rather than O(log n), and worth writing precisely because it makes the interface obvious — the only thing the problem ever asks of the collection is \"give me the largest\".",
+        "def lastStoneWeight(stones):
     # No ordering kept at all: scan for the heaviest, remove it, scan again.
     # O(n) per round against a heap's O(log n) -- worse, but it makes clear that
     # the only operation the problem needs is \"give me the largest\", which is
@@ -9609,8 +10928,13 @@ pub fn nc77_last_stone_weight() -> Embedded {
         if heaviest != following:
             stones.append(heaviest - following)
 
-    return stones[0] if stones else 0"),
-      #("Heap", "O(n log n) time · O(n) space", "Always the two heaviest, so the collection has to give up its maximum over and over — which is exactly what a heap is for, and why this problem exists. Keeping the stones sorted is the same idea at a worse constant; the operation being asked for is what matters.", "import heapq
+    return stones[0] if stones else 0",
+      ),
+      #(
+        "Heap",
+        "O(n log n) time · O(n) space",
+        "Always the two heaviest, so the collection has to give up its maximum over and over — which is exactly what a heap is for, and why this problem exists. Keeping the stones sorted is the same idea at a worse constant; the operation being asked for is what matters.",
+        "import heapq
 
 
 def lastStoneWeight(stones):
@@ -9626,7 +10950,8 @@ def lastStoneWeight(stones):
         if heaviest != following:
             heapq.heappush(heap, -(heaviest - following))
 
-    return -heap[0] if heap else 0"),
+    return -heap[0] if heap else 0",
+      ),
     ],
     check: Check(
       signature: "def lastStoneWeight(stones):",
@@ -9654,12 +10979,21 @@ __case__(\"lastStoneWeight([10, 4, 2, 10])\", 2, lastStoneWeight([10, 4, 2, 10])
 pub fn nc78_k_closest_points() -> Embedded {
   Embedded(
     solutions: [
-      #("Sorting", "O(n log n) time · O(n) space", "Sort by *squared* distance, not distance: the square root is monotonic so it cannot change the order, and skipping it keeps everything in integers with no rounding to argue about. Recognising that a monotonic transform can be dropped is worth more than the sort itself.", "def kClosest(points, k):
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sort by *squared* distance, not distance: the square root is monotonic so it cannot change the order, and skipping it keeps everything in integers with no rounding to argue about. Recognising that a monotonic transform can be dropped is worth more than the sort itself.",
+        "def kClosest(points, k):
     # Sorting by *squared* distance rather than distance: the square root is
     # monotonic, so it cannot change the order, and skipping it keeps everything
     # in integers with no rounding to argue about.
-    return sorted(points, key=lambda point: point[0] ** 2 + point[1] ** 2)[:k]"),
-      #("Heap", "O(n log k) time · O(k) space", "Pull the nearest point out k times rather than ordering everything. O(n·k) against a full sort's O(n log n), so it wins exactly when k is small — the same argument that makes a bounded heap of size k the textbook answer here.", "import heapq
+    return sorted(points, key=lambda point: point[0] ** 2 + point[1] ** 2)[:k]",
+      ),
+      #(
+        "Heap",
+        "O(n log k) time · O(k) space",
+        "Pull the nearest point out k times rather than ordering everything. O(n·k) against a full sort's O(n log n), so it wins exactly when k is small — the same argument that makes a bounded heap of size k the textbook answer here.",
+        "import heapq
 
 
 def kClosest(points, k):
@@ -9671,7 +11005,8 @@ def kClosest(points, k):
         heapq.heappush(heap, (-(point[0] ** 2 + point[1] ** 2), point))
         if len(heap) > k:
             heapq.heappop(heap)
-    return [point for _distance, point in heap]"),
+    return [point for _distance, point in heap]",
+      ),
     ],
     check: Check(
       signature: "def kClosest(points, k):",
@@ -9702,13 +11037,22 @@ __case__(\"kClosest([[1, 1], [2, 2], [3, 3]], 2)\", [[1, 1], [2, 2]], __sorted__
 pub fn nc79_kth_largest_array() -> Embedded {
   Embedded(
     solutions: [
-      #("Sorting", "O(n log n) time · O(n) space", "Sorting answers every k at once, which is more than was asked but is the version nobody gets wrong. O(n log n), and usually the right thing to write first before offering anything cleverer.", "def findKthLargest(nums, k):
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sorting answers every k at once, which is more than was asked but is the version nobody gets wrong. O(n log n), and usually the right thing to write first before offering anything cleverer.",
+        "def findKthLargest(nums, k):
     # Sorting answers every k at once, which is more than asked for but is the
     # version nobody gets wrong. O(n log n).
     if k < 1 or k > len(nums):
         return None
-    return sorted(nums, reverse=True)[k - 1]"),
-      #("Quickselect", "O(n) average time · O(n) space", "Partition around a pivot, then recurse only into the side that must contain the answer. Expected O(n), because the work halves each time instead of being done on both halves — the same saving binary search makes over a scan. Worst case is still O(n²) on adversarial pivots, which is worth saying out loud.", "def findKthLargest(nums, k):
+    return sorted(nums, reverse=True)[k - 1]",
+      ),
+      #(
+        "Quickselect",
+        "O(n) average time · O(n) space",
+        "Partition around a pivot, then recurse only into the side that must contain the answer. Expected O(n), because the work halves each time instead of being done on both halves — the same saving binary search makes over a scan. Worst case is still O(n²) on adversarial pivots, which is worth saying out loud.",
+        "def findKthLargest(nums, k):
     if k < 1 or k > len(nums):
         return None
     return select(nums, k)
@@ -9728,7 +11072,8 @@ def select(nums, k):
         return select(bigger, k)
     if k <= len(bigger) + 1 + len(equal):
         return pivot
-    return select(smaller, k - len(bigger) - 1 - len(equal))"),
+    return select(smaller, k - len(bigger) - 1 - len(equal))",
+      ),
     ],
     check: Check(
       signature: "def findKthLargest(nums, k):",
@@ -9756,7 +11101,11 @@ __case__(\"findKthLargest([], 1)\", None, findKthLargest([], 1))",
 pub fn nc80_task_scheduler() -> Embedded {
   Embedded(
     solutions: [
-      #("Simulation", "O(n·k log k) time · O(k) space", "Run the schedule instead of computing it: each round runs the n+1 most frequent tasks still outstanding, which is the greedy choice and needs the collection to give up its largest values over and over. The trap is the finished tasks — a task at zero is not an idle slot, and counting it as one inflates the answer.", "from collections import Counter
+      #(
+        "Simulation",
+        "O(n·k log k) time · O(k) space",
+        "Run the schedule instead of computing it: each round runs the n+1 most frequent tasks still outstanding, which is the greedy choice and needs the collection to give up its largest values over and over. The trap is the finished tasks — a task at zero is not an idle slot, and counting it as one inflates the answer.",
+        "from collections import Counter
 
 
 def leastInterval(tasks, n):
@@ -9777,8 +11126,13 @@ def leastInterval(tasks, n):
         remaining = [count - 1 for count in running] + outstanding[n + 1:]
 
         # The last round costs only as many ticks as it actually uses.
-        elapsed += n + 1 if any(count > 0 for count in remaining) else len(running)"),
-      #("Greedy", "O(n) time · O(k) space", "Lay the most frequent task out first with gaps of n between its copies. That skeleton is (busiest − 1) frames of n+1 slots plus a final row of every task tied for busiest — and everything else either drops into an idle slot or has already pushed the total past the skeleton, in which case nothing idles and the answer is simply the number of tasks. Hence the max of the two.", "from collections import Counter
+        elapsed += n + 1 if any(count > 0 for count in remaining) else len(running)",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(k) space",
+        "Lay the most frequent task out first with gaps of n between its copies. That skeleton is (busiest − 1) frames of n+1 slots plus a final row of every task tied for busiest — and everything else either drops into an idle slot or has already pushed the total past the skeleton, in which case nothing idles and the answer is simply the number of tasks. Hence the max of the two.",
+        "from collections import Counter
 
 
 def leastInterval(tasks, n):
@@ -9794,7 +11148,8 @@ def leastInterval(tasks, n):
     # row of every task tied for busiest. Everything else either fits into an
     # idle slot or has already pushed the total past the skeleton -- in which
     # case no idling happens and the answer is just the number of tasks.
-    return max(len(tasks), (busiest - 1) * (n + 1) + ties)"),
+    return max(len(tasks), (busiest - 1) * (n + 1) + ties)",
+      ),
     ],
     check: Check(
       signature: "def leastInterval(tasks, n):",
@@ -9822,7 +11177,11 @@ __case__(\"leastInterval(four As and six singles, 2)\", 10, leastInterval([\"A\"
 pub fn nc81_design_twitter() -> Embedded {
   Embedded(
     solutions: [
-      #("Design", "O(all tweets) per feed · O(all tweets) space", "A counter standing in for time is the whole design: it orders tweets across every user without any real timestamps. Then the feed is a filter over one global timeline — simple, correct, and the wrong shape at scale, since it walks every tweet ever posted to produce ten.", "class Twitter:
+      #(
+        "Design",
+        "O(all tweets) per feed · O(all tweets) space",
+        "A counter standing in for time is the whole design: it orders tweets across every user without any real timestamps. Then the feed is a filter over one global timeline — simple, correct, and the wrong shape at scale, since it walks every tweet ever posted to produce ten.",
+        "class Twitter:
     def __init__(self):
         # The clock only ever increases, so it orders tweets across every user
         # without any real timestamps being involved.
@@ -9848,8 +11207,13 @@ pub fn nc81_design_twitter() -> Embedded {
             tweetId
             for _clock, author, tweetId in reversed(self.tweets)
             if author in visible
-        ][:10]"),
-      #("Heap", "O(followees) per feed · O(all tweets) space", "Store tweets per author and the feed becomes a k-way merge over the timelines being followed — and since only the ten newest are wanted, a heap over the heads of those k lists produces them without touching the rest. This is the version that survives a follow-up about scale.", "import heapq
+        ][:10]",
+      ),
+      #(
+        "Heap",
+        "O(followees) per feed · O(all tweets) space",
+        "Store tweets per author and the feed becomes a k-way merge over the timelines being followed — and since only the ten newest are wanted, a heap over the heads of those k lists produces them without touching the rest. This is the version that survives a follow-up about scale.",
+        "import heapq
 
 
 class Twitter:
@@ -9877,7 +11241,8 @@ class Twitter:
         candidates = []
         for author in visible:
             candidates.extend(self.tweets.get(author, [])[-10:])
-        return [tweetId for _clock, tweetId in heapq.nlargest(10, candidates)]"),
+        return [tweetId for _clock, tweetId in heapq.nlargest(10, candidates)]",
+      ),
     ],
     check: Check(
       signature: "class Twitter:
@@ -9930,7 +11295,11 @@ __case__(\"getNewsFeed caps at ten, newest first\", [11, 10, 9, 8, 7, 6, 5, 4, 3
 pub fn nc82_find_median_stream() -> Embedded {
   Embedded(
     solutions: [
-      #("Sorted List", "O(n) per operation · O(n) space", "One sorted list, kept in order on insertion, and the median is a lookup. Easier to believe and easier to write, at the cost of an O(n) insert where two heaps pay O(log n) — the trade that decides which one belongs in a streaming answer.", "from bisect import insort
+      #(
+        "Sorted List",
+        "O(n) per operation · O(n) space",
+        "One sorted list, kept in order on insertion, and the median is a lookup. Easier to believe and easier to write, at the cost of an O(n) insert where two heaps pay O(log n) — the trade that decides which one belongs in a streaming answer.",
+        "from bisect import insort
 
 
 class MedianFinder:
@@ -9947,8 +11316,13 @@ class MedianFinder:
         n = len(self.values)
         if n == 0:
             return 0.0
-        return (self.values[n // 2] + self.values[(n - 1) // 2]) / 2"),
-      #("Two Heaps", "O(log n) per operation · O(n) space", "Split the values into a smaller half and a larger half, and the median is always sitting at one or both of the two inner ends. Each half only ever has to surrender its extreme value, which is exactly a heap — a max-heap below, a min-heap above. The whole difficulty is the rebalancing rule: sizes within one, and nothing below bigger than anything above.", "import heapq
+        return (self.values[n // 2] + self.values[(n - 1) // 2]) / 2",
+      ),
+      #(
+        "Two Heaps",
+        "O(log n) per operation · O(n) space",
+        "Split the values into a smaller half and a larger half, and the median is always sitting at one or both of the two inner ends. Each half only ever has to surrender its extreme value, which is exactly a heap — a max-heap below, a min-heap above. The whole difficulty is the rebalancing rule: sizes within one, and nothing below bigger than anything above.",
+        "import heapq
 
 
 class MedianFinder:
@@ -9972,7 +11346,8 @@ class MedianFinder:
             return 0.0
         if len(self.lower) > len(self.upper):
             return float(-self.lower[0])
-        return (-self.lower[0] + self.upper[0]) / 2"),
+        return (-self.lower[0] + self.upper[0]) / 2",
+      ),
     ],
     check: Check(
       signature: "class MedianFinder:
@@ -10015,7 +11390,11 @@ __case__(\"median before anything is added\", 0.0, MedianFinder().findMedian())"
 pub fn nc83_subsets() -> Embedded {
   Embedded(
     solutions: [
-      #("Bit Manipulation", "O(n·2ⁿ) time · O(n·2ⁿ) space", "The in-or-out choices *are* the bits of a number, so counting from 0 to 2ⁿ−1 enumerates every subset exactly once with no recursion at all. It also gives every subset a stable index, which matters the moment subsets have to be compared, cached or keyed on.", "def subsets(nums):
+      #(
+        "Bit Manipulation",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "The in-or-out choices *are* the bits of a number, so counting from 0 to 2ⁿ−1 enumerates every subset exactly once with no recursion at all. It also gives every subset a stable index, which matters the moment subsets have to be compared, cached or keyed on.",
+        "def subsets(nums):
     # The in-or-out choices *are* the bits of a number, so counting from 0 to
     # 2^n - 1 enumerates every subset exactly once with no recursion at all.
     # Worth knowing: it also gives every subset a stable index, which matters
@@ -10023,15 +11402,21 @@ pub fn nc83_subsets() -> Embedded {
     return [
         [value for i, value in enumerate(nums) if mask >> i & 1]
         for mask in range(1 << len(nums))
-    ]"),
-      #("Recursion", "O(n·2ⁿ) time · O(n·2ⁿ) space", "Every element is either in or out, independently, so the subsets of a list are the subsets of its tail twice over — once with the head added and once without. That recursion is the whole answer, and it is also why there are exactly 2ⁿ of them.", "def subsets(nums):
+    ]",
+      ),
+      #(
+        "Recursion",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "Every element is either in or out, independently, so the subsets of a list are the subsets of its tail twice over — once with the head added and once without. That recursion is the whole answer, and it is also why there are exactly 2ⁿ of them.",
+        "def subsets(nums):
     # Every element is either in or out, independently, so the subsets of a list
     # are the subsets of its tail twice over: once with the head added and once
     # without. That is the whole recursion, and it is why there are 2^n of them.
     if not nums:
         return [[]]
     without = subsets(nums[1:])
-    return [[nums[0]] + subset for subset in without] + without"),
+    return [[nums[0]] + subset for subset in without] + without",
+      ),
     ],
     check: Check(
       signature: "def subsets(nums):",
@@ -10061,7 +11446,11 @@ __case__(\"subsets of five elements count\", 32, len(subsets([1, 2, 3, 4, 5])))"
 pub fn nc84_combination_sum() -> Embedded {
   Embedded(
     solutions: [
-      #("Bottom-Up DP", "O(t·2ᵗ) time · O(t·2ᵗ) space", "Bottom-up: the combinations making a target are every combination making a smaller amount with one more candidate added. Requiring the added candidate to be no smaller than the combination's largest plays the same role the index does in the recursion — it fixes one order per combination.", "def combinationSum(candidates, target):
+      #(
+        "Bottom-Up DP",
+        "O(t·2ᵗ) time · O(t·2ᵗ) space",
+        "Bottom-up: the combinations making a target are every combination making a smaller amount with one more candidate added. Requiring the added candidate to be no smaller than the combination's largest plays the same role the index does in the recursion — it fixes one order per combination.",
+        "def combinationSum(candidates, target):
     usable = sorted(c for c in candidates if c > 0)
 
     # Bottom-up instead of by recursion: the combinations making a target are
@@ -10079,8 +11468,13 @@ pub fn nc84_combination_sum() -> Embedded {
                     found.append([candidate] + combination)
         table[amount] = found
 
-    return table.get(target, [])"),
-      #("Backtracking", "O(2ᵗ) time · O(t) space", "Each step either takes the current candidate again — reuse is allowed — or drops it for good. Never returning to a dropped candidate is what stops the same combination appearing in several orders, so there is no deduplication anywhere. That constraint doing the work is the pattern to carry to the harder variants.", "def combinationSum(candidates, target):
+    return table.get(target, [])",
+      ),
+      #(
+        "Backtracking",
+        "O(2ᵗ) time · O(t) space",
+        "Each step either takes the current candidate again — reuse is allowed — or drops it for good. Never returning to a dropped candidate is what stops the same combination appearing in several orders, so there is no deduplication anywhere. That constraint doing the work is the pattern to carry to the harder variants.",
+        "def combinationSum(candidates, target):
     return build(candidates, target)
 
 
@@ -10098,7 +11492,8 @@ def build(candidates, target):
         return build(candidates[1:], target)
 
     with_first = [[first] + rest for rest in build(candidates, target - first)]
-    return with_first + build(candidates[1:], target)"),
+    return with_first + build(candidates[1:], target)",
+      ),
     ],
     check: Check(
       signature: "def combinationSum(candidates, target):
@@ -10133,7 +11528,11 @@ __case__(\"combinationSum([], 3)\", [], __sorted__([], 3))",
 pub fn nc85_permutations() -> Embedded {
   Embedded(
     solutions: [
-      #("Iterative Insertion", "O(n·n!) time · O(n·n!) space", "Build up rather than choose: every permutation of n elements is a permutation of n−1 with the new element wedged into one of its n positions. No recursion into a shrinking remainder, and it explains the factorial directly — one more choice of position at every step.", "def permute(nums):
+      #(
+        "Iterative Insertion",
+        "O(n·n!) time · O(n·n!) space",
+        "Build up rather than choose: every permutation of n elements is a permutation of n−1 with the new element wedged into one of its n positions. No recursion into a shrinking remainder, and it explains the factorial directly — one more choice of position at every step.",
+        "def permute(nums):
     # Build up instead of choosing: every permutation of n elements is a
     # permutation of n-1 with the new element wedged into one of its n
     # positions. No recursion into a shrinking remainder, and it explains the
@@ -10145,8 +11544,13 @@ pub fn nc85_permutations() -> Embedded {
             for permutation in permutations
             for at in range(len(permutation) + 1)
         ]
-    return permutations"),
-      #("Backtracking", "O(n·n!) time · O(n·n!) space", "Pick each element in turn as the first, then permute what is left. Removing the chosen element from the remainder is exactly what a \"used\" set does in an in-place version; here the remainder is simply a shorter list, and nothing has to be undone afterwards.", "def permute(nums):
+    return permutations",
+      ),
+      #(
+        "Backtracking",
+        "O(n·n!) time · O(n·n!) space",
+        "Pick each element in turn as the first, then permute what is left. Removing the chosen element from the remainder is exactly what a \"used\" set does in an in-place version; here the remainder is simply a shorter list, and nothing has to be undone afterwards.",
+        "def permute(nums):
     # Pick each element in turn as the first, then permute what is left.
     # Removing the chosen element from the remainder is what the \"used\" set does
     # in an in-place version -- here the remainder is simply a shorter list.
@@ -10156,7 +11560,8 @@ pub fn nc85_permutations() -> Embedded {
         [value] + tail
         for i, value in enumerate(nums)
         for tail in permute(nums[:i] + nums[i + 1:])
-    ]"),
+    ]",
+      ),
     ],
     check: Check(
       signature: "def permute(nums):",
@@ -10187,7 +11592,11 @@ __case__(\"permute of four elements count\", 24, len(permute([1, 2, 3, 4])))",
 pub fn nc86_subsets_ii() -> Embedded {
   Embedded(
     solutions: [
-      #("Counting", "O(n·2ⁿ) time · O(n·2ⁿ) space", "A different framing: the choice is not per *element* but per distinct *value* — how many copies to take, from none up to however many exist. Duplicates then cannot arise, so there is no skipping rule to remember and nothing to sort for correctness.", "from collections import Counter
+      #(
+        "Counting",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "A different framing: the choice is not per *element* but per distinct *value* — how many copies to take, from none up to however many exist. Duplicates then cannot arise, so there is no skipping rule to remember and nothing to sort for correctness.",
+        "from collections import Counter
 
 
 def subsetsWithDup(nums):
@@ -10200,8 +11609,13 @@ def subsetsWithDup(nums):
         subsets = [
             subset + [value] * taken for subset in subsets for taken in range(count + 1)
         ]
-    return subsets"),
-      #("Backtracking", "O(n·2ⁿ) time · O(n·2ⁿ) space", "Sorting puts equal values next to each other, which is what makes the duplicate rule expressible at all: when a value is skipped, skip *every* copy of it at once. Skipping one copy and keeping the next rebuilds the same subset from a different copy, which is exactly the repeat you are trying to avoid.", "def subsetsWithDup(nums):
+    return subsets",
+      ),
+      #(
+        "Backtracking",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "Sorting puts equal values next to each other, which is what makes the duplicate rule expressible at all: when a value is skipped, skip *every* copy of it at once. Skipping one copy and keeping the next rebuilds the same subset from a different copy, which is exactly the repeat you are trying to avoid.",
+        "def subsetsWithDup(nums):
     return build(sorted(nums))
 
 
@@ -10220,7 +11634,8 @@ def build(sorted_nums):
     while past < len(sorted_nums) and sorted_nums[past] == first:
         past += 1
 
-    return with_first + build(sorted_nums[past:])"),
+    return with_first + build(sorted_nums[past:])",
+      ),
     ],
     check: Check(
       signature: "def subsetsWithDup(nums):
@@ -10255,9 +11670,13 @@ __case__(\"subsetsWithDup([4, 4, 4, 1, 4]) count\", 10, len(subsetsWithDup([4, 4
 pub fn nc87_combination_sum_ii() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n·4ⁿ) time · O(n·2ⁿ) space", "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+      #(
+        "Brute Force",
+        "O(n·4ⁿ) time · O(n·2ⁿ) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
-Generate every subset that hits the target and collapse the repeats afterwards. Correct, and exponentially wasteful on inputs with many equal values — which is precisely the cost the skipping rule avoids.", "def combinationSum2(candidates, target):
+Generate every subset that hits the target and collapse the repeats afterwards. Correct, and exponentially wasteful on inputs with many equal values — which is precisely the cost the skipping rule avoids.",
+        "def combinationSum2(candidates, target):
     # Generate every subset that hits the target and collapse the repeats
     # afterwards. Correct, and exponentially wasteful on inputs with many equal
     # values -- which is exactly why the skipping rule is worth getting right.
@@ -10272,8 +11691,13 @@ def everySubset(sorted_candidates):
     if not sorted_candidates:
         return [[]]
     without = everySubset(sorted_candidates[1:])
-    return [[sorted_candidates[0]] + subset for subset in without] + without"),
-      #("Backtracking", "O(2ⁿ) time · O(n²) space", "Each candidate is used at most once, so taking one moves past it. The duplicate rule is the same as Subsets II — skipping a value means skipping every copy of it — and that shared rule is the reason to drill the two problems together.", "def combinationSum2(candidates, target):
+    return [[sorted_candidates[0]] + subset for subset in without] + without",
+      ),
+      #(
+        "Backtracking",
+        "O(2ⁿ) time · O(n²) space",
+        "Each candidate is used at most once, so taking one moves past it. The duplicate rule is the same as Subsets II — skipping a value means skipping every copy of it — and that shared rule is the reason to drill the two problems together.",
+        "def combinationSum2(candidates, target):
     return build(sorted(candidates), target)
 
 
@@ -10297,7 +11721,8 @@ def build(sorted_candidates, target):
     while past < len(sorted_candidates) and sorted_candidates[past] == first:
         past += 1
 
-    return with_first + build(sorted_candidates[past:], target)"),
+    return with_first + build(sorted_candidates[past:], target)",
+      ),
     ],
     check: Check(
       signature: "def combinationSum2(candidates, target):
@@ -10332,7 +11757,11 @@ __case__(\"combinationSum2([2], 1)\", [], __sorted__([2], 1))",
 pub fn nc88_word_search() -> Embedded {
   Embedded(
     solutions: [
-      #("Backtracking", "O(m·n·4ᴸ) time · O(L²) space", "Depth-first from every square, with the path so far in a set so no letter is reused within one attempt. The set has to be per-path, not global: a square rejected on one route must still be available on another, and that distinction is the whole difference between backtracking and plain search.", "def exist(board, word):
+      #(
+        "Backtracking",
+        "O(m·n·4ᴸ) time · O(L²) space",
+        "Depth-first from every square, with the path so far in a set so no letter is reused within one attempt. The set has to be per-path, not global: a square rejected on one route must still be available on another, and that distinction is the whole difference between backtracking and plain search.",
+        "def exist(board, word):
     if not word:
         return True
     if not board:
@@ -10361,8 +11790,13 @@ pub fn nc88_word_search() -> Embedded {
         walk(r, c, word, set())
         for r in range(len(board))
         for c in range(len(board[0]))
-    )"),
-      #("Pruned Backtracking", "O(m·n·4ᴸ) time · O(L²) space", "Two cheap checks before any searching. If the board does not hold enough copies of some letter, no search can succeed at all. And starting from whichever end of the word is rarer on the board begins from fewer squares — the branching factor at the root is what dominates, so halving it there is worth more than any saving deeper in.", "from collections import Counter
+    )",
+      ),
+      #(
+        "Pruned Backtracking",
+        "O(m·n·4ᴸ) time · O(L²) space",
+        "Two cheap checks before any searching. If the board does not hold enough copies of some letter, no search can succeed at all. And starting from whichever end of the word is rarer on the board begins from fewer squares — the branching factor at the root is what dominates, so halving it there is worth more than any saving deeper in.",
+        "from collections import Counter
 
 
 def exist(board, word):
@@ -10400,7 +11834,8 @@ def exist(board, word):
         walk(r, c, word, set())
         for r in range(len(board))
         for c in range(len(board[0]))
-    )"),
+    )",
+      ),
     ],
     check: Check(
       signature: "def exist(board, word):",
@@ -10430,7 +11865,11 @@ __case__(\"exist([], 'A')\", False, exist([], \"A\"))",
 pub fn nc89_palindrome_partitioning() -> Embedded {
   Embedded(
     solutions: [
-      #("Backtracking", "O(n·2ⁿ) time · O(n·2ⁿ) space", "Every partition begins with some palindromic prefix, so the only choice at each step is how long that prefix is. Cutting there and recursing on the rest reaches each partition exactly once, in order, with nothing to deduplicate.", "def partition(s):
+      #(
+        "Backtracking",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "Every partition begins with some palindromic prefix, so the only choice at each step is how long that prefix is. Cutting there and recursing on the rest reaches each partition exactly once, in order, with nothing to deduplicate.",
+        "def partition(s):
     return build(s)
 
 
@@ -10446,8 +11885,13 @@ def build(remaining):
         for prefix in [remaining[:size]]
         if prefix == prefix[::-1]
         for rest in build(remaining[size:])
-    ]"),
-      #("DP + Backtracking", "O(n·2ⁿ) time · O(n·2ⁿ) space", "Work out which spans are palindromes once, up front, instead of re-testing the same prefix on every branch. The search then becomes pure choice — a table lookup where there was a linear scan. Precomputing the predicate rather than the answer is a move worth having.", "def partition(s):
+    ]",
+      ),
+      #(
+        "DP + Backtracking",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "Work out which spans are palindromes once, up front, instead of re-testing the same prefix on every branch. The search then becomes pure choice — a table lookup where there was a linear scan. Precomputing the predicate rather than the answer is a move worth having.",
+        "def partition(s):
     n = len(s)
 
     # Work out which spans are palindromes once, up front, rather than
@@ -10470,7 +11914,8 @@ def build(remaining):
             for rest in build(end + 1)
         ]
 
-    return build(0)"),
+    return build(0)",
+      ),
     ],
     check: Check(
       signature: "def partition(s):
@@ -10507,7 +11952,11 @@ __case__(\"partition('abc')\", [\"a,b,c\"], __sorted__(\"abc\"))",
 pub fn nc90_letter_combinations() -> Embedded {
   Embedded(
     solutions: [
-      #("Iterative", "O(n·4ⁿ) time · O(n·4ⁿ) space", "The same cross product built by folding rather than recursing: hold every combination of the digits so far and extend each by every letter of the next. No call stack, and the growth is visible in the code — the list multiplies in size at each step.", "KEYPAD = {
+      #(
+        "Iterative",
+        "O(n·4ⁿ) time · O(n·4ⁿ) space",
+        "The same cross product built by folding rather than recursing: hold every combination of the digits so far and extend each by every letter of the next. No call stack, and the growth is visible in the code — the list multiplies in size at each step.",
+        "KEYPAD = {
     \"2\": \"abc\", \"3\": \"def\", \"4\": \"ghi\", \"5\": \"jkl\",
     \"6\": \"mno\", \"7\": \"pqrs\", \"8\": \"tuv\", \"9\": \"wxyz\",
 }
@@ -10526,8 +11975,13 @@ def letterCombinations(digits):
         combinations = [
             prefix + letter for prefix in combinations for letter in KEYPAD.get(digit, \"\")
         ]
-    return combinations"),
-      #("Recursion", "O(n·4ⁿ) time · O(n·4ⁿ) space", "One choice per digit, independently, so the answer is the cross product of the letter sets. There is no pruning and no constraint between choices — which makes this the cleanest place to see what backtracking degenerates to when nothing can fail.", "KEYPAD = {
+    return combinations",
+      ),
+      #(
+        "Recursion",
+        "O(n·4ⁿ) time · O(n·4ⁿ) space",
+        "One choice per digit, independently, so the answer is the cross product of the letter sets. There is no pruning and no constraint between choices — which makes this the cleanest place to see what backtracking degenerates to when nothing can fail.",
+        "KEYPAD = {
     \"2\": \"abc\", \"3\": \"def\", \"4\": \"ghi\", \"5\": \"jkl\",
     \"6\": \"mno\", \"7\": \"pqrs\", \"8\": \"tuv\", \"9\": \"wxyz\",
 }
@@ -10546,7 +12000,8 @@ def build(digits):
     if not digits:
         return [\"\"]
     tails = build(digits[1:])
-    return [letter + tail for letter in KEYPAD.get(digits[0], \"\") for tail in tails]"),
+    return [letter + tail for letter in KEYPAD.get(digits[0], \"\") for tail in tails]",
+      ),
     ],
     check: Check(
       signature: "def letterCombinations(digits):
@@ -10578,7 +12033,11 @@ __case__(\"letterCombinations('79') count\", 16, len(letterCombinations(\"79\"))
 pub fn nc91_n_queens() -> Embedded {
   Embedded(
     solutions: [
-      #("Brute Force", "O(n²·n!) time · O(n) space", "One queen per row with no two sharing a column *is* a permutation of the columns, so the row and column rules hold by construction and only the diagonals are left. Generating all n! and filtering is far slower than pruning as you go — it explores arrangements a backtracker abandons at the second queen — but it names what the search space actually is.", "from itertools import permutations
+      #(
+        "Brute Force",
+        "O(n²·n!) time · O(n) space",
+        "One queen per row with no two sharing a column *is* a permutation of the columns, so the row and column rules hold by construction and only the diagonals are left. Generating all n! and filtering is far slower than pruning as you go — it explores arrangements a backtracker abandons at the second queen — but it names what the search space actually is.",
+        "from itertools import permutations
 
 
 def solveNQueens(n):
@@ -10600,8 +12059,13 @@ def noDiagonalClash(chosen):
         abs(r1 - r2) != abs(chosen[r1] - chosen[r2])
         for r1 in range(len(chosen))
         for r2 in range(r1 + 1, len(chosen))
-    )"),
-      #("Backtracking", "O(n!) time · O(n²) space", "One queen per row, so the only choice is the column. A diagonal is identified by row − column and an anti-diagonal by row + column, which turns \"is this square attacked?\" into three set lookups — and lets the search abandon an entire subtree the moment one of them fails.", "def solveNQueens(n):
+    )",
+      ),
+      #(
+        "Backtracking",
+        "O(n!) time · O(n²) space",
+        "One queen per row, so the only choice is the column. A diagonal is identified by row − column and an anti-diagonal by row + column, which turns \"is this square attacked?\" into three set lookups — and lets the search abandon an entire subtree the moment one of them fails.",
+        "def solveNQueens(n):
     boards = []
 
     # One queen per row, so the only choice is which column. A diagonal is
@@ -10624,7 +12088,8 @@ def noDiagonalClash(chosen):
             )
 
     place(0, [], set(), set(), set())
-    return boards"),
+    return boards",
+      ),
     ],
     check: Check(
       signature: "def solveNQueens(n):",
@@ -10654,7 +12119,11 @@ __case__(\"solveNQueens(6) count\", 4, len(solveNQueens(6)))",
 pub fn nc92_unique_paths() -> Embedded {
   Embedded(
     solutions: [
-      #("Space-Saving DP", "O(m·n) time · O(n) space", "Only right and down moves, so the ways to reach a square are the ways to reach the one above plus the one to its left. Rows fill top to bottom and only the previous row is ever needed, so one row of counters does for the whole grid.", "def uniquePaths(m, n):
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Only right and down moves, so the ways to reach a square are the ways to reach the one above plus the one to its left. Rows fill top to bottom and only the previous row is ever needed, so one row of counters does for the whole grid.",
+        "def uniquePaths(m, n):
     if m <= 0 or n <= 0:
         return 0
 
@@ -10667,8 +12136,13 @@ pub fn nc92_unique_paths() -> Embedded {
         for c in range(1, n):
             row[c] += row[c - 1]
 
-    return row[-1]"),
-      #("Math", "O(min(m,n)) time · O(1) space", "There is no grid at all. Every path is exactly m−1 downs and n−1 rights in some order, so the count is the number of ways to choose which of the m+n−2 moves are downs — a binomial coefficient. Multiplying and dividing in step keeps every intermediate an exact integer, which is what makes it safe without big numbers.", "def uniquePaths(m, n):
+    return row[-1]",
+      ),
+      #(
+        "Math",
+        "O(min(m,n)) time · O(1) space",
+        "There is no grid at all. Every path is exactly m−1 downs and n−1 rights in some order, so the count is the number of ways to choose which of the m+n−2 moves are downs — a binomial coefficient. Multiplying and dividing in step keeps every intermediate an exact integer, which is what makes it safe without big numbers.",
+        "def uniquePaths(m, n):
     if m <= 0 or n <= 0:
         return 0
 
@@ -10682,7 +12156,8 @@ pub fn nc92_unique_paths() -> Embedded {
     for i in range(1, downs + 1):
         result = result * (total - downs + i) // i
 
-    return result"),
+    return result",
+      ),
     ],
     check: Check(
       signature: "def uniquePaths(m, n):",
@@ -10710,7 +12185,11 @@ __case__(\"uniquePaths(10, 10)\", 48620, uniquePaths(10, 10))",
 pub fn nc93_longest_common_subsequence() -> Embedded {
   Embedded(
     solutions: [
-      #("Top-Down Memo", "O(m·n) time · O(m·n) space", "The same recurrence from the front with a cache. Written this way the choice is explicit — match and advance both, or give up one character from one side — which the rolling row hides behind its indices. Usually the version to write first, then flatten.", "def longestCommonSubsequence(text1, text2):
+      #(
+        "Top-Down Memo",
+        "O(m·n) time · O(m·n) space",
+        "The same recurrence from the front with a cache. Written this way the choice is explicit — match and advance both, or give up one character from one side — which the rolling row hides behind its indices. Usually the version to write first, then flatten.",
+        "def longestCommonSubsequence(text1, text2):
     memo = {}
 
     # The same recurrence from the front, with a cache. Written this way the
@@ -10726,8 +12205,13 @@ pub fn nc93_longest_common_subsequence() -> Embedded {
                 memo[(i, j)] = max(best(i + 1, j), best(i, j + 1))
         return memo[(i, j)]
 
-    return best(0, 0)"),
-      #("Space-Saving DP", "O(m·n) time · O(n) space", "Compare the two current characters: equal means both are used and the answer is one more than the rest; different means the best of dropping one or the other. Filled row by row, only the previous row is ever needed. This recurrence is the backbone of edit distance and distinct subsequences too.", "def longestCommonSubsequence(text1, text2):
+    return best(0, 0)",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Compare the two current characters: equal means both are used and the answer is one more than the rest; different means the best of dropping one or the other. Filled row by row, only the previous row is ever needed. This recurrence is the backbone of edit distance and distinct subsequences too.",
+        "def longestCommonSubsequence(text1, text2):
     # Compare the last characters: equal means both are used and the answer is
     # one more than the rest, different means the best of dropping one or the
     # other. Filled row by row, only the previous row is ever needed.
@@ -10739,7 +12223,8 @@ pub fn nc93_longest_common_subsequence() -> Embedded {
             row[j] = previous[j - 1] + 1 if a == b else max(previous[j], row[j - 1])
         previous = row
 
-    return previous[-1]"),
+    return previous[-1]",
+      ),
     ],
     check: Check(
       signature: "def longestCommonSubsequence(text1, text2):",
@@ -10767,7 +12252,11 @@ __case__(\"longestCommonSubsequence('ezupkr', 'ubmrapg')\", 2, longestCommonSubs
 pub fn nc94_coin_change_ii() -> Embedded {
   Embedded(
     solutions: [
-      #("Top-Down Memo", "O(n·t) time · O(n·t) space", "The same rule stated as a choice rather than a loop order: use this coin again, or set it aside for good. Setting it aside permanently is what fixes one order per combination — the identical constraint the outer loop encodes, made visible.", "def change(amount, coins):
+      #(
+        "Top-Down Memo",
+        "O(n·t) time · O(n·t) space",
+        "The same rule stated as a choice rather than a loop order: use this coin again, or set it aside for good. Setting it aside permanently is what fixes one order per combination — the identical constraint the outer loop encodes, made visible.",
+        "def change(amount, coins):
     usable = [coin for coin in coins if coin > 0]
     memo = {}
 
@@ -10784,8 +12273,13 @@ pub fn nc94_coin_change_ii() -> Embedded {
             memo[(index, remaining)] = using + ways(index + 1, remaining)
         return memo[(index, remaining)]
 
-    return ways(0, amount)"),
-      #("Bottom-Up DP", "O(n·t) time · O(t) space", "Combinations, not permutations, and that is decided entirely by the loop order. Coins on the outside means each coin is considered once and for all before the next is looked at, so 1+2 and 2+1 can never both be counted. Swapping the two loops silently counts orderings instead — the single most instructive bug in this problem.", "def change(amount, coins):
+    return ways(0, amount)",
+      ),
+      #(
+        "Bottom-Up DP",
+        "O(n·t) time · O(t) space",
+        "Combinations, not permutations, and that is decided entirely by the loop order. Coins on the outside means each coin is considered once and for all before the next is looked at, so 1+2 and 2+1 can never both be counted. Swapping the two loops silently counts orderings instead — the single most instructive bug in this problem.",
+        "def change(amount, coins):
     # Combinations, not permutations -- which is entirely decided by the loop
     # order. Coins on the outside means each coin is considered once and for all
     # before the next is looked at, so 1+2 and 2+1 can never both be counted.
@@ -10799,7 +12293,8 @@ pub fn nc94_coin_change_ii() -> Embedded {
         for target in range(coin, amount + 1):
             ways[target] += ways[target - coin]
 
-    return ways[amount]"),
+    return ways[amount]",
+      ),
     ],
     check: Check(
       signature: "def change(amount, coins):",
@@ -10827,7 +12322,11 @@ __case__(\"change(11, [1, 2, 5])\", 11, change(11, [1, 2, 5]))",
 pub fn nc95_target_sum() -> Embedded {
   Embedded(
     solutions: [
-      #("Bottom-Up DP", "O(n·S) time · O(S) space", "The only state that matters is the running total, not which signs produced it. Carrying a map from reachable total to how many ways reach it means different sign choices landing on the same total merge — which is exactly what turns an exponential search into a polynomial one.", "def findTargetSumWays(nums, target):
+      #(
+        "Bottom-Up DP",
+        "O(n·S) time · O(S) space",
+        "The only state that matters is the running total, not which signs produced it. Carrying a map from reachable total to how many ways reach it means different sign choices landing on the same total merge — which is exactly what turns an exponential search into a polynomial one.",
+        "def findTargetSumWays(nums, target):
     # The state that matters is only the running total, not which signs produced
     # it -- so carry a map from reachable total to how many ways reach it, and
     # widen it by each number twice, once added and once subtracted. Different
@@ -10842,8 +12341,13 @@ pub fn nc95_target_sum() -> Embedded {
             following[total - n] = following.get(total - n, 0) + count
         totals = following
 
-    return totals.get(target, 0)"),
-      #("Subset Sum", "O(n·S) time · O(S) space", "Rewrite the problem. If P is the set given a plus and N the set given a minus then P − N = target and P + N = total, so P = (total + target)/2. A sign-assignment question becomes \"how many subsets sum to a fixed value\" — a knapsack, with no negative totals to track at all. Reformulating rather than optimising is the move.", "def findTargetSumWays(nums, target):
+    return totals.get(target, 0)",
+      ),
+      #(
+        "Subset Sum",
+        "O(n·S) time · O(S) space",
+        "Rewrite the problem. If P is the set given a plus and N the set given a minus then P − N = target and P + N = total, so P = (total + target)/2. A sign-assignment question becomes \"how many subsets sum to a fixed value\" — a knapsack, with no negative totals to track at all. Reformulating rather than optimising is the move.",
+        "def findTargetSumWays(nums, target):
     # Rewrite the problem. If P is the set given a plus and N the set given a
     # minus, then P - N = target and P + N = total, so P = (total + target) / 2.
     # That turns a sign-assignment question into \"how many subsets sum to a
@@ -10862,7 +12366,8 @@ pub fn nc95_target_sum() -> Embedded {
                 following[reached + n] = following.get(reached + n, 0) + ways
         counts = following
 
-    return counts.get(goal, 0)"),
+    return counts.get(goal, 0)",
+      ),
     ],
     check: Check(
       signature: "def findTargetSumWays(nums, target):",
@@ -10890,7 +12395,11 @@ __case__(\"findTargetSumWays([1, 2, 3, 4, 5], 3)\", 3, findTargetSumWays([1, 2, 
 pub fn nc96_stock_with_cooldown() -> Embedded {
   Embedded(
     solutions: [
-      #("Top-Down Memo", "O(n) time · O(n) space", "The same three states as an explicit choice each day: buy, sell, or do nothing. After selling the recursion skips a day, which puts the cooldown where it actually happens rather than encoding it in which value gets read.", "def maxProfit(prices):
+      #(
+        "Top-Down Memo",
+        "O(n) time · O(n) space",
+        "The same three states as an explicit choice each day: buy, sell, or do nothing. After selling the recursion skips a day, which puts the cooldown where it actually happens rather than encoding it in which value gets read.",
+        "def maxProfit(prices):
     memo = {}
 
     # The same three states as an explicit choice at each day: buy, sell, or do
@@ -10908,8 +12417,13 @@ pub fn nc96_stock_with_cooldown() -> Embedded {
             memo[(day, holding)] = max(waiting, acting)
         return memo[(day, holding)]
 
-    return best(0, False)"),
-      #("State Machine DP", "O(n) time · O(1) space", "Three states rather than one number: holding, just sold (so today is the cooldown), and free to act. Each day depends only on yesterday, so it is three rolling values — and the cooldown is expressed simply by \"free\" never reading \"sold\" from the same day. Naming the states is most of the work.", "def maxProfit(prices):
+    return best(0, False)",
+      ),
+      #(
+        "State Machine DP",
+        "O(n) time · O(1) space",
+        "Three states rather than one number: holding, just sold (so today is the cooldown), and free to act. Each day depends only on yesterday, so it is three rolling values — and the cooldown is expressed simply by \"free\" never reading \"sold\" from the same day. Naming the states is most of the work.",
+        "def maxProfit(prices):
     # Three states rather than one number: holding a share, having just sold (so
     # today is the cooldown), and free to act. Each day's states depend only on
     # yesterday's, so the whole thing is three rolling values -- and the
@@ -10920,7 +12434,8 @@ pub fn nc96_stock_with_cooldown() -> Embedded {
     for price in prices:
         hold, sold, rest = max(hold, rest - price), hold + price, max(rest, sold)
 
-    return max(sold, rest, 0)"),
+    return max(sold, rest, 0)",
+      ),
     ],
     check: Check(
       signature: "def maxProfit(prices):",
@@ -10948,7 +12463,11 @@ __case__(\"maxProfit([6, 1, 3, 2, 4, 7])\", 6, maxProfit([6, 1, 3, 2, 4, 7]))",
 pub fn nc97_interleaving_string() -> Embedded {
   Embedded(
     solutions: [
-      #("Top-Down Memo", "O(m·n) time · O(m·n) space", "How much of each source has been used is the entire state — the position in the target is their sum, so it never has to be tracked. That collapse from three indices to two is what makes the table two-dimensional, and spotting it is the problem.", "def isInterleave(s1, s2, s3):
+      #(
+        "Top-Down Memo",
+        "O(m·n) time · O(m·n) space",
+        "How much of each source has been used is the entire state — the position in the target is their sum, so it never has to be tracked. That collapse from three indices to two is what makes the table two-dimensional, and spotting it is the problem.",
+        "def isInterleave(s1, s2, s3):
     if len(s1) + len(s2) != len(s3):
         return False
 
@@ -10967,8 +12486,13 @@ pub fn nc97_interleaving_string() -> Embedded {
             )
         return memo[(i, j)]
 
-    return works(0, 0)"),
-      #("Space-Saving DP", "O(m·n) time · O(n) space", "Bottom-up over the same two-index state. Row i says which prefixes of s2 pair with the first i characters of s1, and each row depends only on the one above and itself to the left, so a single row suffices. Note the length check first: without it the recursion can succeed on a target that is too short.", "def isInterleave(s1, s2, s3):
+    return works(0, 0)",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Bottom-up over the same two-index state. Row i says which prefixes of s2 pair with the first i characters of s1, and each row depends only on the one above and itself to the left, so a single row suffices. Note the length check first: without it the recursion can succeed on a target that is too short.",
+        "def isInterleave(s1, s2, s3):
     if len(s1) + len(s2) != len(s3):
         return False
 
@@ -10985,7 +12509,8 @@ pub fn nc97_interleaving_string() -> Embedded {
             target = s3[i + j - 1]
             row[j] = (row[j] and s1[i - 1] == target) or (row[j - 1] and s2[j - 1] == target)
 
-    return row[len(s2)]"),
+    return row[len(s2)]",
+      ),
     ],
     check: Check(
       signature: "def isInterleave(s1, s2, s3):",
@@ -11013,7 +12538,11 @@ __case__(\"isInterleave('abc', 'def', 'adbecf')\", True, isInterleave('abc', 'de
 pub fn nc98_longest_increasing_path() -> Embedded {
   Embedded(
     solutions: [
-      #("Sort + DP", "O(m·n log(m·n)) time · O(m·n) space", "The same acyclicity used the other way round: walk the squares from largest value to smallest and everything a square can move to is already settled. Sorting by value *is* a topological order, so the graph never has to be built.", "def longestIncreasingPath(matrix):
+      #(
+        "Sort + DP",
+        "O(m·n log(m·n)) time · O(m·n) space",
+        "The same acyclicity used the other way round: walk the squares from largest value to smallest and everything a square can move to is already settled. Sorting by value *is* a topological order, so the graph never has to be built.",
+        "def longestIncreasingPath(matrix):
     if not matrix or not matrix[0]:
         return 0
 
@@ -11035,8 +12564,13 @@ pub fn nc98_longest_increasing_path() -> Embedded {
                     best = max(best, 1 + lengths[(nr, nc)])
         lengths[(r, c)] = best
 
-    return max(lengths.values())"),
-      #("DFS + Memo", "O(m·n) time · O(m·n) space", "Strictly increasing means the moves can never form a cycle, so the grid is a directed acyclic graph and the longest path from each square is well-defined. That is what makes caching sound — with cycles, a memo on an in-progress square would be reading an answer that does not exist yet.", "def longestIncreasingPath(matrix):
+    return max(lengths.values())",
+      ),
+      #(
+        "DFS + Memo",
+        "O(m·n) time · O(m·n) space",
+        "Strictly increasing means the moves can never form a cycle, so the grid is a directed acyclic graph and the longest path from each square is well-defined. That is what makes caching sound — with cycles, a memo on an in-progress square would be reading an answer that does not exist yet.",
+        "def longestIncreasingPath(matrix):
     if not matrix or not matrix[0]:
         return 0
 
@@ -11057,7 +12591,8 @@ pub fn nc98_longest_increasing_path() -> Embedded {
             memo[(r, c)] = best
         return memo[(r, c)]
 
-    return max(longest(r, c) for r in range(len(matrix)) for c in range(len(matrix[0])))"),
+    return max(longest(r, c) for r in range(len(matrix)) for c in range(len(matrix[0])))",
+      ),
     ],
     check: Check(
       signature: "def longestIncreasingPath(matrix):",
@@ -11084,7 +12619,11 @@ __case__(\"longestIncreasingPath([[1, 2], [3, 4]])\", 3, longestIncreasingPath([
 pub fn nc99_distinct_subsequences() -> Embedded {
   Embedded(
     solutions: [
-      #("Top-Down Memo", "O(m·n) time · O(m·n) space", "The choice written out: on a match, use this source character or skip it; otherwise skip. Running out of target is one complete subsequence, which is why the base case returns 1 and not 0 — the usual place this one goes wrong.", "def numDistinct(s, t):
+      #(
+        "Top-Down Memo",
+        "O(m·n) time · O(m·n) space",
+        "The choice written out: on a match, use this source character or skip it; otherwise skip. Running out of target is one complete subsequence, which is why the base case returns 1 and not 0 — the usual place this one goes wrong.",
+        "def numDistinct(s, t):
     memo = {}
 
     # The choice written out: when the characters match, either use this source
@@ -11103,8 +12642,13 @@ pub fn nc99_distinct_subsequences() -> Embedded {
             memo[(i, j)] = total
         return memo[(i, j)]
 
-    return ways(0, 0)"),
-      #("Space-Saving DP", "O(m·n) time · O(n) space", "Row j counts the ways to build the first j characters of the target from the source seen so far, and a new source character extends a count at j−1 into one at j when it matches. In a mutable array the row must be swept right to left, or one source character gets used twice; building a fresh row removes the hazard entirely.", "def numDistinct(s, t):
+    return ways(0, 0)",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Row j counts the ways to build the first j characters of the target from the source seen so far, and a new source character extends a count at j−1 into one at j when it matches. In a mutable array the row must be swept right to left, or one source character gets used twice; building a fresh row removes the hazard entirely.",
+        "def numDistinct(s, t):
     # Row j counts the ways to build the first j characters of t out of the
     # source seen so far. A new source character can extend a count at j-1 into
     # one at j, but only if it matches t[j-1].
@@ -11118,7 +12662,8 @@ pub fn nc99_distinct_subsequences() -> Embedded {
             if c == t[j - 1]:
                 row[j] += row[j - 1]
 
-    return row[len(t)]"),
+    return row[len(t)]",
+      ),
     ],
     check: Check(
       signature: "def numDistinct(s, t):",
@@ -11146,7 +12691,11 @@ __case__(\"numDistinct('aaa', 'aa')\", 3, numDistinct('aaa', 'aa'))",
 pub fn tip01_counter() -> Embedded {
   Embedded(
     solutions: [
-      #("Manual Loop", "O(n log n) time · O(n) space", "What Counter does underneath: a dict of counts, then a sort. Worth writing once so most_common stops being a black box.", "def topTwo(nums):
+      #(
+        "Manual Loop",
+        "O(n log n) time · O(n) space",
+        "What Counter does underneath: a dict of counts, then a sort. Worth writing once so most_common stops being a black box.",
+        "def topTwo(nums):
     counts = {}
     for num in nums:
         counts[num] = counts.get(num, 0) + 1
@@ -11154,14 +12703,20 @@ pub fn tip01_counter() -> Embedded {
     return ordered[:2]
 
 def countOf(nums, value):
-    return sum(1 for num in nums if num == value)"),
-      #("Nifty Python · Counter", "O(n) time · O(n) space", "`Counter` counts anything iterable in one call, and `most_common(k)` gives the top k already sorted. It is a dict underneath, so everything a dict does still works — but the counting and the ranking come free.", "from collections import Counter
+    return sum(1 for num in nums if num == value)",
+      ),
+      #(
+        "Nifty Python · Counter",
+        "O(n) time · O(n) space",
+        "`Counter` counts anything iterable in one call, and `most_common(k)` gives the top k already sorted. It is a dict underneath, so everything a dict does still works — but the counting and the ranking come free.",
+        "from collections import Counter
 
 def topTwo(nums):
     return Counter(nums).most_common(2)
 
 def countOf(nums, value):
-    return Counter(nums)[value]"),
+    return Counter(nums)[value]",
+      ),
     ],
     check: Check(
       signature: "def topTwo(nums):
@@ -11191,18 +12746,28 @@ __case__(\"countOf([1, 1, 2], 9)\", 0, countOf([1, 1, 2], 9))",
 pub fn tip02_defaultdict() -> Embedded {
   Embedded(
     solutions: [
-      #("Nifty Python · setdefault", "O(n) time · O(n) space", "setdefault does the same job as defaultdict without changing the type of the dictionary — handy when the result is returned or serialised, since there is no default factory left attached to it.", "def groupByLength(words):
+      #(
+        "Nifty Python · setdefault",
+        "O(n) time · O(n) space",
+        "setdefault does the same job as defaultdict without changing the type of the dictionary — handy when the result is returned or serialised, since there is no default factory left attached to it.",
+        "def groupByLength(words):
     groups = {}
     for word in words:
         groups.setdefault(len(word), []).append(word)
-    return groups"),
-      #("Nifty Python · defaultdict", "O(n) time · O(n) space", "`defaultdict(list)` makes a missing key produce an empty list rather than raise, which is what removes the \"is this key here yet\" check from every append. Grouping is then one line per item.", "from collections import defaultdict
+    return groups",
+      ),
+      #(
+        "Nifty Python · defaultdict",
+        "O(n) time · O(n) space",
+        "`defaultdict(list)` makes a missing key produce an empty list rather than raise, which is what removes the \"is this key here yet\" check from every append. Grouping is then one line per item.",
+        "from collections import defaultdict
 
 def groupByLength(words):
     groups = defaultdict(list)
     for word in words:
         groups[len(word)].append(word)
-    return dict(groups)"),
+    return dict(groups)",
+      ),
     ],
     check: Check(
       signature: "def groupByLength(words):",
@@ -11226,7 +12791,11 @@ __case__(\"groupByLength([])\", {}, groupByLength([]))",
 pub fn tip03_deque() -> Embedded {
   Embedded(
     solutions: [
-      #("Manual Queue", "O(V+E) time · O(V) space", "A list plus a read cursor. The cursor is the point: list.pop(0) is O(n), so a plain list only stays a good queue if you never shift it.", "def bfsOrder(graph, start):
+      #(
+        "Manual Queue",
+        "O(V+E) time · O(V) space",
+        "A list plus a read cursor. The cursor is the point: list.pop(0) is O(n), so a plain list only stays a good queue if you never shift it.",
+        "def bfsOrder(graph, start):
     queue = [start]
     head = 0
     seen = {start}
@@ -11241,8 +12810,13 @@ pub fn tip03_deque() -> Embedded {
                 seen.add(neighbor)
                 queue.append(neighbor)
 
-    return order"),
-      #("Nifty Python · deque", "O(V+E) time · O(V) space", "Lists pop from the front in O(n); `collections.deque` does it in O(1). Any queue-shaped algorithm — breadth-first search above all — wants a deque: append to the right, `popleft` from the left.", "from collections import deque
+    return order",
+      ),
+      #(
+        "Nifty Python · deque",
+        "O(V+E) time · O(V) space",
+        "Lists pop from the front in O(n); `collections.deque` does it in O(1). Any queue-shaped algorithm — breadth-first search above all — wants a deque: append to the right, `popleft` from the left.",
+        "from collections import deque
 
 def bfsOrder(graph, start):
     queue = deque([start])
@@ -11255,7 +12829,8 @@ def bfsOrder(graph, start):
             if neighbor not in seen:
                 seen.add(neighbor)
                 queue.append(neighbor)
-    return order"),
+    return order",
+      ),
     ],
     check: Check(
       signature: "def bfsOrder(graph, start):",
@@ -11280,12 +12855,21 @@ __case__(\"bfsOrder({'x': []}, 'x')\", [\"x\"], bfsOrder({\"x\": []}, \"x\"))",
 pub fn tip04_heapq() -> Embedded {
   Embedded(
     solutions: [
-      #("Sorting", "O(n log n) time · O(n) space", "Sorting is O(n log n) against the heap's O(n + k log n). For small k the heap wins; for k near n they are the same, and this is far shorter.", "def kSmallest(nums, k):
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sorting is O(n log n) against the heap's O(n + k log n). For small k the heap wins; for k near n they are the same, and this is far shorter.",
+        "def kSmallest(nums, k):
     return sorted(nums)[:k]
 
 def kLargest(nums, k):
-    return sorted(nums, reverse=True)[:k]"),
-      #("Nifty Python · Heap", "O(n + k log n) time · O(n) space", "`heapq` turns a plain list into a min-heap: heapify in O(n), push and pop in O(log n). Python has no max-heap, so values are negated on the way in and out. Reach for it when you repeatedly need the smallest of a changing collection.", "import heapq
+    return sorted(nums, reverse=True)[:k]",
+      ),
+      #(
+        "Nifty Python · Heap",
+        "O(n + k log n) time · O(n) space",
+        "`heapq` turns a plain list into a min-heap: heapify in O(n), push and pop in O(log n). Python has no max-heap, so values are negated on the way in and out. Reach for it when you repeatedly need the smallest of a changing collection.",
+        "import heapq
 
 def kSmallest(nums, k):
     heap = list(nums)
@@ -11295,7 +12879,8 @@ def kSmallest(nums, k):
 def kLargest(nums, k):
     heap = [-n for n in nums]
     heapq.heapify(heap)
-    return [-heapq.heappop(heap) for _ in range(min(k, len(heap)))]"),
+    return [-heapq.heappop(heap) for _ in range(min(k, len(heap)))]",
+      ),
     ],
     check: Check(
       signature: "def kSmallest(nums, k):
@@ -11325,7 +12910,11 @@ __case__(\"kSmallest([3], 5)\", [3], kSmallest([3], 5))",
 pub fn tip05_enumerate_zip() -> Embedded {
   Embedded(
     solutions: [
-      #("Index Loop", "O(n) time · O(1) space", "Indexing by hand. It works, and it is exactly what enumerate and zip save you from: the off-by-one risk and the second subscript in dotProduct.", "def firstIndexOf(nums, target):
+      #(
+        "Index Loop",
+        "O(n) time · O(1) space",
+        "Indexing by hand. It works, and it is exactly what enumerate and zip save you from: the off-by-one risk and the second subscript in dotProduct.",
+        "def firstIndexOf(nums, target):
     for i in range(len(nums)):
         if nums[i] == target:
             return i
@@ -11335,15 +12924,21 @@ def dotProduct(a, b):
     total = 0
     for i in range(min(len(a), len(b))):
         total += a[i] * b[i]
-    return total"),
-      #("Nifty Python · Iterators", "O(n) time · O(1) space", "`enumerate` gives index and value together, `zip` walks two sequences in lockstep, and tuple unpacking names the pieces. Between them, almost no loop needs `range(len(...))` — and the ones that do are usually doing something else wrong.", "def firstIndexOf(nums, target):
+    return total",
+      ),
+      #(
+        "Nifty Python · Iterators",
+        "O(n) time · O(1) space",
+        "`enumerate` gives index and value together, `zip` walks two sequences in lockstep, and tuple unpacking names the pieces. Between them, almost no loop needs `range(len(...))` — and the ones that do are usually doing something else wrong.",
+        "def firstIndexOf(nums, target):
     for i, value in enumerate(nums):
         if value == target:
             return i
     return -1
 
 def dotProduct(a, b):
-    return sum(x * y for x, y in zip(a, b))"),
+    return sum(x * y for x, y in zip(a, b))",
+      ),
     ],
     check: Check(
       signature: "def firstIndexOf(nums, target):
@@ -11373,7 +12968,11 @@ __case__(\"dotProduct([1, 2, 3], [4, 5, 6])\", 32, dotProduct([1, 2, 3], [4, 5, 
 pub fn tip06_slicing() -> Embedded {
   Embedded(
     solutions: [
-      #("Manual Loops", "O(n²) time · O(n) space", "Every slice spelled out as a loop. The slices are better in real code; writing them this way once makes the step and the negative bounds obvious.", "def reversedString(s):
+      #(
+        "Manual Loops",
+        "O(n²) time · O(n) space",
+        "Every slice spelled out as a loop. The slices are better in real code; writing them this way once makes the step and the negative bounds obvious.",
+        "def reversedString(s):
     out = \"\"
     for char in s:
         out = char + out
@@ -11391,8 +12990,13 @@ def lastN(s, n):
     return \"\".join(s[i] for i in range(max(len(s) - n, 0), len(s)))
 
 def trimEnds(s):
-    return \"\".join(s[i] for i in range(1, len(s) - 1))"),
-      #("Nifty Python · Slicing", "O(n) time · O(n) space", "Slices are Python's subsequence notation: `s[a:b:step]`. `[::-1]` reverses, `[:]` copies, negative indices count from the end. They never mutate — every slice is a new sequence, which is what makes them safe inside a loop over the original.", "def reversedString(s):
+    return \"\".join(s[i] for i in range(1, len(s) - 1))",
+      ),
+      #(
+        "Nifty Python · Slicing",
+        "O(n) time · O(n) space",
+        "Slices are Python's subsequence notation: `s[a:b:step]`. `[::-1]` reverses, `[:]` copies, negative indices count from the end. They never mutate — every slice is a new sequence, which is what makes them safe inside a loop over the original.",
+        "def reversedString(s):
     return s[::-1]
 
 def everySecond(s):
@@ -11402,7 +13006,8 @@ def lastN(s, n):
     return s[-n:] if n > 0 else \"\"
 
 def trimEnds(s):
-    return s[1:-1]"),
+    return s[1:-1]",
+      ),
     ],
     check: Check(
       signature: "def reversedString(s):
@@ -11443,7 +13048,11 @@ __case__(\"trimEnds('~mid~')\", \"mid\", trimEnds(\"~mid~\"))",
 pub fn tip07_sort_key() -> Embedded {
   Embedded(
     solutions: [
-      #("Decorate-Sort-Undecorate", "O(n log n) time · O(n) space", "Decorate, sort, undecorate: attach the sort key to each item, sort the pairs, then strip it. `key=` is this pattern built into sorted().", "def sortByLength(words):
+      #(
+        "Decorate-Sort-Undecorate",
+        "O(n log n) time · O(n) space",
+        "Decorate, sort, undecorate: attach the sort key to each item, sort the pairs, then strip it. `key=` is this pattern built into sorted().",
+        "def sortByLength(words):
     decorated = [(len(word), word) for word in words]
     decorated.sort(key=lambda pair: pair[0])
     return [word for _, word in decorated]
@@ -11451,12 +13060,18 @@ pub fn tip07_sort_key() -> Embedded {
 def sortPairs(pairs):
     decorated = [((pair[0], -pair[1]), pair) for pair in pairs]
     decorated.sort(key=lambda entry: entry[0])
-    return [pair for _, pair in decorated]"),
-      #("Nifty Python · Sort Key", "O(n log n) time · O(n) space", "`sort`/`sorted` take a key function mapping each element to what it should be compared by: `len`, a tuple for multi-field ordering, a negated number for descending. `sort` mutates in place; `sorted` returns a new list.", "def sortByLength(words):
+    return [pair for _, pair in decorated]",
+      ),
+      #(
+        "Nifty Python · Sort Key",
+        "O(n log n) time · O(n) space",
+        "`sort`/`sorted` take a key function mapping each element to what it should be compared by: `len`, a tuple for multi-field ordering, a negated number for descending. `sort` mutates in place; `sorted` returns a new list.",
+        "def sortByLength(words):
     return sorted(words, key=len)
 
 def sortPairs(pairs):
-    return sorted(pairs, key=lambda p: (p[0], -p[1]))"),
+    return sorted(pairs, key=lambda p: (p[0], -p[1]))",
+      ),
     ],
     check: Check(
       signature: "def sortByLength(words):
@@ -11485,16 +13100,26 @@ __case__(\"sortPairs([('b', 1), ('a', 1), ('a', 9)])\", [(\"a\", 9), (\"a\", 1),
 pub fn tip08_join() -> Embedded {
   Embedded(
     solutions: [
-      #("String Concatenation", "O(n²) time · O(n) space", "The version join exists to replace. Each `+=` builds a whole new string, so this is quadratic in the output length — fine for two characters, painful for a megabyte.", "def joinUpper(chars):
+      #(
+        "String Concatenation",
+        "O(n²) time · O(n) space",
+        "The version join exists to replace. Each `+=` builds a whole new string, so this is quadratic in the output length — fine for two characters, painful for a megabyte.",
+        "def joinUpper(chars):
     out = \"\"
     for c in chars:
         out += c.upper()
-    return out"),
-      #("Nifty Python · join", "O(n) time · O(n) space", "Strings are immutable, so building one with `+=` in a loop re-copies everything each time — O(n²). Collect the pieces in a list and `''.join(parts)` once at the end for O(n). The same reasoning is why the drill runner buffers its output in an array.", "def joinUpper(chars):
+    return out",
+      ),
+      #(
+        "Nifty Python · join",
+        "O(n) time · O(n) space",
+        "Strings are immutable, so building one with `+=` in a loop re-copies everything each time — O(n²). Collect the pieces in a list and `''.join(parts)` once at the end for O(n). The same reasoning is why the drill runner buffers its output in an array.",
+        "def joinUpper(chars):
     parts = []
     for c in chars:
         parts.append(c.upper())
-    return \"\".join(parts)"),
+    return \"\".join(parts)",
+      ),
     ],
     check: Check(
       signature: "def joinUpper(chars):",
@@ -11528,7 +13153,8 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc09_two_sum_sorted" -> Ok(nc09_two_sum_sorted())
     "nc100_edit_distance" -> Ok(nc100_edit_distance())
     "nc101_burst_balloons" -> Ok(nc101_burst_balloons())
-    "nc102_regular_expression_matching" -> Ok(nc102_regular_expression_matching())
+    "nc102_regular_expression_matching" ->
+      Ok(nc102_regular_expression_matching())
     "nc103_implement_trie" -> Ok(nc103_implement_trie())
     "nc104_word_dictionary" -> Ok(nc104_word_dictionary())
     "nc105_word_search_ii" -> Ok(nc105_word_search_ii())
@@ -11578,7 +13204,8 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc145_count_good_nodes" -> Ok(nc145_count_good_nodes())
     "nc146_validate_bst" -> Ok(nc146_validate_bst())
     "nc147_kth_smallest_bst" -> Ok(nc147_kth_smallest_bst())
-    "nc148_build_tree_preorder_inorder" -> Ok(nc148_build_tree_preorder_inorder())
+    "nc148_build_tree_preorder_inorder" ->
+      Ok(nc148_build_tree_preorder_inorder())
     "nc149_max_path_sum" -> Ok(nc149_max_path_sum())
     "nc14_character_replacement" -> Ok(nc14_character_replacement())
     "nc150_serialize_deserialize" -> Ok(nc150_serialize_deserialize())
@@ -11641,7 +13268,8 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc71_coin_change" -> Ok(nc71_coin_change())
     "nc72_maximum_product_subarray" -> Ok(nc72_maximum_product_subarray())
     "nc73_word_break" -> Ok(nc73_word_break())
-    "nc74_longest_increasing_subsequence" -> Ok(nc74_longest_increasing_subsequence())
+    "nc74_longest_increasing_subsequence" ->
+      Ok(nc74_longest_increasing_subsequence())
     "nc75_partition_equal_subset" -> Ok(nc75_partition_equal_subset())
     "nc76_kth_largest_stream" -> Ok(nc76_kth_largest_stream())
     "nc77_last_stone_weight" -> Ok(nc77_last_stone_weight())
