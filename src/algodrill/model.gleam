@@ -17,6 +17,9 @@ pub type Route {
   PickerRoute
   /// The scheduler knobs, plus the device preferences that sit beside them.
   SettingsRoute
+  /// What a finished sitting did. Replaces the alert that used to be the whole
+  /// completion experience.
+  SummaryRoute
   /// The scheduler's home: what is due, what is new, and a button to begin.
   StudyRoute
   /// The manual three-pane browser, kept for picking problems by hand.
@@ -276,6 +279,10 @@ pub type Model {
     /// this rather than from card history, because a score must reflect one
     /// sitting and card state deliberately does not.
     exam_answers: List(#(ProblemRef, Bool)),
+    /// This sitting's answered problems, newest first. Kept for the summary,
+    /// which is owed one the moment a sitting ends -- and unlike the card
+    /// store, this deliberately resets between sittings.
+    sitting: List(SittingEntry),
   )
 }
 
@@ -331,6 +338,7 @@ pub fn default() -> Model {
     choice: None,
     graded: False,
     exam_answers: [],
+    sitting: [],
   )
 }
 
@@ -444,6 +452,17 @@ pub fn language_muted(model: Model, tag: String) -> Bool {
 /// Which scheduler knob a settings input is editing. One message with a field
 /// tag rather than four near-identical variants, because every one of them is
 /// the same parse-clamp-save.
+/// One answered problem in this sitting.
+///
+/// `pressed` is what the user chose, which is not always what was recorded: a
+/// failed run or a revealed solution is coerced to `Again` server-side. That
+/// coercion shows up in the card's next due date rather than here, so the
+/// summary reads the interval from `Model.cards` instead of recomputing the
+/// rule -- there is exactly one copy of it and it is not in the client.
+pub type SittingEntry {
+  SittingEntry(problem: ProblemRef, pressed: fsrs.Rating, duration_ms: Int)
+}
+
 pub type SettingField {
   NewPerDay
   ReviewsPerDay

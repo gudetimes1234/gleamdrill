@@ -1484,6 +1484,116 @@ gleam-editor .cm-editor {
     }
 }
 
+/* ---------- Session summary ---------- */
+
+.summary-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.summary-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.summary-totals {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.summary-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-align: center;
+}
+
+.summary-tile-value {
+    font-size: 22px;
+    color: var(--accent);
+}
+
+.summary-tile-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.summary-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 10px;
+}
+
+.summary-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    align-items: center;
+    gap: 14px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+}
+
+.summary-row-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.summary-row-time,
+.summary-row-next {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+
+.summary-row-grade {
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+}
+
+/* The grade pressed, not the grade recorded: a failed run is coerced to Again
+   server-side, and that shows up in the interval rather than here. */
+.summary-row-grade.grade-again { color: var(--warning); border-color: var(--warning); }
+.summary-row-grade.grade-hard  { color: var(--text-secondary); }
+.summary-row-grade.grade-good  { color: var(--success); border-color: var(--success); }
+.summary-row-grade.grade-easy  { color: var(--accent); border-color: var(--accent); }
+
+.summary-remaining {
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-top: 8px;
+}
+
+@media (max-width: 700px) {
+    .summary-totals {
+        grid-template-columns: 1fr;
+    }
+
+    .summary-row {
+        grid-template-columns: 1fr auto;
+        row-gap: 4px;
+    }
+
+    .summary-row-title {
+        grid-column: 1 / -1;
+        white-space: normal;
+    }
+}
+
 /* ---------- Settings ---------- */
 
 .settings-screen {

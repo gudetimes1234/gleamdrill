@@ -14,12 +14,13 @@ import algodrill/model.{
   MenuCursorMoved, MenuPaneFocused, MenuRoute, MenuSuspendedAtCursor,
   MenuToggledAtCursor, PickerConfirmed, PickerRoute, QuizMoved, ReportRoute,
   SearchFocusRequested, SettingsRoute, StatsActivated, StatsCursorMoved,
-  StatsRoute, StudyRoute, UserClickedBackToStudy, UserClickedBrowse,
-  UserClickedClearSelection, UserClickedExitDrill, UserClickedExitReport,
-  UserClickedNext, UserClickedRun, UserClickedSelectAll, UserClickedStartDrill,
-  UserClickedStartExam, UserClickedStats, UserClickedStudy, UserClosedDetail,
-  UserGraded, UserPickedChoice, UserRevealedHint, UserSearched,
-  UserSubmittedAnswer, UserToggledSide, UserToggledSolution,
+  StatsRoute, StudyRoute, SummaryRoute, UserClickedBackToStudy,
+  UserClickedBrowse, UserClickedClearSelection, UserClickedExitDrill,
+  UserClickedExitReport, UserClickedNext, UserClickedRun, UserClickedSelectAll,
+  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
+  UserClickedStudy, UserClosedDetail, UserGraded, UserPickedChoice,
+  UserRevealedHint, UserSearched, UserSubmittedAnswer, UserToggledSide,
+  UserToggledSolution,
 }
 import algodrill/problem
 import algodrill/problems
@@ -101,6 +102,15 @@ pub fn bindings(m: Model) -> List(Binding) {
             "back",
             "Back to study",
             UserClickedBackToStudy,
+          ),
+          help_binding(),
+        ]
+        SummaryRoute -> [
+          Binding(
+            ["Enter", "Escape", "b"],
+            "done",
+            "Leave the summary",
+            UserClickedExitReport,
           ),
           help_binding(),
         ]
@@ -336,6 +346,7 @@ pub fn context_label(m: Model) -> String {
     ReportRoute -> "REPORT"
     PickerRoute -> "SETUP"
     SettingsRoute -> "SETTINGS"
+    SummaryRoute -> "SUMMARY"
     AuthRoute -> "SIGN IN"
   }
 }

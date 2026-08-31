@@ -19,7 +19,7 @@ import algodrill/model.{
   RuntimeReady, SearchFocusRequested, SettingsRoute, SettingsSaved,
   SignOutCompleted, SigningIn, StateImported, StateLoaded, StatsActivated,
   StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute, SubmittingGrade,
-  SyncFailed, Synced, Syncing, TimedOut, UserChangedAuthEmail,
+  SummaryRoute, SyncFailed, Synced, Syncing, TimedOut, UserChangedAuthEmail,
   UserChangedAuthPassword, UserChangedIterations, UserChangedKeymap,
   UserChangedSetting, UserClickedBackToStudy, UserClickedBreadcrumb,
   UserClickedBrowse, UserClickedCategory, UserClickedClearSelection,
@@ -50,6 +50,7 @@ import algodrill/view/settings
 import algodrill/view/stats
 import algodrill/view/statusbar
 import algodrill/view/study
+import algodrill/view/summary
 import fsrs
 import gleam/dict
 import gleam/float
@@ -872,7 +873,14 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         SubmittingGrade, _ -> #(m, effect.none())
         _, Error(Nil) -> #(m, effect.none())
         _, Ok(ref) -> #(
-          Model(..m, grading: SubmittingGrade),
+          Model(..m, grading: SubmittingGrade, sitting: [
+            model.SittingEntry(
+              problem: ref,
+              pressed: rating,
+              duration_ms: browser.now_ms() - m.opened_at_ms,
+            ),
+            ..m.sitting
+          ]),
           store.record_review(
             m,
             wire.Review(
@@ -1004,6 +1012,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               // Clearing the log is what distinguishes a drill from an exam at
               // the end of the run: a non-empty log means a report is owed.
               exam_answers: [],
+              sitting: [],
               choice: None,
               graded: False,
             ),
@@ -1034,6 +1043,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             iteration_count: 1,
             current_iteration: 1,
             exam_answers: [],
+            sitting: [],
             choice: None,
             graded: False,
             revealed_solution: None,
@@ -1505,6 +1515,7 @@ fn open_first(m: Model, queue: List(ProblemRef)) -> Model {
         grading: initial_grading(m, first),
         opened_at_ms: browser.now_ms(),
         exam_answers: [],
+        sitting: [],
         choice: None,
         graded: False,
       )
@@ -1639,9 +1650,16 @@ fn advance_inner(m: Model) -> #(Model, Effect(Msg)) {
       Model(..reset_home(m), route: ReportRoute, studying: m.studying),
       effect.none(),
     )
+    // A drill sitting earns a report too. `reset_home` clears `studying`, so
+    // like the exam arm this puts it back for the sake of the back button.
     True, [] -> #(
-      reset_home(m),
-      effect.from(fn(_dispatch) { browser.alert("Session complete.") }),
+      Model(
+        ..reset_home(m),
+        route: SummaryRoute,
+        studying: m.studying,
+        sitting: m.sitting,
+      ),
+      effect.none(),
     )
     False, _ -> {
       let advanced =
@@ -1813,6 +1831,7 @@ fn view(m: Model) -> Element(Msg) {
         AuthRoute -> auth.view(m)
         PickerRoute -> picker.view(m)
         SettingsRoute -> settings.view(m)
+        SummaryRoute -> summary.view(m)
         StudyRoute -> study.view(m)
         StatsRoute -> stats.view(m)
         DrillRoute ->
