@@ -39,6 +39,24 @@ Good means you are over-pressing Easy), and a per-problem review timeline
 showing eleven minutes becoming 2m41s. All of it derives from the review log,
 for guests too.
 
+**The queue says how long it will take.** "23 cards ready" is not a number
+anyone can act on when a card is a problem typed from memory, so the study
+screen says "about 40m" beside it — the sum of each problem's median clean
+solve time, with cards you have never solved cleanly counted at eight minutes,
+because those are the expensive ones and an estimate that flatters the queue
+is worse than none. A collapsed preview shows exactly what *Study now* will
+serve, and a sitting ends on a summary rather than an alert: each card with
+the grade you pressed against the interval the scheduler actually gave it,
+which are not always the same thing, since a failed run or a revealed
+solution is coerced to Again server-side.
+
+**You choose your languages.** The catalogue is the same 150 problems once per
+language, and left alone the queue would serve Python and nothing else for
+months. So the first run asks which of the four to drill, nothing pre-ticked,
+and new cards round-robin across whatever you chose rather than draining the
+first language dry. A language that runs out drops out of the rotation
+without ending it. A browser that was already using the app skips the picker.
+
 Scheduling is **FSRS-6** — the algorithm Anki uses by default. Every drill you
 answer is recorded against your account and the scheduler decides when that
 problem comes back: minutes if you failed it, months once it is solid. Grading
@@ -55,6 +73,18 @@ five passes over all three, not five copies of the first — so by the time a
 problem comes round again you have had to actually reload it. Scheduled
 sittings are a single pass, since FSRS decides the spacing rather than the
 sitting doing it.
+
+The limits are yours to set. A settings screen holds new cards per day (5 by
+default — deliberately low, since a card here is minutes not seconds, and a
+cap nobody can reach is a decoration), reviews per day (100), the hour the
+study day rolls over (4am), desired retention (0.9), and a timezone button
+that adopts whatever zone the device is in, which is the case that actually
+happens. Values clamp to the server's own bounds — retention 0.7 to 0.99,
+rollover 0 to 23 — rather than erroring, since anything outside them is a
+typo. The screen says which store each group lands in, because "kept with
+your account" and "kept in this browser" is a real difference and an invisible
+one. A new account is seeded from the same defaults the app uses, so a guest
+studying 5 a day does not silently get 10 on signing up.
 
 Built in [Gleam](https://gleam.run) end to end: a [Lustre](https://lustre.build)
 app on the JavaScript target with a CodeMirror 6 editor, a
@@ -160,16 +190,21 @@ version has to beat.
 
 ## Layout
 
-Three Gleam projects plus the drill content:
+Four Gleam projects plus the drill content:
 
 ```
 src/                    the Lustre app (target: javascript); worker.gleam /
                         py_worker.gleam / ts_worker.gleam run in the
-                        per-language workers; *_ffi.mjs files are the thin JS
-                        platform boundary
+                        per-language workers; queue.gleam is the one place
+                        the due queue is built and counted; *_ffi.mjs files
+                        are the thin JS platform boundary
 fsrs/                   the FSRS-6 scheduler. NO target: it compiles to Erlang
                         for the server and to JavaScript for the app, from one
                         source. Pure — no I/O, no clock, no randomness
+wire/                   the wire format: every payload that crosses between
+                        browser and backend, encoder and decoder, plus the
+                        settings defaults. Same shape as fsrs/ — no target,
+                        one source, both sides
 server/                 the backend (target: erlang): wisp + pog + Argon2,
                         accounts, review log, scheduling
 drills/                 a Gleam project: reference solutions + harnesses for
@@ -187,6 +222,15 @@ the interval the server will actually store. Its tests run on **both** targets
 against vectors generated from the reference `py-fsrs` implementation, so a
 divergence from upstream Anki fails the build rather than quietly producing
 wrong review dates.
+
+`wire/` is shared for the same reason. The encoders and decoders used to be
+written twice — some six hundred lines, whole bodies byte-identical — with
+nothing checking they agreed except fixtures captured from a running server,
+and they had drifted. Now a renamed field is a compile error on whichever side
+has not caught up rather than a blank screen, and every payload round-trips
+through its own encoder and decoder on both targets in `make wire-test`.
+Transport stays each side's own business: HTTP clients, error types and wisp
+responses do not belong in the shared package.
 
 Drill content is data: each drill is a real, runnable source file in
 `drills/{src,python/solutions,ts/solutions,elixir/solutions}` plus a harness
@@ -217,13 +261,14 @@ Narrower targets, for when `verify` is more than you need:
 ```sh
 make fsrs-test     # the scheduler, on Erlang AND JavaScript
 make fsrs-vectors  # regenerate its conformance vectors from py-fsrs
+make wire-test     # every payload round-trips, on Erlang AND JavaScript
 make app-test      # the app's decoders against captured server responses
 make api-fixtures  # recapture those responses from a running backend
 make server-test   # backend unit tests
 make server-smoke  # the whole HTTP surface against a running backend
 make e2e           # a real browser against a built app + running backend
 make tour          # every route and state, photographed — layout's only check
-make check-versions  # the pinned Gleam/Brython versions agree everywhere
+make check-versions  # the pinned Gleam/Brython/bun versions agree everywhere
 make check-format    # gleam format --check across all four projects
 ```
 
@@ -236,6 +281,15 @@ locally, and that a full localStorage is reported rather than swallowed.
 Runtimes are version-stamped and lazy: nothing language-specific downloads
 until a drill of that language opens.
 
+Bun is pinned (1.3.14) alongside Gleam and Brython because `make worker`
+minifies the three worker bundles with whatever bun is on PATH, and the bytes
+differ between versions — enough to make CI's "is `dist/` stale?" check fail on
+minifier drift alone. `check-versions` warns when the bun on PATH disagrees
+with the pin. CI also builds both container images from the repository root,
+the same context Railway uses, because the Dockerfiles were the one piece of
+configuration no test ever executed until a missing `COPY` failed four deploys
+in a row.
+
 ## Running the backend
 
 Needs Postgres 13 or later. Copy `server/.env.example` to `server/.env`, fill it
@@ -244,7 +298,7 @@ in, then:
 ```sh
 createdb algodrill_dev
 make dev-api           # migrates at boot, then listens (server-dev is an alias)
-make server-smoke      # 95 checks against it
+make server-smoke      # 99 checks against it
 ```
 
 The schema is created by migrations embedded in `server/src/server/migrations.gleam`
@@ -266,7 +320,7 @@ make down-clean    # stop and drop the database volume
 
 Docker by default, so `lazydocker` and friends can see the containers; for
 rootless Podman use `make up COMPOSE="podman compose"`. Both images build from the **repository
-root** — the backend needs `fsrs/` alongside `server/`, and the web image copies
+root** — the backend needs `fsrs/` and `wire/` alongside `server/`, and the web image copies
 the committed `dist/`. A `.dockerignore` keeps the context to the ~14M that is
 actually used rather than the whole 278M tree.
 
@@ -285,8 +339,10 @@ service built from `deploy/web.Dockerfile` with the public domain. The web
 service needs `API_UPSTREAM=api.railway.internal:8080`; the api service needs
 `DATABASE_URL`, `SECRET_KEY_BASE`, `ALLOWED_ORIGIN` set to the public domain,
 and **`BIND=::`** rather than `0.0.0.0`, because Railway's private network is
-IPv6-only. Run `make build` before `make deploy`: the web image copies `dist/`
-verbatim rather than building it.
+IPv6-only. Both services deploy from the GitHub `main` branch on push;
+`make deploy` (`railway up`) is the manual alternative. Either way, run
+`make build` and commit `dist/` first: the web image copies it verbatim rather
+than building it.
 
 Only ever run **one** api instance. It migrates the schema at boot assuming it
 is the sole writer; more than one needs a migration story first.
@@ -312,7 +368,11 @@ What a guest gives up, and the app says so on screen rather than in a footnote:
 - On upgrading, cards and drafts carry over but statistics history does not —
   see below.
 
-Signed in, localStorage keeps only the session token and your editor keymap.
+Signed in, localStorage keeps only the session token and your preferences —
+editor keymap and which languages you chose. A guest's scheduler settings get
+their own key too, encoded with the shared `wire` codec, and are cleared with
+the rest on sign-up: the new account starts from the defaults, not from what
+the browser held.
 
 ### Upgrading
 
