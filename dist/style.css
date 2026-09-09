@@ -2890,3 +2890,226 @@ body {
     font-size: 12px;
     color: var(--text-secondary);
 }
+
+/* ===== Queue manager ===== */
+
+.queue-screen {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 16px 56px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.queue-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.queue-title {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.queue-total {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.queue-lede {
+    font-size: 13px;
+    color: var(--text-secondary);
+    max-width: 62ch;
+}
+
+.queue-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.queue-filter-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.queue-filter-label {
+    flex: 0 0 66px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.queue-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.queue-chip {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    padding: 3px 10px;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.queue-chip:hover {
+    color: var(--text-primary);
+}
+
+/* The chosen chip, not a "selected problem": a filter is a lens, so it reads
+   as an outline rather than as the filled state selection uses. */
+.queue-chip.on {
+    border-color: var(--accent);
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.queue-bulk {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.queue-shown {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-right: auto;
+}
+
+.queue-bulk-add,
+.queue-bulk-remove {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.queue-bulk-add {
+    border-color: var(--accent);
+}
+
+.queue-bulk-add:disabled,
+.queue-bulk-remove:disabled,
+.queue-action:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.queue-list {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.queue-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+
+.queue-row:last-child {
+    border-bottom: none;
+}
+
+/* Membership is the one thing this screen is about, so it is the row's own
+   state rather than something you read off the badge. */
+.queue-row.queued {
+    background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.queue-row.cursor {
+    outline: 1px solid var(--accent);
+    outline-offset: -1px;
+}
+
+.queue-row-title {
+    flex: 1 1 auto;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.queue-row-topic {
+    flex: 0 0 auto;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* A problem with no card at all. Quietest of the badges: it is the default
+   state of most of the catalogue, and it must not read as a warning. */
+.badge-unqueued {
+    color: var(--text-secondary);
+    border: 1px dashed var(--border);
+    opacity: 0.6;
+}
+
+.badge-new {
+    color: var(--success);
+    border: 1px solid var(--success);
+    background: color-mix(in srgb, var(--success) 14%, transparent);
+}
+
+.queue-action {
+    flex: 0 0 78px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 4px 8px;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.queue-action.queue-add {
+    border-color: var(--accent);
+}
+
+.queue-empty {
+    padding: 24px;
+    text-align: center;
+    color: var(--text-secondary);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+}
+
+@media (max-width: 700px) {
+    .queue-filter-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+    }
+
+    /* The topic is the first thing to go: the title and the state are what a
+       row is for, and both have to stay on one line on a phone. */
+    .queue-row-topic {
+        display: none;
+    }
+
+    .queue-action {
+        flex-basis: 68px;
+        min-height: 32px;
+    }
+}

@@ -17,7 +17,6 @@ import algodrill/problem.{type ProblemRef}
 import algodrill/problems
 import algodrill/view/format
 import fsrs
-import gleam/dict
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
@@ -37,7 +36,10 @@ pub fn view(m: Model) -> Element(Msg) {
     ]),
     case m.stats, m.insights {
       Some(stats), Some(data) ->
-        case stats.total_reviews == 0 && dict.size(m.cards) == 0 {
+        // Answered cards, not queued ones: an upgraded account has card state
+        // without review history and deserves the panels, while a queue of
+        // problems nobody has opened has nothing to show yet.
+        case stats.total_reviews == 0 && model.answered_count(m) == 0 {
           True ->
             html.p([attribute.class("study-summary")], [
               html.text("No reviews yet. Study a few cards and this fills in."),

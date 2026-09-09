@@ -150,6 +150,130 @@ fn suspend_decoder() -> decode.Decoder(#(study.ProblemRef, Bool)) {
   decode.success(#(problem, suspended))
 }
 
+/// Puts problems into the study queue. Bulk, because "add this whole topic" is
+/// the normal case; the cap is what stops one request from seeding every
+/// catalogue entry the app has.
+pub fn enqueue(request: wisp.Request, context: Context) -> wisp.Response {
+  use user <- web.require_user(request, context)
+  use body <- wisp.require_json(request)
+
+  case decode.run(body, queue_decoder()) {
+    Error(_) -> invalid_queue_body()
+    Ok([]) -> invalid_queue_body()
+    Ok(problems) ->
+      case list.length(problems) > queue_batch_limit {
+        True ->
+          web.error(
+            422,
+            "too_many_problems",
+            "Add at most "
+              <> int.to_string(queue_batch_limit)
+              <> " problems at a time.",
+          )
+        False ->
+          queue_response(context, user, fn() {
+            use cards <- result.try(study.enqueue_cards(
+              context.db,
+              user.id,
+              problems,
+            ))
+            Ok(#(cards, [], []))
+          })
+      }
+  }
+}
+
+/// Takes problems out of the study queue.
+///
+/// A card that has been studied is refused rather than deleted -- its review
+/// log cascades with it -- and comes back in `refused` so the client can park
+/// it instead. That is a 200, not an error: a bulk removal of a topic where
+/// three cards have history did remove the rest, and reporting the whole
+/// request as failed would be a lie.
+pub fn dequeue(request: wisp.Request, context: Context) -> wisp.Response {
+  use user <- web.require_user(request, context)
+  use body <- wisp.require_json(request)
+
+  case decode.run(body, queue_decoder()) {
+    Error(_) -> invalid_queue_body()
+    Ok([]) -> invalid_queue_body()
+    Ok(problems) ->
+      case list.length(problems) > queue_batch_limit {
+        True ->
+          web.error(
+            422,
+            "too_many_problems",
+            "Remove at most "
+              <> int.to_string(queue_batch_limit)
+              <> " problems at a time.",
+          )
+        False ->
+          queue_response(context, user, fn() {
+            use pair <- result.try(study.delete_cards(
+              context.db,
+              user.id,
+              problems,
+            ))
+            let #(removed, refused) = pair
+            Ok(#([], removed, refused))
+          })
+      }
+  }
+}
+
+/// The shared tail of both queue endpoints: run the change, then answer with
+/// the same four lists plus a freshly recomputed `today`, so the client's
+/// counts move with the queue in one fold.
+fn queue_response(
+  context: Context,
+  user: User,
+  change: fn() ->
+    Result(
+      #(List(CardRecord), List(study.ProblemRef), List(study.ProblemRef)),
+      study.StudyError,
+    ),
+) -> wisp.Response {
+  let now = timestamp.system_time()
+  let outcome = {
+    use settings <- result.try(study.load_settings(context.db, user.id))
+    use #(cards, removed, refused) <- result.try(change())
+    use today <- result.try(study.today(context.db, user.id, settings, now))
+    Ok(#(cards, removed, refused, today))
+  }
+
+  case outcome {
+    Error(failure) -> study_error(failure)
+    Ok(#(cards, removed, refused, today)) ->
+      web.json_ok(
+        json.object([
+          #("now", json.float(fsrs.to_epoch(now))),
+          #("cards", json.array(cards, card_json)),
+          #("removed", json.array(removed, problem_json)),
+          #("refused", json.array(refused, problem_json)),
+          #("today", today_json(today)),
+        ]),
+      )
+  }
+}
+
+fn invalid_queue_body() -> wisp.Response {
+  web.error(
+    422,
+    "invalid_body",
+    "Expected problems: a non-empty list of problem references.",
+  )
+}
+
+/// One topic is at most a few dozen problems and the whole catalogue is about
+/// twelve hundred, so this admits "add everything" while still bounding a
+/// single statement.
+const queue_batch_limit = 1500
+
+fn queue_decoder() -> decode.Decoder(List(study.ProblemRef)) {
+  use problems <- decode.field("problems", decode.list(problem_decoder()))
+  decode.success(problems)
+}
+
 pub fn stats(request: wisp.Request, context: Context) -> wisp.Response {
   use <- wisp.require_method(request, http.Get)
   use user <- web.require_user(request, context)
@@ -372,6 +496,8 @@ const accounts_user_json = wire.user_to_json
 const draft_json = wire.draft_to_json
 
 const today_json = wire.today_to_json
+
+const problem_json = wire.ref_to_json
 
 const stats_json = wire.stats_to_json
 

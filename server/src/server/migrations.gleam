@@ -17,8 +17,22 @@ pub type Migration {
 }
 
 pub fn all() -> List(Migration) {
-  [Migration(1, "init", init)]
+  [
+    Migration(1, "init", init),
+    Migration(2, "seeded_cards_have_a_rep", backfill),
+  ]
 }
+
+/// `reps` used to be decoration; now it is the line between a card that is due
+/// and a card that has never been opened. Two import paths wrote a card with
+/// memory already on it and left `reps` at zero -- the legacy "solved" seed and
+/// the guest upgrade -- and those cards would otherwise read as brand new,
+/// getting re-introduced against the daily budget and dropping out of every
+/// statistic. A card carrying stability has been answered by definition, so
+/// one rep is the truthful floor.
+const backfill: List(String) = [
+  "update cards set reps = 1 where reps = 0 and stability is not null",
+]
 
 const init: List(String) = [
   // No extensions: `gen_random_uuid()` is built in from Postgres 13, and email

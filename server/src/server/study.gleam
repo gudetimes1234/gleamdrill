@@ -162,10 +162,11 @@ pub fn load_cards(
   |> result.map_error(database_error)
 }
 
-/// Parks or resumes one card. Only a card that exists — i.e. has been
-/// reviewed at least once — can be suspended: an unseen problem is managed by
-/// simply not studying it, so a missing row is the caller's 404, not an
-/// upsert.
+/// Parks or resumes one card. Only a card that exists can be suspended: a
+/// problem that is not in the study queue is already excluded, so a missing
+/// row is the caller's 404, not an upsert. Suspending is how a card with
+/// review history leaves the queue, since deleting it would take the history
+/// with it.
 pub fn set_suspended(
   db: pog.Connection,
   user_id: String,
@@ -192,11 +193,126 @@ pub fn set_suspended(
   |> result.map_error(database_error)
 }
 
+/// Puts problems into the study queue by giving each one a card, and answers
+/// with the state of every problem named -- including ones already queued, so
+/// the client can fold the response without tracking which of its refs were
+/// new.
+///
+/// `introduced_at` is deliberately left null. It means "first studied", and
+/// the daily new budget counts it (`today`), so stamping it here would spend
+/// the budget on problems that have not been opened.
+///
+/// Written as one `unnest` rather than a statement per ref because queueing a
+/// whole topic is the normal case: 25 round trips to add "Arrays & Hashing"
+/// would be 25 chances to half-apply it.
+pub fn enqueue_cards(
+  db: pog.Connection,
+  user_id: String,
+  problems: List(ProblemRef),
+) -> Result(List(CardRecord), StudyError) {
+  case problems {
+    [] -> Ok([])
+    _ -> {
+      let categories = list.map(problems, fn(ref) { ref.category })
+      let subcategories = list.map(problems, fn(ref) { ref.subcategory })
+      let titles = list.map(problems, fn(ref) { ref.title })
+
+      // The union is not a flourish. A data-modifying CTE and the query it
+      // feeds see the same snapshot, so a plain `select from cards` here comes
+      // back without the rows the insert just wrote -- it would answer with
+      // only the problems that were *already* queued, which is precisely the
+      // set the caller does not need. The insert returns its own rows, and the
+      // select picks up the ones that were there before it.
+      pog.query("with asked as (
+           select * from unnest($2::text[], $3::text[], $4::text[])
+             as t(category, subcategory, title)
+         ), inserted as (
+           insert into cards (user_id, category, subcategory, title)
+           select $1::uuid, category, subcategory, title from asked
+           on conflict (user_id, category, subcategory, title) do nothing
+           returning " <> card_columns <> "
+         )
+         select * from inserted
+         union all
+         select " <> card_columns <> "
+           from cards c
+           join asked using (category, subcategory, title)
+          where c.user_id = $1::uuid")
+      |> pog.parameter(pog.text(user_id))
+      |> pog.parameter(pog.array(pog.text, categories))
+      |> pog.parameter(pog.array(pog.text, subcategories))
+      |> pog.parameter(pog.array(pog.text, titles))
+      |> pog.returning(card_decoder())
+      |> pog.execute(db)
+      |> result.map(fn(returned) { returned.rows })
+      |> result.map_error(database_error)
+    }
+  }
+}
+
+/// Takes problems out of the study queue, and reports which ones it refused.
+///
+/// `reps = 0` is the whole safety condition: `reviews.card_id` cascades on
+/// delete, so removing a card that has been studied would silently destroy its
+/// review log -- the one thing in this schema that cannot be rebuilt. A
+/// studied card is parked with `set_suspended` instead.
+pub fn delete_cards(
+  db: pog.Connection,
+  user_id: String,
+  problems: List(ProblemRef),
+) -> Result(#(List(ProblemRef), List(ProblemRef)), StudyError) {
+  case problems {
+    [] -> Ok(#([], []))
+    _ -> {
+      let categories = list.map(problems, fn(ref) { ref.category })
+      let subcategories = list.map(problems, fn(ref) { ref.subcategory })
+      let titles = list.map(problems, fn(ref) { ref.title })
+
+      pog.query(
+        "delete from cards c
+           using unnest($2::text[], $3::text[], $4::text[])
+             as t(category, subcategory, title)
+          where c.user_id = $1::uuid
+            and c.category = t.category
+            and c.subcategory = t.subcategory
+            and c.title = t.title
+            and c.reps = 0
+        returning c.category, c.subcategory, c.title",
+      )
+      |> pog.parameter(pog.text(user_id))
+      |> pog.parameter(pog.array(pog.text, categories))
+      |> pog.parameter(pog.array(pog.text, subcategories))
+      |> pog.parameter(pog.array(pog.text, titles))
+      |> pog.returning({
+        use category <- decode.field(0, decode.string)
+        use subcategory <- decode.field(1, decode.string)
+        use title <- decode.field(2, decode.string)
+        decode.success(wire.ProblemRef(category:, subcategory:, title:))
+      })
+      |> pog.execute(db)
+      |> result.map(fn(returned) {
+        let removed = returned.rows
+        // Anything asked for and not returned still exists: either it has
+        // been studied, or it was never queued. Both are "not removed", and
+        // the client tells them apart from the cards it already holds.
+        #(
+          removed,
+          list.filter(problems, fn(ref) { !list.contains(removed, ref) }),
+        )
+      })
+      |> result.map_error(database_error)
+    }
+  }
+}
+
 /// Cards are created lazily, on first review, rather than seeding ~1200 rows
 /// per user up front for problems they may never open.
 ///
-/// The `do update` is a deliberate no-op: `on conflict do nothing` would skip
-/// RETURNING for an existing row, and this needs the row either way.
+/// The `do update` is not a no-op: it stamps `introduced_at` the first time a
+/// card is actually reviewed, which is what the daily new budget counts. A row
+/// queued ahead of time exists with a null stamp until this runs.
+/// `on conflict do nothing` would also skip RETURNING for an existing row, and
+/// this needs the row either way.
 fn upsert_card(
   db: pog.Connection,
   user_id: String,
@@ -206,7 +322,7 @@ fn upsert_card(
     "insert into cards (user_id, category, subcategory, title, introduced_at)
      values ($1::uuid, $2, $3, $4, now())
      on conflict (user_id, category, subcategory, title)
-       do update set suspended = cards.suspended
+       do update set introduced_at = coalesce(cards.introduced_at, now())
      returning " <> card_columns,
   )
   |> pog.parameter(pog.text(user_id))
@@ -526,6 +642,7 @@ pub fn today(
        (select count(*) from cards c
          where c.user_id = $1::uuid
            and not c.suspended
+           and c.reps > 0
            and c.due <= to_timestamp($4::float8))::int
      from bounds",
   )
@@ -805,7 +922,7 @@ pub fn import_legacy(
     // Real guest scheduling first, so a problem present in both lists keeps
     // the state it earned rather than the flat legacy seed.
     use _ <- result.try(
-      list.try_each(cards, fn(card) { insert_card(tx, user_id, card, now) }),
+      list.try_each(cards, fn(card) { insert_card(tx, user_id, card) }),
     )
     use _ <- result.try(
       list.try_each(solved, fn(problem) {
@@ -834,7 +951,6 @@ fn insert_card(
   db: pog.Connection,
   user_id: String,
   card: ImportCard,
-  now: Timestamp,
 ) -> Result(Nil, StudyError) {
   pog.query(
     "insert into cards (
@@ -845,7 +961,9 @@ fn insert_card(
              to_timestamp($9::float8),
              case when $10::float8 is null then null
                   else to_timestamp($10::float8) end,
-             $11, $12, to_timestamp($13::float8))
+             $11, $12,
+             case when $13::float8 is null then null
+                  else to_timestamp($13::float8) end)
      on conflict (user_id, category, subcategory, title) do nothing",
   )
   |> pog.parameter(pog.text(user_id))
@@ -869,9 +987,14 @@ fn insert_card(
   ))
   |> pog.parameter(pog.int(card.reps))
   |> pog.parameter(pog.int(card.lapses))
-  |> pog.parameter(
-    pog.float(fsrs.to_epoch(option.unwrap(card.introduced_at, now))),
-  )
+  // Null stays null. `introduced_at` means "first answered", and a guest can
+  // now upgrade with a queue of cards they have never opened -- stamping those
+  // with today would spend the whole daily new budget the moment they signed
+  // up, and the account would report nothing new to study on day one.
+  |> pog.parameter(pog.nullable(
+    pog.float,
+    option.map(card.introduced_at, fsrs.to_epoch),
+  ))
   |> pog.execute(db)
   |> result.replace(Nil)
   |> result.map_error(database_error)
@@ -885,11 +1008,15 @@ fn seed_card(
   now: Timestamp,
 ) -> Result(Nil, StudyError) {
   pog.query(
+    // `reps` is 1, not 0. A zero-rep card is a queued one that has never been
+    // opened, and this card is the opposite: the old app recorded it as solved,
+    // which is what the seeded memory represents. Left at zero it would be
+    // re-introduced as new and counted out of every statistic.
     "insert into cards (
        user_id, category, subcategory, title,
-       state, step, stability, difficulty, due, introduced_at)
+       state, step, stability, difficulty, due, reps, introduced_at)
      values ($1::uuid, $2, $3, $4, 2, null, $5, $6,
-             to_timestamp($7::float8), to_timestamp($7::float8))
+             to_timestamp($7::float8), 1, to_timestamp($7::float8))
      on conflict (user_id, category, subcategory, title) do nothing",
   )
   |> pog.parameter(pog.text(user_id))

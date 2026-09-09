@@ -1,5 +1,6 @@
 //// HTTP routing.
 
+import gleam/http
 import gleam/json
 import server/routes/accounts
 import server/routes/study
@@ -18,7 +19,15 @@ pub fn handle(request: wisp.Request, context: Context) -> wisp.Response {
     ["api", "me"] -> accounts.me(request, context)
 
     ["api", "state"] -> study.state(request, context)
-    ["api", "cards"] -> study.suspend(request, context)
+    // One path, three verbs: PATCH parks a card, POST puts problems into the
+    // study queue and DELETE takes them out. They act on the same resource,
+    // so they share its path rather than inventing /api/cards/queue.
+    ["api", "cards"] ->
+      case request.method {
+        http.Post -> study.enqueue(request, context)
+        http.Delete -> study.dequeue(request, context)
+        _ -> study.suspend(request, context)
+      }
     ["api", "reviews"] -> study.review(request, context)
     ["api", "drafts"] -> study.draft(request, context)
     ["api", "settings"] -> study.settings(request, context)

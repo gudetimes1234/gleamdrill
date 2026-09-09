@@ -188,6 +188,39 @@ pub fn review_outcome_round_trips_test() {
   )
 }
 
+pub fn queue_change_round_trips_test() {
+  let change =
+    wire.QueueChange(
+      now: fsrs.from_epoch(1_787_788_818.0),
+      cards: [a_card()],
+      removed: [
+        wire.ProblemRef(
+          category: "NeetCode 150 · Gleam",
+          subcategory: "Two Pointers",
+          title: "Valid Palindrome",
+        ),
+      ],
+      refused: [a_ref()],
+      today: a_today(),
+    )
+  round_trip(change, wire.queue_change_to_json, wire.queue_change_decoder())
+}
+
+/// An add that changed nothing still answers with the same four lists, empty.
+/// The client folds the response unconditionally, so an absent key would be a
+/// decode failure rather than a no-op.
+pub fn an_empty_queue_change_round_trips_test() {
+  let change =
+    wire.QueueChange(
+      now: fsrs.from_epoch(1_787_788_818.0),
+      cards: [],
+      removed: [],
+      refused: [],
+      today: a_today(),
+    )
+  round_trip(change, wire.queue_change_to_json, wire.queue_change_decoder())
+}
+
 pub fn stats_round_trips_test() {
   let stats =
     wire.Stats(

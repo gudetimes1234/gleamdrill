@@ -105,6 +105,24 @@ pub type ReviewOutcome {
   ReviewOutcome(now: Timestamp, card: CardState, today: Today)
 }
 
+/// What changed after adding problems to the study queue, or taking them out.
+///
+/// One shape for both directions so there is one decoder and one message to
+/// fold: `cards` is the state of every problem the request named that now has
+/// a card, and `removed` the ones whose card is gone. A request that asks to
+/// remove a problem which has already been studied gets it back in neither
+/// list -- deleting it would cascade its review log away -- and the server
+/// says so in `refused`, which the client turns into a suspension instead.
+pub type QueueChange {
+  QueueChange(
+    now: Timestamp,
+    cards: List(CardState),
+    removed: List(ProblemRef),
+    refused: List(ProblemRef),
+    today: Today,
+  )
+}
+
 pub type DayTally {
   DayTally(days_ago: Int, total: Int, correct: Int)
 }
@@ -346,6 +364,16 @@ pub fn review_outcome_to_json(outcome: ReviewOutcome) -> Json {
     #("now", json.float(fsrs.to_epoch(outcome.now))),
     #("card", card_to_json(outcome.card)),
     #("today", today_to_json(outcome.today)),
+  ])
+}
+
+pub fn queue_change_to_json(change: QueueChange) -> Json {
+  json.object([
+    #("now", json.float(fsrs.to_epoch(change.now))),
+    #("cards", json.array(change.cards, card_to_json)),
+    #("removed", json.array(change.removed, ref_to_json)),
+    #("refused", json.array(change.refused, ref_to_json)),
+    #("today", today_to_json(change.today)),
   ])
 }
 
@@ -619,6 +647,15 @@ pub fn review_outcome_decoder() -> Decoder(ReviewOutcome) {
   use card <- decode.field("card", card_decoder())
   use today <- decode.field("today", today_decoder())
   decode.success(ReviewOutcome(now:, card:, today:))
+}
+
+pub fn queue_change_decoder() -> Decoder(QueueChange) {
+  use now <- decode.field("now", moment())
+  use cards <- decode.field("cards", decode.list(card_decoder()))
+  use removed <- decode.field("removed", decode.list(ref_decoder()))
+  use refused <- decode.field("refused", decode.list(ref_decoder()))
+  use today <- decode.field("today", today_decoder())
+  decode.success(QueueChange(now:, cards:, removed:, refused:, today:))
 }
 
 pub fn stats_decoder() -> Decoder(Stats) {

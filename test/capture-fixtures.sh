@@ -28,6 +28,12 @@ REVIEW=$(curl -sf -X POST "$B/api/reviews" -H "$AUTH" -H "$CT" \
   -d "{$REF,\"rating\":3,\"durationMs\":42000}")
 curl -sf -X PUT "$B/api/drafts" -H "$AUTH" -H "$CT" \
   -d "{$REF,\"body\":\"def contains_duplicate(nums):\\n    pass\"}" > /dev/null
+# A second problem put in the queue and never opened. Its card is the shape the
+# client must now read at boot -- no memory, no last review, no introducedAt,
+# reps 0 -- and before the queue screen existed no fixture contained one.
+QUEUED='"category":"NeetCode 150","subcategory":"Arrays & Hashing","title":"Valid Anagram"'
+curl -sf -X POST "$B/api/cards" -H "$AUTH" -H "$CT" \
+  -d "{\"problems\":[{$QUEUED}]}" > /dev/null
 STATE=$(curl -sf "$B/api/state" -H "$AUTH")
 STATS=$(curl -sf "$B/api/stats" -H "$AUTH")
 

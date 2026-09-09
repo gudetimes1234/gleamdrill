@@ -54,18 +54,34 @@ const solve = async () => {
 
 console.log("== no account required");
 // A browser with no stored preferences meets the first-run language picker
-// before the study screen exists. These suites are about what comes after it,
-// so answer it with everything selected -- the state they were written against.
+// before the study screen exists, and with nothing queued the picker hands off
+// to the queue screen -- nothing is scheduled that was not put there. These
+// suites are about what comes after both, so answer the picker with everything
+// selected and queue one topic across every language: enough for a sitting,
+// which is the state they were written against.
 const answerPickerIfShown = async () => {
-  await page.waitForSelector(".study-screen, .picker-screen", { timeout: 20000 });
+  await page.waitForSelector(".study-screen, .picker-screen, .queue-screen",
+    { timeout: 20000 });
   if (await page.isVisible(".picker-screen")) {
     for (const n of [1, 2, 3, 4, 5]) {
       await page.click(`.picker-option:nth-child(${n})`);
       await page.waitForTimeout(120);
     }
     await page.click(".picker-start");
-    await page.waitForSelector(".study-screen", { timeout: 20000 });
+    // Wait for the handoff to actually render. `isVisible` on an element the
+    // app has not drawn yet answers false, and the seeding below would be
+    // skipped -- leaving the suite waiting for a study screen that is still
+    // behind the queue.
+    await page.waitForSelector(".study-screen, .queue-screen", { timeout: 20000 });
   }
+  if (await page.isVisible(".queue-screen")) {
+    await page.click('.queue-chip:text-is("Arrays & Hashing")');
+    await page.waitForTimeout(200);
+    await page.click(".queue-bulk-add");
+    await page.waitForTimeout(600);
+    await page.click(".queue-header .link-button");
+  }
+  await page.waitForSelector(".study-screen", { timeout: 20000 });
 };
 
 await page.goto(APP, { waitUntil: "networkidle" });
@@ -113,12 +129,18 @@ const after = await page.$$eval(".study-count-value", (n) => n.map((e) => e.text
 check("the review is still counted", after[2] === "1", `got ${after[2]}`);
 check("the new-card budget went down", after[1] === "4", `got ${after[1]}`);
 const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("algoDrill.guest.cards.v1") ?? "[]"));
-check("exactly one card was stored", stored.length === 1, `got ${stored.length}`);
+// Queued cards are stored too, so "one card" is now "one *answered* card":
+// every other row is a placeholder waiting for its first outing.
+const answered = stored.filter((c) => c.reps > 0);
+check("exactly one card was answered", answered.length === 1, `got ${answered.length}`);
+check("and the rest are queued, unanswered",
+  stored.length > 1 && stored.every((c) => c.reps > 0 || c.stability === null),
+  `${stored.length} stored`);
 check("with the scheduling it earned",
-  stored[0].stability === 2.3065 && stored[0].state === 1,
-  JSON.stringify(stored[0]?.stability));
-const guestStability = stored[0].stability;
-const guestDue = stored[0].due;
+  answered[0].stability === 2.3065 && answered[0].state === 1,
+  JSON.stringify(answered[0]?.stability));
+const guestStability = answered[0].stability;
+const guestDue = answered[0].due;
 
 console.log("== stats come from local data");
 await page.click("text=Stats");
@@ -152,6 +174,9 @@ await page.evaluate(() => {
       due: Math.floor(Date.now() / 1000) + 20 * 86400,
       lastReview: longAgo,
       introducedAt: longAgo,
+      // Explicit: a card with no reviews is a *new* card now, not a scheduled
+      // one, and spreading `cards[0]` could copy a queued-but-unanswered zero.
+      reps: 1, lapses: 0, suspended: false,
     });
   }
   localStorage.setItem("algoDrill.guest.cards.v1", JSON.stringify(cards));
@@ -172,6 +197,12 @@ check("and names the actual number",
   await page.textContent(".upgrade-prompt-title").catch(() => ""));
 
 console.log("== upgrading keeps the schedule");
+// Counted before signing up: the upgrade clears local storage, and the check
+// below needs to know how much was there to carry.
+await page.evaluate(() => {
+  window.__guestCardCount =
+    JSON.parse(localStorage.getItem("algoDrill.guest.cards.v1") ?? "[]").length;
+});
 const EMAIL = `guest-${Math.floor(Math.random() * 1e9)}@example.com`;
 await page.click(".upgrade-prompt-cta");
 await page.waitForSelector(".auth-card", { timeout: 10000 });
@@ -198,7 +229,12 @@ const onServer = await page.evaluate(async (token) => {
   return (await r.json()).cards;
 }, await page.evaluate(() => localStorage.getItem("algoDrill.token")));
 
-const migrated = onServer.find((c) => c.title === "Contains Duplicate");
+// Matched on category as well as title: the same problem exists once per
+// language, and queueing a topic brings all of those copies along, so a
+// title-only match can find a queued-but-unanswered twin instead of the card
+// that was actually drilled.
+const migrated = onServer.find((c) =>
+  c.title === "Contains Duplicate" && c.category === "NeetCode 150");
 check("the card reached the server", migrated !== undefined,
   `${onServer.length} cards on server`);
 check("with the same stability the guest had",
@@ -207,8 +243,11 @@ check("with the same stability the guest had",
 check("and the same due date",
   Math.abs((migrated?.due ?? 0) - guestDue) < 1,
   `${migrated?.due} vs ${guestDue}`);
-// Two problems were actually drilled, plus the nine seeded ones.
-check("every guest card came across", onServer.length === 11, `got ${onServer.length}`);
+// Everything the guest held, queued cards included: the upgrade must carry
+// the whole queue, not just the problems that happened to be answered.
+const guestCards = await page.evaluate(() => window.__guestCardCount);
+check("every guest card came across", onServer.length === guestCards,
+  `${onServer.length} on server vs ${guestCards} local`);
 
 console.log("== signing out returns to guest, empty");
 await page.click("text=Sign out");
@@ -216,6 +255,19 @@ await page.waitForSelector(".study-screen", { timeout: 15000 });
 check("back in guest mode", await page.isVisible(".guest-strip"));
 const afterOut = await page.$$eval(".study-count-value", (n) => n.map((e) => e.textContent));
 check("with no leftover progress", afterOut[2] === "0", `reviews done = ${afterOut[2]}`);
+
+// Signing out left an empty guest store, and nothing is scheduled until it is
+// queued -- so the storage-full act below, which needs a drill to run, has to
+// put something in the queue first. Before filling storage, obviously: a queue
+// write into a full store is the very failure being staged.
+await page.click('.study-account .link-button:text-is("Queue")');
+await page.waitForSelector(".queue-screen", { timeout: 10000 });
+await page.click('.queue-chip:text-is("Arrays & Hashing")');
+await page.waitForTimeout(200);
+await page.click(".queue-bulk-add");
+await page.waitForTimeout(600);
+await page.click(".queue-header .link-button");
+await page.waitForSelector(".study-screen", { timeout: 10000 });
 
 console.log("== a full store is said out loud");
 // The one failure mode that matters most to a guest: a write that quietly

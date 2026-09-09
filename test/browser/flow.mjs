@@ -30,18 +30,34 @@ page.on("pageerror", (e) => errors.push(String(e)));
 page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
 
 // A browser with no stored preferences meets the first-run language picker
-// before the study screen exists. These suites are about what comes after it,
-// so answer it with everything selected -- the state they were written against.
+// before the study screen exists, and with nothing queued the picker hands off
+// to the queue screen -- nothing is scheduled that was not put there. These
+// suites are about what comes after both, so answer the picker with everything
+// selected and queue one topic across every language: enough for a sitting,
+// which is the state they were written against.
 const answerPickerIfShown = async () => {
-  await page.waitForSelector(".study-screen, .picker-screen", { timeout: 20000 });
+  await page.waitForSelector(".study-screen, .picker-screen, .queue-screen",
+    { timeout: 20000 });
   if (await page.isVisible(".picker-screen")) {
     for (const n of [1, 2, 3, 4, 5]) {
       await page.click(`.picker-option:nth-child(${n})`);
       await page.waitForTimeout(120);
     }
     await page.click(".picker-start");
-    await page.waitForSelector(".study-screen", { timeout: 20000 });
+    // Wait for the handoff to actually render. `isVisible` on an element the
+    // app has not drawn yet answers false, and the seeding below would be
+    // skipped -- leaving the suite waiting for a study screen that is still
+    // behind the queue.
+    await page.waitForSelector(".study-screen, .queue-screen", { timeout: 20000 });
   }
+  if (await page.isVisible(".queue-screen")) {
+    await page.click('.queue-chip:text-is("Arrays & Hashing")');
+    await page.waitForTimeout(200);
+    await page.click(".queue-bulk-add");
+    await page.waitForTimeout(600);
+    await page.click(".queue-header .link-button");
+  }
+  await page.waitForSelector(".study-screen", { timeout: 20000 });
 };
 
 await page.goto(APP, { waitUntil: "networkidle" });
@@ -62,6 +78,10 @@ await page.click(".auth-submit");
 
 await page.waitForSelector(".study-screen", { timeout: 15000 });
 check("lands on the study screen after signing up", true);
+// Signing up hands the guest's cards to the new account and reloads state.
+// The counts below are read from that reload, not from the empty model the
+// study screen first renders with.
+await page.waitForTimeout(2500);
 check("shows the signed-in email",
   (await page.textContent(".study-email")) === EMAIL);
 

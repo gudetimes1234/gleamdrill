@@ -53,6 +53,9 @@ pub type BootState =
 pub type ReviewOutcome =
   wire.ReviewOutcome
 
+pub type QueueChange =
+  wire.QueueChange
+
 pub type DayTally =
   wire.DayTally
 
@@ -221,6 +224,48 @@ pub fn patch_card(
     review_outcome_decoder(),
     handler,
   )
+}
+
+/// Puts problems into the study queue, or takes them out. Both answer the same
+/// `QueueChange`, so one decoder and one message cover the pair -- and a bulk
+/// "add this whole topic" is one request, which is what makes the queue screen
+/// usable at catalogue scale.
+pub fn post_cards(
+  base: String,
+  token: String,
+  problems: List(ProblemRef),
+  handler: fn(Result(QueueChange, ApiError)) -> message,
+) -> Effect(message) {
+  send(
+    base,
+    http.Post,
+    "/api/cards",
+    Some(token),
+    Some(problems_json(problems)),
+    queue_change_decoder(),
+    handler,
+  )
+}
+
+pub fn delete_cards(
+  base: String,
+  token: String,
+  problems: List(ProblemRef),
+  handler: fn(Result(QueueChange, ApiError)) -> message,
+) -> Effect(message) {
+  send(
+    base,
+    http.Delete,
+    "/api/cards",
+    Some(token),
+    Some(problems_json(problems)),
+    queue_change_decoder(),
+    handler,
+  )
+}
+
+fn problems_json(problems: List(ProblemRef)) -> Json {
+  json.object([#("problems", json.array(problems, wire.ref_to_json))])
 }
 
 pub fn put_draft(
@@ -517,6 +562,8 @@ pub const session_decoder = wire.session_decoder
 pub const boot_state_decoder = wire.boot_state_decoder
 
 pub const review_outcome_decoder = wire.review_outcome_decoder
+
+pub const queue_change_decoder = wire.queue_change_decoder
 
 pub const stats_decoder = wire.stats_decoder
 

@@ -16,8 +16,8 @@ import algodrill/browser
 import algodrill/local
 import algodrill/model.{
   type Model, type Msg, Account, CardSuspended, DraftSynced, Guest,
-  HistoryLoaded, InsightsLoaded, ReviewRecorded, SettingsSaved, StateLoaded,
-  StatsLoaded,
+  HistoryLoaded, InsightsLoaded, QueueChanged, ReviewRecorded, SettingsSaved,
+  StateLoaded, StatsLoaded,
 }
 import algodrill/problem.{type ProblemRef}
 import gleam/dict
@@ -123,6 +123,61 @@ pub fn set_suspended(
                 )),
               )
           }
+      })
+    }
+  }
+}
+
+/// Puts problems into the study queue, or takes them out.
+///
+/// Both produce the same `QueueChanged` fold whichever store is behind them,
+/// and both are bulk: adding a topic is one call, so a half-applied selection
+/// is not a state the update loop has to think about.
+pub fn add_to_queue(m: Model, problems: List(ProblemRef)) -> Effect(Msg) {
+  case m.mode {
+    Account(token) -> api.post_cards(base(), token, problems, QueueChanged)
+    Guest -> {
+      use dispatch <- effect.from
+      let now = timestamp.system_time()
+      let day = local.current_day(m.settings)
+      let #(updated, cards) = local.enqueue(local.load(), problems, now)
+      dispatch(case local.save_cards(updated) {
+        Error(Nil) -> QueueChanged(Error(storage_full()))
+        Ok(Nil) ->
+          QueueChanged(
+            Ok(wire.QueueChange(
+              now:,
+              cards:,
+              removed: [],
+              refused: [],
+              today: local.today(updated, m.settings, now, day),
+            )),
+          )
+      })
+    }
+  }
+}
+
+pub fn remove_from_queue(m: Model, problems: List(ProblemRef)) -> Effect(Msg) {
+  case m.mode {
+    Account(token) -> api.delete_cards(base(), token, problems, QueueChanged)
+    Guest -> {
+      use dispatch <- effect.from
+      let now = timestamp.system_time()
+      let day = local.current_day(m.settings)
+      let #(updated, removed, refused) = local.dequeue(local.load(), problems)
+      dispatch(case local.save_cards(updated) {
+        Error(Nil) -> QueueChanged(Error(storage_full()))
+        Ok(Nil) ->
+          QueueChanged(
+            Ok(wire.QueueChange(
+              now:,
+              cards: [],
+              removed:,
+              refused:,
+              today: local.today(updated, m.settings, now, day),
+            )),
+          )
       })
     }
   }

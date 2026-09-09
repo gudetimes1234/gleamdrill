@@ -1,6 +1,10 @@
 //// Small formatters shared between views.
 
+import algodrill/api.{type CardState}
+import fsrs
 import gleam/int
+import gleam/option.{type Option, None, Some}
+import gleam/time/timestamp.{type Timestamp}
 
 /// Compact "3d" style text for an interval.
 ///
@@ -16,5 +20,40 @@ pub fn interval(seconds: Int) -> String {
     _ if seconds < 86_400 -> int.to_string(seconds / 3600) <> "h"
     _ if seconds < 5_184_000 -> int.to_string(seconds / 86_400) <> "d"
     _ -> int.to_string(seconds / 2_592_000) <> "mo"
+  }
+}
+
+/// Where a problem sits in the schedule, as a CSS class and a label.
+///
+/// One definition for the browser's rows, the queue screen's rows and
+/// anywhere else that shows card state: the queue screen exists to tell you
+/// what the scheduler will do, so it must not describe a card differently
+/// from the screen you came from.
+///
+/// `reps == 0` is "new" rather than "due" even though a queued card is created
+/// due immediately -- the date is a placeholder until the card is first
+/// answered, and the daily new budget, not the clock, decides when that is.
+pub fn card_badge(
+  state: Option(CardState),
+  now: Timestamp,
+) -> #(String, String) {
+  case state {
+    None -> #("badge badge-unqueued", "not queued")
+    Some(state) ->
+      case state.suspended, state.reps == 0, fsrs.is_due(state.card, now) {
+        // Parked: the schedule is on hold, whatever the dates say.
+        True, _, _ -> #("badge badge-paused", "paused")
+        False, True, _ -> #("badge badge-new", "new")
+        False, False, True -> #("badge badge-due", "due")
+        False, False, False ->
+          case state.card.state {
+            fsrs.Learning(_) -> #("badge badge-learning", "learning")
+            fsrs.Relearning(_) -> #("badge badge-learning", "relearning")
+            fsrs.Review -> #(
+              "badge badge-scheduled",
+              interval(fsrs.interval_seconds(state.card, now)),
+            )
+          }
+      }
   }
 }

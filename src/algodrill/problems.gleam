@@ -62,6 +62,24 @@ pub fn subcategory_names(category: String) -> List(String) {
   }
 }
 
+/// Every distinct subcategory name across the whole catalogue, in catalogue
+/// order. The same topics ("Arrays & Hashing") repeat once per language, and
+/// the queue screen filters on the topic rather than on one language's copy of
+/// it, so the list is deduplicated.
+pub fn topic_names() -> List(String) {
+  all()
+  |> list.flat_map(fn(c: Category) {
+    list.map(c.subcategories, fn(s: problem.Subcategory) { s.name })
+  })
+  |> list.fold([], fn(seen, name) {
+    case list.contains(seen, name) {
+      True -> seen
+      False -> [name, ..seen]
+    }
+  })
+  |> list.reverse
+}
+
 pub fn problems_in(category: String, subcategory: String) -> List(Problem) {
   case list.find(all(), fn(c: Category) { c.name == category }) {
     Ok(cat) ->
@@ -102,11 +120,11 @@ fn try_find(
 
 /// Every drill in the catalogue, in catalogue order.
 ///
-/// The scheduler needs this because the server cannot: cards are created on
-/// first review, so "which problems have I never seen" is a question only the
-/// client — which ships the catalogue — can answer. Catalogue order is also
-/// the order new cards are introduced in, which is why it is NeetCode's own
-/// ordering and not something derived.
+/// The scheduler needs this because the server cannot: it stores cards, not a
+/// catalogue, so "what could I queue" is a question only the client — which
+/// ships the problems — can answer. Catalogue order is also the order queued
+/// new cards are introduced in, which is why it is NeetCode's own ordering and
+/// not something derived.
 pub fn all_refs() -> List(ProblemRef) {
   use category <- list.flat_map(all())
   use subcategory <- list.flat_map(category.subcategories)

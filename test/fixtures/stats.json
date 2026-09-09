@@ -6,7 +6,7 @@
  "stateCounts": [
   {
    "state": 1,
-   "count": 1
+   "count": 2
   }
  ],
  "history": [
@@ -19,7 +19,7 @@
  "forecast": [
   {
    "daysAhead": 0,
-   "count": 1
+   "count": 2
   }
  ]
 }

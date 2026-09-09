@@ -12,13 +12,15 @@ import algodrill/model.{
   type Key, type Model, type Msg, AuthRoute, AwaitingGrade, DrillRoute,
   EditorFocusRequested, HelpToggled, MenuActivated, MenuCursorJumped,
   MenuCursorMoved, MenuPaneFocused, MenuRoute, MenuSuspendedAtCursor,
-  MenuToggledAtCursor, PickerConfirmed, PickerRoute, QuizMoved, ReportRoute,
+  MenuToggledAtCursor, PickerConfirmed, PickerRoute, QueueCursorJumped,
+  QueueCursorMoved, QueueRoute, QueueToggledAtCursor, QuizMoved, ReportRoute,
   SearchFocusRequested, SettingsRoute, StatsActivated, StatsCursorMoved,
-  StatsRoute, StudyRoute, SummaryRoute, UserClickedBackToStudy,
-  UserClickedBrowse, UserClickedClearSelection, UserClickedExitDrill,
-  UserClickedExitReport, UserClickedNext, UserClickedRun, UserClickedSelectAll,
-  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
-  UserClickedStudy, UserClosedDetail, UserGraded, UserPickedChoice,
+  StatsRoute, StudyRoute, SummaryRoute, UserAddedAllShown,
+  UserClickedBackToStudy, UserClickedBrowse, UserClickedClearSelection,
+  UserClickedExitDrill, UserClickedExitReport, UserClickedNext, UserClickedQueue,
+  UserClickedRun, UserClickedSelectAll, UserClickedStartDrill,
+  UserClickedStartExam, UserClickedStats, UserClickedStudy, UserClosedDetail,
+  UserFilteredQueue, UserGraded, UserPickedChoice, UserRemovedAllShown,
   UserRevealedHint, UserSearched, UserSubmittedAnswer, UserToggledSide,
   UserToggledSolution,
 }
@@ -114,6 +116,7 @@ pub fn bindings(m: Model) -> List(Binding) {
           ),
           help_binding(),
         ]
+        QueueRoute -> queue_bindings(m)
         AuthRoute -> []
       }
   }
@@ -127,10 +130,63 @@ fn study_bindings() -> List(Binding) {
       "Start studying what is due",
       UserClickedStudy,
     ),
+    Binding(["q"], "queue", "Manage the study queue", UserClickedQueue),
     Binding(["b"], "browse", "Browse problems by hand", UserClickedBrowse),
     Binding(["t"], "stats", "Statistics", UserClickedStats),
     Binding(["x"], "exam", "System design exam", UserClickedStartExam),
     help_binding(),
+  ]
+}
+
+/// The queue screen. `space`/`x` is the same "toggle the cursor row" verb the
+/// browser uses, so the two lists feel like one keyboard.
+fn queue_bindings(m: Model) -> List(Binding) {
+  [
+    Binding(
+      ["j", "k"],
+      "move",
+      "Move the cursor down / up",
+      QueueCursorMoved(1),
+    ),
+    Binding(
+      [" ", "x"],
+      "toggle",
+      "Add the cursor row to the queue, or take it out",
+      QueueToggledAtCursor,
+    ),
+    Binding(
+      ["a"],
+      "add all",
+      "Add every problem currently listed",
+      UserAddedAllShown,
+    ),
+    Binding(
+      ["r"],
+      "remove all",
+      "Remove every problem currently listed",
+      UserRemovedAllShown,
+    ),
+    Binding(["/"], "search", "Search problems", SearchFocusRequested),
+    Binding(["g"], "top", "Jump to the first row", QueueCursorJumped(True)),
+    Binding(["G"], "bottom", "Jump to the last row", QueueCursorJumped(False)),
+    Binding(
+      ["Escape"],
+      "study",
+      "Back to the study screen",
+      UserClickedBackToStudy,
+    ),
+    help_binding(),
+    ..case m.queue_status == model.AnyStatus {
+      True -> []
+      False -> [
+        Binding(
+          ["c"],
+          "clear",
+          "Clear the status filter",
+          UserFilteredQueue(model.AnyStatus),
+        ),
+      ]
+    }
   ]
 }
 
@@ -295,6 +351,8 @@ pub fn dispatch(m: Model, key: Key) -> Result(Msg, Nil) {
     "j", MenuRoute, False, _ -> Ok(MenuCursorMoved(1))
     "h", MenuRoute, False, False -> Ok(MenuPaneFocused(-1))
     "l", MenuRoute, False, False -> Ok(MenuPaneFocused(1))
+    "k", QueueRoute, False, _ -> Ok(QueueCursorMoved(-1))
+    "j", QueueRoute, False, _ -> Ok(QueueCursorMoved(1))
     "k", StatsRoute, False, _ ->
       case m.detail {
         None -> Ok(StatsCursorMoved(-1))
@@ -337,6 +395,7 @@ pub fn context_label(m: Model) -> String {
   case m.route {
     StudyRoute -> "STUDY"
     MenuRoute -> "BROWSE"
+    QueueRoute -> "QUEUE"
     DrillRoute ->
       case current_quiz(m) {
         Ok(_) -> "QUIZ"

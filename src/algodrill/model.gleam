@@ -24,6 +24,9 @@ pub type Route {
   StudyRoute
   /// The manual three-pane browser, kept for picking problems by hand.
   MenuRoute
+  /// The queue manager: every problem in the catalogue, which of them are in
+  /// the study queue, and the controls to put them in or take them out.
+  QueueRoute
   DrillRoute
   /// The scored breakdown shown after an exam finishes.
   ReportRoute
@@ -85,6 +88,8 @@ pub type MenuNav {
     search: Int,
     /// Cursor in the stats screen's problem list.
     stats: Int,
+    /// Cursor in the queue screen's problem list.
+    queue: Int,
   )
 }
 
@@ -100,6 +105,12 @@ pub fn menu_row_id(pane: MenuPane, index: Int) -> String {
   prefix <> "-" <> int.to_string(index)
 }
 
+/// The queue screen's row ids, shared by its renderer and the scroll effect
+/// for the same reason `menu_row_id` is.
+pub fn queue_row_id(index: Int) -> String {
+  "queue-" <> int.to_string(index)
+}
+
 pub fn default_nav() -> MenuNav {
   MenuNav(
     focus: LanguagesPane,
@@ -109,7 +120,56 @@ pub fn default_nav() -> MenuNav {
     selected: 0,
     search: 0,
     stats: 0,
+    queue: 0,
   )
+}
+
+/// The queue screen's status lens. A view filter, not stored state: it says
+/// which rows to render, never what the scheduler will do.
+pub type QueueFilter {
+  AnyStatus
+  /// In the queue, whatever its schedule says.
+  Queued
+  /// Queued and never answered -- the New pile.
+  QueuedNew
+  QueuedDue
+  QueuedPaused
+  /// Not in the queue at all: the catalogue's remainder.
+  Unqueued
+}
+
+pub fn queue_filter_slug(filter: QueueFilter) -> String {
+  case filter {
+    AnyStatus -> "all"
+    Queued -> "queued"
+    QueuedNew -> "new"
+    QueuedDue -> "due"
+    QueuedPaused -> "paused"
+    Unqueued -> "unqueued"
+  }
+}
+
+pub fn queue_filter_label(filter: QueueFilter) -> String {
+  case filter {
+    AnyStatus -> "All"
+    Queued -> "In queue"
+    QueuedNew -> "New"
+    QueuedDue -> "Due"
+    QueuedPaused -> "Paused"
+    Unqueued -> "Not queued"
+  }
+}
+
+/// The order the filter chips are shown in, widest lens first.
+pub fn queue_filters() -> List(QueueFilter) {
+  [AnyStatus, Queued, QueuedNew, QueuedDue, QueuedPaused, Unqueued]
+}
+
+pub fn queue_filter_from_slug(slug: String) -> QueueFilter {
+  case list.find(queue_filters(), fn(f) { queue_filter_slug(f) == slug }) {
+    Ok(filter) -> filter
+    Error(Nil) -> AnyStatus
+  }
 }
 
 /// Where the guest is in the one-time upgrade nudge.
@@ -263,6 +323,16 @@ pub type Model {
     /// One-shot leader: `,` was pressed, so the next key dispatches through
     /// the app's key table even if a button holds focus.
     leader_armed: Bool,
+    /// The queue screen's lens: a search box and three filters, none of them
+    /// persisted. They decide which rows are listed, and "add all shown" acts
+    /// on exactly that list, which is what makes bulk queueing precise.
+    queue_search: String,
+    queue_language: Option(String),
+    queue_topic: Option(String),
+    queue_status: QueueFilter,
+    /// Problems whose queue change is in flight, so their row can be disabled
+    /// rather than accepting a second click that would race the first.
+    queue_pending: List(ProblemRef),
     /// Language tags excluded from today's study queue (device preference).
     muted_languages: List(String),
     /// Whether the first-run picker has been answered on this device.
@@ -332,6 +402,11 @@ pub fn default() -> Model {
     editor_keymap: "default",
     side_collapsed: False,
     leader_armed: False,
+    queue_search: "",
+    queue_language: None,
+    queue_topic: None,
+    queue_status: AnyStatus,
+    queue_pending: [],
     muted_languages: [],
     languages_chosen: False,
     picked_languages: [],
@@ -425,16 +500,49 @@ pub fn run_failed(run: RunState) -> Bool {
   }
 }
 
-/// Whether a card is due as of the server's clock. A card the account has
-/// never seen is not "due" — it is new, and new cards are introduced against
-/// the daily budget rather than because a date passed.
+/// Whether a card is due as of the server's clock. A card that has never been
+/// answered is not "due" — it is new, and new cards are introduced against the
+/// daily budget rather than because a date passed. A queued card is created
+/// due immediately, so `reps` is what tells the two apart, not the date.
 pub fn is_due(model: Model, problem: ProblemRef) -> Bool {
   case card_for(model, problem) {
     // A suspended card is parked: not due, not queued, not counted. The
     // schema always had the flag; every reader goes through here.
-    option.Some(state) -> !state.suspended && fsrs.is_due(state.card, model.now)
+    option.Some(state) ->
+      state.reps > 0 && !state.suspended && fsrs.is_due(state.card, model.now)
     None -> False
   }
+}
+
+/// Whether a problem is in the study queue at all. Membership *is* the card:
+/// queueing a problem creates one, removing it deletes it. Nothing else in the
+/// app decides what may be introduced.
+pub fn is_queued(model: Model, problem: ProblemRef) -> Bool {
+  card_for(model, problem) != None
+}
+
+/// A queued problem that has never been answered — what the New pile is drawn
+/// from. Not the same question as `card.memory == None`, which stays true
+/// through the learning steps of a card already being studied.
+pub fn is_new(model: Model, problem: ProblemRef) -> Bool {
+  case card_for(model, problem) {
+    option.Some(state) -> state.reps == 0 && !state.suspended
+    None -> False
+  }
+}
+
+/// Cards with at least one review behind them.
+///
+/// The count that means "progress". `dict.size(model.cards)` counts queue
+/// membership now -- a problem put in line and never opened has a card too --
+/// so anything asking "has this person actually studied" asks this instead.
+pub fn answered_count(model: Model) -> Int {
+  dict.fold(model.cards, 0, fn(count, _problem, state: CardState) {
+    case state.reps > 0 {
+      True -> count + 1
+      False -> count
+    }
+  })
 }
 
 /// Whether the study filter mutes a language today (tag as produced by
@@ -554,6 +662,20 @@ pub type Msg {
   UserToggledSuspend(ProblemRef)
   MenuSuspendedAtCursor
   CardSuspended(Result(api.ReviewOutcome, ApiError))
+  // --- managing the queue ---
+  UserClickedQueue
+  UserSearchedQueue(String)
+  UserFilteredQueue(QueueFilter)
+  UserPickedQueueLanguage(String)
+  UserPickedQueueTopic(String)
+  /// Put one problem in the queue, or take it out -- whichever it is not.
+  UserToggledQueued(ProblemRef)
+  UserAddedAllShown
+  UserRemovedAllShown
+  QueueCursorMoved(Int)
+  QueueCursorJumped(Bool)
+  QueueToggledAtCursor
+  QueueChanged(Result(api.QueueChange, ApiError))
   RunnerReady(language: String)
   RunnerFailed(language: String, message: String)
   RunFinished(id: Int, outcome: RunOutcome, stdout: String)

@@ -286,6 +286,76 @@ pub fn set_suspended(
   }
 }
 
+/// Puts problems into the study queue by giving each one a card, and answers
+/// with the state of every problem named -- already-queued ones included, so
+/// the caller folds one list rather than diffing.
+///
+/// `introduced_at` stays `None`: it means "first studied", and `today` counts
+/// it against the daily new budget. `record` stamps it on the first review.
+/// Mirrors `study.enqueue_cards` on the server, including that.
+pub fn enqueue(
+  local: Local,
+  problems: List(problem.ProblemRef),
+  now: Timestamp,
+) -> #(Local, List(api.CardState)) {
+  let cards =
+    list.fold(problems, local.cards, fn(cards, problem) {
+      case dict.has_key(cards, problem) {
+        True -> cards
+        False ->
+          dict.insert(
+            cards,
+            problem,
+            wire.CardState(
+              problem:,
+              card: fsrs.new_card(now),
+              reps: 0,
+              lapses: 0,
+              suspended: False,
+              introduced_at: None,
+            ),
+          )
+      }
+    })
+
+  #(
+    Local(..local, cards:),
+    list.filter_map(problems, fn(problem) { dict.get(cards, problem) }),
+  )
+}
+
+/// Takes problems out of the study queue, and reports which it refused.
+///
+/// A card with `reps > 0` is kept: the guest's review log is keyed by problem
+/// and dropping the card would orphan it, exactly as deleting the server's row
+/// would cascade its reviews away. Those come back as the second list and the
+/// caller parks them instead.
+pub fn dequeue(
+  local: Local,
+  problems: List(problem.ProblemRef),
+) -> #(Local, List(problem.ProblemRef), List(problem.ProblemRef)) {
+  let removable =
+    list.filter(problems, fn(problem) {
+      case dict.get(local.cards, problem) {
+        Ok(state) -> state.reps == 0
+        Error(Nil) -> False
+      }
+    })
+  let refused =
+    list.filter(problems, fn(problem) { !list.contains(removable, problem) })
+
+  #(
+    Local(
+      ..local,
+      cards: list.fold(removable, local.cards, fn(cards, problem) {
+        dict.delete(cards, problem)
+      }),
+    ),
+    removable,
+    refused,
+  )
+}
+
 pub fn today(
   local: Local,
   settings: Settings,
@@ -325,9 +395,12 @@ pub fn today(
   )
 }
 
+/// `reps > 0` is what separates a review from a new card: a card queued but
+/// never answered is due from the moment it is created, and counting it here
+/// would report the whole New pile as Due.
 fn due_count(local: Local, now: Timestamp) -> Int {
   use count, _problem, state <- dict.fold(local.cards, 0)
-  case !state.suspended && fsrs.is_due(state.card, now) {
+  case state.reps > 0 && !state.suspended && fsrs.is_due(state.card, now) {
     True -> count + 1
     False -> count
   }
@@ -434,13 +507,25 @@ pub fn prompt_state(day: StudyDay) -> model.UpgradePrompt {
   }
 }
 
+/// Answered cards, not queued ones. Queueing a topic is a click and can be
+/// redone in another click; a card with reviews behind it is the thing that
+/// cannot be rebuilt, and it is what the warning is about.
 fn worth_warning_about(local: Local, today_index: Int) -> Bool {
   let study_days =
     list.length(
       list.filter(local.history.days, fn(day) { today_index - day.day < 365 }),
     )
-  dict.size(local.cards) >= prompt_card_threshold
+  answered_count(local) >= prompt_card_threshold
   || study_days >= prompt_day_threshold
+}
+
+pub fn answered_count(local: Local) -> Int {
+  dict.fold(local.cards, 0, fn(count, _problem, state) {
+    case state.reps > 0 {
+      True -> count + 1
+      False -> count
+    }
+  })
 }
 
 // --- storage ---------------------------------------------------------------
@@ -668,7 +753,11 @@ pub fn seed_from_legacy(
                 due: now,
                 last_review: None,
               ),
-              reps: 0,
+              // One, not zero. A zero-rep card is one that was queued and
+              // never opened; this one was recorded as solved by the old app,
+              // which is what the seeded memory says. Left at zero it would be
+              // served as new and counted out of every statistic.
+              reps: 1,
               lapses: 0,
               suspended: False,
               introduced_at: Some(now),

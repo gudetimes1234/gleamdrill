@@ -83,18 +83,42 @@ const capture = async (label, note) => {
   return name;
 };
 
+/// Puts a bounded slice of the catalogue in the study queue.
+///
+/// Nothing is scheduled until it is queued, so this is now part of setup: a
+/// browser that has answered the picker and queued nothing has an empty study
+/// screen, which is correct and useless to photograph. One topic across every
+/// language is a few dozen cards -- enough for a sitting, small enough to stay
+/// a fast click.
+const seedQueue = async (topic = "Arrays & Hashing") => {
+  await page.waitForSelector(".queue-screen", { timeout: 20000 });
+  await page.click(`.queue-chip:text-is("${topic}")`);
+  await page.waitForTimeout(200);
+  await page.click(".queue-bulk-add");
+  await page.waitForTimeout(600);
+  await page.click(".queue-header .link-button");
+  await page.waitForSelector(".study-screen", { timeout: 20000 });
+};
+
 // Several steps clear localStorage and come back through here, which now means
-// meeting the first-run picker. Answering it is part of getting home.
+// meeting the first-run picker, and then the queue screen it hands off to.
+// Answering both is part of getting home.
 const goHome = async () => {
   await page.goto(APP, { waitUntil: "networkidle" });
-  await page.waitForSelector(".study-screen, .picker-screen", { timeout: 20000 });
+  await page.waitForSelector(".study-screen, .picker-screen, .queue-screen",
+    { timeout: 20000 });
   if (await page.isVisible(".picker-screen")) {
     for (const n of [1, 2, 3, 4, 5]) {
       await page.click(`.picker-option:nth-child(${n})`);
       await page.waitForTimeout(120);
     }
     await page.click(".picker-start");
+    // Wait for the handoff to actually render: `isVisible` on an element the
+    // app has not drawn yet answers false, and the seeding below would be
+    // skipped.
+    await page.waitForSelector(".study-screen, .queue-screen", { timeout: 20000 });
   }
+  if (await page.isVisible(".queue-screen")) await seedQueue();
   await page.waitForSelector(".study-screen", { timeout: 20000 });
 };
 
@@ -113,7 +137,9 @@ const freshGuest = async (languages = [1, 2, 3, 4, 5]) => {
     await page.waitForTimeout(120);
   }
   await page.click(".picker-start");
-  await page.waitForSelector(".study-screen", { timeout: 20000 });
+  // With no cards, the picker hands off to the queue rather than the study
+  // screen: "which languages" is only half the setup.
+  await seedQueue();
 };
 
 /// Waits out a lazy runtime download. The run button stays disabled until the
@@ -221,7 +247,13 @@ check("starting is now allowed", !(await page.isDisabled(".picker-start")));
 await capture("picker-chosen", "Two languages chosen; new cards will alternate");
 
 await page.click(".picker-start");
-await page.waitForSelector(".study-screen", { timeout: 20000 });
+// With an empty queue the picker hands off to the queue screen, not the study
+// screen: choosing languages is only half the setup, and a study screen with
+// nothing queued would be a dead end to land a first-time user on.
+await page.waitForSelector(".queue-screen", { timeout: 20000 });
+check("the picker hands a first-time user to the queue", true);
+await capture("picker-to-queue", "Straight from the picker to choosing problems");
+await seedQueue();
 const chosenChips = await page.$$eval(".language-chip",
   (n) => n.filter((e) => !e.className.includes("muted")).map((e) => e.textContent.trim()));
 check("the choice becomes the study filter",
@@ -1017,6 +1049,118 @@ await page.waitForTimeout(400);
 check("z resumes it too", (await page.$$(".badge-paused")).length === 0);
 await goHome();
 
+// ------------------------------------------------------------- act 7c
+act = "07c-queue-screen";
+console.log(act);
+exercises("UserClickedQueue", "UserSearchedQueue", "UserFilteredQueue",
+  "UserPickedQueueLanguage", "UserPickedQueueTopic", "UserToggledQueued",
+  "UserAddedAllShown", "UserRemovedAllShown", "QueueCursorMoved",
+  "QueueCursorJumped", "QueueToggledAtCursor");
+
+await page.click(".study-account .link-button:text-is(\"Queue\")");
+await page.waitForSelector(".queue-screen", { timeout: 10000 });
+const queuedCount = async () =>
+  Number((await page.textContent(".queue-total")).match(/\d+/)[0]);
+const queuedAtStart = await queuedCount();
+check("the queue screen lists the catalogue",
+  (await page.$$(".queue-row")).length > 50);
+check("and says how much is queued", queuedAtStart > 0);
+await capture("queue", "The queue screen: every problem, and which are in play");
+
+// Search narrows the same list the bulk buttons act on.
+await page.fill(".queue-screen .search", "Two Sum");
+await page.waitForTimeout(300);
+const searched = (await page.$$(".queue-row")).length;
+check("search narrows the list", searched > 0 && searched < 50);
+await page.fill(".queue-screen .search", "");
+await page.waitForTimeout(300);
+
+// The status lenses agree with the actions they list.
+await page.click('.queue-chip:text-is("Not queued")');
+await page.waitForTimeout(300);
+check("the not-queued lens hides everything already in play",
+  (await page.$$(".queue-row .queue-remove")).length === 0);
+await page.click('.queue-chip:text-is("New")');
+await page.waitForTimeout(300);
+check("a queued, unanswered card reads as new",
+  (await page.$$(".badge-new")).length > 0);
+// Back to All. The status chips are a single choice, not toggles: pressing
+// New again just re-picks New, and the search below needs the whole list.
+await page.click('.queue-chip:text-is("All")');
+await page.waitForTimeout(300);
+
+// One row, added and taken straight back out. Under a search rather than a
+// status lens, because a lens drops the row the instant it changes state and
+// the second click would land on its neighbour -- which is a different
+// problem, and would leave the count looking right for the wrong reason.
+// A title outside the topic the tour seeded, so every row matching it starts
+// unqueued and the first click is unambiguously an add.
+await page.fill(".queue-screen .search", "Valid Palindrome");
+await page.waitForTimeout(400);
+await page.click(".queue-row:first-child .queue-action");
+await page.waitForTimeout(600);
+check("adding one row raises the count", (await queuedCount()) === queuedAtStart + 1);
+check("and the row now offers to remove itself",
+  (await page.$$(".queue-row:first-child .queue-remove")).length === 1);
+await capture("queue-added", "One problem added, with the state it now has");
+await page.click(".queue-row:first-child .queue-action");
+await page.waitForTimeout(600);
+check("and can be taken straight back out", (await queuedCount()) === queuedAtStart);
+await page.fill(".queue-screen .search", "");
+await page.waitForTimeout(300);
+
+// The keyboard walks the same list. Under the All lens, so the cursor row
+// stays put across the toggle: a filtered lens drops the row the moment it
+// stops matching, and the second press would then land on its neighbour.
+await page.click('.queue-chip:text-is("All")');
+await page.waitForTimeout(300);
+await page.evaluate(() => document.activeElement?.blur());
+await page.keyboard.press("j");
+await page.keyboard.press("j");
+await page.waitForTimeout(200);
+check("j moves the queue cursor", (await page.$$(".queue-row.cursor")).length === 1);
+const beforeToggle = await queuedCount();
+await page.keyboard.press(" ");
+await page.waitForTimeout(600);
+const toggled = await queuedCount();
+check("space toggles the cursor row", Math.abs(toggled - beforeToggle) === 1,
+  `${beforeToggle} then ${toggled}`);
+await page.keyboard.press(" ");
+await page.waitForTimeout(600);
+check("and pressing it again puts the row back",
+  (await queuedCount()) === beforeToggle);
+await page.keyboard.press("G");
+await page.waitForTimeout(200);
+check("G jumps to the last row", (await page.$$(".queue-row.cursor")).length === 1);
+
+// Bulk, over exactly what the filters left. A whole topic in one press is the
+// reason the endpoints take lists.
+await page.click('.queue-chip:text-is("Two Pointers")');
+await page.waitForTimeout(300);
+const beforeBulk = await queuedCount();
+await page.click(".queue-bulk-add");
+await page.waitForTimeout(900);
+const afterBulk = await queuedCount();
+check("adding a whole topic queues more than one", afterBulk > beforeBulk + 1);
+await capture("queue-topic", "A topic queued in one press");
+await page.click(".queue-bulk-remove");
+await page.waitForTimeout(900);
+check("and removing the topic puts it back", (await queuedCount()) === beforeBulk);
+
+// Language is the other lens, and the one the picker preselects.
+await page.click('.queue-chip:text-is("Gleam")');
+await page.waitForTimeout(300);
+check("the language lens shows only that language",
+  (await page.$$eval(".queue-row .lang-tag", (n) => [...new Set(n.map((e) => e.textContent))]))
+    .join() === "gl");
+await page.click('.queue-chip:text-is("Gleam")');
+await page.waitForTimeout(200);
+await page.click('.queue-chip:text-is("Two Pointers")');
+await page.waitForTimeout(200);
+
+await page.click(".queue-header .link-button");
+await page.waitForSelector(".study-screen", { timeout: 10000 });
+
 // ---------------------------------------------------------------- act 8
 act = "08-upgrade";
 console.log(act);
@@ -1035,6 +1179,9 @@ await page.evaluate(() => {
       stability: 30, difficulty: 5,
       due: Math.floor(Date.now() / 1000) + 20 * 86400,
       lastReview: longAgo, introducedAt: longAgo,
+      // Explicit: a card with no reviews is a *new* card now, not a scheduled
+      // one, and spreading `cards[0]` could copy a queued-but-unanswered zero.
+      reps: 1, lapses: 0, suspended: false,
     });
   }
   localStorage.setItem("algoDrill.guest.cards.v1", JSON.stringify(cards));
@@ -1051,6 +1198,10 @@ await goHome();
 check("and stays dismissed across a reload",
   !(await page.isVisible(".upgrade-prompt")));
 
+// Counted before signing up: the upgrade clears the guest store, and the
+// check below needs to know how much there was to carry.
+const guestCards = await page.evaluate(() =>
+  JSON.parse(localStorage.getItem("algoDrill.guest.cards.v1") ?? "[]").length);
 const upgraded = `tour-upgrade-${Date.now()}@example.com`;
 await page.click("text=Create account");
 await page.waitForSelector(".auth-card", { timeout: 10000 });
@@ -1068,8 +1219,11 @@ const serverCards = await page.evaluate(async (token) => {
   });
   return (await r.json()).cards.length;
 }, await page.evaluate(() => localStorage.getItem("algoDrill.token")));
-check("every guest card moved to the account", serverCards === 14,
-  `${serverCards} on server`);
+// Against what the guest actually held rather than a fixed number: the queue
+// is chosen now, so how many cards a guest has is a property of the tour's
+// own clicking, and the invariant is that all of them travel.
+check("every guest card moved to the account", serverCards === guestCards,
+  `${serverCards} on server vs ${guestCards} local`);
 await capture("upgraded", "Signed in, guest progress merged, no strip");
 
 // ---------------------------------------------------------------- act 9
@@ -1095,6 +1249,11 @@ await capture("account-study", "Study screen signed in: email, no guest strip");
 await page.click("text=Sign out");
 await page.waitForSelector(".guest-strip", { timeout: 10000 });
 check("signing out drops to guest, not a wall", await page.isVisible(".guest-strip"));
+// Signing out left an empty guest store, and nothing is scheduled until it is
+// queued. The merge offer below needs guest progress worth merging, so this
+// browser has to pick problems again first.
+await page.click('.study-account .link-button:text-is("Queue")');
+await seedQueue();
 await page.click(".study-start");
 await page.waitForSelector(".run-bar", { timeout: 30000 });
 await waitForRunnable();
@@ -1140,6 +1299,11 @@ console.log(act);
 // Storage full. Run late: this poisons localStorage for anything after it.
 await page.click("text=Sign out");
 await page.waitForSelector(".guest-strip", { timeout: 10000 });
+// Signing out leaves an empty guest store, and the failed-write act below
+// needs a drill to run. Queue before filling storage, obviously: a queue write
+// into a full store is the very failure being staged.
+await page.click('.study-account .link-button:text-is("Queue")');
+await seedQueue();
 const stuffed = await page.evaluate(() => {
   for (const size of [512 * 1024, 64 * 1024, 4 * 1024, 256, 16]) {
     const chunk = "x".repeat(size);
@@ -1221,7 +1385,11 @@ const declared = [
   "UserChangedKeymap",
   "UserClickedRun", "UserClickedStopRun", "UserClickedRetryRuntime",
   "UserToggledSide", "UserToggledLanguage", "UserToggledSuspend",
-  "MenuSuspendedAtCursor", "UserPickedChoice", "UserSubmittedAnswer",
+  "MenuSuspendedAtCursor", "UserClickedQueue", "UserSearchedQueue",
+  "UserFilteredQueue", "UserPickedQueueLanguage", "UserPickedQueueTopic",
+  "UserToggledQueued", "UserAddedAllShown", "UserRemovedAllShown",
+  "QueueCursorMoved", "QueueCursorJumped", "QueueToggledAtCursor",
+  "UserPickedChoice", "UserSubmittedAnswer",
   "UserClickedStartExam", "UserClickedExitReport",
   "PickerToggledLanguage", "PickerConfirmed",
   "UserClickedSettings", "UserChangedSetting", "UserClickedDeviceTimezone",

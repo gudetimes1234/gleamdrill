@@ -91,6 +91,11 @@ pub fn analyse(
 
   let insights =
     dict.to_list(cards)
+    // Queued but never answered is not a card with anything to say: no
+    // fluency, no tier, no trend. Including them would report the size of the
+    // queue as "problems started" and dilute every tier count with rows that
+    // have never been attempted.
+    |> list.filter(fn(entry) { { entry.1 }.reps > 0 })
     |> list.map(fn(entry) {
       let #(problem, card) = entry
       let solves = dict.get(solves_by_problem, problem) |> option.from_result

@@ -1,5 +1,5 @@
 {
- "now": 1788195485.3146234,
+ "now": 1788496909.0651963,
  "user": {
   "id": "00000000-0000-0000-0000-000000000000",
   "email": "drills@example.com"
@@ -38,12 +38,27 @@
   ],
   "maximumInterval": 36500,
   "enableFuzz": true,
-  "newPerDay": 10,
+  "newPerDay": 5,
   "reviewsPerDay": 100,
   "dayStartHour": 4,
   "timezone": "UTC"
  },
  "cards": [
+  {
+   "category": "NeetCode 150",
+   "subcategory": "Arrays & Hashing",
+   "title": "Valid Anagram",
+   "state": 1,
+   "step": 0,
+   "stability": null,
+   "difficulty": null,
+   "due": 1788496909.028819,
+   "lastReview": null,
+   "reps": 0,
+   "lapses": 0,
+   "suspended": false,
+   "introducedAt": null
+  },
   {
    "category": "NeetCode 150 · Python",
    "subcategory": "Arrays & Hashing",
@@ -52,12 +67,12 @@
    "step": 1,
    "stability": 2.3065,
    "difficulty": 2.118103970459015,
-   "due": 1788196085.240066,
-   "lastReview": 1788195485.240066,
+   "due": 1788497508.956043,
+   "lastReview": 1788496908.956043,
    "reps": 1,
    "lapses": 0,
    "suspended": false,
-   "introducedAt": 1788195485.241759
+   "introducedAt": 1788496908.957481
   }
  ],
  "drafts": [
@@ -69,12 +84,12 @@
   }
  ],
  "today": {
-  "dayStart": 1788148800.0,
-  "dayEnd": 1788235200.0,
+  "dayStart": 1788494400.0,
+  "dayEnd": 1788580800.0,
   "reviewsDone": 1,
   "newIntroduced": 1,
   "reviewsRemaining": 99,
-  "newRemaining": 9,
+  "newRemaining": 4,
   "dueNow": 0
  }
 }

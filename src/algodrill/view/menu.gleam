@@ -7,7 +7,6 @@ import algodrill/model.{
 import algodrill/problem.{type Problem, type ProblemRef}
 import algodrill/problems
 import algodrill/view/format
-import fsrs
 import gleam/dynamic/decode
 import gleam/int
 import gleam/list
@@ -405,31 +404,19 @@ fn suspend_toggle(m: Model, ref: ProblemRef) -> Element(Msg) {
   }
 }
 
-/// The badge now reports where a problem sits in the schedule rather than a
-/// sticky pass/fail. "Due" is the one that should pull the eye; a scheduled
-/// card shows how far out it is, so the menu doubles as a forecast.
+/// The badge reports where a problem sits in the schedule rather than a sticky
+/// pass/fail. "Due" is the one that should pull the eye; a scheduled card shows
+/// how far out it is, so the menu doubles as a forecast.
+///
+/// A problem with no card is left blank here rather than labelled "not queued":
+/// this pane is for picking problems to drill by hand, which works whether or
+/// not the scheduler knows about them. The queue screen is where that
+/// distinction is the point, and it renders the label from the same function.
 fn status_badge(m: Model, ref: ProblemRef) -> Element(Msg) {
   case model.card_for(m, ref) {
     None -> element.none()
     Some(state) -> {
-      let #(class, label) = case
-        state.suspended,
-        fsrs.is_due(state.card, m.now),
-        state.card.state
-      {
-        // Parked: the schedule is on hold, whatever the dates say.
-        True, _, _ -> #("badge badge-paused", "paused")
-        False, True, _ -> #("badge badge-due", "due")
-        False, False, fsrs.Learning(_) -> #("badge badge-learning", "learning")
-        False, False, fsrs.Relearning(_) -> #(
-          "badge badge-learning",
-          "relearning",
-        )
-        False, False, fsrs.Review -> #(
-          "badge badge-scheduled",
-          format.interval(fsrs.interval_seconds(state.card, m.now)),
-        )
-      }
+      let #(class, label) = format.card_badge(Some(state), m.now)
       html.span([attribute.class(class)], [html.text(label)])
     }
   }

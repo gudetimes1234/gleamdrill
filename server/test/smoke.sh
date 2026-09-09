@@ -138,6 +138,47 @@ check "an unseen problem has no card to park" 404 "$(status -X PATCH "$B/api/car
 check "parking without a token is 401" 401 "$(status -X PATCH "$B/api/cards" -H "$CT" -d "{$REF,\"suspended\":true}")"
 check "a body without the flag is 422" 422 "$(status -X PATCH "$B/api/cards" -H "$AUTH" -H "$CT" -d "{$REF}")"
 
+echo "== the study queue"
+QE="queue-$RANDOM$RANDOM@example.com"
+QT=$(curl -s -X POST "$B/api/auth/signup" -H "$CT" -d "{\"email\":\"$QE\",\"password\":\"$PW\"}" | j "['token']")
+QA="authorization: Bearer $QT"
+REF2='"category":"NeetCode 150","subcategory":"Arrays & Hashing","title":"Valid Anagram"'
+Q=$(curl -s -X POST "$B/api/cards" -H "$QA" -H "$CT" -d "{\"problems\":[{$REF},{$REF2}]}")
+check "queueing answers with both cards" 2 "$(echo "$Q" | j "len(d['cards'])")"
+check "a queued card starts unreviewed" 0 "$(echo "$Q" | j "['cards'][0]['reps']")"
+# The whole point of leaving introducedAt null: queueing must not spend the
+# daily new budget on problems that have not been opened.
+check "queueing does not introduce anything" 0 "$(echo "$Q" | j "['today']['newIntroduced']")"
+check "and the new budget is untouched" 5 "$(echo "$Q" | j "['today']['newRemaining']")"
+# A queued card is due immediately by date. Counting it as a review would
+# report the whole New pile as a backlog.
+check "a queued card is not counted as due" 0 "$(echo "$Q" | j "['today']['dueNow']")"
+Q=$(curl -s -X POST "$B/api/cards" -H "$QA" -H "$CT" -d "{\"problems\":[{$REF}]}")
+check "queueing again is idempotent" 1 "$(echo "$Q" | j "len(d['cards'])")"
+S=$(curl -s "$B/api/state" -H "$QA")
+check "state holds the two queued cards" 2 "$(echo "$S" | j "len(d['cards'])")"
+
+Q=$(curl -s -X DELETE "$B/api/cards" -H "$QA" -H "$CT" -d "{\"problems\":[{$REF2}]}")
+check "an unstudied card leaves the queue" 1 "$(echo "$Q" | j "len(d['removed'])")"
+check "and nothing is refused" 0 "$(echo "$Q" | j "len(d['refused'])")"
+S=$(curl -s "$B/api/state" -H "$QA")
+check "state is down to one card" 1 "$(echo "$S" | j "len(d['cards'])")"
+
+# The safety rule: reviews cascade on delete, so a studied card is refused
+# rather than taking its log with it.
+curl -s -o /dev/null -X POST "$B/api/reviews" -H "$QA" -H "$CT" -d "{$REF,\"rating\":3}"
+Q=$(curl -s -X DELETE "$B/api/cards" -H "$QA" -H "$CT" -d "{\"problems\":[{$REF}]}")
+check "a studied card is refused, not deleted" 1 "$(echo "$Q" | j "len(d['refused'])")"
+check "and stays removed from nothing" 0 "$(echo "$Q" | j "len(d['removed'])")"
+S=$(curl -s "$B/api/state" -H "$QA")
+check "the studied card is still there" 1 "$(echo "$S" | j "len(d['cards'])")"
+check "and the first review stamped introducedAt" 1 "$(echo "$S" | j "['today']['newIntroduced']")"
+
+check "queueing without a token is 401" 401 "$(status -X POST "$B/api/cards" -H "$CT" -d "{\"problems\":[{$REF}]}")"
+check "dequeueing without a token is 401" 401 "$(status -X DELETE "$B/api/cards" -H "$CT" -d "{\"problems\":[{$REF}]}")"
+check "a body with no problems key is 422" 422 "$(status -X POST "$B/api/cards" -H "$QA" -H "$CT" -d "{$REF}")"
+check "an empty problem list is 422" 422 "$(status -X POST "$B/api/cards" -H "$QA" -H "$CT" -d "{\"problems\":[]}")"
+
 echo "== drafts"
 check "a draft saves" 204 "$(status -X PUT "$B/api/drafts" -H "$AUTH" -H "$CT" -d "{$REF,\"body\":\"def f(): pass\"}")"
 S=$(curl -s "$B/api/state" -H "$AUTH")
@@ -197,7 +238,7 @@ GA="authorization: Bearer $GT"
 # A card a guest drilled to maturity: 40 days of stability, due in 40 days.
 DUE=$(python3 -c "import time; print(time.time() + 40*86400)")
 LAST=$(python3 -c "import time; print(time.time() - 86400)")
-GCARD="{$REF,\"state\":2,\"step\":null,\"stability\":40.5,\"difficulty\":5.25,\"due\":$DUE,\"lastReview\":$LAST,\"reps\":7,\"lapses\":2}"
+GCARD="{$REF,\"state\":2,\"step\":null,\"stability\":40.5,\"difficulty\":5.25,\"due\":$DUE,\"lastReview\":$LAST,\"reps\":7,\"lapses\":2,\"introducedAt\":$LAST}"
 check "guest cards import" 204 \
   "$(status -X POST "$B/api/import" -H "$GA" -H "$CT" -d "{\"cards\":[$GCARD],\"drafts\":[],\"solved\":[]}")"
 GS=$(curl -s "$B/api/state" -H "$GA")
@@ -212,6 +253,21 @@ check "no reviews are fabricated from imported cards" 0 \
   "$(curl -s "$B/api/stats" -H "$GA" | j "['totalReviews']")"
 check "introducedAt crosses the wire" True \
   "$(echo "$GS" | j "d['cards'][0]['introducedAt'] is not None")"
+# A guest can upgrade with a queue of problems they have never opened. Those
+# carry a null stamp, and it has to stay null: stamping them on arrival would
+# spend the whole daily new budget the moment the account was created, and the
+# new account would report nothing new to study on day one.
+QGE="queued-guest-$RANDOM$RANDOM@example.com"
+QGT=$(curl -s -X POST "$B/api/auth/signup" -H "$CT" -d "{\"email\":\"$QGE\",\"password\":\"$PW\"}" | j "['token']")
+QGA="authorization: Bearer $QGT"
+UNSEEN="{$REF,\"state\":1,\"step\":0,\"stability\":null,\"difficulty\":null,\"due\":$LAST,\"lastReview\":null,\"reps\":0,\"lapses\":0,\"introducedAt\":null}"
+curl -s -o /dev/null -X POST "$B/api/import" -H "$QGA" -H "$CT" -d "{\"cards\":[$UNSEEN],\"drafts\":[],\"solved\":[]}"
+QGS=$(curl -s "$B/api/state" -H "$QGA")
+check "an unopened queued card imports unstamped" True \
+  "$(echo "$QGS" | j "d['cards'][0]['introducedAt'] is None")"
+check "and costs nothing against the new budget" 5 \
+  "$(echo "$QGS" | j "['today']['newRemaining']")"
+check "and is not counted as due either" 0 "$(echo "$QGS" | j "['today']['dueNow']")"
 # A second import must not clobber the real scheduling already there.
 STALE="{$REF,\"state\":1,\"step\":0,\"stability\":1.0,\"difficulty\":9.0,\"due\":$DUE,\"lastReview\":null,\"reps\":0,\"lapses\":0}"
 curl -s -X POST "$B/api/import" -H "$GA" -H "$CT" -d "{\"cards\":[$STALE],\"drafts\":[],\"solved\":[]}" > /dev/null

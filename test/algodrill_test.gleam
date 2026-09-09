@@ -67,9 +67,19 @@ pub fn boot_state_decodes_test() -> Nil {
 
 /// The card in this fixture was answered `Good` once, so it is on the second
 /// learning step with the stability a `Good` first answer seeds.
+/// The answered card in the state fixture. The fixture also holds a queued,
+/// never-opened card now, so "the card" has to be named rather than pattern
+/// matched out of a one-element list.
+fn fixture_card(state: api.BootState) -> Result(api.CardState, Nil) {
+  list.find(state.cards, fn(c: api.CardState) { c.reps > 0 })
+}
+
 pub fn boot_state_card_decodes_test() -> Nil {
   let state = decode("state", api.boot_state_decoder())
-  let assert [card] = state.cards
+  let assert Ok(card) =
+    list.find(state.cards, fn(c: api.CardState) {
+      c.problem.title == "Contains Duplicate"
+    })
 
   assert card.problem.title == "Contains Duplicate"
   assert card.reps == 1
@@ -86,6 +96,27 @@ pub fn boot_state_card_decodes_test() -> Nil {
   assert card.card.last_review != None
 }
 
+/// The other card in the fixture: queued and never opened. It is a real
+/// server response, not a hand-written one, because this is the shape the
+/// queue screen made possible -- a card with no memory at all -- and the app
+/// reads it at boot before anything else happens.
+pub fn boot_state_queued_card_decodes_test() -> Nil {
+  let state = decode("state", api.boot_state_decoder())
+  let assert Ok(card) =
+    list.find(state.cards, fn(c: api.CardState) {
+      c.problem.title == "Valid Anagram"
+    })
+
+  assert card.reps == 0
+  assert card.lapses == 0
+  assert card.suspended == False
+  assert card.card.memory == None
+  assert card.card.last_review == None
+  // Null until the first review. The daily new budget counts this, so a stamp
+  // here would mean queueing a problem spent the allowance for opening it.
+  assert card.introduced_at == None
+}
+
 pub fn boot_state_draft_decodes_test() -> Nil {
   let state = decode("state", api.boot_state_decoder())
   let assert [#(problem, body)] = state.drafts
@@ -97,8 +128,10 @@ pub fn today_decodes_test() -> Nil {
   let state = decode("state", api.boot_state_decoder())
   assert state.today.reviews_done == 1
   assert state.today.new_introduced == 1
-  // One of ten new cards has been introduced.
-  assert state.today.new_remaining == 9
+  // One of the account default's five new cards has been introduced. The
+  // other card in the fixture is queued and unopened, and deliberately does
+  // not count against this.
+  assert state.today.new_remaining == 4
 }
 
 pub fn review_outcome_decodes_test() -> Nil {
@@ -122,7 +155,7 @@ pub fn stats_decodes_test() -> Nil {
 /// server's own stored card through the local scheduler is what proves it.
 pub fn preview_agrees_with_the_server_test() -> Nil {
   let state = decode("state", api.boot_state_decoder())
-  let assert [card] = state.cards
+  let assert Ok(card) = fixture_card(state)
 
   // The server put this card on the second learning step, ten minutes out.
   // Reproducing that locally from the same inputs is the check.
@@ -146,7 +179,7 @@ pub fn preview_agrees_with_the_server_test() -> Nil {
 /// carry no information.
 pub fn preview_offers_four_distinct_intervals_test() -> Nil {
   let state = decode("state", api.boot_state_decoder())
-  let assert [card] = state.cards
+  let assert Ok(card) = fixture_card(state)
   let previews = fsrs.preview(card.card, state.now, state.settings.scheduler)
 
   assert list.length(previews) == 4
@@ -216,7 +249,7 @@ fn a_problem(title: String) -> problem.ProblemRef {
 /// against an expectation written by hand.
 pub fn guest_scheduling_matches_the_server_test() -> Nil {
   let state = decode("state", api.boot_state_decoder())
-  let assert [server_card] = state.cards
+  let assert Ok(server_card) = fixture_card(state)
 
   // Replayed from the instant the review happened, which is what the server
   // scheduled against -- `state.now` is when /api/state answered, a fraction
@@ -707,6 +740,7 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
   let contexts = [
     model.Model(..base, route: model.StudyRoute),
     model.Model(..base, route: model.MenuRoute),
+    model.Model(..base, route: model.QueueRoute),
     model.Model(..base, route: model.StatsRoute),
     model.Model(..base, route: model.ReportRoute),
     model.Model(..base, route: model.PickerRoute),
@@ -727,9 +761,61 @@ pub fn dispatch_resolves_from_the_same_table_it_documents_test() -> Nil {
     )
   }
   assert press("b") == Ok(model.UserClickedBrowse)
+  assert press("q") == Ok(model.UserClickedQueue)
   assert press("t") == Ok(model.UserClickedStats)
   assert press("Enter") == Ok(model.UserClickedStudy)
   assert press("z") == Error(Nil)
+}
+
+/// The queue screen's row cursor is its own list, and `space` there means
+/// "queue this", not "select this for a manual drill" -- the two screens share
+/// the keys and must not share the message.
+pub fn the_queue_screen_binds_its_own_verbs_test() -> Nil {
+  let m = model.Model(..model.default(), route: model.QueueRoute)
+  let press = fn(key) {
+    keys.dispatch(
+      m,
+      model.Key(key: key, ctrl: False, shift: False, editing: "none"),
+    )
+  }
+  assert press("j") == Ok(model.QueueCursorMoved(1))
+  assert press("k") == Ok(model.QueueCursorMoved(-1))
+  assert press(" ") == Ok(model.QueueToggledAtCursor)
+  assert press("a") == Ok(model.UserAddedAllShown)
+  assert press("r") == Ok(model.UserRemovedAllShown)
+}
+
+/// `listed` is what "add all shown" acts on, so the filters have to mean
+/// exactly what the table shows -- a mismatch queues problems nobody saw.
+pub fn the_queue_screen_lists_what_its_filters_say_test() -> Nil {
+  let now = fsrs.from_epoch(1_787_788_818.0)
+  let ref = a_catalogue_ref()
+  let #(store, _) = local.enqueue(local.empty(), [ref], now)
+  let m = model.Model(..model.default(), now:, cards: store.cards)
+
+  let all = queue.listed(m)
+  assert list.length(all) > 1
+  assert list.contains(all, ref)
+
+  // Status narrows to the one queued card, and its complement excludes it.
+  let queued = queue.listed(model.Model(..m, queue_status: model.Queued))
+  assert queued == [ref]
+  let unqueued = queue.listed(model.Model(..m, queue_status: model.Unqueued))
+  assert !list.contains(unqueued, ref)
+  assert list.length(queued) + list.length(unqueued) == list.length(all)
+
+  // Language and topic are the same lens from the other two directions.
+  let elsewhere = queue.listed(model.Model(..m, queue_language: Some("sd")))
+  assert !list.contains(elsewhere, ref)
+  let topic = queue.listed(model.Model(..m, queue_topic: Some(ref.subcategory)))
+  assert list.contains(topic, ref)
+  assert list.all(topic, fn(r: problem.ProblemRef) {
+    r.subcategory == ref.subcategory
+  })
+
+  // And the search box, which the same list has to honour.
+  let searched = queue.listed(model.Model(..m, queue_search: ref.title))
+  assert list.contains(searched, ref)
 }
 
 pub fn paired_directions_resolve_to_opposite_deltas_test() -> Nil {
@@ -840,13 +926,119 @@ pub fn guest_and_server_calibration_agree_test() -> Nil {
 // --- the study queue ---------------------------------------------------------
 
 /// A model with nothing studied yet and room for `new_remaining` new cards.
+/// A model with the whole catalogue queued and nothing answered yet, which is
+/// the state the New pile is drawn from. Every problem needs a card now:
+/// nothing is introduced that was not queued first.
 fn fresh_model(new_remaining: Int, muted: List(String)) -> model.Model {
   let base = model.default()
+  let now = fsrs.from_epoch(1_787_788_818.0)
+  let #(store, _) = local.enqueue(local.empty(), problems.all_refs(), now)
   model.Model(
     ..base,
+    now:,
+    cards: store.cards,
     muted_languages: muted,
     today: wire.Today(..base.today, new_remaining:, reviews_remaining: 0),
   )
+}
+
+/// A ref the catalogue really contains. `a_problem` above is a hand-written
+/// key, which is all the local store needs; the queue also has to find it in
+/// `problems.all_refs()`, and the Python category is named "NeetCode 150" with
+/// no language suffix.
+fn a_catalogue_ref() -> problem.ProblemRef {
+  let assert Ok(ref) = list.first(problems.all_refs())
+  ref
+}
+
+/// The opt-in rule, stated on its own: a problem with no card is not a
+/// candidate for anything. Before the queue screen existed this was the
+/// opposite -- every catalogue entry without a card was fair game -- and it is
+/// the single behaviour the whole feature turns on.
+pub fn an_unqueued_problem_never_enters_the_queue_test() -> Nil {
+  let base = model.default()
+  let empty =
+    model.Model(
+      ..base,
+      today: wire.Today(..base.today, new_remaining: 20, reviews_remaining: 20),
+    )
+
+  assert queue.fresh(empty) == []
+  assert queue.due(empty) == []
+  assert queue.build(empty) == []
+}
+
+/// A queued card is created due immediately, so the thing that makes it "new"
+/// rather than "due" is that it has never been answered. Get this wrong and
+/// the whole New pile is reported as a backlog of reviews.
+pub fn a_queued_card_is_new_until_it_is_answered_test() -> Nil {
+  let now = fsrs.from_epoch(1_787_788_818.0)
+  let ref = a_catalogue_ref()
+  let #(store, cards) = local.enqueue(local.empty(), [ref], now)
+  let base = model.default()
+  let m =
+    model.Model(
+      ..base,
+      now:,
+      cards: store.cards,
+      today: wire.Today(..base.today, new_remaining: 5, reviews_remaining: 5),
+    )
+
+  assert list.length(cards) == 1
+  assert model.is_new(m, ref)
+  assert !model.is_due(m, ref)
+  assert list.contains(queue.fresh(m), ref)
+  assert !list.contains(queue.due(m), ref)
+  // And it must not be counted against the reviews half of the daily budget.
+  assert local.today(store, base.settings, now, local.StudyDay(0, 0)).due_now
+    == 0
+}
+
+/// Queueing is idempotent: adding a problem that is already queued must not
+/// reset the card that is being studied.
+pub fn queueing_an_answered_problem_leaves_its_card_alone_test() -> Nil {
+  let now = fsrs.from_epoch(1_787_788_818.0)
+  let ref = a_catalogue_ref()
+  let #(queued, _) = local.enqueue(local.empty(), [ref], now)
+  let #(studied, _) =
+    local.record(
+      queued,
+      model.default().settings,
+      answer(ref, fsrs.Good),
+      now,
+      0,
+      0.5,
+    )
+  let #(again, _) = local.enqueue(studied, [ref], now)
+
+  assert dict.get(again.cards, ref) == dict.get(studied.cards, ref)
+}
+
+/// The one thing a removal must never do is take a review log with it.
+pub fn removing_an_answered_problem_is_refused_test() -> Nil {
+  let now = fsrs.from_epoch(1_787_788_818.0)
+  let ref = a_catalogue_ref()
+  let #(queued, _) = local.enqueue(local.empty(), [ref], now)
+  let #(studied, _) =
+    local.record(
+      queued,
+      model.default().settings,
+      answer(ref, fsrs.Good),
+      now,
+      0,
+      0.5,
+    )
+
+  let #(after, removed, refused) = local.dequeue(studied, [ref])
+  assert removed == []
+  assert refused == [ref]
+  assert dict.has_key(after.cards, ref)
+
+  // An untouched card leaves without argument.
+  let #(gone, removed, refused) = local.dequeue(queued, [ref])
+  assert removed == [ref]
+  assert refused == []
+  assert !dict.has_key(gone.cards, ref)
 }
 
 /// The catalogue is the same 150 problems repeated once per language, listed

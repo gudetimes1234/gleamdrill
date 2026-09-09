@@ -13,25 +13,29 @@ import algodrill/model.{
   MenuActivated, MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
   MenuSuspendedAtCursor, MenuToggledAtCursor, Model, NewPerDay, NotGrading,
   NotStarted, PickerConfirmed, PickerRoute, PickerToggledLanguage,
-  PromptDismissed, QuizMoved, Ran, Registering, ReportRoute, ReviewRecorded,
+  PromptDismissed, QueueChanged, QueueCursorJumped, QueueCursorMoved, QueueRoute,
+  QueueToggledAtCursor, QuizMoved, Ran, Registering, ReportRoute, ReviewRecorded,
   ReviewsPerDay, RunFinished, RunIdle, RunTimedOut, RunnerFailed, RunnerReady,
   Running, RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded,
   RuntimeReady, SearchFocusRequested, SettingsRoute, SettingsSaved,
   SignOutCompleted, SigningIn, StateImported, StateLoaded, StatsActivated,
   StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute, SubmittingGrade,
-  SummaryRoute, SyncFailed, Synced, Syncing, TimedOut, UserChangedAuthEmail,
-  UserChangedAuthPassword, UserChangedIterations, UserChangedKeymap,
-  UserChangedSetting, UserClickedBackToStudy, UserClickedBreadcrumb,
-  UserClickedBrowse, UserClickedCategory, UserClickedClearSelection,
-  UserClickedDeviceTimezone, UserClickedExitDrill, UserClickedExitReport,
-  UserClickedMergeGuest, UserClickedNext, UserClickedRetryRuntime,
-  UserClickedRun, UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
+  SummaryRoute, SyncFailed, Synced, Syncing, TimedOut, UserAddedAllShown,
+  UserChangedAuthEmail, UserChangedAuthPassword, UserChangedIterations,
+  UserChangedKeymap, UserChangedSetting, UserClickedBackToStudy,
+  UserClickedBreadcrumb, UserClickedBrowse, UserClickedCategory,
+  UserClickedClearSelection, UserClickedDeviceTimezone, UserClickedExitDrill,
+  UserClickedExitReport, UserClickedMergeGuest, UserClickedNext,
+  UserClickedQueue, UserClickedRetryRuntime, UserClickedRun,
+  UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
   UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
   UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
-  UserClosedDetail, UserDismissedNotice, UserDismissedUpgradePrompt, UserGraded,
-  UserOpenedDetail, UserPickedChoice, UserRevealedHint, UserSearched,
-  UserSubmittedAnswer, UserSubmittedAuth, UserToggledAuthMode,
-  UserToggledLanguage, UserToggledProblem, UserToggledSide, UserToggledSolution,
+  UserClosedDetail, UserDismissedNotice, UserDismissedUpgradePrompt,
+  UserFilteredQueue, UserGraded, UserOpenedDetail, UserPickedChoice,
+  UserPickedQueueLanguage, UserPickedQueueTopic, UserRemovedAllShown,
+  UserRevealedHint, UserSearched, UserSearchedQueue, UserSubmittedAnswer,
+  UserSubmittedAuth, UserToggledAuthMode, UserToggledLanguage,
+  UserToggledProblem, UserToggledQueued, UserToggledSide, UserToggledSolution,
   UserToggledSuspend,
 }
 import algodrill/problem.{type ProblemRef}
@@ -43,6 +47,7 @@ import algodrill/store
 import algodrill/view/auth
 import algodrill/view/drill
 import algodrill/view/help
+import algodrill/view/manage
 import algodrill/view/menu
 import algodrill/view/picker
 import algodrill/view/report
@@ -56,7 +61,7 @@ import gleam/dict
 import gleam/float
 import gleam/int
 import gleam/list
-import gleam/option.{None, Some}
+import gleam/option.{type Option, None, Some}
 import gleam/string
 import lustre
 import lustre/effect.{type Effect}
@@ -320,6 +325,45 @@ fn cursor_ref(m: Model) -> Result(ProblemRef, Nil) {
           }
         ChoiceRows(_) -> Error(Nil)
       }
+  }
+}
+
+/// The queue screen's cursor. Its own mover rather than a fifth pane in
+/// `move_cursor`: that one walks the browser's panes and its search override,
+/// and this list has neither.
+fn move_queue_cursor(
+  m: Model,
+  next: fn(Int, Int) -> Int,
+) -> #(Model, Effect(Msg)) {
+  let last = int.max(0, list.length(queue.listed(m)) - 1)
+  let index = next(int.clamp(m.nav.queue, 0, last), last)
+  #(
+    Model(..m, nav: model.MenuNav(..m.nav, queue: index)),
+    scroll_to(model.queue_row_id(index)),
+  )
+}
+
+fn queue_cursor_ref(m: Model) -> Result(ProblemRef, Nil) {
+  let rows = queue.listed(m)
+  case list.drop(rows, int.clamp(m.nav.queue, 0, list.length(rows) - 1)) {
+    [ref, ..] -> Ok(ref)
+    [] -> Error(Nil)
+  }
+}
+
+/// Marks rows whose queue change is in flight, so a second click cannot race
+/// the first. Cleared wholesale when the response lands: the requests are
+/// bulk and sequential from one user, so there is never a second one to keep.
+fn pending(m: Model, refs: List(ProblemRef)) -> Model {
+  Model(..m, queue_pending: list.append(refs, m.queue_pending))
+}
+
+/// A filter chip is a toggle: pressing the one already chosen clears it,
+/// which is how "all languages" is reachable without a separate button.
+fn toggle_filter(current: Option(String), value: String) -> Option(String) {
+  case current == Some(value) {
+    True -> None
+    False -> Some(value)
   }
 }
 
@@ -1234,7 +1278,22 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               ..m,
               muted_languages: muted,
               languages_chosen: True,
-              route: StudyRoute,
+              // Straight to the queue when there is nothing in it. "Which
+              // languages" is only half the setup now -- the other half is
+              // which problems, and a study screen with an empty queue is a
+              // dead end to land a first-time user on. Somebody who already
+              // has cards (an upgrade, a returning guest) goes where they
+              // always did.
+              route: case dict.is_empty(m.cards) {
+                True -> QueueRoute
+                False -> StudyRoute
+              },
+              // The picker's language choice is the obvious first lens on a
+              // catalogue of five copies of the same 150 problems.
+              queue_language: case picked {
+                [only] -> Some(only)
+                _ -> None
+              },
             )
           #(m, save_preferences(m))
         }
@@ -1266,6 +1325,120 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
     CardSuspended(Error(failure)) -> #(
       Model(..m, notice: Some(api.error_message(failure))),
+      effect.none(),
+    )
+
+    // --- managing the queue ---
+    UserClickedQueue -> #(Model(..m, route: QueueRoute), effect.none())
+
+    UserSearchedQueue(text) -> #(
+      Model(..m, queue_search: text, nav: model.MenuNav(..m.nav, queue: 0)),
+      effect.none(),
+    )
+
+    // Every filter resets the cursor to the top. Keeping the row index across
+    // a filter change would leave the highlight on whatever now happens to sit
+    // at that position, which is a different problem than the one it was on.
+    UserFilteredQueue(filter) -> #(
+      Model(..m, queue_status: filter, nav: model.MenuNav(..m.nav, queue: 0)),
+      effect.none(),
+    )
+
+    UserPickedQueueLanguage(tag) -> #(
+      Model(
+        ..m,
+        queue_language: toggle_filter(m.queue_language, tag),
+        nav: model.MenuNav(..m.nav, queue: 0),
+      ),
+      effect.none(),
+    )
+
+    UserPickedQueueTopic(topic) -> #(
+      Model(
+        ..m,
+        queue_topic: toggle_filter(m.queue_topic, topic),
+        nav: model.MenuNav(..m.nav, queue: 0),
+      ),
+      effect.none(),
+    )
+
+    // One verb for both directions, because the row shows one control. A card
+    // with review history is parked rather than deleted -- the server refuses
+    // to delete it either way, and asking it to is a round trip that can only
+    // end in `refused`.
+    UserToggledQueued(ref) ->
+      case model.card_for(m, ref) {
+        None -> #(pending(m, [ref]), store.add_to_queue(m, [ref]))
+        Some(state) ->
+          case state.reps == 0 {
+            True -> #(pending(m, [ref]), store.remove_from_queue(m, [ref]))
+            False -> #(m, store.set_suspended(m, ref, !state.suspended))
+          }
+      }
+
+    UserAddedAllShown ->
+      case list.filter(queue.listed(m), fn(ref) { !model.is_queued(m, ref) }) {
+        [] -> #(m, effect.none())
+        refs -> #(pending(m, refs), store.add_to_queue(m, refs))
+      }
+
+    // Only the ones it can actually remove. Sending the studied rows too would
+    // get them back as `refused` and raise a notice about cards the user never
+    // asked to touch -- they are not in this list because they cannot leave the
+    // queue, only be paused.
+    UserRemovedAllShown ->
+      case list.filter(queue.listed(m), fn(ref) { model.is_new(m, ref) }) {
+        [] -> #(m, effect.none())
+        refs -> #(pending(m, refs), store.remove_from_queue(m, refs))
+      }
+
+    QueueCursorMoved(delta) ->
+      move_queue_cursor(m, fn(index, last) { int.clamp(index + delta, 0, last) })
+
+    QueueCursorJumped(first) ->
+      move_queue_cursor(m, fn(_index, last) {
+        case first {
+          True -> 0
+          False -> last
+        }
+      })
+
+    QueueToggledAtCursor ->
+      case queue_cursor_ref(m) {
+        Ok(ref) -> handle(m, UserToggledQueued(ref))
+        Error(Nil) -> #(m, effect.none())
+      }
+
+    QueueChanged(Ok(change)) -> {
+      let cards =
+        list.fold(change.cards, m.cards, fn(cards, card: api.CardState) {
+          dict.insert(cards, card.problem, card)
+        })
+      #(
+        Model(
+          ..m,
+          now: change.now,
+          today: change.today,
+          cards: list.fold(change.removed, cards, dict.delete),
+          queue_pending: [],
+          // Refusals are the server declining to destroy a review log, not a
+          // failure: say what happened and leave the cards parked-or-not as
+          // they were.
+          notice: case change.refused {
+            [] -> m.notice
+            refused ->
+              Some(
+                int.to_string(list.length(refused))
+                <> " problem(s) have review history and stay in the queue. "
+                <> "Pause them instead.",
+              )
+          },
+        ),
+        effect.none(),
+      )
+    }
+    QueueChanged(Error(failure)) -> #(
+      Model(..m, queue_pending: [], notice: Some(api.error_message(failure))),
       effect.none(),
     )
 
@@ -1855,6 +2028,7 @@ fn view(m: Model) -> Element(Msg) {
           }
         ReportRoute -> report.view(m)
         MenuRoute -> menu.view(m)
+        QueueRoute -> manage.view(m)
       }
       case m.route {
         // The sign-in form keeps its focused, chrome-free layout.

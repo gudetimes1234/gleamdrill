@@ -7,9 +7,10 @@
 import algodrill/insights
 import algodrill/model.{
   type Model, type Msg, Guest, PromptShowing, Registering, SigningIn,
-  UserClickedBrowse, UserClickedMergeGuest, UserClickedSettings,
-  UserClickedSignIn, UserClickedSignOut, UserClickedStartExam, UserClickedStats,
-  UserClickedStudy, UserDismissedUpgradePrompt,
+  UserClickedBrowse, UserClickedMergeGuest, UserClickedQueue,
+  UserClickedSettings, UserClickedSignIn, UserClickedSignOut,
+  UserClickedStartExam, UserClickedStats, UserClickedStudy,
+  UserDismissedUpgradePrompt,
 }
 import algodrill/problem
 import algodrill/problems
@@ -34,6 +35,9 @@ pub fn view(m: Model) -> Element(Msg) {
   let ready = due + fresh
   let hidden = queue.hidden_count(m)
   let all_filtered = ready == 0 && hidden_everything(m)
+  // Told apart from "done for today" deliberately: the queue being empty is
+  // something only the user can fix, and the fix is one screen away.
+  let nothing_queued = dict.size(m.cards) == 0
 
   html.div([attribute.class("study-screen")], [
     banner.storage_warning(m),
@@ -64,16 +68,34 @@ pub fn view(m: Model) -> Element(Msg) {
     },
     html.p([attribute.class("study-summary")], [
       html.text(case ready, m.today.reviews_done {
+        // An empty queue is not an empty day, and it outranks the filter: a
+        // muted chip explains nothing when there is nothing behind it to
+        // mute. Nothing is scheduled because nothing has been queued, and no
+        // amount of waiting changes that.
+        0, _ if nothing_queued ->
+          "Nothing is in your study queue yet. Add problems to start scheduling them."
         // Filtered-empty is its own state: not "done", just muted away.
         0, _ if all_filtered ->
           "Everything left today is muted \u{2014} unmute a chip to study."
-        0, 0 -> "Nothing scheduled today. Pick problems by hand to get started."
+        0, 0 ->
+          "Nothing due today, and today's new cards are spent. Queue more problems, or come back tomorrow."
         0, _ ->
           "You're done for today. Anything you drill now counts as extra practice."
         1, _ -> "1 card ready."
         _, _ -> int.to_string(ready) <> " cards ready."
       }),
     ]),
+    case nothing_queued {
+      False -> element.none()
+      True ->
+        html.button(
+          [
+            attribute.class("primary study-start"),
+            event.on_click(UserClickedQueue),
+          ],
+          [html.text("Choose problems to study")],
+        )
+    },
     html.div([attribute.class("study-actions")], [
       html.button(
         [
@@ -82,6 +104,10 @@ pub fn view(m: Model) -> Element(Msg) {
           event.on_click(UserClickedStudy),
         ],
         [html.text("Study now")],
+      ),
+      html.button(
+        [attribute.class("study-secondary"), event.on_click(UserClickedQueue)],
+        [html.text("Manage queue")],
       ),
       html.button(
         [attribute.class("study-secondary"), event.on_click(UserClickedBrowse)],
@@ -179,7 +205,10 @@ fn due_on(m: Model, offset: Int) -> Int {
   use total, problem, state <- dict.fold(m.cards, 0)
   let days = int.max(0, fsrs.interval_seconds(state.card, m.now) / 86_400)
   let muted = model.language_muted(m, problems.language_tag(problem.category))
-  case days == offset && !state.suspended && !muted {
+  // A queued card that has never been answered is due immediately by date,
+  // but it is not a review -- counting it here would pile the whole New pile
+  // onto today's bar and make the week look like a wall.
+  case state.reps > 0 && days == offset && !state.suspended && !muted {
     True -> total + 1
     False -> total
   }
@@ -323,6 +352,7 @@ fn account_controls(m: Model) -> Element(Msg) {
   html.div([attribute.class("study-account")], case m.mode {
     Guest -> [
       html.span([attribute.class("study-email")], [html.text("Guest")]),
+      text_button("Queue", UserClickedQueue),
       text_button("Stats", UserClickedStats),
       text_button("Settings", UserClickedSettings),
       text_button("Sign in", UserClickedSignIn(SigningIn)),
@@ -335,6 +365,7 @@ fn account_controls(m: Model) -> Element(Msg) {
           None -> ""
         }),
       ]),
+      text_button("Queue", UserClickedQueue),
       text_button("Stats", UserClickedStats),
       text_button("Settings", UserClickedSettings),
       text_button("Sign out", UserClickedSignOut),
@@ -373,7 +404,9 @@ fn upgrade_prompt(m: Model) -> Element(Msg) {
         html.p([attribute.class("upgrade-prompt-title")], [
           html.text(
             "You have "
-            <> int.to_string(dict.size(m.cards))
+            // Answered cards only. A queued card is a click; the ones worth
+            // warning about are the ones with review history behind them.
+            <> int.to_string(model.answered_count(m))
             <> " cards scheduled.",
           ),
         ]),
