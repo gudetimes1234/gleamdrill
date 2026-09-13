@@ -421,11 +421,16 @@ fn current_quiz(m: Model) -> Result(problem.Quiz, Nil) {
   }
 }
 
+/// The current problem's check, if it has one this browser can run.
 fn current_check(m: Model) -> Result(problem.Check, Nil) {
   case model.current_ref(m) {
     Ok(ref) ->
       case problems.find(ref.category, ref.subcategory, ref.title) {
-        Ok(found) -> option.to_result(found.check, Nil)
+        Ok(found) ->
+          case model.run_available(m, found.language) {
+            True -> option.to_result(found.check, Nil)
+            False -> Error(Nil)
+          }
         Error(Nil) -> Error(Nil)
       }
     Error(Nil) -> Error(Nil)

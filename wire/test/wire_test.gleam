@@ -409,3 +409,53 @@ fn list_map(items: List(a), f: fn(a) -> b) -> List(b) {
     [first, ..rest] -> [f(first), ..list_map(rest, f)]
   }
 }
+
+// --- server-side runs -------------------------------------------------------
+
+pub fn run_request_round_trips_test() {
+  round_trip(
+    wire.RunRequest(
+      language: "elixir",
+      solution: "defmodule Solution do\n  def f(x), do: x\nend\n",
+      harness: "[{\"f(1)\", inspect(1), inspect(Solution.f(1))}]",
+    ),
+    wire.run_request_to_json,
+    wire.run_request_decoder(),
+  )
+}
+
+pub fn run_result_with_cases_round_trips_test() {
+  round_trip(
+    wire.RunResult(
+      cases: [
+        wire.CaseResult("f(1)", "1", "1", True),
+        wire.CaseResult("f(2)", "2", "3", False),
+      ],
+      stdout: "hello\n",
+      error: None,
+    ),
+    wire.run_result_to_json,
+    wire.run_result_decoder(),
+  )
+}
+
+pub fn run_result_with_error_round_trips_test() {
+  round_trip(
+    wire.RunResult(
+      cases: [],
+      stdout: "",
+      error: Some(wire.RunError("compile", Some(3), "syntax error before: ')'")),
+    ),
+    wire.run_result_to_json,
+    wire.run_result_decoder(),
+  )
+  round_trip(
+    wire.RunResult(
+      cases: [],
+      stdout: "",
+      error: Some(wire.RunError("run", None, "Timed out after 8 seconds.")),
+    ),
+    wire.run_result_to_json,
+    wire.run_result_decoder(),
+  )
+}

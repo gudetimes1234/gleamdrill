@@ -778,3 +778,101 @@ pub fn review_decoder() -> Decoder(Review) {
     practice:,
   ))
 }
+
+// --- server-side runs -------------------------------------------------------
+
+/// A request to run an attempt on the server. Only Elixir travels this way:
+/// every other language compiles in the browser, and the server has no
+/// business seeing that code. The harness is sent along with the solution
+/// because the server holds no catalogue -- and it is as untrusted as the
+/// solution anyway; the sandbox around the run is the boundary, not this.
+pub type RunRequest {
+  RunRequest(language: String, solution: String, harness: String)
+}
+
+/// One harness case: the label it prints under, the expected and actual
+/// values rendered the same way, and whether they agreed.
+pub type CaseResult {
+  CaseResult(label: String, expected: String, actual: String, passed: Bool)
+}
+
+/// Why a run produced no cases. `phase` is "compile", "run" or "internal" --
+/// the last for the runner's own failures, which are never the user's fault.
+pub type RunError {
+  RunError(phase: String, line: Option(Int), message: String)
+}
+
+/// What a server-side run reports back. Mirrors the shape the browser
+/// workers post, so the app folds both into the same state.
+pub type RunResult {
+  RunResult(cases: List(CaseResult), stdout: String, error: Option(RunError))
+}
+
+pub fn run_request_to_json(request: RunRequest) -> Json {
+  json.object([
+    #("language", json.string(request.language)),
+    #("solution", json.string(request.solution)),
+    #("harness", json.string(request.harness)),
+  ])
+}
+
+pub fn run_result_to_json(result: RunResult) -> Json {
+  json.object([
+    #("cases", json.array(result.cases, case_result_to_json)),
+    #("stdout", json.string(result.stdout)),
+    #("error", case result.error {
+      Some(error) -> run_error_to_json(error)
+      None -> json.null()
+    }),
+  ])
+}
+
+fn case_result_to_json(case_result: CaseResult) -> Json {
+  json.object([
+    #("label", json.string(case_result.label)),
+    #("expected", json.string(case_result.expected)),
+    #("actual", json.string(case_result.actual)),
+    #("passed", json.bool(case_result.passed)),
+  ])
+}
+
+fn run_error_to_json(error: RunError) -> Json {
+  json.object([
+    #("phase", json.string(error.phase)),
+    #("line", nullable_int(error.line)),
+    #("message", json.string(error.message)),
+  ])
+}
+
+pub fn run_request_decoder() -> Decoder(RunRequest) {
+  use language <- decode.field("language", decode.string)
+  use solution <- decode.field("solution", decode.string)
+  use harness <- decode.field("harness", decode.string)
+  decode.success(RunRequest(language:, solution:, harness:))
+}
+
+pub fn run_result_decoder() -> Decoder(RunResult) {
+  use cases <- decode.field("cases", decode.list(case_result_decoder()))
+  use stdout <- decode.optional_field("stdout", "", decode.string)
+  use error <- decode.optional_field(
+    "error",
+    None,
+    decode.optional(run_error_decoder()),
+  )
+  decode.success(RunResult(cases:, stdout:, error:))
+}
+
+pub fn case_result_decoder() -> Decoder(CaseResult) {
+  use label <- decode.field("label", decode.string)
+  use expected <- decode.field("expected", decode.string)
+  use actual <- decode.field("actual", decode.string)
+  use passed <- decode.field("passed", decode.bool)
+  decode.success(CaseResult(label:, expected:, actual:, passed:))
+}
+
+pub fn run_error_decoder() -> Decoder(RunError) {
+  use phase <- decode.field("phase", decode.string)
+  use line <- decode.optional_field("line", None, decode.optional(decode.int))
+  use message <- decode.field("message", decode.string)
+  decode.success(RunError(phase:, line:, message:))
+}

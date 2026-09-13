@@ -7,6 +7,7 @@
 import envoy
 import gleam/int
 import gleam/list
+import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 
@@ -30,6 +31,12 @@ pub type Config {
     allowed_origins: List(String),
     /// How long a session token stays valid without use.
     session_days: Int,
+    /// The user server-side runs execute as, via `doas -u`. Set in the
+    /// container (server/Dockerfile), where it is the whole point: an
+    /// attempt running as the API's own user could read the API's
+    /// environment -- this file's secrets -- out of /proc. Unset on a
+    /// developer machine, where attempts run as whoever started the server.
+    run_as_user: Option(String),
   )
 }
 
@@ -43,6 +50,10 @@ pub fn load() -> Result(Config, String) {
   use port <- result.try(int_with_default("PORT", 1637))
   let bind = envoy.get("BIND") |> result.unwrap("127.0.0.1")
   use session_days <- result.try(int_with_default("SESSION_DAYS", 30))
+  let run_as_user = case envoy.get("RUN_AS_USER") {
+    Ok("") | Error(_) -> None
+    Ok(user) -> Some(user)
+  }
 
   // A short secret would still sign cookies, just badly. Fail loudly instead.
   case string.length(secret_key_base) < 64 {
@@ -55,6 +66,7 @@ pub fn load() -> Result(Config, String) {
         secret_key_base:,
         allowed_origins:,
         session_days:,
+        run_as_user:,
       ))
   }
 }

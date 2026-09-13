@@ -440,15 +440,27 @@ fn tests_panel(m: Model) -> Element(Msg) {
 }
 
 fn run_bar(m: Model, current: Problem) -> Element(Msg) {
-  let run_control = case current.check {
-    None -> [
+  let run_control = case
+    current.check,
+    model.run_available(m, current.language)
+  {
+    None, _ -> [
       html.span([attribute.class("run-unavailable")], [
         html.text(
           "Checking isn't available for this drill \u{2014} compare with a solution.",
         ),
       ]),
     ]
-    Some(_) ->
+    // Elixir runs on the server, which needs a session: a guest keeps the
+    // flashcard experience every user had before Elixir could run at all.
+    Some(_), False -> [
+      html.span([attribute.class("run-unavailable")], [
+        html.text(
+          "Elixir runs on the server \u{2014} sign in to run this drill, or compare with a solution.",
+        ),
+      ]),
+    ]
+    Some(_), True ->
       case
         model.runtime_for(m, problem.language_slug(current.language)),
         m.run
@@ -533,7 +545,10 @@ fn grade_controls(m: Model, current: Problem) -> Element(Msg) {
 
 fn grade_buttons(m: Model, current: Problem) -> Element(Msg) {
   let free = case model.current_ref(m) {
-    Ok(ref) -> model.first_encounter(m, ref) || !problem.graded(current)
+    Ok(ref) ->
+      model.first_encounter(m, ref)
+      || !problem.graded(current)
+      || !model.run_available(m, current.language)
     Error(Nil) -> True
   }
   let forced =

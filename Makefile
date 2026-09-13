@@ -24,7 +24,9 @@ dev: vendor content worker
 dev-app:
 	gleam run -m lustre/dev start
 
-# Backend only — needs server/.env (see server/.env.example) and Postgres.
+# Backend only — needs server/.env (see server/.env.example) and Postgres, plus
+# `elixir` on PATH: Elixir drills run through the API (server/priv/run.exs),
+# here as your own user, in the container as a separate one (RUN_AS_USER).
 dev-api:
 	@[ -f server/.env ] || { echo "server/.env missing — copy server/.env.example and fill it in"; exit 1; }
 	cd server && set -a && . ./.env; set +a; gleam run
@@ -47,6 +49,7 @@ deploy: build
 # format gate. Drill sources live inside these files as string literals, which
 # the formatter does not touch, so the built bundle is unaffected.
 content:
+	cd drills/elixir && elixir surface.exs
 	cd drills && gleam run -m generate
 	gleam format \
 	  src/algodrill/problems/embedded.gleam \

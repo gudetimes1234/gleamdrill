@@ -1,0 +1,37 @@
+#!/bin/sh
+# Runs run.exs on one attempt directory with the process limits a hostile
+# solution has to live inside. The API invokes this through `timeout -s KILL`
+# (and, in the container, through `doas -u runner`), so the wall clock and the
+# uid are decided outside; this script owns memory, process count, file size
+# and CPU. See server/src/server/exec.gleam.
+#
+#   run-elixir <dir>
+
+set -eu
+dir="$1"
+here="$(cd "$(dirname "$0")" && pwd)"
+
+# Address space and CPU seconds. Deliberately no file-size limit: the VM
+# backs its memory carriers with memfd files, so RLIMIT_FSIZE kills it with
+# SIGXFSZ before it prints a byte. The address-space cap bounds those too,
+# and the runner user has nowhere to write but /tmp.
+ulimit -v 786432
+ulimit -t 10
+
+# The process cap is per uid, so it only makes sense for the dedicated user
+# the container runs attempts as (server/Dockerfile); on a developer's
+# machine it would count every process they own and refuse to fork.
+if [ "$(id -un)" = runner ]; then
+  ulimit -u 64
+fi
+
+# A home the runner user can neither read secrets from nor litter.
+export HOME=/tmp
+unset ERL_FLAGS ELIXIR_ERL_OPTIONS
+export ERL_CRASH_DUMP=/dev/null
+
+# One scheduler and one dirty scheduler of each kind, a small process table,
+# and a literal-area super carrier that fits under the address-space limit
+# above (the VM reserves 1 GB for it by default, and refuses to boot when it
+# cannot): this is one script, not a node.
+exec elixir --erl "+S 1 +SDcpu 1:1 +SDio 1 +P 4096 +MIscs 64 +MMscs 128" "$here/run.exs" "$dir"

@@ -4,10 +4,14 @@
 
 import fsrs
 import gleam/http
+import gleam/list
 import gleam/option.{None, Some}
+import gleam/string
 import gleeunit
 import gleeunit/should
 import server/auth
+import server/config
+import server/exec
 import server/study
 import server/web
 import wire
@@ -170,4 +174,118 @@ fn tally(days_ago: Int) -> study.DayTally {
 fn authorized(value: String) -> wisp.Request {
   simulate.request(http.Get, "/api/state")
   |> simulate.header("authorization", value)
+}
+
+// --- exec: server-side Elixir runs ------------------------------------------
+//
+// These need `elixir` on the PATH (CI installs it for the Argon2 NIF anyway)
+// and run attempts as the test's own user: config.run_as_user is None, the
+// way a developer machine runs them. The uid boundary is the container's and
+// is checked by hand there; what is checked here is that the report the
+// script prints comes back as the RunResult the app expects, in every shape.
+
+fn exec_config() -> config.Config {
+  config.Config(
+    port: 0,
+    bind: "127.0.0.1",
+    database_url: "",
+    secret_key_base: "",
+    allowed_origins: [],
+    session_days: 1,
+    run_as_user: None,
+  )
+}
+
+const harness = "[
+  {\"contains_duplicate?([1, 2, 3, 1])\", inspect(true), inspect(Solution.contains_duplicate?([1, 2, 3, 1]))},
+  {\"contains_duplicate?([1, 2, 3, 4])\", inspect(false), inspect(Solution.contains_duplicate?([1, 2, 3, 4]))}
+]"
+
+pub fn a_passing_attempt_reports_its_cases_test() {
+  let result =
+    exec.run_elixir(
+      exec_config(),
+      "defmodule Solution do
+  def contains_duplicate?(nums), do: MapSet.size(MapSet.new(nums)) != length(nums)
+end
+",
+      harness,
+    )
+  result.error |> should.equal(None)
+  result.stdout |> should.equal("")
+  result.cases
+  |> should.equal([
+    wire.CaseResult("contains_duplicate?([1, 2, 3, 1])", "true", "true", True),
+    wire.CaseResult("contains_duplicate?([1, 2, 3, 4])", "false", "false", True),
+  ])
+}
+
+pub fn a_failing_attempt_keeps_its_output_test() {
+  let result =
+    exec.run_elixir(
+      exec_config(),
+      "defmodule Solution do
+  def contains_duplicate?(nums) do
+    IO.puts(\"checking\")
+    length(nums) > 3
+  end
+end
+",
+      harness,
+    )
+  result.error |> should.equal(None)
+  result.stdout |> should.equal("checking\nchecking\n")
+  result.cases
+  |> list.map(fn(c) { c.passed })
+  |> should.equal([True, False])
+}
+
+pub fn a_syntax_error_is_a_compile_error_with_a_line_test() {
+  let result =
+    exec.run_elixir(
+      exec_config(),
+      "defmodule Solution do
+  def contains_duplicate?(nums) do
+    x =
+  end
+end
+",
+      harness,
+    )
+  result.cases |> should.equal([])
+  let assert Some(error) = result.error
+  error.phase |> should.equal("compile")
+  error.line |> should.equal(Some(4))
+}
+
+pub fn a_crash_is_a_run_error_test() {
+  let result =
+    exec.run_elixir(
+      exec_config(),
+      "defmodule Solution do
+  def contains_duplicate?(_nums), do: hd([])
+end
+",
+      harness,
+    )
+  result.cases |> should.equal([])
+  let assert Some(error) = result.error
+  error.phase |> should.equal("run")
+  string.contains(error.message, "not a nonempty list") |> should.be_true
+}
+
+pub fn an_infinite_loop_is_killed_and_reported_test() {
+  let result =
+    exec.run_elixir(
+      exec_config(),
+      "defmodule Solution do
+  def contains_duplicate?(_nums), do: Process.sleep(60_000)
+end
+",
+      harness,
+    )
+  result.cases |> should.equal([])
+  let assert Some(error) = result.error
+  error.phase |> should.equal("run")
+  string.contains(error.message, "Timed out") |> should.be_true
 }

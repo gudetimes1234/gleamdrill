@@ -186,6 +186,27 @@ pub fn fetch_state(
   )
 }
 
+/// Runs an attempt on the server. Only Elixir travels this way; see
+/// runner.is_remote. Every server-side refusal (busy, rate limited, session
+/// gone) arrives as an ApiError, never as a failed run: none of them is the
+/// attempt's fault, so none of them may cost a grade.
+pub fn post_run(
+  base: String,
+  token: String,
+  request: wire.RunRequest,
+  handler: fn(Result(wire.RunResult, ApiError)) -> message,
+) -> Effect(message) {
+  send(
+    base,
+    http.Post,
+    "/api/run",
+    Some(token),
+    Some(wire.run_request_to_json(request)),
+    wire.run_result_decoder(),
+    handler,
+  )
+}
+
 pub fn post_review(
   base: String,
   token: String,

@@ -3,6 +3,7 @@
 import gleam/http
 import gleam/json
 import server/routes/accounts
+import server/routes/run
 import server/routes/study
 import server/web.{type Context}
 import wisp
@@ -35,6 +36,7 @@ pub fn handle(request: wisp.Request, context: Context) -> wisp.Response {
     ["api", "insights"] -> study.insights(request, context)
     ["api", "history"] -> study.history(request, context)
     ["api", "import"] -> study.import_legacy(request, context)
+    ["api", "run"] -> run.run(request, context)
 
     _ -> web.error(404, "not_found", "No such endpoint.")
   }

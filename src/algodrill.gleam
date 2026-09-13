@@ -7,26 +7,27 @@ import algodrill/legacy
 import algodrill/local
 import algodrill/model.{
   type Model, type Msg, Account, AuthCompleted, AuthForm, AuthRoute,
-  AwaitingGrade, CardSuspended, DayStartHour, DesiredRetention, DraftSaveTicked,
-  DraftSynced, DrillRoute, EditorChanged, EditorFocusRequested, ExamSampled,
-  ExitConfirmed, Guest, HelpToggled, HistoryLoaded, InsightsLoaded, KeyPressed,
-  MenuActivated, MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
-  MenuSuspendedAtCursor, MenuToggledAtCursor, Model, NewPerDay, NotGrading,
-  NotStarted, PickerConfirmed, PickerRoute, PickerToggledLanguage,
-  PromptDismissed, QueueChanged, QueueCursorJumped, QueueCursorMoved, QueueRoute,
-  QueueToggledAtCursor, QuizMoved, Ran, Registering, ReportRoute, ReviewRecorded,
-  ReviewsPerDay, RunFinished, RunIdle, RunTimedOut, RunnerFailed, RunnerReady,
-  Running, RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded,
-  RuntimeReady, SearchFocusRequested, SettingsRoute, SettingsSaved,
-  SignOutCompleted, SigningIn, StateImported, StateLoaded, StatsActivated,
-  StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute, SubmittingGrade,
-  SummaryRoute, SyncFailed, Synced, Syncing, TimedOut, UserAddedAllShown,
-  UserChangedAuthEmail, UserChangedAuthPassword, UserChangedIterations,
-  UserChangedKeymap, UserChangedSetting, UserClickedBackToStudy,
-  UserClickedBreadcrumb, UserClickedBrowse, UserClickedCategory,
-  UserClickedClearSelection, UserClickedDeviceTimezone, UserClickedExitDrill,
-  UserClickedExitReport, UserClickedMergeGuest, UserClickedNext,
-  UserClickedQueue, UserClickedRetryRuntime, UserClickedRun,
+  AwaitingGrade, CardSuspended, CaseResult, Cases, DayStartHour,
+  DesiredRetention, DraftSaveTicked, DraftSynced, DrillRoute, EditorChanged,
+  EditorFocusRequested, Errored, ExamSampled, ExitConfirmed, Guest, HelpToggled,
+  HistoryLoaded, InsightsLoaded, KeyPressed, MenuActivated, MenuCursorJumped,
+  MenuCursorMoved, MenuPaneFocused, MenuRoute, MenuSuspendedAtCursor,
+  MenuToggledAtCursor, Model, NewPerDay, NotGrading, NotStarted, PickerConfirmed,
+  PickerRoute, PickerToggledLanguage, PromptDismissed, QueueChanged,
+  QueueCursorJumped, QueueCursorMoved, QueueRoute, QueueToggledAtCursor,
+  QuizMoved, Ran, Registering, RemoteRunFinished, ReportRoute, ReviewRecorded,
+  ReviewsPerDay, RunError, RunFinished, RunIdle, RunTimedOut, RunnerFailed,
+  RunnerReady, Running, RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading,
+  RuntimeNotLoaded, RuntimeReady, SearchFocusRequested, SettingsRoute,
+  SettingsSaved, SignOutCompleted, SigningIn, StateImported, StateLoaded,
+  StatsActivated, StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute,
+  SubmittingGrade, SummaryRoute, SyncFailed, Synced, Syncing, TimedOut,
+  UserAddedAllShown, UserChangedAuthEmail, UserChangedAuthPassword,
+  UserChangedIterations, UserChangedKeymap, UserChangedSetting,
+  UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
+  UserClickedCategory, UserClickedClearSelection, UserClickedDeviceTimezone,
+  UserClickedExitDrill, UserClickedExitReport, UserClickedMergeGuest,
+  UserClickedNext, UserClickedQueue, UserClickedRetryRuntime, UserClickedRun,
   UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
   UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
   UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
@@ -1476,6 +1477,17 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         Running(_, _) -> #(m, effect.none())
         _ ->
           case current_language(m), current_check(m) {
+            // Elixir runs on the server, and the server wants a session. The
+            // button is disabled for a guest; the keyboard lands here.
+            Ok("elixir"), Ok(_) if m.mode == Guest -> #(
+              Model(
+                ..m,
+                notice: Some(
+                  "Elixir drills run on the server \u{2014} sign in to run this one.",
+                ),
+              ),
+              effect.none(),
+            )
             Ok(language), Ok(check) ->
               case model.runtime_for(m, language) {
                 RuntimeReady -> {
@@ -1484,10 +1496,28 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                     Ran(_, stdout) -> stdout
                     _ -> ""
                   }
-                  #(
-                    Model(..m, run: Running(id, previous), next_run_id: id + 1),
-                    runner.run(language, id, m.draft, check.harness),
-                  )
+                  let started =
+                    Model(..m, run: Running(id, previous), next_run_id: id + 1)
+                  case runner.is_remote(language), m.mode {
+                    True, Account(token) -> #(
+                      started,
+                      effect.batch([
+                        api.post_run(
+                          api_base(),
+                          token,
+                          wire.RunRequest(language, m.draft, check.harness),
+                          RemoteRunFinished(id, _),
+                        ),
+                        runner.arm_remote_timeout(id),
+                      ]),
+                    )
+                    // Unreachable: the guest arm above catches it first.
+                    True, Guest -> #(m, effect.none())
+                    False, _ -> #(
+                      started,
+                      runner.run(language, id, m.draft, check.harness),
+                    )
+                  }
                 }
                 // The button is disabled in these states, but the keyboard
                 // paths land here too and silence reads as a broken key.
@@ -1555,13 +1585,44 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         _ -> #(m, effect.none())
       }
 
+    // The server answered, or the request failed. A failed request is not
+    // a failed run: the attempt never executed, so the run goes back to idle
+    // and the reason is shown as a notice, where a lost connection belongs.
+    RemoteRunFinished(id, result) ->
+      case m.run, result {
+        Running(current, _), Ok(wire.RunResult(cases, stdout, error))
+          if current == id
+        -> {
+          let outcome = case error {
+            None ->
+              Cases(
+                list.map(cases, fn(c) {
+                  CaseResult(c.label, c.expected, c.actual, c.passed)
+                }),
+              )
+            Some(wire.RunError(phase, line, message)) ->
+              Errored(RunError(phase, None, line, None, message))
+          }
+          handle(m, RunFinished(id, outcome, stdout))
+        }
+        Running(current, _), Error(api.Unauthorised) if current == id ->
+          handle(Model(..m, run: RunIdle), StateLoaded(Error(api.Unauthorised)))
+        Running(current, _), Error(failure) if current == id -> #(
+          Model(..m, run: RunIdle, notice: Some(api.error_message(failure))),
+          effect.none(),
+        )
+        _, _ -> #(m, effect.none())
+      }
+
     RunTimedOut(id) ->
       case m.run {
         Running(current, _) if current == id -> {
           let timed_out =
             Model(..m, run: Ran(TimedOut, ""), grading: AwaitingGrade)
-          // The worker cannot be interrupted, only replaced.
+          // The worker cannot be interrupted, only replaced. A server-side
+          // run has no worker: the server has already killed it.
           case current_language(m) {
+            Ok("elixir") -> #(timed_out, effect.none())
             Ok(language) -> #(
               Model(
                 ..timed_out,
@@ -1724,7 +1785,7 @@ fn open_first(m: Model, queue: List(ProblemRef)) -> Model {
 /// encounter — the learning step, where you reveal, study, and self-grade like
 /// flipping a card. Otherwise a run is required before grading.
 fn initial_grading(m: Model, ref: ProblemRef) -> model.Grading {
-  case problem_kind(ref) {
+  case problem_kind(m, ref) {
     // Quizzes grade themselves on submit.
     QuizProblem -> NotGrading
     CheckableProblem ->
@@ -1742,15 +1803,20 @@ type ProblemKind {
   RevealOnlyProblem
 }
 
-fn problem_kind(ref: ProblemRef) -> ProblemKind {
+fn problem_kind(m: Model, ref: ProblemRef) -> ProblemKind {
   case problems.find(ref.category, ref.subcategory, ref.title) {
     Ok(found) ->
       case found.check, found.quiz {
         _, Some(_) -> QuizProblem
         // A read-and-run card (Check present, graded: False) is gradeable
-        // from the moment it opens, like a reveal-only one.
-        Some(check), None if check.graded -> CheckableProblem
-        _, None -> RevealOnlyProblem
+        // from the moment it opens, like a reveal-only one -- and so is a
+        // check this browser cannot run (Elixir, signed out).
+        Some(check), None ->
+          case check.graded && model.run_available(m, found.language) {
+            True -> CheckableProblem
+            False -> RevealOnlyProblem
+          }
+        None, None -> RevealOnlyProblem
       }
     Error(Nil) -> RevealOnlyProblem
   }
@@ -1806,6 +1872,9 @@ fn handle_key(m: Model, key: model.Key) -> #(Model, Effect(Msg)) {
 
 fn abandon_run(m: Model) -> #(Model, Effect(Msg)) {
   case m.run, current_language(m) {
+    // Nothing to restart for a server-side run; its late answer is ignored
+    // by the id guard.
+    Running(_, _), Ok("elixir") -> #(Model(..m, run: RunIdle), effect.none())
     Running(_, _), Ok(language) -> #(
       Model(
         ..m,

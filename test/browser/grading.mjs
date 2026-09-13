@@ -177,6 +177,37 @@ await page.waitForSelector(".study-screen", { timeout: 15000 });
 const counts = await page.$$eval(".study-count-value", (n) => n.map((e) => e.textContent));
 check("both reviews were recorded", counts[2] === "2", `reviews done = ${counts[2]}`);
 
+console.log("== Elixir runs on the server for a signed-in user");
+// No browser compiles Elixir; the API does, in a sandboxed subprocess, and
+// the app grades the answer exactly as it grades a worker's.
+await page.click("text=Browse problems");
+await page.waitForSelector(".menu-container", { timeout: 10000 });
+await page.click('.pane-item:text-is("Elixir")');
+await page.waitForTimeout(300);
+await page.click('.pane-item:text-is("Arrays & Hashing")');
+await page.waitForTimeout(300);
+await page.click('.pane-item:text-is("Contains Duplicate")');
+await page.waitForTimeout(300);
+await page.click("#startDrill");
+await page.waitForSelector(".run-bar", { timeout: 20000 });
+check("the Elixir starter is a module of todo stubs",
+  (await page.$eval("gleam-editor", (el) => el.doc)).includes('raise "todo"'));
+check("an Elixir first encounter grades freely before any run",
+  JSON.stringify(await labels()) === ALL_FOUR, JSON.stringify(await labels()));
+await runTests();
+check("running the stub is a crash, reported as one",
+  (await page.textContent(".results-summary")).includes("crashed"));
+await typeSolution("defmodule Solution do\n  def contains_duplicate?(nums) do\n    IO.puts(\"checking\")\n    MapSet.size(MapSet.new(nums)) != length(nums)\n  end\nend\n");
+await runTests();
+check("a correct Elixir solution passes every case on the server",
+  (await page.$$(".case.pass")).length === 4 && (await page.$$(".case.fail")).length === 0,
+  `${(await page.$$(".case.pass")).length} passed`);
+check("what the attempt printed comes back with it",
+  (await page.textContent(".output-pane")).includes("checking"));
+await page.goto(APP, { waitUntil: "networkidle" });
+await answerPickerIfShown();
+await page.waitForSelector(".study-screen", { timeout: 15000 });
+
 console.log("== the study queue keeps the honesty rule");
 // Sign out to guest and seed one card due in the past, so Study now serves a
 // LATER review through the scheduled path (the only place coercion applies).

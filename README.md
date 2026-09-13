@@ -27,8 +27,8 @@ problem shows all four grades from the moment it opens — revealing the
 solution is how you learn something new, exactly like flipping a fresh Anki
 card. From the second scheduled review on, a run is required, and a failed
 harness or a revealed solution forces Again (enforced server-side; the log
-records the truth either way). A reveal-only drill has nothing to run, so it
-grades freely every time. Study reps always start from the starter stub —
+records the truth either way). A drill this browser cannot run — an Elixir
+drill as a guest — has nothing to run, so it grades freely every time. Study reps always start from the starter stub —
 your last answer is never sitting in the editor.
 
 **Progress is measured against the promise.** The stats screen leads with the
@@ -101,15 +101,19 @@ Built in [Gleam](https://gleam.run) end to end: a [Lustre](https://lustre.build)
 app on the JavaScript target with a CodeMirror 6 editor, a
 [Wisp](https://gleam-wisp.github.io/wisp/) backend on the Erlang target, and the
 scheduler shared between them as one target-agnostic package. Drill execution is
-still entirely client-side:
+client-side for three of the four languages:
 
 - **Gleam** drills compile with the official Gleam compiler (wasm) in a worker
 - **Python** drills run under Brython in a worker
 - **TypeScript** drills transpile with Sucrase and execute in a worker
-- **Elixir** drills are reveal-only: no browser can compile Elixir *source*
-  (Popcorn and AtomVM run precompiled BEAM bytecode), so there is nothing to
-  hand a typed-in solution to. They are still verified natively in the repo, so
-  the code you compare against is code that has been run.
+- **Elixir** drills run on the server. No browser can compile Elixir *source*
+  (Popcorn and AtomVM run precompiled BEAM bytecode), so a signed-in user's
+  attempt is posted to `/api/run`, where the API runs it in a fresh, short-lived
+  Elixir VM as a separate unprivileged user, under `timeout -s KILL` and
+  resource limits, and reports the same cases and output a worker would
+  (`server/src/server/exec.gleam`, `server/priv/run.exs`). Runs are
+  rate-limited per user and capped node-wide. A guest gets the reveal-only
+  flashcard instead, with free grading, since the server wants a session.
 
 It works on a phone: the layout collapses to one column, the side panels scroll
 in place so the editor is always on the first screen, the run bar sticks to the
@@ -129,7 +133,7 @@ practice.
 | NeetCode 150 | Python | 150 | 309 | yes |
 | NeetCode 150 (Gleam) | Gleam | 150 | 301 | yes |
 | NeetCode 150 (TypeScript) | TypeScript | 150 | 302 | yes |
-| NeetCode 150 (Elixir) | Elixir | 150 | 302 | no — reveal-only |
+| NeetCode 150 (Elixir) | Elixir | 150 | 302 | yes — on the server |
 | Gleam Language Tour | Gleam | 63 | — | runs, ungraded |
 | Python Tips / Idioms | Python | 8 | 16 | yes |
 | Gleam Tips / Idioms | Gleam | 10 | 20 | yes |

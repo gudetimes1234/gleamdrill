@@ -15,17 +15,32 @@ proof of concept helps but is not required to file.
 In scope: the backend under `server/`, the session and account handling it
 does, and anything in the app that could expose another user's data.
 
+**Very much in scope: the Elixir runner.** `POST /api/run` executes code a
+signed-in user typed, on the server, in a subprocess (`server/priv/run.exs`,
+launched by `server/src/server/exec.gleam`). The boundary is that the attempt
+runs as a different Unix user from the API (`runner`, via `doas`; see
+`server/Dockerfile`), with a kill timer and resource limits
+(`server/priv/run-elixir`), so it cannot read the API's environment or
+outlive its eight seconds. Anything that lets an attempt read another user's
+data, the API's secrets, or the host beyond `/tmp/algodrill-run`, or that
+evades the per-user and node-wide caps, is a vulnerability.
+
 Out of scope, by design:
 
-- **Drill code executes in the visitor's own browser.** The Gleam wasm
-  compiler, Brython and Sucrase all run arbitrary code the visitor typed, in a
-  worker, on their own machine. That is the product, not a sandbox escape.
+- **Gleam, Python and TypeScript drill code executes in the visitor's own
+  browser.** The Gleam wasm compiler, Brython and Sucrase all run arbitrary
+  code the visitor typed, in a worker, on their own machine. That is the
+  product, not a sandbox escape.
+- **An attempt spending its own budget.** Elixir attempts may burn their
+  eight seconds and their memory cap however they like; that is what the cap
+  is for.
 - **The session token lives in `localStorage`.** A deliberate trade, documented
   at `src/algodrill/session.gleam`.
 - **Guest progress is unencrypted in `localStorage`.** Guest mode is explicitly
   browser-local; the app says so on every screen.
-- Missing rate limits anywhere other than authentication. Login and signup are
-  throttled per-IP and per-email (`server/src/server/auth.gleam`).
+- Missing rate limits anywhere other than authentication and `/api/run`.
+  Login and signup are throttled per-IP and per-email, runs per user
+  (`server/src/server/auth.gleam`).
 
 ## Supported versions
 

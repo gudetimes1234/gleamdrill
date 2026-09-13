@@ -7,6 +7,7 @@ import mist
 import server/config
 import server/db
 import server/router
+import server/run_gate
 import server/web
 import wisp
 import wisp/wisp_mist
@@ -30,6 +31,7 @@ fn start() -> Result(Nil, String) {
   // always what this build expects. It would need rethinking before running
   // more than one instance at a time.
   use _ <- result.try(db.migrate(database))
+  run_gate.init()
 
   let context = web.Context(db: database, config: config)
   let handler = fn(request) { router.handle(request, context) }

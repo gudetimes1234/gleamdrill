@@ -29,10 +29,21 @@ const run_timeout_ms = 8000
 /// fetch or init is presumed dead and the user is offered a Retry.
 const load_timeout_ms = 30_000
 
+/// Languages with no browser runtime at all: the run is an HTTP request to
+/// the server instead (api.post_run), and "the runtime" is ready the moment
+/// it is asked for. Only Elixir today; see problem.Check.
+pub fn is_remote(language: String) -> Bool {
+  language == "elixir"
+}
+
+/// How long the app waits on a server-side run before calling it lost. The
+/// server kills an attempt after eight seconds and answers; this is only for
+/// a request that never comes back at all.
+pub const remote_timeout_ms = 20_000
+
 /// The Python worker is classic (Brython needs importScripts); the others are
-/// module workers. Explicit arms: routing an unknown language (elixir,
-/// concept) to the Gleam worker by default was a trap waiting for a check to
-/// be added.
+/// module workers. Explicit arms: routing an unknown language (concept) to the
+/// Gleam worker by default was a trap waiting for a check to be added.
 fn worker_config(language: String) -> Result(#(String, Bool), Nil) {
   case language {
     "gleam" -> Ok(#("/gleam-worker.js?v=" <> gleam_version, True))
@@ -46,8 +57,9 @@ fn worker_config(language: String) -> Result(#(String, Bool), Nil) {
 /// repeatedly.
 pub fn ensure(language: String) -> Effect(Msg) {
   effect.from(fn(dispatch) {
-    case worker_config(language) {
-      Ok(#(url, is_module)) -> {
+    case is_remote(language), worker_config(language) {
+      True, _ -> dispatch(RunnerReady(language))
+      False, Ok(#(url, is_module)) -> {
         ffi_spawn(
           language,
           url,
@@ -59,7 +71,7 @@ pub fn ensure(language: String) -> Effect(Msg) {
           dispatch(RuntimeLoadTimedOut(language))
         })
       }
-      Error(Nil) ->
+      False, Error(Nil) ->
         dispatch(RunnerFailed(language, "No runtime exists for this language."))
     }
   })
@@ -68,8 +80,9 @@ pub fn ensure(language: String) -> Effect(Msg) {
 /// Terminate a hung worker and boot a fresh one.
 pub fn restart(language: String) -> Effect(Msg) {
   effect.from(fn(dispatch) {
-    case worker_config(language) {
-      Ok(#(url, is_module)) -> {
+    case is_remote(language), worker_config(language) {
+      True, _ -> dispatch(RunnerReady(language))
+      False, Ok(#(url, is_module)) -> {
         ffi_restart(
           language,
           url,
@@ -81,9 +94,17 @@ pub fn restart(language: String) -> Effect(Msg) {
           dispatch(RuntimeLoadTimedOut(language))
         })
       }
-      Error(Nil) ->
+      False, Error(Nil) ->
         dispatch(RunnerFailed(language, "No runtime exists for this language."))
     }
+  })
+}
+
+/// The timeout for a run that happens elsewhere (the server); the request
+/// itself is api.post_run. Stale ids are ignored exactly as for workers.
+pub fn arm_remote_timeout(id: Int) -> Effect(Msg) {
+  effect.from(fn(dispatch) {
+    ffi_after(remote_timeout_ms, fn() { dispatch(RunTimedOut(id)) })
   })
 }
 

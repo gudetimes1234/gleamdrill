@@ -247,10 +247,21 @@ fn find_credentials(
 
 // --- throttling ------------------------------------------------------------
 
-/// Records one attempt against `key` and fails if the window is exhausted.
-/// The increment and the check are one statement, so concurrent attempts
-/// cannot slip past the limit.
 fn record_attempt(db: pog.Connection, key: String) -> Result(Nil, AuthError) {
+  throttle(db, key, attempt_window_minutes, max_attempts)
+}
+
+/// Records one attempt against `key` and fails with `TooManyAttempts` once
+/// more than `max_attempts` have landed inside a `window_minutes` window.
+/// The increment and the check are one statement, so concurrent attempts
+/// cannot slip past the limit. Sign-in uses it per address and per email;
+/// server-side runs use it per user.
+pub fn throttle(
+  db: pog.Connection,
+  key: String,
+  window_minutes: Int,
+  max_attempts: Int,
+) -> Result(Nil, AuthError) {
   pog.query(
     "insert into login_attempts (key, attempts, window_start)
      values ($1, 1, now())
@@ -264,7 +275,7 @@ fn record_attempt(db: pog.Connection, key: String) -> Result(Nil, AuthError) {
      returning attempts",
   )
   |> pog.parameter(pog.text(key))
-  |> pog.parameter(pog.int(attempt_window_minutes))
+  |> pog.parameter(pog.int(window_minutes))
   |> pog.returning({
     use attempts <- decode.field(0, decode.int)
     decode.success(attempts)

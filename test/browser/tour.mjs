@@ -752,7 +752,7 @@ const languages = [
    "import gleam/list\nimport gleam/set\n\npub fn contains_duplicate(nums: List(Int)) -> Bool {\n  set.size(set.from_list(nums)) != list.length(nums)\n}", true],
   ["TypeScript", "Arrays & Hashing", "Contains Duplicate",
    "export function containsDuplicate(nums: number[]): boolean {\n  return new Set(nums).size !== nums.length;\n}", true],
-  ["Elixir", "Arrays & Hashing", "Contains Duplicate", null, false],
+  ["Elixir", "Arrays & Hashing", "Contains Duplicate", null, false], // guest: see grading.mjs
   // The language tour: the editor opens on the lesson's program, so no code
   // is typed; a run prints and every grade stays on offer.
   ["Gleam Tour", "Basics", "Hello world", null, "tour"],
@@ -794,11 +794,12 @@ for (const [language, subcategory, title, code, runnable] of languages) {
     check(`${language} runs and passes`,
       JSON.stringify(labels) === ALL_FOUR, JSON.stringify(labels));
   } else {
-    // Elixir ships no harness: nothing in a browser compiles Elixir source.
-    check(`${language} says checking is unavailable`,
-      (await page.textContent(".run-unavailable")).length > 0);
-    // A drill with no harness must still be gradeable, or it is a dead end
-    // that can never enter the schedule.
+    // Elixir runs on the server, which a guest cannot ask: nothing in a
+    // browser compiles Elixir source. The signed-in run is in grading.mjs.
+    check(`${language} tells a guest to sign in to run`,
+      (await page.textContent(".run-unavailable")).includes("sign in"));
+    // A drill a guest cannot run must still be gradeable, or it is a dead
+    // end that can never enter the schedule.
     check(`${language} is a flashcard proper: all four grades, no run`,
       (await page.$$(".grade-button")).length === 4,
       `${(await page.$$(".grade-button")).length} buttons`);
