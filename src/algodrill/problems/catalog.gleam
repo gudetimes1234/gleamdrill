@@ -853,6 +853,7 @@ fn build(
   use #(solutions, check) <- result.map(lookup(drill.stem))
   Problem(
     title: drill.title,
+    prompt_html: False,
     prompt: drill.prompt,
     approach: approaches.for_title(drill.title),
     solutions: list.map(solutions, fn(s) {

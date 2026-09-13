@@ -217,16 +217,9 @@ fn due_on(m: Model, offset: Int) -> Int {
 /// One chip per language: pressed = in today's queue, muted = excluded. A
 /// mood dial, not schedule state — flipping a chip never touches a card.
 fn language_chips(m: Model) -> Element(Msg) {
-  let languages = [
-    #("py", "Python"),
-    #("gl", "Gleam"),
-    #("ts", "TypeScript"),
-    #("ex", "Elixir"),
-    #("sd", "System Design"),
-  ]
   html.div(
     [attribute.class("language-chips")],
-    list.map(languages, fn(entry) {
+    list.map(problems.language_options(), fn(entry) {
       let #(tag, label) = entry
       let muted = model.language_muted(m, tag)
       html.button(

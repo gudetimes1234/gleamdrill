@@ -69,6 +69,7 @@ def __case__(label, expected, actual):
 __case__(\"containsDuplicate([1, 2, 3, 1])\", True, containsDuplicate([1, 2, 3, 1]))
 __case__(\"containsDuplicate([1, 2, 3, 4])\", False, containsDuplicate([1, 2, 3, 4]))
 __case__(\"containsDuplicate([])\", False, containsDuplicate([]))",
+      graded: True,
     ),
   )
 }
@@ -133,6 +134,7 @@ __case__(\"isAnagram('anagram', 'nagaram')\", True, isAnagram(\"anagram\", \"nag
 __case__(\"isAnagram('rat', 'car')\", False, isAnagram(\"rat\", \"car\"))
 __case__(\"isAnagram('', '')\", True, isAnagram(\"\", \"\"))
 __case__(\"isAnagram('a', 'ab')\", False, isAnagram(\"a\", \"ab\"))",
+      graded: True,
     ),
   )
 }
@@ -205,6 +207,7 @@ __case__(\"twoSum([2, 7, 11, 15], 9)\", [0, 1], twoSum([2, 7, 11, 15], 9))
 __case__(\"twoSum([3, 2, 4], 6)\", [1, 2], twoSum([3, 2, 4], 6))
 __case__(\"twoSum([3, 3], 6)\", [0, 1], twoSum([3, 3], 6))
 __case__(\"twoSum([1, 2], 7)\", [], twoSum([1, 2], 7))",
+      graded: True,
     ),
   )
 }
@@ -261,6 +264,7 @@ __normalised__ = sorted(sorted(group) for group in groupAnagrams([\"eat\", \"tea
 __case__(\"groupAnagrams(['eat','tea','tan','ate','nat','bat'])\", [[\"ate\", \"eat\", \"tea\"], [\"bat\"], [\"nat\", \"tan\"]], __normalised__)
 __case__(\"groupAnagrams([])\", [], sorted(groupAnagrams([])))
 __case__(\"groupAnagrams(['a'])\", [[\"a\"]], sorted(groupAnagrams([\"a\"])))",
+      graded: True,
     ),
   )
 }
@@ -330,6 +334,7 @@ def __case__(label, expected, actual):
 __case__(\"topKFrequent([1, 1, 1, 2, 2, 3], 2)\", [1, 2], topKFrequent([1, 1, 1, 2, 2, 3], 2))
 __case__(\"topKFrequent([1], 1)\", [1], topKFrequent([1], 1))
 __case__(\"topKFrequent([5, 5, 4, 4, 4, 3], 1)\", [4], topKFrequent([5, 5, 4, 4, 4, 3], 1))",
+      graded: True,
     ),
   )
 }
@@ -390,6 +395,7 @@ def __case__(label, expected, actual):
 __case__(\"productExceptSelf([1, 2, 3, 4])\", [24, 12, 8, 6], productExceptSelf([1, 2, 3, 4]))
 __case__(\"productExceptSelf([-1, 1, 0, -3, 3])\", [0, 0, 9, 0, 0], productExceptSelf([-1, 1, 0, -3, 3]))
 __case__(\"productExceptSelf([2, 3])\", [3, 2], productExceptSelf([2, 3]))",
+      graded: True,
     ),
   )
 }
@@ -458,6 +464,7 @@ def __case__(label, expected, actual):
 __case__(\"longestConsecutive([100, 4, 200, 1, 3, 2])\", 4, longestConsecutive([100, 4, 200, 1, 3, 2]))
 __case__(\"longestConsecutive([0, 3, 7, 2, 5, 8, 4, 6, 0, 1])\", 9, longestConsecutive([0, 3, 7, 2, 5, 8, 4, 6, 0, 1]))
 __case__(\"longestConsecutive([])\", 0, longestConsecutive([]))",
+      graded: True,
     ),
   )
 }
@@ -512,6 +519,7 @@ __case__(\"isPalindrome('A man, a plan, a canal: Panama')\", True, isPalindrome(
 __case__(\"isPalindrome('race a car')\", False, isPalindrome(\"race a car\"))
 __case__(\"isPalindrome(' ')\", True, isPalindrome(\" \"))
 __case__(\"isPalindrome('0P')\", False, isPalindrome(\"0P\"))",
+      graded: True,
     ),
   )
 }
@@ -577,6 +585,7 @@ __case__(\"twoSum([2, 7, 11, 15], 9)\", [1, 2], twoSum([2, 7, 11, 15], 9))
 __case__(\"twoSum([2, 3, 4], 6)\", [1, 3], twoSum([2, 3, 4], 6))
 __case__(\"twoSum([-1, 0], -1)\", [1, 2], twoSum([-1, 0], -1))
 __case__(\"twoSum([1, 2, 3], 100)\", [], twoSum([1, 2, 3], 100))",
+      graded: True,
     ),
   )
 }
@@ -648,6 +657,7 @@ __case__(\"minDistance('', 'abc')\", 3, minDistance('', 'abc'))
 __case__(\"minDistance('abc', '')\", 3, minDistance('abc', ''))
 __case__(\"minDistance('abc', 'abc')\", 0, minDistance('abc', 'abc'))
 __case__(\"minDistance('kitten', 'sitting')\", 3, minDistance('kitten', 'sitting'))",
+      graded: True,
     ),
   )
 }
@@ -728,6 +738,7 @@ __case__(\"maxCoins([1, 5])\", 10, maxCoins([1, 5]))
 __case__(\"maxCoins([])\", 0, maxCoins([]))
 __case__(\"maxCoins([5])\", 5, maxCoins([5]))
 __case__(\"maxCoins([1, 2, 3, 4])\", 40, maxCoins([1, 2, 3, 4]))",
+      graded: True,
     ),
   )
 }
@@ -800,6 +811,7 @@ __case__(\"isMatch('mississippi', 'mis*is*p*.')\", False, isMatch('mississippi',
 __case__(\"isMatch('', '.*')\", True, isMatch('', '.*'))
 __case__(\"isMatch('', '')\", True, isMatch('', ''))
 __case__(\"isMatch('abc', 'abc')\", True, isMatch('abc', 'abc'))",
+      graded: True,
     ),
   )
 }
@@ -907,6 +919,7 @@ __case__(\"search('app') after inserting it too\", True, __t__.search(\"app\"))
 __case__(\"startsWith('apz')\", False, __t__.startsWith(\"apz\"))
 __case__(\"search('') on an empty trie\", False, Trie().search(\"\"))
 __case__(\"startsWith('') on an empty trie\", True, Trie().startsWith(\"\"))",
+      graded: True,
     ),
   )
 }
@@ -996,6 +1009,7 @@ __case__(\"search('b..')\", True, __d__.search(\"b..\"))
 __case__(\"search('...')\", True, __d__.search(\"...\"))
 __case__(\"search('b') -- too short\", False, __d__.search(\"b\"))
 __case__(\"search('....') -- too long\", False, __d__.search(\"....\"))",
+      graded: True,
     ),
   )
 }
@@ -1098,6 +1112,7 @@ __case__(\"findWords([['a','b'],['c','d']], ['abcb'])\", [], sorted(findWords([[
 __case__(\"findWords([['a']], ['a'])\", [\"a\"], sorted(findWords([[\"a\"]], [\"a\"])))
 __case__(\"findWords(board, [])\", [], sorted(findWords(__board__, [])))
 __case__(\"findWords([], ['a'])\", [], sorted(findWords([], [\"a\"])))",
+      graded: True,
     ),
   )
 }
@@ -1194,6 +1209,7 @@ __case__(\"numIslands(three islands)\", 3, numIslands(__board__([\"11000\", \"11
 __case__(\"numIslands(all water)\", 0, numIslands(__board__([\"000\", \"000\"])))
 __case__(\"numIslands([])\", 0, numIslands([]))
 __case__(\"numIslands(diagonal squares are separate)\", 2, numIslands(__board__([\"10\", \"01\"])))",
+      graded: True,
     ),
   )
 }
@@ -1291,6 +1307,7 @@ __case__(\"cloneGraph([[]], 0)\", [[]], cloneGraph([[]], 0))
 __case__(\"cloneGraph([], 0)\", [], cloneGraph([], 0))
 __case__(\"cloneGraph([[1],[0],[3],[2]], 2) -- renumbered\", [[1], [0]], cloneGraph([[1], [0], [3], [2]], 2))
 __case__(\"cloneGraph([[],[]], 1) -- only the reachable part\", [[]], cloneGraph([[], []], 1))",
+      graded: True,
     ),
   )
 }
@@ -1389,6 +1406,7 @@ __case__(\"maxAreaOfIsland([[0,0],[0,0]])\", 0, maxAreaOfIsland([[0, 0], [0, 0]]
 __case__(\"maxAreaOfIsland([])\", 0, maxAreaOfIsland([]))
 __case__(\"maxAreaOfIsland([[1]])\", 1, maxAreaOfIsland([[1]]))
 __case__(\"maxAreaOfIsland([[1,1,1],[1,1,1]])\", 6, maxAreaOfIsland([[1, 1, 1], [1, 1, 1]]))",
+      graded: True,
     ),
   )
 }
@@ -1493,6 +1511,7 @@ __case__(\"pacificAtlantic(the 5x5 example)\", [(0, 4), (1, 3), (1, 4), (2, 2), 
 __case__(\"pacificAtlantic([[1]])\", [(0, 0)], sorted(tuple(p) for p in pacificAtlantic([[1]])))
 __case__(\"pacificAtlantic([])\", [], sorted(tuple(p) for p in pacificAtlantic([])))
 __case__(\"pacificAtlantic([[1,1],[1,1]])\", [(0, 0), (0, 1), (1, 0), (1, 1)], sorted(tuple(p) for p in pacificAtlantic([[1, 1], [1, 1]])))",
+      graded: True,
     ),
   )
 }
@@ -1563,6 +1582,7 @@ def __case__(label, expected, actual):
 __case__(\"threeSum([-1, 0, 1, 2, -1, -4])\", [[-1, -1, 2], [-1, 0, 1]], threeSum([-1, 0, 1, 2, -1, -4]))
 __case__(\"threeSum([0, 1, 1])\", [], threeSum([0, 1, 1]))
 __case__(\"threeSum([0, 0, 0])\", [[0, 0, 0]], threeSum([0, 0, 0]))",
+      graded: True,
     ),
   )
 }
@@ -1671,6 +1691,7 @@ __case__(\"solve([['X']])\", [\"X\"], __shown__([\"X\"]))
 __case__(\"solve([['O']]) -- on the border, so it survives\", [\"O\"], __shown__([\"O\"]))
 __case__(\"solve([])\", [], __shown__([]))
 __case__(\"solve(a region reaching the border)\", [\"XOX\", \"XOX\", \"XXX\"], __shown__([\"XOX\", \"XOX\", \"XXX\"]))",
+      graded: True,
     ),
   )
 }
@@ -1772,6 +1793,7 @@ __case__(\"orangesRotting([[0,2]])\", 0, orangesRotting([[0, 2]]))
 __case__(\"orangesRotting([])\", 0, orangesRotting([]))
 __case__(\"orangesRotting([[1]])\", -1, orangesRotting([[1]]))
 __case__(\"orangesRotting([[0]])\", 0, orangesRotting([[0]]))",
+      graded: True,
     ),
   )
 }
@@ -1875,6 +1897,7 @@ __case__(\"wallsAndGates([[0]])\", [[0]], wallsAndGates([[0]]))
 __case__(\"wallsAndGates([[-1]])\", [[-1]], wallsAndGates([[-1]]))
 __case__(\"wallsAndGates([])\", [], wallsAndGates([]))
 __case__(\"wallsAndGates(no gate at all)\", [[__inf__, __inf__]], wallsAndGates([[__inf__, __inf__]]))",
+      graded: True,
     ),
   )
 }
@@ -1965,6 +1988,7 @@ __case__(\"canFinish(1, [])\", True, canFinish(1, []))
 __case__(\"canFinish(0, [])\", True, canFinish(0, []))
 __case__(\"canFinish(4, [[1,0],[2,1],[3,2]])\", True, canFinish(4, [[1, 0], [2, 1], [3, 2]]))
 __case__(\"canFinish(3, [[0,1],[1,2],[2,0]])\", False, canFinish(3, [[0, 1], [1, 2], [2, 0]]))",
+      graded: True,
     ),
   )
 }
@@ -2069,6 +2093,7 @@ __case__(\"findOrder(1, []) is a valid order\", True, __valid__(1, []))
 __case__(\"findOrder(3, []) is a valid order\", True, __valid__(3, []))
 __case__(\"findOrder(2, [[0,1],[1,0]]) -- a cycle, so no order\", [], findOrder(2, [[0, 1], [1, 0]]))
 __case__(\"findOrder(0, [])\", [], findOrder(0, []))",
+      graded: True,
     ),
   )
 }
@@ -2163,6 +2188,7 @@ def __case__(label, expected, actual):
 __case__(\"findRedundantConnection([[1,2],[1,3],[2,3]])\", [2, 3], list(findRedundantConnection([(1, 2), (1, 3), (2, 3)])))
 __case__(\"findRedundantConnection([[1,2],[2,3],[3,4],[1,4],[1,5]])\", [1, 4], list(findRedundantConnection([(1, 2), (2, 3), (3, 4), (1, 4), (1, 5)])))
 __case__(\"findRedundantConnection([[1,2],[2,1]])\", [2, 1], list(findRedundantConnection([(1, 2), (2, 1)])))",
+      graded: True,
     ),
   )
 }
@@ -2245,6 +2271,7 @@ __case__(\"countComponents(3, [])\", 3, countComponents(3, []))
 __case__(\"countComponents(0, [])\", 0, countComponents(0, []))
 __case__(\"countComponents(1, [])\", 1, countComponents(1, []))
 __case__(\"countComponents(4, [[0,1],[1,0]])\", 3, countComponents(4, [[0, 1], [1, 0]]))",
+      graded: True,
     ),
   )
 }
@@ -2333,6 +2360,7 @@ __case__(\"validTree(1, [])\", True, validTree(1, []))
 __case__(\"validTree(0, [])\", True, validTree(0, []))
 __case__(\"validTree(2, []) -- disconnected\", False, validTree(2, []))
 __case__(\"validTree(4, [[0,1],[2,3]]) -- two trees\", False, validTree(4, [[0, 1], [2, 3]]))",
+      graded: True,
     ),
   )
 }
@@ -2436,6 +2464,7 @@ __case__(\"ladderLength('hit','cog', without cog)\", 0, ladderLength(\"hit\", \"
 __case__(\"ladderLength('a','c', ['a','b','c'])\", 2, ladderLength(\"a\", \"c\", [\"a\", \"b\", \"c\"]))
 __case__(\"ladderLength('hit','hit', ['hit'])\", 1, ladderLength(\"hit\", \"hit\", [\"hit\"]))
 __case__(\"ladderLength('hot','dog', ['hot','dog']) -- no bridge\", 0, ladderLength(\"hot\", \"dog\", [\"hot\", \"dog\"]))",
+      graded: True,
     ),
   )
 }
@@ -2520,6 +2549,7 @@ __case__(\"findItinerary(MUC/LHR/SFO/SJC chain)\", [\"JFK\", \"MUC\", \"LHR\", \
 __case__(\"findItinerary(two ways out of JFK -- smallest first)\", [\"JFK\", \"ATL\", \"JFK\", \"SFO\", \"ATL\", \"SFO\"], findItinerary([[\"JFK\", \"SFO\"], [\"JFK\", \"ATL\"], [\"SFO\", \"ATL\"], [\"ATL\", \"JFK\"], [\"ATL\", \"SFO\"]]))
 __case__(\"findItinerary(KUL is a dead end, so it must come last)\", [\"JFK\", \"NRT\", \"JFK\", \"KUL\"], findItinerary([[\"JFK\", \"KUL\"], [\"JFK\", \"NRT\"], [\"NRT\", \"JFK\"]]))
 __case__(\"findItinerary([])\", [\"JFK\"], findItinerary([]))",
+      graded: True,
     ),
   )
 }
@@ -2575,6 +2605,7 @@ def __case__(label, expected, actual):
 
 __case__(\"maxArea([1, 8, 6, 2, 5, 4, 8, 3, 7])\", 49, maxArea([1, 8, 6, 2, 5, 4, 8, 3, 7]))
 __case__(\"maxArea([1, 1])\", 1, maxArea([1, 1]))",
+      graded: True,
     ),
   )
 }
@@ -2674,6 +2705,7 @@ __case__(\"minCostConnectPoints([[3,12],[-2,5],[-4,1]])\", 18, minCostConnectPoi
 __case__(\"minCostConnectPoints([])\", 0, minCostConnectPoints([]))
 __case__(\"minCostConnectPoints([[1,1]]) -- nothing to connect\", 0, minCostConnectPoints([[1, 1]]))
 __case__(\"minCostConnectPoints([[0,0],[0,5]])\", 5, minCostConnectPoints([[0, 0], [0, 5]]))",
+      graded: True,
     ),
   )
 }
@@ -2752,6 +2784,7 @@ __case__(\"networkDelayTime([[1,2,1]], 2, 1)\", 1, networkDelayTime([[1, 2, 1]],
 __case__(\"networkDelayTime([[1,2,1]], 2, 2) -- node 1 is unreachable\", -1, networkDelayTime([[1, 2, 1]], 2, 2))
 __case__(\"networkDelayTime([], 1, 1)\", 0, networkDelayTime([], 1, 1))
 __case__(\"networkDelayTime(the long way round is shorter, 3, 1)\", 3, networkDelayTime([[1, 2, 1], [2, 3, 2], [1, 3, 4]], 3, 1))",
+      graded: True,
     ),
   )
 }
@@ -2856,6 +2889,7 @@ __case__(\"swimInWater([[0,2],[1,3]])\", 3, swimInWater([[0, 2], [1, 3]]))
 __case__(\"swimInWater(the 5x5 spiral)\", 16, swimInWater([[0, 1, 2, 3, 4], [24, 23, 22, 21, 5], [12, 13, 14, 15, 16], [11, 17, 18, 19, 20], [10, 9, 8, 7, 6]]))
 __case__(\"swimInWater([[0]])\", 0, swimInWater([[0]]))
 __case__(\"swimInWater([[3,2],[1,0]]) -- the start is the deepest cell\", 3, swimInWater([[3, 2], [1, 0]]))",
+      graded: True,
     ),
   )
 }
@@ -2963,6 +2997,7 @@ __case__(\"alienOrder(['z','x','z']) -- contradictory\", \"\", alienOrder([\"z\"
 __case__(\"alienOrder(['abc','ab']) -- a word before its own prefix\", \"\", alienOrder([\"abc\", \"ab\"]))
 __case__(\"alienOrder(['z','z'])\", \"z\", alienOrder([\"z\", \"z\"]))
 __case__(\"alienOrder(['x','y','z'])\", \"xyz\", alienOrder([\"x\", \"y\", \"z\"]))",
+      graded: True,
     ),
   )
 }
@@ -3040,6 +3075,7 @@ __case__(\"findCheapestPrice(3, no stop allowed, 0, 2, 0)\", 500, findCheapestPr
 __case__(\"findCheapestPrice(2, no flights at all, 0, 1, 5)\", -1, findCheapestPrice(2, [], 0, 1, 5))
 __case__(\"findCheapestPrice(1, already there, 0, 0, 0)\", 0, findCheapestPrice(1, [], 0, 0, 0))
 __case__(\"findCheapestPrice(5, cheapest route needs the third hop, 0, 2, 2)\", 7, findCheapestPrice(5, [[0, 1, 5], [1, 2, 5], [0, 3, 2], [3, 1, 2], [1, 4, 1], [4, 2, 1]], 0, 2, 2))",
+      graded: True,
     ),
   )
 }
@@ -3130,6 +3166,7 @@ __case__(\"reverseList([1,2,3,4,5])\", [5, 4, 3, 2, 1], __values__(reverseList(_
 __case__(\"reverseList([1,2])\", [2, 1], __values__(reverseList(__chain__([1, 2]))))
 __case__(\"reverseList([]) -- an empty list\", [], __values__(reverseList(__chain__([]))))
 __case__(\"reverseList([7])\", [7], __values__(reverseList(__chain__([7]))))",
+      graded: True,
     ),
   )
 }
@@ -3228,6 +3265,7 @@ __case__(\"mergeTwoLists([1,2,4], [1,3,4])\", [1, 1, 2, 3, 4, 4], __values__(mer
 __case__(\"mergeTwoLists([], [])\", [], __values__(mergeTwoLists(__chain__([]), __chain__([]))))
 __case__(\"mergeTwoLists([], [0])\", [0], __values__(mergeTwoLists(__chain__([]), __chain__([0]))))
 __case__(\"mergeTwoLists([5], [1,2,3])\", [1, 2, 3, 5], __values__(mergeTwoLists(__chain__([5]), __chain__([1, 2, 3]))))",
+      graded: True,
     ),
   )
 }
@@ -3355,6 +3393,7 @@ __case__(\"reorderList([1,2,3,4,5]) -- the middle stays last\", [1, 5, 2, 4, 3],
 __case__(\"reorderList([1,2])\", [1, 2], __reordered__([1, 2]))
 __case__(\"reorderList([1])\", [1], __reordered__([1]))
 __case__(\"reorderList([])\", [], __reordered__([]))",
+      graded: True,
     ),
   )
 }
@@ -3461,6 +3500,7 @@ __case__(\"removeNthFromEnd([1], 1)\", [], __values__(removeNthFromEnd(__chain__
 __case__(\"removeNthFromEnd([1,2], 1)\", [1], __values__(removeNthFromEnd(__chain__([1, 2]), 1)))
 __case__(\"removeNthFromEnd([1,2], 2) -- the head goes\", [2], __values__(removeNthFromEnd(__chain__([1, 2]), 2)))
 __case__(\"removeNthFromEnd([1,2,3], 5) -- nothing to remove\", [1, 2, 3], __values__(removeNthFromEnd(__chain__([1, 2, 3]), 5)))",
+      graded: True,
     ),
   )
 }
@@ -3592,6 +3632,7 @@ __case__(\"copyRandomList([[7,None],[13,0]])\", [[7, None], [13, 0]], __copied__
 __case__(\"copyRandomList([[1,0]]) -- a node pointing at itself\", [[1, 0]], __copied__([[1, 0]]))
 __case__(\"copyRandomList(a forward link to a node not yet copied)\", [[1, 2], [2, None], [3, 0]], __copied__([[1, 2], [2, None], [3, 0]]))
 __case__(\"copyRandomList([])\", [], __copied__([]))",
+      graded: True,
     ),
   )
 }
@@ -3643,6 +3684,7 @@ def __case__(label, expected, actual):
 __case__(\"maxProfit([7, 1, 5, 3, 6, 4])\", 5, maxProfit([7, 1, 5, 3, 6, 4]))
 __case__(\"maxProfit([7, 6, 4, 3, 1])\", 0, maxProfit([7, 6, 4, 3, 1]))
 __case__(\"maxProfit([])\", 0, maxProfit([]))",
+      graded: True,
     ),
   )
 }
@@ -3756,6 +3798,7 @@ __case__(\"addTwoNumbers([0], [0])\", [0], __values__(addTwoNumbers(__chain__([0
 __case__(\"addTwoNumbers([9,9,9], [1]) -- the carry runs all the way\", [0, 0, 0, 1], __values__(addTwoNumbers(__chain__([9, 9, 9]), __chain__([1]))))
 __case__(\"addTwoNumbers([5], [5]) -- the carry outlives both\", [0, 1], __values__(addTwoNumbers(__chain__([5]), __chain__([5]))))
 __case__(\"addTwoNumbers([1,2], [3,4,5]) -- different lengths\", [4, 6, 5], __values__(addTwoNumbers(__chain__([1, 2]), __chain__([3, 4, 5]))))",
+      graded: True,
     ),
   )
 }
@@ -3845,6 +3888,7 @@ __case__(\"hasCycle([1], no cycle)\", False, hasCycle(__chain__([1], None)))
 __case__(\"hasCycle([1], tail -> index 0)\", True, hasCycle(__chain__([1], 0)))
 __case__(\"hasCycle([])\", False, hasCycle(__chain__([], None)))
 __case__(\"hasCycle([1,2], tail -> index 0)\", True, hasCycle(__chain__([1, 2], 0)))",
+      graded: True,
     ),
   )
 }
@@ -3912,6 +3956,7 @@ __case__(\"findDuplicate([3,1,3,4,2])\", 3, findDuplicate([3, 1, 3, 4, 2]))
 __case__(\"findDuplicate([1,1])\", 1, findDuplicate([1, 1]))
 __case__(\"findDuplicate([2,2,2,2,2]) -- repeated more than twice\", 2, findDuplicate([2, 2, 2, 2, 2]))
 __case__(\"findDuplicate([1,4,4,2,4])\", 4, findDuplicate([1, 4, 4, 2, 4]))",
+      graded: True,
     ),
   )
 }
@@ -4031,6 +4076,7 @@ __u__ = LRUCache(1)
 __u__.put(5, 5)
 __u__.put(5, 9)
 __case__(\"get(5) after put(5,5) then put(5,9) -- an update, not an insert\", 9, __u__.get(5))",
+      graded: True,
     ),
   )
 }
@@ -4161,6 +4207,7 @@ __case__(\"mergeKLists([]) -- no lists at all\", [], __merged__([]))
 __case__(\"mergeKLists([[]]) -- one empty list\", [], __merged__([[]]))
 __case__(\"mergeKLists([[1],[],[0]])\", [0, 1], __merged__([[1], [], [0]]))
 __case__(\"mergeKLists([[2,2],[2]]) -- ties everywhere\", [2, 2, 2], __merged__([[2, 2], [2]]))",
+      graded: True,
     ),
   )
 }
@@ -4281,6 +4328,7 @@ __case__(\"reverseKGroup([1,2,3,4], 4)\", [4, 3, 2, 1], __grouped__([1, 2, 3, 4]
 __case__(\"reverseKGroup([1,2,3], 1) -- nothing changes\", [1, 2, 3], __grouped__([1, 2, 3], 1))
 __case__(\"reverseKGroup([1,2], 5) -- the group never fills\", [1, 2], __grouped__([1, 2], 5))
 __case__(\"reverseKGroup([], 2)\", [], __grouped__([], 2))",
+      graded: True,
     ),
   )
 }
@@ -4414,6 +4462,7 @@ __case__(\"invertTree([4,2,7,1,3,6,9])\", [4, 7, 2, 9, 6, 3, 1], __levels__(inve
 __case__(\"invertTree([]) -- an empty tree\", [], __levels__(invertTree(__build__([]))))
 __case__(\"invertTree([1]) -- a single node\", [1], __levels__(invertTree(__build__([1]))))
 __case__(\"invertTree twice is the original\", [1, 2], __levels__(invertTree(invertTree(__build__([1, 2])))))",
+      graded: True,
     ),
   )
 }
@@ -4533,6 +4582,7 @@ __case__(\"maxDepth([3,9,20,None,None,15,7])\", 3, maxDepth(__build__([3, 9, 20,
 __case__(\"maxDepth([])\", 0, maxDepth(__build__([])))
 __case__(\"maxDepth([1])\", 1, maxDepth(__build__([1])))
 __case__(\"maxDepth(a spindly tree)\", 3, maxDepth(__build__([1, 2, None, 3])))",
+      graded: True,
     ),
   )
 }
@@ -4669,6 +4719,7 @@ __case__(\"diameterOfBinaryTree([])\", 0, diameterOfBinaryTree(__build__([])))
 __case__(\"diameterOfBinaryTree([1])\", 0, diameterOfBinaryTree(__build__([1])))
 __case__(\"diameterOfBinaryTree([1,2])\", 1, diameterOfBinaryTree(__build__([1, 2])))
 __case__(\"diameterOfBinaryTree(widest path misses the root)\", 4, diameterOfBinaryTree(__build__([1, 2, None, 4, 5, 6, None, None, 7])))",
+      graded: True,
     ),
   )
 }
@@ -4802,6 +4853,7 @@ __case__(\"isBalanced([])\", True, isBalanced(__build__([])))
 __case__(\"isBalanced([1])\", True, isBalanced(__build__([1])))
 __case__(\"isBalanced([1,2,2,3,3,None,None,4,4])\", False, isBalanced(__build__([1, 2, 2, 3, 3, None, None, 4, 4])))
 __case__(\"isBalanced(balanced at the root, not below)\", False, isBalanced(__build__([1, 2, 2, 3, None, None, None, 4])))",
+      graded: True,
     ),
   )
 }
@@ -4861,6 +4913,7 @@ __case__(\"lengthOfLongestSubstring('abcabcbb')\", 3, lengthOfLongestSubstring(\
 __case__(\"lengthOfLongestSubstring('bbbbb')\", 1, lengthOfLongestSubstring(\"bbbbb\"))
 __case__(\"lengthOfLongestSubstring('pwwkew')\", 3, lengthOfLongestSubstring(\"pwwkew\"))
 __case__(\"lengthOfLongestSubstring('')\", 0, lengthOfLongestSubstring(\"\"))",
+      graded: True,
     ),
   )
 }
@@ -4981,6 +5034,7 @@ __case__(\"isSameTree([], [])\", True, isSameTree(__build__([]), __build__([])))
 __case__(\"isSameTree([], [1])\", False, isSameTree(__build__([]), __build__([1])))
 __case__(\"isSameTree([1,2], [1,None,2]) -- same values, mirrored\", False, isSameTree(__build__([1, 2]), __build__([1, None, 2])))
 __case__(\"isSameTree([1,2,1], [1,1,2]) -- children swapped\", False, isSameTree(__build__([1, 2, 1]), __build__([1, 1, 2])))",
+      graded: True,
     ),
   )
 }
@@ -5114,6 +5168,7 @@ __case__(\"isSubtree(a near match with an extra node)\", False, isSubtree(__buil
 __case__(\"isSubtree([1], [1]) -- a tree is its own subtree\", True, isSubtree(__build__([1]), __build__([1])))
 __case__(\"isSubtree([], [1])\", False, isSubtree(__build__([]), __build__([1])))
 __case__(\"isSubtree([1], []) -- the empty tree is in everything\", True, isSubtree(__build__([1]), __build__([])))",
+      graded: True,
     ),
   )
 }
@@ -5251,6 +5306,7 @@ __case__(\"lowestCommonAncestor(bst, 2, 4) -- an ancestor counts\", 2, lowestCom
 __case__(\"lowestCommonAncestor(bst, 3, 5)\", 4, lowestCommonAncestor(__bst__, 3, 5))
 __case__(\"lowestCommonAncestor(bst, 7, 9)\", 8, lowestCommonAncestor(__bst__, 7, 9))
 __case__(\"lowestCommonAncestor([1], 1, 1)\", 1, lowestCommonAncestor(__build__([1]), 1, 1))",
+      graded: True,
     ),
   )
 }
@@ -5379,6 +5435,7 @@ __case__(\"levelOrder([3,9,20,None,None,15,7])\", [[3], [9, 20], [15, 7]], level
 __case__(\"levelOrder([])\", [], levelOrder(__build__([])))
 __case__(\"levelOrder([1])\", [[1]], levelOrder(__build__([1])))
 __case__(\"levelOrder(missing left children)\", [[1], [3], [4]], levelOrder(__build__([1, None, 3, None, 4])))",
+      graded: True,
     ),
   )
 }
@@ -5508,6 +5565,7 @@ __case__(\"rightSideView([1,2,3,None,5,None,4])\", [1, 3, 4], rightSideView(__bu
 __case__(\"rightSideView([])\", [], rightSideView(__build__([])))
 __case__(\"rightSideView([1])\", [1], rightSideView(__build__([1])))
 __case__(\"rightSideView(the right side runs out)\", [1, 3, 4], rightSideView(__build__([1, 2, 3, 4])))",
+      graded: True,
     ),
   )
 }
@@ -5640,6 +5698,7 @@ __case__(\"goodNodes([])\", 0, goodNodes(__build__([])))
 __case__(\"goodNodes([1])\", 1, goodNodes(__build__([1])))
 __case__(\"goodNodes([2,2]) -- equal counts as good\", 2, goodNodes(__build__([2, 2])))
 __case__(\"goodNodes([3,3,None,4,2])\", 3, goodNodes(__build__([3, 3, None, 4, 2])))",
+      graded: True,
     ),
   )
 }
@@ -5775,6 +5834,7 @@ __case__(\"isValidBST([1])\", True, isValidBST(__build__([1])))
 __case__(\"isValidBST([5,1,4,None,None,3,6])\", False, isValidBST(__build__([5, 1, 4, None, None, 3, 6])))
 __case__(\"isValidBST(every node beats its parent, but 3 is on the wrong side)\", False, isValidBST(__build__([5, 4, 6, None, None, 3, 7])))
 __case__(\"isValidBST([2,2]) -- equal values are not allowed\", False, isValidBST(__build__([2, 2])))",
+      graded: True,
     ),
   )
 }
@@ -5912,6 +5972,7 @@ __case__(\"kthSmallest(bst, 2)\", 2, kthSmallest(__bst__, 2))
 __case__(\"kthSmallest(bst, 3)\", 3, kthSmallest(__bst__, 3))
 __case__(\"kthSmallest(bst, 4)\", 4, kthSmallest(__bst__, 4))
 __case__(\"kthSmallest([7], 1)\", 7, kthSmallest(__build__([7]), 1))",
+      graded: True,
     ),
   )
 }
@@ -6046,6 +6107,7 @@ __case__(\"buildTree([], [])\", [], __levels__(buildTree([], [])))
 __case__(\"buildTree([-1], [-1])\", [-1], __levels__(buildTree([-1], [-1])))
 __case__(\"buildTree([1,2,3], [3,2,1]) -- leaning left\", [1, 2, None, 3], __levels__(buildTree([1, 2, 3], [3, 2, 1])))
 __case__(\"buildTree([1,2,3], [1,2,3]) -- leaning right\", [1, None, 2, None, 3], __levels__(buildTree([1, 2, 3], [1, 2, 3])))",
+      graded: True,
     ),
   )
 }
@@ -6190,6 +6252,7 @@ __case__(\"maxPathSum([-10,9,20,None,None,15,7])\", 42, maxPathSum(__build__([-1
 __case__(\"maxPathSum([-3]) -- a single negative node\", -3, maxPathSum(__build__([-3])))
 __case__(\"maxPathSum([-2,-1]) -- all negative\", -1, maxPathSum(__build__([-2, -1])))
 __case__(\"maxPathSum([0])\", 0, maxPathSum(__build__([0])))",
+      graded: True,
     ),
   )
 }
@@ -6259,6 +6322,7 @@ def __case__(label, expected, actual):
 __case__(\"characterReplacement('ABAB', 2)\", 4, characterReplacement(\"ABAB\", 2))
 __case__(\"characterReplacement('AABABBA', 1)\", 4, characterReplacement(\"AABABBA\", 1))
 __case__(\"characterReplacement('AAAA', 0)\", 4, characterReplacement(\"AAAA\", 0))",
+      graded: True,
     ),
   )
 }
@@ -6441,6 +6505,7 @@ __case__(\"deserialize(serialize([]))\", [], __round_trip__([]))
 __case__(\"deserialize(serialize([0]))\", [0], __round_trip__([0]))
 __case__(\"deserialize(serialize(a lopsided tree))\", [1, 2, None, 3, None, None, 4], __round_trip__([1, 2, None, 3, None, None, 4]))
 __case__(\"deserialize(serialize([-1,-2,-3])) -- negatives survive\", [-1, -2, -3], __round_trip__([-1, -2, -3]))",
+      graded: True,
     ),
   )
 }
@@ -6509,6 +6574,7 @@ def __case__(label, expected, actual):
 __case__(\"checkInclusion('ab', 'eidbaooo')\", True, checkInclusion(\"ab\", \"eidbaooo\"))
 __case__(\"checkInclusion('ab', 'eidboaoo')\", False, checkInclusion(\"ab\", \"eidboaoo\"))
 __case__(\"checkInclusion('adc', 'dcda')\", True, checkInclusion(\"adc\", \"dcda\"))",
+      graded: True,
     ),
   )
 }
@@ -6563,6 +6629,7 @@ __case__(\"isValid('(]')\", False, isValid(\"(]\"))
 __case__(\"isValid('([)]')\", False, isValid(\"([)]\"))
 __case__(\"isValid('{[]}')\", True, isValid(\"{[]}\"))
 __case__(\"isValid('(')\", False, isValid(\"(\"))",
+      graded: True,
     ),
   )
 }
@@ -6655,6 +6722,7 @@ __case__(\"getMin() after push -2, 0, -3\", -3, __stack__.getMin())
 __stack__.pop()
 __case__(\"top() after pop()\", 0, __stack__.top())
 __case__(\"getMin() after pop()\", -2, __stack__.getMin())",
+      graded: True,
     ),
   )
 }
@@ -6712,6 +6780,7 @@ def __case__(label, expected, actual):
 __case__(\"dailyTemperatures([73, 74, 75, 71, 69, 72, 76, 73])\", [1, 1, 4, 2, 1, 1, 0, 0], dailyTemperatures([73, 74, 75, 71, 69, 72, 76, 73]))
 __case__(\"dailyTemperatures([30, 40, 50, 60])\", [1, 1, 1, 0], dailyTemperatures([30, 40, 50, 60]))
 __case__(\"dailyTemperatures([30, 30, 30])\", [0, 0, 0], dailyTemperatures([30, 30, 30]))",
+      graded: True,
     ),
   )
 }
@@ -6777,6 +6846,7 @@ __case__(\"search([-1, 0, 3, 5, 9, 12], 9)\", 4, search([-1, 0, 3, 5, 9, 12], 9)
 __case__(\"search([-1, 0, 3, 5, 9, 12], 2)\", -1, search([-1, 0, 3, 5, 9, 12], 2))
 __case__(\"search([5], 5)\", 0, search([5], 5))
 __case__(\"search([], 1)\", -1, search([], 1))",
+      graded: True,
     ),
   )
 }
@@ -6832,6 +6902,7 @@ __case__(\"findMin([3, 4, 5, 1, 2])\", 1, findMin([3, 4, 5, 1, 2]))
 __case__(\"findMin([4, 5, 6, 7, 0, 1, 2])\", 0, findMin([4, 5, 6, 7, 0, 1, 2]))
 __case__(\"findMin([11, 13, 15, 17])\", 11, findMin([11, 13, 15, 17]))
 __case__(\"findMin([2, 1])\", 1, findMin([2, 1]))",
+      graded: True,
     ),
   )
 }
@@ -6914,6 +6985,7 @@ __case__(\"search([4, 5, 6, 7, 0, 1, 2], 0)\", 4, search([4, 5, 6, 7, 0, 1, 2], 
 __case__(\"search([4, 5, 6, 7, 0, 1, 2], 3)\", -1, search([4, 5, 6, 7, 0, 1, 2], 3))
 __case__(\"search([1], 1)\", 0, search([1], 1))
 __case__(\"search([4, 5, 6, 7, 0, 1, 2], 6)\", 2, search([4, 5, 6, 7, 0, 1, 2], 6))",
+      graded: True,
     ),
   )
 }
@@ -7007,6 +7079,7 @@ __case__(\"decode(encode([]))\", [], __round_trip__([]))
 __case__(\"decode(encode(['', '']))\", [\"\", \"\"], __round_trip__([\"\", \"\"]))
 __case__(\"decode(encode(['3#x', 'a|b']))\", [\"3#x\", \"a|b\"], __round_trip__([\"3#x\", \"a|b\"]))
 __case__(\"decode(encode(['\\\\\\\\', '|', '#']))\", [\"\\\\\", \"|\", \"#\"], __round_trip__([\"\\\\\", \"|\", \"#\"]))",
+      graded: True,
     ),
   )
 }
@@ -7098,6 +7171,7 @@ __case__(\"isValidSudoku(5 twice in row 0)\", False, isValidSudoku(__with_cell__
 __case__(\"isValidSudoku(5 twice in column 0, different boxes)\", False, isValidSudoku(__with_cell__(3, 0, \"5\")))
 __case__(\"isValidSudoku(3 twice in the top-left box only)\", False, isValidSudoku(__with_cell__(2, 0, \"3\")))
 __case__(\"isValidSudoku(empty board)\", True, isValidSudoku([[\".\"] * 9 for _ in range(9)]))",
+      graded: True,
     ),
   )
 }
@@ -7176,6 +7250,7 @@ __case__(\"trap([])\", 0, trap([]))
 __case__(\"trap([3])\", 0, trap([3]))
 __case__(\"trap([2, 0, 2])\", 2, trap([2, 0, 2]))
 __case__(\"trap([5, 4, 3, 2, 1])\", 0, trap([5, 4, 3, 2, 1]))",
+      graded: True,
     ),
   )
 }
@@ -7273,6 +7348,7 @@ __case__(\"minWindow('a', 'aa')\", \"\", minWindow(\"a\", \"aa\"))
 __case__(\"minWindow('', 'a')\", \"\", minWindow(\"\", \"a\"))
 __case__(\"minWindow('ab', '')\", \"\", minWindow(\"ab\", \"\"))
 __case__(\"minWindow('aaflslflsldkalskaaa', 'aaa')\", \"aaa\", minWindow(\"aaflslflsldkalskaaa\", \"aaa\"))",
+      graded: True,
     ),
   )
 }
@@ -7357,6 +7433,7 @@ __case__(\"maxSlidingWindow([], 3)\", [], maxSlidingWindow([], 3))
 __case__(\"maxSlidingWindow([9, 8, 7, 6], 2)\", [9, 8, 7], maxSlidingWindow([9, 8, 7, 6], 2))
 __case__(\"maxSlidingWindow([1, -1], 1)\", [1, -1], maxSlidingWindow([1, -1], 1))
 __case__(\"maxSlidingWindow([-7, -8, 7, 5, 7, 1, 6, 0], 4)\", [7, 7, 7, 7, 7], maxSlidingWindow([-7, -8, 7, 5, 7, 1, 6, 0], 4))",
+      graded: True,
     ),
   )
 }
@@ -7452,6 +7529,7 @@ __case__(\"evalRPN(['4', '13', '5', '/', '+'])\", 6, evalRPN([\"4\", \"13\", \"5
 __case__(\"evalRPN(['-3', '2', '/'])\", -1, evalRPN([\"-3\", \"2\", \"/\"]))
 __case__(\"evalRPN(['5'])\", 5, evalRPN([\"5\"]))
 __case__(\"evalRPN(the long one)\", 22, evalRPN([\"10\", \"6\", \"9\", \"3\", \"+\", \"-11\", \"*\", \"/\", \"*\", \"17\", \"+\", \"5\", \"+\"]))",
+      graded: True,
     ),
   )
 }
@@ -7528,6 +7606,7 @@ __case__(\"generateParenthesis(1)\", [\"()\"], __sorted__(1))
 __case__(\"generateParenthesis(2)\", [\"(())\", \"()()\"], __sorted__(2))
 __case__(\"generateParenthesis(3)\", [\"((()))\", \"(()())\", \"(())()\", \"()(())\", \"()()()\"], __sorted__(3))
 __case__(\"generateParenthesis(4) count\", 14, len(__sorted__(4)))",
+      graded: True,
     ),
   )
 }
@@ -7598,6 +7677,7 @@ __case__(\"carFleet(100, [0, 2, 4], [4, 2, 1])\", 1, carFleet(100, [0, 2, 4], [4
 __case__(\"carFleet(10, [6, 8], [3, 2])\", 2, carFleet(10, [6, 8], [3, 2]))
 __case__(\"carFleet(10, [], [])\", 0, carFleet(10, [], []))
 __case__(\"carFleet(10, [0, 4, 2], [2, 1, 3])\", 1, carFleet(10, [0, 4, 2], [2, 1, 3]))",
+      graded: True,
     ),
   )
 }
@@ -7673,6 +7753,7 @@ __case__(\"largestRectangleArea([])\", 0, largestRectangleArea([]))
 __case__(\"largestRectangleArea([1, 1, 1])\", 3, largestRectangleArea([1, 1, 1]))
 __case__(\"largestRectangleArea([5])\", 5, largestRectangleArea([5]))
 __case__(\"largestRectangleArea([4, 2, 0, 3, 2, 5])\", 6, largestRectangleArea([4, 2, 0, 3, 2, 5]))",
+      graded: True,
     ),
   )
 }
@@ -7763,6 +7844,7 @@ __case__(\"searchMatrix(matrix, 60)\", True, searchMatrix(__matrix__, 60))
 __case__(\"searchMatrix([[1]], 1)\", True, searchMatrix([[1]], 1))
 __case__(\"searchMatrix([], 1)\", False, searchMatrix([], 1))
 __case__(\"searchMatrix([[1], [3], [5]], 5)\", True, searchMatrix([[1], [3], [5]], 5))",
+      graded: True,
     ),
   )
 }
@@ -7836,6 +7918,7 @@ __case__(\"minEatingSpeed([30, 11, 23, 4, 20], 6)\", 23, minEatingSpeed([30, 11,
 __case__(\"minEatingSpeed([1], 1)\", 1, minEatingSpeed([1], 1))
 __case__(\"minEatingSpeed([4, 4, 4, 4], 4)\", 4, minEatingSpeed([4, 4, 4, 4], 4))
 __case__(\"minEatingSpeed([1, 1, 1, 10], 4)\", 10, minEatingSpeed([1, 1, 1, 10], 4))",
+      graded: True,
     ),
   )
 }
@@ -7928,6 +8011,7 @@ __case__(\"get('foo', 5) after set at 4\", \"bar2\", __store__.get(\"foo\", 5))
 __case__(\"get('foo', 3) still sees the older value\", \"bar\", __store__.get(\"foo\", 3))
 __case__(\"get('foo', 0) before anything was set\", \"\", __store__.get(\"foo\", 0))
 __case__(\"get('missing', 1)\", \"\", __store__.get(\"missing\", 1))",
+      graded: True,
     ),
   )
 }
@@ -8034,6 +8118,7 @@ __case__(\"findMedianSortedArrays([2], [])\", 2.0, findMedianSortedArrays([2], [
 __case__(\"findMedianSortedArrays([], [])\", 0.0, findMedianSortedArrays([], []))
 __case__(\"findMedianSortedArrays([1, 2], [])\", 1.5, findMedianSortedArrays([1, 2], []))
 __case__(\"findMedianSortedArrays([1, 3, 5, 7], [2, 4, 6])\", 4.0, findMedianSortedArrays([1, 3, 5, 7], [2, 4, 6]))",
+      graded: True,
     ),
   )
 }
@@ -8101,6 +8186,7 @@ __case__(\"insert([], [5, 7])\", [[5, 7]], insert([], [5, 7]))
 __case__(\"insert([[1, 5]], [2, 3])\", [[1, 5]], insert([[1, 5]], [2, 3]))
 __case__(\"insert([[1, 5]], [6, 8])\", [[1, 5], [6, 8]], insert([[1, 5]], [6, 8]))
 __case__(\"insert([[3, 5]], [1, 2])\", [[1, 2], [3, 5]], insert([[3, 5]], [1, 2]))",
+      graded: True,
     ),
   )
 }
@@ -8170,6 +8256,7 @@ __case__(\"merge([[1, 4], [4, 5]])\", [[1, 5]], merge([[1, 4], [4, 5]]))
 __case__(\"merge([])\", [], merge([]))
 __case__(\"merge([[1, 4], [0, 4]])\", [[0, 4]], merge([[1, 4], [0, 4]]))
 __case__(\"merge([[1, 4], [2, 3]])\", [[1, 4]], merge([[1, 4], [2, 3]]))",
+      graded: True,
     ),
   )
 }
@@ -8235,6 +8322,7 @@ __case__(\"eraseOverlapIntervals([[1, 2], [1, 2], [1, 2]])\", 2, eraseOverlapInt
 __case__(\"eraseOverlapIntervals([[1, 2], [2, 3]])\", 0, eraseOverlapIntervals([[1, 2], [2, 3]]))
 __case__(\"eraseOverlapIntervals([])\", 0, eraseOverlapIntervals([]))
 __case__(\"eraseOverlapIntervals([[1, 100], [11, 22], [1, 11], [2, 12]])\", 2, eraseOverlapIntervals([[1, 100], [11, 22], [1, 11], [2, 12]]))",
+      graded: True,
     ),
   )
 }
@@ -8290,6 +8378,7 @@ __case__(\"canAttendMeetings([])\", True, canAttendMeetings([]))
 __case__(\"canAttendMeetings([[1, 5]])\", True, canAttendMeetings([[1, 5]]))
 __case__(\"canAttendMeetings([[1, 5], [5, 10]])\", True, canAttendMeetings([[1, 5], [5, 10]]))
 __case__(\"canAttendMeetings([[5, 10], [1, 6]])\", False, canAttendMeetings([[5, 10], [1, 6]]))",
+      graded: True,
     ),
   )
 }
@@ -8356,6 +8445,7 @@ __case__(\"minMeetingRooms([[7, 10], [2, 4]])\", 1, minMeetingRooms([[7, 10], [2
 __case__(\"minMeetingRooms([])\", 0, minMeetingRooms([]))
 __case__(\"minMeetingRooms([[1, 5], [5, 10]])\", 1, minMeetingRooms([[1, 5], [5, 10]]))
 __case__(\"minMeetingRooms(six overlapping meetings)\", 4, minMeetingRooms([[1, 10], [2, 7], [3, 19], [8, 12], [10, 20], [11, 30]]))",
+      graded: True,
     ),
   )
 }
@@ -8447,6 +8537,7 @@ __case__(\"minInterval([[2, 3], [2, 5], [1, 8], [20, 25]], [2, 19, 5, 22])\", [2
 __case__(\"minInterval([], [1, 2])\", [-1, -1], minInterval([], [1, 2]))
 __case__(\"minInterval([[1, 10]], [])\", [], minInterval([[1, 10]], []))
 __case__(\"minInterval([[1, 3]], [0, 4])\", [-1, -1], minInterval([[1, 3]], [0, 4]))",
+      graded: True,
     ),
   )
 }
@@ -8511,6 +8602,7 @@ __case__(\"maxSubArray([5, 4, -1, 7, 8])\", 23, maxSubArray([5, 4, -1, 7, 8]))
 __case__(\"maxSubArray([-1])\", -1, maxSubArray([-1]))
 __case__(\"maxSubArray([-2, -1])\", -1, maxSubArray([-2, -1]))
 __case__(\"maxSubArray([])\", 0, maxSubArray([]))",
+      graded: True,
     ),
   )
 }
@@ -8569,6 +8661,7 @@ __case__(\"canJump([0])\", True, canJump([0]))
 __case__(\"canJump([])\", True, canJump([]))
 __case__(\"canJump([1, 0, 1, 0])\", False, canJump([1, 0, 1, 0]))
 __case__(\"canJump([2, 0, 0])\", True, canJump([2, 0, 0]))",
+      graded: True,
     ),
   )
 }
@@ -8639,6 +8732,7 @@ __case__(\"jump([0])\", 0, jump([0]))
 __case__(\"jump([1])\", 0, jump([1]))
 __case__(\"jump([1, 2, 3])\", 2, jump([1, 2, 3]))
 __case__(\"jump([1, 1, 1, 1])\", 3, jump([1, 1, 1, 1]))",
+      graded: True,
     ),
   )
 }
@@ -8715,6 +8809,7 @@ __case__(\"canCompleteCircuit([5], [4])\", 0, canCompleteCircuit([5], [4]))
 __case__(\"canCompleteCircuit([1, 2], [2, 1])\", 1, canCompleteCircuit([1, 2], [2, 1]))
 __case__(\"canCompleteCircuit([], [])\", -1, canCompleteCircuit([], []))
 __case__(\"canCompleteCircuit([3, 1, 1], [1, 2, 2])\", 0, canCompleteCircuit([3, 1, 1], [1, 2, 2]))",
+      graded: True,
     ),
   )
 }
@@ -8792,6 +8887,7 @@ __case__(\"isNStraightHand([1, 2, 3, 4, 5, 6], 2)\", True, isNStraightHand([1, 2
 __case__(\"isNStraightHand([], 1)\", True, isNStraightHand([], 1))
 __case__(\"isNStraightHand([1, 1, 2, 2, 3, 3], 3)\", True, isNStraightHand([1, 1, 2, 2, 3, 3], 3))
 __case__(\"isNStraightHand([8, 10, 12], 3)\", False, isNStraightHand([8, 10, 12], 3))",
+      graded: True,
     ),
   )
 }
@@ -8844,6 +8940,7 @@ __case__(\"mergeTriplets([[2, 5, 3], [2, 3, 4], [1, 2, 5], [5, 2, 3]], [5, 5, 5]
 __case__(\"mergeTriplets([[1, 1, 1]], [1, 1, 1])\", True, mergeTriplets([[1, 1, 1]], [1, 1, 1]))
 __case__(\"mergeTriplets([], [1, 1, 1])\", False, mergeTriplets([], [1, 1, 1]))
 __case__(\"mergeTriplets([[1, 2, 3]], [3, 2, 1])\", False, mergeTriplets([[1, 2, 3]], [3, 2, 1]))",
+      graded: True,
     ),
   )
 }
@@ -8912,6 +9009,7 @@ __case__(\"partitionLabels('eccbbbbdec')\", [10], partitionLabels('eccbbbbdec'))
 __case__(\"partitionLabels('a')\", [1], partitionLabels('a'))
 __case__(\"partitionLabels('')\", [], partitionLabels(''))
 __case__(\"partitionLabels('abc')\", [1, 1, 1], partitionLabels('abc'))",
+      graded: True,
     ),
   )
 }
@@ -8985,6 +9083,7 @@ __case__(\"checkValidString('')\", True, checkValidString(''))
 __case__(\"checkValidString('*')\", True, checkValidString('*'))
 __case__(\"checkValidString(')*')\", False, checkValidString(')*'))
 __case__(\"checkValidString('(*()')\", True, checkValidString('(*()'))",
+      graded: True,
     ),
   )
 }
@@ -9033,6 +9132,7 @@ __case__(\"singleNumber([4, 1, 2, 1, 2])\", 4, singleNumber([4, 1, 2, 1, 2]))
 __case__(\"singleNumber([1])\", 1, singleNumber([1]))
 __case__(\"singleNumber([-1, -1, -3])\", -3, singleNumber([-1, -1, -3]))
 __case__(\"singleNumber([0, 1, 1])\", 0, singleNumber([0, 1, 1]))",
+      graded: True,
     ),
   )
 }
@@ -9085,6 +9185,7 @@ __case__(\"hammingWeight(128)\", 1, hammingWeight(128))
 __case__(\"hammingWeight(0)\", 0, hammingWeight(0))
 __case__(\"hammingWeight(2147483645)\", 30, hammingWeight(2147483645))
 __case__(\"hammingWeight(1)\", 1, hammingWeight(1))",
+      graded: True,
     ),
   )
 }
@@ -9143,6 +9244,7 @@ __case__(\"countBits(5)\", [0, 1, 1, 2, 1, 2], countBits(5))
 __case__(\"countBits(2)\", [0, 1, 1], countBits(2))
 __case__(\"countBits(0)\", [0], countBits(0))
 __case__(\"countBits(8)\", [0, 1, 1, 2, 1, 2, 2, 3, 1], countBits(8))",
+      graded: True,
     ),
   )
 }
@@ -9193,6 +9295,7 @@ __case__(\"reverseBits(43261596)\", 964176192, reverseBits(43261596))
 __case__(\"reverseBits(4294967293)\", 3221225471, reverseBits(4294967293))
 __case__(\"reverseBits(0)\", 0, reverseBits(0))
 __case__(\"reverseBits(1)\", 2147483648, reverseBits(1))",
+      graded: True,
     ),
   )
 }
@@ -9245,6 +9348,7 @@ __case__(\"missingNumber([9, 6, 4, 2, 3, 5, 7, 0, 1])\", 8, missingNumber([9, 6,
 __case__(\"missingNumber([0])\", 1, missingNumber([0]))
 __case__(\"missingNumber([1])\", 0, missingNumber([1]))
 __case__(\"missingNumber([])\", 0, missingNumber([]))",
+      graded: True,
     ),
   )
 }
@@ -9321,6 +9425,7 @@ __case__(\"getSum(-2, -3)\", -5, getSum(-2, -3))
 __case__(\"getSum(0, 0)\", 0, getSum(0, 0))
 __case__(\"getSum(-1, -1)\", -2, getSum(-1, -1))
 __case__(\"getSum(5, -3)\", 2, getSum(5, -3))",
+      graded: True,
     ),
   )
 }
@@ -9390,6 +9495,7 @@ __case__(\"reverse(0)\", 0, reverse(0))
 __case__(\"reverse(1534236469)\", 0, reverse(1534236469))
 __case__(\"reverse(-2147483648)\", 0, reverse(-2147483648))
 __case__(\"reverse(1463847412)\", 2147483641, reverse(1463847412))",
+      graded: True,
     ),
   )
 }
@@ -9437,6 +9543,7 @@ __case__(\"rotate([[1, 2], [3, 4]])\", [[3, 1], [4, 2]], rotate([[1, 2], [3, 4]]
 __case__(\"rotate([[1]])\", [[1]], rotate([[1]]))
 __case__(\"rotate([])\", [], rotate([]))
 __case__(\"rotate(4x4)\", [[15, 13, 2, 5], [14, 3, 4, 1], [12, 6, 8, 9], [16, 7, 10, 11]], rotate([[5, 1, 9, 11], [2, 4, 8, 10], [13, 3, 6, 7], [15, 14, 12, 16]]))",
+      graded: True,
     ),
   )
 }
@@ -9509,6 +9616,7 @@ __case__(\"spiralOrder([[1]])\", [1], spiralOrder([[1]]))
 __case__(\"spiralOrder([])\", [], spiralOrder([]))
 __case__(\"spiralOrder([[1, 2, 3]])\", [1, 2, 3], spiralOrder([[1, 2, 3]]))
 __case__(\"spiralOrder([[1], [2], [3]])\", [1, 2, 3], spiralOrder([[1], [2], [3]]))",
+      graded: True,
     ),
   )
 }
@@ -9574,6 +9682,7 @@ __case__(\"setZeroes([[1]])\", [[1]], setZeroes([[1]]))
 __case__(\"setZeroes([[0]])\", [[0]], setZeroes([[0]]))
 __case__(\"setZeroes([])\", [], setZeroes([]))
 __case__(\"setZeroes([[1, 2], [3, 4]])\", [[1, 2], [3, 4]], setZeroes([[1, 2], [3, 4]]))",
+      graded: True,
     ),
   )
 }
@@ -9654,6 +9763,7 @@ __case__(\"isHappy(1)\", True, isHappy(1))
 __case__(\"isHappy(7)\", True, isHappy(7))
 __case__(\"isHappy(4)\", False, isHappy(4))
 __case__(\"isHappy(100)\", True, isHappy(100))",
+      graded: True,
     ),
   )
 }
@@ -9714,6 +9824,7 @@ __case__(\"plusOne([9])\", [1, 0], plusOne([9]))
 __case__(\"plusOne([9, 9])\", [1, 0, 0], plusOne([9, 9]))
 __case__(\"plusOne([0])\", [1], plusOne([0]))
 __case__(\"plusOne([1, 9, 9])\", [2, 0, 0], plusOne([1, 9, 9]))",
+      graded: True,
     ),
   )
 }
@@ -9777,6 +9888,7 @@ __case__(\"myPow(0.5, 3)\", 0.125, myPow(0.5, 3))
 __case__(\"myPow(-2.0, 3)\", -8.0, myPow(-2.0, 3))
 __case__(\"myPow(2.0, 1)\", 2.0, myPow(2.0, 1))
 __case__(\"myPow(0.0, 5)\", 0.0, myPow(0.0, 5))",
+      graded: True,
     ),
   )
 }
@@ -9879,6 +9991,7 @@ __case__(\"multiply('0', '52')\", '0', multiply('0', '52'))
 __case__(\"multiply('9', '9')\", '81', multiply('9', '9'))
 __case__(\"multiply('999', '999')\", '998001', multiply('999', '999'))
 __case__(\"multiply('123456789', '987654321')\", '121932631112635269', multiply('123456789', '987654321'))",
+      graded: True,
     ),
   )
 }
@@ -9986,6 +10099,7 @@ __unit__.add([1, 0])
 __unit__.add([1, 1])
 
 __case__(\"count([0, 0]) on the unit square\", 1, __unit__.count([0, 0]))",
+      graded: True,
     ),
   )
 }
@@ -10046,6 +10160,7 @@ __case__(\"climbStairs(1)\", 1, climbStairs(1))
 __case__(\"climbStairs(0)\", 1, climbStairs(0))
 __case__(\"climbStairs(10)\", 89, climbStairs(10))
 __case__(\"climbStairs(45)\", 1836311903, climbStairs(45))",
+      graded: True,
     ),
   )
 }
@@ -10100,6 +10215,7 @@ __case__(\"minCostClimbingStairs([0, 0])\", 0, minCostClimbingStairs([0, 0]))
 __case__(\"minCostClimbingStairs([1, 2])\", 1, minCostClimbingStairs([1, 2]))
 __case__(\"minCostClimbingStairs([0, 1, 1, 0])\", 1, minCostClimbingStairs([0, 1, 1, 0]))
 __case__(\"minCostClimbingStairs([])\", 0, minCostClimbingStairs([]))",
+      graded: True,
     ),
   )
 }
@@ -10160,6 +10276,7 @@ __case__(\"rob([5])\", 5, rob([5]))
 __case__(\"rob([])\", 0, rob([]))
 __case__(\"rob([2, 1, 1, 2])\", 4, rob([2, 1, 1, 2]))
 __case__(\"rob([1, 2])\", 2, rob([1, 2]))",
+      graded: True,
     ),
   )
 }
@@ -10243,6 +10360,7 @@ __case__(\"rob([1, 2, 3])\", 3, rob([1, 2, 3]))
 __case__(\"rob([1])\", 1, rob([1]))
 __case__(\"rob([])\", 0, rob([]))
 __case__(\"rob([1, 2])\", 2, rob([1, 2]))",
+      graded: True,
     ),
   )
 }
@@ -10321,6 +10439,7 @@ __case__(\"longestPalindrome('forgeeksskeegfor')\", 'geeksskeeg', longestPalindr
 __case__(\"longestPalindrome('aaaa')\", 'aaaa', longestPalindrome('aaaa'))
 __case__(\"longestPalindrome('racecar')\", 'racecar', longestPalindrome('racecar'))
 __case__(\"longestPalindrome('abb')\", 'bb', longestPalindrome('abb'))",
+      graded: True,
     ),
   )
 }
@@ -10397,6 +10516,7 @@ __case__(\"countSubstrings('')\", 0, countSubstrings(''))
 __case__(\"countSubstrings('a')\", 1, countSubstrings('a'))
 __case__(\"countSubstrings('aba')\", 4, countSubstrings('aba'))
 __case__(\"countSubstrings('abccba')\", 9, countSubstrings('abccba'))",
+      graded: True,
     ),
   )
 }
@@ -10473,6 +10593,7 @@ __case__(\"numDecodings('')\", 0, numDecodings(''))
 __case__(\"numDecodings('10')\", 1, numDecodings('10'))
 __case__(\"numDecodings('2101')\", 1, numDecodings('2101'))
 __case__(\"numDecodings('11106')\", 2, numDecodings('11106'))",
+      graded: True,
     ),
   )
 }
@@ -10549,6 +10670,7 @@ __case__(\"coinChange([1], 0)\", 0, coinChange([1], 0))
 __case__(\"coinChange([], 5)\", -1, coinChange([], 5))
 __case__(\"coinChange([1, 3, 4], 6)\", 2, coinChange([1, 3, 4], 6))
 __case__(\"coinChange([2, 5, 10, 1], 27)\", 4, coinChange([2, 5, 10, 1], 27))",
+      graded: True,
     ),
   )
 }
@@ -10617,6 +10739,7 @@ __case__(\"maxProduct([0])\", 0, maxProduct([0]))
 __case__(\"maxProduct([-2])\", -2, maxProduct([-2]))
 __case__(\"maxProduct([2, -5, -2, -4, 3])\", 24, maxProduct([2, -5, -2, -4, 3]))
 __case__(\"maxProduct([])\", 0, maxProduct([]))",
+      graded: True,
     ),
   )
 }
@@ -10685,6 +10808,7 @@ __case__(\"wordBreak('catsandog', ['cats', 'dog', 'sand', 'and', 'cat'])\", Fals
 __case__(\"wordBreak('', ['a'])\", True, wordBreak('', ['a']))
 __case__(\"wordBreak('a', [])\", False, wordBreak('a', []))
 __case__(\"wordBreak('aaaaaaa', ['aaa', 'aaaa'])\", True, wordBreak('aaaaaaa', ['aaa', 'aaaa']))",
+      graded: True,
     ),
   )
 }
@@ -10751,6 +10875,7 @@ __case__(\"lengthOfLIS([7, 7, 7, 7, 7, 7, 7])\", 1, lengthOfLIS([7, 7, 7, 7, 7, 
 __case__(\"lengthOfLIS([])\", 0, lengthOfLIS([]))
 __case__(\"lengthOfLIS([1])\", 1, lengthOfLIS([1]))
 __case__(\"lengthOfLIS([4, 10, 4, 3, 8, 9])\", 3, lengthOfLIS([4, 10, 4, 3, 8, 9]))",
+      graded: True,
     ),
   )
 }
@@ -10825,6 +10950,7 @@ __case__(\"canPartition([2, 2])\", True, canPartition([2, 2]))
 __case__(\"canPartition([1])\", False, canPartition([1]))
 __case__(\"canPartition([1, 1])\", True, canPartition([1, 1]))
 __case__(\"canPartition([3, 3, 3, 4, 5])\", True, canPartition([3, 3, 3, 4, 5]))",
+      graded: True,
     ),
   )
 }
@@ -10902,6 +11028,7 @@ def __stream__(k, initial, added):
 __case__(\"k = 3 over [4, 5, 8, 2] then 3, 5, 10, 9, 4\", [4, 5, 5, 8, 8], __stream__(3, [4, 5, 8, 2], [3, 5, 10, 9, 4]))
 __case__(\"k = 1 over [] then 1, 2, 0\", [1, 2, 2], __stream__(1, [], [1, 2, 0]))
 __case__(\"k = 2 over [] then 5, 5\", [None, 5], __stream__(2, [], [5, 5]))",
+      graded: True,
     ),
   )
 }
@@ -10972,6 +11099,7 @@ __case__(\"lastStoneWeight([])\", 0, lastStoneWeight([]))
 __case__(\"lastStoneWeight([2, 2])\", 0, lastStoneWeight([2, 2]))
 __case__(\"lastStoneWeight([3, 7, 2])\", 2, lastStoneWeight([3, 7, 2]))
 __case__(\"lastStoneWeight([10, 4, 2, 10])\", 2, lastStoneWeight([10, 4, 2, 10]))",
+      graded: True,
     ),
   )
 }
@@ -11030,6 +11158,7 @@ __case__(\"kClosest([[3, 3], [5, -1], [-2, 4]], 2)\", [[-2, 4], [3, 3]], __sorte
 __case__(\"kClosest([], 0)\", [], __sorted__([], 0))
 __case__(\"kClosest([[0, 0]], 1)\", [[0, 0]], __sorted__([[0, 0]], 1))
 __case__(\"kClosest([[1, 1], [2, 2], [3, 3]], 2)\", [[1, 1], [2, 2]], __sorted__([[1, 1], [2, 2], [3, 3]], 2))",
+      graded: True,
     ),
   )
 }
@@ -11094,6 +11223,7 @@ __case__(\"findKthLargest([1], 1)\", 1, findKthLargest([1], 1))
 __case__(\"findKthLargest([2, 1], 2)\", 1, findKthLargest([2, 1], 2))
 __case__(\"findKthLargest([7, 6, 5, 4, 3, 2, 1], 3)\", 5, findKthLargest([7, 6, 5, 4, 3, 2, 1], 3))
 __case__(\"findKthLargest([], 1)\", None, findKthLargest([], 1))",
+      graded: True,
     ),
   )
 }
@@ -11170,6 +11300,7 @@ __case__(\"leastInterval(['A','A','A','B','B','B'], 3)\", 10, leastInterval([\"A
 __case__(\"leastInterval([], 2)\", 0, leastInterval([], 2))
 __case__(\"leastInterval(['A'], 5)\", 1, leastInterval([\"A\"], 5))
 __case__(\"leastInterval(four As and six singles, 2)\", 10, leastInterval([\"A\", \"A\", \"A\", \"A\", \"B\", \"C\", \"D\", \"E\", \"F\", \"G\"], 2))",
+      graded: True,
     ),
   )
 }
@@ -11288,6 +11419,7 @@ __eleven__ = Twitter()
 for __i__ in range(1, 12):
     __eleven__.postTweet(1, __i__)
 __case__(\"getNewsFeed caps at ten, newest first\", [11, 10, 9, 8, 7, 6, 5, 4, 3, 2], __eleven__.getNewsFeed(1))",
+      graded: True,
     ),
   )
 }
@@ -11383,6 +11515,7 @@ __case__(\"medians of 1, 2, 3, 4, 5\", [1.0, 1.5, 2.0, 2.5, 3.0], __medians__([1
 __case__(\"medians arriving out of order\", [5.0, 3.0, 2.0, 2.5], __medians__([5, 1, 2, 3]))
 __case__(\"medians of negatives\", [-1.0, -1.5], __medians__([-1, -2]))
 __case__(\"median before anything is added\", 0.0, MedianFinder().findMedian())",
+      graded: True,
     ),
   )
 }
@@ -11439,6 +11572,7 @@ __case__(\"subsets([1, 2, 3])\", [\"\", \"1\", \"1,2\", \"1,2,3\", \"1,3\", \"2\
 __case__(\"subsets([0])\", [\"\", \"0\"], __sorted__([0]))
 __case__(\"subsets([])\", [\"\"], __sorted__([]))
 __case__(\"subsets of five elements count\", 32, len(subsets([1, 2, 3, 4, 5])))",
+      graded: True,
     ),
   )
 }
@@ -11521,6 +11655,7 @@ __case__(\"combinationSum([2, 3, 5], 8)\", [\"2,2,2,2\", \"2,3,3\", \"3,5\"], __
 __case__(\"combinationSum([2], 1)\", [], __sorted__([2], 1))
 __case__(\"combinationSum([1], 0)\", [\"\"], __sorted__([1], 0))
 __case__(\"combinationSum([], 3)\", [], __sorted__([], 3))",
+      graded: True,
     ),
   )
 }
@@ -11585,6 +11720,7 @@ __case__(\"permute([0, 1])\", [\"0,1\", \"1,0\"], __sorted__([0, 1]))
 __case__(\"permute([1])\", [\"1\"], __sorted__([1]))
 __case__(\"permute([])\", [\"\"], __sorted__([]))
 __case__(\"permute of four elements count\", 24, len(permute([1, 2, 3, 4])))",
+      graded: True,
     ),
   )
 }
@@ -11663,6 +11799,7 @@ __case__(\"subsetsWithDup([0])\", [\"\", \"0\"], __sorted__([0]))
 __case__(\"subsetsWithDup([])\", [\"\"], __sorted__([]))
 __case__(\"subsetsWithDup([1, 1, 1])\", [\"\", \"1\", \"1,1\", \"1,1,1\"], __sorted__([1, 1, 1]))
 __case__(\"subsetsWithDup([4, 4, 4, 1, 4]) count\", 10, len(subsetsWithDup([4, 4, 4, 1, 4])))",
+      graded: True,
     ),
   )
 }
@@ -11750,6 +11887,7 @@ __case__(\"combinationSum2([2, 5, 2, 1, 2], 5)\", [\"1,2,2\", \"5\"], __sorted__
 __case__(\"combinationSum2([], 3)\", [], __sorted__([], 3))
 __case__(\"combinationSum2([1], 1)\", [\"1\"], __sorted__([1], 1))
 __case__(\"combinationSum2([2], 1)\", [], __sorted__([2], 1))",
+      graded: True,
     ),
   )
 }
@@ -11858,6 +11996,7 @@ __case__(\"exist(board, 'ABCB')\", False, exist(__board__, \"ABCB\"))
 __case__(\"exist(board, '')\", True, exist(__board__, \"\"))
 __case__(\"exist(board, 'Z')\", False, exist(__board__, \"Z\"))
 __case__(\"exist([], 'A')\", False, exist([], \"A\"))",
+      graded: True,
     ),
   )
 }
@@ -11945,6 +12084,7 @@ __case__(\"partition('a')\", [\"a\"], __sorted__(\"a\"))
 __case__(\"partition('')\", [\"\"], __sorted__(\"\"))
 __case__(\"partition('aba')\", [\"a,b,a\", \"aba\"], __sorted__(\"aba\"))
 __case__(\"partition('abc')\", [\"a,b,c\"], __sorted__(\"abc\"))",
+      graded: True,
     ),
   )
 }
@@ -12026,6 +12166,7 @@ __case__(\"letterCombinations('')\", [], sorted(letterCombinations(\"\")))
 __case__(\"letterCombinations('2')\", [\"a\", \"b\", \"c\"], sorted(letterCombinations(\"2\")))
 __case__(\"letterCombinations('9')\", [\"w\", \"x\", \"y\", \"z\"], sorted(letterCombinations(\"9\")))
 __case__(\"letterCombinations('79') count\", 16, len(letterCombinations(\"79\")))",
+      graded: True,
     ),
   )
 }
@@ -12112,6 +12253,7 @@ __case__(\"solveNQueens(1)\", [\"Q\"], __sorted__(1))
 __case__(\"solveNQueens(2)\", [], __sorted__(2))
 __case__(\"solveNQueens(3)\", [], __sorted__(3))
 __case__(\"solveNQueens(6) count\", 4, len(solveNQueens(6)))",
+      graded: True,
     ),
   )
 }
@@ -12178,6 +12320,7 @@ __case__(\"uniquePaths(7, 3)\", 28, uniquePaths(7, 3))
 __case__(\"uniquePaths(1, 5)\", 1, uniquePaths(1, 5))
 __case__(\"uniquePaths(0, 5)\", 0, uniquePaths(0, 5))
 __case__(\"uniquePaths(10, 10)\", 48620, uniquePaths(10, 10))",
+      graded: True,
     ),
   )
 }
@@ -12245,6 +12388,7 @@ __case__(\"longestCommonSubsequence('abc', 'def')\", 0, longestCommonSubsequence
 __case__(\"longestCommonSubsequence('', 'abc')\", 0, longestCommonSubsequence('', 'abc'))
 __case__(\"longestCommonSubsequence('bsbininm', 'jmjkbkjkv')\", 1, longestCommonSubsequence('bsbininm', 'jmjkbkjkv'))
 __case__(\"longestCommonSubsequence('ezupkr', 'ubmrapg')\", 2, longestCommonSubsequence('ezupkr', 'ubmrapg'))",
+      graded: True,
     ),
   )
 }
@@ -12315,6 +12459,7 @@ __case__(\"change(10, [10])\", 1, change(10, [10]))
 __case__(\"change(0, [1])\", 1, change(0, [1]))
 __case__(\"change(5, [])\", 0, change(5, []))
 __case__(\"change(11, [1, 2, 5])\", 11, change(11, [1, 2, 5]))",
+      graded: True,
     ),
   )
 }
@@ -12388,6 +12533,7 @@ __case__(\"findTargetSumWays([1], 2)\", 0, findTargetSumWays([1], 2))
 __case__(\"findTargetSumWays([0, 0, 0, 0, 0], 0)\", 32, findTargetSumWays([0, 0, 0, 0, 0], 0))
 __case__(\"findTargetSumWays([], 0)\", 1, findTargetSumWays([], 0))
 __case__(\"findTargetSumWays([1, 2, 3, 4, 5], 3)\", 3, findTargetSumWays([1, 2, 3, 4, 5], 3))",
+      graded: True,
     ),
   )
 }
@@ -12456,6 +12602,7 @@ __case__(\"maxProfit([])\", 0, maxProfit([]))
 __case__(\"maxProfit([2, 1])\", 0, maxProfit([2, 1]))
 __case__(\"maxProfit([1, 2, 3, 4, 5])\", 4, maxProfit([1, 2, 3, 4, 5]))
 __case__(\"maxProfit([6, 1, 3, 2, 4, 7])\", 6, maxProfit([6, 1, 3, 2, 4, 7]))",
+      graded: True,
     ),
   )
 }
@@ -12531,6 +12678,7 @@ __case__(\"isInterleave('', '', '')\", True, isInterleave('', '', ''))
 __case__(\"isInterleave('a', '', 'a')\", True, isInterleave('a', '', 'a'))
 __case__(\"isInterleave('', 'b', 'b')\", True, isInterleave('', 'b', 'b'))
 __case__(\"isInterleave('abc', 'def', 'adbecf')\", True, isInterleave('abc', 'def', 'adbecf'))",
+      graded: True,
     ),
   )
 }
@@ -12612,6 +12760,7 @@ __case__(\"longestIncreasingPath([[3, 4, 5], [3, 2, 6], [2, 2, 1]])\", 4, longes
 __case__(\"longestIncreasingPath([[1]])\", 1, longestIncreasingPath([[1]]))
 __case__(\"longestIncreasingPath([])\", 0, longestIncreasingPath([]))
 __case__(\"longestIncreasingPath([[1, 2], [3, 4]])\", 3, longestIncreasingPath([[1, 2], [3, 4]]))",
+      graded: True,
     ),
   )
 }
@@ -12684,6 +12833,7 @@ __case__(\"numDistinct('', 'a')\", 0, numDistinct('', 'a'))
 __case__(\"numDistinct('a', '')\", 1, numDistinct('a', ''))
 __case__(\"numDistinct('abc', 'abc')\", 1, numDistinct('abc', 'abc'))
 __case__(\"numDistinct('aaa', 'aa')\", 3, numDistinct('aaa', 'aa'))",
+      graded: True,
     ),
   )
 }
@@ -12739,6 +12889,7 @@ def __case__(label, expected, actual):
 __case__(\"topTwo([1, 1, 1, 2, 2, 3])\", [(1, 3), (2, 2)], topTwo([1, 1, 1, 2, 2, 3]))
 __case__(\"countOf([1, 1, 2], 1)\", 2, countOf([1, 1, 2], 1))
 __case__(\"countOf([1, 1, 2], 9)\", 0, countOf([1, 1, 2], 9))",
+      graded: True,
     ),
   )
 }
@@ -12784,6 +12935,7 @@ def __case__(label, expected, actual):
 
 __case__(\"groupByLength(['a', 'bc', 'de', 'f'])\", {1: [\"a\", \"f\"], 2: [\"bc\", \"de\"]}, groupByLength([\"a\", \"bc\", \"de\", \"f\"]))
 __case__(\"groupByLength([])\", {}, groupByLength([]))",
+      graded: True,
     ),
   )
 }
@@ -12848,6 +13000,7 @@ def __case__(label, expected, actual):
 __graph__ = {\"a\": [\"b\", \"c\"], \"b\": [\"d\"], \"c\": [\"d\"], \"d\": []}
 __case__(\"bfsOrder(graph, 'a')\", [\"a\", \"b\", \"c\", \"d\"], bfsOrder(__graph__, \"a\"))
 __case__(\"bfsOrder({'x': []}, 'x')\", [\"x\"], bfsOrder({\"x\": []}, \"x\"))",
+      graded: True,
     ),
   )
 }
@@ -12903,6 +13056,7 @@ def __case__(label, expected, actual):
 __case__(\"kSmallest([5, 1, 4, 2], 2)\", [1, 2], kSmallest([5, 1, 4, 2], 2))
 __case__(\"kLargest([5, 1, 4, 2], 2)\", [5, 4], kLargest([5, 1, 4, 2], 2))
 __case__(\"kSmallest([3], 5)\", [3], kSmallest([3], 5))",
+      graded: True,
     ),
   )
 }
@@ -12961,6 +13115,7 @@ def __case__(label, expected, actual):
 __case__(\"firstIndexOf([9, 8, 7], 8)\", 1, firstIndexOf([9, 8, 7], 8))
 __case__(\"firstIndexOf([9, 8, 7], 5)\", -1, firstIndexOf([9, 8, 7], 5))
 __case__(\"dotProduct([1, 2, 3], [4, 5, 6])\", 32, dotProduct([1, 2, 3], [4, 5, 6]))",
+      graded: True,
     ),
   )
 }
@@ -13041,6 +13196,7 @@ __case__(\"reversedString('gleam')\", \"maelg\", reversedString(\"gleam\"))
 __case__(\"everySecond('abcdef')\", \"ace\", everySecond(\"abcdef\"))
 __case__(\"lastN('drill', 3)\", \"ill\", lastN(\"drill\", 3))
 __case__(\"trimEnds('~mid~')\", \"mid\", trimEnds(\"~mid~\"))",
+      graded: True,
     ),
   )
 }
@@ -13093,6 +13249,7 @@ def __case__(label, expected, actual):
 
 __case__(\"sortByLength(['ccc', 'a', 'bb'])\", [\"a\", \"bb\", \"ccc\"], sortByLength([\"ccc\", \"a\", \"bb\"]))
 __case__(\"sortPairs([('b', 1), ('a', 1), ('a', 9)])\", [(\"a\", 9), (\"a\", 1), (\"b\", 1)], sortPairs([(\"b\", 1), (\"a\", 1), (\"a\", 9)]))",
+      graded: True,
     ),
   )
 }
@@ -13136,6 +13293,7 @@ def __case__(label, expected, actual):
 
 __case__(\"joinUpper(['g', 'o'])\", \"GO\", joinUpper([\"g\", \"o\"]))
 __case__(\"joinUpper([])\", \"\", joinUpper([]))",
+      graded: True,
     ),
   )
 }

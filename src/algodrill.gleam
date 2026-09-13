@@ -945,7 +945,13 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               problem: ref,
               rating:,
               duration_ms: Some(browser.now_ms() - m.opened_at_ms),
-              auto_failed: model.run_failed(m.run),
+              // An ungraded card's run is a demonstration, not a test; the
+              // server coerces auto_failed to Again and knows nothing else.
+              auto_failed: case current_problem(m) {
+                Ok(current) ->
+                  problem.graded(current) && model.run_failed(m.run)
+                Error(Nil) -> model.run_failed(m.run)
+              },
               revealed: case current_problem(m) {
                 Ok(current) -> model.answer_revealed(m, current.approach)
                 Error(Nil) -> m.revealed_solution != None
@@ -1741,8 +1747,10 @@ fn problem_kind(ref: ProblemRef) -> ProblemKind {
     Ok(found) ->
       case found.check, found.quiz {
         _, Some(_) -> QuizProblem
-        Some(_), None -> CheckableProblem
-        None, None -> RevealOnlyProblem
+        // A read-and-run card (Check present, graded: False) is gradeable
+        // from the moment it opens, like a reveal-only one.
+        Some(check), None if check.graded -> CheckableProblem
+        _, None -> RevealOnlyProblem
       }
     Error(Nil) -> RevealOnlyProblem
   }

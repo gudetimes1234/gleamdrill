@@ -66,6 +66,7 @@ pub fn category() -> Category {
 fn drill(title: String, prompt: String, e: embedded.Embedded) -> Problem {
   Problem(
     title: title,
+    prompt_html: False,
     prompt: prompt,
     approach: approaches.for_title(title),
     solutions: list.map(e.solutions, fn(s) {

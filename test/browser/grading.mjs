@@ -70,7 +70,7 @@ const answerPickerIfShown = async () => {
   await page.waitForSelector(".study-screen, .picker-screen, .queue-screen",
     { timeout: 20000 });
   if (await page.isVisible(".picker-screen")) {
-    for (const n of [1, 2, 3, 4, 5]) {
+    for (const n of [1, 2, 3, 4, 5, 6]) {
       await page.click(`.picker-option:nth-child(${n})`);
       await page.waitForTimeout(120);
     }

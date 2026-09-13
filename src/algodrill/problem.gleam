@@ -1,4 +1,4 @@
-import gleam/option.{type Option}
+import gleam/option.{type Option, None, Some}
 import wire
 
 /// Identifies one drill in the catalogue.
@@ -34,8 +34,16 @@ pub type Language {
 /// BEAM bytecode, so there is nothing to hand a typed-in solution to. Elixir
 /// drills are reveal-only, and are verified natively instead
 /// (drills/elixir/verify_all.exs).
+///
+/// `graded` is whether a run has any say in the grade. Every problem drill
+/// is graded: a scheduled review needs a passing run before Hard/Good/Easy
+/// are offered, and a failed run forces Again. The Gleam Language Tour is
+/// not: its cards are read-and-run — the starter *is* the lesson's program,
+/// Run shows what it prints, and the four grades are on offer from the
+/// moment the card opens, exactly like a reveal-only card. The harness there
+/// exists only so the Run button has something to call.
 pub type Check {
-  Check(signature: String, starter: String, harness: String)
+  Check(signature: String, starter: String, harness: String, graded: Bool)
 }
 
 /// One way of solving a problem, ordered worst-to-best by runtime. Every
@@ -82,6 +90,10 @@ pub type Problem {
   Problem(
     title: String,
     prompt: String,
+    /// True when `prompt` is trusted HTML from the repository (the vendored
+    /// language tour lessons) rather than plain text. Never set it for
+    /// anything a user typed: the view renders it unescaped.
+    prompt_html: Bool,
     approach: List(ApproachStage),
     solutions: List(Solution),
     language: Language,
@@ -116,5 +128,14 @@ pub fn language_slug(language: Language) -> String {
     TypeScript -> "typescript"
     Elixir -> "elixir"
     Concept -> "concept"
+  }
+}
+
+/// Whether a run decides the grade. Reveal-only drills (no Check) and
+/// read-and-run cards (a Check with `graded: False`) grade freely every time.
+pub fn graded(problem: Problem) -> Bool {
+  case problem.check {
+    Some(check) -> check.graded
+    None -> False
   }
 }

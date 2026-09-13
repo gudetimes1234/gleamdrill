@@ -52,6 +52,7 @@ export function run(): [string, string, string][] {
     [\"containsDuplicate([])\", show(false), show(solution.containsDuplicate([]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -108,6 +109,7 @@ export function run(): [string, string, string][] {
     [\"isAnagram('a', 'ab')\", show(false), show(solution.isAnagram(\"a\", \"ab\"))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -176,6 +178,7 @@ export function run(): [string, string, string][] {
     [\"twoSum([1, 2], 7)\", show([]), show(solution.twoSum([1, 2], 7))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -258,6 +261,7 @@ export function run(): [string, string, string][] {
     [\"groupAnagrams(['a'])\", show([[\"a\"]]), show(normalise(solution.groupAnagrams([\"a\"])))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -322,6 +326,7 @@ export function run(): [string, string, string][] {
     [\"topKFrequent([5, 5, 4, 4, 4, 3], 1)\", show([4]), show(solution.topKFrequent([5, 5, 4, 4, 4, 3], 1))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -385,6 +390,7 @@ export function run(): [string, string, string][] {
     [\"productExceptSelf([2, 3])\", show([3, 2]), show(solution.productExceptSelf([2, 3]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -456,6 +462,7 @@ export function run(): [string, string, string][] {
     [\"longestConsecutive([])\", show(0), show(solution.longestConsecutive([]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -507,6 +514,7 @@ export function run(): [string, string, string][] {
     [\"isPalindrome('0P')\", show(false), show(solution.isPalindrome(\"0P\"))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -580,6 +588,7 @@ export function run(): [string, string, string][] {
     [\"twoSum([1, 2, 3], 100)\", show([]), show(solution.twoSum([1, 2, 3], 100))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -663,6 +672,7 @@ export function run(): [string, string, string][] {
     [\"minDistance('kitten', 'sitting')\", show(3), show(solution.minDistance('kitten', 'sitting'))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -754,6 +764,7 @@ export function run(): [string, string, string][] {
     [\"maxCoins([1, 2, 3, 4])\", show(40), show(solution.maxCoins([1, 2, 3, 4]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -833,6 +844,7 @@ export function run(): [string, string, string][] {
     [\"isMatch('abc', 'abc')\", show(true), show(solution.isMatch('abc', 'abc'))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -951,6 +963,7 @@ export function run(): [string, string, string][] {
 
   return cases;
 }",
+      graded: True,
     ),
   )
 }
@@ -1046,6 +1059,7 @@ export function run(): [string, string, string][] {
     [\"search('....') -- too long\", show(false), show(d.search(\"....\"))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -1156,6 +1170,7 @@ export function run(): [string, string, string][] {
     [\"findWords([], ['a'])\", show([]), show(sorted([], [\"a\"]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -1251,6 +1266,7 @@ export function run(): [string, string, string][] {
     [\"numIslands(diagonal squares are separate)\", show(2), show(solution.numIslands(board([\"10\", \"01\"])))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -1343,6 +1359,7 @@ export function run(): [string, string, string][] {
     [\"cloneGraph([[],[]], 1) -- only the reachable part\", show([[]]), show(solution.cloneGraph([[], []], 1))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -1436,6 +1453,7 @@ export function run(): [string, string, string][] {
     [\"maxAreaOfIsland([[1,1,1],[1,1,1]])\", show(6), show(solution.maxAreaOfIsland([[1, 1, 1], [1, 1, 1]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -1560,6 +1578,7 @@ export function run(): [string, string, string][] {
     [\"pacificAtlantic([[1,1],[1,1]])\", show([[0, 0], [0, 1], [1, 0], [1, 1]]), show(sorted([[1, 1], [1, 1]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -1649,6 +1668,7 @@ export function run(): [string, string, string][] {
     [\"threeSum([0, 0, 0])\", show([\"[0,0,0]\"]), show(normalise(solution.threeSum([0, 0, 0])))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -1757,6 +1777,7 @@ export function run(): [string, string, string][] {
     [\"solve(a region reaching the border)\", show([\"XOX\", \"XOX\", \"XXX\"]), show(shown([\"XOX\", \"XOX\", \"XXX\"]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -1860,6 +1881,7 @@ export function run(): [string, string, string][] {
     [\"orangesRotting([[0]])\", show(0), show(solution.orangesRotting([[0]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -1966,6 +1988,7 @@ export function run(): [string, string, string][] {
     [\"wallsAndGates(no gate at all)\", show([[INF, INF]]), show(solution.wallsAndGates([[INF, INF]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -2060,6 +2083,7 @@ export function run(): [string, string, string][] {
     [\"canFinish(3, [[0,1],[1,2],[2,0]])\", show(false), show(solution.canFinish(3, [[0, 1], [1, 2], [2, 0]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -2164,6 +2188,7 @@ export function run(): [string, string, string][] {
     [\"findOrder(0, [])\", show([]), show(solution.findOrder(0, []))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -2260,6 +2285,7 @@ export function run(): [string, string, string][] {
     [\"findRedundantConnection([[1,2],[2,1]])\", show([2, 1]), show(solution.findRedundantConnection([[1, 2], [2, 1]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -2349,6 +2375,7 @@ export function run(): [string, string, string][] {
     [\"countComponents(4, [[0,1],[1,0]])\", show(3), show(solution.countComponents(4, [[0, 1], [1, 0]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -2439,6 +2466,7 @@ export function run(): [string, string, string][] {
     [\"validTree(4, [[0,1],[2,3]]) -- two trees\", show(false), show(solution.validTree(4, [[0, 1], [2, 3]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -2550,6 +2578,7 @@ export function run(): [string, string, string][] {
     [\"ladderLength('hot','dog', ['hot','dog']) -- no bridge\", show(0), show(solution.ladderLength('hot', 'dog', ['hot', 'dog']))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -2638,6 +2667,7 @@ export function run(): [string, string, string][] {
     [\"findItinerary([])\", show([\"JFK\"]), show(solution.findItinerary([]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -2700,6 +2730,7 @@ export function run(): [string, string, string][] {
     [\"maxArea([1, 1])\", show(1), show(solution.maxArea([1, 1]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -2800,6 +2831,7 @@ export function run(): [string, string, string][] {
     [\"minCostConnectPoints([[0,0],[0,5]])\", show(5), show(solution.minCostConnectPoints([[0, 0], [0, 5]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -2888,6 +2920,7 @@ export function run(): [string, string, string][] {
     [\"networkDelayTime(the long way round is shorter, 3, 1)\", show(3), show(solution.networkDelayTime([[1, 2, 1], [2, 3, 2], [1, 3, 4]], 3, 1))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -2992,6 +3025,7 @@ export function run(): [string, string, string][] {
     [\"swimInWater([[3,2],[1,0]]) -- the start is the deepest cell\", show(3), show(solution.swimInWater([[3, 2], [1, 0]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -3131,6 +3165,7 @@ export function run(): [string, string, string][] {
     [\"alienOrder(['x','y','z'])\", show(\"xyz\"), show(solution.alienOrder([\"x\", \"y\", \"z\"]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -3232,6 +3267,7 @@ export function run(): [string, string, string][] {
     [\"findCheapestPrice(5, cheapest route needs the third hop, 0, 2, 2)\", show(7), show(solution.findCheapestPrice(5, [[0, 1, 5], [1, 2, 5], [0, 3, 2], [3, 1, 2], [1, 4, 1], [4, 2, 1]], 0, 2, 2))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -3337,6 +3373,7 @@ export function run(): [string, string, string][] {
     [\"reverseList([7])\", show([7]), show(listValues(solution.reverseList(chain([7]))))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -3452,6 +3489,7 @@ export function run(): [string, string, string][] {
     [\"mergeTwoLists([5], [1,2,3])\", show([1, 2, 3, 5]), show(listValues(solution.mergeTwoLists(chain([5]), chain([1, 2, 3]))))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -3601,6 +3639,7 @@ export function run(): [string, string, string][] {
     [\"reorderList([])\", show([]), show(reordered([]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -3721,6 +3760,7 @@ export function run(): [string, string, string][] {
     [\"removeNthFromEnd([1,2,3], 5) -- nothing to remove\", show([1, 2, 3]), show(listValues(solution.removeNthFromEnd(chain([1, 2, 3]), 5)))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -3862,6 +3902,7 @@ export function run(): [string, string, string][] {
     [\"copyRandomList([])\", show([]), show(copied([]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -3917,6 +3958,7 @@ export function run(): [string, string, string][] {
     [\"maxProfit([])\", show(0), show(solution.maxProfit([]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -4053,6 +4095,7 @@ export function run(): [string, string, string][] {
     [\"addTwoNumbers([1,2], [3,4,5]) -- different lengths\", show([4, 6, 5]), show(listValues(solution.addTwoNumbers(chain([1, 2]), chain([3, 4, 5]))))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -4157,6 +4200,7 @@ export function run(): [string, string, string][] {
     [\"hasCycle([1,2], tail -> index 0)\", show(true), show(solution.hasCycle(chain([1, 2], 0)))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -4233,6 +4277,7 @@ export function run(): [string, string, string][] {
     [\"findDuplicate([1,4,4,2,4])\", show(4), show(solution.findDuplicate([1, 4, 4, 2, 4]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -4383,6 +4428,7 @@ export function run(): [string, string, string][] {
     [\"get(5) after put(5,5) then put(5,9) -- an update, not an insert\", show(9), show(updated.get(5))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -4525,6 +4571,7 @@ export function run(): [string, string, string][] {
     [\"mergeKLists([[2,2],[2]]) -- ties everywhere\", show([2, 2, 2]), show(merged([[2, 2], [2]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -4665,6 +4712,7 @@ export function run(): [string, string, string][] {
     [\"reverseKGroup([], 2)\", show([]), show(grouped([], 2))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -4819,6 +4867,7 @@ export function run(): [string, string, string][] {
     [\"invertTree twice is the original\", show([1, 2]), show(levels(solution.invertTree(solution.invertTree(build([1, 2])))))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -4956,6 +5005,7 @@ export function run(): [string, string, string][] {
     [\"maxDepth(a spindly tree)\", show(3), show(solution.maxDepth(build([1, 2, null, 3])))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -5106,6 +5156,7 @@ export function run(): [string, string, string][] {
     [\"diameterOfBinaryTree(widest path misses the root)\", show(4), show(solution.diameterOfBinaryTree(build([1, 2, null, 4, 5, 6, null, null, 7])))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -5253,6 +5304,7 @@ export function run(): [string, string, string][] {
     [\"isBalanced(balanced at the root, not below)\", show(false), show(solution.isBalanced(build([1, 2, 2, 3, null, null, null, 4])))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -5317,6 +5369,7 @@ export function run(): [string, string, string][] {
     [\"lengthOfLongestSubstring('')\", show(0), show(solution.lengthOfLongestSubstring(\"\"))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -5455,6 +5508,7 @@ export function run(): [string, string, string][] {
     [\"isSameTree([1,2,1], [1,1,2]) -- children swapped\", show(false), show(solution.isSameTree(build([1, 2, 1]), build([1, 1, 2])))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -5599,6 +5653,7 @@ export function run(): [string, string, string][] {
     [\"isSubtree([1], []) -- the empty tree is in everything\", show(true), show(solution.isSubtree(build([1]), build([])))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -5754,6 +5809,7 @@ export function run(): [string, string, string][] {
     [\"lowestCommonAncestor([1], 1, 1)\", show(1), show(solution.lowestCommonAncestor(build([1]), 1, 1))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -5901,6 +5957,7 @@ export function run(): [string, string, string][] {
     [\"levelOrder(missing left children)\", show([[1], [3], [4]]), show(solution.levelOrder(build([1, null, 3, null, 4])))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -6047,6 +6104,7 @@ export function run(): [string, string, string][] {
     [\"rightSideView(the right side runs out)\", show([1, 3, 4]), show(solution.rightSideView(build([1, 2, 3, 4])))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -6192,6 +6250,7 @@ export function run(): [string, string, string][] {
     [\"goodNodes([3,3,null,4,2])\", show(3), show(solution.goodNodes(build([3, 3, null, 4, 2])))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -6339,6 +6398,7 @@ export function run(): [string, string, string][] {
     [\"isValidBST([2,2]) -- equal values are not allowed\", show(false), show(solution.isValidBST(build([2, 2])))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -6498,6 +6558,7 @@ export function run(): [string, string, string][] {
     [\"kthSmallest([7], 1)\", show(7), show(solution.kthSmallest(build([7]), 1))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -6656,6 +6717,7 @@ export function run(): [string, string, string][] {
     [\"buildTree([1,2,3], [1,2,3]) -- leaning right\", show([1, null, 2, null, 3]), show(levels(solution.buildTree([1, 2, 3], [1, 2, 3])))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -6814,6 +6876,7 @@ export function run(): [string, string, string][] {
     [\"maxPathSum([0])\", show(0), show(solution.maxPathSum(build([0])))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -6890,6 +6953,7 @@ export function run(): [string, string, string][] {
     [\"characterReplacement('AAAA', 0)\", show(4), show(solution.characterReplacement(\"AAAA\", 0))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -7083,6 +7147,7 @@ export function run(): [string, string, string][] {
     [\"deserialize(serialize([-1,-2,-3])) -- negatives survive\", show([-1, -2, -3]), show(roundTrip([-1, -2, -3]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -7154,6 +7219,7 @@ export function run(): [string, string, string][] {
     [\"checkInclusion('adc', 'dcda')\", show(true), show(solution.checkInclusion(\"adc\", \"dcda\"))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -7211,6 +7277,7 @@ export function run(): [string, string, string][] {
     [\"isValid('(')\", show(false), show(solution.isValid(\"(\"))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -7314,6 +7381,7 @@ export function run(): [string, string, string][] {
     [\"getMin() after pop()\", show(-2), show(stack.getMin())],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -7377,6 +7445,7 @@ export function run(): [string, string, string][] {
     [\"dailyTemperatures([30, 30, 30])\", show([0, 0, 0]), show(solution.dailyTemperatures([30, 30, 30]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -7442,6 +7511,7 @@ export function run(): [string, string, string][] {
     [\"search([], 1)\", show(-1), show(solution.search([], 1))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -7505,6 +7575,7 @@ export function run(): [string, string, string][] {
     [\"findMin([2, 1])\", show(1), show(solution.findMin([2, 1]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -7598,6 +7669,7 @@ export function run(): [string, string, string][] {
     [\"search([4, 5, 6, 7, 0, 1, 2], 6)\", show(2), show(solution.search([4, 5, 6, 7, 0, 1, 2], 6))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -7702,6 +7774,7 @@ export function run(): [string, string, string][] {
     [\"decode(encode(['\\\\\\\\', '|', '#']))\", show([\"\\\\\", \"|\", \"#\"]), show(roundTrip([\"\\\\\", \"|\", \"#\"]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -7801,6 +7874,7 @@ export function run(): [string, string, string][] {
     [\"isValidSudoku(empty board)\", show(true), show(solution.isValidSudoku(Array.from({ length: 9 }, () => Array(9).fill(\".\"))))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -7877,6 +7951,7 @@ export function run(): [string, string, string][] {
     [\"trap([5, 4, 3, 2, 1])\", show(0), show(solution.trap([5, 4, 3, 2, 1]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -7983,6 +8058,7 @@ export function run(): [string, string, string][] {
     [\"minWindow('aaflslflsldkalskaaa', 'aaa')\", show(\"aaa\"), show(solution.minWindow(\"aaflslflsldkalskaaa\", \"aaa\"))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -8072,6 +8148,7 @@ export function run(): [string, string, string][] {
     [\"maxSlidingWindow([-7, -8, 7, 5, 7, 1, 6, 0], 4)\", show([7, 7, 7, 7, 7]), show(solution.maxSlidingWindow([-7, -8, 7, 5, 7, 1, 6, 0], 4))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -8155,6 +8232,7 @@ export function run(): [string, string, string][] {
     [\"evalRPN(the long one)\", show(22), show(solution.evalRPN([\"10\", \"6\", \"9\", \"3\", \"+\", \"-11\", \"*\", \"/\", \"*\", \"17\", \"+\", \"5\", \"+\"]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -8229,6 +8307,7 @@ export function run(): [string, string, string][] {
     [\"generateParenthesis(4) count\", show(14), show(sorted(4).length)],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -8305,6 +8384,7 @@ export function run(): [string, string, string][] {
     [\"carFleet(10, [0, 4, 2], [2, 1, 3])\", show(1), show(solution.carFleet(10, [0, 4, 2], [2, 1, 3]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -8385,6 +8465,7 @@ export function run(): [string, string, string][] {
     [\"largestRectangleArea([4, 2, 0, 3, 2, 5])\", show(6), show(solution.largestRectangleArea([4, 2, 0, 3, 2, 5]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -8470,6 +8551,7 @@ export function run(): [string, string, string][] {
     [\"searchMatrix([[1], [3], [5]], 5)\", show(true), show(solution.searchMatrix([[1], [3], [5]], 5))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -8540,6 +8622,7 @@ export function run(): [string, string, string][] {
     [\"minEatingSpeed([1, 1, 1, 10], 4)\", show(10), show(solution.minEatingSpeed([1, 1, 1, 10], 4))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -8644,6 +8727,7 @@ export function run(): [string, string, string][] {
 
   return cases;
 }",
+      graded: True,
     ),
   )
 }
@@ -8753,6 +8837,7 @@ export function run(): [string, string, string][] {
     [\"findMedianSortedArrays([1, 3, 5, 7], [2, 4, 6])\", show(4), show(solution.findMedianSortedArrays([1, 3, 5, 7], [2, 4, 6]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -8823,6 +8908,7 @@ export function run(): [string, string, string][] {
     [\"insert([[3, 5]], [1, 2])\", show([[1, 2], [3, 5]]), show(solution.insert([[3, 5]], [1, 2]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -8893,6 +8979,7 @@ export function run(): [string, string, string][] {
     [\"merge([[1, 4], [2, 3]])\", show([[1, 4]]), show(solution.merge([[1, 4], [2, 3]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -8964,6 +9051,7 @@ export function run(): [string, string, string][] {
     [\"eraseOverlapIntervals([[1, 100], [11, 22], [1, 11], [2, 12]])\", show(2), show(solution.eraseOverlapIntervals([[1, 100], [11, 22], [1, 11], [2, 12]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -9024,6 +9112,7 @@ export function run(): [string, string, string][] {
     [\"canAttendMeetings([[5, 10], [1, 6]])\", show(false), show(solution.canAttendMeetings([[5, 10], [1, 6]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -9095,6 +9184,7 @@ export function run(): [string, string, string][] {
     [\"minMeetingRooms(six overlapping meetings)\", show(4), show(solution.minMeetingRooms([[1, 10], [2, 7], [3, 19], [8, 12], [10, 20], [11, 30]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -9163,6 +9253,7 @@ export function run(): [string, string, string][] {
     [\"minInterval([[1, 3]], [0, 4])\", show([-1, -1]), show(solution.minInterval([[1, 3]], [0, 4]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -9231,6 +9322,7 @@ export function run(): [string, string, string][] {
     [\"maxSubArray([])\", show(0), show(solution.maxSubArray([]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -9291,6 +9383,7 @@ export function run(): [string, string, string][] {
     [\"canJump([2, 0, 0])\", show(true), show(solution.canJump([2, 0, 0]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -9363,6 +9456,7 @@ export function run(): [string, string, string][] {
     [\"jump([1, 1, 1, 1])\", show(3), show(solution.jump([1, 1, 1, 1]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -9446,6 +9540,7 @@ export function run(): [string, string, string][] {
     [\"canCompleteCircuit([3, 1, 1], [1, 2, 2])\", show(0), show(solution.canCompleteCircuit([3, 1, 1], [1, 2, 2]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -9525,6 +9620,7 @@ export function run(): [string, string, string][] {
     [\"isNStraightHand([8, 10, 12], 3)\", show(false), show(solution.isNStraightHand([8, 10, 12], 3))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -9582,6 +9678,7 @@ export function run(): [string, string, string][] {
     [\"mergeTriplets([[1, 2, 3]], [3, 2, 1])\", show(false), show(solution.mergeTriplets([[1, 2, 3]], [3, 2, 1]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -9656,6 +9753,7 @@ export function run(): [string, string, string][] {
     [\"partitionLabels('abc')\", show([1, 1, 1]), show(solution.partitionLabels('abc'))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -9737,6 +9835,7 @@ export function run(): [string, string, string][] {
     [\"checkValidString('(*()')\", show(true), show(solution.checkValidString('(*()'))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -9786,6 +9885,7 @@ export function run(): [string, string, string][] {
     [\"singleNumber([0, 1, 1])\", show(0), show(solution.singleNumber([0, 1, 1]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -9844,6 +9944,7 @@ export function run(): [string, string, string][] {
     [\"hammingWeight(1)\", show(1), show(solution.hammingWeight(1))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -9905,6 +10006,7 @@ export function run(): [string, string, string][] {
     [\"countBits(8)\", show([0, 1, 1, 2, 1, 2, 2, 3, 1]), show(solution.countBits(8))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -9963,6 +10065,7 @@ export function run(): [string, string, string][] {
     [\"reverseBits(1)\", show(2147483648), show(solution.reverseBits(1))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -10017,6 +10120,7 @@ export function run(): [string, string, string][] {
     [\"missingNumber([])\", show(0), show(solution.missingNumber([]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -10088,6 +10192,7 @@ export function run(): [string, string, string][] {
     [\"getSum(5, -3)\", show(2), show(solution.getSum(5, -3))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -10158,6 +10263,7 @@ export function run(): [string, string, string][] {
     [\"reverse(1463847412)\", show(2147483641), show(solution.reverse(1463847412))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -10212,6 +10318,7 @@ export function run(): [string, string, string][] {
     [\"rotate(4x4)\", show([[15, 13, 2, 5], [14, 3, 4, 1], [12, 6, 8, 9], [16, 7, 10, 11]]), show(solution.rotate([[5, 1, 9, 11], [2, 4, 8, 10], [13, 3, 6, 7], [15, 14, 12, 16]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -10289,6 +10396,7 @@ export function run(): [string, string, string][] {
     [\"spiralOrder([[1], [2], [3]])\", show([1, 2, 3]), show(solution.spiralOrder([[1], [2], [3]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -10360,6 +10468,7 @@ export function run(): [string, string, string][] {
     [\"setZeroes([[1, 2], [3, 4]])\", show([[1, 2], [3, 4]]), show(solution.setZeroes([[1, 2], [3, 4]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -10442,6 +10551,7 @@ export function run(): [string, string, string][] {
     [\"isHappy(100)\", show(true), show(solution.isHappy(100))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -10501,6 +10611,7 @@ export function run(): [string, string, string][] {
     [\"plusOne([1, 9, 9])\", show([2, 0, 0]), show(solution.plusOne([1, 9, 9]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -10558,6 +10669,7 @@ export function run(): [string, string, string][] {
     [\"myPow(0.0, 5)\", show(0), show(solution.myPow(0.0, 5))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -10661,6 +10773,7 @@ export function run(): [string, string, string][] {
     [\"multiply('123456789', '987654321')\", show('121932631112635269'), show(solution.multiply('123456789', '987654321'))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -10784,6 +10897,7 @@ export function run(): [string, string, string][] {
 
   return cases;
 }",
+      graded: True,
     ),
   )
 }
@@ -10846,6 +10960,7 @@ export function run(): [string, string, string][] {
     [\"climbStairs(45)\", show(1836311903), show(solution.climbStairs(45))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -10905,6 +11020,7 @@ export function run(): [string, string, string][] {
     [\"minCostClimbingStairs([])\", show(0), show(solution.minCostClimbingStairs([]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -10969,6 +11085,7 @@ export function run(): [string, string, string][] {
     [\"rob([1, 2])\", show(2), show(solution.rob([1, 2]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -11045,6 +11162,7 @@ export function run(): [string, string, string][] {
     [\"rob([1, 2])\", show(2), show(solution.rob([1, 2]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -11130,6 +11248,7 @@ export function run(): [string, string, string][] {
     [\"longestPalindrome('abb')\", show('bb'), show(solution.longestPalindrome('abb'))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -11206,6 +11325,7 @@ export function run(): [string, string, string][] {
     [\"countSubstrings('abccba')\", show(9), show(solution.countSubstrings('abccba'))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -11287,6 +11407,7 @@ export function run(): [string, string, string][] {
     [\"numDecodings('11106')\", show(2), show(solution.numDecodings('11106'))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -11370,6 +11491,7 @@ export function run(): [string, string, string][] {
     [\"coinChange([2, 5, 10, 1], 27)\", show(4), show(solution.coinChange([2, 5, 10, 1], 27))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -11445,6 +11567,7 @@ export function run(): [string, string, string][] {
     [\"maxProduct([])\", show(0), show(solution.maxProduct([]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -11523,6 +11646,7 @@ export function run(): [string, string, string][] {
     [\"wordBreak('aaaaaaa', ['aaa', 'aaaa'])\", show(true), show(solution.wordBreak('aaaaaaa', ['aaa', 'aaaa']))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -11598,6 +11722,7 @@ export function run(): [string, string, string][] {
     [\"lengthOfLIS([4, 10, 4, 3, 8, 9])\", show(3), show(solution.lengthOfLIS([4, 10, 4, 3, 8, 9]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -11677,6 +11802,7 @@ export function run(): [string, string, string][] {
     [\"canPartition([3, 3, 3, 4, 5])\", show(true), show(solution.canPartition([3, 3, 3, 4, 5]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -11765,6 +11891,7 @@ export function run(): [string, string, string][] {
     [\"k = 2 over [] then 5, 5\", show([null, 5]), show(stream(2, [], [5, 5]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -11843,6 +11970,7 @@ export function run(): [string, string, string][] {
     [\"lastStoneWeight([10, 4, 2, 10])\", show(2), show(solution.lastStoneWeight([10, 4, 2, 10]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -11915,6 +12043,7 @@ export function run(): [string, string, string][] {
     [\"kClosest([[1, 1], [2, 2], [3, 3]], 2)\", show([[1, 1], [2, 2]]), show(sorted([[1, 1], [2, 2], [3, 3]], 2))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -11979,6 +12108,7 @@ export function run(): [string, string, string][] {
     [\"findKthLargest([], 1)\", show(null), show(solution.findKthLargest([], 1))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -12057,6 +12187,7 @@ export function run(): [string, string, string][] {
     [\"leastInterval(four As and six singles, 2)\", show(10), show(solution.leastInterval([\"A\", \"A\", \"A\", \"A\", \"B\", \"C\", \"D\", \"E\", \"F\", \"G\"], 2))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -12203,6 +12334,7 @@ export function run(): [string, string, string][] {
 
   return cases;
 }",
+      graded: True,
     ),
   )
 }
@@ -12307,6 +12439,7 @@ export function run(): [string, string, string][] {
     [\"median before anything is added\", show(0), show(new solution.MedianFinder().findMedian())],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -12367,6 +12500,7 @@ export function run(): [string, string, string][] {
     [\"subsets of five elements count\", show(32), show(solution.subsets([1, 2, 3, 4, 5]).length)],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -12453,6 +12587,7 @@ export function run(): [string, string, string][] {
     [\"combinationSum([], 3)\", show([]), show(sorted([], 3))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -12519,6 +12654,7 @@ export function run(): [string, string, string][] {
     [\"permute of four elements count\", show(24), show(solution.permute([1, 2, 3, 4]).length)],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -12600,6 +12736,7 @@ export function run(): [string, string, string][] {
     [\"subsetsWithDup([4, 4, 4, 1, 4]) count\", show(10), show(solution.subsetsWithDup([4, 4, 4, 1, 4]).length)],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -12691,6 +12828,7 @@ export function run(): [string, string, string][] {
     [\"combinationSum2([2], 1)\", show([]), show(sorted([2], 1))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -12807,6 +12945,7 @@ export function run(): [string, string, string][] {
     [\"exist([], 'A')\", show(false), show(solution.exist([], \"A\"))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -12893,6 +13032,7 @@ export function run(): [string, string, string][] {
     [\"partition('abc')\", show([\"a,b,c\"]), show(sorted(\"abc\"))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -12972,6 +13112,7 @@ export function run(): [string, string, string][] {
     [\"letterCombinations('79') count\", show(16), show(solution.letterCombinations(\"79\").length)],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -13076,6 +13217,7 @@ export function run(): [string, string, string][] {
     [\"solveNQueens(6) count\", show(4), show(solution.solveNQueens(6).length)],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -13142,6 +13284,7 @@ export function run(): [string, string, string][] {
     [\"uniquePaths(10, 10)\", show(48620), show(solution.uniquePaths(10, 10))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -13218,6 +13361,7 @@ export function run(): [string, string, string][] {
     [\"longestCommonSubsequence('ezupkr', 'ubmrapg')\", show(2), show(solution.longestCommonSubsequence('ezupkr', 'ubmrapg'))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -13291,6 +13435,7 @@ export function run(): [string, string, string][] {
     [\"change(11, [1, 2, 5])\", show(11), show(solution.change(11, [1, 2, 5]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -13372,6 +13517,7 @@ export function run(): [string, string, string][] {
     [\"findTargetSumWays([1, 2, 3, 4, 5], 3)\", show(3), show(solution.findTargetSumWays([1, 2, 3, 4, 5], 3))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -13446,6 +13592,7 @@ export function run(): [string, string, string][] {
     [\"maxProfit([6, 1, 3, 2, 4, 7])\", show(6), show(solution.maxProfit([6, 1, 3, 2, 4, 7]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -13528,6 +13675,7 @@ export function run(): [string, string, string][] {
     [\"isInterleave('abc', 'def', 'adbecf')\", show(true), show(solution.isInterleave('abc', 'def', 'adbecf'))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -13627,6 +13775,7 @@ export function run(): [string, string, string][] {
     [\"longestIncreasingPath([[1, 2], [3, 4]])\", show(3), show(solution.longestIncreasingPath([[1, 2], [3, 4]]))],
   ];
 }",
+      graded: True,
     ),
   )
 }
@@ -13704,6 +13853,7 @@ export function run(): [string, string, string][] {
     [\"numDistinct('aaa', 'aa')\", show(3), show(solution.numDistinct('aaa', 'aa'))],
   ];
 }",
+      graded: True,
     ),
   )
 }

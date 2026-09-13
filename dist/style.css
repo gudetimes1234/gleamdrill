@@ -602,6 +602,49 @@ details.approach summary:focus-visible {
     color: var(--text-primary);
 }
 
+/* Lesson prose from the language tour: real HTML (paragraphs, inline code,
+   links, the odd list or block), kept close to the plain-text prompt's look. */
+.problem-prompt.prose p {
+    margin: 0 0 10px;
+}
+
+.problem-prompt.prose p:last-child {
+    margin-bottom: 0;
+}
+
+.problem-prompt.prose code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 1px 5px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+
+.problem-prompt.prose pre {
+    margin: 0 0 10px;
+    padding: 10px 12px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+}
+
+.problem-prompt.prose pre code {
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.problem-prompt.prose a {
+    color: var(--accent);
+}
+
+.problem-prompt.prose ul {
+    margin: 0 0 10px;
+    padding-left: 20px;
+}
+
 details.approach summary.panel-title {
     cursor: pointer;
     margin-bottom: 0;

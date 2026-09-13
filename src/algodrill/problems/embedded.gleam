@@ -87,6 +87,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -168,6 +169,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -308,6 +310,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -425,6 +428,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -526,6 +530,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -601,6 +606,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -694,6 +700,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -818,6 +825,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -959,6 +967,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -1124,6 +1133,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -1293,6 +1303,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -1457,6 +1468,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -1647,6 +1659,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -1823,6 +1836,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -2046,6 +2060,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -2227,6 +2242,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -2397,6 +2413,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -2565,6 +2582,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -2800,6 +2818,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -2946,6 +2965,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -3144,6 +3164,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -3314,6 +3335,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -3523,6 +3545,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -3704,6 +3727,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -3929,6 +3953,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -4077,6 +4102,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -4231,6 +4257,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -4403,6 +4430,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -4623,6 +4651,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -4808,6 +4837,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -4898,6 +4928,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -5074,6 +5105,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -5262,6 +5294,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -5498,6 +5531,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -5760,6 +5794,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -5963,6 +5998,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -6035,6 +6071,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -6121,6 +6158,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -6216,6 +6254,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -6314,6 +6353,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -6414,6 +6454,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -6490,6 +6531,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -6601,6 +6643,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -6731,6 +6774,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -6843,6 +6887,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -7042,6 +7087,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -7184,6 +7230,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -7294,6 +7341,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -7421,6 +7469,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -7542,6 +7591,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -7691,6 +7741,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -7857,6 +7908,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -7953,6 +8005,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -8071,6 +8124,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -8196,6 +8250,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -8337,6 +8392,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -8489,6 +8545,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -8647,6 +8704,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -8783,6 +8841,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -8930,6 +8989,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -9062,6 +9122,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -9209,6 +9270,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -9364,6 +9426,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -9506,6 +9569,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -9682,6 +9746,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -9807,6 +9872,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -9893,6 +9959,7 @@ pub fn run() -> List(#(String, String, String)) {
     #(\"is_valid(\\\"(\\\")\", string.inspect(False), string.inspect(solution.is_valid(\"(\"))),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -10057,6 +10124,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -10155,6 +10223,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -10243,6 +10312,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -10343,6 +10413,7 @@ pub fn run() -> List(#(String, String, String)) {
     #(\"find_min([2, 1])\", string.inspect(Ok(1)), string.inspect(solution.find_min([2, 1]))),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -10496,6 +10567,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -10628,6 +10700,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -10786,6 +10859,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -10907,6 +10981,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -11156,6 +11231,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -11275,6 +11351,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -11394,6 +11471,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -11508,6 +11586,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -11606,6 +11685,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -11736,6 +11816,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -11883,6 +11964,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -11991,6 +12073,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -12187,6 +12270,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -12315,6 +12399,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -12431,6 +12516,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -12529,6 +12615,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -12640,6 +12727,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -12732,6 +12820,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -12845,6 +12934,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -12976,6 +13066,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -13080,6 +13171,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -13181,6 +13273,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -13286,6 +13379,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -13407,6 +13501,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -13595,6 +13690,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -13707,6 +13803,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -13821,6 +13918,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -13949,6 +14047,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -14021,6 +14120,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -14100,6 +14200,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -14193,6 +14294,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -14283,6 +14385,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -14367,6 +14470,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -14499,6 +14603,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -14610,6 +14715,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -14711,6 +14817,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -14864,6 +14971,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -14984,6 +15092,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -15086,6 +15195,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -15182,6 +15292,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -15288,6 +15399,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -15488,6 +15600,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -15683,6 +15796,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -15782,6 +15896,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -15877,6 +15992,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -15981,6 +16097,7 @@ pub fn run() -> List(#(String, String, String)) {
     #(\"rob([1, 2])\", string.inspect(2), string.inspect(solution.rob([1, 2]))),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -16092,6 +16209,7 @@ pub fn run() -> List(#(String, String, String)) {
     #(\"rob([1, 2])\", string.inspect(2), string.inspect(solution.rob([1, 2]))),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -16235,6 +16353,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -16365,6 +16484,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -16534,6 +16654,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -16670,6 +16791,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -16799,6 +16921,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -16946,6 +17069,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -17049,6 +17173,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -17185,6 +17310,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -17332,6 +17458,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -17457,6 +17584,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -17585,6 +17713,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -17686,6 +17815,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -17823,6 +17953,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -18092,6 +18223,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -18286,6 +18418,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -18385,6 +18518,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -18525,6 +18659,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -18630,6 +18765,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -18751,6 +18887,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -18872,6 +19009,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -19101,6 +19239,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -19253,6 +19392,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -19394,6 +19534,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -19551,6 +19692,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -19661,6 +19803,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -19822,6 +19965,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -19948,6 +20092,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -20070,6 +20215,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -20194,6 +20340,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -20385,6 +20532,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -20543,6 +20691,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -20696,6 +20845,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -20765,6 +20915,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -20845,6 +20996,7 @@ pub fn run() -> List(#(String, String, String)) {
     #(\"sum([])\", string.inspect(0), string.inspect(solution.sum([]))),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -20961,6 +21113,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -21054,6 +21207,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -21170,6 +21324,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -21233,6 +21388,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -21324,6 +21480,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -21384,6 +21541,7 @@ pub fn run() -> List(#(String, String, String)) {
     #(\"slug(\\\"\\\")\", string.inspect(\"\"), string.inspect(solution.slug(\"\"))),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -21486,6 +21644,7 @@ pub fn run() -> List(#(String, String, String)) {
     #(\"level_up keeps the name\", string.inspect(\"lucy\"), string.inspect(levelled.name)),
   ]
 }",
+      graded: True,
     ),
   )
 }
@@ -21558,6 +21717,7 @@ pub fn run() -> List(#(String, String, String)) {
     ),
   ]
 }",
+      graded: True,
     ),
   )
 }

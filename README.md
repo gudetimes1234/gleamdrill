@@ -130,6 +130,7 @@ practice.
 | NeetCode 150 (Gleam) | Gleam | 150 | 301 | yes |
 | NeetCode 150 (TypeScript) | TypeScript | 150 | 302 | yes |
 | NeetCode 150 (Elixir) | Elixir | 150 | 302 | no — reveal-only |
+| Gleam Language Tour | Gleam | 63 | — | runs, ungraded |
 | Python Tips / Idioms | Python | 8 | 16 | yes |
 | Gleam Tips / Idioms | Gleam | 10 | 20 | yes |
 | System Design | — (multiple choice) | 20 | — | self-grading |
@@ -141,6 +142,15 @@ Programming, 2-D Dynamic Programming, Greedy, Intervals, Math & Geometry and Bit
 Manipulation. `src/algodrill/problems/catalog.gleam` is the one ordered listing —
 one line per problem, not one per problem per language — and each language
 builds its view of it, skipping any drill it has no source for.
+
+The **Gleam Language Tour** is [tour.gleam.run](https://tour.gleam.run) as
+cards: the lesson's prose is the prompt, the editor opens on the lesson's
+program, and Run shows what it prints — including the three lessons that call
+JavaScript through an external. Nothing is graded by the run. A lesson is
+there to be read and tried, so all four grades are on offer from the moment the
+card opens, the way a reveal-only drill grades, and the scheduler spaces the
+re-reading. Lessons are vendored verbatim from the tour's repository and
+re-vendored with `make tour-vendor`.
 
 Beyond code: **System Design** is a multiple-choice category drawn from
 *Acing the System Design Interview* — nine sections mirroring the exam
@@ -428,6 +438,11 @@ problem is worth just as much.
 ## License
 
 [MIT](LICENSE).
+
+The Gleam Language Tour lessons under `drills/tour/` are copied from
+[gleam-lang/language-tour](https://github.com/gleam-lang/language-tour)
+(Apache-2.0, © the Gleam contributors) at the commit named in
+`drills/tour/UPSTREAM`; the only change made is that links open in a new tab.
 
 The vendored runtimes under `assets/` and `dist/` are third-party and keep
 their own licences: the Gleam compiler (Apache-2.0), Brython (BSD-3-Clause),

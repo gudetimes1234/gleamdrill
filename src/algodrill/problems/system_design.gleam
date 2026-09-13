@@ -362,6 +362,7 @@ fn q(
   Problem(
     title: title,
     prompt: prompt,
+    prompt_html: False,
     // Deliberately empty. The drill view renders `approach` in a panel that is
     // available before answering, which on a quiz would hand over the answer.
     approach: [],

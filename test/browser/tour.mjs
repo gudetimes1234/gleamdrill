@@ -108,7 +108,7 @@ const goHome = async () => {
   await page.waitForSelector(".study-screen, .picker-screen, .queue-screen",
     { timeout: 20000 });
   if (await page.isVisible(".picker-screen")) {
-    for (const n of [1, 2, 3, 4, 5]) {
+    for (const n of [1, 2, 3, 4, 5, 6]) {
       await page.click(`.picker-option:nth-child(${n})`);
       await page.waitForTimeout(120);
     }
@@ -127,7 +127,7 @@ const goHome = async () => {
 // Defaults to every language, which is the state the rest of the tour assumes:
 // nothing muted, the whole catalogue in play. Acts that care about a narrower
 // choice pass their own.
-const freshGuest = async (languages = [1, 2, 3, 4, 5]) => {
+const freshGuest = async (languages = [1, 2, 3, 4, 5, 6]) => {
   await page.goto(APP, { waitUntil: "domcontentloaded" });
   await page.evaluate(() => localStorage.clear());
   await page.goto(APP, { waitUntil: "networkidle" });
@@ -337,7 +337,7 @@ await page.waitForSelector(".menu-container", { timeout: 10000 });
 check("the pane browser renders", (await page.$$(".pane")).length >= 2);
 const languageRows = await page.$$eval(".pane:first-child .pane-item", (n) => n.map((e) => e.textContent.trim()));
 check("the first pane is languages",
-  JSON.stringify(languageRows) === '["Python","Gleam","TypeScript","Elixir","System Design"]',
+  JSON.stringify(languageRows) === '["Python","Gleam","TypeScript","Elixir","Gleam Tour","System Design"]',
   JSON.stringify(languageRows));
 check("tips categories are hidden",
   !languageRows.some((l) => l.includes("Tips")));
@@ -753,6 +753,9 @@ const languages = [
   ["TypeScript", "Arrays & Hashing", "Contains Duplicate",
    "export function containsDuplicate(nums: number[]): boolean {\n  return new Set(nums).size !== nums.length;\n}", true],
   ["Elixir", "Arrays & Hashing", "Contains Duplicate", null, false],
+  // The language tour: the editor opens on the lesson's program, so no code
+  // is typed; a run prints and every grade stays on offer.
+  ["Gleam Tour", "Basics", "Hello world", null, "tour"],
 ];
 
 for (const [language, subcategory, title, code, runnable] of languages) {
@@ -762,7 +765,25 @@ for (const [language, subcategory, title, code, runnable] of languages) {
   await page.waitForSelector(".menu-container", { timeout: 10000 });
   await openByHand(language, subcategory, title);
 
-  if (runnable) {
+  if (runnable === "tour") {
+    check(`${language} shows the lesson as prose`,
+      (await page.$$(".problem-prompt.prose p")).length > 0);
+    check(`${language} has no solution to reveal`,
+      (await page.$$(".solution-button")).length === 0);
+    check(`${language} grades freely before any run`,
+      (await page.$$(".grade-button")).length === 4,
+      `${(await page.$$(".grade-button")).length} buttons`);
+    await waitForRunnable();
+    await page.click(".run-button");
+    await page.waitForFunction(() => {
+      const s = document.querySelector(".results-summary");
+      return s && !s.classList.contains("running");
+    }, { timeout: 180000 });
+    check(`${language} prints the lesson's output`,
+      (await page.textContent(".output-pane")).includes("Hello, Joe!"));
+    check(`${language} still grades freely after the run`,
+      JSON.stringify(await gradeLabels()) === ALL_FOUR, JSON.stringify(await gradeLabels()));
+  } else if (runnable) {
     // A cold runtime is a multi-megabyte download; the button stays disabled
     // until its worker reports ready.
     await waitForRunnable();
@@ -784,7 +805,7 @@ for (const [language, subcategory, title, code, runnable] of languages) {
     await page.click(".solution-button");
     await page.waitForTimeout(500);
   }
-  await capture(slug, `${language}: ${runnable ? "compiled, ran and passed" : "reveal-only, no harness"}`);
+  await capture(slug, `${language}: ${runnable === "tour" ? "read-and-run lesson" : runnable ? "compiled, ran and passed" : "reveal-only, no harness"}`);
   dialogs.length = 0;
   await page.click("text=Exit");
   await page.waitForTimeout(800);
@@ -981,18 +1002,18 @@ console.log(act);
 exercises("UserToggledLanguage", "UserToggledSuspend", "MenuSuspendedAtCursor");
 
 // The language filter: chips on the study screen gate what a sitting serves.
-check("five language chips render", (await page.$$(".language-chip")).length === 5);
+check("six language chips render", (await page.$$(".language-chip")).length === 6);
 await page.click('.language-chip:text-is("TypeScript")');
 await page.waitForTimeout(300);
 check("a muted chip shows it", (await page.$$(".language-chip.muted")).length === 1);
-for (const label of ["Python", "Gleam", "Elixir", "System Design"]) {
+for (const label of ["Python", "Gleam", "Elixir", "Gleam Tour", "System Design"]) {
   await page.click(`.language-chip:text-is("${label}")`);
   await page.waitForTimeout(150);
 }
 check("muting every language empties the queue",
   await page.$eval(".study-start", (b) => b.disabled));
 await capture("all-muted", "Every language muted: nothing to study, honestly");
-for (const label of ["Python", "Gleam", "TypeScript", "Elixir", "System Design"]) {
+for (const label of ["Python", "Gleam", "TypeScript", "Elixir", "Gleam Tour", "System Design"]) {
   await page.click(`.language-chip:text-is("${label}")`);
   await page.waitForTimeout(150);
 }

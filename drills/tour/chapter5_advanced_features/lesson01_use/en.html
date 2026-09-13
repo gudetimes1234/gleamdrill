@@ -1,0 +1,52 @@
+<p>
+  Gleam lacks exceptions, macros, type classes, early returns, and a variety of
+  other features, instead going all-in with just first-class-functions and
+  pattern matching. This makes Gleam code easier to understand, but it can
+  sometimes result in excessive indentation.
+</p>
+<p>
+  Gleam's <code>use</code> expression is for calling functions that take a
+  callback as an argument without increasing the indentation of the code.
+</p>
+
+<p>
+  All the code below the <code>use</code> becomes an anonymous function, and
+  the assigned variables become the arguments to the anonymous function.
+</p>
+<p>
+  If the right hand side of <code>&lt;-</code> is a function call then the new
+  anonymous function is inserted as a final argument to the call, otherwise the
+  expression on the right hand side must return a function that takes the
+  anonymous function as an argument.
+</p>
+
+<p>This code:</p>
+<pre>
+pub fn main() -> Nil {
+  use a, b <- my_function
+  next(a)
+  next(b)
+}
+</pre>
+
+<p>Expands into this code:</p>
+<pre>
+pub fn main() -> Nil {
+  my_function(fn(a, b) {
+    next(a)
+    next(b)
+  })
+}
+</pre>
+
+<p>
+  To ensure that your <code>use</code> code works and is as understandable as
+  possible, the right-hand-side ideally should be a regular function call
+  rather than a more complex expression, which would be more difficult to
+  read.
+</p>
+<p>
+  This is a very capable and useful feature, but excessive application of
+  <code>use</code> may result in unclear code, especially to beginners. Usually
+  the regular function call syntax results in more approachable code!
+</p>

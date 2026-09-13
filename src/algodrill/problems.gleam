@@ -1,4 +1,5 @@
 import algodrill/problem.{type Category, type Problem, type ProblemRef}
+import algodrill/problems/gleam_tour
 import algodrill/problems/neetcode_elixir
 import algodrill/problems/neetcode_gleam
 import algodrill/problems/neetcode_python
@@ -25,6 +26,7 @@ fn build() -> List(Category) {
     neetcode_gleam.category(),
     neetcode_ts.category(),
     neetcode_elixir.category(),
+    gleam_tour.category(),
     system_design.category(),
   ]
 }
@@ -152,9 +154,12 @@ pub fn language_options() -> List(#(String, String)) {
 }
 
 fn label_for(category: Category) -> String {
-  case first_language(category) {
-    Ok(problem.Concept) | Error(Nil) -> category.name
-    Ok(language) -> problem.language_label(language)
+  case category.name == gleam_tour.name, first_language(category) {
+    // The one category that shares a language with another: it cannot be
+    // "Gleam" too, and the label has to fit a chip.
+    True, _ -> "Gleam Tour"
+    _, Ok(problem.Concept) | _, Error(Nil) -> category.name
+    _, Ok(language) -> problem.language_label(language)
   }
 }
 
@@ -176,6 +181,9 @@ pub fn language_label(category_name: String) -> String {
 /// once and the full label would drown the titles.
 pub fn language_tag(category_name: String) -> String {
   case list.find(all(), fn(c: Category) { c.name == category_name }) {
+    // Its own tag, or muting Gleam would mute the tour and vice versa; the
+    // tags are what the study chips and the first-run picker toggle.
+    Ok(category) if category.name == gleam_tour.name -> "gt"
     Ok(category) ->
       case first_language(category) {
         Ok(problem.Python) -> "py"

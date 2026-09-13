@@ -11,7 +11,8 @@ PY_RUNTIME_DIR  := assets/python-runtime/$(BRYTHON_VERSION)
 .PHONY: dev dev-app dev-api build deploy vendor content verify worker \
         clean-vendor fsrs-test fsrs-vectors server-dev server-test \
         server-smoke app-test api-fixtures e2e tour serve-dist up down \
-        down-clean check-versions check-format wire-test
+        down-clean check-versions check-format wire-test tour-check \
+        tour-vendor
 
 # The whole dev stack in one terminal: frontend on :1234, backend on :1637.
 # The app on :1234 points at 127.0.0.1:1637 (ffi.mjs apiBase), so the frontend
@@ -52,16 +53,49 @@ content:
 	  src/algodrill/problems/embedded_python.gleam \
 	  src/algodrill/problems/embedded_ts.gleam \
 	  src/algodrill/problems/embedded_elixir.gleam \
+	  src/algodrill/problems/embedded_tour.gleam \
 	  src/algodrill/problems/approaches.gleam
 
 # Runs every solution variant — primaries and alternates, all four languages —
 # against its harness, then the scheduler's conformance suite. A new alternate
 # is not done until this passes.
-verify: content fsrs-test app-test
+verify: content fsrs-test app-test tour-check
 	cd drills && gleam run -m solutions
 	cd drills/python && python3 verify_all.py
 	cd drills/ts && bun verify_all.ts
 	cd drills/elixir && elixir verify_all.exs
+
+# The language tour's 63 lessons are not graded, so the only thing that can
+# go wrong with one is that it no longer compiles against the stdlib the
+# browser ships. One throwaway project with every lesson as its own module
+# catches that for all of them in a single build.
+TOUR_CHECK := drills/build/tour_check
+tour-check:
+	rm -rf $(TOUR_CHECK) && mkdir -p $(TOUR_CHECK)/src
+	printf 'name = "tour_check"\nversion = "0.0.0"\ntarget = "javascript"\n\n[dependencies]\ngleam_stdlib = ">= 0.44.0 and < 2.0.0"\n' \
+	  > $(TOUR_CHECK)/gleam.toml
+	for d in drills/tour/chapter*/lesson*; do \
+	  c=$$(basename $$(dirname $$d)); l=$$(basename $$d); \
+	  cp $$d/code.gleam $(TOUR_CHECK)/src/$${c}_$${l}.gleam; \
+	done
+	cp $(RUNTIME_DIR)/precompiled/my_package_ffi.mjs $(TOUR_CHECK)/src/
+	cd $(TOUR_CHECK) && gleam build
+
+# Re-vendors the language tour at the commit pinned in drills/tour/UPSTREAM
+# (pass TOUR_REF=<sha> to move it). Only the two files the app uses per lesson
+# are kept, plus the one FFI module the externals lessons import.
+TOUR_REF ?= $$(sed -n 's/^commit \([0-9a-f]*\).*/\1/p' drills/tour/UPSTREAM)
+tour-vendor:
+	rm -rf drills/build/language-tour
+	git clone -q https://github.com/gleam-lang/language-tour.git drills/build/language-tour
+	cd drills/build/language-tour && git checkout -q $(TOUR_REF)
+	rm -rf drills/tour/chapter*
+	for d in drills/build/language-tour/src/content/chapter*/lesson*; do \
+	  rel=$${d#drills/build/language-tour/src/content/}; \
+	  mkdir -p drills/tour/$$rel; cp $$d/code.gleam $$d/en.html drills/tour/$$rel/; \
+	done
+	cp drills/build/language-tour/static/precompiled/my_package_ffi.mjs $(RUNTIME_DIR)/precompiled/
+	@echo "vendored $$(ls -d drills/tour/chapter*/lesson* | wc -l) lessons at $(TOUR_REF); now: make content"
 
 # The scheduler is compiled to Erlang by the server and to JavaScript by the
 # app, so it is tested both ways: identical results are what licenses sharing

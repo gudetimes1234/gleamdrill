@@ -323,7 +323,21 @@ fn expanded_panels(
           <> problem.language_label(current.language),
         ),
       ]),
-      html.div([attribute.class("problem-prompt")], [html.text(current.prompt)]),
+      case current.prompt_html {
+        // Repository-vendored lesson HTML, never user input; see
+        // problem.Problem.prompt_html.
+        True ->
+          element.unsafe_raw_html(
+            "",
+            "div",
+            [attribute.class("problem-prompt prose")],
+            current.prompt,
+          )
+        False ->
+          html.div([attribute.class("problem-prompt")], [
+            html.text(current.prompt),
+          ])
+      },
     ])
 
   let approach = case current.approach {
@@ -334,14 +348,22 @@ fn expanded_panels(
   // Output rides with the checkable panes: a drill that cannot run cannot
   // print, and a permanently empty pane is just noise.
   let checked = case current.check {
-    Some(check) -> [
-      panel("Signature", [
-        html.pre([attribute.class("signature")], [
-          html.code([], [html.text(check.signature)]),
-        ]),
-      ]),
-      panel("Tests", [tests_panel(m)]),
-    ]
+    Some(check) ->
+      list.flatten([
+        // A read-and-run card has no function to sign: the whole program
+        // is already in the editor.
+        case check.signature {
+          "" -> []
+          signature -> [
+            panel("Signature", [
+              html.pre([attribute.class("signature")], [
+                html.code([], [html.text(signature)]),
+              ]),
+            ]),
+          ]
+        },
+        [panel("Tests", [tests_panel(m)])],
+      ])
     None -> []
   }
 
@@ -511,7 +533,7 @@ fn grade_controls(m: Model, current: Problem) -> Element(Msg) {
 
 fn grade_buttons(m: Model, current: Problem) -> Element(Msg) {
   let free = case model.current_ref(m) {
-    Ok(ref) -> model.first_encounter(m, ref) || current.check == None
+    Ok(ref) -> model.first_encounter(m, ref) || !problem.graded(current)
     Error(Nil) -> True
   }
   let forced =

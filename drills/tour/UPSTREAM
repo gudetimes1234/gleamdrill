@@ -1,0 +1,7 @@
+https://github.com/gleam-lang/language-tour
+commit 234cb0284d91c458fa26e1b66e4b0276597d722f (2026-08-07)
+licence: Apache-2.0, as declared in the upstream gleam.toml `licences` field; the
+repository carries no licence file of its own, so LICENCE here is the standard text.
+vendored: src/content/*/*/{code.gleam,en.html} unchanged, and
+static/precompiled/my_package_ffi.mjs into assets/gleam-runtime/<version>/precompiled/.
+re-vendor: make tour-vendor

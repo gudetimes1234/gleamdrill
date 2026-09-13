@@ -1054,16 +1054,16 @@ pub fn new_cards_rotate_across_languages_test() -> Nil {
     |> list.unique
 
   assert list.length(picked) == 8
-  // Four NeetCode languages plus System Design, so the first five cards are
-  // five different categories. A flat prefix would have yielded eight Python
-  // problems and one distinct language.
-  assert list.length(picked |> list.take(5)) == 5
-  assert list.length(languages) == 5
+  // Four NeetCode languages, the Gleam tour and System Design, so the first
+  // six cards are six different categories. A flat prefix would have yielded
+  // eight Python problems and one distinct language.
+  assert list.length(picked |> list.take(6)) == 6
+  assert list.length(languages) == 6
 }
 
 /// Muting is what the first-run picker writes, so the queue must honour it.
 pub fn muted_languages_never_enter_the_queue_test() -> Nil {
-  let picked = queue.fresh(fresh_model(8, ["gl", "ts", "ex", "sd"]))
+  let picked = queue.fresh(fresh_model(8, ["gl", "ts", "ex", "gt", "sd"]))
   let languages =
     picked
     |> list.map(fn(ref: problem.ProblemRef) {
@@ -1077,7 +1077,7 @@ pub fn muted_languages_never_enter_the_queue_test() -> Nil {
 /// A language running dry must not stop the rotation for the others -- with
 /// only one language left the queue is simply that language.
 pub fn the_rotation_survives_a_language_running_out_test() -> Nil {
-  let picked = queue.fresh(fresh_model(300, ["gl", "ts", "ex", "sd"]))
+  let picked = queue.fresh(fresh_model(300, ["gl", "ts", "ex", "gt", "sd"]))
   // Python has 150 problems; asking for 300 must yield all of them and stop,
   // not loop or truncate at the first round.
   assert list.length(picked) == 150
@@ -1087,4 +1087,40 @@ pub fn the_rotation_survives_a_language_running_out_test() -> Nil {
 pub fn the_daily_budget_bounds_the_queue_test() -> Nil {
   assert list.length(queue.fresh(fresh_model(3, []))) == 3
   assert queue.fresh(fresh_model(0, [])) == []
+}
+
+/// The language tour is content, so it flows through the same catalogue as
+/// everything else -- but it is the one category whose run decides nothing.
+pub fn the_tour_is_read_and_run_test() -> Nil {
+  let assert Ok(tour) =
+    list.find(problems.all(), fn(c: problem.Category) {
+      c.name == "Gleam Language Tour"
+    })
+  assert list.map(tour.subcategories, fn(s: problem.Subcategory) { s.name })
+    == [
+      "Basics", "Functions", "Flow control", "Data types", "Standard library",
+      "Advanced features",
+    ]
+  let cards =
+    list.flat_map(tour.subcategories, fn(s: problem.Subcategory) { s.problems })
+  assert list.length(cards) == 63
+  assert list.all(cards, fn(card: problem.Problem) {
+    card.prompt_html && !problem.graded(card) && card.check != None
+  })
+  // Its own chip: muting Gleam must not mute the tour.
+  assert problems.language_tag(tour.name) == "gt"
+  assert problems.language_label(tour.name) == "Gleam Tour"
+}
+
+/// Everything else is graded by its run, or has no run at all.
+pub fn only_the_tour_is_ungraded_test() -> Nil {
+  let ungraded =
+    problems.all()
+    |> list.filter(fn(c: problem.Category) { c.name != "Gleam Language Tour" })
+    |> list.flat_map(fn(c: problem.Category) { c.subcategories })
+    |> list.flat_map(fn(s: problem.Subcategory) { s.problems })
+    |> list.filter(fn(card: problem.Problem) {
+      card.check != None && !problem.graded(card)
+    })
+  assert ungraded == []
 }
