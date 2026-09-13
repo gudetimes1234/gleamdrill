@@ -1363,6 +1363,29 @@ await capture("grading", "Grading bar at phone width");
 check("the drill does not scroll sideways",
   (await page.evaluate(() => document.documentElement.scrollWidth)) <= 390 + 1,
   `scrollWidth ${await page.evaluate(() => document.documentElement.scrollWidth)}`);
+
+// At phone width the solution is an overlay on the editor, not a panel under
+// it: the desktop assertion above ("beside, not under") has a narrow-screen
+// counterpart, and the overlay carries its own close button.
+await page.click(".solution-button");
+await page.waitForSelector(".answer-content", { timeout: 10000 });
+{
+  const editorBox = await page.locator(".editor-frame").boundingBox();
+  const answerBox = await page.locator(".answer-content").boundingBox();
+  check("on a phone the revealed solution covers the editor",
+    editorBox && answerBox
+      && Math.abs(answerBox.x - editorBox.x) < 2
+      && Math.abs(answerBox.y - editorBox.y) < 2
+      && Math.abs(answerBox.width - editorBox.width) < 2,
+    `editor ${JSON.stringify(editorBox)} answer ${JSON.stringify(answerBox)}`);
+}
+check("the overlay does not scroll sideways",
+  (await page.evaluate(() => document.documentElement.scrollWidth)) <= 390 + 1);
+await capture("solution", "Solution overlaying the editor at phone width");
+await page.click(".answer-close");
+await page.waitForSelector(".answer-content", { state: "detached", timeout: 10000 });
+check("the overlay's own close button puts it away",
+  (await page.$(".answer-content")) === null);
 await page.setViewportSize({ width: 1280, height: 900 });
 
 

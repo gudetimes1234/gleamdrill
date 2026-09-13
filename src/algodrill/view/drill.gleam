@@ -625,7 +625,7 @@ fn results_only(m: Model, current: Problem) -> List(Element(Msg)) {
 /// compared line by line rather than by scrolling.
 fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
   case revealed(m, current) {
-    Ok(solution) -> [
+    Ok(#(index, solution)) -> [
       html.div(
         [attribute.class("answer-content answer-side")],
         list.flatten([
@@ -648,6 +648,20 @@ fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
                     ]),
                   ]
                 },
+                // On a narrow screen the panel overlays the editor, and the
+                // run bar's toggle may be off-screen; the stylesheet shows
+                // this only there.
+                [
+                  html.button(
+                    [
+                      attribute.class("answer-close"),
+                      attribute.type_("button"),
+                      attribute.attribute("aria-label", "Hide solution"),
+                      event.on_click(UserToggledSolution(index)),
+                    ],
+                    [html.text("\u{00d7}")],
+                  ),
+                ],
               ]),
             ),
           ],
@@ -667,12 +681,13 @@ fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
   }
 }
 
-fn revealed(m: Model, current: Problem) -> Result(Solution, Nil) {
+fn revealed(m: Model, current: Problem) -> Result(#(Int, Solution), Nil) {
   case m.revealed_solution {
     Some(index) ->
       current.solutions
       |> list.drop(index)
       |> list.first
+      |> result.map(fn(solution) { #(index, solution) })
     None -> Error(Nil)
   }
 }

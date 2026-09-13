@@ -113,7 +113,9 @@ still entirely client-side:
 
 It works on a phone: the layout collapses to one column, the side panels scroll
 in place so the editor is always on the first screen, the run bar sticks to the
-bottom, touch targets are sized off `(hover: none)` rather than width, and every
+bottom, a revealed solution overlays the editor rather than pushing it away (the
+same button, or `s`, puts it back so you can read, hide, type, repeat), touch
+targets are sized off `(hover: none)` rather than width, and every
 text control is 16px there so iOS does not zoom on focus. There is a web
 manifest, so Add to Home Screen gives a chromeless standalone app. Typing code
 on a touch keyboard is still typing code on a touch keyboard — there is no
