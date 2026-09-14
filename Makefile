@@ -12,7 +12,7 @@ PY_RUNTIME_DIR  := assets/python-runtime/$(BRYTHON_VERSION)
         clean-vendor fsrs-test fsrs-vectors server-dev server-test \
         server-smoke app-test api-fixtures e2e tour serve-dist up down \
         down-clean check-versions check-format wire-test tour-check \
-        tour-vendor
+        tour-vendor tour-report
 
 # The whole dev stack in one terminal: frontend on :1234, backend on :1637.
 # The app on :1234 points at 127.0.0.1:1637 (ffi.mjs apiBase), so the frontend
@@ -164,8 +164,18 @@ e2e:
 # Broader and slower than $(MAKE) e2e: it is what catches screens no
 # task-shaped test visits, and its screenshots are the only check on layout.
 # Set SHOTS to choose where the images land.
+# The report (test/browser/report.mjs) is always built, even after a failing
+# tour: a red report is the thing worth looking at. Open $SHOTS/index.html.
+SHOTS ?= /tmp/algodrill-tour
+export SHOTS
 tour:
-	bun test/browser/tour.mjs
+	bun test/browser/tour.mjs; status=$$?; \
+	bun test/browser/report.mjs; \
+	exit $$status
+
+# Re-render the report from the last tour's tour.json without rerunning it.
+tour-report:
+	bun test/browser/report.mjs
 
 # The backend. Needs the environment from server/.env.example; `server-dev`
 # reads server/.env if it exists.

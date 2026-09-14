@@ -33,6 +33,20 @@ const results = [];
 const covered = new Set();
 let act = "start";
 
+/// The report (report.mjs) is rendered from this file, so it is written
+/// however the tour ends: a crash mid-act still leaves every check and
+/// screenshot up to that point, plus the crash itself, to look at.
+const writeTour = () =>
+  writeFileSync(join(SHOTS, "tour.json"),
+    JSON.stringify({ results, errors, dialogs, covered: [...covered] }, null, 1));
+process.on("unhandledRejection", (reason) => {
+  results.push({ act, name: "the tour itself crashed", ok: false, detail: String(reason?.message ?? reason).split("\n")[0] });
+  errors.push(`${act}: ${reason?.stack ?? reason}`);
+  writeTour();
+  console.error(reason);
+  process.exit(1);
+});
+
 const check = (name, ok, detail = "") => {
   results.push({ act, name, ok, detail });
   if (ok) { pass++; console.log(`    ok   ${name}`); }
@@ -75,10 +89,13 @@ page.on("console", (m) => {
   }
 });
 
-const capture = async (label, note) => {
+/// `highlight`, when given, is a short title that lifts this screenshot into
+/// the report's headline strip (test/browser/report.mjs): the handful of
+/// images that answer "does the new thing work" without reading the acts.
+const capture = async (label, note, highlight) => {
   const name = `${String(++shot).padStart(2, "0")}-${act}-${label}.png`;
   await page.screenshot({ path: join(SHOTS, name) });
-  results.push({ act, shot: name, note: note ?? label });
+  results.push({ act, shot: name, note: note ?? label, ...(highlight ? { highlight } : {}) });
   console.log(`    shot ${name}`);
   return name;
 };
@@ -806,7 +823,9 @@ for (const [language, subcategory, title, code, runnable] of languages) {
     await page.click(".solution-button");
     await page.waitForTimeout(500);
   }
-  await capture(slug, `${language}: ${runnable === "tour" ? "read-and-run lesson" : runnable ? "compiled, ran and passed" : "reveal-only, no harness"}`);
+  await capture(slug,
+    `${language}: ${runnable === "tour" ? "read-and-run lesson" : runnable ? "compiled, ran and passed" : "reveal-only for a guest"}`,
+    runnable === "tour" ? "Language tour lesson runs in the browser" : undefined);
   dialogs.length = 0;
   await page.click("text=Exit");
   await page.waitForTimeout(800);
@@ -1314,6 +1333,39 @@ if (offered) {
   await capture("merged", "After merging guest progress into an existing account");
 }
 
+// ---------------------------------------------------------------- act 9b
+act = "09b-elixir-server";
+console.log(act);
+
+// Still signed in from act 8: an Elixir attempt is posted to the API, which
+// runs it in a sandboxed subprocess and answers with the same cases a
+// browser worker would. grading.mjs asserts the grading rules around it;
+// this is the photograph.
+await goHome();
+await page.click("text=Browse problems");
+await page.waitForSelector(".menu-container", { timeout: 10000 });
+await openByHand("Elixir", "Arrays & Hashing", "Contains Duplicate");
+check("signed in, an Elixir drill offers Run",
+  (await page.$$(".run-button")).length === 1 && (await page.$$(".run-unavailable")).length === 0);
+await waitForRunnable();
+await setCode("defmodule Solution do\n  def contains_duplicate?(nums) do\n    IO.puts(\"checking #{length(nums)} numbers\")\n    MapSet.size(MapSet.new(nums)) != length(nums)\n  end\nend\n");
+await page.click(".run-button");
+await page.waitForFunction(() => {
+  const s = document.querySelector(".results-summary");
+  return s && !s.classList.contains("running");
+}, { timeout: 60000 });
+check("the server ran it and every case passed",
+  (await page.$$(".case.pass")).length === 4 && (await page.$$(".case.fail")).length === 0,
+  `${(await page.$$(".case.pass")).length} passed`);
+check("what it printed came back with it",
+  (await page.textContent(".output-pane")).includes("checking 4 numbers"));
+await capture("elixir-passed", "Elixir solution run on the server: four cases green, output shown",
+  "Elixir attempt ran on the server");
+dialogs.length = 0;
+await page.click("text=Exit");
+await page.waitForTimeout(800);
+await goHome();
+
 // ---------------------------------------------------------------- act 10
 act = "10-failures";
 console.log(act);
@@ -1403,7 +1455,8 @@ await page.waitForSelector(".answer-content", { timeout: 10000 });
 }
 check("the overlay does not scroll sideways",
   (await page.evaluate(() => document.documentElement.scrollWidth)) <= 390 + 1);
-await capture("solution", "Solution overlaying the editor at phone width");
+await capture("solution", "Solution overlaying the editor at phone width",
+  "Solution overlays the editor on a phone");
 await page.click(".answer-close");
 await page.waitForSelector(".answer-content", { state: "detached", timeout: 10000 });
 check("the overlay's own close button puts it away",
@@ -1447,8 +1500,7 @@ const missed = declared.filter((m) => !covered.has(m));
 check("every user-initiated message was exercised", missed.length === 0,
   missed.join(", "));
 
-writeFileSync(join(SHOTS, "tour.json"),
-  JSON.stringify({ results, errors, dialogs, covered: [...covered] }, null, 1));
+writeTour();
 console.log(`\n${pass} passed, ${fail} failed, ${shot} screenshots`);
 await browser.close();
 process.exit(fail === 0 ? 0 : 1);

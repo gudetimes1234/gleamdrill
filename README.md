@@ -294,7 +294,8 @@ make api-fixtures  # recapture those responses from a running backend
 make server-test   # backend unit tests
 make server-smoke  # the whole HTTP surface against a running backend
 make e2e           # a real browser against a built app + running backend
-make tour          # every route and state, photographed — layout's only check
+make tour          # every route and state, photographed — layout's only check;
+                   # writes $SHOTS/index.html, a report of every act and image
 make check-versions  # the pinned Gleam/Brython/bun versions agree everywhere
 make check-format    # gleam format --check across all four projects
 ```
