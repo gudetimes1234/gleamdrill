@@ -18,8 +18,8 @@ does, and anything in the app that could expose another user's data.
 **Very much in scope: the Elixir runner.** `POST /api/run` executes code a
 signed-in user typed, on the server, in a subprocess (`server/priv/run.exs`,
 launched by `server/src/server/exec.gleam`). The boundary is that the attempt
-runs as a different Unix user from the API (`runner`, via `doas`; see
-`server/Dockerfile`), with a kill timer and resource limits
+runs as a different Unix user from the API (`runner`, via `su` from the
+root API process; see `server/Dockerfile`), with a kill timer and resource limits
 (`server/priv/run-elixir`), so it cannot read the API's environment or
 outlive its eight seconds. Anything that lets an attempt read another user's
 data, the API's secrets, or the host beyond `/tmp/algodrill-run`, or that

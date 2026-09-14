@@ -36,21 +36,19 @@ RUN gleam export erlang-shipment
 # browser can compile Elixir source (see server/src/server/exec.gleam).
 FROM ghcr.io/gleam-lang/gleam:v1.18.1-elixir-alpine
 
-# Two users. `algodrill` runs the API; `runner` runs attempts, through doas,
-# and is the whole sandbox: a process of another uid cannot read this one's
-# /proc/<pid>/environ, which is where DATABASE_URL and SECRET_KEY_BASE live.
-# The rule permits exactly one command, the wrapper that sets the limits.
-RUN apk add --no-cache libstdc++ openssl ncurses doas \
- && adduser -D -h /app algodrill \
- && adduser -D -H -s /sbin/nologin runner \
- && echo 'permit nopass algodrill as runner cmd /app/server/priv/run-elixir' \
-      > /etc/doas.d/algodrill.conf \
- && chmod 0600 /etc/doas.d/algodrill.conf
+# The API stays root inside its container so it can drop to `runner` for
+# each attempt with plain `su`; that uid change is the whole sandbox, since
+# a process of another uid cannot read this one's /proc/<pid>/environ, which
+# is where DATABASE_URL and SECRET_KEY_BASE live. A non-root API would need a
+# setuid helper (doas) for the same switch, and the hosting platform ignores
+# setuid bits -- doas fails there with "Operation not permitted" -- so the
+# privilege has to already be held by the process that spawns the attempt.
+RUN apk add --no-cache libstdc++ openssl ncurses \
+ && adduser -D -H -s /sbin/nologin runner
 
-COPY --from=build --chown=algodrill:algodrill /build/server/build/erlang-shipment /app
+COPY --from=build /build/server/build/erlang-shipment /app
 
 WORKDIR /app
-USER algodrill
 
 ENV PORT=8080 BIND=0.0.0.0 RUN_AS_USER=runner
 EXPOSE 8080

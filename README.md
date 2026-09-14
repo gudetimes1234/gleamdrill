@@ -109,7 +109,8 @@ client-side for three of the four languages:
 - **Elixir** drills run on the server. No browser can compile Elixir *source*
   (Popcorn and AtomVM run precompiled BEAM bytecode), so a signed-in user's
   attempt is posted to `/api/run`, where the API runs it in a fresh, short-lived
-  Elixir VM as a separate unprivileged user, under `timeout -s KILL` and
+  Elixir VM as a separate unprivileged user (`su` from the API, which is root
+  inside its container for exactly this), under `timeout -s KILL` and
   resource limits, and reports the same cases and output a worker would
   (`server/src/server/exec.gleam`, `server/priv/run.exs`). Runs are
   rate-limited per user and capped node-wide. A guest gets the reveal-only

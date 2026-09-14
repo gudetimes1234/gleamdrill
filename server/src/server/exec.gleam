@@ -85,7 +85,11 @@ fn write_readable(path: String, contents: String) -> Result(Nil, String) {
   |> result.map_error(simplifile.describe_error)
 }
 
-/// `timeout -s KILL 8 [doas -u <user>] <priv>/run-elixir <dir>`.
+/// `timeout -s KILL 8 <priv>/run-elixir <dir>`, or with `run_as_user` set,
+/// `timeout -s KILL 8 su -s /bin/sh <user> -c "exec <priv>/run-elixir <dir>"`.
+/// `su` rather than a setuid helper because this process is root in the
+/// container (server/Dockerfile says why); the directory name is hex, so
+/// the quoted command carries nothing the shell could misread.
 fn command(
   config: Config,
   dir: String,
@@ -99,17 +103,20 @@ fn command(
     |> result.replace_error("the server's priv directory is missing"),
   )
   let wrapper = priv <> "/run-elixir"
-  let as_user = case config.run_as_user {
-    Some(user) -> ["doas", "-u", user]
-    None -> []
+  let run = case config.run_as_user {
+    Some(user) -> [
+      "su",
+      "-s",
+      "/bin/sh",
+      user,
+      "-c",
+      "exec '" <> wrapper <> "' '" <> dir <> "'",
+    ]
+    None -> [wrapper, dir]
   }
   Ok(#(
     timeout,
-    list.flatten([
-      ["-s", "KILL", int.to_string(timeout_seconds)],
-      as_user,
-      [wrapper, dir],
-    ]),
+    list.flatten([["-s", "KILL", int.to_string(timeout_seconds)], run]),
   ))
 }
 

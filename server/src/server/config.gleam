@@ -31,11 +31,12 @@ pub type Config {
     allowed_origins: List(String),
     /// How long a session token stays valid without use.
     session_days: Int,
-    /// The user server-side runs execute as, via `doas -u`. Set in the
-    /// container (server/Dockerfile), where it is the whole point: an
-    /// attempt running as the API's own user could read the API's
-    /// environment -- this file's secrets -- out of /proc. Unset on a
-    /// developer machine, where attempts run as whoever started the server.
+    /// The user server-side runs execute as, via `su`, which needs this
+    /// process to be root. Set in the container (server/Dockerfile), where
+    /// it is the whole point: an attempt running as the API's own user could
+    /// read the API's environment -- this file's secrets -- out of /proc.
+    /// Unset on a developer machine, where attempts run as whoever started
+    /// the server.
     run_as_user: Option(String),
   )
 }

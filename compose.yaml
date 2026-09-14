@@ -37,8 +37,9 @@ services:
       ALLOWED_ORIGIN: http://localhost:8080
       PORT: "8080"
       BIND: 0.0.0.0
-      # Elixir attempts run as this user inside the api container; see
-      # server/Dockerfile. It is the image's default, repeated so it is visible.
+      # Elixir attempts run as this user inside the api container (the API
+      # itself is root there, so it can `su`); see server/Dockerfile. It is
+      # the image's default, repeated so it is visible.
       RUN_AS_USER: runner
     depends_on:
       db:
