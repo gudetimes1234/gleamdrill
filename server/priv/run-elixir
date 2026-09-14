@@ -18,11 +18,15 @@ here="$(cd "$(dirname "$0")" && pwd)"
 ulimit -v 786432
 ulimit -t 10
 
-# The process cap is per uid, so it only makes sense for the dedicated user
-# the container runs attempts as (server/Dockerfile); on a developer's
-# machine it would count every process they own and refuse to fork.
+# The process cap is per uid -- host-wide, not per container -- so it only
+# makes sense for the dedicated user the container runs attempts as
+# (server/Dockerfile gives it an uncommon uid for exactly this reason); on a
+# developer's machine it would count every process they own and refuse to
+# fork. A VM with one scheduler needs a couple of dozen threads; 256 leaves
+# room for a few attempts at once and stops a fork bomb well short of the
+# container's pid budget.
 if [ "$(id -un)" = runner ]; then
-  ulimit -u 64
+  ulimit -u 256
 fi
 
 # A home the runner user can neither read secrets from nor litter.

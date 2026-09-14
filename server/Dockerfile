@@ -43,8 +43,12 @@ FROM ghcr.io/gleam-lang/gleam:v1.18.1-elixir-alpine
 # setuid helper (doas) for the same switch, and the hosting platform ignores
 # setuid bits -- doas fails there with "Operation not permitted" -- so the
 # privilege has to already be held by the process that spawns the attempt.
+# A deliberately odd uid: RLIMIT_NPROC (server/priv/run-elixir) counts every
+# process of that uid on the *host*, and on a shared platform uid 1000 is
+# everyone's first user -- the cap tripped on other tenants' processes before
+# a single attempt had forked.
 RUN apk add --no-cache libstdc++ openssl ncurses \
- && adduser -D -H -s /sbin/nologin runner
+ && adduser -D -H -s /sbin/nologin -u 31337 runner
 
 COPY --from=build /build/server/build/erlang-shipment /app
 
