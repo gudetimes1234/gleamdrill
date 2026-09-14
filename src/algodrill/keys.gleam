@@ -117,7 +117,20 @@ pub fn bindings(m: Model) -> List(Binding) {
           help_binding(),
         ]
         QueueRoute -> queue_bindings(m)
-        AuthRoute -> []
+        // A guest can always walk away from the form; the link at its foot
+        // says so, and Escape should mean the same thing.
+        AuthRoute ->
+          case m.mode {
+            model.Guest -> [
+              Binding(
+                ["Escape"],
+                "back",
+                "Keep studying without an account",
+                UserClickedBackToStudy,
+              ),
+            ]
+            _ -> []
+          }
       }
   }
 }

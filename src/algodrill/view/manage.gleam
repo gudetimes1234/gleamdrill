@@ -22,6 +22,7 @@ import algodrill/problems
 import algodrill/queue
 import algodrill/view/banner
 import algodrill/view/format
+import algodrill/view/nav
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
@@ -35,20 +36,31 @@ pub fn view(m: Model) -> Element(Msg) {
   let rows = queue.listed(m)
   let queued = list.length(queue.queued(m))
 
+  // Straight from here to the first card: the queue screen is the second
+  // screen a new user sees, and "go back, then press Study now" was the
+  // longest stretch of the first run.
+  let ready = list.length(queue.build(m))
+
   html.div([attribute.class("queue-screen")], [
     banner.storage_warning(m),
+    nav.notices(m),
     html.header([attribute.class("queue-header")], [
-      html.button(
-        [
-          attribute.class("link-button"),
-          event.on_click(model.UserClickedBackToStudy),
-        ],
-        [html.text("\u{2190} Study")],
-      ),
       html.h1([attribute.class("queue-title")], [html.text("Study queue")]),
       html.span([attribute.class("queue-total")], [
         html.text(int.to_string(queued) <> " in queue"),
       ]),
+      case ready {
+        0 -> element.none()
+        n ->
+          html.button(
+            [
+              attribute.class("btn-primary queue-study-now"),
+              event.on_click(model.UserClickedStudy),
+            ],
+            [html.text("Study now \u{00b7} " <> int.to_string(n))],
+          )
+      },
+      nav.bar(m, model.QueueRoute),
     ]),
     html.p([attribute.class("queue-lede")], [
       html.text(

@@ -12,10 +12,11 @@
 
 import algodrill/model.{
   type Model, type Msg, DayStartHour, DesiredRetention, NewPerDay, ReviewsPerDay,
-  UserChangedKeymap, UserChangedSetting, UserClickedBackToStudy,
-  UserClickedDeviceTimezone, UserToggledLanguage,
+  UserChangedKeymap, UserChangedSetting, UserClickedDeviceTimezone,
+  UserToggledLanguage,
 }
 import algodrill/problems
+import algodrill/view/nav
 import gleam/float
 import gleam/int
 import gleam/list
@@ -28,15 +29,10 @@ pub fn view(m: Model) -> Element(Msg) {
   let settings = m.settings
 
   html.div([attribute.class("settings-screen")], [
+    nav.notices(m),
     html.header([attribute.class("study-header")], [
-      html.button(
-        [
-          attribute.class("btn-secondary"),
-          event.on_click(UserClickedBackToStudy),
-        ],
-        [html.text("\u{2190} Back")],
-      ),
       html.h1([attribute.class("study-title")], [html.text("Settings")]),
+      nav.bar(m, model.SettingsRoute),
     ]),
 
     section("Daily limits", "Kept with your account.", [

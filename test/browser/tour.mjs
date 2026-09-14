@@ -79,7 +79,9 @@ page.on("console", (m) => {
   // those on purpose -- a rejected sign-in, a refused password -- and they are
   // not JavaScript errors. Only genuine script failures are collected.
   const text = m.text();
-  const expectedHttp = /Failed to load resource.*\b(401|409|422|429)\b/.test(text);
+  const expectedHttp = /Failed to load resource.*\b(401|409|422|429)\b/.test(text)
+    // Act 2b cuts the network on purpose.
+    || /Failed to load resource.*ERR_FAILED/.test(text);
   // The Python worker mirrors the user program's tracebacks to the console
   // under a [python] prefix; several acts run deliberately broken programs.
   const mirroredTrace = text.startsWith("[python]");
@@ -341,6 +343,28 @@ await capture("bad-credentials", "Unknown account: same message as a wrong passw
 await page.click("text=Keep studying without an account");
 await page.waitForSelector(".study-screen", { timeout: 10000 });
 check("the form is not a trap", await page.isVisible(".guest-strip"));
+
+// ---------------------------------------------------------------- act 2b
+act = "02b-first-load-fails";
+console.log(act);
+exercises("UserClickedRetrySync");
+
+// A signed-in browser whose first state load fails sees a wall with a way
+// through, not a dead card. Fake a token so boot goes to the server, fail
+// that request, then let the retry succeed -- it will come back 401 for the
+// fake token, which drops to guest, which is the app again.
+await page.evaluate(() => localStorage.setItem("algoDrill.token", "not-a-real-token"));
+await page.route("**/api/state", (route) => route.abort("failed"));
+await page.goto(APP, { waitUntil: "domcontentloaded" });
+await page.waitForSelector('button:text-is("Try again")', { timeout: 20000 });
+check("a failed first load says so and offers to try again",
+  (await page.textContent(".auth-title")).includes("Offline"));
+await capture("offline", "First load failed: try again, or study as a guest");
+await page.unroute("**/api/state");
+await page.click('button:text-is("Try again")');
+await page.waitForSelector(".study-screen, .picker-screen, .queue-screen", { timeout: 20000 });
+check("trying again gets back into the app", true);
+await page.evaluate(() => localStorage.removeItem("algoDrill.token"));
 
 // ---------------------------------------------------------------- act 3
 act = "03-browsing";
@@ -1030,9 +1054,16 @@ for (const label of ["Python", "Gleam", "Elixir", "Gleam Tour", "System Design"]
   await page.click(`.language-chip:text-is("${label}")`);
   await page.waitForTimeout(150);
 }
-check("muting every language empties the queue",
-  await page.$eval(".study-start", (b) => b.disabled));
-await capture("all-muted", "Every language muted: nothing to study, honestly");
+// The button stays live so that pressing it can say *why* nothing starts;
+// a disabled button explains nothing.
+await page.click(".study-start");
+await page.waitForTimeout(300);
+check("muting every language empties the queue, and Study now says so",
+  (await page.isVisible(".study-screen")) && (await page.isVisible(".notice")),
+  await page.textContent(".notice").catch(() => "no notice"));
+await capture("all-muted", "Every language muted: Study now explains instead of going dead");
+await page.click(".notice .notice-dismiss");
+await page.waitForTimeout(200);
 for (const label of ["Python", "Gleam", "TypeScript", "Elixir", "Gleam Tour", "System Design"]) {
   await page.click(`.language-chip:text-is("${label}")`);
   await page.waitForTimeout(150);
@@ -1199,8 +1230,19 @@ await page.waitForTimeout(200);
 await page.click('.queue-chip:text-is("Two Pointers")');
 await page.waitForTimeout(200);
 
-await page.click(".queue-header .link-button");
-await page.waitForSelector(".study-screen", { timeout: 10000 });
+// The queue screen is where a first-time user lands; it can start the
+// sitting itself rather than sending them back to the study screen first.
+check("the queue screen offers Study now once there is something to study",
+  await page.isVisible(".queue-study-now"));
+await capture("queue-study-now", "Study now straight from the queue screen",
+  "First card is one click from the queue screen");
+await page.click(".queue-study-now");
+await page.waitForSelector(".run-bar", { timeout: 30000 });
+check("and it opens the first card", await page.isVisible(".run-bar"));
+dialogs.length = 0;
+await page.click("text=Exit");
+await page.waitForTimeout(800);
+await goHome();
 
 // ---------------------------------------------------------------- act 8
 act = "08-upgrade";
@@ -1244,13 +1286,28 @@ check("and stays dismissed across a reload",
 const guestCards = await page.evaluate(() =>
   JSON.parse(localStorage.getItem("algoDrill.guest.cards.v1") ?? "[]").length);
 const upgraded = `tour-upgrade-${Date.now()}@example.com`;
-await page.click("text=Create account");
+await page.click("text=Save it to an account");
 await page.waitForSelector(".auth-card", { timeout: 10000 });
 await page.fill('input[type="email"]', upgraded);
 await page.fill('input[type="password"]', PASSWORD);
+// Hold the account's first state load so there is time to see what the
+// screen does meanwhile: it must stay the study screen, with the sync bar,
+// never the boot-time loading card.
+const slow = async (route) => {
+  await new Promise((r) => setTimeout(r, 1500));
+  await route.continue();
+};
+await page.route("**/api/state", slow);
 await page.click(".auth-submit");
-await page.waitForSelector(".study-screen", { timeout: 25000 });
-await page.waitForTimeout(2500);
+await page.waitForSelector(".sync-bar", { timeout: 10000 });
+check("signing in keeps the study screen up while the account loads",
+  (await page.isVisible(".study-screen")) && !(await page.isVisible(".auth-screen")));
+await capture("syncing", "Just signed in: study screen stays, sync bar at the top",
+  "Signing in no longer blanks the app");
+await page.waitForFunction(() =>
+  document.querySelector(".study-email")?.textContent.includes("@") && !document.querySelector(".sync-bar"),
+  { timeout: 25000 });
+await page.unroute("**/api/state", slow);
 check("signing up signs you in",
   (await page.textContent(".study-email")) === upgraded);
 check("the guest strip is gone", !(await page.isVisible(".guest-strip")));
@@ -1270,7 +1327,7 @@ await capture("upgraded", "Signed in, guest progress merged, no strip");
 // ---------------------------------------------------------------- act 9
 act = "09-account";
 console.log(act);
-exercises("UserClickedSignOut", "UserDismissedNotice");
+exercises("UserClickedSignOut", "UserDismissedNotice", "UserDismissedMergeOffer");
 
 await page.click("text=Stats");
 await page.waitForSelector(".stats-tiles", { timeout: 10000 });
@@ -1282,7 +1339,7 @@ check("an account's stats come from the server",
 check("cards with no reviews still get a tier breakdown",
   (await page.$$(".state-row")).length >= 4);
 await capture("account-stats", "Statistics for a signed-in account");
-await page.click("text=Back");
+await page.click('.nav-link:text-is("Study")');
 await page.waitForSelector(".study-screen", { timeout: 10000 });
 await capture("account-study", "Study screen signed in: email, no guest strip");
 
@@ -1307,13 +1364,23 @@ await page.waitForSelector(".auth-card", { timeout: 10000 });
 await page.fill('input[type="email"]', upgraded);
 await page.fill('input[type="password"]', PASSWORD);
 await page.click(".auth-submit");
-await page.waitForSelector(".study-screen", { timeout: 25000 });
-await page.waitForTimeout(2000);
+await page.waitForFunction(() =>
+  document.querySelector(".study-email")?.textContent.includes("@") && !document.querySelector(".sync-bar"),
+  { timeout: 25000 });
 const offered = await page.isVisible('button:text-is("Merge it")').catch(() => false);
 check("signing in to an existing account offers the merge rather than doing it",
   offered);
 if (offered) {
   await capture("merge-offer", "Merge offer after signing in with guest progress");
+  // Dismissing is only for now: the guest progress is still in this browser,
+  // so the next load offers it again rather than stranding it.
+  await page.click(".notice .notice-dismiss");
+  await page.waitForTimeout(300);
+  check("the offer can be put off",
+    (await page.$$('button:text-is("Merge it")')).length === 0);
+  await page.reload({ waitUntil: "networkidle" });
+  await page.waitForSelector('button:text-is("Merge it")', { timeout: 25000 });
+  check("and comes back on the next load while the progress is still here", true);
   await page.click('button:text-is("Merge it")');
   await page.waitForTimeout(3000);
   // The merge banner and an error banner share the `.notice` class, so assert
@@ -1495,6 +1562,7 @@ const declared = [
   "MenuCursorJumped", "MenuActivated", "MenuToggledAtCursor", "QuizMoved",
   "EditorFocusRequested", "SearchFocusRequested", "StatsCursorMoved",
   "StatsActivated", "UserOpenedDetail", "UserClosedDetail",
+  "UserDismissedMergeOffer", "UserClickedRetrySync",
 ];
 const missed = declared.filter((m) => !covered.has(m));
 check("every user-initiated message was exercised", missed.length === 0,

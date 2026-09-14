@@ -94,7 +94,7 @@ const answerPickerIfShown = async () => {
 await page.goto(APP, { waitUntil: "networkidle" });
 await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 15000 });
-await page.click("text=Create account");
+await page.click("text=Save it to an account");
 await page.waitForSelector(".auth-card");
 await page.fill('input[type="email"]', EMAIL);
 await page.fill('input[type="password"]', "correct-horse-battery");

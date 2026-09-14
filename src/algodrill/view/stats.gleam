@@ -10,12 +10,12 @@
 import algodrill/api.{type ReviewRow, type Stats}
 import algodrill/insights.{type Analysis, type CardInsight}
 import algodrill/model.{
-  type Model, type Msg, UserClickedBackToStudy, UserClosedDetail,
-  UserOpenedDetail, UserToggledSuspend,
+  type Model, type Msg, UserClosedDetail, UserOpenedDetail, UserToggledSuspend,
 }
 import algodrill/problem.{type ProblemRef}
 import algodrill/problems
 import algodrill/view/format
+import algodrill/view/nav
 import fsrs
 import gleam/int
 import gleam/list
@@ -27,12 +27,10 @@ import lustre/event
 
 pub fn view(m: Model) -> Element(Msg) {
   html.div([attribute.class("stats-screen")], [
+    nav.notices(m),
     html.header([attribute.class("study-header")], [
       html.h1([attribute.class("study-title")], [html.text("Progress")]),
-      html.button(
-        [attribute.class("link-button"), event.on_click(UserClickedBackToStudy)],
-        [html.text("Back")],
-      ),
+      nav.bar(m, model.StatsRoute),
     ]),
     case m.stats, m.insights {
       Some(stats), Some(data) ->

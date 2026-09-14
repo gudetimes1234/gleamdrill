@@ -153,15 +153,30 @@ pub fn loading(m: Model) -> Element(Msg) {
               [
                 attribute.class("auth-submit"),
                 attribute.type_("button"),
+                event.on_click(model.UserClickedRetrySync),
+              ],
+              [html.text("Try again")],
+            ),
+            html.button(
+              [
+                attribute.class("auth-switch"),
+                attribute.type_("button"),
                 event.on_click(model.UserClickedSignOut),
               ],
-              [html.text("Sign out")],
+              [html.text("Sign out and study as a guest")],
             ),
           ])
         _ ->
           element.fragment([
             html.h1([attribute.class("auth-title")], [html.text("AlgoDrill")]),
-            html.p([attribute.class("auth-subtitle")], [
+            html.p([attribute.class("auth-subtitle auth-loading")], [
+              html.span(
+                [
+                  attribute.class("spinner"),
+                  attribute.attribute("aria-hidden", "true"),
+                ],
+                [],
+              ),
               html.text("Loading your cards…"),
             ]),
           ])

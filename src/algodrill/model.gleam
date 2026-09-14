@@ -266,6 +266,11 @@ pub type Model {
     /// from localStorage but the user does not.
     user: Option(User),
     boot: Sync,
+    /// A state load after the first: signing in, merging guest progress, a
+    /// dead token dropping to guest. The screen stays up and a thin bar at
+    /// the top says the server is being asked; only `boot` blanks the app,
+    /// and only until the first load has ever succeeded.
+    refreshing: Bool,
     /// The server's clock as of the last response. Due dates are compared
     /// against this rather than the device clock, so a wrong system time
     /// cannot make cards look due when they are not.
@@ -372,6 +377,7 @@ pub fn default() -> Model {
     mode: Guest,
     user: None,
     boot: NotStarted,
+    refreshing: False,
     now: timestamp.from_unix_seconds(0),
     settings: api.default_settings(),
     cards: dict.new(),
@@ -616,6 +622,9 @@ pub type Msg {
   StateLoaded(Result(api.BootState, ApiError))
   StateImported(Result(Nil, ApiError))
   UserClickedMergeGuest
+  UserDismissedMergeOffer
+  /// The first load failed and the user asked for another go.
+  UserClickedRetrySync
   UserClickedSignOut
   SignOutCompleted(Result(Nil, ApiError))
   UserDismissedNotice

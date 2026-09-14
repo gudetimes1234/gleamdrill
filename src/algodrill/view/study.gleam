@@ -6,17 +6,16 @@
 
 import algodrill/insights
 import algodrill/model.{
-  type Model, type Msg, Guest, PromptShowing, Registering, SigningIn,
-  UserClickedBrowse, UserClickedMergeGuest, UserClickedQueue,
-  UserClickedSettings, UserClickedSignIn, UserClickedSignOut,
-  UserClickedStartExam, UserClickedStats, UserClickedStudy,
-  UserDismissedUpgradePrompt,
+  type Model, type Msg, Guest, PromptShowing, Registering, StudyRoute,
+  UserClickedBrowse, UserClickedQueue, UserClickedSignIn, UserClickedStartExam,
+  UserClickedStudy, UserDismissedUpgradePrompt,
 }
 import algodrill/problem
 import algodrill/problems
 import algodrill/queue
 import algodrill/view/banner
 import algodrill/view/links
+import algodrill/view/nav
 import fsrs
 import gleam/dict
 import gleam/int
@@ -41,13 +40,12 @@ pub fn view(m: Model) -> Element(Msg) {
 
   html.div([attribute.class("study-screen")], [
     banner.storage_warning(m),
-    merge_offer(m),
-    notice(m),
+    nav.notices(m),
     upgrade_prompt(m),
     guest_strip(m),
     html.header([attribute.class("study-header")], [
       html.h1([attribute.class("study-title")], [html.text("AlgoDrill")]),
-      account_controls(m),
+      nav.bar(m, StudyRoute),
     ]),
     html.div([attribute.class("study-counts")], [
       count("Due", due, "due"),
@@ -100,7 +98,7 @@ pub fn view(m: Model) -> Element(Msg) {
       html.button(
         [
           attribute.class("primary study-start"),
-          attribute.disabled(ready == 0),
+          attribute.disabled(False),
           event.on_click(UserClickedStudy),
         ],
         [html.text("Study now")],
@@ -341,37 +339,14 @@ fn count(label: String, value: Int, kind: String) -> Element(Msg) {
   ])
 }
 
-fn account_controls(m: Model) -> Element(Msg) {
-  html.div([attribute.class("study-account")], case m.mode {
-    Guest -> [
-      html.span([attribute.class("study-email")], [html.text("Guest")]),
-      text_button("Queue", UserClickedQueue),
-      text_button("Stats", UserClickedStats),
-      text_button("Settings", UserClickedSettings),
-      text_button("Sign in", UserClickedSignIn(SigningIn)),
-      text_button("Create account", UserClickedSignIn(Registering)),
-    ]
-    _ -> [
-      html.span([attribute.class("study-email")], [
-        html.text(case m.user {
-          Some(user) -> user.email
-          None -> ""
-        }),
-      ]),
-      text_button("Queue", UserClickedQueue),
-      text_button("Stats", UserClickedStats),
-      text_button("Settings", UserClickedSettings),
-      text_button("Sign out", UserClickedSignOut),
-    ]
-  })
-}
-
 /// The standing reminder. Quiet, always present as a guest, and never
 /// dismissible -- it is a statement of where the data lives, not an alert.
 fn guest_strip(m: Model) -> Element(Msg) {
-  case m.mode, m.storage_full {
-    // The storage warning above already says something strictly worse.
-    Guest, False ->
+  case m.mode, m.storage_full, m.upgrade_prompt {
+    // The storage warning above already says something strictly worse, and
+    // so does the upgrade prompt while it is showing.
+    Guest, False, PromptShowing -> element.none()
+    Guest, False, _ ->
       html.div([attribute.class("guest-strip")], [
         html.span([attribute.class("guest-strip-text")], [
           html.text("Guest \u{2014} progress lives only in this browser."),
@@ -384,7 +359,7 @@ fn guest_strip(m: Model) -> Element(Msg) {
           [html.text("Save it to an account")],
         ),
       ])
-    _, _ -> element.none()
+    _, _, _ -> element.none()
   }
 }
 
@@ -430,66 +405,5 @@ fn upgrade_prompt(m: Model) -> Element(Msg) {
         ]),
       ])
     _, _ -> element.none()
-  }
-}
-
-/// Offered after signing in to an existing account while this browser still
-/// holds guest progress. Merging is not automatic there: folding scratch
-/// progress into an established account unasked would be surprising.
-fn merge_offer(m: Model) -> Element(Msg) {
-  case m.merge_offer {
-    False -> element.none()
-    True -> merge_banner()
-  }
-}
-
-fn merge_banner() -> Element(Msg) {
-  html.div([attribute.class("notice"), attribute.role("status")], [
-    html.span([attribute.class("notice-text")], [
-      html.text(
-        "This browser has progress saved from before you signed in. "
-        <> "Merge it into this account?",
-      ),
-    ]),
-    html.button(
-      [
-        attribute.class("guest-strip-action"),
-        event.on_click(UserClickedMergeGuest),
-      ],
-      [html.text("Merge it")],
-    ),
-    html.button(
-      [
-        attribute.class("notice-dismiss"),
-        attribute.attribute("aria-label", "Dismiss"),
-        event.on_click(model.UserDismissedNotice),
-      ],
-      [html.text("\u{00D7}")],
-    ),
-  ])
-}
-
-fn text_button(label: String, msg: Msg) -> Element(Msg) {
-  html.button([attribute.class("link-button"), event.on_click(msg)], [
-    html.text(label),
-  ])
-}
-
-/// A dismissible banner for whatever last went wrong with the server.
-pub fn notice(m: Model) -> Element(Msg) {
-  case m.notice {
-    None -> element.none()
-    Some(message) ->
-      html.div([attribute.class("notice"), attribute.role("status")], [
-        html.span([attribute.class("notice-text")], [html.text(message)]),
-        html.button(
-          [
-            attribute.class("notice-dismiss"),
-            attribute.attribute("aria-label", "Dismiss"),
-            event.on_click(model.UserDismissedNotice),
-          ],
-          [html.text("\u{00D7}")],
-        ),
-      ])
   }
 }

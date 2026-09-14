@@ -90,7 +90,7 @@ await page.waitForSelector(".study-screen", { timeout: 15000 });
 check("lands on the study screen, not a sign-in wall", true);
 check("says where the data lives",
   (await page.textContent(".guest-strip-text")).includes("only in this browser"));
-check("offers a way to sign in", await page.isVisible("text=Create account"));
+check("offers a way to sign in", await page.isVisible("text=Save it to an account"));
 const counts = await page.$$eval(".study-count-value", (n) => n.map((e) => e.textContent));
 // The default new-card budget. Deliberately small: a card here is a problem
 // typed from memory, so a flashcard-sized limit is a workload nobody clears.
@@ -150,7 +150,7 @@ const tiles = await page.$$eval(".stats-tile-value", (n) => n.map((e) => e.textC
 check("streak is 1 day", tiles[2] === "1", `got ${tiles[2]}`);
 check("the problem is counted as started", tiles[1] === "1", `got ${tiles[1]}`);
 check("heatmap renders", (await page.$$(".heatmap-cell")).length > 100);
-await page.click("text=Back");
+await page.click('.nav-link:text-is("Study")');
 await page.waitForSelector(".study-screen");
 
 console.log("== the prompt escalates with stake, not on review one");
@@ -212,7 +212,9 @@ await page.fill('input[type="email"]', EMAIL);
 await page.fill('input[type="password"]', "correct-horse-battery");
 await page.click(".auth-submit");
 await page.waitForSelector(".study-screen", { timeout: 20000 });
-await page.waitForTimeout(2500);
+await page.waitForFunction(() =>
+  document.querySelector(".study-email")?.textContent.includes("@") && !document.querySelector(".sync-bar"),
+  { timeout: 25000 });
 
 check("signed in", (await page.textContent(".study-email")) === EMAIL);
 check("the guest strip is gone", !(await page.isVisible(".guest-strip")));

@@ -66,7 +66,7 @@ await answerPickerIfShown();
 console.log(`== sign up (${EMAIL})`);
 // The app now opens in guest mode, so the form is reached deliberately.
 await page.waitForSelector(".study-screen", { timeout: 15000 });
-await page.click("text=Create account");
+await page.click("text=Save it to an account");
 await page.waitForSelector(".auth-card", { timeout: 10000 });
 check("sign-in form renders", await page.isVisible(".auth-card"));
 check("opens in register mode",
@@ -81,7 +81,9 @@ check("lands on the study screen after signing up", true);
 // Signing up hands the guest's cards to the new account and reloads state.
 // The counts below are read from that reload, not from the empty model the
 // study screen first renders with.
-await page.waitForTimeout(2500);
+await page.waitForFunction(() =>
+  document.querySelector(".study-email")?.textContent.includes("@") && !document.querySelector(".sync-bar"),
+  { timeout: 25000 });
 check("shows the signed-in email",
   (await page.textContent(".study-email")) === EMAIL);
 
@@ -120,7 +122,10 @@ check("Again shows a short interval", /^\d+m$/.test(againInterval), againInterva
 
 console.log("== grade it");
 await page.click(".grade-again");
-await page.waitForTimeout(2500);
+// The next card opens once the review has round-tripped; the grade bar of
+// the old one goes first.
+await page.waitForFunction(() => !document.querySelector(".grade-bar"), { timeout: 25000 });
+await page.waitForSelector(".run-bar", { timeout: 25000 });
 check("advances to the next problem after grading",
   await page.isVisible(".run-bar"));
 
@@ -143,7 +148,7 @@ check("the problem is counted as started", tiles[1] === "1", `got ${tiles[1]}`);
 check("heatmap renders", (await page.$$(".heatmap-cell")).length > 100);
 
 console.log("== the menu badge reflects schedule state");
-await page.click("text=Back");
+await page.click('.nav-link:text-is("Study")');
 await page.waitForSelector(".study-screen");
 await page.click("text=Browse problems");
 await page.waitForSelector(".pane", { timeout: 10000 });

@@ -27,11 +27,12 @@ import algodrill/model.{
   UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
   UserClickedCategory, UserClickedClearSelection, UserClickedDeviceTimezone,
   UserClickedExitDrill, UserClickedExitReport, UserClickedMergeGuest,
-  UserClickedNext, UserClickedQueue, UserClickedRetryRuntime, UserClickedRun,
-  UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
-  UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
-  UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
-  UserClosedDetail, UserDismissedNotice, UserDismissedUpgradePrompt,
+  UserClickedNext, UserClickedQueue, UserClickedRetryRuntime,
+  UserClickedRetrySync, UserClickedRun, UserClickedSelectAll,
+  UserClickedSettings, UserClickedSignIn, UserClickedSignOut,
+  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
+  UserClickedStopRun, UserClickedStudy, UserClickedSubcategory, UserClosedDetail,
+  UserDismissedMergeOffer, UserDismissedNotice, UserDismissedUpgradePrompt,
   UserFilteredQueue, UserGraded, UserOpenedDetail, UserPickedChoice,
   UserPickedQueueLanguage, UserPickedQueueTopic, UserRemovedAllShown,
   UserRevealedHint, UserSearched, UserSearchedQueue, UserSubmittedAnswer,
@@ -65,8 +66,10 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/string
 import lustre
+import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
+import lustre/element/html
 import wire.{ProblemRef}
 
 pub fn main() {
@@ -643,22 +646,28 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
 
     AuthCompleted(Ok(session)) -> {
+      // Straight back to the study screen, which stays on screen while the
+      // account's state loads behind the sync bar: signing in is not a
+      // reboot, and the loading card is for the one load before anything
+      // exists to show.
       let signed_in =
         Model(
           ..m,
           mode: Account(session.token),
           user: Some(session.user),
-          boot: Syncing,
+          refreshing: True,
+          route: StudyRoute,
           // The password leaves the model the moment it is no longer needed.
           auth: AuthForm(..m.auth, password: "", busy: False, error: None),
         )
 
-      // Whatever this browser was holding as a guest goes up now, before the
-      // first state load, so the state that comes back already includes it.
-      // On a brand new account there is nothing to lose by merging; signing
-      // in to an existing one is handled by `UserClickedMergeGuest`, because
-      // folding scratch progress into an established account unasked would be
-      // surprising.
+      // Whatever this browser was holding as a guest goes up first, and the
+      // state is loaded once it has landed (StateImported), so the state that
+      // comes back already includes it -- in sequence, not in a race. On a
+      // brand new account there is nothing to lose by merging; signing in to
+      // an existing one is handled by `UserClickedMergeGuest`, because
+      // folding scratch progress into an established account unasked would
+      // be surprising.
       let upgrading = m.auth.mode == Registering && guest_has_progress()
 
       #(
@@ -667,9 +676,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           session.save_token(session.token),
           case upgrading {
             True -> store.upgrade(session.token, [], StateImported)
-            False -> effect.none()
+            False -> store.load_state(signed_in)
           },
-          store.load_state(signed_in),
         ]),
       )
     }
@@ -688,6 +696,26 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     StateLoaded(Ok(state)) -> {
       let loaded = apply_state(m, state)
+      // An account with cards has answered the language question, on some
+      // device; this one remembers that now rather than asking again.
+      let loaded = case
+        loaded.languages_chosen,
+        dict.is_empty(loaded.cards),
+        loaded.mode
+      {
+        False, False, Account(_) -> Model(..loaded, languages_chosen: True)
+        _, _, _ -> loaded
+      }
+      let remembered = case loaded.languages_chosen && !m.languages_chosen {
+        True -> save_preferences(loaded)
+        False -> effect.none()
+      }
+      // Guest progress left in this browser is offered on every account
+      // load, not only the sign-in that stranded it.
+      let loaded = case loaded.mode {
+        Account(_) -> Model(..loaded, merge_offer: guest_has_progress())
+        Guest -> loaded
+      }
       // The dashboard reports a streak and an estimate of how long today's
       // queue will take, both of which need the stats and insights payloads.
       // Fetched after the screen is already up rather than before it, so a
@@ -697,14 +725,18 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       case m.mode, legacy.pending() {
         // A guest adopts the pre-account blob locally at boot instead; there
         // is nothing to send anywhere.
-        Guest, _ | _, None -> #(loaded, dashboard)
+        Guest, _ | _, None -> #(loaded, effect.batch([dashboard, remembered]))
         Account(token), Some(old) ->
           case legacy.is_empty(old) {
-            True -> #(loaded, effect.batch([dashboard, legacy.mark_imported()]))
+            True -> #(
+              loaded,
+              effect.batch([dashboard, remembered, legacy.mark_imported()]),
+            )
             False -> #(
               loaded,
               effect.batch([
                 dashboard,
+                remembered,
                 api.import_legacy(
                   api_base(),
                   token,
@@ -732,21 +764,41 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           // An expired session drops you to guest; it does not un-ask the
           // language question this browser has already answered.
           languages_chosen: m.languages_chosen,
-          boot: Syncing,
+          // Mid-session this is a refresh, not a reboot: whatever was on
+          // screen stays there. At boot the loading card stays up.
+          boot: m.boot,
+          refreshing: True,
         )
       #(guest, effect.batch([session.clear_token(), store.load_state(guest)]))
     }
 
-    StateLoaded(Error(failure)) -> #(
-      Model(..m, boot: SyncFailed(api.error_message(failure))),
-      effect.none(),
-    )
+    // The first load failing is a wall (there is nothing to show); a later
+    // one failing is a notice, because what is on screen is still good.
+    StateLoaded(Error(failure)) ->
+      case m.boot {
+        Synced -> #(
+          Model(
+            ..m,
+            refreshing: False,
+            notice: Some(
+              "Couldn't refresh from the server: " <> api.error_message(failure),
+            ),
+          ),
+          effect.none(),
+        )
+        _ -> #(
+          Model(..m, boot: SyncFailed(api.error_message(failure))),
+          effect.none(),
+        )
+      }
+
+    UserClickedRetrySync -> #(Model(..m, boot: Syncing), store.load_state(m))
 
     // Progress merged. Wipe the local copy so signing out later cannot
     // resurrect a stale duplicate, and reload so the screen shows the
     // authoritative state.
     StateImported(Ok(Nil)) -> #(
-      Model(..m, merge_offer: False),
+      Model(..m, merge_offer: False, refreshing: True),
       effect.batch([store.clear_guest(), store.load_state(m)]),
     )
 
@@ -762,9 +814,11 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
 
     UserClickedMergeGuest -> #(
-      Model(..m, merge_offer: False),
+      Model(..m, merge_offer: False, refreshing: True),
       store.upgrade(token(m), [], StateImported),
     )
+
+    UserDismissedMergeOffer -> #(Model(..m, merge_offer: False), effect.none())
 
     UserClickedSignOut -> {
       let signed_out =
@@ -795,10 +849,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     // worth telling the user about.
     SignOutCompleted(_) -> #(m, effect.none())
 
-    UserDismissedNotice -> #(
-      Model(..m, notice: None, merge_offer: False),
-      effect.none(),
-    )
+    UserDismissedNotice -> #(Model(..m, notice: None), effect.none())
 
     UserDismissedUpgradePrompt -> #(
       Model(..m, upgrade_prompt: PromptDismissed),
@@ -1666,6 +1717,7 @@ fn apply_state(m: Model, state: api.BootState) -> Model {
     ..m,
     user: Some(state.user),
     boot: Synced,
+    refreshing: False,
     now: state.now,
     settings: state.settings,
     cards: dict.from_list(
@@ -1676,8 +1728,10 @@ fn apply_state(m: Model, state: api.BootState) -> Model {
     // The one place that decides where boot lands. A browser that has never
     // answered the language question goes to the picker instead of the study
     // screen, because the queue it would otherwise build is one language deep
-    // by accident rather than by choice.
-    route: case m.languages_chosen {
+    // by accident rather than by choice -- unless the account already has a
+    // queue, in which case the question was answered on another device and
+    // asking again would only stand between the user and their cards.
+    route: case m.languages_chosen || state.cards != [] {
       True -> StudyRoute
       False -> PickerRoute
     },
@@ -2107,10 +2161,26 @@ fn view(m: Model) -> Element(Msg) {
         MenuRoute -> menu.view(m)
         QueueRoute -> manage.view(m)
       }
+      // A state load after the first is a thin bar at the top, over
+      // whatever is on screen; only the first load gets the loading card.
+      let syncing = case m.refreshing {
+        True -> [
+          html.div(
+            [
+              attribute.class("sync-bar"),
+              attribute.role("progressbar"),
+              attribute.attribute("aria-label", "Loading from the server"),
+            ],
+            [],
+          ),
+        ]
+        False -> []
+      }
       case m.route {
         // The sign-in form keeps its focused, chrome-free layout.
-        AuthRoute -> screen
-        _ -> element.fragment([screen, statusbar.view(m), help.view(m)])
+        AuthRoute -> element.fragment([screen, ..syncing])
+        _ ->
+          element.fragment([screen, statusbar.view(m), help.view(m), ..syncing])
       }
     }
   }
