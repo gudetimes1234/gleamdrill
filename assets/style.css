@@ -1,17 +1,17 @@
-/* Tokyo Night */
+/* Catppuccin Mocha */
 :root {
-    --bg-primary: #1a1b26;
-    --bg-secondary: #24283b;
-    --bg-raised: #1f2335;
-    --bg-hover: #414868;
-    --text-primary: #c0caf5;
-    --text-secondary: #a9b1d6;
-    --accent: #7aa2f7;
-    --accent-hover: #89b4fa;
-    --border: #2f334d;
-    --success: #9ece6a;
-    --error: #f7768e;
-    --warning: #e0af68;
+    --bg-primary: #181825;
+    --bg-secondary: #1e1e2e;
+    --bg-raised: #11111b;
+    --bg-hover: #45475a;
+    --text-primary: #cdd6f4;
+    --text-secondary: #bac2de;
+    --accent: #89b4fa;
+    --accent-hover: #b4befe;
+    --border: #313244;
+    --success: #a6e3a1;
+    --error: #f38ba8;
+    --warning: #f9e2af;
 
     --radius: 6px;
     --radius-sm: 4px;
@@ -163,7 +163,7 @@ body {
 }
 
 /* Themed scrollbars everywhere something scrolls inside a panel — the default
-   light-grey ones read as a rendering glitch against Tokyo Night. */
+   light-grey ones read as a rendering glitch against Catppuccin Mocha. */
 .pane-list,
 .drill-side,
 .drill-main,
@@ -574,7 +574,7 @@ details.approach summary:focus-visible {
     display: grid;
     place-items: center;
     padding: 24px;
-    background: rgb(10 12 20 / 0.7);
+    background: rgb(17 17 27 / 0.7);
 }
 
 .exit-prompt {
@@ -1121,7 +1121,7 @@ gleam-editor .cm-editor {
 }
 
 .answer-content pre {
-    color: var(--success);
+    color: var(--text-primary);
     font-family: inherit;
     white-space: pre-wrap;
 }
@@ -2939,7 +2939,7 @@ body {
     display: grid;
     place-items: center;
     padding: 24px;
-    background: rgb(10 12 20 / 0.7);
+    background: rgb(17 17 27 / 0.7);
 }
 
 .help-card {

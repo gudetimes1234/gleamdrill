@@ -50,7 +50,7 @@ content = "Spaced-repetition drilling for algorithm problems, with in-browser ch
 # Tints the browser chrome on mobile to match the app background.
 [[tools.lustre.html.meta]]
 name = "theme-color"
-content = "#1a1b26"
+content = "#181825"
 
 [[tools.lustre.html.meta]]
 name = "color-scheme"

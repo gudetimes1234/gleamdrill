@@ -791,16 +791,16 @@ const elixir = StreamLanguage.define({
   },
 });
 
-// Tokyo Night, matching the app stylesheet.
+// Catppuccin Mocha, matching the app stylesheet.
 const highlight = HighlightStyle.define([
-  { tag: tags.keyword, color: "#bb9af7" },
-  { tag: tags.string, color: "#9ece6a" },
-  { tag: tags.comment, color: "#565f89", fontStyle: "italic" },
-  { tag: tags.number, color: "#ff9e64" },
-  { tag: tags.typeName, color: "#2ac3de" },
-  { tag: tags.variableName, color: "#c0caf5" },
-  { tag: tags.operator, color: "#89ddff" },
-  { tag: tags.bracket, color: "#a9b1d6" },
+  { tag: tags.keyword, color: "#cba6f7" },
+  { tag: tags.string, color: "#a6e3a1" },
+  { tag: tags.comment, color: "#6c7086", fontStyle: "italic" },
+  { tag: tags.number, color: "#fab387" },
+  { tag: tags.typeName, color: "#f9e2af" },
+  { tag: tags.variableName, color: "#cdd6f4" },
+  { tag: tags.operator, color: "#89dceb" },
+  { tag: tags.bracket, color: "#9399b2" },
 ]);
 
 const theme = EditorView.theme(
@@ -825,7 +825,9 @@ const theme = EditorView.theme(
       border: "none",
       opacity: "0.7",
     },
-    ".cm-activeLine": { backgroundColor: "rgba(65, 72, 104, 0.3)" },
+    ".cm-activeLine": {
+      backgroundColor: "color-mix(in srgb, var(--bg-hover) 30%, transparent)",
+    },
     ".cm-activeLineGutter": { backgroundColor: "transparent" },
     "&.cm-focused": { outline: "none" },
     ".cm-selectionBackground, &.cm-focused .cm-selectionBackground": {

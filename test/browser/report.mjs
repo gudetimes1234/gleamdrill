@@ -108,9 +108,9 @@ const html = `<title>AlgoDrill Tour Report</title>
   /* One theme, deliberately: the screenshots are the app's dark UI, and a
      report that sat them on a light ground would lie about how it looks. */
   :root {
-    --bg: #1a1b26; --bg-raised: #1f2335; --bg-panel: #24283b; --border: #2f334d;
-    --text: #c0caf5; --muted: #a9b1d6; --dim: #565f89; --accent: #7aa2f7;
-    --pass: #9ece6a; --fail: #f7768e;
+    --bg: #181825; --bg-raised: #11111b; --bg-panel: #1e1e2e; --border: #313244;
+    --text: #cdd6f4; --muted: #bac2de; --dim: #6c7086; --accent: #89b4fa;
+    --pass: #a6e3a1; --fail: #f38ba8;
     --sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
     --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
     color-scheme: dark;
