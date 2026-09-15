@@ -806,34 +806,42 @@ pub fn the_queue_screen_lists_what_its_filters_say_test() -> Nil {
   assert !list.contains(unqueued, ref)
   assert list.length(queued) + list.length(unqueued) == list.length(all)
 
-  // Language and topic are the same lens from the other two directions.
+  // Language is the same lens from the other direction.
   let elsewhere = queue.listed(model.Model(..m, queue_language: Some("sd")))
   assert !list.contains(elsewhere, ref)
-  let topic = queue.listed(model.Model(..m, queue_topic: Some(ref.subcategory)))
-  assert list.contains(topic, ref)
-  assert list.all(topic, fn(r: problem.ProblemRef) {
-    r.subcategory == ref.subcategory
-  })
 
-  // Difficulty: the first catalogue entry (Contains Duplicate) is Easy, so
-  // the Easy lens keeps it and the Hard lens drops it; every listed row under
-  // a lens carries that rating, and quizzes (unrated) fall out of all three.
-  let easy = queue.listed(model.Model(..m, queue_difficulty: Some("easy")))
-  assert list.contains(easy, ref)
+  // The grouped view is the same list cut into topics: nothing added,
+  // nothing dropped, order kept, and every row in a group belongs to it.
+  let groups = queue.grouped(m)
+  assert list.flat_map(groups, fn(g) { g.2 }) == all
+  assert list.all(groups, fn(g) {
+    list.all(g.2, fn(r: problem.ProblemRef) {
+      r.category == g.0 && r.subcategory == g.1
+    })
+  })
+  let assert [first, ..] = groups
+  assert first.0 == "NeetCode 150" && first.1 == "Arrays & Hashing"
+
+  // A topic's buttons act on its listed rows: "add" is its unqueued rows,
+  // "add easy" the Easy ones among them, "remove" its never-answered cards.
+  let change = fn(easy_only, add) {
+    model.GroupChange(
+      category: ref.category,
+      subcategory: ref.subcategory,
+      easy_only:,
+      add:,
+    )
+  }
+  let addable = queue.group_rows(m, change(False, True))
+  assert !list.contains(addable, ref)
+  assert list.length(addable) == list.length(first.2) - 1
+  let easy = queue.group_rows(m, change(True, True))
+  assert easy != []
   assert list.all(easy, fn(r: problem.ProblemRef) {
     problems.difficulty_of(r) == Some(problem.Easy)
   })
-  let hard = queue.listed(model.Model(..m, queue_difficulty: Some("hard")))
-  assert !list.contains(hard, ref)
-  assert hard != []
-  let medium = queue.listed(model.Model(..m, queue_difficulty: Some("medium")))
-  let rated = list.length(easy) + list.length(medium) + list.length(hard)
-  assert rated
-    == list.length(
-      list.filter(all, fn(r: problem.ProblemRef) {
-        problems.difficulty_of(r) != None
-      }),
-    )
+  assert list.length(easy) < list.length(addable)
+  assert queue.group_rows(m, change(False, False)) == [ref]
 
   // And the search box, which the same list has to honour.
   let searched = queue.listed(model.Model(..m, queue_search: ref.title))

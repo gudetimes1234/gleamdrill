@@ -143,6 +143,14 @@ pub fn default_nav() -> MenuNav {
   )
 }
 
+/// One topic's bulk action on the queue screen: the rows of that
+/// (category, subcategory) currently listed, added or removed, and for adding
+/// optionally only the Easy ones. The rows are resolved in the update loop
+/// from the same listing the screen renders.
+pub type GroupChange {
+  GroupChange(category: String, subcategory: String, easy_only: Bool, add: Bool)
+}
+
 /// The queue screen's status lens. A view filter, not stored state: it says
 /// which rows to render, never what the scheduler will do.
 pub type QueueFilter {
@@ -366,13 +374,12 @@ pub type Model {
     /// One-shot leader: `,` was pressed, so the next key dispatches through
     /// the app's key table even if a button holds focus.
     leader_armed: Bool,
-    /// The queue screen's lens: a search box and three filters, none of them
-    /// persisted. They decide which rows are listed, and "add all shown" acts
-    /// on exactly that list, which is what makes bulk queueing precise.
+    /// The queue screen's lens: a search box, a language and a status, none
+    /// of them persisted. They decide which rows are listed, and "add all
+    /// shown" acts on exactly that list, which is what makes bulk queueing
+    /// precise.
     queue_search: String,
     queue_language: Option(String),
-    queue_topic: Option(String),
-    queue_difficulty: Option(String),
     queue_status: QueueFilter,
     /// Problems whose queue change is in flight, so their row can be disabled
     /// rather than accepting a second click that would race the first.
@@ -456,8 +463,6 @@ pub fn default() -> Model {
     leader_armed: False,
     queue_search: "",
     queue_language: None,
-    queue_topic: None,
-    queue_difficulty: None,
     queue_status: AnyStatus,
     queue_pending: [],
     muted_languages: [],
@@ -744,8 +749,8 @@ pub type Msg {
   UserSearchedQueue(String)
   UserFilteredQueue(QueueFilter)
   UserPickedQueueLanguage(String)
-  UserPickedQueueTopic(String)
-  UserPickedQueueDifficulty(String)
+  /// Add or remove one topic's listed rows, optionally just its Easy ones.
+  UserChangedGroup(GroupChange)
   /// Put one problem in the queue, or take it out -- whichever it is not.
   UserToggledQueued(ProblemRef)
   UserAddedAllShown

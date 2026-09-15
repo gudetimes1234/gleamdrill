@@ -118,9 +118,13 @@ const capture = async (label, note, highlight) => {
 /// a fast click.
 const seedQueue = async (topic = "Arrays & Hashing") => {
   await page.waitForSelector(".queue-screen", { timeout: 20000 });
-  await page.click(`.queue-chip:text-is("${topic}")`);
+  // Every language listed, so one click queues the topic across all of them.
+  await page.selectOption(".queue-language", "");
   await page.waitForTimeout(200);
-  await page.click(".queue-bulk-add");
+  for (const add of await page.$$(`.queue-group:has(.queue-group-title:has-text("${topic}")) .queue-group-add`)) {
+    await add.click();
+    await page.waitForTimeout(200);
+  }
   await page.waitForTimeout(600);
   await page.click(".queue-header .link-button");
   await page.waitForSelector(".study-screen", { timeout: 20000 });
@@ -1244,8 +1248,7 @@ await goHome();
 act = "07c-queue-screen";
 console.log(act);
 exercises("UserClickedQueue", "UserSearchedQueue", "UserFilteredQueue",
-  "UserPickedQueueLanguage", "UserPickedQueueTopic", "UserPickedQueueDifficulty",
-  "UserToggledQueued",
+  "UserPickedQueueLanguage", "UserChangedGroup", "UserToggledQueued",
   "UserAddedAllShown", "UserRemovedAllShown", "QueueCursorMoved",
   "QueueCursorJumped", "QueueToggledAtCursor");
 
@@ -1257,23 +1260,40 @@ const queuedAtStart = await queuedCount();
 check("the queue screen lists the catalogue",
   (await page.$$(".queue-row")).length > 50);
 check("and says how much is queued", queuedAtStart > 0);
+check("the list is grouped by topic", (await page.$$(".queue-group")).length >= 18,
+  `${(await page.$$(".queue-group")).length} groups`);
+check("no filter chips", (await page.$$(".queue-chip")).length === 0);
 check("every NeetCode row carries a difficulty",
   (await page.$$(".queue-row .difficulty")).length >= 150 * 4,
   `${(await page.$$(".queue-row .difficulty")).length} badges`);
-await capture("queue", "The queue screen: every problem, and which are in play");
+await capture("queue", "The queue screen: topics, each with its own queued count and buttons",
+  "Queue a topic where you read it");
 
-// The difficulty lens: only rows of that rating, and the bulk buttons act
-// on exactly those rows.
-await page.click('.queue-chip:text-is("Hard")');
+// One language at a time is the normal view; the topic headers then drop the
+// language and the rows drop their tag.
+await page.selectOption(".queue-language", "py");
 await page.waitForTimeout(300);
-const hardRows = await page.$$eval(".queue-row .difficulty", (n) => n.map((e) => e.textContent.trim()));
-check("the Hard lens lists only Hard problems",
-  hardRows.length > 0 && hardRows.every((t) => t === "Hard"), JSON.stringify([...new Set(hardRows)]));
-await capture("queue-hard", "Queue screen filtered to Hard problems", "Problems carry Easy / Medium / Hard");
-await page.click('.queue-chip:text-is("Hard")');
-await page.waitForTimeout(300);
-check("pressing the chip again clears the lens",
-  (await page.$$(".queue-row")).length > 50);
+check("one language lists eighteen topics plus nothing else",
+  (await page.$$(".queue-group")).length === 18, `${(await page.$$(".queue-group")).length} groups`);
+check("rows drop the language tag when one language is chosen",
+  (await page.$$(".queue-row .lang-tag")).length === 0);
+
+// A topic header queues its Easy problems in one click, and says how many.
+const easyHead = '.queue-group:has(.queue-group-title:text-is("Two Pointers"))';
+const easyLabel = await page.textContent(`${easyHead} .queue-group-add-easy`);
+const easyCount = Number(easyLabel.match(/\d+/)[0]);
+check("a topic offers its Easy problems", easyCount > 0, easyLabel);
+await page.click(`${easyHead} .queue-group-add-easy`);
+await page.waitForTimeout(600);
+check("adding a topic's Easy problems raises the count by that many",
+  (await queuedCount()) === queuedAtStart + easyCount,
+  `${await queuedCount()} vs ${queuedAtStart + easyCount}`);
+check("and the header now counts them",
+  (await page.textContent(`${easyHead} .queue-group-count`)).startsWith(`${easyCount}/`));
+await capture("queue-group-easy", "Two Pointers: its Easy problems queued from the header");
+await page.click(`${easyHead} .queue-group-remove`);
+await page.waitForTimeout(600);
+check("the header's Remove takes them back out", (await queuedCount()) === queuedAtStart);
 
 // Search narrows the same list the bulk buttons act on.
 await page.fill(".queue-screen .search", "Two Sum");
@@ -1283,18 +1303,16 @@ check("search narrows the list", searched > 0 && searched < 50);
 await page.fill(".queue-screen .search", "");
 await page.waitForTimeout(300);
 
-// The status lenses agree with the actions they list.
-await page.click('.queue-chip:text-is("Not queued")');
+// The status lens agrees with the actions it lists.
+await page.selectOption(".queue-status", "unqueued");
 await page.waitForTimeout(300);
 check("the not-queued lens hides everything already in play",
   (await page.$$(".queue-row .queue-remove")).length === 0);
-await page.click('.queue-chip:text-is("New")');
+await page.selectOption(".queue-status", "new");
 await page.waitForTimeout(300);
 check("a queued, unanswered card reads as new",
   (await page.$$(".badge-new")).length > 0);
-// Back to All. The status chips are a single choice, not toggles: pressing
-// New again just re-picks New, and the search below needs the whole list.
-await page.click('.queue-chip:text-is("All")');
+await page.selectOption(".queue-status", "all");
 await page.waitForTimeout(300);
 
 // One row, added and taken straight back out. Under a search rather than a
@@ -1320,7 +1338,7 @@ await page.waitForTimeout(300);
 // The keyboard walks the same list. Under the All lens, so the cursor row
 // stays put across the toggle: a filtered lens drops the row the moment it
 // stops matching, and the second press would then land on its neighbour.
-await page.click('.queue-chip:text-is("All")');
+await page.selectOption(".queue-status", "all");
 await page.waitForTimeout(300);
 await page.evaluate(() => document.activeElement?.blur());
 await page.keyboard.press("j");
@@ -1341,30 +1359,32 @@ await page.keyboard.press("G");
 await page.waitForTimeout(200);
 check("G jumps to the last row", (await page.$$(".queue-row.cursor")).length === 1);
 
-// Bulk, over exactly what the filters left. A whole topic in one press is the
-// reason the endpoints take lists.
-await page.click('.queue-chip:text-is("Two Pointers")');
-await page.waitForTimeout(300);
+// A whole topic in one press, from its header. That is the reason the
+// endpoints take lists.
+const twoPointers = '.queue-group:has(.queue-group-title:text-is("Two Pointers"))';
 const beforeBulk = await queuedCount();
-await page.click(".queue-bulk-add");
+await page.click(`${twoPointers} .queue-group-add`);
 await page.waitForTimeout(900);
 const afterBulk = await queuedCount();
 check("adding a whole topic queues more than one", afterBulk > beforeBulk + 1);
+check("and its header says the topic is fully queued",
+  /^(\d+)\/\1 queued$/.test(await page.textContent(`${twoPointers} .queue-group-count`)),
+  await page.textContent(`${twoPointers} .queue-group-count`));
 await capture("queue-topic", "A topic queued in one press");
-await page.click(".queue-bulk-remove");
+await page.click(`${twoPointers} .queue-group-remove`);
 await page.waitForTimeout(900);
 check("and removing the topic puts it back", (await queuedCount()) === beforeBulk);
 
-// Language is the other lens, and the one the picker preselects.
-await page.click('.queue-chip:text-is("Gleam")');
+// The language select is the other lens, and the one the picker preselects.
+await page.selectOption(".queue-language", "gl");
 await page.waitForTimeout(300);
 check("the language lens shows only that language",
-  (await page.$$eval(".queue-row .lang-tag", (n) => [...new Set(n.map((e) => e.textContent))]))
-    .join() === "gl");
-await page.click('.queue-chip:text-is("Gleam")');
-await page.waitForTimeout(200);
-await page.click('.queue-chip:text-is("Two Pointers")');
-await page.waitForTimeout(200);
+  (await page.$$eval(".queue-group-title", (n) => n.map((e) => e.textContent))).length === 18
+  && (await page.$$(".queue-row .lang-tag")).length === 0);
+await page.selectOption(".queue-language", "");
+await page.waitForTimeout(300);
+check("all languages name the language on each topic header",
+  (await page.textContent(".queue-group-title")).includes("Python"));
 
 // The queue screen is where a first-time user lands; it can start the
 // sitting itself rather than sending them back to the study screen first.
@@ -1707,9 +1727,9 @@ const declared = [
   "UserClickedRun", "UserClickedStopRun", "UserClickedRetryRuntime",
   "UserToggledSide", "UserToggledLanguage", "UserToggledSuspend",
   "MenuSuspendedAtCursor", "UserClickedQueue", "UserSearchedQueue",
-  "UserFilteredQueue", "UserPickedQueueLanguage", "UserPickedQueueTopic",
+  "UserFilteredQueue", "UserPickedQueueLanguage",
   "UserToggledQueued", "UserAddedAllShown", "UserRemovedAllShown",
-  "UserPickedQueueDifficulty",
+  "UserChangedGroup",
   "UserClickedTour", "UserOpenedLesson", "UserClickedTourNext",
   "UserClickedTourPrev", "UserClickedTourContents", "UserResetLesson",
   "TourEditorChanged", "TourCursorMoved", "TourActivated",

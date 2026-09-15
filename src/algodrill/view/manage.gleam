@@ -7,15 +7,17 @@
 ////
 //// The list is the whole catalogue, not just the queue, because the question
 //// being asked here is "what should I be studying" and the answer needs the
-//// problems you have *not* picked in front of you. The filters narrow it; the
-//// bulk buttons act on exactly what the filters left, which is why the row
-//// list is defined once in `algodrill/queue` and read by both.
+//// problems you have *not* picked in front of you. It is grouped by topic,
+//// and each topic's header queues that topic where you read it -- all of it,
+//// or just its Easy problems. A language and a status narrow the list; the
+//// bulk buttons act on exactly what is left, which is why the row list is
+//// defined once in `algodrill/queue` and read by both.
 
 import algodrill/api
 import algodrill/model.{
-  type Model, type Msg, UserAddedAllShown, UserFilteredQueue,
-  UserPickedQueueDifficulty, UserPickedQueueLanguage, UserPickedQueueTopic,
-  UserRemovedAllShown, UserSearchedQueue, UserToggledQueued,
+  type Model, type Msg, GroupChange, UserAddedAllShown, UserChangedGroup,
+  UserFilteredQueue, UserPickedQueueLanguage, UserRemovedAllShown,
+  UserSearchedQueue, UserToggledQueued,
 }
 import algodrill/problem.{type ProblemRef}
 import algodrill/problems
@@ -69,17 +71,16 @@ pub fn view(m: Model) -> Element(Msg) {
         <> "entirely.",
       ),
     ]),
-    filters(m),
+    controls(m),
     bulk_actions(m, rows),
-    table(m, rows),
+    groups(m, rows),
   ])
 }
 
-/// Search, language, topic, difficulty and status. All five are a lens on the list and
-/// none of them is saved: they change what is on screen, never what the
-/// scheduler will do.
-fn filters(m: Model) -> Element(Msg) {
-  html.div([attribute.class("queue-filters")], [
+/// Search, language and status: three controls, none of them saved. They
+/// change what is on screen, never what the scheduler will do.
+fn controls(m: Model) -> Element(Msg) {
+  html.div([attribute.class("queue-controls")], [
     html.input([
       attribute.type_("search"),
       // The same class the browser's box uses, so `/` focuses this one too --
@@ -89,39 +90,37 @@ fn filters(m: Model) -> Element(Msg) {
       attribute.value(m.queue_search),
       event.on_input(UserSearchedQueue),
     ]),
-    chip_row(
-      "Language",
-      problems.language_options()
-        |> list.map(fn(entry) { #(entry.0, entry.1) }),
-      m.queue_language,
-      UserPickedQueueLanguage,
-    ),
-    chip_row(
-      "Topic",
-      problems.topic_names() |> list.map(fn(name) { #(name, name) }),
-      m.queue_topic,
-      UserPickedQueueTopic,
-    ),
-    chip_row(
-      "Difficulty",
-      [#("easy", "Easy"), #("medium", "Medium"), #("hard", "Hard")],
-      m.queue_difficulty,
-      UserPickedQueueDifficulty,
-    ),
-    html.div([attribute.class("queue-filter-row")], [
-      html.span([attribute.class("queue-filter-label")], [html.text("Status")]),
-      html.div(
-        [attribute.class("queue-chips")],
+    html.label([attribute.class("queue-control")], [
+      html.span([attribute.class("queue-control-label")], [
+        html.text("Language"),
+      ]),
+      html.select(
+        [
+          attribute.class("queue-select queue-language"),
+          event.on_change(UserPickedQueueLanguage),
+        ],
+        [
+          option("", "All languages", m.queue_language == None),
+          ..list.map(problems.language_options(), fn(entry) {
+            option(entry.0, entry.1, m.queue_language == Some(entry.0))
+          })
+        ],
+      ),
+    ]),
+    html.label([attribute.class("queue-control")], [
+      html.span([attribute.class("queue-control-label")], [html.text("Show")]),
+      html.select(
+        [
+          attribute.class("queue-select queue-status"),
+          event.on_change(fn(slug) {
+            UserFilteredQueue(model.queue_filter_from_slug(slug))
+          }),
+        ],
         list.map(model.queue_filters(), fn(filter) {
-          html.button(
-            [
-              attribute.classes([
-                #("queue-chip", True),
-                #("on", m.queue_status == filter),
-              ]),
-              event.on_click(UserFilteredQueue(filter)),
-            ],
-            [html.text(model.queue_filter_label(filter))],
+          option(
+            model.queue_filter_slug(filter),
+            model.queue_filter_label(filter),
+            m.queue_status == filter,
           )
         }),
       ),
@@ -129,33 +128,8 @@ fn filters(m: Model) -> Element(Msg) {
   ])
 }
 
-/// A row of toggle chips over one `Option(String)` filter. Pressing the chip
-/// already on clears it, so "any language" needs no chip of its own.
-fn chip_row(
-  label: String,
-  entries: List(#(String, String)),
-  current: Option(String),
-  msg: fn(String) -> Msg,
-) -> Element(Msg) {
-  html.div([attribute.class("queue-filter-row")], [
-    html.span([attribute.class("queue-filter-label")], [html.text(label)]),
-    html.div(
-      [attribute.class("queue-chips")],
-      list.map(entries, fn(entry) {
-        let #(value, text) = entry
-        html.button(
-          [
-            attribute.classes([
-              #("queue-chip", True),
-              #("on", current == Some(value)),
-            ]),
-            event.on_click(msg(value)),
-          ],
-          [html.text(text)],
-        )
-      }),
-    ),
-  ])
+fn option(value: String, label: String, picked: Bool) -> Element(Msg) {
+  html.option([attribute.value(value), attribute.selected(picked)], label)
 }
 
 /// Bulk add and bulk remove, over exactly the rows on screen.
@@ -191,22 +165,121 @@ fn bulk_actions(m: Model, rows: List(ProblemRef)) -> Element(Msg) {
   ])
 }
 
-fn table(m: Model, rows: List(ProblemRef)) -> Element(Msg) {
+/// The list, one section per topic. Rows keep their index in the flat list
+/// so the keyboard cursor (which walks `queue.listed`) lands on the row it
+/// thinks it is on.
+fn groups(m: Model, rows: List(ProblemRef)) -> Element(Msg) {
   case rows {
     [] ->
-      html.div([attribute.class("queue-empty")], [
-        html.text("Nothing matches those filters."),
-      ])
+      html.div([attribute.class("queue-empty")], [html.text("Nothing matches.")])
     _ -> {
       let length = list.length(rows)
-      keyed.div(
-        [attribute.class("queue-list")],
-        list.index_map(rows, fn(ref: ProblemRef, index) {
-          #(row_key(ref), row(m, ref, index, length))
-        }),
-      )
+      let #(_, sections) =
+        list.map_fold(queue.grouped(m), 0, fn(offset, group) {
+          let #(category, subcategory, members) = group
+          let section = #(
+            category <> "|" <> subcategory,
+            group_section(m, category, subcategory, members, offset, length),
+          )
+          #(offset + list.length(members), section)
+        })
+      keyed.div([attribute.class("queue-list")], sections)
     }
   }
+}
+
+fn group_section(
+  m: Model,
+  category: String,
+  subcategory: String,
+  members: List(ProblemRef),
+  offset: Int,
+  length: Int,
+) -> Element(Msg) {
+  html.section([attribute.class("queue-group")], [
+    group_head(m, category, subcategory, members),
+    keyed.div(
+      [attribute.class("queue-group-rows")],
+      list.index_map(members, fn(ref: ProblemRef, index) {
+        #(row_key(ref), row(m, ref, offset + index, length))
+      }),
+    ),
+  ])
+}
+
+/// The topic's name, how much of it is queued, and the buttons that change
+/// that. A button appears only when it would do something, so a fully queued
+/// topic reads as done rather than as a row of disabled controls.
+fn group_head(
+  m: Model,
+  category: String,
+  subcategory: String,
+  members: List(ProblemRef),
+) -> Element(Msg) {
+  let total = list.length(members)
+  let queued = list.count(members, fn(ref) { model.is_queued(m, ref) })
+  let addable = list.filter(members, fn(ref) { !model.is_queued(m, ref) })
+  let easy =
+    list.count(addable, fn(ref) {
+      problems.difficulty_of(ref) == Some(problem.Easy)
+    })
+  let removable = list.count(members, fn(ref) { model.is_new(m, ref) })
+  let change = fn(easy_only, add) {
+    UserChangedGroup(GroupChange(category:, subcategory:, easy_only:, add:))
+  }
+
+  html.div([attribute.class("queue-group-head")], [
+    html.span([attribute.class("queue-group-title")], [
+      html.text(case m.queue_language {
+        // With every language listed, the same topic repeats once per
+        // language, so the header says which.
+        None -> subcategory <> " \u{b7} " <> problems.language_label(category)
+        Some(_) -> subcategory
+      }),
+    ]),
+    html.span([attribute.class("queue-group-count")], [
+      html.text(
+        int.to_string(queued) <> "/" <> int.to_string(total) <> " queued",
+      ),
+    ]),
+    html.span([attribute.class("queue-group-actions")], [
+      case list.length(addable) {
+        0 -> element.none()
+        n ->
+          html.button(
+            [
+              attribute.class("queue-action queue-group-add"),
+              event.on_click(change(False, True)),
+            ],
+            [html.text("Add " <> int.to_string(n))],
+          )
+      },
+      // Only when it differs from "Add all": a topic with nothing but Easy
+      // left, or nothing Easy left, has no second choice to offer.
+      case easy > 0 && easy < list.length(addable) {
+        False -> element.none()
+        True ->
+          html.button(
+            [
+              attribute.class("queue-action queue-group-add-easy"),
+              event.on_click(change(True, True)),
+            ],
+            [html.text("Add " <> int.to_string(easy) <> " easy")],
+          )
+      },
+      case removable {
+        0 -> element.none()
+        n ->
+          html.button(
+            [
+              attribute.class("queue-action queue-group-remove"),
+              event.on_click(change(False, False)),
+            ],
+            [html.text("Remove " <> int.to_string(n))],
+          )
+      },
+    ]),
+  ])
 }
 
 fn row_key(ref: ProblemRef) -> String {
@@ -230,14 +303,16 @@ fn row(m: Model, ref: ProblemRef, index: Int, length: Int) -> Element(Msg) {
       ]),
     ],
     [
-      html.span([attribute.class("lang-tag")], [
-        html.text(problems.language_tag(ref.category)),
-      ]),
+      // The group header already names the language when one is chosen.
+      case m.queue_language {
+        None ->
+          html.span([attribute.class("lang-tag")], [
+            html.text(problems.language_tag(ref.category)),
+          ])
+        Some(_) -> element.none()
+      },
       html.span([attribute.class("queue-row-title")], [html.text(ref.title)]),
       format.difficulty_badge(problems.difficulty_of(ref)),
-      html.span([attribute.class("queue-row-topic")], [
-        html.text(ref.subcategory),
-      ]),
       html.span([attribute.class(badge_class)], [html.text(badge_text)]),
       action(ref, state, busy),
     ],

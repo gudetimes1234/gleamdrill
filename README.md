@@ -53,13 +53,13 @@ the grade you pressed against the interval the scheduler gave it.
 **You choose what is in the queue.** Nothing is scheduled that you did not put
 there. A queue screen lists the whole catalogue with the state of every problem
 — queued, new, due, paused, or not in play at all — and adds or removes them
-one row or one topic at a time. Every NeetCode problem carries its LeetCode
-rating — Easy, Medium or Hard — as a badge wherever it is listed, and the
-queue screen filters on it, so "queue every Easy problem" is two clicks. New
-cards are still introduced in catalogue order, which is NeetCode's topic
-progression; the rating is a lens on the catalogue, not a reordering of it.
-The starter set a first visit is offered is the first twenty Easy problems of
-each chosen language. Deciding for you which of twelve hundred problems to
+one row or one topic at a time: the list is grouped by topic, and each
+topic's header says how much of it is queued and adds or removes the topic
+right there, or just its Easy problems. Every NeetCode problem carries its
+LeetCode rating — Easy, Medium or Hard — as a badge wherever it is listed.
+New cards are still introduced in catalogue order, which is NeetCode's topic
+progression; the rating is a label, not a reordering. The starter set a first
+visit is offered is the first twenty Easy problems of each chosen language. Deciding for you which of twelve hundred problems to
 introduce is not a decision an app is in a position to make, and the old
 answer, "everything, in catalogue order", meant the only way to refuse a
 problem was to answer it once and then pause it. A problem you have already

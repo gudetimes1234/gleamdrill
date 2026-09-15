@@ -3201,55 +3201,94 @@ body {
     max-width: 62ch;
 }
 
-.queue-filters {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 12px;
-    background: var(--bg-raised);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-}
-
-.queue-filter-row {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-}
-
-.queue-filter-label {
-    flex: 0 0 66px;
-    font-size: 12px;
-    color: var(--text-secondary);
-}
-
-.queue-chips {
+/* Three controls on one line: search, language, status. The topic is not a
+   filter any more -- the list is grouped by it. */
+.queue-controls {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    align-items: center;
+    gap: 10px 16px;
 }
 
-.queue-chip {
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-    padding: 3px 10px;
-    font-family: var(--font-ui);
+.queue-controls .search {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+.queue-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.queue-select {
+    padding: 7px 10px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 13px;
     cursor: pointer;
 }
 
-.queue-chip:hover {
+.queue-select:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* One section per topic. The header sticks while its rows scroll under it,
+   so the buttons that queue a topic are always on screen with the topic. */
+.queue-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.queue-group + .queue-group {
+    margin-top: 14px;
+}
+
+.queue-group-head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    padding: 8px 10px;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border);
+}
+
+.queue-group-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     color: var(--text-primary);
 }
 
-/* The chosen chip, not a "selected problem": a filter is a lens, so it reads
-   as an outline rather than as the filled state selection uses. */
-.queue-chip.on {
-    border-color: var(--accent);
-    color: var(--text-primary);
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
+.queue-group-count {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.queue-group-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
+}
+
+.queue-group-actions .queue-action {
+    flex-basis: auto;
+    padding-inline: 10px;
+}
+
+.queue-group-add-easy {
+    color: var(--success);
 }
 
 .queue-bulk {
@@ -3287,12 +3326,19 @@ body {
     cursor: default;
 }
 
+/* No overflow clip here: a clipped ancestor would pin the sticky group
+   headers to a box that never scrolls. Each group carries its own border. */
 .queue-list {
     display: flex;
     flex-direction: column;
+}
+
+.queue-group-rows {
+    display: flex;
+    flex-direction: column;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
 }
 
 .queue-row {
@@ -3325,12 +3371,6 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.queue-row-topic {
-    flex: 0 0 auto;
-    font-size: 11px;
-    color: var(--text-secondary);
 }
 
 /* A problem with no card at all. Quietest of the badges: it is the default
@@ -3372,16 +3412,18 @@ body {
 }
 
 @media (max-width: 700px) {
-    .queue-filter-row {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 4px;
+    .queue-control {
+        flex: 1 1 45%;
     }
 
-    /* The topic is the first thing to go: the title and the state are what a
-       row is for, and both have to stay on one line on a phone. */
-    .queue-row-topic {
-        display: none;
+    .queue-select {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .queue-group-actions {
+        flex-basis: 100%;
+        margin-left: 0;
     }
 
     /* No min-height here: the 44px touch floor above must win on phones. */

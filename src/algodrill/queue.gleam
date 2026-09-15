@@ -109,23 +109,45 @@ pub fn listed(m: Model) -> List(ProblemRef) {
       None -> True
     }
   })
-  |> list.filter(fn(ref) {
-    case m.queue_topic {
-      Some(topic) -> ref.subcategory == topic
-      None -> True
-    }
-  })
-  |> list.filter(fn(ref) {
-    case m.queue_difficulty {
-      Some(slug) ->
-        case problems.difficulty_of(ref) {
-          Some(rating) -> problem.difficulty_slug(rating) == slug
-          None -> False
-        }
-      None -> True
-    }
-  })
   |> list.filter(fn(ref) { matches_status(m, ref) })
+}
+
+/// `listed`, cut into topics: (category, subcategory, its rows), in order.
+///
+/// Both the catalogue and a search walk category, then subcategory, then
+/// problem, so the rows of one topic are always consecutive and chunking on
+/// the pair loses nothing. The screen renders these; the cursor still walks
+/// the flat `listed`, and the two agree because this is the same list.
+pub fn grouped(m: Model) -> List(#(String, String, List(ProblemRef))) {
+  listed(m)
+  |> list.chunk(fn(ref) { #(ref.category, ref.subcategory) })
+  |> list.filter_map(fn(rows) {
+    case rows {
+      [first, ..] -> Ok(#(first.category, first.subcategory, rows))
+      [] -> Error(Nil)
+    }
+  })
+}
+
+/// The rows a topic's bulk button would touch: its listed rows, narrowed to
+/// the ones the action can apply to, and to Easy when asked.
+pub fn group_rows(m: Model, change: model.GroupChange) -> List(ProblemRef) {
+  listed(m)
+  |> list.filter(fn(ref) {
+    ref.category == change.category && ref.subcategory == change.subcategory
+  })
+  |> list.filter(fn(ref) {
+    case change.add {
+      True -> !model.is_queued(m, ref)
+      False -> model.is_new(m, ref)
+    }
+  })
+  |> list.filter(fn(ref) {
+    case change.easy_only {
+      True -> problems.difficulty_of(ref) == Some(problem.Easy)
+      False -> True
+    }
+  })
 }
 
 fn matches_status(m: Model, ref: ProblemRef) -> Bool {

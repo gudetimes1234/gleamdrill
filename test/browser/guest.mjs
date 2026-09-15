@@ -75,9 +75,7 @@ const answerPickerIfShown = async () => {
     await page.waitForSelector(".study-screen, .queue-screen", { timeout: 20000 });
   }
   if (await page.isVisible(".queue-screen")) {
-    await page.click('.queue-chip:text-is("Arrays & Hashing")');
-    await page.waitForTimeout(200);
-    await page.click(".queue-bulk-add");
+    await page.click('.queue-group:has(.queue-group-title:has-text("Arrays & Hashing")) .queue-group-add');
     await page.waitForTimeout(600);
     await page.click(".queue-header .link-button");
   }
@@ -264,9 +262,7 @@ check("with no leftover progress", afterOut[2] === "0", `reviews done = ${afterO
 // write into a full store is the very failure being staged.
 await page.click('.study-account .link-button:text-is("Queue")');
 await page.waitForSelector(".queue-screen", { timeout: 10000 });
-await page.click('.queue-chip:text-is("Arrays & Hashing")');
-await page.waitForTimeout(200);
-await page.click(".queue-bulk-add");
+await page.click('.queue-group:has(.queue-group-title:has-text("Arrays & Hashing")) .queue-group-add');
 await page.waitForTimeout(600);
 await page.click(".queue-header .link-button");
 await page.waitForSelector(".study-screen", { timeout: 10000 });

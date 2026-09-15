@@ -25,7 +25,7 @@ import algodrill/model.{
   Synced, Syncing, TimedOut, TourActivated, TourContents, TourCursorMoved,
   TourEditorChanged, TourLesson, TourRoute, TourRunTicked, UserAddedAllShown,
   UserAddedStarterSet, UserChangedAuthEmail, UserChangedAuthPassword,
-  UserChangedIterations, UserChangedKeymap, UserChangedSetting,
+  UserChangedGroup, UserChangedIterations, UserChangedKeymap, UserChangedSetting,
   UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
   UserClickedCategory, UserClickedClearSelection, UserClickedDeviceTimezone,
   UserClickedExitDrill, UserClickedExitReport, UserClickedMergeGuest,
@@ -37,10 +37,9 @@ import algodrill/model.{
   UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
   UserClosedDetail, UserDismissedMergeOffer, UserDismissedNotice,
   UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded, UserOpenedDetail,
-  UserOpenedLesson, UserPickedChoice, UserPickedQueueDifficulty,
-  UserPickedQueueLanguage, UserPickedQueueTopic, UserRemovedAllShown,
-  UserResetLesson, UserRevealedHint, UserSearched, UserSearchedQueue,
-  UserSubmittedAnswer, UserSubmittedAuth, UserToggledAuthMode,
+  UserOpenedLesson, UserPickedChoice, UserPickedQueueLanguage,
+  UserRemovedAllShown, UserResetLesson, UserRevealedHint, UserSearched,
+  UserSearchedQueue, UserSubmittedAnswer, UserSubmittedAuth, UserToggledAuthMode,
   UserToggledLanguage, UserToggledProblem, UserToggledQueued, UserToggledSide,
   UserToggledSolution, UserToggledSuspend,
 }
@@ -410,15 +409,6 @@ fn confirm_picker(m: Model, starter starter: Bool) -> #(Model, Effect(Msg)) {
         _, _ -> #(m, save_preferences(m))
       }
     }
-  }
-}
-
-/// A filter chip is a toggle: pressing the one already chosen clears it,
-/// which is how "all languages" is reachable without a separate button.
-fn toggle_filter(current: Option(String), value: String) -> Option(String) {
-  case current == Some(value) {
-    True -> None
-    False -> Some(value)
   }
 }
 
@@ -1654,32 +1644,25 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.none(),
     )
 
+    // From a select: the empty option is "all languages".
     UserPickedQueueLanguage(tag) -> #(
       Model(
         ..m,
-        queue_language: toggle_filter(m.queue_language, tag),
+        queue_language: case tag {
+          "" -> None
+          _ -> Some(tag)
+        },
         nav: model.MenuNav(..m.nav, queue: 0),
       ),
       effect.none(),
     )
 
-    UserPickedQueueTopic(topic) -> #(
-      Model(
-        ..m,
-        queue_topic: toggle_filter(m.queue_topic, topic),
-        nav: model.MenuNav(..m.nav, queue: 0),
-      ),
-      effect.none(),
-    )
-
-    UserPickedQueueDifficulty(difficulty) -> #(
-      Model(
-        ..m,
-        queue_difficulty: toggle_filter(m.queue_difficulty, difficulty),
-        nav: model.MenuNav(..m.nav, queue: 0),
-      ),
-      effect.none(),
-    )
+    UserChangedGroup(change) ->
+      case queue.group_rows(m, change), change.add {
+        [], _ -> #(m, effect.none())
+        refs, True -> #(pending(m, refs), store.add_to_queue(m, refs))
+        refs, False -> #(pending(m, refs), store.remove_from_queue(m, refs))
+      }
 
     // One verb for both directions, because the row shows one control. A card
     // with review history is parked rather than deleted -- the server refuses
