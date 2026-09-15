@@ -7,8 +7,8 @@
 import algodrill/insights
 import algodrill/model.{
   type Model, type Msg, Guest, PromptShowing, Registering, StudyRoute,
-  UserClickedBrowse, UserClickedQueue, UserClickedSignIn, UserClickedStartExam,
-  UserClickedStudy, UserDismissedUpgradePrompt,
+  UserAddedStarterSet, UserClickedBrowse, UserClickedQueue, UserClickedSignIn,
+  UserClickedStartExam, UserClickedStudy, UserDismissedUpgradePrompt,
 }
 import algodrill/problem
 import algodrill/problems
@@ -86,13 +86,22 @@ pub fn view(m: Model) -> Element(Msg) {
     case nothing_queued {
       False -> element.none()
       True ->
-        html.button(
-          [
-            attribute.class("primary study-start"),
-            event.on_click(UserClickedQueue),
-          ],
-          [html.text("Choose problems to study")],
-        )
+        html.div([attribute.class("study-empty-actions")], [
+          html.button(
+            [
+              attribute.class("primary study-start study-starter"),
+              event.on_click(UserAddedStarterSet),
+            ],
+            [html.text("Add a starter set")],
+          ),
+          html.button(
+            [
+              attribute.class("study-secondary"),
+              event.on_click(UserClickedQueue),
+            ],
+            [html.text("Choose problems to study")],
+          ),
+        ])
     },
     html.div([attribute.class("study-actions")], [
       html.button(

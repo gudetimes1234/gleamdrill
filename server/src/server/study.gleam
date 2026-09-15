@@ -45,9 +45,8 @@ pub type Settings =
   wire.Settings
 
 /// A review as the client submits it. Field-for-field the wire shape, so it
-/// is that shape: `practice` means the rating stands as sent, and only the
-/// scheduled study queue is held to the coercion below. The log records
-/// auto_failed/revealed truthfully either way.
+/// is that shape. The rating is always scheduled as sent; `practice`,
+/// `auto_failed` and `revealed` are recorded on the log row for insights.
 pub type ReviewInput =
   wire.Review
 
@@ -428,10 +427,10 @@ fn memory_from(
 
 /// Schedules a review and records it, atomically.
 ///
-/// The rating is coerced, not trusted: a failed harness or a revealed solution
-/// forces `Again` regardless of what the client sent. The client enforces this
-/// in its UI too, but the invariant belongs here -- a review history is only
-/// worth optimising against if it cannot be flattered.
+/// The rating is the user's own assessment and is scheduled as sent. What the
+/// harness said and whether the solution was revealed are still recorded on
+/// the review row, so insights can tell a clean solve from a peeked one; the
+/// scheduler itself does not second-guess the grade.
 pub fn record_review(
   db: pog.Connection,
   user_id: String,
@@ -444,19 +443,9 @@ pub fn record_review(
     use existing <- result.try(upsert_card(tx, user_id, input.problem))
     let before = existing.card
 
-    // The honesty rule applies from the second review onward: the first
-    // encounter is the learning step, where revealing the solution is how you
-    // learn, so the self-grade stands. Later, a failed harness or a revealed
-    // solution forces Again whatever the client sent — a review history is
-    // only worth optimising against if it cannot be flattered. The log's
-    // `revealed`/`auto_failed` columns record the truth in every case.
-    let first = before.memory == None
-    let rating = case
-      !first && !input.practice && { input.auto_failed || input.revealed }
-    {
-      True -> fsrs.Again
-      False -> input.rating
-    }
+    // Self-graded: the rating stands. The log's `revealed`/`auto_failed`
+    // columns record what happened in every case.
+    let rating = input.rating
 
     let elapsed = case before.last_review {
       Some(last) -> fsrs.days_between(last, now)

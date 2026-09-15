@@ -64,13 +64,20 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 
 // Native dialogs block every subsequent command until answered, so the handler
-// goes on before anything can trigger one. `confirm` backs the exit-drill guard
-// and `alert` announces the end of a session.
+// goes on before anything can trigger one. The app no longer opens any -- the
+// exit guard is an in-app prompt -- so any entry here is a regression.
 const dialogs = [];
 page.on("dialog", async (d) => {
   dialogs.push({ type: d.type(), message: d.message() });
   await d.accept();
 });
+
+// Leave the current drill through the in-app prompt.
+const exitDrill = async () => {
+  await page.click("text=Exit");
+  await page.waitForSelector(".exit-prompt", { timeout: 5000 });
+  await page.click(".exit-prompt-leave");
+};
 
 const errors = [];
 page.on("pageerror", (e) => errors.push(`${act}: ${e}`));
@@ -244,7 +251,8 @@ console.log(`screenshots -> ${SHOTS}\n`);
 // ---------------------------------------------------------------- act 1
 act = "00-first-run-picker";
 console.log(act);
-exercises("PickerToggledLanguage", "PickerConfirmed");
+exercises("PickerToggledLanguage", "PickerConfirmed",
+  "PickerConfirmedWithStarter", "UserAddedStarterSet");
 await page.goto(APP, { waitUntil: "domcontentloaded" });
 await page.evaluate(() => localStorage.clear());
 await page.goto(APP, { waitUntil: "networkidle" });
@@ -254,7 +262,9 @@ check("a browser with no preferences is asked which languages to drill",
 check("nothing is pre-selected",
   (await page.$$(".picker-option.picked")).length === 0);
 check("starting is refused until something is chosen",
-  await page.isDisabled(".picker-start"));
+  await page.isDisabled(".picker-start") && await page.isDisabled(".picker-starter"));
+check("the picker says what the app is",
+  (await page.textContent(".picker-blurb")).includes("spaced repetition"));
 await capture("picker-empty", "First run: the language choice, nothing assumed");
 
 await page.click(".picker-option:nth-child(2)");
@@ -285,6 +295,37 @@ check("new cards alternate between the chosen languages",
 await page.reload({ waitUntil: "networkidle" });
 await page.waitForSelector(".study-screen", { timeout: 20000 });
 check("the picker does not ask twice", await page.isVisible(".study-screen"));
+
+// The other way out of the picker: a starter set, queued on the way to the
+// study screen, so the first sitting is one click away.
+await page.evaluate(() => localStorage.clear());
+await page.goto(APP, { waitUntil: "networkidle" });
+await page.waitForSelector(".picker-screen", { timeout: 20000 });
+await page.click(".picker-option:nth-child(1)");
+await page.waitForTimeout(200);
+await page.click(".picker-starter");
+await page.waitForSelector(".study-screen", { timeout: 20000 });
+check("the starter set lands on the study screen with cards queued",
+  (await page.textContent(".study-summary")).includes("ready"),
+  await page.textContent(".study-summary"));
+await capture("picker-starter", "One click from the picker to a queued first sitting");
+
+// And from an empty study screen, the same set is one click away.
+await page.evaluate(() => localStorage.clear());
+await page.goto(APP, { waitUntil: "networkidle" });
+await page.waitForSelector(".picker-screen", { timeout: 20000 });
+await page.click(".picker-option:nth-child(1)");
+await page.waitForTimeout(200);
+await page.click(".picker-start");
+await page.waitForSelector(".queue-screen", { timeout: 20000 });
+await page.click(".nav-link:text-is(\"Study\")");
+await page.waitForSelector(".study-starter", { timeout: 10000 });
+await capture("study-empty", "An empty study screen offers the starter set");
+await page.click(".study-starter");
+await page.waitForFunction(
+  () => (document.querySelector(".study-summary")?.textContent ?? "").includes("ready"),
+  null, { timeout: 10000 });
+check("the empty study screen can queue the starter set", true);
 
 // ---------------------------------------------------------------- act 2
 act = "01-guest-arrival";
@@ -537,10 +578,12 @@ const titleAfter = await page.textContent(".drill-title").catch(() => "");
 check("a digit grades immediately after the run",
   titleAfter !== titleBefore && titleAfter !== "",
   `still on ${titleAfter}`);
-dialogs.length = 0;
 await page.keyboard.press("Escape");
+await page.waitForSelector(".exit-prompt", { timeout: 5000 });
+check("Esc asks before leaving the sitting", await page.isVisible(".exit-prompt"));
+await page.keyboard.press("Enter");
 await page.waitForTimeout(600);
-check("Esc exits the sitting (with the confirm)", dialogs.length > 0);
+check("Enter leaves it", !(await page.isVisible(".exit-prompt")));
 
 // ---------------------------------------------------------------- act 4
 act = "04-python-drill";
@@ -553,6 +596,10 @@ await freshGuest();
 await page.click(".study-start");
 await page.waitForSelector(".run-bar", { timeout: 30000 });
 check("a scheduled session opens a drill", await page.isVisible(".run-bar"));
+await page.waitForTimeout(1200);
+check("the header shows time on the problem",
+  /\d+:\d\d/.test(await page.textContent(".drill-clock").catch(() => "")),
+  await page.textContent(".drill-clock").catch(() => "(none)"));
 // A first encounter is the learning step: every grade is available before a
 // single run, exactly like flipping a new Anki card.
 check("a first encounter grades freely from the start",
@@ -624,25 +671,31 @@ for (const mode of ["Vim", "Emacs", "Std"]) {
 }
 check("all three keymaps are selectable", true);
 
-const before = dialogs.length;
 await page.click("text=Exit");
+await page.waitForSelector(".exit-prompt", { timeout: 5000 });
+check("exiting asks for confirmation", await page.isVisible(".exit-prompt"));
+await capture("exit-prompt", "The in-app exit prompt: no native dialog");
+await page.click(".exit-prompt-stay");
+await page.waitForTimeout(200);
+check("Stay keeps the drill", await page.isVisible(".run-bar") && !(await page.isVisible(".exit-prompt")));
+await page.click("text=Exit");
+await page.waitForSelector(".exit-prompt", { timeout: 5000 });
+await page.click(".exit-prompt-leave");
 await page.waitForSelector(".study-screen", { timeout: 10000 });
-check("exiting asks for confirmation", dialogs.length > before,
-  `${dialogs.length - before} dialogs`);
 check("and returns to the study screen", await page.isVisible(".study-screen"));
 
 // ---------------------------------------------------------------- act 4b
 act = "04b-honesty";
 console.log(act);
-// From the second review onward the rules tighten: a run is required, and a
-// failed run leaves exactly one honest answer. Reached by re-opening the same
-// problem manually — a manual drill posts a review regardless of due dates.
+// From the second review onward a run is required before grading. The grade
+// itself is always the user's: a failed run or a reveal never removes a
+// button. Reached by re-opening the same problem manually — a manual drill
+// posts a review regardless of due dates.
 await page.click(".study-start");
 await page.waitForSelector(".run-bar", { timeout: 30000 });
 await page.click(".grade-good");
 await page.waitForTimeout(2000);
-dialogs.length = 0;
-await page.click("text=Exit");
+await exitDrill();
 await page.waitForSelector(".study-screen", { timeout: 10000 });
 
 await page.click("text=Browse problems");
@@ -654,17 +707,16 @@ await capture("gated", "Second review: grading waits for a run");
 await waitForRunnable();
 await page.click(".run-button");
 await verdict();
-// A manual reopen is practice: self-graded, never coerced.
+// A manual reopen is practice: every grade after a run.
 check("a failed manual run still offers every grade",
   JSON.stringify(await gradeLabels()) === ALL_FOUR,
   JSON.stringify(await gradeLabels()));
 await capture("manual-free", "Manual later review, failed run: still every grade");
-dialogs.length = 0;
-await page.click("text=Exit");
+await exitDrill();
 await page.waitForTimeout(800);
 
-// The honesty rule lives in the scheduled queue: seed a card due in the
-// past so Study now serves a later review through the scheduled path.
+// Same on the scheduled path: seed a card due in the past so Study now
+// serves a later review.
 await page.evaluate(() => {
   const longAgo = Math.floor(Date.now() / 1000) - 10 * 86400;
   localStorage.setItem("algoDrill.guest.cards.v1", JSON.stringify([{
@@ -681,13 +733,13 @@ await page.waitForSelector(".run-bar", { timeout: 30000 });
 await waitForRunnable();
 await page.click(".run-button");
 await verdict();
-check("a failed run in the study queue offers only Again",
-  JSON.stringify(await gradeLabels()) === '["Again"]',
+check("a failed run in the study queue still offers every grade",
+  JSON.stringify(await gradeLabels()) === ALL_FOUR,
   JSON.stringify(await gradeLabels()));
-await capture("forced-again", "Scheduled review, failed run: the one honest answer");
+await capture("failed-still-free", "Scheduled review, failed run: every grade stays yours");
 
-// A passing scheduled run keeps the full choice — until the pseudocode hint
-// is revealed, which counts as seeing the answer.
+// A passing scheduled run keeps the full choice, and so does revealing the
+// pseudocode hint: it is logged as a reveal, not held against the grade.
 await setCode("def containsDuplicate(nums):\n    return len(set(nums)) != len(nums)");
 await page.click(".run-button");
 await verdict();
@@ -698,12 +750,13 @@ for (let i = 0; i < 3; i++) {
   await page.keyboard.press("a");
   await page.waitForTimeout(200);
 }
-check("revealing the pseudocode leaves the one honest answer",
-  JSON.stringify(await gradeLabels()) === '["Again"]',
+check("revealing the pseudocode keeps every grade",
+  JSON.stringify(await gradeLabels()) === ALL_FOUR,
   JSON.stringify(await gradeLabels()));
-await capture("hint-honesty", "Pseudocode revealed on a scheduled review: Again only");
-dialogs.length = 0;
+await capture("hint-still-free", "Pseudocode revealed on a scheduled review: every grade stays");
 await page.keyboard.press("Escape");
+await page.waitForSelector(".exit-prompt", { timeout: 5000 });
+await page.keyboard.press("Enter");
 await page.waitForTimeout(600);
 await page.evaluate(() => localStorage.clear());
 
@@ -756,8 +809,7 @@ await page.click(".side-toggle");
 await page.waitForTimeout(300);
 check("the toggle restores the prompt column",
   (await page.$$(".drill-side .panel")).length > 0);
-dialogs.length = 0;
-await page.click("text=Exit");
+await exitDrill();
 await page.waitForTimeout(800);
 
 // ---------------------------------------------------------------- act 4d
@@ -781,8 +833,7 @@ await page.unroute("**/ts-worker.js*");
 await page.click(".retry-button");
 await waitForRunnable(60000);
 check("Retry recovers the runtime without a reload", true);
-dialogs.length = 0;
-await page.click("text=Exit");
+await exitDrill();
 await page.waitForTimeout(800);
 
 // ---------------------------------------------------------------- act 5
@@ -850,8 +901,7 @@ for (const [language, subcategory, title, code, runnable] of languages) {
   await capture(slug,
     `${language}: ${runnable === "tour" ? "read-and-run lesson" : runnable ? "compiled, ran and passed" : "reveal-only for a guest"}`,
     runnable === "tour" ? "Language tour lesson runs in the browser" : undefined);
-  dialogs.length = 0;
-  await page.click("text=Exit");
+  await exitDrill();
   await page.waitForTimeout(800);
 }
 
@@ -1010,8 +1060,9 @@ await page.click(".solution-button");
 await page.waitForTimeout(400);
 await page.click(".grade-hard");
 await page.waitForTimeout(1500);
-dialogs.length = 0;
 await page.keyboard.press("Escape");
+await page.waitForSelector(".exit-prompt", { timeout: 5000 });
+await page.keyboard.press("Enter");
 await page.waitForSelector(".study-screen", { timeout: 10000 });
 
 await page.keyboard.press("t");
@@ -1239,8 +1290,7 @@ await capture("queue-study-now", "Study now straight from the queue screen",
 await page.click(".queue-study-now");
 await page.waitForSelector(".run-bar", { timeout: 30000 });
 check("and it opens the first card", await page.isVisible(".run-bar"));
-dialogs.length = 0;
-await page.click("text=Exit");
+await exitDrill();
 await page.waitForTimeout(800);
 await goHome();
 
@@ -1428,8 +1478,7 @@ check("what it printed came back with it",
   (await page.textContent(".output-pane")).includes("checking 4 numbers"));
 await capture("elixir-passed", "Elixir solution run on the server: four cases green, output shown",
   "Elixir attempt ran on the server");
-dialogs.length = 0;
-await page.click("text=Exit");
+await exitDrill();
 await page.waitForTimeout(800);
 await goHome();
 
@@ -1501,6 +1550,14 @@ await waitForRunnable();
 await page.click(".run-button");
 await page.waitForSelector(".grade-bar", { timeout: 90000 });
 await capture("grading", "Grading bar at phone width");
+check("a help button is on screen where the status bar is not",
+  await page.isVisible(".help-fab"));
+await page.click(".help-fab");
+await page.waitForSelector(".help-card", { timeout: 5000 });
+check("and it opens the cheatsheet", await page.isVisible(".help-card"));
+await capture("help-phone", "Help reached by touch, no keyboard needed");
+await page.click(".help-overlay", { position: { x: 5, y: 5 } });
+await page.waitForTimeout(300);
 check("the drill does not scroll sideways",
   (await page.evaluate(() => document.documentElement.scrollWidth)) <= 390 + 1,
   `scrollWidth ${await page.evaluate(() => document.documentElement.scrollWidth)}`);
@@ -1556,7 +1613,8 @@ const declared = [
   "QueueCursorMoved", "QueueCursorJumped", "QueueToggledAtCursor",
   "UserPickedChoice", "UserSubmittedAnswer",
   "UserClickedStartExam", "UserClickedExitReport",
-  "PickerToggledLanguage", "PickerConfirmed",
+  "PickerToggledLanguage", "PickerConfirmed", "PickerConfirmedWithStarter",
+  "UserAddedStarterSet",
   "UserClickedSettings", "UserChangedSetting", "UserClickedDeviceTimezone",
   "KeyPressed", "HelpToggled", "MenuCursorMoved", "MenuPaneFocused",
   "MenuCursorJumped", "MenuActivated", "MenuToggledAtCursor", "QuizMoved",
@@ -1564,6 +1622,8 @@ const declared = [
   "StatsActivated", "UserOpenedDetail", "UserClosedDetail",
   "UserDismissedMergeOffer", "UserClickedRetrySync",
 ];
+check("no native dialog was opened", dialogs.length === 0,
+  JSON.stringify(dialogs.slice(0, 2)));
 const missed = declared.filter((m) => !covered.has(m));
 check("every user-initiated message was exercised", missed.length === 0,
   missed.join(", "));

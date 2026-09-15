@@ -301,9 +301,10 @@ pub fn first_encounter_grades_freely_test() -> Nil {
   assert memory.stability == expected.stability
 }
 
-/// From the second review onward the honesty rule applies: a failed harness or
-/// a revealed solution forces Again whatever was claimed.
-pub fn later_reviews_enforce_honesty_test() -> Nil {
+/// Later reviews keep their grade too: a revealed solution is recorded on the
+/// log, but the rating pressed is the rating scheduled. Grading is a
+/// self-assessment, never a verdict.
+pub fn later_reviews_keep_their_grade_test() -> Nil {
   let now = at_epoch(1_800_000_000)
   let problem = a_problem("Contains Duplicate")
   let settings = guest_settings()
@@ -319,7 +320,7 @@ pub fn later_reviews_enforce_honesty_test() -> Nil {
     )
   let assert Some(before) = first.card.memory
 
-  let #(_store, card) =
+  let #(after, card) =
     local.record(
       store,
       settings,
@@ -336,14 +337,16 @@ pub fn later_reviews_enforce_honesty_test() -> Nil {
       0.0,
     )
   let assert Some(memory) = card.card.memory
-  // Coerced to Again on the same-day path: the stability must be what a
-  // same-day Again produces, not what a claimed Easy would.
+  // Scheduled as the Easy that was pressed, on the same-day path.
   assert memory.stability
     == fsrs.short_term_stability(
       settings.scheduler,
       before.stability,
-      fsrs.Again,
+      fsrs.Easy,
     )
+  // The reveal is still on the record.
+  let assert [_, second] = local.history_of(after, problem)
+  assert second.revealed == True
 }
 
 /// Anki counts a lapse only when a card that had graduated fails. Failing one
@@ -692,18 +695,16 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
   // The revealed review is not a clean solve, but it is a reveal.
   assert list.length(data.clean_solves) == 2
   assert data.reveals == [#(problem, 1)]
-  // Review 1 (Good) was followed by the coerced-Again reveal: not a pass.
-  // Review 2 (Again after coercion) was followed by a clean pass.
+  // Every review was graded Good. Review 1 was followed by the reveal: not
+  // a pass. Review 2 (the reveal, still Good) was followed by a clean pass.
   let assert Ok(good_row) =
     list.find(data.calibration, fn(row: api.Calibration) {
       row.rating == fsrs.Good
     })
-  assert good_row.total == 1 && good_row.passed == 0
-  let assert Ok(again_row) =
-    list.find(data.calibration, fn(row: api.Calibration) {
-      row.rating == fsrs.Again
-    })
-  assert again_row.total == 1 && again_row.passed == 1
+  assert good_row.total == 2 && good_row.passed == 1
+  assert list.all(data.calibration, fn(row: api.Calibration) {
+    row.rating == fsrs.Good
+  })
 
   // And the per-problem history keeps every row, oldest first.
   let history = local.history_of(store, problem)

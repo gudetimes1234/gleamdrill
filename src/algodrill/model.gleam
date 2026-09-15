@@ -296,6 +296,10 @@ pub type Model {
     nav: MenuNav,
     /// Whether the `?` cheatsheet overlay is up.
     help_open: Bool,
+    /// The in-app "leave this drill?" question, with its message, while it is
+    /// up. An in-app dialog rather than `window.confirm`, which freezes the
+    /// page and cannot be styled or reached by the leader key.
+    exit_prompt: Option(String),
     /// Set when a local write has failed, which as a guest means progress is
     /// silently not being saved. Unlike `notice` this is not dismissible --
     /// it is the one situation where an account genuinely matters.
@@ -324,6 +328,10 @@ pub type Model {
     /// Wall-clock milliseconds when the current problem was opened, for the
     /// review log's `duration_ms`.
     opened_at_ms: Int,
+    /// Wall-clock milliseconds as of the last clock tick, so the drill header
+    /// can show how long this problem has been open. Only advances while a
+    /// drill is on screen.
+    now_ms: Int,
     draft: String,
     revealed_solution: Option(Int),
     /// How many rungs of the approach hint ladder are shown, top down.
@@ -395,6 +403,7 @@ pub fn default() -> Model {
     notice: None,
     nav: default_nav(),
     help_open: False,
+    exit_prompt: None,
     storage_full: False,
     upgrade_prompt: PromptUnseen,
     merge_offer: False,
@@ -408,6 +417,7 @@ pub fn default() -> Model {
     studying: False,
     grading: NotGrading,
     opened_at_ms: 0,
+    now_ms: 0,
     draft: "",
     revealed_solution: None,
     hints_revealed: 0,
@@ -469,10 +479,10 @@ pub fn card_for(model: Model, problem: ProblemRef) -> Option(CardState) {
 /// Whether this problem has never actually been reviewed — no card, or a card
 /// that was created but never answered.
 ///
-/// This is the boundary the grading rules turn on: the first encounter is the
-/// learning step, where revealing the solution is how you learn and nothing is
-/// coerced. From the second review onward the honesty rules apply. One
-/// definition, used by the view, the local store and (mirrored) the server.
+/// This is the boundary the run gate turns on: the first encounter is the
+/// learning step, where revealing the solution is how you learn, so grading is
+/// open from the moment the drill opens. From the second review onward a
+/// checkable drill must be run once before the grade bar appears.
 pub fn first_encounter(model: Model, problem: ProblemRef) -> Bool {
   case card_for(model, problem) {
     None -> True
@@ -503,8 +513,8 @@ pub fn pseudocode_revealed(
 }
 
 /// The one definition of "the answer was seen": a flipped solution or the
-/// pseudocode hint. Feeds the review's `revealed` flag (which both stores
-/// coerce on) and the grade bar's forced-Again rule.
+/// pseudocode hint. Feeds the review's `revealed` flag, which the log records
+/// for insights; it never changes which grades are offered.
 pub fn answer_revealed(m: Model, stages: List(problem.ApproachStage)) -> Bool {
   m.revealed_solution != option.None || pseudocode_revealed(m, stages)
 }
@@ -579,11 +589,9 @@ pub fn language_muted(model: Model, tag: String) -> Bool {
 /// the same parse-clamp-save.
 /// One answered problem in this sitting.
 ///
-/// `pressed` is what the user chose, which is not always what was recorded: a
-/// failed run or a revealed solution is coerced to `Again` server-side. That
-/// coercion shows up in the card's next due date rather than here, so the
-/// summary reads the interval from `Model.cards` instead of recomputing the
-/// rule -- there is exactly one copy of it and it is not in the client.
+/// `pressed` is what the user chose and what was scheduled. The summary still
+/// reads the resulting interval from `Model.cards` rather than recomputing it,
+/// so the number shown is the one the store actually produced.
 pub type SittingEntry {
   SittingEntry(problem: ProblemRef, pressed: fsrs.Rating, duration_ms: Int)
 }
@@ -654,8 +662,12 @@ pub type Msg {
   UserClickedClearSelection
   UserChangedIterations(String)
   UserClickedStartDrill
+  /// Ask before leaving a drill; opens the in-app exit prompt.
   UserClickedExitDrill
+  /// The answer to that prompt.
   ExitConfirmed(Bool)
+  /// One second of drill time has passed; only scheduled while a drill is up.
+  ClockTicked
   UserToggledSolution(Int)
   UserRevealedHint
   UserClickedNext
@@ -677,8 +689,13 @@ pub type Msg {
   SettingsSaved(Result(Settings, ApiError))
   /// Tick or untick one language in the first-run picker.
   PickerToggledLanguage(String)
-  /// Accept the picker's selection and go study.
+  /// Accept the picker's selection and go choose problems.
   PickerConfirmed
+  /// Accept the picker's selection and queue a starter set of problems in
+  /// each chosen language, so the first sitting is one click away.
+  PickerConfirmedWithStarter
+  /// Queue a starter set from the study screen's empty state.
+  UserAddedStarterSet
   UserToggledSuspend(ProblemRef)
   MenuSuspendedAtCursor
   CardSuspended(Result(api.ReviewOutcome, ApiError))

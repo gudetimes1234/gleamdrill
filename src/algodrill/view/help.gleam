@@ -10,6 +10,24 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 
+/// The way into the cheatsheet when there is no keyboard to press `?` on.
+/// The stylesheet shows it only on touch and narrow screens, where the status
+/// bar (the other clickable route in) is hidden.
+pub fn button(m: Model) -> Element(Msg) {
+  case m.help_open {
+    True -> element.none()
+    False ->
+      html.button(
+        [
+          attribute.class("help-fab"),
+          attribute.attribute("aria-label", "Help and keyboard shortcuts"),
+          event.on_click(HelpToggled),
+        ],
+        [html.text("?")],
+      )
+  }
+}
+
 pub fn view(m: Model) -> Element(Msg) {
   case m.help_open {
     False -> element.none()
@@ -18,15 +36,17 @@ pub fn view(m: Model) -> Element(Msg) {
         [
           attribute.class("help-overlay"),
           attribute.role("dialog"),
-          attribute.attribute("aria-label", "Keyboard shortcuts"),
+          attribute.attribute("aria-modal", "true"),
+          attribute.attribute("aria-labelledby", "help-title"),
           // Clicking the backdrop closes; clicks on the card stop below.
           event.on_click(HelpToggled),
         ],
         [
           html.div([attribute.class("help-card")], [
-            html.h2([attribute.class("help-title")], [
-              html.text("Keys \u{b7} " <> keys.context_label(m)),
-            ]),
+            html.h2(
+              [attribute.class("help-title"), attribute.id("help-title")],
+              [html.text("Help \u{b7} " <> keys.context_label(m))],
+            ),
             html.div(
               [attribute.class("help-rows")],
               // The overlay shows the table for the screen underneath it, so

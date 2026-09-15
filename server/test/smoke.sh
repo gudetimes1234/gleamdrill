@@ -90,12 +90,12 @@ R=$(curl -s -X POST "$B/api/reviews" -H "$AUTH" -H "$CT" -d "{$REF,\"rating\":3}
 check "clearing the last step graduates the card" 2 "$(echo "$R" | j "['card']['state']")"
 check "step is cleared on graduation" None "$(echo "$R" | j "['card']['step']")"
 
-echo "== the grading invariant is enforced server-side"
+echo "== the grade is the user's own, server-side too"
 R=$(curl -s -X POST "$B/api/reviews" -H "$AUTH" -H "$CT" -d "{$REF,\"rating\":4,\"autoFailed\":true}")
-check "a failed harness forces Again despite rating 4" 3 "$(echo "$R" | j "['card']['state']")"
-check "the lapse is counted" 1 "$(echo "$R" | j "['card']['lapses']")"
+check "a failed harness keeps the rating 4" 2 "$(echo "$R" | j "['card']['state']")"
+check "no lapse is counted" 0 "$(echo "$R" | j "['card']['lapses']")"
 R=$(curl -s -X POST "$B/api/reviews" -H "$AUTH" -H "$CT" -d "{$REF,\"rating\":4,\"revealed\":true}")
-check "a revealed solution forces Again too" 3 "$(echo "$R" | j "['card']['state']")"
+check "a revealed solution keeps the rating too" 2 "$(echo "$R" | j "['card']['state']")"
 check "a rating outside 1-4 is 422" 422 "$(status -X POST "$B/api/reviews" -H "$AUTH" -H "$CT" -d "{$REF,\"rating\":9}")"
 check "reviewing without a token is 401" 401 "$(status -X POST "$B/api/reviews" -H "$CT" -d "{$REF,\"rating\":3}")"
 
@@ -110,7 +110,7 @@ check "practice keeps its rating despite a failed harness" 2 "$(echo "$R" | j "[
 R=$(curl -s -X POST "$B/api/reviews" -H "$PA" -H "$CT" -d "{$REF,\"rating\":4,\"revealed\":true,\"practice\":true}")
 check "practice keeps its rating despite a reveal" 2 "$(echo "$R" | j "['card']['state']")"
 R=$(curl -s -X POST "$B/api/reviews" -H "$PA" -H "$CT" -d "{$REF,\"rating\":4,\"autoFailed\":true}")
-check "without the flag the coercion still bites" 3 "$(echo "$R" | j "['card']['state']")"
+check "without the flag the rating still stands" 2 "$(echo "$R" | j "['card']['state']")"
 
 echo "== the first encounter grades freely"
 FE="first-$RANDOM$RANDOM@example.com"
@@ -121,12 +121,11 @@ FA="authorization: Bearer $FET"
 R=$(curl -s -X POST "$B/api/reviews" -H "$FA" -H "$CT" -d "{$REF,\"rating\":3,\"revealed\":true}")
 check "a revealed first review keeps its grade" 2.3065 "$(echo "$R" | j "['card']['stability']")"
 check "and schedules as Good, not Again" 1 "$(echo "$R" | j "['card']['state']")"
-# Second review: memory now exists, so the honesty rule bites. An Easy claim
-# with the solution revealed would graduate the card; coercion keeps it in
-# learning at step zero.
+# Second review: an Easy with the solution revealed still graduates the card.
+# The reveal is on the log row, not in the schedule.
 R=$(curl -s -X POST "$B/api/reviews" -H "$FA" -H "$CT" -d "{$REF,\"rating\":4,\"revealed\":true}")
-check "a later revealed review is coerced to Again" 1 "$(echo "$R" | j "['card']['state']")"
-check "back to the first learning step" 0 "$(echo "$R" | j "['card']['step']")"
+check "a later revealed review keeps its grade" 2 "$(echo "$R" | j "['card']['state']")"
+check "and graduates" None "$(echo "$R" | j "['card']['step']")"
 
 echo "== suspend"
 R=$(curl -s -X PATCH "$B/api/cards" -H "$AUTH" -H "$CT" -d "{$REF,\"suspended\":true}")
@@ -200,11 +199,10 @@ check "the timezone persists" "America/New_York" "$(echo "$S" | j "['settings'][
 echo "== stats"
 T=$(curl -s "$B/api/stats" -H "$AUTH")
 check "every review is counted" 4 "$(echo "$T" | j "['totalReviews']")"
-# Only one of the four reviews began from the Review state: reviews 1 and 2
-# were the learning steps, and review 4 began from Relearning after review 3
-# lapsed the card. So true retention is 0 of 1.
-check "mature reviews exclude learning and relearning" 1 "$(echo "$T" | j "['matureReviews']")"
-check "the forced failure counts against retention" 0 "$(echo "$T" | j "['matureCorrect']")"
+# Reviews 1 and 2 were the learning steps; reviews 3 and 4 began from the
+# Review state and were both graded Easy, so true retention is 2 of 2.
+check "mature reviews exclude learning" 2 "$(echo "$T" | j "['matureReviews']")"
+check "the grades pressed count toward retention" 2 "$(echo "$T" | j "['matureCorrect']")"
 check "a study day today makes a streak of 1" 1 "$(echo "$T" | j "['streakDays']")"
 check "today appears in the history" 4 "$(echo "$T" | j "next(h['total'] for h in d['history'] if h['daysAgo'] == 0)")"
 check "the card appears in the forecast" 1 "$(echo "$T" | j "sum(f['count'] for f in d['forecast'])")"
@@ -303,7 +301,7 @@ H=$(curl -s "$B/api/history?category=NeetCode%20150%20%C2%B7%20Python&subcategor
 check "history returns every review" 4 "$(echo "$H" | j "len(d['reviews'])")"
 check "with reveal truth per row" "[False, False, False, True]" \
   "$(echo "$H" | j "list(r['revealed'] for r in d['reviews'])")"
-check "and the coerced ratings" "[3, 3, 1, 1]" \
+check "and the ratings as pressed" "[3, 3, 4, 4]" \
   "$(echo "$H" | j "list(r['rating'] for r in d['reviews'])")"
 check "history without a token is 401" 401 "$(status "$B/api/history?category=x&subcategory=y&title=z")"
 check "history without the key is 422" 422 "$(status "$B/api/history" -H "$AUTH")"

@@ -22,14 +22,16 @@ dispatcher, the status bar and the help overlay, so the keys can never drift
 from their own documentation. Inside the editor nothing is intercepted except
 Ctrl+Enter — its vim and emacs keymaps keep the keyboard.
 
-**Grading is free the first time, honest after.** The first encounter of a
-problem shows all four grades from the moment it opens — revealing the
-solution is how you learn something new, exactly like flipping a fresh Anki
-card. From the second scheduled review on, a run is required, and a failed
-harness or a revealed solution forces Again (enforced server-side; the log
-records the truth either way). A drill this browser cannot run — an Elixir
-drill as a guest — has nothing to run, so it grades freely every time. Study reps always start from the starter stub —
-your last answer is never sitting in the editor.
+**Grading is yours.** The four grades are a self-assessment of how well you
+knew the problem, exactly like flipping an Anki card: the app never takes a
+button away or rewrites what you pressed, whatever the harness said and even
+if you looked at the solution. The first encounter grades from the moment it
+opens. From the second scheduled review on, a run is required first — the
+tests are feedback to grade against, not a verdict. The review log still
+records every failed run and every reveal, so the stats stay honest. A drill
+this browser cannot run — an Elixir drill as a guest — has nothing to run, so
+it grades from open every time. Study reps always start from the starter
+stub — your last answer is never sitting in the editor.
 
 **Progress is measured against the promise.** The stats screen leads with the
 number that matters — *problems you can write from memory in under three
@@ -46,9 +48,7 @@ solve time, with cards you have never solved cleanly counted at eight minutes,
 because those are the expensive ones and an estimate that flatters the queue
 is worse than none. A collapsed preview shows exactly what *Study now* will
 serve, and a sitting ends on a summary rather than an alert: each card with
-the grade you pressed against the interval the scheduler actually gave it,
-which are not always the same thing, since a failed run or a revealed
-solution is coerced to Again server-side.
+the grade you pressed against the interval the scheduler gave it.
 
 **You choose what is in the queue.** Nothing is scheduled that you did not put
 there. A queue screen lists the whole catalogue with the state of every problem
@@ -71,15 +71,14 @@ was already using the app skips the picker.
 Scheduling is **FSRS-6** — the algorithm Anki uses by default. Every drill you
 answer is recorded against your account and the scheduler decides when that
 problem comes back: minutes if you failed it, months once it is solid. Grading
-is half automatic and half yours: in a scheduled sitting, failing the test
-harness (or revealing a solution) forces `Again` with no way to flatter it,
-and only a genuine pass lets you choose between Hard, Good and Easy, because
-the harness cannot tell fluent from ground-out.
+is yours: in a scheduled sitting you run the harness first, then press the
+grade that matches how well you knew it. The harness cannot tell fluent from
+ground-out, and it does not try to — a failed run and a revealed solution go
+on the log for the stats, not into the schedule.
 
 You can still pick problems by hand. A hand-picked sitting is **practice**:
-self-graded and uncoerced — the Again-forcing above is for the scheduled queue,
-where flattering yourself costs you — and the log flags it `practice` either
-way. Repetitions interleave: choosing three problems and five reps gives you
+it grades the same way, and the log flags it `practice` so the stats can tell
+it from a scheduled review. Repetitions interleave: choosing three problems and five reps gives you
 five passes over all three, not five copies of the first — so by the time a
 problem comes round again you have had to actually reload it. Scheduled
 sittings are a single pass, since FSRS decides the spacing rather than the

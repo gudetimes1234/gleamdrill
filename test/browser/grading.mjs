@@ -1,14 +1,14 @@
-// The grading rules: free on the first encounter, honest ever after.
+// The grading rules: the grade is always yours; later reviews run first.
 //
 // Run with `make e2e`, which expects:
 //   - the backend on :1637          (make server-dev)
 //   - the app on :4173              (make build, then make serve-dist)
 //
-// Three acts. The first encounter grades freely — all four buttons from the
-// moment the drill opens, revealing the solution included. A later MANUAL
-// reopen is practice and also grades freely (failed run and reveal included),
-// every loop. The honesty rule lives in the scheduled study queue alone:
-// there a failed run or reveal still forces a lone Again.
+// Three acts. The first encounter grades from the moment the drill opens,
+// revealing the solution included. A later MANUAL reopen is practice and
+// grades after a run, every loop. The scheduled study queue is the same: a
+// run is required, and after it every grade stays on offer whatever the
+// harness said and whatever was revealed.
 import { chromium } from "playwright-core";
 
 const APP = process.env.APP ?? "http://localhost:4173";
@@ -208,9 +208,9 @@ await page.goto(APP, { waitUntil: "networkidle" });
 await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 15000 });
 
-console.log("== the study queue keeps the honesty rule");
+console.log("== the study queue never takes a grade away");
 // Sign out to guest and seed one card due in the past, so Study now serves a
-// LATER review through the scheduled path (the only place coercion applies).
+// LATER review through the scheduled path.
 await page.click("text=Sign out");
 await page.waitForSelector(".guest-strip", { timeout: 10000 });
 await page.evaluate(() => {
@@ -229,16 +229,16 @@ await page.waitForSelector(".study-screen", { timeout: 15000 });
 await page.click(".study-start");
 await page.waitForSelector(".run-bar", { timeout: 20000 });
 await runTests();
-check("a failed run in the study queue forces Again",
-  JSON.stringify(await labels()) === '["Again"]', JSON.stringify(await labels()));
+check("a failed run in the study queue still offers every grade",
+  JSON.stringify(await labels()) === ALL_FOUR, JSON.stringify(await labels()));
 await typeSolution("def containsDuplicate(nums):\n    return len(set(nums)) != len(nums)");
 await runTests();
-check("a passing study run restores the choice",
+check("a passing study run offers every grade",
   JSON.stringify(await labels()) === ALL_FOUR, JSON.stringify(await labels()));
 await page.click(".solution-button");
 await page.waitForTimeout(400);
-check("revealing in the study queue collapses to Again",
-  JSON.stringify(await labels()) === '["Again"]', JSON.stringify(await labels()));
+check("revealing in the study queue keeps every grade",
+  JSON.stringify(await labels()) === ALL_FOUR, JSON.stringify(await labels()));
 await page.evaluate(() => localStorage.clear());
 
 check("no uncaught JavaScript errors", errors.length === 0, errors.slice(0, 2).join(" | "));

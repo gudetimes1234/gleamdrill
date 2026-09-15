@@ -10,7 +10,8 @@
 //// cannot see the consequences of yet.
 
 import algodrill/model.{
-  type Model, type Msg, PickerConfirmed, PickerToggledLanguage,
+  type Model, type Msg, PickerConfirmed, PickerConfirmedWithStarter,
+  PickerToggledLanguage,
 }
 import algodrill/problems
 import gleam/list
@@ -26,6 +27,15 @@ pub fn view(m: Model) -> Element(Msg) {
   html.div([attribute.class("picker-screen")], [
     html.header([attribute.class("study-header")], [
       html.h1([attribute.class("study-title")], [html.text("AlgoDrill")]),
+    ]),
+    // The one sentence of "what is this" a first visit gets. Everything else
+    // the README says is discoverable from the screens themselves.
+    html.p([attribute.class("picker-blurb")], [
+      html.text(
+        "AlgoDrill schedules algorithm problems with spaced repetition. "
+        <> "Type each one from memory, run it against real tests, grade "
+        <> "yourself, and it comes back right before you would forget it.",
+      ),
     ]),
     html.h2([attribute.class("picker-question")], [
       html.text("What do you want to drill?"),
@@ -66,13 +76,24 @@ pub fn view(m: Model) -> Element(Msg) {
       }),
     ),
     html.div([attribute.class("picker-actions")], [
+      // The starter set is the primary action: twenty problems per language,
+      // queued, and the first sitting one click away. Curating the whole
+      // catalogue is still there for people who know what they want.
       html.button(
         [
-          attribute.class("primary picker-start"),
+          attribute.class("study-start picker-starter"),
+          attribute.disabled(none_yet),
+          event.on_click(PickerConfirmedWithStarter),
+        ],
+        [html.text("Start with a starter set")],
+      ),
+      html.button(
+        [
+          attribute.class("study-secondary picker-start"),
           attribute.disabled(none_yet),
           event.on_click(PickerConfirmed),
         ],
-        [html.text("Start studying")],
+        [html.text("Choose my own problems")],
       ),
     ]),
     html.p([attribute.class("picker-hint")], [

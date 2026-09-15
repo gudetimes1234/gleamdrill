@@ -7,38 +7,38 @@ import algodrill/legacy
 import algodrill/local
 import algodrill/model.{
   type Model, type Msg, Account, AuthCompleted, AuthForm, AuthRoute,
-  AwaitingGrade, CardSuspended, CaseResult, Cases, DayStartHour,
+  AwaitingGrade, CardSuspended, CaseResult, Cases, ClockTicked, DayStartHour,
   DesiredRetention, DraftSaveTicked, DraftSynced, DrillRoute, EditorChanged,
   EditorFocusRequested, Errored, ExamSampled, ExitConfirmed, Guest, HelpToggled,
   HistoryLoaded, InsightsLoaded, KeyPressed, MenuActivated, MenuCursorJumped,
   MenuCursorMoved, MenuPaneFocused, MenuRoute, MenuSuspendedAtCursor,
   MenuToggledAtCursor, Model, NewPerDay, NotGrading, NotStarted, PickerConfirmed,
-  PickerRoute, PickerToggledLanguage, PromptDismissed, QueueChanged,
-  QueueCursorJumped, QueueCursorMoved, QueueRoute, QueueToggledAtCursor,
-  QuizMoved, Ran, Registering, RemoteRunFinished, ReportRoute, ReviewRecorded,
-  ReviewsPerDay, RunError, RunFinished, RunIdle, RunTimedOut, RunnerFailed,
-  RunnerReady, Running, RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading,
-  RuntimeNotLoaded, RuntimeReady, SearchFocusRequested, SettingsRoute,
-  SettingsSaved, SignOutCompleted, SigningIn, StateImported, StateLoaded,
-  StatsActivated, StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute,
-  SubmittingGrade, SummaryRoute, SyncFailed, Synced, Syncing, TimedOut,
-  UserAddedAllShown, UserChangedAuthEmail, UserChangedAuthPassword,
-  UserChangedIterations, UserChangedKeymap, UserChangedSetting,
-  UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
-  UserClickedCategory, UserClickedClearSelection, UserClickedDeviceTimezone,
-  UserClickedExitDrill, UserClickedExitReport, UserClickedMergeGuest,
-  UserClickedNext, UserClickedQueue, UserClickedRetryRuntime,
-  UserClickedRetrySync, UserClickedRun, UserClickedSelectAll,
-  UserClickedSettings, UserClickedSignIn, UserClickedSignOut,
-  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
-  UserClickedStopRun, UserClickedStudy, UserClickedSubcategory, UserClosedDetail,
-  UserDismissedMergeOffer, UserDismissedNotice, UserDismissedUpgradePrompt,
-  UserFilteredQueue, UserGraded, UserOpenedDetail, UserPickedChoice,
-  UserPickedQueueLanguage, UserPickedQueueTopic, UserRemovedAllShown,
-  UserRevealedHint, UserSearched, UserSearchedQueue, UserSubmittedAnswer,
-  UserSubmittedAuth, UserToggledAuthMode, UserToggledLanguage,
-  UserToggledProblem, UserToggledQueued, UserToggledSide, UserToggledSolution,
-  UserToggledSuspend,
+  PickerConfirmedWithStarter, PickerRoute, PickerToggledLanguage,
+  PromptDismissed, QueueChanged, QueueCursorJumped, QueueCursorMoved, QueueRoute,
+  QueueToggledAtCursor, QuizMoved, Ran, Registering, RemoteRunFinished,
+  ReportRoute, ReviewRecorded, ReviewsPerDay, RunError, RunFinished, RunIdle,
+  RunTimedOut, RunnerFailed, RunnerReady, Running, RuntimeFailed,
+  RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded, RuntimeReady,
+  SearchFocusRequested, SettingsRoute, SettingsSaved, SignOutCompleted,
+  SigningIn, StateImported, StateLoaded, StatsActivated, StatsCursorMoved,
+  StatsLoaded, StatsRoute, StudyRoute, SubmittingGrade, SummaryRoute, SyncFailed,
+  Synced, Syncing, TimedOut, UserAddedAllShown, UserAddedStarterSet,
+  UserChangedAuthEmail, UserChangedAuthPassword, UserChangedIterations,
+  UserChangedKeymap, UserChangedSetting, UserClickedBackToStudy,
+  UserClickedBreadcrumb, UserClickedBrowse, UserClickedCategory,
+  UserClickedClearSelection, UserClickedDeviceTimezone, UserClickedExitDrill,
+  UserClickedExitReport, UserClickedMergeGuest, UserClickedNext,
+  UserClickedQueue, UserClickedRetryRuntime, UserClickedRetrySync,
+  UserClickedRun, UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
+  UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
+  UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
+  UserClosedDetail, UserDismissedMergeOffer, UserDismissedNotice,
+  UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded, UserOpenedDetail,
+  UserPickedChoice, UserPickedQueueLanguage, UserPickedQueueTopic,
+  UserRemovedAllShown, UserRevealedHint, UserSearched, UserSearchedQueue,
+  UserSubmittedAnswer, UserSubmittedAuth, UserToggledAuthMode,
+  UserToggledLanguage, UserToggledProblem, UserToggledQueued, UserToggledSide,
+  UserToggledSolution, UserToggledSuspend,
 }
 import algodrill/problem.{type ProblemRef}
 import algodrill/problems
@@ -362,6 +362,49 @@ fn pending(m: Model, refs: List(ProblemRef)) -> Model {
   Model(..m, queue_pending: list.append(refs, m.queue_pending))
 }
 
+/// Leave the first-run picker. With `starter`, a starter set is queued on the
+/// way out and the study screen is the destination; without it, the queue
+/// screen, because "which languages" is only half the setup and a study
+/// screen with an empty queue is a dead end to land a first-time user on.
+/// Somebody who already has cards (an upgrade, a returning guest) goes to the
+/// study screen either way.
+fn confirm_picker(m: Model, starter starter: Bool) -> #(Model, Effect(Msg)) {
+  case m.picked_languages {
+    // The buttons are disabled in this state; the guard is here so the
+    // keyboard cannot get past it either.
+    [] -> #(m, effect.none())
+    picked -> {
+      let muted =
+        problems.language_options()
+        |> list.map(fn(option) { option.0 })
+        |> list.filter(fn(tag) { !list.contains(picked, tag) })
+      let m =
+        Model(
+          ..m,
+          muted_languages: muted,
+          languages_chosen: True,
+          route: case starter || !dict.is_empty(m.cards) {
+            True -> StudyRoute
+            False -> QueueRoute
+          },
+          // The picker's language choice is the obvious first lens on a
+          // catalogue of five copies of the same 150 problems.
+          queue_language: case picked {
+            [only] -> Some(only)
+            _ -> None
+          },
+        )
+      case starter, starter_refs(m, picked) {
+        True, [_, ..] as refs -> #(
+          pending(m, refs),
+          effect.batch([save_preferences(m), store.add_to_queue(m, refs)]),
+        )
+        _, _ -> #(m, save_preferences(m))
+      }
+    }
+  }
+}
+
 /// A filter chip is a toggle: pressing the one already chosen clears it,
 /// which is how "all languages" is reachable without a separate button.
 fn toggle_filter(current: Option(String), value: String) -> Option(String) {
@@ -504,8 +547,41 @@ fn current_check(m: Model) -> Result(problem.Check, Nil) {
 }
 
 fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
-  handle(m, msg)
+  let #(next, effect) = handle(m, msg)
+  // The drill clock starts on the way into a drill, wherever that came
+  // from, and `ClockTicked` keeps it going only while the drill is up.
+  case m.route != DrillRoute && next.route == DrillRoute {
+    True -> #(
+      Model(..next, now_ms: browser.now_ms()),
+      effect.batch([effect, tick()]),
+    )
+    False -> #(next, effect)
+  }
 }
+
+/// One clock tick, a second out. Keyed through the same debounce as the
+/// draft save so a drill reopened within the second does not start a second
+/// chain of ticks.
+fn tick() -> Effect(Msg) {
+  effect.from(fn(dispatch) {
+    browser.debounce("drill-clock", 1000, fn() { dispatch(ClockTicked) })
+  })
+}
+
+/// The first problems of the catalogue in each chosen language, skipping any
+/// already queued. The catalogue is in a curated, easy-first order, so "the
+/// first twenty" is a sensible sitting for somebody who has not yet seen a
+/// single problem and should not have to read through 1200 to pick one.
+fn starter_refs(m: Model, tags: List(String)) -> List(ProblemRef) {
+  use tag <- list.flat_map(tags)
+  problems.all_refs()
+  |> list.filter(fn(ref) {
+    problems.language_tag(ref.category) == tag && !model.is_queued(m, ref)
+  })
+  |> list.take(starter_size)
+}
+
+const starter_size = 20
 
 fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
@@ -802,12 +878,18 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.batch([store.clear_guest(), store.load_state(m)]),
     )
 
+    // The upload failed: the guest data is still in this browser, so the
+    // merge is offered again rather than left as a spinning sync bar with
+    // no way to retry.
     StateImported(Error(failure)) -> #(
       Model(
         ..m,
+        refreshing: False,
+        merge_offer: True,
         notice: Some(
           "Your progress could not be moved to this account: "
-          <> api.error_message(failure),
+          <> api.error_message(failure)
+          <> " It is still in this browser \u{2014} use Merge it to try again.",
         ),
       ),
       effect.none(),
@@ -997,8 +1079,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               problem: ref,
               rating:,
               duration_ms: Some(browser.now_ms() - m.opened_at_ms),
-              // An ungraded card's run is a demonstration, not a test; the
-              // server coerces auto_failed to Again and knows nothing else.
+              // An ungraded card's run is a demonstration, not a test, so
+              // it is never logged as a failure.
               auto_failed: case current_problem(m) {
                 Ok(current) ->
                   problem.graded(current) && model.run_failed(m.run)
@@ -1008,7 +1090,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                 Ok(current) -> model.answer_revealed(m, current.approach)
                 Error(Nil) -> m.revealed_solution != None
               },
-              // A hand-picked sitting is practice: self-graded, uncoerced.
+              // A hand-picked sitting is practice, not a scheduled review.
               practice: !m.studying,
             ),
           ),
@@ -1216,7 +1298,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                 duration_ms: Some(browser.now_ms() - m.opened_at_ms),
                 auto_failed: !right,
                 revealed: False,
-                // The exam is an assessment, not practice: coercion applies.
+                // The exam is an assessment, not practice.
                 practice: False,
               ),
             ),
@@ -1226,32 +1308,36 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
 
     UserClickedExitDrill -> #(
-      m,
-      effect.from(fn(dispatch) {
-        dispatch(
-          ExitConfirmed(
-            browser.confirm(case current_quiz(m), m.studying {
-              Ok(_), _ -> "Exit the exam? You will not get a score for it."
-              // Study-rep typing is deliberately not persisted; a manual
-              // drill's draft was saved moments after the last keystroke.
-              Error(Nil), True ->
-                "Exit the drill? Your typed code will be lost."
-              Error(Nil), False ->
-                "Exit the drill? Your code is saved as a draft."
-            }),
-          ),
-        )
-      }),
+      Model(
+        ..m,
+        exit_prompt: Some(case current_quiz(m), m.studying {
+          Ok(_), _ -> "Exit the exam? You will not get a score for it."
+          // Study-rep typing is deliberately not persisted; a manual
+          // drill's draft was saved moments after the last keystroke.
+          Error(Nil), True -> "Exit the drill? Your typed code will be lost."
+          Error(Nil), False -> "Exit the drill? Your code is saved as a draft."
+        }),
+      ),
+      // Whatever button was clicked last (a grade, a reveal) still has focus,
+      // and a focused button swallows Enter. Drop it so Enter and Escape
+      // reach the prompt's bindings.
+      run_effect(browser.blur_active),
     )
 
     // `reset_home`, not `reset_to_menu`: a sitting started from the study
     // queue must end back on the study screen. Landing in the manual browser
     // is disorienting when that is not where you came from.
     ExitConfirmed(True) -> {
-      let #(m, abandoned) = abandon_run(m)
+      let #(m, abandoned) = abandon_run(Model(..m, exit_prompt: None))
       #(reset_home(m), abandoned)
     }
-    ExitConfirmed(False) -> #(m, effect.none())
+    ExitConfirmed(False) -> #(Model(..m, exit_prompt: None), effect.none())
+
+    ClockTicked ->
+      case m.route {
+        DrillRoute -> #(Model(..m, now_ms: browser.now_ms()), tick())
+        _ -> #(m, effect.none())
+      }
 
     UserRevealedHint -> {
       let cap = case current_problem(m) {
@@ -1321,41 +1407,19 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(Model(..m, picked_languages: picked), effect.none())
     }
 
-    PickerConfirmed ->
-      case m.picked_languages {
-        // The button is disabled in this state; the guard is here so the
-        // keyboard cannot get past it either.
+    PickerConfirmed -> confirm_picker(m, starter: False)
+    PickerConfirmedWithStarter -> confirm_picker(m, starter: True)
+
+    UserAddedStarterSet -> {
+      let chosen =
+        problems.language_options()
+        |> list.map(fn(option) { option.0 })
+        |> list.filter(fn(tag) { !list.contains(m.muted_languages, tag) })
+      case starter_refs(m, chosen) {
         [] -> #(m, effect.none())
-        picked -> {
-          let muted =
-            problems.language_options()
-            |> list.map(fn(option) { option.0 })
-            |> list.filter(fn(tag) { !list.contains(picked, tag) })
-          let m =
-            Model(
-              ..m,
-              muted_languages: muted,
-              languages_chosen: True,
-              // Straight to the queue when there is nothing in it. "Which
-              // languages" is only half the setup now -- the other half is
-              // which problems, and a study screen with an empty queue is a
-              // dead end to land a first-time user on. Somebody who already
-              // has cards (an upgrade, a returning guest) goes where they
-              // always did.
-              route: case dict.is_empty(m.cards) {
-                True -> QueueRoute
-                False -> StudyRoute
-              },
-              // The picker's language choice is the obvious first lens on a
-              // catalogue of five copies of the same 150 problems.
-              queue_language: case picked {
-                [only] -> Some(only)
-                _ -> None
-              },
-            )
-          #(m, save_preferences(m))
-        }
+        refs -> #(pending(m, refs), store.add_to_queue(m, refs))
       }
+    }
 
     UserToggledLanguage(tag) -> {
       let muted = case list.contains(m.muted_languages, tag) {
@@ -2180,7 +2244,13 @@ fn view(m: Model) -> Element(Msg) {
         // The sign-in form keeps its focused, chrome-free layout.
         AuthRoute -> element.fragment([screen, ..syncing])
         _ ->
-          element.fragment([screen, statusbar.view(m), help.view(m), ..syncing])
+          element.fragment([
+            screen,
+            statusbar.view(m),
+            help.button(m),
+            help.view(m),
+            ..syncing
+          ])
       }
     }
   }

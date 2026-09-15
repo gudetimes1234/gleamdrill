@@ -114,11 +114,10 @@ pub fn is_empty(local: Local) -> Bool {
 
 /// Schedules a review and folds it into local state.
 ///
-/// Mirrors `server/src/server/study.gleam:record_review` deliberately, down to
-/// coercing the rating: a failed harness or a revealed solution forces
-/// `Again` here too. A guest can edit their own localStorage if they want to
-/// cheat, but the app will not do it for them, and the rule staying identical
-/// is what lets a guest upgrade without their history changing meaning.
+/// Mirrors `server/src/server/study.gleam:record_review` deliberately: the
+/// rating is scheduled as given and the log keeps the run/reveal truth. The
+/// rule staying identical is what lets a guest upgrade without their history
+/// changing meaning.
 pub fn record(
   local: Local,
   settings: Settings,
@@ -134,17 +133,10 @@ pub fn record(
   }
   let was_mature = before.state == fsrs.Review
 
-  // The honesty rule applies from the second review onward. The first
-  // encounter is the learning step: revealing the solution is how you learn
-  // something you have never seen, so the self-grade stands. The log still
-  // records `revealed`/`auto_failed` truthfully either way.
-  let first = before.memory == None
-  let rating = case
-    !first && !review.practice && { review.auto_failed || review.revealed }
-  {
-    True -> fsrs.Again
-    False -> review.rating
-  }
+  // The rating is the user's own assessment and is scheduled as given. The
+  // log still records `revealed`/`auto_failed` truthfully, so insights can
+  // tell a clean solve from a peeked one without the scheduler punishing it.
+  let rating = review.rating
 
   let after = fsrs.review(before, rating, now, settings.scheduler, fuzz)
 

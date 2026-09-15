@@ -1,9 +1,9 @@
 import algodrill/editor
 import algodrill/model.{
   type CaseResult, type Model, type Msg, type RunError, AwaitingGrade, Cases,
-  EditorChanged, Errored, NotGrading, Ran, RunIdle, Running, RuntimeFailed,
-  RuntimeLoading, RuntimeNotLoaded, RuntimeReady, SubmittingGrade, TimedOut,
-  UserChangedKeymap, UserClickedExitDrill, UserClickedNext,
+  EditorChanged, Errored, ExitConfirmed, NotGrading, Ran, RunIdle, Running,
+  RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady, SubmittingGrade,
+  TimedOut, UserChangedKeymap, UserClickedExitDrill, UserClickedNext,
   UserClickedRetryRuntime, UserClickedRun, UserClickedStopRun, UserGraded,
   UserPickedChoice, UserRevealedHint, UserSubmittedAnswer, UserToggledSide,
   UserToggledSolution,
@@ -14,6 +14,7 @@ import algodrill/problem.{
 import algodrill/problems
 import algodrill/view/banner
 import algodrill/view/format
+import algodrill/view/nav
 import fsrs
 import gleam/int
 import gleam/list
@@ -82,6 +83,10 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
 
   html.div([attribute.class("drill-container")], [
     banner.storage_warning(m),
+    // Rendered here too, or a review that failed to save, a runtime that
+    // never loaded, or an Elixir drill that needs sign-in would only be
+    // reported after exiting the drill.
+    nav.notices(m),
     html.div([attribute.class("drill-header")], [
       html.button(
         [
@@ -101,9 +106,18 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
           attribute.class("progress-text"),
           attribute.style("--progress", int.to_string(percent) <> "%"),
         ],
-        [html.text(progress)],
+        [
+          html.text(progress),
+          // A quiz is not timed against anything; a drill is timed against
+          // the three-minute promise the stats screen measures.
+          case current.quiz {
+            Some(_) -> element.none()
+            None -> clock(m)
+          },
+        ],
       ),
     ]),
+    exit_prompt(m),
     html.div(
       [
         attribute.classes([
@@ -506,18 +520,89 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
   )
 }
 
+/// How long this problem has been open, as m:ss, turning accent past the
+/// three minutes the stats screen counts a fluent solve against. Shown live so
+/// the number in the summary is never a surprise.
+fn clock(m: Model) -> Element(Msg) {
+  let seconds = int.max(0, { m.now_ms - m.opened_at_ms } / 1000)
+  let text =
+    int.to_string(seconds / 60)
+    <> ":"
+    <> string.pad_start(int.to_string(seconds % 60), 2, "0")
+  html.span(
+    [
+      attribute.classes([
+        #("drill-clock", True),
+        #("over-promise", seconds >= promise_seconds),
+      ]),
+      attribute.attribute("aria-label", "Time on this problem"),
+    ],
+    [html.text(" \u{b7} " <> text)],
+  )
+}
+
+/// The "under three minutes" the stats screen measures against.
+const promise_seconds = 180
+
+/// The in-app "leave this drill?" question. Replaces `window.confirm`, which
+/// froze the page, could not be styled and swallowed the leader key.
+fn exit_prompt(m: Model) -> Element(Msg) {
+  case m.exit_prompt {
+    None -> element.none()
+    Some(message) ->
+      html.div([attribute.class("exit-overlay")], [
+        html.div(
+          [
+            attribute.class("exit-prompt"),
+            attribute.role("dialog"),
+            attribute.attribute("aria-modal", "true"),
+            attribute.attribute("aria-labelledby", "exit-prompt-title"),
+          ],
+          [
+            html.p(
+              [
+                attribute.class("exit-prompt-title"),
+                attribute.id("exit-prompt-title"),
+              ],
+              [html.text(message)],
+            ),
+            html.div([attribute.class("exit-prompt-actions")], [
+              html.button(
+                [
+                  attribute.class("btn-primary exit-prompt-leave"),
+                  event.on_click(ExitConfirmed(True)),
+                ],
+                [html.text("Leave")],
+              ),
+              html.button(
+                [
+                  attribute.class("btn-secondary exit-prompt-stay"),
+                  event.on_click(ExitConfirmed(False)),
+                ],
+                [html.text("Stay")],
+              ),
+            ]),
+          ],
+        ),
+      ])
+  }
+}
+
 /// The grading bar: how a drill turns into a scheduled review.
 ///
 /// The rules, in order of precedence:
 ///   * A quiz grades itself on submit — plain Next button.
-///   * The FIRST encounter of a problem grades freely: all four buttons from
-///     the moment it opens. Revealing the solution is how you learn something
-///     the first time, so nothing is coerced — flip the card, judge yourself.
+///   * The FIRST encounter of a problem grades from the moment it opens.
+///     Revealing the solution is how you learn something the first time —
+///     flip the card, judge yourself.
 ///   * A reveal-only drill (no harness exists) is a flashcard proper: all four
 ///     buttons, every time.
-///   * Every later review of a checkable drill must run first; a pass offers
-///     all four (Again included — you may know better than the harness), and a
-///     failed run or a revealed solution leaves exactly one honest answer.
+///   * Every later review of a checkable drill must run first. After that run
+///     the choice is yours, whatever the harness said and whatever you looked
+///     at: the grade is a self-assessment of how well you knew it, never a
+///     verdict the app hands down. The review log still records the failed
+///     run and the reveal, so the stats stay honest without the buttons
+///     policing you.
 fn grade_controls(m: Model, current: Problem) -> Element(Msg) {
   case current.quiz {
     Some(_) ->
@@ -543,28 +628,13 @@ fn grade_controls(m: Model, current: Problem) -> Element(Msg) {
   }
 }
 
-fn grade_buttons(m: Model, current: Problem) -> Element(Msg) {
-  let free = case model.current_ref(m) {
-    Ok(ref) ->
-      model.first_encounter(m, ref)
-      || !problem.graded(current)
-      || !model.run_available(m, current.language)
-    Error(Nil) -> True
-  }
-  let forced =
-    m.studying
-    && !free
-    && { model.run_failed(m.run) || model.answer_revealed(m, current.approach) }
-
-  html.div([attribute.class("grade-bar")], case forced {
-    True -> [grade_button(m, fsrs.Again, "Again", "again")]
-    False -> [
-      grade_button(m, fsrs.Again, "Again", "again"),
-      grade_button(m, fsrs.Hard, "Hard", "hard"),
-      grade_button(m, fsrs.Good, "Good", "good"),
-      grade_button(m, fsrs.Easy, "Easy", "easy"),
-    ]
-  })
+fn grade_buttons(m: Model, _current: Problem) -> Element(Msg) {
+  html.div([attribute.class("grade-bar")], [
+    grade_button(m, fsrs.Again, "Again", "again"),
+    grade_button(m, fsrs.Hard, "Hard", "hard"),
+    grade_button(m, fsrs.Good, "Good", "good"),
+    grade_button(m, fsrs.Easy, "Easy", "easy"),
+  ])
 }
 
 /// Each button carries the interval it would actually produce, computed with
@@ -889,10 +959,11 @@ fn approach_panel(
         ],
       ),
       ..case next {
-        // Fair warning before the rung that gives the answer away.
+        // Fair warning before the rung that gives the answer away. It is
+        // recorded as a reveal for the stats; it never changes the grades.
         problem.Pseudocode(_) -> [
           html.span([attribute.class("hint-warning")], [
-            html.text("counts as seeing the answer"),
+            html.text("logged as a reveal"),
           ]),
         ]
         _ -> []

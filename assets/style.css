@@ -527,6 +527,50 @@ details.approach summary:focus-visible {
     position: relative;
 }
 
+/* Time on the current problem, live. Accent once past the three-minute
+   promise the stats screen measures against; nothing louder than that. */
+.drill-clock {
+    font-variant-numeric: tabular-nums;
+}
+
+.drill-clock.over-promise {
+    color: var(--accent);
+}
+
+/* The in-app "leave this drill?" question, over the drill it asks about. */
+.exit-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgb(10 12 20 / 0.7);
+}
+
+.exit-prompt {
+    width: min(420px, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px 20px;
+    background: var(--bg-raised);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-2);
+}
+
+.exit-prompt-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.exit-prompt-actions {
+    display: flex;
+    gap: 8px;
+}
+
 .drill-header .progress-text::before,
 .drill-header .progress-text::after {
     content: '';
@@ -1943,15 +1987,27 @@ gleam-editor .cm-editor {
     border-color: var(--accent);
 }
 
-.picker-actions {
-    margin-top: 10px;
+.picker-blurb {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0 0 18px;
 }
 
+.picker-actions {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.picker-starter,
 .picker-start {
     width: 100%;
     padding: 14px;
 }
 
+.picker-starter:disabled,
 .picker-start:disabled {
     opacity: 0.45;
     cursor: not-allowed;
@@ -2225,6 +2281,13 @@ gleam-editor .cm-editor {
 .study-start:disabled {
     opacity: 0.5;
     cursor: default;
+}
+
+.study-empty-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
 }
 
 .study-secondary {
@@ -2802,6 +2865,35 @@ body {
 
 /* --- the ? cheatsheet --- */
 
+/* The way into the cheatsheet without a keyboard. Hidden wherever the status
+   bar's clickable "keys" hint is on screen; shown on touch and on phones,
+   where the status bar is not. */
+.help-fab {
+    display: none;
+    position: fixed;
+    right: 14px;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    z-index: 45;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--bg-primary);
+    background: var(--accent);
+    border: none;
+    border-radius: 50%;
+    box-shadow: var(--shadow-2);
+    cursor: pointer;
+}
+
+@media (hover: none), (max-width: 700px) {
+    .help-fab {
+        display: flex;
+    }
+}
+
 .help-overlay {
     position: fixed;
     inset: 0;
@@ -3254,8 +3346,8 @@ body {
         display: none;
     }
 
+    /* No min-height here: the 44px touch floor above must win on phones. */
     .queue-action {
         flex-basis: 68px;
-        min-height: 32px;
     }
 }

@@ -10,19 +10,19 @@
 
 import algodrill/model.{
   type Key, type Model, type Msg, AuthRoute, AwaitingGrade, DrillRoute,
-  EditorFocusRequested, HelpToggled, MenuActivated, MenuCursorJumped,
-  MenuCursorMoved, MenuPaneFocused, MenuRoute, MenuSuspendedAtCursor,
-  MenuToggledAtCursor, PickerConfirmed, PickerRoute, QueueCursorJumped,
-  QueueCursorMoved, QueueRoute, QueueToggledAtCursor, QuizMoved, ReportRoute,
-  SearchFocusRequested, SettingsRoute, StatsActivated, StatsCursorMoved,
-  StatsRoute, StudyRoute, SummaryRoute, UserAddedAllShown,
-  UserClickedBackToStudy, UserClickedBrowse, UserClickedClearSelection,
-  UserClickedExitDrill, UserClickedExitReport, UserClickedNext, UserClickedQueue,
-  UserClickedRun, UserClickedSelectAll, UserClickedStartDrill,
-  UserClickedStartExam, UserClickedStats, UserClickedStudy, UserClosedDetail,
-  UserFilteredQueue, UserGraded, UserPickedChoice, UserRemovedAllShown,
-  UserRevealedHint, UserSearched, UserSubmittedAnswer, UserToggledSide,
-  UserToggledSolution,
+  EditorFocusRequested, ExitConfirmed, HelpToggled, MenuActivated,
+  MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
+  MenuSuspendedAtCursor, MenuToggledAtCursor, PickerConfirmed,
+  PickerConfirmedWithStarter, PickerRoute, QueueCursorJumped, QueueCursorMoved,
+  QueueRoute, QueueToggledAtCursor, QuizMoved, ReportRoute, SearchFocusRequested,
+  SettingsRoute, StatsActivated, StatsCursorMoved, StatsRoute, StudyRoute,
+  SummaryRoute, UserAddedAllShown, UserClickedBackToStudy, UserClickedBrowse,
+  UserClickedClearSelection, UserClickedExitDrill, UserClickedExitReport,
+  UserClickedNext, UserClickedQueue, UserClickedRun, UserClickedSelectAll,
+  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
+  UserClickedStudy, UserClosedDetail, UserFilteredQueue, UserGraded,
+  UserPickedChoice, UserRemovedAllShown, UserRevealedHint, UserSearched,
+  UserSubmittedAnswer, UserToggledSide, UserToggledSolution,
 }
 import algodrill/problem
 import algodrill/problems
@@ -39,12 +39,17 @@ pub type Binding {
 
 /// The bindings live in this context, in the order the status bar shows them.
 pub fn bindings(m: Model) -> List(Binding) {
-  case m.help_open {
+  case m.help_open, m.exit_prompt {
     // While the cheatsheet is up it owns the keyboard.
-    True -> [
+    True, _ -> [
       Binding(["Escape", "?"], "close", "Close this cheatsheet", HelpToggled),
     ]
-    False ->
+    // So does the exit prompt: Enter leaves, Escape stays.
+    False, Some(_) -> [
+      Binding(["Enter"], "leave", "Leave the drill", ExitConfirmed(True)),
+      Binding(["Escape"], "stay", "Stay in the drill", ExitConfirmed(False)),
+    ]
+    False, None ->
       case m.route {
         StudyRoute -> study_bindings()
         MenuRoute -> menu_bindings(m)
@@ -95,7 +100,13 @@ pub fn bindings(m: Model) -> List(Binding) {
         // confirm and nothing else. No Escape: there is nowhere to escape to
         // yet, and dismissing it would leave the queue unanswered.
         PickerRoute -> [
-          Binding(["Enter"], "start", "Start studying", PickerConfirmed),
+          Binding(
+            ["Enter"],
+            "start",
+            "Start with a starter set",
+            PickerConfirmedWithStarter,
+          ),
+          Binding(["c"], "choose", "Choose my own problems", PickerConfirmed),
           help_binding(),
         ]
         SettingsRoute -> [
