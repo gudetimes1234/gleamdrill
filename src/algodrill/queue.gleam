@@ -115,6 +115,16 @@ pub fn listed(m: Model) -> List(ProblemRef) {
       None -> True
     }
   })
+  |> list.filter(fn(ref) {
+    case m.queue_difficulty {
+      Some(slug) ->
+        case problems.difficulty_of(ref) {
+          Some(rating) -> problem.difficulty_slug(rating) == slug
+          None -> False
+        }
+      None -> True
+    }
+  })
   |> list.filter(fn(ref) { matches_status(m, ref) })
 }
 

@@ -14,8 +14,8 @@
 import algodrill/api
 import algodrill/model.{
   type Model, type Msg, UserAddedAllShown, UserFilteredQueue,
-  UserPickedQueueLanguage, UserPickedQueueTopic, UserRemovedAllShown,
-  UserSearchedQueue, UserToggledQueued,
+  UserPickedQueueDifficulty, UserPickedQueueLanguage, UserPickedQueueTopic,
+  UserRemovedAllShown, UserSearchedQueue, UserToggledQueued,
 }
 import algodrill/problem.{type ProblemRef}
 import algodrill/problems
@@ -75,7 +75,7 @@ pub fn view(m: Model) -> Element(Msg) {
   ])
 }
 
-/// Search, language, topic and status. All four are a lens on the list and
+/// Search, language, topic, difficulty and status. All five are a lens on the list and
 /// none of them is saved: they change what is on screen, never what the
 /// scheduler will do.
 fn filters(m: Model) -> Element(Msg) {
@@ -101,6 +101,12 @@ fn filters(m: Model) -> Element(Msg) {
       problems.topic_names() |> list.map(fn(name) { #(name, name) }),
       m.queue_topic,
       UserPickedQueueTopic,
+    ),
+    chip_row(
+      "Difficulty",
+      [#("easy", "Easy"), #("medium", "Medium"), #("hard", "Hard")],
+      m.queue_difficulty,
+      UserPickedQueueDifficulty,
     ),
     html.div([attribute.class("queue-filter-row")], [
       html.span([attribute.class("queue-filter-label")], [html.text("Status")]),
@@ -228,6 +234,7 @@ fn row(m: Model, ref: ProblemRef, index: Int, length: Int) -> Element(Msg) {
         html.text(problems.language_tag(ref.category)),
       ]),
       html.span([attribute.class("queue-row-title")], [html.text(ref.title)]),
+      format.difficulty_badge(problems.difficulty_of(ref)),
       html.span([attribute.class("queue-row-topic")], [
         html.text(ref.subcategory),
       ]),

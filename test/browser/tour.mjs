@@ -134,7 +134,7 @@ const goHome = async () => {
   await page.waitForSelector(".study-screen, .picker-screen, .queue-screen",
     { timeout: 20000 });
   if (await page.isVisible(".picker-screen")) {
-    for (const n of [1, 2, 3, 4, 5, 6]) {
+    for (const n of [1, 2, 3, 4, 5]) {
       await page.click(`.picker-option:nth-child(${n})`);
       await page.waitForTimeout(120);
     }
@@ -153,7 +153,7 @@ const goHome = async () => {
 // Defaults to every language, which is the state the rest of the tour assumes:
 // nothing muted, the whole catalogue in play. Acts that care about a narrower
 // choice pass their own.
-const freshGuest = async (languages = [1, 2, 3, 4, 5, 6]) => {
+const freshGuest = async (languages = [1, 2, 3, 4, 5]) => {
   await page.goto(APP, { waitUntil: "domcontentloaded" });
   await page.evaluate(() => localStorage.clear());
   await page.goto(APP, { waitUntil: "networkidle" });
@@ -419,7 +419,7 @@ await page.waitForSelector(".menu-container", { timeout: 10000 });
 check("the pane browser renders", (await page.$$(".pane")).length >= 2);
 const languageRows = await page.$$eval(".pane:first-child .pane-item", (n) => n.map((e) => e.textContent.trim()));
 check("the first pane is languages",
-  JSON.stringify(languageRows) === '["Python","Gleam","TypeScript","Elixir","Gleam Tour","System Design"]',
+  JSON.stringify(languageRows) === '["Python","Gleam","TypeScript","Elixir","System Design"]',
   JSON.stringify(languageRows));
 check("tips categories are hidden",
   !languageRows.some((l) => l.includes("Tips")));
@@ -845,9 +845,6 @@ const languages = [
   ["TypeScript", "Arrays & Hashing", "Contains Duplicate",
    "export function containsDuplicate(nums: number[]): boolean {\n  return new Set(nums).size !== nums.length;\n}", true],
   ["Elixir", "Arrays & Hashing", "Contains Duplicate", null, false], // guest: see grading.mjs
-  // The language tour: the editor opens on the lesson's program, so no code
-  // is typed; a run prints and every grade stays on offer.
-  ["Gleam Tour", "Basics", "Hello world", null, "tour"],
 ];
 
 for (const [language, subcategory, title, code, runnable] of languages) {
@@ -857,25 +854,7 @@ for (const [language, subcategory, title, code, runnable] of languages) {
   await page.waitForSelector(".menu-container", { timeout: 10000 });
   await openByHand(language, subcategory, title);
 
-  if (runnable === "tour") {
-    check(`${language} shows the lesson as prose`,
-      (await page.$$(".problem-prompt.prose p")).length > 0);
-    check(`${language} has no solution to reveal`,
-      (await page.$$(".solution-button")).length === 0);
-    check(`${language} grades freely before any run`,
-      (await page.$$(".grade-button")).length === 4,
-      `${(await page.$$(".grade-button")).length} buttons`);
-    await waitForRunnable();
-    await page.click(".run-button");
-    await page.waitForFunction(() => {
-      const s = document.querySelector(".results-summary");
-      return s && !s.classList.contains("running");
-    }, { timeout: 180000 });
-    check(`${language} prints the lesson's output`,
-      (await page.textContent(".output-pane")).includes("Hello, Joe!"));
-    check(`${language} still grades freely after the run`,
-      JSON.stringify(await gradeLabels()) === ALL_FOUR, JSON.stringify(await gradeLabels()));
-  } else if (runnable) {
+  if (runnable) {
     // A cold runtime is a multi-megabyte download; the button stays disabled
     // until its worker reports ready.
     await waitForRunnable();
@@ -904,6 +883,95 @@ for (const [language, subcategory, title, code, runnable] of languages) {
   await exitDrill();
   await page.waitForTimeout(800);
 }
+
+// ---------------------------------------------------------------- act 5b
+act = "05b-gleam-tour";
+console.log(act);
+exercises("UserClickedTour", "UserOpenedLesson", "UserClickedTourNext",
+  "UserClickedTourPrev", "UserClickedTourContents", "UserResetLesson",
+  "TourEditorChanged", "TourCursorMoved", "TourActivated");
+
+// The language tour is its own thing: read in order, code runs as you type,
+// nothing scheduled. Reached from the study screen or the nav bar.
+await goHome();
+check("the tour is not a study category",
+  !(await page.$$eval(".language-chip", (n) => n.map((e) => e.textContent))).some((t) => t.includes("Tour")));
+await page.click(".study-tour");
+await page.waitForSelector(".tour-contents", { timeout: 10000 });
+check("the tour opens on its table of contents",
+  (await page.$$(".tour-chapter")).length === 6, `${(await page.$$(".tour-chapter")).length} chapters`);
+check("with every lesson listed", (await page.$$(".tour-toc-item")).length === 63);
+await capture("contents", "The Gleam Language Tour: six chapters, sixty-three lessons",
+  "The Gleam tour, playable in order");
+
+// Open Ints (lesson 5) by clicking; the program runs with no button pressed.
+await page.click('.tour-toc-item:has-text("Ints")');
+await page.waitForSelector(".tour-lesson", { timeout: 10000 });
+check("a lesson shows its prose beside an editor",
+  (await page.$$(".tour-text p")).length > 0 && (await page.isVisible("gleam-editor")));
+check("the breadcrumb places the lesson",
+  (await page.textContent(".tour-crumb-where")).includes("Basics"));
+const tourOutput = async () => (await page.textContent(".tour-output").catch(() => ""));
+await page.waitForFunction(
+  () => /\d/.test(document.querySelector(".tour-output:not(.waiting):not(.stale)")?.textContent ?? ""),
+  null, { timeout: 180000 });
+check("the program ran on open, with nothing clicked", (await tourOutput()).includes("2"),
+  await tourOutput());
+await capture("lesson", "A lesson: prose left, live program and its output right");
+
+// Editing re-runs after a pause in typing.
+await setCode("pub fn main() {\n  echo 40 + 2\n}");
+await page.waitForFunction(
+  () => (document.querySelector(".tour-output:not(.waiting):not(.stale)")?.textContent ?? "").includes("42"),
+  null, { timeout: 60000 });
+check("editing re-runs without a click", (await tourOutput()).includes("42"), await tourOutput());
+await capture("edited", "Edited program, re-run on the pause in typing");
+
+// A compile error lands in the same output box.
+await setCode("pub fn main() {\n  echo 40 +\n}");
+await page.waitForSelector(".tour-output.error", { timeout: 60000 });
+check("a compile error is shown where the output was", await page.isVisible(".tour-output.error"));
+await page.click(".tour-reset");
+await page.waitForFunction(
+  () => /\d/.test(document.querySelector(".tour-output:not(.waiting):not(.stale):not(.error)")?.textContent ?? ""),
+  null, { timeout: 60000 });
+check("Reset code restores the lesson's program", !(await page.isVisible(".tour-output.error")));
+
+// Next, Back and Contents.
+await page.click(".tour-next");
+await page.waitForFunction(
+  () => (document.querySelector(".tour-title")?.textContent ?? "") === "Floats", null, { timeout: 10000 });
+check("Next opens the following lesson", (await page.textContent(".tour-title")) === "Floats");
+await page.click(".tour-prev");
+await page.waitForFunction(
+  () => (document.querySelector(".tour-title")?.textContent ?? "") === "Ints", null, { timeout: 10000 });
+check("Back returns to the previous one", (await page.textContent(".tour-title")) === "Ints");
+await page.click(".tour-contents-link");
+await page.waitForSelector(".tour-contents", { timeout: 10000 });
+check("the contents page marks where you are",
+  (await page.textContent(".tour-toc-item.current")).includes("Ints"));
+
+// The keyboard walks the contents.
+await page.evaluate(() => document.activeElement?.blur());
+await page.keyboard.press("j");
+await page.waitForTimeout(150);
+await page.keyboard.press("Enter");
+await page.waitForSelector(".tour-lesson", { timeout: 10000 });
+check("j then Enter opens the next lesson from the contents",
+  (await page.textContent(".tour-title")) === "Floats");
+
+// The position survives a reload: Continue lands on the same lesson.
+await goHome();
+check("the study screen offers to continue",
+  (await page.textContent(".study-tour")).includes("Continue"));
+await page.click(".study-tour");
+await page.waitForSelector(".tour-contents", { timeout: 10000 });
+await page.click(".tour-continue");
+await page.waitForSelector(".tour-lesson", { timeout: 10000 });
+check("Continue reopens the last lesson", (await page.textContent(".tour-title")) === "Floats");
+await page.keyboard.press("Escape");
+await page.waitForSelector(".study-screen", { timeout: 10000 });
+check("Escape leaves the tour", await page.isVisible(".study-screen"));
 
 // ---------------------------------------------------------------- act 6
 act = "06-quiz-and-report";
@@ -1097,11 +1165,11 @@ console.log(act);
 exercises("UserToggledLanguage", "UserToggledSuspend", "MenuSuspendedAtCursor");
 
 // The language filter: chips on the study screen gate what a sitting serves.
-check("six language chips render", (await page.$$(".language-chip")).length === 6);
+check("five language chips render", (await page.$$(".language-chip")).length === 5);
 await page.click('.language-chip:text-is("TypeScript")');
 await page.waitForTimeout(300);
 check("a muted chip shows it", (await page.$$(".language-chip.muted")).length === 1);
-for (const label of ["Python", "Gleam", "Elixir", "Gleam Tour", "System Design"]) {
+for (const label of ["Python", "Gleam", "Elixir", "System Design"]) {
   await page.click(`.language-chip:text-is("${label}")`);
   await page.waitForTimeout(150);
 }
@@ -1115,7 +1183,7 @@ check("muting every language empties the queue, and Study now says so",
 await capture("all-muted", "Every language muted: Study now explains instead of going dead");
 await page.click(".notice .notice-dismiss");
 await page.waitForTimeout(200);
-for (const label of ["Python", "Gleam", "TypeScript", "Elixir", "Gleam Tour", "System Design"]) {
+for (const label of ["Python", "Gleam", "TypeScript", "Elixir", "System Design"]) {
   await page.click(`.language-chip:text-is("${label}")`);
   await page.waitForTimeout(150);
 }
@@ -1176,7 +1244,8 @@ await goHome();
 act = "07c-queue-screen";
 console.log(act);
 exercises("UserClickedQueue", "UserSearchedQueue", "UserFilteredQueue",
-  "UserPickedQueueLanguage", "UserPickedQueueTopic", "UserToggledQueued",
+  "UserPickedQueueLanguage", "UserPickedQueueTopic", "UserPickedQueueDifficulty",
+  "UserToggledQueued",
   "UserAddedAllShown", "UserRemovedAllShown", "QueueCursorMoved",
   "QueueCursorJumped", "QueueToggledAtCursor");
 
@@ -1188,7 +1257,23 @@ const queuedAtStart = await queuedCount();
 check("the queue screen lists the catalogue",
   (await page.$$(".queue-row")).length > 50);
 check("and says how much is queued", queuedAtStart > 0);
+check("every NeetCode row carries a difficulty",
+  (await page.$$(".queue-row .difficulty")).length >= 150 * 4,
+  `${(await page.$$(".queue-row .difficulty")).length} badges`);
 await capture("queue", "The queue screen: every problem, and which are in play");
+
+// The difficulty lens: only rows of that rating, and the bulk buttons act
+// on exactly those rows.
+await page.click('.queue-chip:text-is("Hard")');
+await page.waitForTimeout(300);
+const hardRows = await page.$$eval(".queue-row .difficulty", (n) => n.map((e) => e.textContent.trim()));
+check("the Hard lens lists only Hard problems",
+  hardRows.length > 0 && hardRows.every((t) => t === "Hard"), JSON.stringify([...new Set(hardRows)]));
+await capture("queue-hard", "Queue screen filtered to Hard problems", "Problems carry Easy / Medium / Hard");
+await page.click('.queue-chip:text-is("Hard")');
+await page.waitForTimeout(300);
+check("pressing the chip again clears the lens",
+  (await page.$$(".queue-row")).length > 50);
 
 // Search narrows the same list the bulk buttons act on.
 await page.fill(".queue-screen .search", "Two Sum");
@@ -1550,6 +1635,20 @@ await waitForRunnable();
 await page.click(".run-button");
 await page.waitForSelector(".grade-bar", { timeout: 90000 });
 await capture("grading", "Grading bar at phone width");
+await goHome();
+await page.click(".study-tour");
+await page.waitForSelector(".tour-contents", { timeout: 10000 });
+await page.click(".tour-continue");
+await page.waitForSelector(".tour-lesson", { timeout: 10000 });
+await page.waitForFunction(
+  () => !!document.querySelector(".tour-output:not(.waiting):not(.stale)"), null, { timeout: 180000 });
+check("the tour does not scroll sideways on a phone",
+  (await page.evaluate(() => document.documentElement.scrollWidth)) <= 390 + 1);
+await capture("tour-phone", "A tour lesson stacked for a phone");
+await page.keyboard.press("Escape");
+await page.waitForSelector(".study-screen", { timeout: 10000 });
+await page.click(".study-start");
+await page.waitForSelector(".run-bar", { timeout: 30000 });
 check("a help button is on screen where the status bar is not",
   await page.isVisible(".help-fab"));
 await page.click(".help-fab");
@@ -1610,6 +1709,10 @@ const declared = [
   "MenuSuspendedAtCursor", "UserClickedQueue", "UserSearchedQueue",
   "UserFilteredQueue", "UserPickedQueueLanguage", "UserPickedQueueTopic",
   "UserToggledQueued", "UserAddedAllShown", "UserRemovedAllShown",
+  "UserPickedQueueDifficulty",
+  "UserClickedTour", "UserOpenedLesson", "UserClickedTourNext",
+  "UserClickedTourPrev", "UserClickedTourContents", "UserResetLesson",
+  "TourEditorChanged", "TourCursorMoved", "TourActivated",
   "QueueCursorMoved", "QueueCursorJumped", "QueueToggledAtCursor",
   "UserPickedChoice", "UserSubmittedAnswer",
   "UserClickedStartExam", "UserClickedExitReport",

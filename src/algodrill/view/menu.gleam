@@ -149,6 +149,7 @@ fn search_results(m: Model, query: String) -> Element(Msg) {
                 html.span([attribute.class("search-hit-title")], [
                   html.text(ref.title),
                 ]),
+                format.difficulty_badge(problems.difficulty_of(ref)),
                 status_badge(m, ref),
                 html.span([attribute.class("search-hit-context")], [
                   html.text(ref.category <> " \u{203a} " <> ref.subcategory),
@@ -375,7 +376,12 @@ fn problem_item(
       on_activate_key(UserToggledProblem(ref)),
       ..extra
     ],
-    [html.text(ref.title), status_badge(m, ref), suspend_toggle(m, ref)],
+    [
+      html.text(ref.title),
+      format.difficulty_badge(problems.difficulty_of(ref)),
+      status_badge(m, ref),
+      suspend_toggle(m, ref),
+    ],
   )
 }
 

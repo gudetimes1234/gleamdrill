@@ -1,10 +1,14 @@
 //// Small formatters shared between views.
 
 import algodrill/api.{type CardState}
+import algodrill/problem.{type Difficulty}
 import fsrs
 import gleam/int
 import gleam/option.{type Option, None, Some}
 import gleam/time/timestamp.{type Timestamp}
+import lustre/attribute
+import lustre/element.{type Element}
+import lustre/element/html
 
 /// Compact "3d" style text for an interval.
 ///
@@ -20,6 +24,24 @@ pub fn interval(seconds: Int) -> String {
     _ if seconds < 86_400 -> int.to_string(seconds / 3600) <> "h"
     _ if seconds < 5_184_000 -> int.to_string(seconds / 86_400) <> "d"
     _ -> int.to_string(seconds / 2_592_000) <> "mo"
+  }
+}
+
+/// A problem's LeetCode rating as a small bordered pill, or nothing for a
+/// problem without one. Its own `difficulty-` class family, never `grade-`:
+/// the grade bar also says "Hard" and "Easy", and the two must not look alike.
+pub fn difficulty_badge(difficulty: Option(Difficulty)) -> Element(msg) {
+  case difficulty {
+    None -> element.none()
+    Some(rating) ->
+      html.span(
+        [
+          attribute.class(
+            "difficulty difficulty-" <> problem.difficulty_slug(rating),
+          ),
+        ],
+        [html.text(problem.difficulty_label(rating))],
+      )
   }
 }
 

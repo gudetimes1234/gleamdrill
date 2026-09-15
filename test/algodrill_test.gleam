@@ -18,6 +18,7 @@ import algodrill/model
 import algodrill/problem
 import algodrill/problems
 import algodrill/queue
+import algodrill/tour
 import algodrill/view/format
 import fsrs
 import gleam/dict
@@ -814,6 +815,26 @@ pub fn the_queue_screen_lists_what_its_filters_say_test() -> Nil {
     r.subcategory == ref.subcategory
   })
 
+  // Difficulty: the first catalogue entry (Contains Duplicate) is Easy, so
+  // the Easy lens keeps it and the Hard lens drops it; every listed row under
+  // a lens carries that rating, and quizzes (unrated) fall out of all three.
+  let easy = queue.listed(model.Model(..m, queue_difficulty: Some("easy")))
+  assert list.contains(easy, ref)
+  assert list.all(easy, fn(r: problem.ProblemRef) {
+    problems.difficulty_of(r) == Some(problem.Easy)
+  })
+  let hard = queue.listed(model.Model(..m, queue_difficulty: Some("hard")))
+  assert !list.contains(hard, ref)
+  assert hard != []
+  let medium = queue.listed(model.Model(..m, queue_difficulty: Some("medium")))
+  let rated = list.length(easy) + list.length(medium) + list.length(hard)
+  assert rated
+    == list.length(
+      list.filter(all, fn(r: problem.ProblemRef) {
+        problems.difficulty_of(r) != None
+      }),
+    )
+
   // And the search box, which the same list has to honour.
   let searched = queue.listed(model.Model(..m, queue_search: ref.title))
   assert list.contains(searched, ref)
@@ -1055,16 +1076,16 @@ pub fn new_cards_rotate_across_languages_test() -> Nil {
     |> list.unique
 
   assert list.length(picked) == 8
-  // Four NeetCode languages, the Gleam tour and System Design, so the first
-  // six cards are six different categories. A flat prefix would have yielded
-  // eight Python problems and one distinct language.
-  assert list.length(picked |> list.take(6)) == 6
-  assert list.length(languages) == 6
+  // Four NeetCode languages and System Design, so the first five cards are
+  // five different categories. A flat prefix would have yielded eight Python
+  // problems and one distinct language.
+  assert list.length(picked |> list.take(5)) == 5
+  assert list.length(languages) == 5
 }
 
 /// Muting is what the first-run picker writes, so the queue must honour it.
 pub fn muted_languages_never_enter_the_queue_test() -> Nil {
-  let picked = queue.fresh(fresh_model(8, ["gl", "ts", "ex", "gt", "sd"]))
+  let picked = queue.fresh(fresh_model(8, ["gl", "ts", "ex", "sd"]))
   let languages =
     picked
     |> list.map(fn(ref: problem.ProblemRef) {
@@ -1078,7 +1099,7 @@ pub fn muted_languages_never_enter_the_queue_test() -> Nil {
 /// A language running dry must not stop the rotation for the others -- with
 /// only one language left the queue is simply that language.
 pub fn the_rotation_survives_a_language_running_out_test() -> Nil {
-  let picked = queue.fresh(fresh_model(300, ["gl", "ts", "ex", "gt", "sd"]))
+  let picked = queue.fresh(fresh_model(300, ["gl", "ts", "ex", "sd"]))
   // Python has 150 problems; asking for 300 must yield all of them and stop,
   // not loop or truncate at the first round.
   assert list.length(picked) == 150
@@ -1090,38 +1111,85 @@ pub fn the_daily_budget_bounds_the_queue_test() -> Nil {
   assert queue.fresh(fresh_model(0, [])) == []
 }
 
-/// The language tour is content, so it flows through the same catalogue as
-/// everything else -- but it is the one category whose run decides nothing.
-pub fn the_tour_is_read_and_run_test() -> Nil {
-  let assert Ok(tour) =
-    list.find(problems.all(), fn(c: problem.Category) {
-      c.name == "Gleam Language Tour"
-    })
-  assert list.map(tour.subcategories, fn(s: problem.Subcategory) { s.name })
+/// The language tour is played in order from its own screen, not scheduled:
+/// it is absent from the catalogue and present, whole and in order, in the
+/// tour module.
+pub fn the_tour_is_its_own_sequence_test() -> Nil {
+  assert list.all(problems.all(), fn(c: problem.Category) {
+    c.name != "Gleam Language Tour"
+  })
+  assert !list.contains(
+    list.map(problems.language_options(), fn(o) { o.0 }),
+    "gt",
+  )
+
+  assert tour.count() == 63
+  assert list.map(tour.chapters(), fn(c) { c.0 })
     == [
       "Basics", "Functions", "Flow control", "Data types", "Standard library",
       "Advanced features",
     ]
-  let cards =
-    list.flat_map(tour.subcategories, fn(s: problem.Subcategory) { s.problems })
-  assert list.length(cards) == 63
-  assert list.all(cards, fn(card: problem.Problem) {
-    card.prompt_html && !problem.graded(card) && card.check != None
-  })
-  // Its own chip: muting Gleam must not mute the tour.
-  assert problems.language_tag(tour.name) == "gt"
-  assert problems.language_label(tour.name) == "Gleam Tour"
+  // Chapters partition the lessons, in order.
+  let indices =
+    tour.chapters()
+    |> list.flat_map(fn(c) { list.map(c.1, fn(e) { e.0 }) })
+  assert indices == list.index_map(indices, fn(_, i) { i })
+  assert list.length(indices) == 63
+
+  let assert Ok(first) = tour.at(0)
+  assert first.title == "Hello world"
+  assert tour.chapter_position(0) == #("Basics", 1, 18)
+  assert tour.chapter_position(18) == #("Functions", 1, 10)
+  assert tour.chapter_position(62) == #("Advanced features", 9, 9)
+  assert tour.at(63) == Error(Nil)
+  assert tour.last() == 62
 }
 
-/// Everything else is graded by its run, or has no run at all.
-pub fn only_the_tour_is_ungraded_test() -> Nil {
+/// Every drill with a harness is graded by its run.
+pub fn every_checkable_problem_is_graded_test() -> Nil {
   let ungraded =
     problems.all()
-    |> list.filter(fn(c: problem.Category) { c.name != "Gleam Language Tour" })
     |> list.flat_map(fn(c: problem.Category) { c.subcategories })
     |> list.flat_map(fn(s: problem.Subcategory) { s.problems })
     |> list.filter(fn(card: problem.Problem) {
       card.check != None && !problem.graded(card)
     })
   assert ungraded == []
+}
+
+/// Every NeetCode problem carries a rating, the four language mirrors of one
+/// problem agree on it, and the split is roughly LeetCode's.
+pub fn every_problem_is_rated_test() -> Nil {
+  let rated =
+    problems.all()
+    |> list.filter(fn(c: problem.Category) {
+      string.starts_with(c.name, "NeetCode 150")
+    })
+    |> list.flat_map(fn(c: problem.Category) { c.subcategories })
+    |> list.flat_map(fn(s: problem.Subcategory) { s.problems })
+  assert rated != []
+  assert list.all(rated, fn(p: problem.Problem) { p.difficulty != None })
+
+  let python =
+    problems.all()
+    |> list.find(fn(c: problem.Category) { c.name == "NeetCode 150" })
+  let assert Ok(python) = python
+  let all =
+    list.flat_map(python.subcategories, fn(s: problem.Subcategory) {
+      s.problems
+    })
+  let count = fn(rating) {
+    list.count(all, fn(p: problem.Problem) { p.difficulty == Some(rating) })
+  }
+  assert count(problem.Easy) == 28
+  assert count(problem.Medium) == 101
+  assert count(problem.Hard) == 21
+
+  // The same title has the same rating whatever the language.
+  let assert Ok(gleam_two_sum) =
+    problems.find("NeetCode 150 (Gleam)", "Arrays & Hashing", "Two Sum")
+  let assert Ok(python_two_sum) =
+    problems.find("NeetCode 150", "Arrays & Hashing", "Two Sum")
+  assert gleam_two_sum.difficulty == python_two_sum.difficulty
+  assert python_two_sum.difficulty == Some(problem.Easy)
 }

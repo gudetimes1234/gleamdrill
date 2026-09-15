@@ -32,6 +32,14 @@ pub type Route {
   /// The scored breakdown shown after an exam finishes.
   ReportRoute
   StatsRoute
+  /// The Gleam Language Tour, played in order from its own screen.
+  TourRoute
+}
+
+/// Which face of the tour screen is up: the table of contents, or one lesson.
+pub type TourPage {
+  TourContents
+  TourLesson(Int)
 }
 
 /// Whether this browser is signed in, and therefore where study data lives.
@@ -296,6 +304,17 @@ pub type Model {
     nav: MenuNav,
     /// Whether the `?` cheatsheet overlay is up.
     help_open: Bool,
+    // --- the Gleam Language Tour ---
+    tour_page: TourPage,
+    /// The lesson's editor text. Edits are kept per lesson for the session
+    /// (`tour_edits`) so Back and Next do not lose work; they are not
+    /// persisted, the same as on tour.gleam.run.
+    tour_draft: String,
+    tour_edits: Dict(Int, String),
+    /// The keyboard cursor on the contents page.
+    tour_cursor: Int,
+    /// The last lesson opened, persisted as a device preference.
+    tour_lesson: Int,
     /// The in-app "leave this drill?" question, with its message, while it is
     /// up. An in-app dialog rather than `window.confirm`, which freezes the
     /// page and cannot be styled or reached by the leader key.
@@ -353,6 +372,7 @@ pub type Model {
     queue_search: String,
     queue_language: Option(String),
     queue_topic: Option(String),
+    queue_difficulty: Option(String),
     queue_status: QueueFilter,
     /// Problems whose queue change is in flight, so their row can be disabled
     /// rather than accepting a second click that would race the first.
@@ -403,6 +423,11 @@ pub fn default() -> Model {
     notice: None,
     nav: default_nav(),
     help_open: False,
+    tour_page: TourContents,
+    tour_draft: "",
+    tour_edits: dict.new(),
+    tour_cursor: 0,
+    tour_lesson: 0,
     exit_prompt: None,
     storage_full: False,
     upgrade_prompt: PromptUnseen,
@@ -432,6 +457,7 @@ pub fn default() -> Model {
     queue_search: "",
     queue_language: None,
     queue_topic: None,
+    queue_difficulty: None,
     queue_status: AnyStatus,
     queue_pending: [],
     muted_languages: [],
@@ -668,6 +694,20 @@ pub type Msg {
   ExitConfirmed(Bool)
   /// One second of drill time has passed; only scheduled while a drill is up.
   ClockTicked
+  // --- the Gleam Language Tour ---
+  /// Open the tour on its table of contents.
+  UserClickedTour
+  UserOpenedLesson(Int)
+  UserClickedTourNext
+  UserClickedTourPrev
+  UserClickedTourContents
+  /// Put the lesson's original program back in the editor.
+  UserResetLesson
+  TourEditorChanged(String)
+  /// The typing pause is over: compile and run what is in the editor.
+  TourRunTicked
+  TourCursorMoved(Int)
+  TourActivated
   UserToggledSolution(Int)
   UserRevealedHint
   UserClickedNext
@@ -705,6 +745,7 @@ pub type Msg {
   UserFilteredQueue(QueueFilter)
   UserPickedQueueLanguage(String)
   UserPickedQueueTopic(String)
+  UserPickedQueueDifficulty(String)
   /// Put one problem in the queue, or take it out -- whichever it is not.
   UserToggledQueued(ProblemRef)
   UserAddedAllShown

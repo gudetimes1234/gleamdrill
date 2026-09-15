@@ -29,6 +29,9 @@ pub type Preferences {
     side_collapsed: Bool,
     /// Language tags kept out of the study queue on this device.
     muted_languages: List(String),
+    /// The last Gleam Tour lesson opened on this device, so "Continue the
+    /// tour" lands where you left off. A device fact, like the keymap.
+    tour_lesson: Int,
     /// Whether the first-run picker has been answered.
     ///
     /// `muted_languages` cannot answer this on its own: an empty list means
@@ -45,6 +48,7 @@ pub fn default_preferences() -> Preferences {
     editor_keymap: "default",
     side_collapsed: False,
     muted_languages: [],
+    tour_lesson: 0,
     languages_chosen: False,
   )
 }
@@ -100,10 +104,12 @@ pub fn load_preferences() -> Preferences {
             True,
             decode.bool,
           )
+          use tour_lesson <- decode.optional_field("tourLesson", 0, decode.int)
           decode.success(Preferences(
             editor_keymap: keymap,
             side_collapsed: collapsed,
             muted_languages: muted,
+            tour_lesson: tour_lesson,
             languages_chosen: chosen,
           ))
         })
@@ -126,6 +132,7 @@ pub fn save_preferences(preferences: Preferences) -> Effect(message) {
           json.array(preferences.muted_languages, json.string),
         ),
         #("languagesChosen", json.bool(preferences.languages_chosen)),
+        #("tourLesson", json.int(preferences.tour_lesson)),
       ]),
     ),
   )

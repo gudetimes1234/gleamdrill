@@ -22,20 +22,24 @@ import algodrill/model.{
   SearchFocusRequested, SettingsRoute, SettingsSaved, SignOutCompleted,
   SigningIn, StateImported, StateLoaded, StatsActivated, StatsCursorMoved,
   StatsLoaded, StatsRoute, StudyRoute, SubmittingGrade, SummaryRoute, SyncFailed,
-  Synced, Syncing, TimedOut, UserAddedAllShown, UserAddedStarterSet,
-  UserChangedAuthEmail, UserChangedAuthPassword, UserChangedIterations,
-  UserChangedKeymap, UserChangedSetting, UserClickedBackToStudy,
-  UserClickedBreadcrumb, UserClickedBrowse, UserClickedCategory,
-  UserClickedClearSelection, UserClickedDeviceTimezone, UserClickedExitDrill,
-  UserClickedExitReport, UserClickedMergeGuest, UserClickedNext,
-  UserClickedQueue, UserClickedRetryRuntime, UserClickedRetrySync,
-  UserClickedRun, UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
-  UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
-  UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
+  Synced, Syncing, TimedOut, TourActivated, TourContents, TourCursorMoved,
+  TourEditorChanged, TourLesson, TourRoute, TourRunTicked, UserAddedAllShown,
+  UserAddedStarterSet, UserChangedAuthEmail, UserChangedAuthPassword,
+  UserChangedIterations, UserChangedKeymap, UserChangedSetting,
+  UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
+  UserClickedCategory, UserClickedClearSelection, UserClickedDeviceTimezone,
+  UserClickedExitDrill, UserClickedExitReport, UserClickedMergeGuest,
+  UserClickedNext, UserClickedQueue, UserClickedRetryRuntime,
+  UserClickedRetrySync, UserClickedRun, UserClickedSelectAll,
+  UserClickedSettings, UserClickedSignIn, UserClickedSignOut,
+  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
+  UserClickedStopRun, UserClickedStudy, UserClickedSubcategory, UserClickedTour,
+  UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
   UserClosedDetail, UserDismissedMergeOffer, UserDismissedNotice,
   UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded, UserOpenedDetail,
-  UserPickedChoice, UserPickedQueueLanguage, UserPickedQueueTopic,
-  UserRemovedAllShown, UserRevealedHint, UserSearched, UserSearchedQueue,
+  UserOpenedLesson, UserPickedChoice, UserPickedQueueDifficulty,
+  UserPickedQueueLanguage, UserPickedQueueTopic, UserRemovedAllShown,
+  UserResetLesson, UserRevealedHint, UserSearched, UserSearchedQueue,
   UserSubmittedAnswer, UserSubmittedAuth, UserToggledAuthMode,
   UserToggledLanguage, UserToggledProblem, UserToggledQueued, UserToggledSide,
   UserToggledSolution, UserToggledSuspend,
@@ -46,6 +50,7 @@ import algodrill/queue
 import algodrill/runner
 import algodrill/session
 import algodrill/store
+import algodrill/tour
 import algodrill/view/auth
 import algodrill/view/drill
 import algodrill/view/help
@@ -58,12 +63,14 @@ import algodrill/view/stats
 import algodrill/view/statusbar
 import algodrill/view/study
 import algodrill/view/summary
+import algodrill/view/tour as tour_view
 import fsrs
 import gleam/dict
 import gleam/float
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/result
 import gleam/string
 import lustre
 import lustre/attribute
@@ -89,6 +96,7 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
       side_collapsed: preferences.side_collapsed,
       muted_languages: preferences.muted_languages,
       languages_chosen: preferences.languages_chosen,
+      tour_lesson: preferences.tour_lesson,
     )
 
   case session.load_token() {
@@ -483,13 +491,24 @@ fn token(m: Model) -> String {
 /// Opening a checkable drill starts that language's (lazy) runtime download so
 /// it is usually ready before the first Run click. Drills without checks never
 /// load anything.
+/// The language whose runtime the screen on the way in will need, if any: a
+/// checkable drill's, or Gleam's for a tour lesson.
+fn runtime_wanted(m: Model) -> Result(String, Nil) {
+  case m.route, m.tour_page {
+    DrillRoute, _ ->
+      case current_check(m) {
+        Ok(_) -> current_language(m)
+        Error(Nil) -> Error(Nil)
+      }
+    TourRoute, TourLesson(_) -> Ok("gleam")
+    _, _ -> Error(Nil)
+  }
+}
+
 fn with_prefetch(pair: #(Model, Effect(Msg))) -> #(Model, Effect(Msg)) {
   let #(m, fx) = pair
-  case
-    m.route == DrillRoute && current_check(m) != Error(Nil),
-    current_language(m)
-  {
-    True, Ok(language) ->
+  case runtime_wanted(m) {
+    Ok(language) ->
       case model.runtime_for(m, language) {
         RuntimeNotLoaded -> #(
           Model(
@@ -509,7 +528,63 @@ fn with_prefetch(pair: #(Model, Effect(Msg))) -> #(Model, Effect(Msg)) {
         )
         _ -> pair
       }
-    _, _ -> pair
+    Error(Nil) -> pair
+  }
+}
+
+/// Post one run to a local runtime that is known to be ready. The previous
+/// run's output is carried into the Running state so the pane can keep
+/// showing it, dimmed, until the new result lands.
+fn start_local_run(
+  m: Model,
+  language: String,
+  solution: String,
+  harness: String,
+) -> #(Model, Effect(Msg)) {
+  let id = m.next_run_id
+  let previous = case m.run {
+    Ran(_, stdout) -> stdout
+    _ -> ""
+  }
+  #(
+    Model(..m, run: Running(id, previous), next_run_id: id + 1),
+    runner.run(language, id, solution, harness),
+  )
+}
+
+/// Run the tour lesson in the editor if the compiler is ready; otherwise do
+/// nothing, and `RunnerReady` will call back here when it is.
+fn run_tour_lesson(m: Model) -> #(Model, Effect(Msg)) {
+  case m.route, m.tour_page, model.runtime_for(m, "gleam") {
+    TourRoute, TourLesson(_), RuntimeReady ->
+      start_local_run(m, "gleam", m.tour_draft, tour.harness)
+    _, _, _ -> #(m, effect.none())
+  }
+}
+
+/// Open one lesson: its draft is whatever was typed there this session, else
+/// the lesson's own program; the run starts as soon as the compiler allows.
+fn open_lesson(m: Model, index: Int) -> #(Model, Effect(Msg)) {
+  let index = int.clamp(index, 0, tour.last())
+  case tour.at(index) {
+    Error(Nil) -> #(m, effect.none())
+    Ok(lesson) -> {
+      let draft =
+        dict.get(m.tour_edits, index)
+        |> result.unwrap(lesson.code)
+      let m =
+        Model(
+          ..m,
+          route: TourRoute,
+          tour_page: TourLesson(index),
+          tour_draft: draft,
+          tour_cursor: index,
+          tour_lesson: index,
+          run: RunIdle,
+        )
+      let #(m, run) = run_tour_lesson(m)
+      with_prefetch(#(m, effect.batch([save_preferences(m), run])))
+    }
   }
 }
 
@@ -568,17 +643,26 @@ fn tick() -> Effect(Msg) {
   })
 }
 
-/// The first problems of the catalogue in each chosen language, skipping any
-/// already queued. The catalogue is in a curated, easy-first order, so "the
-/// first twenty" is a sensible sitting for somebody who has not yet seen a
-/// single problem and should not have to read through 1200 to pick one.
+/// The first twenty Easy problems of each chosen language, in catalogue
+/// order, skipping any already queued. Catalogue order is the topic
+/// curriculum, not a difficulty ramp -- its first twenty include Trapping Rain
+/// Water -- so the starter set filters by rating first and only falls back to
+/// plain catalogue order for a category with no ratings (System Design).
 fn starter_refs(m: Model, tags: List(String)) -> List(ProblemRef) {
   use tag <- list.flat_map(tags)
-  problems.all_refs()
-  |> list.filter(fn(ref) {
-    problems.language_tag(ref.category) == tag && !model.is_queued(m, ref)
-  })
-  |> list.take(starter_size)
+  let unqueued =
+    problems.all_refs()
+    |> list.filter(fn(ref) {
+      problems.language_tag(ref.category) == tag && !model.is_queued(m, ref)
+    })
+  let easy =
+    list.filter(unqueued, fn(ref) {
+      problems.difficulty_of(ref) == Some(problem.Easy)
+    })
+  case easy {
+    [] -> list.take(unqueued, starter_size)
+    _ -> list.take(easy, starter_size)
+  }
 }
 
 const starter_size = 20
@@ -913,6 +997,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           // it sends someone who has already chosen their languages back to
           // the first-run picker.
           languages_chosen: m.languages_chosen,
+          tour_lesson: m.tour_lesson,
           boot: Syncing,
         )
       #(
@@ -1374,6 +1459,109 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UserClickedSettings -> #(Model(..m, route: SettingsRoute), effect.none())
 
+    // --- the Gleam Language Tour ---
+    UserClickedTour -> #(
+      Model(
+        ..m,
+        route: TourRoute,
+        tour_page: TourContents,
+        tour_cursor: m.tour_lesson,
+        run: RunIdle,
+      ),
+      scroll_to("tour-" <> int.to_string(m.tour_lesson)),
+    )
+
+    UserOpenedLesson(index) -> open_lesson(m, index)
+
+    UserClickedTourNext -> {
+      let last = tour.last()
+      case m.tour_page {
+        // Next on the last lesson is Finish: back to the study screen.
+        TourLesson(index) if index >= last -> #(
+          Model(..m, route: StudyRoute, run: RunIdle),
+          effect.none(),
+        )
+        TourLesson(index) -> open_lesson(m, index + 1)
+        TourContents -> open_lesson(m, m.tour_cursor)
+      }
+    }
+
+    UserClickedTourPrev ->
+      case m.tour_page {
+        TourLesson(index) if index > 0 -> open_lesson(m, index - 1)
+        _ -> #(m, effect.none())
+      }
+
+    UserClickedTourContents ->
+      case m.tour_page {
+        TourLesson(index) -> #(
+          Model(..m, tour_page: TourContents, tour_cursor: index, run: RunIdle),
+          scroll_to("tour-" <> int.to_string(index)),
+        )
+        TourContents -> #(m, effect.none())
+      }
+
+    UserResetLesson ->
+      case m.tour_page {
+        TourLesson(index) ->
+          case tour.at(index) {
+            Ok(lesson) -> {
+              let m =
+                Model(
+                  ..m,
+                  tour_draft: lesson.code,
+                  tour_edits: dict.delete(m.tour_edits, index),
+                )
+              run_tour_lesson(m)
+            }
+            Error(Nil) -> #(m, effect.none())
+          }
+        TourContents -> #(m, effect.none())
+      }
+
+    TourEditorChanged(text) ->
+      case m.tour_page {
+        TourLesson(index) -> #(
+          Model(
+            ..m,
+            tour_draft: text,
+            tour_edits: dict.insert(m.tour_edits, index, text),
+          ),
+          // Compile on a pause in typing, the way the tour site does, rather
+          // than on every keystroke: a run is a whole compiler pass.
+          effect.from(fn(dispatch) {
+            browser.debounce("tour-run", 500, fn() { dispatch(TourRunTicked) })
+          }),
+        )
+        TourContents -> #(m, effect.none())
+      }
+
+    TourRunTicked ->
+      case m.run {
+        // A run already in flight finishes first; the next pause re-runs.
+        Running(_, _) -> #(
+          m,
+          effect.from(fn(dispatch) {
+            browser.debounce("tour-run", 500, fn() { dispatch(TourRunTicked) })
+          }),
+        )
+        _ -> run_tour_lesson(m)
+      }
+
+    TourCursorMoved(delta) -> {
+      let cursor = int.clamp(m.tour_cursor + delta, 0, tour.last())
+      #(
+        Model(..m, tour_cursor: cursor),
+        scroll_to("tour-" <> int.to_string(cursor)),
+      )
+    }
+
+    TourActivated ->
+      case m.tour_page {
+        TourContents -> open_lesson(m, m.tour_cursor)
+        TourLesson(_) -> #(m, effect.none())
+      }
+
     // Committed on blur or Enter, so this fires once per edit rather than per
     // keystroke, and saving immediately is affordable.
     UserChangedSetting(field, raw) -> {
@@ -1479,6 +1667,15 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       Model(
         ..m,
         queue_topic: toggle_filter(m.queue_topic, topic),
+        nav: model.MenuNav(..m.nav, queue: 0),
+      ),
+      effect.none(),
+    )
+
+    UserPickedQueueDifficulty(difficulty) -> #(
+      Model(
+        ..m,
+        queue_difficulty: toggle_filter(m.queue_difficulty, difficulty),
         nav: model.MenuNav(..m.nav, queue: 0),
       ),
       effect.none(),
@@ -1628,10 +1825,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                     )
                     // Unreachable: the guest arm above catches it first.
                     True, Guest -> #(m, effect.none())
-                    False, _ -> #(
-                      started,
-                      runner.run(language, id, m.draft, check.harness),
-                    )
+                    False, _ ->
+                      start_local_run(m, language, m.draft, check.harness)
                   }
                 }
                 // The button is disabled in these states, but the keyboard
@@ -1669,10 +1864,18 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       runner.restart(language),
     )
 
-    RunnerReady(language) -> #(
-      Model(..m, runtimes: model.assoc_put(m.runtimes, language, RuntimeReady)),
-      effect.none(),
-    )
+    RunnerReady(language) -> {
+      let m =
+        Model(
+          ..m,
+          runtimes: model.assoc_put(m.runtimes, language, RuntimeReady),
+        )
+      case language, m.run {
+        // A tour lesson opened before the compiler was ready runs now.
+        "gleam", RunIdle -> run_tour_lesson(m)
+        _, _ -> #(m, effect.none())
+      }
+    }
     RunnerFailed(language, message) -> #(
       Model(
         ..m,
@@ -1694,8 +1897,12 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           // grading bar decides what the buttons offer.
           Model(..m, run: Ran(outcome, stdout), grading: AwaitingGrade),
           // Blur the editor so 1-4 grade immediately: the whole rep is
-          // type, Ctrl+Enter, digit.
-          run_effect(browser.blur_active),
+          // type, Ctrl+Enter, digit. Not on the tour, where a run follows
+          // every pause in typing and must not take the cursor away.
+          case m.route {
+            DrillRoute -> run_effect(browser.blur_active)
+            _ -> effect.none()
+          },
         )
         _ -> #(m, effect.none())
       }
@@ -1736,16 +1943,26 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             Model(..m, run: Ran(TimedOut, ""), grading: AwaitingGrade)
           // The worker cannot be interrupted, only replaced. A server-side
           // run has no worker: the server has already killed it.
-          case current_language(m) {
-            Ok("elixir") -> #(timed_out, effect.none())
-            Ok(language) -> #(
-              Model(
-                ..timed_out,
-                runtimes: model.assoc_put(m.runtimes, language, RuntimeLoading),
-              ),
-              runner.restart(language),
-            )
-            Error(Nil) -> #(timed_out, effect.none())
+          case m.route, current_language(m) {
+            TourRoute, _ -> Ok("gleam")
+            _, other -> other
+          }
+          |> fn(language) {
+            case language {
+              Ok("elixir") -> #(timed_out, effect.none())
+              Ok(language) -> #(
+                Model(
+                  ..timed_out,
+                  runtimes: model.assoc_put(
+                    m.runtimes,
+                    language,
+                    RuntimeLoading,
+                  ),
+                ),
+                runner.restart(language),
+              )
+              Error(Nil) -> #(timed_out, effect.none())
+            }
           }
         }
         _ -> #(m, effect.none())
@@ -1949,6 +2166,7 @@ fn save_preferences(m: Model) -> Effect(Msg) {
     editor_keymap: m.editor_keymap,
     side_collapsed: m.side_collapsed,
     muted_languages: m.muted_languages,
+    tour_lesson: m.tour_lesson,
     languages_chosen: m.languages_chosen,
   ))
 }
@@ -2224,6 +2442,7 @@ fn view(m: Model) -> Element(Msg) {
         ReportRoute -> report.view(m)
         MenuRoute -> menu.view(m)
         QueueRoute -> manage.view(m)
+        TourRoute -> tour_view.view(m)
       }
       // A state load after the first is a thin bar at the top, over
       // whatever is on screen; only the first load gets the loading card.

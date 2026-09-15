@@ -358,6 +358,35 @@ gleam-editor .cm-scroller {
     border: 1px solid var(--border);
 }
 
+/* A problem's LeetCode rating. Bordered text, never a filled button, so it
+   cannot be mistaken for the Hard/Easy grade buttons that share its words. */
+.difficulty {
+    flex-shrink: 0;
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 5px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+}
+
+.difficulty-easy {
+    color: var(--success);
+    border-color: color-mix(in srgb, var(--success) 50%, transparent);
+}
+
+.difficulty-medium {
+    color: var(--warning);
+    border-color: color-mix(in srgb, var(--warning) 50%, transparent);
+}
+
+.difficulty-hard {
+    color: var(--error);
+    border-color: color-mix(in srgb, var(--error) 50%, transparent);
+}
+
 .selected-remove {
     flex-shrink: 0;
     color: var(--text-secondary);
@@ -627,6 +656,10 @@ details.approach summary:focus-visible {
 }
 
 .problem-category {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
     color: var(--text-secondary);
     font-size: 12px;
     margin-bottom: 10px;
@@ -1668,7 +1701,7 @@ gleam-editor .cm-editor {
 
 .study-preview-item {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto 1fr auto auto;
     align-items: center;
     gap: 10px;
     padding: 6px 0;
@@ -1776,8 +1809,7 @@ gleam-editor .cm-editor {
     border: 1px solid var(--border);
 }
 
-/* The grade pressed, not the grade recorded: a failed run is coerced to Again
-   server-side, and that shows up in the interval rather than here. */
+/* The grade pressed, which is also the grade recorded. */
 .summary-row-grade.grade-again { color: var(--warning); border-color: var(--warning); }
 .summary-row-grade.grade-hard  { color: var(--text-secondary); }
 .summary-row-grade.grade-good  { color: var(--success); border-color: var(--success); }
@@ -2161,6 +2193,12 @@ gleam-editor .cm-editor {
     display: flex;
     align-items: center;
     gap: 12px;
+    /* Six links plus the account do not fit a phone on one line; the
+       account half wraps under the screens rather than pushing the page
+       wider than the viewport. */
+    flex-wrap: wrap;
+    row-gap: 4px;
+    min-width: 0;
 }
 
 .nav-link.nav-current {
@@ -3349,5 +3387,222 @@ body {
     /* No min-height here: the 44px touch floor above must win on phones. */
     .queue-action {
         flex-basis: 68px;
+    }
+}
+
+/* ---------- The Gleam Language Tour ---------- */
+
+.tour-screen {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px 20px 72px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.tour-contents {
+    max-width: 780px;
+}
+
+.tour-lede {
+    margin: 0;
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.tour-continue {
+    align-self: flex-start;
+}
+
+.tour-chapters {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.tour-chapter-title {
+    margin: 0 0 6px;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.tour-toc {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.tour-toc-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 10px;
+    text-align: left;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text-primary);
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.tour-toc-item:hover {
+    background: var(--bg-raised);
+}
+
+.tour-toc-item.current {
+    color: var(--accent);
+}
+
+.tour-toc-item.cursor {
+    outline: 1px solid var(--accent);
+    outline-offset: -1px;
+}
+
+.tour-toc-number {
+    min-width: 2ch;
+    text-align: right;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+/* Prose on the left, program on the right, as on the site. */
+.tour-lesson-body {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.tour-prose {
+    min-width: 0;
+}
+
+.tour-crumb {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.tour-title {
+    margin: 0 0 12px;
+    font-size: 22px;
+}
+
+.tour-text {
+    font-family: var(--font-ui);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.tour-code {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: sticky;
+    top: 16px;
+}
+
+.tour-editor gleam-editor {
+    min-height: 320px;
+}
+
+.tour-output-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tour-output-head .panel-title {
+    margin: 0;
+}
+
+.tour-output {
+    margin: 0;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    min-height: 72px;
+    max-height: 40svh;
+    overflow: auto;
+    white-space: pre-wrap;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.tour-output.waiting {
+    color: var(--text-secondary);
+    font-style: italic;
+    font-family: var(--font-ui);
+}
+
+.tour-output.stale {
+    opacity: 0.55;
+}
+
+.tour-output.error {
+    color: var(--error);
+    border-color: color-mix(in srgb, var(--error) 40%, var(--border));
+}
+
+.tour-output.failed {
+    color: var(--error);
+}
+
+.tour-nav {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+
+.tour-nav .tour-next {
+    margin-left: auto;
+}
+
+@media (max-width: 900px) {
+    .tour-lesson-body {
+        grid-template-columns: 1fr;
+    }
+
+    .tour-code {
+        position: static;
+    }
+}
+
+@media (max-width: 700px) {
+    .tour-screen {
+        padding: 16px 12px 88px;
+    }
+
+    .tour-editor gleam-editor {
+        min-height: min(45svh, 300px);
+    }
+
+    /* The footer pins like the drill's run bar, so Next is always a thumb
+       away on a phone. */
+    .tour-nav {
+        position: sticky;
+        bottom: env(safe-area-inset-bottom, 0px);
+        background: var(--bg-primary);
+        padding-bottom: 8px;
+        z-index: 30;
     }
 }

@@ -6,9 +6,10 @@
 
 import algodrill/model.{
   type Model, type Msg, type Route, Account, Guest, QueueRoute, SettingsRoute,
-  SigningIn, StatsRoute, StudyRoute, UserClickedBackToStudy, UserClickedQueue,
-  UserClickedSettings, UserClickedSignIn, UserClickedSignOut, UserClickedStats,
-  UserDismissedMergeOffer, UserDismissedNotice,
+  SigningIn, StatsRoute, StudyRoute, TourRoute, UserClickedBackToStudy,
+  UserClickedQueue, UserClickedSettings, UserClickedSignIn, UserClickedSignOut,
+  UserClickedStats, UserClickedTour, UserDismissedMergeOffer,
+  UserDismissedNotice,
 }
 import gleam/list
 import gleam/option.{None, Some}
@@ -22,6 +23,7 @@ pub fn bar(m: Model, current: Route) -> Element(Msg) {
     #("Study", StudyRoute, UserClickedBackToStudy),
     #("Queue", QueueRoute, UserClickedQueue),
     #("Stats", StatsRoute, UserClickedStats),
+    #("Tour", TourRoute, UserClickedTour),
     #("Settings", SettingsRoute, UserClickedSettings),
   ]
   let links =

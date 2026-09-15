@@ -53,10 +53,16 @@ the grade you pressed against the interval the scheduler gave it.
 **You choose what is in the queue.** Nothing is scheduled that you did not put
 there. A queue screen lists the whole catalogue with the state of every problem
 — queued, new, due, paused, or not in play at all — and adds or removes them
-one row or one topic at a time. Deciding for you which of twelve hundred
-problems to introduce is not a decision an app is in a position to make, and
-the old answer, "everything, in catalogue order", meant the only way to refuse
-a problem was to answer it once and then pause it. A problem you have already
+one row or one topic at a time. Every NeetCode problem carries its LeetCode
+rating — Easy, Medium or Hard — as a badge wherever it is listed, and the
+queue screen filters on it, so "queue every Easy problem" is two clicks. New
+cards are still introduced in catalogue order, which is NeetCode's topic
+progression; the rating is a lens on the catalogue, not a reordering of it.
+The starter set a first visit is offered is the first twenty Easy problems of
+each chosen language. Deciding for you which of twelve hundred problems to
+introduce is not a decision an app is in a position to make, and the old
+answer, "everything, in catalogue order", meant the only way to refuse a
+problem was to answer it once and then pause it. A problem you have already
 studied is paused rather than removed, because its review history is the one
 thing here that cannot be rebuilt.
 
@@ -134,7 +140,7 @@ practice.
 | NeetCode 150 (Gleam) | Gleam | 150 | 301 | yes |
 | NeetCode 150 (TypeScript) | TypeScript | 150 | 302 | yes |
 | NeetCode 150 (Elixir) | Elixir | 150 | 302 | yes — on the server |
-| Gleam Language Tour | Gleam | 63 | — | runs, ungraded |
+| Gleam Language Tour | Gleam | 63 lessons | — | runs as you type; its own screen, not scheduled |
 | Python Tips / Idioms | Python | 8 | 16 | yes |
 | Gleam Tips / Idioms | Gleam | 10 | 20 | yes |
 | System Design | — (multiple choice) | 20 | — | self-grading |
@@ -147,14 +153,15 @@ Manipulation. `src/algodrill/problems/catalog.gleam` is the one ordered listing 
 one line per problem, not one per problem per language — and each language
 builds its view of it, skipping any drill it has no source for.
 
-The **Gleam Language Tour** is [tour.gleam.run](https://tour.gleam.run) as
-cards: the lesson's prose is the prompt, the editor opens on the lesson's
-program, and Run shows what it prints — including the three lessons that call
-JavaScript through an external. Nothing is graded by the run. A lesson is
-there to be read and tried, so all four grades are on offer from the moment the
-card opens, the way a reveal-only drill grades, and the scheduler spaces the
-re-reading. Lessons are vendored verbatim from the tour's repository and
-re-vendored with `make tour-vendor`.
+The **Gleam Language Tour** is [tour.gleam.run](https://tour.gleam.run),
+playable from the Tour screen the way the site plays it: the lesson's prose on
+the left, its program in a live editor on the right, and the output underneath
+— compiled and run on every pause in typing, no button. Back, Contents and Next
+walk the sixty-three lessons in order, the table of contents lists the six
+chapters, and the lesson you reached is remembered on this device. Nothing in
+the tour is graded or scheduled; it is a course, not a deck. The three lessons
+that call JavaScript through an external run too. Lessons are vendored
+verbatim from the tour's repository and re-vendored with `make tour-vendor`.
 
 Beyond code: **System Design** is a multiple-choice category drawn from
 *Acing the System Design Interview* — nine sections mirroring the exam

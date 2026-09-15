@@ -258,6 +258,7 @@ fn problem_row(m: Model, card: CardInsight, index: Int) -> Element(Msg) {
       html.span([attribute.class("lang-tag")], [
         html.text(problems.language_tag(card.problem.category)),
       ]),
+      format.difficulty_badge(problems.difficulty_of(card.problem)),
       html.span([attribute.class("problem-row-time")], [
         html.text(case card.fluency_ms {
           Some(ms) -> insights.duration_label(ms)

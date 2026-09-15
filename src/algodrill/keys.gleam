@@ -16,13 +16,15 @@ import algodrill/model.{
   PickerConfirmedWithStarter, PickerRoute, QueueCursorJumped, QueueCursorMoved,
   QueueRoute, QueueToggledAtCursor, QuizMoved, ReportRoute, SearchFocusRequested,
   SettingsRoute, StatsActivated, StatsCursorMoved, StatsRoute, StudyRoute,
-  SummaryRoute, UserAddedAllShown, UserClickedBackToStudy, UserClickedBrowse,
-  UserClickedClearSelection, UserClickedExitDrill, UserClickedExitReport,
-  UserClickedNext, UserClickedQueue, UserClickedRun, UserClickedSelectAll,
-  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
-  UserClickedStudy, UserClosedDetail, UserFilteredQueue, UserGraded,
-  UserPickedChoice, UserRemovedAllShown, UserRevealedHint, UserSearched,
-  UserSubmittedAnswer, UserToggledSide, UserToggledSolution,
+  SummaryRoute, TourActivated, TourContents, TourCursorMoved, TourLesson,
+  TourRoute, TourRunTicked, UserAddedAllShown, UserClickedBackToStudy,
+  UserClickedBrowse, UserClickedClearSelection, UserClickedExitDrill,
+  UserClickedExitReport, UserClickedNext, UserClickedQueue, UserClickedRun,
+  UserClickedSelectAll, UserClickedStartDrill, UserClickedStartExam,
+  UserClickedStats, UserClickedStudy, UserClickedTour, UserClickedTourContents,
+  UserClickedTourNext, UserClickedTourPrev, UserClosedDetail, UserFilteredQueue,
+  UserGraded, UserPickedChoice, UserRemovedAllShown, UserRevealedHint,
+  UserSearched, UserSubmittedAnswer, UserToggledSide, UserToggledSolution,
 }
 import algodrill/problem
 import algodrill/problems
@@ -128,6 +130,7 @@ pub fn bindings(m: Model) -> List(Binding) {
           help_binding(),
         ]
         QueueRoute -> queue_bindings(m)
+        TourRoute -> tour_bindings(m)
         // A guest can always walk away from the form; the link at its foot
         // says so, and Escape should mean the same thing.
         AuthRoute ->
@@ -158,8 +161,46 @@ fn study_bindings() -> List(Binding) {
     Binding(["b"], "browse", "Browse problems by hand", UserClickedBrowse),
     Binding(["t"], "stats", "Statistics", UserClickedStats),
     Binding(["x"], "exam", "System design exam", UserClickedStartExam),
+    Binding(["g"], "tour", "Play the Gleam Language Tour", UserClickedTour),
     help_binding(),
   ]
+}
+
+/// The tour: one set of keys for the contents page, another for a lesson.
+/// Inside the editor nothing is claimed; `Escape` then `Tab` leaves it.
+fn tour_bindings(m: Model) -> List(Binding) {
+  case m.tour_page {
+    TourContents -> [
+      Binding(
+        ["j", "k"],
+        "move",
+        "Move through the lessons",
+        TourCursorMoved(1),
+      ),
+      Binding(["Enter"], "open", "Open the lesson", TourActivated),
+      Binding(
+        ["Escape", "b"],
+        "back",
+        "Back to the study screen",
+        UserClickedBackToStudy,
+      ),
+      help_binding(),
+    ]
+    TourLesson(_) -> [
+      Binding(["n", "l"], "next", "Next lesson", UserClickedTourNext),
+      Binding(["p", "h"], "prev", "Previous lesson", UserClickedTourPrev),
+      Binding(["c"], "contents", "Table of contents", UserClickedTourContents),
+      Binding(["i", "e"], "edit", "Focus the editor", EditorFocusRequested),
+      Binding(["r"], "run", "Run the program now", TourRunTicked),
+      Binding(
+        ["Escape", "b"],
+        "back",
+        "Back to the study screen",
+        UserClickedBackToStudy,
+      ),
+      help_binding(),
+    ]
+  }
 }
 
 /// The queue screen. `space`/`x` is the same "toggle the cursor row" verb the
@@ -377,6 +418,16 @@ pub fn dispatch(m: Model, key: Key) -> Result(Msg, Nil) {
     "l", MenuRoute, False, False -> Ok(MenuPaneFocused(1))
     "k", QueueRoute, False, _ -> Ok(QueueCursorMoved(-1))
     "j", QueueRoute, False, _ -> Ok(QueueCursorMoved(1))
+    "k", TourRoute, False, _ ->
+      case m.tour_page {
+        TourContents -> Ok(TourCursorMoved(-1))
+        TourLesson(_) -> lookup(m, key)
+      }
+    "j", TourRoute, False, _ ->
+      case m.tour_page {
+        TourContents -> Ok(TourCursorMoved(1))
+        TourLesson(_) -> lookup(m, key)
+      }
     "k", StatsRoute, False, _ ->
       case m.detail {
         None -> Ok(StatsCursorMoved(-1))
@@ -430,6 +481,7 @@ pub fn context_label(m: Model) -> String {
     PickerRoute -> "SETUP"
     SettingsRoute -> "SETTINGS"
     SummaryRoute -> "SUMMARY"
+    TourRoute -> "TOUR"
     AuthRoute -> "SIGN IN"
   }
 }

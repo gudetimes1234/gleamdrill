@@ -1,11 +1,11 @@
 import algodrill/problem.{type Category, type Problem, type ProblemRef}
-import algodrill/problems/gleam_tour
 import algodrill/problems/neetcode_elixir
 import algodrill/problems/neetcode_gleam
 import algodrill/problems/neetcode_python
 import algodrill/problems/neetcode_ts
 import algodrill/problems/system_design
 import gleam/list
+import gleam/option.{type Option, None}
 import gleam/result
 import gleam/string
 import wire.{ProblemRef}
@@ -20,13 +20,14 @@ fn build() -> List(Category) {
   // Tips categories are deliberately absent: the content is half-baked. The
   // modules stay in the tree and verified; re-adding a line here restores
   // them. Their absence also removes them from `all_refs`, so the study queue
-  // stops introducing them and existing tips cards go dormant.
+  // stops introducing them and existing tips cards go dormant. The Gleam
+  // Language Tour is absent for a different reason: it is played in order
+  // from its own screen (see tour.gleam), not scheduled.
   [
     neetcode_python.category(),
     neetcode_gleam.category(),
     neetcode_ts.category(),
     neetcode_elixir.category(),
-    gleam_tour.category(),
     system_design.category(),
   ]
 }
@@ -97,6 +98,15 @@ pub fn problems_in(category: String, subcategory: String) -> List(Problem) {
   }
 }
 
+/// LeetCode's rating of a problem, or `None` for one without (a quiz) and
+/// for a ref the catalogue no longer has.
+pub fn difficulty_of(ref: ProblemRef) -> Option(problem.Difficulty) {
+  case find(ref.category, ref.subcategory, ref.title) {
+    Ok(found) -> found.difficulty
+    Error(Nil) -> None
+  }
+}
+
 pub fn find(
   category: String,
   subcategory: String,
@@ -154,12 +164,9 @@ pub fn language_options() -> List(#(String, String)) {
 }
 
 fn label_for(category: Category) -> String {
-  case category.name == gleam_tour.name, first_language(category) {
-    // The one category that shares a language with another: it cannot be
-    // "Gleam" too, and the label has to fit a chip.
-    True, _ -> "Gleam Tour"
-    _, Ok(problem.Concept) | _, Error(Nil) -> category.name
-    _, Ok(language) -> problem.language_label(language)
+  case first_language(category) {
+    Ok(problem.Concept) | Error(Nil) -> category.name
+    Ok(language) -> problem.language_label(language)
   }
 }
 
@@ -181,9 +188,6 @@ pub fn language_label(category_name: String) -> String {
 /// once and the full label would drown the titles.
 pub fn language_tag(category_name: String) -> String {
   case list.find(all(), fn(c: Category) { c.name == category_name }) {
-    // Its own tag, or muting Gleam would mute the tour and vice versa; the
-    // tags are what the study chips and the first-run picker toggle.
-    Ok(category) if category.name == gleam_tour.name -> "gt"
     Ok(category) ->
       case first_language(category) {
         Ok(problem.Python) -> "py"

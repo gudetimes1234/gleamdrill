@@ -35,13 +35,10 @@ pub type Language {
 /// drills are reveal-only, and are verified natively instead
 /// (drills/elixir/verify_all.exs).
 ///
-/// `graded` is whether a run has any say in the grade. Every problem drill
-/// is graded: a scheduled review needs a passing run before Hard/Good/Easy
-/// are offered, and a failed run forces Again. The Gleam Language Tour is
-/// not: its cards are read-and-run — the starter *is* the lesson's program,
-/// Run shows what it prints, and the four grades are on offer from the
-/// moment the card opens, exactly like a reveal-only card. The harness there
-/// exists only so the Run button has something to call.
+/// `graded` is whether a run gates the grade bar. Every problem drill is
+/// graded: a later scheduled review must run once before the grades are
+/// offered (the grade itself is always the user's). Ungraded checks grade
+/// from the moment the card opens, like a reveal-only card.
 pub type Check {
   Check(signature: String, starter: String, harness: String, graded: Bool)
 }
@@ -77,6 +74,42 @@ pub type Quiz {
   )
 }
 
+/// LeetCode's rating of a problem. Shown as a badge, filterable on the queue
+/// screen, and what the starter set is drawn from. Its own type rather than
+/// reusing `fsrs.Rating`'s Hard/Easy: those are what you press after a
+/// review, this is what the problem is, and the two must never read as one.
+pub type Difficulty {
+  Easy
+  Medium
+  Hard
+}
+
+pub fn difficulty_label(difficulty: Difficulty) -> String {
+  case difficulty {
+    Easy -> "Easy"
+    Medium -> "Medium"
+    Hard -> "Hard"
+  }
+}
+
+/// Lowercase form, used as a CSS class suffix and a filter chip value.
+pub fn difficulty_slug(difficulty: Difficulty) -> String {
+  case difficulty {
+    Easy -> "easy"
+    Medium -> "medium"
+    Hard -> "hard"
+  }
+}
+
+pub fn difficulty_from_slug(slug: String) -> Result(Difficulty, Nil) {
+  case slug {
+    "easy" -> Ok(Easy)
+    "medium" -> Ok(Medium)
+    "hard" -> Ok(Hard)
+    _ -> Error(Nil)
+  }
+}
+
 /// One rung of the approach hint ladder, revealed in order: a vague nudge,
 /// then the plan as steps, then (for code drills) language-neutral
 /// pseudocode. Revealing the pseudocode counts as seeing the answer.
@@ -99,6 +132,8 @@ pub type Problem {
     language: Language,
     check: Option(Check),
     quiz: Option(Quiz),
+    /// `None` for a quiz question, which has no LeetCode rating.
+    difficulty: Option(Difficulty),
   )
 }
 
@@ -131,8 +166,8 @@ pub fn language_slug(language: Language) -> String {
   }
 }
 
-/// Whether a run decides the grade. Reveal-only drills (no Check) and
-/// read-and-run cards (a Check with `graded: False`) grade freely every time.
+/// Whether a run gates the grade bar. Reveal-only drills (no Check) and
+/// read-and-run cards (a Check with `graded: False`) grade from open.
 pub fn graded(problem: Problem) -> Bool {
   case problem.check {
     Some(check) -> check.graded

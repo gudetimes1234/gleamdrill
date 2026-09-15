@@ -8,12 +8,14 @@ import algodrill/insights
 import algodrill/model.{
   type Model, type Msg, Guest, PromptShowing, Registering, StudyRoute,
   UserAddedStarterSet, UserClickedBrowse, UserClickedQueue, UserClickedSignIn,
-  UserClickedStartExam, UserClickedStudy, UserDismissedUpgradePrompt,
+  UserClickedStartExam, UserClickedStudy, UserClickedTour,
+  UserDismissedUpgradePrompt,
 }
 import algodrill/problem
 import algodrill/problems
 import algodrill/queue
 import algodrill/view/banner
+import algodrill/view/format
 import algodrill/view/links
 import algodrill/view/nav
 import fsrs
@@ -128,6 +130,18 @@ pub fn view(m: Model) -> Element(Msg) {
           event.on_click(UserClickedStartExam),
         ],
         [html.text("System design exam")],
+      ),
+      html.button(
+        [
+          attribute.class("study-secondary study-tour"),
+          event.on_click(UserClickedTour),
+        ],
+        [
+          html.text(case m.tour_lesson > 0 {
+            True -> "Continue the Gleam tour"
+            False -> "Gleam tour"
+          }),
+        ],
       ),
     ]),
     queue_preview(m),
@@ -317,6 +331,7 @@ fn queue_preview(m: Model) -> Element(Msg) {
               html.span([attribute.class("study-preview-title")], [
                 html.text(ref.title),
               ]),
+              format.difficulty_badge(problems.difficulty_of(ref)),
               html.span([attribute.class("study-preview-state")], [
                 html.text(case model.card_for(m, ref) {
                   Some(_) -> "due"

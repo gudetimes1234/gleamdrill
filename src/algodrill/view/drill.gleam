@@ -334,8 +334,10 @@ fn expanded_panels(
           <> " \u{203a} "
           <> ref.subcategory
           <> " \u{b7} "
-          <> problem.language_label(current.language),
+          <> problem.language_label(current.language)
+          <> " ",
         ),
+        format.difficulty_badge(current.difficulty),
       ]),
       case current.prompt_html {
         // Repository-vendored lesson HTML, never user input; see
