@@ -19,45 +19,46 @@ import gleamdrill/legacy
 import gleamdrill/local
 import gleamdrill/model.{
   type Model, type Msg, Account, ArchiveReady, ArchiveRestored, AuthCompleted,
-  AuthForm, AuthRoute, AwaitingGrade, CardSuspended, CaseResult, Cases,
-  ClockTicked, DayStartHour, DesiredRetention, DraftSaveTicked, DraftSynced,
-  DrillRoute, EditorChanged, EditorFocusRequested, EditorResized, Errored,
-  ExamSampled, ExitConfirmed, Guest, HelpToggled, HistoryLoaded, ImportConfirmed,
-  ImportPicked, InsightsLoaded, KeyPressed, MenuActivated, MenuCursorJumped,
-  MenuCursorMoved, MenuPaneFocused, MenuRoute, MenuSuspendedAtCursor,
-  MenuToggledAtCursor, Model, NewPerDay, NotGrading, NotStarted, NoteChanged,
-  NoteFocusRequested, NoteSaveTicked, NoteSynced, PickerConfirmed,
-  PickerConfirmedWithStarter, PickerRoute, PickerToggledLanguage,
-  PromptDismissed, QueueChanged, QueueCursorJumped, QueueCursorMoved, QueueRoute,
-  QueueToggledAtCursor, QuizMoved, Ran, Registering, RemoteRunFinished,
-  ReportRoute, ReviewRecorded, ReviewsPerDay, RunError, RunFinished, RunIdle,
-  RunTimedOut, RunnerFailed, RunnerReady, Running, RuntimeFailed,
-  RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded, RuntimeReady,
-  SearchFocusRequested, SettingsRoute, SettingsSaved, SignOutCompleted,
-  SigningIn, StateImported, StateLoaded, StatsActivated, StatsCursorMoved,
-  StatsLoaded, StatsRoute, StudyRoute, SubmittingGrade, SummaryRoute, SyncFailed,
-  Synced, Syncing, TimedOut, TourActivated, TourContents, TourCursorMoved,
-  TourEditorChanged, TourLesson, TourRoute, TourRunTicked, UndoRecorded,
-  UserAddedAllShown, UserAddedStarterSet, UserChangedAuthEmail,
-  UserChangedAuthPassword, UserChangedGroup, UserChangedIterations,
-  UserChangedKeymap, UserChangedSetting, UserClickedBackToStudy,
-  UserClickedBreadcrumb, UserClickedBrowse, UserClickedCategory,
-  UserClickedClearSelection, UserClickedDeviceTimezone, UserClickedExitDrill,
-  UserClickedExitReport, UserClickedExport, UserClickedImport,
-  UserClickedMergeGuest, UserClickedNext, UserClickedQueue, UserClickedRecall,
-  UserClickedRetryRuntime, UserClickedRetrySync, UserClickedRun,
-  UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
+  AuthForm, AuthRoute, AwaitingGrade, CacheMeasured, CacheWarmed, CardSuspended,
+  CaseResult, Cases, ClockTicked, DayStartHour, DesiredRetention,
+  DraftSaveTicked, DraftSynced, DrillRoute, EditorChanged, EditorFocusRequested,
+  EditorResized, Errored, ExamSampled, ExitConfirmed, Guest, HelpToggled,
+  HistoryLoaded, ImportConfirmed, ImportPicked, InsightsLoaded, KeyPressed,
+  MenuActivated, MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
+  MenuSuspendedAtCursor, MenuToggledAtCursor, Model, NewPerDay, NotGrading,
+  NotStarted, NoteChanged, NoteFocusRequested, NoteSaveTicked, NoteSynced,
+  PickerConfirmed, PickerConfirmedWithStarter, PickerRoute,
+  PickerToggledLanguage, PromptDismissed, QueueChanged, QueueCursorJumped,
+  QueueCursorMoved, QueueRoute, QueueToggledAtCursor, QuizMoved, Ran,
+  Registering, RemoteRunFinished, ReportRoute, ReviewRecorded, ReviewsPerDay,
+  RunError, RunFinished, RunIdle, RunTimedOut, RunnerFailed, RunnerReady,
+  Running, RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded,
+  RuntimeReady, SearchFocusRequested, SettingsRoute, SettingsSaved,
+  SignOutCompleted, SigningIn, StateImported, StateLoaded, StatsActivated,
+  StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute, SubmittingGrade,
+  SummaryRoute, SyncFailed, Synced, Syncing, TimedOut, TourActivated,
+  TourContents, TourCursorMoved, TourEditorChanged, TourLesson, TourRoute,
+  TourRunTicked, UndoRecorded, UserAddedAllShown, UserAddedStarterSet,
+  UserChangedAuthEmail, UserChangedAuthPassword, UserChangedGroup,
+  UserChangedIterations, UserChangedKeymap, UserChangedSetting,
+  UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
+  UserClickedCategory, UserClickedClearSelection, UserClickedDeviceTimezone,
+  UserClickedExitDrill, UserClickedExitReport, UserClickedExport,
+  UserClickedImport, UserClickedMergeGuest, UserClickedNext, UserClickedQueue,
+  UserClickedRecall, UserClickedRetryRuntime, UserClickedRetrySync,
+  UserClickedRun, UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
   UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
   UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
   UserClickedTour, UserClickedTourContents, UserClickedTourNext,
-  UserClickedTourPrev, UserClickedUndo, UserClosedDetail, UserDismissedDiff,
-  UserDismissedMergeOffer, UserDismissedNotice, UserDismissedUpgradePrompt,
-  UserFilteredQueue, UserGraded, UserOpenedDetail, UserOpenedLesson,
-  UserPickedChoice, UserPickedQueueLanguage, UserRemovedAllShown,
-  UserResetLesson, UserRevealedHint, UserRevealedRecall, UserSearched,
-  UserSearchedQueue, UserSubmittedAnswer, UserSubmittedAuth, UserToggledAuthMode,
-  UserToggledDiff, UserToggledLanguage, UserToggledProblem, UserToggledQueued,
-  UserToggledResults, UserToggledSide, UserToggledSolution, UserToggledSuspend,
+  UserClickedTourPrev, UserClickedUndo, UserClickedWarmCache, UserClosedDetail,
+  UserDismissedDiff, UserDismissedMergeOffer, UserDismissedNotice,
+  UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded, UserOpenedDetail,
+  UserOpenedLesson, UserPickedChoice, UserPickedQueueLanguage,
+  UserRemovedAllShown, UserResetLesson, UserRevealedHint, UserRevealedRecall,
+  UserSearched, UserSearchedQueue, UserSubmittedAnswer, UserSubmittedAuth,
+  UserToggledAuthMode, UserToggledDiff, UserToggledLanguage, UserToggledProblem,
+  UserToggledQueued, UserToggledResults, UserToggledSide, UserToggledSolution,
+  UserToggledSuspend,
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
@@ -88,6 +89,7 @@ import wire.{ProblemRef}
 
 pub fn main() {
   editor.register()
+  browser.register_service_worker()
   let app = lustre.application(init, update, view)
   let assert Ok(_) = lustre.start(app, "#app", Nil)
   Nil
@@ -1606,7 +1608,42 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(m, save_preferences(m))
     }
 
-    UserClickedSettings -> #(Model(..m, route: SettingsRoute), effect.none())
+    UserClickedSettings -> #(Model(..m, route: SettingsRoute), measure_cache())
+
+    // --- the offline cache ---
+    UserClickedWarmCache ->
+      case m.warming {
+        Some(_) -> #(m, effect.none())
+        None -> #(
+          Model(..m, warming: Some(#(0, 0))),
+          effect.from(fn(dispatch) {
+            browser.warm_runtime_cache(fn(ok, done, total, finished) {
+              dispatch(CacheWarmed(ok, done, total, finished))
+            })
+          }),
+        )
+      }
+
+    CacheWarmed(ok, done, total, finished) ->
+      case ok, finished {
+        False, _ -> #(
+          Model(
+            ..m,
+            warming: None,
+            notice: Some(
+              "The download stopped partway. Whatever arrived is kept; try again when you are back online.",
+            ),
+          ),
+          measure_cache(),
+        )
+        True, True -> #(Model(..m, warming: None), measure_cache())
+        True, False -> #(
+          Model(..m, warming: Some(#(done, total))),
+          effect.none(),
+        )
+      }
+
+    CacheMeasured(bytes) -> #(Model(..m, cache_bytes: bytes), effect.none())
 
     // --- the Gleam Language Tour ---
     UserClickedTour -> #(
@@ -2601,6 +2638,12 @@ fn starter_for(ref: ProblemRef) -> String {
       }
     Error(Nil) -> ""
   }
+}
+
+fn measure_cache() -> Effect(Msg) {
+  effect.from(fn(dispatch) {
+    browser.runtime_cache_size(fn(bytes) { dispatch(CacheMeasured(bytes)) })
+  })
 }
 
 fn schedule_draft_save() -> Effect(Msg) {

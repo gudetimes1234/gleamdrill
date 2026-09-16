@@ -357,6 +357,10 @@ pub type Model {
     /// An export file read from disk, waiting for the user to confirm that
     /// it replaces everything.
     import_pending: Option(api.Archive),
+    /// Bytes the offline runtime cache holds, measured when settings opens.
+    cache_bytes: Int,
+    /// A runtime download in progress: (done, total). None when idle.
+    warming: Option(#(Int, Int)),
     /// After a passing run the solution panel opens by itself with your
     /// code diffed against the reference. `diff_open` is that panel, until
     /// dismissed (reset each sitting); `diff_mode` is whether the panel
@@ -491,6 +495,8 @@ pub fn default() -> Model {
     editor_height: None,
     undo: None,
     import_pending: None,
+    cache_bytes: 0,
+    warming: None,
     diff_open: True,
     diff_mode: True,
     recall: False,
@@ -829,6 +835,11 @@ pub type Msg {
   UserClickedRetryRuntime(String)
   UserToggledSide
   UserToggledResults
+  /// Fetch every runtime file into the offline cache.
+  UserClickedWarmCache
+  /// Progress from the worker: ok, done, total, finished.
+  CacheWarmed(Bool, Int, Int, Bool)
+  CacheMeasured(Int)
   /// Download everything as one file.
   UserClickedExport
   ArchiveReady(Result(api.Archive, ApiError))

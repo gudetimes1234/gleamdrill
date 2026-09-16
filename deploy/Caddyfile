@@ -54,6 +54,12 @@
 		@shell path / /index.html
 		header @shell Cache-Control "no-cache"
 
+		# The service worker is how a new shell reaches an installed client:
+		# the browser refetches it on navigation, and only a fresh copy triggers
+		# an update, so it must never be served from an HTTP cache either.
+		@sw path /sw.js
+		header @sw Cache-Control "no-cache"
+
 		# `{path}.html` reproduces the `cleanUrls` Vercel used to provide; the
 		# final fallback is the SPA shell.
 		try_files {path} {path}.html /index.html

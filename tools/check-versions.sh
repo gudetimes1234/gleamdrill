@@ -39,10 +39,12 @@ expect server/Dockerfile             "gleam:v$gleam_version-elixir-alpine"      
 expect src/gleamdrill/runner.gleam    "pub const gleam_version = \"$gleam_version\"" "runner.gleam gleam_version"
 expect src/gleamdrill/worker.gleam    "const default_version = \"$gleam_version\""   "worker.gleam default_version"
 expect drills/src/bundle_stdlib.gleam "const runtime_version = \"$gleam_version\""  "bundle_stdlib.gleam"
+expect assets/sw.js                   "const GLEAM_RUNTIME = \"/gleam-runtime/$gleam_version/\"" "sw.js GLEAM_RUNTIME"
 
 echo "Brython $brython_version (from Makefile BRYTHON_VERSION)"
 expect package.json                  "\"brython\": \"$brython_version\""        "package.json dependency"
 expect src/gleamdrill/runner.gleam    "pub const python_version = \"$brython_version\"" "runner.gleam python_version"
+expect assets/sw.js                   "const PYTHON_RUNTIME = \"/python-runtime/$brython_version/\"" "sw.js PYTHON_RUNTIME"
 
 echo "Bun $bun_version (from Makefile BUN_VERSION)"
 expect .github/workflows/ci.yml "bun-version: \"$bun_version\"" "ci.yml setup-bun"

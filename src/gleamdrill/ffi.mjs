@@ -115,6 +115,56 @@ export function pickFile(callback) {
   input.click();
 }
 
+// Registers assets/sw.js, which caches the shell and the runtimes for a
+// guest sitting with no network. Not on the lustre dev server: its bundle
+// changes on every save, and a worker in front of it only confuses that.
+export function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  if (location.port === "1234") return;
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
+}
+
+// Asks the worker to fetch every runtime file it knows, reporting progress
+// as (done, total, finished) and a final `false` on a failed fetch.
+export function warmRuntimeCache(callback) {
+  if (!("serviceWorker" in navigator)) {
+    callback(false, 0, 0, true);
+    return;
+  }
+  navigator.serviceWorker.ready.then((registration) => {
+    const listener = (event) => {
+      if (event.data?.type !== "warm") return;
+      callback(event.data.ok, event.data.done, event.data.total, !!event.data.finished || !event.data.ok);
+      if (event.data.finished || !event.data.ok) {
+        navigator.serviceWorker.removeEventListener("message", listener);
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", listener);
+    registration.active?.postMessage({ type: "warm" });
+  });
+}
+
+// How much the runtime cache holds, in bytes, from the sizes of its
+// entries. Zero when the Cache API is unavailable.
+export function runtimeCacheSize(callback) {
+  if (!("caches" in self)) {
+    callback(0);
+    return;
+  }
+  caches
+    .open("gleamdrill-runtime")
+    .then(async (cache) => {
+      let total = 0;
+      for (const request of await cache.keys()) {
+        const response = await cache.match(request);
+        const blob = response && (await response.blob());
+        total += blob ? blob.size : 0;
+      }
+      callback(total);
+    })
+    .catch(() => callback(0));
+}
+
 // The browser's IANA zone, e.g. "America/New_York". Sent at signup so the
 // account's study day rolls over where the user actually is.
 export function timeZone() {

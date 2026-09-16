@@ -18,7 +18,7 @@ import gleamdrill/model.{
   type Model, type Msg, DayStartHour, DesiredRetention, ImportConfirmed,
   NewPerDay, ReviewsPerDay, UserChangedKeymap, UserChangedSetting,
   UserClickedDeviceTimezone, UserClickedExport, UserClickedImport,
-  UserToggledLanguage,
+  UserClickedWarmCache, UserToggledLanguage,
 }
 import gleamdrill/problems
 import gleamdrill/view/nav
@@ -94,6 +94,7 @@ pub fn view(m: Model) -> Element(Msg) {
     section("This device", "Kept in this browser, signed in or not.", [
       keymap_row(m),
       languages_row(m),
+      offline_row(m),
     ]),
 
     section(
@@ -126,6 +127,55 @@ pub fn view(m: Model) -> Element(Msg) {
     ),
     import_prompt(m),
   ])
+}
+
+/// The offline cache: how much of the runtimes this browser already holds,
+/// and a button to fetch the rest so a sitting works with no network.
+fn offline_row(m: Model) -> Element(Msg) {
+  let held = case m.cache_bytes {
+    0 -> "Nothing cached yet."
+    bytes -> megabytes(bytes) <> " cached."
+  }
+  html.div([attribute.class("settings-row")], [
+    html.div([attribute.class("settings-label")], [
+      html.span([attribute.class("settings-label-text")], [
+        html.text("Offline runtimes"),
+      ]),
+      html.span([attribute.class("settings-help")], [
+        html.text(
+          "The Gleam compiler and the Python runtime, about 11 MB, so a "
+          <> "guest sitting runs with no network. They also fill in as "
+          <> "you use them. "
+          <> held,
+        ),
+      ]),
+    ]),
+    case m.warming {
+      Some(#(done, total)) ->
+        html.span([attribute.class("settings-progress")], [
+          html.text(
+            "Downloading\u{2026} "
+            <> int.to_string(done)
+            <> "/"
+            <> int.to_string(total),
+          ),
+        ])
+      None ->
+        html.button(
+          [
+            attribute.class("btn-secondary settings-warm"),
+            attribute.type_("button"),
+            event.on_click(UserClickedWarmCache),
+          ],
+          [html.text("Download all")],
+        )
+    },
+  ])
+}
+
+fn megabytes(bytes: Int) -> String {
+  let tenths = bytes / 100_000
+  int.to_string(tenths / 10) <> "." <> int.to_string(tenths % 10) <> " MB"
 }
 
 fn action_row(

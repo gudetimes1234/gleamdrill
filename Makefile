@@ -159,6 +159,7 @@ e2e:
 	bun test/browser/flow.mjs
 	bun test/browser/grading.mjs
 	bun test/browser/guest.mjs
+	bun test/browser/offline.mjs
 
 # Walks every route and every user-initiated message, photographing each state.
 # Broader and slower than $(MAKE) e2e: it is what catches screens no

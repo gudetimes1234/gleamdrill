@@ -36,6 +36,20 @@ pub fn time_zone() -> String
 @external(javascript, "./ffi.mjs", "onKey")
 pub fn on_keys(callback: fn(String, Bool, Bool, String) -> Nil) -> Nil
 
+/// Installs the service worker that keeps a guest sitting working offline.
+@external(javascript, "./ffi.mjs", "registerServiceWorker")
+pub fn register_service_worker() -> Nil
+
+/// Fetches every runtime file into the offline cache. The callback gets
+/// (ok, done, total, finished) after each file; `ok` is False once a fetch
+/// fails, and `finished` is True on the last call either way.
+@external(javascript, "./ffi.mjs", "warmRuntimeCache")
+pub fn warm_runtime_cache(callback: fn(Bool, Int, Int, Bool) -> Nil) -> Nil
+
+/// Bytes held by the runtime cache.
+@external(javascript, "./ffi.mjs", "runtimeCacheSize")
+pub fn runtime_cache_size(callback: fn(Int) -> Nil) -> Nil
+
 /// The study day a past moment fell on, keyed like `study_day_index`.
 @external(javascript, "./ffi.mjs", "studyDayIndexAt")
 pub fn study_day_index_at(epoch_seconds: Int, day_start_hour: Int) -> Int

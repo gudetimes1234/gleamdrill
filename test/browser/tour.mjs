@@ -61,7 +61,14 @@ const exercises = (...msgs) => msgs.forEach((m) => covered.add(m));
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM ?? "/usr/bin/chromium",
 });
-const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+// No service worker here: the tour aborts requests with page.route to stage
+// failures, and a worker in front of the page would answer them from its
+// cache instead. Offline behaviour has its own suite, test/browser/offline.mjs.
+const context = await browser.newContext({
+  viewport: { width: 1280, height: 900 },
+  serviceWorkers: "block",
+});
+const page = await context.newPage();
 
 // Native dialogs block every subsequent command until answered, so the handler
 // goes on before anything can trigger one. The app no longer opens any -- the
@@ -1314,6 +1321,10 @@ await page.waitForSelector(".settings-screen", { timeout: 10000 });
 check("settings opens", await page.isVisible(".settings-screen"));
 check("both stores are represented, and the data section",
   (await page.$$(".settings-section")).length === 4);
+check("the offline row is there", await page.isVisible(".settings-warm"));
+// Exercised for real, with the network off, by test/browser/offline.mjs;
+// this context blocks service workers.
+exercises("UserClickedWarmCache");
 const beforeSave = await page.evaluate(
   () => localStorage.getItem("gleamDrill.guest.settings.v1"));
 check("nothing is written before an edit", beforeSave === null);
@@ -2060,6 +2071,7 @@ const declared = [
   "UserToggledSuspend", "UserClickedRecall", "UserRevealedRecall",
   "UserClickedUndo", "UserToggledDiff", "UserDismissedDiff",
   "UserClickedExport", "UserClickedImport", "ImportConfirmed",
+  "UserClickedWarmCache",
   "MenuSuspendedAtCursor", "UserClickedQueue", "UserSearchedQueue",
   "UserFilteredQueue", "UserPickedQueueLanguage",
   "UserToggledQueued", "UserAddedAllShown", "UserRemovedAllShown",

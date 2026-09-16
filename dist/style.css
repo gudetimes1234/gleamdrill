@@ -1086,6 +1086,14 @@ gleam-editor.resizing {
     border-style: solid;
 }
 
+.settings-progress {
+    flex: none;
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+
 .summary-undo {
     display: flex;
     justify-content: flex-end;
