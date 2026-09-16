@@ -1319,8 +1319,10 @@ await freshGuest();
 await page.click('button:text-is("Settings")');
 await page.waitForSelector(".settings-screen", { timeout: 10000 });
 check("settings opens", await page.isVisible(".settings-screen"));
-check("both stores are represented, and the data section",
-  (await page.$$(".settings-section")).length === 4);
+check("account, reminders, device and data sections",
+  (await page.$$(".settings-section")).length === 5);
+check("a guest sees the reminder control but cannot use it",
+  await page.isVisible(".settings-reminder") && await page.isDisabled(".settings-reminder"));
 check("the offline row is there", await page.isVisible(".settings-warm"));
 // Exercised for real, with the network off, by test/browser/offline.mjs;
 // this context blocks service workers.
@@ -1837,6 +1839,27 @@ await capture("account-stats", "Statistics for a signed-in account");
 await page.click('.nav-link:text-is("Study")');
 await page.waitForSelector(".study-screen", { timeout: 10000 });
 await capture("account-study", "Study screen signed in: email, no guest strip");
+
+// Signed in, the reminder hour is a real setting: picked here, kept by the
+// server, and read back as the hour it will mail at.
+await page.click('button:text-is("Settings")');
+await page.waitForSelector(".settings-reminder", { timeout: 10000 });
+check("an account can pick a reminder hour", !(await page.isDisabled(".settings-reminder")));
+await page.selectOption(".settings-reminder", "8");
+await page.waitForTimeout(600);
+const accountSettings = await page.evaluate(async (api) => {
+  const token = localStorage.getItem("gleamDrill.token");
+  const response = await fetch(`${api}/api/settings`, { headers: { authorization: `Bearer ${token}` } });
+  return (await response.json()).settings;
+}, API);
+check("and the server keeps it", accountSettings.reminderHour === 8, JSON.stringify(accountSettings.reminderHour));
+check("with the help naming the address",
+  (await page.textContent(".settings-row:has(.settings-reminder) .settings-help")).includes("@"));
+await capture("reminders", "Reminders: one mail a day at the hour you pick, to the account's address");
+await page.selectOption(".settings-reminder", "off");
+await page.waitForTimeout(600);
+await page.keyboard.press("Escape");
+await page.waitForSelector(".study-screen", { timeout: 10000 });
 
 // Signing in to an existing account offers the merge rather than doing it.
 await page.click("text=Sign out");

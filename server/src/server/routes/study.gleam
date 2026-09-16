@@ -581,7 +581,12 @@ fn validate_settings(settings: Settings) -> Result(Settings, String) {
       Error("Learning and relearning steps must be at least 1 minute.")
     _, _, _, _, False, _ -> Error("Daily limits cannot be negative.")
     _, _, _, _, _, False -> Error("Day start hour must be between 0 and 23.")
-    _, _, _, _, _, _ -> Ok(settings)
+    _, _, _, _, _, _ ->
+      case settings.reminder_hour {
+        Some(hour) if hour < 0 || hour > 23 ->
+          Error("Reminder hour must be between 0 and 23.")
+        _ -> Ok(settings)
+      }
   }
 }
 

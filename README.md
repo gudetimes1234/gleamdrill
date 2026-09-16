@@ -382,6 +382,14 @@ than building it.
 Only ever run **one** api instance. It migrates the schema at boot assuming it
 is the sole writer; more than one needs a migration story first.
 
+The daily reminder mail is optional and off until `RESEND_API_KEY` is set
+on the api (with `REMINDER_FROM` as a sender on a domain Resend has
+verified, and `APP_URL` if the link should not be the first allowed
+origin). With the key set, a loop wakes every fifteen minutes and mails
+anyone whose chosen hour it is, in their own timezone, if they have
+something due -- once per day, claimed in `reminders_sent` before sending
+so a restart cannot send it twice. See `server/src/server/reminders.gleam`.
+
 ## State
 
 There are **two stores, and no sync between them**.

@@ -23,8 +23,22 @@ pub fn all() -> List(Migration) {
     Migration(3, "notes", notes),
     Migration(4, "recall_reviews", recall_reviews),
     Migration(5, "review_snapshots", review_snapshots),
+    Migration(6, "reminders", reminders),
   ]
 }
+
+/// The daily reminder: the local hour a user wants it (null is off), and a
+/// log of which study days one has gone out for, so a restart -- or a
+/// second instance -- can never send the same day's mail twice.
+const reminders: List(String) = [
+  "alter table settings add column reminder_hour int",
+  "create table reminders_sent (
+     user_id uuid not null references users(id) on delete cascade,
+     day     date not null,
+     sent_at timestamptz not null default now(),
+     primary key (user_id, day)
+   )",
+]
 
 /// What the card looked like before each review, so the most recent one
 /// can be undone exactly: the scheduler's fuzz sample and learning step

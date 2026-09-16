@@ -157,8 +157,22 @@ pub fn customised_settings_round_trip_test() {
       reviews_per_day: 12,
       day_start_hour: 2,
       timezone: "Europe/Lisbon",
+      reminder_hour: Some(8),
     )
   round_trip(settings, wire.settings_to_json, wire.settings_decoder())
+}
+
+/// Settings saved before reminders existed carry no hour: off, not 422.
+pub fn settings_without_a_reminder_hour_default_to_off_test() {
+  let body =
+    "{\"parameters\":[0.4,0.6,2.4,5.8,4.93,0.94,0.86,0.01,1.49,0.14,0.94,"
+    <> "2.18,0.05,0.34,1.26,0.29,2.61],\"desiredRetention\":0.9,"
+    <> "\"learningSteps\":[1,10],\"relearningSteps\":[10],"
+    <> "\"maximumInterval\":36500,\"enableFuzz\":true,\"newPerDay\":5,"
+    <> "\"reviewsPerDay\":100,\"dayStartHour\":4,\"timezone\":\"UTC\"}"
+  let assert Ok(settings) =
+    json.parse(from: body, using: wire.settings_decoder())
+  assert settings.reminder_hour == None
 }
 
 pub fn boot_state_round_trips_test() {

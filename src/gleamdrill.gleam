@@ -30,15 +30,15 @@ import gleamdrill/model.{
   PickerConfirmed, PickerConfirmedWithStarter, PickerRoute,
   PickerToggledLanguage, PromptDismissed, QueueChanged, QueueCursorJumped,
   QueueCursorMoved, QueueRoute, QueueToggledAtCursor, QuizMoved, Ran,
-  Registering, RemoteRunFinished, ReportRoute, ReviewRecorded, ReviewsPerDay,
-  RunError, RunFinished, RunIdle, RunTimedOut, RunnerFailed, RunnerReady,
-  Running, RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded,
-  RuntimeReady, SearchFocusRequested, SettingsRoute, SettingsSaved,
-  SignOutCompleted, SigningIn, StateImported, StateLoaded, StatsActivated,
-  StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute, SubmittingGrade,
-  SummaryRoute, SyncFailed, Synced, Syncing, TimedOut, TourActivated,
-  TourContents, TourCursorMoved, TourEditorChanged, TourLesson, TourRoute,
-  TourRunTicked, UndoRecorded, UserAddedAllShown, UserAddedStarterSet,
+  Registering, ReminderHour, RemoteRunFinished, ReportRoute, ReviewRecorded,
+  ReviewsPerDay, RunError, RunFinished, RunIdle, RunTimedOut, RunnerFailed,
+  RunnerReady, Running, RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading,
+  RuntimeNotLoaded, RuntimeReady, SearchFocusRequested, SettingsRoute,
+  SettingsSaved, SignOutCompleted, SigningIn, StateImported, StateLoaded,
+  StatsActivated, StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute,
+  SubmittingGrade, SummaryRoute, SyncFailed, Synced, Syncing, TimedOut,
+  TourActivated, TourContents, TourCursorMoved, TourEditorChanged, TourLesson,
+  TourRoute, TourRunTicked, UndoRecorded, UserAddedAllShown, UserAddedStarterSet,
   UserChangedAuthEmail, UserChangedAuthPassword, UserChangedGroup,
   UserChangedIterations, UserChangedKeymap, UserChangedSetting,
   UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
@@ -2346,6 +2346,13 @@ fn apply_setting(
         Ok(value) ->
           wire.Settings(..settings, day_start_hour: int.clamp(value, 0, 23))
         Error(Nil) -> settings
+      }
+    ReminderHour ->
+      case int.parse(raw) {
+        Ok(hour) ->
+          wire.Settings(..settings, reminder_hour: Some(int.clamp(hour, 0, 23)))
+        // The select's "off" option, or anything else: no mail.
+        Error(Nil) -> wire.Settings(..settings, reminder_hour: None)
       }
     DesiredRetention ->
       case float.parse(raw) {

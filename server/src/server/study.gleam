@@ -69,7 +69,7 @@ pub fn load_settings(
   pog.query(
     "select parameters, desired_retention, learning_steps, relearning_steps,
             maximum_interval, enable_fuzz, new_per_day, reviews_per_day,
-            day_start_hour, timezone
+            day_start_hour, timezone, reminder_hour
        from settings
       where user_id = $1::uuid",
   )
@@ -96,7 +96,7 @@ pub fn save_settings(
        learning_steps = $4, relearning_steps = $5,
        maximum_interval = $6, enable_fuzz = $7,
        new_per_day = $8, reviews_per_day = $9,
-       day_start_hour = $10, timezone = $11
+       day_start_hour = $10, timezone = $11, reminder_hour = $12
      where user_id = $1::uuid",
   )
   |> pog.parameter(pog.text(user_id))
@@ -110,6 +110,7 @@ pub fn save_settings(
   |> pog.parameter(pog.int(settings.reviews_per_day))
   |> pog.parameter(pog.int(settings.day_start_hour))
   |> pog.parameter(pog.text(settings.timezone))
+  |> pog.parameter(pog.nullable(pog.int, settings.reminder_hour))
   |> pog.execute(db)
   |> result.replace(Nil)
   |> result.map_error(database_error)
@@ -126,6 +127,7 @@ fn settings_decoder() -> decode.Decoder(Settings) {
   use reviews_per_day <- decode.field(7, decode.int)
   use day_start_hour <- decode.field(8, decode.int)
   use timezone <- decode.field(9, decode.string)
+  use reminder_hour <- decode.field(10, decode.optional(decode.int))
   decode.success(wire.Settings(
     scheduler: fsrs.Config(
       parameters:,
@@ -139,6 +141,7 @@ fn settings_decoder() -> decode.Decoder(Settings) {
     reviews_per_day:,
     day_start_hour:,
     timezone:,
+    reminder_hour:,
   ))
 }
 

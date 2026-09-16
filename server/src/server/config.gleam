@@ -38,6 +38,15 @@ pub type Config {
     /// Unset on a developer machine, where attempts run as whoever started
     /// the server.
     run_as_user: Option(String),
+    /// Resend's API key, for the daily "N due" reminder mail. Unset means
+    /// no reminders go out, and the loop that would send them never starts.
+    resend_api_key: Option(String),
+    /// The reminder's From line, e.g. `GleamDrill <reminders@example.com>`.
+    /// Resend only sends from a domain it has verified.
+    reminder_from: String,
+    /// Where the reminder's link points: the first allowed origin unless
+    /// APP_URL says otherwise.
+    app_url: String,
   )
 }
 
@@ -55,6 +64,18 @@ pub fn load() -> Result(Config, String) {
     Ok("") | Error(_) -> None
     Ok(user) -> Some(user)
   }
+  let resend_api_key = case envoy.get("RESEND_API_KEY") {
+    Ok("") | Error(_) -> None
+    Ok(key) -> Some(key)
+  }
+  let reminder_from =
+    envoy.get("REMINDER_FROM")
+    |> result.unwrap("GleamDrill <onboarding@resend.dev>")
+  let app_url = case envoy.get("APP_URL"), allowed_origins {
+    Ok(url), _ if url != "" -> url
+    _, [first, ..] -> first
+    _, [] -> "https://gleamdrill.app"
+  }
 
   // A short secret would still sign cookies, just badly. Fail loudly instead.
   case string.length(secret_key_base) < 64 {
@@ -68,6 +89,9 @@ pub fn load() -> Result(Config, String) {
         allowed_origins:,
         session_days:,
         run_as_user:,
+        resend_api_key:,
+        reminder_from:,
+        app_url:,
       ))
   }
 }

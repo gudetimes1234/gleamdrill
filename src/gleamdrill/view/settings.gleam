@@ -16,7 +16,7 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleamdrill/model.{
   type Model, type Msg, DayStartHour, DesiredRetention, ImportConfirmed,
-  NewPerDay, ReviewsPerDay, UserChangedKeymap, UserChangedSetting,
+  NewPerDay, ReminderHour, ReviewsPerDay, UserChangedKeymap, UserChangedSetting,
   UserClickedDeviceTimezone, UserClickedExport, UserClickedImport,
   UserClickedWarmCache, UserToggledLanguage,
 }
@@ -89,6 +89,13 @@ pub fn view(m: Model) -> Element(Msg) {
         ),
         timezone_row(settings.timezone),
       ],
+    ),
+
+    section(
+      "Reminders",
+      "One plain mail on the days something is due, at the hour you pick "
+        <> "in your timezone. Nothing on days with nothing due.",
+      [reminder_row(m)],
     ),
 
     section("This device", "Kept in this browser, signed in or not.", [
@@ -320,6 +327,72 @@ fn timezone_row(timezone: String) -> Element(Msg) {
       ),
     ]),
   ])
+}
+
+/// The reminder hour, as a select: off, or any hour of the day. A guest has
+/// no address, so the control is shown but disabled with the reason.
+fn reminder_row(m: Model) -> Element(Msg) {
+  let signed_in = case m.mode {
+    model.Account(_) -> True
+    model.Guest -> False
+  }
+  let current = case m.settings.reminder_hour {
+    Some(hour) -> int.to_string(hour)
+    None -> "off"
+  }
+  let option = fn(value, label) {
+    html.option(
+      [attribute.value(value), attribute.selected(value == current)],
+      label,
+    )
+  }
+  html.div([attribute.class("settings-row")], [
+    html.div([attribute.class("settings-label")], [
+      html.span([attribute.class("settings-label-text")], [
+        html.text("Daily reminder"),
+      ]),
+      html.span([attribute.class("settings-help")], [
+        html.text(case signed_in {
+          True -> "Sent to " <> user_email(m) <> "."
+          False -> "Sign in to get reminders: a guest has no address."
+        }),
+      ]),
+    ]),
+    html.select(
+      [
+        attribute.class("settings-input settings-select settings-reminder"),
+        attribute.disabled(!signed_in),
+        event.on_change(UserChangedSetting(ReminderHour, _)),
+      ],
+      [
+        option("off", "Off"),
+        ..list.map(hours, fn(hour) {
+          option(int.to_string(hour), hour_label(hour))
+        })
+      ],
+    ),
+  ])
+}
+
+const hours = [
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+  22, 23,
+]
+
+fn user_email(m: Model) -> String {
+  case m.user {
+    Some(user) -> user.email
+    None -> "your address"
+  }
+}
+
+fn hour_label(hour: Int) -> String {
+  case hour {
+    0 -> "12 am"
+    12 -> "12 pm"
+    h if h < 12 -> int.to_string(h) <> " am"
+    h -> int.to_string(h - 12) <> " pm"
+  }
 }
 
 fn keymap_row(m: Model) -> Element(Msg) {

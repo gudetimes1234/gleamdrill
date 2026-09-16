@@ -84,6 +84,9 @@ pub type Settings {
     reviews_per_day: Int,
     day_start_hour: Int,
     timezone: String,
+    /// The local hour a "N problems due" reminder mail goes out, or None
+    /// for no mail. Account-only: a guest has no address to send to.
+    reminder_hour: Option(Int),
   )
 }
 
@@ -243,6 +246,7 @@ pub fn default_settings() -> Settings {
     reviews_per_day: 100,
     day_start_hour: 4,
     timezone: "UTC",
+    reminder_hour: None,
   )
 }
 
@@ -379,6 +383,7 @@ pub fn settings_to_json(settings: Settings) -> Json {
     #("reviewsPerDay", json.int(settings.reviews_per_day)),
     #("dayStartHour", json.int(settings.day_start_hour)),
     #("timezone", json.string(settings.timezone)),
+    #("reminderHour", nullable_int(settings.reminder_hour)),
   ])
 }
 
@@ -686,6 +691,12 @@ pub fn settings_decoder() -> Decoder(Settings) {
   use reviews_per_day <- decode.field("reviewsPerDay", decode.int)
   use day_start_hour <- decode.field("dayStartHour", decode.int)
   use timezone <- decode.field("timezone", decode.string)
+  // Absent from settings saved before reminders existed: off.
+  use reminder_hour <- decode.optional_field(
+    "reminderHour",
+    None,
+    decode.optional(decode.int),
+  )
   decode.success(Settings(
     scheduler: fsrs.Config(
       parameters:,
@@ -699,6 +710,7 @@ pub fn settings_decoder() -> Decoder(Settings) {
     reviews_per_day:,
     day_start_hour:,
     timezone:,
+    reminder_hour:,
   ))
 }
 

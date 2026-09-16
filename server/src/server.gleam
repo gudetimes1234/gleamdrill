@@ -6,6 +6,7 @@ import gleam/result
 import mist
 import server/config
 import server/db
+import server/reminders
 import server/router
 import server/run_gate
 import server/web
@@ -32,6 +33,7 @@ fn start() -> Result(Nil, String) {
   // more than one instance at a time.
   use _ <- result.try(db.migrate(database))
   run_gate.init()
+  reminders.start(database, config)
 
   let context = web.Context(db: database, config: config)
   let handler = fn(request) { router.handle(request, context) }

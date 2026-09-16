@@ -12,6 +12,7 @@ import gleeunit/should
 import server/auth
 import server/config
 import server/exec
+import server/reminders
 import server/study
 import server/web
 import wire
@@ -182,6 +183,25 @@ fn authorized(value: String) -> wisp.Request {
 // and run attempts as the test's own user: config.run_as_user is None, the
 // way a developer machine runs them. The uid boundary is the container's and
 // is checked by hand there; what is checked here is that the report the
+// --- reminders --------------------------------------------------------------
+//
+// The mail itself is two pure functions; the loop around them is I/O.
+
+pub fn reminder_subject_counts_correctly_test() {
+  reminders.subject(1) |> should.equal("1 problem is due on GleamDrill")
+  reminders.subject(12) |> should.equal("12 problems are due on GleamDrill")
+}
+
+pub fn reminder_body_links_the_app_and_the_way_out_test() {
+  let text = reminders.body(3, "https://gleamdrill.example")
+  assert string.contains(text, "3 problems due today")
+  assert string.contains(text, "https://gleamdrill.example")
+  assert string.contains(text, "Settings > Reminders")
+  assert string.contains(reminders.body(1, "x"), "one problem due today")
+}
+
+// --- exec -----------------------------------------------------------------
+//
 // script prints comes back as the RunResult the app expects, in every shape.
 
 fn exec_config() -> config.Config {
@@ -193,6 +213,9 @@ fn exec_config() -> config.Config {
     allowed_origins: [],
     session_days: 1,
     run_as_user: None,
+    resend_api_key: None,
+    reminder_from: "GleamDrill <reminders@example.com>",
+    app_url: "https://gleamdrill.example",
   )
 }
 

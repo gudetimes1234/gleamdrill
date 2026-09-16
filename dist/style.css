@@ -1086,6 +1086,17 @@ gleam-editor.resizing {
     border-style: solid;
 }
 
+.settings-select {
+    width: auto;
+    text-align: left;
+    cursor: pointer;
+}
+
+.settings-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .settings-progress {
     flex: none;
     color: var(--text-secondary);

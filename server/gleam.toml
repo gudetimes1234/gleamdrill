@@ -18,6 +18,8 @@ antigone = ">= 1.1.0 and < 2.0.0"
 cors_builder = ">= 2.0.8 and < 3.0.0"
 envoy = ">= 1.0.0 and < 2.0.0"
 simplifile = ">= 2.0.0 and < 3.0.0"
+# Reminder mail goes out over Resend's HTTP API; see server/reminders.gleam.
+gleam_httpc = ">= 5.0.0 and < 6.0.0"
 
 # The scheduler is shared with the browser app; see ../fsrs.
 fsrs = { path = "../fsrs" }

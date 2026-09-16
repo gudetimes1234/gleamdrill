@@ -232,6 +232,11 @@ check "retention below 0.7 is rejected" 422 "$(status -X PUT "$B/api/settings" -
 check "an unknown timezone is rejected" 422 "$(status -X PUT "$B/api/settings" -H "$AUTH" -H "$CT" -d "$(mutate '{"timezone":"Mars/Olympus"}')")"
 check "a short parameter list is rejected" 422 "$(status -X PUT "$B/api/settings" -H "$AUTH" -H "$CT" -d "$(mutate '{"parameters":[1.0,2.0]}')")"
 check "a zero-minute learning step is rejected" 422 "$(status -X PUT "$B/api/settings" -H "$AUTH" -H "$CT" -d "$(mutate '{"learningSteps":[0,10]}')")"
+check "a reminder hour out of range is rejected" 422 "$(status -X PUT "$B/api/settings" -H "$AUTH" -H "$CT" -d "$(mutate '{"reminderHour":24}')")"
+check "a reminder hour is accepted" 200 "$(status -X PUT "$B/api/settings" -H "$AUTH" -H "$CT" -d "$(mutate '{"reminderHour":8}')")"
+check "and comes back" 8 "$(curl -s "$B/api/settings" -H "$AUTH" | j "['settings']['reminderHour']")"
+check "settings without the field leave it off" 200 "$(status -X PUT "$B/api/settings" -H "$AUTH" -H "$CT" -d "$SET")"
+check "so it reads as null" None "$(curl -s "$B/api/settings" -H "$AUTH" | j "['settings']['reminderHour']")"
 check "valid settings are accepted" 200 "$(status -X PUT "$B/api/settings" -H "$AUTH" -H "$CT" -d "$(mutate '{"newPerDay":25,"timezone":"America/New_York"}')")"
 S=$(curl -s "$B/api/state" -H "$AUTH")
 check "the new limit takes effect" 24 "$(echo "$S" | j "['today']['newRemaining']")"

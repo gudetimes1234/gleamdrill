@@ -736,6 +736,8 @@ pub type SettingField {
   ReviewsPerDay
   DayStartHour
   DesiredRetention
+  /// "off" or an hour 0-23, from the reminder select.
+  ReminderHour
 }
 
 pub type Msg {
