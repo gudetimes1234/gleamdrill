@@ -47,6 +47,24 @@ pub fn diagnostics(items: List(Diagnostic)) -> Attribute(msg) {
   )
 }
 
+/// The user's code with the reference solution's differences marked inline,
+/// read-only. Rendered by the <gleam-diff> custom element.
+pub fn diff_view(
+  doc: String,
+  original: String,
+  language_name: String,
+) -> Element(msg) {
+  element.element(
+    "gleam-diff",
+    [
+      attribute.property("doc", json.string(doc)),
+      attribute.property("original", json.string(original)),
+      attribute.attribute("language", language_name),
+    ],
+    [],
+  )
+}
+
 /// The height the user dragged the editor to, in px. `None` leaves the
 /// stylesheet in charge.
 pub fn height(px: Option(Int)) -> Attribute(msg) {

@@ -354,6 +354,12 @@ pub type Model {
     studying: Bool,
     /// The latest grade, while it can still be taken back.
     undo: Option(UndoPoint),
+    /// After a passing run the solution panel opens by itself with your
+    /// code diffed against the reference. `diff_open` is that panel, until
+    /// dismissed (reset each sitting); `diff_mode` is whether the panel
+    /// shows the diff or the plain reference, flipped with `d`.
+    diff_open: Bool,
+    diff_mode: Bool,
     /// A recall-only sitting: no editor. The prompt is read, the approach
     /// and solutions are revealed, and the grade is given from memory. Set
     /// alongside `studying`, cleared with it.
@@ -481,6 +487,8 @@ pub fn default() -> Model {
     results_collapsed: False,
     editor_height: None,
     undo: None,
+    diff_open: True,
+    diff_mode: True,
     recall: False,
     leader_armed: False,
     queue_search: "",
@@ -540,6 +548,15 @@ pub fn first_encounter(model: Model, problem: ProblemRef) -> Bool {
   case card_for(model, problem) {
     None -> True
     option.Some(state) -> state.card.memory == None
+  }
+}
+
+/// Whether the most recent run passed every case. Only a harness verdict
+/// counts: a reveal-only drill never "passes".
+pub fn run_passed(run: RunState) -> Bool {
+  case run {
+    Ran(Cases(cases), _) -> cases != [] && list.all(cases, fn(c) { c.passed })
+    _ -> False
   }
 }
 
@@ -808,6 +825,10 @@ pub type Msg {
   UserClickedRetryRuntime(String)
   UserToggledSide
   UserToggledResults
+  /// Flip the solution panel between the diff and the plain reference.
+  UserToggledDiff
+  /// Close the panel a passing run opened.
+  UserDismissedDiff
   /// Take back the latest grade and reopen that problem.
   UserClickedUndo
   UndoRecorded(UndoPoint, Result(api.UndoOutcome, ApiError))

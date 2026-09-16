@@ -1450,6 +1450,79 @@ button.results-summary:focus-visible {
     margin: 0;
 }
 
+/* Your code against the reference, after a pass. The changed lines carry the
+   success tint (they are yours, and they worked); what the reference does
+   instead is struck through in the warning tint. */
+.answer-toggle {
+    margin-left: auto;
+    padding: 3px 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.answer-toggle:hover {
+    color: var(--text-primary);
+    border-color: var(--accent);
+}
+
+.answer-toggle + .answer-close {
+    margin-left: 8px;
+}
+
+/* The panel a pass opened has no run-bar toggle of its own, so its close
+   button shows at every width. */
+.answer-content.auto .answer-close {
+    display: inline-flex;
+    align-items: center;
+}
+
+.answer-diff-key {
+    margin: 0 0 8px;
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-style: italic;
+}
+
+gleam-diff {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+gleam-diff .cm-editor {
+    font-size: 13px;
+}
+
+gleam-diff .cm-changedLine,
+gleam-diff .cm-inlineChangedLine {
+    background: color-mix(in srgb, var(--success) 10%, transparent);
+}
+
+gleam-diff .cm-changedText {
+    background: linear-gradient(
+        color-mix(in srgb, var(--success) 55%, transparent),
+        color-mix(in srgb, var(--success) 55%, transparent)
+    ) bottom / 100% 2px no-repeat;
+}
+
+gleam-diff .cm-deletedChunk {
+    background: color-mix(in srgb, var(--warning) 10%, transparent);
+    color: var(--text-secondary);
+}
+
+gleam-diff .cm-deletedChunk .cm-deletedText {
+    background: none;
+    text-decoration: line-through;
+    text-decoration-color: color-mix(in srgb, var(--warning) 70%, transparent);
+}
+
 /* The overlay's dismiss button: narrow screens only (see the tablet block).
    On a desktop the panel sits beside the editor and the run-bar button is the
    toggle, so there is nothing to close. */
@@ -1508,6 +1581,10 @@ button.results-summary:focus-visible {
        short the body scrolls, and the summary line never leaves the screen. */
     .drill-main .results {
         flex: 0 1 auto;
+    }
+
+    /* Only a box with a body needs a floor; a bare verdict is one line. */
+    .drill-main .results:has(.results-body) {
         min-height: 96px;
     }
 

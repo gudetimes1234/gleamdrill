@@ -39,6 +39,7 @@ import {
   indentOnInput,
 } from "@codemirror/language";
 import { setDiagnostics } from "@codemirror/lint";
+import { unifiedMergeView } from "@codemirror/merge";
 import {
   closeBrackets,
   closeBracketsKeymap,
@@ -1120,8 +1121,92 @@ class GleamEditor extends HTMLElement {
   }
 }
 
+// The <gleam-diff> custom element: the user's code with the reference
+// solution's differences marked inline, read-only. Shown beside the editor
+// after a passing run, so what the reference does differently is one
+// glance away rather than a side-by-side read.
+//
+// Interface, driven from editor.gleam:
+//   property "doc"       — the user's code (what is shown)
+//   property "original"  — the reference solution (what it is compared to)
+//   attribute "language" — highlighting mode, as for <gleam-editor>
+class GleamDiff extends HTMLElement {
+  static observedAttributes = ["language"];
+
+  #view = null;
+  #doc = "";
+  #original = "";
+
+  set doc(value) {
+    this.#doc = value ?? "";
+    this.#rebuild();
+  }
+
+  get doc() {
+    return this.#doc;
+  }
+
+  set original(value) {
+    this.#original = value ?? "";
+    this.#rebuild();
+  }
+
+  get original() {
+    return this.#original;
+  }
+
+  attributeChangedCallback() {
+    this.#rebuild();
+  }
+
+  connectedCallback() {
+    this.#rebuild();
+  }
+
+  disconnectedCallback() {
+    this.#view?.destroy();
+    this.#view = null;
+  }
+
+  // A new state each time rather than a transaction: the diff is a snapshot
+  // of two texts, and both change together when the problem does.
+  #rebuild() {
+    if (!this.isConnected) return;
+    const state = EditorState.create({
+      doc: this.#doc,
+      extensions: [
+        EditorView.editable.of(false),
+        EditorState.readOnly.of(true),
+        lineNumbers(),
+        EditorView.lineWrapping,
+        languageExtension(this.getAttribute("language") ?? "gleam"),
+        syntaxHighlighting(highlight),
+        theme,
+        unifiedMergeView({
+          original: this.#original,
+          mergeControls: false,
+          highlightChanges: true,
+          gutter: false,
+          syntaxHighlightDeletions: true,
+          // Everything is shown: the code is short and the point is to read
+          // it whole, not to hunt for the folds.
+          collapseUnchanged: undefined,
+        }),
+      ],
+    });
+    if (this.#view) {
+      this.#view.setState(state);
+    } else {
+      this.#view = new EditorView({ state, parent: this });
+    }
+  }
+}
+
 export function register() {
   if (!customElements.get("gleam-editor")) {
     customElements.define("gleam-editor", GleamEditor);
+  }
+  if (!customElements.get("gleam-diff")) {
+    customElements.define("gleam-diff", GleamDiff);
   }
 }

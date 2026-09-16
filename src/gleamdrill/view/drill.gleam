@@ -12,9 +12,9 @@ import gleamdrill/model.{
   Ran, RunIdle, Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded,
   RuntimeReady, SubmittingGrade, TimedOut, UserChangedKeymap,
   UserClickedExitDrill, UserClickedNext, UserClickedRetryRuntime, UserClickedRun,
-  UserClickedStopRun, UserClickedUndo, UserGraded, UserPickedChoice,
-  UserRevealedHint, UserRevealedRecall, UserSubmittedAnswer, UserToggledResults,
-  UserToggledSide, UserToggledSolution,
+  UserClickedStopRun, UserClickedUndo, UserDismissedDiff, UserGraded,
+  UserPickedChoice, UserRevealedHint, UserRevealedRecall, UserSubmittedAnswer,
+  UserToggledDiff, UserToggledResults, UserToggledSide, UserToggledSolution,
 }
 import gleamdrill/problem.{
   type Problem, type ProblemRef, type Quiz, type Solution,
@@ -936,10 +936,33 @@ fn results_only(m: Model, current: Problem) -> List(Element(Msg)) {
 /// The revealed solution, rendered beside the editor so code and answer can be
 /// compared line by line rather than by scrolling.
 fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
-  case revealed(m, current) {
-    Ok(#(index, solution)) -> [
+  // A passing run opens the panel by itself, as a diff of your code against
+  // the first solution. That is not a reveal -- the answer was already
+  // given -- so `revealed_solution` is left alone and the review's
+  // `revealed` stays honest.
+  let passed =
+    model.run_passed(m.run)
+    && string.trim(m.draft) != ""
+    && current.solutions != []
+  let diffing = passed && m.diff_mode
+  let shown = case revealed(m, current), passed && m.diff_open {
+    Ok(pair), _ -> Ok(#(True, pair))
+    Error(Nil), True ->
+      closest_solution(m.draft, current.solutions)
+      |> result.map(fn(pair) { #(False, pair) })
+    Error(Nil), False -> Error(Nil)
+  }
+  case shown {
+    Ok(#(by_choice, #(index, solution))) -> [
       html.div(
-        [attribute.class("answer-content answer-side")],
+        [
+          attribute.classes([
+            #("answer-content", True),
+            #("answer-side", True),
+            #("diffing", diffing),
+            #("auto", !by_choice),
+          ]),
+        ],
         list.flatten([
           [
             html.div(
@@ -947,7 +970,10 @@ fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
               list.flatten([
                 [
                   html.div([attribute.class("answer-label")], [
-                    html.text(solution.label),
+                    html.text(case diffing {
+                      True -> "Yours vs " <> solution.label
+                      False -> solution.label
+                    }),
                   ]),
                 ],
                 // Annotated content carries a Big-O line; older content shows
@@ -960,6 +986,24 @@ fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
                     ]),
                   ]
                 },
+                case passed {
+                  True -> [
+                    html.button(
+                      [
+                        attribute.class("answer-toggle"),
+                        attribute.type_("button"),
+                        event.on_click(UserToggledDiff),
+                      ],
+                      [
+                        html.text(case diffing {
+                          True -> "Show code"
+                          False -> "Show diff"
+                        }),
+                      ],
+                    ),
+                  ]
+                  False -> []
+                },
                 // On a narrow screen the panel overlays the editor, and the
                 // run bar's toggle may be off-screen; the stylesheet shows
                 // this only there.
@@ -969,7 +1013,10 @@ fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
                       attribute.class("answer-close"),
                       attribute.type_("button"),
                       attribute.attribute("aria-label", "Hide solution"),
-                      event.on_click(UserToggledSolution(index)),
+                      event.on_click(case by_choice {
+                        True -> UserToggledSolution(index)
+                        False -> UserDismissedDiff
+                      }),
                     ],
                     [html.text("\u{00d7}")],
                   ),
@@ -985,12 +1032,56 @@ fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
               html.div([attribute.class("answer-note")], [html.text(note)]),
             ]
           },
-          [html.pre([], [html.code([], [html.text(solution.code)])])],
+          case diffing {
+            True -> [
+              html.p([attribute.class("answer-diff-key")], [
+                html.text(
+                  "Your code, with what the reference does instead struck through.",
+                ),
+              ]),
+              editor.diff_view(
+                m.draft,
+                solution.code,
+                problem.language_slug(current.language),
+              ),
+            ]
+            False -> [html.pre([], [html.code([], [html.text(solution.code)])])]
+          },
         ]),
       ),
     ]
     Error(Nil) -> []
   }
+}
+
+/// The reference most like what was typed: the one sharing the most lines
+/// with it, ties to the first. Diffing a set-based solve against the brute
+/// force would mark every line; against the hash-set reference it marks
+/// only what actually differs.
+fn closest_solution(
+  draft: String,
+  solutions: List(Solution),
+) -> Result(#(Int, Solution), Nil) {
+  let lines = fn(code) {
+    code
+    |> string.split("\n")
+    |> list.map(string.trim)
+    |> list.filter(fn(line) { line != "" })
+  }
+  let typed = lines(draft)
+  solutions
+  |> list.index_map(fn(solution, index) {
+    let theirs = lines(solution.code)
+    let shared = list.count(typed, fn(line) { list.contains(theirs, line) })
+    #(shared, index, solution)
+  })
+  |> list.fold(Error(Nil), fn(best, candidate) {
+    case best {
+      Ok(#(score, _, _)) if score >= candidate.0 -> best
+      _ -> Ok(candidate)
+    }
+  })
+  |> result.map(fn(found) { #(found.1, found.2) })
 }
 
 fn revealed(m: Model, current: Problem) -> Result(#(Int, Solution), Nil) {

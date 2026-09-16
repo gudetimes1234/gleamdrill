@@ -46,12 +46,12 @@ import gleamdrill/model.{
   UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
   UserClickedStopRun, UserClickedStudy, UserClickedSubcategory, UserClickedTour,
   UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
-  UserClickedUndo, UserClosedDetail, UserDismissedMergeOffer,
+  UserClickedUndo, UserClosedDetail, UserDismissedDiff, UserDismissedMergeOffer,
   UserDismissedNotice, UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded,
   UserOpenedDetail, UserOpenedLesson, UserPickedChoice, UserPickedQueueLanguage,
   UserRemovedAllShown, UserResetLesson, UserRevealedHint, UserRevealedRecall,
   UserSearched, UserSearchedQueue, UserSubmittedAnswer, UserSubmittedAuth,
-  UserToggledAuthMode, UserToggledLanguage, UserToggledProblem,
+  UserToggledAuthMode, UserToggledDiff, UserToggledLanguage, UserToggledProblem,
   UserToggledQueued, UserToggledResults, UserToggledSide, UserToggledSolution,
   UserToggledSuspend,
 }
@@ -1281,6 +1281,10 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.none(),
     )
 
+    UserToggledDiff -> #(Model(..m, diff_mode: !m.diff_mode), effect.none())
+
+    UserDismissedDiff -> #(Model(..m, diff_open: False), effect.none())
+
     UserClickedUndo ->
       case m.undo, m.grading {
         // Not while a grade is still being saved: the point would be stale.
@@ -1410,6 +1414,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               revealed_solution: None,
               hints_revealed: model.opening_hints(m, first),
               run: RunIdle,
+              diff_open: True,
               // Without this a reveal-only drill -- Elixir has no harness at
               // all -- would sit forever on "run the tests to grade this" with
               // no tests to run, and could never be scheduled.
@@ -2274,6 +2279,7 @@ fn open_first(m: Model, queue: List(ProblemRef)) -> Model {
         revealed_solution: None,
         hints_revealed: model.opening_hints(m, first),
         run: RunIdle,
+        diff_open: True,
         grading: initial_grading(m, first),
         opened_at_ms: browser.now_ms(),
         exam_answers: [],

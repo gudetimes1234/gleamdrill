@@ -30,7 +30,7 @@ import gleamdrill/model.{
   UserClickedTourNext, UserClickedTourPrev, UserClickedUndo, UserClosedDetail,
   UserFilteredQueue, UserGraded, UserPickedChoice, UserRemovedAllShown,
   UserRevealedHint, UserRevealedRecall, UserSearched, UserSubmittedAnswer,
-  UserToggledResults, UserToggledSide, UserToggledSolution,
+  UserToggledDiff, UserToggledResults, UserToggledSide, UserToggledSolution,
 }
 import gleamdrill/problem
 import gleamdrill/problems
@@ -426,6 +426,7 @@ fn code_bindings(m: Model) -> List(Binding) {
       ),
     ],
     results_binding(m),
+    diff_binding(m),
     [
       Binding(["n"], "next", "Next problem", UserClickedNext),
       Binding(["Escape"], "exit", "Exit the sitting", UserClickedExitDrill),
@@ -455,6 +456,21 @@ fn quiz_bindings(m: Model) -> List(Binding) {
           help_binding(),
         ],
       ])
+  }
+}
+
+/// Only after a passing run, when there is a diff to flip to.
+fn diff_binding(m: Model) -> List(Binding) {
+  case model.run_passed(m.run) {
+    True -> [
+      Binding(
+        ["d"],
+        "diff",
+        "Flip the solution between the diff and the code",
+        UserToggledDiff,
+      ),
+    ]
+    False -> []
   }
 }
 

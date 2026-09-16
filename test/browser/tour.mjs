@@ -712,6 +712,28 @@ check("stdout lands in its own pane",
   (await page.textContent(".output-pane").catch(() => "")).includes("checking"));
 await capture("passed", "Passing run: green cases, all four grades, stdout in the Output pane");
 
+// A pass opens the solution panel by itself, as your code diffed against
+// the reference it most resembles. It is not a reveal: the answer was
+// already given. `d` flips it to the plain reference and back; the panel
+// has its own close button at every width.
+await page.waitForSelector(".answer-content.auto gleam-diff", { timeout: 5000 });
+check("a pass shows your code diffed against the reference",
+  (await page.$$("gleam-diff .cm-deletedChunk, gleam-diff .cm-changedLine")).length > 0);
+check("against the reference most like it",
+  (await page.textContent(".answer-content.auto .answer-label")).includes("Yours vs"));
+await capture("diff", "Passing run: your code with the reference's differences struck through");
+await page.keyboard.press("d");
+exercises("UserToggledDiff");
+await page.waitForTimeout(300);
+check("d flips the panel to the plain reference",
+  (await page.$("gleam-diff")) === null && (await page.$(".answer-content.auto pre")) !== null);
+await page.keyboard.press("d");
+await page.waitForTimeout(300);
+await page.click(".answer-content.auto .answer-close");
+exercises("UserDismissedDiff");
+await page.waitForTimeout(300);
+check("and its close button puts it away", (await page.$(".answer-content")) === null);
+
 await page.click(".solution-button");
 await page.waitForTimeout(500);
 check("revealing on a first encounter keeps the choice",
@@ -1960,7 +1982,7 @@ const declared = [
   "UserClickedRun", "UserClickedStopRun", "UserClickedRetryRuntime",
   "UserToggledSide", "UserToggledResults", "UserToggledLanguage",
   "UserToggledSuspend", "UserClickedRecall", "UserRevealedRecall",
-  "UserClickedUndo",
+  "UserClickedUndo", "UserToggledDiff", "UserDismissedDiff",
   "MenuSuspendedAtCursor", "UserClickedQueue", "UserSearchedQueue",
   "UserFilteredQueue", "UserPickedQueueLanguage",
   "UserToggledQueued", "UserAddedAllShown", "UserRemovedAllShown",
