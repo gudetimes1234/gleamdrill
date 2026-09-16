@@ -33,7 +33,7 @@ pub const timeout_seconds = 8
 
 /// Where attempts are staged. World-readable, so the runner user can read
 /// them; per-run directories are deleted the moment the run reports.
-const scratch_root = "/tmp/algodrill-run"
+const scratch_root = "/tmp/gleamdrill-run"
 
 /// The compiler's stderr, appended to the output, is capped like stdout.
 const noise_cap = 4000

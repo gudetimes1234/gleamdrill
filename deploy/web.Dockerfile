@@ -1,7 +1,7 @@
 # The static half of the app, fronted by Caddy. Build context is the REPOSITORY
 # ROOT, same as server/Dockerfile:
 #
-#   podman build -f deploy/web.Dockerfile -t algodrill-web .
+#   podman build -f deploy/web.Dockerfile -t gleamdrill-web .
 #
 # `dist/` is committed and needs no build step to serve, which is how this has
 # always been deployed. The tradeoff is that a stale `dist/` ships silently, so

@@ -1,4 +1,4 @@
-name = "algodrill"
+name = "gleamdrill"
 version = "2.0.0"
 target = "javascript"
 
@@ -31,17 +31,17 @@ lustre_dev_tools = ">= 2.3.6 and < 3.0.0"
 minify = true
 
 [tools.lustre.html]
-title = "AlgoDrill - NeetCode Practice"
+title = "GleamDrill - NeetCode Practice"
 stylesheets = [{ href = "/style.css" }]
 
 # lustre_dev_tools folds each table here into <meta>/<link> attributes verbatim,
 # so the head is configured from here rather than from an HTML template.
 # Everything referenced lives in assets/, which is copied wholesale into dist/.
 #
-# There is deliberately no `algodrill-api` meta tag: the app defaults to its own
+# There is deliberately no `gleamdrill-api` meta tag: the app defaults to its own
 # origin and reaches the backend through the reverse proxy in deploy/Caddyfile,
 # so nothing about where it is deployed is baked into the artifact. Add the tag
-# back only for a split-origin deployment. See src/algodrill/ffi.mjs apiBase().
+# back only for a split-origin deployment. See src/gleamdrill/ffi.mjs apiBase().
 
 [[tools.lustre.html.meta]]
 name = "description"

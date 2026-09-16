@@ -1,6 +1,6 @@
 name = "wire"
 version = "1.0.0"
-description = "The AlgoDrill client/server wire format: one encoder and one decoder per payload."
+description = "The GleamDrill client/server wire format: one encoder and one decoder per payload."
 
 # Deliberately no `target` key, for the same reason as ../fsrs: this package is
 # compiled to Erlang by the server and to JavaScript by the app, from the same

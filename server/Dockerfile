@@ -4,7 +4,7 @@
 # a path dependency at ../fsrs, shared verbatim with the browser app, so both
 # directories have to be present with their relative layout intact.
 #
-#   podman build -f server/Dockerfile -t algodrill-api .
+#   podman build -f server/Dockerfile -t gleamdrill-api .
 #
 # The static half of the app is deploy/web.Dockerfile; compose.yaml wires the
 # two together with Postgres.

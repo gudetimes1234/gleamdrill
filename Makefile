@@ -40,7 +40,7 @@ build: vendor content worker
 deploy: build
 	railway up
 
-# Regenerates src/algodrill/problems/embedded*.gleam from the drill sources,
+# Regenerates src/gleamdrill/problems/embedded*.gleam from the drill sources,
 # plus the two generated verifiers `verify` runs.
 #
 # The generator emits unformatted source, so it is formatted here rather than
@@ -52,12 +52,12 @@ content:
 	cd drills/elixir && elixir surface.exs
 	cd drills && gleam run -m generate
 	gleam format \
-	  src/algodrill/problems/embedded.gleam \
-	  src/algodrill/problems/embedded_python.gleam \
-	  src/algodrill/problems/embedded_ts.gleam \
-	  src/algodrill/problems/embedded_elixir.gleam \
-	  src/algodrill/problems/embedded_tour.gleam \
-	  src/algodrill/problems/approaches.gleam
+	  src/gleamdrill/problems/embedded.gleam \
+	  src/gleamdrill/problems/embedded_python.gleam \
+	  src/gleamdrill/problems/embedded_ts.gleam \
+	  src/gleamdrill/problems/embedded_elixir.gleam \
+	  src/gleamdrill/problems/embedded_tour.gleam \
+	  src/gleamdrill/problems/approaches.gleam
 
 # Runs every solution variant — primaries and alternates, all four languages —
 # against its harness, then the scheduler's conformance suite. A new alternate
@@ -166,7 +166,7 @@ e2e:
 # Set SHOTS to choose where the images land.
 # The report (test/browser/report.mjs) is always built, even after a failing
 # tour: a red report is the thing worth looking at. Open $SHOTS/index.html.
-SHOTS ?= /tmp/algodrill-tour
+SHOTS ?= /tmp/gleamdrill-tour
 export SHOTS
 tour:
 	bun test/browser/tour.mjs; status=$$?; \
@@ -209,13 +209,13 @@ check-format:
 # it runs in a classic worker (Brython requires importScripts).
 worker:
 	gleam build --target javascript
-	bun build build/dev/javascript/algodrill/algodrill/worker.mjs \
+	bun build build/dev/javascript/gleamdrill/gleamdrill/worker.mjs \
 		--format=esm --minify --outfile=assets/worker-main.js
-	printf 'import { main } from "./algodrill/py_worker.mjs";\nmain();\n' \
-		> build/dev/javascript/algodrill/py-worker-entry.mjs
-	bun build build/dev/javascript/algodrill/py-worker-entry.mjs \
+	printf 'import { main } from "./gleamdrill/py_worker.mjs";\nmain();\n' \
+		> build/dev/javascript/gleamdrill/py-worker-entry.mjs
+	bun build build/dev/javascript/gleamdrill/py-worker-entry.mjs \
 		--format=iife --minify --outfile=assets/python-worker-main.js
-	bun build build/dev/javascript/algodrill/algodrill/ts_worker.mjs \
+	bun build build/dev/javascript/gleamdrill/gleamdrill/ts_worker.mjs \
 		--format=esm --minify --outfile=assets/ts-worker-main.js
 
 # Downloads the browser build of the Gleam compiler and assembles everything the

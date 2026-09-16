@@ -1,6 +1,6 @@
 # The front door. Serves the built app and proxies the API, so the browser only
 # ever talks to one origin: no CORS preflight, and no backend URL baked into the
-# artifact. See `apiBase()` in src/algodrill/ffi.mjs, which falls back to
+# artifact. See `apiBase()` in src/gleamdrill/ffi.mjs, which falls back to
 # `location.origin` precisely because of this.
 #
 # Both knobs are env-driven so one file covers every deployment:

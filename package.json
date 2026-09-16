@@ -1,5 +1,5 @@
 {
-  "name": "algodrill",
+  "name": "gleamdrill",
   "private": true,
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.3",

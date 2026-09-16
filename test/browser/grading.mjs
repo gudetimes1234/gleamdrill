@@ -213,7 +213,7 @@ await page.click("text=Sign out");
 await page.waitForSelector(".guest-strip", { timeout: 10000 });
 await page.evaluate(() => {
   const longAgo = Math.floor(Date.now() / 1000) - 10 * 86400;
-  localStorage.setItem("algoDrill.guest.cards.v1", JSON.stringify([{
+  localStorage.setItem("gleamDrill.guest.cards.v1", JSON.stringify([{
     category: "NeetCode 150", subcategory: "Arrays & Hashing",
     title: "Contains Duplicate",
     state: 2, step: null, stability: 30, difficulty: 5,

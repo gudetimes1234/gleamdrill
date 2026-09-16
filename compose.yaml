@@ -12,13 +12,13 @@ services:
   db:
     image: docker.io/library/postgres:17-alpine
     environment:
-      POSTGRES_USER: algodrill
-      POSTGRES_PASSWORD: algodrill
-      POSTGRES_DB: algodrill
+      POSTGRES_USER: gleamdrill
+      POSTGRES_PASSWORD: gleamdrill
+      POSTGRES_DB: gleamdrill
     volumes:
-      - algodrill-db:/var/lib/postgresql/data
+      - gleamdrill-db:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U algodrill -d algodrill"]
+      test: ["CMD-SHELL", "pg_isready -U gleamdrill -d gleamdrill"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -28,7 +28,7 @@ services:
       context: .
       dockerfile: server/Dockerfile
     environment:
-      DATABASE_URL: postgres://algodrill:algodrill@db:5432/algodrill
+      DATABASE_URL: postgres://gleamdrill:gleamdrill@db:5432/gleamdrill
       # 64 characters minimum: the server halts rather than start with a weak
       # one. See server/src/server/config.gleam.
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:?set SECRET_KEY_BASE in .env, 64+ chars}
@@ -60,4 +60,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  algodrill-db:
+  gleamdrill-db:

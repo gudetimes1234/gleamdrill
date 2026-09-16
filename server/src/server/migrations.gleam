@@ -3,7 +3,7 @@
 //// A compiled OTP release ships no source tree, so reading migrations off
 //// disk at boot would mean shipping and locating a `priv` directory.
 //// Embedding removes that failure mode, and matches how the rest of this repo
-//// handles content (see `src/algodrill/problems/embedded.gleam`).
+//// handles content (see `src/gleamdrill/problems/embedded.gleam`).
 ////
 //// Each migration is a LIST of statements, not one blob: pog talks Postgres'
 //// extended protocol, which rejects multiple statements in a single query.

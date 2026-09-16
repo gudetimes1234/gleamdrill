@@ -1,4 +1,4 @@
-# AlgoDrill
+# GleamDrill
 
 Spaced-repetition drilling for algorithm problems, with **live in-browser
 checking in three languages**: drill what the scheduler says is due, type each
@@ -149,7 +149,7 @@ All eighteen NeetCode categories are in, in NeetCode's own order: Arrays &
 Hashing, Two Pointers, Sliding Window, Stack, Binary Search, Linked List, Trees,
 Tries, Heap / Priority Queue, Backtracking, Graphs, Advanced Graphs, 1-D Dynamic
 Programming, 2-D Dynamic Programming, Greedy, Intervals, Math & Geometry and Bit
-Manipulation. `src/algodrill/problems/catalog.gleam` is the one ordered listing —
+Manipulation. `src/gleamdrill/problems/catalog.gleam` is the one ordered listing —
 one line per problem, not one per problem per language — and each language
 builds its view of it, skipping any drill it has no source for.
 
@@ -331,7 +331,7 @@ Needs Postgres 13 or later. Copy `server/.env.example` to `server/.env`, fill it
 in, then:
 
 ```sh
-createdb algodrill_dev
+createdb gleamdrill_dev
 make dev-api           # migrates at boot, then listens (server-dev is an alias)
 make server-smoke      # 99 checks against it
 ```
@@ -362,8 +362,8 @@ actually used rather than the whole 278M tree.
 **One origin, no CORS.** Caddy serves `dist/` and reverse-proxies `/api/*` to
 the backend (`deploy/Caddyfile`), so the browser only ever talks to a single
 host. Nothing about where the app is deployed is baked into the artifact:
-`apiBase()` in `src/algodrill/ffi.mjs` defaults to the page's own origin. A
-`<meta name="algodrill-api">` tag still overrides that for a split-origin
+`apiBase()` in `src/gleamdrill/ffi.mjs` defaults to the page's own origin. A
+`<meta name="gleamdrill-api">` tag still overrides that for a split-origin
 deployment, but none is set. The two development ports are the exception, and
 are named explicitly: `:1234` and `:4173` always talk to `127.0.0.1:1637`, so a
 dev session can never post reviews to production.
@@ -434,7 +434,7 @@ conflict.
 
 ## Support
 
-AlgoDrill is free, open source, and has no account wall — the scheduler runs
+GleamDrill is free, open source, and has no account wall — the scheduler runs
 locally whether or not you ever sign up. What money pays for is the part that
 cannot be free: the server and database behind accounts and cross-device sync,
 and the time it takes to keep adding problems in every language.

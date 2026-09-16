@@ -23,7 +23,7 @@ import { join } from "node:path";
 
 const APP = process.env.APP ?? "http://localhost:4173";
 const API = process.env.API ?? "http://127.0.0.1:1637";
-const SHOTS = process.env.SHOTS ?? join(tmpdir(), "algodrill-tour");
+const SHOTS = process.env.SHOTS ?? join(tmpdir(), "gleamdrill-tour");
 const PASSWORD = "correct-horse-battery";
 
 mkdirSync(SHOTS, { recursive: true });
@@ -239,7 +239,7 @@ const countServerCards = async () =>
       headers: { authorization: "Bearer " + token },
     });
     return (await r.json()).cards.length;
-  }, await page.evaluate(() => localStorage.getItem("algoDrill.token")));
+  }, await page.evaluate(() => localStorage.getItem("gleamDrill.token")));
 
 const gradeWhatever = async () => {
   // Selector-based click, resolved at action time: a banner appearing (the
@@ -398,7 +398,7 @@ exercises("UserClickedRetrySync");
 // through, not a dead card. Fake a token so boot goes to the server, fail
 // that request, then let the retry succeed -- it will come back 401 for the
 // fake token, which drops to guest, which is the app again.
-await page.evaluate(() => localStorage.setItem("algoDrill.token", "not-a-real-token"));
+await page.evaluate(() => localStorage.setItem("gleamDrill.token", "not-a-real-token"));
 await page.route("**/api/state", (route) => route.abort("failed"));
 await page.goto(APP, { waitUntil: "domcontentloaded" });
 await page.waitForSelector('button:text-is("Try again")', { timeout: 20000 });
@@ -409,7 +409,7 @@ await page.unroute("**/api/state");
 await page.click('button:text-is("Try again")');
 await page.waitForSelector(".study-screen, .picker-screen, .queue-screen", { timeout: 20000 });
 check("trying again gets back into the app", true);
-await page.evaluate(() => localStorage.removeItem("algoDrill.token"));
+await page.evaluate(() => localStorage.removeItem("gleamDrill.token"));
 
 // ---------------------------------------------------------------- act 3
 act = "03-browsing";
@@ -723,7 +723,7 @@ await page.waitForTimeout(800);
 // serves a later review.
 await page.evaluate(() => {
   const longAgo = Math.floor(Date.now() / 1000) - 10 * 86400;
-  localStorage.setItem("algoDrill.guest.cards.v1", JSON.stringify([{
+  localStorage.setItem("gleamDrill.guest.cards.v1", JSON.stringify([{
     category: "NeetCode 150", subcategory: "Arrays & Hashing",
     title: "Contains Duplicate",
     state: 2, step: null, stability: 30, difficulty: 5,
@@ -1062,7 +1062,7 @@ check("settings opens", await page.isVisible(".settings-screen"));
 check("both stores are represented",
   (await page.$$(".settings-section")).length === 3);
 const beforeSave = await page.evaluate(
-  () => localStorage.getItem("algoDrill.guest.settings.v1"));
+  () => localStorage.getItem("gleamDrill.guest.settings.v1"));
 check("nothing is written before an edit", beforeSave === null);
 await capture("settings", "Settings: account data and device preferences, labelled");
 
@@ -1071,7 +1071,7 @@ await dailyInputs[0].fill("3");
 await dailyInputs[0].press("Enter");
 await page.waitForTimeout(300);
 const savedSettings = await page.evaluate(
-  () => JSON.parse(localStorage.getItem("algoDrill.guest.settings.v1") ?? "null"));
+  () => JSON.parse(localStorage.getItem("gleamDrill.guest.settings.v1") ?? "null"));
 check("editing persists for a guest", savedSettings?.newPerDay === 3,
   JSON.stringify(savedSettings));
 
@@ -1079,14 +1079,14 @@ await dailyInputs[0].fill("9999");
 await dailyInputs[0].press("Enter");
 await page.waitForTimeout(300);
 const clamped = await page.evaluate(
-  () => JSON.parse(localStorage.getItem("algoDrill.guest.settings.v1") ?? "null"));
+  () => JSON.parse(localStorage.getItem("gleamDrill.guest.settings.v1") ?? "null"));
 check("out-of-range clamps to the server's own bound", clamped?.newPerDay === 100,
   String(clamped?.newPerDay));
 
 await page.click(".settings-timezone .btn-secondary");
 await page.waitForTimeout(300);
 const zoned = await page.evaluate(
-  () => JSON.parse(localStorage.getItem("algoDrill.guest.settings.v1") ?? "null"));
+  () => JSON.parse(localStorage.getItem("gleamDrill.guest.settings.v1") ?? "null"));
 check("the timezone button adopts this device's zone",
   typeof zoned?.timezone === "string" && zoned.timezone !== "UTC", zoned?.timezone);
 
@@ -1097,7 +1097,7 @@ await page.click('.settings-screen .keymap-option:text-is("Vim")');
 await page.waitForTimeout(200);
 check("device preferences save from here too",
   (await page.evaluate(() => JSON.parse(
-    localStorage.getItem("algoDrill.prefs.v1") ?? "{}"))).editorKeymap === "vim");
+    localStorage.getItem("gleamDrill.prefs.v1") ?? "{}"))).editorKeymap === "vim");
 
 await page.keyboard.press("Escape");
 await page.waitForSelector(".study-screen", { timeout: 10000 });
@@ -1408,7 +1408,7 @@ exercises("UserDismissedUpgradePrompt", "UserClickedMergeGuest");
 // ten problems. Dated into the past on purpose: ten cards introduced *today*
 // would exhaust the daily new-card budget and correctly disable Study now.
 await page.evaluate(() => {
-  const cards = JSON.parse(localStorage.getItem("algoDrill.guest.cards.v1") ?? "[]");
+  const cards = JSON.parse(localStorage.getItem("gleamDrill.guest.cards.v1") ?? "[]");
   const longAgo = Math.floor(Date.now() / 1000) - 10 * 86400;
   for (let i = 0; i < 12; i++) {
     cards.push({
@@ -1422,7 +1422,7 @@ await page.evaluate(() => {
       reps: 1, lapses: 0, suspended: false,
     });
   }
-  localStorage.setItem("algoDrill.guest.cards.v1", JSON.stringify(cards));
+  localStorage.setItem("gleamDrill.guest.cards.v1", JSON.stringify(cards));
 });
 await goHome();
 check("the upgrade prompt appears once there is something to lose",
@@ -1439,7 +1439,7 @@ check("and stays dismissed across a reload",
 // Counted before signing up: the upgrade clears the guest store, and the
 // check below needs to know how much there was to carry.
 const guestCards = await page.evaluate(() =>
-  JSON.parse(localStorage.getItem("algoDrill.guest.cards.v1") ?? "[]").length);
+  JSON.parse(localStorage.getItem("gleamDrill.guest.cards.v1") ?? "[]").length);
 const upgraded = `tour-upgrade-${Date.now()}@example.com`;
 await page.click("text=Save it to an account");
 await page.waitForSelector(".auth-card", { timeout: 10000 });
@@ -1471,7 +1471,7 @@ const serverCards = await page.evaluate(async (token) => {
     headers: { authorization: "Bearer " + token },
   });
   return (await r.json()).cards.length;
-}, await page.evaluate(() => localStorage.getItem("algoDrill.token")));
+}, await page.evaluate(() => localStorage.getItem("gleamDrill.token")));
 // Against what the guest actually held rather than a fixed number: the queue
 // is chosen now, so how many cards a guest has is a property of the tour's
 // own clicking, and the invariant is that all of them travel.
@@ -1546,7 +1546,7 @@ if (offered) {
   // already had, and the server keeps the existing card. Clearing the local
   // copy is what proves the merge ran to completion.
   const leftover = await page.evaluate(() =>
-    localStorage.getItem("algoDrill.guest.cards.v1"));
+    localStorage.getItem("gleamDrill.guest.cards.v1"));
   check("and clears the local copy",
     leftover === null || JSON.parse(leftover).length === 0,
     String(leftover).slice(0, 40));

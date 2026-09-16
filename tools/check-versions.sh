@@ -36,13 +36,13 @@ expect() {
 echo "Gleam $gleam_version (from Makefile GLEAM_VERSION)"
 expect .github/workflows/ci.yml      "gleam-version: \"$gleam_version\""        "ci.yml setup-beam"
 expect server/Dockerfile             "gleam:v$gleam_version-elixir-alpine"      "server/Dockerfile images"
-expect src/algodrill/runner.gleam    "pub const gleam_version = \"$gleam_version\"" "runner.gleam gleam_version"
-expect src/algodrill/worker.gleam    "const default_version = \"$gleam_version\""   "worker.gleam default_version"
+expect src/gleamdrill/runner.gleam    "pub const gleam_version = \"$gleam_version\"" "runner.gleam gleam_version"
+expect src/gleamdrill/worker.gleam    "const default_version = \"$gleam_version\""   "worker.gleam default_version"
 expect drills/src/bundle_stdlib.gleam "const runtime_version = \"$gleam_version\""  "bundle_stdlib.gleam"
 
 echo "Brython $brython_version (from Makefile BRYTHON_VERSION)"
 expect package.json                  "\"brython\": \"$brython_version\""        "package.json dependency"
-expect src/algodrill/runner.gleam    "pub const python_version = \"$brython_version\"" "runner.gleam python_version"
+expect src/gleamdrill/runner.gleam    "pub const python_version = \"$brython_version\"" "runner.gleam python_version"
 
 echo "Bun $bun_version (from Makefile BUN_VERSION)"
 expect .github/workflows/ci.yml "bun-version: \"$bun_version\"" "ci.yml setup-bun"

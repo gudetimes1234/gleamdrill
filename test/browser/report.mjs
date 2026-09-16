@@ -4,13 +4,13 @@
 // beside the PNGs, which it references by relative path so the page works
 // from file://, from a static server, or published as-is with the images.
 //
-//     SHOTS=/tmp/algodrill-tour bun test/browser/report.mjs
+//     SHOTS=/tmp/gleamdrill-tour bun test/browser/report.mjs
 
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { execSync } from "node:child_process";
 
-const SHOTS = process.env.SHOTS ?? "/tmp/algodrill-tour";
+const SHOTS = process.env.SHOTS ?? "/tmp/gleamdrill-tour";
 const source = join(SHOTS, "tour.json");
 if (!existsSync(source)) {
   console.error(`no ${source}: run \`make tour\` first`);
@@ -101,7 +101,7 @@ const nav = acts.map((entry) => {
 
 const missed = (checks.find((c) => c.name.startsWith("every user-initiated message")) ?? {});
 
-const html = `<title>AlgoDrill Tour Report</title>
+const html = `<title>GleamDrill Tour Report</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -207,7 +207,7 @@ const html = `<title>AlgoDrill Tour Report</title>
 </style>
 
 <header class="top">
-  <h1><small>Browser tour</small>AlgoDrill Tour Report</h1>
+  <h1><small>Browser tour</small>GleamDrill Tour Report</h1>
   <div class="meta">
     <span>${esc(when)}</span>
     <span>${sha ? `<b>${esc(sha)}</b> ${esc(subject)}` : "not in a git checkout"}</span>

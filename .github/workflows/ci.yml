@@ -86,19 +86,19 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_USER: algodrill
-          POSTGRES_PASSWORD: algodrill
-          POSTGRES_DB: algodrill_ci
+          POSTGRES_USER: gleamdrill
+          POSTGRES_PASSWORD: gleamdrill
+          POSTGRES_DB: gleamdrill_ci
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U algodrill -d algodrill_ci"
+          --health-cmd "pg_isready -U gleamdrill -d gleamdrill_ci"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 20
 
     env:
-      DATABASE_URL: postgres://algodrill:algodrill@127.0.0.1:5432/algodrill_ci
+      DATABASE_URL: postgres://gleamdrill:gleamdrill@127.0.0.1:5432/gleamdrill_ci
       # CI-only, and the server refuses to boot on anything shorter than 64.
       SECRET_KEY_BASE: github-actions-ci-secret-key-base-not-a-real-secret-000000000000000000
       ALLOWED_ORIGIN: http://localhost:1234
@@ -159,5 +159,5 @@ jobs:
       # `gleam build` runs against a checkout where the package is simply there.
       - name: Images build
         run: |
-          docker build -f server/Dockerfile -t algodrill-api-ci .
-          docker build -f deploy/web.Dockerfile -t algodrill-web-ci .
+          docker build -f server/Dockerfile -t gleamdrill-api-ci .
+          docker build -f deploy/web.Dockerfile -t gleamdrill-web-ci .

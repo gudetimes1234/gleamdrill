@@ -1,6 +1,6 @@
 name = "server"
 version = "1.0.0"
-description = "AlgoDrill backend: accounts, study history, FSRS scheduling."
+description = "GleamDrill backend: accounts, study history, FSRS scheduling."
 target = "erlang"
 
 [dependencies]

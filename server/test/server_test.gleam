@@ -24,7 +24,7 @@ pub fn main() {
 
 // --- study.state_code / state_step -----------------------------------------
 //
-// These are duplicated verbatim in the browser (src/algodrill/api.gleam) and
+// These are duplicated verbatim in the browser (src/gleamdrill/api.gleam) and
 // are what a card's persisted `state`/`step` columns mean. Pinning them here
 // means the planned shared `wire` package has a spec to move against.
 
@@ -154,7 +154,7 @@ pub fn normalise_email_is_idempotent_test() {
 
 // --- study.default_settings ------------------------------------------------
 
-/// The client ships its own copy of these (src/algodrill/api.gleam). They are
+/// The client ships its own copy of these (src/gleamdrill/api.gleam). They are
 /// meant to be identical, and are checked here so the two cannot part company
 /// unnoticed before the shared `wire` package lands.
 pub fn default_settings_are_the_documented_values_test() {

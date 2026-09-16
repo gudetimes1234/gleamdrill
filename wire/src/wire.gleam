@@ -3,7 +3,7 @@
 ////
 //// These shapes used to exist twice: once as encoders in
 //// `server/src/server/routes/study.gleam` and once as decoders in
-//// `src/algodrill/api.gleam`, roughly six hundred hand-written lines with
+//// `src/gleamdrill/api.gleam`, roughly six hundred hand-written lines with
 //// several bodies byte-identical between them. Nothing checked that they
 //// agreed except captured fixtures, and only if somebody remembered to
 //// recapture them. They had already drifted -- the server sent `rating` as an

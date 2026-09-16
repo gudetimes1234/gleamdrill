@@ -1,4 +1,4 @@
-//// AlgoDrill backend entry point.
+//// GleamDrill backend entry point.
 
 import gleam/erlang/process
 import gleam/io
@@ -18,7 +18,7 @@ pub fn main() -> Nil {
   case start() {
     Ok(_) -> process.sleep_forever()
     Error(message) -> {
-      io.println_error("algodrill-server failed to start: " <> message)
+      io.println_error("gleamdrill-server failed to start: " <> message)
       halt(1)
     }
   }
@@ -46,7 +46,7 @@ fn start() -> Result(Nil, String) {
   )
 
   io.println(
-    "algodrill-server listening on "
+    "gleamdrill-server listening on "
     <> config.bind
     <> ":"
     <> int_to_string(config.port),

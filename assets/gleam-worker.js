@@ -1,4 +1,4 @@
-// Bootstrap only — the worker's logic is Gleam (src/algodrill/worker.gleam),
+// Bootstrap only — the worker's logic is Gleam (src/gleamdrill/worker.gleam),
 // bundled into worker-main.js by the Makefile's `worker` target.
 // The catch matters: main() awaits the wasm compiler and stdlib fetches, and
 // an unhandled rejection in a worker never reaches Worker.onerror — without

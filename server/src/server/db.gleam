@@ -15,7 +15,7 @@ pub fn start(
   database_url: String,
   pool_size: Int,
 ) -> Result(pog.Connection, String) {
-  let name = process.new_name("algodrill_pool")
+  let name = process.new_name("gleamdrill_pool")
   use config <- result.try(
     pog.url_config(name, database_url)
     |> result.replace_error(

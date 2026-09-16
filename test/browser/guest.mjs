@@ -126,7 +126,7 @@ await page.waitForSelector(".study-screen", { timeout: 15000 });
 const after = await page.$$eval(".study-count-value", (n) => n.map((e) => e.textContent));
 check("the review is still counted", after[2] === "1", `got ${after[2]}`);
 check("the new-card budget went down", after[1] === "4", `got ${after[1]}`);
-const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("algoDrill.guest.cards.v1") ?? "[]"));
+const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("gleamDrill.guest.cards.v1") ?? "[]"));
 // Queued cards are stored too, so "one card" is now "one *answered* card":
 // every other row is a placeholder waiting for its first outing.
 const answered = stored.filter((c) => c.reps > 0);
@@ -160,7 +160,7 @@ check("no prompt yet at one card", !(await page.isVisible(".upgrade-prompt")));
 // would exhaust the daily new-card budget and correctly disable "Study now",
 // which is the app working, not a bug.
 await page.evaluate(() => {
-  const cards = JSON.parse(localStorage.getItem("algoDrill.guest.cards.v1") ?? "[]");
+  const cards = JSON.parse(localStorage.getItem("gleamDrill.guest.cards.v1") ?? "[]");
   const longAgo = Math.floor(Date.now() / 1000) - 10 * 86400;
   for (let i = 0; i < 9; i++) {
     cards.push({
@@ -177,7 +177,7 @@ await page.evaluate(() => {
       reps: 1, lapses: 0, suspended: false,
     });
   }
-  localStorage.setItem("algoDrill.guest.cards.v1", JSON.stringify(cards));
+  localStorage.setItem("gleamDrill.guest.cards.v1", JSON.stringify(cards));
 });
 await page.goto(APP, { waitUntil: "networkidle" });
 await answerPickerIfShown();
@@ -199,7 +199,7 @@ console.log("== upgrading keeps the schedule");
 // below needs to know how much was there to carry.
 await page.evaluate(() => {
   window.__guestCardCount =
-    JSON.parse(localStorage.getItem("algoDrill.guest.cards.v1") ?? "[]").length;
+    JSON.parse(localStorage.getItem("gleamDrill.guest.cards.v1") ?? "[]").length;
 });
 const EMAIL = `guest-${Math.floor(Math.random() * 1e9)}@example.com`;
 await page.click(".upgrade-prompt-cta");
@@ -217,7 +217,7 @@ await page.waitForFunction(() =>
 check("signed in", (await page.textContent(".study-email")) === EMAIL);
 check("the guest strip is gone", !(await page.isVisible(".guest-strip")));
 const local = await page.evaluate(() =>
-  localStorage.getItem("algoDrill.guest.cards.v1"));
+  localStorage.getItem("gleamDrill.guest.cards.v1"));
 check("the local copy was cleared", local === null || JSON.parse(local).length === 0,
   String(local).slice(0, 40));
 
@@ -227,7 +227,7 @@ const onServer = await page.evaluate(async (token) => {
     headers: { authorization: "Bearer " + token },
   });
   return (await r.json()).cards;
-}, await page.evaluate(() => localStorage.getItem("algoDrill.token")));
+}, await page.evaluate(() => localStorage.getItem("gleamDrill.token")));
 
 // Matched on category as well as title: the same problem exists once per
 // language, and queueing a topic brings all of those copies along, so a
