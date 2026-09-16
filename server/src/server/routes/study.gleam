@@ -30,13 +30,14 @@ pub fn state(request: wisp.Request, context: Context) -> wisp.Response {
     use settings <- result.try(study.load_settings(context.db, user.id))
     use cards <- result.try(study.load_cards(context.db, user.id))
     use drafts <- result.try(study.load_drafts(context.db, user.id))
+    use notes <- result.try(study.load_notes(context.db, user.id))
     use today <- result.try(study.today(context.db, user.id, settings, now))
-    Ok(#(settings, cards, drafts, today))
+    Ok(#(settings, cards, drafts, notes, today))
   }
 
   case result {
     Error(failure) -> study_error(failure)
-    Ok(#(settings, cards, drafts, today)) ->
+    Ok(#(settings, cards, drafts, notes, today)) ->
       web.json_ok(
         json.object([
           #("now", json.float(fsrs.to_epoch(now))),
@@ -44,6 +45,7 @@ pub fn state(request: wisp.Request, context: Context) -> wisp.Response {
           #("settings", settings_json(settings)),
           #("cards", json.array(cards, card_json)),
           #("drafts", json.array(drafts, draft_json)),
+          #("notes", json.array(notes, draft_json)),
           #("today", today_json(today)),
         ]),
       )
@@ -305,7 +307,7 @@ pub fn import_legacy(request: wisp.Request, context: Context) -> wisp.Response {
         "invalid_body",
         "Expected cards, solved problems and drafts.",
       )
-    Ok(#(solved, cards, drafts)) -> {
+    Ok(#(solved, cards, drafts, notes)) -> {
       let outcome = {
         use settings <- result.try(study.load_settings(context.db, user.id))
         study.import_legacy(
@@ -315,6 +317,7 @@ pub fn import_legacy(request: wisp.Request, context: Context) -> wisp.Response {
           solved,
           cards,
           drafts,
+          notes,
           timestamp.system_time(),
         )
       }
@@ -371,6 +374,24 @@ pub fn history(request: wisp.Request, context: Context) -> wisp.Response {
         "invalid_query",
         "Expected category, subcategory and title query parameters.",
       )
+  }
+}
+
+/// PUT /api/notes -- the user's note on one problem. Same payload as a
+/// draft; an empty body clears it.
+pub fn note(request: wisp.Request, context: Context) -> wisp.Response {
+  use <- wisp.require_method(request, http.Put)
+  use user <- web.require_user(request, context)
+  use body <- wisp.require_json(request)
+
+  case decode.run(body, draft_decoder()) {
+    Error(_) ->
+      web.error(422, "invalid_body", "Expected a problem reference and a body.")
+    Ok(#(problem, note_body)) ->
+      case study.save_note(context.db, user.id, problem, note_body) {
+        Error(failure) -> study_error(failure)
+        Ok(Nil) -> wisp.no_content()
+      }
   }
 }
 
@@ -524,6 +545,7 @@ fn import_decoder() -> decode.Decoder(
     List(study.ProblemRef),
     List(study.ImportCard),
     List(#(study.ProblemRef, String)),
+    List(#(study.ProblemRef, String)),
   ),
 ) {
   // `solved` is the pre-account localStorage format (a sticky boolean, no
@@ -544,7 +566,8 @@ fn import_decoder() -> decode.Decoder(
     [],
     decode.list(draft_decoder()),
   )
-  decode.success(#(solved, cards, drafts))
+  use notes <- decode.optional_field("notes", [], decode.list(draft_decoder()))
+  decode.success(#(solved, cards, drafts, notes))
 }
 
 fn import_card_decoder() -> decode.Decoder(study.ImportCard) {

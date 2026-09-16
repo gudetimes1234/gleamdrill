@@ -1,5 +1,5 @@
 {
- "now": 1788496909.0651963,
+ "now": 1789545348.2587602,
  "user": {
   "id": "00000000-0000-0000-0000-000000000000",
   "email": "drills@example.com"
@@ -45,21 +45,6 @@
  },
  "cards": [
   {
-   "category": "NeetCode 150",
-   "subcategory": "Arrays & Hashing",
-   "title": "Valid Anagram",
-   "state": 1,
-   "step": 0,
-   "stability": null,
-   "difficulty": null,
-   "due": 1788496909.028819,
-   "lastReview": null,
-   "reps": 0,
-   "lapses": 0,
-   "suspended": false,
-   "introducedAt": null
-  },
-  {
    "category": "NeetCode 150 · Python",
    "subcategory": "Arrays & Hashing",
    "title": "Contains Duplicate",
@@ -67,12 +52,27 @@
    "step": 1,
    "stability": 2.3065,
    "difficulty": 2.118103970459015,
-   "due": 1788497508.956043,
-   "lastReview": 1788496908.956043,
+   "due": 1789545948.147084,
+   "lastReview": 1789545348.147084,
    "reps": 1,
    "lapses": 0,
    "suspended": false,
-   "introducedAt": 1788496908.957481
+   "introducedAt": 1789545348.148698
+  },
+  {
+   "category": "NeetCode 150",
+   "subcategory": "Arrays & Hashing",
+   "title": "Valid Anagram",
+   "state": 1,
+   "step": 0,
+   "stability": null,
+   "difficulty": null,
+   "due": 1789545348.222722,
+   "lastReview": null,
+   "reps": 0,
+   "lapses": 0,
+   "suspended": false,
+   "introducedAt": null
   }
  ],
  "drafts": [
@@ -83,9 +83,10 @@
    "body": "def contains_duplicate(nums):\n    pass"
   }
  ],
+ "notes": [],
  "today": {
-  "dayStart": 1788494400.0,
-  "dayEnd": 1788580800.0,
+  "dayStart": 1789531200.0,
+  "dayEnd": 1789617600.0,
   "reviewsDone": 1,
   "newIntroduced": 1,
   "reviewsRemaining": 99,

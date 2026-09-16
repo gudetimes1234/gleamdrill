@@ -31,6 +31,7 @@ pub fn handle(request: wisp.Request, context: Context) -> wisp.Response {
       }
     ["api", "reviews"] -> study.review(request, context)
     ["api", "drafts"] -> study.draft(request, context)
+    ["api", "notes"] -> study.note(request, context)
     ["api", "settings"] -> study.settings(request, context)
     ["api", "stats"] -> study.stats(request, context)
     ["api", "insights"] -> study.insights(request, context)

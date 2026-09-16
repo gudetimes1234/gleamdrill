@@ -7,12 +7,12 @@ import gleam/string
 import gleamdrill/editor
 import gleamdrill/model.{
   type CaseResult, type Model, type Msg, type RunError, AwaitingGrade, Cases,
-  EditorChanged, EditorResized, Errored, ExitConfirmed, NotGrading, Ran, RunIdle,
-  Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady,
-  SubmittingGrade, TimedOut, UserChangedKeymap, UserClickedExitDrill,
-  UserClickedNext, UserClickedRetryRuntime, UserClickedRun, UserClickedStopRun,
-  UserGraded, UserPickedChoice, UserRevealedHint, UserSubmittedAnswer,
-  UserToggledResults, UserToggledSide, UserToggledSolution,
+  EditorChanged, EditorResized, Errored, ExitConfirmed, NotGrading, NoteChanged,
+  Ran, RunIdle, Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded,
+  RuntimeReady, SubmittingGrade, TimedOut, UserChangedKeymap,
+  UserClickedExitDrill, UserClickedNext, UserClickedRetryRuntime, UserClickedRun,
+  UserClickedStopRun, UserGraded, UserPickedChoice, UserRevealedHint,
+  UserSubmittedAnswer, UserToggledResults, UserToggledSide, UserToggledSolution,
 }
 import gleamdrill/problem.{
   type Problem, type ProblemRef, type Quiz, type Solution,
@@ -379,7 +379,44 @@ fn expanded_panels(
     None -> []
   }
 
-  [prompt, ..list.flatten([approach, checked])]
+  [prompt, note_panel(m, ref), ..list.flatten([approach, checked])]
+}
+
+/// The note you left yourself last time, and the box to leave the next one.
+/// It sits right under the prompt so it is read before the code is written;
+/// a note from an earlier visit is lit so it cannot be missed.
+fn note_panel(m: Model, ref: ProblemRef) -> Element(Msg) {
+  let body = model.assoc_get(m.notes, ref) |> result.unwrap("")
+  let returning = body != "" && !model.first_encounter(m, ref)
+  html.section(
+    [
+      attribute.classes([
+        #("panel", True),
+        #("note-panel", True),
+        #("has-note", returning),
+      ]),
+    ],
+    [
+      html.h3([attribute.class("panel-title")], [
+        html.text(case returning {
+          True -> "Your note from last time"
+          False -> "Note to future me"
+        }),
+      ]),
+      html.textarea(
+        [
+          attribute.class("note-input"),
+          attribute.rows(2),
+          attribute.placeholder(
+            "What tripped you up, what to try first next time\u{2026}",
+          ),
+          attribute.attribute("aria-label", "Note on this problem"),
+          event.on_input(NoteChanged),
+        ],
+        body,
+      ),
+    ],
+  )
 }
 
 fn output_panel(m: Model) -> Element(Msg) {

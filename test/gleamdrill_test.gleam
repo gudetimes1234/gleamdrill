@@ -547,6 +547,31 @@ pub fn drafts_evict_oldest_first_test() -> Nil {
   assert model.assoc_get(store.drafts, a_problem("Problem 0")) == Error(Nil)
 }
 
+/// A note is replaced in place, and a blank one is removed rather than kept:
+/// the store only ever holds notes with something in them.
+pub fn notes_replace_and_blank_clears_test() -> Nil {
+  let problem = a_problem("Two Sum")
+  let store =
+    local.empty()
+    |> local.put_note(problem, "first thought")
+    |> local.put_note(a_problem("Valid Anagram"), "sort both")
+    |> local.put_note(problem, "use a map")
+
+  assert list.length(store.notes) == 2
+  assert model.assoc_get(store.notes, problem) == Ok("use a map")
+
+  let cleared = local.put_note(store, problem, "   ")
+  assert model.assoc_get(cleared.notes, problem) == Error(Nil)
+  assert list.length(cleared.notes) == 1
+  assert !local.is_empty(cleared)
+}
+
+/// A boot state from a server that predates notes still decodes.
+pub fn boot_state_without_notes_decodes_test() -> Nil {
+  let state = decode("state", api.boot_state_decoder())
+  assert state.notes == []
+}
+
 // --- insights --------------------------------------------------------------
 //
 // The derivations are pure over the wire payloads, so a synthetic review log
@@ -878,11 +903,11 @@ pub fn history_fixture_decodes_test() -> Nil {
       decode.at(["reviews"], decode.list(api.review_row_decoder())),
     )
   assert list.length(rows) == 3
-  // Oldest first, with the reveal in the middle — and the middle rating is
-  // the coerced Again, proving the log keeps what actually happened.
+  // Oldest first, with the reveal in the middle. The grade stays the user's
+  // own (Good) even on a reveal; the log records the reveal beside it.
   let assert [first, second, third] = rows
   assert first.revealed == False
-  assert second.revealed == True && second.rating == fsrs.Again
+  assert second.revealed == True && second.rating == fsrs.Good
   assert third.duration_ms == Some(90_000)
 }
 

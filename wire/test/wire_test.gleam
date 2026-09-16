@@ -169,6 +169,7 @@ pub fn boot_state_round_trips_test() {
       settings: wire.default_settings(),
       cards: [a_card()],
       drafts: [#(a_ref(), "draft body")],
+      notes: [#(a_ref(), "watch the empty-list case")],
       today: a_today(),
     )
   round_trip(state, wire.boot_state_to_json, wire.boot_state_decoder())

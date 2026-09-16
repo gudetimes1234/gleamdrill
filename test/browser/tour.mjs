@@ -659,6 +659,7 @@ check("the main column does not scroll",
   await page.$eval(".drill-main", (el) => el.scrollHeight <= el.clientHeight + 1));
 await page.click(".results-summary");
 exercises("UserToggledResults");
+await page.waitForTimeout(250);
 check("the results fold to their summary line", (await page.$(".results.collapsed")) !== null);
 check("folded, the summary previews the error",
   (await page.textContent(".results-preview").catch(() => "")).trim().length > 0);
@@ -760,6 +761,22 @@ await openByHand("Python", "Arrays & Hashing", "Contains Duplicate");
 check("a later review still requires a run before grading",
   (await page.textContent(".grade-hint").catch(() => "")).includes("Run the tests"));
 await capture("gated", "Second review: grading waits for a run");
+
+// A note to your future self, typed under the prompt and saved on its own
+// after a pause. `m` puts the cursor there from anywhere on the screen.
+check("the drill offers a note box", await page.isVisible(".note-input"));
+check("a fresh problem has no lit note", (await page.$(".note-panel.has-note")) === null);
+await page.keyboard.press("m");
+exercises("NoteFocusRequested");
+check("m focuses the note", await page.evaluate(() => document.activeElement?.classList.contains("note-input")));
+await page.keyboard.type("Set beats sort here: O(n) and one line.");
+exercises("NoteChanged");
+await page.waitForTimeout(1200);
+check("the note is saved on its own",
+  ((await page.evaluate(() => localStorage.getItem("gleamDrill.guest.notes.v1"))) ?? "").includes("Set beats sort"));
+await page.keyboard.press("Escape");
+await page.waitForTimeout(200);
+check("Escape leaves the note without leaving the drill", await page.isVisible(".run-bar"));
 await waitForRunnable();
 await page.click(".run-button");
 await verdict();
@@ -786,6 +803,13 @@ await page.evaluate(() => {
 await goHome();
 await page.click(".study-start");
 await page.waitForSelector(".run-bar", { timeout: 30000 });
+// The note typed by hand a moment ago comes back lit: this is a later
+// review of the same problem, and the note is the first thing to read.
+check("a note from an earlier visit is shown lit", (await page.$(".note-panel.has-note")) !== null);
+check("with what was written, and nothing else",
+  (await page.inputValue(".note-input")) === "Set beats sort here: O(n) and one line.",
+  await page.inputValue(".note-input"));
+await capture("note-returns", "The note from last time, lit under the prompt");
 await waitForRunnable();
 await page.click(".run-button");
 await verdict();

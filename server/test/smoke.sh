@@ -184,6 +184,19 @@ S=$(curl -s "$B/api/state" -H "$AUTH")
 check "the draft round-trips" "def f(): pass" "$(echo "$S" | j "['drafts'][0]['body']")"
 check "state now holds one card" 1 "$(echo "$S" | j "len(d['cards'])")"
 
+echo "== notes"
+check "a note saves" 204 "$(status -X PUT "$B/api/notes" -H "$AUTH" -H "$CT" -d "{$REF,\"body\":\"forgot the empty list\"}")"
+S=$(curl -s "$B/api/state" -H "$AUTH")
+check "the note round-trips" "forgot the empty list" "$(echo "$S" | j "['notes'][0]['body']")"
+check "a note edits in place" 204 "$(status -X PUT "$B/api/notes" -H "$AUTH" -H "$CT" -d "{$REF,\"body\":\"use a set\"}")"
+S=$(curl -s "$B/api/state" -H "$AUTH")
+check "and there is still one" 1 "$(echo "$S" | j "len(d['notes'])")"
+check "with the new body" "use a set" "$(echo "$S" | j "['notes'][0]['body']")"
+check "a blank note clears it" 204 "$(status -X PUT "$B/api/notes" -H "$AUTH" -H "$CT" -d "{$REF,\"body\":\"  \"}")"
+S=$(curl -s "$B/api/state" -H "$AUTH")
+check "and it is gone" 0 "$(echo "$S" | j "len(d['notes'])")"
+check "a note needs a body" 422 "$(status -X PUT "$B/api/notes" -H "$AUTH" -H "$CT" -d "{$REF}")"
+
 echo "== settings"
 SET=$(curl -s "$B/api/settings" -H "$AUTH" | python3 -c "import sys,json;print(json.dumps(json.load(sys.stdin)['settings']))")
 mutate() { echo "$SET" | python3 -c "import sys,json;d=json.load(sys.stdin);d.update(json.loads(sys.argv[1]));print(json.dumps(d))" "$1"; }

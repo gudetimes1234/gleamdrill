@@ -24,6 +24,7 @@ import gleam/json.{type Json}
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
+import gleam/string
 import gleam/time/timestamp.{type Timestamp}
 import gleamdrill/api.{type CardState, type Settings}
 import gleamdrill/browser
@@ -37,6 +38,8 @@ import wire
 const cards_key = "gleamDrill.guest.cards.v1"
 
 const drafts_key = "gleamDrill.guest.drafts.v1"
+
+const notes_key = "gleamDrill.guest.notes.v1"
 
 const history_key = "gleamDrill.guest.history.v1"
 
@@ -91,6 +94,9 @@ pub type Local {
   Local(
     cards: Dict(ProblemRef, CardState),
     drafts: List(#(ProblemRef, String)),
+    /// The user's note on a problem. Unlike drafts these are never evicted:
+    /// they are short, and a note is exactly the thing you would miss.
+    notes: List(#(ProblemRef, String)),
     history: History,
     /// Newest first, capped. The raw material for the insight screens; the
     /// same rows the server keeps in its `reviews` table.
@@ -99,7 +105,13 @@ pub type Local {
 }
 
 pub fn empty() -> Local {
-  Local(cards: dict.new(), drafts: [], history: empty_history(), log: [])
+  Local(
+    cards: dict.new(),
+    drafts: [],
+    notes: [],
+    history: empty_history(),
+    log: [],
+  )
 }
 
 fn empty_history() -> History {
@@ -107,7 +119,7 @@ fn empty_history() -> History {
 }
 
 pub fn is_empty(local: Local) -> Bool {
-  dict.is_empty(local.cards) && local.drafts == []
+  dict.is_empty(local.cards) && local.drafts == [] && local.notes == []
 }
 
 // --- recording a review ----------------------------------------------------
@@ -250,6 +262,16 @@ pub fn put_draft(local: Local, problem: ProblemRef, body: String) -> Local {
       drafts: model.assoc_put(local.drafts, problem, body)
       |> list.take(draft_limit),
   )
+}
+
+/// A blank note is removed rather than kept, so the store only ever holds
+/// notes with something in them.
+pub fn put_note(local: Local, problem: ProblemRef, body: String) -> Local {
+  let others = list.filter(local.notes, fn(entry) { entry.0 != problem })
+  Local(..local, notes: case string.trim(body) {
+    "" -> others
+    _ -> [#(problem, body), ..others]
+  })
 }
 
 // --- derived views ---------------------------------------------------------
@@ -530,6 +552,8 @@ pub fn load() -> Local {
       |> dict.from_list,
     drafts: read(drafts_key, decode.list(draft_decoder()))
       |> option.unwrap([]),
+    notes: read(notes_key, decode.list(draft_decoder()))
+      |> option.unwrap([]),
     history: read(history_key, history_decoder())
       |> option.unwrap(empty_history()),
     log: read(reviews_key, decode.list(log_row_decoder()))
@@ -582,6 +606,10 @@ pub fn save_drafts(local: Local) -> Result(Nil, Nil) {
   write(drafts_key, json.to_string(json.array(local.drafts, draft_json)))
 }
 
+pub fn save_notes(local: Local) -> Result(Nil, Nil) {
+  write(notes_key, json.to_string(json.array(local.notes, draft_json)))
+}
+
 pub fn save_history(local: Local) -> Result(Nil, Nil) {
   case write(history_key, json.to_string(history_json(local.history))) {
     Ok(Nil) ->
@@ -600,6 +628,7 @@ pub fn clear() -> Nil {
         [
           cards_key,
           drafts_key,
+          notes_key,
           history_key,
           flags_key,
           reviews_key,

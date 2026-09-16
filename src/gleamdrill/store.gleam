@@ -19,8 +19,8 @@ import gleamdrill/browser
 import gleamdrill/local
 import gleamdrill/model.{
   type Model, type Msg, Account, CardSuspended, DraftSynced, Guest,
-  HistoryLoaded, InsightsLoaded, QueueChanged, ReviewRecorded, SettingsSaved,
-  StateLoaded, StatsLoaded,
+  HistoryLoaded, InsightsLoaded, NoteSynced, QueueChanged, ReviewRecorded,
+  SettingsSaved, StateLoaded, StatsLoaded,
 }
 import gleamdrill/problem.{type ProblemRef}
 import lustre/effect.{type Effect}
@@ -47,6 +47,7 @@ pub fn load_state(m: Model) -> Effect(Msg) {
             settings:,
             cards: dict.values(store.cards),
             drafts: store.drafts,
+            notes: store.notes,
             today: local.today(store, settings, now, day),
           )),
         ),
@@ -199,6 +200,22 @@ pub fn save_draft(m: Model, problem: ProblemRef, body: String) -> Effect(Msg) {
   }
 }
 
+pub fn save_note(m: Model, problem: ProblemRef, body: String) -> Effect(Msg) {
+  case m.mode {
+    Account(token) -> api.put_note(base(), token, problem, body, NoteSynced)
+    Guest -> {
+      use dispatch <- effect.from
+      let updated = local.put_note(local.load(), problem, body)
+      dispatch(
+        NoteSynced(case local.save_notes(updated) {
+          Ok(Nil) -> Ok(Nil)
+          Error(Nil) -> Error(storage_full())
+        }),
+      )
+    }
+  }
+}
+
 /// Persist the scheduler settings. Same shape as `save_draft`, with one
 /// difference worth naming: the server answers with the settings it stored, so
 /// the guest branch has to dispatch what it just wrote rather than `Nil`.
@@ -274,6 +291,7 @@ pub fn upgrade(
     solved,
     dict.values(store.cards),
     store.drafts,
+    store.notes,
     handler,
   )
 }

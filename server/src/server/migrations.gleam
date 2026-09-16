@@ -20,8 +20,24 @@ pub fn all() -> List(Migration) {
   [
     Migration(1, "init", init),
     Migration(2, "seeded_cards_have_a_rep", backfill),
+    Migration(3, "notes", notes),
   ]
 }
+
+/// A note the user leaves themselves on a problem -- what they missed, what
+/// to try first next time. Keyed like a draft; an empty note is deleted
+/// rather than stored.
+const notes: List(String) = [
+  "create table notes (
+     user_id     uuid not null references users(id) on delete cascade,
+     category    text not null,
+     subcategory text not null,
+     title       text not null,
+     body        text not null,
+     updated_at  timestamptz not null default now(),
+     primary key (user_id, category, subcategory, title)
+   )",
+]
 
 /// `reps` used to be decoration; now it is the line between a card that is due
 /// and a card that has never been opened. Two import paths wrote a card with

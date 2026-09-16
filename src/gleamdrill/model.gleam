@@ -366,6 +366,10 @@ pub type Model {
     runtimes: List(#(String, RuntimeState)),
     run: RunState,
     drafts: List(#(ProblemRef, String)),
+    /// The user's note on each problem, shown beside the prompt on every
+    /// visit after the first. Written from the drill screen, saved like a
+    /// draft.
+    notes: List(#(ProblemRef, String)),
     search: String,
     next_run_id: Int,
     editor_keymap: String,
@@ -462,6 +466,7 @@ pub fn default() -> Model {
     runtimes: [],
     run: RunIdle,
     drafts: [],
+    notes: [],
     search: "",
     next_run_id: 1,
     editor_keymap: "default",
@@ -728,6 +733,12 @@ pub type Msg {
   UserChangedKeymap(String)
   EditorChanged(String)
   DraftSaveTicked
+  /// The note on the current problem changed; saved after a pause.
+  NoteChanged(String)
+  NoteSaveTicked
+  NoteSynced(Result(Nil, ApiError))
+  /// `m` on the drill screen: put the cursor in the note.
+  NoteFocusRequested
   UserClickedRun
   UserClickedStopRun
   UserClickedRetryRuntime(String)

@@ -308,6 +308,25 @@ pub fn put_draft(
   )
 }
 
+pub fn put_note(
+  base: String,
+  token: String,
+  problem: ProblemRef,
+  body: String,
+  handler: fn(Result(Nil, ApiError)) -> message,
+) -> Effect(message) {
+  send_expecting_nothing(
+    base,
+    http.Put,
+    "/api/notes",
+    Some(token),
+    Some(json.object(
+      wire.ref_fields(problem) |> list.append([#("body", json.string(body))]),
+    )),
+    handler,
+  )
+}
+
 pub fn put_settings(
   base: String,
   token: String,
@@ -337,6 +356,7 @@ pub fn import_legacy(
   solved: List(ProblemRef),
   cards: List(CardState),
   drafts: List(#(ProblemRef, String)),
+  notes: List(#(ProblemRef, String)),
   handler: fn(Result(Nil, ApiError)) -> message,
 ) -> Effect(message) {
   send_expecting_nothing(
@@ -353,15 +373,8 @@ pub fn import_legacy(
           }),
         ),
         #("cards", json.array(cards, card_json)),
-        #(
-          "drafts",
-          json.array(drafts, fn(entry) {
-            json.object(
-              wire.ref_fields(entry.0)
-              |> list.append([#("body", json.string(entry.1))]),
-            )
-          }),
-        ),
+        #("drafts", json.array(drafts, wire.draft_to_json)),
+        #("notes", json.array(notes, wire.draft_to_json)),
       ]),
     ),
     handler,

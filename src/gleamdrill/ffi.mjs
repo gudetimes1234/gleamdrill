@@ -97,9 +97,11 @@ export function timeZone() {
 // preventDefault must be decided synchronously, so the handled-key set lives
 // here rather than in Gleam: Space would scroll the page, "/" opens quick-find
 // in Firefox, and the browser must not see either when the app is handling it.
+// "m" and "i"/"e" move focus into a text field; without preventDefault the
+// same keystroke would also be typed into it.
 const APP_KEYS = new Set([
   "j", "k", "h", "l", "g", "G", "x", "a", "c", "d", "s", "n", "r", "b", "t",
-  "i", "e", "z", ",", "?", "/", "1", "2", "3", "4", "Enter", " ",
+  "i", "e", "m", "z", ",", "?", "/", "1", "2", "3", "4", "Enter", " ",
 ]);
 
 export function onKey(callback) {

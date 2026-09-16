@@ -97,6 +97,9 @@ pub type BootState {
     settings: Settings,
     cards: List(CardState),
     drafts: List(#(ProblemRef, String)),
+    /// The user's own note on each problem -- what to remember next time.
+    /// Same shape as a draft: a body keyed by the problem.
+    notes: List(#(ProblemRef, String)),
     today: Today,
   )
 }
@@ -355,6 +358,7 @@ pub fn boot_state_to_json(state: BootState) -> Json {
     #("settings", settings_to_json(state.settings)),
     #("cards", json.array(state.cards, card_to_json)),
     #("drafts", json.array(state.drafts, draft_to_json)),
+    #("notes", json.array(state.notes, draft_to_json)),
     #("today", today_to_json(state.today)),
   ])
 }
@@ -638,8 +642,18 @@ pub fn boot_state_decoder() -> Decoder(BootState) {
   use settings <- decode.field("settings", settings_decoder())
   use cards <- decode.field("cards", decode.list(card_decoder()))
   use drafts <- decode.field("drafts", decode.list(draft_decoder()))
+  // Optional: a server from before notes existed sends none.
+  use notes <- decode.optional_field("notes", [], decode.list(draft_decoder()))
   use today <- decode.field("today", today_decoder())
-  decode.success(BootState(now:, user:, settings:, cards:, drafts:, today:))
+  decode.success(BootState(
+    now:,
+    user:,
+    settings:,
+    cards:,
+    drafts:,
+    notes:,
+    today:,
+  ))
 }
 
 pub fn review_outcome_decoder() -> Decoder(ReviewOutcome) {

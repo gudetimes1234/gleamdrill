@@ -573,6 +573,65 @@ pub fn save_draft(
   |> result.map_error(database_error)
 }
 
+// --- notes -----------------------------------------------------------------
+
+pub fn load_notes(
+  db: pog.Connection,
+  user_id: String,
+) -> Result(List(#(ProblemRef, String)), StudyError) {
+  pog.query(
+    "select category, subcategory, title, body
+       from notes where user_id = $1::uuid",
+  )
+  |> pog.parameter(pog.text(user_id))
+  |> pog.returning({
+    use category <- decode.field(0, decode.string)
+    use subcategory <- decode.field(1, decode.string)
+    use title <- decode.field(2, decode.string)
+    use body <- decode.field(3, decode.string)
+    decode.success(#(wire.ProblemRef(category:, subcategory:, title:), body))
+  })
+  |> pog.execute(db)
+  |> result.map(fn(returned) { returned.rows })
+  |> result.map_error(database_error)
+}
+
+/// An empty body deletes the row: there is no such thing as a blank note.
+pub fn save_note(
+  db: pog.Connection,
+  user_id: String,
+  problem: ProblemRef,
+  body: String,
+) -> Result(Nil, StudyError) {
+  let keyed = fn(sql) {
+    pog.query(sql)
+    |> pog.parameter(pog.text(user_id))
+    |> pog.parameter(pog.text(problem.category))
+    |> pog.parameter(pog.text(problem.subcategory))
+    |> pog.parameter(pog.text(problem.title))
+  }
+  let query = case string.trim(body) {
+    "" ->
+      keyed(
+        "delete from notes
+          where user_id = $1::uuid and category = $2
+            and subcategory = $3 and title = $4",
+      )
+    _ ->
+      keyed(
+        "insert into notes (user_id, category, subcategory, title, body)
+         values ($1::uuid, $2, $3, $4, $5)
+         on conflict (user_id, category, subcategory, title)
+           do update set body = excluded.body, updated_at = now()",
+      )
+      |> pog.parameter(pog.text(body))
+  }
+  query
+  |> pog.execute(db)
+  |> result.replace(Nil)
+  |> result.map_error(database_error)
+}
+
 // --- errors ----------------------------------------------------------------
 
 fn database_error(error: pog.QueryError) -> StudyError {
@@ -886,7 +945,7 @@ pub type ImportCard {
   )
 }
 
-/// Seeds cards and drafts from the pre-account localStorage state.
+/// Seeds cards, drafts and notes from the pre-account localStorage state.
 ///
 /// Solved problems become Review cards due now, seeded with the memory state a
 /// `Good` first answer would produce. They are deliberately NOT written to the
@@ -903,6 +962,7 @@ pub fn import_legacy(
   solved: List(ProblemRef),
   cards: List(ImportCard),
   drafts: List(#(ProblemRef, String)),
+  notes: List(#(ProblemRef, String)),
   now: Timestamp,
 ) -> Result(Nil, StudyError) {
   let seed = fsrs.initial_memory(settings.scheduler, fsrs.Good)
@@ -918,9 +978,12 @@ pub fn import_legacy(
         seed_card(tx, user_id, problem, seed, now)
       }),
     )
-    list.try_each(drafts, fn(entry) {
-      save_draft(tx, user_id, entry.0, entry.1)
-    })
+    use _ <- result.try(
+      list.try_each(drafts, fn(entry) {
+        save_draft(tx, user_id, entry.0, entry.1)
+      }),
+    )
+    list.try_each(notes, fn(entry) { save_note(tx, user_id, entry.0, entry.1) })
   })
   |> result.map_error(flatten_transaction_error)
 }

@@ -21,7 +21,8 @@ import gleamdrill/model.{
   Guest, HelpToggled, HistoryLoaded, InsightsLoaded, KeyPressed, MenuActivated,
   MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
   MenuSuspendedAtCursor, MenuToggledAtCursor, Model, NewPerDay, NotGrading,
-  NotStarted, PickerConfirmed, PickerConfirmedWithStarter, PickerRoute,
+  NotStarted, NoteChanged, NoteFocusRequested, NoteSaveTicked, NoteSynced,
+  PickerConfirmed, PickerConfirmedWithStarter, PickerRoute,
   PickerToggledLanguage, PromptDismissed, QueueChanged, QueueCursorJumped,
   QueueCursorMoved, QueueRoute, QueueToggledAtCursor, QuizMoved, Ran,
   Registering, RemoteRunFinished, ReportRoute, ReviewRecorded, ReviewsPerDay,
@@ -895,6 +896,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                   old.solved,
                   [],
                   old.drafts,
+                  [],
                   StateImported,
                 ),
                 legacy.mark_imported(),
@@ -1773,6 +1775,45 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(Model(..m, draft: text, drafts: drafts), schedule_draft_save())
     }
 
+    NoteChanged(text) ->
+      case model.current_ref(m) {
+        Ok(ref) -> #(
+          Model(..m, notes: model.assoc_put(m.notes, ref, text)),
+          effect.from(fn(dispatch) {
+            browser.debounce("note-save", 600, fn() { dispatch(NoteSaveTicked) })
+          }),
+        )
+        Error(Nil) -> #(m, effect.none())
+      }
+
+    NoteSaveTicked ->
+      case model.current_ref(m) {
+        Ok(ref) -> #(
+          m,
+          store.save_note(
+            m,
+            ref,
+            model.assoc_get(m.notes, ref) |> result.unwrap(""),
+          ),
+        )
+        Error(Nil) -> #(m, effect.none())
+      }
+
+    NoteSynced(Ok(Nil)) -> #(m, effect.none())
+    NoteSynced(Error(failure)) -> #(
+      Model(
+        ..m,
+        storage_full: m.mode == Guest || m.storage_full,
+        notice: Some(api.error_message(failure)),
+      ),
+      effect.none(),
+    )
+
+    NoteFocusRequested -> #(
+      m,
+      run_effect(fn() { browser.focus_element(".note-input") }),
+    )
+
     DraftSaveTicked ->
       case model.current_ref(m), m.studying {
         // A study rep is throwaway typing; persisting it would clobber the
@@ -2006,6 +2047,7 @@ fn apply_state(m: Model, state: api.BootState) -> Model {
     ),
     today: state.today,
     drafts: state.drafts,
+    notes: state.notes,
     // The one place that decides where boot lands. A browser that has never
     // answered the language question goes to the picker instead of the study
     // screen, because the queue it would otherwise build is one language deep
