@@ -19,9 +19,10 @@ import gleamdrill/api
 import gleamdrill/browser
 import gleamdrill/local
 import gleamdrill/model.{
-  type Model, type Msg, type UndoPoint, Account, CardSuspended, DraftSynced,
-  Guest, HistoryLoaded, InsightsLoaded, NoteSynced, QueueChanged, ReviewRecorded,
-  SettingsSaved, StateLoaded, StatsLoaded, UndoRecorded,
+  type Model, type Msg, type UndoPoint, Account, ArchiveReady, ArchiveRestored,
+  CardSuspended, DraftSynced, Guest, HistoryLoaded, InsightsLoaded, NoteSynced,
+  QueueChanged, ReviewRecorded, SettingsSaved, StateLoaded, StatsLoaded,
+  UndoRecorded,
 }
 import gleamdrill/problem.{type ProblemRef}
 import lustre/effect.{type Effect}
@@ -89,6 +90,45 @@ pub fn record_review(m: Model, review: api.Review) -> Effect(Msg) {
             )),
           )
       })
+    }
+  }
+}
+
+/// Everything the user has, as one archive: fetched from the server, or
+/// assembled from the guest store.
+pub fn export_archive(m: Model) -> Effect(Msg) {
+  case m.mode {
+    Account(token) -> api.fetch_export(base(), token, ArchiveReady)
+    Guest -> {
+      use dispatch <- effect.from
+      dispatch(
+        ArchiveReady(
+          Ok(local.archive(
+            local.load(),
+            local.load_settings(),
+            timestamp.system_time(),
+          )),
+        ),
+      )
+    }
+  }
+}
+
+/// Replaces everything the user has with an archive. The caller reloads
+/// the boot state afterwards; nothing here touches the model.
+pub fn restore_archive(m: Model, archive: api.Archive) -> Effect(Msg) {
+  case m.mode {
+    Account(token) -> api.post_restore(base(), token, archive, ArchiveRestored)
+    Guest -> {
+      use dispatch <- effect.from
+      dispatch(
+        ArchiveRestored(
+          case local.save_all(local.restore(archive), archive.settings) {
+            Ok(Nil) -> Ok(Nil)
+            Error(Nil) -> Error(storage_full())
+          },
+        ),
+      )
     }
   }
 }

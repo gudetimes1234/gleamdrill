@@ -108,6 +108,25 @@ pub type ReviewOutcome {
   ReviewOutcome(now: Timestamp, card: CardState, today: Today)
 }
 
+/// Everything a user has, in one file: the export, and what an import
+/// replaces. The same shape for a guest and an account, so a file made by
+/// one restores into the other. `version` is the file format's, for the
+/// day the shape changes.
+pub type Archive {
+  Archive(
+    version: Int,
+    exported_at: Timestamp,
+    settings: Settings,
+    cards: List(CardState),
+    /// Oldest first, each row with the problem it belongs to.
+    reviews: List(#(ProblemRef, ReviewRow)),
+    drafts: List(#(ProblemRef, String)),
+    notes: List(#(ProblemRef, String)),
+  )
+}
+
+pub const archive_version = 1
+
 /// What undoing the latest review leaves behind. `card` is None when the
 /// undone review had created the card: it is out of the queue again.
 pub type UndoOutcome {
@@ -375,6 +394,24 @@ pub fn boot_state_to_json(state: BootState) -> Json {
   ])
 }
 
+pub fn archive_to_json(archive: Archive) -> Json {
+  json.object([
+    #("gleamdrill", json.int(archive.version)),
+    #("exportedAt", json.float(fsrs.to_epoch(archive.exported_at))),
+    #("settings", settings_to_json(archive.settings)),
+    #("cards", json.array(archive.cards, card_to_json)),
+    #(
+      "reviews",
+      json.array(archive.reviews, fn(entry) {
+        let #(problem, row) = entry
+        json.object(ref_fields(problem) |> list.append(review_row_fields(row)))
+      }),
+    ),
+    #("drafts", json.array(archive.drafts, draft_to_json)),
+    #("notes", json.array(archive.notes, draft_to_json)),
+  ])
+}
+
 pub fn undo_outcome_to_json(outcome: UndoOutcome) -> Json {
   json.object([
     #("now", json.float(fsrs.to_epoch(outcome.now))),
@@ -478,7 +515,11 @@ pub fn insights_to_json(insights: Insights) -> Json {
 }
 
 pub fn review_row_to_json(row: ReviewRow) -> Json {
-  json.object([
+  json.object(review_row_fields(row))
+}
+
+fn review_row_fields(row: ReviewRow) -> List(#(String, Json)) {
+  [
     #("at", json.float(fsrs.to_epoch(row.at))),
     #("rating", json.int(fsrs.rating_to_int(row.rating))),
     #("durationMs", nullable_int(row.duration_ms)),
@@ -488,7 +529,7 @@ pub fn review_row_to_json(row: ReviewRow) -> Json {
     #("scheduledDays", json.int(row.scheduled_days)),
     #("stabilityAfter", nullable_float(row.stability_after)),
     #("recall", json.bool(row.recall)),
-  ])
+  ]
 }
 
 pub fn review_to_json(review: Review) -> Json {
@@ -678,6 +719,36 @@ pub fn boot_state_decoder() -> Decoder(BootState) {
     drafts:,
     notes:,
     today:,
+  ))
+}
+
+pub fn archive_decoder() -> Decoder(Archive) {
+  use version <- decode.field("gleamdrill", decode.int)
+  use exported_at <- decode.field("exportedAt", moment())
+  use settings <- decode.field("settings", settings_decoder())
+  use cards <- decode.field("cards", decode.list(card_decoder()))
+  use reviews <- decode.field(
+    "reviews",
+    decode.list({
+      use problem <- decode.then(ref_decoder())
+      use row <- decode.then(review_row_decoder())
+      decode.success(#(problem, row))
+    }),
+  )
+  use drafts <- decode.optional_field(
+    "drafts",
+    [],
+    decode.list(draft_decoder()),
+  )
+  use notes <- decode.optional_field("notes", [], decode.list(draft_decoder()))
+  decode.success(Archive(
+    version:,
+    exported_at:,
+    settings:,
+    cards:,
+    reviews:,
+    drafts:,
+    notes:,
   ))
 }
 

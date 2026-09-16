@@ -19,10 +19,12 @@
 import fsrs
 import gleam/dict.{type Dict}
 import gleam/dynamic/decode.{type Decoder}
+import gleam/float
 import gleam/int
 import gleam/json.{type Json}
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/order
 import gleam/result
 import gleam/string
 import gleam/time/timestamp.{type Timestamp}
@@ -336,6 +338,72 @@ pub fn put_note(local: Local, problem: ProblemRef, body: String) -> Local {
     "" -> others
     _ -> [#(problem, body), ..others]
   })
+}
+
+// --- export and restore ----------------------------------------------------
+
+/// Everything in the guest store as one archive, oldest review first.
+pub fn archive(
+  local: Local,
+  settings: Settings,
+  now: Timestamp,
+) -> wire.Archive {
+  wire.Archive(
+    version: wire.archive_version,
+    exported_at: now,
+    settings:,
+    cards: dict.values(local.cards),
+    reviews: list.reverse(local.log),
+    drafts: local.drafts,
+    notes: local.notes,
+  )
+}
+
+/// A guest store built from an archive, replacing whatever was there. The
+/// day tallies and totals are re-derived from the log, so a file made by
+/// an account (which keeps no tallies) restores as well as a guest's own.
+pub fn restore(archive: wire.Archive) -> Local {
+  let log =
+    archive.reviews
+    |> list.sort(fn(a, b) {
+      timestamp.compare({ a.1 }.at, { b.1 }.at) |> order.negate
+    })
+    |> list.take(review_log_limit)
+  let history =
+    log
+    |> list.reverse
+    |> list.fold(empty_history(), fn(history, entry) {
+      let #(_, row) = entry
+      let day =
+        browser.study_day_index_at(
+          float.round(fsrs.to_epoch(row.at)),
+          archive.settings.day_start_hour,
+        )
+      tally(
+        history,
+        day,
+        row.rating != fsrs.Again,
+        row.state_before == api.state_code(fsrs.Review),
+      )
+    })
+  Local(
+    cards: archive.cards
+      |> list.map(fn(card: CardState) { #(card.problem, card) })
+      |> dict.from_list,
+    drafts: list.take(archive.drafts, draft_limit),
+    notes: archive.notes,
+    history:,
+    log:,
+  )
+}
+
+/// Writes every key at once, for a restore.
+pub fn save_all(local: Local, settings: Settings) -> Result(Nil, Nil) {
+  use _ <- result.try(save_settings(settings))
+  use _ <- result.try(save_cards(local))
+  use _ <- result.try(save_drafts(local))
+  use _ <- result.try(save_notes(local))
+  save_history(local)
 }
 
 // --- derived views ---------------------------------------------------------

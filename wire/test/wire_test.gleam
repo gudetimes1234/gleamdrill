@@ -175,6 +175,35 @@ pub fn boot_state_round_trips_test() {
   round_trip(state, wire.boot_state_to_json, wire.boot_state_decoder())
 }
 
+pub fn archive_round_trips_test() {
+  let archive =
+    wire.Archive(
+      version: wire.archive_version,
+      exported_at: fsrs.from_epoch(1_787_788_818.0),
+      settings: wire.default_settings(),
+      cards: [a_card()],
+      reviews: [
+        #(
+          a_ref(),
+          wire.ReviewRow(
+            at: fsrs.from_epoch(1_787_700_000.0),
+            rating: fsrs.Good,
+            duration_ms: Some(161_000),
+            revealed: False,
+            auto_failed: False,
+            state_before: 2,
+            scheduled_days: 15,
+            stability_after: Some(21.4),
+            recall: False,
+          ),
+        ),
+      ],
+      drafts: [#(a_ref(), "draft body")],
+      notes: [#(a_ref(), "note body")],
+    )
+  round_trip(archive, wire.archive_to_json, wire.archive_decoder())
+}
+
 pub fn undo_outcome_round_trips_test() {
   let restored =
     wire.UndoOutcome(

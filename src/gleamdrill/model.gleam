@@ -354,6 +354,9 @@ pub type Model {
     studying: Bool,
     /// The latest grade, while it can still be taken back.
     undo: Option(UndoPoint),
+    /// An export file read from disk, waiting for the user to confirm that
+    /// it replaces everything.
+    import_pending: Option(api.Archive),
     /// After a passing run the solution panel opens by itself with your
     /// code diffed against the reference. `diff_open` is that panel, until
     /// dismissed (reset each sitting); `diff_mode` is whether the panel
@@ -487,6 +490,7 @@ pub fn default() -> Model {
     results_collapsed: False,
     editor_height: None,
     undo: None,
+    import_pending: None,
     diff_open: True,
     diff_mode: True,
     recall: False,
@@ -825,6 +829,16 @@ pub type Msg {
   UserClickedRetryRuntime(String)
   UserToggledSide
   UserToggledResults
+  /// Download everything as one file.
+  UserClickedExport
+  ArchiveReady(Result(api.Archive, ApiError))
+  /// Pick an export file to restore from.
+  UserClickedImport
+  /// The chosen file's text.
+  ImportPicked(String)
+  /// The "replace everything?" answer.
+  ImportConfirmed(Bool)
+  ArchiveRestored(Result(Nil, ApiError))
   /// Flip the solution panel between the diff and the plain reference.
   UserToggledDiff
   /// Close the panel a passing run opened.

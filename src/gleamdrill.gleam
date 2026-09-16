@@ -3,10 +3,13 @@ import gleam/bool
 import gleam/dict
 import gleam/float
 import gleam/int
+import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
+import gleam/time/calendar
+import gleam/time/timestamp
 import gleamdrill/api
 import gleamdrill/browser
 import gleamdrill/editor
@@ -15,45 +18,46 @@ import gleamdrill/keys
 import gleamdrill/legacy
 import gleamdrill/local
 import gleamdrill/model.{
-  type Model, type Msg, Account, AuthCompleted, AuthForm, AuthRoute,
-  AwaitingGrade, CardSuspended, CaseResult, Cases, ClockTicked, DayStartHour,
-  DesiredRetention, DraftSaveTicked, DraftSynced, DrillRoute, EditorChanged,
-  EditorFocusRequested, EditorResized, Errored, ExamSampled, ExitConfirmed,
-  Guest, HelpToggled, HistoryLoaded, InsightsLoaded, KeyPressed, MenuActivated,
-  MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
-  MenuSuspendedAtCursor, MenuToggledAtCursor, Model, NewPerDay, NotGrading,
-  NotStarted, NoteChanged, NoteFocusRequested, NoteSaveTicked, NoteSynced,
-  PickerConfirmed, PickerConfirmedWithStarter, PickerRoute,
-  PickerToggledLanguage, PromptDismissed, QueueChanged, QueueCursorJumped,
-  QueueCursorMoved, QueueRoute, QueueToggledAtCursor, QuizMoved, Ran,
-  Registering, RemoteRunFinished, ReportRoute, ReviewRecorded, ReviewsPerDay,
-  RunError, RunFinished, RunIdle, RunTimedOut, RunnerFailed, RunnerReady,
-  Running, RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded,
-  RuntimeReady, SearchFocusRequested, SettingsRoute, SettingsSaved,
-  SignOutCompleted, SigningIn, StateImported, StateLoaded, StatsActivated,
-  StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute, SubmittingGrade,
-  SummaryRoute, SyncFailed, Synced, Syncing, TimedOut, TourActivated,
-  TourContents, TourCursorMoved, TourEditorChanged, TourLesson, TourRoute,
-  TourRunTicked, UndoRecorded, UserAddedAllShown, UserAddedStarterSet,
-  UserChangedAuthEmail, UserChangedAuthPassword, UserChangedGroup,
-  UserChangedIterations, UserChangedKeymap, UserChangedSetting,
-  UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
-  UserClickedCategory, UserClickedClearSelection, UserClickedDeviceTimezone,
-  UserClickedExitDrill, UserClickedExitReport, UserClickedMergeGuest,
-  UserClickedNext, UserClickedQueue, UserClickedRecall, UserClickedRetryRuntime,
-  UserClickedRetrySync, UserClickedRun, UserClickedSelectAll,
-  UserClickedSettings, UserClickedSignIn, UserClickedSignOut,
-  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
-  UserClickedStopRun, UserClickedStudy, UserClickedSubcategory, UserClickedTour,
-  UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
-  UserClickedUndo, UserClosedDetail, UserDismissedDiff, UserDismissedMergeOffer,
-  UserDismissedNotice, UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded,
-  UserOpenedDetail, UserOpenedLesson, UserPickedChoice, UserPickedQueueLanguage,
-  UserRemovedAllShown, UserResetLesson, UserRevealedHint, UserRevealedRecall,
-  UserSearched, UserSearchedQueue, UserSubmittedAnswer, UserSubmittedAuth,
-  UserToggledAuthMode, UserToggledDiff, UserToggledLanguage, UserToggledProblem,
-  UserToggledQueued, UserToggledResults, UserToggledSide, UserToggledSolution,
-  UserToggledSuspend,
+  type Model, type Msg, Account, ArchiveReady, ArchiveRestored, AuthCompleted,
+  AuthForm, AuthRoute, AwaitingGrade, CardSuspended, CaseResult, Cases,
+  ClockTicked, DayStartHour, DesiredRetention, DraftSaveTicked, DraftSynced,
+  DrillRoute, EditorChanged, EditorFocusRequested, EditorResized, Errored,
+  ExamSampled, ExitConfirmed, Guest, HelpToggled, HistoryLoaded, ImportConfirmed,
+  ImportPicked, InsightsLoaded, KeyPressed, MenuActivated, MenuCursorJumped,
+  MenuCursorMoved, MenuPaneFocused, MenuRoute, MenuSuspendedAtCursor,
+  MenuToggledAtCursor, Model, NewPerDay, NotGrading, NotStarted, NoteChanged,
+  NoteFocusRequested, NoteSaveTicked, NoteSynced, PickerConfirmed,
+  PickerConfirmedWithStarter, PickerRoute, PickerToggledLanguage,
+  PromptDismissed, QueueChanged, QueueCursorJumped, QueueCursorMoved, QueueRoute,
+  QueueToggledAtCursor, QuizMoved, Ran, Registering, RemoteRunFinished,
+  ReportRoute, ReviewRecorded, ReviewsPerDay, RunError, RunFinished, RunIdle,
+  RunTimedOut, RunnerFailed, RunnerReady, Running, RuntimeFailed,
+  RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded, RuntimeReady,
+  SearchFocusRequested, SettingsRoute, SettingsSaved, SignOutCompleted,
+  SigningIn, StateImported, StateLoaded, StatsActivated, StatsCursorMoved,
+  StatsLoaded, StatsRoute, StudyRoute, SubmittingGrade, SummaryRoute, SyncFailed,
+  Synced, Syncing, TimedOut, TourActivated, TourContents, TourCursorMoved,
+  TourEditorChanged, TourLesson, TourRoute, TourRunTicked, UndoRecorded,
+  UserAddedAllShown, UserAddedStarterSet, UserChangedAuthEmail,
+  UserChangedAuthPassword, UserChangedGroup, UserChangedIterations,
+  UserChangedKeymap, UserChangedSetting, UserClickedBackToStudy,
+  UserClickedBreadcrumb, UserClickedBrowse, UserClickedCategory,
+  UserClickedClearSelection, UserClickedDeviceTimezone, UserClickedExitDrill,
+  UserClickedExitReport, UserClickedExport, UserClickedImport,
+  UserClickedMergeGuest, UserClickedNext, UserClickedQueue, UserClickedRecall,
+  UserClickedRetryRuntime, UserClickedRetrySync, UserClickedRun,
+  UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
+  UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
+  UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
+  UserClickedTour, UserClickedTourContents, UserClickedTourNext,
+  UserClickedTourPrev, UserClickedUndo, UserClosedDetail, UserDismissedDiff,
+  UserDismissedMergeOffer, UserDismissedNotice, UserDismissedUpgradePrompt,
+  UserFilteredQueue, UserGraded, UserOpenedDetail, UserOpenedLesson,
+  UserPickedChoice, UserPickedQueueLanguage, UserRemovedAllShown,
+  UserResetLesson, UserRevealedHint, UserRevealedRecall, UserSearched,
+  UserSearchedQueue, UserSubmittedAnswer, UserSubmittedAuth, UserToggledAuthMode,
+  UserToggledDiff, UserToggledLanguage, UserToggledProblem, UserToggledQueued,
+  UserToggledResults, UserToggledSide, UserToggledSolution, UserToggledSuspend,
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
@@ -1727,6 +1731,81 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     SettingsSaved(Error(error)) -> #(
       Model(..m, notice: Some(api.error_message(error))),
+      effect.none(),
+    )
+
+    // --- export and import ---
+    UserClickedExport -> #(m, store.export_archive(m))
+
+    ArchiveReady(Ok(archive)) -> #(
+      m,
+      run_effect(fn() {
+        browser.download_text(
+          "gleamdrill-"
+            <> string.slice(
+            timestamp.to_rfc3339(archive.exported_at, calendar.utc_offset),
+            0,
+            10,
+          )
+            <> ".json",
+          json.to_string(wire.archive_to_json(archive)),
+        )
+      }),
+    )
+
+    ArchiveReady(Error(error)) -> #(
+      Model(..m, notice: Some(api.error_message(error))),
+      effect.none(),
+    )
+
+    UserClickedImport -> #(
+      m,
+      effect.from(fn(dispatch) {
+        browser.pick_file(fn(text) { dispatch(ImportPicked(text)) })
+      }),
+    )
+
+    // Parsed here, before the question is asked, so a file that is not an
+    // export is refused without ever offering to replace anything with it.
+    ImportPicked(text) ->
+      case json.parse(text, wire.archive_decoder()) {
+        Ok(archive) if archive.version == wire.archive_version -> #(
+          Model(..m, import_pending: Some(archive)),
+          effect.none(),
+        )
+        Ok(_) -> #(
+          Model(
+            ..m,
+            notice: Some("This export was made by a newer GleamDrill."),
+          ),
+          effect.none(),
+        )
+        Error(_) -> #(
+          Model(..m, notice: Some("That file is not a GleamDrill export.")),
+          effect.none(),
+        )
+      }
+
+    ImportConfirmed(False) -> #(Model(..m, import_pending: None), effect.none())
+
+    ImportConfirmed(True) ->
+      case m.import_pending {
+        Some(archive) -> #(
+          Model(..m, import_pending: None, refreshing: True),
+          store.restore_archive(m, archive),
+        )
+        None -> #(m, effect.none())
+      }
+
+    // Everything on screen came from the old data, so the boot state is
+    // fetched again rather than patched.
+    ArchiveRestored(Ok(Nil)) -> #(
+      Model(..m, notice: Some("Restored. Everything is as the file had it.")),
+      store.load_state(m),
+    )
+
+    ArchiveRestored(Error(error)) -> #(
+      Model(..m, refreshing: False, notice: Some(api.error_message(error))),
       effect.none(),
     )
 

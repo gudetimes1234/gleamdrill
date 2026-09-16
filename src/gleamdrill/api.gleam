@@ -227,6 +227,43 @@ pub fn post_review(
   )
 }
 
+pub type Archive =
+  wire.Archive
+
+/// GET /api/export: the whole account as one archive.
+pub fn fetch_export(
+  base: String,
+  token: String,
+  handler: fn(Result(Archive, ApiError)) -> message,
+) -> Effect(message) {
+  send(
+    base,
+    http.Get,
+    "/api/export",
+    Some(token),
+    None,
+    wire.archive_decoder(),
+    handler,
+  )
+}
+
+/// POST /api/restore: replace the whole account with an archive.
+pub fn post_restore(
+  base: String,
+  token: String,
+  archive: Archive,
+  handler: fn(Result(Nil, ApiError)) -> message,
+) -> Effect(message) {
+  send_expecting_nothing(
+    base,
+    http.Post,
+    "/api/restore",
+    Some(token),
+    Some(wire.archive_to_json(archive)),
+    handler,
+  )
+}
+
 /// DELETE /api/reviews: undo the most recent review.
 pub fn delete_review(
   base: String,

@@ -17,7 +17,7 @@
 // language runtimes are lazy multi-megabyte downloads.
 
 import { chromium } from "playwright-core";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -1312,8 +1312,8 @@ await freshGuest();
 await page.click('button:text-is("Settings")');
 await page.waitForSelector(".settings-screen", { timeout: 10000 });
 check("settings opens", await page.isVisible(".settings-screen"));
-check("both stores are represented",
-  (await page.$$(".settings-section")).length === 3);
+check("both stores are represented, and the data section",
+  (await page.$$(".settings-section")).length === 4);
 const beforeSave = await page.evaluate(
   () => localStorage.getItem("gleamDrill.guest.settings.v1"));
 check("nothing is written before an edit", beforeSave === null);
@@ -1351,6 +1351,82 @@ await page.waitForTimeout(200);
 check("device preferences save from here too",
   (await page.evaluate(() => JSON.parse(
     localStorage.getItem("gleamDrill.prefs.v1") ?? "{}"))).editorKeymap === "vim");
+
+// Everything as one file, and back. A card is seeded so the file has
+// something in it; the store is wiped between the two halves.
+await page.evaluate(() => {
+  const longAgo = Math.floor(Date.now() / 1000) - 3 * 86400;
+  localStorage.setItem("gleamDrill.guest.cards.v1", JSON.stringify([{
+    category: "NeetCode 150", subcategory: "Arrays & Hashing", title: "Two Sum",
+    state: 2, step: null, stability: 12, difficulty: 5,
+    due: longAgo + 86400 * 5, lastReview: longAgo, introducedAt: longAgo,
+    reps: 2, lapses: 0, suspended: false,
+  }]));
+  localStorage.setItem("gleamDrill.guest.notes.v1", JSON.stringify([{
+    category: "NeetCode 150", subcategory: "Arrays & Hashing", title: "Two Sum",
+    body: "complement map",
+  }]));
+});
+await page.reload({ waitUntil: "networkidle" });
+await page.waitForSelector(".study-screen", { timeout: 10000 });
+await page.click('button:text-is("Settings")');
+await page.waitForSelector(".settings-screen", { timeout: 10000 });
+const [download] = await Promise.all([
+  page.waitForEvent("download", { timeout: 10000 }),
+  page.click(".settings-export"),
+]);
+exercises("UserClickedExport");
+const exportPath = join(SHOTS, "export.json");
+await download.saveAs(exportPath);
+const exported = JSON.parse(readFileSync(exportPath, "utf8"));
+check("export downloads a dated JSON file",
+  /^gleamdrill-\d{4}-\d{2}-\d{2}\.json$/.test(download.suggestedFilename()), download.suggestedFilename());
+check("holding the cards, notes and settings",
+  exported.gleamdrill === 1 && exported.cards.length === 1
+    && exported.notes[0]?.body === "complement map" && exported.settings.newPerDay === 100,
+  JSON.stringify(Object.keys(exported)));
+await page.evaluate(() => {
+  localStorage.removeItem("gleamDrill.guest.cards.v1");
+  localStorage.removeItem("gleamDrill.guest.notes.v1");
+});
+// The picker's input is created on click and read on change; handing it
+// the file directly is the same path a real choice takes.
+const chooseFile = async (path) => {
+  await page.click(".settings-import");
+  await page.setInputFiles("input[type=file]", path);
+};
+await chooseFile(exportPath);
+exercises("UserClickedImport");
+await page.waitForSelector(".import-prompt", { timeout: 10000 });
+check("import asks before replacing anything",
+  (await page.textContent(".import-prompt")).includes("1 cards"));
+await capture("import-prompt", "Import: the file's contents named, and a question before anything is replaced");
+await page.keyboard.press("Escape");
+exercises("ImportConfirmed");
+await page.waitForTimeout(300);
+check("Escape keeps what is here", (await page.$(".import-prompt")) === null
+  && (await page.evaluate(() => localStorage.getItem("gleamDrill.guest.cards.v1"))) === null);
+await chooseFile(exportPath);
+await page.waitForSelector(".import-prompt", { timeout: 10000 });
+await page.click(".import-prompt .exit-prompt-leave");
+await page.waitForTimeout(800);
+check("Replace restores the file",
+  (await page.evaluate(() => JSON.parse(localStorage.getItem("gleamDrill.guest.cards.v1") ?? "[]").length)) === 1
+    && (await page.evaluate(() => JSON.parse(localStorage.getItem("gleamDrill.guest.notes.v1") ?? "[]")[0]?.body)) === "complement map");
+check("and says so", (await page.textContent(".notice").catch(() => "")).includes("Restored"));
+// A restore reloads everything, which lands on the study screen with the
+// restored queue in view.
+await page.waitForSelector(".study-screen", { timeout: 10000 });
+check("and lands on the restored study screen", await page.isVisible(".study-screen"));
+await page.click('button:text-is("Settings")');
+await page.waitForSelector(".settings-screen", { timeout: 10000 });
+writeFileSync(exportPath, "{\"hello\": 1}");
+await chooseFile(exportPath);
+await page.waitForTimeout(500);
+check("a file that is not an export is refused without a question",
+  (await page.$(".import-prompt")) === null
+    && (await page.textContent(".notice").catch(() => "")).includes("not a GleamDrill export"));
+await page.click(".notice-dismiss").catch(() => {});
 
 await page.keyboard.press("Escape");
 await page.waitForSelector(".study-screen", { timeout: 10000 });
@@ -1983,6 +2059,7 @@ const declared = [
   "UserToggledSide", "UserToggledResults", "UserToggledLanguage",
   "UserToggledSuspend", "UserClickedRecall", "UserRevealedRecall",
   "UserClickedUndo", "UserToggledDiff", "UserDismissedDiff",
+  "UserClickedExport", "UserClickedImport", "ImportConfirmed",
   "MenuSuspendedAtCursor", "UserClickedQueue", "UserSearchedQueue",
   "UserFilteredQueue", "UserPickedQueueLanguage",
   "UserToggledQueued", "UserAddedAllShown", "UserRemovedAllShown",

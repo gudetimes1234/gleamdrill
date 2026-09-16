@@ -870,6 +870,50 @@ pub fn unrecord_is_the_inverse_of_record_test() -> Nil {
   assert list.length(fresh.log) == 1
 }
 
+/// Export then import gives back the same store: every card, row, draft
+/// and note, with the totals re-derived from the log.
+pub fn a_guest_archive_restores_to_the_same_store_test() -> Nil {
+  let settings = guest_settings()
+  let store =
+    [
+      #("Two Sum", fsrs.Good),
+      #("Valid Anagram", fsrs.Again),
+      #("Two Sum", fsrs.Easy),
+    ]
+    |> list.index_fold(local.empty(), fn(store, pair, index) {
+      let #(next, _) =
+        local.record(
+          store,
+          settings,
+          answer(a_problem(pair.0), pair.1),
+          at_epoch(1_800_000_000 + index * 3600),
+          7,
+          0.0,
+        )
+      next
+    })
+    |> local.put_draft(a_problem("Two Sum"), "def twoSum(nums, target): pass")
+    |> local.put_note(a_problem("Valid Anagram"), "sort both")
+
+  let archive = local.archive(store, settings, at_epoch(1_800_010_000))
+  assert archive.version == wire.archive_version
+  assert list.length(archive.reviews) == 3
+  // Oldest first in the file, newest first in the store.
+  let assert [#(first, _), ..] = archive.reviews
+  assert first == a_problem("Two Sum")
+
+  let json = json.to_string(wire.archive_to_json(archive))
+  let assert Ok(parsed) = json.parse(json, wire.archive_decoder())
+  let restored = local.restore(parsed)
+  assert restored.cards == store.cards
+  assert restored.log == store.log
+  assert restored.drafts == store.drafts
+  assert restored.notes == store.notes
+  assert restored.history.total_reviews == 3
+  assert restored.history.mature_reviews == store.history.mature_reviews
+  assert restored.history.mature_correct == store.history.mature_correct
+}
+
 pub fn the_review_log_is_a_ring_buffer_test() -> Nil {
   let settings = guest_settings()
   let store =

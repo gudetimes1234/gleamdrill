@@ -357,6 +357,30 @@ check "nor a reveal" 1 "$(echo "$I" | j "['reveals'][0]['count']")"
 check "history without a token is 401" 401 "$(status "$B/api/history?category=x&subcategory=y&title=z")"
 check "history without the key is 422" 422 "$(status "$B/api/history" -H "$AUTH")"
 
+echo "== export and restore"
+# The main account's whole history as one file, wiped, and put back.
+X=$(curl -s "$B/api/export" -H "$AUTH")
+check "the export is a versioned archive" 1 "$(echo "$X" | j "['gleamdrill']")"
+check "with every review" 5 "$(echo "$X" | j "len(d['reviews'])")"
+check "each naming its problem" "Contains Duplicate" "$(echo "$X" | j "['reviews'][0]['title']")"
+check "the settings" "America/New_York" "$(echo "$X" | j "['settings']['timezone']")"
+check "and the cards" 1 "$(echo "$X" | j "len(d['cards'])")"
+EMPTY=$(echo "$X" | python3 -c "import sys,json;d=json.load(sys.stdin);d.update(cards=[],reviews=[],drafts=[],notes=[]);print(json.dumps(d))")
+check "restoring an empty archive wipes the account" 204 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$EMPTY")"
+check "no cards remain" 0 "$(curl -s "$B/api/state" -H "$AUTH" | j "len(d['cards'])")"
+check "no reviews remain" 0 "$(curl -s "$B/api/stats" -H "$AUTH" | j "['totalReviews']")"
+check "restoring the export brings it all back" 204 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$X")"
+check "the card is back" 1 "$(curl -s "$B/api/state" -H "$AUTH" | j "len(d['cards'])")"
+check "with its scheduling" "$(echo "$X" | j "['cards'][0]['stability']")" "$(curl -s "$B/api/state" -H "$AUTH" | j "['cards'][0]['stability']")"
+check "every review is back" 5 "$(curl -s "$B/api/stats" -H "$AUTH" | j "['totalReviews']")"
+Y=$(curl -s "$B/api/export" -H "$AUTH")
+check "and exporting again gives the same file" "$(echo "$X" | j "json.dumps({k: v for k, v in d.items() if k != 'exportedAt'}, sort_keys=True)")" "$(echo "$Y" | j "json.dumps({k: v for k, v in d.items() if k != 'exportedAt'}, sort_keys=True)")"
+check "a restored review cannot be undone" 409 "$(status -X DELETE "$B/api/reviews" -H "$AUTH")"
+check "a file that is not an export is refused" 422 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d '{"hello":1}')"
+check "a newer format is refused" 422 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$(echo "$X" | python3 -c "import sys,json;d=json.load(sys.stdin);d['gleamdrill']=99;print(json.dumps(d))")")"
+check "bad settings in the file are refused" 422 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$(echo "$X" | python3 -c "import sys,json;d=json.load(sys.stdin);d['settings']['desiredRetention']=0.1;print(json.dumps(d))")")"
+check "export without a token is 401" 401 "$(status "$B/api/export")"
+
 echo "== isolation and routing"
 T2=$(curl -s -X POST "$B/api/auth/signup" -H "$CT" -d "{\"email\":\"other-$RANDOM$RANDOM@example.com\",\"password\":\"$PW\"}" | j "['token']")
 check "a second account sees none of the first's cards" 0 "$(curl -s "$B/api/state" -H "authorization: Bearer $T2" | j "len(d['cards'])")"

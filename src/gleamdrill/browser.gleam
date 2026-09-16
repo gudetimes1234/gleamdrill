@@ -36,6 +36,19 @@ pub fn time_zone() -> String
 @external(javascript, "./ffi.mjs", "onKey")
 pub fn on_keys(callback: fn(String, Bool, Bool, String) -> Nil) -> Nil
 
+/// The study day a past moment fell on, keyed like `study_day_index`.
+@external(javascript, "./ffi.mjs", "studyDayIndexAt")
+pub fn study_day_index_at(epoch_seconds: Int, day_start_hour: Int) -> Int
+
+/// Hands the browser a text file to save.
+@external(javascript, "./ffi.mjs", "downloadText")
+pub fn download_text(filename: String, text: String) -> Nil
+
+/// Opens the file picker; the callback gets the chosen file's text, and is
+/// not called at all if the picker is cancelled.
+@external(javascript, "./ffi.mjs", "pickFile")
+pub fn pick_file(callback: fn(String) -> Nil) -> Nil
+
 @external(javascript, "./ffi.mjs", "focusElement")
 pub fn focus_element(selector: String) -> Nil
 

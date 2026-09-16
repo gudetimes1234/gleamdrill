@@ -410,6 +410,71 @@ pub fn history(request: wisp.Request, context: Context) -> wisp.Response {
   }
 }
 
+/// GET /api/export -- everything the account holds, as one archive.
+pub fn export(request: wisp.Request, context: Context) -> wisp.Response {
+  use <- wisp.require_method(request, http.Get)
+  use user <- web.require_user(request, context)
+  let outcome = {
+    use settings <- result.try(study.load_settings(context.db, user.id))
+    use cards <- result.try(study.load_cards(context.db, user.id))
+    use reviews <- result.try(study.all_reviews(context.db, user.id))
+    use drafts <- result.try(study.load_drafts(context.db, user.id))
+    use notes <- result.try(study.load_notes(context.db, user.id))
+    Ok(wire.Archive(
+      version: wire.archive_version,
+      exported_at: timestamp.system_time(),
+      settings:,
+      cards: list.map(cards, card_state),
+      reviews:,
+      drafts:,
+      notes:,
+    ))
+  }
+  case outcome {
+    Error(failure) -> study_error(failure)
+    Ok(archive) -> web.json_ok(wire.archive_to_json(archive))
+  }
+}
+
+/// POST /api/restore -- replace everything with an archive. The client asks
+/// before sending; the server only checks the file is one of ours and, for
+/// scheduler settings, one it would have accepted from the settings form.
+pub fn restore(request: wisp.Request, context: Context) -> wisp.Response {
+  use <- wisp.require_method(request, http.Post)
+  use user <- web.require_user(request, context)
+  use body <- wisp.require_json(request)
+  case decode.run(body, wire.archive_decoder()) {
+    Error(_) ->
+      web.error(422, "invalid_body", "That is not a GleamDrill export.")
+    Ok(archive) ->
+      case archive.version == wire.archive_version {
+        False ->
+          web.error(
+            422,
+            "unsupported_version",
+            "This export was made by a newer GleamDrill.",
+          )
+        True ->
+          case validate_settings(archive.settings) {
+            Error(message) -> web.error(422, "invalid_settings", message)
+            Ok(_) ->
+              case
+                study.timezone_is_valid(context.db, archive.settings.timezone)
+              {
+                Ok(False) ->
+                  web.error(422, "invalid_settings", "Unknown timezone.")
+                Error(failure) -> study_error(failure)
+                Ok(True) ->
+                  case study.restore(context.db, user.id, archive) {
+                    Error(failure) -> study_error(failure)
+                    Ok(Nil) -> wisp.no_content()
+                  }
+              }
+          }
+      }
+  }
+}
+
 /// PUT /api/notes -- the user's note on one problem. Same payload as a
 /// draft; an empty body clears it.
 pub fn note(request: wisp.Request, context: Context) -> wisp.Response {
@@ -535,14 +600,18 @@ fn fuzz_sample() -> Float {
 /// the only shape difference between what the server keeps and what it sends,
 /// and it is why `CardRecord` is not itself a wire type.
 fn card_json(record: CardRecord) -> Json {
-  wire.card_to_json(wire.CardState(
+  wire.card_to_json(card_state(record))
+}
+
+fn card_state(record: CardRecord) -> wire.CardState {
+  wire.CardState(
     problem: record.problem,
     card: record.card,
     reps: record.reps,
     lapses: record.lapses,
     suspended: record.suspended,
     introduced_at: record.introduced_at,
-  ))
+  )
 }
 
 const accounts_user_json = wire.user_to_json

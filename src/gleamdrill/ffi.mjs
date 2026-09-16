@@ -74,6 +74,47 @@ export function studyDayIndex(dayStartHour) {
   );
 }
 
+// `studyDayIndex` for a moment other than now: which study day a past
+// review fell on, when a restored log has to be tallied by day again.
+export function studyDayIndexAt(epochSeconds, dayStartHour) {
+  const shifted = new Date(epochSeconds * 1000 - dayStartHour * 3600 * 1000);
+  return Math.floor(
+    Date.UTC(shifted.getFullYear(), shifted.getMonth(), shifted.getDate()) / 86400000,
+  );
+}
+
+// Hands the browser a file to save. An anchor with a download attribute is
+// the one way to do this without a permission prompt; the object URL is
+// released once the click has been dispatched.
+export function downloadText(filename, text) {
+  const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// Opens the file picker and reads the chosen file as text. A hidden input
+// created per call, so a cancelled picker leaves nothing behind; the
+// callback is not invoked on cancel.
+export function pickFile(callback) {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json,.json";
+  input.style.display = "none";
+  input.addEventListener("change", () => {
+    const file = input.files?.[0];
+    input.remove();
+    if (!file) return;
+    file.text().then(callback, () => {});
+  });
+  document.body.appendChild(input);
+  input.click();
+}
+
 // The browser's IANA zone, e.g. "America/New_York". Sent at signup so the
 // account's study day rolls over where the user actually is.
 export function timeZone() {

@@ -13,9 +13,11 @@
 import gleam/float
 import gleam/int
 import gleam/list
+import gleam/option.{None, Some}
 import gleamdrill/model.{
-  type Model, type Msg, DayStartHour, DesiredRetention, NewPerDay, ReviewsPerDay,
-  UserChangedKeymap, UserChangedSetting, UserClickedDeviceTimezone,
+  type Model, type Msg, DayStartHour, DesiredRetention, ImportConfirmed,
+  NewPerDay, ReviewsPerDay, UserChangedKeymap, UserChangedSetting,
+  UserClickedDeviceTimezone, UserClickedExport, UserClickedImport,
   UserToggledLanguage,
 }
 import gleamdrill/problems
@@ -93,7 +95,112 @@ pub fn view(m: Model) -> Element(Msg) {
       keymap_row(m),
       languages_row(m),
     ]),
+
+    section(
+      "Your data",
+      case m.mode {
+        model.Guest ->
+          "Everything this browser holds, as one file. Import it on "
+          <> "another device, or keep it as a backup."
+        model.Account(_) ->
+          "Everything your account holds, as one file. The same file "
+          <> "restores into a guest browser, and a guest's file into an account."
+      },
+      [
+        action_row(
+          "Export study data",
+          "Cards, every review, settings, drafts and notes, as JSON.",
+          "Download",
+          "settings-export",
+          UserClickedExport,
+        ),
+        action_row(
+          "Import study data",
+          "Replaces everything here with the file's contents. You are asked "
+            <> "first.",
+          "Choose file\u{2026}",
+          "settings-import",
+          UserClickedImport,
+        ),
+      ],
+    ),
+    import_prompt(m),
   ])
+}
+
+fn action_row(
+  label: String,
+  help: String,
+  button: String,
+  class: String,
+  msg: Msg,
+) -> Element(Msg) {
+  html.div([attribute.class("settings-row")], [
+    html.div([attribute.class("settings-label")], [
+      html.span([attribute.class("settings-label-text")], [html.text(label)]),
+      html.span([attribute.class("settings-help")], [html.text(help)]),
+    ]),
+    html.button(
+      [
+        attribute.class("btn-secondary " <> class),
+        attribute.type_("button"),
+        event.on_click(msg),
+      ],
+      [html.text(button)],
+    ),
+  ])
+}
+
+/// The "replace everything?" question, over the settings it will change.
+/// Same markup as the drill's exit prompt, so it reads and keys the same.
+fn import_prompt(m: Model) -> Element(Msg) {
+  case m.import_pending {
+    None -> element.none()
+    Some(archive) ->
+      html.div([attribute.class("exit-overlay")], [
+        html.div(
+          [
+            attribute.class("exit-prompt import-prompt"),
+            attribute.role("dialog"),
+            attribute.attribute("aria-modal", "true"),
+            attribute.attribute("aria-labelledby", "import-prompt-title"),
+          ],
+          [
+            html.p(
+              [
+                attribute.class("exit-prompt-title"),
+                attribute.id("import-prompt-title"),
+              ],
+              [
+                html.text(
+                  "Replace everything here with this file? It holds "
+                  <> int.to_string(list.length(archive.cards))
+                  <> " cards and "
+                  <> int.to_string(list.length(archive.reviews))
+                  <> " reviews. What is here now is gone for good.",
+                ),
+              ],
+            ),
+            html.div([attribute.class("exit-prompt-actions")], [
+              html.button(
+                [
+                  attribute.class("btn-primary exit-prompt-leave"),
+                  event.on_click(ImportConfirmed(True)),
+                ],
+                [html.text("Replace")],
+              ),
+              html.button(
+                [
+                  attribute.class("btn-secondary exit-prompt-stay"),
+                  event.on_click(ImportConfirmed(False)),
+                ],
+                [html.text("Keep mine")],
+              ),
+            ]),
+          ],
+        ),
+      ])
+  }
 }
 
 fn section(

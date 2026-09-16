@@ -14,8 +14,8 @@ import gleam/option.{None, Some}
 import gleam/string
 import gleamdrill/model.{
   type Key, type Model, type Msg, AuthRoute, AwaitingGrade, DrillRoute,
-  EditorFocusRequested, ExitConfirmed, HelpToggled, MenuActivated,
-  MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
+  EditorFocusRequested, ExitConfirmed, HelpToggled, ImportConfirmed,
+  MenuActivated, MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
   MenuSuspendedAtCursor, MenuToggledAtCursor, NoteFocusRequested,
   PickerConfirmed, PickerConfirmedWithStarter, PickerRoute, QueueCursorJumped,
   QueueCursorMoved, QueueRoute, QueueToggledAtCursor, QuizMoved, Ran,
@@ -43,17 +43,22 @@ pub type Binding {
 
 /// The bindings live in this context, in the order the status bar shows them.
 pub fn bindings(m: Model) -> List(Binding) {
-  case m.help_open, m.exit_prompt {
+  case m.help_open, m.exit_prompt, m.import_pending {
     // While the cheatsheet is up it owns the keyboard.
-    True, _ -> [
+    True, _, _ -> [
       Binding(["Escape", "?"], "close", "Close this cheatsheet", HelpToggled),
     ]
     // So does the exit prompt: Enter leaves, Escape stays.
-    False, Some(_) -> [
+    False, Some(_), _ -> [
       Binding(["Enter"], "leave", "Leave the drill", ExitConfirmed(True)),
       Binding(["Escape"], "stay", "Stay in the drill", ExitConfirmed(False)),
     ]
-    False, None ->
+    // And the import question, the same way round: Escape keeps yours.
+    False, None, Some(_) -> [
+      Binding(["Enter"], "replace", "Replace everything", ImportConfirmed(True)),
+      Binding(["Escape"], "keep", "Keep what is here", ImportConfirmed(False)),
+    ]
+    False, None, None ->
       case m.route {
         StudyRoute -> study_bindings()
         MenuRoute -> menu_bindings(m)
