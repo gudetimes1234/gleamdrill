@@ -18,17 +18,18 @@ import gleamdrill/model.{
   MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
   MenuSuspendedAtCursor, MenuToggledAtCursor, PickerConfirmed,
   PickerConfirmedWithStarter, PickerRoute, QueueCursorJumped, QueueCursorMoved,
-  QueueRoute, QueueToggledAtCursor, QuizMoved, ReportRoute, SearchFocusRequested,
-  SettingsRoute, StatsActivated, StatsCursorMoved, StatsRoute, StudyRoute,
-  SummaryRoute, TourActivated, TourContents, TourCursorMoved, TourLesson,
-  TourRoute, TourRunTicked, UserAddedAllShown, UserClickedBackToStudy,
-  UserClickedBrowse, UserClickedClearSelection, UserClickedExitDrill,
-  UserClickedExitReport, UserClickedNext, UserClickedQueue, UserClickedRun,
-  UserClickedSelectAll, UserClickedStartDrill, UserClickedStartExam,
-  UserClickedStats, UserClickedStudy, UserClickedTour, UserClickedTourContents,
-  UserClickedTourNext, UserClickedTourPrev, UserClosedDetail, UserFilteredQueue,
-  UserGraded, UserPickedChoice, UserRemovedAllShown, UserRevealedHint,
-  UserSearched, UserSubmittedAnswer, UserToggledSide, UserToggledSolution,
+  QueueRoute, QueueToggledAtCursor, QuizMoved, Ran, ReportRoute,
+  SearchFocusRequested, SettingsRoute, StatsActivated, StatsCursorMoved,
+  StatsRoute, StudyRoute, SummaryRoute, TourActivated, TourContents,
+  TourCursorMoved, TourLesson, TourRoute, TourRunTicked, UserAddedAllShown,
+  UserClickedBackToStudy, UserClickedBrowse, UserClickedClearSelection,
+  UserClickedExitDrill, UserClickedExitReport, UserClickedNext, UserClickedQueue,
+  UserClickedRun, UserClickedSelectAll, UserClickedStartDrill,
+  UserClickedStartExam, UserClickedStats, UserClickedStudy, UserClickedTour,
+  UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
+  UserClosedDetail, UserFilteredQueue, UserGraded, UserPickedChoice,
+  UserRemovedAllShown, UserRevealedHint, UserSearched, UserSubmittedAnswer,
+  UserToggledResults, UserToggledSide, UserToggledSolution,
 }
 import gleamdrill/problem
 import gleamdrill/problems
@@ -373,6 +374,9 @@ fn code_bindings(m: Model) -> List(Binding) {
         "Toggle the first solution",
         UserToggledSolution(0),
       ),
+    ],
+    results_binding(m),
+    [
       Binding(["n"], "next", "Next problem", UserClickedNext),
       Binding(["Escape"], "exit", "Exit the sitting", UserClickedExitDrill),
       help_binding(),
@@ -392,11 +396,30 @@ fn quiz_bindings(m: Model) -> List(Binding) {
       Binding(["Escape"], "exit", "Exit the exam", UserClickedExitDrill),
       help_binding(),
     ]
-    True -> [
-      Binding(["Enter", "n"], "next", "Next question", UserClickedNext),
-      Binding(["Escape"], "exit", "Exit the exam", UserClickedExitDrill),
-      help_binding(),
+    True ->
+      list.flatten([
+        [Binding(["Enter", "n"], "next", "Next question", UserClickedNext)],
+        results_binding(m),
+        [
+          Binding(["Escape"], "exit", "Exit the exam", UserClickedExitDrill),
+          help_binding(),
+        ],
+      ])
+  }
+}
+
+/// Only once there is a verdict on screen to fold.
+fn results_binding(m: Model) -> List(Binding) {
+  case m.run, m.graded {
+    Ran(_, _), _ | _, True -> [
+      Binding(
+        ["x"],
+        "results",
+        "Fold or unfold the run results",
+        UserToggledResults,
+      ),
     ]
+    _, _ -> []
   }
 }
 

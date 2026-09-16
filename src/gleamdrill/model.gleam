@@ -371,6 +371,12 @@ pub type Model {
     editor_keymap: String,
     /// Whether the drill's prompt column is collapsed to a slim rail.
     side_collapsed: Bool,
+    /// Whether the run results are folded to their one-line verdict. Lives for
+    /// the session only: a new run keeps whatever you chose.
+    results_collapsed: Bool,
+    /// The editor height the user dragged to, in px, on this device. `None`
+    /// is the stylesheet's default.
+    editor_height: Option(Int),
     /// One-shot leader: `,` was pressed, so the next key dispatches through
     /// the app's key table even if a button holds focus.
     leader_armed: Bool,
@@ -460,6 +466,8 @@ pub fn default() -> Model {
     next_run_id: 1,
     editor_keymap: "default",
     side_collapsed: False,
+    results_collapsed: False,
+    editor_height: None,
     leader_armed: False,
     queue_search: "",
     queue_language: None,
@@ -724,6 +732,9 @@ pub type Msg {
   UserClickedStopRun
   UserClickedRetryRuntime(String)
   UserToggledSide
+  UserToggledResults
+  /// The editor's resize handle was released at this many px; 0 resets.
+  EditorResized(Int)
   UserToggledLanguage(String)
   UserClickedSettings
   /// A settings input committed (on blur or Enter), carrying its raw text.

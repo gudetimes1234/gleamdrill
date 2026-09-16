@@ -648,6 +648,58 @@ check("a broken program reports an error",
   (await page.$$(".results")).length > 0);
 await capture("compile-error", "Syntax error: phase, corrected location, message");
 
+// The error lands under the editor, not on top of it: the editor keeps its
+// height and the results scroll inside themselves. Folding them leaves the
+// verdict line with the first line of the error beside it.
+const editorHeight = () =>
+  page.$eval("gleam-editor", (el) => Math.round(el.getBoundingClientRect().height));
+const editorBefore = await editorHeight();
+check("an error does not squeeze the editor", editorBefore >= 280, String(editorBefore));
+check("the main column does not scroll",
+  await page.$eval(".drill-main", (el) => el.scrollHeight <= el.clientHeight + 1));
+await page.click(".results-summary");
+exercises("UserToggledResults");
+check("the results fold to their summary line", (await page.$(".results.collapsed")) !== null);
+check("folded, the summary previews the error",
+  (await page.textContent(".results-preview").catch(() => "")).trim().length > 0);
+await capture("results-folded", "Error results folded to one line, first line of the error as a preview");
+await page.evaluate(() => document.activeElement?.blur());
+await page.keyboard.press("x");
+await page.waitForTimeout(200);
+check("x unfolds them", (await page.$(".results.collapsed")) === null);
+
+// The handle under the code sets the editor's height, and the device
+// remembers it. Folded results are what free the room on a 900px screen.
+await page.keyboard.press("x");
+await page.waitForTimeout(200);
+const handleBox = await (await page.$(".editor-resize-handle")).boundingBox();
+await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
+await page.mouse.down();
+await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2 + 150, { steps: 8 });
+await page.mouse.up();
+exercises("EditorResized");
+await page.waitForTimeout(300);
+const editorDragged = await editorHeight();
+check("dragging the handle grows the editor", editorDragged >= editorBefore + 40,
+  `${editorBefore} -> ${editorDragged}`);
+check("the summary line is still on screen after the drag",
+  await page.evaluate(() => {
+    const column = document.querySelector(".drill-main").getBoundingClientRect();
+    const summary = document.querySelector(".results-summary").getBoundingClientRect();
+    return summary.bottom <= column.bottom + 1;
+  }));
+check("the height is remembered on this device",
+  (await page.evaluate(() => JSON.parse(localStorage.getItem("gleamDrill.prefs.v1") ?? "{}").editorHeight)) === editorDragged);
+await page.waitForTimeout(2200);
+check("the clock ticking does not undo the drag", (await editorHeight()) === editorDragged);
+await capture("editor-resized", "Editor dragged taller by its handle; results folded beneath");
+await (await page.$(".editor-resize-handle")).dblclick();
+await page.waitForTimeout(300);
+check("double-clicking the handle resets the height", (await editorHeight()) === editorBefore,
+  String(await editorHeight()));
+await page.keyboard.press("x");
+await page.waitForTimeout(200);
+
 // A passing solution that also prints, so the Output pane earns its frame.
 await setCode("def containsDuplicate(nums):\n    print('checking', nums)\n    return len(set(nums)) != len(nums)");
 await page.click(".run-button");
@@ -1698,6 +1750,8 @@ await page.waitForSelector(".answer-content", { timeout: 10000 });
 }
 check("the overlay does not scroll sideways",
   (await page.evaluate(() => document.documentElement.scrollWidth)) <= 390 + 1);
+check("a phone has no editor resize handle",
+  (await page.$eval(".editor-resize-handle", (el) => getComputedStyle(el).display)) === "none");
 await capture("solution", "Solution overlaying the editor at phone width",
   "Solution overlays the editor on a phone");
 await page.click(".answer-close");
@@ -1725,7 +1779,8 @@ const declared = [
   "UserToggledSolution", "UserRevealedHint", "UserClickedNext", "UserSearched",
   "UserChangedKeymap",
   "UserClickedRun", "UserClickedStopRun", "UserClickedRetryRuntime",
-  "UserToggledSide", "UserToggledLanguage", "UserToggledSuspend",
+  "UserToggledSide", "UserToggledResults", "UserToggledLanguage",
+  "UserToggledSuspend",
   "MenuSuspendedAtCursor", "UserClickedQueue", "UserSearchedQueue",
   "UserFilteredQueue", "UserPickedQueueLanguage",
   "UserToggledQueued", "UserAddedAllShown", "UserRemovedAllShown",

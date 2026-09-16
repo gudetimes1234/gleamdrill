@@ -9,9 +9,9 @@ import gleam/option.{Some}
 import gleam/string
 import gleamdrill/editor
 import gleamdrill/model.{
-  type Model, type Msg, Errored, Ran, RunIdle, Running, RuntimeFailed,
-  RuntimeLoading, RuntimeNotLoaded, RuntimeReady, TimedOut, TourContents,
-  TourEditorChanged, TourLesson, TourRoute, UserClickedBackToStudy,
+  type Model, type Msg, EditorResized, Errored, Ran, RunIdle, Running,
+  RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady, TimedOut,
+  TourContents, TourEditorChanged, TourLesson, TourRoute, UserClickedBackToStudy,
   UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
   UserOpenedLesson, UserResetLesson,
 }
@@ -164,7 +164,9 @@ fn lesson_page(m: Model, index: Int, lesson: tour.Lesson) -> Element(Msg) {
               editor.doc(m.tour_draft),
               editor.language("gleam"),
               editor.keymap(m.editor_keymap),
+              editor.height(m.editor_height),
               editor.on_change(TourEditorChanged),
+              editor.on_resize(EditorResized),
               editor.diagnostics(diagnostics(m)),
             ]),
           ),

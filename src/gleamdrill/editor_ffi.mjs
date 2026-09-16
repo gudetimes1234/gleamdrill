@@ -873,13 +873,19 @@ class GleamEditor extends HTMLElement {
   // keymap and language ride on ATTRIBUTES, not properties: Lustre reliably
   // diffs attributes on every (re)mount, while a property set on a remounted
   // custom element has been observed not to arrive.
-  static observedAttributes = ["keymap", "language"];
+  // `height` is the user's chosen editor height in px; absent means "whatever
+  // the stylesheet says". It is an attribute for the same reason, and because
+  // Lustre only rewrites it when the model's value changes -- which is at the
+  // end of a drag, never during one -- so a re-render mid-drag (the drill
+  // clock ticks every second) cannot fight the handle.
+  static observedAttributes = ["keymap", "language", "height"];
 
   #view = null;
   #doc = "";
   #diagnostics = [];
   #keymapCompartment = new Compartment();
   #languageCompartment = new Compartment();
+  #handle = null;
 
   // Focusing the host focuses the CodeMirror view: this is what the `i`
   // keybinding calls to enter the editor from the keyboard.
@@ -918,6 +924,10 @@ class GleamEditor extends HTMLElement {
   }
 
   attributeChangedCallback(name, _previous, _value) {
+    if (name === "height") {
+      this.#applyHeight();
+      return;
+    }
     if (!this.#view) return;
     switch (name) {
       case "keymap":
@@ -984,11 +994,104 @@ class GleamEditor extends HTMLElement {
       parent: this,
     });
     if (this.#diagnostics.length > 0) this.#applyDiagnostics();
+    this.#mountHandle();
+    this.#applyHeight();
   }
 
   disconnectedCallback() {
     this.#view?.destroy();
     this.#view = null;
+    this.#handle?.remove();
+    this.#handle = null;
+  }
+
+  #applyHeight() {
+    const px = Number.parseInt(this.getAttribute("height") ?? "", 10);
+    if (Number.isFinite(px) && px > 0) {
+      this.style.height = `${px}px`;
+    } else {
+      this.style.removeProperty("height");
+    }
+  }
+
+  // A drag bar under the code. The element sets its own inline height while
+  // the pointer moves and reports the final size once, as `editor-resize`,
+  // for the app to remember. Double-click reports 0: "back to the default".
+  #mountHandle() {
+    const handle = document.createElement("div");
+    handle.className = "editor-resize-handle";
+    handle.title = "Drag to resize the editor. Double-click to reset.";
+    let startY = 0;
+    let startHeight = 0;
+    let ceiling = Infinity;
+    let height = 0;
+    let dragging = false;
+    const report = (value) => {
+      this.dispatchEvent(
+        new CustomEvent("editor-resize", {
+          detail: { height: value },
+          bubbles: true,
+        }),
+      );
+    };
+    handle.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      handle.setPointerCapture(event.pointerId);
+      startY = event.clientY;
+      startHeight = this.getBoundingClientRect().height;
+      height = startHeight;
+      // Never taller than leaves everything else in the column on screen:
+      // the run bar, the grades and the results' summary line. The results'
+      // body is the one thing a drag may eat into, down to a couple of lines.
+      const column = this.closest(".drill-main");
+      if (column) {
+        // Summed by hand: scrollHeight is never less than the column itself,
+        // so it cannot say how much of the column is actually empty.
+        const gap = Number.parseFloat(getComputedStyle(column).rowGap) || 0;
+        const children = Array.from(column.children);
+        const content =
+          children.reduce(
+            (sum, child) => sum + child.getBoundingClientRect().height,
+            0,
+          ) +
+          gap * Math.max(0, children.length - 1);
+        const others = content - startHeight;
+        const body =
+          column.querySelector(".results-body")?.getBoundingClientRect()
+            .height ?? 0;
+        ceiling = column.clientHeight - others + Math.max(0, body - 60);
+      } else {
+        ceiling = window.innerHeight - 200;
+      }
+      ceiling = Math.max(200, Math.floor(ceiling));
+      dragging = true;
+      this.classList.add("resizing");
+    });
+    handle.addEventListener("pointermove", (event) => {
+      if (!dragging) return;
+      height = Math.round(
+        Math.min(ceiling, Math.max(200, startHeight + event.clientY - startY)),
+      );
+      this.style.height = `${height}px`;
+    });
+    const finish = (event) => {
+      if (!dragging) return;
+      dragging = false;
+      this.classList.remove("resizing");
+      if (handle.hasPointerCapture?.(event.pointerId)) {
+        handle.releasePointerCapture(event.pointerId);
+      }
+      report(height);
+    };
+    handle.addEventListener("pointerup", finish);
+    handle.addEventListener("pointercancel", finish);
+    handle.addEventListener("dblclick", () => {
+      this.style.removeProperty("height");
+      report(0);
+    });
+    this.appendChild(handle);
+    this.#handle = handle;
   }
 
   #applyDiagnostics() {

@@ -17,39 +17,39 @@ import gleamdrill/model.{
   type Model, type Msg, Account, AuthCompleted, AuthForm, AuthRoute,
   AwaitingGrade, CardSuspended, CaseResult, Cases, ClockTicked, DayStartHour,
   DesiredRetention, DraftSaveTicked, DraftSynced, DrillRoute, EditorChanged,
-  EditorFocusRequested, Errored, ExamSampled, ExitConfirmed, Guest, HelpToggled,
-  HistoryLoaded, InsightsLoaded, KeyPressed, MenuActivated, MenuCursorJumped,
-  MenuCursorMoved, MenuPaneFocused, MenuRoute, MenuSuspendedAtCursor,
-  MenuToggledAtCursor, Model, NewPerDay, NotGrading, NotStarted, PickerConfirmed,
-  PickerConfirmedWithStarter, PickerRoute, PickerToggledLanguage,
-  PromptDismissed, QueueChanged, QueueCursorJumped, QueueCursorMoved, QueueRoute,
-  QueueToggledAtCursor, QuizMoved, Ran, Registering, RemoteRunFinished,
-  ReportRoute, ReviewRecorded, ReviewsPerDay, RunError, RunFinished, RunIdle,
-  RunTimedOut, RunnerFailed, RunnerReady, Running, RuntimeFailed,
-  RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded, RuntimeReady,
-  SearchFocusRequested, SettingsRoute, SettingsSaved, SignOutCompleted,
-  SigningIn, StateImported, StateLoaded, StatsActivated, StatsCursorMoved,
-  StatsLoaded, StatsRoute, StudyRoute, SubmittingGrade, SummaryRoute, SyncFailed,
-  Synced, Syncing, TimedOut, TourActivated, TourContents, TourCursorMoved,
-  TourEditorChanged, TourLesson, TourRoute, TourRunTicked, UserAddedAllShown,
-  UserAddedStarterSet, UserChangedAuthEmail, UserChangedAuthPassword,
-  UserChangedGroup, UserChangedIterations, UserChangedKeymap, UserChangedSetting,
-  UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
-  UserClickedCategory, UserClickedClearSelection, UserClickedDeviceTimezone,
-  UserClickedExitDrill, UserClickedExitReport, UserClickedMergeGuest,
-  UserClickedNext, UserClickedQueue, UserClickedRetryRuntime,
-  UserClickedRetrySync, UserClickedRun, UserClickedSelectAll,
-  UserClickedSettings, UserClickedSignIn, UserClickedSignOut,
-  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
-  UserClickedStopRun, UserClickedStudy, UserClickedSubcategory, UserClickedTour,
-  UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
-  UserClosedDetail, UserDismissedMergeOffer, UserDismissedNotice,
-  UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded, UserOpenedDetail,
-  UserOpenedLesson, UserPickedChoice, UserPickedQueueLanguage,
+  EditorFocusRequested, EditorResized, Errored, ExamSampled, ExitConfirmed,
+  Guest, HelpToggled, HistoryLoaded, InsightsLoaded, KeyPressed, MenuActivated,
+  MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
+  MenuSuspendedAtCursor, MenuToggledAtCursor, Model, NewPerDay, NotGrading,
+  NotStarted, PickerConfirmed, PickerConfirmedWithStarter, PickerRoute,
+  PickerToggledLanguage, PromptDismissed, QueueChanged, QueueCursorJumped,
+  QueueCursorMoved, QueueRoute, QueueToggledAtCursor, QuizMoved, Ran,
+  Registering, RemoteRunFinished, ReportRoute, ReviewRecorded, ReviewsPerDay,
+  RunError, RunFinished, RunIdle, RunTimedOut, RunnerFailed, RunnerReady,
+  Running, RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded,
+  RuntimeReady, SearchFocusRequested, SettingsRoute, SettingsSaved,
+  SignOutCompleted, SigningIn, StateImported, StateLoaded, StatsActivated,
+  StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute, SubmittingGrade,
+  SummaryRoute, SyncFailed, Synced, Syncing, TimedOut, TourActivated,
+  TourContents, TourCursorMoved, TourEditorChanged, TourLesson, TourRoute,
+  TourRunTicked, UserAddedAllShown, UserAddedStarterSet, UserChangedAuthEmail,
+  UserChangedAuthPassword, UserChangedGroup, UserChangedIterations,
+  UserChangedKeymap, UserChangedSetting, UserClickedBackToStudy,
+  UserClickedBreadcrumb, UserClickedBrowse, UserClickedCategory,
+  UserClickedClearSelection, UserClickedDeviceTimezone, UserClickedExitDrill,
+  UserClickedExitReport, UserClickedMergeGuest, UserClickedNext,
+  UserClickedQueue, UserClickedRetryRuntime, UserClickedRetrySync,
+  UserClickedRun, UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
+  UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
+  UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
+  UserClickedTour, UserClickedTourContents, UserClickedTourNext,
+  UserClickedTourPrev, UserClosedDetail, UserDismissedMergeOffer,
+  UserDismissedNotice, UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded,
+  UserOpenedDetail, UserOpenedLesson, UserPickedChoice, UserPickedQueueLanguage,
   UserRemovedAllShown, UserResetLesson, UserRevealedHint, UserSearched,
   UserSearchedQueue, UserSubmittedAnswer, UserSubmittedAuth, UserToggledAuthMode,
-  UserToggledLanguage, UserToggledProblem, UserToggledQueued, UserToggledSide,
-  UserToggledSolution, UserToggledSuspend,
+  UserToggledLanguage, UserToggledProblem, UserToggledQueued, UserToggledResults,
+  UserToggledSide, UserToggledSolution, UserToggledSuspend,
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
@@ -94,6 +94,7 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
       ..base,
       editor_keymap: preferences.editor_keymap,
       side_collapsed: preferences.side_collapsed,
+      editor_height: preferences.editor_height,
       muted_languages: preferences.muted_languages,
       languages_chosen: preferences.languages_chosen,
       tour_lesson: preferences.tour_lesson,
@@ -911,6 +912,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           ..model.default(),
           editor_keymap: m.editor_keymap,
           side_collapsed: m.side_collapsed,
+          editor_height: m.editor_height,
           muted_languages: m.muted_languages,
           // An expired session drops you to guest; it does not un-ask the
           // language question this browser has already answered.
@@ -1445,6 +1447,20 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UserToggledSide -> {
       let m = Model(..m, side_collapsed: !m.side_collapsed)
+      #(m, save_preferences(m))
+    }
+
+    UserToggledResults -> #(
+      Model(..m, results_collapsed: !m.results_collapsed),
+      effect.none(),
+    )
+
+    EditorResized(height) -> {
+      let m =
+        Model(..m, editor_height: case height > 0 {
+          True -> Some(height)
+          False -> None
+        })
       #(m, save_preferences(m))
     }
 
@@ -2149,6 +2165,7 @@ fn save_preferences(m: Model) -> Effect(Msg) {
   session.save_preferences(session.Preferences(
     editor_keymap: m.editor_keymap,
     side_collapsed: m.side_collapsed,
+    editor_height: m.editor_height,
     muted_languages: m.muted_languages,
     tour_lesson: m.tour_lesson,
     languages_chosen: m.languages_chosen,

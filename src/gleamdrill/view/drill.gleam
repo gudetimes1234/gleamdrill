@@ -1,18 +1,18 @@
 import fsrs
 import gleam/int
 import gleam/list
-import gleam/option.{None, Some}
+import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 import gleamdrill/editor
 import gleamdrill/model.{
   type CaseResult, type Model, type Msg, type RunError, AwaitingGrade, Cases,
-  EditorChanged, Errored, ExitConfirmed, NotGrading, Ran, RunIdle, Running,
-  RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady, SubmittingGrade,
-  TimedOut, UserChangedKeymap, UserClickedExitDrill, UserClickedNext,
-  UserClickedRetryRuntime, UserClickedRun, UserClickedStopRun, UserGraded,
-  UserPickedChoice, UserRevealedHint, UserSubmittedAnswer, UserToggledSide,
-  UserToggledSolution,
+  EditorChanged, EditorResized, Errored, ExitConfirmed, NotGrading, Ran, RunIdle,
+  Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady,
+  SubmittingGrade, TimedOut, UserChangedKeymap, UserClickedExitDrill,
+  UserClickedNext, UserClickedRetryRuntime, UserClickedRun, UserClickedStopRun,
+  UserGraded, UserPickedChoice, UserRevealedHint, UserSubmittedAnswer,
+  UserToggledResults, UserToggledSide, UserToggledSolution,
 }
 import gleamdrill/problem.{
   type Problem, type ProblemRef, type Quiz, type Solution,
@@ -141,7 +141,9 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
                     editor.doc(m.draft),
                     editor.language(problem.language_slug(current.language)),
                     editor.keymap(m.editor_keymap),
+                    editor.height(m.editor_height),
                     editor.on_change(EditorChanged),
+                    editor.on_resize(EditorResized),
                     editor.diagnostics(editor_diagnostics(m)),
                   ]),
                 ),
@@ -237,29 +239,23 @@ fn quiz_verdict(m: Model, quiz: Quiz) -> List(Element(Msg)) {
     True -> {
       let right = m.choice == Some(quiz.correct)
       [
-        html.div([attribute.class("results")], [
-          html.div(
-            [
-              attribute.classes([
-                #("results-summary", True),
-                #("pass", right),
-                #("fail", !right),
-              ]),
-            ],
-            [
-              html.text(case right {
-                True -> "\u{2713} Correct"
-                False -> "\u{2717} Not quite"
-              }),
-            ],
-          ),
-          html.div([attribute.class("quiz-explanation")], [
-            html.text(quiz.explanation),
-          ]),
-          html.div([attribute.class("quiz-page")], [
-            html.text("Book reference: " <> quiz.page),
-          ]),
-        ]),
+        results_box(
+          m,
+          case right {
+            True -> "\u{2713} Correct"
+            False -> "\u{2717} Not quite"
+          },
+          right,
+          None,
+          [
+            html.div([attribute.class("quiz-explanation")], [
+              html.text(quiz.explanation),
+            ]),
+            html.div([attribute.class("quiz-page")], [
+              html.text("Book reference: " <> quiz.page),
+            ]),
+          ],
+        ),
       ]
     }
   }
@@ -716,16 +712,16 @@ fn results_only(m: Model, current: Problem) -> List(Element(Msg)) {
         ]),
       ]),
     ]
-    Ran(Cases(cases), _) -> [case_results(cases)]
-    Ran(Errored(error), _) -> [error_results(error, current)]
+    Ran(Cases(cases), _) -> [case_results(m, cases)]
+    Ran(Errored(error), _) -> [error_results(m, error, current)]
     Ran(TimedOut, _) -> [
-      html.div([attribute.class("results")], [
-        html.div([attribute.class("results-summary fail")], [
-          html.text(
-            "Your solution didn't finish \u{2014} likely an infinite loop. The runtime was restarted.",
-          ),
-        ]),
-      ]),
+      results_box(
+        m,
+        "Your solution didn't finish \u{2014} likely an infinite loop. The runtime was restarted.",
+        False,
+        None,
+        [],
+      ),
     ]
   }
 }
@@ -801,37 +797,30 @@ fn revealed(m: Model, current: Problem) -> Result(#(Int, Solution), Nil) {
   }
 }
 
-fn case_results(cases: List(CaseResult)) -> Element(Msg) {
+fn case_results(m: Model, cases: List(CaseResult)) -> Element(Msg) {
   let total = list.length(cases)
   let passed = list.count(cases, fn(c) { c.passed })
   let all_passed = passed == total && total > 0
+  let failed = list.filter(cases, fn(c: CaseResult) { !c.passed })
 
-  let summary =
-    html.div(
-      [
-        attribute.classes([
-          #("results-summary", True),
-          #("pass", all_passed),
-          #("fail", !all_passed),
-        ]),
-      ],
-      [
-        html.text(
-          case all_passed {
-            True -> "\u{2713} "
-            False -> "\u{2717} "
-          }
-          <> int.to_string(passed)
-          <> "/"
-          <> int.to_string(total)
-          <> " passed",
-        ),
-      ],
-    )
+  let verdict =
+    case all_passed {
+      True -> "\u{2713} "
+      False -> "\u{2717} "
+    }
+    <> int.to_string(passed)
+    <> "/"
+    <> int.to_string(total)
+    <> " passed"
+
+  // Folded, the first failing case's name is the one thing worth a glance.
+  let preview = case failed {
+    [first, ..] -> Some(first.label)
+    [] -> None
+  }
 
   let failures =
-    cases
-    |> list.filter(fn(c: CaseResult) { !c.passed })
+    failed
     |> list.map(fn(c: CaseResult) {
       html.div([attribute.class("case fail")], [
         html.div([attribute.class("case-label")], [
@@ -852,10 +841,95 @@ fn case_results(cases: List(CaseResult)) -> Element(Msg) {
       ])
     })
 
-  html.div([attribute.class("results")], [summary, ..failures])
+  results_box(m, verdict, all_passed, preview, failures)
 }
 
-fn error_results(error: RunError, current: Problem) -> Element(Msg) {
+/// Every run verdict: a one-line summary that is also the fold button, over a
+/// body that scrolls on its own. Folded, the body is hidden but stays in the
+/// DOM, so the failing cases are still there to count.
+fn results_box(
+  m: Model,
+  verdict: String,
+  passed: Bool,
+  preview: Option(String),
+  body: List(Element(Msg)),
+) -> Element(Msg) {
+  let foldable = body != []
+  let collapsed = foldable && m.results_collapsed
+  let summary_children =
+    list.flatten([
+      [html.span([attribute.class("results-verdict")], [html.text(verdict)])],
+      case collapsed, preview {
+        True, Some(line) -> [
+          html.span([attribute.class("results-preview")], [
+            html.text(first_line(line)),
+          ]),
+        ]
+        _, _ -> []
+      },
+      case foldable {
+        True -> [
+          html.span([attribute.class("results-chevron")], [
+            html.text(case collapsed {
+              True -> "\u{25B8}"
+              False -> "\u{25BE}"
+            }),
+          ]),
+        ]
+        False -> []
+      },
+    ])
+  let summary_classes =
+    attribute.classes([
+      #("results-summary", True),
+      #("pass", passed),
+      #("fail", !passed),
+    ])
+  let summary = case foldable {
+    True ->
+      html.button(
+        [
+          summary_classes,
+          attribute.type_("button"),
+          attribute.attribute("aria-expanded", case collapsed {
+            True -> "false"
+            False -> "true"
+          }),
+          event.on_click(UserToggledResults),
+        ],
+        summary_children,
+      )
+    False -> html.div([summary_classes], summary_children)
+  }
+  html.div(
+    [
+      attribute.classes([
+        #("results", True),
+        #("collapsed", collapsed),
+      ]),
+    ],
+    case foldable {
+      True -> [summary, html.div([attribute.class("results-body")], body)]
+      False -> [summary]
+    },
+  )
+}
+
+/// The first non-empty line, cut to fit beside the verdict.
+fn first_line(text: String) -> String {
+  let line =
+    text
+    |> string.split("\n")
+    |> list.map(string.trim)
+    |> list.find(fn(l) { l != "" })
+    |> result.unwrap("")
+  case string.length(line) > 90 {
+    True -> string.slice(line, 0, 90) <> "\u{2026}"
+    False -> line
+  }
+}
+
+fn error_results(m: Model, error: RunError, current: Problem) -> Element(Msg) {
   // An "internal" failure is the drill runner's own bug; even when it names a
   // check file it must not read as "your signature is wrong".
   let is_check_file = case error.file, error.phase {
@@ -865,34 +939,37 @@ fn error_results(error: RunError, current: Problem) -> Element(Msg) {
   }
   case is_check_file, current.check {
     True, Some(check) ->
-      html.div([attribute.class("results")], [
-        html.div([attribute.class("results-summary fail")], [
-          html.text("Your solution doesn't match the required signature."),
-        ]),
-        html.pre([attribute.class("signature")], [
-          html.code([], [html.text(check.signature)]),
-        ]),
-        html.details([attribute.class("results-details")], [
-          html.summary([], [html.text("Details")]),
+      results_box(
+        m,
+        "Your solution doesn't match the required signature.",
+        False,
+        Some(check.signature),
+        [
+          html.pre([attribute.class("signature")], [
+            html.code([], [html.text(check.signature)]),
+          ]),
           html.pre([attribute.class("results-message")], [
             html.text(error.message),
           ]),
-        ]),
-      ])
+        ],
+      )
     _, _ ->
-      html.div([attribute.class("results")], [
-        html.div([attribute.class("results-summary fail")], [
-          html.text(case error.phase {
-            "compile" -> "Your code doesn't compile."
-            "internal" ->
-              "The drill runner itself failed on this input \u{2014} a bug in GleamDrill, not your code."
-            _ -> "Your code crashed while running."
-          }),
-        ]),
-        html.pre([attribute.class("results-message")], [
-          html.text(error.message),
-        ]),
-      ])
+      results_box(
+        m,
+        case error.phase {
+          "compile" -> "Your code doesn't compile."
+          "internal" ->
+            "The drill runner itself failed on this input \u{2014} a bug in GleamDrill, not your code."
+          _ -> "Your code crashed while running."
+        },
+        False,
+        Some(error.message),
+        [
+          html.pre([attribute.class("results-message")], [
+            html.text(error.message),
+          ]),
+        ],
+      )
   }
 }
 

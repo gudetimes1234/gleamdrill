@@ -37,6 +37,8 @@ pub type Preferences {
   Preferences(
     editor_keymap: String,
     side_collapsed: Bool,
+    /// Where the editor's resize handle was left, in px. `None` is the default.
+    editor_height: Option(Int),
     /// Language tags kept out of the study queue on this device.
     muted_languages: List(String),
     /// The last Gleam Tour lesson opened on this device, so "Continue the
@@ -57,6 +59,7 @@ pub fn default_preferences() -> Preferences {
   Preferences(
     editor_keymap: "default",
     side_collapsed: False,
+    editor_height: None,
     muted_languages: [],
     tour_lesson: 0,
     languages_chosen: False,
@@ -132,6 +135,11 @@ pub fn load_preferences() -> Preferences {
             False,
             decode.bool,
           )
+          use editor_height <- decode.optional_field(
+            "editorHeight",
+            None,
+            decode.optional(decode.int),
+          )
           use muted <- decode.optional_field(
             "mutedLanguages",
             [],
@@ -149,6 +157,7 @@ pub fn load_preferences() -> Preferences {
           decode.success(Preferences(
             editor_keymap: keymap,
             side_collapsed: collapsed,
+            editor_height: editor_height,
             muted_languages: muted,
             tour_lesson: tour_lesson,
             languages_chosen: chosen,
@@ -168,6 +177,7 @@ pub fn save_preferences(preferences: Preferences) -> Effect(message) {
       json.object([
         #("editorKeymap", json.string(preferences.editor_keymap)),
         #("sideCollapsed", json.bool(preferences.side_collapsed)),
+        #("editorHeight", json.nullable(preferences.editor_height, json.int)),
         #(
           "mutedLanguages",
           json.array(preferences.muted_languages, json.string),

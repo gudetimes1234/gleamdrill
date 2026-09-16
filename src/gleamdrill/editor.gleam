@@ -1,7 +1,9 @@
 //// Lustre-side interface to the <gleam-editor> CodeMirror custom element.
 
 import gleam/dynamic/decode
+import gleam/int
 import gleam/json
+import gleam/option.{type Option, None, Some}
 import lustre/attribute.{type Attribute}
 import lustre/element.{type Element}
 import lustre/event
@@ -43,6 +45,24 @@ pub fn diagnostics(items: List(Diagnostic)) -> Attribute(msg) {
       ])
     }),
   )
+}
+
+/// The height the user dragged the editor to, in px. `None` leaves the
+/// stylesheet in charge.
+pub fn height(px: Option(Int)) -> Attribute(msg) {
+  case px {
+    Some(value) -> attribute.attribute("height", int.to_string(value))
+    None -> attribute.none()
+  }
+}
+
+/// Fired once when a drag on the resize handle ends, with the new height.
+/// A height of 0 means the handle was double-clicked: back to the default.
+pub fn on_resize(to_msg: fn(Int) -> msg) -> Attribute(msg) {
+  event.on("editor-resize", {
+    use value <- decode.subfield(["detail", "height"], decode.int)
+    decode.success(to_msg(value))
+  })
 }
 
 pub fn on_change(to_msg: fn(String) -> msg) -> Attribute(msg) {
