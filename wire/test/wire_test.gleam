@@ -175,6 +175,18 @@ pub fn boot_state_round_trips_test() {
   round_trip(state, wire.boot_state_to_json, wire.boot_state_decoder())
 }
 
+pub fn undo_outcome_round_trips_test() {
+  let restored =
+    wire.UndoOutcome(
+      now: fsrs.from_epoch(1_787_788_818.0),
+      card: Some(a_card()),
+      today: a_today(),
+    )
+  round_trip(restored, wire.undo_outcome_to_json, wire.undo_outcome_decoder())
+  let removed = wire.UndoOutcome(..restored, card: None)
+  round_trip(removed, wire.undo_outcome_to_json, wire.undo_outcome_decoder())
+}
+
 pub fn review_outcome_round_trips_test() {
   let outcome =
     wire.ReviewOutcome(

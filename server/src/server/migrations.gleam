@@ -22,8 +22,19 @@ pub fn all() -> List(Migration) {
     Migration(2, "seeded_cards_have_a_rep", backfill),
     Migration(3, "notes", notes),
     Migration(4, "recall_reviews", recall_reviews),
+    Migration(5, "review_snapshots", review_snapshots),
   ]
 }
+
+/// What the card looked like before each review, so the most recent one
+/// can be undone exactly: the scheduler's fuzz sample and learning step
+/// are not recoverable from the log alone. `created` records that the
+/// review is what put the card in the queue, so undoing it takes the card
+/// back out. Null on rows from before this column existed; those cannot be
+/// undone.
+const review_snapshots: List(String) = [
+  "alter table reviews add column card_before jsonb",
+]
 
 /// A recall-only review: approach and solution shown, graded from memory,
 /// no code written. Scheduled like any other review but never a solve, so

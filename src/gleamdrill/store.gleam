@@ -13,14 +13,15 @@
 
 import gleam/dict
 import gleam/int
+import gleam/result
 import gleam/time/timestamp
 import gleamdrill/api
 import gleamdrill/browser
 import gleamdrill/local
 import gleamdrill/model.{
-  type Model, type Msg, Account, CardSuspended, DraftSynced, Guest,
-  HistoryLoaded, InsightsLoaded, NoteSynced, QueueChanged, ReviewRecorded,
-  SettingsSaved, StateLoaded, StatsLoaded,
+  type Model, type Msg, type UndoPoint, Account, CardSuspended, DraftSynced,
+  Guest, HistoryLoaded, InsightsLoaded, NoteSynced, QueueChanged, ReviewRecorded,
+  SettingsSaved, StateLoaded, StatsLoaded, UndoRecorded,
 }
 import gleamdrill/problem.{type ProblemRef}
 import lustre/effect.{type Effect}
@@ -88,6 +89,39 @@ pub fn record_review(m: Model, review: api.Review) -> Effect(Msg) {
             )),
           )
       })
+    }
+  }
+}
+
+/// Takes back the most recent review. Signed in, the server restores the
+/// card from the snapshot it kept; a guest is restored from the snapshot
+/// the model kept, and the log loses its newest row.
+pub fn undo_review(m: Model, point: UndoPoint) -> Effect(Msg) {
+  case m.mode {
+    Account(token) -> api.delete_review(base(), token, UndoRecorded(point, _))
+    Guest -> {
+      use dispatch <- effect.from
+      let now = timestamp.system_time()
+      let day = local.current_day(m.settings)
+      let store = local.load()
+      let result = {
+        use updated <- result.try(
+          local.unrecord(store, point.problem, point.card_before, day.index)
+          |> result.replace_error(api.Rejected(
+            "The latest review is not the one to undo.",
+          )),
+        )
+        case local.save_cards(updated), local.save_history(updated) {
+          Ok(Nil), Ok(Nil) ->
+            Ok(wire.UndoOutcome(
+              now:,
+              card: point.card_before,
+              today: local.today(updated, m.settings, now, day),
+            ))
+          _, _ -> Error(storage_full())
+        }
+      }
+      dispatch(UndoRecorded(point, result))
     }
   }
 }

@@ -213,6 +213,69 @@ pub fn record(
   )
 }
 
+/// The inverse of `record`, for the newest review only: the log row goes,
+/// the day's tally and the totals step back, and the card is put back as
+/// it was -- or removed, when that review is what created it. Refuses when
+/// the newest row is not this problem's, so a stale undo cannot take back
+/// somebody else's grade.
+pub fn unrecord(
+  local: Local,
+  problem: ProblemRef,
+  card_before: Option(CardState),
+  day_index: Int,
+) -> Result(Local, Nil) {
+  case local.log {
+    [#(logged, row), ..rest] if logged == problem ->
+      Ok(
+        Local(
+          ..local,
+          cards: case card_before {
+            Some(state) -> dict.insert(local.cards, problem, state)
+            None -> dict.delete(local.cards, problem)
+          },
+          history: untally(
+            local.history,
+            day_index,
+            row.rating != fsrs.Again,
+            row.state_before == api.state_code(fsrs.Review),
+          ),
+          log: rest,
+        ),
+      )
+    _ -> Error(Nil)
+  }
+}
+
+fn untally(
+  history: History,
+  day_index: Int,
+  correct: Bool,
+  mature: Bool,
+) -> History {
+  History(
+    days: list.filter_map(history.days, fn(day) {
+      case day.day == day_index {
+        False -> Ok(day)
+        True ->
+          case day.total - 1 {
+            0 -> Error(Nil)
+            total ->
+              Ok(
+                DayTally(
+                  ..day,
+                  total:,
+                  correct: int.max(0, day.correct - bit(correct)),
+                ),
+              )
+          }
+      }
+    }),
+    total_reviews: int.max(0, history.total_reviews - 1),
+    mature_reviews: int.max(0, history.mature_reviews - bit(mature)),
+    mature_correct: int.max(0, history.mature_correct - bit(mature && correct)),
+  )
+}
+
 fn tally(
   history: History,
   day_index: Int,

@@ -34,21 +34,21 @@ import gleamdrill/model.{
   StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute, SubmittingGrade,
   SummaryRoute, SyncFailed, Synced, Syncing, TimedOut, TourActivated,
   TourContents, TourCursorMoved, TourEditorChanged, TourLesson, TourRoute,
-  TourRunTicked, UserAddedAllShown, UserAddedStarterSet, UserChangedAuthEmail,
-  UserChangedAuthPassword, UserChangedGroup, UserChangedIterations,
-  UserChangedKeymap, UserChangedSetting, UserClickedBackToStudy,
-  UserClickedBreadcrumb, UserClickedBrowse, UserClickedCategory,
-  UserClickedClearSelection, UserClickedDeviceTimezone, UserClickedExitDrill,
-  UserClickedExitReport, UserClickedMergeGuest, UserClickedNext,
-  UserClickedQueue, UserClickedRecall, UserClickedRetryRuntime,
+  TourRunTicked, UndoRecorded, UserAddedAllShown, UserAddedStarterSet,
+  UserChangedAuthEmail, UserChangedAuthPassword, UserChangedGroup,
+  UserChangedIterations, UserChangedKeymap, UserChangedSetting,
+  UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
+  UserClickedCategory, UserClickedClearSelection, UserClickedDeviceTimezone,
+  UserClickedExitDrill, UserClickedExitReport, UserClickedMergeGuest,
+  UserClickedNext, UserClickedQueue, UserClickedRecall, UserClickedRetryRuntime,
   UserClickedRetrySync, UserClickedRun, UserClickedSelectAll,
   UserClickedSettings, UserClickedSignIn, UserClickedSignOut,
   UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
   UserClickedStopRun, UserClickedStudy, UserClickedSubcategory, UserClickedTour,
   UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
-  UserClosedDetail, UserDismissedMergeOffer, UserDismissedNotice,
-  UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded, UserOpenedDetail,
-  UserOpenedLesson, UserPickedChoice, UserPickedQueueLanguage,
+  UserClickedUndo, UserClosedDetail, UserDismissedMergeOffer,
+  UserDismissedNotice, UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded,
+  UserOpenedDetail, UserOpenedLesson, UserPickedChoice, UserPickedQueueLanguage,
   UserRemovedAllShown, UserResetLesson, UserRevealedHint, UserRevealedRecall,
   UserSearched, UserSearchedQueue, UserSubmittedAnswer, UserSubmittedAuth,
   UserToggledAuthMode, UserToggledLanguage, UserToggledProblem,
@@ -1184,14 +1184,34 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         SubmittingGrade, _ -> #(m, effect.none())
         _, Error(Nil) -> #(m, effect.none())
         _, Ok(ref) -> #(
-          Model(..m, grading: SubmittingGrade, sitting: [
-            model.SittingEntry(
+          Model(
+            ..m,
+            grading: SubmittingGrade,
+            sitting: [
+              model.SittingEntry(
+                problem: ref,
+                pressed: rating,
+                duration_ms: browser.now_ms() - m.opened_at_ms,
+              ),
+              ..m.sitting
+            ],
+            // Everything needed to stand here again if the grade was a slip.
+            undo: Some(model.UndoPoint(
               problem: ref,
-              pressed: rating,
+              selected: m.selected,
+              problem_index: m.problem_index,
+              current_iteration: m.current_iteration,
+              iteration_count: m.iteration_count,
+              studying: m.studying,
+              recall: m.recall,
+              draft: m.draft,
+              run: m.run,
+              revealed_solution: m.revealed_solution,
+              hints_revealed: m.hints_revealed,
               duration_ms: browser.now_ms() - m.opened_at_ms,
-            ),
-            ..m.sitting
-          ]),
+              card_before: model.card_for(m, ref),
+            )),
+          ),
           store.record_review(m, case m.recall {
             // Revealing is the mechanism here, not a peek, and there was no
             // code to time: the row says "recall" and nothing else.
@@ -1250,6 +1270,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     ReviewRecorded(Error(failure)) -> #(
       Model(
         ..m,
+        undo: None,
         grading: case m.grading {
           SubmittingGrade -> AwaitingGrade
           other -> other
@@ -1257,6 +1278,61 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         storage_full: m.mode == Guest || m.storage_full,
         notice: Some(api.error_message(failure)),
       ),
+      effect.none(),
+    )
+
+    UserClickedUndo ->
+      case m.undo, m.grading {
+        // Not while a grade is still being saved: the point would be stale.
+        Some(point), NotGrading | Some(point), AwaitingGrade -> #(
+          Model(..m, undo: None),
+          store.undo_review(m, point),
+        )
+        _, _ -> #(m, effect.none())
+      }
+
+    UndoRecorded(point, Ok(outcome)) -> {
+      let cards = case outcome.card {
+        Some(card) -> dict.insert(m.cards, card.problem, card)
+        None -> dict.delete(m.cards, point.problem)
+      }
+      // Back on the problem as it was when the grade was pressed, with the
+      // clock where it stood, waiting for the grade you meant.
+      #(
+        Model(
+          ..m,
+          now: outcome.now,
+          today: outcome.today,
+          cards:,
+          route: DrillRoute,
+          selected: point.selected,
+          problem_index: point.problem_index,
+          current_iteration: point.current_iteration,
+          iteration_count: point.iteration_count,
+          studying: point.studying,
+          recall: point.recall,
+          draft: point.draft,
+          run: point.run,
+          revealed_solution: point.revealed_solution,
+          hints_revealed: point.hints_revealed,
+          grading: AwaitingGrade,
+          opened_at_ms: browser.now_ms() - point.duration_ms,
+          sitting: case m.sitting {
+            [_, ..rest] -> rest
+            [] -> []
+          },
+          exam_answers: [],
+          choice: None,
+          graded: False,
+          notice: None,
+        ),
+        effect.none(),
+      )
+    }
+
+    // The point is handed back so the undo can be tried again.
+    UndoRecorded(point, Error(failure)) -> #(
+      Model(..m, undo: Some(point), notice: Some(api.error_message(failure))),
       effect.none(),
     )
 
@@ -1394,6 +1470,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         },
         studying: False,
         recall: False,
+        undo: None,
       ),
       effect.none(),
     )
@@ -2357,6 +2434,7 @@ fn advance_inner(m: Model) -> #(Model, Effect(Msg)) {
         studying: m.studying,
         recall: m.recall,
         sitting: m.sitting,
+        undo: m.undo,
       ),
       effect.none(),
     )
@@ -2418,6 +2496,7 @@ fn reset_home(m: Model) -> Model {
     studying: False,
     recall: False,
     grading: NotGrading,
+    undo: None,
   )
 }
 

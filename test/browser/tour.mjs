@@ -1018,10 +1018,58 @@ await page.waitForTimeout(1500);
 check("the sitting ends in a recall summary",
   await page.isVisible(".summary-container") && (await page.$(".summary-container .recall-chip")) !== null);
 await page.setViewportSize({ width: 1280, height: 900 });
-await page.click("text=Study");
-await page.waitForSelector(".study-screen", { timeout: 10000 });
-check("a recall pass leaves nothing due",
-  ((await page.textContent(".study-screen")) ?? "").length > 0);
+
+// A slip on the last card is the one you notice once the sitting is over,
+// so the summary can still take the latest grade back. Undo reopens the
+// card exactly as it was -- revealed, waiting for the grade you meant --
+// and the store forgets the review.
+const repsBeforeUndo = await page.evaluate(() =>
+  JSON.parse(localStorage.getItem("gleamDrill.guest.cards.v1")).find((c) => c.title === "Valid Anagram").reps);
+await capture("summary-undo", "A recall summary, with the last grade still undoable");
+await page.click(".summary-undo .undo-button");
+exercises("UserClickedUndo");
+await page.waitForSelector(".recall-answers", { timeout: 5000 });
+check("undo reopens the last card, revealed and waiting for a grade",
+  (await page.textContent(".drill-title")).includes("Valid Anagram")
+    && JSON.stringify(await gradeLabels()) === ALL_FOUR);
+check("the card is back where it was",
+  (await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("gleamDrill.guest.cards.v1")).find((c) => c.title === "Valid Anagram").reps)) === repsBeforeUndo - 1);
+check("and the log has forgotten the review",
+  (await page.evaluate(() => JSON.parse(localStorage.getItem("gleamDrill.guest.reviews.v1")).length)) === 1);
+check("only the newest grade can be undone", (await page.$(".undo-button")) === null);
+await page.keyboard.press("1");
+await page.waitForTimeout(1500);
+check("the grade you meant lands", await page.isVisible(".summary-container"));
+check("with the sitting's row updated",
+  (await page.textContent(".summary-rows")).includes("Again"));
+// From the drill itself: grade one card, take it back from the next.
+await page.evaluate(() => {
+  const longAgo = Math.floor(Date.now() / 1000) - 10 * 86400;
+  const card = (title) => ({
+    category: "NeetCode 150", subcategory: "Arrays & Hashing", title,
+    state: 2, step: null, stability: 30, difficulty: 5,
+    due: longAgo + 86400, lastReview: longAgo, introducedAt: longAgo,
+    reps: 1, lapses: 0, suspended: false,
+  });
+  localStorage.setItem("gleamDrill.guest.cards.v1",
+    JSON.stringify([card("Contains Duplicate"), card("Valid Anagram")]));
+});
+await goHome();
+await page.click(".study-recall");
+await page.waitForSelector(".recall-card", { timeout: 15000 });
+await page.keyboard.press(" ");
+await page.waitForSelector(".recall-answers", { timeout: 5000 });
+await page.keyboard.press("4");
+await page.waitForTimeout(1500);
+check("the next card offers to undo the grade just given",
+  await page.isVisible(".recall-card .undo-button"));
+await page.keyboard.press("u");
+await page.waitForSelector(".recall-answers", { timeout: 5000 });
+check("u takes it back and returns to the card",
+  (await page.textContent(".drill-title")).includes("Contains Duplicate"));
+await exitDrill();
+await page.waitForTimeout(800);
 
 // ---------------------------------------------------------------- act 5
 act = "05-languages";
@@ -1912,6 +1960,7 @@ const declared = [
   "UserClickedRun", "UserClickedStopRun", "UserClickedRetryRuntime",
   "UserToggledSide", "UserToggledResults", "UserToggledLanguage",
   "UserToggledSuspend", "UserClickedRecall", "UserRevealedRecall",
+  "UserClickedUndo",
   "MenuSuspendedAtCursor", "UserClickedQueue", "UserSearchedQueue",
   "UserFilteredQueue", "UserPickedQueueLanguage",
   "UserToggledQueued", "UserAddedAllShown", "UserRemovedAllShown",

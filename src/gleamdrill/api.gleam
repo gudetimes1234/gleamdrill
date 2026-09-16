@@ -53,6 +53,9 @@ pub type BootState =
 pub type ReviewOutcome =
   wire.ReviewOutcome
 
+pub type UndoOutcome =
+  wire.UndoOutcome
+
 pub type QueueChange =
   wire.QueueChange
 
@@ -220,6 +223,23 @@ pub fn post_review(
     Some(token),
     Some(wire.review_to_json(review)),
     review_outcome_decoder(),
+    handler,
+  )
+}
+
+/// DELETE /api/reviews: undo the most recent review.
+pub fn delete_review(
+  base: String,
+  token: String,
+  handler: fn(Result(UndoOutcome, ApiError)) -> message,
+) -> Effect(message) {
+  send(
+    base,
+    http.Delete,
+    "/api/reviews",
+    Some(token),
+    None,
+    wire.undo_outcome_decoder(),
     handler,
   )
 }

@@ -1074,6 +1074,23 @@ gleam-editor.resizing {
     margin-left: auto;
 }
 
+/* Undo sits apart from the run controls and away from the grades: the one
+   button here that goes backwards. */
+.undo-button {
+    color: var(--text-secondary);
+    border-style: dashed;
+}
+
+.undo-button:hover {
+    color: var(--text-primary);
+    border-style: solid;
+}
+
+.summary-undo {
+    display: flex;
+    justify-content: flex-end;
+}
+
 .results {
     background: var(--bg-secondary);
     border: 1px solid var(--border);
@@ -1309,6 +1326,13 @@ button.results-summary:focus-visible {
     line-height: 1.5;
 }
 
+.recall-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
 .recall-reveal {
     font-size: 15px;
     padding: 12px 22px;
@@ -1356,6 +1380,7 @@ button.results-summary:focus-visible {
         min-width: 0;
     }
 
+    .recall-actions,
     .recall-reveal {
         width: 100%;
     }

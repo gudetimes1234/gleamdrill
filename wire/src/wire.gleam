@@ -108,6 +108,12 @@ pub type ReviewOutcome {
   ReviewOutcome(now: Timestamp, card: CardState, today: Today)
 }
 
+/// What undoing the latest review leaves behind. `card` is None when the
+/// undone review had created the card: it is out of the queue again.
+pub type UndoOutcome {
+  UndoOutcome(now: Timestamp, card: Option(CardState), today: Today)
+}
+
 /// What changed after adding problems to the study queue, or taking them out.
 ///
 /// One shape for both directions so there is one decoder and one message to
@@ -366,6 +372,17 @@ pub fn boot_state_to_json(state: BootState) -> Json {
     #("drafts", json.array(state.drafts, draft_to_json)),
     #("notes", json.array(state.notes, draft_to_json)),
     #("today", today_to_json(state.today)),
+  ])
+}
+
+pub fn undo_outcome_to_json(outcome: UndoOutcome) -> Json {
+  json.object([
+    #("now", json.float(fsrs.to_epoch(outcome.now))),
+    #("card", case outcome.card {
+      Some(card) -> card_to_json(card)
+      None -> json.null()
+    }),
+    #("today", today_to_json(outcome.today)),
   ])
 }
 
@@ -662,6 +679,13 @@ pub fn boot_state_decoder() -> Decoder(BootState) {
     notes:,
     today:,
   ))
+}
+
+pub fn undo_outcome_decoder() -> Decoder(UndoOutcome) {
+  use now <- decode.field("now", moment())
+  use card <- decode.field("card", decode.optional(card_decoder()))
+  use today <- decode.field("today", today_decoder())
+  decode.success(UndoOutcome(now:, card:, today:))
 }
 
 pub fn review_outcome_decoder() -> Decoder(ReviewOutcome) {

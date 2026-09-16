@@ -197,6 +197,34 @@ S=$(curl -s "$B/api/state" -H "$AUTH")
 check "and it is gone" 0 "$(echo "$S" | j "len(d['notes'])")"
 check "a note needs a body" 422 "$(status -X PUT "$B/api/notes" -H "$AUTH" -H "$CT" -d "{$REF}")"
 
+echo "== undo"
+# One more review, then take it back: the card, the day's count and the log
+# all return to exactly what they were.
+S=$(curl -s "$B/api/state" -H "$AUTH")
+REPS_BEFORE=$(echo "$S" | j "next(c['reps'] for c in d['cards'] if c['title'] == 'Contains Duplicate')")
+STAB_BEFORE=$(echo "$S" | j "next(c['stability'] for c in d['cards'] if c['title'] == 'Contains Duplicate')")
+DONE_BEFORE=$(echo "$S" | j "['today']['reviewsDone']")
+check "a review to undo" 200 "$(status -X POST "$B/api/reviews" -H "$AUTH" -H "$CT" -d "{$REF,\"rating\":1}")"
+S=$(curl -s "$B/api/state" -H "$AUTH")
+check "which moved the card" "$((REPS_BEFORE + 1))" "$(echo "$S" | j "next(c['reps'] for c in d['cards'] if c['title'] == 'Contains Duplicate')")"
+U=$(curl -s -X DELETE "$B/api/reviews" -H "$AUTH")
+check "undo returns the restored card" "$REPS_BEFORE" "$(echo "$U" | j "['card']['reps']")"
+check "with its stability back" "$STAB_BEFORE" "$(echo "$U" | j "['card']['stability']")"
+check "and the day's count back" "$DONE_BEFORE" "$(echo "$U" | j "['today']['reviewsDone']")"
+S=$(curl -s "$B/api/state" -H "$AUTH")
+check "the state agrees" "$REPS_BEFORE" "$(echo "$S" | j "next(c['reps'] for c in d['cards'] if c['title'] == 'Contains Duplicate')")"
+H=$(curl -s "$B/api/history?category=NeetCode%20150%20%C2%B7%20Python&subcategory=Arrays%20%26%20Hashing&title=Contains%20Duplicate" -H "$AUTH")
+check "and the log has forgotten the review" 4 "$(echo "$H" | j "len(d['reviews'])")"
+# A review that created its card: undoing it takes the card out again.
+NEWREF='"category":"NeetCode 150 · Python","subcategory":"Arrays & Hashing","title":"Two Sum"'
+check "a first review on a new problem" 200 "$(status -X POST "$B/api/reviews" -H "$AUTH" -H "$CT" -d "{$NEWREF,\"rating\":3}")"
+check "made a card" 2 "$(curl -s "$B/api/state" -H "$AUTH" | j "len(d['cards'])")"
+U=$(curl -s -X DELETE "$B/api/reviews" -H "$AUTH")
+check "undoing it returns no card" None "$(echo "$U" | j "['card']")"
+check "and the card is gone" 1 "$(curl -s "$B/api/state" -H "$AUTH" | j "len(d['cards'])")"
+T3=$(curl -s -X POST "$B/api/auth/signup" -H "$CT" -d "{\"email\":\"undo-$RANDOM$RANDOM@example.com\",\"password\":\"$PW\"}" | j "['token']")
+check "nothing to undo is 409" 409 "$(status -X DELETE "$B/api/reviews" -H "authorization: Bearer $T3")"
+
 echo "== settings"
 SET=$(curl -s "$B/api/settings" -H "$AUTH" | python3 -c "import sys,json;print(json.dumps(json.load(sys.stdin)['settings']))")
 mutate() { echo "$SET" | python3 -c "import sys,json;d=json.load(sys.stdin);d.update(json.loads(sys.argv[1]));print(json.dumps(d))" "$1"; }

@@ -12,9 +12,9 @@ import gleamdrill/model.{
   Ran, RunIdle, Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded,
   RuntimeReady, SubmittingGrade, TimedOut, UserChangedKeymap,
   UserClickedExitDrill, UserClickedNext, UserClickedRetryRuntime, UserClickedRun,
-  UserClickedStopRun, UserGraded, UserPickedChoice, UserRevealedHint,
-  UserRevealedRecall, UserSubmittedAnswer, UserToggledResults, UserToggledSide,
-  UserToggledSolution,
+  UserClickedStopRun, UserClickedUndo, UserGraded, UserPickedChoice,
+  UserRevealedHint, UserRevealedRecall, UserSubmittedAnswer, UserToggledResults,
+  UserToggledSide, UserToggledSolution,
 }
 import gleamdrill/problem.{
   type Problem, type ProblemRef, type Quiz, type Solution,
@@ -217,12 +217,20 @@ fn recall_main(m: Model, current: Problem) -> List(Element(Msg)) {
             "Say it, out loud or in your head: which pattern, which data structure, and the time and space complexity. Then reveal.",
           ),
         ]),
-        html.button(
-          [
-            attribute.class("btn-primary recall-reveal"),
-            event.on_click(UserRevealedRecall),
-          ],
-          [html.text("Reveal")],
+        html.div(
+          [attribute.class("recall-actions")],
+          list.flatten([
+            [
+              html.button(
+                [
+                  attribute.class("btn-primary recall-reveal"),
+                  event.on_click(UserRevealedRecall),
+                ],
+                [html.text("Reveal")],
+              ),
+            ],
+            undo_button(m),
+          ]),
         ),
       ]),
     ]
@@ -239,12 +247,18 @@ fn recall_main(m: Model, current: Problem) -> List(Element(Msg)) {
         ]
         solutions -> list.map(solutions, recall_solution)
       }),
-      html.div([attribute.class("run-bar recall-bar")], [
-        html.span([attribute.class("grade-hint recall-hint")], [
-          html.text("How well did you have it?"),
+      html.div(
+        [attribute.class("run-bar recall-bar")],
+        list.flatten([
+          undo_button(m),
+          [
+            html.span([attribute.class("grade-hint recall-hint")], [
+              html.text("How well did you have it?"),
+            ]),
+            grade_controls(m, current),
+          ],
         ]),
-        grade_controls(m, current),
-      ]),
+      ),
     ]
   }
 }
@@ -658,9 +672,32 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
     list.flatten([
       run_control,
       solution_buttons(m, current),
+      undo_button(m),
       [grade_controls(m, current)],
     ]),
   )
+}
+
+/// Takes back the grade just given on the previous card. Only while there
+/// is one, and only on the card right after it; a new grade replaces it.
+fn undo_button(m: Model) -> List(Element(Msg)) {
+  case m.undo {
+    Some(point) -> [
+      html.button(
+        [
+          attribute.class("btn-secondary undo-button"),
+          attribute.type_("button"),
+          attribute.attribute(
+            "title",
+            "Take back the grade on " <> point.problem.title,
+          ),
+          event.on_click(UserClickedUndo),
+        ],
+        [html.text("\u{21b6} Undo grade")],
+      ),
+    ]
+    None -> []
+  }
 }
 
 /// How long this problem has been open, as m:ss, turning accent past the

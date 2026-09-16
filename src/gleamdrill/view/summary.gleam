@@ -16,6 +16,7 @@ import gleam/option
 import gleamdrill/insights
 import gleamdrill/model.{
   type Model, type Msg, type SittingEntry, UserClickedExitReport,
+  UserClickedUndo,
 }
 import gleamdrill/view/format
 import lustre/attribute
@@ -75,6 +76,22 @@ pub fn view(m: Model) -> Element(Msg) {
             list.map(entries, fn(entry) { row(m, entry) }),
           )
       }),
+      // The last grade can still be taken back from here: a slip on the
+      // final card is the one you only notice once the sitting is over.
+      case m.undo {
+        option.Some(point) ->
+          html.div([attribute.class("summary-undo")], [
+            html.button(
+              [
+                attribute.class("btn-secondary undo-button"),
+                attribute.type_("button"),
+                event.on_click(UserClickedUndo),
+              ],
+              [html.text("\u{21b6} Undo the grade on " <> point.problem.title)],
+            ),
+          ])
+        option.None -> element.none()
+      },
       panel("Still today", remaining(m)),
     ]),
   ])

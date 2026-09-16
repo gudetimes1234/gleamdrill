@@ -53,6 +53,39 @@ pub fn state(request: wisp.Request, context: Context) -> wisp.Response {
 }
 
 /// Records one review. The scheduling decision is made here and only here.
+/// DELETE /api/reviews -- undo the most recent review. Same {now, card,
+/// today} fold as recording one, except `card` is null when the review had
+/// created the card and undoing it took the card out of the queue.
+pub fn undo(request: wisp.Request, context: Context) -> wisp.Response {
+  use user <- web.require_user(request, context)
+  let now = timestamp.system_time()
+  case study.undo_review(context.db, user.id) {
+    Error(study.NothingToUndo) ->
+      web.error(409, "nothing_to_undo", "There is no review to undo.")
+    Error(study.UndoFailed(failure)) -> study_error(failure)
+    Ok(study.Undone(card)) -> {
+      let outcome = {
+        use settings <- result.try(study.load_settings(context.db, user.id))
+        study.today(context.db, user.id, settings, now)
+      }
+      case outcome {
+        Error(failure) -> study_error(failure)
+        Ok(today) ->
+          web.json_ok(
+            json.object([
+              #("now", json.float(fsrs.to_epoch(now))),
+              #("card", case card {
+                Some(record) -> card_json(record)
+                None -> json.null()
+              }),
+              #("today", today_json(today)),
+            ]),
+          )
+      }
+    }
+  }
+}
+
 pub fn review(request: wisp.Request, context: Context) -> wisp.Response {
   use <- wisp.require_method(request, http.Post)
   use user <- web.require_user(request, context)

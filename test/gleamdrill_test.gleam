@@ -817,6 +817,59 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
   assert recalled.recall && recalled.duration_ms == None
 }
 
+/// Undo is the exact inverse of record: card, tallies and log all return.
+/// A review that created its card takes the card with it, and only the
+/// newest row can be undone.
+pub fn unrecord_is_the_inverse_of_record_test() -> Nil {
+  let settings = guest_settings()
+  let problem = a_problem("Two Sum")
+  let other = a_problem("Valid Anagram")
+  let #(seeded, _) =
+    local.record(
+      local.empty(),
+      settings,
+      answer(other, fsrs.Good),
+      at_epoch(1_800_000_000),
+      7,
+      0.0,
+    )
+  let #(seeded, _) =
+    local.record(
+      seeded,
+      settings,
+      answer(problem, fsrs.Good),
+      at_epoch(1_800_000_000 + 60),
+      7,
+      0.0,
+    )
+  let assert Ok(before) = dict.get(seeded.cards, problem)
+
+  // A second review on the same card, then taken back.
+  let #(graded, _) =
+    local.record(
+      seeded,
+      settings,
+      answer(problem, fsrs.Again),
+      at_epoch(1_800_000_000 + 120),
+      7,
+      0.0,
+    )
+  assert graded.history.total_reviews == 3
+  let assert Ok(undone) = local.unrecord(graded, problem, Some(before), 7)
+  assert undone.cards == seeded.cards
+  assert undone.history == seeded.history
+  assert undone.log == seeded.log
+
+  // The newest row belongs to `problem`, so `other` cannot be undone.
+  assert local.unrecord(graded, other, None, 7) == Error(Nil)
+
+  // Undoing the review that created a card removes the card.
+  let assert Ok(fresh) = local.unrecord(seeded, problem, None, 7)
+  assert dict.get(fresh.cards, problem) == Error(Nil)
+  assert fresh.history.total_reviews == 1
+  assert list.length(fresh.log) == 1
+}
+
 pub fn the_review_log_is_a_ring_buffer_test() -> Nil {
   let settings = guest_settings()
   let store =

@@ -352,6 +352,8 @@ pub type Model {
     /// hand-picked from the menu. Reviews are recorded either way; this only
     /// decides where exiting returns to.
     studying: Bool,
+    /// The latest grade, while it can still be taken back.
+    undo: Option(UndoPoint),
     /// A recall-only sitting: no editor. The prompt is read, the approach
     /// and solutions are revealed, and the grade is given from memory. Set
     /// alongside `studying`, cleared with it.
@@ -478,6 +480,7 @@ pub fn default() -> Model {
     side_collapsed: False,
     results_collapsed: False,
     editor_height: None,
+    undo: None,
     recall: False,
     leader_armed: False,
     queue_search: "",
@@ -679,6 +682,28 @@ pub type SittingEntry {
   SittingEntry(problem: ProblemRef, pressed: fsrs.Rating, duration_ms: Int)
 }
 
+/// Enough of the moment before the latest grade to go back to it: which
+/// problem in which sitting, what was on screen, and what the card was.
+/// Only the most recent grade can be undone, so there is at most one.
+pub type UndoPoint {
+  UndoPoint(
+    problem: ProblemRef,
+    selected: List(ProblemRef),
+    problem_index: Int,
+    current_iteration: Int,
+    iteration_count: Int,
+    studying: Bool,
+    recall: Bool,
+    draft: String,
+    run: RunState,
+    revealed_solution: Option(Int),
+    hints_revealed: Int,
+    duration_ms: Int,
+    /// None when the grade is what put the card in the queue.
+    card_before: Option(CardState),
+  )
+}
+
 pub type SettingField {
   NewPerDay
   ReviewsPerDay
@@ -783,6 +808,9 @@ pub type Msg {
   UserClickedRetryRuntime(String)
   UserToggledSide
   UserToggledResults
+  /// Take back the latest grade and reopen that problem.
+  UserClickedUndo
+  UndoRecorded(UndoPoint, Result(api.UndoOutcome, ApiError))
   /// Start a recall-only sitting over the study queue.
   UserClickedRecall
   /// Show the approach and solutions for the current recall card.

@@ -27,10 +27,10 @@ import gleamdrill/model.{
   UserClickedNext, UserClickedQueue, UserClickedRecall, UserClickedRun,
   UserClickedSelectAll, UserClickedStartDrill, UserClickedStartExam,
   UserClickedStats, UserClickedStudy, UserClickedTour, UserClickedTourContents,
-  UserClickedTourNext, UserClickedTourPrev, UserClosedDetail, UserFilteredQueue,
-  UserGraded, UserPickedChoice, UserRemovedAllShown, UserRevealedHint,
-  UserRevealedRecall, UserSearched, UserSubmittedAnswer, UserToggledResults,
-  UserToggledSide, UserToggledSolution,
+  UserClickedTourNext, UserClickedTourPrev, UserClickedUndo, UserClosedDetail,
+  UserFilteredQueue, UserGraded, UserPickedChoice, UserRemovedAllShown,
+  UserRevealedHint, UserRevealedRecall, UserSearched, UserSubmittedAnswer,
+  UserToggledResults, UserToggledSide, UserToggledSolution,
 }
 import gleamdrill/problem
 import gleamdrill/problems
@@ -122,15 +122,19 @@ pub fn bindings(m: Model) -> List(Binding) {
           ),
           help_binding(),
         ]
-        SummaryRoute -> [
-          Binding(
-            ["Enter", "Escape", "b"],
-            "done",
-            "Leave the summary",
-            UserClickedExitReport,
-          ),
-          help_binding(),
-        ]
+        SummaryRoute ->
+          list.flatten([
+            undo_binding(m),
+            [
+              Binding(
+                ["Enter", "Escape", "b"],
+                "done",
+                "Leave the summary",
+                UserClickedExitReport,
+              ),
+              help_binding(),
+            ],
+          ])
         QueueRoute -> queue_bindings(m)
         TourRoute -> tour_bindings(m)
         // A guest can always walk away from the form; the link at its foot
@@ -368,6 +372,7 @@ fn recall_bindings(m: Model) -> List(Binding) {
   }
   list.flatten([
     step,
+    undo_binding(m),
     [
       Binding(["m"], "note", "Write a note to future you", NoteFocusRequested),
       Binding(["a"], "hint", "Reveal the next approach hint", UserRevealedHint),
@@ -401,6 +406,7 @@ fn code_bindings(m: Model) -> List(Binding) {
 
   list.flatten([
     grades,
+    undo_binding(m),
     runnable,
     [
       Binding(["i", "e"], "edit", "Focus the editor", EditorFocusRequested),
@@ -449,6 +455,16 @@ fn quiz_bindings(m: Model) -> List(Binding) {
           help_binding(),
         ],
       ])
+  }
+}
+
+/// Only while the latest grade can still be taken back.
+fn undo_binding(m: Model) -> List(Binding) {
+  case m.undo {
+    Some(_) -> [
+      Binding(["u"], "undo", "Take back the last grade", UserClickedUndo),
+    ]
+    None -> []
   }
 }
 

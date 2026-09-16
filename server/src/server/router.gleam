@@ -29,7 +29,12 @@ pub fn handle(request: wisp.Request, context: Context) -> wisp.Response {
         http.Delete -> study.dequeue(request, context)
         _ -> study.suspend(request, context)
       }
-    ["api", "reviews"] -> study.review(request, context)
+    // POST records a review; DELETE undoes the most recent one.
+    ["api", "reviews"] ->
+      case request.method {
+        http.Delete -> study.undo(request, context)
+        _ -> study.review(request, context)
+      }
     ["api", "drafts"] -> study.draft(request, context)
     ["api", "notes"] -> study.note(request, context)
     ["api", "settings"] -> study.settings(request, context)
