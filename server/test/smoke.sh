@@ -316,6 +316,16 @@ check "with reveal truth per row" "[False, False, False, True]" \
   "$(echo "$H" | j "list(r['revealed'] for r in d['reviews'])")"
 check "and the ratings as pressed" "[3, 3, 4, 4]" \
   "$(echo "$H" | j "list(r['rating'] for r in d['reviews'])")"
+# A recall-only review: scheduled like any other, logged as recall, and
+# never a clean solve even though it is a timed-looking pass.
+check "a recall review is accepted" 200 "$(status -X POST "$B/api/reviews" -H "$AUTH" -H "$CT" -d "{$REF,\"rating\":3,\"recall\":true}")"
+H=$(curl -s "$B/api/history?category=NeetCode%20150%20%C2%B7%20Python&subcategory=Arrays%20%26%20Hashing&title=Contains%20Duplicate" -H "$AUTH")
+check "the recall row is logged as such" "[False, False, False, False, True]" \
+  "$(echo "$H" | j "list(r['recall'] for r in d['reviews'])")"
+check "and bumped the card" 5 "$(curl -s "$B/api/state" -H "$AUTH" | j "next(c['reps'] for c in d['cards'] if c['title'] == 'Contains Duplicate')")"
+I=$(curl -s "$B/api/insights" -H "$AUTH")
+check "a recall pass is not a clean solve" 1 "$(echo "$I" | j "len(d['cleanSolves'])")"
+check "nor a reveal" 1 "$(echo "$I" | j "['reveals'][0]['count']")"
 check "history without a token is 401" 401 "$(status "$B/api/history?category=x&subcategory=y&title=z")"
 check "history without the key is 422" 422 "$(status "$B/api/history" -H "$AUTH")"
 

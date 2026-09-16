@@ -24,13 +24,13 @@ import gleamdrill/model.{
   TourContents, TourCursorMoved, TourLesson, TourRoute, TourRunTicked,
   UserAddedAllShown, UserClickedBackToStudy, UserClickedBrowse,
   UserClickedClearSelection, UserClickedExitDrill, UserClickedExitReport,
-  UserClickedNext, UserClickedQueue, UserClickedRun, UserClickedSelectAll,
-  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
-  UserClickedStudy, UserClickedTour, UserClickedTourContents,
+  UserClickedNext, UserClickedQueue, UserClickedRecall, UserClickedRun,
+  UserClickedSelectAll, UserClickedStartDrill, UserClickedStartExam,
+  UserClickedStats, UserClickedStudy, UserClickedTour, UserClickedTourContents,
   UserClickedTourNext, UserClickedTourPrev, UserClosedDetail, UserFilteredQueue,
   UserGraded, UserPickedChoice, UserRemovedAllShown, UserRevealedHint,
-  UserSearched, UserSubmittedAnswer, UserToggledResults, UserToggledSide,
-  UserToggledSolution,
+  UserRevealedRecall, UserSearched, UserSubmittedAnswer, UserToggledResults,
+  UserToggledSide, UserToggledSolution,
 }
 import gleamdrill/problem
 import gleamdrill/problems
@@ -159,6 +159,7 @@ fn study_bindings() -> List(Binding) {
       "Start studying what is due",
       UserClickedStudy,
     ),
+    Binding(["c"], "recall", "Recall what is due, no editor", UserClickedRecall),
     Binding(["q"], "queue", "Manage the study queue", UserClickedQueue),
     Binding(["b"], "browse", "Browse problems by hand", UserClickedBrowse),
     Binding(["t"], "stats", "Statistics", UserClickedStats),
@@ -336,10 +337,51 @@ fn menu_bindings(m: Model) -> List(Binding) {
 }
 
 fn drill_bindings(m: Model) -> List(Binding) {
-  case current_quiz(m) {
-    Ok(_) -> quiz_bindings(m)
-    Error(Nil) -> code_bindings(m)
+  case current_quiz(m), m.recall {
+    Ok(_), _ -> quiz_bindings(m)
+    Error(Nil), True -> recall_bindings(m)
+    Error(Nil), False -> code_bindings(m)
   }
+}
+
+/// A recall card has two moments: before the reveal, and grading after it.
+fn recall_bindings(m: Model) -> List(Binding) {
+  let step = case m.revealed_solution {
+    None -> [
+      Binding(
+        [" ", "s"],
+        "reveal",
+        "Show the approach and solutions",
+        UserRevealedRecall,
+      ),
+    ]
+    Some(_) ->
+      case m.grading {
+        AwaitingGrade -> [
+          Binding(["1"], "again", "Grade: Again", UserGraded(fsrs.Again)),
+          Binding(["2"], "hard", "Grade: Hard", UserGraded(fsrs.Hard)),
+          Binding(["3"], "good", "Grade: Good", UserGraded(fsrs.Good)),
+          Binding(["4"], "easy", "Grade: Easy", UserGraded(fsrs.Easy)),
+        ]
+        _ -> []
+      }
+  }
+  list.flatten([
+    step,
+    [
+      Binding(["m"], "note", "Write a note to future you", NoteFocusRequested),
+      Binding(["a"], "hint", "Reveal the next approach hint", UserRevealedHint),
+      Binding(
+        ["p"],
+        "prompt",
+        "Hide or show the problem prompt",
+        UserToggledSide,
+      ),
+      Binding(["n"], "skip", "Skip to the next card", UserClickedNext),
+      Binding(["Escape"], "exit", "Exit the sitting", UserClickedExitDrill),
+      help_binding(),
+    ],
+  ])
 }
 
 fn code_bindings(m: Model) -> List(Binding) {
@@ -497,9 +539,10 @@ pub fn context_label(m: Model) -> String {
     MenuRoute -> "BROWSE"
     QueueRoute -> "QUEUE"
     DrillRoute ->
-      case current_quiz(m) {
-        Ok(_) -> "QUIZ"
-        Error(Nil) -> "DRILL"
+      case current_quiz(m), m.recall {
+        Ok(_), _ -> "QUIZ"
+        Error(Nil), True -> "RECALL"
+        Error(Nil), False -> "DRILL"
       }
     StatsRoute -> "STATS"
     ReportRoute -> "REPORT"

@@ -46,6 +46,11 @@ pub fn view(m: Model) -> Element(Msg) {
         ],
       ),
       html.h2([attribute.class("drill-title")], [html.text("Session complete")]),
+      case m.recall {
+        True ->
+          html.span([attribute.class("recall-chip")], [html.text("Recall")])
+        False -> element.none()
+      },
     ]),
     html.div([attribute.class("summary-body")], [
       html.div([attribute.class("summary-totals")], [
@@ -53,7 +58,10 @@ pub fn view(m: Model) -> Element(Msg) {
           1 -> "problem"
           _ -> "problems"
         }),
-        tile(insights.duration_label(total_ms), "at the keyboard"),
+        tile(insights.duration_label(total_ms), case m.recall {
+          True -> "thinking"
+          False -> "at the keyboard"
+        }),
         tile(int.to_string(m.today.reviews_done), "done today"),
       ]),
       panel("What you answered", case entries {

@@ -285,6 +285,7 @@ pub fn review_row_round_trips_test() {
       state_before: 2,
       scheduled_days: 15,
       stability_after: Some(21.4),
+      recall: False,
     )
   round_trip(row, wire.review_row_to_json, wire.review_row_decoder())
 }
@@ -302,6 +303,7 @@ pub fn review_row_without_a_duration_round_trips_test() {
       state_before: 1,
       scheduled_days: 0,
       stability_after: None,
+      recall: False,
     )
   round_trip(row, wire.review_row_to_json, wire.review_row_decoder())
 }
@@ -315,6 +317,7 @@ pub fn review_round_trips_test() {
       auto_failed: False,
       revealed: False,
       practice: False,
+      recall: False,
     )
   round_trip(review, wire.review_to_json, wire.review_decoder())
 }
@@ -328,8 +331,40 @@ pub fn practice_review_round_trips_test() {
       auto_failed: False,
       revealed: True,
       practice: True,
+      recall: False,
     )
   round_trip(review, wire.review_to_json, wire.review_decoder())
+}
+
+/// A recall-only review carries no code and no time, just the grade.
+pub fn recall_review_round_trips_test() {
+  let review =
+    wire.Review(
+      problem: a_ref(),
+      rating: fsrs.Good,
+      duration_ms: None,
+      auto_failed: False,
+      revealed: False,
+      practice: False,
+      recall: True,
+    )
+  round_trip(review, wire.review_to_json, wire.review_decoder())
+}
+
+pub fn recall_review_row_round_trips_test() {
+  let row =
+    wire.ReviewRow(
+      at: fsrs.from_epoch(1_787_700_000.0),
+      rating: fsrs.Hard,
+      duration_ms: None,
+      revealed: False,
+      auto_failed: False,
+      state_before: 2,
+      scheduled_days: 4,
+      stability_after: Some(6.0),
+      recall: True,
+    )
+  round_trip(row, wire.review_row_to_json, wire.review_row_decoder())
 }
 
 /// Older clients omit `practice` entirely. It has to default rather than 422,
@@ -347,6 +382,7 @@ pub fn review_without_practice_defaults_to_false_test() {
       auto_failed: False,
       revealed: False,
       practice: False,
+      recall: False,
     )),
   )
 }

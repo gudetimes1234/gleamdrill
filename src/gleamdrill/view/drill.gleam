@@ -12,7 +12,8 @@ import gleamdrill/model.{
   RuntimeReady, SubmittingGrade, TimedOut, UserChangedKeymap,
   UserClickedExitDrill, UserClickedNext, UserClickedRetryRuntime, UserClickedRun,
   UserClickedStopRun, UserGraded, UserPickedChoice, UserRevealedHint,
-  UserSubmittedAnswer, UserToggledResults, UserToggledSide, UserToggledSolution,
+  UserRevealedRecall, UserSubmittedAnswer, UserToggledResults, UserToggledSide,
+  UserToggledSolution,
 }
 import gleamdrill/problem.{
   type Problem, type ProblemRef, type Quiz, type Solution,
@@ -96,10 +97,13 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
         [html.text("\u{2190} Exit")],
       ),
       html.h2([attribute.class("drill-title")], [html.text(current.title)]),
-      // Nothing to type in a quiz, so the keybinding picker is noise.
-      case current.quiz {
-        Some(_) -> element.none()
-        None -> keymap_picker(m)
+      // Nothing to type in a quiz or a recall card, so the keybinding
+      // picker is noise; a recall card says what it is instead.
+      case current.quiz, m.recall {
+        Some(_), _ -> element.none()
+        None, True ->
+          html.span([attribute.class("recall-chip")], [html.text("Recall")])
+        None, False -> keymap_picker(m)
       },
       html.div(
         [
@@ -130,9 +134,10 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
         // The editor's keyed frame stays the permanent first child of
         // .work-row: appending the answer panel after it cannot remount
         // CodeMirror, which would drop undo history and cursor.
-        html.div([attribute.class("drill-main")], case current.quiz {
-          Some(quiz) -> quiz_main(m, quiz)
-          None -> [
+        html.div([attribute.class("drill-main")], case current.quiz, m.recall {
+          Some(quiz), _ -> quiz_main(m, quiz)
+          None, True -> recall_main(m, current)
+          None, False -> [
             html.div([attribute.class("work-row")], [
               keyed.div([attribute.class("editor-frame")], [
                 #(
@@ -177,6 +182,83 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
 /// The quiz replaces the editor and the run bar entirely: there is nothing to
 /// type and nothing to execute. Options stay clickable until Submit, after
 /// which the grading and the explanation are shown and only Next remains.
+/// A recall card: no editor. Think it through, reveal, grade from memory.
+/// Every solution is shown on reveal, label and complexity first, because
+/// naming the technique is the thing being tested.
+fn recall_main(m: Model, current: Problem) -> List(Element(Msg)) {
+  case m.revealed_solution {
+    None -> [
+      html.div([attribute.class("recall-card")], [
+        html.p([attribute.class("recall-lead")], [
+          html.text(
+            "Say it, out loud or in your head: which pattern, which data structure, and the time and space complexity. Then reveal.",
+          ),
+        ]),
+        html.button(
+          [
+            attribute.class("btn-primary recall-reveal"),
+            event.on_click(UserRevealedRecall),
+          ],
+          [html.text("Reveal")],
+        ),
+      ]),
+    ]
+    Some(_) -> [
+      html.div([attribute.class("recall-answers")], case current.solutions {
+        [] -> [
+          html.div([attribute.class("recall-card")], [
+            html.p([attribute.class("recall-lead")], [
+              html.text(
+                "This drill has no reference solution; the approach is in the side panel.",
+              ),
+            ]),
+          ]),
+        ]
+        solutions -> list.map(solutions, recall_solution)
+      }),
+      html.div([attribute.class("run-bar recall-bar")], [
+        html.span([attribute.class("grade-hint recall-hint")], [
+          html.text("How well did you have it?"),
+        ]),
+        grade_controls(m, current),
+      ]),
+    ]
+  }
+}
+
+fn recall_solution(solution: Solution) -> Element(Msg) {
+  html.div(
+    [attribute.class("answer-content recall-answer")],
+    list.flatten([
+      [
+        html.div(
+          [attribute.class("answer-header")],
+          list.flatten([
+            [
+              html.div([attribute.class("answer-label")], [
+                html.text(solution.label),
+              ]),
+            ],
+            case solution.complexity {
+              "" -> []
+              complexity -> [
+                html.span([attribute.class("answer-complexity")], [
+                  html.text(complexity),
+                ]),
+              ]
+            },
+          ]),
+        ),
+      ],
+      case solution.note {
+        "" -> []
+        note -> [html.div([attribute.class("answer-note")], [html.text(note)])]
+      },
+      [html.pre([], [html.code([], [html.text(solution.code)])])],
+    ]),
+  )
+}
+
 fn quiz_main(m: Model, quiz: Quiz) -> List(Element(Msg)) {
   let options =
     html.div(
@@ -374,7 +456,10 @@ fn expanded_panels(
             ]),
           ]
         },
-        [panel("Tests", [tests_panel(m)])],
+        case m.recall {
+          True -> []
+          False -> [panel("Tests", [tests_panel(m)])]
+        },
       ])
     None -> []
   }

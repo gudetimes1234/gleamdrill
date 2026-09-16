@@ -351,6 +351,10 @@ pub type Model {
     /// hand-picked from the menu. Reviews are recorded either way; this only
     /// decides where exiting returns to.
     studying: Bool,
+    /// A recall-only sitting: no editor. The prompt is read, the approach
+    /// and solutions are revealed, and the grade is given from memory. Set
+    /// alongside `studying`, cleared with it.
+    recall: Bool,
     grading: Grading,
     /// Wall-clock milliseconds when the current problem was opened, for the
     /// review log's `duration_ms`.
@@ -473,6 +477,7 @@ pub fn default() -> Model {
     side_collapsed: False,
     results_collapsed: False,
     editor_height: None,
+    recall: False,
     leader_armed: False,
     queue_search: "",
     queue_language: None,
@@ -744,6 +749,10 @@ pub type Msg {
   UserClickedRetryRuntime(String)
   UserToggledSide
   UserToggledResults
+  /// Start a recall-only sitting over the study queue.
+  UserClickedRecall
+  /// Show the approach and solutions for the current recall card.
+  UserRevealedRecall
   /// The editor's resize handle was released at this many px; 0 resets.
   EditorResized(Int)
   UserToggledLanguage(String)

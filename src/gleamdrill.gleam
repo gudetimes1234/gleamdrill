@@ -1,4 +1,5 @@
 import fsrs
+import gleam/bool
 import gleam/dict
 import gleam/float
 import gleam/int
@@ -39,18 +40,20 @@ import gleamdrill/model.{
   UserClickedBreadcrumb, UserClickedBrowse, UserClickedCategory,
   UserClickedClearSelection, UserClickedDeviceTimezone, UserClickedExitDrill,
   UserClickedExitReport, UserClickedMergeGuest, UserClickedNext,
-  UserClickedQueue, UserClickedRetryRuntime, UserClickedRetrySync,
-  UserClickedRun, UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
-  UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
-  UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
-  UserClickedTour, UserClickedTourContents, UserClickedTourNext,
-  UserClickedTourPrev, UserClosedDetail, UserDismissedMergeOffer,
-  UserDismissedNotice, UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded,
-  UserOpenedDetail, UserOpenedLesson, UserPickedChoice, UserPickedQueueLanguage,
-  UserRemovedAllShown, UserResetLesson, UserRevealedHint, UserSearched,
-  UserSearchedQueue, UserSubmittedAnswer, UserSubmittedAuth, UserToggledAuthMode,
-  UserToggledLanguage, UserToggledProblem, UserToggledQueued, UserToggledResults,
-  UserToggledSide, UserToggledSolution, UserToggledSuspend,
+  UserClickedQueue, UserClickedRecall, UserClickedRetryRuntime,
+  UserClickedRetrySync, UserClickedRun, UserClickedSelectAll,
+  UserClickedSettings, UserClickedSignIn, UserClickedSignOut,
+  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
+  UserClickedStopRun, UserClickedStudy, UserClickedSubcategory, UserClickedTour,
+  UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
+  UserClosedDetail, UserDismissedMergeOffer, UserDismissedNotice,
+  UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded, UserOpenedDetail,
+  UserOpenedLesson, UserPickedChoice, UserPickedQueueLanguage,
+  UserRemovedAllShown, UserResetLesson, UserRevealedHint, UserRevealedRecall,
+  UserSearched, UserSearchedQueue, UserSubmittedAnswer, UserSubmittedAuth,
+  UserToggledAuthMode, UserToggledLanguage, UserToggledProblem,
+  UserToggledQueued, UserToggledResults, UserToggledSide, UserToggledSolution,
+  UserToggledSuspend,
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
@@ -1056,6 +1059,42 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           ))
       }
 
+    // The same queue as Study, opened without an editor: each card is read,
+    // revealed and graded from memory. Nothing to run, so no runtime is
+    // fetched.
+    UserClickedRecall ->
+      case queue.build(m) {
+        [] -> #(
+          Model(
+            ..m,
+            notice: Some(
+              "Nothing to recall right now. Come back when cards are due.",
+            ),
+          ),
+          effect.none(),
+        )
+        queue -> #(
+          Model(
+            ..open_first(Model(..m, studying: True, recall: True), queue),
+            iteration_count: 1,
+          ),
+          effect.none(),
+        )
+      }
+
+    UserRevealedRecall -> #(
+      Model(
+        ..m,
+        revealed_solution: Some(0),
+        hints_revealed: case current_problem(m) {
+          Ok(current) -> list.length(current.approach)
+          Error(Nil) -> 0
+        },
+        grading: AwaitingGrade,
+      ),
+      effect.none(),
+    )
+
     UserClickedBrowse -> #(Model(..m, route: MenuRoute), effect.none())
 
     UserClickedBackToStudy -> #(Model(..m, route: StudyRoute), effect.none())
@@ -1153,27 +1192,40 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             ),
             ..m.sitting
           ]),
-          store.record_review(
-            m,
-            wire.Review(
-              problem: ref,
-              rating:,
-              duration_ms: Some(browser.now_ms() - m.opened_at_ms),
-              // An ungraded card's run is a demonstration, not a test, so
-              // it is never logged as a failure.
-              auto_failed: case current_problem(m) {
-                Ok(current) ->
-                  problem.graded(current) && model.run_failed(m.run)
-                Error(Nil) -> model.run_failed(m.run)
-              },
-              revealed: case current_problem(m) {
-                Ok(current) -> model.answer_revealed(m, current.approach)
-                Error(Nil) -> m.revealed_solution != None
-              },
-              // A hand-picked sitting is practice, not a scheduled review.
-              practice: !m.studying,
-            ),
-          ),
+          store.record_review(m, case m.recall {
+            // Revealing is the mechanism here, not a peek, and there was no
+            // code to time: the row says "recall" and nothing else.
+            True ->
+              wire.Review(
+                problem: ref,
+                rating:,
+                duration_ms: None,
+                auto_failed: False,
+                revealed: False,
+                practice: !m.studying,
+                recall: True,
+              )
+            False ->
+              wire.Review(
+                problem: ref,
+                rating:,
+                duration_ms: Some(browser.now_ms() - m.opened_at_ms),
+                // An ungraded card's run is a demonstration, not a test, so
+                // it is never logged as a failure.
+                auto_failed: case current_problem(m) {
+                  Ok(current) ->
+                    problem.graded(current) && model.run_failed(m.run)
+                  Error(Nil) -> model.run_failed(m.run)
+                },
+                revealed: case current_problem(m) {
+                  Ok(current) -> model.answer_revealed(m, current.approach)
+                  Error(Nil) -> m.revealed_solution != None
+                },
+                // A hand-picked sitting is practice, not a scheduled review.
+                practice: !m.studying,
+                recall: False,
+              )
+          }),
         )
       }
 
@@ -1341,6 +1393,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           False -> MenuRoute
         },
         studying: False,
+        recall: False,
       ),
       effect.none(),
     )
@@ -1380,6 +1433,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                 revealed: False,
                 // The exam is an assessment, not practice.
                 practice: False,
+                recall: False,
               ),
             ),
           )
@@ -2162,6 +2216,7 @@ fn open_first(m: Model, queue: List(ProblemRef)) -> Model {
 /// encounter — the learning step, where you reveal, study, and self-grade like
 /// flipping a card. Otherwise a run is required before grading.
 fn initial_grading(m: Model, ref: ProblemRef) -> model.Grading {
+  use <- bool.guard(m.recall, NotGrading)
   case problem_kind(m, ref) {
     // Quizzes grade themselves on submit.
     QuizProblem -> NotGrading
@@ -2300,6 +2355,7 @@ fn advance_inner(m: Model) -> #(Model, Effect(Msg)) {
         ..reset_home(m),
         route: SummaryRoute,
         studying: m.studying,
+        recall: m.recall,
         sitting: m.sitting,
       ),
       effect.none(),
@@ -2333,7 +2389,10 @@ fn advance_inner(m: Model) -> #(Model, Effect(Msg)) {
           )
         Error(Nil) -> Model(..advanced, draft: "")
       }
-      with_prefetch(#(advanced, effect.none()))
+      case m.recall {
+        True -> #(advanced, effect.none())
+        False -> with_prefetch(#(advanced, effect.none()))
+      }
     }
   }
 }
@@ -2356,6 +2415,7 @@ fn reset_home(m: Model) -> Model {
       False -> m.selected
     },
     studying: False,
+    recall: False,
     grading: NotGrading,
   )
 }

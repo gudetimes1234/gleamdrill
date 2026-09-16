@@ -916,6 +916,74 @@ check("Retry recovers the runtime without a reload", true);
 await exitDrill();
 await page.waitForTimeout(800);
 
+// ---------------------------------------------------------------- act 4e
+act = "04e-recall";
+console.log(act);
+// The same queue with no editor: read, think, reveal, grade from memory.
+// Two due cards seeded so the sitting has a second card to advance to.
+await page.evaluate(() => {
+  const longAgo = Math.floor(Date.now() / 1000) - 10 * 86400;
+  const card = (title) => ({
+    category: "NeetCode 150", subcategory: "Arrays & Hashing", title,
+    state: 2, step: null, stability: 30, difficulty: 5,
+    due: longAgo + 86400, lastReview: longAgo, introducedAt: longAgo,
+    reps: 1, lapses: 0, suspended: false,
+  });
+  localStorage.setItem("gleamDrill.guest.cards.v1",
+    JSON.stringify([card("Contains Duplicate"), card("Valid Anagram")]));
+  localStorage.removeItem("gleamDrill.guest.reviews.v1");
+});
+await goHome();
+await page.click(".study-recall");
+exercises("UserClickedRecall");
+await page.waitForSelector(".recall-card", { timeout: 15000 });
+check("a recall card opens with no editor",
+  (await page.$("gleam-editor")) === null && await page.isVisible(".recall-reveal"));
+check("and says so in the header", (await page.textContent(".recall-chip")).trim() === "Recall");
+check("nothing to run, so no Tests panel",
+  !(await page.$$eval(".drill-side .panel-title", (n) => n.map((e) => e.textContent))).includes("Tests"));
+check("no grade before the reveal", (await page.$(".grade-bar")) === null);
+await capture("recall-think", "Recall card before the reveal: prompt, note, and a question to answer in your head");
+await page.keyboard.press(" ");
+exercises("UserRevealedRecall");
+await page.waitForSelector(".recall-answers", { timeout: 5000 });
+check("Space reveals every solution with its technique and complexity",
+  (await page.$$(".recall-answer .answer-label")).length >= 2
+    && (await page.$$(".recall-answer .answer-complexity")).length >= 1);
+check("and the approach ladder is fully open",
+  (await page.$(".hint-button")) === null || !(await page.isVisible(".hint-button")));
+check("then the grade is yours", JSON.stringify(await gradeLabels()) === ALL_FOUR,
+  JSON.stringify(await gradeLabels()));
+await capture("recall-revealed", "Revealed: technique, Big-O, note and code for every solution, then the grades");
+await page.keyboard.press("3");
+await page.waitForTimeout(1500);
+check("grading advances to the next recall card", await page.isVisible(".recall-card"));
+const recallRow = await page.evaluate(() =>
+  JSON.parse(localStorage.getItem("gleamDrill.guest.reviews.v1") ?? "[]")[0]);
+check("the review is logged as recall, untimed and unrevealed",
+  recallRow && recallRow.recall === true && recallRow.durationMs === null && recallRow.revealed === false,
+  JSON.stringify(recallRow));
+check("a recall review schedules the card like any other",
+  (await page.evaluate(() => JSON.parse(localStorage.getItem("gleamDrill.guest.cards.v1"))
+    .find((c) => c.title === "Contains Duplicate").reps)) === 2);
+// Second card, on a phone: the one drill layout meant for a commute.
+await page.setViewportSize({ width: 390, height: 844 });
+await page.waitForTimeout(300);
+await page.click(".recall-reveal");
+await page.waitForSelector(".recall-answers", { timeout: 5000 });
+check("recall fits a phone",
+  (await page.evaluate(() => document.documentElement.scrollWidth)) <= 391);
+await capture("recall-phone", "Recall on a phone: answers stacked, grades full width");
+await page.click(".grade-good");
+await page.waitForTimeout(1500);
+check("the sitting ends in a recall summary",
+  await page.isVisible(".summary-container") && (await page.$(".summary-container .recall-chip")) !== null);
+await page.setViewportSize({ width: 1280, height: 900 });
+await page.click("text=Study");
+await page.waitForSelector(".study-screen", { timeout: 10000 });
+check("a recall pass leaves nothing due",
+  ((await page.textContent(".study-screen")) ?? "").length > 0);
+
 // ---------------------------------------------------------------- act 5
 act = "05-languages";
 console.log(act);
@@ -1804,7 +1872,7 @@ const declared = [
   "UserChangedKeymap",
   "UserClickedRun", "UserClickedStopRun", "UserClickedRetryRuntime",
   "UserToggledSide", "UserToggledResults", "UserToggledLanguage",
-  "UserToggledSuspend",
+  "UserToggledSuspend", "UserClickedRecall", "UserRevealedRecall",
   "MenuSuspendedAtCursor", "UserClickedQueue", "UserSearchedQueue",
   "UserFilteredQueue", "UserPickedQueueLanguage",
   "UserToggledQueued", "UserAddedAllShown", "UserRemovedAllShown",

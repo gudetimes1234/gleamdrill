@@ -1238,6 +1238,95 @@ button.results-summary:focus-visible {
     box-shadow: 0 8px 24px -18px var(--success);
 }
 
+/* ---------- Recall cards ---------- */
+
+/* No editor: the column is a prompt to think, then the answers and the
+   grades. It is the one drill layout meant to work on a phone. */
+.recall-chip {
+    flex: none;
+    padding: 3px 10px;
+    border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+    border-radius: var(--radius-pill);
+    color: var(--accent);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.recall-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 24px 20px;
+    background: var(--bg-secondary);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+}
+
+.recall-lead {
+    margin: 0;
+    max-width: 52ch;
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.recall-reveal {
+    font-size: 15px;
+    padding: 12px 22px;
+}
+
+.recall-answers {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.recall-answer {
+    flex: none;
+}
+
+.recall-bar {
+    justify-content: space-between;
+}
+
+.recall-hint {
+    font-style: normal;
+}
+
+@media (min-width: 901px) {
+    /* The answers scroll and the grade bar stays put, like the results box. */
+    .recall-answers {
+        flex: 1 1 auto;
+    }
+}
+
+@media (max-width: 700px) {
+    .recall-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .recall-bar .grade-bar {
+        width: 100%;
+    }
+
+    .recall-bar .grade-button {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .recall-reveal {
+        width: 100%;
+    }
+}
+
 /* Label row: the technique name on the left, its Big-O badge on the right. */
 .answer-header {
     display: flex;
@@ -1523,7 +1612,8 @@ button.results-summary:focus-visible {
         overflow-wrap: anywhere;
     }
 
-    .keymap-picker {
+    .keymap-picker,
+    .drill-header .recall-chip {
         grid-area: keymap;
         justify-self: end;
     }

@@ -12,8 +12,8 @@ import gleam/option.{None, Some}
 import gleamdrill/insights
 import gleamdrill/model.{
   type Model, type Msg, Guest, PromptShowing, Registering, StudyRoute,
-  UserAddedStarterSet, UserClickedBrowse, UserClickedQueue, UserClickedSignIn,
-  UserClickedStartExam, UserClickedStudy, UserClickedTour,
+  UserAddedStarterSet, UserClickedBrowse, UserClickedQueue, UserClickedRecall,
+  UserClickedSignIn, UserClickedStartExam, UserClickedStudy, UserClickedTour,
   UserDismissedUpgradePrompt,
 }
 import gleamdrill/problem
@@ -113,6 +113,15 @@ pub fn view(m: Model) -> Element(Msg) {
           event.on_click(UserClickedStudy),
         ],
         [html.text("Study now")],
+      ),
+      // The same queue without an editor: read, reveal, grade from memory.
+      // Short enough for a phone or a commute, so it earns its own button.
+      html.button(
+        [
+          attribute.class("study-secondary study-recall"),
+          event.on_click(UserClickedRecall),
+        ],
+        [html.text("Recall only")],
       ),
       html.button(
         [attribute.class("study-secondary"), event.on_click(UserClickedQueue)],

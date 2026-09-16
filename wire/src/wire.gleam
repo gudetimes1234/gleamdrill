@@ -177,6 +177,10 @@ pub type ReviewRow {
     state_before: Int,
     scheduled_days: Int,
     stability_after: Option(Float),
+    /// A recall-only review: the approach and solution were shown and the
+    /// grade was given from memory, with no code written. Scheduled like
+    /// any review, but never counted as a solve.
+    recall: Bool,
   )
 }
 
@@ -193,6 +197,8 @@ pub type Review {
     /// freely, so the server must not coerce the rating. The log still
     /// records auto_failed/revealed truthfully.
     practice: Bool,
+    /// See `ReviewRow.recall`.
+    recall: Bool,
   )
 }
 
@@ -464,6 +470,7 @@ pub fn review_row_to_json(row: ReviewRow) -> Json {
     #("stateBefore", json.int(row.state_before)),
     #("scheduledDays", json.int(row.scheduled_days)),
     #("stabilityAfter", nullable_float(row.stability_after)),
+    #("recall", json.bool(row.recall)),
   ])
 }
 
@@ -476,6 +483,7 @@ pub fn review_to_json(review: Review) -> Json {
       #("autoFailed", json.bool(review.auto_failed)),
       #("revealed", json.bool(review.revealed)),
       #("practice", json.bool(review.practice)),
+      #("recall", json.bool(review.recall)),
     ]),
   )
 }
@@ -755,6 +763,8 @@ pub fn review_row_decoder() -> Decoder(ReviewRow) {
     "stabilityAfter",
     decode.optional(lenient_float()),
   )
+  // Rows logged before recall mode existed have no flag: none of them were.
+  use recall <- decode.optional_field("recall", False, decode.bool)
   decode.success(ReviewRow(
     at:,
     rating:,
@@ -764,6 +774,7 @@ pub fn review_row_decoder() -> Decoder(ReviewRow) {
     state_before:,
     scheduled_days:,
     stability_after:,
+    recall:,
   ))
 }
 
@@ -783,6 +794,7 @@ pub fn review_decoder() -> Decoder(Review) {
   use auto_failed <- decode.optional_field("autoFailed", False, decode.bool)
   use revealed <- decode.optional_field("revealed", False, decode.bool)
   use practice <- decode.optional_field("practice", False, decode.bool)
+  use recall <- decode.optional_field("recall", False, decode.bool)
   decode.success(Review(
     problem:,
     rating:,
@@ -790,6 +802,7 @@ pub fn review_decoder() -> Decoder(Review) {
     auto_failed:,
     revealed:,
     practice:,
+    recall:,
   ))
 }
 

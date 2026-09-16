@@ -21,8 +21,16 @@ pub fn all() -> List(Migration) {
     Migration(1, "init", init),
     Migration(2, "seeded_cards_have_a_rep", backfill),
     Migration(3, "notes", notes),
+    Migration(4, "recall_reviews", recall_reviews),
   ]
 }
+
+/// A recall-only review: approach and solution shown, graded from memory,
+/// no code written. Scheduled like any other review but never a solve, so
+/// the insight queries leave it out.
+const recall_reviews: List(String) = [
+  "alter table reviews add column recall boolean not null default false",
+]
 
 /// A note the user leaves themselves on a problem -- what they missed, what
 /// to try first next time. Keyed like a draft; an empty note is deleted

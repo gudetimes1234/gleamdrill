@@ -198,6 +198,7 @@ pub fn record(
       stability_after: option.map(updated.card.memory, fn(memory) {
         memory.stability
       }),
+      recall: review.recall,
     )
 
   #(
@@ -810,8 +811,13 @@ pub fn insights(local: Local) -> api.Insights {
   let clean =
     list.filter_map(chronological, fn(entry) {
       let #(problem, row) = entry
+      // A recall-only review has no code behind it, so it says nothing
+      // about how fast the problem can be solved.
       case
-        fsrs.rating_to_int(row.rating) > 1 && !row.revealed && !row.auto_failed,
+        fsrs.rating_to_int(row.rating) > 1
+        && !row.revealed
+        && !row.auto_failed
+        && !row.recall,
         row.duration_ms
       {
         True, Some(duration_ms) ->
@@ -914,6 +920,7 @@ fn log_row_json(entry: #(ProblemRef, api.ReviewRow)) -> Json {
       Some(stability) -> json.float(stability)
       None -> json.null()
     }),
+    #("recall", json.bool(row.recall)),
   ])
 }
 

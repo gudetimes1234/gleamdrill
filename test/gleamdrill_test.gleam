@@ -238,6 +238,7 @@ fn answer(problem: problem.ProblemRef, rating: fsrs.Rating) -> api.Review {
     auto_failed: False,
     revealed: False,
     practice: False,
+    recall: False,
   )
 }
 
@@ -292,6 +293,7 @@ pub fn first_encounter_grades_freely_test() -> Nil {
         auto_failed: True,
         revealed: True,
         practice: False,
+        recall: False,
       ),
       now,
       0,
@@ -332,6 +334,7 @@ pub fn later_reviews_keep_their_grade_test() -> Nil {
         auto_failed: False,
         revealed: True,
         practice: False,
+        recall: False,
       ),
       at_epoch(1_800_000_600),
       0,
@@ -679,6 +682,7 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
         auto_failed: False,
         revealed: False,
         practice: False,
+        recall: False,
       ),
       at_epoch(1_800_000_000),
       0,
@@ -695,6 +699,7 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
         auto_failed: False,
         revealed: True,
         practice: False,
+        recall: False,
       ),
       at_epoch(1_800_000_000 + 600),
       0,
@@ -711,6 +716,7 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
         auto_failed: False,
         revealed: False,
         practice: False,
+        recall: False,
       ),
       at_epoch(1_800_000_000 + 1200),
       0,
@@ -737,6 +743,33 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
   assert list.length(history) == 3
   let assert [first, second, ..] = history
   assert first.revealed == False && second.revealed == True
+
+  // A recall-only review schedules the card and is logged, but it is not a
+  // solve: nothing was typed, so it says nothing about speed.
+  let #(store, _) =
+    local.record(
+      store,
+      settings,
+      wire.Review(
+        problem:,
+        rating: fsrs.Good,
+        duration_ms: None,
+        auto_failed: False,
+        revealed: False,
+        practice: False,
+        recall: True,
+      ),
+      at_epoch(1_800_000_000 + 1800),
+      0,
+      0.0,
+    )
+  let data = local.insights(store)
+  assert list.length(data.clean_solves) == 2
+  assert data.reveals == [#(problem, 1)]
+  let assert Ok(card) = dict.get(store.cards, problem)
+  assert card.reps == 4
+  let assert [_, _, _, recalled] = local.history_of(store, problem)
+  assert recalled.recall && recalled.duration_ms == None
 }
 
 pub fn the_review_log_is_a_ring_buffer_test() -> Nil {
@@ -929,6 +962,7 @@ pub fn guest_and_server_calibration_agree_test() -> Nil {
         auto_failed: False,
         revealed: False,
         practice: False,
+        recall: False,
       ),
       at_epoch(1_800_000_000),
       0,
@@ -945,6 +979,7 @@ pub fn guest_and_server_calibration_agree_test() -> Nil {
         auto_failed: False,
         revealed: True,
         practice: False,
+        recall: False,
       ),
       at_epoch(1_800_000_600),
       0,
@@ -961,6 +996,7 @@ pub fn guest_and_server_calibration_agree_test() -> Nil {
         auto_failed: False,
         revealed: False,
         practice: False,
+        recall: False,
       ),
       at_epoch(1_800_001_200),
       0,

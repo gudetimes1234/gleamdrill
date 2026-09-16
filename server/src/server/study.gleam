@@ -501,9 +501,9 @@ fn insert_review(
     "insert into reviews (
        user_id, card_id, rating, state_before, reviewed_at,
        elapsed_days, scheduled_days, stability_after, difficulty_after,
-       duration_ms, auto_failed, revealed)
+       duration_ms, auto_failed, revealed, recall)
      values ($1::uuid, $2::uuid, $3, $4, to_timestamp($5::float8),
-             $6, $7, $8, $9, $10, $11, $12)",
+             $6, $7, $8, $9, $10, $11, $12, $13)",
   )
   |> pog.parameter(pog.text(user_id))
   |> pog.parameter(pog.text(record.id))
@@ -523,6 +523,7 @@ fn insert_review(
   |> pog.parameter(pog.nullable(pog.int, input.duration_ms))
   |> pog.parameter(pog.bool(input.auto_failed))
   |> pog.parameter(pog.bool(input.revealed))
+  |> pog.parameter(pog.bool(input.recall))
   |> pog.execute(db)
   |> result.replace(Nil)
   |> result.map_error(database_error)
@@ -1134,6 +1135,7 @@ fn clean_solves(
           and r.rating > 1
           and not r.revealed
           and not r.auto_failed
+          and not r.recall
           and r.duration_ms is not null
      ) latest
      where recency <= 5
@@ -1190,7 +1192,8 @@ fn calibration(
             count(*) filter (where next_pass)::int
        from (
          select r.rating,
-                lead(r.rating > 1 and not r.revealed and not r.auto_failed)
+                lead(r.rating > 1 and not r.revealed and not r.auto_failed
+                     and not r.recall)
                   over (partition by r.card_id order by r.reviewed_at)
                   as next_pass
            from reviews r
@@ -1224,7 +1227,7 @@ pub fn history(
   pog.query(
     "select extract(epoch from r.reviewed_at)::float8, r.rating,
             r.duration_ms, r.revealed, r.auto_failed, r.state_before,
-            r.scheduled_days, r.stability_after
+            r.scheduled_days, r.stability_after, r.recall
        from reviews r
        join cards c on c.id = r.card_id
       where r.user_id = $1::uuid
@@ -1244,6 +1247,7 @@ pub fn history(
     use state_before <- decode.field(5, decode.int)
     use scheduled_days <- decode.field(6, decode.int)
     use stability_after <- decode.field(7, decode.optional(decode.float))
+    use recall <- decode.field(8, decode.bool)
     // The column is constrained to 1-4 by the insert; `Good` is unreachable
     // rather than a guess.
     let rating = result.unwrap(fsrs.rating_from_int(rating), fsrs.Good)
@@ -1256,6 +1260,7 @@ pub fn history(
       state_before:,
       scheduled_days:,
       stability_after:,
+      recall:,
     ))
   })
   |> pog.execute(db)
