@@ -568,6 +568,40 @@ details.approach summary:focus-visible {
     color: var(--accent);
 }
 
+/* A card forgotten again and again. The badge rides the title and the
+   approach panel opens itself; the tint is the same one a returning note
+   wears, because both mean "read this before you type". */
+.leech-badge {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 10px;
+    padding: 2px 9px;
+    border: 1px solid color-mix(in srgb, var(--warning) 55%, var(--border));
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--warning) 12%, transparent);
+    color: var(--warning);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: none;
+}
+
+.drill-median {
+    color: var(--text-secondary);
+    font-weight: normal;
+}
+
+/* Past your own median: the clock turns before the three-minute promise
+   does, because your own pace is the nearer bar. */
+.drill-clock.over-median {
+    color: var(--warning);
+}
+
+.drill-clock.over-promise.over-median {
+    color: var(--accent);
+}
+
 /* The in-app "leave this drill?" question, over the drill it asks about. */
 .exit-overlay {
     position: fixed;

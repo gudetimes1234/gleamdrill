@@ -8,6 +8,7 @@ import gleam/string
 import gleam/time/timestamp.{type Timestamp}
 import gleamdrill/api.{type ApiError, type CardState, type Settings, type User}
 import gleamdrill/problem.{type ProblemRef}
+import gleamdrill/problems
 import wire
 
 pub type Route {
@@ -547,6 +548,39 @@ pub fn first_encounter(model: Model, problem: ProblemRef) -> Bool {
 /// drill view (which buttons to offer) need it, and two copies drifted once.
 /// Whether the revealed hint rungs include the pseudocode stage — the point
 /// past which the hints have given the answer away.
+/// Forgotten this many times from Review, the card is a leech: reading the
+/// approach again before typing beats another blind attempt.
+pub const leech_lapses = 4
+
+pub fn is_leech(m: Model, problem: ProblemRef) -> Bool {
+  case card_for(m, problem) {
+    option.Some(state) -> state.lapses >= leech_lapses
+    None -> False
+  }
+}
+
+/// How many rungs of the ladder a problem opens with: everything short of
+/// the pseudocode for a leech, so the approach is on screen before the
+/// first keystroke without the open counting as a reveal; none otherwise.
+pub fn opening_hints(m: Model, problem: ProblemRef) -> Int {
+  case is_leech(m, problem) {
+    False -> 0
+    True ->
+      case problems.find(problem.category, problem.subcategory, problem.title) {
+        Ok(found) ->
+          found.approach
+          |> list.take_while(fn(stage) {
+            case stage {
+              problem.Pseudocode(_) -> False
+              _ -> True
+            }
+          })
+          |> list.length
+        Error(Nil) -> 0
+      }
+  }
+}
+
 pub fn pseudocode_revealed(
   m: Model,
   stages: List(problem.ApproachStage),

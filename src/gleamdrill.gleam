@@ -1332,7 +1332,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               studying: False,
               draft: draft_for(m, first),
               revealed_solution: None,
-              hints_revealed: 0,
+              hints_revealed: model.opening_hints(m, first),
               run: RunIdle,
               // Without this a reveal-only drill -- Elixir has no harness at
               // all -- would sit forever on "run the tests to grade this" with
@@ -2195,7 +2195,7 @@ fn open_first(m: Model, queue: List(ProblemRef)) -> Model {
           False -> draft_for(m, first)
         },
         revealed_solution: None,
-        hints_revealed: 0,
+        hints_revealed: model.opening_hints(m, first),
         run: RunIdle,
         grading: initial_grading(m, first),
         opened_at_ms: browser.now_ms(),
@@ -2385,6 +2385,7 @@ fn advance_inner(m: Model) -> #(Model, Effect(Msg)) {
               True -> draft_for(advanced, ref)
               False -> starter_for(ref)
             },
+            hints_revealed: model.opening_hints(m, ref),
             grading: initial_grading(m, ref),
           )
         Error(Nil) -> Model(..advanced, draft: "")

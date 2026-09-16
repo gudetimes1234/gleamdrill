@@ -140,6 +140,15 @@ pub fn tier_of(fluency: Option(Int)) -> Tier {
   }
 }
 
+/// One problem's fluency, straight from the insight payload: the median of
+/// its last three clean solves, or None before the first. What the drill
+/// header shows next to the clock.
+pub fn fluency_for(data: Insights, problem: ProblemRef) -> Option(Int) {
+  data.clean_solves
+  |> list.filter(fn(solve: CleanSolve) { solve.problem == problem })
+  |> fluency_of
+}
+
 /// Median of the last three clean solves; None until there is at least one.
 pub fn fluency_of(solves: List(CleanSolve)) -> Option(Int) {
   let last_three =

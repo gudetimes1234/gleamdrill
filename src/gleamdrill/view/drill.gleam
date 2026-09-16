@@ -5,6 +5,7 @@ import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 import gleamdrill/editor
+import gleamdrill/insights
 import gleamdrill/model.{
   type CaseResult, type Model, type Msg, type RunError, AwaitingGrade, Cases,
   EditorChanged, EditorResized, Errored, ExitConfirmed, NotGrading, NoteChanged,
@@ -96,7 +97,29 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
         ],
         [html.text("\u{2190} Exit")],
       ),
-      html.h2([attribute.class("drill-title")], [html.text(current.title)]),
+      html.h2(
+        [attribute.class("drill-title")],
+        list.flatten([
+          [html.text(current.title)],
+          case model.is_leech(m, ref) {
+            True -> [
+              html.span(
+                [
+                  attribute.class("leech-badge"),
+                  attribute.attribute(
+                    "title",
+                    "Forgotten "
+                      <> int.to_string(model.leech_lapses)
+                      <> "+ times: the approach is open. Read it first.",
+                  ),
+                ],
+                [html.text("Leech \u{b7} read the approach first")],
+              ),
+            ]
+            False -> []
+          },
+        ]),
+      ),
       // Nothing to type in a quiz or a recall card, so the keybinding
       // picker is noise; a recall card says what it is instead.
       case current.quiz, m.recall {
@@ -649,15 +672,40 @@ fn clock(m: Model) -> Element(Msg) {
     int.to_string(seconds / 60)
     <> ":"
     <> string.pad_start(int.to_string(seconds % 60), 2, "0")
+  // Your own median on this problem, from the insights loaded at boot: the
+  // sittings before this one, which is exactly the pace to beat. Not
+  // refreshed per review on purpose; this sitting's solves join it next time.
+  let median = case m.insights, model.current_ref(m), m.recall {
+    Some(data), Ok(ref), False -> insights.fluency_for(data, ref)
+    _, _, _ -> None
+  }
   html.span(
     [
       attribute.classes([
         #("drill-clock", True),
         #("over-promise", seconds >= promise_seconds),
+        #("over-median", case median {
+          Some(ms) -> seconds * 1000 > ms
+          None -> False
+        }),
       ]),
       attribute.attribute("aria-label", "Time on this problem"),
     ],
-    [html.text(" \u{b7} " <> text)],
+    [
+      html.text(" \u{b7} " <> text),
+      ..case median {
+        Some(ms) -> [
+          html.span(
+            [
+              attribute.class("drill-median"),
+              attribute.attribute("aria-label", "Your median on this problem"),
+            ],
+            [html.text(" \u{b7} median " <> insights.duration_label(ms))],
+          ),
+        ]
+        None -> []
+      }
+    ],
   )
 }
 

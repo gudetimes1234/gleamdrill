@@ -609,6 +609,51 @@ pub fn fluency_is_the_median_of_the_last_three_test() -> Nil {
   assert insights.fluency_of([]) == None
 }
 
+/// The drill header's median is one problem's, from the whole payload.
+pub fn fluency_for_picks_one_problem_out_of_the_payload_test() -> Nil {
+  let data =
+    wire.Insights(
+      clean_solves: [
+        solve("X", 1, 300_000),
+        solve("Y", 2, 30_000),
+        solve("X", 3, 100_000),
+        solve("X", 4, 200_000),
+      ],
+      reveals: [],
+      calibration: [],
+    )
+  assert insights.fluency_for(data, a_problem("X")) == Some(200_000)
+  assert insights.fluency_for(data, a_problem("Y")) == Some(30_000)
+  assert insights.fluency_for(data, a_problem("Z")) == None
+}
+
+/// A leech opens with the ladder read up to, but not including, the
+/// pseudocode: the approach is on screen, and nothing counts as a reveal.
+pub fn a_leech_opens_with_the_approach_shown_test() -> Nil {
+  // The catalogue's Python category is plain "NeetCode 150".
+  let problem =
+    wire.ProblemRef("NeetCode 150", "Arrays & Hashing", "Contains Duplicate")
+  let lapsed = fn(lapses) {
+    let card = wire.CardState(..card_named("Contains Duplicate"), problem:)
+    model.Model(
+      ..model.default(),
+      cards: dict.from_list([#(problem, wire.CardState(..card, lapses:))]),
+    )
+  }
+  let assert Ok(found) =
+    problems.find(problem.category, problem.subcategory, problem.title)
+  let rungs = list.length(found.approach)
+  assert rungs >= 2
+
+  assert !model.is_leech(lapsed(3), problem)
+  assert model.opening_hints(lapsed(3), problem) == 0
+  assert model.is_leech(lapsed(4), problem)
+  let shown = model.opening_hints(lapsed(4), problem)
+  assert shown == rungs - 1
+  let opened = model.Model(..lapsed(4), hints_revealed: shown)
+  assert !model.pseudocode_revealed(opened, found.approach)
+}
+
 pub fn tiers_split_on_the_three_minute_line_test() -> Nil {
   assert insights.tier_of(Some(179_999)) == insights.Fluent
   assert insights.tier_of(Some(180_000)) == insights.Solid

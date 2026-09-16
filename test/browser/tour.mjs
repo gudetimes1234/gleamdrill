@@ -916,6 +916,45 @@ check("Retry recovers the runtime without a reload", true);
 await exitDrill();
 await page.waitForTimeout(800);
 
+// ---------------------------------------------------------------- act 4d2
+act = "04d2-median-and-leech";
+console.log(act);
+// Two things the header says about a card with history: your own median on
+// it beside the clock, and a leech badge (with the approach already open)
+// once it has been forgotten four times.
+await page.evaluate(() => {
+  const longAgo = Math.floor(Date.now() / 1000) - 10 * 86400;
+  const ref = { category: "NeetCode 150", subcategory: "Arrays & Hashing", title: "Contains Duplicate" };
+  localStorage.setItem("gleamDrill.guest.cards.v1", JSON.stringify([{
+    ...ref, state: 2, step: null, stability: 30, difficulty: 5,
+    due: longAgo + 86400, lastReview: longAgo, introducedAt: longAgo,
+    reps: 6, lapses: 4, suspended: false,
+  }]));
+  const row = (i, durationMs) => ({
+    ...ref, at: longAgo - i * 86400, rating: 3, durationMs, revealed: false,
+    autoFailed: false, stateBefore: 2, scheduledDays: 3, stabilityAfter: 30, recall: false,
+  });
+  localStorage.setItem("gleamDrill.guest.reviews.v1",
+    JSON.stringify([row(1, 250000), row(2, 130000), row(3, 190000)]));
+});
+await goHome();
+await page.click(".study-start");
+await page.waitForSelector(".run-bar", { timeout: 30000 });
+check("the clock shows your median on this problem",
+  (await page.textContent(".drill-median").catch(() => "")).includes("median 3m10s"),
+  await page.textContent(".drill-median").catch(() => ""));
+check("a card forgotten four times is badged a leech",
+  (await page.textContent(".leech-badge").catch(() => "")).includes("Leech"));
+const rungsOpen = await page.$$eval(".panel.approach .approach-nudge, .panel.approach .approach-steps", (n) => n.length);
+check("and opens with the approach read up to the pseudocode", rungsOpen >= 1, String(rungsOpen));
+check("without the pseudocode", (await page.$(".approach-pseudocode")) === null);
+check("so nothing counts as a reveal yet",
+  (await page.textContent(".hint-button").catch(() => "")).includes("pseudocode"));
+await capture("leech", "A leech: badge on the title, approach already open, your median beside the clock");
+await exitDrill();
+await page.waitForTimeout(800);
+await page.evaluate(() => localStorage.removeItem("gleamDrill.guest.reviews.v1"));
+
 // ---------------------------------------------------------------- act 4e
 act = "04e-recall";
 console.log(act);
