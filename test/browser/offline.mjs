@@ -25,7 +25,7 @@ await page.goto(APP, { waitUntil: "networkidle" });
 await page.evaluate(() => {
   localStorage.clear();
   localStorage.setItem("gleamDrill.prefs.v1",
-    JSON.stringify({ editorKeymap: "default", languagesChosen: true, mutedLanguages: [] }));
+    JSON.stringify({ editorKeymap: "default", languagesChosen: true }));
   const longAgo = Math.floor(Date.now() / 1000) - 3 * 86400;
   localStorage.setItem("gleamDrill.guest.cards.v1", JSON.stringify([{
     category: "NeetCode 150", subcategory: "Arrays & Hashing", title: "Contains Duplicate",

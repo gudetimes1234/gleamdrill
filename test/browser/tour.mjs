@@ -294,14 +294,15 @@ await page.waitForSelector(".queue-screen", { timeout: 20000 });
 check("the picker hands a first-time user to the queue", true);
 await capture("picker-to-queue", "Straight from the picker to choosing problems");
 await seedQueue();
-const chosenChips = await page.$$eval(".language-chip",
-  (n) => n.filter((e) => !e.className.includes("muted")).map((e) => e.textContent.trim()));
-check("the choice becomes the study filter",
-  JSON.stringify(chosenChips) === '["Gleam","TypeScript"]', JSON.stringify(chosenChips));
+check("the study screen has no language filter: the queue is what you queued",
+  (await page.$$(".language-chip")).length === 0);
 const queueTags = await page.$$eval(".study-preview-item .study-preview-tag",
   (n) => n.map((e) => e.textContent.trim()));
-check("new cards alternate between the chosen languages",
-  new Set(queueTags).size === 2, JSON.stringify(queueTags));
+// The topic was queued in every language, and the sitting round-robins
+// across whatever is queued: the first few cards are all different
+// languages, whatever the picker was told.
+check("new cards alternate between the queued languages",
+  new Set(queueTags.slice(0, 4)).size === 4, JSON.stringify(queueTags));
 
 await page.reload({ waitUntil: "networkidle" });
 await page.waitForSelector(".study-screen", { timeout: 20000 });
@@ -332,11 +333,18 @@ await page.waitForSelector(".queue-screen", { timeout: 20000 });
 await page.click(".nav-link:text-is(\"Study\")");
 await page.waitForSelector(".study-starter", { timeout: 10000 });
 await capture("study-empty", "An empty study screen offers the starter set");
+// "Add a starter set" goes through the picker: it is the starter-set
+// chooser, and which languages is the one thing it has to ask.
 await page.click(".study-starter");
+await page.waitForSelector(".picker-screen", { timeout: 10000 });
+check("the empty study screen offers the starter set through the picker", true);
+await page.click(".picker-option:nth-child(1)");
+await page.waitForTimeout(200);
+await page.click(".picker-starter");
 await page.waitForFunction(
   () => (document.querySelector(".study-summary")?.textContent ?? "").includes("ready"),
   null, { timeout: 10000 });
-check("the empty study screen can queue the starter set", true);
+check("and the starter set lands on the study screen, ready", true);
 
 // ---------------------------------------------------------------- act 2
 act = "01-guest-arrival";
@@ -1158,8 +1166,11 @@ exercises("UserClickedTour", "UserOpenedLesson", "UserClickedTourNext",
 // The language tour is its own thing: read in order, code runs as you type,
 // nothing scheduled. Reached from the study screen or the nav bar.
 await goHome();
+await page.click("text=Manage queue");
+await page.waitForSelector(".queue-screen", { timeout: 10000 });
 check("the tour is not a study category",
-  !(await page.$$eval(".language-chip", (n) => n.map((e) => e.textContent))).some((t) => t.includes("Tour")));
+  !(await page.$$eval(".queue-language option", (n) => n.map((e) => e.textContent))).some((t) => t.includes("Tour")));
+await goHome();
 await page.click(".study-tour");
 await page.waitForSelector(".tour-contents", { timeout: 10000 });
 check("the tour opens on its table of contents",
@@ -1313,7 +1324,7 @@ check("the report returns to where the exam started",
 act = "06b-settings";
 console.log(act);
 exercises("UserClickedSettings", "UserChangedSetting",
-  "UserClickedDeviceTimezone", "UserToggledLanguage");
+  "UserClickedDeviceTimezone");
 
 await freshGuest();
 await page.click('button:text-is("Settings")');
@@ -1356,8 +1367,8 @@ const zoned = await page.evaluate(
 check("the timezone button adopts this device's zone",
   typeof zoned?.timezone === "string" && zoned.timezone !== "UTC", zoned?.timezone);
 
-await page.click(".settings-screen .language-chip:nth-child(2)");
-await page.waitForTimeout(200);
+check("no language toggles in settings either",
+  (await page.$$(".settings-screen .language-chip")).length === 0);
 exercises("UserChangedKeymap");
 await page.click('.settings-screen .keymap-option:text-is("Vim")');
 await page.waitForTimeout(200);
@@ -1508,37 +1519,12 @@ await page.waitForSelector(".study-screen", { timeout: 10000 });
 // ---------------------------------------------------------------- act 7b
 act = "07b-queue-management";
 console.log(act);
-exercises("UserToggledLanguage", "UserToggledSuspend", "MenuSuspendedAtCursor");
-
-// The language filter: chips on the study screen gate what a sitting serves.
-check("five language chips render", (await page.$$(".language-chip")).length === 5);
-await page.click('.language-chip:text-is("TypeScript")');
-await page.waitForTimeout(300);
-check("a muted chip shows it", (await page.$$(".language-chip.muted")).length === 1);
-for (const label of ["Python", "Gleam", "Elixir", "System Design"]) {
-  await page.click(`.language-chip:text-is("${label}")`);
-  await page.waitForTimeout(150);
-}
-// The button stays live so that pressing it can say *why* nothing starts;
-// a disabled button explains nothing.
-await page.click(".study-start");
-await page.waitForTimeout(300);
-check("muting every language empties the queue, and Study now says so",
-  (await page.isVisible(".study-screen")) && (await page.isVisible(".notice")),
-  await page.textContent(".notice").catch(() => "no notice"));
-await capture("all-muted", "Every language muted: Study now explains instead of going dead");
-await page.click(".notice .notice-dismiss");
-await page.waitForTimeout(200);
-for (const label of ["Python", "Gleam", "TypeScript", "Elixir", "System Design"]) {
-  await page.click(`.language-chip:text-is("${label}")`);
-  await page.waitForTimeout(150);
-}
-check("unmuting restores the queue",
-  !(await page.$eval(".study-start", (b) => b.disabled)));
+exercises("UserToggledSuspend", "MenuSuspendedAtCursor");
 
 // Suspend from the stats detail: park a reviewed card without lying to FSRS.
-// The last chip click left a button focused and buttons swallow keys — the
-// , leader is the rescue: press it, then the key works regardless of focus.
+// A button may still hold focus from the last click and buttons swallow
+// keys — the , leader is the rescue: press it, then the key works
+// regardless of focus.
 await page.keyboard.press(",");
 await page.waitForTimeout(200);
 check("the statusbar shows the armed leader",
@@ -2090,8 +2076,7 @@ const declared = [
   "UserToggledSolution", "UserRevealedHint", "UserClickedNext", "UserSearched",
   "UserChangedKeymap",
   "UserClickedRun", "UserClickedStopRun", "UserClickedRetryRuntime",
-  "UserToggledSide", "UserToggledResults", "UserToggledLanguage",
-  "UserToggledSuspend", "UserClickedRecall", "UserRevealedRecall",
+  "UserToggledSide", "UserToggledResults", "UserToggledSuspend", "UserClickedRecall", "UserRevealedRecall",
   "UserClickedUndo", "UserToggledDiff", "UserDismissedDiff",
   "UserClickedExport", "UserClickedImport", "ImportConfirmed",
   "UserClickedWarmCache",

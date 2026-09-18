@@ -2674,41 +2674,6 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
     color: var(--text-secondary);
 }
 
-/* The language mood dial: pressed chips feed today's queue, muted ones sit
-   out. Deliberately quiet — a filter, not a call to action. */
-.language-chips {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin: 4px 0 2px;
-}
-
-.language-chip {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    border: 1px solid var(--accent);
-    border-radius: 999px;
-    padding: 4px 12px;
-    font-family: var(--font-ui);
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.language-chip.muted {
-    border-color: var(--border);
-    color: var(--text-secondary);
-    opacity: 0.55;
-    text-decoration: line-through;
-}
-
-.study-hidden-hint {
-    color: var(--text-secondary);
-    font-family: var(--font-ui);
-    font-size: 12px;
-    text-align: center;
-}
-
 .study-summary {
     color: var(--text-secondary);
     font-size: 14px;

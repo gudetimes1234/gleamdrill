@@ -56,9 +56,8 @@ import gleamdrill/model.{
   UserOpenedLesson, UserPickedChoice, UserPickedQueueLanguage,
   UserRemovedAllShown, UserResetLesson, UserRevealedHint, UserRevealedRecall,
   UserSearched, UserSearchedQueue, UserSubmittedAnswer, UserSubmittedAuth,
-  UserToggledAuthMode, UserToggledDiff, UserToggledLanguage, UserToggledProblem,
-  UserToggledQueued, UserToggledResults, UserToggledSide, UserToggledSolution,
-  UserToggledSuspend,
+  UserToggledAuthMode, UserToggledDiff, UserToggledProblem, UserToggledQueued,
+  UserToggledResults, UserToggledSide, UserToggledSolution, UserToggledSuspend,
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
@@ -105,7 +104,6 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
       editor_keymap: preferences.editor_keymap,
       side_collapsed: preferences.side_collapsed,
       editor_height: preferences.editor_height,
-      muted_languages: preferences.muted_languages,
       languages_chosen: preferences.languages_chosen,
       tour_lesson: preferences.tour_lesson,
     )
@@ -393,14 +391,9 @@ fn confirm_picker(m: Model, starter starter: Bool) -> #(Model, Effect(Msg)) {
     // keyboard cannot get past it either.
     [] -> #(m, effect.none())
     picked -> {
-      let muted =
-        problems.language_options()
-        |> list.map(fn(option) { option.0 })
-        |> list.filter(fn(tag) { !list.contains(picked, tag) })
       let m =
         Model(
           ..m,
-          muted_languages: muted,
           languages_chosen: True,
           route: case starter || !dict.is_empty(m.cards) {
             True -> StudyRoute
@@ -924,7 +917,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           editor_keymap: m.editor_keymap,
           side_collapsed: m.side_collapsed,
           editor_height: m.editor_height,
-          muted_languages: m.muted_languages,
           // An expired session drops you to guest; it does not un-ask the
           // language question this browser has already answered.
           languages_chosen: m.languages_chosen,
@@ -996,7 +988,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           ..model.default(),
           editor_keymap: m.editor_keymap,
           side_collapsed: m.side_collapsed,
-          muted_languages: m.muted_languages,
           // Signing out is not a factory reset of this browser. Without this
           // it sends someone who has already chosen their languages back to
           // the first-run picker.
@@ -1042,13 +1033,9 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         [] -> #(
           Model(
             ..m,
-            notice: Some(case queue.hidden_count(m) {
-              0 ->
-                "Nothing to study right now. Come back when cards are due, or pick problems by hand."
-              hidden ->
-                int.to_string(hidden)
-                <> " due card(s) are hidden by the language filter."
-            }),
+            notice: Some(
+              "Nothing to study right now. Come back when cards are due, or pick problems by hand.",
+            ),
           ),
           effect.none(),
         )
@@ -1846,8 +1833,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.none(),
     )
 
-    // The picker collects what you want; `muted_languages` stores what you do
-    // not, so the inversion happens once, here, on confirm.
     PickerToggledLanguage(tag) -> {
       let picked = case list.contains(m.picked_languages, tag) {
         True -> list.filter(m.picked_languages, fn(t) { t != tag })
@@ -1859,25 +1844,12 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     PickerConfirmed -> confirm_picker(m, starter: False)
     PickerConfirmedWithStarter -> confirm_picker(m, starter: True)
 
-    UserAddedStarterSet -> {
-      let chosen =
-        problems.language_options()
-        |> list.map(fn(option) { option.0 })
-        |> list.filter(fn(tag) { !list.contains(m.muted_languages, tag) })
-      case starter_refs(m, chosen) {
-        [] -> #(m, effect.none())
-        refs -> #(pending(m, refs), store.add_to_queue(m, refs))
-      }
-    }
-
-    UserToggledLanguage(tag) -> {
-      let muted = case list.contains(m.muted_languages, tag) {
-        True -> list.filter(m.muted_languages, fn(t) { t != tag })
-        False -> [tag, ..m.muted_languages]
-      }
-      let m = Model(..m, muted_languages: muted)
-      #(m, save_preferences(m))
-    }
+    // The picker is the starter-set chooser: which languages, then twenty
+    // easy problems in each.
+    UserAddedStarterSet -> #(
+      Model(..m, route: PickerRoute, picked_languages: []),
+      effect.none(),
+    )
 
     UserToggledSuspend(ref) ->
       case model.card_for(m, ref) {
@@ -2469,7 +2441,6 @@ fn save_preferences(m: Model) -> Effect(Msg) {
     editor_keymap: m.editor_keymap,
     side_collapsed: m.side_collapsed,
     editor_height: m.editor_height,
-    muted_languages: m.muted_languages,
     tour_lesson: m.tour_lesson,
     languages_chosen: m.languages_chosen,
   ))

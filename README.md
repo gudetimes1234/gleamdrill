@@ -67,12 +67,12 @@ studied is paused rather than removed, because its review history is the one
 thing here that cannot be rebuilt.
 
 **You choose your languages.** The catalogue is the same 150 problems once per
-language, so the first run asks which of the four to drill, nothing pre-ticked,
-and new cards round-robin across whatever you chose rather than draining the
-first language dry. A language that runs out drops out of the rotation
-without ending it. The chips are a filter on today's sitting, not a change to
-the queue: muting one parks its cards, it does not remove them. A browser that
-was already using the app skips the picker.
+language, so the first run asks which of the four a starter set should
+cover, nothing pre-ticked. After that the study queue is exactly what you
+put in it -- there is no language filter on top -- and new cards round-robin
+across whatever languages are queued rather than draining the first one dry.
+A language that runs out drops out of the rotation without ending it. A
+browser that was already using the app skips the picker.
 
 Scheduling is **FSRS-6** — the algorithm Anki uses by default. Every drill you
 answer is recorded against your account and the scheduler decides when that

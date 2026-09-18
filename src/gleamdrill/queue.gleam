@@ -8,7 +8,7 @@
 ////
 //// New problems are chosen here rather than server-side because the server has
 //// no catalogue: it knows which problems are queued, but not what order the
-//// languages come in or which of them this device is muting.
+//// languages come in.
 ////
 //// Nothing is introduced that the user did not queue. `fresh` draws from
 //// cards with no reviews yet, and a card only exists because someone added
@@ -34,7 +34,7 @@ pub fn build(m: Model) -> List(ProblemRef) {
 
 /// Due cards the sitting would serve, most overdue first.
 pub fn due(m: Model) -> List(ProblemRef) {
-  audible(m)
+  problems.all_refs()
   |> list.filter(fn(ref) { model.is_due(m, ref) })
   |> list.sort(fn(a, b) { int.compare(due_seconds(m, a), due_seconds(m, b)) })
   |> list.take(m.today.reviews_remaining)
@@ -49,22 +49,14 @@ pub fn due(m: Model) -> List(ProblemRef) {
 /// from each in turn is what makes a two-language choice mean anything on day
 /// one.
 pub fn fresh(m: Model) -> List(ProblemRef) {
-  audible(m)
+  problems.all_refs()
   |> list.filter(fn(ref) { model.is_new(m, ref) })
   |> list.chunk(fn(ref) { ref.category })
   |> interleave
   |> list.take(m.today.new_remaining)
 }
 
-/// Due cards the language filter is currently hiding. Not a failure state:
-/// they wait, and FSRS reschedules from real elapsed time whenever they are
-/// finally answered.
-pub fn hidden(m: Model) -> List(ProblemRef) {
-  problems.all_refs()
-  |> list.filter(fn(ref) { model.is_due(m, ref) && muted(m, ref) })
-}
-
-/// Everything in the queue regardless of today's budget or language filter --
+/// Everything in the queue regardless of today's budget --
 /// what the queue screen manages, as opposed to what this sitting serves.
 pub fn queued(m: Model) -> List(ProblemRef) {
   problems.all_refs() |> list.filter(fn(ref) { model.is_queued(m, ref) })
@@ -84,10 +76,6 @@ pub fn due_count(m: Model) -> Int {
 
 pub fn new_count(m: Model) -> Int {
   list.length(fresh(m))
-}
-
-pub fn hidden_count(m: Model) -> Int {
-  list.length(hidden(m))
 }
 
 /// The rows the queue screen shows, after its search box and three filters.
@@ -163,17 +151,6 @@ fn matches_status(m: Model, ref: ProblemRef) -> Bool {
       }
     model.Unqueued -> !model.is_queued(m, ref)
   }
-}
-
-/// The catalogue minus whatever today's language filter mutes. Muting is a
-/// device preference and queue membership is account state, so this stays a
-/// separate filter rather than folding into the card.
-fn audible(m: Model) -> List(ProblemRef) {
-  problems.all_refs() |> list.filter(fn(ref) { !muted(m, ref) })
-}
-
-fn muted(m: Model, ref: ProblemRef) -> Bool {
-  model.language_muted(m, problems.language_tag(ref.category))
 }
 
 /// One from each group in turn, until every group is spent. Groups run dry at

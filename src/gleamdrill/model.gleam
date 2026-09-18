@@ -414,13 +414,10 @@ pub type Model {
     /// Problems whose queue change is in flight, so their row can be disabled
     /// rather than accepting a second click that would race the first.
     queue_pending: List(ProblemRef),
-    /// Language tags excluded from today's study queue (device preference).
-    muted_languages: List(String),
     /// Whether the first-run picker has been answered on this device.
     languages_chosen: Bool,
-    /// Language tags ticked in the first-run picker, before it is confirmed.
-    /// Separate from `muted_languages` because the picker collects what you
-    /// want and the queue stores what you do not.
+    /// Language tags ticked in the first-run picker, before it is confirmed:
+    /// the languages a starter set is queued in.
     picked_languages: List(String),
     /// Quiz option currently picked, before Submit is pressed.
     choice: Option(Int),
@@ -505,7 +502,6 @@ pub fn default() -> Model {
     queue_language: None,
     queue_status: AnyStatus,
     queue_pending: [],
-    muted_languages: [],
     languages_chosen: False,
     picked_languages: [],
     choice: None,
@@ -685,14 +681,6 @@ pub fn answered_count(model: Model) -> Int {
   })
 }
 
-/// Whether the study filter mutes a language today (tag as produced by
-/// problems.language_tag). Muting is a device preference, not schedule state:
-/// the card keeps its due date and FSRS reschedules from real elapsed time
-/// whenever it is finally reviewed.
-pub fn language_muted(model: Model, tag: String) -> Bool {
-  list.contains(model.muted_languages, tag)
-}
-
 // The queue these counts used to describe -- and their three separate copies
 // of its filter -- now live in `gleamdrill/queue`, so what the dashboard shows
 // and what "Study now" serves cannot drift apart.
@@ -865,7 +853,6 @@ pub type Msg {
   UserRevealedRecall
   /// The editor's resize handle was released at this many px; 0 resets.
   EditorResized(Int)
-  UserToggledLanguage(String)
   UserClickedSettings
   /// A settings input committed (on blur or Enter), carrying its raw text.
   UserChangedSetting(SettingField, String)

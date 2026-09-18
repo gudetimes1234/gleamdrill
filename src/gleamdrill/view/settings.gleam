@@ -18,9 +18,8 @@ import gleamdrill/model.{
   type Model, type Msg, DayStartHour, DesiredRetention, ImportConfirmed,
   NewPerDay, ReminderHour, ReviewsPerDay, UserChangedKeymap, UserChangedSetting,
   UserClickedDeviceTimezone, UserClickedExport, UserClickedImport,
-  UserClickedWarmCache, UserToggledLanguage,
+  UserClickedWarmCache,
 }
-import gleamdrill/problems
 import gleamdrill/view/nav
 import lustre/attribute
 import lustre/element.{type Element}
@@ -100,7 +99,6 @@ pub fn view(m: Model) -> Element(Msg) {
 
     section("This device", "Kept in this browser, signed in or not.", [
       keymap_row(m),
-      languages_row(m),
       offline_row(m),
     ]),
 
@@ -422,37 +420,6 @@ fn keymap_row(m: Model) -> Element(Msg) {
           )
         },
       ),
-    ),
-  ])
-}
-
-fn languages_row(m: Model) -> Element(Msg) {
-  html.div([attribute.class("settings-row")], [
-    html.div([attribute.class("settings-label")], [
-      html.span([attribute.class("settings-label-text")], [
-        html.text("Languages"),
-      ]),
-      html.span([attribute.class("settings-help")], [
-        html.text(
-          "Muting one keeps its cards out of the queue without penalty: they "
-          <> "wait, and are rescheduled from real elapsed time whenever you "
-          <> "come back to them.",
-        ),
-      ]),
-    ]),
-    html.div(
-      [attribute.class("language-chips")],
-      list.map(problems.language_options(), fn(option) {
-        let #(tag, label) = option
-        let muted = model.language_muted(m, tag)
-        html.button(
-          [
-            attribute.classes([#("language-chip", True), #("muted", muted)]),
-            event.on_click(UserToggledLanguage(tag)),
-          ],
-          [html.text(label)],
-        )
-      }),
     ),
   ])
 }

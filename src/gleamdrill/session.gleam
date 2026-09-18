@@ -39,16 +39,10 @@ pub type Preferences {
     side_collapsed: Bool,
     /// Where the editor's resize handle was left, in px. `None` is the default.
     editor_height: Option(Int),
-    /// Language tags kept out of the study queue on this device.
-    muted_languages: List(String),
     /// The last Gleam Tour lesson opened on this device, so "Continue the
     /// tour" lands where you left off. A device fact, like the keymap.
     tour_lesson: Int,
-    /// Whether the first-run picker has been answered.
-    ///
-    /// `muted_languages` cannot answer this on its own: an empty list means
-    /// both "never chose" and "chose all of them". Without a separate flag the
-    /// picker would either never appear or appear forever.
+    /// Whether the first-run picker has been answered on this device.
     languages_chosen: Bool,
   )
 }
@@ -60,7 +54,6 @@ pub fn default_preferences() -> Preferences {
     editor_keymap: "default",
     side_collapsed: False,
     editor_height: None,
-    muted_languages: [],
     tour_lesson: 0,
     languages_chosen: False,
   )
@@ -140,11 +133,6 @@ pub fn load_preferences() -> Preferences {
             None,
             decode.optional(decode.int),
           )
-          use muted <- decode.optional_field(
-            "mutedLanguages",
-            [],
-            decode.list(decode.string),
-          )
           // True, unlike `default_preferences`: a blob written before this
           // field existed belongs to someone already using the app, and
           // showing them a first-run picker would be a lie.
@@ -158,7 +146,6 @@ pub fn load_preferences() -> Preferences {
             editor_keymap: keymap,
             side_collapsed: collapsed,
             editor_height: editor_height,
-            muted_languages: muted,
             tour_lesson: tour_lesson,
             languages_chosen: chosen,
           ))
@@ -178,10 +165,6 @@ pub fn save_preferences(preferences: Preferences) -> Effect(message) {
         #("editorKeymap", json.string(preferences.editor_keymap)),
         #("sideCollapsed", json.bool(preferences.side_collapsed)),
         #("editorHeight", json.nullable(preferences.editor_height, json.int)),
-        #(
-          "mutedLanguages",
-          json.array(preferences.muted_languages, json.string),
-        ),
         #("languagesChosen", json.bool(preferences.languages_chosen)),
         #("tourLesson", json.int(preferences.tour_lesson)),
       ]),

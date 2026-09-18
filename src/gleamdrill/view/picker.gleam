@@ -38,13 +38,14 @@ pub fn view(m: Model) -> Element(Msg) {
       ),
     ]),
     html.h2([attribute.class("picker-question")], [
-      html.text("What do you want to drill?"),
+      html.text("Which languages do you want to drill?"),
     ]),
     html.p([attribute.class("picker-explainer")], [
       html.text(
         "The same problems are here in every language, each scheduled "
-        <> "separately. Pick one to start; you can change this later, and "
-        <> "adding a language never disturbs what you have already learned.",
+        <> "separately. Pick the ones a starter set should cover; the study "
+        <> "queue is whatever you put in it, and adding a language later "
+        <> "never disturbs what you have already learned.",
       ),
     ]),
     html.div(

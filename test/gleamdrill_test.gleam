@@ -1162,15 +1162,22 @@ pub fn guest_and_server_calibration_agree_test() -> Nil {
 /// A model with the whole catalogue queued and nothing answered yet, which is
 /// the state the New pile is drawn from. Every problem needs a card now:
 /// nothing is introduced that was not queued first.
-fn fresh_model(new_remaining: Int, muted: List(String)) -> model.Model {
+fn fresh_model(new_remaining: Int) -> model.Model {
+  fresh_model_of(new_remaining, problems.all_refs())
+}
+
+/// The same, with only `refs` queued.
+fn fresh_model_of(
+  new_remaining: Int,
+  refs: List(problem.ProblemRef),
+) -> model.Model {
   let base = model.default()
   let now = fsrs.from_epoch(1_787_788_818.0)
-  let #(store, _) = local.enqueue(local.empty(), problems.all_refs(), now)
+  let #(store, _) = local.enqueue(local.empty(), refs, now)
   model.Model(
     ..base,
     now:,
     cards: store.cards,
-    muted_languages: muted,
     today: wire.Today(..base.today, new_remaining:, reviews_remaining: 0),
   )
 }
@@ -1278,7 +1285,7 @@ pub fn removing_an_answered_problem_is_refused_test() -> Nil {
 /// language by language. Taking a flat prefix therefore means one language for
 /// months; the queue rotates instead.
 pub fn new_cards_rotate_across_languages_test() -> Nil {
-  let picked = queue.fresh(fresh_model(8, []))
+  let picked = queue.fresh(fresh_model(8))
   let languages =
     picked
     |> list.map(fn(ref: problem.ProblemRef) {
@@ -1294,9 +1301,14 @@ pub fn new_cards_rotate_across_languages_test() -> Nil {
   assert list.length(languages) == 5
 }
 
-/// Muting is what the first-run picker writes, so the queue must honour it.
-pub fn muted_languages_never_enter_the_queue_test() -> Nil {
-  let picked = queue.fresh(fresh_model(8, ["gl", "ts", "ex", "sd"]))
+/// The queue is exactly what was queued: a language nobody added never
+/// appears, and there is no filter on top of that.
+pub fn only_queued_problems_enter_the_queue_test() -> Nil {
+  let python =
+    list.filter(problems.all_refs(), fn(ref: problem.ProblemRef) {
+      problems.language_tag(ref.category) == "py"
+    })
+  let picked = queue.fresh(fresh_model_of(8, python))
   let languages =
     picked
     |> list.map(fn(ref: problem.ProblemRef) {
@@ -1308,9 +1320,13 @@ pub fn muted_languages_never_enter_the_queue_test() -> Nil {
 }
 
 /// A language running dry must not stop the rotation for the others -- with
-/// only one language left the queue is simply that language.
+/// only one language queued the queue is simply that language.
 pub fn the_rotation_survives_a_language_running_out_test() -> Nil {
-  let picked = queue.fresh(fresh_model(300, ["gl", "ts", "ex", "sd"]))
+  let python =
+    list.filter(problems.all_refs(), fn(ref: problem.ProblemRef) {
+      problems.language_tag(ref.category) == "py"
+    })
+  let picked = queue.fresh(fresh_model_of(300, python))
   // Python has 150 problems; asking for 300 must yield all of them and stop,
   // not loop or truncate at the first round.
   assert list.length(picked) == 150
@@ -1318,8 +1334,8 @@ pub fn the_rotation_survives_a_language_running_out_test() -> Nil {
 
 /// The budget is the cap, not a suggestion.
 pub fn the_daily_budget_bounds_the_queue_test() -> Nil {
-  assert list.length(queue.fresh(fresh_model(3, []))) == 3
-  assert queue.fresh(fresh_model(0, [])) == []
+  assert list.length(queue.fresh(fresh_model(3))) == 3
+  assert queue.fresh(fresh_model(0)) == []
 }
 
 /// The language tour is played in order from its own screen, not scheduled:
