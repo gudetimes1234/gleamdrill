@@ -12,9 +12,11 @@ import gleamdrill/model.{
   Ran, RunIdle, Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded,
   RuntimeReady, SubmittingGrade, TimedOut, UserChangedKeymap,
   UserClickedExitDrill, UserClickedNext, UserClickedRetryRuntime, UserClickedRun,
-  UserClickedStopRun, UserClickedUndo, UserDismissedDiff, UserGraded,
-  UserPickedChoice, UserRevealedHint, UserRevealedRecall, UserSubmittedAnswer,
-  UserToggledDiff, UserToggledResults, UserToggledSide, UserToggledSolution,
+  UserClickedStopRun, UserClickedUndo, UserClosedWalk, UserDismissedDiff,
+  UserGraded, UserOpenedWalk, UserPickedChoice, UserRevealedHint,
+  UserRevealedRecall, UserSubmittedAnswer, UserToggledDiff, UserToggledResults,
+  UserToggledSide, UserToggledSolution, WalkAdvanced, WalkBacked, WalkCodeShown,
+  WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/problem.{
   type Problem, type ProblemRef, type Quiz, type Solution,
@@ -176,7 +178,10 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
                   ]),
                 ),
               ]),
-              ..answer_panel(m, current)
+              ..case m.walk_open, m.walk {
+                True, Some(state) -> walk_panel(m, current, state)
+                _, _ -> answer_panel(m, current)
+              }
             ]),
             ..list.flatten([
               // Its own pane, right under the code it narrates: watching
@@ -933,6 +938,207 @@ fn results_only(m: Model, current: Problem) -> List(Element(Msg)) {
   }
 }
 
+/// The guided walkthrough: the plan one step at a time, beside the editor.
+/// Each step has three layers under it -- a hint that points, a why that
+/// explains, and its slice of the pseudocode -- turned over on request.
+/// Only the code slice is logged as a reveal; the panel says so.
+fn walk_panel(
+  m: Model,
+  current: Problem,
+  state: model.WalkState,
+) -> List(Element(Msg)) {
+  let steps = model.walk_steps(current.approach)
+  let total = list.length(steps)
+  let finished = state.step >= total
+  let header =
+    html.div([attribute.class("answer-header")], [
+      html.div([attribute.class("answer-label")], [
+        html.text(case finished {
+          True -> "That's the approach"
+          False ->
+            "Step "
+            <> int.to_string(state.step + 1)
+            <> " of "
+            <> int.to_string(total)
+        }),
+      ]),
+      html.div(
+        [
+          attribute.class("walk-progress"),
+          attribute.attribute("aria-hidden", "true"),
+        ],
+        list.index_map(steps, fn(_, index) {
+          html.span(
+            [
+              attribute.classes([
+                #("walk-dot", True),
+                #("done", index < state.step),
+                #("current", index == state.step),
+              ]),
+            ],
+            [],
+          )
+        }),
+      ),
+      html.button(
+        [
+          attribute.class("answer-close"),
+          attribute.type_("button"),
+          attribute.attribute("aria-label", "Close the walkthrough"),
+          event.on_click(UserClosedWalk),
+        ],
+        [html.text("\u{00d7}")],
+      ),
+    ])
+  let done =
+    steps
+    |> list.take(state.step)
+    |> list.index_map(fn(step, index) {
+      html.li([attribute.class("walk-step-done")], [
+        html.span([attribute.class("walk-step-number")], [
+          html.text(int.to_string(index + 1)),
+        ]),
+        html.text(step.step),
+      ])
+    })
+  let body = case list.drop(steps, state.step) {
+    [step, ..] -> [
+      html.p([attribute.class("walk-step")], [html.text(step.step)]),
+      ..list.flatten([
+        layer(state.hint_shown, "walk-hint", "Hint", step.hint),
+        layer(state.why_shown, "walk-why", "Why", step.why),
+        case step.code {
+          "" -> []
+          code ->
+            case state.code_shown {
+              True -> [
+                html.pre([attribute.class("approach-pseudocode walk-code")], [
+                  html.code([], [html.text(code)]),
+                ]),
+              ]
+              False -> []
+            }
+        },
+        [
+          html.div(
+            [attribute.class("walk-controls")],
+            list.flatten([
+              case state.hint_shown {
+                True -> []
+                False -> [
+                  reveal_button("walk-reveal-hint", "Hint", "h", WalkHintShown),
+                ]
+              },
+              case state.why_shown {
+                True -> []
+                False -> [
+                  reveal_button("walk-reveal-why", "Why", "y", WalkWhyShown),
+                ]
+              },
+              case step.code, state.code_shown {
+                "", _ | _, True -> []
+                _, False -> [
+                  reveal_button("walk-reveal-code", "Code", "c", WalkCodeShown),
+                  html.span([attribute.class("hint-warning")], [
+                    html.text("logged as a reveal"),
+                  ]),
+                ]
+              },
+              [
+                html.button(
+                  [
+                    attribute.class("btn-primary walk-next"),
+                    attribute.type_("button"),
+                    event.on_click(WalkAdvanced),
+                  ],
+                  [
+                    html.text(case state.step + 1 == total {
+                      True -> "Done"
+                      False -> "Next step"
+                    }),
+                    html.kbd([], [html.text("\u{21b5}")]),
+                  ],
+                ),
+              ],
+            ]),
+          ),
+        ],
+      ])
+    ]
+    [] -> [
+      html.p([attribute.class("walk-step walk-finished")], [
+        html.text(
+          "Every step is on the left now. Write it, run it, and grade how much of that you had before the walk.",
+        ),
+      ]),
+      html.div([attribute.class("walk-controls")], [
+        html.button(
+          [
+            attribute.class("btn-secondary"),
+            attribute.type_("button"),
+            event.on_click(WalkBacked),
+          ],
+          [html.text("Back")],
+        ),
+        html.button(
+          [
+            attribute.class("btn-primary walk-next"),
+            attribute.type_("button"),
+            event.on_click(UserClosedWalk),
+          ],
+          [html.text("Close"), html.kbd([], [html.text("\u{21b5}")])],
+        ),
+      ]),
+    ]
+  }
+  [
+    html.div(
+      [attribute.class("answer-content answer-side walk-side")],
+      list.flatten([
+        [header],
+        case done {
+          [] -> []
+          _ -> [html.ol([attribute.class("walk-done")], done)]
+        },
+        body,
+      ]),
+    ),
+  ]
+}
+
+fn layer(
+  shown: Bool,
+  class: String,
+  label: String,
+  text: String,
+) -> List(Element(Msg)) {
+  case shown {
+    False -> []
+    True -> [
+      html.div([attribute.class("walk-layer " <> class)], [
+        html.span([attribute.class("walk-layer-label")], [html.text(label)]),
+        html.p([], [html.text(text)]),
+      ]),
+    ]
+  }
+}
+
+fn reveal_button(
+  class: String,
+  label: String,
+  key: String,
+  msg: Msg,
+) -> Element(Msg) {
+  html.button(
+    [
+      attribute.class("btn-secondary walk-reveal " <> class),
+      attribute.type_("button"),
+      event.on_click(msg),
+    ],
+    [html.text(label), html.kbd([], [html.text(key)])],
+  )
+}
+
 /// The revealed solution, rendered beside the editor so code and answer can be
 /// compared line by line rather than by scrolling.
 fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
@@ -1310,7 +1516,17 @@ fn approach_panel(
   let revealed =
     stages
     |> list.take(shown)
-    |> list.map(approach_stage)
+    |> list.map(fn(stage) {
+      case m.recall, stage, m.walk {
+        True, _, _ -> recall_stage(stage)
+        // A walk in progress lists only the steps already walked: the
+        // panel is where the next one is read, one at a time.
+        False, problem.Walk(steps), Some(state) ->
+          walk_summary(list.take(steps, state.step), !m.walk_open)
+        False, problem.Walk(steps), None -> walk_summary(steps, True)
+        False, _, _ -> approach_stage(stage)
+      }
+    })
 
   let control = case list.drop(stages, shown) {
     [] -> []
@@ -1318,13 +1534,19 @@ fn approach_panel(
       html.button(
         [
           attribute.class("btn-secondary hint-button"),
-          event.on_click(UserRevealedHint),
+          // The walk form of the plan opens the guided panel; the other
+          // rungs just unfold in place.
+          event.on_click(case next {
+            problem.Walk(_) -> UserOpenedWalk
+            _ -> UserRevealedHint
+          }),
         ],
         [
           html.text(
             case next {
               problem.Nudge(_) -> "Show hint"
               problem.Steps(_) -> "Show the steps"
+              problem.Walk(_) -> "Walk me through it"
               problem.Pseudocode(_) -> "Show pseudocode"
             }
             <> " ("
@@ -1365,10 +1587,63 @@ fn approach_stage(stage: problem.ApproachStage) -> Element(Msg) {
         [attribute.class("approach-steps")],
         list.map(items, fn(item) { html.li([], [html.text(item)]) }),
       )
+    // In the ladder a walk reads as the plain list; the hints and whys
+    // live in the walkthrough panel, one step at a time.
+    problem.Walk(steps) -> walk_summary(steps, True)
     problem.Pseudocode(code) ->
       html.pre([attribute.class("approach-pseudocode")], [
         html.code([], [html.text(code)]),
       ])
+  }
+}
+
+/// The plan rung as the ladder shows it: the step texts, and a way into the
+/// walkthrough unless it is already open beside the editor.
+fn walk_summary(steps: List(problem.WalkStep), offer: Bool) -> Element(Msg) {
+  html.div(
+    [attribute.class("approach-walk")],
+    list.flatten([
+      case steps {
+        [] -> []
+        _ -> [
+          html.ol(
+            [attribute.class("approach-steps")],
+            list.map(steps, fn(step) { html.li([], [html.text(step.step)]) }),
+          ),
+        ]
+      },
+      case offer {
+        True -> [
+          html.button(
+            [
+              attribute.class("link-button approach-walk-open"),
+              attribute.type_("button"),
+              event.on_click(UserOpenedWalk),
+            ],
+            [html.text("Walk through the steps \u{2192}")],
+          ),
+        ]
+        False -> []
+      },
+    ]),
+  )
+}
+
+/// The same rung in recall mode, where reading is the point: every step
+/// with its why underneath.
+fn recall_stage(stage: problem.ApproachStage) -> Element(Msg) {
+  case stage {
+    problem.Walk(steps) ->
+      html.ol(
+        [attribute.class("approach-steps approach-steps-explained")],
+        list.map(steps, fn(step) {
+          html.li([], [
+            html.text(step.step),
+            html.p([attribute.class("approach-why")], [html.text(step.why)]),
+          ])
+        }),
+      )
+    other -> approach_stage(other)
   }
 }
 

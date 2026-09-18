@@ -1,3 +1,4 @@
+import gleam/list
 import gleam/option.{type Option, None, Some}
 import wire
 
@@ -113,10 +114,29 @@ pub fn difficulty_from_slug(slug: String) -> Result(Difficulty, Nil) {
 /// One rung of the approach hint ladder, revealed in order: a vague nudge,
 /// then the plan as steps, then (for code drills) language-neutral
 /// pseudocode. Revealing the pseudocode counts as seeing the answer.
+///
+/// `Walk` is the plan as a guided walkthrough: the same steps, each with a
+/// hint that points at it, a why that explains it, and its slice of the
+/// pseudocode. `Steps` is the plain list, kept for ladders not yet written
+/// in the walk format.
 pub type ApproachStage {
   Nudge(String)
   Steps(List(String))
+  Walk(List(WalkStep))
   Pseudocode(String)
+}
+
+pub type WalkStep {
+  WalkStep(step: String, hint: String, why: String, code: String)
+}
+
+/// The step texts of the plan rung, whichever form it takes.
+pub fn plan_steps(stage: ApproachStage) -> List(String) {
+  case stage {
+    Steps(items) -> items
+    Walk(steps) -> list.map(steps, fn(step) { step.step })
+    Nudge(_) | Pseudocode(_) -> []
+  }
 }
 
 pub type Problem {

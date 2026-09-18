@@ -4,6 +4,7 @@ import gleam/int
 import gleam/list
 import gleam/option.{type Option, None}
 import gleam/order
+import gleam/result
 import gleam/string
 import gleam/time/timestamp.{type Timestamp}
 import gleamdrill/api.{type ApiError, type CardState, type Settings, type User}
@@ -383,6 +384,14 @@ pub type Model {
     revealed_solution: Option(Int),
     /// How many rungs of the approach hint ladder are shown, top down.
     hints_revealed: Int,
+    /// The guided walkthrough of the plan: which step, and which of its
+    /// layers have been turned over. Kept while the panel is closed, so
+    /// reopening resumes and the ladder only lists the steps walked so far.
+    walk: Option(WalkState),
+    walk_open: Bool,
+    /// Whether any step's code slice has been shown on this problem. A
+    /// slice is a piece of the pseudocode, so it counts as a reveal.
+    walk_code_seen: Bool,
     runtimes: List(#(String, RuntimeState)),
     run: RunState,
     drafts: List(#(ProblemRef, String)),
@@ -480,6 +489,9 @@ pub fn default() -> Model {
     draft: "",
     revealed_solution: None,
     hints_revealed: 0,
+    walk: None,
+    walk_open: False,
+    walk_code_seen: False,
     runtimes: [],
     run: RunIdle,
     drafts: [],
@@ -625,7 +637,36 @@ pub fn pseudocode_revealed(
 /// pseudocode hint. Feeds the review's `revealed` flag, which the log records
 /// for insights; it never changes which grades are offered.
 pub fn answer_revealed(m: Model, stages: List(problem.ApproachStage)) -> Bool {
-  m.revealed_solution != option.None || pseudocode_revealed(m, stages)
+  m.revealed_solution != option.None
+  || m.walk_code_seen
+  || pseudocode_revealed(m, stages)
+}
+
+/// The plan rung's steps, if the ladder has one in walkthrough form.
+pub fn walk_steps(
+  stages: List(problem.ApproachStage),
+) -> List(problem.WalkStep) {
+  list.find_map(stages, fn(stage) {
+    case stage {
+      problem.Walk(steps) -> Ok(steps)
+      _ -> Error(Nil)
+    }
+  })
+  |> result.unwrap([])
+}
+
+/// The index of the plan rung in the ladder, so opening the walkthrough
+/// can count that rung as revealed.
+pub fn plan_rung(stages: List(problem.ApproachStage)) -> Option(Int) {
+  stages
+  |> list.index_map(fn(stage, index) { #(stage, index) })
+  |> list.find_map(fn(pair) {
+    case pair.0 {
+      problem.Walk(_) | problem.Steps(_) -> Ok(pair.1)
+      _ -> Error(Nil)
+    }
+  })
+  |> option.from_result
 }
 
 pub fn run_failed(run: RunState) -> Bool {
@@ -693,6 +734,10 @@ pub fn answered_count(model: Model) -> Int {
 /// `pressed` is what the user chose and what was scheduled. The summary still
 /// reads the resulting interval from `Model.cards` rather than recomputing it,
 /// so the number shown is the one the store actually produced.
+pub type WalkState {
+  WalkState(step: Int, hint_shown: Bool, why_shown: Bool, code_shown: Bool)
+}
+
 pub type SittingEntry {
   SittingEntry(problem: ProblemRef, pressed: fsrs.Rating, duration_ms: Int)
 }
@@ -809,6 +854,14 @@ pub type Msg {
   TourActivated
   UserToggledSolution(Int)
   UserRevealedHint
+  /// The guided walkthrough beside the editor.
+  UserOpenedWalk
+  UserClosedWalk
+  WalkHintShown
+  WalkWhyShown
+  WalkCodeShown
+  WalkAdvanced
+  WalkBacked
   UserClickedNext
   UserSearched(String)
   UserChangedKeymap(String)

@@ -3,7 +3,9 @@
 
 import gleam/list
 import gleam/string
-import gleamdrill/problem.{type ApproachStage, Nudge, Pseudocode, Steps}
+import gleamdrill/problem.{
+  type ApproachStage, Nudge, Pseudocode, Steps, Walk, WalkStep,
+}
 
 /// The hint ladder for a problem title, vaguest stage first. Titles
 /// are slugged so every language mirror of a problem shares one ladder.
@@ -13,12 +15,38 @@ pub fn for_title(title: String) -> List(ApproachStage) {
       Nudge(
         "The question is really \"have I seen this value before?\" — asked once per element. What structure answers that in O(1), and what's the cost of not having one?",
       ),
-      Steps([
-        "Create an empty set of seen values.",
-        "Walk the array once; for each value, ask the set whether it's already there.",
-        "If it is, stop — the answer is true, no need to know where or how many.",
-        "Otherwise add the value and keep walking.",
-        "Fall off the end: every value was new, answer false.",
+      Walk([
+        WalkStep(
+          step: "Create an empty set of seen values.",
+          hint: "You need to answer \"have I met this before?\" many times. Which structure answers membership in constant time?",
+          why: "A hash set gives O(1) membership checks, which turns the naive O(n²) compare-every-pair into a single pass; the price is O(n) extra space.",
+          code: "seen = empty set",
+        ),
+        WalkStep(
+          step: "Walk the array once; for each value, ask the set whether it's already there.",
+          hint: "How many passes over the array should this take if the set is doing its job?",
+          why: "One pass is enough because the set remembers everything to the left of the current position, so each value only has to be compared with the set, not with every earlier value.",
+          code: "for value in nums:
+    if value in seen:",
+        ),
+        WalkStep(
+          step: "If it is, stop — the answer is true, no need to know where or how many.",
+          hint: "The moment you find a repeat, is there anything left to learn from the rest of the array?",
+          why: "Returning at the first repeat is correct and makes the best case O(1); the problem asks whether any duplicate exists, not which or how many.",
+          code: "return true",
+        ),
+        WalkStep(
+          step: "Otherwise add the value and keep walking.",
+          hint: "If a value is new, what has to happen so a later copy of it is caught?",
+          why: "Adding after the check, not before, is what stops a value from matching itself.",
+          code: "seen.add(value)",
+        ),
+        WalkStep(
+          step: "Fall off the end: every value was new, answer false.",
+          hint: "What does reaching the end of the loop without returning tell you?",
+          why: "If the loop finishes, every value was inserted without a hit, so there is no duplicate; the false lives after the loop, not inside it.",
+          code: "return false",
+        ),
       ]),
       Pseudocode(
         "seen = empty set
@@ -263,13 +291,53 @@ while left < right:
       Nudge(
         "Three numbers is one number too many for any pair trick you know — unless you hold one of them still. What does the problem become once one value is fixed? And what would make the \"no duplicate triples\" rule cheap instead of painful?",
       ),
-      Steps([
-        "Sort the array — duplicates become neighbours and pair-finding gets a structure to lean on.",
-        "Walk each index i as the fixed first value; skip it when it equals the value before it (that triple family is already done).",
-        "For each fixed value, solve Two Sum II on the rest: left pointer just after i, right pointer at the end, target -(nums[i]).",
-        "Sum too small — move left up. Too big — move right down. A hit — record it, then advance left past every duplicate of its value.",
-        "Stop each scan when the pointers meet; stop everything when i's value goes positive (three positives cannot sum to zero).",
-        "If the interviewer bans sorting: fix one value, find the pair with a hash set instead — same O(n²), but duplicate-skipping needs a set of seen triples.",
+      Walk([
+        WalkStep(
+          step: "Sort the array — duplicates become neighbours and pair-finding gets a structure to lean on.",
+          hint: "The duplicate rule is the hard part. What arrangement makes \"the same value again\" mean \"the value right next door\"?",
+          why: "One O(n log n) sort buys two things: equal values sit together so a duplicate is a neighbour check, and order lets two pointers replace a hash set for the pair search.",
+          code: "sort(nums)
+result = []",
+        ),
+        WalkStep(
+          step: "Walk each index i as the fixed first value; skip it when it equals the value before it (that triple family is already done).",
+          hint: "With one value pinned, what problem is left over the rest of the array? And if nums[i] equals nums[i-1], what new triples could i possibly start?",
+          why: "Fixing nums[i] turns 3Sum into Two Sum on nums[i+1..], and skipping a repeated pivot is what stops the same triple family being found twice.",
+          code: "for i in 0..n-1:
+    if i > 0 and nums[i] == nums[i-1]: continue",
+        ),
+        WalkStep(
+          step: "For each fixed value, solve Two Sum II on the rest: left pointer just after i, right pointer at the end, target -(nums[i]).",
+          hint: "The remainder is sorted. Which pair-finding technique needs no extra memory on a sorted array?",
+          why: "Two pointers scan the sorted remainder in O(n) with no hash set, so the whole thing is O(n²) time and O(1) extra space beyond the output.",
+          code: "left, right = i+1, n-1
+    while left < right:
+        total = nums[i] + nums[left] + nums[right]",
+        ),
+        WalkStep(
+          step: "Sum too small — move left up. Too big — move right down. A hit — record it, then advance left past every duplicate of its value.",
+          hint: "Each pointer move should be forced. If the sum is under zero, which pointer can only make it bigger?",
+          why: "Because the array is sorted, moving left up raises the sum and moving right down lowers it, so every move discards pairs that cannot work; after a hit, stepping past equal values is what keeps the output free of repeats.",
+          code: "if total < 0:      left += 1
+        else if total > 0: right -= 1
+        else:
+            result.add([nums[i], nums[left], nums[right]])
+            left += 1
+            while left < right and nums[left] == nums[left-1]:
+                left += 1",
+        ),
+        WalkStep(
+          step: "Stop each scan when the pointers meet; stop everything when i's value goes positive (three positives cannot sum to zero).",
+          hint: "Once the pivot itself is above zero, what is the smallest sum any triple starting there can reach?",
+          why: "The array is sorted, so a positive pivot means everything after it is positive too; breaking there is a free early exit that never skips an answer.",
+          code: "return result",
+        ),
+        WalkStep(
+          step: "If the interviewer bans sorting: fix one value, find the pair with a hash set instead — same O(n²), but duplicate-skipping needs a set of seen triples.",
+          hint: "Without order, how else can you check \"have I seen -(a+b)\" in O(1)?",
+          why: "A hash set restores O(1) pair lookup without sorting, at the cost of O(n) extra space and a second set to reject duplicate triples, which sorting had made a neighbour check.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "sort(nums)

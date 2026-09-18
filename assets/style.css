@@ -1542,6 +1542,165 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
     text-decoration-color: color-mix(in srgb, var(--warning) 70%, transparent);
 }
 
+/* ---------- The walkthrough ---------- */
+
+/* The plan one step at a time, in the answer panel's slot. Done steps
+   shrink to a numbered list; the current step is the one thing in large
+   type; its layers unfold beneath it on request. */
+.walk-side .answer-header {
+    gap: 12px;
+}
+
+.walk-side .answer-close {
+    display: inline-flex;
+    align-items: center;
+}
+
+.walk-progress {
+    display: flex;
+    gap: 5px;
+    margin-left: auto;
+}
+
+.walk-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+}
+
+.walk-dot.done {
+    background: var(--success);
+}
+
+.walk-dot.current {
+    background: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.walk-done {
+    margin: 0 0 12px;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 4px;
+}
+
+.walk-step-done {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.walk-step-number {
+    flex: none;
+    min-width: 18px;
+    color: var(--success);
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+.walk-step {
+    margin: 0 0 12px;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+
+.walk-finished {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.walk-layer {
+    margin: 0 0 10px;
+    padding: 10px 12px;
+    border-left: 3px solid var(--border);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: var(--bg-raised);
+}
+
+.walk-layer p {
+    margin: 0;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+
+.walk-layer-label {
+    display: block;
+    margin-bottom: 4px;
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.walk-hint {
+    border-left-color: var(--accent);
+}
+
+.walk-hint .walk-layer-label {
+    color: var(--accent);
+}
+
+.walk-why {
+    border-left-color: var(--warning);
+}
+
+.walk-why .walk-layer-label {
+    color: var(--warning);
+}
+
+.walk-code {
+    margin: 0 0 10px;
+}
+
+.walk-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.walk-controls kbd {
+    margin-left: 6px;
+    padding: 1px 5px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.walk-next {
+    margin-left: auto;
+}
+
+.approach-walk-open {
+    display: block;
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+/* Recall mode reads the whole plan: each step with its why underneath. */
+.approach-steps-explained li + li {
+    margin-top: 10px;
+}
+
+.approach-why {
+    margin: 4px 0 0;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
 /* The overlay's dismiss button: narrow screens only (see the tablet block).
    On a desktop the panel sits beside the editor and the run-bar button is the
    toggle, so there is nothing to close. */

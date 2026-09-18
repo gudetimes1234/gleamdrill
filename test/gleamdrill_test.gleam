@@ -654,6 +654,48 @@ pub fn a_leech_opens_with_the_approach_shown_test() -> Nil {
   assert !model.pseudocode_revealed(opened, found.approach)
 }
 
+/// A walk step's code slice is a piece of the pseudocode; its hint and why
+/// are not. Only the slice makes the review a reveal.
+pub fn only_the_walk_code_counts_as_a_reveal_test() -> Nil {
+  let stages = [
+    problem.Nudge("n"),
+    problem.Walk([
+      problem.WalkStep(step: "s", hint: "h", why: "w", code: "c"),
+    ]),
+    problem.Pseudocode("p"),
+  ]
+  let base = model.Model(..model.default(), hints_revealed: 2)
+  assert !model.answer_revealed(base, stages)
+  assert model.answer_revealed(
+    model.Model(..base, walk_code_seen: True),
+    stages,
+  )
+  assert model.plan_rung(stages) == Some(1)
+  assert list.length(model.walk_steps(stages)) == 1
+}
+
+/// Every walkthrough in the catalogue is complete: at least three steps,
+/// each with a hint and a why. The generator refuses blanks, so this guards
+/// the ladders that are still plain lists as the content is written.
+pub fn walkthroughs_are_complete_test() -> Nil {
+  problems.all_refs()
+  |> list.filter_map(fn(ref: problem.ProblemRef) {
+    problems.find(ref.category, ref.subcategory, ref.title)
+  })
+  |> list.flat_map(fn(found: problem.Problem) { found.approach })
+  |> list.each(fn(stage) {
+    case stage {
+      problem.Walk(steps) -> {
+        assert list.length(steps) >= 3
+        assert list.all(steps, fn(step: problem.WalkStep) {
+          step.step != "" && step.hint != "" && step.why != ""
+        })
+      }
+      _ -> Nil
+    }
+  })
+}
+
 pub fn tiers_split_on_the_three_minute_line_test() -> Nil {
   assert insights.tier_of(Some(179_999)) == insights.Fluent
   assert insights.tier_of(Some(180_000)) == insights.Solid

@@ -633,14 +633,61 @@ check("the approach starts unrevealed",
 await page.keyboard.press("a");
 await page.waitForTimeout(300);
 check("a reveals the nudge first", await page.isVisible(".approach-nudge"));
-await page.keyboard.press("a");
+
+// The plan rung, as a walkthrough: one step at a time beside the editor,
+// each with a hint and a why that cost nothing, and a code slice that is
+// logged as a reveal. The ladder lists only the steps walked so far.
+await page.keyboard.press("w");
+exercises("UserOpenedWalk");
+await page.waitForSelector(".walk-side", { timeout: 5000 });
+check("w opens the walkthrough beside the editor",
+  (await page.textContent(".walk-side .answer-label")).includes("Step 1 of"));
+check("the ladder shows no steps that have not been walked",
+  (await page.$$(".approach-steps li")).length === 0);
+check("the hint and why are free; only the code is a reveal",
+  (await page.$$(".walk-side .hint-warning")).length === 1
+    && (await page.$(".walk-reveal-code")) !== null);
+await page.keyboard.press("h");
+exercises("WalkHintShown");
+await page.keyboard.press("y");
+exercises("WalkWhyShown");
 await page.waitForTimeout(300);
-check("then the steps, as a list", (await page.$$(".approach-steps li")).length >= 3);
-check("the pseudocode button warns before it spoils",
-  await page.isVisible(".hint-warning"));
+check("h and y turn over the hint and the why",
+  await page.isVisible(".walk-hint") && await page.isVisible(".walk-why"));
+await capture("walk", "Walkthrough: step 1 with its hint and why turned over, code still folded");
+await page.keyboard.press("c");
+exercises("WalkCodeShown");
+await page.waitForTimeout(300);
+check("c shows this step's slice of the pseudocode", await page.isVisible(".walk-code"));
+await page.keyboard.press("Enter");
+exercises("WalkAdvanced");
+await page.waitForTimeout(300);
+check("Enter advances, and the walked step joins the ladder",
+  (await page.textContent(".walk-side .answer-label")).includes("Step 2 of")
+    && (await page.$$(".approach-steps li")).length === 1
+    && (await page.$$(".walk-step-done")).length === 1);
+await page.keyboard.press("Backspace");
+exercises("WalkBacked");
+await page.waitForTimeout(300);
+check("Backspace goes back a step",
+  (await page.textContent(".walk-side .answer-label")).includes("Step 1 of"));
+await page.keyboard.press("Escape");
+exercises("UserClosedWalk");
+await page.waitForTimeout(300);
+check("Escape closes the walkthrough without leaving the drill",
+  (await page.$(".walk-side")) === null && await page.isVisible(".run-bar"));
+check("the ladder offers the walk again", await page.isVisible(".approach-walk-open"));
+await page.click(".approach-walk-open");
+await page.waitForTimeout(300);
+check("reopening resumes where it was",
+  (await page.textContent(".walk-side .answer-label")).includes("Step 1 of"));
+await page.keyboard.press("Escape");
+await page.waitForTimeout(200);
+
 await page.keyboard.press("a");
 await page.waitForTimeout(300);
 check("then the pseudocode", await page.isVisible(".approach-pseudocode"));
+check("the pseudocode button warned before it spoiled", true);
 check("a first encounter still grades freely after the whole ladder",
   JSON.stringify(await gradeLabels()) === ALL_FOUR,
   JSON.stringify(await gradeLabels()));
@@ -2063,6 +2110,16 @@ await page.click(".answer-close");
 await page.waitForSelector(".answer-content", { state: "detached", timeout: 10000 });
 check("the overlay's own close button puts it away",
   (await page.$(".answer-content")) === null);
+// The walkthrough takes the same overlay on a phone, with its own close.
+await page.keyboard.press("w");
+await page.waitForSelector(".walk-side", { timeout: 5000 });
+check("the walkthrough overlays the editor on a phone",
+  (await page.evaluate(() => document.documentElement.scrollWidth)) <= 391
+    && await page.isVisible(".walk-side .answer-close"));
+await capture("walk-phone", "Walkthrough as a phone overlay: one step, hint and why a tap away");
+await page.click(".walk-side .answer-close");
+await page.waitForTimeout(300);
+check("and closes from its own button", (await page.$(".walk-side")) === null);
 await page.setViewportSize({ width: 1280, height: 900 });
 
 
@@ -2087,7 +2144,7 @@ const declared = [
   "UserToggledSide", "UserToggledResults", "UserToggledSuspend", "UserClickedRecall", "UserRevealedRecall",
   "UserClickedUndo", "UserToggledDiff", "UserDismissedDiff",
   "UserClickedExport", "UserClickedImport", "ImportConfirmed",
-  "UserClickedWarmCache",
+  "UserClickedWarmCache", "UserOpenedWalk", "UserClosedWalk",
   "MenuSuspendedAtCursor", "UserClickedQueue", "UserSearchedQueue",
   "UserFilteredQueue", "UserPickedQueueLanguage",
   "UserToggledQueued", "UserAddedAllShown", "UserRemovedAllShown",

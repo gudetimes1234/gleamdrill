@@ -51,13 +51,15 @@ import gleamdrill/model.{
   UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
   UserClickedTour, UserClickedTourContents, UserClickedTourNext,
   UserClickedTourPrev, UserClickedUndo, UserClickedWarmCache, UserClosedDetail,
-  UserDismissedDiff, UserDismissedMergeOffer, UserDismissedNotice,
-  UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded, UserOpenedDetail,
-  UserOpenedLesson, UserPickedChoice, UserPickedQueueLanguage,
-  UserRemovedAllShown, UserResetLesson, UserRevealedHint, UserRevealedRecall,
-  UserSearched, UserSearchedQueue, UserSubmittedAnswer, UserSubmittedAuth,
-  UserToggledAuthMode, UserToggledDiff, UserToggledProblem, UserToggledQueued,
-  UserToggledResults, UserToggledSide, UserToggledSolution, UserToggledSuspend,
+  UserClosedWalk, UserDismissedDiff, UserDismissedMergeOffer,
+  UserDismissedNotice, UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded,
+  UserOpenedDetail, UserOpenedLesson, UserOpenedWalk, UserPickedChoice,
+  UserPickedQueueLanguage, UserRemovedAllShown, UserResetLesson,
+  UserRevealedHint, UserRevealedRecall, UserSearched, UserSearchedQueue,
+  UserSubmittedAnswer, UserSubmittedAuth, UserToggledAuthMode, UserToggledDiff,
+  UserToggledProblem, UserToggledQueued, UserToggledResults, UserToggledSide,
+  UserToggledSolution, UserToggledSuspend, WalkAdvanced, WalkBacked,
+  WalkCodeShown, WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
@@ -1406,6 +1408,9 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               draft: draft_for(m, first),
               revealed_solution: None,
               hints_revealed: model.opening_hints(m, first),
+              walk: None,
+              walk_open: False,
+              walk_code_seen: False,
               run: RunIdle,
               diff_open: True,
               // Without this a reveal-only drill -- Elixir has no harness at
@@ -1559,7 +1564,107 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       )
     }
 
+    // Opening the walkthrough is the plan rung, just read one step at a
+    // time; it counts as that rung revealed, never as the pseudocode.
+    UserOpenedWalk ->
+      case current_problem(m) {
+        Ok(current) ->
+          case model.plan_rung(current.approach) {
+            Some(rung) -> #(
+              Model(
+                ..m,
+                walk_open: True,
+                walk: Some(case m.walk {
+                  Some(state) -> state
+                  None ->
+                    model.WalkState(
+                      step: 0,
+                      hint_shown: False,
+                      why_shown: False,
+                      code_shown: False,
+                    )
+                }),
+                hints_revealed: int.max(m.hints_revealed, rung + 1),
+                // One side panel at a time: the walk takes the answer's slot.
+                revealed_solution: None,
+              ),
+              effect.none(),
+            )
+            None -> #(m, effect.none())
+          }
+        Error(Nil) -> #(m, effect.none())
+      }
+
+    UserClosedWalk -> #(Model(..m, walk_open: False), effect.none())
+
+    WalkHintShown -> #(
+      Model(
+        ..m,
+        walk: option.map(m.walk, fn(w) {
+          model.WalkState(..w, hint_shown: True)
+        }),
+      ),
+      effect.none(),
+    )
+
+    WalkWhyShown -> #(
+      Model(
+        ..m,
+        walk: option.map(m.walk, fn(w) { model.WalkState(..w, why_shown: True) }),
+      ),
+      effect.none(),
+    )
+
+    WalkCodeShown -> #(
+      Model(
+        ..m,
+        walk: option.map(m.walk, fn(w) {
+          model.WalkState(..w, code_shown: True)
+        }),
+        walk_code_seen: True,
+      ),
+      effect.none(),
+    )
+
+    WalkAdvanced ->
+      case m.walk, current_problem(m) {
+        Some(w), Ok(current) -> {
+          let total = list.length(model.walk_steps(current.approach))
+          #(
+            Model(
+              ..m,
+              walk: Some(model.WalkState(
+                step: int.min(w.step + 1, total),
+                hint_shown: False,
+                why_shown: False,
+                code_shown: False,
+              )),
+            ),
+            effect.none(),
+          )
+        }
+        _, _ -> #(m, effect.none())
+      }
+
+    WalkBacked ->
+      case m.walk {
+        Some(w) -> #(
+          Model(
+            ..m,
+            walk: Some(model.WalkState(
+              step: int.max(w.step - 1, 0),
+              hint_shown: False,
+              why_shown: False,
+              code_shown: False,
+            )),
+          ),
+          effect.none(),
+        )
+        None -> #(m, effect.none())
+      }
+
     UserToggledSolution(index) -> {
+      let m = Model(..m, walk_open: False)
       let revealed = case m.revealed_solution {
         Some(current) if current == index -> None
         _ -> Some(index)
@@ -2373,6 +2478,9 @@ fn open_first(m: Model, queue: List(ProblemRef)) -> Model {
         },
         revealed_solution: None,
         hints_revealed: model.opening_hints(m, first),
+        walk: None,
+        walk_open: False,
+        walk_code_seen: False,
         run: RunIdle,
         diff_open: True,
         grading: initial_grading(m, first),
@@ -2564,6 +2672,9 @@ fn advance_inner(m: Model) -> #(Model, Effect(Msg)) {
               False -> starter_for(ref)
             },
             hints_revealed: model.opening_hints(m, ref),
+            walk: None,
+            walk_open: False,
+            walk_code_seen: False,
             grading: initial_grading(m, ref),
           )
         Error(Nil) -> Model(..advanced, draft: "")

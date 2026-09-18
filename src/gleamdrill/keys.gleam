@@ -28,9 +28,11 @@ import gleamdrill/model.{
   UserClickedSelectAll, UserClickedStartDrill, UserClickedStartExam,
   UserClickedStats, UserClickedStudy, UserClickedTour, UserClickedTourContents,
   UserClickedTourNext, UserClickedTourPrev, UserClickedUndo, UserClosedDetail,
-  UserFilteredQueue, UserGraded, UserPickedChoice, UserRemovedAllShown,
-  UserRevealedHint, UserRevealedRecall, UserSearched, UserSubmittedAnswer,
-  UserToggledDiff, UserToggledResults, UserToggledSide, UserToggledSolution,
+  UserClosedWalk, UserFilteredQueue, UserGraded, UserOpenedWalk,
+  UserPickedChoice, UserRemovedAllShown, UserRevealedHint, UserRevealedRecall,
+  UserSearched, UserSubmittedAnswer, UserToggledDiff, UserToggledResults,
+  UserToggledSide, UserToggledSolution, WalkAdvanced, WalkBacked, WalkCodeShown,
+  WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/problem
 import gleamdrill/problems
@@ -346,11 +348,59 @@ fn menu_bindings(m: Model) -> List(Binding) {
 }
 
 fn drill_bindings(m: Model) -> List(Binding) {
-  case current_quiz(m), m.recall {
-    Ok(_), _ -> quiz_bindings(m)
-    Error(Nil), True -> recall_bindings(m)
-    Error(Nil), False -> code_bindings(m)
+  case current_quiz(m), m.recall, m.walk_open, m.walk {
+    Ok(_), _, _, _ -> quiz_bindings(m)
+    Error(Nil), True, _, _ -> recall_bindings(m)
+    // While the walkthrough is open it owns the keyboard: its layers, its
+    // steps, and Escape to put it away. The grades stay reachable.
+    Error(Nil), False, True, Some(state) -> walk_bindings(m, state)
+    Error(Nil), False, _, _ -> code_bindings(m)
   }
+}
+
+fn walk_bindings(m: Model, state: model.WalkState) -> List(Binding) {
+  let grades = case m.grading {
+    AwaitingGrade -> [
+      Binding(["1"], "again", "Grade: Again", UserGraded(fsrs.Again)),
+      Binding(["2"], "hard", "Grade: Hard", UserGraded(fsrs.Hard)),
+      Binding(["3"], "good", "Grade: Good", UserGraded(fsrs.Good)),
+      Binding(["4"], "easy", "Grade: Easy", UserGraded(fsrs.Easy)),
+    ]
+    _ -> []
+  }
+  list.flatten([
+    [
+      Binding(
+        ["Enter"],
+        "next step",
+        "Next step of the walkthrough",
+        WalkAdvanced,
+      ),
+    ],
+    case state.hint_shown {
+      True -> []
+      False -> [Binding(["h"], "hint", "Show this step's hint", WalkHintShown)]
+    },
+    case state.why_shown {
+      True -> []
+      False -> [Binding(["y"], "why", "Explain this step", WalkWhyShown)]
+    },
+    case state.code_shown {
+      True -> []
+      False -> [
+        Binding(["c"], "code", "Show this step's pseudocode", WalkCodeShown),
+      ]
+    },
+    [
+      Binding(["Backspace"], "back", "Previous step", WalkBacked),
+      Binding(["i", "e"], "edit", "Focus the editor", EditorFocusRequested),
+    ],
+    grades,
+    [
+      Binding(["w", "Escape"], "close", "Close the walkthrough", UserClosedWalk),
+      help_binding(),
+    ],
+  ])
 }
 
 /// A recall card has two moments: before the reveal, and grading after it.
@@ -417,6 +467,9 @@ fn code_bindings(m: Model) -> List(Binding) {
       Binding(["i", "e"], "edit", "Focus the editor", EditorFocusRequested),
       Binding(["m"], "note", "Write a note to future you", NoteFocusRequested),
       Binding(["a"], "hint", "Reveal the next approach hint", UserRevealedHint),
+    ],
+    walk_binding(m),
+    [
       Binding(
         ["p"],
         "prompt",
@@ -461,6 +514,20 @@ fn quiz_bindings(m: Model) -> List(Binding) {
           help_binding(),
         ],
       ])
+  }
+}
+
+/// Only for problems whose plan is written as a walkthrough.
+fn walk_binding(m: Model) -> List(Binding) {
+  case current_problem(m) {
+    Ok(current) ->
+      case model.walk_steps(current.approach) {
+        [] -> []
+        _ -> [
+          Binding(["w"], "walk", "Walk through the approach", UserOpenedWalk),
+        ]
+      }
+    Error(Nil) -> []
   }
 }
 
@@ -588,6 +655,13 @@ pub fn context_label(m: Model) -> String {
     SummaryRoute -> "SUMMARY"
     TourRoute -> "TOUR"
     AuthRoute -> "SIGN IN"
+  }
+}
+
+fn current_problem(m: Model) -> Result(problem.Problem, Nil) {
+  case model.current_ref(m) {
+    Ok(ref) -> problems.find(ref.category, ref.subcategory, ref.title)
+    Error(Nil) -> Error(Nil)
   }
 }
 

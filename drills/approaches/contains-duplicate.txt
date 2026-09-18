@@ -1,11 +1,32 @@
 == nudge
 The question is really "have I seen this value before?" — asked once per element. What structure answers that in O(1), and what's the cost of not having one?
-== steps
-- Create an empty set of seen values.
-- Walk the array once; for each value, ask the set whether it's already there.
-- If it is, stop — the answer is true, no need to know where or how many.
-- Otherwise add the value and keep walking.
-- Fall off the end: every value was new, answer false.
+== walk
+# Create an empty set of seen values.
+hint: You need to answer "have I met this before?" many times. Which structure answers membership in constant time?
+why: A hash set gives O(1) membership checks, which turns the naive O(n²) compare-every-pair into a single pass; the price is O(n) extra space.
+code:
+seen = empty set
+# Walk the array once; for each value, ask the set whether it's already there.
+hint: How many passes over the array should this take if the set is doing its job?
+why: One pass is enough because the set remembers everything to the left of the current position, so each value only has to be compared with the set, not with every earlier value.
+code:
+for value in nums:
+    if value in seen:
+# If it is, stop — the answer is true, no need to know where or how many.
+hint: The moment you find a repeat, is there anything left to learn from the rest of the array?
+why: Returning at the first repeat is correct and makes the best case O(1); the problem asks whether any duplicate exists, not which or how many.
+code:
+        return true
+# Otherwise add the value and keep walking.
+hint: If a value is new, what has to happen so a later copy of it is caught?
+why: Adding after the check, not before, is what stops a value from matching itself.
+code:
+    seen.add(value)
+# Fall off the end: every value was new, answer false.
+hint: What does reaching the end of the loop without returning tell you?
+why: If the loop finishes, every value was inserted without a hit, so there is no duplicate; the false lives after the loop, not inside it.
+code:
+return false
 == pseudocode
 seen = empty set
 for value in nums:
