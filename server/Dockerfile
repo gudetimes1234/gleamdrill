@@ -47,8 +47,20 @@ FROM ghcr.io/gleam-lang/gleam:v1.18.1-elixir-alpine
 # process of that uid on the *host*, and on a shared platform uid 1000 is
 # everyone's first user -- the cap tripped on other tenants' processes before
 # a single attempt had forked.
-RUN apk add --no-cache libstdc++ openssl ncurses \
+RUN apk add --no-cache libstdc++ openssl ncurses go \
  && adduser -D -H -s /sbin/nologin -u 31337 runner
+
+# Go drills run here too (server/priv/run-go). Compiling an attempt means
+# compiling the standard library packages it imports unless they are in
+# the build cache, so the cache is warmed once, here, as the user the
+# attempts run as -- encoding/json and friends take twenty seconds cold and
+# under a second warm. GOFLAGS as in run-go, so the cache keys match.
+RUN mkdir -p /opt/gocache /tmp/gowarm && chown runner /opt/gocache \
+ && printf 'module warm\n\ngo 1.21\n' > /tmp/gowarm/go.mod \
+ && printf 'package main\nimport (_ "encoding/json"; _ "fmt"; _ "os"; _ "runtime/debug"; _ "sort"; _ "strconv"; _ "strings"; _ "math"; _ "container/heap"; _ "container/list"; _ "math/bits"; _ "slices"; _ "unicode"; _ "bytes"; _ "math/rand")\nfunc main() {}\n' > /tmp/gowarm/main.go \
+ && chmod -R a+rX /tmp/gowarm \
+ && su -s /bin/sh runner -c 'cd /tmp/gowarm && HOME=/tmp GOCACHE=/opt/gocache GOFLAGS=-mod=mod GOTOOLCHAIN=local CGO_ENABLED=0 GOPROXY=off GOMAXPROCS=1 go build -o /dev/null .' \
+ && rm -rf /tmp/gowarm
 
 COPY --from=build /build/server/build/erlang-shipment /app
 

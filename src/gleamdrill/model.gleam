@@ -60,12 +60,12 @@ pub fn is_guest(mode: Mode) -> Bool {
   mode == Guest
 }
 
-/// Whether this browser can run a check in that language at all. Elixir runs
-/// on the server, which only a signed-in user may ask; a guest gets the
-/// reveal-only experience for Elixir, exactly as every user did before.
+/// Whether this browser can run a check in that language at all. Elixir and
+/// Go run on the server, which only a signed-in user may ask; a guest gets
+/// the reveal-only experience for them, exactly as every user did before.
 pub fn run_available(model: Model, language: problem.Language) -> Bool {
   case language {
-    problem.Elixir -> !is_guest(model.mode)
+    problem.Elixir | problem.Go -> !is_guest(model.mode)
     _ -> True
   }
 }
@@ -943,7 +943,7 @@ pub type Msg {
   RunnerReady(language: String)
   RunnerFailed(language: String, message: String)
   RunFinished(id: Int, outcome: RunOutcome, stdout: String)
-  /// A server-side run (Elixir) came back, or failed to. See api.post_run.
+  /// A server-side run (Elixir, Go) came back, or failed to. See api.post_run.
   RemoteRunFinished(id: Int, result: Result(wire.RunResult, ApiError))
   RunTimedOut(id: Int)
   RuntimeLoadTimedOut(language: String)

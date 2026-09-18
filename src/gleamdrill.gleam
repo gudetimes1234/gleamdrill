@@ -2159,46 +2159,25 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         Running(_, _) -> #(m, effect.none())
         _ ->
           case current_language(m), current_check(m) {
-            // Elixir runs on the server, and the server wants a session. The
-            // button is disabled for a guest; the keyboard lands here.
-            Ok("elixir"), Ok(_) if m.mode == Guest -> #(
-              Model(
-                ..m,
-                notice: Some(
-                  "Elixir drills run on the server \u{2014} sign in to run this one.",
-                ),
-              ),
-              effect.none(),
-            )
             Ok(language), Ok(check) ->
               case model.runtime_for(m, language) {
-                RuntimeReady -> {
-                  let id = m.next_run_id
-                  let previous = case m.run {
-                    Ran(_, stdout) -> stdout
-                    _ -> ""
-                  }
-                  let started =
-                    Model(..m, run: Running(id, previous), next_run_id: id + 1)
-                  case runner.is_remote(language), m.mode {
-                    True, Account(token) -> #(
-                      started,
-                      effect.batch([
-                        api.post_run(
-                          api_base(),
-                          token,
-                          wire.RunRequest(language, m.draft, check.harness),
-                          RemoteRunFinished(id, _),
+                // Elixir and Go run on the server, and the server wants a
+                // session. The button is disabled for a guest; the keyboard
+                // lands here.
+                RuntimeReady if m.mode == Guest ->
+                  case runner.is_remote(language) {
+                    True -> #(
+                      Model(
+                        ..m,
+                        notice: Some(
+                          "This drill runs on the server \u{2014} sign in to run it.",
                         ),
-                        runner.arm_remote_timeout(id),
-                      ]),
+                      ),
+                      effect.none(),
                     )
-                    // Unreachable: the guest arm above catches it first.
-                    True, Guest -> #(m, effect.none())
-                    False, _ ->
-                      start_local_run(m, language, m.draft, check.harness)
+                    False -> start_run(m, language, check)
                   }
-                }
+                RuntimeReady -> start_run(m, language, check)
                 // The button is disabled in these states, but the keyboard
                 // paths land here too and silence reads as a broken key.
                 RuntimeLoading | RuntimeNotLoaded -> #(
@@ -2319,18 +2298,21 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           }
           |> fn(language) {
             case language {
-              Ok("elixir") -> #(timed_out, effect.none())
-              Ok(language) -> #(
-                Model(
-                  ..timed_out,
-                  runtimes: model.assoc_put(
-                    m.runtimes,
-                    language,
-                    RuntimeLoading,
-                  ),
-                ),
-                runner.restart(language),
-              )
+              Ok(language) ->
+                case runner.is_remote(language) {
+                  True -> #(timed_out, effect.none())
+                  False -> #(
+                    Model(
+                      ..timed_out,
+                      runtimes: model.assoc_put(
+                        m.runtimes,
+                        language,
+                        RuntimeLoading,
+                      ),
+                    ),
+                    runner.restart(language),
+                  )
+                }
               Error(Nil) -> #(timed_out, effect.none())
             }
           }
@@ -2589,19 +2571,54 @@ fn handle_key(m: Model, key: model.Key) -> #(Model, Effect(Msg)) {
   }
 }
 
+/// A run the button or keyboard asked for, once the runtime is ready: posted
+/// to the server for a remote language, spawned in a worker otherwise.
+fn start_run(
+  m: Model,
+  language: String,
+  check: problem.Check,
+) -> #(Model, Effect(Msg)) {
+  let id = m.next_run_id
+  let previous = case m.run {
+    Ran(_, stdout) -> stdout
+    _ -> ""
+  }
+  let started = Model(..m, run: Running(id, previous), next_run_id: id + 1)
+  case runner.is_remote(language), m.mode {
+    True, Account(token) -> #(
+      started,
+      effect.batch([
+        api.post_run(
+          api_base(),
+          token,
+          wire.RunRequest(language, m.draft, check.harness),
+          RemoteRunFinished(id, _),
+        ),
+        runner.arm_remote_timeout(id),
+      ]),
+    )
+    // Unreachable: UserClickedRun catches a guest first.
+    True, Guest -> #(m, effect.none())
+    False, _ -> start_local_run(m, language, m.draft, check.harness)
+  }
+}
+
 fn abandon_run(m: Model) -> #(Model, Effect(Msg)) {
   case m.run, current_language(m) {
     // Nothing to restart for a server-side run; its late answer is ignored
     // by the id guard.
-    Running(_, _), Ok("elixir") -> #(Model(..m, run: RunIdle), effect.none())
-    Running(_, _), Ok(language) -> #(
-      Model(
-        ..m,
-        run: RunIdle,
-        runtimes: model.assoc_put(m.runtimes, language, RuntimeLoading),
-      ),
-      runner.restart(language),
-    )
+    Running(_, _), Ok(language) ->
+      case runner.is_remote(language) {
+        True -> #(Model(..m, run: RunIdle), effect.none())
+        False -> #(
+          Model(
+            ..m,
+            run: RunIdle,
+            runtimes: model.assoc_put(m.runtimes, language, RuntimeLoading),
+          ),
+          runner.restart(language),
+        )
+      }
     Running(_, _), Error(Nil) -> #(Model(..m, run: RunIdle), effect.none())
     _, _ -> #(m, effect.none())
   }

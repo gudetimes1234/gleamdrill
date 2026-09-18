@@ -31,9 +31,9 @@ const load_timeout_ms = 30_000
 
 /// Languages with no browser runtime at all: the run is an HTTP request to
 /// the server instead (api.post_run), and "the runtime" is ready the moment
-/// it is asked for. Only Elixir today; see problem.Check.
+/// it is asked for. Elixir and Go; see problem.Check.
 pub fn is_remote(language: String) -> Bool {
-  language == "elixir"
+  language == "elixir" || language == "go"
 }
 
 /// How long the app waits on a server-side run before calling it lost. The

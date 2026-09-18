@@ -1339,8 +1339,8 @@ pub fn new_cards_rotate_across_languages_test() -> Nil {
   // Four NeetCode languages and System Design, so the first five cards are
   // five different categories. A flat prefix would have yielded eight Python
   // problems and one distinct language.
-  assert list.length(picked |> list.take(5)) == 5
-  assert list.length(languages) == 5
+  assert list.length(picked |> list.take(6)) == 6
+  assert list.length(languages) == 6
 }
 
 /// The queue is exactly what was queued: a language nobody added never

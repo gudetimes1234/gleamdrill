@@ -119,6 +119,12 @@ jobs:
           # Gleam; the same requirement applies here.
           elixir-version: "1.18"
 
+      # Go drills run on the server too (server/priv/run-go); the exec tests
+      # compile and run a few attempts for real.
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
       # The app half of the tree is not built here, but `server` path-depends
       # on ../fsrs, which is why the whole repo is checked out.
       - name: Build

@@ -5,6 +5,7 @@ import gleam/string
 import gleamdrill/problem.{type Category, type Problem, type ProblemRef}
 import gleamdrill/problems/neetcode_elixir
 import gleamdrill/problems/neetcode_gleam
+import gleamdrill/problems/neetcode_go
 import gleamdrill/problems/neetcode_python
 import gleamdrill/problems/neetcode_ts
 import gleamdrill/problems/system_design
@@ -28,6 +29,7 @@ fn build() -> List(Category) {
     neetcode_gleam.category(),
     neetcode_ts.category(),
     neetcode_elixir.category(),
+    neetcode_go.category(),
     system_design.category(),
   ]
 }
@@ -194,6 +196,7 @@ pub fn language_tag(category_name: String) -> String {
         Ok(problem.Gleam) -> "gl"
         Ok(problem.TypeScript) -> "ts"
         Ok(problem.Elixir) -> "ex"
+        Ok(problem.Go) -> "go"
         Ok(problem.Concept) | Error(Nil) -> "sd"
       }
     Error(Nil) -> "??"

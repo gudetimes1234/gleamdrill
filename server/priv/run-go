@@ -1,0 +1,57 @@
+#!/bin/sh
+# Builds and runs one Go attempt directory with the process limits a hostile
+# solution has to live inside. The API invokes this through `timeout -s KILL`
+# (and, in the container, through `su runner`), so the wall clock and the uid
+# are decided outside; this script owns memory, process count, file size and
+# CPU. See server/src/server/exec.gleam, and run-elixir for the same shape.
+#
+#   run-go <dir>
+#
+# The directory holds solution.go, harness.go, prelude.go and go.mod: one
+# `package main`. A build failure exits 3 with the compiler's output, which
+# exec.gleam turns into a compile error at the line in solution.go; a build
+# that succeeds is exec'd, and the report is its last line.
+
+set -eu
+dir="$1"
+
+# The build cache is what makes an attempt take a second rather than
+# twenty: server/Dockerfile warms /opt/gocache with the standard library as
+# the runner user, whose home is /tmp so nothing of this process's is
+# readable. A developer machine keeps its own ~/.cache/go-build, which
+# `make verify` warms; a first attempt on a cold cache runs out of CPU and
+# reports a timeout, and the second one is fine.
+if [ -d /opt/gocache ]; then
+  export GOCACHE=/opt/gocache HOME=/tmp
+fi
+
+# Offline, reproducible, single-threaded: the module has no dependencies,
+# the toolchain on the image is the only one there is, cgo would need a C
+# compiler the image lacks, and one attempt gets one core.
+export GOTMPDIR=/tmp
+export GOFLAGS=-mod=mod GOTOOLCHAIN=local CGO_ENABLED=0 GOPROXY=off GOSUMDB=off
+export GOMAXPROCS=1 GOMEMLIMIT=256MiB GOGC=50
+
+# Address space, CPU seconds and file size. The Go runtime reserves large
+# virtual arenas up front, so the address-space cap is generous where
+# run-elixir's is tight; GOMEMLIMIT above is the working cap.
+ulimit -v 4194304
+ulimit -t 10
+ulimit -f 262144
+
+# Per uid and host-wide, so only for the dedicated container user (see
+# run-elixir for the reasoning).
+if [ "$(id -un)" = runner ]; then
+  ulimit -u 256
+fi
+
+cd "$dir"
+binary="$(mktemp /tmp/gleamdrill-go.XXXXXX)"
+trap 'rm -f "$binary"' EXIT
+
+if ! output="$(go build -o "$binary" . 2>&1)"; then
+  printf '%s\n' "$output"
+  exit 3
+fi
+
+"$binary"

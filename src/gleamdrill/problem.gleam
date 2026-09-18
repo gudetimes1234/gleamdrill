@@ -23,6 +23,7 @@ pub type Language {
   Gleam
   TypeScript
   Elixir
+  Go
   /// Not a programming language: a prose concept drill with nothing to compile.
   /// Used by the system design quiz, whose problems carry a Quiz instead of a
   /// Check.
@@ -30,11 +31,11 @@ pub type Language {
 }
 
 /// Everything needed to compile and grade an attempt in the browser. Gleam,
-/// Python and TypeScript drills have one; Elixir drills do not, because no
-/// browser can compile Elixir *source* — Popcorn and AtomVM run precompiled
-/// BEAM bytecode, so there is nothing to hand a typed-in solution to. Elixir
-/// drills are reveal-only, and are verified natively instead
-/// (drills/elixir/verify_all.exs).
+/// Python and TypeScript drills run it in a browser worker; Elixir and Go
+/// drills have one too, but no browser compiles their source, so the app
+/// posts the attempt to the server (runner.is_remote) and a guest gets the
+/// reveal-only experience. All are verified natively as well
+/// (drills/*/verify_all.*).
 ///
 /// `graded` is whether a run gates the grade bar. Every problem drill is
 /// graded: a later scheduled review must run once before the grades are
@@ -168,6 +169,7 @@ pub fn language_label(language: Language) -> String {
     Gleam -> "Gleam"
     TypeScript -> "TypeScript"
     Elixir -> "Elixir"
+    Go -> "Go"
     Concept -> "Concept"
   }
 }
@@ -179,6 +181,7 @@ pub fn language_slug(language: Language) -> String {
     Gleam -> "gleam"
     TypeScript -> "typescript"
     Elixir -> "elixir"
+    Go -> "go"
     Concept -> "concept"
   }
 }

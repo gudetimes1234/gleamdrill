@@ -297,6 +297,132 @@ end
   string.contains(error.message, "not a nonempty list") |> should.be_true
 }
 
+// --- exec: Go ---------------------------------------------------------------
+//
+// The same shapes for Go, which needs `go` on the PATH. The harness is the
+// one drills/go/harnesses/nc01_contains_duplicate.go carries; the prelude it
+// calls into is staged from server/priv/go by exec itself.
+
+const go_harness = "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"containsDuplicate([1, 2, 3, 1])\", true, containsDuplicate([]int{1, 2, 3, 1})),
+			tc(\"containsDuplicate([1, 2, 3, 4])\", false, containsDuplicate([]int{1, 2, 3, 4})),
+		}
+	})
+}
+"
+
+pub fn a_passing_go_attempt_reports_its_cases_test() {
+  let result =
+    exec.run_go(
+      exec_config(),
+      "package main
+
+func containsDuplicate(nums []int) bool {
+	seen := map[int]bool{}
+	for _, n := range nums {
+		if seen[n] {
+			return true
+		}
+		seen[n] = true
+	}
+	return false
+}
+",
+      go_harness,
+    )
+  result.error |> should.equal(None)
+  result.stdout |> should.equal("")
+  result.cases
+  |> should.equal([
+    wire.CaseResult("containsDuplicate([1, 2, 3, 1])", "true", "true", True),
+    wire.CaseResult("containsDuplicate([1, 2, 3, 4])", "false", "false", True),
+  ])
+}
+
+pub fn a_failing_go_attempt_keeps_its_output_test() {
+  let result =
+    exec.run_go(
+      exec_config(),
+      "package main
+
+import \"fmt\"
+
+func containsDuplicate(nums []int) bool {
+	fmt.Println(\"checking\")
+	return len(nums) > 3
+}
+",
+      go_harness,
+    )
+  result.error |> should.equal(None)
+  result.stdout |> should.equal("checking\nchecking\n")
+  result.cases
+  |> list.map(fn(c) { c.passed })
+  |> should.equal([True, False])
+}
+
+pub fn a_go_build_error_is_a_compile_error_with_a_line_test() {
+  let result =
+    exec.run_go(
+      exec_config(),
+      "package main
+
+func containsDuplicate(nums []int) bool {
+	return undefinedThing
+}
+",
+      go_harness,
+    )
+  result.cases |> should.equal([])
+  let assert Some(error) = result.error
+  error.phase |> should.equal("compile")
+  error.line |> should.equal(Some(4))
+  string.contains(error.message, "undefined: undefinedThing") |> should.be_true
+}
+
+pub fn a_go_panic_is_a_run_error_with_a_line_test() {
+  let result =
+    exec.run_go(
+      exec_config(),
+      "package main
+
+func containsDuplicate(nums []int) bool {
+	var empty []int
+	return empty[3] == 0
+}
+",
+      go_harness,
+    )
+  result.cases |> should.equal([])
+  let assert Some(error) = result.error
+  error.phase |> should.equal("run")
+  error.line |> should.equal(Some(5))
+  string.contains(error.message, "index out of range") |> should.be_true
+}
+
+pub fn a_go_infinite_loop_is_killed_and_reported_test() {
+  let result =
+    exec.run_go(
+      exec_config(),
+      "package main
+
+func containsDuplicate(nums []int) bool {
+	for {
+	}
+}
+",
+      go_harness,
+    )
+  result.cases |> should.equal([])
+  let assert Some(error) = result.error
+  error.phase |> should.equal("run")
+  string.contains(error.message, "Timed out") |> should.be_true
+}
+
 pub fn an_infinite_loop_is_killed_and_reported_test() {
   let result =
     exec.run_elixir(

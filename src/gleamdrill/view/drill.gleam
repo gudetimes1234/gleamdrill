@@ -627,12 +627,12 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
         ),
       ]),
     ]
-    // Elixir runs on the server, which needs a session: a guest keeps the
-    // flashcard experience every user had before Elixir could run at all.
+    // Elixir and Go run on the server, which needs a session: a guest keeps
+    // the flashcard experience every user had before they could run at all.
     Some(_), False -> [
       html.span([attribute.class("run-unavailable")], [
         html.text(
-          "Elixir runs on the server \u{2014} sign in to run this drill, or compare with a solution.",
+          "This drill runs on the server \u{2014} sign in to run it, or compare with a solution.",
         ),
       ]),
     ]

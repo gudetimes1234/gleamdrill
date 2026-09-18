@@ -37,22 +37,22 @@ pub fn run(request: wisp.Request, context: Context) -> wisp.Response {
         "Expected a language, a solution and a harness.",
       )
     Ok(input) ->
-      case input.language {
-        "elixir" ->
+      case exec.language(input.language) {
+        Ok(language) ->
           case
             string.byte_size(input.solution) + string.byte_size(input.harness)
             > max_bytes
           {
             True ->
               web.error(413, "too_large", "That attempt is too large to run.")
-            False -> throttled(context, user, input)
+            False -> throttled(context, user, language, input)
           }
-        other ->
+        Error(Nil) ->
           web.error(
             422,
             "unsupported_language",
-            "Only Elixir runs on the server; "
-              <> other
+            "Only Elixir and Go run on the server; "
+              <> input.language
               <> " runs in the browser.",
           )
       }
@@ -62,6 +62,7 @@ pub fn run(request: wisp.Request, context: Context) -> wisp.Response {
 fn throttled(
   context: Context,
   user: auth.User,
+  language: exec.Language,
   input: wire.RunRequest,
 ) -> wisp.Response {
   case
@@ -89,7 +90,7 @@ fn throttled(
           )
         True -> {
           let result =
-            exec.run_elixir(context.config, input.solution, input.harness)
+            exec.run(context.config, language, input.solution, input.harness)
           run_gate.release()
           web.json_ok(wire.run_result_to_json(result))
         }

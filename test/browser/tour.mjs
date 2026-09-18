@@ -145,7 +145,7 @@ const goHome = async () => {
   await page.waitForSelector(".study-screen, .picker-screen, .queue-screen",
     { timeout: 20000 });
   if (await page.isVisible(".picker-screen")) {
-    for (const n of [1, 2, 3, 4, 5]) {
+    for (const n of [1, 2, 3, 4, 5, 6]) {
       await page.click(`.picker-option:nth-child(${n})`);
       await page.waitForTimeout(120);
     }
@@ -164,7 +164,7 @@ const goHome = async () => {
 // Defaults to every language, which is the state the rest of the tour assumes:
 // nothing muted, the whole catalogue in play. Acts that care about a narrower
 // choice pass their own.
-const freshGuest = async (languages = [1, 2, 3, 4, 5]) => {
+const freshGuest = async (languages = [1, 2, 3, 4, 5, 6]) => {
   await page.goto(APP, { waitUntil: "domcontentloaded" });
   await page.evaluate(() => localStorage.clear());
   await page.goto(APP, { waitUntil: "networkidle" });
@@ -439,7 +439,7 @@ await page.waitForSelector(".menu-container", { timeout: 10000 });
 check("the pane browser renders", (await page.$$(".pane")).length >= 2);
 const languageRows = await page.$$eval(".pane:first-child .pane-item", (n) => n.map((e) => e.textContent.trim()));
 check("the first pane is languages",
-  JSON.stringify(languageRows) === '["Python","Gleam","TypeScript","Elixir","System Design"]',
+  JSON.stringify(languageRows) === '["Python","Gleam","TypeScript","Elixir","Go","System Design"]',
   JSON.stringify(languageRows));
 check("tips categories are hidden",
   !languageRows.some((l) => l.includes("Tips")));
