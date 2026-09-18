@@ -357,7 +357,8 @@ check("the guest strip states where data lives",
   (await page.textContent(".guest-strip-text")).includes("only in this browser"));
 check("a seven-day forecast renders", (await page.$$(".forecast-day")).length === 7);
 check("counts render", (await page.$$(".study-count")).length === 3);
-await capture("landing", "Guest landing: strip, counts, forecast, actions");
+await capture("landing", "Guest landing: strip, counts, forecast, actions",
+  "The study screen: counts and the queue, no language filter");
 
 // ---------------------------------------------------------------- act 2
 act = "02-auth";
@@ -708,7 +709,8 @@ check("the height is remembered on this device",
   (await page.evaluate(() => JSON.parse(localStorage.getItem("gleamDrill.prefs.v1") ?? "{}").editorHeight)) === editorDragged);
 await page.waitForTimeout(2200);
 check("the clock ticking does not undo the drag", (await editorHeight()) === editorDragged);
-await capture("editor-resized", "Editor dragged taller by its handle; results folded beneath");
+await capture("editor-resized", "Editor dragged taller by its handle; results folded beneath",
+  "The editor keeps its height and is yours to drag");
 await (await page.$(".editor-resize-handle")).dblclick();
 await page.waitForTimeout(300);
 check("double-clicking the handle resets the height", (await editorHeight()) === editorBefore,
@@ -736,7 +738,8 @@ check("a pass shows your code diffed against the reference",
   (await page.$$("gleam-diff .cm-deletedChunk, gleam-diff .cm-changedLine")).length > 0);
 check("against the reference most like it",
   (await page.textContent(".answer-content.auto .answer-label")).includes("Yours vs"));
-await capture("diff", "Passing run: your code with the reference's differences struck through");
+await capture("diff", "Passing run: your code with the reference's differences struck through",
+  "A pass shows your code diffed against the closest reference");
 await page.keyboard.press("d");
 exercises("UserToggledDiff");
 await page.waitForTimeout(300);
@@ -846,7 +849,8 @@ check("a note from an earlier visit is shown lit", (await page.$(".note-panel.ha
 check("with what was written, and nothing else",
   (await page.inputValue(".note-input")) === "Set beats sort here: O(n) and one line.",
   await page.inputValue(".note-input"));
-await capture("note-returns", "The note from last time, lit under the prompt");
+await capture("note-returns", "The note from last time, lit under the prompt",
+  "Your note from last time comes back lit");
 await waitForRunnable();
 await page.click(".run-button");
 await verdict();
@@ -1030,7 +1034,8 @@ check("and the approach ladder is fully open",
   (await page.$(".hint-button")) === null || !(await page.isVisible(".hint-button")));
 check("then the grade is yours", JSON.stringify(await gradeLabels()) === ALL_FOUR,
   JSON.stringify(await gradeLabels()));
-await capture("recall-revealed", "Revealed: technique, Big-O, note and code for every solution, then the grades");
+await capture("recall-revealed", "Revealed: technique, Big-O, note and code for every solution, then the grades",
+  "Recall-only sittings: read, reveal, grade from memory");
 await page.keyboard.press("3");
 await page.waitForTimeout(1500);
 check("grading advances to the next recall card", await page.isVisible(".recall-card"));
@@ -1062,7 +1067,8 @@ await page.setViewportSize({ width: 1280, height: 900 });
 // and the store forgets the review.
 const repsBeforeUndo = await page.evaluate(() =>
   JSON.parse(localStorage.getItem("gleamDrill.guest.cards.v1")).find((c) => c.title === "Valid Anagram").reps);
-await capture("summary-undo", "A recall summary, with the last grade still undoable");
+await capture("summary-undo", "A recall summary, with the last grade still undoable",
+  "The last grade can be taken back");
 await page.click(".summary-undo .undo-button");
 exercises("UserClickedUndo");
 await page.waitForSelector(".recall-answers", { timeout: 5000 });
@@ -1424,7 +1430,8 @@ exercises("UserClickedImport");
 await page.waitForSelector(".import-prompt", { timeout: 10000 });
 check("import asks before replacing anything",
   (await page.textContent(".import-prompt")).includes("1 cards"));
-await capture("import-prompt", "Import: the file's contents named, and a question before anything is replaced");
+await capture("import-prompt", "Import: the file's contents named, and a question before anything is replaced",
+  "Export and import everything as one file");
 await page.keyboard.press("Escape");
 exercises("ImportConfirmed");
 await page.waitForTimeout(300);
@@ -1841,7 +1848,8 @@ const accountSettings = await page.evaluate(async (api) => {
 check("and the server keeps it", accountSettings.reminderHour === 8, JSON.stringify(accountSettings.reminderHour));
 check("with the help naming the address",
   (await page.textContent(".settings-row:has(.settings-reminder) .settings-help")).includes("@"));
-await capture("reminders", "Reminders: one mail a day at the hour you pick, to the account's address");
+await capture("reminders", "Reminders: one mail a day at the hour you pick, to the account's address",
+  "A daily reminder mail, at the hour you pick");
 await page.selectOption(".settings-reminder", "off");
 await page.waitForTimeout(600);
 await page.keyboard.press("Escape");
