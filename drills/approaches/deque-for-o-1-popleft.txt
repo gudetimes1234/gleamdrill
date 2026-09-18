@@ -1,8 +1,35 @@
 == nudge
 Breadth-first search is queue-shaped: add at one end, remove from the other. What does removing from the front of a plain Python list actually cost, and what would that silently do to the whole traversal?
-== steps
-- Use collections.deque as the queue — list.pop(0) is O(n) and quietly turns BFS quadratic; popleft is O(1).
-- Start with deque([start]) and a seen set containing start; mark nodes seen when they are enqueued, not when dequeued.
-- Loop while the queue is nonempty: popleft a node and record it in the visit order.
-- For each unseen neighbour, add it to seen and append it on the right.
-- Return the visit order once the queue drains.
+== walk
+# Use collections.deque as the queue — list.pop(0) is O(n) and quietly turns BFS quadratic; popleft is O(1).
+hint: What does removing the front of a list cost, and what does that do to a BFS?
+why: list.pop(0) shifts every remaining element, so a queue built on it makes BFS O(n²); deque.popleft is O(1).
+code:
+from collections import deque
+# Start with deque([start]) and a seen set containing start; mark nodes seen when they are enqueued, not when dequeued.
+hint: When should a node be marked seen: when it enters the queue or when it leaves?
+why: On enqueue, or the same node can be queued several times before its first visit; starting with the start node in both is the base case.
+code:
+queue = deque([start])
+seen = {start}
+# Loop while the queue is nonempty: popleft a node and record it in the visit order.
+hint: What does one iteration of the search do?
+why: Take the oldest node, record it; the queue's order is what makes the visit order breadth-first.
+code:
+order = []
+while queue:
+    node = queue.popleft()
+    order.append(node)
+# For each unseen neighbour, add it to seen and append it on the right.
+hint: Which neighbours get added, and where?
+why: Unseen ones, marked as they go in and appended on the right so they wait behind everything already queued.
+code:
+    for n in graph[node]:
+        if n not in seen:
+            seen.add(n)
+            queue.append(n)
+# Return the visit order once the queue drains.
+hint: When is the search finished?
+why: When the queue drains; every reachable node was visited once, O(V + E).
+code:
+return order

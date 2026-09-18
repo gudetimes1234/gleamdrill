@@ -1,12 +1,36 @@
 == nudge
 Comparing each node with its parent feels sufficient — is it? A node can be larger than its parent and still sit on the wrong side of something higher up. What knowledge about allowed values would have to travel down the tree with you to catch that?
-== steps
-- Validate each node against a range of allowed values, not against its parent alone.
-- Start at the root with both bounds open — no limit on either side.
-- Recurse left with the upper bound tightened to the node's value; recurse right with the lower bound tightened.
-- Fail a node the moment it is at or beyond either bound — equal values are invalid too.
-- An empty subtree is trivially valid; the tree is valid when every node passes.
-- Alternative worth knowing: an in-order walk of a valid BST is strictly increasing, so walk in order and check each value beats the previous one.
+== walk
+# Validate each node against a range of allowed values, not against its parent alone.
+hint: Is comparing each node with its parent enough?
+why: No, a node deep in the left subtree must also be below the root; each node must respect a range inherited from all its ancestors.
+code:
+function valid(node, low, high):
+# Start at the root with both bounds open — no limit on either side.
+hint: What are the root's bounds?
+why: Open on both sides.
+code:
+return valid(root, unset, unset)
+# Recurse left with the upper bound tightened to the node's value; recurse right with the lower bound tightened.
+hint: How do the bounds change going left and right?
+why: Going left tightens the upper bound to the node's value; going right tightens the lower bound.
+code:
+    return valid(node.left, low, node.val)
+       and valid(node.right, node.val, high)
+# Fail a node the moment it is at or beyond either bound — equal values are invalid too.
+hint: What makes a node fail?
+why: Being at or beyond either bound; equal values are invalid too.
+code:
+    if low is set and node.val <= low: return false
+    if high is set and node.val >= high: return false
+# An empty subtree is trivially valid; the tree is valid when every node passes.
+hint: What is the base case?
+why: An empty subtree is valid; the tree is valid when every node passes, O(n).
+code:
+    if node is null: return true
+# Alternative worth knowing: an in-order walk of a valid BST is strictly increasing, so walk in order and check each value beats the previous one.
+hint: What property of in-order traversal gives another check?
+why: A valid BST's in-order values are strictly increasing, so walk in order and compare each value with the previous.
 == pseudocode
 function valid(node, low, high):
     if node is null: return true

@@ -1,8 +1,27 @@
 == nudge
 All three of these walk a list while carrying some running state. That shape has a name and a single library function — what are its two ingredients, and which variant do you need when the intermediate values are the answer?
-== steps
-- Name the two ingredients for each function: an initial accumulator and a function combining accumulator with element — that pair is the whole fold.
-- max: an empty list has no max, so case first; on [first, ..rest], fold rest starting from first, keeping the larger each step.
-- count_if: fold from 0, adding 1 whenever the predicate holds.
-- running_total: list.scan is fold that keeps every intermediate accumulator — fold from 0 with addition and the running totals fall out.
-- No hand-written recursion anywhere: if you typed a case over [head, ..tail], back up.
+== walk
+# Name the two ingredients for each function: an initial accumulator and a function combining accumulator with element — that pair is the whole fold.
+hint: Every loop has a starting value and a way to combine one more element. What are those called in a fold?
+why: The initial accumulator and the combining function; naming them is the whole design of each function.
+# max: an empty list has no max, so case first; on [first, ..rest], fold rest starting from first, keeping the larger each step.
+hint: What is the max of an empty list, and how does that shape the code?
+why: There is none, so match first; on a non-empty list fold the rest starting from the head, keeping the larger each step.
+code:
+case xs {
+  [] -> Error(Nil)
+  [first, ..rest] -> Ok(list.fold(rest, first, int.max))
+}
+# count_if: fold from 0, adding 1 whenever the predicate holds.
+hint: What accumulator does counting need?
+why: An integer starting at 0, incremented when the predicate holds.
+code:
+list.fold(xs, 0, fn(n, x) { case pred(x) { True -> n + 1 False -> n } })
+# running_total: list.scan is fold that keeps every intermediate accumulator — fold from 0 with addition and the running totals fall out.
+hint: Running totals need every intermediate value. Which fold variant keeps them?
+why: list.scan is fold that emits each accumulator, so scanning with addition from 0 yields the running totals.
+code:
+list.scan(xs, 0, fn(total, x) { total + x })
+# No hand-written recursion anywhere: if you typed a case over [head, ..tail], back up.
+hint: What should you not see anywhere in these solutions?
+why: A hand-written recursive case over [head, ..tail]; fold and scan are that recursion, already written.

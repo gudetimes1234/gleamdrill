@@ -1,12 +1,42 @@
 == nudge
 The list arrives sorted and non-overlapping — that is a gift, not a detail. Relative to the new interval, what three kinds of interval does the list split into, and which kind actually requires any work?
-== steps
-- Copy across every interval that ends before the new one starts — untouched.
-- Absorb the touching run: while an interval starts at or before the new end, widen the new interval to the smaller start and larger end, consuming it.
-- Append the (possibly widened) new interval once.
-- Append everything remaining — it all starts after the new end, also untouched.
-- One pass, no sorting: only the middle run ever collapses, into a single interval spanning the lot.
-- Follow-up: appending the new interval and re-running a full merge also works, but it throws away the sortedness you were handed.
+== walk
+# Copy across every interval that ends before the new one starts — untouched.
+hint: Which intervals cannot possibly interact with the new one?
+why: Those ending before it starts; sortedness means they form a prefix, copied across untouched.
+code:
+out = []
+i = 0
+while i < n and intervals[i].end < new.start:
+    out.add(intervals[i])
+    i = i + 1
+# Absorb the touching run: while an interval starts at or before the new end, widen the new interval to the smaller start and larger end, consuming it.
+hint: What does an interval that starts at or before the new one's end do to it?
+why: It overlaps or touches, so the new interval grows to cover both; consuming the whole run collapses it into one interval.
+code:
+while i < n and intervals[i].start <= new.end:
+    new.start = min(new.start, intervals[i].start)
+    new.end = max(new.end, intervals[i].end)
+    i = i + 1
+# Append the (possibly widened) new interval once.
+hint: How many times does the new interval appear in the output?
+why: Once, after the run it absorbed; whether it grew or not it goes in exactly here.
+code:
+out.add(new)
+# Append everything remaining — it all starts after the new end, also untouched.
+hint: What about the intervals still remaining?
+why: They start after the new end, so they are copied unchanged; the three loops together are one O(n) pass.
+code:
+while i < n:
+    out.add(intervals[i])
+    i = i + 1
+return out
+# One pass, no sorting: only the middle run ever collapses, into a single interval spanning the lot.
+hint: Why is no sort needed?
+why: The input is already sorted and non-overlapping, and only the middle run changes, so the output stays sorted by construction.
+# Follow-up: appending the new interval and re-running a full merge also works, but it throws away the sortedness you were handed.
+hint: What would appending then merging cost?
+why: A full sort, O(n log n), discarding the order you were given; correct but wasteful.
 == pseudocode
 out = []
 i = 0

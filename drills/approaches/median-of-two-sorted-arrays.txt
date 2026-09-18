@@ -1,11 +1,38 @@
 == nudge
 The median only cares about what sits at the middle of the combined order. Do you actually need the whole merged array — or even half of it stored — to know what is there? And how much of the merge do you really have to run?
-== steps
-- Compute the combined length; the median involves the value at position total / 2, and the one before it when the total is even.
-- Merge with two indexes, but never build the merged array — each step just take whichever front value is smaller.
-- Keep only the last two values taken, and stop after total / 2 + 1 values.
-- For an odd total the answer is the last value taken; for an even total, the average of the last two.
-- Interview follow-up — O(log(min(m, n))): binary search a cut through the shorter array so both left sides together hold half the elements and every left value is <= every right value; the median falls out of the four values around the cut.
+== walk
+# Compute the combined length; the median involves the value at position total / 2, and the one before it when the total is even.
+hint: Which positions in the merged order does the median depend on?
+why: The element at total / 2 and, for an even total, the one before it; nothing else needs to be materialised.
+code:
+total = len(a) + len(b)
+# Merge with two indexes, but never build the merged array — each step just take whichever front value is smaller.
+hint: How can you walk the merged order without building it?
+why: Two indexes, taking whichever front value is smaller each step.
+code:
+i = 0, j = 0
+    if i < len(a) and (j >= len(b) or a[i] <= b[j]):
+        current = a[i]
+        i += 1
+    else:
+        current = b[j]
+        j += 1
+# Keep only the last two values taken, and stop after total / 2 + 1 values.
+hint: How much of the walk is needed, and what state survives?
+why: total / 2 + 1 steps, remembering only the last two values taken; O(m + n) time, O(1) space.
+code:
+previous = 0, current = 0
+repeat total / 2 + 1 times:
+    previous = current
+# For an odd total the answer is the last value taken; for an even total, the average of the last two.
+hint: How does parity pick the answer?
+why: Odd total: the last value; even total: the average of the last two.
+code:
+if total is odd: return current
+return (previous + current) / 2
+# Interview follow-up — O(log(min(m, n))): binary search a cut through the shorter array so both left sides together hold half the elements and every left value is <= every right value; the median falls out of the four values around the cut.
+hint: What is the logarithmic version built on?
+why: A binary search for a cut through the shorter array such that the left sides hold half the elements and every left value is at most every right value; the median is read from the four values at the cut.
 == pseudocode
 total = len(a) + len(b)
 i = 0, j = 0

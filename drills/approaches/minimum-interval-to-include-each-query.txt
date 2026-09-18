@@ -1,11 +1,34 @@
 == nudge
 Answering the queries in the order they arrive is the trap here. What is the plain-definition answer for a single query — and if repeating that per query is too slow, must the queries be handled in their given order at all?
-== steps
-- Start from the definition: for one query, scan every interval that contains it and keep the smallest length end - start + 1, or -1 if none does.
-- Repeat per query and collect the answers in input order — the O(n times q) baseline, and the thing to check anything cleverer against.
-- Follow-up: sort the queries by value, admit intervals into a min-heap keyed by length as their starts pass, and pop whatever has already ended — each interval enters and leaves the heap once.
-- Other follow-up: hand intervals out shortest first — the first interval to cover a query is already that query's final answer, so a settled query leaves the pool for good.
-- Either faster route answers queries out of order, so scatter the answers back to their input positions at the end.
+== walk
+# Start from the definition: for one query, scan every interval that contains it and keep the smallest length end - start + 1, or -1 if none does.
+hint: What is the answer for a single query, stated directly?
+why: The shortest interval containing it, or -1 if none does; that definition is the baseline before any cleverness.
+code:
+for query in queries:
+    best = infinity
+    for [start, end] in intervals:
+        if start <= query and query <= end:
+            best = min(best, end - start + 1)
+# Repeat per query and collect the answers in input order — the O(n times q) baseline, and the thing to check anything cleverer against.
+hint: How do you turn that into the full answer?
+why: Repeat per query in input order; O(n * q), correct, and the reference to check faster versions against.
+code:
+answers = []
+    if best == infinity:
+        answers.add(-1)
+    else:
+        answers.add(best)
+return answers
+# Follow-up: sort the queries by value, admit intervals into a min-heap keyed by length as their starts pass, and pop whatever has already ended — each interval enters and leaves the heap once.
+hint: If queries are sorted, which intervals matter as you sweep?
+why: Those whose start has passed and whose end has not; a min-heap by length admits and evicts each interval once, O((n + q) log n).
+# Other follow-up: hand intervals out shortest first — the first interval to cover a query is already that query's final answer, so a settled query leaves the pool for good.
+hint: What if intervals are handed out shortest first instead?
+why: The first interval to cover a query is that query's final answer, so settled queries leave the pool for good.
+# Either faster route answers queries out of order, so scatter the answers back to their input positions at the end.
+hint: What does either faster route disturb?
+why: The output order; answers found in sorted-query order must be scattered back to input positions.
 == pseudocode
 answers = []
 for query in queries:

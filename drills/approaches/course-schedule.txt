@@ -1,12 +1,39 @@
 == nudge
 When exactly can a set of courses not be finished? Think about what the prerequisite pairs draw, and what shape in that drawing leaves some course forever unstartable.
-== steps
-- Recognize the question as cycle detection: every course can be finished exactly when the prerequisite graph is acyclic.
-- Build, per course, a count of unmet prerequisites and a list of the courses it unlocks.
-- Queue every course whose count is zero — those can be taken immediately.
-- Repeatedly take a course off the queue, count it as taken, and decrement each dependent's counter, queueing any that reach zero.
-- Answer true when the number taken equals numCourses; a stall with courses left over means they wait on each other in a circle.
-- Depth-first search answers it too but needs three node states, not two — a node re-met on the current path is a cycle, one finished down an earlier branch is fine.
+== walk
+# Recognize the question as cycle detection: every course can be finished exactly when the prerequisite graph is acyclic.
+hint: What kind of prerequisite structure makes finishing impossible?
+why: A cycle: courses waiting on each other; so the question is cycle detection in a directed graph, not scheduling.
+# Build, per course, a count of unmet prerequisites and a list of the courses it unlocks.
+hint: What two things do you need to know per course to run Kahn's algorithm?
+why: How many prerequisites it still waits on, and which courses it unlocks when taken; both come from one pass over the pairs.
+code:
+waiting[c] = number of prerequisites of c, for every course
+unlocks[p] = list of courses that require p
+# Queue every course whose count is zero — those can be taken immediately.
+hint: Which courses can be taken on day one?
+why: Those with zero unmet prerequisites; they seed the queue.
+code:
+ready = queue of courses with waiting == 0
+taken = 0
+# Repeatedly take a course off the queue, count it as taken, and decrement each dependent's counter, queueing any that reach zero.
+hint: What happens when a course is taken?
+why: Each dependent's count drops, and any that hit zero become ready; every edge is relaxed once, so it is O(V + E).
+code:
+while ready not empty:
+    course = ready.pop_front()
+    taken += 1
+    for next in unlocks[course]:
+        waiting[next] -= 1
+        if waiting[next] == 0: ready.push_back(next)
+# Answer true when the number taken equals numCourses; a stall with courses left over means they wait on each other in a circle.
+hint: If the queue empties with courses untaken, what must be true of them?
+why: They never reached zero because they wait on each other in a cycle, so the count of taken courses is the whole verdict.
+code:
+return taken == numCourses
+# Depth-first search answers it too but needs three node states, not two — a node re-met on the current path is a cycle, one finished down an earlier branch is fine.
+hint: Could depth-first search do it, and what extra bookkeeping does it need?
+why: Yes, with three states per node: meeting a node that is on the current path is a cycle, while one finished by an earlier branch is fine.
 == pseudocode
 waiting[c] = number of prerequisites of c, for every course
 unlocks[p] = list of courses that require p

@@ -1,8 +1,32 @@
 == nudge
 One function cares only about how the string starts; the other needs to look at individual characters. Gleam's case can match more of a string than you might expect — and when it can't, what turns a string into something the list functions can chew on?
-== steps
-- strip_comment: case on the string itself with prefix patterns — "# " <> rest binds everything after the prefix directly.
-- Order the branches from most to least specific ("# " before "#"), with a catch-all returning the line unchanged.
-- initials: split the name on " " to get words.
-- list.filter_map with string.to_graphemes plus list.first grabs each word's first character and drops empty words in the same pass.
-- Concatenate and uppercase the collected letters.
+== walk
+# strip_comment: case on the string itself with prefix patterns — "# " <> rest binds everything after the prefix directly.
+hint: How do you match a string that starts with a known prefix and bind the rest?
+why: A prefix pattern in case: "# " <> rest binds everything after it.
+code:
+case line {
+  "# " <> rest -> rest
+# Order the branches from most to least specific ("# " before "#"), with a catch-all returning the line unchanged.
+hint: In which order must the branches go?
+why: Most specific first, so "# " is tried before "#", with a catch-all last.
+code:
+  "#" <> rest -> rest
+  _ -> line
+}
+# initials: split the name on " " to get words.
+hint: How does a name become words?
+why: Split on a space.
+code:
+string.split(name, " ")
+# list.filter_map with string.to_graphemes plus list.first grabs each word's first character and drops empty words in the same pass.
+hint: How do you take each word's first letter and drop empty words in one pass?
+why: filter_map with to_graphemes and list.first: an empty word gives Error and is dropped.
+code:
+|> list.filter_map(fn(w) { w |> string.to_graphemes |> list.first })
+# Concatenate and uppercase the collected letters.
+hint: What finishes the initials?
+why: Concatenate the letters and uppercase.
+code:
+|> string.concat
+|> string.uppercase

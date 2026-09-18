@@ -1,11 +1,30 @@
 == nudge
 Reversing feels like peeling from one end and stacking onto the other. The real question is about the width: what do the leading zeros of a small input become in the answer, and what does that say about when you may stop?
-== steps
-- Start the result at 0.
-- Each round, shift the result left one place and OR in the bottom bit of the input, then shift the input right one — first bit out is last bit in.
-- Run exactly 32 rounds, no fewer: the loop count comes from the width, not from the value.
-- Do not stop early when the input hits zero — the leading zeros of a small input are exactly the trailing zeros the answer needs.
-- Return the result.
+== walk
+# Start the result at 0.
+hint: What does the result start as?
+why: 0, with bits shifted into it from the right.
+code:
+result = 0
+# Each round, shift the result left one place and OR in the bottom bit of the input, then shift the input right one — first bit out is last bit in.
+hint: What does one round move?
+why: The input's bottom bit into the result's bottom, after shifting the result left; first bit out is last bit in.
+code:
+    result = (result << 1) OR (n AND 1)
+    n = n >> 1
+# Run exactly 32 rounds, no fewer: the loop count comes from the width, not from the value.
+hint: How many rounds?
+why: Exactly 32, from the width, not from the value.
+code:
+repeat 32 times:
+# Do not stop early when the input hits zero — the leading zeros of a small input are exactly the trailing zeros the answer needs.
+hint: What goes wrong if you stop when the input reaches zero?
+why: A small input's leading zeros are the answer's trailing zeros, so stopping early leaves the result unshifted.
+# Return the result.
+hint: What remains?
+why: Return the result; O(1) fixed work.
+code:
+return result
 == pseudocode
 result = 0
 repeat 32 times:

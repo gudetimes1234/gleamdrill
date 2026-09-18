@@ -1,11 +1,34 @@
 == nudge
 Testing every substring rereads the same characters endlessly. What does every palindrome, however long, have exactly one of — and how many candidates does that leave to try?
-== steps
-- Enumerate centres instead of substrings: n characters plus the n gaps between them, 2n centres in all.
-- Do not forget the gaps — without them every even-length palindrome is invisible.
-- From each centre, expand outwards while the two end characters match.
-- When the expansion stops, the pointers have gone one step too far; step them back to read off the palindrome's start and length.
-- Keep the longest span found across all centres and slice it out at the end — O(n^2) time and no table.
+== walk
+# Enumerate centres instead of substrings: n characters plus the n gaps between them, 2n centres in all.
+hint: Rather than testing every substring, what can you enumerate that determines a palindrome?
+why: Its centre: every palindrome grows symmetrically from one, and there are only 2n - 1 of them.
+code:
+for i in 0..n-1:
+    for (left, right) in ((i, i), (i, i + 1)):
+# Do not forget the gaps — without them every even-length palindrome is invisible.
+hint: Where is the centre of "abba"?
+why: Between the two b's, so gaps between characters are centres too; leaving them out loses every even-length palindrome.
+# From each centre, expand outwards while the two end characters match.
+hint: From a centre, how far does the palindrome extend?
+why: As long as the characters at the two ends match; expand outward until they do not or the string ends.
+code:
+        while left >= 0 and right < n and s[left] == s[right]:
+            left -= 1
+            right += 1
+# When the expansion stops, the pointers have gone one step too far; step them back to read off the palindrome's start and length.
+hint: When the expansion stops, where exactly are the pointers?
+why: One step past the palindrome on each side, so the length is right - left - 1 and the start is left + 1.
+code:
+        length = right - left - 1
+        if length > best_length:
+            best_start, best_length = left + 1, length
+# Keep the longest span found across all centres and slice it out at the end — O(n^2) time and no table.
+hint: What is the total cost, and what does it avoid?
+why: O(n²) time with O(1) extra space; no table of substrings, just the best span sliced out at the end.
+code:
+return substring of s starting at best_start with length best_length
 == pseudocode
 best_start, best_length = 0, 0
 for i in 0..n-1:

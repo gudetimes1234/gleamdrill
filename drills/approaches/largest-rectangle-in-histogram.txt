@@ -1,11 +1,38 @@
 == nudge
 Every candidate rectangle is really one bar stretched as wide as its own height allows. For a given bar, what finally stops it stretching in each direction — and could a single sweep discover both of its walls?
-== steps
-- Sweep the bars keeping a stack of (start index, height) entries with heights increasing.
-- A new bar shorter than the stack's top closes the taller entries: pop each one, and its rectangle is its height times (current index minus its start).
-- The new bar inherits the start of the last entry it popped — it would have fit under every one of them, so it extends that far left.
-- Push (inherited start, height) and track the best area throughout.
-- After the sweep, anything still stacked was never cut off: close each at width n minus its start.
+== walk
+# Sweep the bars keeping a stack of (start index, height) entries with heights increasing.
+hint: Which bars could still be the bottom of a rectangle extending to the right?
+why: Those not yet cut off by a shorter bar; keeping them on a stack with increasing heights means the top is always the first to be cut.
+code:
+stack = empty   // (start, height), heights increasing
+best = 0
+# A new bar shorter than the stack's top closes the taller entries: pop each one, and its rectangle is its height times (current index minus its start).
+hint: A shorter bar arrives. What does it settle?
+why: Every taller stacked bar can extend no further right, so each pops with a rectangle of its height times the distance from its start to here.
+code:
+for i in 0..n-1:
+    start = i
+    while stack not empty and stack.top.height > heights[i]:
+        (s, h) = stack.pop()
+        best = max(best, h * (i - s))
+# The new bar inherits the start of the last entry it popped — it would have fit under every one of them, so it extends that far left.
+hint: How far left does the new bar's rectangle reach?
+why: To the start of the last bar it popped, because the new bar is shorter than all of them and so fits under them.
+code:
+        start = s
+# Push (inherited start, height) and track the best area throughout.
+hint: What is pushed, and what is tracked?
+why: The new bar with its inherited start, and the best area so far; each bar is pushed and popped once, O(n).
+code:
+    stack.push((start, heights[i]))
+# After the sweep, anything still stacked was never cut off: close each at width n minus its start.
+hint: What about bars still on the stack at the end?
+why: Nothing ever cut them off, so they extend to the end: close each at width n minus its start.
+code:
+for (s, h) in stack:
+    best = max(best, h * (n - s))
+return best
 == pseudocode
 stack = empty   // (start, height), heights increasing
 best = 0

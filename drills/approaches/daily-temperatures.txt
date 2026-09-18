@@ -1,11 +1,34 @@
 == nudge
 Each day is waiting for news from the future, and a single warm day can settle many of them at once. Which of the still-waiting days does it settle — and what order were they left waiting in?
-== steps
-- Keep a stack of indices still waiting for a warmer day; their temperatures sit in decreasing order from bottom to top.
-- For each new day, pop every stacked day that is colder — this new day is the one they were waiting for.
-- For each pop, write current index minus popped index into the result.
-- Push the current day; now it waits its turn.
-- Days never popped keep the default 0 — no warmer day ever comes for them.
+== walk
+# Keep a stack of indices still waiting for a warmer day; their temperatures sit in decreasing order from bottom to top.
+hint: Which days are still unresolved as you sweep, and what order are their temperatures in?
+why: Days waiting for a warmer one form a stack whose temperatures decrease from bottom to top, because a warmer day would have resolved anything colder above it.
+code:
+result = array of n zeros
+stack = empty   // indices, temperatures decreasing
+# For each new day, pop every stacked day that is colder — this new day is the one they were waiting for.
+hint: A new day arrives. Which waiting days does it answer?
+why: Every stacked day colder than it, and they are exactly the ones on top, so popping while colder finds them all.
+code:
+for i in 0..n-1:
+    while stack not empty and temps[i] > temps[stack.top]:
+# For each pop, write current index minus popped index into the result.
+hint: What is the answer for a day you just popped?
+why: The distance from it to today, since today is the first warmer day it met.
+code:
+        j = stack.pop()
+        result[j] = i - j
+# Push the current day; now it waits its turn.
+hint: What happens to today once it has resolved the colder days?
+why: It joins the stack to wait for its own warmer day; each index is pushed and popped at most once, so the sweep is O(n).
+code:
+    stack.push(i)
+# Days never popped keep the default 0 — no warmer day ever comes for them.
+hint: What about days still on the stack when the sweep ends?
+why: No warmer day ever came, and the result array's default 0 already says so.
+code:
+return result
 == pseudocode
 result = array of n zeros
 stack = empty   // indices, temperatures decreasing

@@ -1,11 +1,32 @@
 == nudge
 Feed the source string through one character at a time. When a new character arrives, which partial spellings of the target does it help — and how would you count them without ever listing them?
-== steps
-- Keep row[j] = the number of ways to build the first j characters of t from the source read so far, with row[0] = 1 (one way to build nothing).
-- Read s one character at a time: a character equal to t[j-1] extends every way of building j - 1 characters into a way of building j, so row[j] += row[j-1].
-- Sweep j from len(t) DOWN to 1 — right to left — so the character's own update at j - 1 is not read back at j, which would use one source character twice in a single subsequence.
-- After the whole source is read, row[len(t)] is the answer.
-- Follow-up: the top-down twin is "skip or match" — at (i, j) count the ways skipping s[i], plus (when the characters match) the ways using it — memoised on the two indices.
+== walk
+# Keep row[j] = the number of ways to build the first j characters of t from the source read so far, with row[0] = 1 (one way to build nothing).
+hint: How many ways are there to build an empty target, and what does the rest of the row start at?
+why: One way to build nothing and zero ways to build anything else, so row[0] = 1 anchors every later count.
+code:
+row = array of len(t)+1 zeros
+row[0] = 1
+# Read s one character at a time: a character equal to t[j-1] extends every way of building j - 1 characters into a way of building j, so row[j] += row[j-1].
+hint: A source character matches t[j-1]. Which existing ways does it extend?
+why: Every way of building the first j-1 characters gains one way of building j, so row[j] grows by row[j-1].
+code:
+for c in s:
+        if c == t[j-1]:
+            row[j] = row[j] + row[j-1]
+# Sweep j from len(t) DOWN to 1 — right to left — so the character's own update at j - 1 is not read back at j, which would use one source character twice in a single subsequence.
+hint: If you sweep j upward, what goes wrong when the same character extends both j-1 and j?
+why: The update at j would read the value just written at j-1, using one source character twice; sweeping right to left reads only last round's values.
+code:
+    for j from len(t) down to 1:
+# After the whole source is read, row[len(t)] is the answer.
+hint: When the source is exhausted, where is the answer?
+why: row[len(t)] counts the ways to build all of t; O(|s| * |t|) time with a single row.
+code:
+return row[len(t)]
+# Follow-up: the top-down twin is "skip or match" — at (i, j) count the ways skipping s[i], plus (when the characters match) the ways using it — memoised on the two indices.
+hint: What does the recursive version look like at a position pair?
+why: Skip s[i], plus (if the characters match) use it, memoised on (i, j); it is the same recurrence read top-down.
 == pseudocode
 row = array of len(t)+1 zeros
 row[0] = 1

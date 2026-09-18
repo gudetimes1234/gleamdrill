@@ -1,12 +1,36 @@
 == nudge
 The constraints ban everything a duplicate hunt normally leans on: no sorting, no marking, no extra space. But notice that every value is also a legal position in the array. If each cell is read as pointing somewhere, what shape does the repeated value force — and where have you dealt with that shape before?
-== steps
-- Read position i as a node linked to position nums[i]; because one value repeats, two positions point at the same place, so this implicit list has a cycle.
-- The duplicate value is the cycle's entrance — the position several links converge on.
-- Run Floyd phase one: slow hops once (slow = nums[slow]), fast hops twice; loop until they meet inside the cycle.
-- Run Floyd phase two: restart one pointer at position 0, hop both once per step; where they meet is the entrance — return it.
-- Confirm the constraints hold: the array is never written, and only two indexes are carried.
-- Follow-up: binary search on the value range also works — count how many numbers are at most v; that count exceeds v exactly when the duplicate is at or below v. O(n log n), still O(1) space.
+== walk
+# Read position i as a node linked to position nums[i]; because one value repeats, two positions point at the same place, so this implicit list has a cycle.
+hint: If you treat each value as a pointer to an index, what structure do the n+1 slots form?
+why: A linked list starting at index 0; a repeated value means two indices point at the same slot, and that is a cycle.
+# The duplicate value is the cycle's entrance — the position several links converge on.
+hint: Where in that list is the duplicate value?
+why: At the cycle entrance: the slot that more than one pointer leads to is the duplicate.
+# Run Floyd phase one: slow hops once (slow = nums[slow]), fast hops twice; loop until they meet inside the cycle.
+hint: How do you detect a cycle with no extra memory?
+why: Floyd's tortoise and hare: a slow and a fast pointer must meet inside the cycle if one exists, in O(n) with O(1) space.
+code:
+slow = nums[0]
+fast = nums[nums[0]]
+while slow != fast:
+    slow = nums[slow]
+    fast = nums[nums[fast]]
+# Run Floyd phase two: restart one pointer at position 0, hop both once per step; where they meet is the entrance — return it.
+hint: Having met inside the cycle, how do you find where it starts?
+why: Restart one pointer at 0 and move both one step at a time; the distance from the start to the entrance equals the distance from the meeting point to it, so they meet at the entrance.
+code:
+slow = 0
+while slow != fast:
+    slow = nums[slow]
+    fast = nums[fast]
+return slow
+# Confirm the constraints hold: the array is never written, and only two indexes are carried.
+hint: Did the solution respect the two constraints?
+why: The array is only read, and two indices are the whole state, which is exactly what rules out sorting and hash sets.
+# Follow-up: binary search on the value range also works — count how many numbers are at most v; that count exceeds v exactly when the duplicate is at or below v. O(n log n), still O(1) space.
+hint: Is there another way that also keeps O(1) space?
+why: Binary search on the value range: counting numbers at most v tells which side the duplicate is on, O(n log n) with no extra memory.
 == pseudocode
 slow = nums[0]
 fast = nums[nums[0]]

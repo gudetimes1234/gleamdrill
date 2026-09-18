@@ -1,11 +1,28 @@
 == nudge
 Standing on any step, the money already spent got you there in one of two ways. If you knew the cheapest way to stand on each earlier step, what would standing here cost?
-== steps
-- Define, per step, the cheapest total paid to stand on it: its own price plus the cheaper of the two answers below.
-- Start both rolling values at 0 — beginning on step 0 or step 1 costs nothing until you step off it.
-- Walk the cost array once: standing here costs this step's price plus min(one step back, two steps back).
-- Finish with the min of the last two values, since the top is reached from either of the final two steps — that min is what makes both starts legal.
-- Know the reverse reading too: what it costs to finish from each step gives the same answer and is often the easier direction to state.
+== walk
+# Define, per step, the cheapest total paid to stand on it: its own price plus the cheaper of the two answers below.
+hint: What is the cheapest way to be standing on a given step?
+why: Its own price plus the cheaper of the two steps below, since you arrive from one or two back.
+# Start both rolling values at 0 — beginning on step 0 or step 1 costs nothing until you step off it.
+hint: What does it cost to be on step 0 or step 1 before moving?
+why: Nothing: you may start on either, and you pay only when you step off; both rolling values begin at 0.
+code:
+one_back, two_back = 0, 0
+# Walk the cost array once: standing here costs this step's price plus min(one step back, two steps back).
+hint: What is the update as you walk the prices?
+why: Standing here costs this price plus min of the two previous values; the pair rolls forward, O(n) with O(1) space.
+code:
+for price in cost:
+    one_back, two_back = price + min(one_back, two_back), one_back
+# Finish with the min of the last two values, since the top is reached from either of the final two steps — that min is what makes both starts legal.
+hint: The top is not a step with a price. How do you reach it?
+why: From either of the last two steps, so the answer is the min of the final two values.
+code:
+return min(one_back, two_back)
+# Know the reverse reading too: what it costs to finish from each step gives the same answer and is often the easier direction to state.
+hint: Is there a direction that is easier to explain?
+why: Backwards: the cost to finish from each step is its price plus the cheaper of the two ahead; same answer, often clearer.
 == pseudocode
 one_back, two_back = 0, 0
 for price in cost:

@@ -179,7 +179,7 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
                 ),
               ]),
               ..case m.walk_open, m.walk {
-                True, Some(state) -> walk_panel(m, current, state)
+                True, Some(state) -> walk_panel(current, state)
                 _, _ -> answer_panel(m, current)
               }
             ]),
@@ -942,11 +942,7 @@ fn results_only(m: Model, current: Problem) -> List(Element(Msg)) {
 /// Each step has three layers under it -- a hint that points, a why that
 /// explains, and its slice of the pseudocode -- turned over on request.
 /// Only the code slice is logged as a reveal; the panel says so.
-fn walk_panel(
-  m: Model,
-  current: Problem,
-  state: model.WalkState,
-) -> List(Element(Msg)) {
+fn walk_panel(current: Problem, state: model.WalkState) -> List(Element(Msg)) {
   let steps = model.walk_steps(current.approach)
   let total = list.length(steps)
   let finished = state.step >= total
@@ -1545,7 +1541,6 @@ fn approach_panel(
           html.text(
             case next {
               problem.Nudge(_) -> "Show hint"
-              problem.Steps(_) -> "Show the steps"
               problem.Walk(_) -> "Walk me through it"
               problem.Pseudocode(_) -> "Show pseudocode"
             }
@@ -1582,11 +1577,6 @@ fn approach_stage(stage: problem.ApproachStage) -> Element(Msg) {
   case stage {
     problem.Nudge(text) ->
       html.p([attribute.class("approach-nudge")], [html.text(text)])
-    problem.Steps(items) ->
-      html.ol(
-        [attribute.class("approach-steps")],
-        list.map(items, fn(item) { html.li([], [html.text(item)]) }),
-      )
     // In the ladder a walk reads as the plain list; the hints and whys
     // live in the walkthrough panel, one step at a time.
     problem.Walk(steps) -> walk_summary(steps, True)

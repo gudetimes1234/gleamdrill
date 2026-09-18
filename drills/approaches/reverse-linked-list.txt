@@ -1,12 +1,36 @@
 == nudge
 Every node points forward and you want them all pointing back. The moment you flip one node's link, what have you just lost — and what must you have saved before touching anything?
-== steps
-- Keep two references: previous (starting empty) and the current node.
-- Before changing anything, save current's next — once the link is overwritten, the rest of the list is unreachable.
-- Point current's link back at previous.
-- Slide both forward: previous becomes current, current becomes the saved next.
-- When current runs out, previous is the new head — return it.
-- Follow-up: the recursive version reverses the tail then hooks the next node back; in a cons-list language the same rewiring is an accumulator you prepend to — a value instead of a mutation.
+== walk
+# Keep two references: previous (starting empty) and the current node.
+hint: What two references does an in-place reversal need to carry?
+why: The node already reversed (previous, starting empty) and the current node.
+code:
+previous = null
+while head != null:
+# Before changing anything, save current's next — once the link is overwritten, the rest of the list is unreachable.
+hint: What must be saved before a link is overwritten?
+why: The current node's next, or the rest of the list becomes unreachable.
+code:
+    following = head.next
+# Point current's link back at previous.
+hint: Which way does the current node's link now point?
+why: Backwards, at previous; that is the whole reversal step.
+code:
+    head.next = previous
+# Slide both forward: previous becomes current, current becomes the saved next.
+hint: How do the references advance?
+why: Previous becomes current and current becomes the saved next; one pass, O(n).
+code:
+    previous = head
+    head = following
+# When current runs out, previous is the new head — return it.
+hint: When current is null, which node is the new head?
+why: Previous, the last node processed.
+code:
+return previous
+# Follow-up: the recursive version reverses the tail then hooks the next node back; in a cons-list language the same rewiring is an accumulator you prepend to — a value instead of a mutation.
+hint: What does the recursive version do, and how does a cons-list language express it?
+why: Reverse the tail then hook the head onto its end; with immutable lists the same thing is an accumulator you prepend to, a value rather than a mutation.
 == pseudocode
 previous = null
 while head != null:

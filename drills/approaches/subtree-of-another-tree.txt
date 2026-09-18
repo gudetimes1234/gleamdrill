@@ -1,12 +1,40 @@
 == nudge
 Two different questions are tangled here: whether two trees match exactly, and where to stand while asking. What happens if you refuse to tangle them and solve each one alone?
-== steps
-- Write (or reuse) Same Tree: two empties match, an empty against a node fails, and two nodes need equal values plus matching child pairs.
-- Handle the edges: an empty subRoot is a subtree of anything; an empty root contains nothing.
-- At each node of the main tree ask "identical from here?" — if yes, done.
-- Otherwise recurse into the left and right children and accept either.
-- Know the cost: O(n*m) worst case, driven by partial matches that fail deep.
-- Follow-up: serialise both trees and run substring search to collapse it — sound only if the serialisation marks empty children, or false matches slip through.
+== walk
+# Write (or reuse) Same Tree: two empties match, an empty against a node fails, and two nodes need equal values plus matching child pairs.
+hint: What helper does this problem reduce to?
+why: Same Tree: two empties match, empty against a node fails, and nodes need equal values plus matching children.
+code:
+same(a, b):
+    if a == null and b == null: return true
+    if a == null or b == null: return false
+    return a.value == b.value
+       and same(a.left, b.left)
+       and same(a.right, b.right)
+# Handle the edges: an empty subRoot is a subtree of anything; an empty root contains nothing.
+hint: What are the answers for the empty inputs?
+why: An empty subtree is in everything; an empty main tree contains nothing but the empty tree.
+code:
+isSubtree(root, subRoot):
+    if subRoot == null: return true
+    if root == null: return false
+# At each node of the main tree ask "identical from here?" — if yes, done.
+hint: What question is asked at each node of the main tree?
+why: Is the tree rooted here identical to subRoot; a yes ends the search.
+code:
+    if same(root, subRoot): return true
+# Otherwise recurse into the left and right children and accept either.
+hint: And if not?
+why: Try both children and accept either.
+code:
+    return isSubtree(root.left, subRoot)
+        or isSubtree(root.right, subRoot)
+# Know the cost: O(n*m) worst case, driven by partial matches that fail deep.
+hint: What is the worst case, and what causes it?
+why: O(n * m), from partial matches that fail deep at many nodes.
+# Follow-up: serialise both trees and run substring search to collapse it — sound only if the serialisation marks empty children, or false matches slip through.
+hint: How can serialisation collapse the cost?
+why: Serialise both and substring-search, which is sound only if empty children are marked; otherwise different shapes can serialise alike.
 == pseudocode
 isSubtree(root, subRoot):
     if subRoot == null: return true

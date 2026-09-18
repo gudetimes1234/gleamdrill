@@ -1,11 +1,30 @@
 == nudge
 Walk the top edge, then look hard at what remains. Does the leftover have a familiar shape — and could a change of viewpoint turn "now go down the right side" into the very move you just made?
-== steps
-- Emit the entire first row into the output.
-- Rotate the remaining rows a quarter turn anticlockwise: the column you would have walked down is now the top row.
-- Repeat until nothing is left — there is only ever one move to make.
-- Build the anticlockwise turn as a transpose of the remainder with the row order then reversed.
-- Follow-up: the boundary version tracks four edges closing inward; its traps are the single remaining row or column, where the top and bottom edges are the same edge and a careless walk emits it twice.
+== walk
+# Emit the entire first row into the output.
+hint: What is always the next thing to output?
+why: The first row, in order; the spiral begins along the top.
+code:
+out = []
+while matrix is not empty:
+    out.extend(first row of matrix)
+# Rotate the remaining rows a quarter turn anticlockwise: the column you would have walked down is now the top row.
+hint: After removing the top row, what turn makes the next side into a new top row?
+why: A quarter turn anticlockwise: the right column becomes the top row.
+code:
+    rest = matrix without its first row
+    matrix = transpose(rest) with its rows in reverse order
+# Repeat until nothing is left — there is only ever one move to make.
+hint: How many distinct moves does the loop need?
+why: One; the turn reduces every direction to "take the top row", and it ends when the matrix is empty.
+code:
+return out
+# Build the anticlockwise turn as a transpose of the remainder with the row order then reversed.
+hint: How is the anticlockwise turn built from primitives?
+why: Transpose the remainder, then reverse the order of its rows.
+# Follow-up: the boundary version tracks four edges closing inward; its traps are the single remaining row or column, where the top and bottom edges are the same edge and a careless walk emits it twice.
+hint: What does the four-boundary version have to guard against?
+why: A single remaining row or column, where top and bottom (or left and right) are the same edge and a careless walk emits it twice.
 == pseudocode
 out = []
 while matrix is not empty:

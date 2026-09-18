@@ -1,12 +1,38 @@
 == nudge
 The values are easy to visit; the hard part is knowing where one level ends and the next begins. What if you never held single nodes at all — what larger unit of the tree could you process whole, so the boundaries come for free?
-== steps
-- Hold the current level as one whole list of nodes — the frontier — starting with just the root, or nothing for an empty tree.
-- Each round, record the values of every node on the frontier as one output level.
-- Build the next frontier from all the children of the current one, left to right, skipping empties.
-- Repeat until the frontier is empty, then return the collected levels.
-- Contrast with the trap: a one-node-at-a-time queue gives the right order but no idea where each level ends — the whole-frontier step is what makes the grouping free.
-- Depth-first works too, if each value is filed under its depth in a list of lists.
+== walk
+# Hold the current level as one whole list of nodes — the frontier — starting with just the root, or nothing for an empty tree.
+hint: A queue gives you nodes in the right order. What does it not tell you?
+why: Holding an entire level as one list keeps the level boundaries explicit, which is exactly what a plain one-node queue loses.
+code:
+levels = []
+frontier = [root] if root != null else []
+# Each round, record the values of every node on the frontier as one output level.
+hint: With the whole level in hand, what is the output for this round?
+why: The frontier is one output level by construction, so recording its values is one line with no counting.
+code:
+while frontier is not empty:
+    levels.add(values of every node in frontier)
+# Build the next frontier from all the children of the current one, left to right, skipping empties.
+hint: Where does the next level come from, and in what order should it be built?
+why: Collecting children left to right from the frontier preserves the within-level order the problem wants, and skipping nulls keeps the next list honest.
+code:
+    next = []
+    for node in frontier:
+        if node.left != null: next.add(node.left)
+        if node.right != null: next.add(node.right)
+    frontier = next
+# Repeat until the frontier is empty, then return the collected levels.
+hint: When are you done?
+why: A frontier with no nodes means the previous level was the last; every node was visited once, so the walk is O(n).
+code:
+return levels
+# Contrast with the trap: a one-node-at-a-time queue gives the right order but no idea where each level ends — the whole-frontier step is what makes the grouping free.
+hint: If you used a single queue, how would you know a level had ended?
+why: The usual fix is to read the queue's size at the start of each round and dequeue exactly that many, which is the same idea with the boundary tracked by a count.
+# Depth-first works too, if each value is filed under its depth in a list of lists.
+hint: Could a depth-first walk produce the same grouping?
+why: Yes: carry the depth down the recursion and append each value to levels[depth]; it is the same O(n) work with recursion doing the bookkeeping.
 == pseudocode
 levels = []
 frontier = [root] if root != null else []

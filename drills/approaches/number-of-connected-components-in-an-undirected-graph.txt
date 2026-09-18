@@ -1,12 +1,39 @@
 == nudge
 With no edges at all the answer is obvious. What does each edge do to that obvious answer — and do all of the edges actually do it?
-== steps
-- Start from the no-edge answer: n nodes means n components.
-- Process each edge with union-find: find the root of both endpoints.
-- If the roots differ, the edge genuinely merges two components — union them and count one merge.
-- If the roots match, the edge lies inside one component and changes nothing.
-- Answer n minus the number of real merges — no adjacency list, no traversal.
-- The traversal version is island-counting over an adjacency list; the contrast worth stating is that union-find takes edges as they arrive, while the traversal needs the whole graph first.
+== walk
+# Start from the no-edge answer: n nodes means n components.
+hint: With no edges at all, how many components are there?
+why: n, one per node; every real merge reduces that by one.
+code:
+parent[node] = node, for every node
+# Process each edge with union-find: find the root of both endpoints.
+hint: What does union-find answer about an edge's two ends?
+why: Whether they are already in the same component, by comparing their roots.
+code:
+function find(node):
+    while parent[node] != node: node = parent[node]
+    return node
+
+for (a, b) in edges:
+    rootA, rootB = find(a), find(b)
+# If the roots differ, the edge genuinely merges two components — union them and count one merge.
+hint: When the roots differ, what happens?
+why: Two components become one: link the roots and count a merge.
+code:
+    if rootA != rootB:
+        parent[rootA] = rootB
+        merges += 1
+# If the roots match, the edge lies inside one component and changes nothing.
+hint: And when they match?
+why: The edge lies inside a component and changes nothing.
+# Answer n minus the number of real merges — no adjacency list, no traversal.
+hint: What is the count at the end?
+why: n minus the merges; no adjacency list and no traversal, near-linear with path compression.
+code:
+return n - merges
+# The traversal version is island-counting over an adjacency list; the contrast worth stating is that union-find takes edges as they arrive, while the traversal needs the whole graph first.
+hint: How does this compare with counting islands by traversal?
+why: Traversal needs the whole graph first; union-find processes edges as they arrive, which matters for streaming input.
 == pseudocode
 parent[node] = node, for every node
 

@@ -3,9 +3,7 @@
 
 import gleam/list
 import gleam/string
-import gleamdrill/problem.{
-  type ApproachStage, Nudge, Pseudocode, Steps, Walk, WalkStep,
-}
+import gleamdrill/problem.{type ApproachStage, Nudge, Pseudocode, Walk, WalkStep}
 
 /// The hint ladder for a problem title, vaguest stage first. Titles
 /// are slugged so every language mirror of a problem shares one ladder.
@@ -60,13 +58,47 @@ return false",
       Nudge(
         "When are two strings made of exactly the same material? This is a counting problem in disguise — what one fact about each character would you need from both strings, and what is the cheapest disqualifier you can check before doing any real work?",
       ),
-      Steps([
-        "If the lengths differ, return false before counting anything.",
-        "Build a character-to-count map from the first string.",
-        "Walk the second string, decrementing each character's count.",
-        "Fail the moment a character is missing from the map or its count drops below zero.",
-        "Reaching the end means every count balanced out — return true.",
-        "If the interviewer prefers it simple: sort both strings and compare, at O(n log n) against the map's O(n).",
+      Walk([
+        WalkStep(
+          step: "If the lengths differ, return false before counting anything.",
+          hint: "What cheap check rules out most non-anagrams?",
+          why: "Different lengths.",
+          code: "if length(s) != length(t): return false",
+        ),
+        WalkStep(
+          step: "Build a character-to-count map from the first string.",
+          hint: "What does the first string contribute?",
+          why: "A count of each character.",
+          code: "count = empty map
+for ch in s:
+    count[ch] += 1",
+        ),
+        WalkStep(
+          step: "Walk the second string, decrementing each character's count.",
+          hint: "What does the second string do to those counts?",
+          why: "Decrements them character by character.",
+          code: "for ch in t:
+    count[ch] -= 1",
+        ),
+        WalkStep(
+          step: "Fail the moment a character is missing from the map or its count drops below zero.",
+          hint: "What signals a mismatch during the walk?",
+          why: "A character absent from the map or a count going negative.",
+          code: "if ch not in count: return false
+    if count[ch] < 0: return false",
+        ),
+        WalkStep(
+          step: "Reaching the end means every count balanced out — return true.",
+          hint: "What does reaching the end mean?",
+          why: "With equal lengths, every count balanced, so the strings are anagrams; O(n).",
+          code: "return true",
+        ),
+        WalkStep(
+          step: "If the interviewer prefers it simple: sort both strings and compare, at O(n log n) against the map's O(n).",
+          hint: "What is the simpler but slower check?",
+          why: "Sort both and compare, O(n log n).",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "if length(s) != length(t): return false
@@ -84,12 +116,39 @@ return true",
       Nudge(
         "For each number you visit, you already know exactly what its partner must be. Have you perhaps walked past that partner already — and what would let you ask that question in O(1) instead of rescanning?",
       ),
-      Steps([
-        "Walk the array once, carrying a map from each value seen so far to its index.",
-        "At each number, compute the complement: target minus this number.",
-        "Look the complement up in the map; a hit means done — return its stored index and the current one.",
-        "Otherwise record this number's index and move on; recording after the lookup is what stops an element pairing with itself.",
-        "Know the brute force this beats: checking every pair is O(n squared), the one-pass map is O(n).",
+      Walk([
+        WalkStep(
+          step: "Walk the array once, carrying a map from each value seen so far to its index.",
+          hint: "What do you need to remember as you walk the array?",
+          why: "Each value seen so far with its index, in a map.",
+          code: "seen = empty map
+for i in 0..n-1:",
+        ),
+        WalkStep(
+          step: "At each number, compute the complement: target minus this number.",
+          hint: "What is the partner you are looking for?",
+          why: "The complement: target minus this number.",
+          code: "complement = target - nums[i]",
+        ),
+        WalkStep(
+          step: "Look the complement up in the map; a hit means done — return its stored index and the current one.",
+          hint: "What does a hit look like?",
+          why: "The complement is in the map; return its index and the current one.",
+          code: "if complement in seen:
+        return [seen[complement], i]",
+        ),
+        WalkStep(
+          step: "Otherwise record this number's index and move on; recording after the lookup is what stops an element pairing with itself.",
+          hint: "Why record the current number after the lookup?",
+          why: "So a number cannot pair with itself; O(n) with one pass.",
+          code: "seen[nums[i]] = i",
+        ),
+        WalkStep(
+          step: "Know the brute force this beats: checking every pair is O(n squared), the one-pass map is O(n).",
+          hint: "What does this beat?",
+          why: "Checking every pair, O(n²).",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "seen = empty map
@@ -104,12 +163,41 @@ for i in 0..n-1:
       Nudge(
         "A bucketing problem: every word belongs to exactly one group, so what do all the words in one group share that no outsider has? If you could write that shared thing down as a label, where would you file each word?",
       ),
-      Steps([
-        "Give every word a signature that comes out identical exactly for anagrams.",
-        "Use the tally of each letter — a 26-slot count — as that signature; building it is O(length) per word.",
-        "Keep a map from signature to a list of words, appending each word to its bucket.",
-        "Return the map's values: each bucket is one finished group.",
-        "Follow-up: sorting each word's letters also makes a valid key, at O(L log L) per word instead of O(L).",
+      Walk([
+        WalkStep(
+          step: "Give every word a signature that comes out identical exactly for anagrams.",
+          hint: "What do two anagrams have in common that other words do not?",
+          why: "The same multiset of letters, so any canonical description of that multiset is a key that groups exactly the anagrams.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Use the tally of each letter — a 26-slot count — as that signature; building it is O(length) per word.",
+          hint: "What is the cheapest canonical form to build?",
+          why: "A 26-slot letter count, O(length) per word, with no sorting.",
+          code: "key = array of 26 zeros
+    for ch in word:
+        key[letter_index(ch)] += 1",
+        ),
+        WalkStep(
+          step: "Keep a map from signature to a list of words, appending each word to its bucket.",
+          hint: "Where does each word go?",
+          why: "Into the bucket under its key; a map from key to list, appending as you go, O(total letters).",
+          code: "groups = empty map from key to list
+for word in strs:
+    groups[key].append(word)",
+        ),
+        WalkStep(
+          step: "Return the map's values: each bucket is one finished group.",
+          hint: "What are the groups at the end?",
+          why: "The map's values, one list per key; order between groups is not required.",
+          code: "return values(groups)",
+        ),
+        WalkStep(
+          step: "Follow-up: sorting each word's letters also makes a valid key, at O(L log L) per word instead of O(L).",
+          hint: "What other key would work, and at what cost?",
+          why: "The sorted word, O(L log L) per word instead of O(L); simpler to write, slightly slower.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "groups = empty map from key to list
@@ -125,12 +213,44 @@ return values(groups)",
       Nudge(
         "Two jobs hide in this one: something to measure, then something to select by that measurement. The measuring part you know — but before reaching for sorting, ask how large the measured numbers can possibly get. Does that bound suggest somewhere to file things?",
       ),
-      Steps([
-        "Count each value's frequency with a map.",
-        "Notice no frequency can exceed n, so frequencies themselves can index an array of n+1 buckets.",
-        "Drop each distinct value into the bucket for its count.",
-        "Walk the buckets from highest frequency down, collecting values until you have k — O(n) overall.",
-        "Follow-up: when k is much smaller than n, a heap of size k gives O(n log k); sorting the (value, count) pairs is the simple O(n log n) baseline.",
+      Walk([
+        WalkStep(
+          step: "Count each value's frequency with a map.",
+          hint: "What is the first thing you need about each value?",
+          why: "Its frequency, from one pass with a map.",
+          code: "counts = empty map
+for value in nums:
+    counts[value] += 1",
+        ),
+        WalkStep(
+          step: "Notice no frequency can exceed n, so frequencies themselves can index an array of n+1 buckets.",
+          hint: "What bounds a frequency, and what does that let you index?",
+          why: "It cannot exceed n, so frequencies can index an array of n + 1 buckets.",
+          code: "buckets = array of n+1 empty lists",
+        ),
+        WalkStep(
+          step: "Drop each distinct value into the bucket for its count.",
+          hint: "Where does each distinct value go?",
+          why: "Into the bucket for its count.",
+          code: "for (value, freq) in counts:
+    buckets[freq].append(value)",
+        ),
+        WalkStep(
+          step: "Walk the buckets from highest frequency down, collecting values until you have k — O(n) overall.",
+          hint: "How do you collect the top k?",
+          why: "Walk buckets from the highest frequency down until k values are gathered; O(n) overall.",
+          code: "result = []
+for freq from n down to 1:
+    for value in buckets[freq]:
+        result.append(value)
+        if size(result) == k: return result",
+        ),
+        WalkStep(
+          step: "Follow-up: when k is much smaller than n, a heap of size k gives O(n log k); sorting the (value, count) pairs is the simple O(n log n) baseline.",
+          hint: "What are the alternatives and their costs?",
+          why: "A heap of size k for O(n log k) when k is small, or sorting the pairs for O(n log n).",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "counts = empty map
@@ -150,12 +270,47 @@ for freq from n down to 1:
       Nudge(
         "Any encoding is legal, so the real question lives on the decoding side: reading one long string, how does the decoder know where each piece stops — whatever characters the pieces contain? What could the encoder write down in advance to settle that?",
       ),
-      Steps([
-        "Prefix each string with its length and a fixed marker, like 5#hello, then concatenate all the framed pieces.",
-        "To decode, read digits up to the marker to recover the next length.",
-        "Take exactly that many characters as the next string; the content may contain the marker itself and it does not matter, because you never scan inside a piece.",
-        "Jump past the piece and repeat until the input is exhausted.",
-        "Follow-up: a plain separator only works with escaping, and any scheme must tell an empty list apart from a list holding one empty string.",
+      Walk([
+        WalkStep(
+          step: "Prefix each string with its length and a fixed marker, like 5#hello, then concatenate all the framed pieces.",
+          hint: "Strings can contain any character. What can the encoder write that the decoder can trust regardless?",
+          why: "The length: a number followed by a marker tells the decoder exactly how far to read, whatever the content is.",
+          code: "encode(strs):
+    out = \"\"
+    for s in strs:
+        out += length(s) + \"#\" + s
+    return out",
+        ),
+        WalkStep(
+          step: "To decode, read digits up to the marker to recover the next length.",
+          hint: "How does the decoder recover the next length?",
+          why: "Read digits up to the marker; the marker is safe here because the digits before it are always a number.",
+          code: "decode(data):
+    out = []
+    i = 0
+    while i < length(data):
+        j = position of \"#\" at or after i
+        len = number written in data[i..j-1]",
+        ),
+        WalkStep(
+          step: "Take exactly that many characters as the next string; the content may contain the marker itself and it does not matter, because you never scan inside a piece.",
+          hint: "What if the string itself contains the marker character?",
+          why: "It does not matter, because the decoder never scans inside a piece; it takes exactly len characters by count.",
+          code: "out.append(data[j+1 .. j+len])",
+        ),
+        WalkStep(
+          step: "Jump past the piece and repeat until the input is exhausted.",
+          hint: "Where does the next piece begin?",
+          why: "Just past the current one, so the decoder jumps rather than scans; both directions are O(total length).",
+          code: "i = j + 1 + len
+    return out",
+        ),
+        WalkStep(
+          step: "Follow-up: a plain separator only works with escaping, and any scheme must tell an empty list apart from a list holding one empty string.",
+          hint: "What breaks a plain separator scheme, and what must any scheme distinguish?",
+          why: "A separator needs escaping when it appears in content, and an empty list must encode differently from a list with one empty string.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "encode(strs):
@@ -179,12 +334,44 @@ decode(data):
       Nudge(
         "Division is off the table, so stop thinking about undoing a total. Standing at one position, what two pieces of information — taken together — completely determine its answer? Could each piece be accumulated as you sweep past?",
       ),
-      Steps([
-        "See each answer as (product of everything left of i) times (product of everything right of i).",
-        "Forward pass: write into result[i] the running product of everything before i.",
-        "Backward pass: carry a running suffix product and multiply it into result[i].",
-        "Start both running products at 1 so the two ends come out right.",
-        "Counting only the output array as free, this is already O(1) extra space — the classic follow-up answers itself.",
+      Walk([
+        WalkStep(
+          step: "See each answer as (product of everything left of i) times (product of everything right of i).",
+          hint: "Without division, what two pieces multiply to give the product of everything except position i?",
+          why: "Everything to its left and everything to its right; splitting the product that way is what makes two linear passes enough.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Forward pass: write into result[i] the running product of everything before i.",
+          hint: "What can a single left-to-right pass leave in each slot?",
+          why: "The product of everything before it, carried as a running prefix.",
+          code: "result = array of n ones
+prefix = 1
+for i in 0..n-1:
+    result[i] = prefix
+    prefix *= nums[i]",
+        ),
+        WalkStep(
+          step: "Backward pass: carry a running suffix product and multiply it into result[i].",
+          hint: "And the right-to-left pass?",
+          why: "A running suffix product multiplied into each slot, completing the answer in place; O(n).",
+          code: "suffix = 1
+for i in n-1..0:
+    result[i] *= suffix
+    suffix *= nums[i]",
+        ),
+        WalkStep(
+          step: "Start both running products at 1 so the two ends come out right.",
+          hint: "What value should the running products start at?",
+          why: "1, the identity, so the first element gets the empty product on its left and the last gets it on its right.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Counting only the output array as free, this is already O(1) extra space — the classic follow-up answers itself.",
+          hint: "How much extra space does this use?",
+          why: "Only the output array, which the problem does not count, so the O(1) follow-up is already satisfied.",
+          code: "return result",
+        ),
       ]),
       Pseudocode(
         "result = array of n ones
@@ -203,12 +390,41 @@ return result",
       Nudge(
         "Three separate rules — but look closer and each is the same kind of rule about the same kind of unit. What single question, asked once per filled cell, covers its row, its column, and its box together? And notice what is not being asked: nothing about whether the puzzle can be finished.",
       ),
-      Steps([
-        "Walk every cell, skipping empties — only filled cells can break a rule.",
-        "For each digit, form three signatures: (value, row), (value, column), and (value, box), where the box is named by (row div 3, column div 3).",
-        "Keep one set of every signature seen so far; meeting a signature twice means the same digit twice in one unit — return false.",
-        "Otherwise add all three signatures and continue.",
-        "Finish the sweep clean and the board is valid, solvable or not.",
+      Walk([
+        WalkStep(
+          step: "Walk every cell, skipping empties — only filled cells can break a rule.",
+          hint: "Which cells can break a rule?",
+          why: "Only filled ones, so empties are skipped.",
+          code: "seen = empty set
+for r in 0..8:
+    for c in 0..8:
+        if board[r][c] == \".\": continue
+        v = board[r][c]",
+        ),
+        WalkStep(
+          step: "For each digit, form three signatures: (value, row), (value, column), and (value, box), where the box is named by (row div 3, column div 3).",
+          hint: "How do you name the three units a digit belongs to?",
+          why: "Its row, its column, and its box, with the box named by (row div 3, column div 3).",
+          code: "for key in [(v, \"row\", r), (v, \"col\", c), (v, \"box\", r div 3, c div 3)]:",
+        ),
+        WalkStep(
+          step: "Keep one set of every signature seen so far; meeting a signature twice means the same digit twice in one unit — return false.",
+          hint: "What does seeing a signature twice mean?",
+          why: "The same digit twice in one unit, so the board is invalid.",
+          code: "if key in seen: return false",
+        ),
+        WalkStep(
+          step: "Otherwise add all three signatures and continue.",
+          hint: "What happens on a new signature?",
+          why: "Record all three and move on; one pass over 81 cells.",
+          code: "seen.add(key)",
+        ),
+        WalkStep(
+          step: "Finish the sweep clean and the board is valid, solvable or not.",
+          hint: "What does a clean sweep prove?",
+          why: "The board is valid by the rules, which is different from solvable.",
+          code: "return true",
+        ),
       ]),
       Pseudocode(
         "seen = empty set
@@ -226,12 +442,42 @@ return true",
       Nudge(
         "Sorting would answer this instantly, and the O(n) requirement exists precisely to ban it. What would let you ask \"is this number present?\" in constant time — and among all the numbers, which ones are the only sensible places for a run to begin?",
       ),
-      Steps([
-        "Put every number into a set for O(1) membership tests.",
-        "Only start counting at numbers with no predecessor — where num - 1 is absent from the set.",
-        "From each such start, walk forward while num + length is present, counting as you go.",
-        "Track the longest run seen.",
-        "Trust the accounting: every number is visited at most twice across all walks, so the nested-looking loop is still O(n).",
+      Walk([
+        WalkStep(
+          step: "Put every number into a set for O(1) membership tests.",
+          hint: "What structure answers \"is num + 1 here\" in O(1)?",
+          why: "A set of all the numbers; it also removes duplicates for free.",
+          code: "present = set of nums
+longest = 0",
+        ),
+        WalkStep(
+          step: "Only start counting at numbers with no predecessor — where num - 1 is absent from the set.",
+          hint: "Which numbers are worth starting a count from?",
+          why: "Only those with no predecessor in the set; starting from the middle of a run would count it again.",
+          code: "for num in present:
+    if num - 1 in present: continue",
+        ),
+        WalkStep(
+          step: "From each such start, walk forward while num + length is present, counting as you go.",
+          hint: "From a start, how do you measure the run?",
+          why: "Step forward while the next number is present, counting.",
+          code: "length = 1
+    while num + length in present:
+        length += 1",
+        ),
+        WalkStep(
+          step: "Track the longest run seen.",
+          hint: "What is kept between starts?",
+          why: "The longest run so far.",
+          code: "longest = max(longest, length)
+return longest",
+        ),
+        WalkStep(
+          step: "Trust the accounting: every number is visited at most twice across all walks, so the nested-looking loop is still O(n).",
+          hint: "The loop looks nested. Why is it still O(n)?",
+          why: "Each number is visited once as a candidate start and at most once inside some run, since runs begin only at their first element.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "present = set of nums
@@ -249,12 +495,41 @@ return longest",
       Nudge(
         "Half of this problem is deciding which characters even count. Once only the meaningful ones remain, what is the most direct way to check symmetry — and can you do it without building a cleaned copy at all?",
       ),
-      Steps([
-        "Set one pointer at each end of the raw string.",
-        "Advance each pointer past characters that are not letters or digits.",
-        "Compare the two survivors lowercased; a mismatch is an immediate false.",
-        "Move both pointers inward and repeat until they cross.",
-        "Follow-up: building the cleaned string and comparing it with its reverse is the same complexity — the pointers only save the extra copy, so pick whichever reads better.",
+      Walk([
+        WalkStep(
+          step: "Set one pointer at each end of the raw string.",
+          hint: "Where do the two pointers start?",
+          why: "At the ends of the raw string, with no cleaned copy made.",
+          code: "left, right = 0, n - 1
+while left < right:",
+        ),
+        WalkStep(
+          step: "Advance each pointer past characters that are not letters or digits.",
+          hint: "What should each pointer skip?",
+          why: "Anything that is not a letter or digit.",
+          code: "while left < right and not alnum(s[left]):  left += 1
+    while left < right and not alnum(s[right]): right -= 1",
+        ),
+        WalkStep(
+          step: "Compare the two survivors lowercased; a mismatch is an immediate false.",
+          hint: "How are the two survivors compared?",
+          why: "Lowercased; a mismatch is an immediate false.",
+          code: "if lower(s[left]) != lower(s[right]): return false",
+        ),
+        WalkStep(
+          step: "Move both pointers inward and repeat until they cross.",
+          hint: "What then?",
+          why: "Move both inward and repeat until they cross; O(n) with O(1) space.",
+          code: "left += 1
+    right -= 1
+return true",
+        ),
+        WalkStep(
+          step: "Follow-up: building the cleaned string and comparing it with its reverse is the same complexity — the pointers only save the extra copy, so pick whichever reads better.",
+          hint: "How does this compare with cleaning and reversing?",
+          why: "Same complexity; the pointers only save the extra copy, so choose whichever reads better.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "left, right = 0, n - 1
@@ -271,12 +546,39 @@ return true",
       Nudge(
         "The first Two Sum paid for its speed with extra memory; this one hands you sorted order instead. If some candidate pair sums too small, which end of the array is it safe to give up on — and why can that never skip the answer?",
       ),
-      Steps([
-        "Start one pointer at each end of the array.",
-        "Sum the two pointed-at values; equal to target means done — return the two positions, 1-indexed as asked.",
-        "Too small: move the left pointer right, the only move that can raise the sum.",
-        "Too big: move the right pointer left.",
-        "The pointers meet without a hit only if no pair exists — O(n) time, O(1) space, no map anywhere.",
+      Walk([
+        WalkStep(
+          step: "Start one pointer at each end of the array.",
+          hint: "Where do two pointers start when the array is sorted?",
+          why: "At the two ends, where the sum can be steered up or down by moving either.",
+          code: "left, right = 0, n - 1",
+        ),
+        WalkStep(
+          step: "Sum the two pointed-at values; equal to target means done — return the two positions, 1-indexed as asked.",
+          hint: "What does a hit return?",
+          why: "The two positions, one-indexed as the problem asks.",
+          code: "while left < right:
+    total = numbers[left] + numbers[right]
+    if total == target: return [left + 1, right + 1]",
+        ),
+        WalkStep(
+          step: "Too small: move the left pointer right, the only move that can raise the sum.",
+          hint: "The sum is too small. Which move can raise it?",
+          why: "Only moving left rightward, since the array is sorted.",
+          code: "if total < target: left += 1",
+        ),
+        WalkStep(
+          step: "Too big: move the right pointer left.",
+          hint: "And too big?",
+          why: "Move right leftward.",
+          code: "else: right -= 1",
+        ),
+        WalkStep(
+          step: "The pointers meet without a hit only if no pair exists — O(n) time, O(1) space, no map anywhere.",
+          hint: "What does it cost, and what did you not need?",
+          why: "O(n) time and O(1) space with no hash map; if the pointers meet there is no pair.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "left, right = 0, n - 1
@@ -361,12 +663,41 @@ return result",
       Nudge(
         "Checking every pair of lines is quadratic, so the question is what lets you rule pairs out wholesale. Start from the widest container imaginable: what limits how much it holds — and which of its two walls could possibly be worth abandoning?",
       ),
-      Steps([
-        "Start pointers at both ends: the widest container possible.",
-        "Compute the area — width times the shorter of the two heights — and keep the best seen.",
-        "Move the pointer at the shorter line inward: keeping it can never beat the current area, because the width only shrinks and that short wall still caps the height.",
-        "On equal heights, moving either pointer is fine.",
-        "Stop when the pointers meet; the tracked best is the answer, in one O(n) pass.",
+      Walk([
+        WalkStep(
+          step: "Start pointers at both ends: the widest container possible.",
+          hint: "Which pair of lines gives the largest possible width?",
+          why: "The two ends; starting there means every later move trades width for a chance at more height, and no wider container is ever missed.",
+          code: "left, right = 0, n - 1
+best = 0",
+        ),
+        WalkStep(
+          step: "Compute the area — width times the shorter of the two heights — and keep the best seen.",
+          hint: "What limits how much water two lines can hold?",
+          why: "The shorter line caps the height, so area is width times the smaller height, and tracking the best seen is the whole state.",
+          code: "while left < right:
+    area = (right - left) * min(height[left], height[right])
+    best = max(best, area)",
+        ),
+        WalkStep(
+          step: "Move the pointer at the shorter line inward: keeping it can never beat the current area, because the width only shrinks and that short wall still caps the height.",
+          hint: "If you keep the shorter line and move the taller one, can the area ever grow?",
+          why: "No: width shrinks and the short line still caps the height, so moving the shorter pointer is the only move that can improve, which makes one pass sufficient.",
+          code: "if height[left] < height[right]: left += 1
+    else: right -= 1",
+        ),
+        WalkStep(
+          step: "On equal heights, moving either pointer is fine.",
+          hint: "What if both lines are the same height?",
+          why: "Either move discards a container that cannot beat the current one, so the choice does not matter.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Stop when the pointers meet; the tracked best is the answer, in one O(n) pass.",
+          hint: "When have all the useful pairs been considered?",
+          why: "When the pointers meet; every discarded pair was provably no better, so the tracked best is the answer in O(n).",
+          code: "return best",
+        ),
       ]),
       Pseudocode(
         "left, right = 0, n - 1
@@ -383,12 +714,46 @@ return best",
       Nudge(
         "Forget the shapes of the pools. Stand on a single bar and ask: what must the water level directly above this spot be? What two facts about the rest of the skyline decide it — and could those facts be carried along rather than recomputed?",
       ),
-      Steps([
-        "Water above index i is min(tallest bar to its left, tallest bar to its right) minus height[i].",
-        "The direct reading: precompute running maxima from each side, then sum that formula — two passes, O(n) extra space.",
-        "The one-pass version: pointers at both ends, each carrying the running maximum of its own side.",
-        "Always step the side whose current bar is shorter — on that side its own running max already fixes the water level, whatever stands between the pointers.",
-        "Before stepping, add that side's max minus its height to the total; stop when the pointers meet.",
+      Walk([
+        WalkStep(
+          step: "Water above index i is min(tallest bar to its left, tallest bar to its right) minus height[i].",
+          hint: "How much water sits above one bar?",
+          why: "The lower of the tallest bars on either side, minus the bar's own height, never negative.",
+          code: "",
+        ),
+        WalkStep(
+          step: "The direct reading: precompute running maxima from each side, then sum that formula — two passes, O(n) extra space.",
+          hint: "What is the straightforward way to get those two maxima?",
+          why: "Precompute running maxima from each side and sum the formula; two passes with O(n) extra space.",
+          code: "",
+        ),
+        WalkStep(
+          step: "The one-pass version: pointers at both ends, each carrying the running maximum of its own side.",
+          hint: "How can two pointers avoid the extra arrays?",
+          why: "Each end carries its own running maximum as it moves inward.",
+          code: "left, right = 0, n - 1
+left_max = right_max = total = 0
+while left < right:",
+        ),
+        WalkStep(
+          step: "Always step the side whose current bar is shorter — on that side its own running max already fixes the water level, whatever stands between the pointers.",
+          hint: "Which side is safe to step, and why?",
+          why: "The side with the shorter current bar: its own running max already bounds the water there, since the other side is at least as tall.",
+          code: "if height[left] < height[right]:
+        left_max = max(left_max, height[left])
+        left += 1
+    else:
+        right_max = max(right_max, height[right])
+        right -= 1",
+        ),
+        WalkStep(
+          step: "Before stepping, add that side's max minus its height to the total; stop when the pointers meet.",
+          hint: "What gets added before each step?",
+          why: "That side's max minus its height; the loop ends when the pointers meet, O(n) and O(1) space.",
+          code: "total += left_max - height[left]
+        total += right_max - height[right]
+return total",
+        ),
       ]),
       Pseudocode(
         "left, right = 0, n - 1
@@ -409,12 +774,38 @@ return total",
       Nudge(
         "Suppose today were the day you sold. What single fact about the past would tell you your profit on the spot? If that fact can be carried along as you walk, how many passes does this problem really need?",
       ),
-      Steps([
-        "Sweep the prices once, left to right.",
-        "Carry the cheapest price seen so far — the best possible buy for a sale today.",
-        "At each day, compute price minus that minimum and keep the best profit seen.",
-        "Update the minimum before taking the difference; buying and selling on the same day just yields zero, which is harmless.",
-        "If prices only ever fall, the answer stays 0 — no transaction beats not trading.",
+      Walk([
+        WalkStep(
+          step: "Sweep the prices once, left to right.",
+          hint: "You must buy before you sell. Which direction of scan makes \"before\" easy to keep track of?",
+          why: "A left-to-right sweep means everything already seen is a legal buy day for the current sell day, which is what lets one pass replace checking every pair.",
+          code: "for price in prices:",
+        ),
+        WalkStep(
+          step: "Carry the cheapest price seen so far — the best possible buy for a sale today.",
+          hint: "For a sale today, which past day is the only one worth buying on?",
+          why: "Only the cheapest earlier price matters for today's profit, so a single running minimum stands in for the whole past in O(1) space.",
+          code: "lowest = min(lowest, price)",
+        ),
+        WalkStep(
+          step: "At each day, compute price minus that minimum and keep the best profit seen.",
+          hint: "Given today's price and the cheapest so far, what is the best sale ending today?",
+          why: "Price minus the running minimum is today's best profit; keeping the max over all days is the answer, and the whole thing is O(n).",
+          code: "profit = max(profit, price - lowest)",
+        ),
+        WalkStep(
+          step: "Update the minimum before taking the difference; buying and selling on the same day just yields zero, which is harmless.",
+          hint: "If today's price is the new minimum, does using it for both buy and sell cause harm?",
+          why: "Updating the minimum first can only produce a zero-profit same-day trade, which never beats the current best, so the order is safe and simpler.",
+          code: "",
+        ),
+        WalkStep(
+          step: "If prices only ever fall, the answer stays 0 — no transaction beats not trading.",
+          hint: "What should the answer be when no sale ever makes money?",
+          why: "Starting profit at 0 means a falling market returns 0 rather than a negative number; not trading is always allowed.",
+          code: "profit = 0
+return profit",
+        ),
       ]),
       Pseudocode(
         "lowest = infinity
@@ -429,12 +820,43 @@ return profit",
       Nudge(
         "A substring is a window, and the rule only ever breaks when the window grows. When the newest character is one the window already holds, how much of the window is actually poisoned — and what is the least you must discard to fix it?",
       ),
-      Steps([
-        "Slide a window over the string, with a set of the characters currently inside it.",
-        "Advance the right edge one character at a time.",
-        "While the arriving character is already in the set, evict from the left: remove s[left] and step left forward.",
-        "Add the new character, then record the window size if it is the widest yet.",
-        "Follow-up: remembering each character's last index lets the left edge jump straight past the repeat instead of evicting one at a time — same O(n), fewer steps.",
+      Walk([
+        WalkStep(
+          step: "Slide a window over the string, with a set of the characters currently inside it.",
+          hint: "What does the substring being examined need to remember about itself?",
+          why: "Which characters it contains, so a set alongside the window's edges is the whole state.",
+          code: "window = empty set
+left = 0
+longest = 0",
+        ),
+        WalkStep(
+          step: "Advance the right edge one character at a time.",
+          hint: "Which edge drives the loop?",
+          why: "The right edge advances one character per iteration; the left edge only moves when forced.",
+          code: "for right in 0..n-1:",
+        ),
+        WalkStep(
+          step: "While the arriving character is already in the set, evict from the left: remove s[left] and step left forward.",
+          hint: "A repeat arrives. What has to leave, and until when?",
+          why: "Characters from the left, one at a time, until the earlier copy of the arriving character is gone.",
+          code: "while s[right] in window:
+        window.remove(s[left])
+        left += 1",
+        ),
+        WalkStep(
+          step: "Add the new character, then record the window size if it is the widest yet.",
+          hint: "After the window is clean, what two updates remain?",
+          why: "Admit the new character and compare the window size with the best; each character enters and leaves once, so O(n).",
+          code: "window.add(s[right])
+    longest = max(longest, right - left + 1)
+return longest",
+        ),
+        WalkStep(
+          step: "Follow-up: remembering each character's last index lets the left edge jump straight past the repeat instead of evicting one at a time — same O(n), fewer steps.",
+          hint: "Could the left edge move in one jump instead?",
+          why: "Remembering each character's last index lets left leap just past the repeat; same complexity, fewer steps.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "window = empty set
@@ -453,13 +875,51 @@ return longest",
       Nudge(
         "In any stretch you keep, one letter survives and everything else gets repainted. Given some candidate window, how many changes would it actually need — and at what moment does that number outrun the budget k?",
       ),
-      Steps([
-        "Slide a window, keeping a count of each letter inside it.",
-        "A window is fixable when its size minus the count of its most frequent letter is at most k.",
-        "Grow the right edge, updating that letter's count and the largest count seen.",
-        "When the window breaks the rule, shrink one step from the left.",
-        "The answer is the largest window that was ever valid.",
-        "Subtlety worth saying aloud: the tracked max count can go stale as the window shrinks, and that is safe — a stale max only stops the window growing, and only windows bigger than the best so far can improve the answer.",
+      Walk([
+        WalkStep(
+          step: "Slide a window, keeping a count of each letter inside it.",
+          hint: "What does the window need to know about its contents?",
+          why: "How many of each letter it holds, so a count map travels with the edges.",
+          code: "count = empty map
+left = 0
+best_freq = 0
+longest = 0",
+        ),
+        WalkStep(
+          step: "A window is fixable when its size minus the count of its most frequent letter is at most k.",
+          hint: "When can a window be made uniform with k replacements?",
+          why: "When everything except its most frequent letter fits in k, i.e. size minus max count is at most k.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Grow the right edge, updating that letter's count and the largest count seen.",
+          hint: "What does admitting a character update?",
+          why: "Its count and the largest count seen.",
+          code: "for right in 0..n-1:
+    count[s[right]] += 1
+    best_freq = max(best_freq, count[s[right]])",
+        ),
+        WalkStep(
+          step: "When the window breaks the rule, shrink one step from the left.",
+          hint: "What happens when the rule breaks?",
+          why: "The left edge steps in by one, releasing its letter; the window never needs to shrink further than that.",
+          code: "while (right - left + 1) - best_freq > k:
+        count[s[left]] -= 1
+        left += 1",
+        ),
+        WalkStep(
+          step: "The answer is the largest window that was ever valid.",
+          hint: "What is the answer?",
+          why: "The largest window that was ever valid; each character enters and leaves once, O(n).",
+          code: "longest = max(longest, right - left + 1)
+return longest",
+        ),
+        WalkStep(
+          step: "Subtlety worth saying aloud: the tracked max count can go stale as the window shrinks, and that is safe — a stale max only stops the window growing, and only windows bigger than the best so far can improve the answer.",
+          hint: "The max count is never decreased when the window shrinks. Why is that safe?",
+          why: "A stale max only prevents growth, and only a window larger than the best so far could improve the answer, which needs a genuinely larger count anyway.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "count = empty map
@@ -480,12 +940,44 @@ return longest",
       Nudge(
         "A permutation scrambles order but preserves something else entirely — what? And since every candidate inside s2 must have exactly s1's length, how many candidates are there really, and how cheaply can you move from one to the next?",
       ),
-      Steps([
-        "If s1 is longer than s2, return false outright.",
-        "Build a frequency map of s1 and another of s2's first |s1| characters.",
-        "Equal maps means a permutation is already found.",
-        "Slide the fixed-width window one step at a time: count the entering character in, count the leaving one out, dropping entries that reach zero, and compare maps again.",
-        "Follow-up: instead of comparing whole maps each slide, maintain one integer — how many of the 26 letter counts currently match — and each slide becomes O(1).",
+      Walk([
+        WalkStep(
+          step: "If s1 is longer than s2, return false outright.",
+          hint: "What rules out an answer before any counting?",
+          why: "s1 longer than s2.",
+          code: "if length(s1) > length(s2): return false",
+        ),
+        WalkStep(
+          step: "Build a frequency map of s1 and another of s2's first |s1| characters.",
+          hint: "What two frequency maps start the comparison?",
+          why: "s1's, and the first |s1| characters of s2.",
+          code: "need = counts of s1
+window = counts of first length(s1) characters of s2",
+        ),
+        WalkStep(
+          step: "Equal maps means a permutation is already found.",
+          hint: "What does equal maps mean?",
+          why: "The window is a permutation of s1.",
+          code: "if window == need: return true",
+        ),
+        WalkStep(
+          step: "Slide the fixed-width window one step at a time: count the entering character in, count the leaving one out, dropping entries that reach zero, and compare maps again.",
+          hint: "How does the window move?",
+          why: "Count the entering character in and the leaving one out, dropping zero entries so the maps stay comparable.",
+          code: "for i in length(s1)..length(s2)-1:
+    window[s2[i]] += 1
+    old = s2[i - length(s1)]
+    window[old] -= 1
+    if window[old] == 0: remove old from window
+    if window == need: return true
+return false",
+        ),
+        WalkStep(
+          step: "Follow-up: instead of comparing whole maps each slide, maintain one integer — how many of the 26 letter counts currently match — and each slide becomes O(1).",
+          hint: "How do you avoid comparing whole maps each slide?",
+          why: "Track how many of the 26 letter counts currently match; each slide updates that in O(1).",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "if length(s1) > length(s2): return false
@@ -505,12 +997,46 @@ return false",
       Nudge(
         "Two forces pull at the window: it must grow until it holds everything t asks for, then prove itself by shrinking. The expensive part is knowing when it qualifies — what single number could announce \"the window is complete\" without re-checking every character each time?",
       ),
-      Steps([
-        "Count the characters t needs into a map, and set missing to t's length.",
-        "Sweep the right edge over s; when an arriving character is still genuinely needed (its count is positive), decrement missing. Decrement its count either way — negative counts just record surplus.",
-        "The moment missing reaches zero, the window is valid.",
-        "While it stays valid, record the window if it is the shortest yet, then release the left character: bump its count back up, and if that count goes positive the window has broken — missing returns to one.",
-        "Keep growing after each break; at the end return the shortest window recorded, or the empty string if none ever qualified.",
+      Walk([
+        WalkStep(
+          step: "Count the characters t needs into a map, and set missing to t's length.",
+          hint: "What does the window have to satisfy, and how do you keep that checkable in O(1)?",
+          why: "Cover every character of t with multiplicity; a need count per character plus one missing total makes validity a single comparison.",
+          code: "need = counts of t
+missing = length(t)",
+        ),
+        WalkStep(
+          step: "Sweep the right edge over s; when an arriving character is still genuinely needed (its count is positive), decrement missing. Decrement its count either way — negative counts just record surplus.",
+          hint: "An arriving character: when does it reduce what is missing, and what about extras?",
+          why: "Only while its need is still positive; decrementing the count regardless lets negatives record surplus for later release.",
+          code: "left = 0
+best = none
+for right in 0..n-1:
+    if need[s[right]] > 0: missing -= 1
+    need[s[right]] -= 1",
+        ),
+        WalkStep(
+          step: "The moment missing reaches zero, the window is valid.",
+          hint: "How do you know the window is valid?",
+          why: "missing hits zero; nothing else has to be scanned.",
+          code: "while missing == 0:",
+        ),
+        WalkStep(
+          step: "While it stays valid, record the window if it is the shortest yet, then release the left character: bump its count back up, and if that count goes positive the window has broken — missing returns to one.",
+          hint: "While valid, what two things happen at the left edge?",
+          why: "Record the window if shortest, then release the left character: its need rises, and if it goes positive the window broke and missing returns to one.",
+          code: "if best is none or right - left + 1 < width(best):
+            best = (left, right)
+        need[s[left]] += 1
+        if need[s[left]] > 0: missing += 1
+        left += 1",
+        ),
+        WalkStep(
+          step: "Keep growing after each break; at the end return the shortest window recorded, or the empty string if none ever qualified.",
+          hint: "What happens after a break, and what is returned?",
+          why: "The right edge keeps growing to repair it; each character enters and leaves once, O(n), and the shortest recorded window or the empty string is the answer.",
+          code: "return substring at best, or \"\"",
+        ),
       ]),
       Pseudocode(
         "need = counts of t
@@ -533,12 +1059,47 @@ return substring at best, or \"\"",
       Nudge(
         "Adding to a running maximum is trivial — it is the element leaving the window that ruins everything, because dropping the champion tells you nothing about the runner-up. What extra record, prepared ahead of time or kept as you go, would let a maximum survive removals?",
       ),
-      Steps([
-        "Cut the array into blocks of width k, then precompute two arrays: left[i], the running max from each block's start forward, and right[i], the running max from each block's end backward.",
-        "Observe that any window of width k straddles at most one block boundary.",
-        "So every window is a suffix of one block plus a prefix of the next, and its maximum is max(right[start], left[start + k - 1]).",
-        "Emit that value for each start — three plain O(n) passes, no clever data structure.",
-        "Follow-up: the other classic O(n) answer is a deque of indices kept in decreasing value order — evict the front when it leaves the window, pop the back while smaller than the newcomer, and the front is always the answer.",
+      Walk([
+        WalkStep(
+          step: "Cut the array into blocks of width k, then precompute two arrays: left[i], the running max from each block's start forward, and right[i], the running max from each block's end backward.",
+          hint: "If you split the array into blocks of k, what two running maxima are cheap to precompute?",
+          why: "The max from each block's start forward and from each block's end backward.",
+          code: "left = array of n
+right = array of n
+for i in 0..n-1:
+    if i mod k == 0: left[i] = nums[i]
+    else: left[i] = max(left[i-1], nums[i])
+for i in n-1..0:
+    if i == n-1 or (i+1) mod k == 0: right[i] = nums[i]
+    else: right[i] = max(right[i+1], nums[i])",
+        ),
+        WalkStep(
+          step: "Observe that any window of width k straddles at most one block boundary.",
+          hint: "How many block boundaries can a window of width k cross?",
+          why: "At most one, which is what makes the two arrays sufficient.",
+          code: "",
+        ),
+        WalkStep(
+          step: "So every window is a suffix of one block plus a prefix of the next, and its maximum is max(right[start], left[start + k - 1]).",
+          hint: "What is a window in terms of the blocks?",
+          why: "A suffix of one block plus a prefix of the next, so its max is max(right[start], left[end]).",
+          code: "",
+        ),
+        WalkStep(
+          step: "Emit that value for each start — three plain O(n) passes, no clever data structure.",
+          hint: "What does the output loop look like?",
+          why: "One value per start, three O(n) passes total, no data structure.",
+          code: "answer = []
+for start in 0..n-k:
+    answer.append(max(right[start], left[start + k - 1]))
+return answer",
+        ),
+        WalkStep(
+          step: "Follow-up: the other classic O(n) answer is a deque of indices kept in decreasing value order — evict the front when it leaves the window, pop the back while smaller than the newcomer, and the front is always the answer.",
+          hint: "What is the other classic linear solution?",
+          why: "A deque of indices in decreasing value order: drop the front when it leaves the window, pop the back while smaller than the newcomer, read the front.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "left = array of n
@@ -559,11 +1120,35 @@ return answer",
       Nudge(
         "The most recently opened bracket must be the first one to close — where have you seen that discipline before? And beyond a plain mismatch, what two quieter ways can a string fail?",
       ),
-      Steps([
-        "Walk the string, keeping the still-unclosed openers in last-in-first-out order.",
-        "On an opener, push it.",
-        "On a closer, the top of the stack must be its matching opener: an empty stack or a wrong opener means false.",
-        "At the end the stack must be empty — anything left is an opener that never closed.",
+      Walk([
+        WalkStep(
+          step: "Walk the string, keeping the still-unclosed openers in last-in-first-out order.",
+          hint: "What order do openers need to be closed in?",
+          why: "Last opened, first closed, which is exactly a stack.",
+          code: "pairs = { \")\": \"(\", \"]\": \"[\", \"}\": \"{\" }
+stack = empty
+for ch in s:",
+        ),
+        WalkStep(
+          step: "On an opener, push it.",
+          hint: "What happens on an opener?",
+          why: "Push it and wait.",
+          code: "else:
+        stack.push(ch)",
+        ),
+        WalkStep(
+          step: "On a closer, the top of the stack must be its matching opener: an empty stack or a wrong opener means false.",
+          hint: "What must be true when a closer arrives?",
+          why: "The stack's top is its matching opener; an empty stack or a mismatch fails.",
+          code: "if ch is a closer:
+        if stack is empty or stack.pop() != pairs[ch]: return false",
+        ),
+        WalkStep(
+          step: "At the end the stack must be empty — anything left is an opener that never closed.",
+          hint: "What does a leftover opener mean at the end?",
+          why: "It never closed, so the string is valid only if the stack is empty; O(n).",
+          code: "return stack is empty",
+        ),
       ]),
       Pseudocode(
         "pairs = { \")\": \"(\", \"]\": \"[\", \"}\": \"{\" }
@@ -580,12 +1165,43 @@ return stack is empty",
       Nudge(
         "Push, pop, and top are free — retrieving the minimum in O(1) is the intruder. When you push a value, what one extra fact could you freeze alongside it, so that popping never forces you to recount what remains?",
       ),
-      Steps([
-        "Keep a second stack of minimums rising and falling in step with the main one.",
-        "On push, also push min(new value, top of the min stack) — the minimum of everything at or below this entry.",
-        "On pop, pop both stacks together; the previous minimum simply resurfaces.",
-        "getMin is the min stack's top, so all four operations are O(1).",
-        "Variant worth knowing: storing (value, min-so-far) pairs in one stack is the same idea with the bookkeeping fused into each entry.",
+      Walk([
+        WalkStep(
+          step: "Keep a second stack of minimums rising and falling in step with the main one.",
+          hint: "What extra information would make getMin O(1)?",
+          why: "The minimum of everything below each entry, kept on a parallel stack that rises and falls with the main one.",
+          code: "",
+        ),
+        WalkStep(
+          step: "On push, also push min(new value, top of the min stack) — the minimum of everything at or below this entry.",
+          hint: "What goes on the min stack when a value is pushed?",
+          why: "The smaller of the new value and the current minimum, so each level knows the minimum at or below it.",
+          code: "push(v):
+    stack.push(v)
+    if mins is empty: mins.push(v)
+    else: mins.push(min(v, mins.top))",
+        ),
+        WalkStep(
+          step: "On pop, pop both stacks together; the previous minimum simply resurfaces.",
+          hint: "What does popping have to do?",
+          why: "Pop both stacks; the earlier minimum resurfaces on its own.",
+          code: "pop():
+    stack.pop()
+    mins.pop()",
+        ),
+        WalkStep(
+          step: "getMin is the min stack's top, so all four operations are O(1).",
+          hint: "Where is the minimum?",
+          why: "The min stack's top; all four operations are O(1).",
+          code: "top(): return stack.top
+getMin(): return mins.top",
+        ),
+        WalkStep(
+          step: "Variant worth knowing: storing (value, min-so-far) pairs in one stack is the same idea with the bookkeeping fused into each entry.",
+          hint: "How could the two stacks be fused?",
+          why: "Store (value, min-so-far) pairs in one stack; same idea, one structure.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "push(v):
@@ -606,12 +1222,42 @@ getMin(): return mins.top",
       Nudge(
         "This notation was invented so that by the time an operator arrives, its inputs are already sitting somewhere convenient, fully evaluated. Where would they be sitting — and in what order do they come back out?",
       ),
-      Steps([
-        "Walk the tokens, keeping evaluated numbers on a stack.",
-        "A number: push it.",
-        "An operator: pop twice — the first value popped is the RIGHT operand, the second the left — apply, and push the result.",
-        "Make division truncate toward zero rather than floor; with a negative operand those differ, so divide the magnitudes and reapply the sign.",
-        "The single value left on the stack at the end is the answer.",
+      Walk([
+        WalkStep(
+          step: "Walk the tokens, keeping evaluated numbers on a stack.",
+          hint: "In postfix notation, what has to be waiting when an operator appears?",
+          why: "Its operands, already evaluated, which is exactly what a stack of numbers holds.",
+          code: "stack = empty
+for token in tokens:",
+        ),
+        WalkStep(
+          step: "A number: push it.",
+          hint: "What happens to a plain number?",
+          why: "It is pushed to wait for an operator; nothing about it is decided yet.",
+          code: "else:
+        stack.push(number(token))",
+        ),
+        WalkStep(
+          step: "An operator: pop twice — the first value popped is the RIGHT operand, the second the left — apply, and push the result.",
+          hint: "An operator pops two values. Which one is the left operand?",
+          why: "The second one popped: the first popped was pushed last, so it is the right operand; getting this wrong breaks subtraction and division.",
+          code: "if token is an operator:
+        b = stack.pop()
+        a = stack.pop()
+        stack.push(apply(token, a, b))",
+        ),
+        WalkStep(
+          step: "Make division truncate toward zero rather than floor; with a negative operand those differ, so divide the magnitudes and reapply the sign.",
+          hint: "What does -7 / 2 give in your language, and what does the problem want?",
+          why: "The problem truncates toward zero (-3), while floor division gives -4; dividing magnitudes and reapplying the sign makes it right everywhere.",
+          code: "// \"/\" truncates toward zero",
+        ),
+        WalkStep(
+          step: "The single value left on the stack at the end is the answer.",
+          hint: "When the tokens run out, what is on the stack?",
+          why: "Exactly one value for a valid expression, and it is the result; the whole evaluation is O(n).",
+          code: "return stack.top",
+        ),
       ]),
       Pseudocode(
         "stack = empty
@@ -629,13 +1275,48 @@ return stack.top",
       Nudge(
         "Generating every string of brackets and filtering would mostly produce garbage — could you build only the valid ones instead? Mid-construction, what two numbers tell you exactly which characters are still allowed to come next?",
       ),
-      Steps([
-        "Build strings one character at a time, tracking how many openers and closers remain to be placed.",
-        "An opener is legal whenever any openers remain.",
-        "A closer is legal only while more closers than openers remain — that surplus is exactly the count of currently unclosed openers.",
-        "When both counters hit zero the string is complete and valid by construction: record it.",
-        "Recurse on each legal choice, undoing the partial addition on the way back.",
-        "Follow-up: every balanced string is \"(\" A \")\" B for a unique split, so composing smaller answers enumerates the same set — and the count is the nth Catalan number.",
+      Walk([
+        WalkStep(
+          step: "Build strings one character at a time, tracking how many openers and closers remain to be placed.",
+          hint: "What two counts fully describe a partial string's future?",
+          why: "How many openers and closers are still to be placed; every legality rule below is a comparison of those two.",
+          code: "build(open_left, close_left, current):",
+        ),
+        WalkStep(
+          step: "An opener is legal whenever any openers remain.",
+          hint: "When is it safe to add an opener?",
+          why: "Whenever any remain; an opener can never break balance on its own.",
+          code: "if open_left > 0:
+        build(open_left - 1, close_left, current + \"(\")",
+        ),
+        WalkStep(
+          step: "A closer is legal only while more closers than openers remain — that surplus is exactly the count of currently unclosed openers.",
+          hint: "When is a closer safe?",
+          why: "Only while more closers than openers remain, because that surplus equals the number of unclosed openers; a closer with nothing open would go negative.",
+          code: "if close_left > open_left:
+        build(open_left, close_left - 1, current + \")\")",
+        ),
+        WalkStep(
+          step: "When both counters hit zero the string is complete and valid by construction: record it.",
+          hint: "When is a string finished, and does it need checking?",
+          why: "Both counts at zero; the legality rules made every prefix valid, so the result is valid by construction.",
+          code: "if open_left == 0 and close_left == 0:
+        out.append(current)
+        return",
+        ),
+        WalkStep(
+          step: "Recurse on each legal choice, undoing the partial addition on the way back.",
+          hint: "What state has to be restored when a branch returns?",
+          why: "With strings built by concatenation nothing needs undoing; with a shared buffer the last character is popped, the classic backtracking step.",
+          code: "build(n, n, \"\")
+return out",
+        ),
+        WalkStep(
+          step: "Follow-up: every balanced string is \"(\" A \")\" B for a unique split, so composing smaller answers enumerates the same set — and the count is the nth Catalan number.",
+          hint: "Is there a way to count or build these without backtracking?",
+          why: "Every balanced string is \"(\" A \")\" B for a unique split, so composing smaller answers enumerates the set, and the count is the Catalan number.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "out = []
@@ -655,12 +1336,40 @@ return out",
       Nudge(
         "Each day is waiting for news from the future, and a single warm day can settle many of them at once. Which of the still-waiting days does it settle — and what order were they left waiting in?",
       ),
-      Steps([
-        "Keep a stack of indices still waiting for a warmer day; their temperatures sit in decreasing order from bottom to top.",
-        "For each new day, pop every stacked day that is colder — this new day is the one they were waiting for.",
-        "For each pop, write current index minus popped index into the result.",
-        "Push the current day; now it waits its turn.",
-        "Days never popped keep the default 0 — no warmer day ever comes for them.",
+      Walk([
+        WalkStep(
+          step: "Keep a stack of indices still waiting for a warmer day; their temperatures sit in decreasing order from bottom to top.",
+          hint: "Which days are still unresolved as you sweep, and what order are their temperatures in?",
+          why: "Days waiting for a warmer one form a stack whose temperatures decrease from bottom to top, because a warmer day would have resolved anything colder above it.",
+          code: "result = array of n zeros
+stack = empty   // indices, temperatures decreasing",
+        ),
+        WalkStep(
+          step: "For each new day, pop every stacked day that is colder — this new day is the one they were waiting for.",
+          hint: "A new day arrives. Which waiting days does it answer?",
+          why: "Every stacked day colder than it, and they are exactly the ones on top, so popping while colder finds them all.",
+          code: "for i in 0..n-1:
+    while stack not empty and temps[i] > temps[stack.top]:",
+        ),
+        WalkStep(
+          step: "For each pop, write current index minus popped index into the result.",
+          hint: "What is the answer for a day you just popped?",
+          why: "The distance from it to today, since today is the first warmer day it met.",
+          code: "j = stack.pop()
+        result[j] = i - j",
+        ),
+        WalkStep(
+          step: "Push the current day; now it waits its turn.",
+          hint: "What happens to today once it has resolved the colder days?",
+          why: "It joins the stack to wait for its own warmer day; each index is pushed and popped at most once, so the sweep is O(n).",
+          code: "stack.push(i)",
+        ),
+        WalkStep(
+          step: "Days never popped keep the default 0 — no warmer day ever comes for them.",
+          hint: "What about days still on the stack when the sweep ends?",
+          why: "No warmer day ever came, and the result array's default 0 already says so.",
+          code: "return result",
+        ),
       ]),
       Pseudocode(
         "result = array of n zeros
@@ -677,12 +1386,43 @@ return result",
       Nudge(
         "Positions and speeds are a distraction until you ask one question per car: when would it reach the target if nothing were in the way? Once every car is a single number, which neighbour decides whether it stays independent — and in what order should you meet the cars?",
       ),
-      Steps([
-        "Sort the cars by starting position, closest to the target first.",
-        "Walk that order carrying the unhindered arrival time of the fleet ahead.",
-        "A car whose own arrival time is at most the lead fleet's catches it and joins — its speed stops mattering from then on.",
-        "A car arriving strictly later can never catch up: count a new fleet and make its time the new lead time.",
-        "Compare arrival times cross-multiplied — distance times the other's speed on each side — so the arithmetic stays in integers.",
+      Walk([
+        WalkStep(
+          step: "Sort the cars by starting position, closest to the target first.",
+          hint: "A car can only be blocked by a car ahead of it. What order lets you always know what is ahead?",
+          why: "Sorting by position, nearest the target first, means every car you visit has already had everything ahead of it resolved.",
+          code: "cars = (position, speed) pairs sorted by position, descending",
+        ),
+        WalkStep(
+          step: "Walk that order carrying the unhindered arrival time of the fleet ahead.",
+          hint: "What single fact about the fleet ahead decides whether this car joins it?",
+          why: "Its arrival time: a car catches a fleet if and only if it would have arrived no later, so one number summarises the entire fleet.",
+          code: "fleets = 0
+lead_dist, lead_speed = 0, 1
+for (pos, spd) in cars:
+    dist = target - pos",
+        ),
+        WalkStep(
+          step: "A car whose own arrival time is at most the lead fleet's catches it and joins — its speed stops mattering from then on.",
+          hint: "Once a car catches the fleet ahead, does its own speed still matter?",
+          why: "It is slowed to the fleet's pace, so it arrives when the fleet does; the fleet's time stays the lead time and nothing needs updating.",
+          code: "",
+        ),
+        WalkStep(
+          step: "A car arriving strictly later can never catch up: count a new fleet and make its time the new lead time.",
+          hint: "What does arriving strictly later than the fleet ahead mean for this car?",
+          why: "It never catches up, so it heads a new fleet and becomes the lead time for everything behind it.",
+          code: "if arrives later than lead:
+        fleets += 1
+        lead_dist, lead_speed = dist, spd
+return fleets",
+        ),
+        WalkStep(
+          step: "Compare arrival times cross-multiplied — distance times the other's speed on each side — so the arithmetic stays in integers.",
+          hint: "Comparing dist / speed on each side risks floating point. How do you compare two fractions exactly?",
+          why: "Cross-multiplying compares dist1 * speed2 against dist2 * speed1 with integers only, so equal arrival times are detected exactly.",
+          code: "# later means: dist * lead_speed > lead_dist * spd",
+        ),
       ]),
       Pseudocode(
         "cars = (position, speed) pairs sorted by position, descending
@@ -700,12 +1440,44 @@ return fleets",
       Nudge(
         "Every candidate rectangle is really one bar stretched as wide as its own height allows. For a given bar, what finally stops it stretching in each direction — and could a single sweep discover both of its walls?",
       ),
-      Steps([
-        "Sweep the bars keeping a stack of (start index, height) entries with heights increasing.",
-        "A new bar shorter than the stack's top closes the taller entries: pop each one, and its rectangle is its height times (current index minus its start).",
-        "The new bar inherits the start of the last entry it popped — it would have fit under every one of them, so it extends that far left.",
-        "Push (inherited start, height) and track the best area throughout.",
-        "After the sweep, anything still stacked was never cut off: close each at width n minus its start.",
+      Walk([
+        WalkStep(
+          step: "Sweep the bars keeping a stack of (start index, height) entries with heights increasing.",
+          hint: "Which bars could still be the bottom of a rectangle extending to the right?",
+          why: "Those not yet cut off by a shorter bar; keeping them on a stack with increasing heights means the top is always the first to be cut.",
+          code: "stack = empty   // (start, height), heights increasing
+best = 0",
+        ),
+        WalkStep(
+          step: "A new bar shorter than the stack's top closes the taller entries: pop each one, and its rectangle is its height times (current index minus its start).",
+          hint: "A shorter bar arrives. What does it settle?",
+          why: "Every taller stacked bar can extend no further right, so each pops with a rectangle of its height times the distance from its start to here.",
+          code: "for i in 0..n-1:
+    start = i
+    while stack not empty and stack.top.height > heights[i]:
+        (s, h) = stack.pop()
+        best = max(best, h * (i - s))",
+        ),
+        WalkStep(
+          step: "The new bar inherits the start of the last entry it popped — it would have fit under every one of them, so it extends that far left.",
+          hint: "How far left does the new bar's rectangle reach?",
+          why: "To the start of the last bar it popped, because the new bar is shorter than all of them and so fits under them.",
+          code: "start = s",
+        ),
+        WalkStep(
+          step: "Push (inherited start, height) and track the best area throughout.",
+          hint: "What is pushed, and what is tracked?",
+          why: "The new bar with its inherited start, and the best area so far; each bar is pushed and popped once, O(n).",
+          code: "stack.push((start, heights[i]))",
+        ),
+        WalkStep(
+          step: "After the sweep, anything still stacked was never cut off: close each at width n minus its start.",
+          hint: "What about bars still on the stack at the end?",
+          why: "Nothing ever cut them off, so they extend to the end: close each at width n minus its start.",
+          code: "for (s, h) in stack:
+    best = max(best, h * (n - s))
+return best",
+        ),
       ]),
       Pseudocode(
         "stack = empty   // (start, height), heights increasing
@@ -726,12 +1498,39 @@ return best",
       Nudge(
         "One comparison against one well-chosen element — how much of the array can that single answer eliminate? And what promise about your two boundary markers must survive every iteration for the loop to be correct?",
       ),
-      Steps([
-        "Keep inclusive bounds left and right around the region that could still hold the target.",
-        "Probe the middle, computed as left + (right - left) div 2 so fixed-width languages cannot overflow.",
-        "A match returns the index; a smaller middle means the target can only be right of mid, a larger one only left.",
-        "Move the losing bound past mid — never onto it, or the loop can stall forever.",
-        "Bounds crossing means the region is empty: return -1. O(log n) because the region halves every step.",
+      Walk([
+        WalkStep(
+          step: "Keep inclusive bounds left and right around the region that could still hold the target.",
+          hint: "What do left and right mean, exactly? Is the target allowed to be at either bound?",
+          why: "Inclusive bounds make the invariant simple: the target, if present, lies within [left, right], and the loop condition falls straight out of that.",
+          code: "left, right = 0, n - 1
+while left <= right:",
+        ),
+        WalkStep(
+          step: "Probe the middle, computed as left + (right - left) div 2 so fixed-width languages cannot overflow.",
+          hint: "Why not just (left + right) / 2?",
+          why: "left + (right - left) / 2 gives the same midpoint without the sum overflowing a fixed-width integer, and it is the form interviewers look for.",
+          code: "mid = left + (right - left) div 2",
+        ),
+        WalkStep(
+          step: "A match returns the index; a smaller middle means the target can only be right of mid, a larger one only left.",
+          hint: "The middle is not the target. What does the sort order tell you about which half can still hold it?",
+          why: "Because the array is sorted, one comparison rules out an entire half, which is the whole reason the search is logarithmic.",
+          code: "if nums[mid] == target: return mid
+    if nums[mid] < target: left = mid + 1",
+        ),
+        WalkStep(
+          step: "Move the losing bound past mid — never onto it, or the loop can stall forever.",
+          hint: "If you set left = mid instead of mid + 1, what happens when left and right are one apart?",
+          why: "mid has already been checked, so the new bound must step past it; landing on it can leave the region unchanged and the loop spinning forever.",
+          code: "else: right = mid - 1",
+        ),
+        WalkStep(
+          step: "Bounds crossing means the region is empty: return -1. O(log n) because the region halves every step.",
+          hint: "What does left > right say about the region you were searching?",
+          why: "Crossed bounds mean the candidate region is empty, so the target is absent; each iteration halves the region, giving O(log n).",
+          code: "return -1",
+        ),
       ]),
       Pseudocode(
         "left, right = 0, n - 1
@@ -747,12 +1546,41 @@ return -1",
       Nudge(
         "Read the guarantees again: sorted rows that never overlap. What does that make the matrix as a whole, once you squint past the grid shape — and how many comparisons should a structure like that really cost?",
       ),
-      Steps([
-        "Binary search over the rows first: compare the target against a middle row's first and last values.",
-        "A row whose last value is too small sends the search below it; one whose first value is too big sends it above.",
-        "Landing on the one row that could contain the target, binary search inside it — O(log m + log n) total.",
-        "Alternative with the same bound: treat the grid as one flat sorted array of m*n values, mapping position p to matrix[p div n][p mod n] and halving once.",
-        "Follow-up: the staircase walk from the top-right corner discards a whole row or column per step, runs O(m + n), and does not even need the rows to be non-overlapping.",
+      Walk([
+        WalkStep(
+          step: "Binary search over the rows first: compare the target against a middle row's first and last values.",
+          hint: "With sorted rows that continue one another, what can you binary search first?",
+          why: "The rows, comparing the target against a middle row's first and last values.",
+          code: "low, high = 0, m - 1
+while low <= high:
+    mid = (low + high) div 2",
+        ),
+        WalkStep(
+          step: "A row whose last value is too small sends the search below it; one whose first value is too big sends it above.",
+          hint: "What does each row comparison tell you?",
+          why: "A last value below the target means look below; a first value above it means look above.",
+          code: "if last of matrix[mid] < target: low = mid + 1
+    else if first of matrix[mid] > target: high = mid - 1",
+        ),
+        WalkStep(
+          step: "Landing on the one row that could contain the target, binary search inside it — O(log m + log n) total.",
+          hint: "When you land on the only row that could hold the target, what remains?",
+          why: "A binary search within it; O(log m + log n) overall.",
+          code: "else: return binary_search(matrix[mid], target)
+return false",
+        ),
+        WalkStep(
+          step: "Alternative with the same bound: treat the grid as one flat sorted array of m*n values, mapping position p to matrix[p div n][p mod n] and halving once.",
+          hint: "How would you treat the grid as one array?",
+          why: "Map position p to matrix[p div n][p mod n] and binary search over m * n positions; same bound, one loop.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Follow-up: the staircase walk from the top-right corner discards a whole row or column per step, runs O(m + n), and does not even need the rows to be non-overlapping.",
+          hint: "What does the top-right staircase walk offer?",
+          why: "O(m + n) by discarding a row or column per step, and it works even when rows overlap.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "low, high = 0, m - 1
@@ -768,13 +1596,48 @@ return false",
       Nudge(
         "You are asked for the smallest speed that works. If some speed gets Koko done in time, what do you immediately know about every faster speed? What kind of search does that one-way structure invite — and over what range?",
       ),
-      Steps([
-        "Write the feasibility check first: at speed k, a pile costs ceil(pile / k) hours because piles never share an hour; sum the costs and compare with h.",
-        "Notice the check is monotone — if a speed finishes in time, every faster speed does too.",
-        "Binary search on the answer, not the input: low starts at 1, high at the largest pile.",
-        "Test the midpoint speed; if it finishes within h hours, the answer is mid or slower, so pull high down to mid.",
-        "Otherwise mid is too slow — push low to mid + 1.",
-        "When low meets high, that speed is the smallest that works — return it.",
+      Walk([
+        WalkStep(
+          step: "Write the feasibility check first: at speed k, a pile costs ceil(pile / k) hours because piles never share an hour; sum the costs and compare with h.",
+          hint: "Given a speed, how many hours does one pile take, and can two piles share an hour?",
+          why: "Each pile costs ceil(pile / k) hours and hours are never shared, so summing those against h is the whole feasibility test.",
+          code: "hours = 0
+    for pile in piles:
+        hours += ceil(pile / mid)",
+        ),
+        WalkStep(
+          step: "Notice the check is monotone — if a speed finishes in time, every faster speed does too.",
+          hint: "If speed k finishes in time, what about k + 1?",
+          why: "Faster always finishes too, so feasibility is monotone in k, which is exactly the property that lets binary search find the boundary.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Binary search on the answer, not the input: low starts at 1, high at the largest pile.",
+          hint: "What are the slowest and fastest speeds worth considering?",
+          why: "1 is the slowest possible; the largest pile is fast enough to eat everything in one hour each, so nothing above it can help.",
+          code: "low = 1
+high = max(piles)",
+        ),
+        WalkStep(
+          step: "Test the midpoint speed; if it finishes within h hours, the answer is mid or slower, so pull high down to mid.",
+          hint: "The midpoint speed works. Can the answer be faster than it?",
+          why: "No, the answer is the smallest working speed, so it is mid or slower: pull high down to mid, keeping mid as a candidate.",
+          code: "while low < high:
+    mid = (low + high) / 2
+    if hours <= h: high = mid",
+        ),
+        WalkStep(
+          step: "Otherwise mid is too slow — push low to mid + 1.",
+          hint: "The midpoint is too slow. Where must the answer be?",
+          why: "Strictly faster, so low moves past mid; each check is O(n) and the search is O(log max pile).",
+          code: "else:          low = mid + 1",
+        ),
+        WalkStep(
+          step: "When low meets high, that speed is the smallest that works — return it.",
+          hint: "What does it mean when low and high meet?",
+          why: "One speed remains, and every slower one was shown infeasible, so it is the smallest that works.",
+          code: "return low",
+        ),
       ]),
       Pseudocode(
         "low = 1
@@ -793,13 +1656,47 @@ return low",
       Nudge(
         "The array was sorted once and still mostly is — order breaks in exactly one place, and that place is what you are hunting. Can comparing two positions tell you which side of the break you are on, without scanning anything?",
       ),
-      Steps([
-        "Keep two indexes, left and right, spanning the whole array.",
-        "Compare the middle value with the value at right — the right end is the boundary that reveals which half is sorted.",
-        "If the middle value is greater than the right value, the break (and the minimum) lies strictly to the right: move left to mid + 1.",
-        "Otherwise the right half is sorted, so the minimum is at mid or before it: move right to mid — mid may itself be the minimum, so do not skip it.",
-        "When left meets right, that position holds the minimum.",
-        "Classic follow-up — duplicates allowed: equal middle and right values are ambiguous, so shrink right by one and accept an O(n) worst case.",
+      Walk([
+        WalkStep(
+          step: "Keep two indexes, left and right, spanning the whole array.",
+          hint: "Where can the minimum be, at the start?",
+          why: "Anywhere, so the search region is the whole array and each probe must shrink it.",
+          code: "left = 0
+right = n - 1",
+        ),
+        WalkStep(
+          step: "Compare the middle value with the value at right — the right end is the boundary that reveals which half is sorted.",
+          hint: "Which end of the region tells you which half is sorted when compared with the middle?",
+          why: "The right end: middle greater than right can only happen if the rotation point lies between them, so that comparison locates the break.",
+          code: "while left < right:
+    mid = (left + right) / 2",
+        ),
+        WalkStep(
+          step: "If the middle value is greater than the right value, the break (and the minimum) lies strictly to the right: move left to mid + 1.",
+          hint: "If the middle is bigger than the right end, where is the minimum?",
+          why: "Strictly to the right of mid, since values climb from mid until they drop past the break.",
+          code: "if nums[mid] > nums[right]:
+        left = mid + 1",
+        ),
+        WalkStep(
+          step: "Otherwise the right half is sorted, so the minimum is at mid or before it: move right to mid — mid may itself be the minimum, so do not skip it.",
+          hint: "If the middle is not bigger than the right end, can mid itself be the minimum?",
+          why: "Yes, so the region keeps mid: right = mid, not mid - 1; skipping it would lose the answer.",
+          code: "else:
+        right = mid",
+        ),
+        WalkStep(
+          step: "When left meets right, that position holds the minimum.",
+          hint: "What does it mean when left and right coincide?",
+          why: "One candidate is left and every discarded half was shown not to hold the minimum, so that value is it, in O(log n).",
+          code: "return nums[left]",
+        ),
+        WalkStep(
+          step: "Classic follow-up — duplicates allowed: equal middle and right values are ambiguous, so shrink right by one and accept an O(n) worst case.",
+          hint: "What if the middle equals the right end?",
+          why: "With duplicates allowed that comparison says nothing about which side holds the minimum, so shrink right by one; the worst case degrades to O(n).",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "left = 0
@@ -817,13 +1714,54 @@ return nums[left]",
       Nudge(
         "Log-time search wants sorted order, and the rotation seems to have broken it. But how broken is it really? Cut the array at any midpoint and look hard at the two halves — what is always true of at least one of them?",
       ),
-      Steps([
-        "Run a standard binary search loop with left and right bounds; return mid the moment it holds the target.",
-        "At each mid, decide which half is sorted: nums[left] <= nums[mid] means the left half is, otherwise the right half is.",
-        "If the sorted half's endpoints bracket the target, search inside it.",
-        "Otherwise the target can only live in the other half — search there.",
-        "Shrink the bounds accordingly and repeat; when they cross, return -1.",
-        "Follow-up worth knowing: find the rotation pivot with one binary search, then run a plain binary search in the correct half — two searches instead of one.",
+      Walk([
+        WalkStep(
+          step: "Run a standard binary search loop with left and right bounds; return mid the moment it holds the target.",
+          hint: "What stays the same as ordinary binary search?",
+          why: "The bounds, the midpoint, and returning immediately on a hit.",
+          code: "left = 0
+right = n - 1
+while left <= right:
+    mid = (left + right) / 2
+    if nums[mid] == target: return mid",
+        ),
+        WalkStep(
+          step: "At each mid, decide which half is sorted: nums[left] <= nums[mid] means the left half is, otherwise the right half is.",
+          hint: "A rotated array is two sorted runs. How do you tell which side of mid is the intact one?",
+          why: "nums[left] <= nums[mid] means the left half is sorted; otherwise the right half is.",
+          code: "if nums[left] <= nums[mid]:",
+        ),
+        WalkStep(
+          step: "If the sorted half's endpoints bracket the target, search inside it.",
+          hint: "The sorted half is known. When is the target inside it?",
+          why: "When its endpoints bracket the target; then search there.",
+          code: "if nums[left] <= target and target < nums[mid]:
+            right = mid - 1",
+        ),
+        WalkStep(
+          step: "Otherwise the target can only live in the other half — search there.",
+          hint: "And when it is not?",
+          why: "The target can only be in the other half.",
+          code: "else:
+            left = mid + 1
+    else:
+        if nums[mid] < target and target <= nums[right]:
+            left = mid + 1
+        else:
+            right = mid - 1",
+        ),
+        WalkStep(
+          step: "Shrink the bounds accordingly and repeat; when they cross, return -1.",
+          hint: "How does it end?",
+          why: "Bounds cross with no hit means absent; each step halves the region, O(log n).",
+          code: "return -1",
+        ),
+        WalkStep(
+          step: "Follow-up worth knowing: find the rotation pivot with one binary search, then run a plain binary search in the correct half — two searches instead of one.",
+          hint: "What two-search alternative exists?",
+          why: "Find the rotation pivot with one binary search, then run a plain binary search on the correct half.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "left = 0
@@ -848,13 +1786,53 @@ return -1",
       Nudge(
         "Each key accumulates a history, and get asks about a moment in the past. What does the guarantee that timestamps only ever increase hand you for free at write time — and what kind of lookup does that gift make possible at read time?",
       ),
-      Steps([
-        "Keep a map from key to a list of (timestamp, value) pairs.",
-        "On set, append to the key's list — timestamps only increase, so the list stays sorted with no sorting.",
-        "On get, fetch the key's history; no history means the answer is the empty string.",
-        "Binary search the history for the newest entry at or before the asked timestamp.",
-        "When the middle entry qualifies, record its value as the best so far and keep searching the newer side for a better one; otherwise search the older side.",
-        "Return the recorded value, or the empty string when nothing qualified.",
+      Walk([
+        WalkStep(
+          step: "Keep a map from key to a list of (timestamp, value) pairs.",
+          hint: "What does each key need to remember?",
+          why: "Its history as (timestamp, value) pairs.",
+          code: "set(key, value, timestamp):
+    store[key].append((timestamp, value))",
+        ),
+        WalkStep(
+          step: "On set, append to the key's list — timestamps only increase, so the list stays sorted with no sorting.",
+          hint: "Why does appending keep the history sorted?",
+          why: "Timestamps only increase, so no sorting is ever needed and set is O(1).",
+          code: "",
+        ),
+        WalkStep(
+          step: "On get, fetch the key's history; no history means the answer is the empty string.",
+          hint: "What if the key has never been set?",
+          why: "The answer is the empty string.",
+          code: "get(key, timestamp):
+    history = store[key], or empty list",
+        ),
+        WalkStep(
+          step: "Binary search the history for the newest entry at or before the asked timestamp.",
+          hint: "How do you find the newest entry at or before a timestamp?",
+          why: "Binary search the history, O(log n).",
+          code: "low = 0
+    high = len(history) - 1
+    best = \"\"
+    while low <= high:
+        mid = (low + high) / 2",
+        ),
+        WalkStep(
+          step: "When the middle entry qualifies, record its value as the best so far and keep searching the newer side for a better one; otherwise search the older side.",
+          hint: "When the middle entry qualifies, why keep searching?",
+          why: "A newer qualifying entry may exist, so record it and search the newer side; otherwise search older.",
+          code: "if history[mid].time <= timestamp:
+            best = history[mid].value
+            low = mid + 1
+        else:
+            high = mid - 1",
+        ),
+        WalkStep(
+          step: "Return the recorded value, or the empty string when nothing qualified.",
+          hint: "What is returned?",
+          why: "The best value recorded, or the empty string if nothing qualified.",
+          code: "return best",
+        ),
       ]),
       Pseudocode(
         "set(key, value, timestamp):
@@ -879,12 +1857,46 @@ get(key, timestamp):
       Nudge(
         "The median only cares about what sits at the middle of the combined order. Do you actually need the whole merged array — or even half of it stored — to know what is there? And how much of the merge do you really have to run?",
       ),
-      Steps([
-        "Compute the combined length; the median involves the value at position total / 2, and the one before it when the total is even.",
-        "Merge with two indexes, but never build the merged array — each step just take whichever front value is smaller.",
-        "Keep only the last two values taken, and stop after total / 2 + 1 values.",
-        "For an odd total the answer is the last value taken; for an even total, the average of the last two.",
-        "Interview follow-up — O(log(min(m, n))): binary search a cut through the shorter array so both left sides together hold half the elements and every left value is <= every right value; the median falls out of the four values around the cut.",
+      Walk([
+        WalkStep(
+          step: "Compute the combined length; the median involves the value at position total / 2, and the one before it when the total is even.",
+          hint: "Which positions in the merged order does the median depend on?",
+          why: "The element at total / 2 and, for an even total, the one before it; nothing else needs to be materialised.",
+          code: "total = len(a) + len(b)",
+        ),
+        WalkStep(
+          step: "Merge with two indexes, but never build the merged array — each step just take whichever front value is smaller.",
+          hint: "How can you walk the merged order without building it?",
+          why: "Two indexes, taking whichever front value is smaller each step.",
+          code: "i = 0, j = 0
+    if i < len(a) and (j >= len(b) or a[i] <= b[j]):
+        current = a[i]
+        i += 1
+    else:
+        current = b[j]
+        j += 1",
+        ),
+        WalkStep(
+          step: "Keep only the last two values taken, and stop after total / 2 + 1 values.",
+          hint: "How much of the walk is needed, and what state survives?",
+          why: "total / 2 + 1 steps, remembering only the last two values taken; O(m + n) time, O(1) space.",
+          code: "previous = 0, current = 0
+repeat total / 2 + 1 times:
+    previous = current",
+        ),
+        WalkStep(
+          step: "For an odd total the answer is the last value taken; for an even total, the average of the last two.",
+          hint: "How does parity pick the answer?",
+          why: "Odd total: the last value; even total: the average of the last two.",
+          code: "if total is odd: return current
+return (previous + current) / 2",
+        ),
+        WalkStep(
+          step: "Interview follow-up — O(log(min(m, n))): binary search a cut through the shorter array so both left sides together hold half the elements and every left value is <= every right value; the median falls out of the four values around the cut.",
+          hint: "What is the logarithmic version built on?",
+          why: "A binary search for a cut through the shorter array such that the left sides hold half the elements and every left value is at most every right value; the median is read from the four values at the cut.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "total = len(a) + len(b)
@@ -906,13 +1918,45 @@ return (previous + current) / 2",
       Nudge(
         "Every node points forward and you want them all pointing back. The moment you flip one node's link, what have you just lost — and what must you have saved before touching anything?",
       ),
-      Steps([
-        "Keep two references: previous (starting empty) and the current node.",
-        "Before changing anything, save current's next — once the link is overwritten, the rest of the list is unreachable.",
-        "Point current's link back at previous.",
-        "Slide both forward: previous becomes current, current becomes the saved next.",
-        "When current runs out, previous is the new head — return it.",
-        "Follow-up: the recursive version reverses the tail then hooks the next node back; in a cons-list language the same rewiring is an accumulator you prepend to — a value instead of a mutation.",
+      Walk([
+        WalkStep(
+          step: "Keep two references: previous (starting empty) and the current node.",
+          hint: "What two references does an in-place reversal need to carry?",
+          why: "The node already reversed (previous, starting empty) and the current node.",
+          code: "previous = null
+while head != null:",
+        ),
+        WalkStep(
+          step: "Before changing anything, save current's next — once the link is overwritten, the rest of the list is unreachable.",
+          hint: "What must be saved before a link is overwritten?",
+          why: "The current node's next, or the rest of the list becomes unreachable.",
+          code: "following = head.next",
+        ),
+        WalkStep(
+          step: "Point current's link back at previous.",
+          hint: "Which way does the current node's link now point?",
+          why: "Backwards, at previous; that is the whole reversal step.",
+          code: "head.next = previous",
+        ),
+        WalkStep(
+          step: "Slide both forward: previous becomes current, current becomes the saved next.",
+          hint: "How do the references advance?",
+          why: "Previous becomes current and current becomes the saved next; one pass, O(n).",
+          code: "previous = head
+    head = following",
+        ),
+        WalkStep(
+          step: "When current runs out, previous is the new head — return it.",
+          hint: "When current is null, which node is the new head?",
+          why: "Previous, the last node processed.",
+          code: "return previous",
+        ),
+        WalkStep(
+          step: "Follow-up: the recursive version reverses the tail then hooks the next node back; in a cons-list language the same rewiring is an accumulator you prepend to — a value instead of a mutation.",
+          hint: "What does the recursive version do, and how does a cons-list language express it?",
+          why: "Reverse the tail then hook the head onto its end; with immutable lists the same thing is an accumulator you prepend to, a value rather than a mutation.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "previous = null
@@ -928,13 +1972,49 @@ return previous",
       Nudge(
         "At any moment you can only see the two front nodes. Why is comparing just those two enough to decide the next node of the answer? And what awkwardness appears when the answer has no first node to attach anything to yet?",
       ),
-      Steps([
-        "Create a dummy head with a tail pointer at it — this removes the special case of choosing the first node separately.",
-        "While both lists are non-empty, compare the two front values.",
-        "Splice the smaller front node onto tail — sortedness guarantees it precedes everything still remaining in either list.",
-        "Advance the list the node came from, and advance tail to the node just attached.",
-        "When one list empties, attach the other whole — it is already sorted and already linked.",
-        "Return dummy.next.",
+      Walk([
+        WalkStep(
+          step: "Create a dummy head with a tail pointer at it — this removes the special case of choosing the first node separately.",
+          hint: "What special case does a dummy head remove?",
+          why: "Choosing the first node separately; with a dummy, every attachment is the same tail.next assignment.",
+          code: "dummy = new node
+tail = dummy",
+        ),
+        WalkStep(
+          step: "While both lists are non-empty, compare the two front values.",
+          hint: "While both lists have nodes, what decides which goes next?",
+          why: "Comparing the two fronts; the smaller belongs next.",
+          code: "while a != null and b != null:
+    if a.value <= b.value:",
+        ),
+        WalkStep(
+          step: "Splice the smaller front node onto tail — sortedness guarantees it precedes everything still remaining in either list.",
+          hint: "Why is taking the smaller front always right?",
+          why: "Both lists are sorted, so that node precedes everything remaining in either; the merge is O(m + n).",
+          code: "tail.next = a
+        a = a.next
+    else:
+        tail.next = b
+        b = b.next",
+        ),
+        WalkStep(
+          step: "Advance the list the node came from, and advance tail to the node just attached.",
+          hint: "What moves after a node is attached?",
+          why: "The list it came from advances, and tail advances to the node just attached.",
+          code: "tail = tail.next",
+        ),
+        WalkStep(
+          step: "When one list empties, attach the other whole — it is already sorted and already linked.",
+          hint: "One list is empty. What about the rest of the other?",
+          why: "It is already sorted and linked, so attach it whole rather than node by node.",
+          code: "tail.next = a if a != null else b",
+        ),
+        WalkStep(
+          step: "Return dummy.next.",
+          hint: "Which node is the merged head?",
+          why: "The one after the dummy.",
+          code: "return dummy.next",
+        ),
       ]),
       Pseudocode(
         "dummy = new node
@@ -955,13 +2035,60 @@ return dummy.next",
       Nudge(
         "The target order alternates front, back, front, back. Squint at that pattern: it looks like two simpler lists being interleaved. Which two lists — and what smaller jobs, each one familiar on its own, would produce them?",
       ),
-      Steps([
-        "Split the job into three independent sub-problems: find the middle, reverse the back half, weave the halves together — none needs to know about the others.",
-        "Find the middle with slow and fast pointers, then cut the list there by setting the first half's tail link to null.",
-        "Reverse the second half with the standard three-reference loop.",
-        "Weave: alternately take one node from the first half and one from the reversed second half, fixing links as you go.",
-        "The second half is never longer, so loop while it still has nodes.",
-        "Follow-up: copying the nodes into an array and relinking by index also works, at O(n) extra space — the in-place version is what avoids that.",
+      Walk([
+        WalkStep(
+          step: "Split the job into three independent sub-problems: find the middle, reverse the back half, weave the halves together — none needs to know about the others.",
+          hint: "Which three well-known list operations combine into this reordering?",
+          why: "Find the middle, reverse the back half, interleave the halves; each is a solved problem, and keeping them separate keeps the code honest.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Find the middle with slow and fast pointers, then cut the list there by setting the first half's tail link to null.",
+          hint: "How do you find the middle and separate the halves?",
+          why: "Slow and fast pointers stop slow at the middle; cutting the first half's tail link makes two independent lists.",
+          code: "slow = head, fast = head.next
+while fast != null and fast.next != null:
+    slow = slow.next
+    fast = fast.next.next
+second = slow.next
+slow.next = null",
+        ),
+        WalkStep(
+          step: "Reverse the second half with the standard three-reference loop.",
+          hint: "What does reversing the second half use?",
+          why: "The standard three-reference loop: save next, flip the link, slide forward.",
+          code: "previous = null
+while second != null:
+    following = second.next
+    second.next = previous
+    previous = second
+    second = following",
+        ),
+        WalkStep(
+          step: "Weave: alternately take one node from the first half and one from the reversed second half, fixing links as you go.",
+          hint: "How are the two halves combined?",
+          why: "Alternate one node from each, saving each side's next before relinking; O(n) total, O(1) space.",
+          code: "first = head, second = previous
+while second != null:
+    firstNext = first.next
+    secondNext = second.next
+    first.next = second
+    second.next = firstNext
+    first = firstNext
+    second = secondNext",
+        ),
+        WalkStep(
+          step: "The second half is never longer, so loop while it still has nodes.",
+          hint: "Which half runs out first, and why does that make the loop simple?",
+          why: "The second half is never longer, so looping while it has nodes leaves any extra first-half node correctly in place.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Follow-up: copying the nodes into an array and relinking by index also works, at O(n) extra space — the in-place version is what avoids that.",
+          hint: "What would an array-based version cost?",
+          why: "O(n) extra space to index the nodes; the pointer version exists to avoid exactly that.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "slow = head, fast = head.next
@@ -992,13 +2119,48 @@ while second != null:
       Nudge(
         "Counting from the end of a list you can only walk forwards — that is the whole difficulty. Could two walkers, arranged just so, turn \"nth from the end\" into \"when the other one finishes\"? And which node do you actually need to be standing on to make the change?",
       ),
-      Steps([
-        "Put a dummy node in front of the head — removing the first node then needs no special case.",
-        "Start two pointers at the dummy and advance the leading one n steps.",
-        "Advance both together until the leader's next is null; the trailer now sits on the node just before the doomed one.",
-        "Bypass the doomed node: trailer.next = trailer.next.next.",
-        "Return dummy.next, which is right even when the head itself was removed.",
-        "The two-pass alternative — count the length, then walk to node length - n — gives the same answer; the held gap is what makes it one pass.",
+      Walk([
+        WalkStep(
+          step: "Put a dummy node in front of the head — removing the first node then needs no special case.",
+          hint: "What special case does a node in front of the head remove?",
+          why: "Removing the head itself; with a dummy, the node before the doomed one always exists.",
+          code: "dummy = new node with next = head
+behind = dummy
+ahead = dummy",
+        ),
+        WalkStep(
+          step: "Start two pointers at the dummy and advance the leading one n steps.",
+          hint: "How do you create a gap of n between two pointers?",
+          why: "Advance the leader n steps first.",
+          code: "repeat n times:
+    ahead = ahead.next",
+        ),
+        WalkStep(
+          step: "Advance both together until the leader's next is null; the trailer now sits on the node just before the doomed one.",
+          hint: "When the leader reaches the last node, where is the trailer?",
+          why: "Just before the nth from the end, because the gap never changed; one pass, O(n).",
+          code: "while ahead.next != null:
+    behind = behind.next
+    ahead = ahead.next",
+        ),
+        WalkStep(
+          step: "Bypass the doomed node: trailer.next = trailer.next.next.",
+          hint: "How is the node removed?",
+          why: "Link the trailer past it.",
+          code: "behind.next = behind.next.next",
+        ),
+        WalkStep(
+          step: "Return dummy.next, which is right even when the head itself was removed.",
+          hint: "What is the head afterwards?",
+          why: "Whatever follows the dummy, correct even if the original head was removed.",
+          code: "return dummy.next",
+        ),
+        WalkStep(
+          step: "The two-pass alternative — count the length, then walk to node length - n — gives the same answer; the held gap is what makes it one pass.",
+          hint: "What does the two-pass version do instead?",
+          why: "Count the length, then walk to node length - n; the held gap is what collapses it to one pass.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "dummy = new node with next = head
@@ -1017,12 +2179,45 @@ return dummy.next",
       Nudge(
         "A plain copy walk stumbles on the extra link: it can point at a node you have not reached yet, so it cannot be resolved on first sight. What would let you look up \"the copy of that node\" later, whenever the link finally makes sense?",
       ),
-      Steps([
-        "Make one pass creating a copy of every node, recording original to copy in a map; seed the map with null mapping to null so empty links resolve themselves.",
-        "Make a second pass wiring the copies: copy.next = map[original.next] and copy.random = map[original.random].",
-        "Return the map entry for the head.",
-        "Recognise the shape: this is Clone Graph on a list — a node-to-copy map whenever links can point anywhere.",
-        "Follow-up, O(1) extra space: splice each copy in right after its original so the interleaved list is the map, wire the randoms through it, then unweave in a third pass.",
+      Walk([
+        WalkStep(
+          step: "Make one pass creating a copy of every node, recording original to copy in a map; seed the map with null mapping to null so empty links resolve themselves.",
+          hint: "A random link may point at a node you have not copied yet. What lets you resolve it later without a search?",
+          why: "A map from original to copy, built in a first pass, answers every link in O(1) afterwards; mapping null to null means an empty link needs no special case.",
+          code: "copies = map with copies[null] = null
+node = head
+while node != null:
+    copies[node] = new node(node.value)
+    node = node.next",
+        ),
+        WalkStep(
+          step: "Make a second pass wiring the copies: copy.next = map[original.next] and copy.random = map[original.random].",
+          hint: "With every copy existing, how do you set a copy's two pointers?",
+          why: "Look up where the original's next and random go and take their copies; both passes are O(n) with O(n) extra space.",
+          code: "node = head
+while node != null:
+    copies[node].next = copies[node.next]
+    copies[node].random = copies[node.random]
+    node = node.next",
+        ),
+        WalkStep(
+          step: "Return the map entry for the head.",
+          hint: "Which copy is the new head?",
+          why: "The map entry for the original head, which for an empty list resolves to null through the seeded entry.",
+          code: "return copies[head]",
+        ),
+        WalkStep(
+          step: "Recognise the shape: this is Clone Graph on a list — a node-to-copy map whenever links can point anywhere.",
+          hint: "What problem does this map-then-wire shape come from?",
+          why: "Clone Graph: whenever links can point anywhere, a node-to-copy map is the general tool and the list is just a special case.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Follow-up, O(1) extra space: splice each copy in right after its original so the interleaved list is the map, wire the randoms through it, then unweave in a third pass.",
+          hint: "Can the map be avoided?",
+          why: "Splicing each copy right after its original makes the list itself the map: copy.random is original.random.next, and a final pass unweaves the two lists.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "copies = map with copies[null] = null
@@ -1042,13 +2237,53 @@ return copies[head]",
       Nudge(
         "How did you add multi-digit numbers in school — starting from which end, carrying what along? Now look at the order these digits arrive in. How much of the work has the problem already done for you?",
       ),
-      Steps([
-        "Walk both lists together, building the result behind a dummy head — least-significant-first is exactly the order addition wants, so no reversing and no length matching.",
-        "Loop while either list has digits or a carry remains — 5 + 5 needs a node neither input has.",
-        "Each round, sum the carry plus whichever front digits exist, advancing only the non-empty lists.",
-        "The new digit is the sum mod 10; the new carry is the sum divided by 10.",
-        "Append the digit as a new node and advance the tail.",
-        "Return dummy.next.",
+      Walk([
+        WalkStep(
+          step: "Walk both lists together, building the result behind a dummy head — least-significant-first is exactly the order addition wants, so no reversing and no length matching.",
+          hint: "The digits arrive least-significant first. Is that a nuisance to fix, or exactly the order you add on paper?",
+          why: "Column addition starts at the ones place, which is the head of each list, so walking both heads in step needs no reversal, no lengths, and a dummy head means the result never has a special first node.",
+          code: "dummy = new node
+tail = dummy
+carry = 0",
+        ),
+        WalkStep(
+          step: "Loop while either list has digits or a carry remains — 5 + 5 needs a node neither input has.",
+          hint: "What does 5 + 5 produce, and where would that extra digit live if you stopped when the inputs ran out?",
+          why: "A carry after the last digit is a real digit of the answer; looping on carry as well as on the two lists is what makes 99 + 1 come out as 100.",
+          code: "while a != null or b != null or carry > 0:",
+        ),
+        WalkStep(
+          step: "Each round, sum the carry plus whichever front digits exist, advancing only the non-empty lists.",
+          hint: "If one list is shorter, what should its missing digit contribute, and how do you avoid stepping past its end?",
+          why: "Treating an exhausted list as contributing zero lets one loop handle unequal lengths; advancing each list only when it has a node is what keeps you off a null.",
+          code: "total = carry
+    if a != null:
+        total += a.value
+        a = a.next
+    if b != null:
+        total += b.value
+        b = b.next",
+        ),
+        WalkStep(
+          step: "The new digit is the sum mod 10; the new carry is the sum divided by 10.",
+          hint: "A column can sum to 19 at most. How do you split that into the digit written down and the digit carried?",
+          why: "Mod 10 and integer division by 10 are the two halves of column addition; the carry is at most 1 because three digits at most 9, 9 and 1 sum to 19.",
+          code: "carry = total / 10
+    digit = total mod 10",
+        ),
+        WalkStep(
+          step: "Append the digit as a new node and advance the tail.",
+          hint: "You have a digit; how does it become part of the answer without walking the result list from the start each time?",
+          why: "Keeping a tail pointer makes each append O(1), so the whole addition is O(max(m, n)) with nothing revisited.",
+          code: "tail.next = new node(digit)
+    tail = tail.next",
+        ),
+        WalkStep(
+          step: "Return dummy.next.",
+          hint: "The dummy head was never a digit. What is the first real node?",
+          why: "The dummy exists only so appending never has a first-node special case; the answer starts one past it.",
+          code: "return dummy.next",
+        ),
       ]),
       Pseudocode(
         "dummy = new node
@@ -1072,13 +2307,47 @@ return dummy.next",
       Nudge(
         "Following the links, only two futures exist: fall off the end, or go round forever. The obvious fix is to remember every node you have visited — but what does that cost, and could motion alone reveal that you are circling?",
       ),
-      Steps([
-        "Start two pointers at the head: slow steps one node at a time, fast steps two.",
-        "Loop while fast and fast.next exist, advancing both each round.",
-        "Compare node identity, never values — it is nodes that repeat, not what they hold.",
-        "If slow and fast are ever the same node, there is a cycle: return true; if fast runs off the end, return false.",
-        "Why the meeting is guaranteed: inside a loop, fast gains one place on slow every step, so it must land exactly on it.",
-        "The set-of-visited-nodes version answers it too, at O(n) memory — that contrast is why the two-pointer version is worth knowing.",
+      Walk([
+        WalkStep(
+          step: "Start two pointers at the head: slow steps one node at a time, fast steps two.",
+          hint: "Two runners on a circular track: what eventually happens if one is faster?",
+          why: "The faster laps the slower; on a list, a pointer stepping two at a time must meet one stepping one at a time inside a cycle.",
+          code: "slow = head
+fast = head",
+        ),
+        WalkStep(
+          step: "Loop while fast and fast.next exist, advancing both each round.",
+          hint: "What must be checked before fast can take two steps?",
+          why: "That fast and fast.next exist; running off the end means no cycle.",
+          code: "while fast != null and fast.next != null:
+    slow = slow.next
+    fast = fast.next.next",
+        ),
+        WalkStep(
+          step: "Compare node identity, never values — it is nodes that repeat, not what they hold.",
+          hint: "Should you compare values or nodes?",
+          why: "Nodes: values can repeat in a straight list, but a node revisited is a cycle by definition.",
+          code: "",
+        ),
+        WalkStep(
+          step: "If slow and fast are ever the same node, there is a cycle: return true; if fast runs off the end, return false.",
+          hint: "What are the two ways the loop ends?",
+          why: "The pointers coincide, meaning a cycle, or fast hits null, meaning none; O(n) time and O(1) space.",
+          code: "if slow is fast: return true
+return false",
+        ),
+        WalkStep(
+          step: "Why the meeting is guaranteed: inside a loop, fast gains one place on slow every step, so it must land exactly on it.",
+          hint: "Why can fast not skip over slow forever?",
+          why: "Inside a loop the gap closes by exactly one each step, so it reaches zero and they land on the same node.",
+          code: "",
+        ),
+        WalkStep(
+          step: "The set-of-visited-nodes version answers it too, at O(n) memory — that contrast is why the two-pointer version is worth knowing.",
+          hint: "What does the visited-set version give up?",
+          why: "O(n) extra memory for the same answer; the two-pointer trick is worth knowing precisely for that contrast.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "slow = head
@@ -1094,13 +2363,51 @@ return false",
       Nudge(
         "The constraints ban everything a duplicate hunt normally leans on: no sorting, no marking, no extra space. But notice that every value is also a legal position in the array. If each cell is read as pointing somewhere, what shape does the repeated value force — and where have you dealt with that shape before?",
       ),
-      Steps([
-        "Read position i as a node linked to position nums[i]; because one value repeats, two positions point at the same place, so this implicit list has a cycle.",
-        "The duplicate value is the cycle's entrance — the position several links converge on.",
-        "Run Floyd phase one: slow hops once (slow = nums[slow]), fast hops twice; loop until they meet inside the cycle.",
-        "Run Floyd phase two: restart one pointer at position 0, hop both once per step; where they meet is the entrance — return it.",
-        "Confirm the constraints hold: the array is never written, and only two indexes are carried.",
-        "Follow-up: binary search on the value range also works — count how many numbers are at most v; that count exceeds v exactly when the duplicate is at or below v. O(n log n), still O(1) space.",
+      Walk([
+        WalkStep(
+          step: "Read position i as a node linked to position nums[i]; because one value repeats, two positions point at the same place, so this implicit list has a cycle.",
+          hint: "If you treat each value as a pointer to an index, what structure do the n+1 slots form?",
+          why: "A linked list starting at index 0; a repeated value means two indices point at the same slot, and that is a cycle.",
+          code: "",
+        ),
+        WalkStep(
+          step: "The duplicate value is the cycle's entrance — the position several links converge on.",
+          hint: "Where in that list is the duplicate value?",
+          why: "At the cycle entrance: the slot that more than one pointer leads to is the duplicate.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Run Floyd phase one: slow hops once (slow = nums[slow]), fast hops twice; loop until they meet inside the cycle.",
+          hint: "How do you detect a cycle with no extra memory?",
+          why: "Floyd's tortoise and hare: a slow and a fast pointer must meet inside the cycle if one exists, in O(n) with O(1) space.",
+          code: "slow = nums[0]
+fast = nums[nums[0]]
+while slow != fast:
+    slow = nums[slow]
+    fast = nums[nums[fast]]",
+        ),
+        WalkStep(
+          step: "Run Floyd phase two: restart one pointer at position 0, hop both once per step; where they meet is the entrance — return it.",
+          hint: "Having met inside the cycle, how do you find where it starts?",
+          why: "Restart one pointer at 0 and move both one step at a time; the distance from the start to the entrance equals the distance from the meeting point to it, so they meet at the entrance.",
+          code: "slow = 0
+while slow != fast:
+    slow = nums[slow]
+    fast = nums[fast]
+return slow",
+        ),
+        WalkStep(
+          step: "Confirm the constraints hold: the array is never written, and only two indexes are carried.",
+          hint: "Did the solution respect the two constraints?",
+          why: "The array is only read, and two indices are the whole state, which is exactly what rules out sorting and hash sets.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Follow-up: binary search on the value range also works — count how many numbers are at most v; that count exceeds v exactly when the duplicate is at or below v. O(n log n), still O(1) space.",
+          hint: "Is there another way that also keeps O(1) space?",
+          why: "Binary search on the value range: counting numbers at most v tells which side the duplicate is on, O(n log n) with no extra memory.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "slow = nums[0]
@@ -1119,13 +2426,50 @@ return slow",
       Nudge(
         "Two questions must both be answered in O(1): where does this key live, and which key has waited longest untouched? No single structure you would reach for answers both. What combination might — or does your language's map already keep a secret that helps?",
       ),
-      Steps([
-        "Keep a map whose iteration order is insertion order (or the classic pairing: a hash map into the nodes of a doubly linked list).",
-        "On get of a missing key, return -1.",
-        "On get of a present key, delete it and re-insert it — re-insertion makes it the newest, which is the recency bump; then return the value.",
-        "On put of an existing key, delete the old entry first so the fresh insert lands at the newest position.",
-        "After inserting, if the size exceeds capacity, evict the first key in iteration order — that is the least recently used.",
-        "Follow-up: without an insertion-ordered map, move a key's list node to the tail on every use and evict from the head — same O(1) operations, more wiring.",
+      Walk([
+        WalkStep(
+          step: "Keep a map whose iteration order is insertion order (or the classic pairing: a hash map into the nodes of a doubly linked list).",
+          hint: "What structure gives O(1) lookup and also remembers the order of use?",
+          why: "A map that iterates in insertion order (or a hash map into a doubly linked list); recency becomes position.",
+          code: "",
+        ),
+        WalkStep(
+          step: "On get of a missing key, return -1.",
+          hint: "What does a miss look like?",
+          why: "Return -1 with no side effects.",
+          code: "get(key):
+    if key not in entries: return -1",
+        ),
+        WalkStep(
+          step: "On get of a present key, delete it and re-insert it — re-insertion makes it the newest, which is the recency bump; then return the value.",
+          hint: "How does a hit become \"most recently used\" in an insertion-ordered map?",
+          why: "Remove and re-insert: the entry moves to the newest position, then return its value.",
+          code: "value = entries.remove(key)
+    entries[key] = value
+    return value",
+        ),
+        WalkStep(
+          step: "On put of an existing key, delete the old entry first so the fresh insert lands at the newest position.",
+          hint: "Why delete before inserting on an existing key?",
+          why: "So the fresh insert lands at the newest position rather than updating in place and keeping the old age.",
+          code: "put(key, value):
+    if key in entries:
+        entries.remove(key)
+    entries[key] = value",
+        ),
+        WalkStep(
+          step: "After inserting, if the size exceeds capacity, evict the first key in iteration order — that is the least recently used.",
+          hint: "Which entry goes when the cache is full?",
+          why: "The first in iteration order, which is the least recently used; every operation stays O(1).",
+          code: "if size(entries) > capacity:
+        entries.remove(oldest key in entries)",
+        ),
+        WalkStep(
+          step: "Follow-up: without an insertion-ordered map, move a key's list node to the tail on every use and evict from the head — same O(1) operations, more wiring.",
+          hint: "Without an ordered map, what does the classic version do?",
+          why: "A hash map to list nodes: move a node to the tail on each use and evict from the head; the same O(1) operations with explicit pointers.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "get(key):
@@ -1146,13 +2490,58 @@ put(key, value):
       Nudge(
         "You already own the two-list merge; the trap is in how you scale it to k. If you fold the lists in one at a time, what work does the growing result force you to repeat — and how could the same merges be arranged so nothing is walked too often?",
       ),
-      Steps([
-        "Drop the empty lists; if nothing remains, return null.",
-        "Reuse the two-list merge (dummy head, take the smaller front) as the inner routine.",
-        "Merge the lists in pairs: each round halves how many lists remain, with any odd one carried over.",
-        "Repeat rounds until one list remains — each element moves once per round and there are log k rounds: O(n log k).",
-        "Name the trap being avoided: folding lists in one at a time re-walks the growing result every merge, O(k*n).",
-        "Follow-up: a min-heap of the k front nodes reaches the same O(n log k) — and is the version that still works when the lists arrive as streams.",
+      Walk([
+        WalkStep(
+          step: "Drop the empty lists; if nothing remains, return null.",
+          hint: "What should happen with empty lists before any merging?",
+          why: "Drop them; if nothing remains the answer is null, and later code can assume non-null heads.",
+          code: "lists = the non-null heads
+if lists is empty: return null",
+        ),
+        WalkStep(
+          step: "Reuse the two-list merge (dummy head, take the smaller front) as the inner routine.",
+          hint: "What routine do you already have for two lists?",
+          why: "The dummy-head merge that takes the smaller front; it becomes the inner step here.",
+          code: "merge(a, b):
+    dummy = new node
+    tail = dummy
+    while a != null and b != null:
+        splice the smaller front onto tail, advance that list
+        tail = tail.next
+    tail.next = whichever list remains
+    return dummy.next",
+        ),
+        WalkStep(
+          step: "Merge the lists in pairs: each round halves how many lists remain, with any odd one carried over.",
+          hint: "How do you combine k lists so that no list is walked too often?",
+          why: "Merge them in pairs each round; the count halves and an odd one is carried forward.",
+          code: "while len(lists) > 1:
+    merged = []
+    for i = 0, 2, 4, ... while i < len(lists):
+        if i + 1 < len(lists):
+            merged.add(merge(lists[i], lists[i + 1]))
+        else:
+            merged.add(lists[i])
+    lists = merged",
+        ),
+        WalkStep(
+          step: "Repeat rounds until one list remains — each element moves once per round and there are log k rounds: O(n log k).",
+          hint: "How many rounds, and how much work per round?",
+          why: "log k rounds, each moving every element once, so O(n log k).",
+          code: "return lists[0]",
+        ),
+        WalkStep(
+          step: "Name the trap being avoided: folding lists in one at a time re-walks the growing result every merge, O(k*n).",
+          hint: "What does merging lists one at a time into a growing result cost?",
+          why: "Each merge re-walks the whole result, O(k * n); the pairing avoids that.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Follow-up: a min-heap of the k front nodes reaches the same O(n log k) — and is the version that still works when the lists arrive as streams.",
+          hint: "What alternative gives the same bound and handles streams?",
+          why: "A min-heap of the k front nodes, popping the smallest and pushing its successor, O(n log k).",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "lists = the non-null heads
@@ -1181,13 +2570,55 @@ merge(a, b):
       Nudge(
         "Reversing k nodes is a drill you already own; the real question hides at the end of the list. By the time you discover a group is short, what damage has already been done — and when did you actually need to know?",
       ),
-      Steps([
-        "Anchor a dummy before the head and keep a pointer, before, at the node just ahead of the current group.",
-        "Look ahead k nodes first; if the walk hits null, fewer than k remain — return dummy.next with the tail untouched.",
-        "Reverse the k nodes with the standard loop, seeding previous with the node after the group so the reversed block comes out pre-connected to the rest.",
-        "Reconnect the front: before.next = the group's new first node; the group's old first node is now its last.",
-        "Move before to that old first node and repeat for the next group.",
-        "Alternative: count the whole length up front — one counting pass replaces a look-ahead per group and answers the same question.",
+      Walk([
+        WalkStep(
+          step: "Anchor a dummy before the head and keep a pointer, before, at the node just ahead of the current group.",
+          hint: "What does a dummy node give you here?",
+          why: "A node before the head, so the first group is reconnected the same way as every other; before tracks the node ahead of the current group.",
+          code: "dummy = new node with next = head
+before = dummy",
+        ),
+        WalkStep(
+          step: "Look ahead k nodes first; if the walk hits null, fewer than k remain — return dummy.next with the tail untouched.",
+          hint: "What must you know before reversing a group?",
+          why: "That k nodes remain; a look-ahead that hits null means the tail stays as is.",
+          code: "loop:
+    after = before
+    repeat k times:
+        after = after.next
+        if after == null: return dummy.next",
+        ),
+        WalkStep(
+          step: "Reverse the k nodes with the standard loop, seeding previous with the node after the group so the reversed block comes out pre-connected to the rest.",
+          hint: "How does seeding previous with the node after the group help?",
+          why: "The reversed block comes out already linked to the rest, so no separate tail fix is needed.",
+          code: "node = before.next
+    previous = after.next
+    first = node
+    repeat k times:
+        following = node.next
+        node.next = previous
+        previous = node
+        node = following",
+        ),
+        WalkStep(
+          step: "Reconnect the front: before.next = the group's new first node; the group's old first node is now its last.",
+          hint: "How is the front reconnected?",
+          why: "before.next points at the group's new first node; the old first node is now its last.",
+          code: "before.next = previous",
+        ),
+        WalkStep(
+          step: "Move before to that old first node and repeat for the next group.",
+          hint: "Where does before go for the next group?",
+          why: "To the old first node, now the end of this group; each node is touched a constant number of times, O(n).",
+          code: "before = first",
+        ),
+        WalkStep(
+          step: "Alternative: count the whole length up front — one counting pass replaces a look-ahead per group and answers the same question.",
+          hint: "What alternative avoids a look-ahead per group?",
+          why: "Count the total length once and reverse while at least k remain.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "dummy = new node with next = head
@@ -1213,12 +2644,40 @@ loop:
       Nudge(
         "A mirror image swaps left and right — at every depth, not just the top. Once you have fixed a single node, look at what remains on each side. Does it resemble the problem you started with?",
       ),
-      Steps([
-        "Base case: an empty tree inverts to itself — return null.",
-        "Swap the node's two children.",
-        "Invert each child recursively; swapping before or after recursing gives the same tree, so the order does not matter.",
-        "Return the root.",
-        "Keep the shape in mind: nearly every tree problem is this same walk with different work done at the node.",
+      Walk([
+        WalkStep(
+          step: "Base case: an empty tree inverts to itself — return null.",
+          hint: "What is the inverse of an empty tree?",
+          why: "Itself; returning null is the base case every recursion ends on.",
+          code: "invert(node):
+    if node == null: return null",
+        ),
+        WalkStep(
+          step: "Swap the node's two children.",
+          hint: "What does inverting do at a single node?",
+          why: "Swaps its two children; the subtrees themselves are handled by the recursive calls.",
+          code: "swapped = node.left
+    node.left = invert(node.right)
+    node.right = invert(swapped)",
+        ),
+        WalkStep(
+          step: "Invert each child recursively; swapping before or after recursing gives the same tree, so the order does not matter.",
+          hint: "Does it matter whether you swap before or after recursing?",
+          why: "No, both orders produce the same mirrored tree; O(n) either way.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Return the root.",
+          hint: "What should the function hand back?",
+          why: "The root, so the call composes and the caller can use the returned tree.",
+          code: "return node",
+        ),
+        WalkStep(
+          step: "Keep the shape in mind: nearly every tree problem is this same walk with different work done at the node.",
+          hint: "What is the reusable shape here?",
+          why: "Recursive walk, base case on null, work at the node, combine children; most tree problems are this with different work.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "invert(node):
@@ -1233,11 +2692,32 @@ loop:
       Nudge(
         "Try to define the depth of a tree in one sentence, using only the depths of smaller trees. Whatever sentence you write down is nearly the whole program. What is the depth of nothing at all?",
       ),
-      Steps([
-        "Base case: an empty tree has depth 0 — the whole problem lives in that line.",
-        "Recursively compute the depth of the left subtree and of the right subtree.",
-        "Return 1 plus the larger of the two.",
-        "Follow-up: a breadth-first level count gives the same number without recursion — what a tree deep enough to overflow the call stack needs.",
+      Walk([
+        WalkStep(
+          step: "Base case: an empty tree has depth 0 — the whole problem lives in that line.",
+          hint: "What is the depth of an empty tree?",
+          why: "0, and that single line is the whole problem; everything else is the standard recursion.",
+          code: "depth(node):
+    if node == null: return 0",
+        ),
+        WalkStep(
+          step: "Recursively compute the depth of the left subtree and of the right subtree.",
+          hint: "What do you need from each child?",
+          why: "Its depth, computed by the same function.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Return 1 plus the larger of the two.",
+          hint: "How does a node combine the two?",
+          why: "One more than the deeper child; O(n) with recursion depth equal to the tree's height.",
+          code: "return 1 + max(depth(node.left), depth(node.right))",
+        ),
+        WalkStep(
+          step: "Follow-up: a breadth-first level count gives the same number without recursion — what a tree deep enough to overflow the call stack needs.",
+          hint: "When would recursion be the wrong tool?",
+          why: "A tree deep enough to overflow the call stack; counting levels breadth-first gives the same number iteratively.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "depth(node):
@@ -1249,13 +2729,48 @@ loop:
       Nudge(
         "The longest path bends through some node, joining a walk down its left side to a walk down its right. Measuring that at every node from scratch is quadratic — what could each subtree hand its parent so that one walk answers everything?",
       ),
-      Steps([
-        "See what a path through a node costs: its left height plus its right height, counted in edges.",
-        "Give each call two jobs: return the subtree's height, and record the best path seen anywhere so far.",
-        "Base case: an empty subtree has height 0 and no path.",
-        "At each node, take the children's heights; return 1 + the larger, and offer left + right as a diameter candidate.",
-        "Keep the widest candidate across all nodes — the answer is recorded on the way past, never returned up.",
-        "Name the trap being avoided: calling a separate height() at every node is the O(n squared) version.",
+      Walk([
+        WalkStep(
+          step: "See what a path through a node costs: its left height plus its right height, counted in edges.",
+          hint: "A path that bends at a node goes down both sides. How long is it, in edges?",
+          why: "Left height plus right height, so the diameter is the largest such sum over every node.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Give each call two jobs: return the subtree's height, and record the best path seen anywhere so far.",
+          hint: "Computing height separately at every node repeats work. What can one walk return to avoid that?",
+          why: "Each call returns its subtree's height and records the best bent path seen, so heights are computed once, O(n).",
+          code: "measure(node):",
+        ),
+        WalkStep(
+          step: "Base case: an empty subtree has height 0 and no path.",
+          hint: "What does an empty subtree contribute?",
+          why: "Height 0 and no path; the base case that stops the recursion at every leaf's children.",
+          code: "if node == null: return (0, 0)",
+        ),
+        WalkStep(
+          step: "At each node, take the children's heights; return 1 + the larger, and offer left + right as a diameter candidate.",
+          hint: "With both children's heights in hand, what goes up and what gets recorded?",
+          why: "Up goes 1 plus the taller side; recorded is left plus right, the path bending here.",
+          code: "(leftHeight, leftWidest) = measure(node.left)
+    (rightHeight, rightWidest) = measure(node.right)
+    height = 1 + max(leftHeight, rightHeight)",
+        ),
+        WalkStep(
+          step: "Keep the widest candidate across all nodes — the answer is recorded on the way past, never returned up.",
+          hint: "Why is the answer not simply the root's value?",
+          why: "The widest path may sit deep in one subtree, so the best is carried alongside the height rather than being what the recursion returns for the parent.",
+          code: "widest = max(leftHeight + rightHeight, leftWidest, rightWidest)
+    return (height, widest)
+
+answer = widest of measure(root)",
+        ),
+        WalkStep(
+          step: "Name the trap being avoided: calling a separate height() at every node is the O(n squared) version.",
+          hint: "What is the trap this structure avoids?",
+          why: "Calling a standalone height() at every node revisits subtrees repeatedly and costs O(n²) on a skewed tree.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "measure(node):
@@ -1273,13 +2788,45 @@ answer = widest of measure(root)",
       Nudge(
         "Checking balance at every node by measuring heights fresh asks the same subtree the same question over and over. Could the height computation itself carry the verdict — and once one subtree has failed, what is left to measure?",
       ),
-      Steps([
-        "Write one walk that reports a subtree's height, with a twist: -1 means something below is already unbalanced.",
-        "Base case: an empty subtree has height 0.",
-        "Measure both children; if either reports -1, pass -1 straight up without measuring anything else.",
-        "If the two heights differ by more than one, this node breaks the rule — report -1.",
-        "Otherwise report 1 plus the larger height.",
-        "The tree is balanced when the root's report is not -1; the sentinel-in-the-return trick is the same move as the diameter walk.",
+      Walk([
+        WalkStep(
+          step: "Write one walk that reports a subtree's height, with a twist: -1 means something below is already unbalanced.",
+          hint: "Height and balance are usually two separate walks. What one return value could carry both?",
+          why: "Folding \"unbalanced\" into the height as a sentinel makes a single O(n) post-order walk do the job; a separate height call per node would be O(n log n) or worse.",
+          code: "measure(node):",
+        ),
+        WalkStep(
+          step: "Base case: an empty subtree has height 0.",
+          hint: "What is the height of nothing, and is nothing balanced?",
+          why: "An empty subtree is the base case both questions share: height 0, and trivially balanced, so it never returns the sentinel.",
+          code: "if node == null: return 0",
+        ),
+        WalkStep(
+          step: "Measure both children; if either reports -1, pass -1 straight up without measuring anything else.",
+          hint: "If a child already reported trouble, is there any point measuring the other side?",
+          why: "Propagating -1 unchanged short-circuits the walk; the first imbalance found is enough, and passing it straight up keeps the answer O(n).",
+          code: "left = measure(node.left)
+    right = measure(node.right)
+    if left == -1 or right == -1: return -1",
+        ),
+        WalkStep(
+          step: "If the two heights differ by more than one, this node breaks the rule — report -1.",
+          hint: "What exactly does \"balanced\" ask of this node, given the two child heights?",
+          why: "The rule is local: a node is fine when its children's heights differ by at most one; violating it here is what turns a height into the sentinel.",
+          code: "if abs(left - right) > 1: return -1",
+        ),
+        WalkStep(
+          step: "Otherwise report 1 plus the larger height.",
+          hint: "With both children fine, what is this node's height?",
+          why: "A node adds one level on top of its taller child, which is the ordinary height recurrence the sentinel rides along with.",
+          code: "return 1 + max(left, right)",
+        ),
+        WalkStep(
+          step: "The tree is balanced when the root's report is not -1; the sentinel-in-the-return trick is the same move as the diameter walk.",
+          hint: "The root has answered. How do you read a yes or no out of a height?",
+          why: "Any non-negative number means no node anywhere broke the rule; the same encode-trouble-in-the-return move solves the diameter problem.",
+          code: "return measure(root) != -1",
+        ),
       ]),
       Pseudocode(
         "measure(node):
@@ -1297,12 +2844,39 @@ return measure(root) != -1",
       Nudge(
         "Two trees are the same when their roots agree and — what, exactly? Spell out every way a pair of positions can disagree, including the ways that involve nothing at all.",
       ),
-      Steps([
-        "Walk both trees in step, comparing the pair of nodes at each position.",
-        "Two empties match: return true.",
-        "An empty and a node never match: return false.",
-        "Two nodes match when their values are equal and both pairs of children match recursively.",
-        "Keep this function close: it is the inner loop of Subtree of Another Tree and of Symmetric Tree, which is why it is worth writing out.",
+      Walk([
+        WalkStep(
+          step: "Walk both trees in step, comparing the pair of nodes at each position.",
+          hint: "How do you compare two trees?",
+          why: "Walk them together, comparing the pair of nodes at each position.",
+          code: "same(p, q):",
+        ),
+        WalkStep(
+          step: "Two empties match: return true.",
+          hint: "What if both positions are empty?",
+          why: "They match.",
+          code: "if p == null and q == null: return true",
+        ),
+        WalkStep(
+          step: "An empty and a node never match: return false.",
+          hint: "And one empty, one not?",
+          why: "Never a match.",
+          code: "if p == null or q == null: return false",
+        ),
+        WalkStep(
+          step: "Two nodes match when their values are equal and both pairs of children match recursively.",
+          hint: "What makes two nodes match?",
+          why: "Equal values and matching children on both sides; O(n).",
+          code: "return p.value == q.value
+       and same(p.left, q.left)
+       and same(p.right, q.right)",
+        ),
+        WalkStep(
+          step: "Keep this function close: it is the inner loop of Subtree of Another Tree and of Symmetric Tree, which is why it is worth writing out.",
+          hint: "Why write this out?",
+          why: "It is the inner loop of Subtree of Another Tree and Symmetric Tree.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "same(p, q):
@@ -1317,13 +2891,51 @@ return measure(root) != -1",
       Nudge(
         "Two different questions are tangled here: whether two trees match exactly, and where to stand while asking. What happens if you refuse to tangle them and solve each one alone?",
       ),
-      Steps([
-        "Write (or reuse) Same Tree: two empties match, an empty against a node fails, and two nodes need equal values plus matching child pairs.",
-        "Handle the edges: an empty subRoot is a subtree of anything; an empty root contains nothing.",
-        "At each node of the main tree ask \"identical from here?\" — if yes, done.",
-        "Otherwise recurse into the left and right children and accept either.",
-        "Know the cost: O(n*m) worst case, driven by partial matches that fail deep.",
-        "Follow-up: serialise both trees and run substring search to collapse it — sound only if the serialisation marks empty children, or false matches slip through.",
+      Walk([
+        WalkStep(
+          step: "Write (or reuse) Same Tree: two empties match, an empty against a node fails, and two nodes need equal values plus matching child pairs.",
+          hint: "What helper does this problem reduce to?",
+          why: "Same Tree: two empties match, empty against a node fails, and nodes need equal values plus matching children.",
+          code: "same(a, b):
+    if a == null and b == null: return true
+    if a == null or b == null: return false
+    return a.value == b.value
+       and same(a.left, b.left)
+       and same(a.right, b.right)",
+        ),
+        WalkStep(
+          step: "Handle the edges: an empty subRoot is a subtree of anything; an empty root contains nothing.",
+          hint: "What are the answers for the empty inputs?",
+          why: "An empty subtree is in everything; an empty main tree contains nothing but the empty tree.",
+          code: "isSubtree(root, subRoot):
+    if subRoot == null: return true
+    if root == null: return false",
+        ),
+        WalkStep(
+          step: "At each node of the main tree ask \"identical from here?\" — if yes, done.",
+          hint: "What question is asked at each node of the main tree?",
+          why: "Is the tree rooted here identical to subRoot; a yes ends the search.",
+          code: "if same(root, subRoot): return true",
+        ),
+        WalkStep(
+          step: "Otherwise recurse into the left and right children and accept either.",
+          hint: "And if not?",
+          why: "Try both children and accept either.",
+          code: "return isSubtree(root.left, subRoot)
+        or isSubtree(root.right, subRoot)",
+        ),
+        WalkStep(
+          step: "Know the cost: O(n*m) worst case, driven by partial matches that fail deep.",
+          hint: "What is the worst case, and what causes it?",
+          why: "O(n * m), from partial matches that fail deep at many nodes.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Follow-up: serialise both trees and run substring search to collapse it — sound only if the serialisation marks empty children, or false matches slip through.",
+          hint: "How can serialisation collapse the cost?",
+          why: "Serialise both and substring-search, which is sound only if empty children are marked; otherwise different shapes can serialise alike.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "isSubtree(root, subRoot):
@@ -1345,13 +2957,47 @@ same(a, b):
       Nudge(
         "This is not just any tree — every node states a fact about everything beneath it. Standing at the root with two target values in hand, what does that fact already tell you, before you go looking for either one?",
       ),
-      Steps([
-        "Start a single pointer at the root; neither target is ever searched for.",
-        "If both values are smaller than the current node's, the split lies to the left — move left.",
-        "If both are larger, move right.",
-        "Otherwise the targets part ways here (or one equals this node, which counts as its own descendant) — this node is the answer.",
-        "Iterate rather than recurse: the walk is O(h) time with O(1) space.",
-        "Follow-up: on a plain binary tree the ordering is gone — the fallback is finding both root-to-node paths and comparing where they diverge.",
+      Walk([
+        WalkStep(
+          step: "Start a single pointer at the root; neither target is ever searched for.",
+          hint: "In a BST, do you need to find the two nodes to find their ancestor?",
+          why: "No; the ordering tells you at every node which side both values lie on, so one pointer descends without ever searching.",
+          code: "node = root
+while node != null:",
+        ),
+        WalkStep(
+          step: "If both values are smaller than the current node's, the split lies to the left — move left.",
+          hint: "Both values are smaller than the current node. Where is the split?",
+          why: "In the left subtree, since both targets are there and so is any common ancestor below this one.",
+          code: "if p < node.value and q < node.value:
+        node = node.left",
+        ),
+        WalkStep(
+          step: "If both are larger, move right.",
+          hint: "And if both are larger?",
+          why: "Symmetric: go right.",
+          code: "else if p > node.value and q > node.value:
+        node = node.right",
+        ),
+        WalkStep(
+          step: "Otherwise the targets part ways here (or one equals this node, which counts as its own descendant) — this node is the answer.",
+          hint: "What does it mean when neither of those holds?",
+          why: "The values fall on different sides, or one equals this node, so this is the lowest node with both beneath it.",
+          code: "else:
+        return node.value",
+        ),
+        WalkStep(
+          step: "Iterate rather than recurse: the walk is O(h) time with O(1) space.",
+          hint: "Why iterate instead of recurse?",
+          why: "The walk follows one path with no backtracking, so a loop gives O(h) time and O(1) space.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Follow-up: on a plain binary tree the ordering is gone — the fallback is finding both root-to-node paths and comparing where they diverge.",
+          hint: "What changes on an ordinary binary tree?",
+          why: "No ordering to steer by; find both root-to-node paths and take the last node they share.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "node = root
@@ -1368,13 +3014,49 @@ while node != null:
       Nudge(
         "The values are easy to visit; the hard part is knowing where one level ends and the next begins. What if you never held single nodes at all — what larger unit of the tree could you process whole, so the boundaries come for free?",
       ),
-      Steps([
-        "Hold the current level as one whole list of nodes — the frontier — starting with just the root, or nothing for an empty tree.",
-        "Each round, record the values of every node on the frontier as one output level.",
-        "Build the next frontier from all the children of the current one, left to right, skipping empties.",
-        "Repeat until the frontier is empty, then return the collected levels.",
-        "Contrast with the trap: a one-node-at-a-time queue gives the right order but no idea where each level ends — the whole-frontier step is what makes the grouping free.",
-        "Depth-first works too, if each value is filed under its depth in a list of lists.",
+      Walk([
+        WalkStep(
+          step: "Hold the current level as one whole list of nodes — the frontier — starting with just the root, or nothing for an empty tree.",
+          hint: "A queue gives you nodes in the right order. What does it not tell you?",
+          why: "Holding an entire level as one list keeps the level boundaries explicit, which is exactly what a plain one-node queue loses.",
+          code: "levels = []
+frontier = [root] if root != null else []",
+        ),
+        WalkStep(
+          step: "Each round, record the values of every node on the frontier as one output level.",
+          hint: "With the whole level in hand, what is the output for this round?",
+          why: "The frontier is one output level by construction, so recording its values is one line with no counting.",
+          code: "while frontier is not empty:
+    levels.add(values of every node in frontier)",
+        ),
+        WalkStep(
+          step: "Build the next frontier from all the children of the current one, left to right, skipping empties.",
+          hint: "Where does the next level come from, and in what order should it be built?",
+          why: "Collecting children left to right from the frontier preserves the within-level order the problem wants, and skipping nulls keeps the next list honest.",
+          code: "next = []
+    for node in frontier:
+        if node.left != null: next.add(node.left)
+        if node.right != null: next.add(node.right)
+    frontier = next",
+        ),
+        WalkStep(
+          step: "Repeat until the frontier is empty, then return the collected levels.",
+          hint: "When are you done?",
+          why: "A frontier with no nodes means the previous level was the last; every node was visited once, so the walk is O(n).",
+          code: "return levels",
+        ),
+        WalkStep(
+          step: "Contrast with the trap: a one-node-at-a-time queue gives the right order but no idea where each level ends — the whole-frontier step is what makes the grouping free.",
+          hint: "If you used a single queue, how would you know a level had ended?",
+          why: "The usual fix is to read the queue's size at the start of each round and dequeue exactly that many, which is the same idea with the boundary tracked by a count.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Depth-first works too, if each value is filed under its depth in a list of lists.",
+          hint: "Could a depth-first walk produce the same grouping?",
+          why: "Yes: carry the depth down the recursion and append each value to levels[depth]; it is the same O(n) work with recursion doing the bookkeeping.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "levels = []
@@ -1393,13 +3075,49 @@ return levels",
       Nudge(
         "Standing to the right of the tree, exactly one node per level shows. Which one — and why is it not simply whatever hangs off the right children? Try restating the problem level by level.",
       ),
-      Steps([
-        "Walk the tree level by level with a whole-frontier loop, exactly as in Level Order Traversal.",
-        "From each level keep only the last node's value — that is what the right side sees.",
-        "Build the next frontier from all children, left to right, skipping empties.",
-        "Repeat until the frontier empties; the kept values, top to bottom, are the answer.",
-        "Beware the tempting wrong answer of following right children only: where the right side is short, a node further left is the one that shows.",
-        "Depth-first alternative: visit the right child first and record the first value reached at each new depth — first to a depth is rightmost on it.",
+      Walk([
+        WalkStep(
+          step: "Walk the tree level by level with a whole-frontier loop, exactly as in Level Order Traversal.",
+          hint: "Which traversal already hands you every node on a level at once?",
+          why: "The whole-frontier level walk from Level Order Traversal gives each level as a list, and the right side view is one value from each list.",
+          code: "seen = []
+frontier = [root] if root != null else []
+while frontier is not empty:",
+        ),
+        WalkStep(
+          step: "From each level keep only the last node's value — that is what the right side sees.",
+          hint: "Of a whole level, which node does someone standing on the right see?",
+          why: "The last node in left-to-right order is the rightmost on that level, whichever subtree it comes from.",
+          code: "seen.add(value of last node in frontier)",
+        ),
+        WalkStep(
+          step: "Build the next frontier from all children, left to right, skipping empties.",
+          hint: "How do you build the next level so that \"last\" still means \"rightmost\"?",
+          why: "Collecting children left to right keeps the level in visual order, so the last element stays the correct pick.",
+          code: "next = []
+    for node in frontier:
+        if node.left != null: next.add(node.left)
+        if node.right != null: next.add(node.right)
+    frontier = next",
+        ),
+        WalkStep(
+          step: "Repeat until the frontier empties; the kept values, top to bottom, are the answer.",
+          hint: "When does the view end?",
+          why: "When a level has no nodes there is nothing below to see; one visit per node makes it O(n).",
+          code: "return seen",
+        ),
+        WalkStep(
+          step: "Beware the tempting wrong answer of following right children only: where the right side is short, a node further left is the one that shows.",
+          hint: "What goes wrong if you only ever follow right children?",
+          why: "A left subtree deeper than the right one has levels the right spine never reaches, and those levels are visible from the right.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Depth-first alternative: visit the right child first and record the first value reached at each new depth — first to a depth is rightmost on it.",
+          hint: "Is there a depth-first version?",
+          why: "Visiting right before left and recording the first value reached at each new depth works, because the first arrival at a depth is its rightmost node.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "seen = []
@@ -1418,12 +3136,38 @@ return seen",
       Nudge(
         "Whether a node is good depends only on the trip taken to reach it, never on anything beneath it. What single piece of that trip's history is enough to carry along — and what should it start as so the root judges itself correctly?",
       ),
-      Steps([
-        "Walk the tree carrying one extra argument: the largest value on the path so far.",
-        "Start at the root with the root's own value as the initial maximum — that is what makes the root always good.",
-        "At each node, count 1 when its value is at least the carried maximum, else 0.",
-        "Update the maximum with the node's value before descending.",
-        "Return this node's count plus the counts from both children, with empty subtrees contributing 0 — one pass is enough because the test never looks down.",
+      Walk([
+        WalkStep(
+          step: "Walk the tree carrying one extra argument: the largest value on the path so far.",
+          hint: "Goodness is about the path from the root. What one number summarises that path?",
+          why: "The largest value seen on the way down; carrying it as an argument turns a path property into a local test.",
+          code: "count(node, largest):
+    if node == null: return 0",
+        ),
+        WalkStep(
+          step: "Start at the root with the root's own value as the initial maximum — that is what makes the root always good.",
+          hint: "What should the maximum be when you start at the root?",
+          why: "The root's own value, so the root compares equal to it and is counted good, as the problem defines.",
+          code: "answer = count(root, root.value) if root != null else 0",
+        ),
+        WalkStep(
+          step: "At each node, count 1 when its value is at least the carried maximum, else 0.",
+          hint: "What makes a node good, in terms of the number you carry?",
+          why: "Its value is at least the path maximum; ties count, which is why the comparison is >= rather than >.",
+          code: "here = 1 if node.value >= largest else 0",
+        ),
+        WalkStep(
+          step: "Update the maximum with the node's value before descending.",
+          hint: "What must the children receive as their path maximum?",
+          why: "The maximum including this node, so the update happens before the recursive calls.",
+          code: "largest = max(largest, node.value)",
+        ),
+        WalkStep(
+          step: "Return this node's count plus the counts from both children, with empty subtrees contributing 0 — one pass is enough because the test never looks down.",
+          hint: "How do the counts combine, and why is one pass enough?",
+          why: "This node's 0 or 1 plus both subtrees' counts; the test only ever looks upward along the path, so a single O(n) walk sees everything it needs.",
+          code: "return here + count(node.left, largest) + count(node.right, largest)",
+        ),
       ]),
       Pseudocode(
         "count(node, largest):
@@ -1439,13 +3183,45 @@ answer = count(root, root.value) if root != null else 0",
       Nudge(
         "Comparing each node with its parent feels sufficient — is it? A node can be larger than its parent and still sit on the wrong side of something higher up. What knowledge about allowed values would have to travel down the tree with you to catch that?",
       ),
-      Steps([
-        "Validate each node against a range of allowed values, not against its parent alone.",
-        "Start at the root with both bounds open — no limit on either side.",
-        "Recurse left with the upper bound tightened to the node's value; recurse right with the lower bound tightened.",
-        "Fail a node the moment it is at or beyond either bound — equal values are invalid too.",
-        "An empty subtree is trivially valid; the tree is valid when every node passes.",
-        "Alternative worth knowing: an in-order walk of a valid BST is strictly increasing, so walk in order and check each value beats the previous one.",
+      Walk([
+        WalkStep(
+          step: "Validate each node against a range of allowed values, not against its parent alone.",
+          hint: "Is comparing each node with its parent enough?",
+          why: "No, a node deep in the left subtree must also be below the root; each node must respect a range inherited from all its ancestors.",
+          code: "function valid(node, low, high):",
+        ),
+        WalkStep(
+          step: "Start at the root with both bounds open — no limit on either side.",
+          hint: "What are the root's bounds?",
+          why: "Open on both sides.",
+          code: "return valid(root, unset, unset)",
+        ),
+        WalkStep(
+          step: "Recurse left with the upper bound tightened to the node's value; recurse right with the lower bound tightened.",
+          hint: "How do the bounds change going left and right?",
+          why: "Going left tightens the upper bound to the node's value; going right tightens the lower bound.",
+          code: "return valid(node.left, low, node.val)
+       and valid(node.right, node.val, high)",
+        ),
+        WalkStep(
+          step: "Fail a node the moment it is at or beyond either bound — equal values are invalid too.",
+          hint: "What makes a node fail?",
+          why: "Being at or beyond either bound; equal values are invalid too.",
+          code: "if low is set and node.val <= low: return false
+    if high is set and node.val >= high: return false",
+        ),
+        WalkStep(
+          step: "An empty subtree is trivially valid; the tree is valid when every node passes.",
+          hint: "What is the base case?",
+          why: "An empty subtree is valid; the tree is valid when every node passes, O(n).",
+          code: "if node is null: return true",
+        ),
+        WalkStep(
+          step: "Alternative worth knowing: an in-order walk of a valid BST is strictly increasing, so walk in order and check each value beats the previous one.",
+          hint: "What property of in-order traversal gives another check?",
+          why: "A valid BST's in-order values are strictly increasing, so walk in order and compare each value with the previous.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "function valid(node, low, high):
@@ -1462,12 +3238,44 @@ return valid(root, unset, unset)",
       Nudge(
         "The tree already encodes something about order — what does a particular way of walking it hand you for free? And once the kth thing has been reached, why keep walking at all?",
       ),
-      Steps([
-        "Walk the tree in order — left subtree, node, right subtree — since a BST yields its values sorted that way.",
-        "Use an explicit stack so the walk can stop mid-flight; a plain recursive walk would have to run to the end.",
-        "Slide left from the current node, pushing every node passed.",
-        "Pop a node, count it, and return its value the moment the count hits k; otherwise step into its right child and slide left again.",
-        "Follow-up: if the tree is queried often, store subtree sizes in each node and descend one path comparing k against the left subtree's size — O(depth) per query.",
+      Walk([
+        WalkStep(
+          step: "Walk the tree in order — left subtree, node, right subtree — since a BST yields its values sorted that way.",
+          hint: "Which traversal of a BST produces its values in sorted order?",
+          why: "In-order (left, node, right), so the kth value visited is the kth smallest without sorting anything.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Use an explicit stack so the walk can stop mid-flight; a plain recursive walk would have to run to the end.",
+          hint: "Why not just write the recursive in-order walk?",
+          why: "It cannot stop early without extra plumbing; an explicit stack lets the walk end the moment the kth node is reached, O(H + k).",
+          code: "stack = empty
+node = root",
+        ),
+        WalkStep(
+          step: "Slide left from the current node, pushing every node passed.",
+          hint: "How do you reach the smallest value first?",
+          why: "Slide down the left spine pushing each node, so the deepest left node is on top.",
+          code: "while stack not empty or node is not null:
+    while node is not null:
+        stack.push(node)
+        node = node.left",
+        ),
+        WalkStep(
+          step: "Pop a node, count it, and return its value the moment the count hits k; otherwise step into its right child and slide left again.",
+          hint: "After visiting a node, where does the walk go next?",
+          why: "Count it, stop if that made k, otherwise into its right subtree and left-slide again; the stack remembers the ancestors.",
+          code: "node = stack.pop()
+    k = k - 1
+    if k == 0: return node.val
+    node = node.right",
+        ),
+        WalkStep(
+          step: "Follow-up: if the tree is queried often, store subtree sizes in each node and descend one path comparing k against the left subtree's size — O(depth) per query.",
+          hint: "If this query runs constantly, what could the tree store to make it faster?",
+          why: "Subtree sizes: comparing k with the left size picks a direction at each node, so a query is O(depth) instead of O(k).",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "stack = empty
@@ -1486,12 +3294,41 @@ while stack not empty or node is not null:
       Nudge(
         "Either traversal alone matches many different trees, yet together they pin down exactly one. What does the very first entry of one list tell you outright — and what does locating that value in the other list divide in two?",
       ),
-      Steps([
-        "Take the first preorder value: it is the root of the whole tree.",
-        "Find that value in the inorder list — everything before it is the left subtree, everything after is the right.",
-        "The left chunk's size also says how to split the rest of the preorder list between the two subtrees.",
-        "Recurse on each preorder-slice and inorder-slice pair; an empty slice is an empty subtree.",
-        "Follow-up: searching the inorder list is a hidden O(n) per node — precompute a value-to-index map and pass boundary indices instead of slicing for O(n) overall.",
+      Walk([
+        WalkStep(
+          step: "Take the first preorder value: it is the root of the whole tree.",
+          hint: "What does preorder visit first, always?",
+          why: "The root, so preorder[0] is the root of whatever subtree the slice describes.",
+          code: "function build(preorder, inorder):
+    if preorder is empty: return null
+    root_val = preorder[0]",
+        ),
+        WalkStep(
+          step: "Find that value in the inorder list — everything before it is the left subtree, everything after is the right.",
+          hint: "Where does the root sit in the inorder list, and what surrounds it?",
+          why: "Inorder visits left subtree, root, right subtree, so the root's position splits the list into exactly the two subtrees.",
+          code: "split = position of root_val in inorder",
+        ),
+        WalkStep(
+          step: "The left chunk's size also says how to split the rest of the preorder list between the two subtrees.",
+          hint: "You know how many nodes the left subtree has. What does that tell you about the preorder list?",
+          why: "Preorder lists the whole left subtree before any of the right, so the left subtree's size cuts the remaining preorder into its two halves.",
+          code: "node = new node(root_val)
+    node.left = build(preorder[1 .. split], inorder[0 .. split - 1])
+    node.right = build(preorder[split + 1 ..], inorder[split + 1 ..])",
+        ),
+        WalkStep(
+          step: "Recurse on each preorder-slice and inorder-slice pair; an empty slice is an empty subtree.",
+          hint: "What is the smallest input, and what tree does it describe?",
+          why: "An empty slice is an empty subtree, which is the base case that ends the recursion on every leaf.",
+          code: "return node",
+        ),
+        WalkStep(
+          step: "Follow-up: searching the inorder list is a hidden O(n) per node — precompute a value-to-index map and pass boundary indices instead of slicing for O(n) overall.",
+          hint: "How much work does the inorder search add per node?",
+          why: "A linear search per node makes the build O(n²); a value-to-index map and index boundaries instead of slices bring it to O(n).",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "function build(preorder, inorder):
@@ -1508,12 +3345,42 @@ while stack not empty or node is not null:
       Nudge(
         "A path may bend through a node and use both its arms — but what is it no longer allowed to do once it continues up to the parent? There are two different bests hiding at every node: which one gets returned, and which one only recorded?",
       ),
-      Steps([
-        "Compute two things per node: the best path that can continue upward (node plus at most one child) and the best path bending through it (node plus both children).",
-        "Recurse into both children first, getting each child's extendable sum and its best-anywhere sum.",
-        "Clamp a negative child sum to zero — a path is allowed to stop rather than absorb a loss.",
-        "Return the node's value plus the larger clamped gain; record the node's value plus both clamped gains against the best seen so far.",
-        "The answer is the best recorded anywhere, which may be a single node when every value is negative.",
+      Walk([
+        WalkStep(
+          step: "Compute two things per node: the best path that can continue upward (node plus at most one child) and the best path bending through it (node plus both children).",
+          hint: "A path through a node can bend once. Can the path you hand up to the parent also bend?",
+          why: "The parent can extend a path only if it is a straight line ending at the child, so each node must report the straight version separately from the best bent one.",
+          code: "function walk(node):
+    if node is null: return (0, -infinity)",
+        ),
+        WalkStep(
+          step: "Recurse into both children first, getting each child's extendable sum and its best-anywhere sum.",
+          hint: "What must you know from each child before deciding anything at this node?",
+          why: "Post-order: both children's extendable sums and their best-anywhere sums, since the answer may be entirely inside one subtree.",
+          code: "(left_up, left_best) = walk(node.left)
+    (right_up, right_best) = walk(node.right)",
+        ),
+        WalkStep(
+          step: "Clamp a negative child sum to zero — a path is allowed to stop rather than absorb a loss.",
+          hint: "If a child's best extendable sum is negative, should the path include it?",
+          why: "A path may stop at any node, so a negative contribution is simply dropped; clamping to zero encodes that choice without a branch.",
+          code: "left_gain = max(left_up, 0)
+    right_gain = max(right_up, 0)",
+        ),
+        WalkStep(
+          step: "Return the node's value plus the larger clamped gain; record the node's value plus both clamped gains against the best seen so far.",
+          hint: "Which of the two numbers is for the parent, and which is a candidate answer?",
+          why: "The extendable value takes one child at most; the bent value takes both and can only be the final answer, never part of a longer path.",
+          code: "up = node.val + max(left_gain, right_gain)
+    through = node.val + left_gain + right_gain
+    return (up, max(through, left_best, right_best))",
+        ),
+        WalkStep(
+          step: "The answer is the best recorded anywhere, which may be a single node when every value is negative.",
+          hint: "If every value is negative, what is the best path?",
+          why: "Seeding the best with negative infinity rather than zero lets a lone negative node win, which the problem requires; the walk is O(n).",
+          code: "answer = second component of walk(root)",
+        ),
       ]),
       Pseudocode(
         "function walk(node):
@@ -1533,13 +3400,54 @@ answer = second component of walk(root)",
       Nudge(
         "The format is yours to choose — so what information, exactly, must the string carry for one and only one tree to match it? A list of values alone fits many shapes; what is it missing?",
       ),
-      Steps([
-        "Serialize with a pre-order walk, writing each value and a marker (say \"#\") for every empty child.",
-        "Join the tokens with a separator that cannot appear inside a value, such as a comma.",
-        "Deserialize by consuming tokens in the same pre-order: a marker means an empty subtree, anything else becomes a node.",
-        "After making a node, recursively read its left subtree then its right, sharing one cursor over the token list.",
-        "No length bookkeeping is needed — the markers tell the reader exactly when a subtree ends.",
-        "Follow-up: post-order works just as well read from the end, and level-order with markers is the BFS flavour some interviewers prefer.",
+      Walk([
+        WalkStep(
+          step: "Serialize with a pre-order walk, writing each value and a marker (say \"#\") for every empty child.",
+          hint: "Which traversal, with markers for empties, describes a tree unambiguously?",
+          why: "Pre-order with a marker for every null child; the markers replace shape information.",
+          code: "function write(node, parts):
+    if node is null:
+        parts.add(\"#\")
+        return
+    parts.add(node.val as text)
+    write(node.left, parts)
+    write(node.right, parts)",
+        ),
+        WalkStep(
+          step: "Join the tokens with a separator that cannot appear inside a value, such as a comma.",
+          hint: "What separator is safe between tokens?",
+          why: "One that cannot appear inside a value, such as a comma.",
+          code: "serialize(root): write then join parts with \",\"",
+        ),
+        WalkStep(
+          step: "Deserialize by consuming tokens in the same pre-order: a marker means an empty subtree, anything else becomes a node.",
+          hint: "How does the reader interpret each token?",
+          why: "A marker is an empty subtree; anything else is a node value.",
+          code: "function read(tokens, cursor):
+    token = tokens[cursor]; advance cursor
+    if token == \"#\": return null
+    node = new node(token as number)",
+        ),
+        WalkStep(
+          step: "After making a node, recursively read its left subtree then its right, sharing one cursor over the token list.",
+          hint: "After creating a node, what does the reader do?",
+          why: "Reads the left subtree then the right from the same cursor, mirroring the writer.",
+          code: "node.left = read(tokens, cursor)
+    node.right = read(tokens, cursor)
+    return node",
+        ),
+        WalkStep(
+          step: "No length bookkeeping is needed — the markers tell the reader exactly when a subtree ends.",
+          hint: "Why is no size or length information needed?",
+          why: "The markers tell the reader exactly where every subtree ends; O(n) both ways.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Follow-up: post-order works just as well read from the end, and level-order with markers is the BFS flavour some interviewers prefer.",
+          hint: "What other orders work?",
+          why: "Post-order read from the end, or level-order with markers as the BFS flavour.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "function write(node, parts):
@@ -1565,12 +3473,48 @@ function read(tokens, cursor):
       Nudge(
         "insert, search, startsWith — two of those are nearly the same question. What single piece of per-node information separates a stored prefix from a stored word? And what do many words with the same opening letters share that a flat store would duplicate?",
       ),
-      Steps([
-        "Give each node a map from letter to child node plus a flag meaning \"a word ends here\".",
-        "Insert by walking letter by letter, creating missing children as you go, and set the flag on the final node.",
-        "Answer both queries by walking the letters and failing the moment a letter has no child.",
-        "search additionally demands the final node's flag; startsWith is satisfied by merely arriving.",
-        "Alternative: a hash set of every word plus every prefix answers both queries in one lookup each, but stores O(total letters) of text instead of sharing prefixes.",
+      Walk([
+        WalkStep(
+          step: "Give each node a map from letter to child node plus a flag meaning \"a word ends here\".",
+          hint: "What does one node of a trie need to hold?",
+          why: "A map from letter to child and a flag saying a word ends here; the flag is what separates a word from a mere prefix.",
+          code: "node: children (map letter -> node), terminal (flag)",
+        ),
+        WalkStep(
+          step: "Insert by walking letter by letter, creating missing children as you go, and set the flag on the final node.",
+          hint: "How does a word get into the trie?",
+          why: "Walk letter by letter creating any missing child, then flag the final node; O(word length).",
+          code: "insert(word):
+    node = root
+    for letter in word:
+        if letter not in node.children: node.children[letter] = new node
+        node = node.children[letter]
+    node.terminal = true",
+        ),
+        WalkStep(
+          step: "Answer both queries by walking the letters and failing the moment a letter has no child.",
+          hint: "What do search and startsWith have in common?",
+          why: "The same walk, failing at the first letter with no child; factoring it out leaves each query one line.",
+          code: "walk(letters):
+    node = root
+    for letter in letters:
+        if letter not in node.children: return null
+        node = node.children[letter]
+    return node",
+        ),
+        WalkStep(
+          step: "search additionally demands the final node's flag; startsWith is satisfied by merely arriving.",
+          hint: "How do the two queries differ once the walk succeeds?",
+          why: "search needs the terminal flag; startsWith is satisfied by merely arriving at a node.",
+          code: "search(word): node = walk(word); return node is not null and node.terminal
+startsWith(prefix): return walk(prefix) is not null",
+        ),
+        WalkStep(
+          step: "Alternative: a hash set of every word plus every prefix answers both queries in one lookup each, but stores O(total letters) of text instead of sharing prefixes.",
+          hint: "What would a hash-set version look like, and what does it cost?",
+          why: "Store every word and every prefix for O(1) queries, at O(total letters) of storage with no prefix sharing.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "node: children (map letter -> node), terminal (flag)
@@ -1597,13 +3541,49 @@ startsWith(prefix): return walk(prefix) is not null",
       Nudge(
         "Without the dot this is a structure you already know. What does one wildcard character force the lookup to become — and what keeps that from degenerating into checking every stored word?",
       ),
-      Steps([
-        "Store the words in a trie: letter-to-child maps with an end-of-word flag; addWord is the plain insert.",
-        "Search recursively over the pattern: a literal letter follows its single child or fails immediately.",
-        "A dot tries every child of the current node against the rest of the pattern, succeeding if any does.",
-        "When the pattern is exhausted, succeed only if the current node's end-of-word flag is set.",
-        "The trie's payoff is pruning: a branch dies at the first letter that cannot match, so shared prefixes are explored once instead of once per word.",
-        "Cheap alternative worth naming: bucket words by length and scan the matching bucket — a pattern can only match words of its own length.",
+      Walk([
+        WalkStep(
+          step: "Store the words in a trie: letter-to-child maps with an end-of-word flag; addWord is the plain insert.",
+          hint: "Words share prefixes. Which structure stores them so a prefix is walked once?",
+          why: "A trie: each node maps a letter to a child, with a flag marking word ends; addWord is a walk that creates missing children.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Search recursively over the pattern: a literal letter follows its single child or fails immediately.",
+          hint: "For a literal letter in the pattern, how many branches can match?",
+          why: "One: the child under that letter, or none, which fails immediately.",
+          code: "if letter not in node.children: return false
+    return search(node.children[letter], rest)",
+        ),
+        WalkStep(
+          step: "A dot tries every child of the current node against the rest of the pattern, succeeding if any does.",
+          hint: "A dot can be any letter. What does the search do at that point?",
+          why: "Try every child against the rest of the pattern and succeed if any branch does; this is where the recursion fans out.",
+          code: "if letter == \".\":
+        for child in values of node.children:
+            if search(child, rest): return true
+        return false",
+        ),
+        WalkStep(
+          step: "When the pattern is exhausted, succeed only if the current node's end-of-word flag is set.",
+          hint: "The pattern has run out. Is being at some node enough?",
+          why: "Only if a word ends exactly here; the terminal flag distinguishes a stored word from a prefix of one.",
+          code: "search(node, pattern):
+    if pattern is empty: return node.terminal
+    letter = pattern[0]; rest = pattern[1 ..]",
+        ),
+        WalkStep(
+          step: "The trie's payoff is pruning: a branch dies at the first letter that cannot match, so shared prefixes are explored once instead of once per word.",
+          hint: "Why is this better than checking every stored word against the pattern?",
+          why: "A trie branch dies at the first letter that cannot match, so shared prefixes are examined once instead of once per word.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Cheap alternative worth naming: bucket words by length and scan the matching bucket — a pattern can only match words of its own length.",
+          hint: "What cheaper structure would also work?",
+          why: "Buckets by length: a pattern can only match words of its own length, so scanning that bucket is correct and often fast enough.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "search(node, pattern):
@@ -1621,13 +3601,50 @@ startsWith(prefix): return walk(prefix) is not null",
       Nudge(
         "You could run the single-word grid search once per word — where exactly does that repeat work? Many of the words open with the same letters; what would let one walk of the board serve all of them at once?",
       ),
-      Steps([
-        "Build one trie of every word, and mark each word's final node with the word itself.",
-        "From every cell, walk the board and the trie together: a step is legal only if the cell's letter is a child of the current trie node.",
-        "Record a word the moment its marker node is reached, and keep walking — longer words may continue through it.",
-        "Carry the cells used on the current path so no cell repeats within one word; a fresh path from another start gets a fresh set.",
-        "Collect results in a set, since the same word can be traced from several places.",
-        "Optimisation follow-up: prune found words (or emptied nodes) out of the trie so exhausted branches stop being explored.",
+      Walk([
+        WalkStep(
+          step: "Build one trie of every word, and mark each word's final node with the word itself.",
+          hint: "Searching the board once per word repeats work. What lets one walk serve every word?",
+          why: "A trie of all words, with each complete word stored at its final node.",
+          code: "build trie of words; each complete word's node stores that word",
+        ),
+        WalkStep(
+          step: "From every cell, walk the board and the trie together: a step is legal only if the cell's letter is a child of the current trie node.",
+          hint: "What makes a step from a cell legal?",
+          why: "The cell's letter must be a child of the current trie node; the board and the trie are walked together.",
+          code: "function walk(r, c, node, used):
+    if (r, c) outside grid or (r, c) in used: return
+    letter = board[r][c]
+    if letter not in node.children: return
+    child = node.children[letter]",
+        ),
+        WalkStep(
+          step: "Record a word the moment its marker node is reached, and keep walking — longer words may continue through it.",
+          hint: "When is a word recorded, and does the walk stop?",
+          why: "On reaching a node that stores a word; keep walking, since longer words may pass through.",
+          code: "if child stores a word: found.add(that word)",
+        ),
+        WalkStep(
+          step: "Carry the cells used on the current path so no cell repeats within one word; a fresh path from another start gets a fresh set.",
+          hint: "How do you stop a cell being reused within one word?",
+          why: "A per-path set of used cells; a fresh start gets a fresh set.",
+          code: "for (dr, dc) in four directions:
+        walk(r + dr, c + dc, child, used plus (r, c))
+
+for each cell (r, c): walk(r, c, trie root, empty set)",
+        ),
+        WalkStep(
+          step: "Collect results in a set, since the same word can be traced from several places.",
+          hint: "Why collect results in a set?",
+          why: "The same word can be traced from several starting cells.",
+          code: "return found as a list",
+        ),
+        WalkStep(
+          step: "Optimisation follow-up: prune found words (or emptied nodes) out of the trie so exhausted branches stop being explored.",
+          hint: "What pruning keeps the search from revisiting finished branches?",
+          why: "Remove found words or emptied nodes from the trie so exhausted branches die immediately.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "build trie of words; each complete word's node stores that word
@@ -1649,12 +3666,41 @@ return found as a list",
       Nudge(
         "Every added value asks the same question about the k largest seen so far. How much of the stream do you actually need to remember to keep answering it — and which single remembered value is the answer?",
       ),
-      Steps([
-        "Keep only the k largest values seen, in a min-heap capped at size k; its root is the kth largest.",
-        "Build by heapifying the initial list, then popping until at most k values remain.",
-        "On add, push the new value, then pop once if the heap exceeds k — whatever falls out can never be the answer.",
-        "Report the heap's root, noting there is no kth largest at all until k values have arrived.",
-        "Each add costs O(log k) and memory stays O(k) however long the stream runs — keeping everything and sorting per query is the trap.",
+      Walk([
+        WalkStep(
+          step: "Keep only the k largest values seen, in a min-heap capped at size k; its root is the kth largest.",
+          hint: "Of all the values seen, which ones can still matter for the kth largest?",
+          why: "Only the k largest; a min-heap of exactly those has the kth largest at its root.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Build by heapifying the initial list, then popping until at most k values remain.",
+          hint: "How do you get from the initial list to that heap?",
+          why: "Heapify the whole list in O(n), then pop until k remain; what is popped is smaller than k other values.",
+          code: "constructor(k, nums):
+    heap = min-heap of nums
+    while heap.size > k: heap.pop()",
+        ),
+        WalkStep(
+          step: "On add, push the new value, then pop once if the heap exceeds k — whatever falls out can never be the answer.",
+          hint: "A new value arrives. How do you keep the heap at size k?",
+          why: "Push it, then pop once if the size exceeds k; the evicted value is the smallest and can never be the answer again.",
+          code: "add(value):
+    heap.push(value)
+    if heap.size > k: heap.pop()",
+        ),
+        WalkStep(
+          step: "Report the heap's root, noting there is no kth largest at all until k values have arrived.",
+          hint: "Where is the answer, and when does it not exist?",
+          why: "The root; until k values have arrived there is no kth largest at all, which the problem's constraints avoid but the code should not assume.",
+          code: "return heap.top",
+        ),
+        WalkStep(
+          step: "Each add costs O(log k) and memory stays O(k) however long the stream runs — keeping everything and sorting per query is the trap.",
+          hint: "What does each add cost over a long stream?",
+          why: "O(log k) time and O(k) memory forever; keeping everything and sorting on each query is the trap this replaces.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "constructor(k, nums):
@@ -1671,13 +3717,45 @@ add(value):
       Nudge(
         "Strip away the story: which single operation does the bag of stones have to support, over and over, until almost nothing is left? Name that operation and the right structure names itself.",
       ),
-      Steps([
-        "Put all stones into a structure that surrenders its maximum cheaply — a max-heap.",
-        "While at least two stones remain, pop the two heaviest.",
-        "If they differ, push back the difference; equal stones destroy each other.",
-        "When the loop ends, return the lone survivor, or 0 if the heap is empty.",
-        "If the library only offers a min-heap, negate values going in and coming out.",
-        "Alternatives that make the same point: a sorted list is the same idea at a worse constant, and scanning for the max each round is O(n) per smash.",
+      Walk([
+        WalkStep(
+          step: "Put all stones into a structure that surrenders its maximum cheaply — a max-heap.",
+          hint: "Every round needs the two heaviest stones. Which structure hands over the maximum cheaply?",
+          why: "A max-heap gives the largest in O(log n) per pop, far better than rescanning.",
+          code: "heap = max-heap of stones",
+        ),
+        WalkStep(
+          step: "While at least two stones remain, pop the two heaviest.",
+          hint: "How many stones does a round consume?",
+          why: "Two, so the loop runs while at least two remain.",
+          code: "while heap.size > 1:
+    a = heap.pop()
+    b = heap.pop()",
+        ),
+        WalkStep(
+          step: "If they differ, push back the difference; equal stones destroy each other.",
+          hint: "What goes back into the heap after a smash?",
+          why: "The difference if they differ, nothing if they are equal.",
+          code: "if a != b: heap.push(a - b)",
+        ),
+        WalkStep(
+          step: "When the loop ends, return the lone survivor, or 0 if the heap is empty.",
+          hint: "What is left at the end?",
+          why: "At most one stone; return it, or 0 for none. n smashes at O(log n) each.",
+          code: "return heap.top if heap not empty else 0",
+        ),
+        WalkStep(
+          step: "If the library only offers a min-heap, negate values going in and coming out.",
+          hint: "What if only a min-heap is available?",
+          why: "Negate values in and out; the smallest negative is the heaviest stone.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Alternatives that make the same point: a sorted list is the same idea at a worse constant, and scanning for the max each round is O(n) per smash.",
+          hint: "How do the alternatives compare?",
+          why: "A sorted list does the same job with worse constants, and finding the max by scanning is O(n) per smash.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "heap = max-heap of stones
@@ -1692,12 +3770,37 @@ return heap.top if heap not empty else 0",
       Nudge(
         "Closeness is an ordering problem in disguise — but does the ordering key have to be the true distance? What does computing the square root buy you here, and what does it cost?",
       ),
-      Steps([
-        "Rank points by squared distance x*x + y*y: the square root is monotonic, so dropping it cannot change the order, and everything stays in exact integers with nothing to round.",
-        "Sort all points by that key and take the first k — O(n log n).",
-        "The answer may be in any order, so no tie-breaking rules are needed.",
-        "Follow-up when k is much smaller than n: scan once keeping a max-heap of size k on squared distance, evicting the farthest — O(n log k).",
-        "Deeper follow-up: quickselect partitions around a pivot distance for expected O(n).",
+      Walk([
+        WalkStep(
+          step: "Rank points by squared distance x*x + y*y: the square root is monotonic, so dropping it cannot change the order, and everything stays in exact integers with nothing to round.",
+          hint: "Does the square root change which point is closer?",
+          why: "No, it is monotonic, so comparing x² + y² keeps exact integers and the same order.",
+          code: "sort points by (x*x + y*y)",
+        ),
+        WalkStep(
+          step: "Sort all points by that key and take the first k — O(n log n).",
+          hint: "What is the simplest correct solution?",
+          why: "Sort by that key and take k, O(n log n); worth writing before optimising.",
+          code: "return the first k points",
+        ),
+        WalkStep(
+          step: "The answer may be in any order, so no tie-breaking rules are needed.",
+          hint: "What does \"any order\" in the problem let you skip?",
+          why: "Tie-breaking: equal distances can come out in any order, so no secondary key is needed.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Follow-up when k is much smaller than n: scan once keeping a max-heap of size k on squared distance, evicting the farthest — O(n log k).",
+          hint: "When k is tiny and n is huge, what wastes work in the sort?",
+          why: "Ordering points you will discard; a max-heap of size k keeps only candidates and evicts the farthest, O(n log k).",
+          code: "",
+        ),
+        WalkStep(
+          step: "Deeper follow-up: quickselect partitions around a pivot distance for expected O(n).",
+          hint: "Is there an expected-linear method?",
+          why: "Quickselect partitions around a pivot distance so only one side is recursed into, expected O(n).",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "sort points by (x*x + y*y)
@@ -1708,11 +3811,32 @@ return the first k points",
       Nudge(
         "Duplicates count separately, so this is a position in sorted order — but must the whole array end up sorted for one position to be known? Start from the version nobody gets wrong, then ask what it overworks.",
       ),
-      Steps([
-        "Guard against k outside 1..n.",
-        "Sort descending and return the element at index k - 1 — O(n log n), answers every k at once, hard to get wrong.",
-        "Follow-up: quickselect partitions around a pivot and recurses only into the side that must hold index k — expected O(n) because the work halves instead of doubling, worst case still quadratic.",
-        "Second follow-up: a min-heap of size k gives O(n log k), the answer when the data streams and cannot be sorted in place.",
+      Walk([
+        WalkStep(
+          step: "Guard against k outside 1..n.",
+          hint: "What inputs have no kth largest at all?",
+          why: "k below 1 or above n; guarding first keeps the index arithmetic honest.",
+          code: "if k < 1 or k > length(nums): return none",
+        ),
+        WalkStep(
+          step: "Sort descending and return the element at index k - 1 — O(n log n), answers every k at once, hard to get wrong.",
+          hint: "What is the plainest solution, and where is the kth largest after it?",
+          why: "Sort descending and take index k - 1; O(n log n), answers every k at once and is hard to get wrong.",
+          code: "sort nums descending
+return nums[k - 1]",
+        ),
+        WalkStep(
+          step: "Follow-up: quickselect partitions around a pivot and recurses only into the side that must hold index k — expected O(n) because the work halves instead of doubling, worst case still quadratic.",
+          hint: "How can you find one order statistic without sorting everything?",
+          why: "Quickselect partitions around a pivot and recurses only into the side containing index k, so the work halves and the expected cost is O(n).",
+          code: "",
+        ),
+        WalkStep(
+          step: "Second follow-up: a min-heap of size k gives O(n log k), the answer when the data streams and cannot be sorted in place.",
+          hint: "When the data streams and cannot be sorted in place, what works?",
+          why: "A min-heap of size k, O(n log k), the same tool as the streaming version of this problem.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "if k < 1 or k > length(nums): return none
@@ -1724,12 +3848,39 @@ return nums[k - 1]",
       Nudge(
         "One task dominates the timeline: the one that repeats most. If you laid out only that task with its cooldowns, what shape would the schedule take — and where would everything else have to go?",
       ),
-      Steps([
-        "Count how many times each task occurs; find the busiest count and how many tasks tie for it.",
-        "Lay the busiest task out first: (busiest - 1) frames of n + 1 slots each, plus a final row of every task tied for busiest.",
-        "Every other task either drops into an idle slot of that skeleton, or there are so many tasks that nothing idles at all and they simply extend the line.",
-        "So the answer is the larger of the skeleton size and the plain number of tasks — no schedule ever built.",
-        "Follow-up: simulating with a max-heap of remaining counts plus a cooldown queue gives the same answer in O(total intervals), and also produces an actual schedule.",
+      Walk([
+        WalkStep(
+          step: "Count how many times each task occurs; find the busiest count and how many tasks tie for it.",
+          hint: "What about the tasks determines the minimum time?",
+          why: "The most frequent task's count and how many tasks tie for it.",
+          code: "counts = frequency of each task
+busiest = max of counts
+ties = how many counts equal busiest",
+        ),
+        WalkStep(
+          step: "Lay the busiest task out first: (busiest - 1) frames of n + 1 slots each, plus a final row of every task tied for busiest.",
+          hint: "How do you lay out the busiest task with its cooldowns?",
+          why: "busiest - 1 frames of n + 1 slots, then a final row holding every tied task.",
+          code: "skeleton = (busiest - 1) * (n + 1) + ties",
+        ),
+        WalkStep(
+          step: "Every other task either drops into an idle slot of that skeleton, or there are so many tasks that nothing idles at all and they simply extend the line.",
+          hint: "Where do the remaining tasks go?",
+          why: "Into idle slots of the skeleton, or if there are too many for that, they extend the line with no idling at all.",
+          code: "",
+        ),
+        WalkStep(
+          step: "So the answer is the larger of the skeleton size and the plain number of tasks — no schedule ever built.",
+          hint: "What is the formula, then?",
+          why: "The larger of the skeleton and the plain task count; no schedule is ever built, O(n).",
+          code: "return max(number of tasks, skeleton)",
+        ),
+        WalkStep(
+          step: "Follow-up: simulating with a max-heap of remaining counts plus a cooldown queue gives the same answer in O(total intervals), and also produces an actual schedule.",
+          hint: "What would a simulation add?",
+          why: "A max-heap of counts with a cooldown queue produces an actual schedule at O(total intervals).",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "counts = frequency of each task
@@ -1743,12 +3894,46 @@ return max(number of tasks, skeleton)",
       Nudge(
         "Four operations, but only the feed is hard. Ordering tweets across many users needs some notion of time — what is the cheapest thing that can stand in for a clock? And where can tweets live so ten recent ones are findable?",
       ),
-      Steps([
-        "Keep a counter that increments on every post — it totally orders tweets across all users with no real timestamps.",
-        "Store each tweet as (clock, author, id) in one global list; store follows as a map from user to a set of followees.",
-        "follow adds to the set; unfollow discards, tolerating users never seen before.",
-        "For the feed, form the visible set (the user plus followees), walk the global list newest-first keeping visible tweets, and stop at ten.",
-        "Scaling follow-up: per-author tweet lists turn the feed into a k-way merge of the followees' lists, which a heap resolves in about ten steps instead of walking every tweet ever posted.",
+      Walk([
+        WalkStep(
+          step: "Keep a counter that increments on every post — it totally orders tweets across all users with no real timestamps.",
+          hint: "There are no timestamps. What else can put every tweet in one global order?",
+          why: "A counter bumped on each post is a logical clock: later posts get larger numbers, across all users.",
+          code: "post(user, tweet_id):
+    tweets.add((clock, user, tweet_id))
+    clock = clock + 1",
+        ),
+        WalkStep(
+          step: "Store each tweet as (clock, author, id) in one global list; store follows as a map from user to a set of followees.",
+          hint: "What is the simplest storage that answers both \"what did they post\" and \"who do they follow\"?",
+          why: "One global list of (clock, author, id) and a map from user to a set of followees; both are O(1) to update.",
+          code: "",
+        ),
+        WalkStep(
+          step: "follow adds to the set; unfollow discards, tolerating users never seen before.",
+          hint: "What should unfollow do for a pair that was never followed?",
+          why: "Nothing, quietly; discard rather than remove means unknown users and repeated unfollows cannot raise.",
+          code: "follow(a, b): following[a].add(b)
+unfollow(a, b): following[a].discard(b)",
+        ),
+        WalkStep(
+          step: "For the feed, form the visible set (the user plus followees), walk the global list newest-first keeping visible tweets, and stop at ten.",
+          hint: "Whose tweets belong in a feed, and how many?",
+          why: "The user's own plus their followees', newest first, and the walk stops at ten so it never scans further than it must.",
+          code: "feed(user):
+    visible = following[user] plus user
+    result = []
+    for (time, author, id) in tweets newest first:
+        if author in visible: result.add(id)
+        if result.size == 10: break
+    return result",
+        ),
+        WalkStep(
+          step: "Scaling follow-up: per-author tweet lists turn the feed into a k-way merge of the followees' lists, which a heap resolves in about ten steps instead of walking every tweet ever posted.",
+          hint: "If there were millions of tweets, what would the feed walk cost?",
+          why: "The global scan is O(total tweets); per-author lists turn the feed into a k-way merge with a heap, about ten pops of log k each.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "post(user, tweet_id):
@@ -1771,13 +3956,48 @@ feed(user):
       Nudge(
         "The median only ever cares about the middle — the value or two at the inner edge of each half. What kind of structure gives up its extreme value cheaply, and how would two of them, facing each other, be kept in balance?",
       ),
-      Steps([
-        "Keep the smaller half in a max-heap and the larger half in a min-heap; the median lives at their roots.",
-        "Route every new value through the lower heap: push it there, then move the lower heap's maximum into the upper heap — that enforces the order invariant.",
-        "If the upper heap outgrows the lower, move its minimum back down; sizes stay within one, with the lower heap allowed the extra element.",
-        "Report the lower root alone when the count is odd, the average of the two roots when even.",
-        "With a min-heap-only library, store the lower half negated.",
-        "Follow-up: a sorted list with binary-search insertion is O(n) per add; the two heaps make adds O(log n) and the median O(1).",
+      Walk([
+        WalkStep(
+          step: "Keep the smaller half in a max-heap and the larger half in a min-heap; the median lives at their roots.",
+          hint: "The median is the boundary between two halves. Which structure gives you the extreme of each half in O(1)?",
+          why: "A max-heap for the lower half and a min-heap for the upper put the two middle values at the roots.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Route every new value through the lower heap: push it there, then move the lower heap's maximum into the upper heap — that enforces the order invariant.",
+          hint: "A new value arrives. How do you guarantee it lands in the correct half?",
+          why: "Push it into the lower heap, then hand the lower heap's maximum to the upper heap; whatever it was, the largest of the lower half now sits above.",
+          code: "add(value):
+    lower.push(value)          -- max-heap, smaller half
+    upper.push(lower.pop())    -- min-heap, larger half",
+        ),
+        WalkStep(
+          step: "If the upper heap outgrows the lower, move its minimum back down; sizes stay within one, with the lower heap allowed the extra element.",
+          hint: "After the hand-off, which heap might be too big?",
+          why: "The upper one, by one; moving its minimum back keeps the sizes within one with the lower heap holding any extra element.",
+          code: "if upper.size > lower.size:
+        lower.push(upper.pop())",
+        ),
+        WalkStep(
+          step: "Report the lower root alone when the count is odd, the average of the two roots when even.",
+          hint: "With the sizes balanced, where is the median?",
+          why: "The lower root alone when the count is odd, the average of the two roots when even; both are O(1) reads.",
+          code: "median():
+    if lower.size > upper.size: return lower.top
+    return (lower.top + upper.top) / 2",
+        ),
+        WalkStep(
+          step: "With a min-heap-only library, store the lower half negated.",
+          hint: "What if the library only offers a min-heap?",
+          why: "Store the lower half negated: the smallest negative is the largest original, so the min-heap behaves as a max-heap.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Follow-up: a sorted list with binary-search insertion is O(n) per add; the two heaps make adds O(log n) and the median O(1).",
+          hint: "Why not keep a sorted list and insert by binary search?",
+          why: "The insertion shifts elements, O(n) per add; two heaps make adds O(log n) and the median O(1).",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "add(value):
@@ -1795,12 +4015,39 @@ median():
       Nudge(
         "For each element there is exactly one question to ask, and it is asked independently of every other element. What is that question — and what does its independence tell you about how many answers must exist?",
       ),
-      Steps([
-        "Frame it per element: each one is in or out, independently, which is why there are 2^n subsets.",
-        "Recurse on the tail: the subsets of a list are the subsets of its tail twice over — once with the head added, once without.",
-        "Base case: the empty list has exactly one subset, the empty set.",
-        "Combine by prepending the head to every tail-subset and concatenating with the untouched tail-subsets.",
-        "Follow-up: the in-or-out choices are the bits of a number, so counting from 0 to 2^n - 1 and mapping set bits to elements enumerates the same thing with no recursion at all.",
+      Walk([
+        WalkStep(
+          step: "Frame it per element: each one is in or out, independently, which is why there are 2^n subsets.",
+          hint: "What choice does each element face, and how many subsets does that give?",
+          why: "In or out, independently, so 2^n subsets.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Recurse on the tail: the subsets of a list are the subsets of its tail twice over — once with the head added, once without.",
+          hint: "How do the subsets of a list relate to the subsets of its tail?",
+          why: "Each tail subset appears twice: once with the head added, once without.",
+          code: "function subsets(nums):
+    rest = subsets(nums without its first element)",
+        ),
+        WalkStep(
+          step: "Base case: the empty list has exactly one subset, the empty set.",
+          hint: "How many subsets does the empty list have?",
+          why: "One, the empty set; the base case that seeds everything.",
+          code: "if nums is empty: return [[]]",
+        ),
+        WalkStep(
+          step: "Combine by prepending the head to every tail-subset and concatenating with the untouched tail-subsets.",
+          hint: "How are the two halves combined?",
+          why: "Prepend the head to every tail subset and concatenate with the untouched tail subsets.",
+          code: "with_first = prepend nums[0] to each subset in rest
+    return with_first + rest",
+        ),
+        WalkStep(
+          step: "Follow-up: the in-or-out choices are the bits of a number, so counting from 0 to 2^n - 1 and mapping set bits to elements enumerates the same thing with no recursion at all.",
+          hint: "How can bits enumerate the same subsets?",
+          why: "Count from 0 to 2^n - 1 and include element i when bit i is set; no recursion.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "function subsets(nums):
@@ -1814,12 +4061,42 @@ median():
       Nudge(
         "Reuse is allowed, which threatens to produce the same combination in many different orders. What discipline about which candidates are still available makes each combination reachable exactly one way?",
       ),
-      Steps([
-        "At each step face the first remaining candidate with two moves: take it again (reuse allowed, shrinking the target) or drop it for good.",
-        "Never return to a dropped candidate — that ordering is what stops one combination appearing in several orders, so no dedup pass is needed.",
-        "Base cases: target 0 yields one empty combination; no candidates left yields nothing.",
-        "Prune a candidate larger than the remaining target by dropping straight to the next.",
-        "Note the pattern: killing duplicates by construction rather than by filtering afterwards is what the harder variants all build on.",
+      Walk([
+        WalkStep(
+          step: "At each step face the first remaining candidate with two moves: take it again (reuse allowed, shrinking the target) or drop it for good.",
+          hint: "Facing the first candidate, what are the only two things you can do with it?",
+          why: "Take it again or drop it for good; framing the search as that binary choice is what lets reuse and termination both fall out naturally.",
+          code: "function build(candidates, target):
+    first = candidates[0]
+    with_first = prepend first to each of build(candidates, target - first)
+    without = build(candidates past first, target)
+    return with_first + without",
+        ),
+        WalkStep(
+          step: "Never return to a dropped candidate — that ordering is what stops one combination appearing in several orders, so no dedup pass is needed.",
+          hint: "Why does the search never come back to a dropped candidate?",
+          why: "Once dropped, a candidate can only appear in combinations found earlier, so each combination is built in one canonical order and no deduplication is needed.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Base cases: target 0 yields one empty combination; no candidates left yields nothing.",
+          hint: "When does a branch succeed, and when does it fail?",
+          why: "Target 0 means the choices so far form a valid combination; running out of candidates with target left means they do not.",
+          code: "if target == 0: return [[]]
+    if candidates is empty: return []",
+        ),
+        WalkStep(
+          step: "Prune a candidate larger than the remaining target by dropping straight to the next.",
+          hint: "What if the first candidate is already bigger than what is left?",
+          why: "It can never fit, so skipping straight to the next candidate prunes a dead branch without exploring it.",
+          code: "if first > target: return build(candidates past first, target)",
+        ),
+        WalkStep(
+          step: "Note the pattern: killing duplicates by construction rather than by filtering afterwards is what the harder variants all build on.",
+          hint: "How does this differ from generating everything and removing duplicates?",
+          why: "Building each combination once by construction is exponentially cheaper than filtering, and the same idea carries Combination Sum II and Subsets II.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "function build(candidates, target):
@@ -1836,12 +4113,41 @@ median():
       Nudge(
         "Order matters now, so in-or-out is the wrong question. If you decide only what comes first, what remains to be decided — and how does that shape of decision explain the factorial count?",
       ),
-      Steps([
-        "Pick each element in turn as the first of the permutation.",
-        "Recurse on what remains after removing the chosen element, and prepend the choice to each result.",
-        "Base case: an empty list has exactly one permutation, the empty one.",
-        "In-place variant: a \"used\" set, or swapping the choice into position, plays the role of removing the chosen element.",
-        "Follow-up: the other direction works too — every permutation of n elements is a permutation of n - 1 with the new element wedged into one of n positions, which explains n! outright.",
+      Walk([
+        WalkStep(
+          step: "Pick each element in turn as the first of the permutation.",
+          hint: "What is the first choice a permutation makes?",
+          why: "Which element comes first; every element gets a turn.",
+          code: "function permute(nums):
+    result = []
+    for each value at index i in nums:",
+        ),
+        WalkStep(
+          step: "Recurse on what remains after removing the chosen element, and prepend the choice to each result.",
+          hint: "Given that choice, what remains to be arranged?",
+          why: "The rest, recursively; prepend the chosen element to each arrangement of the rest.",
+          code: "for tail in permute(nums without index i):
+            result.add([value] + tail)
+    return result",
+        ),
+        WalkStep(
+          step: "Base case: an empty list has exactly one permutation, the empty one.",
+          hint: "How many permutations does an empty list have?",
+          why: "Exactly one, the empty permutation, which seeds the construction.",
+          code: "if nums is empty: return [[]]",
+        ),
+        WalkStep(
+          step: "In-place variant: a \"used\" set, or swapping the choice into position, plays the role of removing the chosen element.",
+          hint: "How can you avoid building new lists for the remainder?",
+          why: "A used set, or swapping the choice into position, marks it taken in place.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Follow-up: the other direction works too — every permutation of n elements is a permutation of n - 1 with the new element wedged into one of n positions, which explains n! outright.",
+          hint: "Where does the n! count come from?",
+          why: "Each permutation of n - 1 elements admits the new element in n positions, so counts multiply by n at each level.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "function permute(nums):
@@ -1857,13 +4163,47 @@ median():
       Nudge(
         "The plain subsets recursion suddenly produces repeats — trace how the same subset gets built twice when two equal values sit in the list. What arrangement of the input makes \"skip this value entirely\" even expressible?",
       ),
-      Steps([
-        "Sort first, so equal values become adjacent — that is what makes the duplicate rule sayable at all.",
-        "Recurse as in Subsets: either take the head and recurse on the tail, or skip the head.",
-        "The one change: when skipping the head, jump past every copy of it at once.",
-        "Skipping one copy while keeping the next is exactly how the same subset gets built by two routes.",
-        "Base case: the empty list yields the empty subset.",
-        "Follow-up framing that avoids the rule entirely: per distinct value, choose how many copies (0 up to its count) to include.",
+      Walk([
+        WalkStep(
+          step: "Sort first, so equal values become adjacent — that is what makes the duplicate rule sayable at all.",
+          hint: "What arrangement makes \"the same value again\" detectable?",
+          why: "Sorting, so equal values are neighbours and the skip rule can be stated.",
+          code: "sort nums",
+        ),
+        WalkStep(
+          step: "Recurse as in Subsets: either take the head and recurse on the tail, or skip the head.",
+          hint: "What does the recursion look like, from Subsets?",
+          why: "Take the head and recurse on the tail, or skip the head.",
+          code: "function build(nums):
+    first = nums[0]
+    with_first = prepend first to each of build(nums past index 0)",
+        ),
+        WalkStep(
+          step: "The one change: when skipping the head, jump past every copy of it at once.",
+          hint: "What is the one change when skipping?",
+          why: "Skip every copy of the head at once.",
+          code: "past = index of the first value different from first
+    without = build(nums from past onward)
+    return with_first + without",
+        ),
+        WalkStep(
+          step: "Skipping one copy while keeping the next is exactly how the same subset gets built by two routes.",
+          hint: "Why would skipping one copy and keeping the next cause duplicates?",
+          why: "Because \"take copy 1\" and \"skip copy 1, take copy 2\" build the same subset.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Base case: the empty list yields the empty subset.",
+          hint: "What is the base case?",
+          why: "The empty list has the empty subset.",
+          code: "if nums is empty: return [[]]",
+        ),
+        WalkStep(
+          step: "Follow-up framing that avoids the rule entirely: per distinct value, choose how many copies (0 up to its count) to include.",
+          hint: "Is there a framing with no skip rule at all?",
+          why: "Per distinct value choose how many copies to include, from 0 to its count.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "sort nums
@@ -1880,12 +4220,43 @@ function build(nums):
       Nudge(
         "Two rules changed at once: candidates may repeat, and each may be used at most once. One of those changes you have already tamed in another drill — which one, and what did it demand of the input first?",
       ),
-      Steps([
-        "Sort the candidates so equal values sit next to each other.",
-        "Take the first candidate by subtracting it from the target and recursing past it — single use means taking always advances.",
-        "When skipping, skip every copy of that value at once — the Subsets II rule, and the reason to drill the two together.",
-        "Base cases: target 0 yields the empty combination; an empty list yields nothing, and a first candidate above the target ends the branch outright since sorted input means nothing later fits either.",
-        "Follow-up: generating everything and deduplicating afterwards is correct but exponentially wasteful when many values are equal.",
+      Walk([
+        WalkStep(
+          step: "Sort the candidates so equal values sit next to each other.",
+          hint: "Duplicates in the input make duplicate combinations. What arrangement makes duplicates easy to see?",
+          why: "Sorting puts equal values next to each other, so \"skip every copy\" becomes a neighbour scan rather than a search.",
+          code: "sort candidates",
+        ),
+        WalkStep(
+          step: "Take the first candidate by subtracting it from the target and recursing past it — single use means taking always advances.",
+          hint: "Each candidate may be used once. What does taking it do to the candidates list?",
+          why: "Taking always advances past the candidate, unlike the reuse version, so the recursion shrinks the list on both branches.",
+          code: "first = candidates[0]
+    with_first = prepend first to each of
+        build(candidates past index 0, target - first)",
+        ),
+        WalkStep(
+          step: "When skipping, skip every copy of that value at once — the Subsets II rule, and the reason to drill the two together.",
+          hint: "If you decide not to use a value, what about its other copies?",
+          why: "Skipping one copy but taking the next produces the same combination again; jumping past every copy is the Subsets II rule that kills duplicates by construction.",
+          code: "past = index after the last copy of first
+    without = build(candidates from past onward, target)
+    return with_first + without",
+        ),
+        WalkStep(
+          step: "Base cases: target 0 yields the empty combination; an empty list yields nothing, and a first candidate above the target ends the branch outright since sorted input means nothing later fits either.",
+          hint: "When can a branch stop early, given the list is sorted?",
+          why: "Target 0 is a hit; an empty list is a miss; and a first candidate above the target means everything after it is too, so the branch ends at once.",
+          code: "function build(candidates, target):
+    if target == 0: return [[]]
+    if candidates is empty or candidates[0] > target: return []",
+        ),
+        WalkStep(
+          step: "Follow-up: generating everything and deduplicating afterwards is correct but exponentially wasteful when many values are equal.",
+          hint: "What is wrong with generating all combinations and deduplicating at the end?",
+          why: "It is correct but explores every duplicate path, which is exponential in the number of repeated values; construction-time skipping does no wasted work.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "sort candidates
@@ -1904,13 +4275,47 @@ function build(candidates, target):
       Nudge(
         "A path through the grid can fail late and force you to unwind. What must be remembered while you are still on a path — and what must be forgotten the moment you back out of a dead end?",
       ),
-      Steps([
-        "Try a depth-first walk from every cell of the grid.",
-        "At each step fail fast: out of bounds, already used on this path, or the letter does not match the next character.",
-        "Keep the used-cell set per path, not global — a cell rejected on one route must stay available to another, which is the whole difference between backtracking and plain search.",
-        "Succeed the moment the last character matches, and propagate true straight up.",
-        "On a dead end, undo the cell's used mark (or let a per-call copy of the set fall away) and try the next direction or starting cell.",
-        "Pruning follow-up: check the board has enough of each letter before searching, and start from whichever end of the word has the rarer letter.",
+      Walk([
+        WalkStep(
+          step: "Try a depth-first walk from every cell of the grid.",
+          hint: "Where can the word begin?",
+          why: "Any cell, so a depth-first walk starts from each.",
+          code: "return true if walk(r, c, word, empty set) succeeds for any cell (r, c)",
+        ),
+        WalkStep(
+          step: "At each step fail fast: out of bounds, already used on this path, or the letter does not match the next character.",
+          hint: "What makes a step fail immediately?",
+          why: "Out of bounds, a cell already used on this path, or a letter that does not match.",
+          code: "function walk(r, c, remaining, used):
+    if (r, c) outside grid or (r, c) in used: return false
+    if board[r][c] != remaining[0]: return false",
+        ),
+        WalkStep(
+          step: "Keep the used-cell set per path, not global — a cell rejected on one route must stay available to another, which is the whole difference between backtracking and plain search.",
+          hint: "Should the used set be shared between paths?",
+          why: "No; a cell rejected on one route must stay available to another, which is the difference between backtracking and plain search.",
+          code: "used = used plus (r, c)",
+        ),
+        WalkStep(
+          step: "Succeed the moment the last character matches, and propagate true straight up.",
+          hint: "When does the search succeed?",
+          why: "When the last character matches; propagate true straight up.",
+          code: "if remaining has one character: return true",
+        ),
+        WalkStep(
+          step: "On a dead end, undo the cell's used mark (or let a per-call copy of the set fall away) and try the next direction or starting cell.",
+          hint: "What happens at a dead end?",
+          why: "Undo the mark (or let the per-call copy fall away) and try the next direction or start.",
+          code: "for (dr, dc) in four directions:
+        if walk(r + dr, c + dc, remaining[1 ..], used): return true
+    return false",
+        ),
+        WalkStep(
+          step: "Pruning follow-up: check the board has enough of each letter before searching, and start from whichever end of the word has the rarer letter.",
+          hint: "What pruning helps before searching?",
+          why: "Check the board has enough of each letter, and start from the word's rarer end.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "function walk(r, c, remaining, used):
@@ -1929,12 +4334,42 @@ return true if walk(r, c, word, empty set) succeeds for any cell (r, c)",
       Nudge(
         "Every valid partition has to start somewhere — what is the only decision actually available at the front of the string? Once that decision is made, what does the rest of the problem look like?",
       ),
-      Steps([
-        "Frame the choice: every partition begins with some palindromic prefix, so the only decision at each step is how long that prefix is.",
-        "For each possible prefix length, test whether that prefix is a palindrome and skip the lengths that are not.",
-        "Cut there and recurse on the remainder, prepending the prefix to each partition of the rest.",
-        "Base case: the empty string has one partition, the empty list — this reaches every partition exactly once, with nothing to dedupe.",
-        "Follow-up: precompute which spans are palindromes in a table so the test inside the search becomes a lookup instead of a scan.",
+      Walk([
+        WalkStep(
+          step: "Frame the choice: every partition begins with some palindromic prefix, so the only decision at each step is how long that prefix is.",
+          hint: "What is the only decision a partition makes at its front?",
+          why: "How long the first piece is, and it must be a palindrome.",
+          code: "function build(remaining):
+    result = []
+    for size in 1 .. length(remaining):
+        prefix = first size characters of remaining",
+        ),
+        WalkStep(
+          step: "For each possible prefix length, test whether that prefix is a palindrome and skip the lengths that are not.",
+          hint: "Which prefix lengths are worth pursuing?",
+          why: "Only those whose prefix reads the same reversed; the rest are skipped.",
+          code: "if prefix reads the same reversed:",
+        ),
+        WalkStep(
+          step: "Cut there and recurse on the remainder, prepending the prefix to each partition of the rest.",
+          hint: "After cutting a prefix, what happens to the rest?",
+          why: "Recurse on it and prepend the prefix to each of its partitions.",
+          code: "for rest in build(remaining after the prefix):
+                result.add([prefix] + rest)
+    return result",
+        ),
+        WalkStep(
+          step: "Base case: the empty string has one partition, the empty list — this reaches every partition exactly once, with nothing to dedupe.",
+          hint: "What does the empty string produce, and why is there no duplication?",
+          why: "One partition, the empty list; each partition is built by its unique sequence of cuts, so nothing repeats.",
+          code: "if remaining is empty: return [[]]",
+        ),
+        WalkStep(
+          step: "Follow-up: precompute which spans are palindromes in a table so the test inside the search becomes a lookup instead of a scan.",
+          hint: "Where is the repeated work, and how do you remove it?",
+          why: "The palindrome test is repeated on the same spans; a precomputed table makes it a lookup.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "function build(remaining):
@@ -1952,13 +4387,49 @@ return true if walk(r, c, word, empty set) succeeds for any cell (r, c)",
       Nudge(
         "One independent choice per digit, and no way for a choice to ever be wrong. What does the size of the answer have to be, then — and what does a backtracking search collapse into when no branch can fail?",
       ),
-      Steps([
-        "Map each digit to its keypad letters.",
-        "Handle the empty input first: no digits means no combinations, not one empty string.",
-        "Recurse: build every combination of the remaining digits, then attach each letter of the first digit to the front of each tail.",
-        "Base case: no digits left yields one empty string — the seed the letters accumulate onto.",
-        "Name what this is: a plain cross product of the letter sets, backtracking with nothing to prune.",
-        "Follow-up: an iterative fold builds the same product with no call stack — start from one empty string and expand through each digit in turn.",
+      Walk([
+        WalkStep(
+          step: "Map each digit to its keypad letters.",
+          hint: "What lookup does every step need?",
+          why: "Digit to its letters; a small fixed map, built once.",
+          code: "keypad = map from digit to its letters",
+        ),
+        WalkStep(
+          step: "Handle the empty input first: no digits means no combinations, not one empty string.",
+          hint: "What should an empty input produce, and why is it a special case?",
+          why: "No combinations at all; the recursion's base case yields one empty string, so the empty input must be caught before it.",
+          code: "if digits is empty: return []",
+        ),
+        WalkStep(
+          step: "Recurse: build every combination of the remaining digits, then attach each letter of the first digit to the front of each tail.",
+          hint: "Given all combinations of the remaining digits, how do you handle the first digit?",
+          why: "Prepend each of its letters to every tail; the result size multiplies by the letter count at each digit.",
+          code: "function build(digits):
+    tails = build(digits after the first)
+    result = []
+    for letter in keypad[digits[0]]:
+        for tail in tails:
+            result.add(letter + tail)
+    return result",
+        ),
+        WalkStep(
+          step: "Base case: no digits left yields one empty string — the seed the letters accumulate onto.",
+          hint: "What does the recursion bottom out on?",
+          why: "No digits left gives one empty string, the seed that letters accumulate onto.",
+          code: "if digits is empty: return [\"\"]",
+        ),
+        WalkStep(
+          step: "Name what this is: a plain cross product of the letter sets, backtracking with nothing to prune.",
+          hint: "Is anything ever pruned?",
+          why: "No, this is a plain cross product; the output size is the cost, O(4^n) at worst.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Follow-up: an iterative fold builds the same product with no call stack — start from one empty string and expand through each digit in turn.",
+          hint: "Can the same product be built without recursion?",
+          why: "A fold starting from one empty string expands through each digit in turn, no call stack.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "if digits is empty: return []
@@ -1977,13 +4448,50 @@ function build(digits):
       Nudge(
         "n queens on n rows means one queen per row — so what is the only real decision at each level? And when two queens share a diagonal, what simple arithmetic relation between their coordinates gives it away?",
       ),
-      Steps([
-        "Place queens row by row, so the only choice per row is the column.",
-        "Keep three sets of threatened lines: columns, diagonals keyed by row - column, anti-diagonals keyed by row + column.",
-        "A square is safe exactly when its column and both diagonal keys are absent from all three sets — three lookups, no board scan.",
-        "On placing a queen, add its three keys and recurse into the next row; the branch dies the moment no column in a row is safe.",
-        "On reaching row n, render the chosen columns into board strings and record the solution.",
-        "Follow-up: an arrangement with no shared column is a permutation of columns, so filtering permutations by the two diagonal checks is a legitimate slower alternative.",
+      Walk([
+        WalkStep(
+          step: "Place queens row by row, so the only choice per row is the column.",
+          hint: "If you place one queen per row, what is the only decision left per row?",
+          why: "The column, which shrinks the search from all squares to n choices per level.",
+          code: "function place(row, chosen, cols, diags, antis):",
+        ),
+        WalkStep(
+          step: "Keep three sets of threatened lines: columns, diagonals keyed by row - column, anti-diagonals keyed by row + column.",
+          hint: "What three lines does a queen threaten, and how can each be named by one number?",
+          why: "Its column, its diagonal (row - col is constant along it), and its anti-diagonal (row + col is constant).",
+          code: "",
+        ),
+        WalkStep(
+          step: "A square is safe exactly when its column and both diagonal keys are absent from all three sets — three lookups, no board scan.",
+          hint: "How do you test a square for safety without scanning the board?",
+          why: "Three set lookups on those keys; O(1) per square.",
+          code: "for col in 0 .. n - 1:
+        if col in cols or row - col in diags or row + col in antis: continue",
+        ),
+        WalkStep(
+          step: "On placing a queen, add its three keys and recurse into the next row; the branch dies the moment no column in a row is safe.",
+          hint: "What changes when a queen is placed, and when does a branch die?",
+          why: "Its three keys join the sets and the search moves to the next row; a row with no safe column ends the branch.",
+          code: "place(row + 1, chosen + [col],
+              cols plus col, diags plus row - col, antis plus row + col)",
+        ),
+        WalkStep(
+          step: "On reaching row n, render the chosen columns into board strings and record the solution.",
+          hint: "What does reaching row n mean?",
+          why: "A full placement; render the chosen columns as board strings and record it.",
+          code: "if row == n:
+        boards.add(render each column in chosen as a board row)
+        return
+
+place(0, [], empty set, empty set, empty set)
+return boards",
+        ),
+        WalkStep(
+          step: "Follow-up: an arrangement with no shared column is a permutation of columns, so filtering permutations by the two diagonal checks is a legitimate slower alternative.",
+          hint: "What is a placement with no shared column, structurally?",
+          why: "A permutation of columns, so filtering permutations by the two diagonal checks is a slower but legitimate alternative.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "function place(row, chosen, cols, diags, antis):
@@ -2003,13 +4511,52 @@ return boards",
       Nudge(
         "There is a graph here that nobody handed you — what are its nodes, and what are its edges? And if you started walking from one piece of land, what would \"one island\" correspond to in that walk?",
       ),
-      Steps([
-        "Treat the grid as an implicit graph: land cells are the nodes, four-way adjacency the edges — never build the graph.",
-        "Scan every cell; on meeting land not yet seen, count one island and flood outward from it.",
-        "Flood with DFS or BFS — an explicit stack of coordinates works — marking every reached land cell as seen.",
-        "Marking as you go is what stops one component being counted once per square.",
-        "The number of floods you had to start is the answer.",
-        "Follow-up: union-find does the same job without recursion, which matters when the grid is deep enough to overflow the stack; sinking cells in place (\"1\" to \"0\") replaces the seen set when mutation is allowed.",
+      Walk([
+        WalkStep(
+          step: "Treat the grid as an implicit graph: land cells are the nodes, four-way adjacency the edges — never build the graph.",
+          hint: "Where is the graph in this problem?",
+          why: "Implicit: land cells are nodes and four-way adjacency the edges; nothing needs building.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Scan every cell; on meeting land not yet seen, count one island and flood outward from it.",
+          hint: "When does a new island get counted?",
+          why: "On meeting a land cell not yet seen; each such cell starts a flood.",
+          code: "seen = empty set
+count = 0
+for each land cell (r, c) in the grid:
+    if (r, c) in seen: continue
+    count = count + 1",
+        ),
+        WalkStep(
+          step: "Flood with DFS or BFS — an explicit stack of coordinates works — marking every reached land cell as seen.",
+          hint: "How does the flood work?",
+          why: "A stack of coordinates, marking each reached land cell; DFS and BFS both work.",
+          code: "stack = [(r, c)]
+    while stack not empty:
+        (a, b) = stack.pop()
+        if (a, b) is not land or (a, b) in seen: continue
+        seen.add((a, b))
+        push the four neighbours of (a, b) onto stack",
+        ),
+        WalkStep(
+          step: "Marking as you go is what stops one component being counted once per square.",
+          hint: "Why mark cells during the flood?",
+          why: "So the same component is not counted again from another of its squares.",
+          code: "",
+        ),
+        WalkStep(
+          step: "The number of floods you had to start is the answer.",
+          hint: "What is the answer?",
+          why: "The number of floods started; every cell is visited once, O(rows * cols).",
+          code: "return count",
+        ),
+        WalkStep(
+          step: "Follow-up: union-find does the same job without recursion, which matters when the grid is deep enough to overflow the stack; sinking cells in place (\"1\" to \"0\") replaces the seen set when mutation is allowed.",
+          hint: "What variations should you know?",
+          why: "Union-find avoids deep recursion, and sinking cells in place replaces the seen set when mutation is allowed.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "seen = empty set
@@ -2030,12 +4577,49 @@ return count",
       Nudge(
         "Copying a node means copying its neighbours, which means copying their neighbours — and this graph has cycles. What single piece of bookkeeping stops the copy from chasing its own tail forever?",
       ),
-      Steps([
-        "Keep a set of nodes already handled and consult it before doing anything; a node found there is skipped, which is exactly what terminates a cycle.",
-        "Traverse from the start node — breadth-first or depth-first makes no difference — pushing each reached node's neighbours onto the frontier.",
-        "Only nodes reachable from the start belong in the copy, and the traversal decides that for free.",
-        "Renumber the reached nodes by ascending original index, mapping each old index to a new one.",
-        "Rebuild the adjacency list under the new numbering, dropping any neighbour that was never reached.",
+      Walk([
+        WalkStep(
+          step: "Keep a set of nodes already handled and consult it before doing anything; a node found there is skipped, which is exactly what terminates a cycle.",
+          hint: "A graph can loop back on itself. What stops a traversal from going round forever?",
+          why: "A visited set checked before any work is the one thing that makes cycles safe; skipping a node already handled is also what keeps the copy from duplicating it.",
+          code: "reached = empty set
+frontier = [start]
+while frontier not empty:
+    node = frontier.pop()
+    if node in reached: continue
+    reached.add(node)",
+        ),
+        WalkStep(
+          step: "Traverse from the start node — breadth-first or depth-first makes no difference — pushing each reached node's neighbours onto the frontier.",
+          hint: "Does the copy care whether you reach nodes breadth-first or depth-first?",
+          why: "Only reachability matters, so any traversal works; pushing neighbours onto a frontier is O(V + E) either way.",
+          code: "for n in adjacency[node]: frontier.push(n)",
+        ),
+        WalkStep(
+          step: "Only nodes reachable from the start belong in the copy, and the traversal decides that for free.",
+          hint: "If a node cannot be reached from the start, does it belong in the clone?",
+          why: "The clone is the connected component of the start node, and the traversal's visited set is exactly that component with no extra pass.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Renumber the reached nodes by ascending original index, mapping each old index to a new one.",
+          hint: "The reached nodes have gaps in their numbering. What should the copy's indices look like?",
+          why: "Renumbering by ascending original index gives a dense 0..k-1 labelling that preserves the original relative order, which is what the expected output uses.",
+          code: "ordered = sort(reached)
+for i in 0..len(ordered)-1: numbering[ordered[i]] = i",
+        ),
+        WalkStep(
+          step: "Rebuild the adjacency list under the new numbering, dropping any neighbour that was never reached.",
+          hint: "A reached node may list an unreached neighbour. What happens to that edge?",
+          why: "Edges to nodes outside the component cannot exist in the copy, so translating each neighbour through the numbering and dropping the misses finishes the clone.",
+          code: "copy = []
+for node in ordered:
+    row = []
+    for n in adjacency[node]:
+        if n in reached: row.add(numbering[n])
+    copy.add(row)
+return copy",
+        ),
       ]),
       Pseudocode(
         "reached = empty set
@@ -2062,12 +4646,47 @@ return copy",
       Nudge(
         "You already know how to find every island — this problem has only changed what it wants to know about each one. What number should each traversal hand back now?",
       ),
-      Steps([
-        "Sweep every cell; a land cell not yet seen starts a fresh island traversal.",
-        "Flood that island — stack or recursion — marking each cell seen and counting it toward the island's area.",
-        "Push the four orthogonal neighbours of each cell; water, out-of-bounds, and already-seen cells are skipped when popped.",
-        "Keep the largest area across all traversals; a grid with no land answers 0 with no special case.",
-        "Written recursively, the area is the return value — 1 plus the four neighbour calls — with no counter at all.",
+      Walk([
+        WalkStep(
+          step: "Sweep every cell; a land cell not yet seen starts a fresh island traversal.",
+          hint: "How do you find every island without counting one twice?",
+          why: "Sweep all cells and start a traversal only at land not yet seen; the seen set is shared across islands so each is flooded once.",
+          code: "seen = empty set
+best = 0
+for each cell (r, c) where grid[r][c] == 1:
+    if (r, c) in seen: continue",
+        ),
+        WalkStep(
+          step: "Flood that island — stack or recursion — marking each cell seen and counting it toward the island's area.",
+          hint: "What does one traversal have to produce?",
+          why: "The island's area: mark each cell as it is reached and count it; stack or recursion both work.",
+          code: "area = 0
+    stack = [(r, c)]
+    while stack not empty:
+        (cr, cc) = stack.pop()
+        if (cr, cc) is out of bounds, water, or in seen: continue
+        seen.add((cr, cc))
+        area += 1",
+        ),
+        WalkStep(
+          step: "Push the four orthogonal neighbours of each cell; water, out-of-bounds, and already-seen cells are skipped when popped.",
+          hint: "Which neighbours count, and where is it easiest to reject the bad ones?",
+          why: "The four orthogonal ones; pushing all four and rejecting on pop keeps the bounds and water checks in one place.",
+          code: "push the 4 neighbours of (cr, cc) onto stack",
+        ),
+        WalkStep(
+          step: "Keep the largest area across all traversals; a grid with no land answers 0 with no special case.",
+          hint: "What is the answer for a grid with no land?",
+          why: "0, and the max-over-islands loop gives it without a special case; every cell is visited once, O(rows * cols).",
+          code: "best = max(best, area)
+return best",
+        ),
+        WalkStep(
+          step: "Written recursively, the area is the return value — 1 plus the four neighbour calls — with no counter at all.",
+          hint: "How does the recursive version avoid a counter?",
+          why: "Each call returns 1 plus its four neighbour calls, so the area is the return value.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "seen = empty set
@@ -2090,12 +4709,47 @@ return best",
       Nudge(
         "Asked cell by cell, \"can water get from here to both oceans?\" repeats the same searching over and over. Is there a direction to run the question in that needs only two searches in total?",
       ),
-      Steps([
-        "Reverse the question: instead of water flowing downhill from every cell, let each ocean climb uphill from its border.",
-        "Seed one frontier with every Pacific-edge cell (top row plus left column) and another with every Atlantic-edge cell (bottom row plus right column).",
-        "From each seed set, search into neighbours whose height is greater than or equal to the current cell — uphill is the flow rule reversed.",
-        "Record the set of cells each ocean reaches.",
-        "Intersect the two sets and report the shared cells in row-major order.",
+      Walk([
+        WalkStep(
+          step: "Reverse the question: instead of water flowing downhill from every cell, let each ocean climb uphill from its border.",
+          hint: "Instead of asking where each cell's water goes, what could you ask about each ocean?",
+          why: "Which cells it can reach climbing uphill from its edge; reversing the flow turns n² searches into two.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Seed one frontier with every Pacific-edge cell (top row plus left column) and another with every Atlantic-edge cell (bottom row plus right column).",
+          hint: "Where does each ocean's climb begin?",
+          why: "At every cell on its border: top row and left column for the Pacific, bottom row and right column for the Atlantic.",
+          code: "pacific = reach(every cell on the top row or left column)
+atlantic = reach(every cell on the bottom row or right column)",
+        ),
+        WalkStep(
+          step: "From each seed set, search into neighbours whose height is greater than or equal to the current cell — uphill is the flow rule reversed.",
+          hint: "What is the rule for moving from a cell to its neighbour when climbing?",
+          why: "The neighbour must be at least as high, which is the downhill flow rule read backwards.",
+          code: "function reach(starts):
+    reached = empty set
+    frontier = starts
+    while frontier not empty:
+        (r, c) = frontier.pop()
+        if (r, c) in reached: continue
+        reached.add((r, c))
+        for each in-bounds neighbour (nr, nc):
+            if heights[nr][nc] >= heights[r][c]:
+                frontier.push((nr, nc))",
+        ),
+        WalkStep(
+          step: "Record the set of cells each ocean reaches.",
+          hint: "What does each search produce?",
+          why: "The set of cells that ocean can reach; the seen set doubles as the answer, O(rows * cols) per ocean.",
+          code: "return reached",
+        ),
+        WalkStep(
+          step: "Intersect the two sets and report the shared cells in row-major order.",
+          hint: "Which cells does the problem want?",
+          why: "Those in both sets, reported in row-major order.",
+          code: "return sort(intersection(pacific, atlantic))",
+        ),
       ]),
       Pseudocode(
         "function reach(starts):
@@ -2119,12 +4773,45 @@ return sort(intersection(pacific, atlantic))",
       Nudge(
         "Noticing mid-flood that a region has touched the edge is awkward bookkeeping. Which regions are easier to find directly — the surrounded ones, or their opposite?",
       ),
-      Steps([
-        "Invert the question: find the regions that are NOT surrounded — every O reachable from a border O — and everything left is surrounded by definition.",
-        "Seed a search with every O sitting on one of the four edges of the board.",
-        "Flood from those seeds through neighbouring O cells, collecting a set of safe cells.",
-        "Rewrite the board: an O in the safe set stays, every other O flips to X.",
-        "Note the payoff: one pass from the border replaces a search per region plus an escape test.",
+      Walk([
+        WalkStep(
+          step: "Invert the question: find the regions that are NOT surrounded — every O reachable from a border O — and everything left is surrounded by definition.",
+          hint: "Which regions are easier to find: the surrounded ones or the free ones?",
+          why: "The free ones, since each touches the border; everything else is surrounded by definition.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Seed a search with every O sitting on one of the four edges of the board.",
+          hint: "Where does the search start?",
+          why: "At every O on the four edges.",
+          code: "safe = empty set
+stack = every border cell holding \"O\"",
+        ),
+        WalkStep(
+          step: "Flood from those seeds through neighbouring O cells, collecting a set of safe cells.",
+          hint: "How do you find everything connected to the border?",
+          why: "Flood through neighbouring O cells, collecting them in a safe set.",
+          code: "while stack not empty:
+    (r, c) = stack.pop()
+    if (r, c) out of bounds or board[r][c] != \"O\" or (r, c) in safe: continue
+    safe.add((r, c))
+    push the 4 neighbours of (r, c) onto stack",
+        ),
+        WalkStep(
+          step: "Rewrite the board: an O in the safe set stays, every other O flips to X.",
+          hint: "How is the board rewritten?",
+          why: "Safe O cells stay; every other O becomes X.",
+          code: "for each cell (r, c):
+    if board[r][c] == \"O\" and (r, c) not in safe:
+        board[r][c] = \"X\"
+return board",
+        ),
+        WalkStep(
+          step: "Note the payoff: one pass from the border replaces a search per region plus an escape test.",
+          hint: "What did the inversion save?",
+          why: "A search per region plus an escape test; one border flood does it all in O(rows * cols).",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "safe = empty set
@@ -2145,13 +4832,53 @@ return board",
       Nudge(
         "The rot spreads from many places at once, and the clock ticks for all of them together. What kind of search moves in synchronized waves — and what does one wave correspond to here?",
       ),
-      Steps([
-        "Scan the grid once, collecting every rotten orange into the starting frontier and counting the fresh ones.",
-        "Search breadth-first from all the rotten sources at once — seeding them together at minute zero is what makes each wave one minute.",
-        "For each wave, rot every fresh neighbour of the frontier, mark it seen, and decrement the fresh count; the newly rotted cells form the next frontier.",
-        "Count a minute only when a wave actually rotted something; stop when a wave changes nothing or no fresh orange remains.",
-        "If fresh oranges survive at the end, some were unreachable — answer -1.",
-        "One search per source would give a distance from each source and still need combining; the multi-source frontier yields each orange's earliest rot time directly.",
+      Walk([
+        WalkStep(
+          step: "Scan the grid once, collecting every rotten orange into the starting frontier and counting the fresh ones.",
+          hint: "What does the first scan need to collect?",
+          why: "Every rotten orange as a starting point and the number of fresh ones, so the end condition is a counter rather than a rescan.",
+          code: "frontier = every rotten cell
+fresh = count of fresh cells
+minutes = 0",
+        ),
+        WalkStep(
+          step: "Search breadth-first from all the rotten sources at once — seeding them together at minute zero is what makes each wave one minute.",
+          hint: "Why must all rotten oranges start the search together?",
+          why: "Rot spreads from all of them at once; a multi-source frontier makes each wave exactly one minute.",
+          code: "while frontier not empty and fresh > 0:",
+        ),
+        WalkStep(
+          step: "For each wave, rot every fresh neighbour of the frontier, mark it seen, and decrement the fresh count; the newly rotted cells form the next frontier.",
+          hint: "What does one wave do?",
+          why: "Rots every fresh neighbour of the frontier, marks it, decrements the fresh count, and those cells become the next frontier.",
+          code: "next = []
+    for (r, c) in frontier:
+        for each in-bounds neighbour (nr, nc):
+            if grid[nr][nc] is fresh and (nr, nc) not seen:
+                mark (nr, nc) seen
+                fresh -= 1
+                next.push((nr, nc))",
+        ),
+        WalkStep(
+          step: "Count a minute only when a wave actually rotted something; stop when a wave changes nothing or no fresh orange remains.",
+          hint: "When does a minute count, and when does the search stop?",
+          why: "A minute passes only when a wave rotted something; stop when a wave changes nothing or nothing fresh remains.",
+          code: "if next is empty: break
+    frontier = next
+    minutes += 1",
+        ),
+        WalkStep(
+          step: "If fresh oranges survive at the end, some were unreachable — answer -1.",
+          hint: "What does leftover fresh fruit mean?",
+          why: "Some orange was unreachable, so the answer is -1; otherwise the minute count, O(rows * cols).",
+          code: "return minutes if fresh == 0 else -1",
+        ),
+        WalkStep(
+          step: "One search per source would give a distance from each source and still need combining; the multi-source frontier yields each orange's earliest rot time directly.",
+          hint: "Why not search from each rotten orange separately?",
+          why: "That gives a distance per source that still has to be combined; the shared frontier yields each orange's earliest rot time directly.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "frontier = every rotten cell
@@ -2175,12 +4902,42 @@ return minutes if fresh == 0 else -1",
       Nudge(
         "Every room wants its nearest gate, but searching outward from each room repeats a full sweep per room. Who else could do the searching — and if they all start at once, what does being reached first mean?",
       ),
-      Steps([
-        "Run one breadth-first search seeded with every gate at once, all at distance zero.",
-        "Pop a cell and look at its four neighbours; an empty room still holding the infinity marker gets the popped cell's distance plus one.",
-        "Let the written distance double as the visited mark — a room already filled is never touched again.",
-        "Because all gates start together, the first arrival at a room is from its nearest gate, so no value is ever revised.",
-        "Walls and unreachable rooms are simply never written to; they keep their original values.",
+      Walk([
+        WalkStep(
+          step: "Run one breadth-first search seeded with every gate at once, all at distance zero.",
+          hint: "Why start the search from every gate at once?",
+          why: "So each room's first arrival is from its nearest gate; a multi-source BFS gives all distances in one pass.",
+          code: "frontier = queue of every gate cell",
+        ),
+        WalkStep(
+          step: "Pop a cell and look at its four neighbours; an empty room still holding the infinity marker gets the popped cell's distance plus one.",
+          hint: "What does a popped cell do to its neighbours?",
+          why: "Any empty room still marked infinite gets this cell's distance plus one and joins the queue.",
+          code: "while frontier not empty:
+    (r, c) = frontier.pop_front()
+    for each in-bounds neighbour (nr, nc):
+        if rooms[nr][nc] == INFINITY:
+            rooms[nr][nc] = rooms[r][c] + 1
+            frontier.push_back((nr, nc))",
+        ),
+        WalkStep(
+          step: "Let the written distance double as the visited mark — a room already filled is never touched again.",
+          hint: "Where is the visited set?",
+          why: "The written distance itself: a filled room is no longer infinite, so it is never touched again.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Because all gates start together, the first arrival at a room is from its nearest gate, so no value is ever revised.",
+          hint: "Why is a distance never revised?",
+          why: "BFS from all gates reaches every room in nondecreasing distance order, so the first write is the smallest.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Walls and unreachable rooms are simply never written to; they keep their original values.",
+          hint: "What happens to walls and unreachable rooms?",
+          why: "They are never written, so they keep their original values; O(rows * cols).",
+          code: "return rooms",
+        ),
       ]),
       Pseudocode(
         "frontier = queue of every gate cell
@@ -2197,13 +4954,50 @@ return rooms",
       Nudge(
         "When exactly can a set of courses not be finished? Think about what the prerequisite pairs draw, and what shape in that drawing leaves some course forever unstartable.",
       ),
-      Steps([
-        "Recognize the question as cycle detection: every course can be finished exactly when the prerequisite graph is acyclic.",
-        "Build, per course, a count of unmet prerequisites and a list of the courses it unlocks.",
-        "Queue every course whose count is zero — those can be taken immediately.",
-        "Repeatedly take a course off the queue, count it as taken, and decrement each dependent's counter, queueing any that reach zero.",
-        "Answer true when the number taken equals numCourses; a stall with courses left over means they wait on each other in a circle.",
-        "Depth-first search answers it too but needs three node states, not two — a node re-met on the current path is a cycle, one finished down an earlier branch is fine.",
+      Walk([
+        WalkStep(
+          step: "Recognize the question as cycle detection: every course can be finished exactly when the prerequisite graph is acyclic.",
+          hint: "What kind of prerequisite structure makes finishing impossible?",
+          why: "A cycle: courses waiting on each other; so the question is cycle detection in a directed graph, not scheduling.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Build, per course, a count of unmet prerequisites and a list of the courses it unlocks.",
+          hint: "What two things do you need to know per course to run Kahn's algorithm?",
+          why: "How many prerequisites it still waits on, and which courses it unlocks when taken; both come from one pass over the pairs.",
+          code: "waiting[c] = number of prerequisites of c, for every course
+unlocks[p] = list of courses that require p",
+        ),
+        WalkStep(
+          step: "Queue every course whose count is zero — those can be taken immediately.",
+          hint: "Which courses can be taken on day one?",
+          why: "Those with zero unmet prerequisites; they seed the queue.",
+          code: "ready = queue of courses with waiting == 0
+taken = 0",
+        ),
+        WalkStep(
+          step: "Repeatedly take a course off the queue, count it as taken, and decrement each dependent's counter, queueing any that reach zero.",
+          hint: "What happens when a course is taken?",
+          why: "Each dependent's count drops, and any that hit zero become ready; every edge is relaxed once, so it is O(V + E).",
+          code: "while ready not empty:
+    course = ready.pop_front()
+    taken += 1
+    for next in unlocks[course]:
+        waiting[next] -= 1
+        if waiting[next] == 0: ready.push_back(next)",
+        ),
+        WalkStep(
+          step: "Answer true when the number taken equals numCourses; a stall with courses left over means they wait on each other in a circle.",
+          hint: "If the queue empties with courses untaken, what must be true of them?",
+          why: "They never reached zero because they wait on each other in a cycle, so the count of taken courses is the whole verdict.",
+          code: "return taken == numCourses",
+        ),
+        WalkStep(
+          step: "Depth-first search answers it too but needs three node states, not two — a node re-met on the current path is a cycle, one finished down an earlier branch is fine.",
+          hint: "Could depth-first search do it, and what extra bookkeeping does it need?",
+          why: "Yes, with three states per node: meeting a node that is on the current path is a cycle, while one finished by an earlier branch is fine.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "waiting[c] = number of prerequisites of c, for every course
@@ -2223,13 +5017,49 @@ return taken == numCourses",
       Nudge(
         "You have already decided whether all the courses can be taken. What did that decision process throw away that this problem wants kept?",
       ),
-      Steps([
-        "Run the same ready-list process as Course Schedule: count each course's unmet prerequisites and list what it unlocks.",
-        "Queue the courses with no outstanding prerequisites.",
-        "Append each course to the answer as it leaves the queue — the departure order is a topological order.",
-        "Decrement each dependent's counter as its prerequisite is taken; any counter hitting zero joins the queue.",
-        "If the order comes out shorter than numCourses, a cycle blocked the rest — return the empty list.",
-        "Depth-first search yields an order too: record a course only after everything it depends on (post-order), then reverse the record.",
+      Walk([
+        WalkStep(
+          step: "Run the same ready-list process as Course Schedule: count each course's unmet prerequisites and list what it unlocks.",
+          hint: "What did Course Schedule already compute that this problem can reuse?",
+          why: "Unmet-prerequisite counts and unlock lists; the ordering falls out of the same Kahn process.",
+          code: "waiting[c] = number of prerequisites of c, for every course
+unlocks[p] = list of courses that require p",
+        ),
+        WalkStep(
+          step: "Queue the courses with no outstanding prerequisites.",
+          hint: "Which courses start the queue?",
+          why: "Those with no outstanding prerequisites; they can appear first in any valid order.",
+          code: "ready = queue of courses with waiting == 0
+order = []",
+        ),
+        WalkStep(
+          step: "Append each course to the answer as it leaves the queue — the departure order is a topological order.",
+          hint: "When a course leaves the queue, where does it go?",
+          why: "Onto the answer: every prerequisite of it has already left, so departure order is a topological order.",
+          code: "while ready not empty:
+    course = ready.pop_front()
+    order.add(course)",
+        ),
+        WalkStep(
+          step: "Decrement each dependent's counter as its prerequisite is taken; any counter hitting zero joins the queue.",
+          hint: "How does taking a course affect the ones that need it?",
+          why: "Their counts drop by one, and reaching zero means all prerequisites are met, so they join the queue; O(V + E) overall.",
+          code: "for next in unlocks[course]:
+        waiting[next] -= 1
+        if waiting[next] == 0: ready.push_back(next)",
+        ),
+        WalkStep(
+          step: "If the order comes out shorter than numCourses, a cycle blocked the rest — return the empty list.",
+          hint: "What does a short order mean?",
+          why: "A cycle kept some courses from ever reaching zero, so no valid order exists and the answer is empty.",
+          code: "return order if len(order) == numCourses else []",
+        ),
+        WalkStep(
+          step: "Depth-first search yields an order too: record a course only after everything it depends on (post-order), then reverse the record.",
+          hint: "How would depth-first search produce an order?",
+          why: "Record a course after its prerequisites finish (post-order), then reverse; the reversal is what turns finish order into a valid start order.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "waiting[c] = number of prerequisites of c, for every course
@@ -2249,13 +5079,47 @@ return order if len(order) == numCourses else []",
       Nudge(
         "A tree plus one extra edge — so exactly one loop hides in the edge list. Adding edges one at a time, what moment would tell you an edge did no useful work?",
       ),
-      Steps([
-        "Grow the graph edge by edge with union-find: every node points toward a parent, and a root is a node that is its own parent.",
-        "For each edge, find the root of both endpoints by walking parent pointers upward.",
-        "Different roots: the edge joins two components — merge them by pointing one root at the other.",
-        "Same root: the endpoints were already connected, so this edge closes the cycle — record it.",
-        "Processing edges in the given order is what makes the recorded edge the last removable one, which is what the problem asks for.",
-        "The brute-force reading — delete each edge in turn and test whether a tree remains — is the honest O(n^2) baseline worth naming before beating it.",
+      Walk([
+        WalkStep(
+          step: "Grow the graph edge by edge with union-find: every node points toward a parent, and a root is a node that is its own parent.",
+          hint: "What structure lets you add edges one at a time and ask whether two nodes are already connected?",
+          why: "Union-find: each node points toward a parent, and a root is its own parent.",
+          code: "parent[node] = node, for every node",
+        ),
+        WalkStep(
+          step: "For each edge, find the root of both endpoints by walking parent pointers upward.",
+          hint: "How do you find a node's component?",
+          why: "Walk parent pointers until reaching a root.",
+          code: "function find(node):
+    while parent[node] != node: node = parent[node]
+    return node",
+        ),
+        WalkStep(
+          step: "Different roots: the edge joins two components — merge them by pointing one root at the other.",
+          hint: "Two endpoints have different roots. What does the edge do?",
+          why: "Joins two components; point one root at the other.",
+          code: "for (a, b) in edges:
+    rootA, rootB = find(a), find(b)
+    else: parent[rootA] = rootB",
+        ),
+        WalkStep(
+          step: "Same root: the endpoints were already connected, so this edge closes the cycle — record it.",
+          hint: "And when the roots are the same?",
+          why: "The endpoints were already connected, so this edge closes a cycle; record it.",
+          code: "if rootA == rootB: answer = (a, b)",
+        ),
+        WalkStep(
+          step: "Processing edges in the given order is what makes the recorded edge the last removable one, which is what the problem asks for.",
+          hint: "Why process the edges in the given order?",
+          why: "The problem wants the last edge that could be removed, and taking edges in order makes the recorded one exactly that.",
+          code: "return answer",
+        ),
+        WalkStep(
+          step: "The brute-force reading — delete each edge in turn and test whether a tree remains — is the honest O(n^2) baseline worth naming before beating it.",
+          hint: "What baseline should you be able to state?",
+          why: "Delete each edge in turn and test whether a tree remains, O(n²); union-find beats it in near-linear time.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "parent[node] = node, for every node
@@ -2276,13 +5140,50 @@ return answer",
       Nudge(
         "With no edges at all the answer is obvious. What does each edge do to that obvious answer — and do all of the edges actually do it?",
       ),
-      Steps([
-        "Start from the no-edge answer: n nodes means n components.",
-        "Process each edge with union-find: find the root of both endpoints.",
-        "If the roots differ, the edge genuinely merges two components — union them and count one merge.",
-        "If the roots match, the edge lies inside one component and changes nothing.",
-        "Answer n minus the number of real merges — no adjacency list, no traversal.",
-        "The traversal version is island-counting over an adjacency list; the contrast worth stating is that union-find takes edges as they arrive, while the traversal needs the whole graph first.",
+      Walk([
+        WalkStep(
+          step: "Start from the no-edge answer: n nodes means n components.",
+          hint: "With no edges at all, how many components are there?",
+          why: "n, one per node; every real merge reduces that by one.",
+          code: "parent[node] = node, for every node",
+        ),
+        WalkStep(
+          step: "Process each edge with union-find: find the root of both endpoints.",
+          hint: "What does union-find answer about an edge's two ends?",
+          why: "Whether they are already in the same component, by comparing their roots.",
+          code: "function find(node):
+    while parent[node] != node: node = parent[node]
+    return node
+
+for (a, b) in edges:
+    rootA, rootB = find(a), find(b)",
+        ),
+        WalkStep(
+          step: "If the roots differ, the edge genuinely merges two components — union them and count one merge.",
+          hint: "When the roots differ, what happens?",
+          why: "Two components become one: link the roots and count a merge.",
+          code: "if rootA != rootB:
+        parent[rootA] = rootB
+        merges += 1",
+        ),
+        WalkStep(
+          step: "If the roots match, the edge lies inside one component and changes nothing.",
+          hint: "And when they match?",
+          why: "The edge lies inside a component and changes nothing.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Answer n minus the number of real merges — no adjacency list, no traversal.",
+          hint: "What is the count at the end?",
+          why: "n minus the merges; no adjacency list and no traversal, near-linear with path compression.",
+          code: "return n - merges",
+        ),
+        WalkStep(
+          step: "The traversal version is island-counting over an adjacency list; the contrast worth stating is that union-find takes edges as they arrive, while the traversal needs the whole graph first.",
+          hint: "How does this compare with counting islands by traversal?",
+          why: "Traversal needs the whole graph first; union-find processes edges as they arrive, which matters for streaming input.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "parent[node] = node, for every node
@@ -2304,13 +5205,49 @@ return n - merges",
       Nudge(
         "A tree is two properties at once — but must you test both? Count what a tree of n nodes always has, and ask what verifying that count buys you.",
       ),
-      Steps([
-        "Check the edge count first: a tree on n nodes has exactly n - 1 edges, so any other count fails immediately.",
-        "With the count right, connected and acyclic imply each other — verify just one, and connectivity is the easier pick.",
-        "Build an adjacency list with each edge entered in both directions.",
-        "Traverse from node 0 with a stack and a seen set, collecting every node reached.",
-        "Answer true exactly when the traversal reached all n nodes.",
-        "Union-find gets both properties in a single pass instead: an edge landing inside a component is a cycle, and n - 1 successful merges means one component.",
+      Walk([
+        WalkStep(
+          step: "Check the edge count first: a tree on n nodes has exactly n - 1 edges, so any other count fails immediately.",
+          hint: "How many edges must a tree on n nodes have?",
+          why: "Exactly n - 1; checking that first rejects most non-trees in O(1) and is what makes the next step sufficient.",
+          code: "if number of edges != n - 1: return false",
+        ),
+        WalkStep(
+          step: "With the count right, connected and acyclic imply each other — verify just one, and connectivity is the easier pick.",
+          hint: "With exactly n - 1 edges, what does connectivity imply about cycles?",
+          why: "A connected graph with n - 1 edges cannot have a cycle, so one property proves the other and you only need to check connectivity.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Build an adjacency list with each edge entered in both directions.",
+          hint: "What shape should the graph take for a traversal?",
+          why: "An adjacency list with each undirected edge entered both ways, so a walk can leave a node along any edge.",
+          code: "adjacency from edges, both directions",
+        ),
+        WalkStep(
+          step: "Traverse from node 0 with a stack and a seen set, collecting every node reached.",
+          hint: "How do you find out what node 0 can reach?",
+          why: "A depth-first walk with a stack and a seen set; the set is what stops the walk looping and what counts the component.",
+          code: "seen = empty set
+stack = [0]
+while stack not empty:
+    node = stack.pop()
+    if node in seen: continue
+    seen.add(node)
+    for neighbour in adjacency[node]: stack.push(neighbour)",
+        ),
+        WalkStep(
+          step: "Answer true exactly when the traversal reached all n nodes.",
+          hint: "What must the reached set look like for a tree?",
+          why: "All n nodes; anything fewer means a disconnected piece, O(V + E) in total.",
+          code: "return len(seen) == n",
+        ),
+        WalkStep(
+          step: "Union-find gets both properties in a single pass instead: an edge landing inside a component is a cycle, and n - 1 successful merges means one component.",
+          hint: "Is there a single pass that checks both properties at once?",
+          why: "Union-find: an edge whose ends are already in one component closes a cycle, and n - 1 successful merges means everything is connected.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "if number of edges != n - 1: return false
@@ -2329,14 +5266,61 @@ return len(seen) == n",
       Nudge(
         "One-letter changes quietly link the words into something searchable, and \"shortest sequence\" should tell you how to search it. The real cost question: how do you find a word's neighbours without comparing every pair?",
       ),
-      Steps([
-        "If endWord is not in the list, answer 0 before doing anything.",
-        "Build neighbour buckets instead of a graph: file each word under each of its wildcard patterns (hot under *ot, h*t, ho*) — words sharing a pattern differ by one letter.",
-        "Breadth-first search from beginWord, counting levels; start the count at 1 because the answer counts words, not changes.",
-        "To expand a word, form each of its patterns and take every unseen word in those buckets.",
-        "Mark words seen as they are queued so nothing is processed twice.",
-        "Return the level at which endWord is dequeued; an exhausted search means no ladder exists — return 0.",
-        "The bucket trick is the transferable part: comparing every pair of words costs O(n^2) before the search even starts.",
+      Walk([
+        WalkStep(
+          step: "If endWord is not in the list, answer 0 before doing anything.",
+          hint: "What rules out an answer before building anything?",
+          why: "endWord absent from the list.",
+          code: "words = set(wordList)
+if endWord not in words: return 0",
+        ),
+        WalkStep(
+          step: "Build neighbour buckets instead of a graph: file each word under each of its wildcard patterns (hot under *ot, h*t, ho*) — words sharing a pattern differ by one letter.",
+          hint: "How do you find one-letter neighbours without comparing every pair?",
+          why: "File each word under its wildcard patterns; words sharing a pattern differ by one letter.",
+          code: "for word in words:
+    for i in 0..len(word)-1:
+        buckets[word with position i replaced by *].add(word)",
+        ),
+        WalkStep(
+          step: "Breadth-first search from beginWord, counting levels; start the count at 1 because the answer counts words, not changes.",
+          hint: "What search finds the shortest ladder, and where does the count start?",
+          why: "Breadth-first by levels, starting at 1 because the answer counts words.",
+          code: "seen = {beginWord}
+frontier = queue([beginWord])
+steps = 1",
+        ),
+        WalkStep(
+          step: "To expand a word, form each of its patterns and take every unseen word in those buckets.",
+          hint: "How is a word expanded?",
+          why: "Form its patterns and take every unseen word in those buckets.",
+          code: "while frontier not empty:
+    for each word in the current level of frontier:
+        if word == endWord: return steps
+        for i in 0..len(word)-1:
+            for neighbour in buckets[word with position i replaced by *]:",
+        ),
+        WalkStep(
+          step: "Mark words seen as they are queued so nothing is processed twice.",
+          hint: "When is a word marked seen?",
+          why: "As it is queued, so nothing is processed twice.",
+          code: "if neighbour not in seen:
+                    seen.add(neighbour)
+                    frontier.push(neighbour)",
+        ),
+        WalkStep(
+          step: "Return the level at which endWord is dequeued; an exhausted search means no ladder exists — return 0.",
+          hint: "How does the search end?",
+          why: "Return the level at which endWord appears, or 0 if the frontier empties.",
+          code: "steps += 1
+return 0",
+        ),
+        WalkStep(
+          step: "The bucket trick is the transferable part: comparing every pair of words costs O(n^2) before the search even starts.",
+          hint: "Which part transfers to other problems?",
+          why: "The bucket trick: pairwise comparison would cost O(n²) before the search begins.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "words = set(wordList)
@@ -2364,13 +5348,49 @@ return 0",
       Nudge(
         "Every ticket must be used exactly once, while airports may repeat freely — is that a walk over nodes or over edges? And when greedily taking the smallest destination strands you somewhere, what must that dead end be?",
       ),
-      Steps([
-        "Group the tickets by origin and sort each destination list, so the alphabetically smallest unused ticket is always the one taken.",
-        "Walk greedily with a stack: from the airport on top, follow and consume its smallest remaining ticket.",
-        "When the top airport has no tickets left, pop it onto the route — an airport is recorded only once its tickets are exhausted.",
-        "Trust the dead end: the place the greedy walk gets stuck is exactly where the itinerary has to end, so recording at exhaustion builds the route back to front.",
-        "Reverse the recorded route for the answer.",
-        "Backtracking — take a ticket, recurse, undo on failure — finds the same itinerary at exponential cost; this walk (Hierholzer's) never undoes anything.",
+      Walk([
+        WalkStep(
+          step: "Group the tickets by origin and sort each destination list, so the alphabetically smallest unused ticket is always the one taken.",
+          hint: "How do you make \"smallest lexical\" the default choice at every airport?",
+          why: "Group tickets by origin and sort each destination list, so the first remaining ticket is always the smallest unused one.",
+          code: "destinations[origin] = sorted list of destinations of origin's tickets",
+        ),
+        WalkStep(
+          step: "Walk greedily with a stack: from the airport on top, follow and consume its smallest remaining ticket.",
+          hint: "What does the greedy walk do at the airport on top of the stack?",
+          why: "Consumes its smallest remaining ticket and pushes the destination.",
+          code: "route = []
+stack = [\"JFK\"]
+while stack not empty:
+    airport = stack.top()
+    if destinations[airport] not empty:
+        stack.push(remove first element of destinations[airport])",
+        ),
+        WalkStep(
+          step: "When the top airport has no tickets left, pop it onto the route — an airport is recorded only once its tickets are exhausted.",
+          hint: "When is an airport added to the route?",
+          why: "Only once it has no tickets left, by popping it; that is Hierholzer's post-order rule.",
+          code: "else:
+        route.add(stack.pop())",
+        ),
+        WalkStep(
+          step: "Trust the dead end: the place the greedy walk gets stuck is exactly where the itinerary has to end, so recording at exhaustion builds the route back to front.",
+          hint: "Why is getting stuck not a failure?",
+          why: "The dead end is where the itinerary must end, so recording at exhaustion builds the route from the back.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Reverse the recorded route for the answer.",
+          hint: "What is the last step?",
+          why: "Reverse the recorded route; O(E log E) for the sorting.",
+          code: "return reverse(route)",
+        ),
+        WalkStep(
+          step: "Backtracking — take a ticket, recurse, undo on failure — finds the same itinerary at exponential cost; this walk (Hierholzer's) never undoes anything.",
+          hint: "How does this compare with backtracking?",
+          why: "Backtracking finds the same itinerary at exponential cost; this walk never undoes a step.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "destinations[origin] = sorted list of destinations of origin's tickets
@@ -2389,13 +5409,48 @@ return reverse(route)",
       Nudge(
         "\"Join everything up for the least total cost\" is a structure with a classic name — and here every pair of points is a candidate connection. Which of the classic algorithms suits a graph that dense?",
       ),
-      Steps([
-        "Recognize a minimum spanning tree on a complete graph: every pair of points is an edge weighted by Manhattan distance.",
-        "Grow one tree from any starting point (Prim's), each outside point remembering only its cheapest distance to the tree so far.",
-        "Repeatedly pull in the outside point with the smallest remembered distance and add that distance to the total.",
-        "After each addition, relax: lower every remaining point's remembered distance if the new tree member is closer.",
-        "Skip the heap: two linear passes per addition is O(n^2), which is the right shape when the edges number n^2 anyway.",
-        "If asked about sparse graphs: Kruskal's sorts all edges and uses union-find to skip loop-closers — it never looks at the points, so it is the one that generalises.",
+      Walk([
+        WalkStep(
+          step: "Recognize a minimum spanning tree on a complete graph: every pair of points is an edge weighted by Manhattan distance.",
+          hint: "What graph problem is \"connect every point as cheaply as possible\"?",
+          why: "A minimum spanning tree on the complete graph whose edge weights are Manhattan distances.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Grow one tree from any starting point (Prim's), each outside point remembering only its cheapest distance to the tree so far.",
+          hint: "Prim's grows one tree. What does each outside point need to remember?",
+          why: "Only its cheapest distance to the tree so far; that single number is updated as the tree grows.",
+          code: "outside = list of (point, manhattan(start, point)) for every point except start
+total = 0",
+        ),
+        WalkStep(
+          step: "Repeatedly pull in the outside point with the smallest remembered distance and add that distance to the total.",
+          hint: "Which point joins the tree next?",
+          why: "The outside point with the smallest remembered distance, and that distance is paid into the total.",
+          code: "while outside not empty:
+    (point, cost) = remove the outside entry with the smallest cost
+    total += cost",
+        ),
+        WalkStep(
+          step: "After each addition, relax: lower every remaining point's remembered distance if the new tree member is closer.",
+          hint: "After a point joins, what may have changed for the others?",
+          why: "Their cheapest distance to the tree may now be to the new member, so each remembered distance is lowered if so.",
+          code: "for entry in outside:
+        entry.cost = min(entry.cost, manhattan(point, entry.point))
+return total",
+        ),
+        WalkStep(
+          step: "Skip the heap: two linear passes per addition is O(n^2), which is the right shape when the edges number n^2 anyway.",
+          hint: "Why not use a heap here?",
+          why: "The graph is complete with n² edges, so two linear scans per addition give O(n²), matching the input size without heap overhead.",
+          code: "",
+        ),
+        WalkStep(
+          step: "If asked about sparse graphs: Kruskal's sorts all edges and uses union-find to skip loop-closers — it never looks at the points, so it is the one that generalises.",
+          hint: "What would you reach for on a sparse graph?",
+          why: "Kruskal's: sort the edges and use union-find to skip edges that close a loop; it never looks at points, so it generalises.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "outside = list of (point, manhattan(start, point)) for every point except start
@@ -2412,14 +5467,55 @@ return total",
       Nudge(
         "One source, weighted links, \"how long until it arrives\" — which family of graph problem is that? And once every node has an arrival time, which single number answers \"when has everyone heard?\"",
       ),
-      Steps([
-        "Model it as single-source shortest paths from k; the answer is the largest of the per-node arrival times.",
-        "Build an adjacency list of outgoing edges with their travel times.",
-        "Run Dijkstra: keep a min-heap of tentative arrival times and always pop the smallest.",
-        "Popping a node settles it for good — sound only because no edge is negative — so skip anything popped twice.",
-        "Relax each outgoing edge of a settled node by pushing the neighbour's candidate time; stale heap entries are left in and skipped on the way out, cheaper than rewriting them.",
-        "If fewer than n nodes settled, some node never hears the signal — return -1; otherwise return the largest settled time.",
-        "If edge weights could be negative, switch to Bellman-Ford — relax every edge n - 1 times, choosing nothing — the slower one that survives.",
+      Walk([
+        WalkStep(
+          step: "Model it as single-source shortest paths from k; the answer is the largest of the per-node arrival times.",
+          hint: "When has the signal reached everyone?",
+          why: "When the last node hears it, so the answer is the largest of the shortest arrival times from k.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Build an adjacency list of outgoing edges with their travel times.",
+          hint: "What form should the edges take for a graph search?",
+          why: "An adjacency list from each origin to its (destination, time) pairs.",
+          code: "edges[origin] = list of (destination, weight)",
+        ),
+        WalkStep(
+          step: "Run Dijkstra: keep a min-heap of tentative arrival times and always pop the smallest.",
+          hint: "Which node should be settled next?",
+          why: "The one with the smallest tentative time; a min-heap makes that pop O(log n), which is Dijkstra.",
+          code: "settled = empty map
+heap = [(0, k)]
+while heap not empty:
+    (time, node) = heap.pop_min()",
+        ),
+        WalkStep(
+          step: "Popping a node settles it for good — sound only because no edge is negative — so skip anything popped twice.",
+          hint: "Why is popping a node final, and what does that require?",
+          why: "With no negative edges nothing later can be cheaper, so the first pop is the shortest time and later pops are skipped.",
+          code: "if node in settled: continue
+    settled[node] = time",
+        ),
+        WalkStep(
+          step: "Relax each outgoing edge of a settled node by pushing the neighbour's candidate time; stale heap entries are left in and skipped on the way out, cheaper than rewriting them.",
+          hint: "What happens to a neighbour's old heap entry when a better time is found?",
+          why: "It stays in the heap and is skipped when popped; leaving stale entries is cheaper than rewriting them.",
+          code: "for (next, weight) in edges[node]:
+        if next not in settled:
+            heap.push((time + weight, next))",
+        ),
+        WalkStep(
+          step: "If fewer than n nodes settled, some node never hears the signal — return -1; otherwise return the largest settled time.",
+          hint: "What do the settled times tell you at the end?",
+          why: "If fewer than n nodes settled some node is unreachable, -1; otherwise the maximum settled time is the answer, O((V + E) log V).",
+          code: "return max value in settled if len(settled) == n else -1",
+        ),
+        WalkStep(
+          step: "If edge weights could be negative, switch to Bellman-Ford — relax every edge n - 1 times, choosing nothing — the slower one that survives.",
+          hint: "What if an edge could be negative?",
+          why: "Dijkstra's settling would be wrong; Bellman-Ford relaxes every edge n - 1 rounds and survives negatives at O(V * E).",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "edges[origin] = list of (destination, weight)
@@ -2439,12 +5535,43 @@ return max value in settled if len(settled) == n else -1",
       Nudge(
         "It looks like a shortest-path grid problem, yet adding up step costs is wrong here — the water only has to rise once. What should the \"cost\" of a path mean instead, and does your favourite shortest-path algorithm actually care?",
       ),
-      Steps([
-        "Redefine a path's cost as the largest depth along it rather than the sum — and change nothing else about Dijkstra.",
-        "Start a min-heap holding the top-left cell at cost equal to its own depth.",
-        "Pop the cheapest cell; the first time the bottom-right corner pops, its cost is the answer.",
-        "Otherwise skip it if already settled, mark it, and push each unvisited neighbour at cost max(current cost, neighbour depth).",
-        "Alternative worth naming: reachability is monotone in time, so binary search the answer, with each probe a plain flood fill asking \"passable yet?\".",
+      Walk([
+        WalkStep(
+          step: "Redefine a path's cost as the largest depth along it rather than the sum — and change nothing else about Dijkstra.",
+          hint: "What single change to Dijkstra fits a cost that is a maximum instead of a sum?",
+          why: "Combine with max instead of plus; everything else, including the greedy settling, still holds.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Start a min-heap holding the top-left cell at cost equal to its own depth.",
+          hint: "Where does the search start?",
+          why: "The top-left cell at a cost equal to its own depth.",
+          code: "seen = empty set
+heap = [(grid[0][0], 0, 0)]",
+        ),
+        WalkStep(
+          step: "Pop the cheapest cell; the first time the bottom-right corner pops, its cost is the answer.",
+          hint: "When do you have the answer?",
+          why: "The first time the bottom-right corner is popped; its cost is minimal by the Dijkstra argument.",
+          code: "while heap not empty:
+    (cost, r, c) = heap.pop_min()
+    if (r, c) is the bottom-right corner: return cost",
+        ),
+        WalkStep(
+          step: "Otherwise skip it if already settled, mark it, and push each unvisited neighbour at cost max(current cost, neighbour depth).",
+          hint: "What does settling a cell do?",
+          why: "Skip it if already settled, mark it, and push neighbours at max(cost, their depth); O(n² log n) on an n by n grid.",
+          code: "if (r, c) in seen: continue
+    seen.add((r, c))
+    for each in-bounds neighbour (nr, nc) not in seen:
+        heap.push((max(cost, grid[nr][nc]), nr, nc))",
+        ),
+        WalkStep(
+          step: "Alternative worth naming: reachability is monotone in time, so binary search the answer, with each probe a plain flood fill asking \"passable yet?\".",
+          hint: "What monotone property allows a binary search instead?",
+          why: "If time t suffices, so does any later time, so probe times with a flood fill asking \"passable yet\".",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "seen = empty set
@@ -2462,13 +5589,53 @@ while heap not empty:
       Nudge(
         "The input is words, but is the ordering really about words? Compare two neighbours in the sorted list — how much of them actually says anything about the alphabet?",
       ),
-      Steps([
-        "Build a graph over letters, not words: for each adjacent pair of words, find their first differing position.",
-        "Take exactly one edge from that difference — earlier letter before later letter — because everything after it says nothing.",
-        "If a pair never differs and the first word is longer, that is a word followed by its own prefix, which no alphabet can explain — return \"\".",
-        "Topologically sort the letter graph: count incoming edges per letter, start from the zero-count letters, and release dependents as letters are emitted.",
-        "If fewer letters come out than exist, the constraints form a cycle — the words contradict each other, return \"\".",
-        "Otherwise join the emitted letters into the alphabet.",
+      Walk([
+        WalkStep(
+          step: "Build a graph over letters, not words: for each adjacent pair of words, find their first differing position.",
+          hint: "The words are sorted, but by what? What is the only thing a sorted pair of words tells you about letters?",
+          why: "Order between words is decided at their first differing position, so that one position is the only letter-to-letter fact a pair contributes; everything else is noise.",
+          code: "for each adjacent pair (first, second) in words:
+    i = first position where they differ, if any",
+        ),
+        WalkStep(
+          step: "Take exactly one edge from that difference — earlier letter before later letter — because everything after it says nothing.",
+          hint: "Once two words differ at position i, does position i+1 say anything about the alphabet?",
+          why: "After the first difference the later letters are compared by nothing, so taking exactly one edge per pair keeps the graph honest and small: at most one edge per adjacent pair.",
+          code: "if i exists:
+        unlocks[first[i]].add(second[i])
+        waiting[second[i]] += 1",
+        ),
+        WalkStep(
+          step: "If a pair never differs and the first word is longer, that is a word followed by its own prefix, which no alphabet can explain — return \"\".",
+          hint: "What would it mean for a sorted list to put \"apple\" before \"app\"?",
+          why: "A word listed after its own prefix is impossible under any alphabet, so it is not a missing edge but a contradiction; catching it here is what stops the sort from inventing an answer.",
+          code: "else if len(first) > len(second): return \"\"",
+        ),
+        WalkStep(
+          step: "Topologically sort the letter graph: count incoming edges per letter, start from the zero-count letters, and release dependents as letters are emitted.",
+          hint: "You have a graph of \"this letter before that letter\". Which classic ordering respects every edge?",
+          why: "Kahn's topological sort emits a letter only once every letter that must precede it is out, so the output honours every constraint in O(V + E).",
+          code: "ready = letters with waiting == 0
+order = []
+while ready not empty:
+    letter = ready.pop()
+    order.add(letter)
+    for next in unlocks[letter]:
+        waiting[next] -= 1
+        if waiting[next] == 0: ready.push(next)",
+        ),
+        WalkStep(
+          step: "If fewer letters come out than exist, the constraints form a cycle — the words contradict each other, return \"\".",
+          hint: "If some letters never reach zero incoming edges, what shape must the constraints have formed?",
+          why: "A cycle keeps every letter on it waiting forever, so a short output is the signature of contradictory words rather than an incomplete run.",
+          code: "if len(order) != len(letters): return \"\"",
+        ),
+        WalkStep(
+          step: "Otherwise join the emitted letters into the alphabet.",
+          hint: "What still has to be true of the letters you emitted before they can be called an alphabet?",
+          why: "Every letter that appears in any word must be in the order, including ones with no constraints at all; seeding waiting counts for all letters is what gets them emitted.",
+          code: "return join(order)",
+        ),
       ]),
       Pseudocode(
         "letters = every letter appearing in any word
@@ -2495,13 +5662,48 @@ return join(order) if len(order) == len(letters) else \"\"",
       Nudge(
         "Cheapest path — so reach for the usual algorithm? Careful: what does the stop limit do to the claim that a city's cheapest fare can be settled once and reused?",
       ),
-      Steps([
-        "Notice why plain Dijkstra breaks: a costlier route with fewer stops may be the only one that still gets through, so cheapest-so-far can no longer settle a city.",
-        "Use Bellman-Ford, which settles nothing and relaxes edges in rounds — one round means one flight taken.",
-        "Start with only the source known, at cost 0.",
-        "Run k + 1 rounds; in each, relax every flight, improving the destination's cost from the origin's cost plus the fare.",
-        "Read each round from a snapshot of the previous round's costs — reading the table being written lets two flights leak into one round and breaks the limit.",
-        "Answer the destination's cost after the rounds, or -1 if it never received one.",
+      Walk([
+        WalkStep(
+          step: "Notice why plain Dijkstra breaks: a costlier route with fewer stops may be the only one that still gets through, so cheapest-so-far can no longer settle a city.",
+          hint: "Dijkstra settles a city at its cheapest cost. What does the stop limit do to that guarantee?",
+          why: "A pricier route with fewer stops may be the only legal way onward, so the cheapest cost to a city no longer tells you the best way through it; the settling step is what breaks.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Use Bellman-Ford, which settles nothing and relaxes edges in rounds — one round means one flight taken.",
+          hint: "Which shortest-path algorithm works in rounds where each round is one more edge?",
+          why: "Bellman-Ford's rounds count edges taken, which is exactly a count of flights, so the stop limit becomes a round limit.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Start with only the source known, at cost 0.",
+          hint: "Before any flight, which cities have a known cost?",
+          why: "Only the source at cost 0; every other city is unreached until a round relaxes a flight into it.",
+          code: "costs = {src: 0}",
+        ),
+        WalkStep(
+          step: "Run k + 1 rounds; in each, relax every flight, improving the destination's cost from the origin's cost plus the fare.",
+          hint: "k stops allow how many flights, and what does one round do with a flight?",
+          why: "k stops means k + 1 flights, so k + 1 rounds; relaxing a flight improves its destination from the origin's cost plus the fare, and O(k * E) is fine here.",
+          code: "repeat k + 1 times:
+    for (origin, destination, price) in flights:
+        if origin in previous:
+            total = previous[origin] + price
+            if destination not in costs or total < costs[destination]:
+                costs[destination] = total",
+        ),
+        WalkStep(
+          step: "Read each round from a snapshot of the previous round's costs — reading the table being written lets two flights leak into one round and breaks the limit.",
+          hint: "If a round reads a cost it just wrote, how many flights could that path have used?",
+          why: "Reading the live table lets one round chain two flights and overshoot the limit; reading a snapshot from the previous round keeps each round to exactly one flight.",
+          code: "previous = copy of costs",
+        ),
+        WalkStep(
+          step: "Answer the destination's cost after the rounds, or -1 if it never received one.",
+          hint: "After the rounds, what does a missing entry for the destination mean?",
+          why: "No route within k stops exists, so the answer is -1; otherwise the table holds the cheapest legal cost.",
+          code: "return costs[dst] if dst in costs else -1",
+        ),
       ]),
       Pseudocode(
         "costs = {src: 0}
@@ -2519,12 +5721,39 @@ return costs[dst] if dst in costs else -1",
       Nudge(
         "Stand at the top and ask what the very last move could have been. If you already knew the answer for every shorter staircase, how would those answers combine?",
       ),
-      Steps([
-        "Split on the last move: it was one step or two, so the ways to reach step n are the ways to reach n - 1 plus the ways to reach n - 2.",
-        "Anchor the bases: one way to stand at the bottom, one way to reach step 1.",
-        "Notice only the last two values ever matter, so carry two variables and roll them forward n times — no table.",
-        "Name the sequence: it is Fibonacci with a staircase painted on it.",
-        "Write the top-down version once too: the same recurrence with a cache, where the memo is the whole difference between O(n) and O(2^n).",
+      Walk([
+        WalkStep(
+          step: "Split on the last move: it was one step or two, so the ways to reach step n are the ways to reach n - 1 plus the ways to reach n - 2.",
+          hint: "Think about the very last move onto step n. How many possibilities are there, and where did each come from?",
+          why: "Every way to reach n ends with a 1-step from n-1 or a 2-step from n-2, and those two groups never overlap, so the counts simply add.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Anchor the bases: one way to stand at the bottom, one way to reach step 1.",
+          hint: "What are the smallest cases you can answer without the recurrence?",
+          why: "One way to be at the bottom and one way to reach step 1 anchor the recurrence; without correct bases every later count is off.",
+          code: "previous, current = 0, 1",
+        ),
+        WalkStep(
+          step: "Notice only the last two values ever matter, so carry two variables and roll them forward n times — no table.",
+          hint: "How much of the history does the recurrence actually read?",
+          why: "Only the previous two counts are ever used, so two rolling variables give O(n) time in O(1) space instead of a table.",
+          code: "repeat n times:
+    previous, current = current, previous + current
+return current",
+        ),
+        WalkStep(
+          step: "Name the sequence: it is Fibonacci with a staircase painted on it.",
+          hint: "Does the sequence 1, 2, 3, 5, 8 look familiar?",
+          why: "Recognising Fibonacci names the whole family: the recurrence, the closed form and the reason the naive recursion is exponential.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Write the top-down version once too: the same recurrence with a cache, where the memo is the whole difference between O(n) and O(2^n).",
+          hint: "What turns the tree-shaped recursion into something linear?",
+          why: "A memo means each n is computed once, collapsing the O(2^n) call tree into O(n) calls; the recurrence is identical, the cache is the entire difference.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "previous, current = 0, 1
@@ -2537,12 +5766,38 @@ return current",
       Nudge(
         "Standing on any step, the money already spent got you there in one of two ways. If you knew the cheapest way to stand on each earlier step, what would standing here cost?",
       ),
-      Steps([
-        "Define, per step, the cheapest total paid to stand on it: its own price plus the cheaper of the two answers below.",
-        "Start both rolling values at 0 — beginning on step 0 or step 1 costs nothing until you step off it.",
-        "Walk the cost array once: standing here costs this step's price plus min(one step back, two steps back).",
-        "Finish with the min of the last two values, since the top is reached from either of the final two steps — that min is what makes both starts legal.",
-        "Know the reverse reading too: what it costs to finish from each step gives the same answer and is often the easier direction to state.",
+      Walk([
+        WalkStep(
+          step: "Define, per step, the cheapest total paid to stand on it: its own price plus the cheaper of the two answers below.",
+          hint: "What is the cheapest way to be standing on a given step?",
+          why: "Its own price plus the cheaper of the two steps below, since you arrive from one or two back.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Start both rolling values at 0 — beginning on step 0 or step 1 costs nothing until you step off it.",
+          hint: "What does it cost to be on step 0 or step 1 before moving?",
+          why: "Nothing: you may start on either, and you pay only when you step off; both rolling values begin at 0.",
+          code: "one_back, two_back = 0, 0",
+        ),
+        WalkStep(
+          step: "Walk the cost array once: standing here costs this step's price plus min(one step back, two steps back).",
+          hint: "What is the update as you walk the prices?",
+          why: "Standing here costs this price plus min of the two previous values; the pair rolls forward, O(n) with O(1) space.",
+          code: "for price in cost:
+    one_back, two_back = price + min(one_back, two_back), one_back",
+        ),
+        WalkStep(
+          step: "Finish with the min of the last two values, since the top is reached from either of the final two steps — that min is what makes both starts legal.",
+          hint: "The top is not a step with a price. How do you reach it?",
+          why: "From either of the last two steps, so the answer is the min of the final two values.",
+          code: "return min(one_back, two_back)",
+        ),
+        WalkStep(
+          step: "Know the reverse reading too: what it costs to finish from each step gives the same answer and is often the easier direction to state.",
+          hint: "Is there a direction that is easier to explain?",
+          why: "Backwards: the cost to finish from each step is its price plus the cheaper of the two ahead; same answer, often clearer.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "one_back, two_back = 0, 0
@@ -2555,12 +5810,38 @@ return min(one_back, two_back)",
       Nudge(
         "At each house there are only two futures, and each is summarized by a single number you could already know. What two questions about the earlier houses would decide this house instantly?",
       ),
-      Steps([
-        "Frame the choice at each house: rob it — its value plus the best from two houses back — or skip it and keep the best so far.",
-        "Notice both inputs are single numbers, so the whole table collapses to a rolling pair.",
-        "Walk the houses once, updating best = max(best so far, two-back best + value).",
-        "Shift the pair each step: the old best becomes the new two-back.",
-        "If asked where the recurrence comes from, write the recursion: a tree of rob-or-skip choices that the cache flattens from O(2^n) to O(n).",
+      Walk([
+        WalkStep(
+          step: "Frame the choice at each house: rob it — its value plus the best from two houses back — or skip it and keep the best so far.",
+          hint: "Standing at a house, what are the only two things you can do, and what does each depend on?",
+          why: "Rob it, adding its value to the best from two houses back, or skip it and keep the best so far; both depend on earlier bests only.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Notice both inputs are single numbers, so the whole table collapses to a rolling pair.",
+          hint: "How much of the past does that choice actually read?",
+          why: "Two numbers, so a table collapses to a rolling pair and the space is O(1).",
+          code: "best, previous = 0, 0",
+        ),
+        WalkStep(
+          step: "Walk the houses once, updating best = max(best so far, two-back best + value).",
+          hint: "What is the update at each house?",
+          why: "The new best is the larger of skipping (best so far) and robbing (two-back best plus value); one pass makes it O(n).",
+          code: "for value in houses:
+    best, previous = max(best, previous + value), best",
+        ),
+        WalkStep(
+          step: "Shift the pair each step: the old best becomes the new two-back.",
+          hint: "After the update, what becomes the new two-back value?",
+          why: "The best before this house, which is why the pair shifts as a unit.",
+          code: "return best",
+        ),
+        WalkStep(
+          step: "If asked where the recurrence comes from, write the recursion: a tree of rob-or-skip choices that the cache flattens from O(2^n) to O(n).",
+          hint: "If asked to derive the recurrence, where does it come from?",
+          why: "A rob-or-skip recursion whose call tree is O(2^n); memoising it is what produces the linear table the pair replaces.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "best, previous = 0, 0
@@ -2573,12 +5854,43 @@ return best",
       Nudge(
         "How much does the circle actually change? Exactly one pair of houses became neighbours that were not before — what case split would make that new constraint vanish?",
       ),
-      Steps([
-        "Reduce the circle to its one constraint: the first and last houses are now adjacent, so at most one of them is robbed.",
-        "Case one: rule out the first house and rob houses 1..n-1 as an ordinary row.",
-        "Case two: rule out the last house and rob houses 0..n-2 as an ordinary row.",
-        "Solve both cases with the straight-line House Robber pair you already have, and answer the better one — reusing a solved problem beats inventing a circular recurrence.",
-        "Guard the tiny inputs: a single house is just its own value, since excluding it from both cases would wrongly answer 0.",
+      Walk([
+        WalkStep(
+          step: "Reduce the circle to its one constraint: the first and last houses are now adjacent, so at most one of them is robbed.",
+          hint: "What single thing does the circle change compared with a row of houses?",
+          why: "The first and last houses are now neighbours, so they cannot both be robbed; everything else is the row problem unchanged.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Case one: rule out the first house and rob houses 1..n-1 as an ordinary row.",
+          hint: "If the first house is off limits, what is left?",
+          why: "Houses 1..n-1 in a straight row, solvable by the plain House Robber recurrence.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Case two: rule out the last house and rob houses 0..n-2 as an ordinary row.",
+          hint: "And if the last house is off limits?",
+          why: "Houses 0..n-2, another straight row; between the two cases every valid plan is covered.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Solve both cases with the straight-line House Robber pair you already have, and answer the better one — reusing a solved problem beats inventing a circular recurrence.",
+          hint: "How do the two cases combine?",
+          why: "Take the better of the two straight-line answers; reusing the solved row problem twice beats inventing a circular recurrence, O(n).",
+          code: "return max(straight(houses without last), straight(houses without first))
+
+function straight(values):
+    best, previous = 0, 0
+    for value in values:
+        best, previous = max(best, previous + value), best
+    return best",
+        ),
+        WalkStep(
+          step: "Guard the tiny inputs: a single house is just its own value, since excluding it from both cases would wrongly answer 0.",
+          hint: "What goes wrong with a single house?",
+          why: "Both cases exclude it and answer 0, so one house must be returned as itself before the split.",
+          code: "if length == 1: return houses[0]",
+        ),
       ]),
       Pseudocode(
         "if length == 1: return houses[0]
@@ -2595,12 +5907,42 @@ function straight(values):
       Nudge(
         "Testing every substring rereads the same characters endlessly. What does every palindrome, however long, have exactly one of — and how many candidates does that leave to try?",
       ),
-      Steps([
-        "Enumerate centres instead of substrings: n characters plus the n gaps between them, 2n centres in all.",
-        "Do not forget the gaps — without them every even-length palindrome is invisible.",
-        "From each centre, expand outwards while the two end characters match.",
-        "When the expansion stops, the pointers have gone one step too far; step them back to read off the palindrome's start and length.",
-        "Keep the longest span found across all centres and slice it out at the end — O(n^2) time and no table.",
+      Walk([
+        WalkStep(
+          step: "Enumerate centres instead of substrings: n characters plus the n gaps between them, 2n centres in all.",
+          hint: "Rather than testing every substring, what can you enumerate that determines a palindrome?",
+          why: "Its centre: every palindrome grows symmetrically from one, and there are only 2n - 1 of them.",
+          code: "for i in 0..n-1:
+    for (left, right) in ((i, i), (i, i + 1)):",
+        ),
+        WalkStep(
+          step: "Do not forget the gaps — without them every even-length palindrome is invisible.",
+          hint: "Where is the centre of \"abba\"?",
+          why: "Between the two b's, so gaps between characters are centres too; leaving them out loses every even-length palindrome.",
+          code: "",
+        ),
+        WalkStep(
+          step: "From each centre, expand outwards while the two end characters match.",
+          hint: "From a centre, how far does the palindrome extend?",
+          why: "As long as the characters at the two ends match; expand outward until they do not or the string ends.",
+          code: "while left >= 0 and right < n and s[left] == s[right]:
+            left -= 1
+            right += 1",
+        ),
+        WalkStep(
+          step: "When the expansion stops, the pointers have gone one step too far; step them back to read off the palindrome's start and length.",
+          hint: "When the expansion stops, where exactly are the pointers?",
+          why: "One step past the palindrome on each side, so the length is right - left - 1 and the start is left + 1.",
+          code: "length = right - left - 1
+        if length > best_length:
+            best_start, best_length = left + 1, length",
+        ),
+        WalkStep(
+          step: "Keep the longest span found across all centres and slice it out at the end — O(n^2) time and no table.",
+          hint: "What is the total cost, and what does it avoid?",
+          why: "O(n²) time with O(1) extra space; no table of substrings, just the best span sliced out at the end.",
+          code: "return substring of s starting at best_start with length best_length",
+        ),
       ]),
       Pseudocode(
         "best_start, best_length = 0, 0
@@ -2619,12 +5961,44 @@ return substring of s starting at best_start with length best_length",
       Nudge(
         "You have grown palindromes outward from their centres before, to find the longest. What small change turns that measuring tool into a counting one?",
       ),
-      Steps([
-        "Reuse the 2n centres: every character, and every gap between characters for the even lengths.",
-        "Expand from each centre while the end characters match — but now each successful widening is itself one palindromic substring.",
-        "Count the widenings instead of measuring how far the biggest one got.",
-        "Sum the counts over all centres for the answer — the same O(n^2) walk with different bookkeeping.",
-        "The table alternative says s[i..j] is a palindrome when its ends match and the inside already was, which forces filling spans shortest first.",
+      Walk([
+        WalkStep(
+          step: "Reuse the 2n centres: every character, and every gap between characters for the even lengths.",
+          hint: "Which centres can a palindrome grow from?",
+          why: "Each character and each gap between characters, 2n - 1 in all; gaps cover the even lengths.",
+          code: "total = 0
+for i in 0..n-1:
+    total += grow(s, i, i) + grow(s, i, i + 1)",
+        ),
+        WalkStep(
+          step: "Expand from each centre while the end characters match — but now each successful widening is itself one palindromic substring.",
+          hint: "What does each successful widening represent?",
+          why: "One more palindromic substring centred here, not just progress toward the biggest.",
+          code: "function grow(s, left, right):
+    count = 0
+    while left >= 0 and right < len(s) and s[left] == s[right]:
+        count += 1
+        left -= 1
+        right += 1",
+        ),
+        WalkStep(
+          step: "Count the widenings instead of measuring how far the biggest one got.",
+          hint: "What changes from the longest-palindrome walk?",
+          why: "You count widenings instead of recording the widest span.",
+          code: "return count",
+        ),
+        WalkStep(
+          step: "Sum the counts over all centres for the answer — the same O(n^2) walk with different bookkeeping.",
+          hint: "How do the centres combine?",
+          why: "Sum their counts; same O(n²) expansion, different bookkeeping.",
+          code: "return total",
+        ),
+        WalkStep(
+          step: "The table alternative says s[i..j] is a palindrome when its ends match and the inside already was, which forces filling spans shortest first.",
+          hint: "What does the table version say?",
+          why: "s[i..j] is a palindrome when its ends match and the inside already was, which forces filling shorter spans first.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "total = 0
@@ -2645,13 +6019,48 @@ function grow(s, left, right):
       Nudge(
         "This is a counting problem: ask how the last character of a prefix could have been decoded — how many ways can that final piece end? And before writing anything, ask what a zero is allowed to do in this encoding.",
       ),
-      Steps([
-        "Count decodings of prefixes with two rolling values: the ways ending one character back and two characters back.",
-        "Extend each new character two ways: standing alone (adds the one-back count) or pairing with its predecessor (adds the two-back count).",
-        "Gate each branch: standing alone is invalid for \"0\", and a pair counts only when it reads as 10 through 26.",
-        "Treat zeros as the whole difficulty — a zero can never stand alone, and only 10 or 20 can absorb one.",
-        "Seed both counts at 1, not 0: the empty prefix is one complete decoding, and that base case is where correctness lives.",
-        "Roll the pair through the string; the final one-back value is the answer.",
+      Walk([
+        WalkStep(
+          step: "Count decodings of prefixes with two rolling values: the ways ending one character back and two characters back.",
+          hint: "Which earlier prefixes can the count for this position depend on?",
+          why: "A character either stands alone or pairs with the one before it, so only the counts one and two characters back matter; two rolling values are the whole state.",
+          code: "two_back, one_back = 1, 1
+for i in 0..n-1:",
+        ),
+        WalkStep(
+          step: "Extend each new character two ways: standing alone (adds the one-back count) or pairing with its predecessor (adds the two-back count).",
+          hint: "What are the two ways the newest character can end a decoding?",
+          why: "As a single letter (extending every decoding of the prefix before it) or as the second half of a pair (extending every decoding two back), and the two groups add.",
+          code: "alone = one_back if s[i] != \"0\" else 0
+    paired = 0
+    if i > 0:
+        pair = the two characters s[i-1], s[i] read as a number",
+        ),
+        WalkStep(
+          step: "Gate each branch: standing alone is invalid for \"0\", and a pair counts only when it reads as 10 through 26.",
+          hint: "Not every character can stand alone, and not every pair is a letter. What are the rules?",
+          why: "A lone \"0\" maps to nothing, and only 10 through 26 are letters, so each branch is gated before it contributes.",
+          code: "if 10 <= pair <= 26: paired = two_back",
+        ),
+        WalkStep(
+          step: "Treat zeros as the whole difficulty — a zero can never stand alone, and only 10 or 20 can absorb one.",
+          hint: "Where do all the tricky test cases come from?",
+          why: "Zeros: they cannot stand alone and only 10 or 20 absorb one, so a string like \"30\" has no decoding at all.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Seed both counts at 1, not 0: the empty prefix is one complete decoding, and that base case is where correctness lives.",
+          hint: "What is the count for the empty string, and why does it matter so much?",
+          why: "One, the empty decoding; seeding both rolling values at 1 is what makes the first character and first pair count correctly.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Roll the pair through the string; the final one-back value is the answer.",
+          hint: "After the sweep, which value is the answer?",
+          why: "The count one back is the count for the whole string; the pass is O(n) time and O(1) space.",
+          code: "two_back, one_back = one_back, alone + paired
+return one_back",
+        ),
       ]),
       Pseudocode(
         "two_back, one_back = 1, 1
@@ -2669,13 +6078,48 @@ return one_back",
       Nudge(
         "Grabbing the biggest coin first fails on some denominations — try making 6 from coins 1, 3, 4. If you somehow knew the fewest coins for every smaller amount, how would this amount's answer follow?",
       ),
-      Steps([
-        "Build a table from zero upward: amount 0 costs zero coins.",
-        "For each amount up to the target, try every coin: the cheapest way here is one coin more than the cheapest way to make the amount minus that coin.",
-        "Store entries only for reachable amounts — a gap in the table is cleaner than inventing an infinity sentinel.",
-        "An amount whose every coin-predecessor is missing gets no entry and stays unreachable.",
-        "Answer the target's entry, or -1 when it has none.",
-        "Say the reframe out loud: this is breadth-first search from zero with coins as edges, so the answer is a shortest path.",
+      Walk([
+        WalkStep(
+          step: "Build a table from zero upward: amount 0 costs zero coins.",
+          hint: "What is the cheapest way to make an amount of zero?",
+          why: "Zero coins; that base is what every other entry builds upward from.",
+          code: "table = {0: 0}",
+        ),
+        WalkStep(
+          step: "For each amount up to the target, try every coin: the cheapest way here is one coin more than the cheapest way to make the amount minus that coin.",
+          hint: "For an amount t, if the last coin used were c, how many coins would the rest take?",
+          why: "The best for t is one more than the best for t - c over all coins c, so building amounts upward guarantees the smaller amount is already known; O(amount * coins).",
+          code: "for target in 1..amount:
+    best = none
+    for coin in coins:
+        if coin <= target and (target - coin) in table:
+            best = min(best, table[target - coin] + 1)",
+        ),
+        WalkStep(
+          step: "Store entries only for reachable amounts — a gap in the table is cleaner than inventing an infinity sentinel.",
+          hint: "How should the table say \"this amount cannot be made\"?",
+          why: "Leaving the entry absent avoids an infinity sentinel that has to be guarded against in every min; a lookup either finds a real count or nothing.",
+          code: "if best is not none:
+        table[target] = best",
+        ),
+        WalkStep(
+          step: "An amount whose every coin-predecessor is missing gets no entry and stays unreachable.",
+          hint: "What happens to an amount none of whose predecessors are reachable?",
+          why: "It gets no entry and is unreachable itself, and that unreachability propagates correctly to amounts that depend on it.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Answer the target's entry, or -1 when it has none.",
+          hint: "What does the target's entry, or its absence, tell you?",
+          why: "Present means the fewest coins; absent means no combination of these coins makes the amount, which is the -1 case.",
+          code: "return table[amount] if amount in table else -1",
+        ),
+        WalkStep(
+          step: "Say the reframe out loud: this is breadth-first search from zero with coins as edges, so the answer is a shortest path.",
+          hint: "If each coin is an edge from amount a to a + coin, what is the question asking for?",
+          why: "The shortest path from 0 to amount in an unweighted graph, which is why breadth-first search also solves it and why the DP is a shortest-path table.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "table = {0: 0}
@@ -2693,12 +6137,39 @@ return table[amount] if amount in table else -1",
       Nudge(
         "The running-best trick from maximum-sum subarrays stumbles here: what does multiplying by a negative number do to \"best so far\"? What second value would you have to carry for that reversal to become good news?",
       ),
-      Steps([
-        "Carry two running products, the highest and the lowest ending at the current element — a negative value swaps their roles, so today's minimum is tomorrow's maximum in waiting.",
-        "At each element, form three candidates: the element alone, element times the previous high, element times the previous low.",
-        "Take the max of the three as the new high and the min as the new low.",
-        "Let including the element alone handle zeros — both tracks reset with no special case.",
-        "Track the best high ever seen; that is the answer.",
+      Walk([
+        WalkStep(
+          step: "Carry two running products, the highest and the lowest ending at the current element — a negative value swaps their roles, so today's minimum is tomorrow's maximum in waiting.",
+          hint: "Why is one running maximum not enough here, unlike the sum version?",
+          why: "A negative number turns the smallest product into the largest, so the minimum must be carried too.",
+          code: "high = low = best = nums[0]",
+        ),
+        WalkStep(
+          step: "At each element, form three candidates: the element alone, element times the previous high, element times the previous low.",
+          hint: "At each element, what are the candidates for the product ending here?",
+          why: "The element alone, or the element times either running extreme.",
+          code: "for n in rest of nums:
+    candidates = (n, high * n, low * n)",
+        ),
+        WalkStep(
+          step: "Take the max of the three as the new high and the min as the new low.",
+          hint: "How are the two tracks updated?",
+          why: "High takes the max of the candidates and low the min, using the previous values for both.",
+          code: "high, low = max(candidates), min(candidates)",
+        ),
+        WalkStep(
+          step: "Let including the element alone handle zeros — both tracks reset with no special case.",
+          hint: "What does a zero do, and does it need special handling?",
+          why: "Both products become zero, and the element-alone candidate restarts the tracks; no special case.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Track the best high ever seen; that is the answer.",
+          hint: "Where is the answer?",
+          why: "The best high ever seen, kept as you go; one pass, O(n).",
+          code: "best = max(best, high)
+return best",
+        ),
       ]),
       Pseudocode(
         "high = low = best = nums[0]
@@ -2713,13 +6184,47 @@ return best",
       Nudge(
         "Trying every way to cut the string branches out of control. What if the question were not about the pieces at all, but about which boundaries between characters you can stand on?",
       ),
-      Steps([
-        "Work over positions, not substrings: position 0, before the first character, is reachable by definition.",
-        "For each position end from 1 to the string's length, ask whether some already-reached start has s[start..end] in the dictionary.",
-        "If so, mark end reached — dictionary words cover the string up to there.",
-        "Keep the dictionary in a set so each bridging test is a single lookup.",
-        "Answer whether the final position was reached.",
-        "Top-down on suffixes asks the same question, but the cache is essential — inputs like \"aaaa...b\" reach the same suffix exponentially many ways.",
+      Walk([
+        WalkStep(
+          step: "Work over positions, not substrings: position 0, before the first character, is reachable by definition.",
+          hint: "What is the state: substrings or positions?",
+          why: "Positions between characters; position 0 is reachable by definition.",
+          code: "words = set(wordDict)
+reached = {0}",
+        ),
+        WalkStep(
+          step: "For each position end from 1 to the string's length, ask whether some already-reached start has s[start..end] in the dictionary.",
+          hint: "How does a position become reachable?",
+          why: "When some already-reached earlier position plus a dictionary word lands exactly on it.",
+          code: "for end in 1..len(s):
+    for start in 0..end-1:
+        if start in reached and s[start..end] in words:",
+        ),
+        WalkStep(
+          step: "If so, mark end reached — dictionary words cover the string up to there.",
+          hint: "What happens on a hit?",
+          why: "Mark the end reached and stop scanning starts for it.",
+          code: "reached.add(end)
+            break",
+        ),
+        WalkStep(
+          step: "Keep the dictionary in a set so each bridging test is a single lookup.",
+          hint: "Why a set for the dictionary?",
+          why: "Each bridging test becomes one lookup; O(n²) tests overall.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Answer whether the final position was reached.",
+          hint: "What is the answer?",
+          why: "Whether the final position was reached.",
+          code: "return len(s) in reached",
+        ),
+        WalkStep(
+          step: "Top-down on suffixes asks the same question, but the cache is essential — inputs like \"aaaa...b\" reach the same suffix exponentially many ways.",
+          hint: "Why does the top-down version need a cache?",
+          why: "Inputs like \"aaaa...b\" reach the same suffix exponentially many ways; memoisation collapses them.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "words = set(wordDict)
@@ -2736,13 +6241,49 @@ return len(s) in reached",
       Nudge(
         "A subsequence may skip whatever it likes, so a \"best so far\" for the whole prefix says too little. What is the right thing to know at each position — something anchored to that position itself?",
       ),
-      Steps([
-        "Define, per position, the length of the longest increasing subsequence ending exactly there.",
-        "Compute it as one plus the best answer among earlier positions holding a smaller value; no such position means length 1.",
-        "Process left to right so every earlier position is already answered, keeping the running maximum as the result.",
-        "Name the cost — O(n^2) — because the classic follow-up asks for better.",
-        "For O(n log n), keep the smallest value a subsequence of each length can end with; that list stays sorted, so each number is placed by binary search (patience sorting).",
-        "Be ready to say that the sorted list is not an answer subsequence — only its length means anything.",
+      Walk([
+        WalkStep(
+          step: "Define, per position, the length of the longest increasing subsequence ending exactly there.",
+          hint: "What subproblem, anchored at a position, makes the answer for later positions computable?",
+          why: "The longest increasing subsequence ending exactly at each position; anchoring at the end is what lets a later element extend it.",
+          code: "endings = []   -- (value, length) for each position so far",
+        ),
+        WalkStep(
+          step: "Compute it as one plus the best answer among earlier positions holding a smaller value; no such position means length 1.",
+          hint: "An element can extend which earlier subsequences?",
+          why: "Those ending in a smaller value; take the best of them plus one, or 1 if none exists.",
+          code: "longest = 0
+    for (value, length) in endings:
+        if value < n and length > longest: longest = length
+    endings.add((n, longest + 1))",
+        ),
+        WalkStep(
+          step: "Process left to right so every earlier position is already answered, keeping the running maximum as the result.",
+          hint: "Why left to right, and where does the final answer live?",
+          why: "Every earlier position is already solved when needed, and the answer is the maximum over all endings, not the last one.",
+          code: "best = 0
+for n in nums:
+    best = max(best, longest + 1)
+return best",
+        ),
+        WalkStep(
+          step: "Name the cost — O(n^2) — because the classic follow-up asks for better.",
+          hint: "What does the double loop cost, and why will you be asked about it?",
+          why: "O(n²); the interviewer's follow-up is the O(n log n) version, so know the number before being asked.",
+          code: "",
+        ),
+        WalkStep(
+          step: "For O(n log n), keep the smallest value a subsequence of each length can end with; that list stays sorted, so each number is placed by binary search (patience sorting).",
+          hint: "What list, kept sorted, lets each element be placed by binary search?",
+          why: "The smallest possible ending value for each subsequence length; replacing the first entry not smaller than the element keeps it sorted, patience-sorting style.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Be ready to say that the sorted list is not an answer subsequence — only its length means anything.",
+          hint: "Is that sorted list an actual increasing subsequence?",
+          why: "No, only its length is meaningful; reconstructing a real subsequence needs extra back-pointers.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "endings = []   -- (value, length) for each position so far
@@ -2760,13 +6301,47 @@ return best",
       Nudge(
         "Forget \"two subsets\" — once one subset is chosen, the other is whatever remains. What single number must the chosen subset hit, and when is hitting it impossible before any work at all?",
       ),
-      Steps([
-        "Reduce to subset sum: an equal split exists exactly when some subset reaches half the total.",
-        "Check parity first: an odd total rules the split out immediately.",
-        "Carry the set of sums reachable so far, starting from {0}.",
-        "For each number, widen the set with every existing sum plus that number, discarding anything past half.",
-        "Answer whether half landed in the set — no ordering needed and no 2-D table; the set collapses duplicates for free.",
-        "The take-it-or-leave-it recursion states the same search and makes the underlying 2^n visible; the reachable set is its collapsed form.",
+      Walk([
+        WalkStep(
+          step: "Reduce to subset sum: an equal split exists exactly when some subset reaches half the total.",
+          hint: "If one group sums to half the total, what must the other group sum to?",
+          why: "The other half, so an equal split exists exactly when some subset reaches half: the problem is subset sum.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Check parity first: an odd total rules the split out immediately.",
+          hint: "What can an odd total tell you before any search?",
+          why: "No two equal halves exist, so answer false immediately.",
+          code: "total = sum(nums)
+if total is odd: return false
+half = total / 2",
+        ),
+        WalkStep(
+          step: "Carry the set of sums reachable so far, starting from {0}.",
+          hint: "What state summarises the subsets considered so far?",
+          why: "The set of sums they can reach, starting with 0 from the empty subset.",
+          code: "reachable = {0}",
+        ),
+        WalkStep(
+          step: "For each number, widen the set with every existing sum plus that number, discarding anything past half.",
+          hint: "How does one number extend the reachable sums?",
+          why: "Every reachable sum plus the number is reachable too; sums past half are useless and dropped. O(n * half).",
+          code: "for n in nums:
+    for s in a copy of reachable:
+        if s + n <= half: reachable.add(s + n)",
+        ),
+        WalkStep(
+          step: "Answer whether half landed in the set — no ordering needed and no 2-D table; the set collapses duplicates for free.",
+          hint: "What is the final question?",
+          why: "Whether half is in the set; the set collapsed duplicate sums so no 2-D table was needed.",
+          code: "return half in reachable",
+        ),
+        WalkStep(
+          step: "The take-it-or-leave-it recursion states the same search and makes the underlying 2^n visible; the reachable set is its collapsed form.",
+          hint: "What does the recursive take-or-leave version make visible?",
+          why: "The 2^n choices underneath; the reachable set is that search with equal states merged.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "total = sum(nums)
@@ -2783,13 +6358,44 @@ return half in reachable",
       Nudge(
         "Every route into a square arrives from only two directions. If you knew how many ways reach each of those two neighbours, what would that tell you — and does the whole grid ever need to be in memory at once? This is a counting problem, not a pathfinding one.",
       ),
-      Steps([
-        "Define ways(r, c) as the number of paths reaching that square: it is the ways to reach the square above plus the ways to reach the one on the left.",
-        "Seed the top row with 1s — there is exactly one way along the top edge.",
-        "Fill row by row; only the row above is ever read, so keep a single row of counters.",
-        "Update the row in place left to right: adding the value on the left into a cell turns \"row above\" into \"row here\".",
-        "After m - 1 sweeps the last entry is the answer.",
-        "Follow-up: there is no grid at all — every path is m - 1 downs and n - 1 rights in some order, so the count is the binomial coefficient C(m + n - 2, m - 1).",
+      Walk([
+        WalkStep(
+          step: "Define ways(r, c) as the number of paths reaching that square: it is the ways to reach the square above plus the ways to reach the one on the left.",
+          hint: "How can you reach a square, and what does that say about the count?",
+          why: "Only from above or from the left, so the paths to it are the paths to those two squares added.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Seed the top row with 1s — there is exactly one way along the top edge.",
+          hint: "How many ways reach each square on the top row?",
+          why: "Exactly one, along the edge; the same holds for the left column.",
+          code: "row = array of n ones",
+        ),
+        WalkStep(
+          step: "Fill row by row; only the row above is ever read, so keep a single row of counters.",
+          hint: "How much of the table is needed at once?",
+          why: "Only the row above, so one row of counters suffices.",
+          code: "repeat m - 1 times:",
+        ),
+        WalkStep(
+          step: "Update the row in place left to right: adding the value on the left into a cell turns \"row above\" into \"row here\".",
+          hint: "How does updating in place left to right work?",
+          why: "Adding the left neighbour to a cell that still holds the row-above value turns it into the current row's value.",
+          code: "for c in 1..n-1:
+        row[c] = row[c] + row[c-1]",
+        ),
+        WalkStep(
+          step: "After m - 1 sweeps the last entry is the answer.",
+          hint: "Where is the answer?",
+          why: "The last entry after m - 1 sweeps; O(m * n) time, O(n) space.",
+          code: "return row[n-1]",
+        ),
+        WalkStep(
+          step: "Follow-up: there is no grid at all — every path is m - 1 downs and n - 1 rights in some order, so the count is the binomial coefficient C(m + n - 2, m - 1).",
+          hint: "What is a path, combinatorially?",
+          why: "An ordering of m - 1 downs and n - 1 rights, so the count is C(m + n - 2, m - 1) with no grid at all.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "row = array of n ones
@@ -2803,13 +6409,48 @@ return row[n-1]",
       Nudge(
         "Compare just the current character of each string. What can you say about the answer when they are equal — and when they differ, which string would you shorten? One small decision, asked over and over, is the whole problem.",
       ),
-      Steps([
-        "Define lcs(i, j) over prefixes: the LCS length of the first i characters of text1 and the first j of text2.",
-        "Equal current characters are both used: the answer is 1 plus the LCS with both shortened.",
-        "Different characters mean one of them is dead weight: take the best of dropping the last character of one string or the other.",
-        "Base case: any empty prefix has LCS 0, which fills the first row and column of the table.",
-        "Fill row by row; only the previous row is ever read, so two rows of length len(text2) + 1 suffice.",
-        "Follow-up: this recurrence is the backbone of the whole category — edit distance and distinct subsequences are the same table with different costs.",
+      Walk([
+        WalkStep(
+          step: "Define lcs(i, j) over prefixes: the LCS length of the first i characters of text1 and the first j of text2.",
+          hint: "What subproblem over prefixes builds up to the whole answer?",
+          why: "The LCS length of the first i characters of one text and the first j of the other; every character either joins the subsequence or is dropped from one side.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Equal current characters are both used: the answer is 1 plus the LCS with both shortened.",
+          hint: "If the two current characters match, what is the best move?",
+          why: "Use them both: one plus the LCS of both prefixes shortened.",
+          code: "if a == text2[j-1]: row[j] = previous[j-1] + 1",
+        ),
+        WalkStep(
+          step: "Different characters mean one of them is dead weight: take the best of dropping the last character of one string or the other.",
+          hint: "If they differ, what are the options?",
+          why: "Drop the last character of one text or the other and take the better; that is the max of the cell above and the cell to the left.",
+          code: "else:               row[j] = max(previous[j], row[j-1])",
+        ),
+        WalkStep(
+          step: "Base case: any empty prefix has LCS 0, which fills the first row and column of the table.",
+          hint: "What is the LCS with an empty prefix?",
+          why: "0, which fills the first row and column and is why the arrays start as zeros.",
+          code: "previous = array of len(text2)+1 zeros",
+        ),
+        WalkStep(
+          step: "Fill row by row; only the previous row is ever read, so two rows of length len(text2) + 1 suffice.",
+          hint: "How much of the table is needed at once?",
+          why: "Only the previous row, so two rows suffice; O(m * n) time and O(n) space, answer in the last cell.",
+          code: "for each character a in text1:
+    row = array of len(text2)+1 zeros
+    for j in 1..len(text2):
+        ...
+    previous = row
+return previous[len(text2)]",
+        ),
+        WalkStep(
+          step: "Follow-up: this recurrence is the backbone of the whole category — edit distance and distinct subsequences are the same table with different costs.",
+          hint: "Which other problems are this table in disguise?",
+          why: "Edit distance and distinct subsequences use the same prefix table with different costs; learn the shape once.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "previous = array of len(text2)+1 zeros
@@ -2826,12 +6467,44 @@ return previous[len(text2)]",
       Nudge(
         "One running profit number cannot remember whether you currently own a share or are serving the cooldown. What are the distinct situations you could be in at the close of a day — and how much of yesterday does today actually need?",
       ),
-      Steps([
-        "Name three end-of-day states: holding a share, having just sold today, and resting (free to act).",
-        "Write each day's transitions from yesterday: hold is max(hold, rest - price), sold is hold + price, rest is max(rest, sold).",
-        "Notice the cooldown lives in one asymmetry — today's hold reads rest, never sold, so buying the day after a sale is impossible by construction.",
-        "Each day depends only on yesterday, so three rolling values replace any table; start hold and sold at minus infinity (unreachable) and rest at 0.",
-        "The answer is the best of sold and rest at the end — never end the run holding — with 0 as the floor for doing nothing.",
+      Walk([
+        WalkStep(
+          step: "Name three end-of-day states: holding a share, having just sold today, and resting (free to act).",
+          hint: "At the end of a day, what are the distinct situations you can be in that affect tomorrow?",
+          why: "Holding, having sold today, and resting are the three states that change what tomorrow allows; a state machine turns the cooldown rule into transitions.",
+          code: "hold = -infinity
+sold = -infinity
+rest = 0",
+        ),
+        WalkStep(
+          step: "Write each day's transitions from yesterday: hold is max(hold, rest - price), sold is hold + price, rest is max(rest, sold).",
+          hint: "From each of yesterday's states, what can today's price turn it into?",
+          why: "Holding either continues or starts from rest; selling comes only from holding; resting continues or follows a sale, and taking the max keeps the best value per state.",
+          code: "for price in prices:
+    new_hold = max(hold, rest - price)
+    new_sold = hold + price
+    new_rest = max(rest, sold)",
+        ),
+        WalkStep(
+          step: "Notice the cooldown lives in one asymmetry — today's hold reads rest, never sold, so buying the day after a sale is impossible by construction.",
+          hint: "Where in those transitions does the cooldown actually live?",
+          why: "Buying reads from rest and never from sold, so a purchase the day after a sale is impossible by construction rather than by a check.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Each day depends only on yesterday, so three rolling values replace any table; start hold and sold at minus infinity (unreachable) and rest at 0.",
+          hint: "How much history does each day need?",
+          why: "Only yesterday's three values, so three rolling variables replace a table; starting hold and sold at negative infinity marks them unreachable on day one.",
+          code: "hold = new_hold
+    sold = new_sold
+    rest = new_rest",
+        ),
+        WalkStep(
+          step: "The answer is the best of sold and rest at the end — never end the run holding — with 0 as the floor for doing nothing.",
+          hint: "On the last day, which states are worth ending in?",
+          why: "Ending while holding wastes a purchase, so the answer is the better of sold and rest, floored at 0 for never trading.",
+          code: "return max(sold, rest, 0)",
+        ),
       ]),
       Pseudocode(
         "hold = -infinity
@@ -2851,13 +6524,45 @@ return max(sold, rest, 0)",
       Nudge(
         "What separates this from plain coin change — what goes wrong if 1+2 and 2+1 are both counted? Whatever counting scheme you choose has to make that double-count structurally impossible, not filter it out afterwards.",
       ),
-      Steps([
-        "Keep ways[t] = the number of combinations making total t, with ways[0] = 1 for the empty combination.",
-        "Put the coins on the OUTER loop: settle everything one coin contributes before the next coin is even looked at.",
-        "For each coin, sweep t upward from coin to amount, adding ways[t - coin] into ways[t].",
-        "Coin-outermost is what counts combinations: every combination is only ever built in coin order, so 1+2 and 2+1 collapse into one.",
-        "Follow-up: swapping the loops (amount outer) silently counts permutations instead — know which question is being asked.",
-        "As a recursion the same rule reads: at each coin, either use it again or set it aside for good.",
+      Walk([
+        WalkStep(
+          step: "Keep ways[t] = the number of combinations making total t, with ways[0] = 1 for the empty combination.",
+          hint: "What is the count for making zero, and why does it have to be 1 rather than 0?",
+          why: "The empty combination makes zero in exactly one way, and every other count is built by adding to it; a 0 base would make every entry 0.",
+          code: "ways = array of amount+1 zeros
+ways[0] = 1",
+        ),
+        WalkStep(
+          step: "Put the coins on the OUTER loop: settle everything one coin contributes before the next coin is even looked at.",
+          hint: "If you loop over coins first, what has been decided by the time you look at the second coin?",
+          why: "Everything the first coin can contribute is settled before the second appears, so combinations are only ever assembled in coin order.",
+          code: "for coin in coins:",
+        ),
+        WalkStep(
+          step: "For each coin, sweep t upward from coin to amount, adding ways[t - coin] into ways[t].",
+          hint: "How does a single coin extend the counts you already have?",
+          why: "Every way to make t - coin becomes a way to make t by adding this coin; sweeping upward lets a coin be used more than once within the same pass.",
+          code: "for t in coin..amount:
+        ways[t] = ways[t] + ways[t - coin]",
+        ),
+        WalkStep(
+          step: "Coin-outermost is what counts combinations: every combination is only ever built in coin order, so 1+2 and 2+1 collapse into one.",
+          hint: "Why does 1+2 not get counted again as 2+1?",
+          why: "With coins on the outer loop the 2 is never placed before the 1, so each multiset of coins is built exactly once.",
+          code: "return ways[amount]",
+        ),
+        WalkStep(
+          step: "Follow-up: swapping the loops (amount outer) silently counts permutations instead — know which question is being asked.",
+          hint: "What changes if amount is the outer loop and coins the inner?",
+          why: "Then each total considers every coin as its last piece, so orderings are distinguished and the count becomes permutations; the loop order is the whole answer to which question you are solving.",
+          code: "",
+        ),
+        WalkStep(
+          step: "As a recursion the same rule reads: at each coin, either use it again or set it aside for good.",
+          hint: "As a recursion, what are the two moves at each coin?",
+          why: "Use this coin again, or set it aside forever; that binary choice is the same coin-ordered construction the loops perform.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "ways = array of amount+1 zeros
@@ -2872,12 +6577,42 @@ return ways[amount]",
       Nudge(
         "There are 2 to the n sign patterns, but after k numbers how many genuinely different positions can you be in? When two different histories land in the same place, do you ever need to keep them apart?",
       ),
-      Steps([
-        "Track a map from reachable running total to how many sign assignments reach it, starting at {0: 1}.",
-        "For each number, build the next map: every (total, count) pair contributes count to total + n and count to total - n.",
-        "Let collisions merge by adding counts — different sign choices landing on the same total are interchangeable from here on, and that merging is what keeps the work polynomial.",
-        "The answer is the count stored at target, or 0 if the target was never reached.",
-        "Follow-up: rewrite the problem — if P is the sum of the plus-signed numbers then P - N = target and P + N = total, so P = (total + target) / 2 and the whole thing is a subset-sum count (impossible when that value is odd or negative).",
+      Walk([
+        WalkStep(
+          step: "Track a map from reachable running total to how many sign assignments reach it, starting at {0: 1}.",
+          hint: "What state summarises all the sign choices made so far?",
+          why: "The set of reachable running totals with how many assignments reach each; start with 0 reached one way.",
+          code: "totals = {0: 1}",
+        ),
+        WalkStep(
+          step: "For each number, build the next map: every (total, count) pair contributes count to total + n and count to total - n.",
+          hint: "How does one number extend that state?",
+          why: "Every total splits into total + n and total - n, each inheriting the count.",
+          code: "for n in nums:
+    next = empty map
+    for (total, count) in totals:
+        next[total + n] = next[total + n] + count
+        next[total - n] = next[total - n] + count
+    totals = next",
+        ),
+        WalkStep(
+          step: "Let collisions merge by adding counts — different sign choices landing on the same total are interchangeable from here on, and that merging is what keeps the work polynomial.",
+          hint: "Why add counts when two paths land on the same total?",
+          why: "From that point on they are interchangeable, so merging keeps the map bounded by the range of sums rather than 2^n paths.",
+          code: "",
+        ),
+        WalkStep(
+          step: "The answer is the count stored at target, or 0 if the target was never reached.",
+          hint: "Where is the answer?",
+          why: "The count at the target, or 0 if it was never reached.",
+          code: "return totals[target] if present else 0",
+        ),
+        WalkStep(
+          step: "Follow-up: rewrite the problem — if P is the sum of the plus-signed numbers then P - N = target and P + N = total, so P = (total + target) / 2 and the whole thing is a subset-sum count (impossible when that value is odd or negative).",
+          hint: "How does the problem become subset sum?",
+          why: "If P is the plus-signed sum then P = (total + target) / 2, so count subsets summing to P; impossible when that is odd or negative.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "totals = {0: 1}
@@ -2894,13 +6629,48 @@ return totals[target] if present else 0",
       Nudge(
         "Freeze the weave partway through. What do you actually need to remember to decide whether the rest can still work out? You might reach for three positions — is one of them redundant?",
       ),
-      Steps([
-        "Check the lengths first: s3 must be exactly as long as s1 and s2 together, or the answer is no.",
-        "Let works(i, j) mean: with i characters of s1 and j of s2 consumed, can the remainders interleave into the rest of s3?",
-        "The position in s3 is always i + j — that collapse from three indices to two is the insight, so never track it separately.",
-        "At (i, j) look at s3[i + j]: try consuming from s1 if s1[i] matches, and from s2 if s2[j] matches; either branch succeeding is enough.",
-        "Base case: both sources exhausted means the interleaving worked.",
-        "Memoise on (i, j) — many consumption orders reach the same state. (Follow-up: a bottom-up table with a rolling row gets the space to O(len(s2)).)",
+      Walk([
+        WalkStep(
+          step: "Check the lengths first: s3 must be exactly as long as s1 and s2 together, or the answer is no.",
+          hint: "What is the cheapest thing to check before any search?",
+          why: "The lengths: s3 must be exactly s1 plus s2 long, or the answer is no in O(1).",
+          code: "if len(s1) + len(s2) != len(s3): return false",
+        ),
+        WalkStep(
+          step: "Let works(i, j) mean: with i characters of s1 and j of s2 consumed, can the remainders interleave into the rest of s3?",
+          hint: "What state describes the search after consuming some of each source?",
+          why: "How much of s1 and of s2 has been used; works(i, j) asks whether the remainders can interleave into the rest.",
+          code: "works(i, j):",
+        ),
+        WalkStep(
+          step: "The position in s3 is always i + j — that collapse from three indices to two is the insight, so never track it separately.",
+          hint: "Where in s3 are you when i of s1 and j of s2 are consumed?",
+          why: "At i + j, always, so the third index is redundant and the state is two-dimensional.",
+          code: "target = s3[i + j]",
+        ),
+        WalkStep(
+          step: "At (i, j) look at s3[i + j]: try consuming from s1 if s1[i] matches, and from s2 if s2[j] matches; either branch succeeding is enough.",
+          hint: "What are the two moves at a state?",
+          why: "Consume from s1 if its next character matches s3's, or from s2 likewise; either branch succeeding is enough.",
+          code: "ok = false
+        if i < len(s1) and s1[i] == target and works(i + 1, j): ok = true
+        if j < len(s2) and s2[j] == target and works(i, j + 1): ok = true",
+        ),
+        WalkStep(
+          step: "Base case: both sources exhausted means the interleaving worked.",
+          hint: "When has the interleaving succeeded?",
+          why: "Both sources are exhausted; the length check already guarantees s3 is exhausted too.",
+          code: "if i == len(s1) and j == len(s2): return true",
+        ),
+        WalkStep(
+          step: "Memoise on (i, j) — many consumption orders reach the same state. (Follow-up: a bottom-up table with a rolling row gets the space to O(len(s2)).)",
+          hint: "Why is memoisation essential here?",
+          why: "Many consumption orders reach the same (i, j), so caching makes it O(len(s1) * len(s2)); a bottom-up rolling row gets space to O(len(s2)).",
+          code: "memo = empty map
+        memo[(i, j)] = ok
+    return memo[(i, j)]
+return works(0, 0)",
+        ),
       ]),
       Pseudocode(
         "if len(s1) + len(s2) != len(s3): return false
@@ -2921,13 +6691,50 @@ return works(0, 0)",
       Nudge(
         "Longest path in a general graph is famously hard, so what does \"strictly increasing\" buy you here? And once each square's answer is a fixed fact, what stops you from ever computing it twice?",
       ),
-      Steps([
-        "Notice a strictly increasing walk can never return to a square: no cycles, so the grid is a directed acyclic graph and \"longest path starting here\" is a well-defined number per square.",
-        "Write longest(r, c): 1 plus the best longest(neighbour) over the four neighbours holding a strictly greater value, or just 1 if none do.",
-        "Cache each square's answer — without the acyclicity guarantee that memoisation would be unsound, which is the fact this problem is really testing.",
-        "Skip the visited set entirely: the strict inequality already prevents revisits.",
-        "The answer is the maximum of longest over every square.",
-        "Follow-up: an iterative version sorts the squares by value and fills answers in that order — a topological order obtained without ever building the graph.",
+      Walk([
+        WalkStep(
+          step: "Notice a strictly increasing walk can never return to a square: no cycles, so the grid is a directed acyclic graph and \"longest path starting here\" is a well-defined number per square.",
+          hint: "Can a strictly increasing walk ever revisit a square?",
+          why: "No, values only go up, so the moves form a directed acyclic graph and each square has one well-defined longest path from it.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Write longest(r, c): 1 plus the best longest(neighbour) over the four neighbours holding a strictly greater value, or just 1 if none do.",
+          hint: "What is the longest path from a square in terms of its neighbours?",
+          why: "One plus the best over neighbours with a strictly greater value, or 1 when no neighbour qualifies.",
+          code: "longest(r, c):
+        best = 1
+        for (nr, nc) in the four neighbours of (r, c) inside the grid:
+            if matrix[nr][nc] > matrix[r][c]:
+                best = max(best, 1 + longest(nr, nc))",
+        ),
+        WalkStep(
+          step: "Cache each square's answer — without the acyclicity guarantee that memoisation would be unsound, which is the fact this problem is really testing.",
+          hint: "Why is caching each square's answer safe here when it is not for general grids?",
+          why: "Because there are no cycles the answer for a square does not depend on how you arrived; that acyclicity is the fact being tested, and it makes the whole thing O(rows * cols).",
+          code: "memo = empty map
+    if (r, c) not in memo:
+        memo[(r, c)] = best
+    return memo[(r, c)]",
+        ),
+        WalkStep(
+          step: "Skip the visited set entirely: the strict inequality already prevents revisits.",
+          hint: "Do you need a visited set for the walk?",
+          why: "No; the strict inequality already prevents returning to a square.",
+          code: "",
+        ),
+        WalkStep(
+          step: "The answer is the maximum of longest over every square.",
+          hint: "Where is the final answer?",
+          why: "The maximum of longest over every square, since the best path can start anywhere.",
+          code: "return max of longest(r, c) over every square",
+        ),
+        WalkStep(
+          step: "Follow-up: an iterative version sorts the squares by value and fills answers in that order — a topological order obtained without ever building the graph.",
+          hint: "How would you do it without recursion?",
+          why: "Sort squares by value and fill answers in that order: a topological order of the DAG obtained without building it.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "memo = empty map
@@ -2946,12 +6753,40 @@ return max of longest(r, c) over every square",
       Nudge(
         "Feed the source string through one character at a time. When a new character arrives, which partial spellings of the target does it help — and how would you count them without ever listing them?",
       ),
-      Steps([
-        "Keep row[j] = the number of ways to build the first j characters of t from the source read so far, with row[0] = 1 (one way to build nothing).",
-        "Read s one character at a time: a character equal to t[j-1] extends every way of building j - 1 characters into a way of building j, so row[j] += row[j-1].",
-        "Sweep j from len(t) DOWN to 1 — right to left — so the character's own update at j - 1 is not read back at j, which would use one source character twice in a single subsequence.",
-        "After the whole source is read, row[len(t)] is the answer.",
-        "Follow-up: the top-down twin is \"skip or match\" — at (i, j) count the ways skipping s[i], plus (when the characters match) the ways using it — memoised on the two indices.",
+      Walk([
+        WalkStep(
+          step: "Keep row[j] = the number of ways to build the first j characters of t from the source read so far, with row[0] = 1 (one way to build nothing).",
+          hint: "How many ways are there to build an empty target, and what does the rest of the row start at?",
+          why: "One way to build nothing and zero ways to build anything else, so row[0] = 1 anchors every later count.",
+          code: "row = array of len(t)+1 zeros
+row[0] = 1",
+        ),
+        WalkStep(
+          step: "Read s one character at a time: a character equal to t[j-1] extends every way of building j - 1 characters into a way of building j, so row[j] += row[j-1].",
+          hint: "A source character matches t[j-1]. Which existing ways does it extend?",
+          why: "Every way of building the first j-1 characters gains one way of building j, so row[j] grows by row[j-1].",
+          code: "for c in s:
+        if c == t[j-1]:
+            row[j] = row[j] + row[j-1]",
+        ),
+        WalkStep(
+          step: "Sweep j from len(t) DOWN to 1 — right to left — so the character's own update at j - 1 is not read back at j, which would use one source character twice in a single subsequence.",
+          hint: "If you sweep j upward, what goes wrong when the same character extends both j-1 and j?",
+          why: "The update at j would read the value just written at j-1, using one source character twice; sweeping right to left reads only last round's values.",
+          code: "for j from len(t) down to 1:",
+        ),
+        WalkStep(
+          step: "After the whole source is read, row[len(t)] is the answer.",
+          hint: "When the source is exhausted, where is the answer?",
+          why: "row[len(t)] counts the ways to build all of t; O(|s| * |t|) time with a single row.",
+          code: "return row[len(t)]",
+        ),
+        WalkStep(
+          step: "Follow-up: the top-down twin is \"skip or match\" — at (i, j) count the ways skipping s[i], plus (when the characters match) the ways using it — memoised on the two indices.",
+          hint: "What does the recursive version look like at a position pair?",
+          why: "Skip s[i], plus (if the characters match) use it, memoised on (i, j); it is the same recurrence read top-down.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "row = array of len(t)+1 zeros
@@ -2967,12 +6802,45 @@ return row[len(t)]",
       Nudge(
         "Line the two words up, prefix against prefix. Each of the three allowed edits shrinks the comparison in its own way — what smaller problem does each one leave behind, and what should matching characters cost?",
       ),
-      Steps([
-        "Define dist(i, j) = the fewest edits turning the first i characters of word1 into the first j of word2.",
-        "Equal current characters cost nothing: take the diagonal dist(i-1, j-1) outright.",
-        "Otherwise pay 1 plus the best neighbour: the diagonal for replace, above for delete, the left for insert.",
-        "Seed the first row and column with 0, 1, 2, ... — the cost of building a string out of nothing is its length.",
-        "Fill row by row keeping only the previous row; the bottom-right cell is the answer.",
+      Walk([
+        WalkStep(
+          step: "Define dist(i, j) = the fewest edits turning the first i characters of word1 into the first j of word2.",
+          hint: "What subproblem, if solved for shorter prefixes, would give the answer for longer ones?",
+          why: "The distance between prefixes of both words; every edit either consumes a character of one word, the other, or both, which is why a two-dimensional table of prefixes closes.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Equal current characters cost nothing: take the diagonal dist(i-1, j-1) outright.",
+          hint: "If the two current characters are the same, is any edit needed for them?",
+          why: "No, so the cost is exactly the cost of the two shorter prefixes: the diagonal cell, taken outright.",
+          code: "if word1[i-1] == word2[j-1]:
+            row[j] = previous[j-1]",
+        ),
+        WalkStep(
+          step: "Otherwise pay 1 plus the best neighbour: the diagonal for replace, above for delete, the left for insert.",
+          hint: "If they differ, what are the three edits, and which cell does each one come from?",
+          why: "Replace comes from the diagonal, delete from above (one fewer of word1), insert from the left (one fewer of word2); each costs one plus that cell.",
+          code: "else:
+            row[j] = 1 + min(previous[j-1], previous[j], row[j-1])",
+        ),
+        WalkStep(
+          step: "Seed the first row and column with 0, 1, 2, ... — the cost of building a string out of nothing is its length.",
+          hint: "What does it cost to turn a prefix into nothing, or nothing into a prefix?",
+          why: "Its length, one deletion or insertion per character, which seeds the first row and column.",
+          code: "previous = [0, 1, 2, ..., len(word2)]
+    row[0] = i",
+        ),
+        WalkStep(
+          step: "Fill row by row keeping only the previous row; the bottom-right cell is the answer.",
+          hint: "How much of the table does a row read?",
+          why: "Only the previous row and the cell to its left, so two rows suffice; the last cell of the last row is the answer, O(m * n) time and O(n) space.",
+          code: "for i in 1..len(word1):
+    row = array of len(word2)+1 zeros
+    for j in 1..len(word2):
+        ...
+    previous = row
+return previous[len(word2)]",
+        ),
       ]),
       Pseudocode(
         "previous = [0, 1, 2, ..., len(word2)]
@@ -2992,13 +6860,48 @@ return previous[len(word2)]",
       Nudge(
         "The natural question — which balloon to burst first — tangles every choice with its ever-shifting neighbours. Is there a different question to ask about a span of balloons whose answer does not depend on anything outside it?",
       ),
-      Steps([
-        "Pad the array with a 1 at each end so every balloon always has two neighbours and the edge cases vanish.",
-        "For a span (left, right) whose two boundary balloons are unburst, ask which balloon inside is burst LAST, not first.",
-        "The last balloon still has the span's two boundaries as neighbours — untouched by definition — so its coins are balloons[left] * balloons[last] * balloons[right], a known value.",
-        "Bursting it last also splits the span into two independent subproblems, (left, last) and (last, right); add their best values.",
-        "Take the max over every choice of last, memoise on (left, right), and let a span with nothing inside be worth 0.",
-        "Know why \"first\" fails: the first balloon's future neighbours depend on choices made on the other side, so the recursion never closes.",
+      Walk([
+        WalkStep(
+          step: "Pad the array with a 1 at each end so every balloon always has two neighbours and the edge cases vanish.",
+          hint: "What are the neighbours of the first and last balloons, and why is that awkward?",
+          why: "Padding with 1s gives every real balloon two neighbours forever, so the coin formula needs no edge cases.",
+          code: "balloons = [1] + nums + [1]",
+        ),
+        WalkStep(
+          step: "For a span (left, right) whose two boundary balloons are unburst, ask which balloon inside is burst LAST, not first.",
+          hint: "Choosing which balloon to burst first makes the future messy. What if you choose which one is burst last instead?",
+          why: "The last balloon in a span is burst with the span's boundaries as its neighbours, and those boundaries are outside the span, so they are fixed no matter what happened inside.",
+          code: "best(left, right):
+    if right - left < 2: return 0",
+        ),
+        WalkStep(
+          step: "The last balloon still has the span's two boundaries as neighbours — untouched by definition — so its coins are balloons[left] * balloons[last] * balloons[right], a known value.",
+          hint: "When the last balloon in (left, right) finally pops, what is on each side of it?",
+          why: "Its neighbours are the span boundaries by definition, so its coins are a product of three known values with no dependence on order inside.",
+          code: "for last in left+1 .. right-1:
+            coins = balloons[left] * balloons[last] * balloons[right]",
+        ),
+        WalkStep(
+          step: "Bursting it last also splits the span into two independent subproblems, (left, last) and (last, right); add their best values.",
+          hint: "Once the last balloon is fixed, do the two sides interact?",
+          why: "Everything left of it and everything right of it burst independently with the last balloon standing between them, so their best values simply add.",
+          code: "+ best(left, last) + best(last, right)",
+        ),
+        WalkStep(
+          step: "Take the max over every choice of last, memoise on (left, right), and let a span with nothing inside be worth 0.",
+          hint: "How many spans are there, and how much work does each take?",
+          why: "O(n²) spans each trying O(n) candidates gives O(n³), which is fine for n up to 300; the memo is what stops the recursion re-solving spans.",
+          code: "top = max(top, coins)
+        memo[(left, right)] = top
+    return memo[(left, right)]
+return best(0, len(balloons) - 1)",
+        ),
+        WalkStep(
+          step: "Know why \"first\" fails: the first balloon's future neighbours depend on choices made on the other side, so the recursion never closes.",
+          hint: "Why can't the same trick work with \"first\"?",
+          why: "Bursting first changes which balloons become adjacent later on both sides, so the subproblems depend on each other and no clean split exists.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "balloons = [1] + nums + [1]
@@ -3020,13 +6923,48 @@ return best(0, len(balloons) - 1)",
       Nudge(
         "A star means nothing on its own — it modifies the character before it. If you read the pattern with that in mind, how many symbols do you consume per decision, and what choices does a starred pair leave open?",
       ),
-      Steps([
-        "Let works(i, j) mean: does the pattern from j onward match the text from i onward? Memoise on the pair.",
-        "At each state compute whether a single character matches here: i in bounds and p[j] equal to s[i] or to the dot.",
-        "If the NEXT pattern symbol is a star, treat p[j] plus the star as one unit with two branches: skip the pair entirely for zero copies, or — if it matches here — consume one text character and stay on the same pair.",
-        "Otherwise it is a plain single-character match: match here and recurse on (i+1, j+1).",
-        "Base case: pattern exhausted is a match only when the text is exhausted too.",
-        "Do not drop the zero-copies branch — it is what lets \"c*a*b\" match \"aab\", and it is where this problem is usually got wrong.",
+      Walk([
+        WalkStep(
+          step: "Let works(i, j) mean: does the pattern from j onward match the text from i onward? Memoise on the pair.",
+          hint: "What state describes a partial match?",
+          why: "Positions in both the text and the pattern; works(i, j) asks whether the tails match, memoised on the pair.",
+          code: "memo = empty map
+works(i, j):",
+        ),
+        WalkStep(
+          step: "At each state compute whether a single character matches here: i in bounds and p[j] equal to s[i] or to the dot.",
+          hint: "What does \"the current pattern symbol matches here\" mean?",
+          why: "There is a text character left and the symbol equals it or is a dot.",
+          code: "here = i < len(s) and (p[j] == s[i] or p[j] == \".\")",
+        ),
+        WalkStep(
+          step: "If the NEXT pattern symbol is a star, treat p[j] plus the star as one unit with two branches: skip the pair entirely for zero copies, or — if it matches here — consume one text character and stay on the same pair.",
+          hint: "If the next pattern symbol is a star, what unit are you really looking at?",
+          why: "The symbol plus its star, with two options: zero copies (skip both) or one more copy (consume a text character, stay on the pair).",
+          code: "if j + 1 < len(p) and p[j+1] == \"*\":
+            memo[(i, j)] = works(i, j + 2) or (here and works(i + 1, j))",
+        ),
+        WalkStep(
+          step: "Otherwise it is a plain single-character match: match here and recurse on (i+1, j+1).",
+          hint: "And without a star?",
+          why: "A plain match: the symbol must match here and both positions advance.",
+          code: "else:
+            memo[(i, j)] = here and works(i + 1, j + 1)",
+        ),
+        WalkStep(
+          step: "Base case: pattern exhausted is a match only when the text is exhausted too.",
+          hint: "When the pattern runs out, when is the match complete?",
+          why: "Only if the text ran out too; leftover text is a failure.",
+          code: "if j >= len(p): return i >= len(s)
+    return memo[(i, j)]
+return works(0, 0)",
+        ),
+        WalkStep(
+          step: "Do not drop the zero-copies branch — it is what lets \"c*a*b\" match \"aab\", and it is where this problem is usually got wrong.",
+          hint: "Which branch is most often forgotten?",
+          why: "Zero copies of a starred symbol; without it \"c*a*b\" cannot match \"aab\".",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "memo = empty map
@@ -3046,12 +6984,40 @@ return works(0, 0)",
       Nudge(
         "Instead of hunting for the best subarray anywhere, ask a smaller question at each position: what is the best subarray that ends exactly here? How does that answer relate to the one just before it — and when is a running start worth abandoning?",
       ),
-      Steps([
-        "Track two numbers: here, the best sum of a subarray ending at the current position, and best, the best seen anywhere.",
-        "At each element choose between extending the run (here + n) and starting fresh at n — whichever is larger.",
-        "See what the choice really tests: a running total that has gone negative can only hurt whatever follows.",
-        "Update best after every element, and do not clamp at zero — an all-negative array's answer is its largest single element.",
-        "Follow-up: the prefix-sum framing says the same thing — the best subarray ending at j is prefix[j] minus the smallest prefix before it.",
+      Walk([
+        WalkStep(
+          step: "Track two numbers: here, the best sum of a subarray ending at the current position, and best, the best seen anywhere.",
+          hint: "What two things do you need to know as you pass each element?",
+          why: "The best sum ending exactly here, and the best sum seen anywhere; the first feeds the next step, the second is the answer.",
+          code: "here = nums[0]
+best = nums[0]",
+        ),
+        WalkStep(
+          step: "At each element choose between extending the run (here + n) and starting fresh at n — whichever is larger.",
+          hint: "Standing on an element, should it join the run before it or start a new one?",
+          why: "Whichever is larger: here + n extends, n alone restarts; that single max is Kadane's algorithm.",
+          code: "for n in nums[1..]:
+    here = max(n, here + n)",
+        ),
+        WalkStep(
+          step: "See what the choice really tests: a running total that has gone negative can only hurt whatever follows.",
+          hint: "When does restarting win?",
+          why: "Exactly when the running sum is negative, because carrying it forward can only lower whatever follows.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Update best after every element, and do not clamp at zero — an all-negative array's answer is its largest single element.",
+          hint: "Why not clamp the running sum at zero?",
+          why: "An all-negative array's answer is its largest element, which a zero floor would replace with 0; update best after every element instead.",
+          code: "best = max(best, here)
+return best",
+        ),
+        WalkStep(
+          step: "Follow-up: the prefix-sum framing says the same thing — the best subarray ending at j is prefix[j] minus the smallest prefix before it.",
+          hint: "How does the prefix-sum view say the same thing?",
+          why: "The best subarray ending at j is prefix[j] minus the smallest prefix before it; tracking that minimum is the same O(n) pass.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "here = nums[0]
@@ -3066,12 +7032,38 @@ return best",
       Nudge(
         "Do you really need to track every index you could land on? Think about the shape of the reachable set — could it compress to a single number, and what would falling outside it mean?",
       ),
-      Steps([
-        "Notice everything reachable from the start forms a prefix of the array, so one number describes it: the furthest index reachable so far.",
-        "Walk left to right; the moment the current index is beyond that reach, stop — nothing past it can ever be reached, return false.",
-        "Otherwise extend the reach with i + nums[i].",
-        "Return true once the reach covers the last index.",
-        "Follow-up: walking backwards works too — carry the leftmost index known to reach the end and check whether it makes it to zero.",
+      Walk([
+        WalkStep(
+          step: "Notice everything reachable from the start forms a prefix of the array, so one number describes it: the furthest index reachable so far.",
+          hint: "What shape does the set of reachable indices have?",
+          why: "A prefix of the array, because reaching an index means every earlier one was reachable too; one number, the furthest reach, describes it.",
+          code: "reach = 0",
+        ),
+        WalkStep(
+          step: "Walk left to right; the moment the current index is beyond that reach, stop — nothing past it can ever be reached, return false.",
+          hint: "When can you stop early with a no?",
+          why: "The moment the current index is past the reach: nothing beyond it can ever be reached.",
+          code: "for i in 0..n-1:
+    if i > reach: return false",
+        ),
+        WalkStep(
+          step: "Otherwise extend the reach with i + nums[i].",
+          hint: "How does visiting an index change the reach?",
+          why: "It may extend it to i + nums[i]; keeping the max is the entire update, O(n).",
+          code: "reach = max(reach, i + nums[i])",
+        ),
+        WalkStep(
+          step: "Return true once the reach covers the last index.",
+          hint: "What is the success condition?",
+          why: "The reach covers the last index by the end of the walk.",
+          code: "return reach >= n - 1",
+        ),
+        WalkStep(
+          step: "Follow-up: walking backwards works too — carry the leftmost index known to reach the end and check whether it makes it to zero.",
+          hint: "Is there a backwards version?",
+          why: "Carry the leftmost index known to reach the end and move it left whenever an index can jump to it; success is reaching index zero.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "reach = 0
@@ -3085,12 +7077,43 @@ return reach >= n - 1",
       Nudge(
         "Fewest steps smells like a breadth-first search. What does \"everything reachable in exactly k jumps\" look like for this array — and does that shape let you drop the queue and the visited set entirely?",
       ),
-      Steps([
-        "See the BFS levels: everything reachable in k jumps is a contiguous window of indices, so the frontier is just a range.",
-        "Walk the array once, tracking the current window's end and the furthest index anything seen so far can reach.",
-        "When the walk reaches the window's end, one jump is spent and the next window runs to that furthest index.",
-        "Stop the walk at the second-to-last index — arriving at the end must not charge an extra jump.",
-        "Return the jump count: no queue, no visited set, one pass.",
+      Walk([
+        WalkStep(
+          step: "See the BFS levels: everything reachable in k jumps is a contiguous window of indices, so the frontier is just a range.",
+          hint: "If you took BFS over indices, what would each level look like?",
+          why: "A contiguous range, because reachability from a range is itself a range; so the frontier is two numbers, not a queue.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Walk the array once, tracking the current window's end and the furthest index anything seen so far can reach.",
+          hint: "What two numbers describe the current level and the next?",
+          why: "Where the current window ends, and the furthest index anything seen so far can reach.",
+          code: "jumps = 0
+window_end = 0
+furthest = 0
+for i in 0..n-2:
+    furthest = max(furthest, i + nums[i])",
+        ),
+        WalkStep(
+          step: "When the walk reaches the window's end, one jump is spent and the next window runs to that furthest index.",
+          hint: "When do you spend a jump?",
+          why: "On reaching the end of the current window: the next window runs to the furthest reach recorded, and the count goes up by one.",
+          code: "if i == window_end:
+        jumps = jumps + 1
+        window_end = furthest",
+        ),
+        WalkStep(
+          step: "Stop the walk at the second-to-last index — arriving at the end must not charge an extra jump.",
+          hint: "Why stop the walk one short of the end?",
+          why: "Reaching the last index would spend a jump you never make; the loop must not charge for arriving.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Return the jump count: no queue, no visited set, one pass.",
+          hint: "What did the reframing buy?",
+          why: "No queue and no visited set, one O(n) pass; the greedy is BFS with the levels compressed to ranges.",
+          code: "return jumps",
+        ),
       ]),
       Pseudocode(
         "jumps = 0
@@ -3108,12 +7131,45 @@ return jumps",
       Nudge(
         "Trying every start is quadratic. When an attempt starting at station i runs dry at station j, what does that failure tell you about every station in between? And is there a one-number test for whether any start can work at all?",
       ),
-      Steps([
-        "Sum gas[i] - cost[i] over the whole circle as you go; a negative grand total means no start works — return -1.",
-        "Walk once with a running tank, adding each station's surplus or deficit.",
-        "When the tank goes negative at station i, no station between the current candidate and i can work either — each would arrive with even less fuel — so jump the candidate straight to i + 1 and reset the tank to zero.",
-        "Those two facts together turn the quadratic search over starts into a single pass.",
-        "Skip any second lap to verify: a non-negative grand total already guarantees the surviving candidate completes the circle.",
+      Walk([
+        WalkStep(
+          step: "Sum gas[i] - cost[i] over the whole circle as you go; a negative grand total means no start works — return -1.",
+          hint: "If the total gas is less than the total cost, can any start work?",
+          why: "No, so summing the surplus over the circle decides feasibility in one pass and -1 falls out.",
+          code: "total = 0
+for i in 0..n-1:
+    diff = gas[i] - cost[i]
+    total = total + diff",
+        ),
+        WalkStep(
+          step: "Walk once with a running tank, adding each station's surplus or deficit.",
+          hint: "What does a running tank tell you as you drive from a candidate start?",
+          why: "Whether you can still reach the next station; it accumulates each station's surplus or deficit.",
+          code: "tank = 0
+start = 0
+    tank = tank + diff",
+        ),
+        WalkStep(
+          step: "When the tank goes negative at station i, no station between the current candidate and i can work either — each would arrive with even less fuel — so jump the candidate straight to i + 1 and reset the tank to zero.",
+          hint: "If the tank goes negative at station i, what about starting at any station between the candidate and i?",
+          why: "Each would arrive at i with even less fuel, since they skip the positive prefix, so the next candidate is i + 1 and the tank resets.",
+          code: "if tank < 0:
+        start = i + 1
+        tank = 0",
+        ),
+        WalkStep(
+          step: "Those two facts together turn the quadratic search over starts into a single pass.",
+          hint: "How do the two facts turn a quadratic search into one pass?",
+          why: "The total check settles existence, and the jump rule means each station is a candidate at most once.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Skip any second lap to verify: a non-negative grand total already guarantees the surviving candidate completes the circle.",
+          hint: "Why is no second lap needed to confirm the survivor?",
+          why: "A non-negative grand total guarantees the last candidate completes the circle, so the answer is immediate, O(n).",
+          code: "if total >= 0: return start
+return -1",
+        ),
       ]),
       Pseudocode(
         "total = 0
@@ -3134,12 +7190,41 @@ return -1",
       Nudge(
         "Greedy choices are dangerous when they can be wrong. Look at the smallest card still in your hand — how many different groups could it possibly belong to? What does that do to the choosing?",
       ),
-      Steps([
-        "Reject immediately unless the group size divides the hand size evenly.",
-        "Count how many copies of each card value the hand holds.",
-        "Repeatedly take the smallest value still present: it has no smaller neighbour to hide behind, so it must START whatever group contains it — there is no choice, which is what makes the greedy safe.",
-        "Its copies are indistinguishable, so consume them all at once: subtract that many from each of the groupSize consecutive values, failing the moment any value runs short.",
-        "Walk the values in sorted order; if every count is spent without a failure, the hand works.",
+      Walk([
+        WalkStep(
+          step: "Reject immediately unless the group size divides the hand size evenly.",
+          hint: "Before looking at any card, what simple arithmetic can rule the hand out?",
+          why: "Groups of equal size must tile the hand exactly, so a remainder means failure in O(1) before any grouping is attempted.",
+          code: "if len(hand) mod groupSize != 0: return false",
+        ),
+        WalkStep(
+          step: "Count how many copies of each card value the hand holds.",
+          hint: "Cards repeat. What do you need to know about each value?",
+          why: "How many copies there are; a frequency map turns the hand into values with multiplicities, which is what group building consumes.",
+          code: "counts = map from card value to copies held",
+        ),
+        WalkStep(
+          step: "Repeatedly take the smallest value still present: it has no smaller neighbour to hide behind, so it must START whatever group contains it — there is no choice, which is what makes the greedy safe.",
+          hint: "Which card has no choice about which group it belongs to?",
+          why: "The smallest remaining value has nothing below it, so it can only start a group; that forced move is what makes the greedy correct.",
+          code: "for smallest in sorted keys of counts:
+    copies = counts[smallest]
+    if copies == 0: continue",
+        ),
+        WalkStep(
+          step: "Its copies are indistinguishable, so consume them all at once: subtract that many from each of the groupSize consecutive values, failing the moment any value runs short.",
+          hint: "If the smallest value has three copies, how many groups start there?",
+          why: "Three, and they are indistinguishable, so subtract three from each of the next groupSize values at once and fail if any runs short.",
+          code: "for card in smallest .. smallest + groupSize - 1:
+        if counts[card] < copies: return false
+        counts[card] = counts[card] - copies",
+        ),
+        WalkStep(
+          step: "Walk the values in sorted order; if every count is spent without a failure, the hand works.",
+          hint: "What does finishing the sorted walk without a failure prove?",
+          why: "Every copy of every value was placed in a group, so the hand works; sorting the distinct values makes it O(n log n).",
+          code: "return true",
+        ),
       ]),
       Pseudocode(
         "if len(hand) mod groupSize != 0: return false
@@ -3157,12 +7242,40 @@ return true",
       Nudge(
         "The merge operation only ever pushes values up, never down. Which triplets are ruined forever the moment you touch them — and once those are out of the room, is there any reason left to be picky?",
       ),
-      Steps([
-        "Notice a merge takes componentwise maxima, and a maximum never comes back down.",
-        "Discard every triplet with ANY component above the target: using one would overshoot that component permanently.",
-        "Every survivor can be merged freely — each of its components only pushes toward the target, never past it.",
-        "Fold the survivors into one running componentwise maximum.",
-        "Return whether that maximum equals the target exactly: every target component must actually be supplied by some survivor.",
+      Walk([
+        WalkStep(
+          step: "Notice a merge takes componentwise maxima, and a maximum never comes back down.",
+          hint: "What does a merge do to each component, and can it be undone?",
+          why: "It takes the maximum, which never decreases, so any overshoot is permanent.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Discard every triplet with ANY component above the target: using one would overshoot that component permanently.",
+          hint: "Which triplets can never be part of a solution?",
+          why: "Any with a component above the target; merging it would push that component past the target for good.",
+          code: "for triplet in triplets:
+    if triplet[0] <= target[0] and triplet[1] <= target[1] and triplet[2] <= target[2]:",
+        ),
+        WalkStep(
+          step: "Every survivor can be merged freely — each of its components only pushes toward the target, never past it.",
+          hint: "Is there any risk in merging all the survivors?",
+          why: "None: every surviving component is at most the target's, so merging only moves toward it.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Fold the survivors into one running componentwise maximum.",
+          hint: "What does merging every survivor produce?",
+          why: "The componentwise maximum of all of them, one O(n) pass.",
+          code: "best = [0, 0, 0]
+        for i in 0..2:
+            best[i] = max(best[i], triplet[i])",
+        ),
+        WalkStep(
+          step: "Return whether that maximum equals the target exactly: every target component must actually be supplied by some survivor.",
+          hint: "What must that maximum satisfy?",
+          why: "Equality with the target on all three components, meaning each target value was actually supplied by some triplet.",
+          code: "return best == target",
+        ),
       ]),
       Pseudocode(
         "best = [0, 0, 0]
@@ -3177,12 +7290,45 @@ return best == target",
       Nudge(
         "A cut is legal only when nothing to its left ever appears again to its right. What single fact about each character decides that — and how would you know, mid-walk, that you are finally allowed to cut?",
       ),
-      Steps([
-        "First pass: map each character to its LAST position in the string (overwriting as you go leaves exactly that).",
-        "Sweep left to right, growing the current piece's required end: the furthest last-position of any character seen inside the piece.",
-        "When the walk's index catches up with that end, nothing inside the piece can reappear later — close it there.",
-        "Record the piece's length and start the next piece at the following index.",
-        "Closing at the earliest legal point every time is what makes the number of pieces maximal.",
+      Walk([
+        WalkStep(
+          step: "First pass: map each character to its LAST position in the string (overwriting as you go leaves exactly that).",
+          hint: "What one fact per character decides where a piece may end?",
+          why: "Its last position; overwriting in a single pass leaves exactly that.",
+          code: "last = empty map
+for i in 0..n-1:
+    last[s[i]] = i",
+        ),
+        WalkStep(
+          step: "Sweep left to right, growing the current piece's required end: the furthest last-position of any character seen inside the piece.",
+          hint: "As you sweep, what does the current piece require?",
+          why: "That it extend at least to the last position of every character inside it, so the required end grows as characters appear.",
+          code: "sizes = []
+start = 0
+end = 0
+for i in 0..n-1:
+    end = max(end, last[s[i]])",
+        ),
+        WalkStep(
+          step: "When the walk's index catches up with that end, nothing inside the piece can reappear later — close it there.",
+          hint: "When is the piece safe to close?",
+          why: "When the sweep index reaches the required end: nothing inside recurs later.",
+          code: "if i == end:",
+        ),
+        WalkStep(
+          step: "Record the piece's length and start the next piece at the following index.",
+          hint: "What happens at a close?",
+          why: "Record the length and start the next piece at the following index; two passes, O(n).",
+          code: "sizes.add(end - start + 1)
+        start = i + 1
+return sizes",
+        ),
+        WalkStep(
+          step: "Closing at the earliest legal point every time is what makes the number of pieces maximal.",
+          hint: "Why does closing as early as possible give the most pieces?",
+          why: "Any later close would merge what could have been two pieces; the earliest legal cut is always part of a maximal partition.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "last = empty map
@@ -3203,13 +7349,53 @@ return sizes",
       Nudge(
         "Without stars this is a single counter. Each star could push that counter either way — must you branch on every one, or can all the readings still alive be summarised in something smaller?",
       ),
-      Steps([
-        "Carry a range instead of one counter: low is the open count if every star so far closed or vanished, high if every star opened.",
-        "On \"(\" increment both; on \")\" decrement both; on a star, decrement low and increment high — one character spanning all three readings.",
-        "If high ever goes negative, fail: even reading every star as an opener leaves too many closers.",
-        "Clamp low at zero — a star can always be nothing, and a negative open count is meaningless.",
-        "The string is valid exactly when low reaches zero at the end: some reading closes everything.",
-        "Follow-up: the two-pass alternative — left to right treating stars as openers, right to left treating them as closers — proves the same thing without the range.",
+      Walk([
+        WalkStep(
+          step: "Carry a range instead of one counter: low is the open count if every star so far closed or vanished, high if every star opened.",
+          hint: "A star could be three things. What one thing can summarise all readings at once?",
+          why: "A range of possible open counts: low if stars close or vanish, high if they open.",
+          code: "low = 0
+high = 0
+for c in s:",
+        ),
+        WalkStep(
+          step: "On \"(\" increment both; on \")\" decrement both; on a star, decrement low and increment high — one character spanning all three readings.",
+          hint: "How does each character move the range?",
+          why: "An opener raises both, a closer lowers both, a star widens both ways.",
+          code: "if c == \"(\":
+        low = low + 1
+        high = high + 1
+    else if c == \")\":
+        low = max(low - 1, 0)
+        high = high - 1
+    else:
+        low = max(low - 1, 0)
+        high = high + 1",
+        ),
+        WalkStep(
+          step: "If high ever goes negative, fail: even reading every star as an opener leaves too many closers.",
+          hint: "What does a negative high mean?",
+          why: "Even reading every star as an opener leaves too many closers; fail.",
+          code: "if high < 0: return false",
+        ),
+        WalkStep(
+          step: "Clamp low at zero — a star can always be nothing, and a negative open count is meaningless.",
+          hint: "Why clamp low at zero?",
+          why: "A star can always be nothing, so a negative open count has no meaning.",
+          code: "",
+        ),
+        WalkStep(
+          step: "The string is valid exactly when low reaches zero at the end: some reading closes everything.",
+          hint: "What is the final test?",
+          why: "low is zero, meaning some reading closes everything; O(n) in one pass.",
+          code: "return low == 0",
+        ),
+        WalkStep(
+          step: "Follow-up: the two-pass alternative — left to right treating stars as openers, right to left treating them as closers — proves the same thing without the range.",
+          hint: "What two-pass alternative proves the same?",
+          why: "Left to right with stars as openers, right to left with stars as closers; both must never go negative.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "low = 0
@@ -3232,13 +7418,53 @@ return low == 0",
       Nudge(
         "The list arrives sorted and non-overlapping — that is a gift, not a detail. Relative to the new interval, what three kinds of interval does the list split into, and which kind actually requires any work?",
       ),
-      Steps([
-        "Copy across every interval that ends before the new one starts — untouched.",
-        "Absorb the touching run: while an interval starts at or before the new end, widen the new interval to the smaller start and larger end, consuming it.",
-        "Append the (possibly widened) new interval once.",
-        "Append everything remaining — it all starts after the new end, also untouched.",
-        "One pass, no sorting: only the middle run ever collapses, into a single interval spanning the lot.",
-        "Follow-up: appending the new interval and re-running a full merge also works, but it throws away the sortedness you were handed.",
+      Walk([
+        WalkStep(
+          step: "Copy across every interval that ends before the new one starts — untouched.",
+          hint: "Which intervals cannot possibly interact with the new one?",
+          why: "Those ending before it starts; sortedness means they form a prefix, copied across untouched.",
+          code: "out = []
+i = 0
+while i < n and intervals[i].end < new.start:
+    out.add(intervals[i])
+    i = i + 1",
+        ),
+        WalkStep(
+          step: "Absorb the touching run: while an interval starts at or before the new end, widen the new interval to the smaller start and larger end, consuming it.",
+          hint: "What does an interval that starts at or before the new one's end do to it?",
+          why: "It overlaps or touches, so the new interval grows to cover both; consuming the whole run collapses it into one interval.",
+          code: "while i < n and intervals[i].start <= new.end:
+    new.start = min(new.start, intervals[i].start)
+    new.end = max(new.end, intervals[i].end)
+    i = i + 1",
+        ),
+        WalkStep(
+          step: "Append the (possibly widened) new interval once.",
+          hint: "How many times does the new interval appear in the output?",
+          why: "Once, after the run it absorbed; whether it grew or not it goes in exactly here.",
+          code: "out.add(new)",
+        ),
+        WalkStep(
+          step: "Append everything remaining — it all starts after the new end, also untouched.",
+          hint: "What about the intervals still remaining?",
+          why: "They start after the new end, so they are copied unchanged; the three loops together are one O(n) pass.",
+          code: "while i < n:
+    out.add(intervals[i])
+    i = i + 1
+return out",
+        ),
+        WalkStep(
+          step: "One pass, no sorting: only the middle run ever collapses, into a single interval spanning the lot.",
+          hint: "Why is no sort needed?",
+          why: "The input is already sorted and non-overlapping, and only the middle run changes, so the output stays sorted by construction.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Follow-up: appending the new interval and re-running a full merge also works, but it throws away the sortedness you were handed.",
+          hint: "What would appending then merging cost?",
+          why: "A full sort, O(n log n), discarding the order you were given; correct but wasteful.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "out = []
@@ -3261,13 +7487,47 @@ return out",
       Nudge(
         "Unsorted, any interval might overlap any other, anywhere. What ordering would guarantee that each interval can only ever interact with one candidate — and which candidate would that be?",
       ),
-      Steps([
-        "Sort the intervals by start.",
-        "Walk them once, keeping the interval currently being built as the last entry of the output.",
-        "If the next interval starts at or before the built one's end, it overlaps — extend the built end to the larger of the two.",
-        "Otherwise the built interval is finished; append the next one as a fresh start.",
-        "Why one candidate suffices: anything the next interval could have overlapped earlier was already absorbed into the one being built.",
-        "Follow-up framing: keep only the edges, +1 at each start and -1 at each end, and cut wherever the running count returns to zero.",
+      Walk([
+        WalkStep(
+          step: "Sort the intervals by start.",
+          hint: "What order makes overlaps show up as neighbours?",
+          why: "Sorting by start, so any interval that overlaps the one being built is the next one.",
+          code: "sort intervals by start",
+        ),
+        WalkStep(
+          step: "Walk them once, keeping the interval currently being built as the last entry of the output.",
+          hint: "Where does the interval being built live?",
+          why: "As the last entry of the output; extending it in place avoids a separate current variable.",
+          code: "out = []
+for [start, end] in intervals:",
+        ),
+        WalkStep(
+          step: "If the next interval starts at or before the built one's end, it overlaps — extend the built end to the larger of the two.",
+          hint: "When does the next interval belong to the one being built?",
+          why: "When it starts at or before the built one's end; the built end grows to the larger of the two.",
+          code: "if out is not empty and start <= out.last.end:
+        out.last.end = max(out.last.end, end)",
+        ),
+        WalkStep(
+          step: "Otherwise the built interval is finished; append the next one as a fresh start.",
+          hint: "And when it does not overlap?",
+          why: "The built interval is complete and the next one starts fresh; O(n log n) for the sort, O(n) for the walk.",
+          code: "else:
+        out.add([start, end])
+return out",
+        ),
+        WalkStep(
+          step: "Why one candidate suffices: anything the next interval could have overlapped earlier was already absorbed into the one being built.",
+          hint: "Why is comparing with only the last interval enough?",
+          why: "Anything the next interval could overlap earlier was already merged into the last one, since starts are sorted.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Follow-up framing: keep only the edges, +1 at each start and -1 at each end, and cut wherever the running count returns to zero.",
+          hint: "What is the sweep-line way to think about it?",
+          why: "+1 at each start, -1 at each end, and a merged interval ends wherever the running count returns to zero.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "sort intervals by start
@@ -3284,13 +7544,50 @@ return out",
       Nudge(
         "Flip the objective: removing the fewest intervals is the same as keeping the most. When several intervals fight over the same stretch, which single property of an interval decides which one is safest to keep?",
       ),
-      Steps([
-        "Reframe as keeping the largest non-overlapping set — the classic activity-selection greedy.",
-        "Sort by END time, not start.",
-        "Sweep, keeping an interval whenever it starts at or after the end of the last one kept; count everything else as removed.",
-        "The exchange argument: the interval finishing earliest leaves the most room for everything after it, so keeping it can never be worse.",
-        "Touching at a point does not overlap here, so the keep test is start >= last kept end.",
-        "Know why sorting by start is the natural wrong answer — it keeps whichever came first, which may be a very long interval that smothers many others.",
+      Walk([
+        WalkStep(
+          step: "Reframe as keeping the largest non-overlapping set — the classic activity-selection greedy.",
+          hint: "Removing the fewest intervals is the same as doing what with the rest?",
+          why: "Keeping the most non-overlapping ones, which is activity selection, a classic greedy.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Sort by END time, not start.",
+          hint: "Which sort order makes the greedy choice obvious?",
+          why: "By end time: the interval that finishes first constrains the future least.",
+          code: "sort intervals by end",
+        ),
+        WalkStep(
+          step: "Sweep, keeping an interval whenever it starts at or after the end of the last one kept; count everything else as removed.",
+          hint: "What is the decision at each interval?",
+          why: "Keep it if it starts after the last kept one ends; otherwise it overlaps and is counted as removed. O(n log n).",
+          code: "removed = 0
+last_end = -infinity
+for [start, end] in intervals:
+    if start >= last_end:
+        last_end = end
+    else:
+        removed = removed + 1
+return removed",
+        ),
+        WalkStep(
+          step: "The exchange argument: the interval finishing earliest leaves the most room for everything after it, so keeping it can never be worse.",
+          hint: "Why is keeping the earliest-ending interval never worse?",
+          why: "Any optimal solution's first kept interval can be swapped for it without creating an overlap; that exchange argument is the proof.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Touching at a point does not overlap here, so the keep test is start >= last kept end.",
+          hint: "Do intervals that touch at a point overlap?",
+          why: "Not here, so the keep test uses >= on the start.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Know why sorting by start is the natural wrong answer — it keeps whichever came first, which may be a very long interval that smothers many others.",
+          hint: "What goes wrong sorting by start?",
+          why: "The first-starting interval may be very long and smother many short ones that together would keep more.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "sort intervals by end
@@ -3308,12 +7605,40 @@ return removed",
       Nudge(
         "Checking every pair of meetings is quadratic. Is there an ordering under which a clash, if one exists at all, is forced to show up between neighbours?",
       ),
-      Steps([
-        "Sort the meetings by start time.",
-        "Check only adjacent pairs: each meeting must start at or after the previous one ends.",
-        "Why that suffices: any meeting earlier than the previous one began earlier still, so it would have clashed with the previous one first.",
-        "Mind the boundary: a meeting ending exactly as the next begins is fine, so the failing condition is previous end strictly greater than next start.",
-        "Worth memorising the general test while you are here: two intervals overlap when each starts before the other ends.",
+      Walk([
+        WalkStep(
+          step: "Sort the meetings by start time.",
+          hint: "What order makes potential clashes adjacent?",
+          why: "Sorting by start time; after that a clash can only be between neighbours.",
+          code: "sort intervals by start",
+        ),
+        WalkStep(
+          step: "Check only adjacent pairs: each meeting must start at or after the previous one ends.",
+          hint: "What is the one check per adjacent pair?",
+          why: "The next meeting must start no earlier than the previous one ends; O(n log n) for the sort, O(n) for the sweep.",
+          code: "for i in 1..n-1:
+    if intervals[i-1].end > intervals[i].start:
+        return false
+return true",
+        ),
+        WalkStep(
+          step: "Why that suffices: any meeting earlier than the previous one began earlier still, so it would have clashed with the previous one first.",
+          hint: "Why not compare every pair?",
+          why: "Any meeting that clashes with an earlier one clashes with the immediately previous one too, since that one started even later.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Mind the boundary: a meeting ending exactly as the next begins is fine, so the failing condition is previous end strictly greater than next start.",
+          hint: "A meeting ends at 10 and the next starts at 10. Clash or not?",
+          why: "Not a clash, so the failing test is strictly greater; off-by-one here flips the answer.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Worth memorising the general test while you are here: two intervals overlap when each starts before the other ends.",
+          hint: "What is the general overlap test worth remembering?",
+          why: "Two intervals overlap when each starts before the other ends.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "sort intervals by start
@@ -3327,13 +7652,51 @@ return true",
       Nudge(
         "You are not assigning rooms — you are measuring something. At the busiest single moment of the day, how many meetings are running at once? What is the smallest kind of event you need to notice to track that number?",
       ),
-      Steps([
-        "Reframe: the rooms needed equal the maximum number of meetings ever running simultaneously.",
-        "Forget the meetings themselves and keep only their edges: a +1 event at each start, a -1 at each end.",
-        "Sort every edge by time and sweep, maintaining a running depth and its high-water mark.",
-        "Tie-break deliberately: a room freed exactly as another meeting starts is reusable, so ends sort before starts at the same time (-1 before +1) — the opposite of what merging intervals wants.",
-        "Return the high-water mark.",
-        "Follow-up: two sorted arrays of starts and ends with two pointers, or a min-heap of end times, reach the same number.",
+      Walk([
+        WalkStep(
+          step: "Reframe: the rooms needed equal the maximum number of meetings ever running simultaneously.",
+          hint: "How many rooms are needed, in terms of the meetings themselves?",
+          why: "The peak number running at the same time; that reframing turns scheduling into counting overlap.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Forget the meetings themselves and keep only their edges: a +1 event at each start, a -1 at each end.",
+          hint: "What information about each meeting is enough to find that peak?",
+          why: "Only its edges: +1 at the start, -1 at the end.",
+          code: "edges = []
+for [start, end] in intervals:
+    edges.add((start, +1))
+    edges.add((end, -1))",
+        ),
+        WalkStep(
+          step: "Sort every edge by time and sweep, maintaining a running depth and its high-water mark.",
+          hint: "How do you find the peak from the edges?",
+          why: "Sort by time and sweep, keeping a running depth and its maximum; O(n log n).",
+          code: "sort edges by time, with -1 before +1 on ties
+depth = 0
+best = 0
+for (time, delta) in edges:
+    depth = depth + delta
+    best = max(best, depth)",
+        ),
+        WalkStep(
+          step: "Tie-break deliberately: a room freed exactly as another meeting starts is reusable, so ends sort before starts at the same time (-1 before +1) — the opposite of what merging intervals wants.",
+          hint: "A meeting ends exactly as another starts. Which edge should sort first?",
+          why: "The end, so the room is freed before it is needed; that tie-break is the reverse of what interval merging wants.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Return the high-water mark.",
+          hint: "What is the answer?",
+          why: "The high-water mark of the depth.",
+          code: "return best",
+        ),
+        WalkStep(
+          step: "Follow-up: two sorted arrays of starts and ends with two pointers, or a min-heap of end times, reach the same number.",
+          hint: "What other shapes reach the same number?",
+          why: "Two sorted arrays of starts and ends with two pointers, or a min-heap of end times.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "edges = []
@@ -3353,12 +7716,46 @@ return best",
       Nudge(
         "Answering the queries in the order they arrive is the trap here. What is the plain-definition answer for a single query — and if repeating that per query is too slow, must the queries be handled in their given order at all?",
       ),
-      Steps([
-        "Start from the definition: for one query, scan every interval that contains it and keep the smallest length end - start + 1, or -1 if none does.",
-        "Repeat per query and collect the answers in input order — the O(n times q) baseline, and the thing to check anything cleverer against.",
-        "Follow-up: sort the queries by value, admit intervals into a min-heap keyed by length as their starts pass, and pop whatever has already ended — each interval enters and leaves the heap once.",
-        "Other follow-up: hand intervals out shortest first — the first interval to cover a query is already that query's final answer, so a settled query leaves the pool for good.",
-        "Either faster route answers queries out of order, so scatter the answers back to their input positions at the end.",
+      Walk([
+        WalkStep(
+          step: "Start from the definition: for one query, scan every interval that contains it and keep the smallest length end - start + 1, or -1 if none does.",
+          hint: "What is the answer for a single query, stated directly?",
+          why: "The shortest interval containing it, or -1 if none does; that definition is the baseline before any cleverness.",
+          code: "for query in queries:
+    best = infinity
+    for [start, end] in intervals:
+        if start <= query and query <= end:
+            best = min(best, end - start + 1)",
+        ),
+        WalkStep(
+          step: "Repeat per query and collect the answers in input order — the O(n times q) baseline, and the thing to check anything cleverer against.",
+          hint: "How do you turn that into the full answer?",
+          why: "Repeat per query in input order; O(n * q), correct, and the reference to check faster versions against.",
+          code: "answers = []
+    if best == infinity:
+        answers.add(-1)
+    else:
+        answers.add(best)
+return answers",
+        ),
+        WalkStep(
+          step: "Follow-up: sort the queries by value, admit intervals into a min-heap keyed by length as their starts pass, and pop whatever has already ended — each interval enters and leaves the heap once.",
+          hint: "If queries are sorted, which intervals matter as you sweep?",
+          why: "Those whose start has passed and whose end has not; a min-heap by length admits and evicts each interval once, O((n + q) log n).",
+          code: "",
+        ),
+        WalkStep(
+          step: "Other follow-up: hand intervals out shortest first — the first interval to cover a query is already that query's final answer, so a settled query leaves the pool for good.",
+          hint: "What if intervals are handed out shortest first instead?",
+          why: "The first interval to cover a query is that query's final answer, so settled queries leave the pool for good.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Either faster route answers queries out of order, so scatter the answers back to their input positions at the end.",
+          hint: "What does either faster route disturb?",
+          why: "The output order; answers found in sorted-query order must be scattered back to input positions.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "answers = []
@@ -3378,12 +7775,42 @@ return answers",
       Nudge(
         "A quarter turn feels like fiddly index gymnastics — unless it can be built out of simpler motions you already know. Which two mirror flips, composed, make a 90-degree turn?",
       ),
-      Steps([
-        "Decompose the turn into two reflections: flip across the main diagonal (transpose), then flip each row (a reflection through the vertical centre line).",
-        "Both operations are a couple of lines and need no index arithmetic — which beats memorising the four-way element cycle.",
-        "In place: swap matrix[r][c] with matrix[c][r] for every c > r, then reverse each row.",
-        "Sanity-check the direction on a 2x2 example — the same two flips in the other order turn it anticlockwise.",
-        "Follow-up: to derive the direct mapping instead, the entry at (row, column) after a clockwise turn came from (n - 1 - column, row).",
+      Walk([
+        WalkStep(
+          step: "Decompose the turn into two reflections: flip across the main diagonal (transpose), then flip each row (a reflection through the vertical centre line).",
+          hint: "What two reflections compose into a quarter turn?",
+          why: "Transpose across the main diagonal, then reverse each row; two simple operations replace a memorised four-way cycle.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Both operations are a couple of lines and need no index arithmetic — which beats memorising the four-way element cycle.",
+          hint: "Why prefer reflections over moving each element to its destination?",
+          why: "Each reflection is a couple of lines with no index arithmetic to get wrong.",
+          code: "",
+        ),
+        WalkStep(
+          step: "In place: swap matrix[r][c] with matrix[c][r] for every c > r, then reverse each row.",
+          hint: "What are the in-place loops?",
+          why: "Swap (r, c) with (c, r) for c > r, then reverse every row; O(n²) with no extra matrix.",
+          code: "for r in 0..n-1:
+    for c in r+1..n-1:
+        swap matrix[r][c], matrix[c][r]
+for each row in matrix:
+    reverse the row
+return matrix",
+        ),
+        WalkStep(
+          step: "Sanity-check the direction on a 2x2 example — the same two flips in the other order turn it anticlockwise.",
+          hint: "How do you confirm the direction?",
+          why: "Try a 2x2 by hand; the same two flips in the other order rotate anticlockwise.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Follow-up: to derive the direct mapping instead, the entry at (row, column) after a clockwise turn came from (n - 1 - column, row).",
+          hint: "Where does a cell come from in the direct mapping?",
+          why: "The entry at (row, column) after a clockwise turn came from (n - 1 - column, row).",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "// reflect through the main diagonal
@@ -3400,12 +7827,40 @@ return matrix",
       Nudge(
         "Walk the top edge, then look hard at what remains. Does the leftover have a familiar shape — and could a change of viewpoint turn \"now go down the right side\" into the very move you just made?",
       ),
-      Steps([
-        "Emit the entire first row into the output.",
-        "Rotate the remaining rows a quarter turn anticlockwise: the column you would have walked down is now the top row.",
-        "Repeat until nothing is left — there is only ever one move to make.",
-        "Build the anticlockwise turn as a transpose of the remainder with the row order then reversed.",
-        "Follow-up: the boundary version tracks four edges closing inward; its traps are the single remaining row or column, where the top and bottom edges are the same edge and a careless walk emits it twice.",
+      Walk([
+        WalkStep(
+          step: "Emit the entire first row into the output.",
+          hint: "What is always the next thing to output?",
+          why: "The first row, in order; the spiral begins along the top.",
+          code: "out = []
+while matrix is not empty:
+    out.extend(first row of matrix)",
+        ),
+        WalkStep(
+          step: "Rotate the remaining rows a quarter turn anticlockwise: the column you would have walked down is now the top row.",
+          hint: "After removing the top row, what turn makes the next side into a new top row?",
+          why: "A quarter turn anticlockwise: the right column becomes the top row.",
+          code: "rest = matrix without its first row
+    matrix = transpose(rest) with its rows in reverse order",
+        ),
+        WalkStep(
+          step: "Repeat until nothing is left — there is only ever one move to make.",
+          hint: "How many distinct moves does the loop need?",
+          why: "One; the turn reduces every direction to \"take the top row\", and it ends when the matrix is empty.",
+          code: "return out",
+        ),
+        WalkStep(
+          step: "Build the anticlockwise turn as a transpose of the remainder with the row order then reversed.",
+          hint: "How is the anticlockwise turn built from primitives?",
+          why: "Transpose the remainder, then reverse the order of its rows.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Follow-up: the boundary version tracks four edges closing inward; its traps are the single remaining row or column, where the top and bottom edges are the same edge and a careless walk emits it twice.",
+          hint: "What does the four-boundary version have to guard against?",
+          why: "A single remaining row or column, where top and bottom (or left and right) are the same edge and a careless walk emits it twice.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "out = []
@@ -3420,12 +7875,47 @@ return out",
       Nudge(
         "Try clearing cells as you scan and watch what happens — can you still tell your own zeroes from the originals? What is the least you need to remember before any writing becomes safe?",
       ),
-      Steps([
-        "See why one pass fails: a zero you write is indistinguishable from a zero that was already there, and the whole grid clears itself.",
-        "First pass: scan the grid, recording which rows and which columns contain an original zero (two sets).",
-        "Second pass: rewrite every cell to zero when its row or column is marked, leaving the rest untouched.",
-        "That is O(m + n) extra space and no cascade is possible.",
-        "Follow-up: for O(1) extra space, store the marks in the grid's own first row and first column (plus one flag for the first column itself) and clear those two last.",
+      Walk([
+        WalkStep(
+          step: "See why one pass fails: a zero you write is indistinguishable from a zero that was already there, and the whole grid clears itself.",
+          hint: "What goes wrong if you zero rows and columns as you find zeros?",
+          why: "A zero you wrote looks like an original one, so the clearing cascades until the whole grid is zero.",
+          code: "",
+        ),
+        WalkStep(
+          step: "First pass: scan the grid, recording which rows and which columns contain an original zero (two sets).",
+          hint: "What should the first pass record?",
+          why: "Which rows and columns hold an original zero, as two sets, without changing the grid.",
+          code: "rows = empty set
+columns = empty set
+for r in 0..m-1:
+    for c in 0..n-1:
+        if matrix[r][c] == 0:
+            rows.add(r)
+            columns.add(c)",
+        ),
+        WalkStep(
+          step: "Second pass: rewrite every cell to zero when its row or column is marked, leaving the rest untouched.",
+          hint: "What does the second pass do?",
+          why: "Zeroes every cell whose row or column is marked, leaving everything else alone.",
+          code: "for r in 0..m-1:
+    for c in 0..n-1:
+        if r in rows or c in columns:
+            matrix[r][c] = 0
+return matrix",
+        ),
+        WalkStep(
+          step: "That is O(m + n) extra space and no cascade is possible.",
+          hint: "What does that cost, and why can it not cascade?",
+          why: "O(m + n) extra space and two passes; the marks came from the original grid, so writes never influence them.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Follow-up: for O(1) extra space, store the marks in the grid's own first row and first column (plus one flag for the first column itself) and clear those two last.",
+          hint: "Where can the marks live to make the extra space constant?",
+          why: "In the grid's own first row and column, plus one flag for the first column itself, cleared last.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "rows = empty set
@@ -3446,12 +7936,47 @@ return matrix",
       Nudge(
         "Follow the sequence a few steps for an unhappy number. What must eventually happen, and why can the walk not wander off forever? Name that behaviour and this joins a family of problems you already know how to solve.",
       ),
-      Steps([
-        "Notice sums of squared digits are bounded, so only finitely many values are reachable — an unhappy walk must eventually revisit a value and loop.",
-        "That makes this cycle detection wearing a numeric costume.",
-        "Write the step helper: peel digits with mod 10 and integer division by 10, summing the squares.",
-        "Keep a set of values already seen and iterate until you reach 1 (happy) or a repeat (trapped in the loop).",
-        "Follow-up: Floyd's slow and fast pointers do it in constant space — they meet at 1 for a happy number and inside the other cycle otherwise.",
+      Walk([
+        WalkStep(
+          step: "Notice sums of squared digits are bounded, so only finitely many values are reachable — an unhappy walk must eventually revisit a value and loop.",
+          hint: "How large can a sum of squared digits get, and what does that imply about repeating?",
+          why: "It is bounded (a few hundred for reasonable inputs), so an unhappy sequence must revisit a value and cycle forever.",
+          code: "",
+        ),
+        WalkStep(
+          step: "That makes this cycle detection wearing a numeric costume.",
+          hint: "Once the sequence can repeat, what problem is this really?",
+          why: "Cycle detection over a hidden linked list where the next pointer is the digit-square step.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Write the step helper: peel digits with mod 10 and integer division by 10, summing the squares.",
+          hint: "How do you take a number apart into digits?",
+          why: "mod 10 peels the last digit and integer division drops it; summing the squares is the step function.",
+          code: "squareDigits(n):
+    total = 0
+    while n > 0:
+        digit = n mod 10
+        total = total + digit * digit
+        n = n / 10   // integer division
+    return total",
+        ),
+        WalkStep(
+          step: "Keep a set of values already seen and iterate until you reach 1 (happy) or a repeat (trapped in the loop).",
+          hint: "When do you stop iterating, and what does each stop mean?",
+          why: "Reaching 1 is happy; hitting a value already seen is the loop; a seen set tells the two apart.",
+          code: "seen = empty set
+while n != 1 and n not in seen:
+    seen.add(n)
+    n = squareDigits(n)
+return n == 1",
+        ),
+        WalkStep(
+          step: "Follow-up: Floyd's slow and fast pointers do it in constant space — they meet at 1 for a happy number and inside the other cycle otherwise.",
+          hint: "Can the set be dropped?",
+          why: "Floyd's slow and fast pointers meet at 1 for a happy number and inside the other cycle otherwise, giving O(1) space.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "squareDigits(n):
@@ -3473,12 +7998,44 @@ return n == 1",
       Nudge(
         "This is grade-school addition with the smallest possible second operand. Where does the work begin, why does it usually stop almost immediately — and what is the one input shape that refuses to let it stop?",
       ),
-      Steps([
-        "Walk the digits from the right end with a carry that starts at 1.",
-        "At each digit take digit + carry: write sum mod 10 and carry the integer quotient.",
-        "The carry dies at the first digit below nine — from there the remaining digits are copied unchanged.",
-        "Handle all nines: the carry survives the whole walk and the number grows a new leading 1.",
-        "Follow-up: folding the digits into one integer and adding 1 works only until the number outgrows the language's integers — which is exactly why the input is a list of digits.",
+      Walk([
+        WalkStep(
+          step: "Walk the digits from the right end with a carry that starts at 1.",
+          hint: "Where does adding one begin, and what travels?",
+          why: "At the last digit, with a carry that starts as 1.",
+          code: "out = []
+carry = 1
+for digit in digits from last to first:",
+        ),
+        WalkStep(
+          step: "At each digit take digit + carry: write sum mod 10 and carry the integer quotient.",
+          hint: "What does each digit produce?",
+          why: "Its sum with the carry, split into a written digit and a new carry.",
+          code: "total = digit + carry
+    out.add(total mod 10)
+    carry = total / 10   // integer division",
+        ),
+        WalkStep(
+          step: "The carry dies at the first digit below nine — from there the remaining digits are copied unchanged.",
+          hint: "When does the carry stop mattering?",
+          why: "At the first digit below nine; after that the digits are copied unchanged.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Handle all nines: the carry survives the whole walk and the number grows a new leading 1.",
+          hint: "What about 999?",
+          why: "The carry survives every digit and becomes a new leading 1, so the number grows.",
+          code: "if carry > 0:
+    out.add(carry)
+reverse out
+return out",
+        ),
+        WalkStep(
+          step: "Follow-up: folding the digits into one integer and adding 1 works only until the number outgrows the language's integers — which is exactly why the input is a list of digits.",
+          hint: "Why not convert to an integer and add one?",
+          why: "It works only while the number fits the language's integers, which is why the input is digits in the first place.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "out = []
@@ -3497,12 +8054,40 @@ return out",
       Nudge(
         "Multiplying x by itself n times is the obvious loop. If someone handed you x to the power n/2 for free, how much work would be left — and what does that say about the total number of multiplications really needed?",
       ),
-      Steps([
-        "Recurse on half the exponent: compute half = power(x, n / 2) once and square it.",
-        "When n is odd, multiply in one extra x.",
-        "Bottom the recursion out at n == 0, returning 1.",
-        "Handle a negative exponent with a single reciprocal at the top — 1 / power(x, -n) — not inside the recursion.",
-        "Compute half once and reuse it: calling power twice rebuilds the full O(n) tree and forfeits the O(log n).",
+      Walk([
+        WalkStep(
+          step: "Recurse on half the exponent: compute half = power(x, n / 2) once and square it.",
+          hint: "How does x^n relate to x^(n/2)?",
+          why: "It is that value squared, so halving the exponent each call gives O(log n) multiplications.",
+          code: "power(x, n):
+    half = power(x, n / 2)   // integer division",
+        ),
+        WalkStep(
+          step: "When n is odd, multiply in one extra x.",
+          hint: "What does an odd exponent need that an even one does not?",
+          why: "One extra factor of x, since integer halving dropped it.",
+          code: "if n is odd: return half * half * x
+    return half * half",
+        ),
+        WalkStep(
+          step: "Bottom the recursion out at n == 0, returning 1.",
+          hint: "Where does the recursion stop?",
+          why: "n == 0 returns 1, the empty product.",
+          code: "if n == 0: return 1",
+        ),
+        WalkStep(
+          step: "Handle a negative exponent with a single reciprocal at the top — 1 / power(x, -n) — not inside the recursion.",
+          hint: "Where should a negative exponent be handled?",
+          why: "Once at the top with a reciprocal; putting it inside the recursion complicates every call.",
+          code: "if n < 0: return 1 / power(x, -n)
+return power(x, n)",
+        ),
+        WalkStep(
+          step: "Compute half once and reuse it: calling power twice rebuilds the full O(n) tree and forfeits the O(log n).",
+          hint: "What single mistake makes this linear again?",
+          why: "Calling power(x, n/2) twice rebuilds the whole tree, O(n); compute half once and reuse it.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "power(x, n):
@@ -3519,12 +8104,46 @@ return power(x, n)",
       Nudge(
         "How did you multiply two big numbers on paper in school? Before reaching for anything clever, ask where the product of one digit from each number always ends up — and whether the carrying really has to happen during the multiplication.",
       ),
-      Steps([
-        "Handle \"0\" times anything up front, then reverse both strings into digit arrays so index equals place value.",
-        "Allocate a result array of len(a) + len(b) slots — a product can never need more digits than that.",
-        "Nested loop: add digit i times digit j straight into slot i + j, with no carrying yet — deferring the carry is what keeps this inner loop clean.",
-        "Do one sweep over the slots afterwards: each slot keeps total mod 10 and passes total div 10 on as carry.",
-        "Reverse the digits into a string and strip leading zeros, keeping at least one digit.",
+      Walk([
+        WalkStep(
+          step: "Handle \"0\" times anything up front, then reverse both strings into digit arrays so index equals place value.",
+          hint: "Which input needs handling before the digit loops, and what orientation helps the loops?",
+          why: "\"0\" times anything is \"0\"; reversing the strings makes index equal place value so digit i times digit j lands at i + j.",
+          code: "if num1 == \"0\" or num2 == \"0\": return \"0\"
+a = digits of num1, lowest place first
+b = digits of num2, lowest place first",
+        ),
+        WalkStep(
+          step: "Allocate a result array of len(a) + len(b) slots — a product can never need more digits than that.",
+          hint: "How many digits can the product have at most?",
+          why: "len(a) + len(b), so that many slots always suffice.",
+          code: "slots = array of (len(a) + len(b)) zeros",
+        ),
+        WalkStep(
+          step: "Nested loop: add digit i times digit j straight into slot i + j, with no carrying yet — deferring the carry is what keeps this inner loop clean.",
+          hint: "Why not carry inside the nested loop?",
+          why: "Adding raw products into slots keeps the inner loop a single line; carrying once afterwards is simpler and equivalent.",
+          code: "for i in 0..len(a)-1:
+    for j in 0..len(b)-1:
+        slots[i + j] += a[i] * b[j]",
+        ),
+        WalkStep(
+          step: "Do one sweep over the slots afterwards: each slot keeps total mod 10 and passes total div 10 on as carry.",
+          hint: "What does the carry sweep do to each slot?",
+          why: "Keeps total mod 10 and passes total div 10 onward, normalising every slot to one digit.",
+          code: "carry = 0
+digits = []
+for slot in slots:
+    total = slot + carry
+    digits.append(total mod 10)
+    carry = total div 10",
+        ),
+        WalkStep(
+          step: "Reverse the digits into a string and strip leading zeros, keeping at least one digit.",
+          hint: "What cleanup turns the digits into the answer?",
+          why: "Reverse back to most-significant first and strip leading zeros, keeping at least one digit; O(m * n).",
+          code: "return digits reversed, joined, leading zeros stripped",
+        ),
       ]),
       Pseudocode(
         "if num1 == \"0\" or num2 == \"0\": return \"0\"
@@ -3547,13 +8166,48 @@ return digits reversed, joined, leading zeros stripped",
       Nudge(
         "A square has four corners, but how many of them do you actually get to choose? Given the query point, which single other corner would pin down the whole square — and what does that reduce the counting to?",
       ),
-      Steps([
-        "Store added points in a map from (x, y) to how many copies sit there — duplicates matter.",
-        "add is just an increment of that count.",
-        "For count, loop over every stored point as the candidate corner diagonally opposite the query.",
-        "A valid diagonal partner shares neither coordinate with the query and satisfies |px - x| == |py - y| — a true diagonal.",
-        "That choice forces the other two corners to (x, py) and (px, y); add copies(diagonal) times copies(x, py) times copies(px, y) to the total.",
-        "Duplicated points multiply rather than repeat: two points at the same spot really do make two squares.",
+      Walk([
+        WalkStep(
+          step: "Store added points in a map from (x, y) to how many copies sit there — duplicates matter.",
+          hint: "Two points can be added at the same coordinates. What must the storage remember about that?",
+          why: "How many copies sit there, so a map from point to count rather than a set; duplicates change the answer.",
+          code: "counts = empty map",
+        ),
+        WalkStep(
+          step: "add is just an increment of that count.",
+          hint: "What does add have to do?",
+          why: "Increment that point's count; O(1) and nothing else.",
+          code: "add(point):
+    counts[point] += 1",
+        ),
+        WalkStep(
+          step: "For count, loop over every stored point as the candidate corner diagonally opposite the query.",
+          hint: "Which single choice determines a whole square containing the query point?",
+          why: "Its diagonally opposite corner; enumerating stored points as that corner covers every square in O(points) per query.",
+          code: "count(x, y):
+    total = 0
+    for each (px, py) with c copies in counts:",
+        ),
+        WalkStep(
+          step: "A valid diagonal partner shares neither coordinate with the query and satisfies |px - x| == |py - y| — a true diagonal.",
+          hint: "What makes a candidate a true diagonal partner?",
+          why: "It must differ in both coordinates by the same amount; sharing a coordinate or unequal offsets cannot be a square's diagonal.",
+          code: "if px == x or py == y: continue
+        if abs(px - x) != abs(py - y): continue",
+        ),
+        WalkStep(
+          step: "That choice forces the other two corners to (x, py) and (px, y); add copies(diagonal) times copies(x, py) times copies(px, y) to the total.",
+          hint: "Given the diagonal, where are the other two corners, and how many squares do they make?",
+          why: "At (x, py) and (px, y); the number of squares is the product of the three counts, since any copy pairs with any copy.",
+          code: "total += c * counts[(x, py)] * counts[(px, y)]
+    return total",
+        ),
+        WalkStep(
+          step: "Duplicated points multiply rather than repeat: two points at the same spot really do make two squares.",
+          hint: "If a corner has two copies, how many squares is that?",
+          why: "Two: multiplying counts is what makes duplicates count as distinct squares rather than being collapsed.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "counts = empty map
@@ -3574,11 +8228,32 @@ count(x, y):
       Nudge(
         "Every value has a twin except one, and you're allowed no extra space. Is there an operation under which a pair of equal values wipes itself out — no matter how far apart the two copies sit?",
       ),
-      Steps([
-        "Start an accumulator at 0.",
-        "XOR every value into it: XOR is its own inverse and ignores order, so both copies of any pair cancel wherever they sit.",
-        "Return the accumulator — the lone value is all that survives.",
-        "If asked for an alternative: twice the sum of the distinct values minus the actual total gives the same answer, but it needs a set (extra space) and leans on every other value appearing exactly twice.",
+      Walk([
+        WalkStep(
+          step: "Start an accumulator at 0.",
+          hint: "What is the identity for XOR?",
+          why: "0, so the accumulator starts there.",
+          code: "result = 0",
+        ),
+        WalkStep(
+          step: "XOR every value into it: XOR is its own inverse and ignores order, so both copies of any pair cancel wherever they sit.",
+          hint: "What happens when the same value is XOR-ed twice, in any order?",
+          why: "It cancels, because XOR is its own inverse and commutative; every pair vanishes wherever its copies sit.",
+          code: "for n in nums:
+    result = result XOR n",
+        ),
+        WalkStep(
+          step: "Return the accumulator — the lone value is all that survives.",
+          hint: "What survives?",
+          why: "The single value; O(n) time, O(1) space.",
+          code: "return result",
+        ),
+        WalkStep(
+          step: "If asked for an alternative: twice the sum of the distinct values minus the actual total gives the same answer, but it needs a set (extra space) and leans on every other value appearing exactly twice.",
+          hint: "What is the arithmetic alternative, and what does it assume?",
+          why: "Twice the sum of distinct values minus the total; it needs a set and relies on every other value appearing exactly twice.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "result = 0
@@ -3591,12 +8266,39 @@ return result",
       Nudge(
         "You could inspect all 32 bit positions one by one — but do the zeros deserve any of your time? Is there a way to jump straight from one set bit to the next?",
       ),
-      Steps([
-        "Loop while n is nonzero, counting one iteration per set bit.",
-        "Each round, replace n with n AND (n - 1): that clears the lowest set bit and touches nothing else.",
-        "Return the count — the loop ran once per 1 bit, not once per bit position.",
-        "Keep the trick in your fingers: n AND (n - 1) == 0 is also the power-of-two test.",
-        "The plain alternative — shift right and test the bottom bit 32 times — works everywhere but always costs 32 steps, and the sign bit needs care on a right shift.",
+      Walk([
+        WalkStep(
+          step: "Loop while n is nonzero, counting one iteration per set bit.",
+          hint: "How many iterations should counting set bits take?",
+          why: "One per set bit, so the loop runs while n is nonzero rather than a fixed 32 times.",
+          code: "count = 0
+while n != 0:",
+        ),
+        WalkStep(
+          step: "Each round, replace n with n AND (n - 1): that clears the lowest set bit and touches nothing else.",
+          hint: "What does n AND (n - 1) do to the binary representation?",
+          why: "Subtracting one flips the lowest set bit and everything below it; AND-ing back clears just that bit.",
+          code: "n = n AND (n - 1)
+    count += 1",
+        ),
+        WalkStep(
+          step: "Return the count — the loop ran once per 1 bit, not once per bit position.",
+          hint: "What does the count represent when the loop ends?",
+          why: "The number of bits cleared, which is the number of 1 bits; O(number of set bits).",
+          code: "return count",
+        ),
+        WalkStep(
+          step: "Keep the trick in your fingers: n AND (n - 1) == 0 is also the power-of-two test.",
+          hint: "What else is that expression good for?",
+          why: "n AND (n - 1) == 0 tests for a power of two, since a power of two has exactly one set bit.",
+          code: "",
+        ),
+        WalkStep(
+          step: "The plain alternative — shift right and test the bottom bit 32 times — works everywhere but always costs 32 steps, and the sign bit needs care on a right shift.",
+          hint: "What does the shift-and-test alternative cost?",
+          why: "Always 32 steps, and a right shift of a negative number needs a logical shift or masking to avoid sign extension.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "count = 0
@@ -3610,12 +8312,38 @@ return count",
       Nudge(
         "You need a bit count for every number up to n. Counting each one from scratch works — but by the time you reach i, you've already counted a lot of smaller numbers. How is i built out of one of them?",
       ),
-      Steps([
-        "Allocate an array of n + 1 zeros; index 0 is already correct.",
-        "See each i as a smaller number with one extra bit on the end: drop the last bit with i >> 1, and that count is already in the array.",
-        "Fill left to right: counts[i] = counts[i >> 1] + (i AND 1).",
-        "Return the array — each entry cost one lookup, so the whole thing is O(n) instead of an O(n log n) sweep of per-number popcounts.",
-        "If asked for a variant recurrence: counts[i] = counts[i AND (i - 1)] + 1 leans on clearing the lowest set bit instead.",
+      Walk([
+        WalkStep(
+          step: "Allocate an array of n + 1 zeros; index 0 is already correct.",
+          hint: "What is the bit count of zero, and what does that give you for free?",
+          why: "Zero, so an array of zeros already has index 0 right and the loop starts at 1.",
+          code: "counts = array of (n + 1) zeros",
+        ),
+        WalkStep(
+          step: "See each i as a smaller number with one extra bit on the end: drop the last bit with i >> 1, and that count is already in the array.",
+          hint: "Strip the last bit off i. Is the count for the result already known?",
+          why: "i >> 1 is smaller than i, so its count was filled earlier; the recurrence reuses work instead of counting from scratch.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Fill left to right: counts[i] = counts[i >> 1] + (i AND 1).",
+          hint: "What does the last bit add back?",
+          why: "i AND 1 is 1 exactly when i is odd, so each entry is one lookup plus one addition.",
+          code: "for i in 1..n:
+    counts[i] = counts[i >> 1] + (i AND 1)",
+        ),
+        WalkStep(
+          step: "Return the array — each entry cost one lookup, so the whole thing is O(n) instead of an O(n log n) sweep of per-number popcounts.",
+          hint: "How does this compare with counting bits of every number separately?",
+          why: "Per-number popcount is O(log n) each, O(n log n) total; the recurrence makes the whole table O(n).",
+          code: "return counts",
+        ),
+        WalkStep(
+          step: "If asked for a variant recurrence: counts[i] = counts[i AND (i - 1)] + 1 leans on clearing the lowest set bit instead.",
+          hint: "What other recurrence clears one bit at a time?",
+          why: "i AND (i - 1) clears the lowest set bit, so counts[i] = counts[i AND (i - 1)] + 1 works the same way.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "counts = array of (n + 1) zeros
@@ -3628,12 +8356,38 @@ return counts",
       Nudge(
         "Reversing feels like peeling from one end and stacking onto the other. The real question is about the width: what do the leading zeros of a small input become in the answer, and what does that say about when you may stop?",
       ),
-      Steps([
-        "Start the result at 0.",
-        "Each round, shift the result left one place and OR in the bottom bit of the input, then shift the input right one — first bit out is last bit in.",
-        "Run exactly 32 rounds, no fewer: the loop count comes from the width, not from the value.",
-        "Do not stop early when the input hits zero — the leading zeros of a small input are exactly the trailing zeros the answer needs.",
-        "Return the result.",
+      Walk([
+        WalkStep(
+          step: "Start the result at 0.",
+          hint: "What does the result start as?",
+          why: "0, with bits shifted into it from the right.",
+          code: "result = 0",
+        ),
+        WalkStep(
+          step: "Each round, shift the result left one place and OR in the bottom bit of the input, then shift the input right one — first bit out is last bit in.",
+          hint: "What does one round move?",
+          why: "The input's bottom bit into the result's bottom, after shifting the result left; first bit out is last bit in.",
+          code: "result = (result << 1) OR (n AND 1)
+    n = n >> 1",
+        ),
+        WalkStep(
+          step: "Run exactly 32 rounds, no fewer: the loop count comes from the width, not from the value.",
+          hint: "How many rounds?",
+          why: "Exactly 32, from the width, not from the value.",
+          code: "repeat 32 times:",
+        ),
+        WalkStep(
+          step: "Do not stop early when the input hits zero — the leading zeros of a small input are exactly the trailing zeros the answer needs.",
+          hint: "What goes wrong if you stop when the input reaches zero?",
+          why: "A small input's leading zeros are the answer's trailing zeros, so stopping early leaves the result unshifted.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Return the result.",
+          hint: "What remains?",
+          why: "Return the result; O(1) fixed work.",
+          code: "return result",
+        ),
       ]),
       Pseudocode(
         "result = 0
@@ -3647,12 +8401,38 @@ return result",
       Nudge(
         "The numbers 0 to n, with one absent. If every present value could somehow meet the index it belongs to, they would all pair off — what operation makes each pairing vanish, and what would the one unpaired thing leave behind?",
       ),
-      Steps([
-        "Start the result at n — the one index the loop below never visits.",
-        "Walk the array, XOR-ing both the index and the value at it into the result.",
-        "Every present number meets its own index and the pair cancels; the missing number's index has no partner, so it survives as the answer.",
-        "Return the result.",
-        "If asked for the arithmetic version: expected sum n(n + 1)/2 minus the actual sum reads better, but the intermediate can overflow in a fixed-width language where the XOR cannot.",
+      Walk([
+        WalkStep(
+          step: "Start the result at n — the one index the loop below never visits.",
+          hint: "XOR pairs indices with values. Which index will the loop never produce?",
+          why: "n itself, so seeding the result with n supplies the one value that has no loop iteration.",
+          code: "result = n",
+        ),
+        WalkStep(
+          step: "Walk the array, XOR-ing both the index and the value at it into the result.",
+          hint: "What does XOR do with a number that appears twice?",
+          why: "Cancels it, since x XOR x is 0; XOR-ing every index and every value pairs each present number with its own index.",
+          code: "for i in 0..n-1:
+    result = result XOR i XOR nums[i]",
+        ),
+        WalkStep(
+          step: "Every present number meets its own index and the pair cancels; the missing number's index has no partner, so it survives as the answer.",
+          hint: "Which number survives the cancelling?",
+          why: "The one index with no matching value, which is the missing number; O(n) time, O(1) space.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Return the result.",
+          hint: "What is left to do?",
+          why: "Return the accumulated result.",
+          code: "return result",
+        ),
+        WalkStep(
+          step: "If asked for the arithmetic version: expected sum n(n + 1)/2 minus the actual sum reads better, but the intermediate can overflow in a fixed-width language where the XOR cannot.",
+          hint: "Why prefer XOR to the arithmetic formula?",
+          why: "n(n + 1)/2 reads better but can overflow fixed-width integers on the way; XOR never grows.",
+          code: "",
+        ),
       ]),
       Pseudocode(
         "result = n
@@ -3665,12 +8445,43 @@ return result",
       Nudge(
         "Addition without + sounds impossible until you split what addition does into two jobs. Column by column, what happens in the columns that don't overflow — and separately, where do the carries go? Which bitwise operators do those two jobs?",
       ),
-      Steps([
-        "XOR the two numbers: that is addition with the carries forgotten.",
-        "AND the two numbers and shift left one: that is exactly the carries, moved to the column they are owed to.",
-        "Loop: replace a with the XOR and b with the shifted carry, until the carry is zero; a is the sum.",
-        "In a fixed-width language this just works; with arbitrary-precision integers (Python), mask both values and every intermediate to 32 bits or a negative's carry never dies out.",
-        "After masking, read the sign back by hand: a 32-bit pattern above the signed maximum is a negative number.",
+      Walk([
+        WalkStep(
+          step: "XOR the two numbers: that is addition with the carries forgotten.",
+          hint: "What does XOR compute for two bit columns?",
+          why: "The sum bit with carries forgotten.",
+          code: "",
+        ),
+        WalkStep(
+          step: "AND the two numbers and shift left one: that is exactly the carries, moved to the column they are owed to.",
+          hint: "Where do the carries come from, and where do they go?",
+          why: "AND finds columns where both bits are 1; shifting left moves each carry to the column it is owed to.",
+          code: "carry = ((a AND b) << 1) AND MASK",
+        ),
+        WalkStep(
+          step: "Loop: replace a with the XOR and b with the shifted carry, until the carry is zero; a is the sum.",
+          hint: "How do the two pieces combine into a sum?",
+          why: "Repeat with a as the XOR and b as the carry until no carry remains; at most 32 rounds.",
+          code: "while b != 0:
+    a = (a XOR b) AND MASK
+    b = carry",
+        ),
+        WalkStep(
+          step: "In a fixed-width language this just works; with arbitrary-precision integers (Python), mask both values and every intermediate to 32 bits or a negative's carry never dies out.",
+          hint: "Why does Python need masking when C does not?",
+          why: "Its integers are unbounded, so a negative number's carry never dies out; masking to 32 bits restores wraparound.",
+          code: "MASK = 0xFFFFFFFF
+MAX_SIGNED = 0x7FFFFFFF
+a = a AND MASK
+b = b AND MASK",
+        ),
+        WalkStep(
+          step: "After masking, read the sign back by hand: a 32-bit pattern above the signed maximum is a negative number.",
+          hint: "After masking, how do you recover a negative result?",
+          why: "A pattern above the signed maximum is negative in two's complement; convert it by hand.",
+          code: "if a <= MAX_SIGNED: return a
+return -((a XOR MASK) + 1)",
+        ),
       ]),
       Pseudocode(
         "MASK = 0xFFFFFFFF
@@ -3689,12 +8500,43 @@ return -((a XOR MASK) + 1)",
       Nudge(
         "Peeling digits off one number and pushing them onto another is the easy part. The whole problem is the 32-bit boundary: at what exact moment would the value be destroyed, and is a check after that moment worth anything?",
       ),
-      Steps([
-        "Record the sign and work with the absolute value.",
-        "Loop while digits remain: peel the bottom digit with mod 10, push it with result = result * 10 + digit, drop it with integer division.",
-        "Test for overflow BEFORE the multiply: if result already exceeds MAX div 10, the next push cannot fit — return 0.",
-        "The order matters because in a fixed-width language the multiply is where the value is lost; checking afterwards inspects a number that no longer exists.",
-        "Reapply the sign and do a final range check against the signed 32-bit bounds, returning 0 outside them.",
+      Walk([
+        WalkStep(
+          step: "Record the sign and work with the absolute value.",
+          hint: "What should be separated out before reversing digits?",
+          why: "The sign; work with the absolute value and reapply it at the end.",
+          code: "sign = -1 if x < 0 else 1
+remaining = abs(x)
+result = 0",
+        ),
+        WalkStep(
+          step: "Loop while digits remain: peel the bottom digit with mod 10, push it with result = result * 10 + digit, drop it with integer division.",
+          hint: "How does one digit move from the input to the result?",
+          why: "Peel it with mod 10, push it with result * 10 + digit, drop it with integer division.",
+          code: "while remaining != 0:
+    result = result * 10 + (remaining mod 10)
+    remaining = remaining div 10",
+        ),
+        WalkStep(
+          step: "Test for overflow BEFORE the multiply: if result already exceeds MAX div 10, the next push cannot fit — return 0.",
+          hint: "When must the overflow check happen?",
+          why: "Before the multiply: if result already exceeds MAX div 10 the next push cannot fit.",
+          code: "if result > MAX div 10: return 0",
+        ),
+        WalkStep(
+          step: "The order matters because in a fixed-width language the multiply is where the value is lost; checking afterwards inspects a number that no longer exists.",
+          hint: "Why not check after multiplying?",
+          why: "In a fixed-width language the multiply is where the value is lost, so an after-check inspects a number that no longer exists.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Reapply the sign and do a final range check against the signed 32-bit bounds, returning 0 outside them.",
+          hint: "What finishes it?",
+          why: "Reapply the sign and do a final range check against the signed 32-bit bounds.",
+          code: "result = result * sign
+if result > MAX or result < MIN: return 0
+return result",
+        ),
       ]),
       Pseudocode(
         "MAX = 2147483647
@@ -3715,208 +8557,674 @@ return result",
       Nudge(
         "Both functions are the same counting question asked twice. Before hand-rolling a dict with get-or-default bookkeeping, ask whether the standard library already ships the counting idiom whole.",
       ),
-      Steps([
-        "Build collections.Counter(nums) once — feed it any iterable and it is a dict of value to count.",
-        "topTwo: Counter.most_common(2) hands back the (value, count) pairs already ordered.",
-        "countOf: index the Counter directly — a missing key reads as 0, so there is no KeyError and no .get dance.",
-        "Remember what you skipped: no manual \"if key in dict\" bookkeeping anywhere.",
+      Walk([
+        WalkStep(
+          step: "Build collections.Counter(nums) once — feed it any iterable and it is a dict of value to count.",
+          hint: "How much code should counting occurrences take?",
+          why: "One line: Counter consumes any iterable and is already a dict from value to count, so the loop and the missing-key check vanish.",
+          code: "counts = Counter(nums)",
+        ),
+        WalkStep(
+          step: "topTwo: Counter.most_common(2) hands back the (value, count) pairs already ordered.",
+          hint: "Does Counter know how to rank its entries?",
+          why: "most_common(k) returns the k largest (value, count) pairs already sorted, so topTwo is a call rather than a sort.",
+          code: "return counts.most_common(2)",
+        ),
+        WalkStep(
+          step: "countOf: index the Counter directly — a missing key reads as 0, so there is no KeyError and no .get dance.",
+          hint: "What does a Counter return for a value it never saw?",
+          why: "Zero, not a KeyError, so direct indexing is safe and .get(value, 0) is unnecessary.",
+          code: "return counts[value]",
+        ),
+        WalkStep(
+          step: "Remember what you skipped: no manual \"if key in dict\" bookkeeping anywhere.",
+          hint: "What bookkeeping did you not write?",
+          why: "No \"if key in dict\" before an increment anywhere; Counter and defaultdict exist to remove exactly that.",
+          code: "",
+        ),
       ]),
     ]
     "defaultdict-for-grouping" -> [
       Nudge(
         "A grouping problem, and the only real friction is the first word of each length: something has to exist before you can append to it. What removes the \"is the key there yet?\" dance entirely?",
       ),
-      Steps([
-        "Create collections.defaultdict(list) — first touch of any key materialises an empty list.",
-        "Walk the words in order, appending each to groups[len(word)] — one append per item, and appending preserves input order for free.",
-        "Convert with dict(groups) at the end, as the prompt asks.",
-        "File the pattern: defaultdict(int) for counters, defaultdict(set) for unique membership.",
+      Walk([
+        WalkStep(
+          step: "Create collections.defaultdict(list) — first touch of any key materialises an empty list.",
+          hint: "What would you otherwise have to write before appending to a key you have not seen?",
+          why: "defaultdict(list) creates the empty list on first touch, removing the \"if key not in groups\" dance and the KeyError it guards against.",
+          code: "groups = defaultdict(list)",
+        ),
+        WalkStep(
+          step: "Walk the words in order, appending each to groups[len(word)] — one append per item, and appending preserves input order for free.",
+          hint: "Does the order words are appended in match the order the output wants?",
+          why: "Appending in input order keeps each group in input order for free, and the whole pass is O(n).",
+          code: "for word in words:
+    groups[len(word)].append(word)",
+        ),
+        WalkStep(
+          step: "Convert with dict(groups) at the end, as the prompt asks.",
+          hint: "Is a defaultdict what the caller asked for?",
+          why: "Converting with dict() drops the default factory so a later lookup of a missing key raises rather than silently inserting.",
+          code: "return dict(groups)",
+        ),
+        WalkStep(
+          step: "File the pattern: defaultdict(int) for counters, defaultdict(set) for unique membership.",
+          hint: "What else does the same trick tidy up?",
+          why: "Counting and unique-membership both start from an empty something; defaultdict(int) and defaultdict(set) remove the same first-touch check there.",
+          code: "",
+        ),
       ]),
     ]
     "deque-for-o-1-popleft" -> [
       Nudge(
         "Breadth-first search is queue-shaped: add at one end, remove from the other. What does removing from the front of a plain Python list actually cost, and what would that silently do to the whole traversal?",
       ),
-      Steps([
-        "Use collections.deque as the queue — list.pop(0) is O(n) and quietly turns BFS quadratic; popleft is O(1).",
-        "Start with deque([start]) and a seen set containing start; mark nodes seen when they are enqueued, not when dequeued.",
-        "Loop while the queue is nonempty: popleft a node and record it in the visit order.",
-        "For each unseen neighbour, add it to seen and append it on the right.",
-        "Return the visit order once the queue drains.",
+      Walk([
+        WalkStep(
+          step: "Use collections.deque as the queue — list.pop(0) is O(n) and quietly turns BFS quadratic; popleft is O(1).",
+          hint: "What does removing the front of a list cost, and what does that do to a BFS?",
+          why: "list.pop(0) shifts every remaining element, so a queue built on it makes BFS O(n²); deque.popleft is O(1).",
+          code: "from collections import deque",
+        ),
+        WalkStep(
+          step: "Start with deque([start]) and a seen set containing start; mark nodes seen when they are enqueued, not when dequeued.",
+          hint: "When should a node be marked seen: when it enters the queue or when it leaves?",
+          why: "On enqueue, or the same node can be queued several times before its first visit; starting with the start node in both is the base case.",
+          code: "queue = deque([start])
+seen = {start}",
+        ),
+        WalkStep(
+          step: "Loop while the queue is nonempty: popleft a node and record it in the visit order.",
+          hint: "What does one iteration of the search do?",
+          why: "Take the oldest node, record it; the queue's order is what makes the visit order breadth-first.",
+          code: "order = []
+while queue:
+    node = queue.popleft()
+    order.append(node)",
+        ),
+        WalkStep(
+          step: "For each unseen neighbour, add it to seen and append it on the right.",
+          hint: "Which neighbours get added, and where?",
+          why: "Unseen ones, marked as they go in and appended on the right so they wait behind everything already queued.",
+          code: "for n in graph[node]:
+        if n not in seen:
+            seen.add(n)
+            queue.append(n)",
+        ),
+        WalkStep(
+          step: "Return the visit order once the queue drains.",
+          hint: "When is the search finished?",
+          why: "When the queue drains; every reachable node was visited once, O(V + E).",
+          code: "return order",
+        ),
       ]),
     ]
     "heapq-for-min-max-heaps" -> [
       Nudge(
         "You repeatedly need the smallest of a changing collection — sorting everything each time is overkill. What structure is built for exactly that ask, and what do you do when the same library only leans one way?",
       ),
-      Steps([
-        "Copy the list and heapq.heapify it — O(n), and it turns a plain list into a min-heap in place.",
-        "kSmallest: heappop k times; each pop is O(log n) and they come out in order.",
-        "kLargest: Python has no max-heap, so negate every value on the way in, heapify, pop k times, and negate again on the way out.",
-        "Keep the costs straight: heapify O(n), push and pop O(log n) each.",
+      Walk([
+        WalkStep(
+          step: "Copy the list and heapq.heapify it — O(n), and it turns a plain list into a min-heap in place.",
+          hint: "What does heapify do to a list, and how fast?",
+          why: "Rearranges it in place into a min-heap in O(n), which is cheaper than n pushes; copying first protects the caller's list.",
+          code: "heap = list(nums)
+heapq.heapify(heap)",
+        ),
+        WalkStep(
+          step: "kSmallest: heappop k times; each pop is O(log n) and they come out in order.",
+          hint: "How do the k smallest come out?",
+          why: "heappop k times, each O(log n), and they arrive in ascending order.",
+          code: "return [heapq.heappop(heap) for _ in range(k)]",
+        ),
+        WalkStep(
+          step: "kLargest: Python has no max-heap, so negate every value on the way in, heapify, pop k times, and negate again on the way out.",
+          hint: "Python has no max-heap. What trick turns the min-heap into one?",
+          why: "Negate on the way in so the largest original is the smallest stored, and negate back on the way out.",
+          code: "heap = [-x for x in nums]
+heapq.heapify(heap)
+return [-heapq.heappop(heap) for _ in range(k)]",
+        ),
+        WalkStep(
+          step: "Keep the costs straight: heapify O(n), push and pop O(log n) each.",
+          hint: "Which operation is linear and which are logarithmic?",
+          why: "heapify is O(n); push and pop are O(log n) each, so k pops cost O(k log n).",
+          code: "",
+        ),
       ]),
     ]
     "enumerate-zip-and-unpacking" -> [
       Nudge(
         "Both loops are tempting to write with range(len(...)). What do you actually need in each — the index alongside the value, or two sequences walking in lockstep — and which builtins hand you exactly that?",
       ),
-      Steps([
-        "firstIndexOf: loop for i, value in enumerate(nums) — index and value arrive together, already named.",
-        "Return i at the first match; return -1 after the loop falls through.",
-        "dotProduct: zip(a, b) walks both sequences in lockstep, yielding pairs.",
-        "Unpack each pair as x, y right in the for clause and sum the products — no [0]/[1] indexing, no range(len(...)) anywhere.",
+      Walk([
+        WalkStep(
+          step: "firstIndexOf: loop for i, value in enumerate(nums) — index and value arrive together, already named.",
+          hint: "You need both the position and the value. What gives you both without indexing?",
+          why: "enumerate yields (index, value) pairs, so range(len(nums)) and nums[i] both disappear.",
+          code: "for i, value in enumerate(nums):",
+        ),
+        WalkStep(
+          step: "Return i at the first match; return -1 after the loop falls through.",
+          hint: "What does the loop return, and what if it never matches?",
+          why: "Return the index at the first match; a return after the loop is the not-found case and only runs if the loop finishes.",
+          code: "if value == target: return i
+return -1",
+        ),
+        WalkStep(
+          step: "dotProduct: zip(a, b) walks both sequences in lockstep, yielding pairs.",
+          hint: "Two sequences must be walked in step. What pairs them up?",
+          why: "zip stops at the shorter sequence and yields one pair per position, so no index arithmetic is needed.",
+          code: "for x, y in zip(a, b):",
+        ),
+        WalkStep(
+          step: "Unpack each pair as x, y right in the for clause and sum the products — no [0]/[1] indexing, no range(len(...)) anywhere.",
+          hint: "Where can a pair be split into two names?",
+          why: "Right in the for clause, so the body reads x * y rather than pair[0] * pair[1]; sum over a generator finishes it.",
+          code: "return sum(x * y for x, y in zip(a, b))",
+        ),
       ]),
     ]
     "slicing-and-reversal" -> [
       Nudge(
         "Four string functions and not a loop in sight — s[a:b:step] can express all of them. Which start, stop, and step does each one need, and which edge case does the notation not handle for you?",
       ),
-      Steps([
-        "reversedString: s[::-1] — the famous step of -1 walks the whole string backwards.",
-        "everySecond: s[::2] takes the characters at even indices.",
-        "lastN: s[-n:] counts from the end, but guard n <= 0 yourself first and return \"\" — a negative index of 0 does not mean \"last zero characters\".",
-        "trimEnds: s[1:-1] drops the first and last character in one slice.",
-        "Remember slices never mutate — every one of these returns a new sequence, and [:] alone is the idiomatic copy.",
+      Walk([
+        WalkStep(
+          step: "reversedString: s[::-1] — the famous step of -1 walks the whole string backwards.",
+          hint: "What does a step of -1 do in a slice?",
+          why: "Walks the sequence backwards, so [::-1] is the reversal.",
+          code: "return s[::-1]",
+        ),
+        WalkStep(
+          step: "everySecond: s[::2] takes the characters at even indices.",
+          hint: "How do you take every second character?",
+          why: "A step of 2 from the start.",
+          code: "return s[::2]",
+        ),
+        WalkStep(
+          step: "lastN: s[-n:] counts from the end, but guard n <= 0 yourself first and return \"\" — a negative index of 0 does not mean \"last zero characters\".",
+          hint: "What is the trap in taking the last n characters?",
+          why: "s[-0:] is the whole string, so guard n <= 0 and return \"\" yourself.",
+          code: "if n <= 0: return \"\"
+return s[-n:]",
+        ),
+        WalkStep(
+          step: "trimEnds: s[1:-1] drops the first and last character in one slice.",
+          hint: "How do you drop the first and last character together?",
+          why: "One slice from 1 to -1.",
+          code: "return s[1:-1]",
+        ),
+        WalkStep(
+          step: "Remember slices never mutate — every one of these returns a new sequence, and [:] alone is the idiomatic copy.",
+          hint: "Do slices change the original?",
+          why: "Never; each returns a new sequence, and [:] alone is the idiomatic copy.",
+          code: "",
+        ),
       ]),
     ]
     "sorting-with-a-key" -> [
       Nudge(
         "You want the list ordered by something other than the values themselves. Where does that \"something\" plug into the sort — and how do you say \"this field ascending, that field descending\" in one go?",
       ),
-      Steps([
-        "Pass a key function: it maps each element to what it should be compared by, and the sort orders by that.",
-        "sortByLength: sorted(words, key=len) — a bare builtin is a perfectly good key.",
-        "sortPairs: return a tuple from the key, (name, -score) — tuples compare field by field, and negating a number flips just that field to descending.",
-        "Keep the pair straight: sort mutates the list in place, sorted returns a new one — these prompts want sorted.",
+      Walk([
+        WalkStep(
+          step: "Pass a key function: it maps each element to what it should be compared by, and the sort orders by that.",
+          hint: "How do you tell a sort what to compare by?",
+          why: "A key function mapping each element to its comparison value.",
+          code: "sorted(items, key=...)",
+        ),
+        WalkStep(
+          step: "sortByLength: sorted(words, key=len) — a bare builtin is a perfectly good key.",
+          hint: "What key sorts words by length?",
+          why: "The builtin len itself.",
+          code: "sorted(words, key=len)",
+        ),
+        WalkStep(
+          step: "sortPairs: return a tuple from the key, (name, -score) — tuples compare field by field, and negating a number flips just that field to descending.",
+          hint: "How do you sort by name ascending and score descending at once?",
+          why: "Return a tuple; tuples compare field by field, and negating the score flips just that field.",
+          code: "sorted(pairs, key=lambda p: (p[0], -p[1]))",
+        ),
+        WalkStep(
+          step: "Keep the pair straight: sort mutates the list in place, sorted returns a new one — these prompts want sorted.",
+          hint: "What is the difference between sort and sorted?",
+          why: "sort mutates in place and returns None; sorted returns a new list, which these prompts want.",
+          code: "",
+        ),
       ]),
     ]
     "building-strings-efficiently" -> [
       Nudge(
         "Concatenating with += in a loop looks harmless. But strings are immutable — so what does each += actually do to everything built so far, and what does that add up to across the loop?",
       ),
-      Steps([
-        "Recognise the trap: every += copies the whole string built so far, so the loop is O(n squared).",
-        "Collect the pieces in a list instead — appending to a list is O(1).",
-        "Append each character's uppercased form as you walk the input.",
-        "Join once at the end with \"\".join(parts) — one O(n) pass builds the final string.",
+      Walk([
+        WalkStep(
+          step: "Recognise the trap: every += copies the whole string built so far, so the loop is O(n squared).",
+          hint: "What does the runtime do each time you append to an immutable string?",
+          why: "Every += copies the whole accumulated string, so n appends touch O(n²) characters; the cost is invisible in the code and brutal on long input.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Collect the pieces in a list instead — appending to a list is O(1).",
+          hint: "Which structure lets you add a piece in constant time?",
+          why: "A list append is amortised O(1), so collecting pieces and joining once is O(n) overall.",
+          code: "pieces = []",
+        ),
+        WalkStep(
+          step: "Append each character's uppercased form as you walk the input.",
+          hint: "What goes into the list on each step of the loop?",
+          why: "Each transformed character, ready for one join; the transformation stays inside the loop, the concatenation does not.",
+          code: "for ch in text:
+    pieces.append(ch.upper())",
+        ),
+        WalkStep(
+          step: "Join once at the end with \"\".join(parts) — one O(n) pass builds the final string.",
+          hint: "How do the pieces become one string without another quadratic loop?",
+          why: "A single join measures the total once and copies each piece once, so the final build is one O(n) pass.",
+          code: "return \"\".join(pieces)",
+        ),
       ]),
     ]
     "pattern-matching-on-lists" -> [
       Nudge(
         "There is no loop keyword coming to save you. A Gleam list can only ever be one of two shapes — which two? — and once you name them in a case expression, what does \"the rest of the work\" become?",
       ),
-      Steps([
-        "Write every list function as a case over [] and [head, ..tail]; recursion on the tail replaces the loop.",
-        "length: [] is 0; [_, ..rest] is 1 + length(rest).",
-        "last: the last element matters, so add the third classic pattern [only] between the other two.",
-        "last on [] is Error(Nil), [only] is Ok(only), and [_, ..rest] just recurses — the answer lives at the end.",
-        "Check each case body only handles its own shape; the compiler's exhaustiveness check does the rest.",
+      Walk([
+        WalkStep(
+          step: "Write every list function as a case over [] and [head, ..tail]; recursion on the tail replaces the loop.",
+          hint: "What two shapes can any list have?",
+          why: "Empty, or a head followed by a tail; matching those two is the loop.",
+          code: "case list {
+  [] -> ...
+  [head, ..tail] -> ...
+}",
+        ),
+        WalkStep(
+          step: "length: [] is 0; [_, ..rest] is 1 + length(rest).",
+          hint: "How does length read in those terms?",
+          why: "Empty is 0; otherwise one plus the length of the tail.",
+          code: "case list {
+  [] -> 0
+  [_, ..rest] -> 1 + length(rest)
+}",
+        ),
+        WalkStep(
+          step: "last: the last element matters, so add the third classic pattern [only] between the other two.",
+          hint: "Which extra pattern does last need?",
+          why: "The single-element list, [only], because that is where the answer is found.",
+          code: "",
+        ),
+        WalkStep(
+          step: "last on [] is Error(Nil), [only] is Ok(only), and [_, ..rest] just recurses — the answer lives at the end.",
+          hint: "What are the three arms of last?",
+          why: "Empty is an error, one element is the answer, and anything longer recurses on the tail.",
+          code: "case list {
+  [] -> Error(Nil)
+  [only] -> Ok(only)
+  [_, ..rest] -> last(rest)
+}",
+        ),
+        WalkStep(
+          step: "Check each case body only handles its own shape; the compiler's exhaustiveness check does the rest.",
+          hint: "What should each arm handle, and who checks the rest?",
+          why: "Only its own shape; the compiler's exhaustiveness check guarantees nothing is missed.",
+          code: "",
+        ),
       ]),
     ]
     "tail-recursion-with-accumulators" -> [
       Nudge(
         "Plain recursion piles up stack frames because work is left waiting after each call returns. Where else could the work-in-progress live — and what does the call have to look like for the compiler to turn the recursion into a loop?",
       ),
-      Steps([
-        "Split each function in two: a public wrapper that supplies the starting value, and a private helper carrying the work-in-progress as an extra argument.",
-        "Make the recursive call the LAST thing the helper does — that tail position is what lets the compiler compile it to a loop with no stack growth.",
-        "reverse: accumulator starts at [], and prepending each head builds the list backwards, which is exactly reversed.",
-        "sum: accumulator starts at 0 and each step adds the head.",
-        "On [], the helper just returns the accumulator — the answer was built on the way down, not the way back up.",
+      Walk([
+        WalkStep(
+          step: "Split each function in two: a public wrapper that supplies the starting value, and a private helper carrying the work-in-progress as an extra argument.",
+          hint: "Why split each function into a wrapper and a helper?",
+          why: "The helper needs an extra argument for the work in progress; the wrapper hides that from callers and supplies the start value.",
+          code: "pub fn sum(xs) { do_sum(xs, 0) }",
+        ),
+        WalkStep(
+          step: "Make the recursive call the LAST thing the helper does — that tail position is what lets the compiler compile it to a loop with no stack growth.",
+          hint: "Where must the recursive call sit for the compiler to make it a loop?",
+          why: "In tail position, as the last thing the helper does; then no stack frame is kept.",
+          code: "",
+        ),
+        WalkStep(
+          step: "reverse: accumulator starts at [], and prepending each head builds the list backwards, which is exactly reversed.",
+          hint: "What accumulator reverses a list?",
+          why: "Start from [] and prepend each head; prepending builds the list backwards, which is the reversal.",
+          code: "fn do_reverse(xs, acc) {
+  case xs {
+    [] -> acc
+    [head, ..rest] -> do_reverse(rest, [head, ..acc])
+  }
+}",
+        ),
+        WalkStep(
+          step: "sum: accumulator starts at 0 and each step adds the head.",
+          hint: "And for a sum?",
+          why: "Start from 0 and add each head.",
+          code: "fn do_sum(xs, acc) {
+  case xs {
+    [] -> acc
+    [head, ..rest] -> do_sum(rest, acc + head)
+  }
+}",
+        ),
+        WalkStep(
+          step: "On [], the helper just returns the accumulator — the answer was built on the way down, not the way back up.",
+          hint: "What happens on the empty list?",
+          why: "Return the accumulator: the answer was built on the way down, not assembled on the way back up.",
+          code: "",
+        ),
       ]),
     ]
     "fold-is-the-loop" -> [
       Nudge(
         "All three of these walk a list while carrying some running state. That shape has a name and a single library function — what are its two ingredients, and which variant do you need when the intermediate values are the answer?",
       ),
-      Steps([
-        "Name the two ingredients for each function: an initial accumulator and a function combining accumulator with element — that pair is the whole fold.",
-        "max: an empty list has no max, so case first; on [first, ..rest], fold rest starting from first, keeping the larger each step.",
-        "count_if: fold from 0, adding 1 whenever the predicate holds.",
-        "running_total: list.scan is fold that keeps every intermediate accumulator — fold from 0 with addition and the running totals fall out.",
-        "No hand-written recursion anywhere: if you typed a case over [head, ..tail], back up.",
+      Walk([
+        WalkStep(
+          step: "Name the two ingredients for each function: an initial accumulator and a function combining accumulator with element — that pair is the whole fold.",
+          hint: "Every loop has a starting value and a way to combine one more element. What are those called in a fold?",
+          why: "The initial accumulator and the combining function; naming them is the whole design of each function.",
+          code: "",
+        ),
+        WalkStep(
+          step: "max: an empty list has no max, so case first; on [first, ..rest], fold rest starting from first, keeping the larger each step.",
+          hint: "What is the max of an empty list, and how does that shape the code?",
+          why: "There is none, so match first; on a non-empty list fold the rest starting from the head, keeping the larger each step.",
+          code: "case xs {
+  [] -> Error(Nil)
+  [first, ..rest] -> Ok(list.fold(rest, first, int.max))
+}",
+        ),
+        WalkStep(
+          step: "count_if: fold from 0, adding 1 whenever the predicate holds.",
+          hint: "What accumulator does counting need?",
+          why: "An integer starting at 0, incremented when the predicate holds.",
+          code: "list.fold(xs, 0, fn(n, x) { case pred(x) { True -> n + 1 False -> n } })",
+        ),
+        WalkStep(
+          step: "running_total: list.scan is fold that keeps every intermediate accumulator — fold from 0 with addition and the running totals fall out.",
+          hint: "Running totals need every intermediate value. Which fold variant keeps them?",
+          why: "list.scan is fold that emits each accumulator, so scanning with addition from 0 yields the running totals.",
+          code: "list.scan(xs, 0, fn(total, x) { total + x })",
+        ),
+        WalkStep(
+          step: "No hand-written recursion anywhere: if you typed a case over [head, ..tail], back up.",
+          hint: "What should you not see anywhere in these solutions?",
+          why: "A hand-written recursive case over [head, ..tail]; fold and scan are that recursion, already written.",
+          code: "",
+        ),
       ]),
     ]
     "frequency-maps-with-dict-upsert" -> [
       Nudge(
         "A counting problem, and the sticking point is incrementing a key that may not exist yet. Is there a dict operation that hands you \"what's there, if anything\" and stores whatever you answer — so the get-then-insert dance disappears?",
       ),
-      Steps([
-        "Normalise first, as a pipeline: string.lowercase, string.split on \" \", list.filter out the empty strings.",
-        "Fold the words over dict.new() as the accumulator.",
-        "Inside the fold, dict.upsert(counts, word, fn) — the callback receives Some(current) or None and stores what it returns.",
-        "The callback body is one line: option.unwrap(n, 0) + 1 — absent reads as 0, then increment.",
-        "The whole function is one pipeline ending in the fold; no case expressions needed.",
+      Walk([
+        WalkStep(
+          step: "Normalise first, as a pipeline: string.lowercase, string.split on \" \", list.filter out the empty strings.",
+          hint: "What cleaning does the text need before anything is counted?",
+          why: "Lowercase so case does not split a word, split on spaces, and drop the empty strings that repeated spaces produce; as a pipeline it reads as the three steps.",
+          code: "text
+|> string.lowercase
+|> string.split(\" \")
+|> list.filter(fn(w) { w != \"\" })",
+        ),
+        WalkStep(
+          step: "Fold the words over dict.new() as the accumulator.",
+          hint: "With a list of words, what replaces the mutable loop that fills a map?",
+          why: "A fold over the words with an empty dict as the accumulator; each word returns the next dict.",
+          code: "|> list.fold(dict.new(), fn(counts, word) {",
+        ),
+        WalkStep(
+          step: "Inside the fold, dict.upsert(counts, word, fn) — the callback receives Some(current) or None and stores what it returns.",
+          hint: "How do you increment a key that may not exist yet, in one call?",
+          why: "dict.upsert hands the callback Some(current) or None and stores whatever it returns, so present and absent are one code path.",
+          code: "dict.upsert(counts, word, fn(n) {",
+        ),
+        WalkStep(
+          step: "The callback body is one line: option.unwrap(n, 0) + 1 — absent reads as 0, then increment.",
+          hint: "What is the callback for a count?",
+          why: "Absent reads as 0, then add one; option.unwrap does the defaulting.",
+          code: "option.unwrap(n, 0) + 1
+  })
+})",
+        ),
+        WalkStep(
+          step: "The whole function is one pipeline ending in the fold; no case expressions needed.",
+          hint: "Is there any branching left?",
+          why: "None: the pipeline ends in the fold and the upsert callback handles both cases, so no case expression appears.",
+          code: "",
+        ),
       ]),
     ]
     "result-chains-with-use" -> [
       Nudge(
         "Three things can go wrong here, one after another. Write it with case expressions and you get a pyramid that drifts off the right edge — what does Gleam offer to flatten \"try this, and if it worked, keep going\"?",
       ),
-      Steps([
-        "Chain each fallible step with use x <- result.try(...): it binds the Ok value and continues, or short-circuits the whole function with the Error.",
-        "Parse port with use port <- result.try(int.parse(port)), then timeout the same way — each line reads like a straight assignment.",
-        "Validate the host with a final case: \"\" is Error(Nil), anything else builds Ok(Config(host, port, timeout)).",
-        "Read the idiom as early-return for Results — the failure paths are all invisible plumbing.",
+      Walk([
+        WalkStep(
+          step: "Chain each fallible step with use x <- result.try(...): it binds the Ok value and continues, or short-circuits the whole function with the Error.",
+          hint: "What does `use x <- result.try(...)` do on Ok and on Error?",
+          why: "Binds the value and continues, or returns the Error from the whole function; it is early return for Results.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Parse port with use port <- result.try(int.parse(port)), then timeout the same way — each line reads like a straight assignment.",
+          hint: "How do the two parses read once written that way?",
+          why: "Like plain assignments, one per line, with no visible error handling.",
+          code: "use port <- result.try(int.parse(port))
+use timeout <- result.try(int.parse(timeout))",
+        ),
+        WalkStep(
+          step: "Validate the host with a final case: \"\" is Error(Nil), anything else builds Ok(Config(host, port, timeout)).",
+          hint: "What does the last step do, and why is it a case rather than a try?",
+          why: "Validates the host and builds the Config; there is no Result to unwrap, just a decision to make.",
+          code: "case host {
+  \"\" -> Error(Nil)
+  _ -> Ok(Config(host, port, timeout))
+}",
+        ),
+        WalkStep(
+          step: "Read the idiom as early-return for Results — the failure paths are all invisible plumbing.",
+          hint: "What has disappeared from the code?",
+          why: "Every failure branch; they are plumbing inside result.try, and the happy path is all that is written.",
+          code: "",
+        ),
       ]),
     ]
     "option-ergonomics" -> [
       Nudge(
         "The value might be there, it might not — and case expressions are off the table. Can the pipeline itself say \"transform it if present, fall back if not\", one small function per clause of that sentence?",
       ),
-      Steps([
-        "dict.get returns a Result; convert it with option.from_result to enter Option territory.",
-        "option.map applies the \"if present\" transformation — append \" (configured)\" to the raw value — and skips it on None.",
-        "option.unwrap supplies the fallback, \"8080 (default)\", collapsing the Option back to a plain String.",
-        "Chain all three with |> so the maybe-missing value flows straight through, then prepend \"port: \" to the result.",
-        "Reach for this shape whenever the code is a straight pipeline over one maybe-missing value; a case expression would say the same thing in twice the lines.",
+      Walk([
+        WalkStep(
+          step: "dict.get returns a Result; convert it with option.from_result to enter Option territory.",
+          hint: "dict.get gives a Result. Which type does the rest of the pipeline want?",
+          why: "Option, so option.from_result converts once at the boundary.",
+          code: "dict.get(config, \"port\")
+|> option.from_result",
+        ),
+        WalkStep(
+          step: "option.map applies the \"if present\" transformation — append \" (configured)\" to the raw value — and skips it on None.",
+          hint: "How do you transform the value only when it is present?",
+          why: "option.map applies the function on Some and passes None through untouched.",
+          code: "|> option.map(fn(v) { v <> \" (configured)\" })",
+        ),
+        WalkStep(
+          step: "option.unwrap supplies the fallback, \"8080 (default)\", collapsing the Option back to a plain String.",
+          hint: "How does the Option become a plain String?",
+          why: "option.unwrap with the default collapses both cases.",
+          code: "|> option.unwrap(\"8080 (default)\")",
+        ),
+        WalkStep(
+          step: "Chain all three with |> so the maybe-missing value flows straight through, then prepend \"port: \" to the result.",
+          hint: "What does the chain look like end to end?",
+          why: "One pipeline where the maybe-missing value flows straight through, then a final prefix on the result.",
+          code: "\"port: \" <> (... pipeline ...)",
+        ),
+        WalkStep(
+          step: "Reach for this shape whenever the code is a straight pipeline over one maybe-missing value; a case expression would say the same thing in twice the lines.",
+          hint: "When is this shape the right choice over a case expression?",
+          why: "Whenever the code is a straight transformation of one optional value; case says the same in twice the lines.",
+          code: "",
+        ),
       ]),
     ]
     "string-prefix-patterns-and-graphemes" -> [
       Nudge(
         "One function cares only about how the string starts; the other needs to look at individual characters. Gleam's case can match more of a string than you might expect — and when it can't, what turns a string into something the list functions can chew on?",
       ),
-      Steps([
-        "strip_comment: case on the string itself with prefix patterns — \"# \" <> rest binds everything after the prefix directly.",
-        "Order the branches from most to least specific (\"# \" before \"#\"), with a catch-all returning the line unchanged.",
-        "initials: split the name on \" \" to get words.",
-        "list.filter_map with string.to_graphemes plus list.first grabs each word's first character and drops empty words in the same pass.",
-        "Concatenate and uppercase the collected letters.",
+      Walk([
+        WalkStep(
+          step: "strip_comment: case on the string itself with prefix patterns — \"# \" <> rest binds everything after the prefix directly.",
+          hint: "How do you match a string that starts with a known prefix and bind the rest?",
+          why: "A prefix pattern in case: \"# \" <> rest binds everything after it.",
+          code: "case line {
+  \"# \" <> rest -> rest",
+        ),
+        WalkStep(
+          step: "Order the branches from most to least specific (\"# \" before \"#\"), with a catch-all returning the line unchanged.",
+          hint: "In which order must the branches go?",
+          why: "Most specific first, so \"# \" is tried before \"#\", with a catch-all last.",
+          code: "\"#\" <> rest -> rest
+  _ -> line
+}",
+        ),
+        WalkStep(
+          step: "initials: split the name on \" \" to get words.",
+          hint: "How does a name become words?",
+          why: "Split on a space.",
+          code: "string.split(name, \" \")",
+        ),
+        WalkStep(
+          step: "list.filter_map with string.to_graphemes plus list.first grabs each word's first character and drops empty words in the same pass.",
+          hint: "How do you take each word's first letter and drop empty words in one pass?",
+          why: "filter_map with to_graphemes and list.first: an empty word gives Error and is dropped.",
+          code: "|> list.filter_map(fn(w) { w |> string.to_graphemes |> list.first })",
+        ),
+        WalkStep(
+          step: "Concatenate and uppercase the collected letters.",
+          hint: "What finishes the initials?",
+          why: "Concatenate the letters and uppercase.",
+          code: "|> string.concat
+|> string.uppercase",
+        ),
       ]),
     ]
     "pipelines" -> [
       Nudge(
         "Written with nested calls, this reads inside-out: the first thing that happens is buried deepest. What operator turns the same five transformations into a top-to-bottom recipe, and what's the telltale sign code wants it?",
       ),
-      Steps([
-        "Start from the input: title |> string.trim.",
-        "Keep piping: |> string.lowercase, |> string.split(\" \") — each result feeds the next call's first argument.",
-        "Drop the empty words with |> list.filter(fn(w) { w != \"\" }) — double spaces would otherwise leave empty segments.",
-        "Finish with |> string.join(\"-\") and the slug falls out; the function body is one expression.",
-        "The telltale sign: if you're naming throwaway intermediate variables, the code probably wants to be a pipeline.",
+      Walk([
+        WalkStep(
+          step: "Start from the input: title |> string.trim.",
+          hint: "What is the first thing to do with a title before splitting it?",
+          why: "Trim it, so stray spaces at the ends do not become empty words.",
+          code: "title |> string.trim",
+        ),
+        WalkStep(
+          step: "Keep piping: |> string.lowercase, |> string.split(\" \") — each result feeds the next call's first argument.",
+          hint: "How does each step receive the previous result?",
+          why: "The pipe passes it as the first argument, so lowercase then split read in order.",
+          code: "|> string.lowercase
+|> string.split(\" \")",
+        ),
+        WalkStep(
+          step: "Drop the empty words with |> list.filter(fn(w) { w != \"\" }) — double spaces would otherwise leave empty segments.",
+          hint: "What does a double space produce after splitting, and how is it removed?",
+          why: "An empty segment; a filter drops them before joining.",
+          code: "|> list.filter(fn(w) { w != \"\" })",
+        ),
+        WalkStep(
+          step: "Finish with |> string.join(\"-\") and the slug falls out; the function body is one expression.",
+          hint: "How does the list become a slug?",
+          why: "Join with a dash; the whole function body is one expression.",
+          code: "|> string.join(\"-\")",
+        ),
+        WalkStep(
+          step: "The telltale sign: if you're naming throwaway intermediate variables, the code probably wants to be a pipeline.",
+          hint: "What in your code hints that a pipeline is wanted?",
+          why: "Throwaway intermediate variables used once each; the pipe removes the names and keeps the order.",
+          code: "",
+        ),
       ]),
     ]
     "records-labelled-args-and-update-syntax" -> [
       Nudge(
         "Records never change in place, yet the game clearly needs a player's score to go up. What does \"modify a field\" mean in a language where nothing mutates — and what syntax says it without re-listing every field?",
       ),
-      Steps([
-        "Define Player with labelled fields, and have new_player construct it with labelled arguments — Player(name: name, level: 1, ...) reads like documentation.",
-        "add_points: return Player(..player, points: player.points + n) — a copy with one field swapped, everything else carried over.",
-        "level_up: same update syntax, changing the fields the level-up touches.",
-        "Remember every update returns a NEW record; the original is untouched, so callers must use the return value.",
+      Walk([
+        WalkStep(
+          step: "Define Player with labelled fields, and have new_player construct it with labelled arguments — Player(name: name, level: 1, ...) reads like documentation.",
+          hint: "What makes a constructor call readable when it has several fields?",
+          why: "Labelled arguments name each field at the call site.",
+          code: "Player(name: name, level: 1, points: 0)",
+        ),
+        WalkStep(
+          step: "add_points: return Player(..player, points: player.points + n) — a copy with one field swapped, everything else carried over.",
+          hint: "How do you change one field of a record without rewriting the rest?",
+          why: "Update syntax copies the record with the named fields replaced.",
+          code: "Player(..player, points: player.points + n)",
+        ),
+        WalkStep(
+          step: "level_up: same update syntax, changing the fields the level-up touches.",
+          hint: "What does level_up look like?",
+          why: "The same update syntax for the fields a level-up touches.",
+          code: "Player(..player, level: player.level + 1, points: 0)",
+        ),
+        WalkStep(
+          step: "Remember every update returns a NEW record; the original is untouched, so callers must use the return value.",
+          hint: "What happens to the original record?",
+          why: "Nothing; every update returns a new record, so callers must use the return value.",
+          code: "",
+        ),
       ]),
     ]
     "gleam-set-for-membership-and-dedupe" -> [
       Nudge(
         "\"Have I seen this before?\" asked once per element — a list answers that slowly, something else answers it fast. And since the output must keep first-seen order, how many things does the fold have to carry?",
       ),
-      Steps([
-        "Answer membership with gleam/set, not a list — set.contains is effectively O(1) where list.contains is O(n).",
-        "Fold over the items carrying a pair #(kept, seen): the deduped list so far plus the set of values already seen.",
-        "When set.contains says the item is old, pass the accumulator through unchanged.",
-        "When it's new, prepend it to kept and insert it into seen.",
-        "Prepending built kept backwards, so list.reverse it at the end to restore first-seen order.",
+      Walk([
+        WalkStep(
+          step: "Answer membership with gleam/set, not a list — set.contains is effectively O(1) where list.contains is O(n).",
+          hint: "What does \"have I seen this\" cost on a list, and on a set?",
+          why: "list.contains scans everything for O(n) per check; set.contains is effectively O(1), so the dedupe stays O(n) overall.",
+          code: "",
+        ),
+        WalkStep(
+          step: "Fold over the items carrying a pair #(kept, seen): the deduped list so far plus the set of values already seen.",
+          hint: "A fold carries one accumulator. What two things does dedupe need to carry?",
+          why: "The kept items and the seen set; a tuple accumulator carries both through one pass.",
+          code: "list.fold(items, #([], set.new()), fn(acc, item) {
+  let #(kept, seen) = acc",
+        ),
+        WalkStep(
+          step: "When set.contains says the item is old, pass the accumulator through unchanged.",
+          hint: "What should happen to an item already in the set?",
+          why: "Nothing: returning the accumulator unchanged is the skip.",
+          code: "case set.contains(seen, item) {
+    True -> acc",
+        ),
+        WalkStep(
+          step: "When it's new, prepend it to kept and insert it into seen.",
+          hint: "And to a new one?",
+          why: "Prepend it to kept and record it in seen; prepending is O(1) where appending would copy the list.",
+          code: "False -> #([item, ..kept], set.insert(seen, item))
+  }
+})",
+        ),
+        WalkStep(
+          step: "Prepending built kept backwards, so list.reverse it at the end to restore first-seen order.",
+          hint: "What order did prepending leave the kept list in?",
+          why: "Reversed, so one list.reverse at the end restores first-seen order.",
+          code: "|> fn(acc) { list.reverse(acc.0) }",
+        ),
       ]),
     ]
     _ -> []

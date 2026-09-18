@@ -185,13 +185,17 @@ suit: linked lists are real nodes in Python and TypeScript, cons lists in Gleam
 and Elixir.
 
 Every drill carries a required signature, a starter stub, a progressive
-**Approach** hint ladder — a vague nudge, then the plan as numbered steps,
-then language-neutral pseudocode, each revealed on demand (`a`), with the
-pseudocode counting as seeing the answer — at least two reference
-**solutions**, and a test harness with per-case expected-vs-actual results.
-The ladders live in `drills/approaches/<slug>.txt` (sections split by
-`== nudge` / `== steps` / `== pseudocode`; `MANIFEST` is the census) and are
-embedded by the generator like the notes. Compile errors underline the offending line; runaway code is
+**Approach** hint ladder — a vague nudge, then the plan as a walkthrough
+(`w`): one step at a time beside the editor, each with a hint that points at
+it and a why that explains it, plus its slice of the pseudocode, then the
+full language-neutral pseudocode. Nudge and steps unfold on demand (`a`);
+only the pseudocode, whole or by slice, counts as seeing the answer — at
+least two reference **solutions**, and a test harness with per-case
+expected-vs-actual results. The ladders live in
+`drills/approaches/<slug>.txt` (sections `== nudge` / `== walk` /
+`== pseudocode`, a walk being `# step` blocks with `hint:`, `why:` and an
+optional `code:` slice; `MANIFEST` is the census) and are embedded by the
+generator like the notes. Compile errors underline the offending line; runaway code is
 terminated by a timeout. Anything your code prints is captured and shown under
 **Output** — on a pass, on a failure, and on a crash, since printing and then
 crashing is when you most want to read it.

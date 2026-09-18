@@ -1,11 +1,31 @@
 == nudge
 Every added value asks the same question about the k largest seen so far. How much of the stream do you actually need to remember to keep answering it — and which single remembered value is the answer?
-== steps
-- Keep only the k largest values seen, in a min-heap capped at size k; its root is the kth largest.
-- Build by heapifying the initial list, then popping until at most k values remain.
-- On add, push the new value, then pop once if the heap exceeds k — whatever falls out can never be the answer.
-- Report the heap's root, noting there is no kth largest at all until k values have arrived.
-- Each add costs O(log k) and memory stays O(k) however long the stream runs — keeping everything and sorting per query is the trap.
+== walk
+# Keep only the k largest values seen, in a min-heap capped at size k; its root is the kth largest.
+hint: Of all the values seen, which ones can still matter for the kth largest?
+why: Only the k largest; a min-heap of exactly those has the kth largest at its root.
+# Build by heapifying the initial list, then popping until at most k values remain.
+hint: How do you get from the initial list to that heap?
+why: Heapify the whole list in O(n), then pop until k remain; what is popped is smaller than k other values.
+code:
+constructor(k, nums):
+    heap = min-heap of nums
+    while heap.size > k: heap.pop()
+# On add, push the new value, then pop once if the heap exceeds k — whatever falls out can never be the answer.
+hint: A new value arrives. How do you keep the heap at size k?
+why: Push it, then pop once if the size exceeds k; the evicted value is the smallest and can never be the answer again.
+code:
+add(value):
+    heap.push(value)
+    if heap.size > k: heap.pop()
+# Report the heap's root, noting there is no kth largest at all until k values have arrived.
+hint: Where is the answer, and when does it not exist?
+why: The root; until k values have arrived there is no kth largest at all, which the problem's constraints avoid but the code should not assume.
+code:
+    return heap.top
+# Each add costs O(log k) and memory stays O(k) however long the stream runs — keeping everything and sorting per query is the trap.
+hint: What does each add cost over a long stream?
+why: O(log k) time and O(k) memory forever; keeping everything and sorting on each query is the trap this replaces.
 == pseudocode
 constructor(k, nums):
     heap = min-heap of nums

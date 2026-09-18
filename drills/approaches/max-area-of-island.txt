@@ -1,11 +1,39 @@
 == nudge
 You already know how to find every island — this problem has only changed what it wants to know about each one. What number should each traversal hand back now?
-== steps
-- Sweep every cell; a land cell not yet seen starts a fresh island traversal.
-- Flood that island — stack or recursion — marking each cell seen and counting it toward the island's area.
-- Push the four orthogonal neighbours of each cell; water, out-of-bounds, and already-seen cells are skipped when popped.
-- Keep the largest area across all traversals; a grid with no land answers 0 with no special case.
-- Written recursively, the area is the return value — 1 plus the four neighbour calls — with no counter at all.
+== walk
+# Sweep every cell; a land cell not yet seen starts a fresh island traversal.
+hint: How do you find every island without counting one twice?
+why: Sweep all cells and start a traversal only at land not yet seen; the seen set is shared across islands so each is flooded once.
+code:
+seen = empty set
+best = 0
+for each cell (r, c) where grid[r][c] == 1:
+    if (r, c) in seen: continue
+# Flood that island — stack or recursion — marking each cell seen and counting it toward the island's area.
+hint: What does one traversal have to produce?
+why: The island's area: mark each cell as it is reached and count it; stack or recursion both work.
+code:
+    area = 0
+    stack = [(r, c)]
+    while stack not empty:
+        (cr, cc) = stack.pop()
+        if (cr, cc) is out of bounds, water, or in seen: continue
+        seen.add((cr, cc))
+        area += 1
+# Push the four orthogonal neighbours of each cell; water, out-of-bounds, and already-seen cells are skipped when popped.
+hint: Which neighbours count, and where is it easiest to reject the bad ones?
+why: The four orthogonal ones; pushing all four and rejecting on pop keeps the bounds and water checks in one place.
+code:
+        push the 4 neighbours of (cr, cc) onto stack
+# Keep the largest area across all traversals; a grid with no land answers 0 with no special case.
+hint: What is the answer for a grid with no land?
+why: 0, and the max-over-islands loop gives it without a special case; every cell is visited once, O(rows * cols).
+code:
+    best = max(best, area)
+return best
+# Written recursively, the area is the return value — 1 plus the four neighbour calls — with no counter at all.
+hint: How does the recursive version avoid a counter?
+why: Each call returns 1 plus its four neighbour calls, so the area is the return value.
 == pseudocode
 seen = empty set
 best = 0

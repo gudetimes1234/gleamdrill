@@ -1,12 +1,35 @@
 == nudge
 "Join everything up for the least total cost" is a structure with a classic name — and here every pair of points is a candidate connection. Which of the classic algorithms suits a graph that dense?
-== steps
-- Recognize a minimum spanning tree on a complete graph: every pair of points is an edge weighted by Manhattan distance.
-- Grow one tree from any starting point (Prim's), each outside point remembering only its cheapest distance to the tree so far.
-- Repeatedly pull in the outside point with the smallest remembered distance and add that distance to the total.
-- After each addition, relax: lower every remaining point's remembered distance if the new tree member is closer.
-- Skip the heap: two linear passes per addition is O(n^2), which is the right shape when the edges number n^2 anyway.
-- If asked about sparse graphs: Kruskal's sorts all edges and uses union-find to skip loop-closers — it never looks at the points, so it is the one that generalises.
+== walk
+# Recognize a minimum spanning tree on a complete graph: every pair of points is an edge weighted by Manhattan distance.
+hint: What graph problem is "connect every point as cheaply as possible"?
+why: A minimum spanning tree on the complete graph whose edge weights are Manhattan distances.
+# Grow one tree from any starting point (Prim's), each outside point remembering only its cheapest distance to the tree so far.
+hint: Prim's grows one tree. What does each outside point need to remember?
+why: Only its cheapest distance to the tree so far; that single number is updated as the tree grows.
+code:
+outside = list of (point, manhattan(start, point)) for every point except start
+total = 0
+# Repeatedly pull in the outside point with the smallest remembered distance and add that distance to the total.
+hint: Which point joins the tree next?
+why: The outside point with the smallest remembered distance, and that distance is paid into the total.
+code:
+while outside not empty:
+    (point, cost) = remove the outside entry with the smallest cost
+    total += cost
+# After each addition, relax: lower every remaining point's remembered distance if the new tree member is closer.
+hint: After a point joins, what may have changed for the others?
+why: Their cheapest distance to the tree may now be to the new member, so each remembered distance is lowered if so.
+code:
+    for entry in outside:
+        entry.cost = min(entry.cost, manhattan(point, entry.point))
+return total
+# Skip the heap: two linear passes per addition is O(n^2), which is the right shape when the edges number n^2 anyway.
+hint: Why not use a heap here?
+why: The graph is complete with n² edges, so two linear scans per addition give O(n²), matching the input size without heap overhead.
+# If asked about sparse graphs: Kruskal's sorts all edges and uses union-find to skip loop-closers — it never looks at the points, so it is the one that generalises.
+hint: What would you reach for on a sparse graph?
+why: Kruskal's: sort the edges and use union-find to skip edges that close a loop; it never looks at points, so it generalises.
 == pseudocode
 outside = list of (point, manhattan(start, point)) for every point except start
 total = 0

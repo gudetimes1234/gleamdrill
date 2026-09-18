@@ -1,12 +1,37 @@
 == nudge
 Grabbing the biggest coin first fails on some denominations — try making 6 from coins 1, 3, 4. If you somehow knew the fewest coins for every smaller amount, how would this amount's answer follow?
-== steps
-- Build a table from zero upward: amount 0 costs zero coins.
-- For each amount up to the target, try every coin: the cheapest way here is one coin more than the cheapest way to make the amount minus that coin.
-- Store entries only for reachable amounts — a gap in the table is cleaner than inventing an infinity sentinel.
-- An amount whose every coin-predecessor is missing gets no entry and stays unreachable.
-- Answer the target's entry, or -1 when it has none.
-- Say the reframe out loud: this is breadth-first search from zero with coins as edges, so the answer is a shortest path.
+== walk
+# Build a table from zero upward: amount 0 costs zero coins.
+hint: What is the cheapest way to make an amount of zero?
+why: Zero coins; that base is what every other entry builds upward from.
+code:
+table = {0: 0}
+# For each amount up to the target, try every coin: the cheapest way here is one coin more than the cheapest way to make the amount minus that coin.
+hint: For an amount t, if the last coin used were c, how many coins would the rest take?
+why: The best for t is one more than the best for t - c over all coins c, so building amounts upward guarantees the smaller amount is already known; O(amount * coins).
+code:
+for target in 1..amount:
+    best = none
+    for coin in coins:
+        if coin <= target and (target - coin) in table:
+            best = min(best, table[target - coin] + 1)
+# Store entries only for reachable amounts — a gap in the table is cleaner than inventing an infinity sentinel.
+hint: How should the table say "this amount cannot be made"?
+why: Leaving the entry absent avoids an infinity sentinel that has to be guarded against in every min; a lookup either finds a real count or nothing.
+code:
+    if best is not none:
+        table[target] = best
+# An amount whose every coin-predecessor is missing gets no entry and stays unreachable.
+hint: What happens to an amount none of whose predecessors are reachable?
+why: It gets no entry and is unreachable itself, and that unreachability propagates correctly to amounts that depend on it.
+# Answer the target's entry, or -1 when it has none.
+hint: What does the target's entry, or its absence, tell you?
+why: Present means the fewest coins; absent means no combination of these coins makes the amount, which is the -1 case.
+code:
+return table[amount] if amount in table else -1
+# Say the reframe out loud: this is breadth-first search from zero with coins as edges, so the answer is a shortest path.
+hint: If each coin is an edge from amount a to a + coin, what is the question asking for?
+why: The shortest path from 0 to amount in an unweighted graph, which is why breadth-first search also solves it and why the DP is a shortest-path table.
 == pseudocode
 table = {0: 0}
 for target in 1..amount:

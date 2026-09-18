@@ -1,12 +1,39 @@
 == nudge
 You are asked for the smallest speed that works. If some speed gets Koko done in time, what do you immediately know about every faster speed? What kind of search does that one-way structure invite — and over what range?
-== steps
-- Write the feasibility check first: at speed k, a pile costs ceil(pile / k) hours because piles never share an hour; sum the costs and compare with h.
-- Notice the check is monotone — if a speed finishes in time, every faster speed does too.
-- Binary search on the answer, not the input: low starts at 1, high at the largest pile.
-- Test the midpoint speed; if it finishes within h hours, the answer is mid or slower, so pull high down to mid.
-- Otherwise mid is too slow — push low to mid + 1.
-- When low meets high, that speed is the smallest that works — return it.
+== walk
+# Write the feasibility check first: at speed k, a pile costs ceil(pile / k) hours because piles never share an hour; sum the costs and compare with h.
+hint: Given a speed, how many hours does one pile take, and can two piles share an hour?
+why: Each pile costs ceil(pile / k) hours and hours are never shared, so summing those against h is the whole feasibility test.
+code:
+    hours = 0
+    for pile in piles:
+        hours += ceil(pile / mid)
+# Notice the check is monotone — if a speed finishes in time, every faster speed does too.
+hint: If speed k finishes in time, what about k + 1?
+why: Faster always finishes too, so feasibility is monotone in k, which is exactly the property that lets binary search find the boundary.
+# Binary search on the answer, not the input: low starts at 1, high at the largest pile.
+hint: What are the slowest and fastest speeds worth considering?
+why: 1 is the slowest possible; the largest pile is fast enough to eat everything in one hour each, so nothing above it can help.
+code:
+low = 1
+high = max(piles)
+# Test the midpoint speed; if it finishes within h hours, the answer is mid or slower, so pull high down to mid.
+hint: The midpoint speed works. Can the answer be faster than it?
+why: No, the answer is the smallest working speed, so it is mid or slower: pull high down to mid, keeping mid as a candidate.
+code:
+while low < high:
+    mid = (low + high) / 2
+    if hours <= h: high = mid
+# Otherwise mid is too slow — push low to mid + 1.
+hint: The midpoint is too slow. Where must the answer be?
+why: Strictly faster, so low moves past mid; each check is O(n) and the search is O(log max pile).
+code:
+    else:          low = mid + 1
+# When low meets high, that speed is the smallest that works — return it.
+hint: What does it mean when low and high meet?
+why: One speed remains, and every slower one was shown infeasible, so it is the smallest that works.
+code:
+return low
 == pseudocode
 low = 1
 high = max(piles)

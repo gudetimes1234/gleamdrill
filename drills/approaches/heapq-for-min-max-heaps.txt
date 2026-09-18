@@ -1,7 +1,24 @@
 == nudge
 You repeatedly need the smallest of a changing collection — sorting everything each time is overkill. What structure is built for exactly that ask, and what do you do when the same library only leans one way?
-== steps
-- Copy the list and heapq.heapify it — O(n), and it turns a plain list into a min-heap in place.
-- kSmallest: heappop k times; each pop is O(log n) and they come out in order.
-- kLargest: Python has no max-heap, so negate every value on the way in, heapify, pop k times, and negate again on the way out.
-- Keep the costs straight: heapify O(n), push and pop O(log n) each.
+== walk
+# Copy the list and heapq.heapify it — O(n), and it turns a plain list into a min-heap in place.
+hint: What does heapify do to a list, and how fast?
+why: Rearranges it in place into a min-heap in O(n), which is cheaper than n pushes; copying first protects the caller's list.
+code:
+heap = list(nums)
+heapq.heapify(heap)
+# kSmallest: heappop k times; each pop is O(log n) and they come out in order.
+hint: How do the k smallest come out?
+why: heappop k times, each O(log n), and they arrive in ascending order.
+code:
+return [heapq.heappop(heap) for _ in range(k)]
+# kLargest: Python has no max-heap, so negate every value on the way in, heapify, pop k times, and negate again on the way out.
+hint: Python has no max-heap. What trick turns the min-heap into one?
+why: Negate on the way in so the largest original is the smallest stored, and negate back on the way out.
+code:
+heap = [-x for x in nums]
+heapq.heapify(heap)
+return [-heapq.heappop(heap) for _ in range(k)]
+# Keep the costs straight: heapify O(n), push and pop O(log n) each.
+hint: Which operation is linear and which are logarithmic?
+why: heapify is O(n); push and pop are O(log n) each, so k pops cost O(k log n).

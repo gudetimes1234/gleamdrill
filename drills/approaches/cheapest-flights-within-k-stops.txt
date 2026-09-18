@@ -1,12 +1,37 @@
 == nudge
 Cheapest path — so reach for the usual algorithm? Careful: what does the stop limit do to the claim that a city's cheapest fare can be settled once and reused?
-== steps
-- Notice why plain Dijkstra breaks: a costlier route with fewer stops may be the only one that still gets through, so cheapest-so-far can no longer settle a city.
-- Use Bellman-Ford, which settles nothing and relaxes edges in rounds — one round means one flight taken.
-- Start with only the source known, at cost 0.
-- Run k + 1 rounds; in each, relax every flight, improving the destination's cost from the origin's cost plus the fare.
-- Read each round from a snapshot of the previous round's costs — reading the table being written lets two flights leak into one round and breaks the limit.
-- Answer the destination's cost after the rounds, or -1 if it never received one.
+== walk
+# Notice why plain Dijkstra breaks: a costlier route with fewer stops may be the only one that still gets through, so cheapest-so-far can no longer settle a city.
+hint: Dijkstra settles a city at its cheapest cost. What does the stop limit do to that guarantee?
+why: A pricier route with fewer stops may be the only legal way onward, so the cheapest cost to a city no longer tells you the best way through it; the settling step is what breaks.
+# Use Bellman-Ford, which settles nothing and relaxes edges in rounds — one round means one flight taken.
+hint: Which shortest-path algorithm works in rounds where each round is one more edge?
+why: Bellman-Ford's rounds count edges taken, which is exactly a count of flights, so the stop limit becomes a round limit.
+# Start with only the source known, at cost 0.
+hint: Before any flight, which cities have a known cost?
+why: Only the source at cost 0; every other city is unreached until a round relaxes a flight into it.
+code:
+costs = {src: 0}
+# Run k + 1 rounds; in each, relax every flight, improving the destination's cost from the origin's cost plus the fare.
+hint: k stops allow how many flights, and what does one round do with a flight?
+why: k stops means k + 1 flights, so k + 1 rounds; relaxing a flight improves its destination from the origin's cost plus the fare, and O(k * E) is fine here.
+code:
+repeat k + 1 times:
+    for (origin, destination, price) in flights:
+        if origin in previous:
+            total = previous[origin] + price
+            if destination not in costs or total < costs[destination]:
+                costs[destination] = total
+# Read each round from a snapshot of the previous round's costs — reading the table being written lets two flights leak into one round and breaks the limit.
+hint: If a round reads a cost it just wrote, how many flights could that path have used?
+why: Reading the live table lets one round chain two flights and overshoot the limit; reading a snapshot from the previous round keeps each round to exactly one flight.
+code:
+    previous = copy of costs
+# Answer the destination's cost after the rounds, or -1 if it never received one.
+hint: After the rounds, what does a missing entry for the destination mean?
+why: No route within k stops exists, so the answer is -1; otherwise the table holds the cheapest legal cost.
+code:
+return costs[dst] if dst in costs else -1
 == pseudocode
 costs = {src: 0}
 repeat k + 1 times:

@@ -1,11 +1,32 @@
 == nudge
 Reuse is allowed, which threatens to produce the same combination in many different orders. What discipline about which candidates are still available makes each combination reachable exactly one way?
-== steps
-- At each step face the first remaining candidate with two moves: take it again (reuse allowed, shrinking the target) or drop it for good.
-- Never return to a dropped candidate — that ordering is what stops one combination appearing in several orders, so no dedup pass is needed.
-- Base cases: target 0 yields one empty combination; no candidates left yields nothing.
-- Prune a candidate larger than the remaining target by dropping straight to the next.
-- Note the pattern: killing duplicates by construction rather than by filtering afterwards is what the harder variants all build on.
+== walk
+# At each step face the first remaining candidate with two moves: take it again (reuse allowed, shrinking the target) or drop it for good.
+hint: Facing the first candidate, what are the only two things you can do with it?
+why: Take it again or drop it for good; framing the search as that binary choice is what lets reuse and termination both fall out naturally.
+code:
+function build(candidates, target):
+    first = candidates[0]
+    with_first = prepend first to each of build(candidates, target - first)
+    without = build(candidates past first, target)
+    return with_first + without
+# Never return to a dropped candidate — that ordering is what stops one combination appearing in several orders, so no dedup pass is needed.
+hint: Why does the search never come back to a dropped candidate?
+why: Once dropped, a candidate can only appear in combinations found earlier, so each combination is built in one canonical order and no deduplication is needed.
+# Base cases: target 0 yields one empty combination; no candidates left yields nothing.
+hint: When does a branch succeed, and when does it fail?
+why: Target 0 means the choices so far form a valid combination; running out of candidates with target left means they do not.
+code:
+    if target == 0: return [[]]
+    if candidates is empty: return []
+# Prune a candidate larger than the remaining target by dropping straight to the next.
+hint: What if the first candidate is already bigger than what is left?
+why: It can never fit, so skipping straight to the next candidate prunes a dead branch without exploring it.
+code:
+    if first > target: return build(candidates past first, target)
+# Note the pattern: killing duplicates by construction rather than by filtering afterwards is what the harder variants all build on.
+hint: How does this differ from generating everything and removing duplicates?
+why: Building each combination once by construction is exponentially cheaper than filtering, and the same idea carries Combination Sum II and Subsets II.
 == pseudocode
 function build(candidates, target):
     if target == 0: return [[]]

@@ -1,12 +1,39 @@
 == nudge
 Two questions must both be answered in O(1): where does this key live, and which key has waited longest untouched? No single structure you would reach for answers both. What combination might — or does your language's map already keep a secret that helps?
-== steps
-- Keep a map whose iteration order is insertion order (or the classic pairing: a hash map into the nodes of a doubly linked list).
-- On get of a missing key, return -1.
-- On get of a present key, delete it and re-insert it — re-insertion makes it the newest, which is the recency bump; then return the value.
-- On put of an existing key, delete the old entry first so the fresh insert lands at the newest position.
-- After inserting, if the size exceeds capacity, evict the first key in iteration order — that is the least recently used.
-- Follow-up: without an insertion-ordered map, move a key's list node to the tail on every use and evict from the head — same O(1) operations, more wiring.
+== walk
+# Keep a map whose iteration order is insertion order (or the classic pairing: a hash map into the nodes of a doubly linked list).
+hint: What structure gives O(1) lookup and also remembers the order of use?
+why: A map that iterates in insertion order (or a hash map into a doubly linked list); recency becomes position.
+# On get of a missing key, return -1.
+hint: What does a miss look like?
+why: Return -1 with no side effects.
+code:
+get(key):
+    if key not in entries: return -1
+# On get of a present key, delete it and re-insert it — re-insertion makes it the newest, which is the recency bump; then return the value.
+hint: How does a hit become "most recently used" in an insertion-ordered map?
+why: Remove and re-insert: the entry moves to the newest position, then return its value.
+code:
+    value = entries.remove(key)
+    entries[key] = value
+    return value
+# On put of an existing key, delete the old entry first so the fresh insert lands at the newest position.
+hint: Why delete before inserting on an existing key?
+why: So the fresh insert lands at the newest position rather than updating in place and keeping the old age.
+code:
+put(key, value):
+    if key in entries:
+        entries.remove(key)
+    entries[key] = value
+# After inserting, if the size exceeds capacity, evict the first key in iteration order — that is the least recently used.
+hint: Which entry goes when the cache is full?
+why: The first in iteration order, which is the least recently used; every operation stays O(1).
+code:
+    if size(entries) > capacity:
+        entries.remove(oldest key in entries)
+# Follow-up: without an insertion-ordered map, move a key's list node to the tail on every use and evict from the head — same O(1) operations, more wiring.
+hint: Without an ordered map, what does the classic version do?
+why: A hash map to list nodes: move a node to the tail on each use and evict from the head; the same O(1) operations with explicit pointers.
 == pseudocode
 get(key):
     if key not in entries: return -1

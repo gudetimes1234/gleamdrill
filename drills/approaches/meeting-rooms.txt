@@ -1,11 +1,28 @@
 == nudge
 Checking every pair of meetings is quadratic. Is there an ordering under which a clash, if one exists at all, is forced to show up between neighbours?
-== steps
-- Sort the meetings by start time.
-- Check only adjacent pairs: each meeting must start at or after the previous one ends.
-- Why that suffices: any meeting earlier than the previous one began earlier still, so it would have clashed with the previous one first.
-- Mind the boundary: a meeting ending exactly as the next begins is fine, so the failing condition is previous end strictly greater than next start.
-- Worth memorising the general test while you are here: two intervals overlap when each starts before the other ends.
+== walk
+# Sort the meetings by start time.
+hint: What order makes potential clashes adjacent?
+why: Sorting by start time; after that a clash can only be between neighbours.
+code:
+sort intervals by start
+# Check only adjacent pairs: each meeting must start at or after the previous one ends.
+hint: What is the one check per adjacent pair?
+why: The next meeting must start no earlier than the previous one ends; O(n log n) for the sort, O(n) for the sweep.
+code:
+for i in 1..n-1:
+    if intervals[i-1].end > intervals[i].start:
+        return false
+return true
+# Why that suffices: any meeting earlier than the previous one began earlier still, so it would have clashed with the previous one first.
+hint: Why not compare every pair?
+why: Any meeting that clashes with an earlier one clashes with the immediately previous one too, since that one started even later.
+# Mind the boundary: a meeting ending exactly as the next begins is fine, so the failing condition is previous end strictly greater than next start.
+hint: A meeting ends at 10 and the next starts at 10. Clash or not?
+why: Not a clash, so the failing test is strictly greater; off-by-one here flips the answer.
+# Worth memorising the general test while you are here: two intervals overlap when each starts before the other ends.
+hint: What is the general overlap test worth remembering?
+why: Two intervals overlap when each starts before the other ends.
 == pseudocode
 sort intervals by start
 for i in 1..n-1:

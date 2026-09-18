@@ -1,11 +1,32 @@
 == nudge
 Whether a node is good depends only on the trip taken to reach it, never on anything beneath it. What single piece of that trip's history is enough to carry along — and what should it start as so the root judges itself correctly?
-== steps
-- Walk the tree carrying one extra argument: the largest value on the path so far.
-- Start at the root with the root's own value as the initial maximum — that is what makes the root always good.
-- At each node, count 1 when its value is at least the carried maximum, else 0.
-- Update the maximum with the node's value before descending.
-- Return this node's count plus the counts from both children, with empty subtrees contributing 0 — one pass is enough because the test never looks down.
+== walk
+# Walk the tree carrying one extra argument: the largest value on the path so far.
+hint: Goodness is about the path from the root. What one number summarises that path?
+why: The largest value seen on the way down; carrying it as an argument turns a path property into a local test.
+code:
+count(node, largest):
+    if node == null: return 0
+# Start at the root with the root's own value as the initial maximum — that is what makes the root always good.
+hint: What should the maximum be when you start at the root?
+why: The root's own value, so the root compares equal to it and is counted good, as the problem defines.
+code:
+answer = count(root, root.value) if root != null else 0
+# At each node, count 1 when its value is at least the carried maximum, else 0.
+hint: What makes a node good, in terms of the number you carry?
+why: Its value is at least the path maximum; ties count, which is why the comparison is >= rather than >.
+code:
+    here = 1 if node.value >= largest else 0
+# Update the maximum with the node's value before descending.
+hint: What must the children receive as their path maximum?
+why: The maximum including this node, so the update happens before the recursive calls.
+code:
+    largest = max(largest, node.value)
+# Return this node's count plus the counts from both children, with empty subtrees contributing 0 — one pass is enough because the test never looks down.
+hint: How do the counts combine, and why is one pass enough?
+why: This node's 0 or 1 plus both subtrees' counts; the test only ever looks upward along the path, so a single O(n) walk sees everything it needs.
+code:
+    return here + count(node.left, largest) + count(node.right, largest)
 == pseudocode
 count(node, largest):
     if node == null: return 0

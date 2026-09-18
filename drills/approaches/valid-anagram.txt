@@ -1,12 +1,38 @@
 == nudge
 When are two strings made of exactly the same material? This is a counting problem in disguise — what one fact about each character would you need from both strings, and what is the cheapest disqualifier you can check before doing any real work?
-== steps
-- If the lengths differ, return false before counting anything.
-- Build a character-to-count map from the first string.
-- Walk the second string, decrementing each character's count.
-- Fail the moment a character is missing from the map or its count drops below zero.
-- Reaching the end means every count balanced out — return true.
-- If the interviewer prefers it simple: sort both strings and compare, at O(n log n) against the map's O(n).
+== walk
+# If the lengths differ, return false before counting anything.
+hint: What cheap check rules out most non-anagrams?
+why: Different lengths.
+code:
+if length(s) != length(t): return false
+# Build a character-to-count map from the first string.
+hint: What does the first string contribute?
+why: A count of each character.
+code:
+count = empty map
+for ch in s:
+    count[ch] += 1
+# Walk the second string, decrementing each character's count.
+hint: What does the second string do to those counts?
+why: Decrements them character by character.
+code:
+for ch in t:
+    count[ch] -= 1
+# Fail the moment a character is missing from the map or its count drops below zero.
+hint: What signals a mismatch during the walk?
+why: A character absent from the map or a count going negative.
+code:
+    if ch not in count: return false
+    if count[ch] < 0: return false
+# Reaching the end means every count balanced out — return true.
+hint: What does reaching the end mean?
+why: With equal lengths, every count balanced, so the strings are anagrams; O(n).
+code:
+return true
+# If the interviewer prefers it simple: sort both strings and compare, at O(n log n) against the map's O(n).
+hint: What is the simpler but slower check?
+why: Sort both and compare, O(n log n).
 == pseudocode
 if length(s) != length(t): return false
 count = empty map

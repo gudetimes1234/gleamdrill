@@ -1,8 +1,34 @@
 == nudge
 There is no loop keyword coming to save you. A Gleam list can only ever be one of two shapes — which two? — and once you name them in a case expression, what does "the rest of the work" become?
-== steps
-- Write every list function as a case over [] and [head, ..tail]; recursion on the tail replaces the loop.
-- length: [] is 0; [_, ..rest] is 1 + length(rest).
-- last: the last element matters, so add the third classic pattern [only] between the other two.
-- last on [] is Error(Nil), [only] is Ok(only), and [_, ..rest] just recurses — the answer lives at the end.
-- Check each case body only handles its own shape; the compiler's exhaustiveness check does the rest.
+== walk
+# Write every list function as a case over [] and [head, ..tail]; recursion on the tail replaces the loop.
+hint: What two shapes can any list have?
+why: Empty, or a head followed by a tail; matching those two is the loop.
+code:
+case list {
+  [] -> ...
+  [head, ..tail] -> ...
+}
+# length: [] is 0; [_, ..rest] is 1 + length(rest).
+hint: How does length read in those terms?
+why: Empty is 0; otherwise one plus the length of the tail.
+code:
+case list {
+  [] -> 0
+  [_, ..rest] -> 1 + length(rest)
+}
+# last: the last element matters, so add the third classic pattern [only] between the other two.
+hint: Which extra pattern does last need?
+why: The single-element list, [only], because that is where the answer is found.
+# last on [] is Error(Nil), [only] is Ok(only), and [_, ..rest] just recurses — the answer lives at the end.
+hint: What are the three arms of last?
+why: Empty is an error, one element is the answer, and anything longer recurses on the tail.
+code:
+case list {
+  [] -> Error(Nil)
+  [only] -> Ok(only)
+  [_, ..rest] -> last(rest)
+}
+# Check each case body only handles its own shape; the compiler's exhaustiveness check does the rest.
+hint: What should each arm handle, and who checks the rest?
+why: Only its own shape; the compiler's exhaustiveness check guarantees nothing is missed.

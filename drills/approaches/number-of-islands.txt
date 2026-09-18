@@ -1,12 +1,39 @@
 == nudge
 There is a graph here that nobody handed you — what are its nodes, and what are its edges? And if you started walking from one piece of land, what would "one island" correspond to in that walk?
-== steps
-- Treat the grid as an implicit graph: land cells are the nodes, four-way adjacency the edges — never build the graph.
-- Scan every cell; on meeting land not yet seen, count one island and flood outward from it.
-- Flood with DFS or BFS — an explicit stack of coordinates works — marking every reached land cell as seen.
-- Marking as you go is what stops one component being counted once per square.
-- The number of floods you had to start is the answer.
-- Follow-up: union-find does the same job without recursion, which matters when the grid is deep enough to overflow the stack; sinking cells in place ("1" to "0") replaces the seen set when mutation is allowed.
+== walk
+# Treat the grid as an implicit graph: land cells are the nodes, four-way adjacency the edges — never build the graph.
+hint: Where is the graph in this problem?
+why: Implicit: land cells are nodes and four-way adjacency the edges; nothing needs building.
+# Scan every cell; on meeting land not yet seen, count one island and flood outward from it.
+hint: When does a new island get counted?
+why: On meeting a land cell not yet seen; each such cell starts a flood.
+code:
+seen = empty set
+count = 0
+for each land cell (r, c) in the grid:
+    if (r, c) in seen: continue
+    count = count + 1
+# Flood with DFS or BFS — an explicit stack of coordinates works — marking every reached land cell as seen.
+hint: How does the flood work?
+why: A stack of coordinates, marking each reached land cell; DFS and BFS both work.
+code:
+    stack = [(r, c)]
+    while stack not empty:
+        (a, b) = stack.pop()
+        if (a, b) is not land or (a, b) in seen: continue
+        seen.add((a, b))
+        push the four neighbours of (a, b) onto stack
+# Marking as you go is what stops one component being counted once per square.
+hint: Why mark cells during the flood?
+why: So the same component is not counted again from another of its squares.
+# The number of floods you had to start is the answer.
+hint: What is the answer?
+why: The number of floods started; every cell is visited once, O(rows * cols).
+code:
+return count
+# Follow-up: union-find does the same job without recursion, which matters when the grid is deep enough to overflow the stack; sinking cells in place ("1" to "0") replaces the seen set when mutation is allowed.
+hint: What variations should you know?
+why: Union-find avoids deep recursion, and sinking cells in place replaces the seen set when mutation is allowed.
 == pseudocode
 seen = empty set
 count = 0

@@ -1,11 +1,30 @@
 == nudge
 Instead of hunting for the best subarray anywhere, ask a smaller question at each position: what is the best subarray that ends exactly here? How does that answer relate to the one just before it — and when is a running start worth abandoning?
-== steps
-- Track two numbers: here, the best sum of a subarray ending at the current position, and best, the best seen anywhere.
-- At each element choose between extending the run (here + n) and starting fresh at n — whichever is larger.
-- See what the choice really tests: a running total that has gone negative can only hurt whatever follows.
-- Update best after every element, and do not clamp at zero — an all-negative array's answer is its largest single element.
-- Follow-up: the prefix-sum framing says the same thing — the best subarray ending at j is prefix[j] minus the smallest prefix before it.
+== walk
+# Track two numbers: here, the best sum of a subarray ending at the current position, and best, the best seen anywhere.
+hint: What two things do you need to know as you pass each element?
+why: The best sum ending exactly here, and the best sum seen anywhere; the first feeds the next step, the second is the answer.
+code:
+here = nums[0]
+best = nums[0]
+# At each element choose between extending the run (here + n) and starting fresh at n — whichever is larger.
+hint: Standing on an element, should it join the run before it or start a new one?
+why: Whichever is larger: here + n extends, n alone restarts; that single max is Kadane's algorithm.
+code:
+for n in nums[1..]:
+    here = max(n, here + n)
+# See what the choice really tests: a running total that has gone negative can only hurt whatever follows.
+hint: When does restarting win?
+why: Exactly when the running sum is negative, because carrying it forward can only lower whatever follows.
+# Update best after every element, and do not clamp at zero — an all-negative array's answer is its largest single element.
+hint: Why not clamp the running sum at zero?
+why: An all-negative array's answer is its largest element, which a zero floor would replace with 0; update best after every element instead.
+code:
+    best = max(best, here)
+return best
+# Follow-up: the prefix-sum framing says the same thing — the best subarray ending at j is prefix[j] minus the smallest prefix before it.
+hint: How does the prefix-sum view say the same thing?
+why: The best subarray ending at j is prefix[j] minus the smallest prefix before it; tracking that minimum is the same O(n) pass.
 == pseudocode
 here = nums[0]
 best = nums[0]

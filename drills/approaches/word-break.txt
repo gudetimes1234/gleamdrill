@@ -1,12 +1,36 @@
 == nudge
 Trying every way to cut the string branches out of control. What if the question were not about the pieces at all, but about which boundaries between characters you can stand on?
-== steps
-- Work over positions, not substrings: position 0, before the first character, is reachable by definition.
-- For each position end from 1 to the string's length, ask whether some already-reached start has s[start..end] in the dictionary.
-- If so, mark end reached — dictionary words cover the string up to there.
-- Keep the dictionary in a set so each bridging test is a single lookup.
-- Answer whether the final position was reached.
-- Top-down on suffixes asks the same question, but the cache is essential — inputs like "aaaa...b" reach the same suffix exponentially many ways.
+== walk
+# Work over positions, not substrings: position 0, before the first character, is reachable by definition.
+hint: What is the state: substrings or positions?
+why: Positions between characters; position 0 is reachable by definition.
+code:
+words = set(wordDict)
+reached = {0}
+# For each position end from 1 to the string's length, ask whether some already-reached start has s[start..end] in the dictionary.
+hint: How does a position become reachable?
+why: When some already-reached earlier position plus a dictionary word lands exactly on it.
+code:
+for end in 1..len(s):
+    for start in 0..end-1:
+        if start in reached and s[start..end] in words:
+# If so, mark end reached — dictionary words cover the string up to there.
+hint: What happens on a hit?
+why: Mark the end reached and stop scanning starts for it.
+code:
+            reached.add(end)
+            break
+# Keep the dictionary in a set so each bridging test is a single lookup.
+hint: Why a set for the dictionary?
+why: Each bridging test becomes one lookup; O(n²) tests overall.
+# Answer whether the final position was reached.
+hint: What is the answer?
+why: Whether the final position was reached.
+code:
+return len(s) in reached
+# Top-down on suffixes asks the same question, but the cache is essential — inputs like "aaaa...b" reach the same suffix exponentially many ways.
+hint: Why does the top-down version need a cache?
+why: Inputs like "aaaa...b" reach the same suffix exponentially many ways; memoisation collapses them.
 == pseudocode
 words = set(wordDict)
 reached = {0}

@@ -1,12 +1,36 @@
 == nudge
 A subsequence may skip whatever it likes, so a "best so far" for the whole prefix says too little. What is the right thing to know at each position — something anchored to that position itself?
-== steps
-- Define, per position, the length of the longest increasing subsequence ending exactly there.
-- Compute it as one plus the best answer among earlier positions holding a smaller value; no such position means length 1.
-- Process left to right so every earlier position is already answered, keeping the running maximum as the result.
-- Name the cost — O(n^2) — because the classic follow-up asks for better.
-- For O(n log n), keep the smallest value a subsequence of each length can end with; that list stays sorted, so each number is placed by binary search (patience sorting).
-- Be ready to say that the sorted list is not an answer subsequence — only its length means anything.
+== walk
+# Define, per position, the length of the longest increasing subsequence ending exactly there.
+hint: What subproblem, anchored at a position, makes the answer for later positions computable?
+why: The longest increasing subsequence ending exactly at each position; anchoring at the end is what lets a later element extend it.
+code:
+endings = []   -- (value, length) for each position so far
+# Compute it as one plus the best answer among earlier positions holding a smaller value; no such position means length 1.
+hint: An element can extend which earlier subsequences?
+why: Those ending in a smaller value; take the best of them plus one, or 1 if none exists.
+code:
+    longest = 0
+    for (value, length) in endings:
+        if value < n and length > longest: longest = length
+    endings.add((n, longest + 1))
+# Process left to right so every earlier position is already answered, keeping the running maximum as the result.
+hint: Why left to right, and where does the final answer live?
+why: Every earlier position is already solved when needed, and the answer is the maximum over all endings, not the last one.
+code:
+best = 0
+for n in nums:
+    best = max(best, longest + 1)
+return best
+# Name the cost — O(n^2) — because the classic follow-up asks for better.
+hint: What does the double loop cost, and why will you be asked about it?
+why: O(n²); the interviewer's follow-up is the O(n log n) version, so know the number before being asked.
+# For O(n log n), keep the smallest value a subsequence of each length can end with; that list stays sorted, so each number is placed by binary search (patience sorting).
+hint: What list, kept sorted, lets each element be placed by binary search?
+why: The smallest possible ending value for each subsequence length; replacing the first entry not smaller than the element keeps it sorted, patience-sorting style.
+# Be ready to say that the sorted list is not an answer subsequence — only its length means anything.
+hint: Is that sorted list an actual increasing subsequence?
+why: No, only its length is meaningful; reconstructing a real subsequence needs extra back-pointers.
 == pseudocode
 endings = []   -- (value, length) for each position so far
 best = 0

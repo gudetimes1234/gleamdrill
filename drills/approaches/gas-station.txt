@@ -1,11 +1,37 @@
 == nudge
 Trying every start is quadratic. When an attempt starting at station i runs dry at station j, what does that failure tell you about every station in between? And is there a one-number test for whether any start can work at all?
-== steps
-- Sum gas[i] - cost[i] over the whole circle as you go; a negative grand total means no start works — return -1.
-- Walk once with a running tank, adding each station's surplus or deficit.
-- When the tank goes negative at station i, no station between the current candidate and i can work either — each would arrive with even less fuel — so jump the candidate straight to i + 1 and reset the tank to zero.
-- Those two facts together turn the quadratic search over starts into a single pass.
-- Skip any second lap to verify: a non-negative grand total already guarantees the surviving candidate completes the circle.
+== walk
+# Sum gas[i] - cost[i] over the whole circle as you go; a negative grand total means no start works — return -1.
+hint: If the total gas is less than the total cost, can any start work?
+why: No, so summing the surplus over the circle decides feasibility in one pass and -1 falls out.
+code:
+total = 0
+for i in 0..n-1:
+    diff = gas[i] - cost[i]
+    total = total + diff
+# Walk once with a running tank, adding each station's surplus or deficit.
+hint: What does a running tank tell you as you drive from a candidate start?
+why: Whether you can still reach the next station; it accumulates each station's surplus or deficit.
+code:
+tank = 0
+start = 0
+    tank = tank + diff
+# When the tank goes negative at station i, no station between the current candidate and i can work either — each would arrive with even less fuel — so jump the candidate straight to i + 1 and reset the tank to zero.
+hint: If the tank goes negative at station i, what about starting at any station between the candidate and i?
+why: Each would arrive at i with even less fuel, since they skip the positive prefix, so the next candidate is i + 1 and the tank resets.
+code:
+    if tank < 0:
+        start = i + 1
+        tank = 0
+# Those two facts together turn the quadratic search over starts into a single pass.
+hint: How do the two facts turn a quadratic search into one pass?
+why: The total check settles existence, and the jump rule means each station is a candidate at most once.
+# Skip any second lap to verify: a non-negative grand total already guarantees the surviving candidate completes the circle.
+hint: Why is no second lap needed to confirm the survivor?
+why: A non-negative grand total guarantees the last candidate completes the circle, so the answer is immediate, O(n).
+code:
+if total >= 0: return start
+return -1
 == pseudocode
 total = 0
 tank = 0

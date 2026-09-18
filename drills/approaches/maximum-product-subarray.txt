@@ -1,11 +1,31 @@
 == nudge
 The running-best trick from maximum-sum subarrays stumbles here: what does multiplying by a negative number do to "best so far"? What second value would you have to carry for that reversal to become good news?
-== steps
-- Carry two running products, the highest and the lowest ending at the current element — a negative value swaps their roles, so today's minimum is tomorrow's maximum in waiting.
-- At each element, form three candidates: the element alone, element times the previous high, element times the previous low.
-- Take the max of the three as the new high and the min as the new low.
-- Let including the element alone handle zeros — both tracks reset with no special case.
-- Track the best high ever seen; that is the answer.
+== walk
+# Carry two running products, the highest and the lowest ending at the current element — a negative value swaps their roles, so today's minimum is tomorrow's maximum in waiting.
+hint: Why is one running maximum not enough here, unlike the sum version?
+why: A negative number turns the smallest product into the largest, so the minimum must be carried too.
+code:
+high = low = best = nums[0]
+# At each element, form three candidates: the element alone, element times the previous high, element times the previous low.
+hint: At each element, what are the candidates for the product ending here?
+why: The element alone, or the element times either running extreme.
+code:
+for n in rest of nums:
+    candidates = (n, high * n, low * n)
+# Take the max of the three as the new high and the min as the new low.
+hint: How are the two tracks updated?
+why: High takes the max of the candidates and low the min, using the previous values for both.
+code:
+    high, low = max(candidates), min(candidates)
+# Let including the element alone handle zeros — both tracks reset with no special case.
+hint: What does a zero do, and does it need special handling?
+why: Both products become zero, and the element-alone candidate restarts the tracks; no special case.
+# Track the best high ever seen; that is the answer.
+hint: Where is the answer?
+why: The best high ever seen, kept as you go; one pass, O(n).
+code:
+    best = max(best, high)
+return best
 == pseudocode
 high = low = best = nums[0]
 for n in rest of nums:

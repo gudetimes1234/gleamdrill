@@ -1,11 +1,28 @@
 == nudge
 The numbers 0 to n, with one absent. If every present value could somehow meet the index it belongs to, they would all pair off — what operation makes each pairing vanish, and what would the one unpaired thing leave behind?
-== steps
-- Start the result at n — the one index the loop below never visits.
-- Walk the array, XOR-ing both the index and the value at it into the result.
-- Every present number meets its own index and the pair cancels; the missing number's index has no partner, so it survives as the answer.
-- Return the result.
-- If asked for the arithmetic version: expected sum n(n + 1)/2 minus the actual sum reads better, but the intermediate can overflow in a fixed-width language where the XOR cannot.
+== walk
+# Start the result at n — the one index the loop below never visits.
+hint: XOR pairs indices with values. Which index will the loop never produce?
+why: n itself, so seeding the result with n supplies the one value that has no loop iteration.
+code:
+result = n
+# Walk the array, XOR-ing both the index and the value at it into the result.
+hint: What does XOR do with a number that appears twice?
+why: Cancels it, since x XOR x is 0; XOR-ing every index and every value pairs each present number with its own index.
+code:
+for i in 0..n-1:
+    result = result XOR i XOR nums[i]
+# Every present number meets its own index and the pair cancels; the missing number's index has no partner, so it survives as the answer.
+hint: Which number survives the cancelling?
+why: The one index with no matching value, which is the missing number; O(n) time, O(1) space.
+# Return the result.
+hint: What is left to do?
+why: Return the accumulated result.
+code:
+return result
+# If asked for the arithmetic version: expected sum n(n + 1)/2 minus the actual sum reads better, but the intermediate can overflow in a fixed-width language where the XOR cannot.
+hint: Why prefer XOR to the arithmetic formula?
+why: n(n + 1)/2 reads better but can overflow fixed-width integers on the way; XOR never grows.
 == pseudocode
 result = n
 for i in 0..n-1:

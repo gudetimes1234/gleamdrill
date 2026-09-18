@@ -1,11 +1,27 @@
 == nudge
 Stand at the top and ask what the very last move could have been. If you already knew the answer for every shorter staircase, how would those answers combine?
-== steps
-- Split on the last move: it was one step or two, so the ways to reach step n are the ways to reach n - 1 plus the ways to reach n - 2.
-- Anchor the bases: one way to stand at the bottom, one way to reach step 1.
-- Notice only the last two values ever matter, so carry two variables and roll them forward n times — no table.
-- Name the sequence: it is Fibonacci with a staircase painted on it.
-- Write the top-down version once too: the same recurrence with a cache, where the memo is the whole difference between O(n) and O(2^n).
+== walk
+# Split on the last move: it was one step or two, so the ways to reach step n are the ways to reach n - 1 plus the ways to reach n - 2.
+hint: Think about the very last move onto step n. How many possibilities are there, and where did each come from?
+why: Every way to reach n ends with a 1-step from n-1 or a 2-step from n-2, and those two groups never overlap, so the counts simply add.
+# Anchor the bases: one way to stand at the bottom, one way to reach step 1.
+hint: What are the smallest cases you can answer without the recurrence?
+why: One way to be at the bottom and one way to reach step 1 anchor the recurrence; without correct bases every later count is off.
+code:
+previous, current = 0, 1
+# Notice only the last two values ever matter, so carry two variables and roll them forward n times — no table.
+hint: How much of the history does the recurrence actually read?
+why: Only the previous two counts are ever used, so two rolling variables give O(n) time in O(1) space instead of a table.
+code:
+repeat n times:
+    previous, current = current, previous + current
+return current
+# Name the sequence: it is Fibonacci with a staircase painted on it.
+hint: Does the sequence 1, 2, 3, 5, 8 look familiar?
+why: Recognising Fibonacci names the whole family: the recurrence, the closed form and the reason the naive recursion is exponential.
+# Write the top-down version once too: the same recurrence with a cache, where the memo is the whole difference between O(n) and O(2^n).
+hint: What turns the tree-shaped recursion into something linear?
+why: A memo means each n is computed once, collapsing the O(2^n) call tree into O(n) calls; the recurrence is identical, the cache is the entire difference.
 == pseudocode
 previous, current = 0, 1
 repeat n times:

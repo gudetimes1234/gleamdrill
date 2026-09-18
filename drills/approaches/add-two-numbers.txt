@@ -1,12 +1,46 @@
 == nudge
 How did you add multi-digit numbers in school — starting from which end, carrying what along? Now look at the order these digits arrive in. How much of the work has the problem already done for you?
-== steps
-- Walk both lists together, building the result behind a dummy head — least-significant-first is exactly the order addition wants, so no reversing and no length matching.
-- Loop while either list has digits or a carry remains — 5 + 5 needs a node neither input has.
-- Each round, sum the carry plus whichever front digits exist, advancing only the non-empty lists.
-- The new digit is the sum mod 10; the new carry is the sum divided by 10.
-- Append the digit as a new node and advance the tail.
-- Return dummy.next.
+== walk
+# Walk both lists together, building the result behind a dummy head — least-significant-first is exactly the order addition wants, so no reversing and no length matching.
+hint: The digits arrive least-significant first. Is that a nuisance to fix, or exactly the order you add on paper?
+why: Column addition starts at the ones place, which is the head of each list, so walking both heads in step needs no reversal, no lengths, and a dummy head means the result never has a special first node.
+code:
+dummy = new node
+tail = dummy
+carry = 0
+# Loop while either list has digits or a carry remains — 5 + 5 needs a node neither input has.
+hint: What does 5 + 5 produce, and where would that extra digit live if you stopped when the inputs ran out?
+why: A carry after the last digit is a real digit of the answer; looping on carry as well as on the two lists is what makes 99 + 1 come out as 100.
+code:
+while a != null or b != null or carry > 0:
+# Each round, sum the carry plus whichever front digits exist, advancing only the non-empty lists.
+hint: If one list is shorter, what should its missing digit contribute, and how do you avoid stepping past its end?
+why: Treating an exhausted list as contributing zero lets one loop handle unequal lengths; advancing each list only when it has a node is what keeps you off a null.
+code:
+    total = carry
+    if a != null:
+        total += a.value
+        a = a.next
+    if b != null:
+        total += b.value
+        b = b.next
+# The new digit is the sum mod 10; the new carry is the sum divided by 10.
+hint: A column can sum to 19 at most. How do you split that into the digit written down and the digit carried?
+why: Mod 10 and integer division by 10 are the two halves of column addition; the carry is at most 1 because three digits at most 9, 9 and 1 sum to 19.
+code:
+    carry = total / 10
+    digit = total mod 10
+# Append the digit as a new node and advance the tail.
+hint: You have a digit; how does it become part of the answer without walking the result list from the start each time?
+why: Keeping a tail pointer makes each append O(1), so the whole addition is O(max(m, n)) with nothing revisited.
+code:
+    tail.next = new node(digit)
+    tail = tail.next
+# Return dummy.next.
+hint: The dummy head was never a digit. What is the first real node?
+why: The dummy exists only so appending never has a first-node special case; the answer starts one past it.
+code:
+return dummy.next
 == pseudocode
 dummy = new node
 tail = dummy

@@ -1,11 +1,31 @@
 == nudge
 Two trees are the same when their roots agree and — what, exactly? Spell out every way a pair of positions can disagree, including the ways that involve nothing at all.
-== steps
-- Walk both trees in step, comparing the pair of nodes at each position.
-- Two empties match: return true.
-- An empty and a node never match: return false.
-- Two nodes match when their values are equal and both pairs of children match recursively.
-- Keep this function close: it is the inner loop of Subtree of Another Tree and of Symmetric Tree, which is why it is worth writing out.
+== walk
+# Walk both trees in step, comparing the pair of nodes at each position.
+hint: How do you compare two trees?
+why: Walk them together, comparing the pair of nodes at each position.
+code:
+same(p, q):
+# Two empties match: return true.
+hint: What if both positions are empty?
+why: They match.
+code:
+    if p == null and q == null: return true
+# An empty and a node never match: return false.
+hint: And one empty, one not?
+why: Never a match.
+code:
+    if p == null or q == null: return false
+# Two nodes match when their values are equal and both pairs of children match recursively.
+hint: What makes two nodes match?
+why: Equal values and matching children on both sides; O(n).
+code:
+    return p.value == q.value
+       and same(p.left, q.left)
+       and same(p.right, q.right)
+# Keep this function close: it is the inner loop of Subtree of Another Tree and of Symmetric Tree, which is why it is worth writing out.
+hint: Why write this out?
+why: It is the inner loop of Subtree of Another Tree and Symmetric Tree.
 == pseudocode
 same(p, q):
     if p == null and q == null: return true

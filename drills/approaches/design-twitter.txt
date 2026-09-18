@@ -1,11 +1,36 @@
 == nudge
 Four operations, but only the feed is hard. Ordering tweets across many users needs some notion of time — what is the cheapest thing that can stand in for a clock? And where can tweets live so ten recent ones are findable?
-== steps
-- Keep a counter that increments on every post — it totally orders tweets across all users with no real timestamps.
-- Store each tweet as (clock, author, id) in one global list; store follows as a map from user to a set of followees.
-- follow adds to the set; unfollow discards, tolerating users never seen before.
-- For the feed, form the visible set (the user plus followees), walk the global list newest-first keeping visible tweets, and stop at ten.
-- Scaling follow-up: per-author tweet lists turn the feed into a k-way merge of the followees' lists, which a heap resolves in about ten steps instead of walking every tweet ever posted.
+== walk
+# Keep a counter that increments on every post — it totally orders tweets across all users with no real timestamps.
+hint: There are no timestamps. What else can put every tweet in one global order?
+why: A counter bumped on each post is a logical clock: later posts get larger numbers, across all users.
+code:
+post(user, tweet_id):
+    tweets.add((clock, user, tweet_id))
+    clock = clock + 1
+# Store each tweet as (clock, author, id) in one global list; store follows as a map from user to a set of followees.
+hint: What is the simplest storage that answers both "what did they post" and "who do they follow"?
+why: One global list of (clock, author, id) and a map from user to a set of followees; both are O(1) to update.
+# follow adds to the set; unfollow discards, tolerating users never seen before.
+hint: What should unfollow do for a pair that was never followed?
+why: Nothing, quietly; discard rather than remove means unknown users and repeated unfollows cannot raise.
+code:
+follow(a, b): following[a].add(b)
+unfollow(a, b): following[a].discard(b)
+# For the feed, form the visible set (the user plus followees), walk the global list newest-first keeping visible tweets, and stop at ten.
+hint: Whose tweets belong in a feed, and how many?
+why: The user's own plus their followees', newest first, and the walk stops at ten so it never scans further than it must.
+code:
+feed(user):
+    visible = following[user] plus user
+    result = []
+    for (time, author, id) in tweets newest first:
+        if author in visible: result.add(id)
+        if result.size == 10: break
+    return result
+# Scaling follow-up: per-author tweet lists turn the feed into a k-way merge of the followees' lists, which a heap resolves in about ten steps instead of walking every tweet ever posted.
+hint: If there were millions of tweets, what would the feed walk cost?
+why: The global scan is O(total tweets); per-author lists turn the feed into a k-way merge with a heap, about ten pops of log k each.
 == pseudocode
 post(user, tweet_id):
     tweets.add((clock, user, tweet_id))

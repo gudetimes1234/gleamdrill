@@ -1,7 +1,24 @@
 == nudge
 Both loops are tempting to write with range(len(...)). What do you actually need in each — the index alongside the value, or two sequences walking in lockstep — and which builtins hand you exactly that?
-== steps
-- firstIndexOf: loop for i, value in enumerate(nums) — index and value arrive together, already named.
-- Return i at the first match; return -1 after the loop falls through.
-- dotProduct: zip(a, b) walks both sequences in lockstep, yielding pairs.
-- Unpack each pair as x, y right in the for clause and sum the products — no [0]/[1] indexing, no range(len(...)) anywhere.
+== walk
+# firstIndexOf: loop for i, value in enumerate(nums) — index and value arrive together, already named.
+hint: You need both the position and the value. What gives you both without indexing?
+why: enumerate yields (index, value) pairs, so range(len(nums)) and nums[i] both disappear.
+code:
+for i, value in enumerate(nums):
+# Return i at the first match; return -1 after the loop falls through.
+hint: What does the loop return, and what if it never matches?
+why: Return the index at the first match; a return after the loop is the not-found case and only runs if the loop finishes.
+code:
+    if value == target: return i
+return -1
+# dotProduct: zip(a, b) walks both sequences in lockstep, yielding pairs.
+hint: Two sequences must be walked in step. What pairs them up?
+why: zip stops at the shorter sequence and yields one pair per position, so no index arithmetic is needed.
+code:
+for x, y in zip(a, b):
+# Unpack each pair as x, y right in the for clause and sum the products — no [0]/[1] indexing, no range(len(...)) anywhere.
+hint: Where can a pair be split into two names?
+why: Right in the for clause, so the body reads x * y rather than pair[0] * pair[1]; sum over a generator finishes it.
+code:
+return sum(x * y for x, y in zip(a, b))

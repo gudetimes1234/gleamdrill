@@ -1,12 +1,38 @@
 == nudge
 Standing to the right of the tree, exactly one node per level shows. Which one — and why is it not simply whatever hangs off the right children? Try restating the problem level by level.
-== steps
-- Walk the tree level by level with a whole-frontier loop, exactly as in Level Order Traversal.
-- From each level keep only the last node's value — that is what the right side sees.
-- Build the next frontier from all children, left to right, skipping empties.
-- Repeat until the frontier empties; the kept values, top to bottom, are the answer.
-- Beware the tempting wrong answer of following right children only: where the right side is short, a node further left is the one that shows.
-- Depth-first alternative: visit the right child first and record the first value reached at each new depth — first to a depth is rightmost on it.
+== walk
+# Walk the tree level by level with a whole-frontier loop, exactly as in Level Order Traversal.
+hint: Which traversal already hands you every node on a level at once?
+why: The whole-frontier level walk from Level Order Traversal gives each level as a list, and the right side view is one value from each list.
+code:
+seen = []
+frontier = [root] if root != null else []
+while frontier is not empty:
+# From each level keep only the last node's value — that is what the right side sees.
+hint: Of a whole level, which node does someone standing on the right see?
+why: The last node in left-to-right order is the rightmost on that level, whichever subtree it comes from.
+code:
+    seen.add(value of last node in frontier)
+# Build the next frontier from all children, left to right, skipping empties.
+hint: How do you build the next level so that "last" still means "rightmost"?
+why: Collecting children left to right keeps the level in visual order, so the last element stays the correct pick.
+code:
+    next = []
+    for node in frontier:
+        if node.left != null: next.add(node.left)
+        if node.right != null: next.add(node.right)
+    frontier = next
+# Repeat until the frontier empties; the kept values, top to bottom, are the answer.
+hint: When does the view end?
+why: When a level has no nodes there is nothing below to see; one visit per node makes it O(n).
+code:
+return seen
+# Beware the tempting wrong answer of following right children only: where the right side is short, a node further left is the one that shows.
+hint: What goes wrong if you only ever follow right children?
+why: A left subtree deeper than the right one has levels the right spine never reaches, and those levels are visible from the right.
+# Depth-first alternative: visit the right child first and record the first value reached at each new depth — first to a depth is rightmost on it.
+hint: Is there a depth-first version?
+why: Visiting right before left and recording the first value reached at each new depth works, because the first arrival at a depth is its rightmost node.
 == pseudocode
 seen = []
 frontier = [root] if root != null else []

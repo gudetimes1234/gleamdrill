@@ -1,11 +1,35 @@
 == nudge
 Follow the sequence a few steps for an unhappy number. What must eventually happen, and why can the walk not wander off forever? Name that behaviour and this joins a family of problems you already know how to solve.
-== steps
-- Notice sums of squared digits are bounded, so only finitely many values are reachable — an unhappy walk must eventually revisit a value and loop.
-- That makes this cycle detection wearing a numeric costume.
-- Write the step helper: peel digits with mod 10 and integer division by 10, summing the squares.
-- Keep a set of values already seen and iterate until you reach 1 (happy) or a repeat (trapped in the loop).
-- Follow-up: Floyd's slow and fast pointers do it in constant space — they meet at 1 for a happy number and inside the other cycle otherwise.
+== walk
+# Notice sums of squared digits are bounded, so only finitely many values are reachable — an unhappy walk must eventually revisit a value and loop.
+hint: How large can a sum of squared digits get, and what does that imply about repeating?
+why: It is bounded (a few hundred for reasonable inputs), so an unhappy sequence must revisit a value and cycle forever.
+# That makes this cycle detection wearing a numeric costume.
+hint: Once the sequence can repeat, what problem is this really?
+why: Cycle detection over a hidden linked list where the next pointer is the digit-square step.
+# Write the step helper: peel digits with mod 10 and integer division by 10, summing the squares.
+hint: How do you take a number apart into digits?
+why: mod 10 peels the last digit and integer division drops it; summing the squares is the step function.
+code:
+squareDigits(n):
+    total = 0
+    while n > 0:
+        digit = n mod 10
+        total = total + digit * digit
+        n = n / 10   // integer division
+    return total
+# Keep a set of values already seen and iterate until you reach 1 (happy) or a repeat (trapped in the loop).
+hint: When do you stop iterating, and what does each stop mean?
+why: Reaching 1 is happy; hitting a value already seen is the loop; a seen set tells the two apart.
+code:
+seen = empty set
+while n != 1 and n not in seen:
+    seen.add(n)
+    n = squareDigits(n)
+return n == 1
+# Follow-up: Floyd's slow and fast pointers do it in constant space — they meet at 1 for a happy number and inside the other cycle otherwise.
+hint: Can the set be dropped?
+why: Floyd's slow and fast pointers meet at 1 for a happy number and inside the other cycle otherwise, giving O(1) space.
 == pseudocode
 squareDigits(n):
     total = 0

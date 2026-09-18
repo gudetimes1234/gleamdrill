@@ -1,11 +1,28 @@
 == nudge
 You need a bit count for every number up to n. Counting each one from scratch works — but by the time you reach i, you've already counted a lot of smaller numbers. How is i built out of one of them?
-== steps
-- Allocate an array of n + 1 zeros; index 0 is already correct.
-- See each i as a smaller number with one extra bit on the end: drop the last bit with i >> 1, and that count is already in the array.
-- Fill left to right: counts[i] = counts[i >> 1] + (i AND 1).
-- Return the array — each entry cost one lookup, so the whole thing is O(n) instead of an O(n log n) sweep of per-number popcounts.
-- If asked for a variant recurrence: counts[i] = counts[i AND (i - 1)] + 1 leans on clearing the lowest set bit instead.
+== walk
+# Allocate an array of n + 1 zeros; index 0 is already correct.
+hint: What is the bit count of zero, and what does that give you for free?
+why: Zero, so an array of zeros already has index 0 right and the loop starts at 1.
+code:
+counts = array of (n + 1) zeros
+# See each i as a smaller number with one extra bit on the end: drop the last bit with i >> 1, and that count is already in the array.
+hint: Strip the last bit off i. Is the count for the result already known?
+why: i >> 1 is smaller than i, so its count was filled earlier; the recurrence reuses work instead of counting from scratch.
+# Fill left to right: counts[i] = counts[i >> 1] + (i AND 1).
+hint: What does the last bit add back?
+why: i AND 1 is 1 exactly when i is odd, so each entry is one lookup plus one addition.
+code:
+for i in 1..n:
+    counts[i] = counts[i >> 1] + (i AND 1)
+# Return the array — each entry cost one lookup, so the whole thing is O(n) instead of an O(n log n) sweep of per-number popcounts.
+hint: How does this compare with counting bits of every number separately?
+why: Per-number popcount is O(log n) each, O(n log n) total; the recurrence makes the whole table O(n).
+code:
+return counts
+# If asked for a variant recurrence: counts[i] = counts[i AND (i - 1)] + 1 leans on clearing the lowest set bit instead.
+hint: What other recurrence clears one bit at a time?
+why: i AND (i - 1) clears the lowest set bit, so counts[i] = counts[i AND (i - 1)] + 1 works the same way.
 == pseudocode
 counts = array of (n + 1) zeros
 for i in 1..n:

@@ -1,12 +1,46 @@
 == nudge
 The input is words, but is the ordering really about words? Compare two neighbours in the sorted list — how much of them actually says anything about the alphabet?
-== steps
-- Build a graph over letters, not words: for each adjacent pair of words, find their first differing position.
-- Take exactly one edge from that difference — earlier letter before later letter — because everything after it says nothing.
-- If a pair never differs and the first word is longer, that is a word followed by its own prefix, which no alphabet can explain — return "".
-- Topologically sort the letter graph: count incoming edges per letter, start from the zero-count letters, and release dependents as letters are emitted.
-- If fewer letters come out than exist, the constraints form a cycle — the words contradict each other, return "".
-- Otherwise join the emitted letters into the alphabet.
+== walk
+# Build a graph over letters, not words: for each adjacent pair of words, find their first differing position.
+hint: The words are sorted, but by what? What is the only thing a sorted pair of words tells you about letters?
+why: Order between words is decided at their first differing position, so that one position is the only letter-to-letter fact a pair contributes; everything else is noise.
+code:
+for each adjacent pair (first, second) in words:
+    i = first position where they differ, if any
+# Take exactly one edge from that difference — earlier letter before later letter — because everything after it says nothing.
+hint: Once two words differ at position i, does position i+1 say anything about the alphabet?
+why: After the first difference the later letters are compared by nothing, so taking exactly one edge per pair keeps the graph honest and small: at most one edge per adjacent pair.
+code:
+    if i exists:
+        unlocks[first[i]].add(second[i])
+        waiting[second[i]] += 1
+# If a pair never differs and the first word is longer, that is a word followed by its own prefix, which no alphabet can explain — return "".
+hint: What would it mean for a sorted list to put "apple" before "app"?
+why: A word listed after its own prefix is impossible under any alphabet, so it is not a missing edge but a contradiction; catching it here is what stops the sort from inventing an answer.
+code:
+    else if len(first) > len(second): return ""
+# Topologically sort the letter graph: count incoming edges per letter, start from the zero-count letters, and release dependents as letters are emitted.
+hint: You have a graph of "this letter before that letter". Which classic ordering respects every edge?
+why: Kahn's topological sort emits a letter only once every letter that must precede it is out, so the output honours every constraint in O(V + E).
+code:
+ready = letters with waiting == 0
+order = []
+while ready not empty:
+    letter = ready.pop()
+    order.add(letter)
+    for next in unlocks[letter]:
+        waiting[next] -= 1
+        if waiting[next] == 0: ready.push(next)
+# If fewer letters come out than exist, the constraints form a cycle — the words contradict each other, return "".
+hint: If some letters never reach zero incoming edges, what shape must the constraints have formed?
+why: A cycle keeps every letter on it waiting forever, so a short output is the signature of contradictory words rather than an incomplete run.
+code:
+if len(order) != len(letters): return ""
+# Otherwise join the emitted letters into the alphabet.
+hint: What still has to be true of the letters you emitted before they can be called an alphabet?
+why: Every letter that appears in any word must be in the order, including ones with no constraints at all; seeding waiting counts for all letters is what gets them emitted.
+code:
+return join(order)
 == pseudocode
 letters = every letter appearing in any word
 waiting[letter] = 0 and unlocks[letter] = [] for each letter

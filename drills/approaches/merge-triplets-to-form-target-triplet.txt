@@ -1,11 +1,30 @@
 == nudge
 The merge operation only ever pushes values up, never down. Which triplets are ruined forever the moment you touch them — and once those are out of the room, is there any reason left to be picky?
-== steps
-- Notice a merge takes componentwise maxima, and a maximum never comes back down.
-- Discard every triplet with ANY component above the target: using one would overshoot that component permanently.
-- Every survivor can be merged freely — each of its components only pushes toward the target, never past it.
-- Fold the survivors into one running componentwise maximum.
-- Return whether that maximum equals the target exactly: every target component must actually be supplied by some survivor.
+== walk
+# Notice a merge takes componentwise maxima, and a maximum never comes back down.
+hint: What does a merge do to each component, and can it be undone?
+why: It takes the maximum, which never decreases, so any overshoot is permanent.
+# Discard every triplet with ANY component above the target: using one would overshoot that component permanently.
+hint: Which triplets can never be part of a solution?
+why: Any with a component above the target; merging it would push that component past the target for good.
+code:
+for triplet in triplets:
+    if triplet[0] <= target[0] and triplet[1] <= target[1] and triplet[2] <= target[2]:
+# Every survivor can be merged freely — each of its components only pushes toward the target, never past it.
+hint: Is there any risk in merging all the survivors?
+why: None: every surviving component is at most the target's, so merging only moves toward it.
+# Fold the survivors into one running componentwise maximum.
+hint: What does merging every survivor produce?
+why: The componentwise maximum of all of them, one O(n) pass.
+code:
+best = [0, 0, 0]
+        for i in 0..2:
+            best[i] = max(best[i], triplet[i])
+# Return whether that maximum equals the target exactly: every target component must actually be supplied by some survivor.
+hint: What must that maximum satisfy?
+why: Equality with the target on all three components, meaning each target value was actually supplied by some triplet.
+code:
+return best == target
 == pseudocode
 best = [0, 0, 0]
 for triplet in triplets:

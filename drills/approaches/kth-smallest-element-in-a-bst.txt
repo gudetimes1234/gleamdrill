@@ -1,11 +1,34 @@
 == nudge
 The tree already encodes something about order — what does a particular way of walking it hand you for free? And once the kth thing has been reached, why keep walking at all?
-== steps
-- Walk the tree in order — left subtree, node, right subtree — since a BST yields its values sorted that way.
-- Use an explicit stack so the walk can stop mid-flight; a plain recursive walk would have to run to the end.
-- Slide left from the current node, pushing every node passed.
-- Pop a node, count it, and return its value the moment the count hits k; otherwise step into its right child and slide left again.
-- Follow-up: if the tree is queried often, store subtree sizes in each node and descend one path comparing k against the left subtree's size — O(depth) per query.
+== walk
+# Walk the tree in order — left subtree, node, right subtree — since a BST yields its values sorted that way.
+hint: Which traversal of a BST produces its values in sorted order?
+why: In-order (left, node, right), so the kth value visited is the kth smallest without sorting anything.
+# Use an explicit stack so the walk can stop mid-flight; a plain recursive walk would have to run to the end.
+hint: Why not just write the recursive in-order walk?
+why: It cannot stop early without extra plumbing; an explicit stack lets the walk end the moment the kth node is reached, O(H + k).
+code:
+stack = empty
+node = root
+# Slide left from the current node, pushing every node passed.
+hint: How do you reach the smallest value first?
+why: Slide down the left spine pushing each node, so the deepest left node is on top.
+code:
+while stack not empty or node is not null:
+    while node is not null:
+        stack.push(node)
+        node = node.left
+# Pop a node, count it, and return its value the moment the count hits k; otherwise step into its right child and slide left again.
+hint: After visiting a node, where does the walk go next?
+why: Count it, stop if that made k, otherwise into its right subtree and left-slide again; the stack remembers the ancestors.
+code:
+    node = stack.pop()
+    k = k - 1
+    if k == 0: return node.val
+    node = node.right
+# Follow-up: if the tree is queried often, store subtree sizes in each node and descend one path comparing k against the left subtree's size — O(depth) per query.
+hint: If this query runs constantly, what could the tree store to make it faster?
+why: Subtree sizes: comparing k with the left size picks a direction at each node, so a query is O(depth) instead of O(k).
 == pseudocode
 stack = empty
 node = root

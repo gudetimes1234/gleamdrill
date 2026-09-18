@@ -1,11 +1,33 @@
 == nudge
 One comparison against one well-chosen element — how much of the array can that single answer eliminate? And what promise about your two boundary markers must survive every iteration for the loop to be correct?
-== steps
-- Keep inclusive bounds left and right around the region that could still hold the target.
-- Probe the middle, computed as left + (right - left) div 2 so fixed-width languages cannot overflow.
-- A match returns the index; a smaller middle means the target can only be right of mid, a larger one only left.
-- Move the losing bound past mid — never onto it, or the loop can stall forever.
-- Bounds crossing means the region is empty: return -1. O(log n) because the region halves every step.
+== walk
+# Keep inclusive bounds left and right around the region that could still hold the target.
+hint: What do left and right mean, exactly? Is the target allowed to be at either bound?
+why: Inclusive bounds make the invariant simple: the target, if present, lies within [left, right], and the loop condition falls straight out of that.
+code:
+left, right = 0, n - 1
+while left <= right:
+# Probe the middle, computed as left + (right - left) div 2 so fixed-width languages cannot overflow.
+hint: Why not just (left + right) / 2?
+why: left + (right - left) / 2 gives the same midpoint without the sum overflowing a fixed-width integer, and it is the form interviewers look for.
+code:
+    mid = left + (right - left) div 2
+# A match returns the index; a smaller middle means the target can only be right of mid, a larger one only left.
+hint: The middle is not the target. What does the sort order tell you about which half can still hold it?
+why: Because the array is sorted, one comparison rules out an entire half, which is the whole reason the search is logarithmic.
+code:
+    if nums[mid] == target: return mid
+    if nums[mid] < target: left = mid + 1
+# Move the losing bound past mid — never onto it, or the loop can stall forever.
+hint: If you set left = mid instead of mid + 1, what happens when left and right are one apart?
+why: mid has already been checked, so the new bound must step past it; landing on it can leave the region unchanged and the loop spinning forever.
+code:
+    else: right = mid - 1
+# Bounds crossing means the region is empty: return -1. O(log n) because the region halves every step.
+hint: What does left > right say about the region you were searching?
+why: Crossed bounds mean the candidate region is empty, so the target is absent; each iteration halves the region, giving O(log n).
+code:
+return -1
 == pseudocode
 left, right = 0, n - 1
 while left <= right:

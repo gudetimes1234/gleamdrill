@@ -1,12 +1,36 @@
 == nudge
 Forget "two subsets" — once one subset is chosen, the other is whatever remains. What single number must the chosen subset hit, and when is hitting it impossible before any work at all?
-== steps
-- Reduce to subset sum: an equal split exists exactly when some subset reaches half the total.
-- Check parity first: an odd total rules the split out immediately.
-- Carry the set of sums reachable so far, starting from {0}.
-- For each number, widen the set with every existing sum plus that number, discarding anything past half.
-- Answer whether half landed in the set — no ordering needed and no 2-D table; the set collapses duplicates for free.
-- The take-it-or-leave-it recursion states the same search and makes the underlying 2^n visible; the reachable set is its collapsed form.
+== walk
+# Reduce to subset sum: an equal split exists exactly when some subset reaches half the total.
+hint: If one group sums to half the total, what must the other group sum to?
+why: The other half, so an equal split exists exactly when some subset reaches half: the problem is subset sum.
+# Check parity first: an odd total rules the split out immediately.
+hint: What can an odd total tell you before any search?
+why: No two equal halves exist, so answer false immediately.
+code:
+total = sum(nums)
+if total is odd: return false
+half = total / 2
+# Carry the set of sums reachable so far, starting from {0}.
+hint: What state summarises the subsets considered so far?
+why: The set of sums they can reach, starting with 0 from the empty subset.
+code:
+reachable = {0}
+# For each number, widen the set with every existing sum plus that number, discarding anything past half.
+hint: How does one number extend the reachable sums?
+why: Every reachable sum plus the number is reachable too; sums past half are useless and dropped. O(n * half).
+code:
+for n in nums:
+    for s in a copy of reachable:
+        if s + n <= half: reachable.add(s + n)
+# Answer whether half landed in the set — no ordering needed and no 2-D table; the set collapses duplicates for free.
+hint: What is the final question?
+why: Whether half is in the set; the set collapsed duplicate sums so no 2-D table was needed.
+code:
+return half in reachable
+# The take-it-or-leave-it recursion states the same search and makes the underlying 2^n visible; the reachable set is its collapsed form.
+hint: What does the recursive take-or-leave version make visible?
+why: The 2^n choices underneath; the reachable set is that search with equal states merged.
 == pseudocode
 total = sum(nums)
 if total is odd: return false

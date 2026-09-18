@@ -1,12 +1,39 @@
 == nudge
 A square has four corners, but how many of them do you actually get to choose? Given the query point, which single other corner would pin down the whole square — and what does that reduce the counting to?
-== steps
-- Store added points in a map from (x, y) to how many copies sit there — duplicates matter.
-- add is just an increment of that count.
-- For count, loop over every stored point as the candidate corner diagonally opposite the query.
-- A valid diagonal partner shares neither coordinate with the query and satisfies |px - x| == |py - y| — a true diagonal.
-- That choice forces the other two corners to (x, py) and (px, y); add copies(diagonal) times copies(x, py) times copies(px, y) to the total.
-- Duplicated points multiply rather than repeat: two points at the same spot really do make two squares.
+== walk
+# Store added points in a map from (x, y) to how many copies sit there — duplicates matter.
+hint: Two points can be added at the same coordinates. What must the storage remember about that?
+why: How many copies sit there, so a map from point to count rather than a set; duplicates change the answer.
+code:
+counts = empty map
+# add is just an increment of that count.
+hint: What does add have to do?
+why: Increment that point's count; O(1) and nothing else.
+code:
+add(point):
+    counts[point] += 1
+# For count, loop over every stored point as the candidate corner diagonally opposite the query.
+hint: Which single choice determines a whole square containing the query point?
+why: Its diagonally opposite corner; enumerating stored points as that corner covers every square in O(points) per query.
+code:
+count(x, y):
+    total = 0
+    for each (px, py) with c copies in counts:
+# A valid diagonal partner shares neither coordinate with the query and satisfies |px - x| == |py - y| — a true diagonal.
+hint: What makes a candidate a true diagonal partner?
+why: It must differ in both coordinates by the same amount; sharing a coordinate or unequal offsets cannot be a square's diagonal.
+code:
+        if px == x or py == y: continue
+        if abs(px - x) != abs(py - y): continue
+# That choice forces the other two corners to (x, py) and (px, y); add copies(diagonal) times copies(x, py) times copies(px, y) to the total.
+hint: Given the diagonal, where are the other two corners, and how many squares do they make?
+why: At (x, py) and (px, y); the number of squares is the product of the three counts, since any copy pairs with any copy.
+code:
+        total += c * counts[(x, py)] * counts[(px, y)]
+    return total
+# Duplicated points multiply rather than repeat: two points at the same spot really do make two squares.
+hint: If a corner has two copies, how many squares is that?
+why: Two: multiplying counts is what makes duplicates count as distinct squares rather than being collapsed.
 == pseudocode
 counts = empty map
 

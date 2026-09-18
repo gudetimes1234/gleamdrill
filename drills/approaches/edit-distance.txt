@@ -1,11 +1,37 @@
 == nudge
 Line the two words up, prefix against prefix. Each of the three allowed edits shrinks the comparison in its own way — what smaller problem does each one leave behind, and what should matching characters cost?
-== steps
-- Define dist(i, j) = the fewest edits turning the first i characters of word1 into the first j of word2.
-- Equal current characters cost nothing: take the diagonal dist(i-1, j-1) outright.
-- Otherwise pay 1 plus the best neighbour: the diagonal for replace, above for delete, the left for insert.
-- Seed the first row and column with 0, 1, 2, ... — the cost of building a string out of nothing is its length.
-- Fill row by row keeping only the previous row; the bottom-right cell is the answer.
+== walk
+# Define dist(i, j) = the fewest edits turning the first i characters of word1 into the first j of word2.
+hint: What subproblem, if solved for shorter prefixes, would give the answer for longer ones?
+why: The distance between prefixes of both words; every edit either consumes a character of one word, the other, or both, which is why a two-dimensional table of prefixes closes.
+# Equal current characters cost nothing: take the diagonal dist(i-1, j-1) outright.
+hint: If the two current characters are the same, is any edit needed for them?
+why: No, so the cost is exactly the cost of the two shorter prefixes: the diagonal cell, taken outright.
+code:
+        if word1[i-1] == word2[j-1]:
+            row[j] = previous[j-1]
+# Otherwise pay 1 plus the best neighbour: the diagonal for replace, above for delete, the left for insert.
+hint: If they differ, what are the three edits, and which cell does each one come from?
+why: Replace comes from the diagonal, delete from above (one fewer of word1), insert from the left (one fewer of word2); each costs one plus that cell.
+code:
+        else:
+            row[j] = 1 + min(previous[j-1], previous[j], row[j-1])
+# Seed the first row and column with 0, 1, 2, ... — the cost of building a string out of nothing is its length.
+hint: What does it cost to turn a prefix into nothing, or nothing into a prefix?
+why: Its length, one deletion or insertion per character, which seeds the first row and column.
+code:
+previous = [0, 1, 2, ..., len(word2)]
+    row[0] = i
+# Fill row by row keeping only the previous row; the bottom-right cell is the answer.
+hint: How much of the table does a row read?
+why: Only the previous row and the cell to its left, so two rows suffice; the last cell of the last row is the answer, O(m * n) time and O(n) space.
+code:
+for i in 1..len(word1):
+    row = array of len(word2)+1 zeros
+    for j in 1..len(word2):
+        ...
+    previous = row
+return previous[len(word2)]
 == pseudocode
 previous = [0, 1, 2, ..., len(word2)]
 for i in 1..len(word1):

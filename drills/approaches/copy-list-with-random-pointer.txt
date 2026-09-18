@@ -1,11 +1,35 @@
 == nudge
 A plain copy walk stumbles on the extra link: it can point at a node you have not reached yet, so it cannot be resolved on first sight. What would let you look up "the copy of that node" later, whenever the link finally makes sense?
-== steps
-- Make one pass creating a copy of every node, recording original to copy in a map; seed the map with null mapping to null so empty links resolve themselves.
-- Make a second pass wiring the copies: copy.next = map[original.next] and copy.random = map[original.random].
-- Return the map entry for the head.
-- Recognise the shape: this is Clone Graph on a list — a node-to-copy map whenever links can point anywhere.
-- Follow-up, O(1) extra space: splice each copy in right after its original so the interleaved list is the map, wire the randoms through it, then unweave in a third pass.
+== walk
+# Make one pass creating a copy of every node, recording original to copy in a map; seed the map with null mapping to null so empty links resolve themselves.
+hint: A random link may point at a node you have not copied yet. What lets you resolve it later without a search?
+why: A map from original to copy, built in a first pass, answers every link in O(1) afterwards; mapping null to null means an empty link needs no special case.
+code:
+copies = map with copies[null] = null
+node = head
+while node != null:
+    copies[node] = new node(node.value)
+    node = node.next
+# Make a second pass wiring the copies: copy.next = map[original.next] and copy.random = map[original.random].
+hint: With every copy existing, how do you set a copy's two pointers?
+why: Look up where the original's next and random go and take their copies; both passes are O(n) with O(n) extra space.
+code:
+node = head
+while node != null:
+    copies[node].next = copies[node.next]
+    copies[node].random = copies[node.random]
+    node = node.next
+# Return the map entry for the head.
+hint: Which copy is the new head?
+why: The map entry for the original head, which for an empty list resolves to null through the seeded entry.
+code:
+return copies[head]
+# Recognise the shape: this is Clone Graph on a list — a node-to-copy map whenever links can point anywhere.
+hint: What problem does this map-then-wire shape come from?
+why: Clone Graph: whenever links can point anywhere, a node-to-copy map is the general tool and the list is just a special case.
+# Follow-up, O(1) extra space: splice each copy in right after its original so the interleaved list is the map, wire the randoms through it, then unweave in a third pass.
+hint: Can the map be avoided?
+why: Splicing each copy right after its original makes the list itself the map: copy.random is original.random.next, and a final pass unweaves the two lists.
 == pseudocode
 copies = map with copies[null] = null
 node = head

@@ -1,8 +1,31 @@
 == nudge
 A counting problem, and the sticking point is incrementing a key that may not exist yet. Is there a dict operation that hands you "what's there, if anything" and stores whatever you answer — so the get-then-insert dance disappears?
-== steps
-- Normalise first, as a pipeline: string.lowercase, string.split on " ", list.filter out the empty strings.
-- Fold the words over dict.new() as the accumulator.
-- Inside the fold, dict.upsert(counts, word, fn) — the callback receives Some(current) or None and stores what it returns.
-- The callback body is one line: option.unwrap(n, 0) + 1 — absent reads as 0, then increment.
-- The whole function is one pipeline ending in the fold; no case expressions needed.
+== walk
+# Normalise first, as a pipeline: string.lowercase, string.split on " ", list.filter out the empty strings.
+hint: What cleaning does the text need before anything is counted?
+why: Lowercase so case does not split a word, split on spaces, and drop the empty strings that repeated spaces produce; as a pipeline it reads as the three steps.
+code:
+text
+|> string.lowercase
+|> string.split(" ")
+|> list.filter(fn(w) { w != "" })
+# Fold the words over dict.new() as the accumulator.
+hint: With a list of words, what replaces the mutable loop that fills a map?
+why: A fold over the words with an empty dict as the accumulator; each word returns the next dict.
+code:
+|> list.fold(dict.new(), fn(counts, word) {
+# Inside the fold, dict.upsert(counts, word, fn) — the callback receives Some(current) or None and stores what it returns.
+hint: How do you increment a key that may not exist yet, in one call?
+why: dict.upsert hands the callback Some(current) or None and stores whatever it returns, so present and absent are one code path.
+code:
+  dict.upsert(counts, word, fn(n) {
+# The callback body is one line: option.unwrap(n, 0) + 1 — absent reads as 0, then increment.
+hint: What is the callback for a count?
+why: Absent reads as 0, then add one; option.unwrap does the defaulting.
+code:
+    option.unwrap(n, 0) + 1
+  })
+})
+# The whole function is one pipeline ending in the fold; no case expressions needed.
+hint: Is there any branching left?
+why: None: the pipeline ends in the fold and the upsert callback handles both cases, so no case expression appears.

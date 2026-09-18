@@ -1,12 +1,38 @@
 == nudge
 Checking balance at every node by measuring heights fresh asks the same subtree the same question over and over. Could the height computation itself carry the verdict — and once one subtree has failed, what is left to measure?
-== steps
-- Write one walk that reports a subtree's height, with a twist: -1 means something below is already unbalanced.
-- Base case: an empty subtree has height 0.
-- Measure both children; if either reports -1, pass -1 straight up without measuring anything else.
-- If the two heights differ by more than one, this node breaks the rule — report -1.
-- Otherwise report 1 plus the larger height.
-- The tree is balanced when the root's report is not -1; the sentinel-in-the-return trick is the same move as the diameter walk.
+== walk
+# Write one walk that reports a subtree's height, with a twist: -1 means something below is already unbalanced.
+hint: Height and balance are usually two separate walks. What one return value could carry both?
+why: Folding "unbalanced" into the height as a sentinel makes a single O(n) post-order walk do the job; a separate height call per node would be O(n log n) or worse.
+code:
+measure(node):
+# Base case: an empty subtree has height 0.
+hint: What is the height of nothing, and is nothing balanced?
+why: An empty subtree is the base case both questions share: height 0, and trivially balanced, so it never returns the sentinel.
+code:
+    if node == null: return 0
+# Measure both children; if either reports -1, pass -1 straight up without measuring anything else.
+hint: If a child already reported trouble, is there any point measuring the other side?
+why: Propagating -1 unchanged short-circuits the walk; the first imbalance found is enough, and passing it straight up keeps the answer O(n).
+code:
+    left = measure(node.left)
+    right = measure(node.right)
+    if left == -1 or right == -1: return -1
+# If the two heights differ by more than one, this node breaks the rule — report -1.
+hint: What exactly does "balanced" ask of this node, given the two child heights?
+why: The rule is local: a node is fine when its children's heights differ by at most one; violating it here is what turns a height into the sentinel.
+code:
+    if abs(left - right) > 1: return -1
+# Otherwise report 1 plus the larger height.
+hint: With both children fine, what is this node's height?
+why: A node adds one level on top of its taller child, which is the ordinary height recurrence the sentinel rides along with.
+code:
+    return 1 + max(left, right)
+# The tree is balanced when the root's report is not -1; the sentinel-in-the-return trick is the same move as the diameter walk.
+hint: The root has answered. How do you read a yes or no out of a height?
+why: Any non-negative number means no node anywhere broke the rule; the same encode-trouble-in-the-return move solves the diameter problem.
+code:
+return measure(root) != -1
 == pseudocode
 measure(node):
     if node == null: return 0

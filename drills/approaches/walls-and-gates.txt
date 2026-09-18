@@ -1,11 +1,32 @@
 == nudge
 Every room wants its nearest gate, but searching outward from each room repeats a full sweep per room. Who else could do the searching — and if they all start at once, what does being reached first mean?
-== steps
-- Run one breadth-first search seeded with every gate at once, all at distance zero.
-- Pop a cell and look at its four neighbours; an empty room still holding the infinity marker gets the popped cell's distance plus one.
-- Let the written distance double as the visited mark — a room already filled is never touched again.
-- Because all gates start together, the first arrival at a room is from its nearest gate, so no value is ever revised.
-- Walls and unreachable rooms are simply never written to; they keep their original values.
+== walk
+# Run one breadth-first search seeded with every gate at once, all at distance zero.
+hint: Why start the search from every gate at once?
+why: So each room's first arrival is from its nearest gate; a multi-source BFS gives all distances in one pass.
+code:
+frontier = queue of every gate cell
+# Pop a cell and look at its four neighbours; an empty room still holding the infinity marker gets the popped cell's distance plus one.
+hint: What does a popped cell do to its neighbours?
+why: Any empty room still marked infinite gets this cell's distance plus one and joins the queue.
+code:
+while frontier not empty:
+    (r, c) = frontier.pop_front()
+    for each in-bounds neighbour (nr, nc):
+        if rooms[nr][nc] == INFINITY:
+            rooms[nr][nc] = rooms[r][c] + 1
+            frontier.push_back((nr, nc))
+# Let the written distance double as the visited mark — a room already filled is never touched again.
+hint: Where is the visited set?
+why: The written distance itself: a filled room is no longer infinite, so it is never touched again.
+# Because all gates start together, the first arrival at a room is from its nearest gate, so no value is ever revised.
+hint: Why is a distance never revised?
+why: BFS from all gates reaches every room in nondecreasing distance order, so the first write is the smallest.
+# Walls and unreachable rooms are simply never written to; they keep their original values.
+hint: What happens to walls and unreachable rooms?
+why: They are never written, so they keep their original values; O(rows * cols).
+code:
+return rooms
 == pseudocode
 frontier = queue of every gate cell
 while frontier not empty:

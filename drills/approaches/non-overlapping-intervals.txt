@@ -1,12 +1,35 @@
 == nudge
 Flip the objective: removing the fewest intervals is the same as keeping the most. When several intervals fight over the same stretch, which single property of an interval decides which one is safest to keep?
-== steps
-- Reframe as keeping the largest non-overlapping set — the classic activity-selection greedy.
-- Sort by END time, not start.
-- Sweep, keeping an interval whenever it starts at or after the end of the last one kept; count everything else as removed.
-- The exchange argument: the interval finishing earliest leaves the most room for everything after it, so keeping it can never be worse.
-- Touching at a point does not overlap here, so the keep test is start >= last kept end.
-- Know why sorting by start is the natural wrong answer — it keeps whichever came first, which may be a very long interval that smothers many others.
+== walk
+# Reframe as keeping the largest non-overlapping set — the classic activity-selection greedy.
+hint: Removing the fewest intervals is the same as doing what with the rest?
+why: Keeping the most non-overlapping ones, which is activity selection, a classic greedy.
+# Sort by END time, not start.
+hint: Which sort order makes the greedy choice obvious?
+why: By end time: the interval that finishes first constrains the future least.
+code:
+sort intervals by end
+# Sweep, keeping an interval whenever it starts at or after the end of the last one kept; count everything else as removed.
+hint: What is the decision at each interval?
+why: Keep it if it starts after the last kept one ends; otherwise it overlaps and is counted as removed. O(n log n).
+code:
+removed = 0
+last_end = -infinity
+for [start, end] in intervals:
+    if start >= last_end:
+        last_end = end
+    else:
+        removed = removed + 1
+return removed
+# The exchange argument: the interval finishing earliest leaves the most room for everything after it, so keeping it can never be worse.
+hint: Why is keeping the earliest-ending interval never worse?
+why: Any optimal solution's first kept interval can be swapped for it without creating an overlap; that exchange argument is the proof.
+# Touching at a point does not overlap here, so the keep test is start >= last kept end.
+hint: Do intervals that touch at a point overlap?
+why: Not here, so the keep test uses >= on the start.
+# Know why sorting by start is the natural wrong answer — it keeps whichever came first, which may be a very long interval that smothers many others.
+hint: What goes wrong sorting by start?
+why: The first-starting interval may be very long and smother many short ones that together would keep more.
 == pseudocode
 sort intervals by end
 removed = 0

@@ -1,8 +1,27 @@
 == nudge
 Written with nested calls, this reads inside-out: the first thing that happens is buried deepest. What operator turns the same five transformations into a top-to-bottom recipe, and what's the telltale sign code wants it?
-== steps
-- Start from the input: title |> string.trim.
-- Keep piping: |> string.lowercase, |> string.split(" ") — each result feeds the next call's first argument.
-- Drop the empty words with |> list.filter(fn(w) { w != "" }) — double spaces would otherwise leave empty segments.
-- Finish with |> string.join("-") and the slug falls out; the function body is one expression.
-- The telltale sign: if you're naming throwaway intermediate variables, the code probably wants to be a pipeline.
+== walk
+# Start from the input: title |> string.trim.
+hint: What is the first thing to do with a title before splitting it?
+why: Trim it, so stray spaces at the ends do not become empty words.
+code:
+title |> string.trim
+# Keep piping: |> string.lowercase, |> string.split(" ") — each result feeds the next call's first argument.
+hint: How does each step receive the previous result?
+why: The pipe passes it as the first argument, so lowercase then split read in order.
+code:
+|> string.lowercase
+|> string.split(" ")
+# Drop the empty words with |> list.filter(fn(w) { w != "" }) — double spaces would otherwise leave empty segments.
+hint: What does a double space produce after splitting, and how is it removed?
+why: An empty segment; a filter drops them before joining.
+code:
+|> list.filter(fn(w) { w != "" })
+# Finish with |> string.join("-") and the slug falls out; the function body is one expression.
+hint: How does the list become a slug?
+why: Join with a dash; the whole function body is one expression.
+code:
+|> string.join("-")
+# The telltale sign: if you're naming throwaway intermediate variables, the code probably wants to be a pipeline.
+hint: What in your code hints that a pipeline is wanted?
+why: Throwaway intermediate variables used once each; the pipe removes the names and keeps the order.

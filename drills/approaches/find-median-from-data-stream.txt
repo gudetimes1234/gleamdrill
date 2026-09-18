@@ -1,12 +1,35 @@
 == nudge
 The median only ever cares about the middle — the value or two at the inner edge of each half. What kind of structure gives up its extreme value cheaply, and how would two of them, facing each other, be kept in balance?
-== steps
-- Keep the smaller half in a max-heap and the larger half in a min-heap; the median lives at their roots.
-- Route every new value through the lower heap: push it there, then move the lower heap's maximum into the upper heap — that enforces the order invariant.
-- If the upper heap outgrows the lower, move its minimum back down; sizes stay within one, with the lower heap allowed the extra element.
-- Report the lower root alone when the count is odd, the average of the two roots when even.
-- With a min-heap-only library, store the lower half negated.
-- Follow-up: a sorted list with binary-search insertion is O(n) per add; the two heaps make adds O(log n) and the median O(1).
+== walk
+# Keep the smaller half in a max-heap and the larger half in a min-heap; the median lives at their roots.
+hint: The median is the boundary between two halves. Which structure gives you the extreme of each half in O(1)?
+why: A max-heap for the lower half and a min-heap for the upper put the two middle values at the roots.
+# Route every new value through the lower heap: push it there, then move the lower heap's maximum into the upper heap — that enforces the order invariant.
+hint: A new value arrives. How do you guarantee it lands in the correct half?
+why: Push it into the lower heap, then hand the lower heap's maximum to the upper heap; whatever it was, the largest of the lower half now sits above.
+code:
+add(value):
+    lower.push(value)          -- max-heap, smaller half
+    upper.push(lower.pop())    -- min-heap, larger half
+# If the upper heap outgrows the lower, move its minimum back down; sizes stay within one, with the lower heap allowed the extra element.
+hint: After the hand-off, which heap might be too big?
+why: The upper one, by one; moving its minimum back keeps the sizes within one with the lower heap holding any extra element.
+code:
+    if upper.size > lower.size:
+        lower.push(upper.pop())
+# Report the lower root alone when the count is odd, the average of the two roots when even.
+hint: With the sizes balanced, where is the median?
+why: The lower root alone when the count is odd, the average of the two roots when even; both are O(1) reads.
+code:
+median():
+    if lower.size > upper.size: return lower.top
+    return (lower.top + upper.top) / 2
+# With a min-heap-only library, store the lower half negated.
+hint: What if the library only offers a min-heap?
+why: Store the lower half negated: the smallest negative is the largest original, so the min-heap behaves as a max-heap.
+# Follow-up: a sorted list with binary-search insertion is O(n) per add; the two heaps make adds O(log n) and the median O(1).
+hint: Why not keep a sorted list and insert by binary search?
+why: The insertion shifts elements, O(n) per add; two heaps make adds O(log n) and the median O(1).
 == pseudocode
 add(value):
     lower.push(value)          -- max-heap, smaller half

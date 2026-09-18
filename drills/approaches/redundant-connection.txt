@@ -1,12 +1,38 @@
 == nudge
 A tree plus one extra edge — so exactly one loop hides in the edge list. Adding edges one at a time, what moment would tell you an edge did no useful work?
-== steps
-- Grow the graph edge by edge with union-find: every node points toward a parent, and a root is a node that is its own parent.
-- For each edge, find the root of both endpoints by walking parent pointers upward.
-- Different roots: the edge joins two components — merge them by pointing one root at the other.
-- Same root: the endpoints were already connected, so this edge closes the cycle — record it.
-- Processing edges in the given order is what makes the recorded edge the last removable one, which is what the problem asks for.
-- The brute-force reading — delete each edge in turn and test whether a tree remains — is the honest O(n^2) baseline worth naming before beating it.
+== walk
+# Grow the graph edge by edge with union-find: every node points toward a parent, and a root is a node that is its own parent.
+hint: What structure lets you add edges one at a time and ask whether two nodes are already connected?
+why: Union-find: each node points toward a parent, and a root is its own parent.
+code:
+parent[node] = node, for every node
+# For each edge, find the root of both endpoints by walking parent pointers upward.
+hint: How do you find a node's component?
+why: Walk parent pointers until reaching a root.
+code:
+function find(node):
+    while parent[node] != node: node = parent[node]
+    return node
+# Different roots: the edge joins two components — merge them by pointing one root at the other.
+hint: Two endpoints have different roots. What does the edge do?
+why: Joins two components; point one root at the other.
+code:
+for (a, b) in edges:
+    rootA, rootB = find(a), find(b)
+    else: parent[rootA] = rootB
+# Same root: the endpoints were already connected, so this edge closes the cycle — record it.
+hint: And when the roots are the same?
+why: The endpoints were already connected, so this edge closes a cycle; record it.
+code:
+    if rootA == rootB: answer = (a, b)
+# Processing edges in the given order is what makes the recorded edge the last removable one, which is what the problem asks for.
+hint: Why process the edges in the given order?
+why: The problem wants the last edge that could be removed, and taking edges in order makes the recorded one exactly that.
+code:
+return answer
+# The brute-force reading — delete each edge in turn and test whether a tree remains — is the honest O(n^2) baseline worth naming before beating it.
+hint: What baseline should you be able to state?
+why: Delete each edge in turn and test whether a tree remains, O(n²); union-find beats it in near-linear time.
 == pseudocode
 parent[node] = node, for every node
 

@@ -1,12 +1,36 @@
 == nudge
 Without the dot this is a structure you already know. What does one wildcard character force the lookup to become — and what keeps that from degenerating into checking every stored word?
-== steps
-- Store the words in a trie: letter-to-child maps with an end-of-word flag; addWord is the plain insert.
-- Search recursively over the pattern: a literal letter follows its single child or fails immediately.
-- A dot tries every child of the current node against the rest of the pattern, succeeding if any does.
-- When the pattern is exhausted, succeed only if the current node's end-of-word flag is set.
-- The trie's payoff is pruning: a branch dies at the first letter that cannot match, so shared prefixes are explored once instead of once per word.
-- Cheap alternative worth naming: bucket words by length and scan the matching bucket — a pattern can only match words of its own length.
+== walk
+# Store the words in a trie: letter-to-child maps with an end-of-word flag; addWord is the plain insert.
+hint: Words share prefixes. Which structure stores them so a prefix is walked once?
+why: A trie: each node maps a letter to a child, with a flag marking word ends; addWord is a walk that creates missing children.
+# Search recursively over the pattern: a literal letter follows its single child or fails immediately.
+hint: For a literal letter in the pattern, how many branches can match?
+why: One: the child under that letter, or none, which fails immediately.
+code:
+    if letter not in node.children: return false
+    return search(node.children[letter], rest)
+# A dot tries every child of the current node against the rest of the pattern, succeeding if any does.
+hint: A dot can be any letter. What does the search do at that point?
+why: Try every child against the rest of the pattern and succeed if any branch does; this is where the recursion fans out.
+code:
+    if letter == ".":
+        for child in values of node.children:
+            if search(child, rest): return true
+        return false
+# When the pattern is exhausted, succeed only if the current node's end-of-word flag is set.
+hint: The pattern has run out. Is being at some node enough?
+why: Only if a word ends exactly here; the terminal flag distinguishes a stored word from a prefix of one.
+code:
+search(node, pattern):
+    if pattern is empty: return node.terminal
+    letter = pattern[0]; rest = pattern[1 ..]
+# The trie's payoff is pruning: a branch dies at the first letter that cannot match, so shared prefixes are explored once instead of once per word.
+hint: Why is this better than checking every stored word against the pattern?
+why: A trie branch dies at the first letter that cannot match, so shared prefixes are examined once instead of once per word.
+# Cheap alternative worth naming: bucket words by length and scan the matching bucket — a pattern can only match words of its own length.
+hint: What cheaper structure would also work?
+why: Buckets by length: a pattern can only match words of its own length, so scanning that bucket is correct and often fast enough.
 == pseudocode
 search(node, pattern):
     if pattern is empty: return node.terminal

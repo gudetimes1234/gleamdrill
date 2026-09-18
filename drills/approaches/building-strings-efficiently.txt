@@ -1,7 +1,22 @@
 == nudge
 Concatenating with += in a loop looks harmless. But strings are immutable — so what does each += actually do to everything built so far, and what does that add up to across the loop?
-== steps
-- Recognise the trap: every += copies the whole string built so far, so the loop is O(n squared).
-- Collect the pieces in a list instead — appending to a list is O(1).
-- Append each character's uppercased form as you walk the input.
-- Join once at the end with "".join(parts) — one O(n) pass builds the final string.
+== walk
+# Recognise the trap: every += copies the whole string built so far, so the loop is O(n squared).
+hint: What does the runtime do each time you append to an immutable string?
+why: Every += copies the whole accumulated string, so n appends touch O(n²) characters; the cost is invisible in the code and brutal on long input.
+# Collect the pieces in a list instead — appending to a list is O(1).
+hint: Which structure lets you add a piece in constant time?
+why: A list append is amortised O(1), so collecting pieces and joining once is O(n) overall.
+code:
+pieces = []
+# Append each character's uppercased form as you walk the input.
+hint: What goes into the list on each step of the loop?
+why: Each transformed character, ready for one join; the transformation stays inside the loop, the concatenation does not.
+code:
+for ch in text:
+    pieces.append(ch.upper())
+# Join once at the end with "".join(parts) — one O(n) pass builds the final string.
+hint: How do the pieces become one string without another quadratic loop?
+why: A single join measures the total once and copies each piece once, so the final build is one O(n) pass.
+code:
+return "".join(pieces)

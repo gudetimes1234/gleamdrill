@@ -1,12 +1,38 @@
 == nudge
 One independent choice per digit, and no way for a choice to ever be wrong. What does the size of the answer have to be, then — and what does a backtracking search collapse into when no branch can fail?
-== steps
-- Map each digit to its keypad letters.
-- Handle the empty input first: no digits means no combinations, not one empty string.
-- Recurse: build every combination of the remaining digits, then attach each letter of the first digit to the front of each tail.
-- Base case: no digits left yields one empty string — the seed the letters accumulate onto.
-- Name what this is: a plain cross product of the letter sets, backtracking with nothing to prune.
-- Follow-up: an iterative fold builds the same product with no call stack — start from one empty string and expand through each digit in turn.
+== walk
+# Map each digit to its keypad letters.
+hint: What lookup does every step need?
+why: Digit to its letters; a small fixed map, built once.
+code:
+keypad = map from digit to its letters
+# Handle the empty input first: no digits means no combinations, not one empty string.
+hint: What should an empty input produce, and why is it a special case?
+why: No combinations at all; the recursion's base case yields one empty string, so the empty input must be caught before it.
+code:
+if digits is empty: return []
+# Recurse: build every combination of the remaining digits, then attach each letter of the first digit to the front of each tail.
+hint: Given all combinations of the remaining digits, how do you handle the first digit?
+why: Prepend each of its letters to every tail; the result size multiplies by the letter count at each digit.
+code:
+function build(digits):
+    tails = build(digits after the first)
+    result = []
+    for letter in keypad[digits[0]]:
+        for tail in tails:
+            result.add(letter + tail)
+    return result
+# Base case: no digits left yields one empty string — the seed the letters accumulate onto.
+hint: What does the recursion bottom out on?
+why: No digits left gives one empty string, the seed that letters accumulate onto.
+code:
+    if digits is empty: return [""]
+# Name what this is: a plain cross product of the letter sets, backtracking with nothing to prune.
+hint: Is anything ever pruned?
+why: No, this is a plain cross product; the output size is the cost, O(4^n) at worst.
+# Follow-up: an iterative fold builds the same product with no call stack — start from one empty string and expand through each digit in turn.
+hint: Can the same product be built without recursion?
+why: A fold starting from one empty string expands through each digit in turn, no call stack.
 == pseudocode
 if digits is empty: return []
 

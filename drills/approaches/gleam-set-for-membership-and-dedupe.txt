@@ -1,8 +1,30 @@
 == nudge
 "Have I seen this before?" asked once per element — a list answers that slowly, something else answers it fast. And since the output must keep first-seen order, how many things does the fold have to carry?
-== steps
-- Answer membership with gleam/set, not a list — set.contains is effectively O(1) where list.contains is O(n).
-- Fold over the items carrying a pair #(kept, seen): the deduped list so far plus the set of values already seen.
-- When set.contains says the item is old, pass the accumulator through unchanged.
-- When it's new, prepend it to kept and insert it into seen.
-- Prepending built kept backwards, so list.reverse it at the end to restore first-seen order.
+== walk
+# Answer membership with gleam/set, not a list — set.contains is effectively O(1) where list.contains is O(n).
+hint: What does "have I seen this" cost on a list, and on a set?
+why: list.contains scans everything for O(n) per check; set.contains is effectively O(1), so the dedupe stays O(n) overall.
+# Fold over the items carrying a pair #(kept, seen): the deduped list so far plus the set of values already seen.
+hint: A fold carries one accumulator. What two things does dedupe need to carry?
+why: The kept items and the seen set; a tuple accumulator carries both through one pass.
+code:
+list.fold(items, #([], set.new()), fn(acc, item) {
+  let #(kept, seen) = acc
+# When set.contains says the item is old, pass the accumulator through unchanged.
+hint: What should happen to an item already in the set?
+why: Nothing: returning the accumulator unchanged is the skip.
+code:
+  case set.contains(seen, item) {
+    True -> acc
+# When it's new, prepend it to kept and insert it into seen.
+hint: And to a new one?
+why: Prepend it to kept and record it in seen; prepending is O(1) where appending would copy the list.
+code:
+    False -> #([item, ..kept], set.insert(seen, item))
+  }
+})
+# Prepending built kept backwards, so list.reverse it at the end to restore first-seen order.
+hint: What order did prepending leave the kept list in?
+why: Reversed, so one list.reverse at the end restores first-seen order.
+code:
+|> fn(acc) { list.reverse(acc.0) }

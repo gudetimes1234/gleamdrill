@@ -1,11 +1,40 @@
 == nudge
 insert, search, startsWith — two of those are nearly the same question. What single piece of per-node information separates a stored prefix from a stored word? And what do many words with the same opening letters share that a flat store would duplicate?
-== steps
-- Give each node a map from letter to child node plus a flag meaning "a word ends here".
-- Insert by walking letter by letter, creating missing children as you go, and set the flag on the final node.
-- Answer both queries by walking the letters and failing the moment a letter has no child.
-- search additionally demands the final node's flag; startsWith is satisfied by merely arriving.
-- Alternative: a hash set of every word plus every prefix answers both queries in one lookup each, but stores O(total letters) of text instead of sharing prefixes.
+== walk
+# Give each node a map from letter to child node plus a flag meaning "a word ends here".
+hint: What does one node of a trie need to hold?
+why: A map from letter to child and a flag saying a word ends here; the flag is what separates a word from a mere prefix.
+code:
+node: children (map letter -> node), terminal (flag)
+# Insert by walking letter by letter, creating missing children as you go, and set the flag on the final node.
+hint: How does a word get into the trie?
+why: Walk letter by letter creating any missing child, then flag the final node; O(word length).
+code:
+insert(word):
+    node = root
+    for letter in word:
+        if letter not in node.children: node.children[letter] = new node
+        node = node.children[letter]
+    node.terminal = true
+# Answer both queries by walking the letters and failing the moment a letter has no child.
+hint: What do search and startsWith have in common?
+why: The same walk, failing at the first letter with no child; factoring it out leaves each query one line.
+code:
+walk(letters):
+    node = root
+    for letter in letters:
+        if letter not in node.children: return null
+        node = node.children[letter]
+    return node
+# search additionally demands the final node's flag; startsWith is satisfied by merely arriving.
+hint: How do the two queries differ once the walk succeeds?
+why: search needs the terminal flag; startsWith is satisfied by merely arriving at a node.
+code:
+search(word): node = walk(word); return node is not null and node.terminal
+startsWith(prefix): return walk(prefix) is not null
+# Alternative: a hash set of every word plus every prefix answers both queries in one lookup each, but stores O(total letters) of text instead of sharing prefixes.
+hint: What would a hash-set version look like, and what does it cost?
+why: Store every word and every prefix for O(1) queries, at O(total letters) of storage with no prefix sharing.
 == pseudocode
 node: children (map letter -> node), terminal (flag)
 

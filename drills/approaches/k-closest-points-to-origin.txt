@@ -1,11 +1,25 @@
 == nudge
 Closeness is an ordering problem in disguise — but does the ordering key have to be the true distance? What does computing the square root buy you here, and what does it cost?
-== steps
-- Rank points by squared distance x*x + y*y: the square root is monotonic, so dropping it cannot change the order, and everything stays in exact integers with nothing to round.
-- Sort all points by that key and take the first k — O(n log n).
-- The answer may be in any order, so no tie-breaking rules are needed.
-- Follow-up when k is much smaller than n: scan once keeping a max-heap of size k on squared distance, evicting the farthest — O(n log k).
-- Deeper follow-up: quickselect partitions around a pivot distance for expected O(n).
+== walk
+# Rank points by squared distance x*x + y*y: the square root is monotonic, so dropping it cannot change the order, and everything stays in exact integers with nothing to round.
+hint: Does the square root change which point is closer?
+why: No, it is monotonic, so comparing x² + y² keeps exact integers and the same order.
+code:
+sort points by (x*x + y*y)
+# Sort all points by that key and take the first k — O(n log n).
+hint: What is the simplest correct solution?
+why: Sort by that key and take k, O(n log n); worth writing before optimising.
+code:
+return the first k points
+# The answer may be in any order, so no tie-breaking rules are needed.
+hint: What does "any order" in the problem let you skip?
+why: Tie-breaking: equal distances can come out in any order, so no secondary key is needed.
+# Follow-up when k is much smaller than n: scan once keeping a max-heap of size k on squared distance, evicting the farthest — O(n log k).
+hint: When k is tiny and n is huge, what wastes work in the sort?
+why: Ordering points you will discard; a max-heap of size k keeps only candidates and evicts the farthest, O(n log k).
+# Deeper follow-up: quickselect partitions around a pivot distance for expected O(n).
+hint: Is there an expected-linear method?
+why: Quickselect partitions around a pivot distance so only one side is recursed into, expected O(n).
 == pseudocode
 sort points by (x*x + y*y)
 return the first k points

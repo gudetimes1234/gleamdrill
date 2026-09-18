@@ -1,11 +1,30 @@
 == nudge
 Suppose today were the day you sold. What single fact about the past would tell you your profit on the spot? If that fact can be carried along as you walk, how many passes does this problem really need?
-== steps
-- Sweep the prices once, left to right.
-- Carry the cheapest price seen so far — the best possible buy for a sale today.
-- At each day, compute price minus that minimum and keep the best profit seen.
-- Update the minimum before taking the difference; buying and selling on the same day just yields zero, which is harmless.
-- If prices only ever fall, the answer stays 0 — no transaction beats not trading.
+== walk
+# Sweep the prices once, left to right.
+hint: You must buy before you sell. Which direction of scan makes "before" easy to keep track of?
+why: A left-to-right sweep means everything already seen is a legal buy day for the current sell day, which is what lets one pass replace checking every pair.
+code:
+for price in prices:
+# Carry the cheapest price seen so far — the best possible buy for a sale today.
+hint: For a sale today, which past day is the only one worth buying on?
+why: Only the cheapest earlier price matters for today's profit, so a single running minimum stands in for the whole past in O(1) space.
+code:
+    lowest = min(lowest, price)
+# At each day, compute price minus that minimum and keep the best profit seen.
+hint: Given today's price and the cheapest so far, what is the best sale ending today?
+why: Price minus the running minimum is today's best profit; keeping the max over all days is the answer, and the whole thing is O(n).
+code:
+    profit = max(profit, price - lowest)
+# Update the minimum before taking the difference; buying and selling on the same day just yields zero, which is harmless.
+hint: If today's price is the new minimum, does using it for both buy and sell cause harm?
+why: Updating the minimum first can only produce a zero-profit same-day trade, which never beats the current best, so the order is safe and simpler.
+# If prices only ever fall, the answer stays 0 — no transaction beats not trading.
+hint: What should the answer be when no sale ever makes money?
+why: Starting profit at 0 means a falling market returns 0 rather than a negative number; not trading is always allowed.
+code:
+profit = 0
+return profit
 == pseudocode
 lowest = infinity
 profit = 0

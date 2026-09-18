@@ -1,12 +1,38 @@
 == nudge
 A tree is two properties at once — but must you test both? Count what a tree of n nodes always has, and ask what verifying that count buys you.
-== steps
-- Check the edge count first: a tree on n nodes has exactly n - 1 edges, so any other count fails immediately.
-- With the count right, connected and acyclic imply each other — verify just one, and connectivity is the easier pick.
-- Build an adjacency list with each edge entered in both directions.
-- Traverse from node 0 with a stack and a seen set, collecting every node reached.
-- Answer true exactly when the traversal reached all n nodes.
-- Union-find gets both properties in a single pass instead: an edge landing inside a component is a cycle, and n - 1 successful merges means one component.
+== walk
+# Check the edge count first: a tree on n nodes has exactly n - 1 edges, so any other count fails immediately.
+hint: How many edges must a tree on n nodes have?
+why: Exactly n - 1; checking that first rejects most non-trees in O(1) and is what makes the next step sufficient.
+code:
+if number of edges != n - 1: return false
+# With the count right, connected and acyclic imply each other — verify just one, and connectivity is the easier pick.
+hint: With exactly n - 1 edges, what does connectivity imply about cycles?
+why: A connected graph with n - 1 edges cannot have a cycle, so one property proves the other and you only need to check connectivity.
+# Build an adjacency list with each edge entered in both directions.
+hint: What shape should the graph take for a traversal?
+why: An adjacency list with each undirected edge entered both ways, so a walk can leave a node along any edge.
+code:
+adjacency from edges, both directions
+# Traverse from node 0 with a stack and a seen set, collecting every node reached.
+hint: How do you find out what node 0 can reach?
+why: A depth-first walk with a stack and a seen set; the set is what stops the walk looping and what counts the component.
+code:
+seen = empty set
+stack = [0]
+while stack not empty:
+    node = stack.pop()
+    if node in seen: continue
+    seen.add(node)
+    for neighbour in adjacency[node]: stack.push(neighbour)
+# Answer true exactly when the traversal reached all n nodes.
+hint: What must the reached set look like for a tree?
+why: All n nodes; anything fewer means a disconnected piece, O(V + E) in total.
+code:
+return len(seen) == n
+# Union-find gets both properties in a single pass instead: an edge landing inside a component is a cycle, and n - 1 successful merges means one component.
+hint: Is there a single pass that checks both properties at once?
+why: Union-find: an edge whose ends are already in one component closes a cycle, and n - 1 successful merges means everything is connected.
 == pseudocode
 if number of edges != n - 1: return false
 adjacency from edges, both directions

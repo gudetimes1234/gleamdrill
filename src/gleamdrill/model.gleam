@@ -662,7 +662,7 @@ pub fn plan_rung(stages: List(problem.ApproachStage)) -> Option(Int) {
   |> list.index_map(fn(stage, index) { #(stage, index) })
   |> list.find_map(fn(pair) {
     case pair.0 {
-      problem.Walk(_) | problem.Steps(_) -> Ok(pair.1)
+      problem.Walk(_) -> Ok(pair.1)
       _ -> Error(Nil)
     }
   })

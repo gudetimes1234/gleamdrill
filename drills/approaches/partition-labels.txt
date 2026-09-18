@@ -1,11 +1,37 @@
 == nudge
 A cut is legal only when nothing to its left ever appears again to its right. What single fact about each character decides that — and how would you know, mid-walk, that you are finally allowed to cut?
-== steps
-- First pass: map each character to its LAST position in the string (overwriting as you go leaves exactly that).
-- Sweep left to right, growing the current piece's required end: the furthest last-position of any character seen inside the piece.
-- When the walk's index catches up with that end, nothing inside the piece can reappear later — close it there.
-- Record the piece's length and start the next piece at the following index.
-- Closing at the earliest legal point every time is what makes the number of pieces maximal.
+== walk
+# First pass: map each character to its LAST position in the string (overwriting as you go leaves exactly that).
+hint: What one fact per character decides where a piece may end?
+why: Its last position; overwriting in a single pass leaves exactly that.
+code:
+last = empty map
+for i in 0..n-1:
+    last[s[i]] = i
+# Sweep left to right, growing the current piece's required end: the furthest last-position of any character seen inside the piece.
+hint: As you sweep, what does the current piece require?
+why: That it extend at least to the last position of every character inside it, so the required end grows as characters appear.
+code:
+sizes = []
+start = 0
+end = 0
+for i in 0..n-1:
+    end = max(end, last[s[i]])
+# When the walk's index catches up with that end, nothing inside the piece can reappear later — close it there.
+hint: When is the piece safe to close?
+why: When the sweep index reaches the required end: nothing inside recurs later.
+code:
+    if i == end:
+# Record the piece's length and start the next piece at the following index.
+hint: What happens at a close?
+why: Record the length and start the next piece at the following index; two passes, O(n).
+code:
+        sizes.add(end - start + 1)
+        start = i + 1
+return sizes
+# Closing at the earliest legal point every time is what makes the number of pieces maximal.
+hint: Why does closing as early as possible give the most pieces?
+why: Any later close would merge what could have been two pieces; the earliest legal cut is always part of a maximal partition.
 == pseudocode
 last = empty map
 for i in 0..n-1:

@@ -1,11 +1,36 @@
 == nudge
 Two jobs hide in this one: something to measure, then something to select by that measurement. The measuring part you know — but before reaching for sorting, ask how large the measured numbers can possibly get. Does that bound suggest somewhere to file things?
-== steps
-- Count each value's frequency with a map.
-- Notice no frequency can exceed n, so frequencies themselves can index an array of n+1 buckets.
-- Drop each distinct value into the bucket for its count.
-- Walk the buckets from highest frequency down, collecting values until you have k — O(n) overall.
-- Follow-up: when k is much smaller than n, a heap of size k gives O(n log k); sorting the (value, count) pairs is the simple O(n log n) baseline.
+== walk
+# Count each value's frequency with a map.
+hint: What is the first thing you need about each value?
+why: Its frequency, from one pass with a map.
+code:
+counts = empty map
+for value in nums:
+    counts[value] += 1
+# Notice no frequency can exceed n, so frequencies themselves can index an array of n+1 buckets.
+hint: What bounds a frequency, and what does that let you index?
+why: It cannot exceed n, so frequencies can index an array of n + 1 buckets.
+code:
+buckets = array of n+1 empty lists
+# Drop each distinct value into the bucket for its count.
+hint: Where does each distinct value go?
+why: Into the bucket for its count.
+code:
+for (value, freq) in counts:
+    buckets[freq].append(value)
+# Walk the buckets from highest frequency down, collecting values until you have k — O(n) overall.
+hint: How do you collect the top k?
+why: Walk buckets from the highest frequency down until k values are gathered; O(n) overall.
+code:
+result = []
+for freq from n down to 1:
+    for value in buckets[freq]:
+        result.append(value)
+        if size(result) == k: return result
+# Follow-up: when k is much smaller than n, a heap of size k gives O(n log k); sorting the (value, count) pairs is the simple O(n log n) baseline.
+hint: What are the alternatives and their costs?
+why: A heap of size k for O(n log k) when k is small, or sorting the pairs for O(n log n).
 == pseudocode
 counts = empty map
 for value in nums:

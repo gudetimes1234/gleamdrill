@@ -1,10 +1,23 @@
 == nudge
 Duplicates count separately, so this is a position in sorted order — but must the whole array end up sorted for one position to be known? Start from the version nobody gets wrong, then ask what it overworks.
-== steps
-- Guard against k outside 1..n.
-- Sort descending and return the element at index k - 1 — O(n log n), answers every k at once, hard to get wrong.
-- Follow-up: quickselect partitions around a pivot and recurses only into the side that must hold index k — expected O(n) because the work halves instead of doubling, worst case still quadratic.
-- Second follow-up: a min-heap of size k gives O(n log k), the answer when the data streams and cannot be sorted in place.
+== walk
+# Guard against k outside 1..n.
+hint: What inputs have no kth largest at all?
+why: k below 1 or above n; guarding first keeps the index arithmetic honest.
+code:
+if k < 1 or k > length(nums): return none
+# Sort descending and return the element at index k - 1 — O(n log n), answers every k at once, hard to get wrong.
+hint: What is the plainest solution, and where is the kth largest after it?
+why: Sort descending and take index k - 1; O(n log n), answers every k at once and is hard to get wrong.
+code:
+sort nums descending
+return nums[k - 1]
+# Follow-up: quickselect partitions around a pivot and recurses only into the side that must hold index k — expected O(n) because the work halves instead of doubling, worst case still quadratic.
+hint: How can you find one order statistic without sorting everything?
+why: Quickselect partitions around a pivot and recurses only into the side containing index k, so the work halves and the expected cost is O(n).
+# Second follow-up: a min-heap of size k gives O(n log k), the answer when the data streams and cannot be sorted in place.
+hint: When the data streams and cannot be sorted in place, what works?
+why: A min-heap of size k, O(n log k), the same tool as the streaming version of this problem.
 == pseudocode
 if k < 1 or k > length(nums): return none
 sort nums descending

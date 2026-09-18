@@ -1,10 +1,30 @@
 == nudge
 The most recently opened bracket must be the first one to close — where have you seen that discipline before? And beyond a plain mismatch, what two quieter ways can a string fail?
-== steps
-- Walk the string, keeping the still-unclosed openers in last-in-first-out order.
-- On an opener, push it.
-- On a closer, the top of the stack must be its matching opener: an empty stack or a wrong opener means false.
-- At the end the stack must be empty — anything left is an opener that never closed.
+== walk
+# Walk the string, keeping the still-unclosed openers in last-in-first-out order.
+hint: What order do openers need to be closed in?
+why: Last opened, first closed, which is exactly a stack.
+code:
+pairs = { ")": "(", "]": "[", "}": "{" }
+stack = empty
+for ch in s:
+# On an opener, push it.
+hint: What happens on an opener?
+why: Push it and wait.
+code:
+    else:
+        stack.push(ch)
+# On a closer, the top of the stack must be its matching opener: an empty stack or a wrong opener means false.
+hint: What must be true when a closer arrives?
+why: The stack's top is its matching opener; an empty stack or a mismatch fails.
+code:
+    if ch is a closer:
+        if stack is empty or stack.pop() != pairs[ch]: return false
+# At the end the stack must be empty — anything left is an opener that never closed.
+hint: What does a leftover opener mean at the end?
+why: It never closed, so the string is valid only if the stack is empty; O(n).
+code:
+return stack is empty
 == pseudocode
 pairs = { ")": "(", "]": "[", "}": "{" }
 stack = empty

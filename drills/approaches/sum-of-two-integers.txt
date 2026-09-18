@@ -1,11 +1,35 @@
 == nudge
 Addition without + sounds impossible until you split what addition does into two jobs. Column by column, what happens in the columns that don't overflow — and separately, where do the carries go? Which bitwise operators do those two jobs?
-== steps
-- XOR the two numbers: that is addition with the carries forgotten.
-- AND the two numbers and shift left one: that is exactly the carries, moved to the column they are owed to.
-- Loop: replace a with the XOR and b with the shifted carry, until the carry is zero; a is the sum.
-- In a fixed-width language this just works; with arbitrary-precision integers (Python), mask both values and every intermediate to 32 bits or a negative's carry never dies out.
-- After masking, read the sign back by hand: a 32-bit pattern above the signed maximum is a negative number.
+== walk
+# XOR the two numbers: that is addition with the carries forgotten.
+hint: What does XOR compute for two bit columns?
+why: The sum bit with carries forgotten.
+# AND the two numbers and shift left one: that is exactly the carries, moved to the column they are owed to.
+hint: Where do the carries come from, and where do they go?
+why: AND finds columns where both bits are 1; shifting left moves each carry to the column it is owed to.
+code:
+    carry = ((a AND b) << 1) AND MASK
+# Loop: replace a with the XOR and b with the shifted carry, until the carry is zero; a is the sum.
+hint: How do the two pieces combine into a sum?
+why: Repeat with a as the XOR and b as the carry until no carry remains; at most 32 rounds.
+code:
+while b != 0:
+    a = (a XOR b) AND MASK
+    b = carry
+# In a fixed-width language this just works; with arbitrary-precision integers (Python), mask both values and every intermediate to 32 bits or a negative's carry never dies out.
+hint: Why does Python need masking when C does not?
+why: Its integers are unbounded, so a negative number's carry never dies out; masking to 32 bits restores wraparound.
+code:
+MASK = 0xFFFFFFFF
+MAX_SIGNED = 0x7FFFFFFF
+a = a AND MASK
+b = b AND MASK
+# After masking, read the sign back by hand: a 32-bit pattern above the signed maximum is a negative number.
+hint: After masking, how do you recover a negative result?
+why: A pattern above the signed maximum is negative in two's complement; convert it by hand.
+code:
+if a <= MAX_SIGNED: return a
+return -((a XOR MASK) + 1)
 == pseudocode
 MASK = 0xFFFFFFFF
 MAX_SIGNED = 0x7FFFFFFF

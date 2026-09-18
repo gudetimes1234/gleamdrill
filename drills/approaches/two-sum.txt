@@ -1,11 +1,31 @@
 == nudge
 For each number you visit, you already know exactly what its partner must be. Have you perhaps walked past that partner already — and what would let you ask that question in O(1) instead of rescanning?
-== steps
-- Walk the array once, carrying a map from each value seen so far to its index.
-- At each number, compute the complement: target minus this number.
-- Look the complement up in the map; a hit means done — return its stored index and the current one.
-- Otherwise record this number's index and move on; recording after the lookup is what stops an element pairing with itself.
-- Know the brute force this beats: checking every pair is O(n squared), the one-pass map is O(n).
+== walk
+# Walk the array once, carrying a map from each value seen so far to its index.
+hint: What do you need to remember as you walk the array?
+why: Each value seen so far with its index, in a map.
+code:
+seen = empty map
+for i in 0..n-1:
+# At each number, compute the complement: target minus this number.
+hint: What is the partner you are looking for?
+why: The complement: target minus this number.
+code:
+    complement = target - nums[i]
+# Look the complement up in the map; a hit means done — return its stored index and the current one.
+hint: What does a hit look like?
+why: The complement is in the map; return its index and the current one.
+code:
+    if complement in seen:
+        return [seen[complement], i]
+# Otherwise record this number's index and move on; recording after the lookup is what stops an element pairing with itself.
+hint: Why record the current number after the lookup?
+why: So a number cannot pair with itself; O(n) with one pass.
+code:
+    seen[nums[i]] = i
+# Know the brute force this beats: checking every pair is O(n squared), the one-pass map is O(n).
+hint: What does this beat?
+why: Checking every pair, O(n²).
 == pseudocode
 seen = empty map
 for i in 0..n-1:

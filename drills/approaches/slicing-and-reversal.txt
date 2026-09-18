@@ -1,8 +1,27 @@
 == nudge
 Four string functions and not a loop in sight — s[a:b:step] can express all of them. Which start, stop, and step does each one need, and which edge case does the notation not handle for you?
-== steps
-- reversedString: s[::-1] — the famous step of -1 walks the whole string backwards.
-- everySecond: s[::2] takes the characters at even indices.
-- lastN: s[-n:] counts from the end, but guard n <= 0 yourself first and return "" — a negative index of 0 does not mean "last zero characters".
-- trimEnds: s[1:-1] drops the first and last character in one slice.
-- Remember slices never mutate — every one of these returns a new sequence, and [:] alone is the idiomatic copy.
+== walk
+# reversedString: s[::-1] — the famous step of -1 walks the whole string backwards.
+hint: What does a step of -1 do in a slice?
+why: Walks the sequence backwards, so [::-1] is the reversal.
+code:
+return s[::-1]
+# everySecond: s[::2] takes the characters at even indices.
+hint: How do you take every second character?
+why: A step of 2 from the start.
+code:
+return s[::2]
+# lastN: s[-n:] counts from the end, but guard n <= 0 yourself first and return "" — a negative index of 0 does not mean "last zero characters".
+hint: What is the trap in taking the last n characters?
+why: s[-0:] is the whole string, so guard n <= 0 and return "" yourself.
+code:
+if n <= 0: return ""
+return s[-n:]
+# trimEnds: s[1:-1] drops the first and last character in one slice.
+hint: How do you drop the first and last character together?
+why: One slice from 1 to -1.
+code:
+return s[1:-1]
+# Remember slices never mutate — every one of these returns a new sequence, and [:] alone is the idiomatic copy.
+hint: Do slices change the original?
+why: Never; each returns a new sequence, and [:] alone is the idiomatic copy.

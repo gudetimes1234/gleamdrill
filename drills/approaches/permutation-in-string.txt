@@ -1,11 +1,36 @@
 == nudge
 A permutation scrambles order but preserves something else entirely — what? And since every candidate inside s2 must have exactly s1's length, how many candidates are there really, and how cheaply can you move from one to the next?
-== steps
-- If s1 is longer than s2, return false outright.
-- Build a frequency map of s1 and another of s2's first |s1| characters.
-- Equal maps means a permutation is already found.
-- Slide the fixed-width window one step at a time: count the entering character in, count the leaving one out, dropping entries that reach zero, and compare maps again.
-- Follow-up: instead of comparing whole maps each slide, maintain one integer — how many of the 26 letter counts currently match — and each slide becomes O(1).
+== walk
+# If s1 is longer than s2, return false outright.
+hint: What rules out an answer before any counting?
+why: s1 longer than s2.
+code:
+if length(s1) > length(s2): return false
+# Build a frequency map of s1 and another of s2's first |s1| characters.
+hint: What two frequency maps start the comparison?
+why: s1's, and the first |s1| characters of s2.
+code:
+need = counts of s1
+window = counts of first length(s1) characters of s2
+# Equal maps means a permutation is already found.
+hint: What does equal maps mean?
+why: The window is a permutation of s1.
+code:
+if window == need: return true
+# Slide the fixed-width window one step at a time: count the entering character in, count the leaving one out, dropping entries that reach zero, and compare maps again.
+hint: How does the window move?
+why: Count the entering character in and the leaving one out, dropping zero entries so the maps stay comparable.
+code:
+for i in length(s1)..length(s2)-1:
+    window[s2[i]] += 1
+    old = s2[i - length(s1)]
+    window[old] -= 1
+    if window[old] == 0: remove old from window
+    if window == need: return true
+return false
+# Follow-up: instead of comparing whole maps each slide, maintain one integer — how many of the 26 letter counts currently match — and each slide becomes O(1).
+hint: How do you avoid comparing whole maps each slide?
+why: Track how many of the 26 letter counts currently match; each slide updates that in O(1).
 == pseudocode
 if length(s1) > length(s2): return false
 need = counts of s1

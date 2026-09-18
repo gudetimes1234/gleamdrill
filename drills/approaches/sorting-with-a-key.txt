@@ -1,7 +1,21 @@
 == nudge
 You want the list ordered by something other than the values themselves. Where does that "something" plug into the sort — and how do you say "this field ascending, that field descending" in one go?
-== steps
-- Pass a key function: it maps each element to what it should be compared by, and the sort orders by that.
-- sortByLength: sorted(words, key=len) — a bare builtin is a perfectly good key.
-- sortPairs: return a tuple from the key, (name, -score) — tuples compare field by field, and negating a number flips just that field to descending.
-- Keep the pair straight: sort mutates the list in place, sorted returns a new one — these prompts want sorted.
+== walk
+# Pass a key function: it maps each element to what it should be compared by, and the sort orders by that.
+hint: How do you tell a sort what to compare by?
+why: A key function mapping each element to its comparison value.
+code:
+sorted(items, key=...)
+# sortByLength: sorted(words, key=len) — a bare builtin is a perfectly good key.
+hint: What key sorts words by length?
+why: The builtin len itself.
+code:
+sorted(words, key=len)
+# sortPairs: return a tuple from the key, (name, -score) — tuples compare field by field, and negating a number flips just that field to descending.
+hint: How do you sort by name ascending and score descending at once?
+why: Return a tuple; tuples compare field by field, and negating the score flips just that field.
+code:
+sorted(pairs, key=lambda p: (p[0], -p[1]))
+# Keep the pair straight: sort mutates the list in place, sorted returns a new one — these prompts want sorted.
+hint: What is the difference between sort and sorted?
+why: sort mutates in place and returns None; sorted returns a new list, which these prompts want.

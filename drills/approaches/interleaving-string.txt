@@ -1,12 +1,41 @@
 == nudge
 Freeze the weave partway through. What do you actually need to remember to decide whether the rest can still work out? You might reach for three positions — is one of them redundant?
-== steps
-- Check the lengths first: s3 must be exactly as long as s1 and s2 together, or the answer is no.
-- Let works(i, j) mean: with i characters of s1 and j of s2 consumed, can the remainders interleave into the rest of s3?
-- The position in s3 is always i + j — that collapse from three indices to two is the insight, so never track it separately.
-- At (i, j) look at s3[i + j]: try consuming from s1 if s1[i] matches, and from s2 if s2[j] matches; either branch succeeding is enough.
-- Base case: both sources exhausted means the interleaving worked.
-- Memoise on (i, j) — many consumption orders reach the same state. (Follow-up: a bottom-up table with a rolling row gets the space to O(len(s2)).)
+== walk
+# Check the lengths first: s3 must be exactly as long as s1 and s2 together, or the answer is no.
+hint: What is the cheapest thing to check before any search?
+why: The lengths: s3 must be exactly s1 plus s2 long, or the answer is no in O(1).
+code:
+if len(s1) + len(s2) != len(s3): return false
+# Let works(i, j) mean: with i characters of s1 and j of s2 consumed, can the remainders interleave into the rest of s3?
+hint: What state describes the search after consuming some of each source?
+why: How much of s1 and of s2 has been used; works(i, j) asks whether the remainders can interleave into the rest.
+code:
+works(i, j):
+# The position in s3 is always i + j — that collapse from three indices to two is the insight, so never track it separately.
+hint: Where in s3 are you when i of s1 and j of s2 are consumed?
+why: At i + j, always, so the third index is redundant and the state is two-dimensional.
+code:
+        target = s3[i + j]
+# At (i, j) look at s3[i + j]: try consuming from s1 if s1[i] matches, and from s2 if s2[j] matches; either branch succeeding is enough.
+hint: What are the two moves at a state?
+why: Consume from s1 if its next character matches s3's, or from s2 likewise; either branch succeeding is enough.
+code:
+        ok = false
+        if i < len(s1) and s1[i] == target and works(i + 1, j): ok = true
+        if j < len(s2) and s2[j] == target and works(i, j + 1): ok = true
+# Base case: both sources exhausted means the interleaving worked.
+hint: When has the interleaving succeeded?
+why: Both sources are exhausted; the length check already guarantees s3 is exhausted too.
+code:
+    if i == len(s1) and j == len(s2): return true
+# Memoise on (i, j) — many consumption orders reach the same state. (Follow-up: a bottom-up table with a rolling row gets the space to O(len(s2)).)
+hint: Why is memoisation essential here?
+why: Many consumption orders reach the same (i, j), so caching makes it O(len(s1) * len(s2)); a bottom-up rolling row gets space to O(len(s2)).
+code:
+memo = empty map
+        memo[(i, j)] = ok
+    return memo[(i, j)]
+return works(0, 0)
 == pseudocode
 if len(s1) + len(s2) != len(s3): return false
 memo = empty map

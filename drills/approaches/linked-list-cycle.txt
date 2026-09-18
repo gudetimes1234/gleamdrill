@@ -1,12 +1,34 @@
 == nudge
 Following the links, only two futures exist: fall off the end, or go round forever. The obvious fix is to remember every node you have visited — but what does that cost, and could motion alone reveal that you are circling?
-== steps
-- Start two pointers at the head: slow steps one node at a time, fast steps two.
-- Loop while fast and fast.next exist, advancing both each round.
-- Compare node identity, never values — it is nodes that repeat, not what they hold.
-- If slow and fast are ever the same node, there is a cycle: return true; if fast runs off the end, return false.
-- Why the meeting is guaranteed: inside a loop, fast gains one place on slow every step, so it must land exactly on it.
-- The set-of-visited-nodes version answers it too, at O(n) memory — that contrast is why the two-pointer version is worth knowing.
+== walk
+# Start two pointers at the head: slow steps one node at a time, fast steps two.
+hint: Two runners on a circular track: what eventually happens if one is faster?
+why: The faster laps the slower; on a list, a pointer stepping two at a time must meet one stepping one at a time inside a cycle.
+code:
+slow = head
+fast = head
+# Loop while fast and fast.next exist, advancing both each round.
+hint: What must be checked before fast can take two steps?
+why: That fast and fast.next exist; running off the end means no cycle.
+code:
+while fast != null and fast.next != null:
+    slow = slow.next
+    fast = fast.next.next
+# Compare node identity, never values — it is nodes that repeat, not what they hold.
+hint: Should you compare values or nodes?
+why: Nodes: values can repeat in a straight list, but a node revisited is a cycle by definition.
+# If slow and fast are ever the same node, there is a cycle: return true; if fast runs off the end, return false.
+hint: What are the two ways the loop ends?
+why: The pointers coincide, meaning a cycle, or fast hits null, meaning none; O(n) time and O(1) space.
+code:
+    if slow is fast: return true
+return false
+# Why the meeting is guaranteed: inside a loop, fast gains one place on slow every step, so it must land exactly on it.
+hint: Why can fast not skip over slow forever?
+why: Inside a loop the gap closes by exactly one each step, so it reaches zero and they land on the same node.
+# The set-of-visited-nodes version answers it too, at O(n) memory — that contrast is why the two-pointer version is worth knowing.
+hint: What does the visited-set version give up?
+why: O(n) extra memory for the same answer; the two-pointer trick is worth knowing precisely for that contrast.
 == pseudocode
 slow = head
 fast = head

@@ -1,12 +1,46 @@
 == nudge
 Reversing k nodes is a drill you already own; the real question hides at the end of the list. By the time you discover a group is short, what damage has already been done — and when did you actually need to know?
-== steps
-- Anchor a dummy before the head and keep a pointer, before, at the node just ahead of the current group.
-- Look ahead k nodes first; if the walk hits null, fewer than k remain — return dummy.next with the tail untouched.
-- Reverse the k nodes with the standard loop, seeding previous with the node after the group so the reversed block comes out pre-connected to the rest.
-- Reconnect the front: before.next = the group's new first node; the group's old first node is now its last.
-- Move before to that old first node and repeat for the next group.
-- Alternative: count the whole length up front — one counting pass replaces a look-ahead per group and answers the same question.
+== walk
+# Anchor a dummy before the head and keep a pointer, before, at the node just ahead of the current group.
+hint: What does a dummy node give you here?
+why: A node before the head, so the first group is reconnected the same way as every other; before tracks the node ahead of the current group.
+code:
+dummy = new node with next = head
+before = dummy
+# Look ahead k nodes first; if the walk hits null, fewer than k remain — return dummy.next with the tail untouched.
+hint: What must you know before reversing a group?
+why: That k nodes remain; a look-ahead that hits null means the tail stays as is.
+code:
+loop:
+    after = before
+    repeat k times:
+        after = after.next
+        if after == null: return dummy.next
+# Reverse the k nodes with the standard loop, seeding previous with the node after the group so the reversed block comes out pre-connected to the rest.
+hint: How does seeding previous with the node after the group help?
+why: The reversed block comes out already linked to the rest, so no separate tail fix is needed.
+code:
+    node = before.next
+    previous = after.next
+    first = node
+    repeat k times:
+        following = node.next
+        node.next = previous
+        previous = node
+        node = following
+# Reconnect the front: before.next = the group's new first node; the group's old first node is now its last.
+hint: How is the front reconnected?
+why: before.next points at the group's new first node; the old first node is now its last.
+code:
+    before.next = previous
+# Move before to that old first node and repeat for the next group.
+hint: Where does before go for the next group?
+why: To the old first node, now the end of this group; each node is touched a constant number of times, O(n).
+code:
+    before = first
+# Alternative: count the whole length up front — one counting pass replaces a look-ahead per group and answers the same question.
+hint: What alternative avoids a look-ahead per group?
+why: Count the total length once and reverse while at least k remain.
 == pseudocode
 dummy = new node with next = head
 before = dummy

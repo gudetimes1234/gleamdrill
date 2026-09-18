@@ -1,11 +1,33 @@
 == nudge
 Fewest steps smells like a breadth-first search. What does "everything reachable in exactly k jumps" look like for this array — and does that shape let you drop the queue and the visited set entirely?
-== steps
-- See the BFS levels: everything reachable in k jumps is a contiguous window of indices, so the frontier is just a range.
-- Walk the array once, tracking the current window's end and the furthest index anything seen so far can reach.
-- When the walk reaches the window's end, one jump is spent and the next window runs to that furthest index.
-- Stop the walk at the second-to-last index — arriving at the end must not charge an extra jump.
-- Return the jump count: no queue, no visited set, one pass.
+== walk
+# See the BFS levels: everything reachable in k jumps is a contiguous window of indices, so the frontier is just a range.
+hint: If you took BFS over indices, what would each level look like?
+why: A contiguous range, because reachability from a range is itself a range; so the frontier is two numbers, not a queue.
+# Walk the array once, tracking the current window's end and the furthest index anything seen so far can reach.
+hint: What two numbers describe the current level and the next?
+why: Where the current window ends, and the furthest index anything seen so far can reach.
+code:
+jumps = 0
+window_end = 0
+furthest = 0
+for i in 0..n-2:
+    furthest = max(furthest, i + nums[i])
+# When the walk reaches the window's end, one jump is spent and the next window runs to that furthest index.
+hint: When do you spend a jump?
+why: On reaching the end of the current window: the next window runs to the furthest reach recorded, and the count goes up by one.
+code:
+    if i == window_end:
+        jumps = jumps + 1
+        window_end = furthest
+# Stop the walk at the second-to-last index — arriving at the end must not charge an extra jump.
+hint: Why stop the walk one short of the end?
+why: Reaching the last index would spend a jump you never make; the loop must not charge for arriving.
+# Return the jump count: no queue, no visited set, one pass.
+hint: What did the reframing buy?
+why: No queue and no visited set, one O(n) pass; the greedy is BFS with the levels compressed to ranges.
+code:
+return jumps
 == pseudocode
 jumps = 0
 window_end = 0

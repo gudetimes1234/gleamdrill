@@ -1,11 +1,35 @@
 == nudge
 Noticing mid-flood that a region has touched the edge is awkward bookkeeping. Which regions are easier to find directly — the surrounded ones, or their opposite?
-== steps
-- Invert the question: find the regions that are NOT surrounded — every O reachable from a border O — and everything left is surrounded by definition.
-- Seed a search with every O sitting on one of the four edges of the board.
-- Flood from those seeds through neighbouring O cells, collecting a set of safe cells.
-- Rewrite the board: an O in the safe set stays, every other O flips to X.
-- Note the payoff: one pass from the border replaces a search per region plus an escape test.
+== walk
+# Invert the question: find the regions that are NOT surrounded — every O reachable from a border O — and everything left is surrounded by definition.
+hint: Which regions are easier to find: the surrounded ones or the free ones?
+why: The free ones, since each touches the border; everything else is surrounded by definition.
+# Seed a search with every O sitting on one of the four edges of the board.
+hint: Where does the search start?
+why: At every O on the four edges.
+code:
+safe = empty set
+stack = every border cell holding "O"
+# Flood from those seeds through neighbouring O cells, collecting a set of safe cells.
+hint: How do you find everything connected to the border?
+why: Flood through neighbouring O cells, collecting them in a safe set.
+code:
+while stack not empty:
+    (r, c) = stack.pop()
+    if (r, c) out of bounds or board[r][c] != "O" or (r, c) in safe: continue
+    safe.add((r, c))
+    push the 4 neighbours of (r, c) onto stack
+# Rewrite the board: an O in the safe set stays, every other O flips to X.
+hint: How is the board rewritten?
+why: Safe O cells stay; every other O becomes X.
+code:
+for each cell (r, c):
+    if board[r][c] == "O" and (r, c) not in safe:
+        board[r][c] = "X"
+return board
+# Note the payoff: one pass from the border replaces a search per region plus an escape test.
+hint: What did the inversion save?
+why: A search per region plus an escape test; one border flood does it all in O(rows * cols).
 == pseudocode
 safe = empty set
 stack = every border cell holding "O"

@@ -1,11 +1,36 @@
 == nudge
 One running profit number cannot remember whether you currently own a share or are serving the cooldown. What are the distinct situations you could be in at the close of a day — and how much of yesterday does today actually need?
-== steps
-- Name three end-of-day states: holding a share, having just sold today, and resting (free to act).
-- Write each day's transitions from yesterday: hold is max(hold, rest - price), sold is hold + price, rest is max(rest, sold).
-- Notice the cooldown lives in one asymmetry — today's hold reads rest, never sold, so buying the day after a sale is impossible by construction.
-- Each day depends only on yesterday, so three rolling values replace any table; start hold and sold at minus infinity (unreachable) and rest at 0.
-- The answer is the best of sold and rest at the end — never end the run holding — with 0 as the floor for doing nothing.
+== walk
+# Name three end-of-day states: holding a share, having just sold today, and resting (free to act).
+hint: At the end of a day, what are the distinct situations you can be in that affect tomorrow?
+why: Holding, having sold today, and resting are the three states that change what tomorrow allows; a state machine turns the cooldown rule into transitions.
+code:
+hold = -infinity
+sold = -infinity
+rest = 0
+# Write each day's transitions from yesterday: hold is max(hold, rest - price), sold is hold + price, rest is max(rest, sold).
+hint: From each of yesterday's states, what can today's price turn it into?
+why: Holding either continues or starts from rest; selling comes only from holding; resting continues or follows a sale, and taking the max keeps the best value per state.
+code:
+for price in prices:
+    new_hold = max(hold, rest - price)
+    new_sold = hold + price
+    new_rest = max(rest, sold)
+# Notice the cooldown lives in one asymmetry — today's hold reads rest, never sold, so buying the day after a sale is impossible by construction.
+hint: Where in those transitions does the cooldown actually live?
+why: Buying reads from rest and never from sold, so a purchase the day after a sale is impossible by construction rather than by a check.
+# Each day depends only on yesterday, so three rolling values replace any table; start hold and sold at minus infinity (unreachable) and rest at 0.
+hint: How much history does each day need?
+why: Only yesterday's three values, so three rolling variables replace a table; starting hold and sold at negative infinity marks them unreachable on day one.
+code:
+    hold = new_hold
+    sold = new_sold
+    rest = new_rest
+# The answer is the best of sold and rest at the end — never end the run holding — with 0 as the floor for doing nothing.
+hint: On the last day, which states are worth ending in?
+why: Ending while holding wastes a purchase, so the answer is the better of sold and rest, floored at 0 for never trading.
+code:
+return max(sold, rest, 0)
 == pseudocode
 hold = -infinity
 sold = -infinity

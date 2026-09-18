@@ -1,11 +1,34 @@
 == nudge
 Every valid partition has to start somewhere — what is the only decision actually available at the front of the string? Once that decision is made, what does the rest of the problem look like?
-== steps
-- Frame the choice: every partition begins with some palindromic prefix, so the only decision at each step is how long that prefix is.
-- For each possible prefix length, test whether that prefix is a palindrome and skip the lengths that are not.
-- Cut there and recurse on the remainder, prepending the prefix to each partition of the rest.
-- Base case: the empty string has one partition, the empty list — this reaches every partition exactly once, with nothing to dedupe.
-- Follow-up: precompute which spans are palindromes in a table so the test inside the search becomes a lookup instead of a scan.
+== walk
+# Frame the choice: every partition begins with some palindromic prefix, so the only decision at each step is how long that prefix is.
+hint: What is the only decision a partition makes at its front?
+why: How long the first piece is, and it must be a palindrome.
+code:
+function build(remaining):
+    result = []
+    for size in 1 .. length(remaining):
+        prefix = first size characters of remaining
+# For each possible prefix length, test whether that prefix is a palindrome and skip the lengths that are not.
+hint: Which prefix lengths are worth pursuing?
+why: Only those whose prefix reads the same reversed; the rest are skipped.
+code:
+        if prefix reads the same reversed:
+# Cut there and recurse on the remainder, prepending the prefix to each partition of the rest.
+hint: After cutting a prefix, what happens to the rest?
+why: Recurse on it and prepend the prefix to each of its partitions.
+code:
+            for rest in build(remaining after the prefix):
+                result.add([prefix] + rest)
+    return result
+# Base case: the empty string has one partition, the empty list — this reaches every partition exactly once, with nothing to dedupe.
+hint: What does the empty string produce, and why is there no duplication?
+why: One partition, the empty list; each partition is built by its unique sequence of cuts, so nothing repeats.
+code:
+    if remaining is empty: return [[]]
+# Follow-up: precompute which spans are palindromes in a table so the test inside the search becomes a lookup instead of a scan.
+hint: Where is the repeated work, and how do you remove it?
+why: The palindrome test is repeated on the same spans; a precomputed table makes it a lookup.
 == pseudocode
 function build(remaining):
     if remaining is empty: return [[]]

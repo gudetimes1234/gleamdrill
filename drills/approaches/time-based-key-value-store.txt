@@ -1,12 +1,44 @@
 == nudge
 Each key accumulates a history, and get asks about a moment in the past. What does the guarantee that timestamps only ever increase hand you for free at write time — and what kind of lookup does that gift make possible at read time?
-== steps
-- Keep a map from key to a list of (timestamp, value) pairs.
-- On set, append to the key's list — timestamps only increase, so the list stays sorted with no sorting.
-- On get, fetch the key's history; no history means the answer is the empty string.
-- Binary search the history for the newest entry at or before the asked timestamp.
-- When the middle entry qualifies, record its value as the best so far and keep searching the newer side for a better one; otherwise search the older side.
-- Return the recorded value, or the empty string when nothing qualified.
+== walk
+# Keep a map from key to a list of (timestamp, value) pairs.
+hint: What does each key need to remember?
+why: Its history as (timestamp, value) pairs.
+code:
+set(key, value, timestamp):
+    store[key].append((timestamp, value))
+# On set, append to the key's list — timestamps only increase, so the list stays sorted with no sorting.
+hint: Why does appending keep the history sorted?
+why: Timestamps only increase, so no sorting is ever needed and set is O(1).
+# On get, fetch the key's history; no history means the answer is the empty string.
+hint: What if the key has never been set?
+why: The answer is the empty string.
+code:
+get(key, timestamp):
+    history = store[key], or empty list
+# Binary search the history for the newest entry at or before the asked timestamp.
+hint: How do you find the newest entry at or before a timestamp?
+why: Binary search the history, O(log n).
+code:
+    low = 0
+    high = len(history) - 1
+    best = ""
+    while low <= high:
+        mid = (low + high) / 2
+# When the middle entry qualifies, record its value as the best so far and keep searching the newer side for a better one; otherwise search the older side.
+hint: When the middle entry qualifies, why keep searching?
+why: A newer qualifying entry may exist, so record it and search the newer side; otherwise search older.
+code:
+        if history[mid].time <= timestamp:
+            best = history[mid].value
+            low = mid + 1
+        else:
+            high = mid - 1
+# Return the recorded value, or the empty string when nothing qualified.
+hint: What is returned?
+why: The best value recorded, or the empty string if nothing qualified.
+code:
+    return best
 == pseudocode
 set(key, value, timestamp):
     store[key].append((timestamp, value))

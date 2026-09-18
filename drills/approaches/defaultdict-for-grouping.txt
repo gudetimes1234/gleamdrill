@@ -1,7 +1,22 @@
 == nudge
 A grouping problem, and the only real friction is the first word of each length: something has to exist before you can append to it. What removes the "is the key there yet?" dance entirely?
-== steps
-- Create collections.defaultdict(list) — first touch of any key materialises an empty list.
-- Walk the words in order, appending each to groups[len(word)] — one append per item, and appending preserves input order for free.
-- Convert with dict(groups) at the end, as the prompt asks.
-- File the pattern: defaultdict(int) for counters, defaultdict(set) for unique membership.
+== walk
+# Create collections.defaultdict(list) — first touch of any key materialises an empty list.
+hint: What would you otherwise have to write before appending to a key you have not seen?
+why: defaultdict(list) creates the empty list on first touch, removing the "if key not in groups" dance and the KeyError it guards against.
+code:
+groups = defaultdict(list)
+# Walk the words in order, appending each to groups[len(word)] — one append per item, and appending preserves input order for free.
+hint: Does the order words are appended in match the order the output wants?
+why: Appending in input order keeps each group in input order for free, and the whole pass is O(n).
+code:
+for word in words:
+    groups[len(word)].append(word)
+# Convert with dict(groups) at the end, as the prompt asks.
+hint: Is a defaultdict what the caller asked for?
+why: Converting with dict() drops the default factory so a later lookup of a missing key raises rather than silently inserting.
+code:
+return dict(groups)
+# File the pattern: defaultdict(int) for counters, defaultdict(set) for unique membership.
+hint: What else does the same trick tidy up?
+why: Counting and unique-membership both start from an empty something; defaultdict(int) and defaultdict(set) remove the same first-touch check there.

@@ -1,11 +1,33 @@
 == nudge
 Push, pop, and top are free — retrieving the minimum in O(1) is the intruder. When you push a value, what one extra fact could you freeze alongside it, so that popping never forces you to recount what remains?
-== steps
-- Keep a second stack of minimums rising and falling in step with the main one.
-- On push, also push min(new value, top of the min stack) — the minimum of everything at or below this entry.
-- On pop, pop both stacks together; the previous minimum simply resurfaces.
-- getMin is the min stack's top, so all four operations are O(1).
-- Variant worth knowing: storing (value, min-so-far) pairs in one stack is the same idea with the bookkeeping fused into each entry.
+== walk
+# Keep a second stack of minimums rising and falling in step with the main one.
+hint: What extra information would make getMin O(1)?
+why: The minimum of everything below each entry, kept on a parallel stack that rises and falls with the main one.
+# On push, also push min(new value, top of the min stack) — the minimum of everything at or below this entry.
+hint: What goes on the min stack when a value is pushed?
+why: The smaller of the new value and the current minimum, so each level knows the minimum at or below it.
+code:
+push(v):
+    stack.push(v)
+    if mins is empty: mins.push(v)
+    else: mins.push(min(v, mins.top))
+# On pop, pop both stacks together; the previous minimum simply resurfaces.
+hint: What does popping have to do?
+why: Pop both stacks; the earlier minimum resurfaces on its own.
+code:
+pop():
+    stack.pop()
+    mins.pop()
+# getMin is the min stack's top, so all four operations are O(1).
+hint: Where is the minimum?
+why: The min stack's top; all four operations are O(1).
+code:
+top(): return stack.top
+getMin(): return mins.top
+# Variant worth knowing: storing (value, min-so-far) pairs in one stack is the same idea with the bookkeeping fused into each entry.
+hint: How could the two stacks be fused?
+why: Store (value, min-so-far) pairs in one stack; same idea, one structure.
 == pseudocode
 push(v):
     stack.push(v)

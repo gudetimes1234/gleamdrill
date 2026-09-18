@@ -1,11 +1,35 @@
 == nudge
 Try clearing cells as you scan and watch what happens — can you still tell your own zeroes from the originals? What is the least you need to remember before any writing becomes safe?
-== steps
-- See why one pass fails: a zero you write is indistinguishable from a zero that was already there, and the whole grid clears itself.
-- First pass: scan the grid, recording which rows and which columns contain an original zero (two sets).
-- Second pass: rewrite every cell to zero when its row or column is marked, leaving the rest untouched.
-- That is O(m + n) extra space and no cascade is possible.
-- Follow-up: for O(1) extra space, store the marks in the grid's own first row and first column (plus one flag for the first column itself) and clear those two last.
+== walk
+# See why one pass fails: a zero you write is indistinguishable from a zero that was already there, and the whole grid clears itself.
+hint: What goes wrong if you zero rows and columns as you find zeros?
+why: A zero you wrote looks like an original one, so the clearing cascades until the whole grid is zero.
+# First pass: scan the grid, recording which rows and which columns contain an original zero (two sets).
+hint: What should the first pass record?
+why: Which rows and columns hold an original zero, as two sets, without changing the grid.
+code:
+rows = empty set
+columns = empty set
+for r in 0..m-1:
+    for c in 0..n-1:
+        if matrix[r][c] == 0:
+            rows.add(r)
+            columns.add(c)
+# Second pass: rewrite every cell to zero when its row or column is marked, leaving the rest untouched.
+hint: What does the second pass do?
+why: Zeroes every cell whose row or column is marked, leaving everything else alone.
+code:
+for r in 0..m-1:
+    for c in 0..n-1:
+        if r in rows or c in columns:
+            matrix[r][c] = 0
+return matrix
+# That is O(m + n) extra space and no cascade is possible.
+hint: What does that cost, and why can it not cascade?
+why: O(m + n) extra space and two passes; the marks came from the original grid, so writes never influence them.
+# Follow-up: for O(1) extra space, store the marks in the grid's own first row and first column (plus one flag for the first column itself) and clear those two last.
+hint: Where can the marks live to make the extra space constant?
+why: In the grid's own first row and column, plus one flag for the first column itself, cleared last.
 == pseudocode
 rows = empty set
 columns = empty set

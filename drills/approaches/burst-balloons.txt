@@ -1,12 +1,39 @@
 == nudge
 The natural question — which balloon to burst first — tangles every choice with its ever-shifting neighbours. Is there a different question to ask about a span of balloons whose answer does not depend on anything outside it?
-== steps
-- Pad the array with a 1 at each end so every balloon always has two neighbours and the edge cases vanish.
-- For a span (left, right) whose two boundary balloons are unburst, ask which balloon inside is burst LAST, not first.
-- The last balloon still has the span's two boundaries as neighbours — untouched by definition — so its coins are balloons[left] * balloons[last] * balloons[right], a known value.
-- Bursting it last also splits the span into two independent subproblems, (left, last) and (last, right); add their best values.
-- Take the max over every choice of last, memoise on (left, right), and let a span with nothing inside be worth 0.
-- Know why "first" fails: the first balloon's future neighbours depend on choices made on the other side, so the recursion never closes.
+== walk
+# Pad the array with a 1 at each end so every balloon always has two neighbours and the edge cases vanish.
+hint: What are the neighbours of the first and last balloons, and why is that awkward?
+why: Padding with 1s gives every real balloon two neighbours forever, so the coin formula needs no edge cases.
+code:
+balloons = [1] + nums + [1]
+# For a span (left, right) whose two boundary balloons are unburst, ask which balloon inside is burst LAST, not first.
+hint: Choosing which balloon to burst first makes the future messy. What if you choose which one is burst last instead?
+why: The last balloon in a span is burst with the span's boundaries as its neighbours, and those boundaries are outside the span, so they are fixed no matter what happened inside.
+code:
+best(left, right):
+    if right - left < 2: return 0
+# The last balloon still has the span's two boundaries as neighbours — untouched by definition — so its coins are balloons[left] * balloons[last] * balloons[right], a known value.
+hint: When the last balloon in (left, right) finally pops, what is on each side of it?
+why: Its neighbours are the span boundaries by definition, so its coins are a product of three known values with no dependence on order inside.
+code:
+        for last in left+1 .. right-1:
+            coins = balloons[left] * balloons[last] * balloons[right]
+# Bursting it last also splits the span into two independent subproblems, (left, last) and (last, right); add their best values.
+hint: Once the last balloon is fixed, do the two sides interact?
+why: Everything left of it and everything right of it burst independently with the last balloon standing between them, so their best values simply add.
+code:
+                    + best(left, last) + best(last, right)
+# Take the max over every choice of last, memoise on (left, right), and let a span with nothing inside be worth 0.
+hint: How many spans are there, and how much work does each take?
+why: O(n²) spans each trying O(n) candidates gives O(n³), which is fine for n up to 300; the memo is what stops the recursion re-solving spans.
+code:
+            top = max(top, coins)
+        memo[(left, right)] = top
+    return memo[(left, right)]
+return best(0, len(balloons) - 1)
+# Know why "first" fails: the first balloon's future neighbours depend on choices made on the other side, so the recursion never closes.
+hint: Why can't the same trick work with "first"?
+why: Bursting first changes which balloons become adjacent later on both sides, so the subproblems depend on each other and no clean split exists.
 == pseudocode
 balloons = [1] + nums + [1]
 memo = empty map

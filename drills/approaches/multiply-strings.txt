@@ -1,11 +1,40 @@
 == nudge
 How did you multiply two big numbers on paper in school? Before reaching for anything clever, ask where the product of one digit from each number always ends up — and whether the carrying really has to happen during the multiplication.
-== steps
-- Handle "0" times anything up front, then reverse both strings into digit arrays so index equals place value.
-- Allocate a result array of len(a) + len(b) slots — a product can never need more digits than that.
-- Nested loop: add digit i times digit j straight into slot i + j, with no carrying yet — deferring the carry is what keeps this inner loop clean.
-- Do one sweep over the slots afterwards: each slot keeps total mod 10 and passes total div 10 on as carry.
-- Reverse the digits into a string and strip leading zeros, keeping at least one digit.
+== walk
+# Handle "0" times anything up front, then reverse both strings into digit arrays so index equals place value.
+hint: Which input needs handling before the digit loops, and what orientation helps the loops?
+why: "0" times anything is "0"; reversing the strings makes index equal place value so digit i times digit j lands at i + j.
+code:
+if num1 == "0" or num2 == "0": return "0"
+a = digits of num1, lowest place first
+b = digits of num2, lowest place first
+# Allocate a result array of len(a) + len(b) slots — a product can never need more digits than that.
+hint: How many digits can the product have at most?
+why: len(a) + len(b), so that many slots always suffice.
+code:
+slots = array of (len(a) + len(b)) zeros
+# Nested loop: add digit i times digit j straight into slot i + j, with no carrying yet — deferring the carry is what keeps this inner loop clean.
+hint: Why not carry inside the nested loop?
+why: Adding raw products into slots keeps the inner loop a single line; carrying once afterwards is simpler and equivalent.
+code:
+for i in 0..len(a)-1:
+    for j in 0..len(b)-1:
+        slots[i + j] += a[i] * b[j]
+# Do one sweep over the slots afterwards: each slot keeps total mod 10 and passes total div 10 on as carry.
+hint: What does the carry sweep do to each slot?
+why: Keeps total mod 10 and passes total div 10 onward, normalising every slot to one digit.
+code:
+carry = 0
+digits = []
+for slot in slots:
+    total = slot + carry
+    digits.append(total mod 10)
+    carry = total div 10
+# Reverse the digits into a string and strip leading zeros, keeping at least one digit.
+hint: What cleanup turns the digits into the answer?
+why: Reverse back to most-significant first and strip leading zeros, keeping at least one digit; O(m * n).
+code:
+return digits reversed, joined, leading zeros stripped
 == pseudocode
 if num1 == "0" or num2 == "0": return "0"
 a = digits of num1, lowest place first

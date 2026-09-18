@@ -1,11 +1,36 @@
 == nudge
 You have grown palindromes outward from their centres before, to find the longest. What small change turns that measuring tool into a counting one?
-== steps
-- Reuse the 2n centres: every character, and every gap between characters for the even lengths.
-- Expand from each centre while the end characters match — but now each successful widening is itself one palindromic substring.
-- Count the widenings instead of measuring how far the biggest one got.
-- Sum the counts over all centres for the answer — the same O(n^2) walk with different bookkeeping.
-- The table alternative says s[i..j] is a palindrome when its ends match and the inside already was, which forces filling spans shortest first.
+== walk
+# Reuse the 2n centres: every character, and every gap between characters for the even lengths.
+hint: Which centres can a palindrome grow from?
+why: Each character and each gap between characters, 2n - 1 in all; gaps cover the even lengths.
+code:
+total = 0
+for i in 0..n-1:
+    total += grow(s, i, i) + grow(s, i, i + 1)
+# Expand from each centre while the end characters match — but now each successful widening is itself one palindromic substring.
+hint: What does each successful widening represent?
+why: One more palindromic substring centred here, not just progress toward the biggest.
+code:
+function grow(s, left, right):
+    count = 0
+    while left >= 0 and right < len(s) and s[left] == s[right]:
+        count += 1
+        left -= 1
+        right += 1
+# Count the widenings instead of measuring how far the biggest one got.
+hint: What changes from the longest-palindrome walk?
+why: You count widenings instead of recording the widest span.
+code:
+    return count
+# Sum the counts over all centres for the answer — the same O(n^2) walk with different bookkeeping.
+hint: How do the centres combine?
+why: Sum their counts; same O(n²) expansion, different bookkeeping.
+code:
+return total
+# The table alternative says s[i..j] is a palindrome when its ends match and the inside already was, which forces filling spans shortest first.
+hint: What does the table version say?
+why: s[i..j] is a palindrome when its ends match and the inside already was, which forces filling shorter spans first.
 == pseudocode
 total = 0
 for i in 0..n-1:

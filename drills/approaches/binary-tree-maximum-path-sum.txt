@@ -1,11 +1,36 @@
 == nudge
 A path may bend through a node and use both its arms — but what is it no longer allowed to do once it continues up to the parent? There are two different bests hiding at every node: which one gets returned, and which one only recorded?
-== steps
-- Compute two things per node: the best path that can continue upward (node plus at most one child) and the best path bending through it (node plus both children).
-- Recurse into both children first, getting each child's extendable sum and its best-anywhere sum.
-- Clamp a negative child sum to zero — a path is allowed to stop rather than absorb a loss.
-- Return the node's value plus the larger clamped gain; record the node's value plus both clamped gains against the best seen so far.
-- The answer is the best recorded anywhere, which may be a single node when every value is negative.
+== walk
+# Compute two things per node: the best path that can continue upward (node plus at most one child) and the best path bending through it (node plus both children).
+hint: A path through a node can bend once. Can the path you hand up to the parent also bend?
+why: The parent can extend a path only if it is a straight line ending at the child, so each node must report the straight version separately from the best bent one.
+code:
+function walk(node):
+    if node is null: return (0, -infinity)
+# Recurse into both children first, getting each child's extendable sum and its best-anywhere sum.
+hint: What must you know from each child before deciding anything at this node?
+why: Post-order: both children's extendable sums and their best-anywhere sums, since the answer may be entirely inside one subtree.
+code:
+    (left_up, left_best) = walk(node.left)
+    (right_up, right_best) = walk(node.right)
+# Clamp a negative child sum to zero — a path is allowed to stop rather than absorb a loss.
+hint: If a child's best extendable sum is negative, should the path include it?
+why: A path may stop at any node, so a negative contribution is simply dropped; clamping to zero encodes that choice without a branch.
+code:
+    left_gain = max(left_up, 0)
+    right_gain = max(right_up, 0)
+# Return the node's value plus the larger clamped gain; record the node's value plus both clamped gains against the best seen so far.
+hint: Which of the two numbers is for the parent, and which is a candidate answer?
+why: The extendable value takes one child at most; the bent value takes both and can only be the final answer, never part of a longer path.
+code:
+    up = node.val + max(left_gain, right_gain)
+    through = node.val + left_gain + right_gain
+    return (up, max(through, left_best, right_best))
+# The answer is the best recorded anywhere, which may be a single node when every value is negative.
+hint: If every value is negative, what is the best path?
+why: Seeding the best with negative infinity rather than zero lets a lone negative node win, which the problem requires; the walk is O(n).
+code:
+answer = second component of walk(root)
 == pseudocode
 function walk(node):
     if node is null: return (0, -infinity)

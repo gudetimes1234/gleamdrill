@@ -1,12 +1,36 @@
 == nudge
 Unsorted, any interval might overlap any other, anywhere. What ordering would guarantee that each interval can only ever interact with one candidate — and which candidate would that be?
-== steps
-- Sort the intervals by start.
-- Walk them once, keeping the interval currently being built as the last entry of the output.
-- If the next interval starts at or before the built one's end, it overlaps — extend the built end to the larger of the two.
-- Otherwise the built interval is finished; append the next one as a fresh start.
-- Why one candidate suffices: anything the next interval could have overlapped earlier was already absorbed into the one being built.
-- Follow-up framing: keep only the edges, +1 at each start and -1 at each end, and cut wherever the running count returns to zero.
+== walk
+# Sort the intervals by start.
+hint: What order makes overlaps show up as neighbours?
+why: Sorting by start, so any interval that overlaps the one being built is the next one.
+code:
+sort intervals by start
+# Walk them once, keeping the interval currently being built as the last entry of the output.
+hint: Where does the interval being built live?
+why: As the last entry of the output; extending it in place avoids a separate current variable.
+code:
+out = []
+for [start, end] in intervals:
+# If the next interval starts at or before the built one's end, it overlaps — extend the built end to the larger of the two.
+hint: When does the next interval belong to the one being built?
+why: When it starts at or before the built one's end; the built end grows to the larger of the two.
+code:
+    if out is not empty and start <= out.last.end:
+        out.last.end = max(out.last.end, end)
+# Otherwise the built interval is finished; append the next one as a fresh start.
+hint: And when it does not overlap?
+why: The built interval is complete and the next one starts fresh; O(n log n) for the sort, O(n) for the walk.
+code:
+    else:
+        out.add([start, end])
+return out
+# Why one candidate suffices: anything the next interval could have overlapped earlier was already absorbed into the one being built.
+hint: Why is comparing with only the last interval enough?
+why: Anything the next interval could overlap earlier was already merged into the last one, since starts are sorted.
+# Follow-up framing: keep only the edges, +1 at each start and -1 at each end, and cut wherever the running count returns to zero.
+hint: What is the sweep-line way to think about it?
+why: +1 at each start, -1 at each end, and a merged interval ends wherever the running count returns to zero.
 == pseudocode
 sort intervals by start
 out = []

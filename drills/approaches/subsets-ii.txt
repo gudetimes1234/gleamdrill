@@ -1,12 +1,36 @@
 == nudge
 The plain subsets recursion suddenly produces repeats — trace how the same subset gets built twice when two equal values sit in the list. What arrangement of the input makes "skip this value entirely" even expressible?
-== steps
-- Sort first, so equal values become adjacent — that is what makes the duplicate rule sayable at all.
-- Recurse as in Subsets: either take the head and recurse on the tail, or skip the head.
-- The one change: when skipping the head, jump past every copy of it at once.
-- Skipping one copy while keeping the next is exactly how the same subset gets built by two routes.
-- Base case: the empty list yields the empty subset.
-- Follow-up framing that avoids the rule entirely: per distinct value, choose how many copies (0 up to its count) to include.
+== walk
+# Sort first, so equal values become adjacent — that is what makes the duplicate rule sayable at all.
+hint: What arrangement makes "the same value again" detectable?
+why: Sorting, so equal values are neighbours and the skip rule can be stated.
+code:
+sort nums
+# Recurse as in Subsets: either take the head and recurse on the tail, or skip the head.
+hint: What does the recursion look like, from Subsets?
+why: Take the head and recurse on the tail, or skip the head.
+code:
+function build(nums):
+    first = nums[0]
+    with_first = prepend first to each of build(nums past index 0)
+# The one change: when skipping the head, jump past every copy of it at once.
+hint: What is the one change when skipping?
+why: Skip every copy of the head at once.
+code:
+    past = index of the first value different from first
+    without = build(nums from past onward)
+    return with_first + without
+# Skipping one copy while keeping the next is exactly how the same subset gets built by two routes.
+hint: Why would skipping one copy and keeping the next cause duplicates?
+why: Because "take copy 1" and "skip copy 1, take copy 2" build the same subset.
+# Base case: the empty list yields the empty subset.
+hint: What is the base case?
+why: The empty list has the empty subset.
+code:
+    if nums is empty: return [[]]
+# Follow-up framing that avoids the rule entirely: per distinct value, choose how many copies (0 up to its count) to include.
+hint: Is there a framing with no skip rule at all?
+why: Per distinct value choose how many copies to include, from 0 to its count.
 == pseudocode
 sort nums
 function build(nums):

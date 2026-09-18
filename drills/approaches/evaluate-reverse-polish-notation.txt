@@ -1,11 +1,36 @@
 == nudge
 This notation was invented so that by the time an operator arrives, its inputs are already sitting somewhere convenient, fully evaluated. Where would they be sitting — and in what order do they come back out?
-== steps
-- Walk the tokens, keeping evaluated numbers on a stack.
-- A number: push it.
-- An operator: pop twice — the first value popped is the RIGHT operand, the second the left — apply, and push the result.
-- Make division truncate toward zero rather than floor; with a negative operand those differ, so divide the magnitudes and reapply the sign.
-- The single value left on the stack at the end is the answer.
+== walk
+# Walk the tokens, keeping evaluated numbers on a stack.
+hint: In postfix notation, what has to be waiting when an operator appears?
+why: Its operands, already evaluated, which is exactly what a stack of numbers holds.
+code:
+stack = empty
+for token in tokens:
+# A number: push it.
+hint: What happens to a plain number?
+why: It is pushed to wait for an operator; nothing about it is decided yet.
+code:
+    else:
+        stack.push(number(token))
+# An operator: pop twice — the first value popped is the RIGHT operand, the second the left — apply, and push the result.
+hint: An operator pops two values. Which one is the left operand?
+why: The second one popped: the first popped was pushed last, so it is the right operand; getting this wrong breaks subtraction and division.
+code:
+    if token is an operator:
+        b = stack.pop()
+        a = stack.pop()
+        stack.push(apply(token, a, b))
+# Make division truncate toward zero rather than floor; with a negative operand those differ, so divide the magnitudes and reapply the sign.
+hint: What does -7 / 2 give in your language, and what does the problem want?
+why: The problem truncates toward zero (-3), while floor division gives -4; dividing magnitudes and reapplying the sign makes it right everywhere.
+code:
+        // "/" truncates toward zero
+# The single value left on the stack at the end is the answer.
+hint: When the tokens run out, what is on the stack?
+why: Exactly one value for a valid expression, and it is the result; the whole evaluation is O(n).
+code:
+return stack.top
 == pseudocode
 stack = empty
 for token in tokens:

@@ -1,11 +1,29 @@
 == nudge
 One task dominates the timeline: the one that repeats most. If you laid out only that task with its cooldowns, what shape would the schedule take — and where would everything else have to go?
-== steps
-- Count how many times each task occurs; find the busiest count and how many tasks tie for it.
-- Lay the busiest task out first: (busiest - 1) frames of n + 1 slots each, plus a final row of every task tied for busiest.
-- Every other task either drops into an idle slot of that skeleton, or there are so many tasks that nothing idles at all and they simply extend the line.
-- So the answer is the larger of the skeleton size and the plain number of tasks — no schedule ever built.
-- Follow-up: simulating with a max-heap of remaining counts plus a cooldown queue gives the same answer in O(total intervals), and also produces an actual schedule.
+== walk
+# Count how many times each task occurs; find the busiest count and how many tasks tie for it.
+hint: What about the tasks determines the minimum time?
+why: The most frequent task's count and how many tasks tie for it.
+code:
+counts = frequency of each task
+busiest = max of counts
+ties = how many counts equal busiest
+# Lay the busiest task out first: (busiest - 1) frames of n + 1 slots each, plus a final row of every task tied for busiest.
+hint: How do you lay out the busiest task with its cooldowns?
+why: busiest - 1 frames of n + 1 slots, then a final row holding every tied task.
+code:
+skeleton = (busiest - 1) * (n + 1) + ties
+# Every other task either drops into an idle slot of that skeleton, or there are so many tasks that nothing idles at all and they simply extend the line.
+hint: Where do the remaining tasks go?
+why: Into idle slots of the skeleton, or if there are too many for that, they extend the line with no idling at all.
+# So the answer is the larger of the skeleton size and the plain number of tasks — no schedule ever built.
+hint: What is the formula, then?
+why: The larger of the skeleton and the plain task count; no schedule is ever built, O(n).
+code:
+return max(number of tasks, skeleton)
+# Follow-up: simulating with a max-heap of remaining counts plus a cooldown queue gives the same answer in O(total intervals), and also produces an actual schedule.
+hint: What would a simulation add?
+why: A max-heap of counts with a cooldown queue produces an actual schedule at O(total intervals).
 == pseudocode
 counts = frequency of each task
 busiest = max of counts

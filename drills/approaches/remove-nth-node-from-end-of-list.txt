@@ -1,12 +1,39 @@
 == nudge
 Counting from the end of a list you can only walk forwards — that is the whole difficulty. Could two walkers, arranged just so, turn "nth from the end" into "when the other one finishes"? And which node do you actually need to be standing on to make the change?
-== steps
-- Put a dummy node in front of the head — removing the first node then needs no special case.
-- Start two pointers at the dummy and advance the leading one n steps.
-- Advance both together until the leader's next is null; the trailer now sits on the node just before the doomed one.
-- Bypass the doomed node: trailer.next = trailer.next.next.
-- Return dummy.next, which is right even when the head itself was removed.
-- The two-pass alternative — count the length, then walk to node length - n — gives the same answer; the held gap is what makes it one pass.
+== walk
+# Put a dummy node in front of the head — removing the first node then needs no special case.
+hint: What special case does a node in front of the head remove?
+why: Removing the head itself; with a dummy, the node before the doomed one always exists.
+code:
+dummy = new node with next = head
+behind = dummy
+ahead = dummy
+# Start two pointers at the dummy and advance the leading one n steps.
+hint: How do you create a gap of n between two pointers?
+why: Advance the leader n steps first.
+code:
+repeat n times:
+    ahead = ahead.next
+# Advance both together until the leader's next is null; the trailer now sits on the node just before the doomed one.
+hint: When the leader reaches the last node, where is the trailer?
+why: Just before the nth from the end, because the gap never changed; one pass, O(n).
+code:
+while ahead.next != null:
+    behind = behind.next
+    ahead = ahead.next
+# Bypass the doomed node: trailer.next = trailer.next.next.
+hint: How is the node removed?
+why: Link the trailer past it.
+code:
+behind.next = behind.next.next
+# Return dummy.next, which is right even when the head itself was removed.
+hint: What is the head afterwards?
+why: Whatever follows the dummy, correct even if the original head was removed.
+code:
+return dummy.next
+# The two-pass alternative — count the length, then walk to node length - n — gives the same answer; the held gap is what makes it one pass.
+hint: What does the two-pass version do instead?
+why: Count the length, then walk to node length - n; the held gap is what collapses it to one pass.
 == pseudocode
 dummy = new node with next = head
 behind = dummy

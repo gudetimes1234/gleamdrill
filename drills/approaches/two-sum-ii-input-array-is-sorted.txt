@@ -1,11 +1,31 @@
 == nudge
 The first Two Sum paid for its speed with extra memory; this one hands you sorted order instead. If some candidate pair sums too small, which end of the array is it safe to give up on — and why can that never skip the answer?
-== steps
-- Start one pointer at each end of the array.
-- Sum the two pointed-at values; equal to target means done — return the two positions, 1-indexed as asked.
-- Too small: move the left pointer right, the only move that can raise the sum.
-- Too big: move the right pointer left.
-- The pointers meet without a hit only if no pair exists — O(n) time, O(1) space, no map anywhere.
+== walk
+# Start one pointer at each end of the array.
+hint: Where do two pointers start when the array is sorted?
+why: At the two ends, where the sum can be steered up or down by moving either.
+code:
+left, right = 0, n - 1
+# Sum the two pointed-at values; equal to target means done — return the two positions, 1-indexed as asked.
+hint: What does a hit return?
+why: The two positions, one-indexed as the problem asks.
+code:
+while left < right:
+    total = numbers[left] + numbers[right]
+    if total == target: return [left + 1, right + 1]
+# Too small: move the left pointer right, the only move that can raise the sum.
+hint: The sum is too small. Which move can raise it?
+why: Only moving left rightward, since the array is sorted.
+code:
+    if total < target: left += 1
+# Too big: move the right pointer left.
+hint: And too big?
+why: Move right leftward.
+code:
+    else: right -= 1
+# The pointers meet without a hit only if no pair exists — O(n) time, O(1) space, no map anywhere.
+hint: What does it cost, and what did you not need?
+why: O(n) time and O(1) space with no hash map; if the pointers meet there is no pair.
 == pseudocode
 left, right = 0, n - 1
 while left < right:

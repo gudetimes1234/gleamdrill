@@ -1,11 +1,30 @@
 == nudge
 Do you really need to track every index you could land on? Think about the shape of the reachable set — could it compress to a single number, and what would falling outside it mean?
-== steps
-- Notice everything reachable from the start forms a prefix of the array, so one number describes it: the furthest index reachable so far.
-- Walk left to right; the moment the current index is beyond that reach, stop — nothing past it can ever be reached, return false.
-- Otherwise extend the reach with i + nums[i].
-- Return true once the reach covers the last index.
-- Follow-up: walking backwards works too — carry the leftmost index known to reach the end and check whether it makes it to zero.
+== walk
+# Notice everything reachable from the start forms a prefix of the array, so one number describes it: the furthest index reachable so far.
+hint: What shape does the set of reachable indices have?
+why: A prefix of the array, because reaching an index means every earlier one was reachable too; one number, the furthest reach, describes it.
+code:
+reach = 0
+# Walk left to right; the moment the current index is beyond that reach, stop — nothing past it can ever be reached, return false.
+hint: When can you stop early with a no?
+why: The moment the current index is past the reach: nothing beyond it can ever be reached.
+code:
+for i in 0..n-1:
+    if i > reach: return false
+# Otherwise extend the reach with i + nums[i].
+hint: How does visiting an index change the reach?
+why: It may extend it to i + nums[i]; keeping the max is the entire update, O(n).
+code:
+    reach = max(reach, i + nums[i])
+# Return true once the reach covers the last index.
+hint: What is the success condition?
+why: The reach covers the last index by the end of the walk.
+code:
+return reach >= n - 1
+# Follow-up: walking backwards works too — carry the leftmost index known to reach the end and check whether it makes it to zero.
+hint: Is there a backwards version?
+why: Carry the leftmost index known to reach the end and move it left whenever an index can jump to it; success is reaching index zero.
 == pseudocode
 reach = 0
 for i in 0..n-1:

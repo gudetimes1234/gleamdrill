@@ -1,11 +1,35 @@
 == nudge
 Greedy choices are dangerous when they can be wrong. Look at the smallest card still in your hand — how many different groups could it possibly belong to? What does that do to the choosing?
-== steps
-- Reject immediately unless the group size divides the hand size evenly.
-- Count how many copies of each card value the hand holds.
-- Repeatedly take the smallest value still present: it has no smaller neighbour to hide behind, so it must START whatever group contains it — there is no choice, which is what makes the greedy safe.
-- Its copies are indistinguishable, so consume them all at once: subtract that many from each of the groupSize consecutive values, failing the moment any value runs short.
-- Walk the values in sorted order; if every count is spent without a failure, the hand works.
+== walk
+# Reject immediately unless the group size divides the hand size evenly.
+hint: Before looking at any card, what simple arithmetic can rule the hand out?
+why: Groups of equal size must tile the hand exactly, so a remainder means failure in O(1) before any grouping is attempted.
+code:
+if len(hand) mod groupSize != 0: return false
+# Count how many copies of each card value the hand holds.
+hint: Cards repeat. What do you need to know about each value?
+why: How many copies there are; a frequency map turns the hand into values with multiplicities, which is what group building consumes.
+code:
+counts = map from card value to copies held
+# Repeatedly take the smallest value still present: it has no smaller neighbour to hide behind, so it must START whatever group contains it — there is no choice, which is what makes the greedy safe.
+hint: Which card has no choice about which group it belongs to?
+why: The smallest remaining value has nothing below it, so it can only start a group; that forced move is what makes the greedy correct.
+code:
+for smallest in sorted keys of counts:
+    copies = counts[smallest]
+    if copies == 0: continue
+# Its copies are indistinguishable, so consume them all at once: subtract that many from each of the groupSize consecutive values, failing the moment any value runs short.
+hint: If the smallest value has three copies, how many groups start there?
+why: Three, and they are indistinguishable, so subtract three from each of the next groupSize values at once and fail if any runs short.
+code:
+    for card in smallest .. smallest + groupSize - 1:
+        if counts[card] < copies: return false
+        counts[card] = counts[card] - copies
+# Walk the values in sorted order; if every count is spent without a failure, the hand works.
+hint: What does finishing the sorted walk without a failure prove?
+why: Every copy of every value was placed in a group, so the hand works; sorting the distinct values makes it O(n log n).
+code:
+return true
 == pseudocode
 if len(hand) mod groupSize != 0: return false
 counts = map from card value to copies held

@@ -1,13 +1,43 @@
 == nudge
 One source, weighted links, "how long until it arrives" — which family of graph problem is that? And once every node has an arrival time, which single number answers "when has everyone heard?"
-== steps
-- Model it as single-source shortest paths from k; the answer is the largest of the per-node arrival times.
-- Build an adjacency list of outgoing edges with their travel times.
-- Run Dijkstra: keep a min-heap of tentative arrival times and always pop the smallest.
-- Popping a node settles it for good — sound only because no edge is negative — so skip anything popped twice.
-- Relax each outgoing edge of a settled node by pushing the neighbour's candidate time; stale heap entries are left in and skipped on the way out, cheaper than rewriting them.
-- If fewer than n nodes settled, some node never hears the signal — return -1; otherwise return the largest settled time.
-- If edge weights could be negative, switch to Bellman-Ford — relax every edge n - 1 times, choosing nothing — the slower one that survives.
+== walk
+# Model it as single-source shortest paths from k; the answer is the largest of the per-node arrival times.
+hint: When has the signal reached everyone?
+why: When the last node hears it, so the answer is the largest of the shortest arrival times from k.
+# Build an adjacency list of outgoing edges with their travel times.
+hint: What form should the edges take for a graph search?
+why: An adjacency list from each origin to its (destination, time) pairs.
+code:
+edges[origin] = list of (destination, weight)
+# Run Dijkstra: keep a min-heap of tentative arrival times and always pop the smallest.
+hint: Which node should be settled next?
+why: The one with the smallest tentative time; a min-heap makes that pop O(log n), which is Dijkstra.
+code:
+settled = empty map
+heap = [(0, k)]
+while heap not empty:
+    (time, node) = heap.pop_min()
+# Popping a node settles it for good — sound only because no edge is negative — so skip anything popped twice.
+hint: Why is popping a node final, and what does that require?
+why: With no negative edges nothing later can be cheaper, so the first pop is the shortest time and later pops are skipped.
+code:
+    if node in settled: continue
+    settled[node] = time
+# Relax each outgoing edge of a settled node by pushing the neighbour's candidate time; stale heap entries are left in and skipped on the way out, cheaper than rewriting them.
+hint: What happens to a neighbour's old heap entry when a better time is found?
+why: It stays in the heap and is skipped when popped; leaving stale entries is cheaper than rewriting them.
+code:
+    for (next, weight) in edges[node]:
+        if next not in settled:
+            heap.push((time + weight, next))
+# If fewer than n nodes settled, some node never hears the signal — return -1; otherwise return the largest settled time.
+hint: What do the settled times tell you at the end?
+why: If fewer than n nodes settled some node is unreachable, -1; otherwise the maximum settled time is the answer, O((V + E) log V).
+code:
+return max value in settled if len(settled) == n else -1
+# If edge weights could be negative, switch to Bellman-Ford — relax every edge n - 1 times, choosing nothing — the slower one that survives.
+hint: What if an edge could be negative?
+why: Dijkstra's settling would be wrong; Bellman-Ford relaxes every edge n - 1 rounds and survives negatives at O(V * E).
 == pseudocode
 edges[origin] = list of (destination, weight)
 settled = empty map

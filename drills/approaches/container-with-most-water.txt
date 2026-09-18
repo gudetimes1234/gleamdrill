@@ -1,11 +1,33 @@
 == nudge
 Checking every pair of lines is quadratic, so the question is what lets you rule pairs out wholesale. Start from the widest container imaginable: what limits how much it holds — and which of its two walls could possibly be worth abandoning?
-== steps
-- Start pointers at both ends: the widest container possible.
-- Compute the area — width times the shorter of the two heights — and keep the best seen.
-- Move the pointer at the shorter line inward: keeping it can never beat the current area, because the width only shrinks and that short wall still caps the height.
-- On equal heights, moving either pointer is fine.
-- Stop when the pointers meet; the tracked best is the answer, in one O(n) pass.
+== walk
+# Start pointers at both ends: the widest container possible.
+hint: Which pair of lines gives the largest possible width?
+why: The two ends; starting there means every later move trades width for a chance at more height, and no wider container is ever missed.
+code:
+left, right = 0, n - 1
+best = 0
+# Compute the area — width times the shorter of the two heights — and keep the best seen.
+hint: What limits how much water two lines can hold?
+why: The shorter line caps the height, so area is width times the smaller height, and tracking the best seen is the whole state.
+code:
+while left < right:
+    area = (right - left) * min(height[left], height[right])
+    best = max(best, area)
+# Move the pointer at the shorter line inward: keeping it can never beat the current area, because the width only shrinks and that short wall still caps the height.
+hint: If you keep the shorter line and move the taller one, can the area ever grow?
+why: No: width shrinks and the short line still caps the height, so moving the shorter pointer is the only move that can improve, which makes one pass sufficient.
+code:
+    if height[left] < height[right]: left += 1
+    else: right -= 1
+# On equal heights, moving either pointer is fine.
+hint: What if both lines are the same height?
+why: Either move discards a container that cannot beat the current one, so the choice does not matter.
+# Stop when the pointers meet; the tracked best is the answer, in one O(n) pass.
+hint: When have all the useful pairs been considered?
+why: When the pointers meet; every discarded pair was provably no better, so the tracked best is the answer in O(n).
+code:
+return best
 == pseudocode
 left, right = 0, n - 1
 best = 0

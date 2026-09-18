@@ -1,11 +1,29 @@
 == nudge
 You could inspect all 32 bit positions one by one — but do the zeros deserve any of your time? Is there a way to jump straight from one set bit to the next?
-== steps
-- Loop while n is nonzero, counting one iteration per set bit.
-- Each round, replace n with n AND (n - 1): that clears the lowest set bit and touches nothing else.
-- Return the count — the loop ran once per 1 bit, not once per bit position.
-- Keep the trick in your fingers: n AND (n - 1) == 0 is also the power-of-two test.
-- The plain alternative — shift right and test the bottom bit 32 times — works everywhere but always costs 32 steps, and the sign bit needs care on a right shift.
+== walk
+# Loop while n is nonzero, counting one iteration per set bit.
+hint: How many iterations should counting set bits take?
+why: One per set bit, so the loop runs while n is nonzero rather than a fixed 32 times.
+code:
+count = 0
+while n != 0:
+# Each round, replace n with n AND (n - 1): that clears the lowest set bit and touches nothing else.
+hint: What does n AND (n - 1) do to the binary representation?
+why: Subtracting one flips the lowest set bit and everything below it; AND-ing back clears just that bit.
+code:
+    n = n AND (n - 1)
+    count += 1
+# Return the count — the loop ran once per 1 bit, not once per bit position.
+hint: What does the count represent when the loop ends?
+why: The number of bits cleared, which is the number of 1 bits; O(number of set bits).
+code:
+return count
+# Keep the trick in your fingers: n AND (n - 1) == 0 is also the power-of-two test.
+hint: What else is that expression good for?
+why: n AND (n - 1) == 0 tests for a power of two, since a power of two has exactly one set bit.
+# The plain alternative — shift right and test the bottom bit 32 times — works everywhere but always costs 32 steps, and the sign bit needs care on a right shift.
+hint: What does the shift-and-test alternative cost?
+why: Always 32 steps, and a right shift of a negative number needs a logical shift or masking to avoid sign extension.
 == pseudocode
 count = 0
 while n != 0:

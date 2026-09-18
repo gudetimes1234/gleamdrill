@@ -1,12 +1,38 @@
 == nudge
 You are not assigning rooms — you are measuring something. At the busiest single moment of the day, how many meetings are running at once? What is the smallest kind of event you need to notice to track that number?
-== steps
-- Reframe: the rooms needed equal the maximum number of meetings ever running simultaneously.
-- Forget the meetings themselves and keep only their edges: a +1 event at each start, a -1 at each end.
-- Sort every edge by time and sweep, maintaining a running depth and its high-water mark.
-- Tie-break deliberately: a room freed exactly as another meeting starts is reusable, so ends sort before starts at the same time (-1 before +1) — the opposite of what merging intervals wants.
-- Return the high-water mark.
-- Follow-up: two sorted arrays of starts and ends with two pointers, or a min-heap of end times, reach the same number.
+== walk
+# Reframe: the rooms needed equal the maximum number of meetings ever running simultaneously.
+hint: How many rooms are needed, in terms of the meetings themselves?
+why: The peak number running at the same time; that reframing turns scheduling into counting overlap.
+# Forget the meetings themselves and keep only their edges: a +1 event at each start, a -1 at each end.
+hint: What information about each meeting is enough to find that peak?
+why: Only its edges: +1 at the start, -1 at the end.
+code:
+edges = []
+for [start, end] in intervals:
+    edges.add((start, +1))
+    edges.add((end, -1))
+# Sort every edge by time and sweep, maintaining a running depth and its high-water mark.
+hint: How do you find the peak from the edges?
+why: Sort by time and sweep, keeping a running depth and its maximum; O(n log n).
+code:
+sort edges by time, with -1 before +1 on ties
+depth = 0
+best = 0
+for (time, delta) in edges:
+    depth = depth + delta
+    best = max(best, depth)
+# Tie-break deliberately: a room freed exactly as another meeting starts is reusable, so ends sort before starts at the same time (-1 before +1) — the opposite of what merging intervals wants.
+hint: A meeting ends exactly as another starts. Which edge should sort first?
+why: The end, so the room is freed before it is needed; that tie-break is the reverse of what interval merging wants.
+# Return the high-water mark.
+hint: What is the answer?
+why: The high-water mark of the depth.
+code:
+return best
+# Follow-up: two sorted arrays of starts and ends with two pointers, or a min-heap of end times, reach the same number.
+hint: What other shapes reach the same number?
+why: Two sorted arrays of starts and ends with two pointers, or a min-heap of end times.
 == pseudocode
 edges = []
 for [start, end] in intervals:

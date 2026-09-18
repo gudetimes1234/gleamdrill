@@ -1,12 +1,34 @@
 == nudge
 What separates this from plain coin change — what goes wrong if 1+2 and 2+1 are both counted? Whatever counting scheme you choose has to make that double-count structurally impossible, not filter it out afterwards.
-== steps
-- Keep ways[t] = the number of combinations making total t, with ways[0] = 1 for the empty combination.
-- Put the coins on the OUTER loop: settle everything one coin contributes before the next coin is even looked at.
-- For each coin, sweep t upward from coin to amount, adding ways[t - coin] into ways[t].
-- Coin-outermost is what counts combinations: every combination is only ever built in coin order, so 1+2 and 2+1 collapse into one.
-- Follow-up: swapping the loops (amount outer) silently counts permutations instead — know which question is being asked.
-- As a recursion the same rule reads: at each coin, either use it again or set it aside for good.
+== walk
+# Keep ways[t] = the number of combinations making total t, with ways[0] = 1 for the empty combination.
+hint: What is the count for making zero, and why does it have to be 1 rather than 0?
+why: The empty combination makes zero in exactly one way, and every other count is built by adding to it; a 0 base would make every entry 0.
+code:
+ways = array of amount+1 zeros
+ways[0] = 1
+# Put the coins on the OUTER loop: settle everything one coin contributes before the next coin is even looked at.
+hint: If you loop over coins first, what has been decided by the time you look at the second coin?
+why: Everything the first coin can contribute is settled before the second appears, so combinations are only ever assembled in coin order.
+code:
+for coin in coins:
+# For each coin, sweep t upward from coin to amount, adding ways[t - coin] into ways[t].
+hint: How does a single coin extend the counts you already have?
+why: Every way to make t - coin becomes a way to make t by adding this coin; sweeping upward lets a coin be used more than once within the same pass.
+code:
+    for t in coin..amount:
+        ways[t] = ways[t] + ways[t - coin]
+# Coin-outermost is what counts combinations: every combination is only ever built in coin order, so 1+2 and 2+1 collapse into one.
+hint: Why does 1+2 not get counted again as 2+1?
+why: With coins on the outer loop the 2 is never placed before the 1, so each multiset of coins is built exactly once.
+code:
+return ways[amount]
+# Follow-up: swapping the loops (amount outer) silently counts permutations instead — know which question is being asked.
+hint: What changes if amount is the outer loop and coins the inner?
+why: Then each total considers every coin as its last piece, so orderings are distinguished and the count becomes permutations; the loop order is the whole answer to which question you are solving.
+# As a recursion the same rule reads: at each coin, either use it again or set it aside for good.
+hint: As a recursion, what are the two moves at each coin?
+why: Use this coin again, or set it aside forever; that binary choice is the same coin-ordered construction the loops perform.
 == pseudocode
 ways = array of amount+1 zeros
 ways[0] = 1

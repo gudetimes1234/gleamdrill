@@ -1,12 +1,33 @@
 == nudge
 Every route into a square arrives from only two directions. If you knew how many ways reach each of those two neighbours, what would that tell you — and does the whole grid ever need to be in memory at once? This is a counting problem, not a pathfinding one.
-== steps
-- Define ways(r, c) as the number of paths reaching that square: it is the ways to reach the square above plus the ways to reach the one on the left.
-- Seed the top row with 1s — there is exactly one way along the top edge.
-- Fill row by row; only the row above is ever read, so keep a single row of counters.
-- Update the row in place left to right: adding the value on the left into a cell turns "row above" into "row here".
-- After m - 1 sweeps the last entry is the answer.
-- Follow-up: there is no grid at all — every path is m - 1 downs and n - 1 rights in some order, so the count is the binomial coefficient C(m + n - 2, m - 1).
+== walk
+# Define ways(r, c) as the number of paths reaching that square: it is the ways to reach the square above plus the ways to reach the one on the left.
+hint: How can you reach a square, and what does that say about the count?
+why: Only from above or from the left, so the paths to it are the paths to those two squares added.
+# Seed the top row with 1s — there is exactly one way along the top edge.
+hint: How many ways reach each square on the top row?
+why: Exactly one, along the edge; the same holds for the left column.
+code:
+row = array of n ones
+# Fill row by row; only the row above is ever read, so keep a single row of counters.
+hint: How much of the table is needed at once?
+why: Only the row above, so one row of counters suffices.
+code:
+repeat m - 1 times:
+# Update the row in place left to right: adding the value on the left into a cell turns "row above" into "row here".
+hint: How does updating in place left to right work?
+why: Adding the left neighbour to a cell that still holds the row-above value turns it into the current row's value.
+code:
+    for c in 1..n-1:
+        row[c] = row[c] + row[c-1]
+# After m - 1 sweeps the last entry is the answer.
+hint: Where is the answer?
+why: The last entry after m - 1 sweeps; O(m * n) time, O(n) space.
+code:
+return row[n-1]
+# Follow-up: there is no grid at all — every path is m - 1 downs and n - 1 rights in some order, so the count is the binomial coefficient C(m + n - 2, m - 1).
+hint: What is a path, combinatorially?
+why: An ordering of m - 1 downs and n - 1 rights, so the count is C(m + n - 2, m - 1) with no grid at all.
 == pseudocode
 row = array of n ones
 repeat m - 1 times:

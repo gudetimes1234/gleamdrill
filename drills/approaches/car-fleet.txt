@@ -1,11 +1,35 @@
 == nudge
 Positions and speeds are a distraction until you ask one question per car: when would it reach the target if nothing were in the way? Once every car is a single number, which neighbour decides whether it stays independent — and in what order should you meet the cars?
-== steps
-- Sort the cars by starting position, closest to the target first.
-- Walk that order carrying the unhindered arrival time of the fleet ahead.
-- A car whose own arrival time is at most the lead fleet's catches it and joins — its speed stops mattering from then on.
-- A car arriving strictly later can never catch up: count a new fleet and make its time the new lead time.
-- Compare arrival times cross-multiplied — distance times the other's speed on each side — so the arithmetic stays in integers.
+== walk
+# Sort the cars by starting position, closest to the target first.
+hint: A car can only be blocked by a car ahead of it. What order lets you always know what is ahead?
+why: Sorting by position, nearest the target first, means every car you visit has already had everything ahead of it resolved.
+code:
+cars = (position, speed) pairs sorted by position, descending
+# Walk that order carrying the unhindered arrival time of the fleet ahead.
+hint: What single fact about the fleet ahead decides whether this car joins it?
+why: Its arrival time: a car catches a fleet if and only if it would have arrived no later, so one number summarises the entire fleet.
+code:
+fleets = 0
+lead_dist, lead_speed = 0, 1
+for (pos, spd) in cars:
+    dist = target - pos
+# A car whose own arrival time is at most the lead fleet's catches it and joins — its speed stops mattering from then on.
+hint: Once a car catches the fleet ahead, does its own speed still matter?
+why: It is slowed to the fleet's pace, so it arrives when the fleet does; the fleet's time stays the lead time and nothing needs updating.
+# A car arriving strictly later can never catch up: count a new fleet and make its time the new lead time.
+hint: What does arriving strictly later than the fleet ahead mean for this car?
+why: It never catches up, so it heads a new fleet and becomes the lead time for everything behind it.
+code:
+    if arrives later than lead:
+        fleets += 1
+        lead_dist, lead_speed = dist, spd
+return fleets
+# Compare arrival times cross-multiplied — distance times the other's speed on each side — so the arithmetic stays in integers.
+hint: Comparing dist / speed on each side risks floating point. How do you compare two fractions exactly?
+why: Cross-multiplying compares dist1 * speed2 against dist2 * speed1 with integers only, so equal arrival times are detected exactly.
+code:
+    # later means: dist * lead_speed > lead_dist * spd
 == pseudocode
 cars = (position, speed) pairs sorted by position, descending
 fleets = 0

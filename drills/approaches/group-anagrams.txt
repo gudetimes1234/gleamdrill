@@ -1,11 +1,31 @@
 == nudge
 A bucketing problem: every word belongs to exactly one group, so what do all the words in one group share that no outsider has? If you could write that shared thing down as a label, where would you file each word?
-== steps
-- Give every word a signature that comes out identical exactly for anagrams.
-- Use the tally of each letter — a 26-slot count — as that signature; building it is O(length) per word.
-- Keep a map from signature to a list of words, appending each word to its bucket.
-- Return the map's values: each bucket is one finished group.
-- Follow-up: sorting each word's letters also makes a valid key, at O(L log L) per word instead of O(L).
+== walk
+# Give every word a signature that comes out identical exactly for anagrams.
+hint: What do two anagrams have in common that other words do not?
+why: The same multiset of letters, so any canonical description of that multiset is a key that groups exactly the anagrams.
+# Use the tally of each letter — a 26-slot count — as that signature; building it is O(length) per word.
+hint: What is the cheapest canonical form to build?
+why: A 26-slot letter count, O(length) per word, with no sorting.
+code:
+    key = array of 26 zeros
+    for ch in word:
+        key[letter_index(ch)] += 1
+# Keep a map from signature to a list of words, appending each word to its bucket.
+hint: Where does each word go?
+why: Into the bucket under its key; a map from key to list, appending as you go, O(total letters).
+code:
+groups = empty map from key to list
+for word in strs:
+    groups[key].append(word)
+# Return the map's values: each bucket is one finished group.
+hint: What are the groups at the end?
+why: The map's values, one list per key; order between groups is not required.
+code:
+return values(groups)
+# Follow-up: sorting each word's letters also makes a valid key, at O(L log L) per word instead of O(L).
+hint: What other key would work, and at what cost?
+why: The sorted word, O(L log L) per word instead of O(L); simpler to write, slightly slower.
 == pseudocode
 groups = empty map from key to list
 for word in strs:

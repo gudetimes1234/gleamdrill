@@ -1,12 +1,38 @@
 == nudge
 The array was sorted once and still mostly is — order breaks in exactly one place, and that place is what you are hunting. Can comparing two positions tell you which side of the break you are on, without scanning anything?
-== steps
-- Keep two indexes, left and right, spanning the whole array.
-- Compare the middle value with the value at right — the right end is the boundary that reveals which half is sorted.
-- If the middle value is greater than the right value, the break (and the minimum) lies strictly to the right: move left to mid + 1.
-- Otherwise the right half is sorted, so the minimum is at mid or before it: move right to mid — mid may itself be the minimum, so do not skip it.
-- When left meets right, that position holds the minimum.
-- Classic follow-up — duplicates allowed: equal middle and right values are ambiguous, so shrink right by one and accept an O(n) worst case.
+== walk
+# Keep two indexes, left and right, spanning the whole array.
+hint: Where can the minimum be, at the start?
+why: Anywhere, so the search region is the whole array and each probe must shrink it.
+code:
+left = 0
+right = n - 1
+# Compare the middle value with the value at right — the right end is the boundary that reveals which half is sorted.
+hint: Which end of the region tells you which half is sorted when compared with the middle?
+why: The right end: middle greater than right can only happen if the rotation point lies between them, so that comparison locates the break.
+code:
+while left < right:
+    mid = (left + right) / 2
+# If the middle value is greater than the right value, the break (and the minimum) lies strictly to the right: move left to mid + 1.
+hint: If the middle is bigger than the right end, where is the minimum?
+why: Strictly to the right of mid, since values climb from mid until they drop past the break.
+code:
+    if nums[mid] > nums[right]:
+        left = mid + 1
+# Otherwise the right half is sorted, so the minimum is at mid or before it: move right to mid — mid may itself be the minimum, so do not skip it.
+hint: If the middle is not bigger than the right end, can mid itself be the minimum?
+why: Yes, so the region keeps mid: right = mid, not mid - 1; skipping it would lose the answer.
+code:
+    else:
+        right = mid
+# When left meets right, that position holds the minimum.
+hint: What does it mean when left and right coincide?
+why: One candidate is left and every discarded half was shown not to hold the minimum, so that value is it, in O(log n).
+code:
+return nums[left]
+# Classic follow-up — duplicates allowed: equal middle and right values are ambiguous, so shrink right by one and accept an O(n) worst case.
+hint: What if the middle equals the right end?
+why: With duplicates allowed that comparison says nothing about which side holds the minimum, so shrink right by one; the worst case degrades to O(n).
 == pseudocode
 left = 0
 right = n - 1

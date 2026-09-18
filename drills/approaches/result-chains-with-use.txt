@@ -1,7 +1,23 @@
 == nudge
 Three things can go wrong here, one after another. Write it with case expressions and you get a pyramid that drifts off the right edge — what does Gleam offer to flatten "try this, and if it worked, keep going"?
-== steps
-- Chain each fallible step with use x <- result.try(...): it binds the Ok value and continues, or short-circuits the whole function with the Error.
-- Parse port with use port <- result.try(int.parse(port)), then timeout the same way — each line reads like a straight assignment.
-- Validate the host with a final case: "" is Error(Nil), anything else builds Ok(Config(host, port, timeout)).
-- Read the idiom as early-return for Results — the failure paths are all invisible plumbing.
+== walk
+# Chain each fallible step with use x <- result.try(...): it binds the Ok value and continues, or short-circuits the whole function with the Error.
+hint: What does `use x <- result.try(...)` do on Ok and on Error?
+why: Binds the value and continues, or returns the Error from the whole function; it is early return for Results.
+# Parse port with use port <- result.try(int.parse(port)), then timeout the same way — each line reads like a straight assignment.
+hint: How do the two parses read once written that way?
+why: Like plain assignments, one per line, with no visible error handling.
+code:
+use port <- result.try(int.parse(port))
+use timeout <- result.try(int.parse(timeout))
+# Validate the host with a final case: "" is Error(Nil), anything else builds Ok(Config(host, port, timeout)).
+hint: What does the last step do, and why is it a case rather than a try?
+why: Validates the host and builds the Config; there is no Result to unwrap, just a decision to make.
+code:
+case host {
+  "" -> Error(Nil)
+  _ -> Ok(Config(host, port, timeout))
+}
+# Read the idiom as early-return for Results — the failure paths are all invisible plumbing.
+hint: What has disappeared from the code?
+why: Every failure branch; they are plumbing inside result.try, and the happy path is all that is written.

@@ -1,12 +1,40 @@
 == nudge
 You have already decided whether all the courses can be taken. What did that decision process throw away that this problem wants kept?
-== steps
-- Run the same ready-list process as Course Schedule: count each course's unmet prerequisites and list what it unlocks.
-- Queue the courses with no outstanding prerequisites.
-- Append each course to the answer as it leaves the queue — the departure order is a topological order.
-- Decrement each dependent's counter as its prerequisite is taken; any counter hitting zero joins the queue.
-- If the order comes out shorter than numCourses, a cycle blocked the rest — return the empty list.
-- Depth-first search yields an order too: record a course only after everything it depends on (post-order), then reverse the record.
+== walk
+# Run the same ready-list process as Course Schedule: count each course's unmet prerequisites and list what it unlocks.
+hint: What did Course Schedule already compute that this problem can reuse?
+why: Unmet-prerequisite counts and unlock lists; the ordering falls out of the same Kahn process.
+code:
+waiting[c] = number of prerequisites of c, for every course
+unlocks[p] = list of courses that require p
+# Queue the courses with no outstanding prerequisites.
+hint: Which courses start the queue?
+why: Those with no outstanding prerequisites; they can appear first in any valid order.
+code:
+ready = queue of courses with waiting == 0
+order = []
+# Append each course to the answer as it leaves the queue — the departure order is a topological order.
+hint: When a course leaves the queue, where does it go?
+why: Onto the answer: every prerequisite of it has already left, so departure order is a topological order.
+code:
+while ready not empty:
+    course = ready.pop_front()
+    order.add(course)
+# Decrement each dependent's counter as its prerequisite is taken; any counter hitting zero joins the queue.
+hint: How does taking a course affect the ones that need it?
+why: Their counts drop by one, and reaching zero means all prerequisites are met, so they join the queue; O(V + E) overall.
+code:
+    for next in unlocks[course]:
+        waiting[next] -= 1
+        if waiting[next] == 0: ready.push_back(next)
+# If the order comes out shorter than numCourses, a cycle blocked the rest — return the empty list.
+hint: What does a short order mean?
+why: A cycle kept some courses from ever reaching zero, so no valid order exists and the answer is empty.
+code:
+return order if len(order) == numCourses else []
+# Depth-first search yields an order too: record a course only after everything it depends on (post-order), then reverse the record.
+hint: How would depth-first search produce an order?
+why: Record a course after its prerequisites finish (post-order), then reverse; the reversal is what turns finish order into a valid start order.
 == pseudocode
 waiting[c] = number of prerequisites of c, for every course
 unlocks[p] = list of courses that require p

@@ -1,12 +1,38 @@
 == nudge
 Every ticket must be used exactly once, while airports may repeat freely — is that a walk over nodes or over edges? And when greedily taking the smallest destination strands you somewhere, what must that dead end be?
-== steps
-- Group the tickets by origin and sort each destination list, so the alphabetically smallest unused ticket is always the one taken.
-- Walk greedily with a stack: from the airport on top, follow and consume its smallest remaining ticket.
-- When the top airport has no tickets left, pop it onto the route — an airport is recorded only once its tickets are exhausted.
-- Trust the dead end: the place the greedy walk gets stuck is exactly where the itinerary has to end, so recording at exhaustion builds the route back to front.
-- Reverse the recorded route for the answer.
-- Backtracking — take a ticket, recurse, undo on failure — finds the same itinerary at exponential cost; this walk (Hierholzer's) never undoes anything.
+== walk
+# Group the tickets by origin and sort each destination list, so the alphabetically smallest unused ticket is always the one taken.
+hint: How do you make "smallest lexical" the default choice at every airport?
+why: Group tickets by origin and sort each destination list, so the first remaining ticket is always the smallest unused one.
+code:
+destinations[origin] = sorted list of destinations of origin's tickets
+# Walk greedily with a stack: from the airport on top, follow and consume its smallest remaining ticket.
+hint: What does the greedy walk do at the airport on top of the stack?
+why: Consumes its smallest remaining ticket and pushes the destination.
+code:
+route = []
+stack = ["JFK"]
+while stack not empty:
+    airport = stack.top()
+    if destinations[airport] not empty:
+        stack.push(remove first element of destinations[airport])
+# When the top airport has no tickets left, pop it onto the route — an airport is recorded only once its tickets are exhausted.
+hint: When is an airport added to the route?
+why: Only once it has no tickets left, by popping it; that is Hierholzer's post-order rule.
+code:
+    else:
+        route.add(stack.pop())
+# Trust the dead end: the place the greedy walk gets stuck is exactly where the itinerary has to end, so recording at exhaustion builds the route back to front.
+hint: Why is getting stuck not a failure?
+why: The dead end is where the itinerary must end, so recording at exhaustion builds the route from the back.
+# Reverse the recorded route for the answer.
+hint: What is the last step?
+why: Reverse the recorded route; O(E log E) for the sorting.
+code:
+return reverse(route)
+# Backtracking — take a ticket, recurse, undo on failure — finds the same itinerary at exponential cost; this walk (Hierholzer's) never undoes anything.
+hint: How does this compare with backtracking?
+why: Backtracking finds the same itinerary at exponential cost; this walk never undoes a step.
 == pseudocode
 destinations[origin] = sorted list of destinations of origin's tickets
 route = []

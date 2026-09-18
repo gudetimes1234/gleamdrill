@@ -1,11 +1,31 @@
 == nudge
 Read the guarantees again: sorted rows that never overlap. What does that make the matrix as a whole, once you squint past the grid shape — and how many comparisons should a structure like that really cost?
-== steps
-- Binary search over the rows first: compare the target against a middle row's first and last values.
-- A row whose last value is too small sends the search below it; one whose first value is too big sends it above.
-- Landing on the one row that could contain the target, binary search inside it — O(log m + log n) total.
-- Alternative with the same bound: treat the grid as one flat sorted array of m*n values, mapping position p to matrix[p div n][p mod n] and halving once.
-- Follow-up: the staircase walk from the top-right corner discards a whole row or column per step, runs O(m + n), and does not even need the rows to be non-overlapping.
+== walk
+# Binary search over the rows first: compare the target against a middle row's first and last values.
+hint: With sorted rows that continue one another, what can you binary search first?
+why: The rows, comparing the target against a middle row's first and last values.
+code:
+low, high = 0, m - 1
+while low <= high:
+    mid = (low + high) div 2
+# A row whose last value is too small sends the search below it; one whose first value is too big sends it above.
+hint: What does each row comparison tell you?
+why: A last value below the target means look below; a first value above it means look above.
+code:
+    if last of matrix[mid] < target: low = mid + 1
+    else if first of matrix[mid] > target: high = mid - 1
+# Landing on the one row that could contain the target, binary search inside it — O(log m + log n) total.
+hint: When you land on the only row that could hold the target, what remains?
+why: A binary search within it; O(log m + log n) overall.
+code:
+    else: return binary_search(matrix[mid], target)
+return false
+# Alternative with the same bound: treat the grid as one flat sorted array of m*n values, mapping position p to matrix[p div n][p mod n] and halving once.
+hint: How would you treat the grid as one array?
+why: Map position p to matrix[p div n][p mod n] and binary search over m * n positions; same bound, one loop.
+# Follow-up: the staircase walk from the top-right corner discards a whole row or column per step, runs O(m + n), and does not even need the rows to be non-overlapping.
+hint: What does the top-right staircase walk offer?
+why: O(m + n) by discarding a row or column per step, and it works even when rows overlap.
 == pseudocode
 low, high = 0, m - 1
 while low <= high:

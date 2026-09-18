@@ -1,7 +1,21 @@
 == nudge
 Records never change in place, yet the game clearly needs a player's score to go up. What does "modify a field" mean in a language where nothing mutates — and what syntax says it without re-listing every field?
-== steps
-- Define Player with labelled fields, and have new_player construct it with labelled arguments — Player(name: name, level: 1, ...) reads like documentation.
-- add_points: return Player(..player, points: player.points + n) — a copy with one field swapped, everything else carried over.
-- level_up: same update syntax, changing the fields the level-up touches.
-- Remember every update returns a NEW record; the original is untouched, so callers must use the return value.
+== walk
+# Define Player with labelled fields, and have new_player construct it with labelled arguments — Player(name: name, level: 1, ...) reads like documentation.
+hint: What makes a constructor call readable when it has several fields?
+why: Labelled arguments name each field at the call site.
+code:
+Player(name: name, level: 1, points: 0)
+# add_points: return Player(..player, points: player.points + n) — a copy with one field swapped, everything else carried over.
+hint: How do you change one field of a record without rewriting the rest?
+why: Update syntax copies the record with the named fields replaced.
+code:
+Player(..player, points: player.points + n)
+# level_up: same update syntax, changing the fields the level-up touches.
+hint: What does level_up look like?
+why: The same update syntax for the fields a level-up touches.
+code:
+Player(..player, level: player.level + 1, points: 0)
+# Remember every update returns a NEW record; the original is untouched, so callers must use the return value.
+hint: What happens to the original record?
+why: Nothing; every update returns a new record, so callers must use the return value.
