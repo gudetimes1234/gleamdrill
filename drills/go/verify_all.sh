@@ -11,7 +11,8 @@ failures=0
 while IFS='|' read -r module label stem; do
   [ -z "$stem" ] && continue
   count=$((count + 1))
-  report=$(cd ".verify/$stem" && go run . 2>&1 | tail -n 1)
+  report=$(cd ".verify/$stem" && timeout -s KILL 20 go run . 2>&1 | tail -n 1)
+  [ -z "$report" ] && report='timed out'
   case "$report" in
     *'"error":null'*) ;;
     *) failures=$((failures + 1)); echo "FAIL $module [$label] $report"; continue ;;
@@ -93,13 +94,64 @@ nc123_alien_dictionary|DFS Topological Sort|nc123_alien_dictionary__dfs_postorde
 nc123_alien_dictionary|Topological Sort|nc123_alien_dictionary
 nc124_cheapest_flights|BFS|nc124_cheapest_flights__breadth_first
 nc124_cheapest_flights|Bellman-Ford|nc124_cheapest_flights
+nc125_reverse_linked_list|Iterative|nc125_reverse_linked_list
+nc125_reverse_linked_list|Solution 2 · By folding|nc125_reverse_linked_list__by_folding
+nc126_merge_two_sorted_lists|Iterative|nc126_merge_two_sorted_lists
+nc126_merge_two_sorted_lists|Solution 2 · Iterative|nc126_merge_two_sorted_lists__iterative
+nc127_reorder_list|Fast & Slow Pointers|nc127_reorder_list
+nc127_reorder_list|Solution 2 · From both ends|nc127_reorder_list__from_both_ends
+nc128_remove_nth_from_end|Two Pass|nc128_remove_nth_from_end__by_length
+nc128_remove_nth_from_end|Two Pointers|nc128_remove_nth_from_end
+nc129_copy_random_list|Hash Map|nc129_copy_random_list
+nc129_copy_random_list|Solution 2 · By searching|nc129_copy_random_list__by_searching
 nc12_best_time_stock|Brute Force|nc12_best_time_stock__brute_force
 nc12_best_time_stock|Greedy|nc12_best_time_stock
+nc130_add_two_numbers|Nifty Python · Big Ints|nc130_add_two_numbers__via_integers
+nc130_add_two_numbers|Simulation|nc130_add_two_numbers
+nc131_linked_list_cycle|Hash Set|nc131_linked_list_cycle__seen_set
+nc131_linked_list_cycle|Fast & Slow Pointers|nc131_linked_list_cycle
+nc132_find_the_duplicate|Binary Search|nc132_find_the_duplicate__counting
+nc132_find_the_duplicate|Fast & Slow Pointers|nc132_find_the_duplicate
+nc133_lru_cache|Nifty Python · Dict Order|nc133_lru_cache
+nc133_lru_cache|Solution 2 · Timestamps|nc133_lru_cache__timestamps
+nc134_merge_k_sorted_lists|Divide & Conquer|nc134_merge_k_sorted_lists
+nc134_merge_k_sorted_lists|Solution 2 · Smallest head|nc134_merge_k_sorted_lists__smallest_head
+nc135_reverse_k_group|Two Pass|nc135_reverse_k_group__count_first
+nc135_reverse_k_group|Linked List|nc135_reverse_k_group
+nc136_invert_binary_tree|Flatten & Rebuild|nc136_invert_binary_tree__by_rebuilding
 nc136_invert_binary_tree|DFS|nc136_invert_binary_tree
+nc137_maximum_depth|BFS|nc137_maximum_depth__by_levels
+nc137_maximum_depth|DFS|nc137_maximum_depth
+nc138_diameter_of_binary_tree|Brute Force|nc138_diameter_of_binary_tree__height_per_node
+nc138_diameter_of_binary_tree|DFS|nc138_diameter_of_binary_tree
+nc139_balanced_binary_tree|Brute Force|nc139_balanced_binary_tree__height_per_node
+nc139_balanced_binary_tree|DFS|nc139_balanced_binary_tree
 nc13_longest_substring|Sliding Window|nc13_longest_substring
 nc13_longest_substring|Solution 2 · Shrinking window|nc13_longest_substring__shrinking_window
+nc140_same_tree|Serialisation|nc140_same_tree__by_serialising
+nc140_same_tree|DFS|nc140_same_tree
+nc141_subtree_of_another_tree|DFS|nc141_subtree_of_another_tree
+nc141_subtree_of_another_tree|Serialisation|nc141_subtree_of_another_tree__by_serialising
+nc142_lowest_common_ancestor_bst|Path Comparison|nc142_lowest_common_ancestor_bst__by_paths
+nc142_lowest_common_ancestor_bst|BST Walk|nc142_lowest_common_ancestor_bst
+nc143_level_order_traversal|DFS|nc143_level_order_traversal__by_depth
+nc143_level_order_traversal|BFS|nc143_level_order_traversal
+nc144_right_side_view|DFS|nc144_right_side_view__right_first
+nc144_right_side_view|BFS|nc144_right_side_view
+nc145_count_good_nodes|Full-Path DFS|nc145_count_good_nodes__by_path
+nc145_count_good_nodes|DFS|nc145_count_good_nodes
+nc146_validate_bst|In-Order Traversal|nc146_validate_bst__in_order
+nc146_validate_bst|DFS|nc146_validate_bst
+nc147_kth_smallest_bst|Subtree Counting|nc147_kth_smallest_bst__by_counting
+nc147_kth_smallest_bst|Iterative In-Order|nc147_kth_smallest_bst
+nc148_build_tree_preorder_inorder|Recursion|nc148_build_tree_preorder_inorder
+nc148_build_tree_preorder_inorder|Hash Map|nc148_build_tree_preorder_inorder__by_bounds
+nc149_max_path_sum|Brute Force|nc149_max_path_sum__all_paths
+nc149_max_path_sum|DFS|nc149_max_path_sum
 nc14_character_replacement|Per-Letter Window|nc14_character_replacement__per_character
 nc14_character_replacement|Sliding Window|nc14_character_replacement
+nc150_serialize_deserialize|Post-Order DFS|nc150_serialize_deserialize__post_order
+nc150_serialize_deserialize|Pre-Order DFS|nc150_serialize_deserialize
 nc15_permutation_in_string|Brute Force|nc15_permutation_in_string__sorted_windows
 nc15_permutation_in_string|Sliding Window|nc15_permutation_in_string
 nc16_valid_parentheses|Nifty Python · Replace|nc16_valid_parentheses__reduction

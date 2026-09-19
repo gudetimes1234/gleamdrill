@@ -3911,6 +3911,427 @@ func main() {
   )
 }
 
+pub fn nc125_reverse_linked_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Iterative",
+        "O(n) time · O(1) space",
+        "One pass, three references: where you came from, where you are, and where you were going. Losing the look-ahead is the classic bug — once the link has been overwritten, the rest of the list is unreachable. In a language with cons lists the same thing is an accumulator you prepend to, which is the *same* rewiring written as a value.",
+        "package main
+
+func reverseList(head *ListNode) *ListNode {
+	var previous *ListNode
+	// Walk the list, pointing each node back at the one before it.
+	for head != nil {
+		head.Next, previous, head = previous, head, head.Next
+	}
+	return previous
+}",
+      ),
+      #(
+        "Solution 2 · By folding",
+        "",
+        "The accumulator, named by the standard library instead of written out. Worth putting next to the hand-written loop: a left fold that prepends is the definition of reversing, which is why the built-in exists at all.",
+        "package main
+
+func reverseList(head *ListNode) *ListNode {
+	// Recursive: reverse the rest, then hang the head off what was its
+	// successor. The rest's new head is the answer all the way up.
+	if head == nil || head.Next == nil {
+		return head
+	}
+	reversed := reverseList(head.Next)
+	head.Next.Next = head
+	head.Next = nil
+	return reversed
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func reverseList(head *ListNode) *ListNode",
+      starter: "package main
+
+func reverseList(head *ListNode) *ListNode {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"reverseList([1,2,3,4,5])\", list(5, 4, 3, 2, 1), reverseList(list(1, 2, 3, 4, 5))),
+			tc(\"reverseList([1,2])\", list(2, 1), reverseList(list(1, 2))),
+			tc(\"reverseList([1])\", list(1), reverseList(list(1))),
+			tc(\"reverseList([])\", list(), reverseList(list())),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc126_merge_two_sorted_lists() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Iterative",
+        "O(n+m) time · O(1) space",
+        "Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.",
+        "package main
+
+func mergeTwoLists(list1 *ListNode, list2 *ListNode) *ListNode {
+	// Whichever head is smaller leads, and its Next is the merge of the rest.
+	if list1 == nil {
+		return list2
+	}
+	if list2 == nil {
+		return list1
+	}
+	if list1.Val <= list2.Val {
+		list1.Next = mergeTwoLists(list1.Next, list2)
+		return list1
+	}
+	list2.Next = mergeTwoLists(list1, list2.Next)
+	return list2
+}",
+      ),
+      #(
+        "Solution 2 · Iterative",
+        "",
+        "The same merge with the recursion turned into a loop: build the answer backwards in an accumulator and reverse once at the end. That accumulator is the functional twin of the dummy head, and the reversal costs one extra pass rather than one extra frame per node.",
+        "package main
+
+func mergeTwoLists(list1 *ListNode, list2 *ListNode) *ListNode {
+	// A dummy head lets the loop append without a special first case.
+	dummy := &ListNode{}
+	tail := dummy
+	for list1 != nil && list2 != nil {
+		if list1.Val <= list2.Val {
+			tail.Next, list1 = list1, list1.Next
+		} else {
+			tail.Next, list2 = list2, list2.Next
+		}
+		tail = tail.Next
+	}
+	if list1 != nil {
+		tail.Next = list1
+	} else {
+		tail.Next = list2
+	}
+	return dummy.Next
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func mergeTwoLists(list1 *ListNode, list2 *ListNode) *ListNode",
+      starter: "package main
+
+func mergeTwoLists(list1 *ListNode, list2 *ListNode) *ListNode {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"mergeTwoLists([1,2,4], [1,3,4])\", list(1, 1, 2, 3, 4, 4), mergeTwoLists(list(1, 2, 4), list(1, 3, 4))),
+			tc(\"mergeTwoLists([], [])\", list(), mergeTwoLists(list(), list())),
+			tc(\"mergeTwoLists([], [0])\", list(0), mergeTwoLists(list(), list(0))),
+			tc(\"mergeTwoLists([5], [1,2])\", list(1, 2, 5), mergeTwoLists(list(5), list(1, 2))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc127_reorder_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Fast & Slow Pointers",
+        "O(n) time · O(1) space",
+        "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.",
+        "package main
+
+func reorderList(head *ListNode) {
+	if head == nil || head.Next == nil {
+		return
+	}
+	// Find the middle, reverse the second half, then interleave the two.
+	slow, fast := head, head
+	for fast.Next != nil && fast.Next.Next != nil {
+		slow, fast = slow.Next, fast.Next.Next
+	}
+	var second *ListNode
+	for node := slow.Next; node != nil; {
+		node.Next, second, node = second, node, node.Next
+	}
+	slow.Next = nil
+	first := head
+	for second != nil {
+		first.Next, second.Next, first, second = second, first.Next, first.Next, second.Next
+	}
+}",
+      ),
+      #(
+        "Solution 2 · From both ends",
+        "",
+        "Take from the front, then from the back, until they meet. Reads exactly like the specification and needs no midpoint and no reversal — but reaching the back is a full walk of what is left each time, so it is O(n²) where the split-and-reverse version is O(n).",
+        "package main
+
+func reorderList(head *ListNode) {
+	// Put the nodes in a slice, then pick from both ends in turn. O(n)
+	// extra space, but the pointer surgery is a single loop.
+	nodes := []*ListNode{}
+	for node := head; node != nil; node = node.Next {
+		nodes = append(nodes, node)
+	}
+	left, right := 0, len(nodes)-1
+	for left < right {
+		nodes[left].Next = nodes[right]
+		left++
+		if left == right {
+			break
+		}
+		nodes[right].Next = nodes[left]
+		right--
+	}
+	if len(nodes) > 0 {
+		nodes[left].Next = nil
+	}
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func reorderList(head *ListNode)",
+      starter: "package main
+
+func reorderList(head *ListNode) {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func reordered(values ...int) *ListNode {
+	head := list(values...)
+	reorderList(head)
+	return head
+}
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"reorderList([1,2,3,4])\", list(1, 4, 2, 3), reordered(1, 2, 3, 4)),
+			tc(\"reorderList([1,2,3,4,5]) -- the middle stays last\", list(1, 5, 2, 4, 3), reordered(1, 2, 3, 4, 5)),
+			tc(\"reorderList([1,2])\", list(1, 2), reordered(1, 2)),
+			tc(\"reorderList([1])\", list(1), reordered(1)),
+			tc(\"reorderList([])\", list(), reordered()),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc128_remove_nth_from_end() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Two Pass",
+        "O(n) time · O(1) space",
+        "Count first, then remove by position. Two passes rather than one, and it says outright what the gap encodes: nth from the end is length minus n from the front. Where a list cannot be walked twice — a stream, say — that is the assumption that fails.",
+        "package main
+
+func removeNthFromEnd(head *ListNode, n int) *ListNode {
+	// Count the nodes, then walk to the one before position length-n.
+	length := 0
+	for node := head; node != nil; node = node.Next {
+		length++
+	}
+	dummy := &ListNode{Next: head}
+	before := dummy
+	for i := 0; i < length-n; i++ {
+		before = before.Next
+	}
+	before.Next = before.Next.Next
+	return dummy.Next
+}",
+      ),
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Two walkers n apart. When the leading one runs off the end, the trailing one is on the node to change — the length is never computed, which is the point: one pass instead of two. Opening the gap can fail, and that failure is exactly the \"n is longer than the list\" case.",
+        "package main
+
+func removeNthFromEnd(head *ListNode, n int) *ListNode {
+	// Two pointers n apart: when the front one runs off the end, the back
+	// one is just before the node to drop. The dummy handles dropping the head.
+	dummy := &ListNode{Next: head}
+	front, back := dummy, dummy
+	for i := 0; i <= n; i++ {
+		front = front.Next
+	}
+	for front != nil {
+		front, back = front.Next, back.Next
+	}
+	back.Next = back.Next.Next
+	return dummy.Next
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func removeNthFromEnd(head *ListNode, n int) *ListNode",
+      starter: "package main
+
+func removeNthFromEnd(head *ListNode, n int) *ListNode {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"removeNthFromEnd([1,2,3,4,5], 2)\", list(1, 2, 3, 5), removeNthFromEnd(list(1, 2, 3, 4, 5), 2)),
+			tc(\"removeNthFromEnd([1], 1)\", list(), removeNthFromEnd(list(1), 1)),
+			tc(\"removeNthFromEnd([1,2], 1)\", list(1), removeNthFromEnd(list(1, 2), 1)),
+			tc(\"removeNthFromEnd([1,2], 2) -- the head goes\", list(2), removeNthFromEnd(list(1, 2), 2)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc129_copy_random_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Hash Map",
+        "O(n) time · O(n) space",
+        "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.",
+        "package main
+
+func copyRandomList(head *RandomNode) *RandomNode {
+	// Two passes with a map from original to copy: make every copy first,
+	// then wire Next and Random through the map, so a Random pointing
+	// forward finds its copy already made.
+	copies := map[*RandomNode]*RandomNode{}
+	for node := head; node != nil; node = node.Next {
+		copies[node] = &RandomNode{Val: node.Val}
+	}
+	for node := head; node != nil; node = node.Next {
+		copies[node].Next = copies[node.Next]
+		copies[node].Random = copies[node.Random]
+	}
+	return copies[head]
+}",
+      ),
+      #(
+        "Solution 2 · By searching",
+        "",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+The same translation without the map: for each link, search for the node it names. O(n²) against O(n), and the contrast is the lesson — the map is not an optimisation bolted on afterwards, it is the same lookup, paid for once instead of once per node.",
+        "package main
+
+func copyRandomList(head *RandomNode) *RandomNode {
+	// Copy the chain first, then for each node find where its Random
+	// points by walking both lists in step. O(n^2), no map.
+	if head == nil {
+		return nil
+	}
+	dummy := &RandomNode{}
+	tail := dummy
+	for node := head; node != nil; node = node.Next {
+		tail.Next = &RandomNode{Val: node.Val}
+		tail = tail.Next
+	}
+	for original, copied := head, dummy.Next; original != nil; original, copied = original.Next, copied.Next {
+		if original.Random == nil {
+			continue
+		}
+		for a, b := head, dummy.Next; a != nil; a, b = a.Next, b.Next {
+			if a == original.Random {
+				copied.Random = b
+				break
+			}
+		}
+	}
+	return dummy.Next
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func copyRandomList(head *RandomNode) *RandomNode",
+      starter: "package main
+
+func copyRandomList(head *RandomNode) *RandomNode {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+// Nodes as [val, random index or -1]; the copy must match and must share
+// no node with the original.
+func copied(spec [][2]int) [][2]int {
+	nodes := make([]*RandomNode, len(spec))
+	for i, entry := range spec {
+		nodes[i] = &RandomNode{Val: entry[0]}
+	}
+	for i, entry := range spec {
+		if i+1 < len(nodes) {
+			nodes[i].Next = nodes[i+1]
+		}
+		if entry[1] >= 0 {
+			nodes[i].Random = nodes[entry[1]]
+		}
+	}
+	var head *RandomNode
+	if len(nodes) > 0 {
+		head = nodes[0]
+	}
+	clone := copyRandomList(head)
+	index := map[*RandomNode]int{}
+	order := []*RandomNode{}
+	for node := clone; node != nil; node = node.Next {
+		index[node] = len(order)
+		order = append(order, node)
+	}
+	out := [][2]int{}
+	for _, node := range order {
+		for _, original := range nodes {
+			if node == original {
+				return [][2]int{{-99, -99}}
+			}
+		}
+		random := -1
+		if node.Random != nil {
+			random = index[node.Random]
+		}
+		out = append(out, [2]int{node.Val, random})
+	}
+	return out
+}
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"copyRandomList([[7,-1],[13,0]])\", [][2]int{{7, -1}, {13, 0}}, copied([][2]int{{7, -1}, {13, 0}})),
+			tc(\"copyRandomList([[1,0]]) -- a node pointing at itself\", [][2]int{{1, 0}}, copied([][2]int{{1, 0}})),
+			tc(\"copyRandomList(a forward link to a node not yet copied)\", [][2]int{{1, 2}, {2, -1}, {3, 0}}, copied([][2]int{{1, 2}, {2, -1}, {3, 0}})),
+			tc(\"copyRandomList([])\", [][2]int{}, copied([][2]int{})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
 pub fn nc12_best_time_stock() -> Embedded {
   Embedded(
     solutions: [
@@ -3977,9 +4398,673 @@ func main() {
   )
 }
 
+pub fn nc130_add_two_numbers() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Python · Big Ints",
+        "O(n+m) time · O(n+m) space",
+        "Turn both lists into whole numbers, add, take the sum apart again. It reads well, and it is safe here only because this language's integers are arbitrary precision — which is precisely why the problem is posed as a list of digits in languages where they are not.",
+        "package main
+
+import \"math/big\"
+
+func addTwoNumbers(l1 *ListNode, l2 *ListNode) *ListNode {
+	// Read both lists as numbers, add, write the digits back. Big ints so
+	// long lists do not overflow.
+	sum := new(big.Int).Add(toNumber(l1), toNumber(l2))
+	text := sum.String()
+	var head *ListNode
+	for i := 0; i < len(text); i++ {
+		head = &ListNode{Val: int(text[i] - '0'), Next: head}
+	}
+	return head
+}
+
+func toNumber(node *ListNode) *big.Int {
+	digits := []int{}
+	for ; node != nil; node = node.Next {
+		digits = append(digits, node.Val)
+	}
+	n := new(big.Int)
+	for i := len(digits) - 1; i >= 0; i-- {
+		n.Mul(n, big.NewInt(10))
+		n.Add(n, big.NewInt(int64(digits[i])))
+	}
+	return n
+}",
+      ),
+      #(
+        "Simulation",
+        "O(n+m) time · O(n+m) space",
+        "The digits arrive least significant first, which is exactly the order addition wants — no reversing and no length matching. The case worth writing down is the carry outliving both numbers: 5 + 5 produces a digit neither input has a node for.",
+        "package main
+
+func addTwoNumbers(l1 *ListNode, l2 *ListNode) *ListNode {
+	// Digits are least significant first, so add column by column with a
+	// carry, like on paper, and keep going while anything remains.
+	dummy := &ListNode{}
+	tail := dummy
+	carry := 0
+	for l1 != nil || l2 != nil || carry > 0 {
+		total := carry
+		if l1 != nil {
+			total += l1.Val
+			l1 = l1.Next
+		}
+		if l2 != nil {
+			total += l2.Val
+			l2 = l2.Next
+		}
+		tail.Next = &ListNode{Val: total % 10}
+		tail = tail.Next
+		carry = total / 10
+	}
+	return dummy.Next
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func addTwoNumbers(l1 *ListNode, l2 *ListNode) *ListNode",
+      starter: "package main
+
+func addTwoNumbers(l1 *ListNode, l2 *ListNode) *ListNode {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"addTwoNumbers([2,4,3], [5,6,4]) -- 342 + 465\", list(7, 0, 8), addTwoNumbers(list(2, 4, 3), list(5, 6, 4))),
+			tc(\"addTwoNumbers([0], [0])\", list(0), addTwoNumbers(list(0), list(0))),
+			tc(\"addTwoNumbers([9,9,9,9,9,9,9], [9,9,9,9])\", list(8, 9, 9, 9, 0, 0, 0, 1), addTwoNumbers(list(9, 9, 9, 9, 9, 9, 9), list(9, 9, 9, 9))),
+			tc(\"addTwoNumbers([5], [5]) -- a carry makes a new digit\", list(0, 1), addTwoNumbers(list(5), list(5))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc131_linked_list_cycle() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Hash Set",
+        "O(n) time · O(n) space",
+        "Remember every node visited and stop when one repeats. Obvious and correct, at O(n) memory — which is exactly what the two-walker version removes. Note that it is the *nodes* that go in the set, not their values: repeated values are ordinary, repeated nodes are the cycle.",
+        "package main
+
+func hasCycle(head *ListNode) bool {
+	seen := map[*ListNode]bool{}
+	for node := head; node != nil; node = node.Next {
+		if seen[node] {
+			return true
+		}
+		seen[node] = true
+	}
+	return false
+}",
+      ),
+      #(
+        "Fast & Slow Pointers",
+        "O(n) time · O(1) space",
+        "Floyd's tortoise and hare. One walker takes single steps, the other double; inside a loop the fast one gains a place per step on the slow one, so it must land on it. Outside one, it runs off the end first. Constant memory and nothing is marked — that is the whole result.",
+        "package main
+
+func hasCycle(head *ListNode) bool {
+	// Tortoise and hare: in a cycle the fast pointer laps the slow one.
+	slow, fast := head, head
+	for fast != nil && fast.Next != nil {
+		slow, fast = slow.Next, fast.Next.Next
+		if slow == fast {
+			return true
+		}
+	}
+	return false
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func hasCycle(head *ListNode) bool",
+      starter: "package main
+
+func hasCycle(head *ListNode) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+// chain builds a list whose tail points back at index pos (none for -1).
+func chain(values []int, pos int) *ListNode {
+	head := list(values...)
+	if pos < 0 || head == nil {
+		return head
+	}
+	var target, tail *ListNode
+	for i, node := 0, head; node != nil; i, node = i+1, node.Next {
+		if i == pos {
+			target = node
+		}
+		tail = node
+	}
+	tail.Next = target
+	return head
+}
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"hasCycle([3,2,0,-4], tail -> index 1)\", true, hasCycle(chain([]int{3, 2, 0, -4}, 1))),
+			tc(\"hasCycle([1,2], no cycle)\", false, hasCycle(chain([]int{1, 2}, -1))),
+			tc(\"hasCycle([1], no cycle)\", false, hasCycle(chain([]int{1}, -1))),
+			tc(\"hasCycle([1], tail -> index 0)\", true, hasCycle(chain([]int{1}, 0))),
+			tc(\"hasCycle([])\", false, hasCycle(chain([]int{}, -1))),
+			tc(\"hasCycle([1,2], tail -> index 0)\", true, hasCycle(chain([]int{1, 2}, 0))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc132_find_the_duplicate() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Binary Search",
+        "O(n log n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Binary search over the *values*, not the positions. For a candidate v, count how many numbers are at most v: with no duplicate that count is exactly v, so a count running ahead says the repeat is at or below v. O(n log n), but it needs no insight about cycles.",
+        "package main
+
+func findDuplicate(nums []int) int {
+	seen := map[int]bool{}
+	for _, n := range nums {
+		if seen[n] {
+			return n
+		}
+		seen[n] = true
+	}
+	return -1
+}",
+      ),
+      #(
+        "Fast & Slow Pointers",
+        "O(n) time · O(1) space",
+        "Read the array as a linked list: position i points at position nums[i]. Every value is a valid position and one repeats, so two positions point at the same place — the list has a cycle, and the duplicate is its entrance. Then it is Floyd's twice: once to meet inside the loop, once to find where it begins.",
+        "package main
+
+func findDuplicate(nums []int) int {
+	// Treat i -> nums[i] as a linked list: values in 1..n over indices
+	// 0..n means a duplicate is a node with two incoming links, the start
+	// of a cycle. Floyd's algorithm finds it with no extra memory.
+	slow, fast := nums[0], nums[nums[0]]
+	for slow != fast {
+		slow, fast = nums[slow], nums[nums[fast]]
+	}
+	slow = 0
+	for slow != fast {
+		slow, fast = nums[slow], nums[fast]
+	}
+	return slow
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func findDuplicate(nums []int) int",
+      starter: "package main
+
+func findDuplicate(nums []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"findDuplicate([1,3,4,2,2])\", 2, findDuplicate([]int{1, 3, 4, 2, 2})),
+			tc(\"findDuplicate([3,1,3,4,2])\", 3, findDuplicate([]int{3, 1, 3, 4, 2})),
+			tc(\"findDuplicate([1,1])\", 1, findDuplicate([]int{1, 1})),
+			tc(\"findDuplicate([2,2,2,2,2]) -- repeated more than twice\", 2, findDuplicate([]int{2, 2, 2, 2, 2})),
+			tc(\"findDuplicate([1,4,4,2,4])\", 4, findDuplicate([]int{1, 4, 4, 2, 4})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc133_lru_cache() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Python · Dict Order",
+        "O(1) per operation · O(capacity) space",
+        "Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A map alone gives the first and a list alone gives the second — the structure is whatever supplies both. Where the language's map already remembers insertion order, deleting a key and putting it back *is* the recency list.",
+        "package main
+
+type entry struct {
+	key, value int
+	prev, next *entry
+}
+
+// A map for O(1) lookup and a doubly linked list for O(1) recency: the
+// head sentinel's next is the most recent, the tail sentinel's prev the
+// least. Every access unlinks the entry and relinks it at the front.
+type LRUCache struct {
+	capacity   int
+	entries    map[int]*entry
+	head, tail *entry
+}
+
+func Constructor(capacity int) LRUCache {
+	head, tail := &entry{}, &entry{}
+	head.next, tail.prev = tail, head
+	return LRUCache{capacity: capacity, entries: map[int]*entry{}, head: head, tail: tail}
+}
+
+func (c *LRUCache) Get(key int) int {
+	e, ok := c.entries[key]
+	if !ok {
+		return -1
+	}
+	c.unlink(e)
+	c.pushFront(e)
+	return e.value
+}
+
+func (c *LRUCache) Put(key int, value int) {
+	if e, ok := c.entries[key]; ok {
+		e.value = value
+		c.unlink(e)
+		c.pushFront(e)
+		return
+	}
+	if len(c.entries) == c.capacity {
+		oldest := c.tail.prev
+		c.unlink(oldest)
+		delete(c.entries, oldest.key)
+	}
+	e := &entry{key: key, value: value}
+	c.entries[key] = e
+	c.pushFront(e)
+}
+
+func (c *LRUCache) unlink(e *entry) {
+	e.prev.next, e.next.prev = e.next, e.prev
+}
+
+func (c *LRUCache) pushFront(e *entry) {
+	e.next, e.prev = c.head.next, c.head
+	c.head.next.prev, c.head.next = e, e
+}",
+      ),
+      #(
+        "Solution 2 · Timestamps",
+        "",
+        "No recency order at all — just a counter, bumped on every use. Eviction becomes a scan for the smallest stamp, trading the reordering walk for a search. Worth seeing because it makes plain that \"least recently used\" is a minimum, not a position.",
+        "package main
+
+type stamped struct {
+	value, lastUsed int
+}
+
+// Stamp each entry with the tick of its last use; eviction scans for the
+// oldest stamp. O(capacity) per eviction, no linked list.
+type LRUCache struct {
+	capacity int
+	clock    int
+	entries  map[int]*stamped
+}
+
+func Constructor(capacity int) LRUCache {
+	return LRUCache{capacity: capacity, entries: map[int]*stamped{}}
+}
+
+func (c *LRUCache) Get(key int) int {
+	e, ok := c.entries[key]
+	if !ok {
+		return -1
+	}
+	c.clock++
+	e.lastUsed = c.clock
+	return e.value
+}
+
+func (c *LRUCache) Put(key int, value int) {
+	c.clock++
+	if e, ok := c.entries[key]; ok {
+		e.value, e.lastUsed = value, c.clock
+		return
+	}
+	if len(c.entries) == c.capacity {
+		oldestKey, oldestTick := 0, c.clock+1
+		for k, e := range c.entries {
+			if e.lastUsed < oldestTick {
+				oldestKey, oldestTick = k, e.lastUsed
+			}
+		}
+		delete(c.entries, oldestKey)
+	}
+	c.entries[key] = &stamped{value, c.clock}
+}",
+      ),
+    ],
+    check: Check(
+      signature: "type entry struct { … }
+
+type LRUCache struct { … }
+
+func Constructor(capacity int) LRUCache
+
+func (c *LRUCache) Get(key int) int
+
+func (c *LRUCache) Put(key int, value int)
+
+func (c *LRUCache) unlink(e *entry)
+
+func (c *LRUCache) pushFront(e *entry)",
+      starter: "package main
+
+type entry struct {
+	// todo
+}
+
+type LRUCache struct {
+	// todo
+}
+
+func Constructor(capacity int) LRUCache {
+	panic(\"todo\")
+}
+
+func (c *LRUCache) Get(key int) int {
+	panic(\"todo\")
+}
+
+func (c *LRUCache) Put(key int, value int) {
+	panic(\"todo\")
+}
+
+func (c *LRUCache) unlink(e *entry) {
+	panic(\"todo\")
+}
+
+func (c *LRUCache) pushFront(e *entry) {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		cache := Constructor(2)
+		cache.Put(1, 1)
+		cache.Put(2, 2)
+		first := cache.Get(1)
+		cache.Put(3, 3)
+		evicted := cache.Get(2)
+		kept := cache.Get(3)
+		cache.Put(4, 4)
+		return []testCase{
+			tc(\"get(1) after put(1,1), put(2,2)\", 1, first),
+			tc(\"get(2) after put(3,3) -- 2 was least recently used\", -1, evicted),
+			tc(\"get(3) after put(3,3)\", 3, kept),
+			tc(\"get(1) after put(4,4) -- reading 3 saved it, so 1 went\", -1, cache.Get(1)),
+			tc(\"get(3) after put(4,4)\", 3, cache.Get(3)),
+			tc(\"get(4) after put(4,4)\", 4, cache.Get(4)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc134_merge_k_sorted_lists() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Divide & Conquer",
+        "O(n log k) time · O(k) space",
+        "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.",
+        "package main
+
+import \"container/heap\"
+
+type headHeap []*ListNode
+
+func (h headHeap) Len() int           { return len(h) }
+func (h headHeap) Less(i, j int) bool { return h[i].Val < h[j].Val }
+func (h headHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *headHeap) Push(x any)        { *h = append(*h, x.(*ListNode)) }
+func (h *headHeap) Pop() any {
+	old := *h
+	x := old[len(old)-1]
+	*h = old[:len(old)-1]
+	return x
+}
+
+func mergeKLists(lists []*ListNode) *ListNode {
+	// A min-heap of the current heads: pop the smallest, push its
+	// successor. O(N log k) for N nodes across k lists.
+	h := &headHeap{}
+	for _, node := range lists {
+		if node != nil {
+			heap.Push(h, node)
+		}
+	}
+	dummy := &ListNode{}
+	tail := dummy
+	for h.Len() > 0 {
+		node := heap.Pop(h).(*ListNode)
+		tail.Next = node
+		tail = node
+		if node.Next != nil {
+			heap.Push(h, node.Next)
+		}
+	}
+	return dummy.Next
+}",
+      ),
+      #(
+        "Solution 2 · Smallest head",
+        "",
+        "The heap solution with the heap spelled out as a scan, for languages that have no priority queue: O(k) per element rather than O(log k), which is the entire difference the heap makes. What it does not need is any pairing structure — it works on lists arriving one at a time.",
+        "package main
+
+func mergeKLists(lists []*ListNode) *ListNode {
+	// Scan the k heads for the smallest each step, no heap: O(Nk).
+	heads := append([]*ListNode{}, lists...)
+	dummy := &ListNode{}
+	tail := dummy
+	for {
+		smallest := -1
+		for i, node := range heads {
+			if node != nil && (smallest < 0 || node.Val < heads[smallest].Val) {
+				smallest = i
+			}
+		}
+		if smallest < 0 {
+			return dummy.Next
+		}
+		tail.Next = heads[smallest]
+		tail = tail.Next
+		heads[smallest] = heads[smallest].Next
+	}
+}",
+      ),
+    ],
+    check: Check(
+      signature: "type headHeap []*ListNode
+
+func (h headHeap) Len() int           { return len(h) }
+
+func (h headHeap) Less(i, j int) bool { return h[i].Val < h[j].Val }
+
+func (h headHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *headHeap) Push(x any)        { *h = append(*h, x.(*ListNode)) }
+
+func (h *headHeap) Pop() any
+
+func mergeKLists(lists []*ListNode) *ListNode",
+      starter: "package main
+
+type headHeap []*ListNode
+
+func (h headHeap) Len() int           { return len(h) } {
+	panic(\"todo\")
+}
+
+func (h headHeap) Less(i, j int) bool { return h[i].Val < h[j].Val } {
+	panic(\"todo\")
+}
+
+func (h headHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] } {
+	panic(\"todo\")
+}
+
+func (h *headHeap) Push(x any)        { *h = append(*h, x.(*ListNode)) } {
+	panic(\"todo\")
+}
+
+func (h *headHeap) Pop() any {
+	panic(\"todo\")
+}
+
+func mergeKLists(lists []*ListNode) *ListNode {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"mergeKLists([[1,4,5],[1,3,4],[2,6]])\", list(1, 1, 2, 3, 4, 4, 5, 6), mergeKLists([]*ListNode{list(1, 4, 5), list(1, 3, 4), list(2, 6)})),
+			tc(\"mergeKLists([]) -- no lists at all\", list(), mergeKLists([]*ListNode{})),
+			tc(\"mergeKLists([[]]) -- one empty list\", list(), mergeKLists([]*ListNode{nil})),
+			tc(\"mergeKLists([[1],[],[0]])\", list(0, 1), mergeKLists([]*ListNode{list(1), nil, list(0)})),
+			tc(\"mergeKLists([[2,2],[2]]) -- ties everywhere\", list(2, 2, 2), mergeKLists([]*ListNode{list(2, 2), list(2)})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc135_reverse_k_group() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Two Pass",
+        "O(n) time · O(1) space",
+        "Count once, then reverse exactly length / k groups. One length calculation instead of a look-ahead per group — and it makes the boundary explicit: everything past the last whole group is untouched, however long it is.",
+        "package main
+
+func reverseKGroup(head *ListNode, k int) *ListNode {
+	// Count the nodes first, so the loop knows exactly how many full groups
+	// there are and never has to probe ahead.
+	length := 0
+	for node := head; node != nil; node = node.Next {
+		length++
+	}
+	dummy := &ListNode{Next: head}
+	groupBefore := dummy
+	for ; length >= k; length -= k {
+		first := groupBefore.Next
+		var previous *ListNode
+		node := first
+		for i := 0; i < k; i++ {
+			node.Next, previous, node = previous, node, node.Next
+		}
+		first.Next = node
+		groupBefore.Next = previous
+		groupBefore = first
+	}
+	return dummy.Next
+}",
+      ),
+      #(
+        "Linked List",
+        "O(n) time · O(1) space",
+        "Look ahead k nodes *before* reversing anything. That check is the whole difficulty: once the rewiring starts there is no way to tell how far it got, so a short final group would be reversed by mistake.",
+        "package main
+
+func reverseKGroup(head *ListNode, k int) *ListNode {
+	dummy := &ListNode{Next: head}
+	groupBefore := dummy
+	for {
+		// Is there a full group ahead? If not, the tail stays as it is.
+		kth := groupBefore
+		for i := 0; i < k && kth != nil; i++ {
+			kth = kth.Next
+		}
+		if kth == nil {
+			return dummy.Next
+		}
+		groupAfter := kth.Next
+		// Reverse the group in place; its old first node becomes its last.
+		previous, node := groupAfter, groupBefore.Next
+		for node != groupAfter {
+			node.Next, previous, node = previous, node, node.Next
+		}
+		first := groupBefore.Next
+		groupBefore.Next = kth
+		groupBefore = first
+	}
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func reverseKGroup(head *ListNode, k int) *ListNode",
+      starter: "package main
+
+func reverseKGroup(head *ListNode, k int) *ListNode {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"reverseKGroup([1,2,3,4,5], 2)\", list(2, 1, 4, 3, 5), reverseKGroup(list(1, 2, 3, 4, 5), 2)),
+			tc(\"reverseKGroup([1,2,3,4,5], 3) -- the last two are left alone\", list(3, 2, 1, 4, 5), reverseKGroup(list(1, 2, 3, 4, 5), 3)),
+			tc(\"reverseKGroup([1,2,3,4], 4)\", list(4, 3, 2, 1), reverseKGroup(list(1, 2, 3, 4), 4)),
+			tc(\"reverseKGroup([1,2,3], 1) -- nothing changes\", list(1, 2, 3), reverseKGroup(list(1, 2, 3), 1)),
+			tc(\"reverseKGroup([1,2], 5) -- the group never fills\", list(1, 2), reverseKGroup(list(1, 2), 5)),
+			tc(\"reverseKGroup([], 2)\", list(), reverseKGroup(list(), 2)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
 pub fn nc136_invert_binary_tree() -> Embedded {
   Embedded(
     solutions: [
+      #(
+        "Flatten & Rebuild",
+        "O(n) time · O(n) space",
+        "Write the tree out pre-order with a marker for every empty child, then read it back taking the first subtree as the *right* child. The inversion happens entirely in the reading — nothing is ever swapped. Longer than the direct recursion, and worth having because the same flatten/rebuild pair is all [[nc150_serialize_deserialize]] is.",
+        "package main
+
+func invertTree(root *TreeNode) *TreeNode {
+	// Build a fresh mirrored tree instead of swapping in place: the
+	// original is left untouched.
+	if root == nil {
+		return nil
+	}
+	return &TreeNode{Val: root.Val, Left: invertTree(root.Right), Right: invertTree(root.Left)}
+}",
+      ),
       #(
         "DFS",
         "O(n) time · O(h) space",
@@ -4014,6 +5099,233 @@ func main() {
 			tc(\"invertTree([]) -- an empty tree\", tree(), invertTree(tree())),
 			tc(\"invertTree([1]) -- a single node\", tree(1), invertTree(tree(1))),
 			tc(\"invertTree twice is the original\", tree(1, 2), invertTree(invertTree(tree(1, 2)))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc137_maximum_depth() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "BFS",
+        "O(n) time · O(n) space",
+        "Count the levels instead of measuring the branches: take the whole frontier, replace it with all its children, and add one. No recursion and no stack — which is what makes this the version that survives a tree deep enough to overflow one.",
+        "package main
+
+func maxDepth(root *TreeNode) int {
+	if root == nil {
+		return 0
+	}
+	// Breadth-first: count the levels as the queue drains one at a time.
+	depth := 0
+	queue := []*TreeNode{root}
+	for len(queue) > 0 {
+		depth++
+		next := []*TreeNode{}
+		for _, node := range queue {
+			if node.Left != nil {
+				next = append(next, node.Left)
+			}
+			if node.Right != nil {
+				next = append(next, node.Right)
+			}
+		}
+		queue = next
+	}
+	return depth
+}",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "One more than the deeper of the two children, with an empty tree at zero. The whole problem is that base case; everything else is the definition of depth read aloud.",
+        "package main
+
+func maxDepth(root *TreeNode) int {
+	if root == nil {
+		return 0
+	}
+	return 1 + max(maxDepth(root.Left), maxDepth(root.Right))
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func maxDepth(root *TreeNode) int",
+      starter: "package main
+
+func maxDepth(root *TreeNode) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"maxDepth([3,9,20,null,null,15,7])\", 3, maxDepth(tree(3, 9, 20, x, x, 15, 7))),
+			tc(\"maxDepth([1,null,2])\", 2, maxDepth(tree(1, x, 2))),
+			tc(\"maxDepth([])\", 0, maxDepth(tree())),
+			tc(\"maxDepth([1])\", 1, maxDepth(tree(1))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc138_diameter_of_binary_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "Ask every node how tall its two sides are and keep the largest sum. Correct and obvious, but height is recomputed from scratch at every node, so a balanced tree costs O(n log n) and a spindly one O(n²) — exactly what returning the height alongside the answer avoids.",
+        "package main
+
+func diameterOfBinaryTree(root *TreeNode) int {
+	// For each node, measure both subtree heights from scratch and keep
+	// the best: O(n^2) on a skewed tree, but a direct reading of the
+	// definition.
+	if root == nil {
+		return 0
+	}
+	through := height(root.Left) + height(root.Right)
+	return max(through, max(diameterOfBinaryTree(root.Left), diameterOfBinaryTree(root.Right)))
+}
+
+func height(node *TreeNode) int {
+	if node == nil {
+		return 0
+	}
+	return 1 + max(height(node.Left), height(node.Right))
+}",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "One walk doing two jobs: each call *returns* its own height, and on the way past it *records* the path through that node — left height plus right height. The answer is the largest such path, so it is never returned, only tracked. That split between return and record is the pattern, and it comes back in [[nc149_max_path_sum]].",
+        "package main
+
+func diameterOfBinaryTree(root *TreeNode) int {
+	best := 0
+	// Each node's height is computed once; the longest path through a
+	// node is its two children's heights added, tracked as a side effect.
+	var height func(node *TreeNode) int
+	height = func(node *TreeNode) int {
+		if node == nil {
+			return 0
+		}
+		left, right := height(node.Left), height(node.Right)
+		best = max(best, left+right)
+		return 1 + max(left, right)
+	}
+	height(root)
+	return best
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func diameterOfBinaryTree(root *TreeNode) int",
+      starter: "package main
+
+func diameterOfBinaryTree(root *TreeNode) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"diameterOfBinaryTree([1,2,3,4,5])\", 3, diameterOfBinaryTree(tree(1, 2, 3, 4, 5))),
+			tc(\"diameterOfBinaryTree([1,2])\", 1, diameterOfBinaryTree(tree(1, 2))),
+			tc(\"diameterOfBinaryTree([1])\", 0, diameterOfBinaryTree(tree(1))),
+			tc(\"diameterOfBinaryTree([])\", 0, diameterOfBinaryTree(tree())),
+			tc(\"diameterOfBinaryTree(the path avoids the root)\", 4, diameterOfBinaryTree(tree(1, 2, x, 3, 4, x, x, 5, x, x, 6))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc139_balanced_binary_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "The definition read literally: every node's two sides differ by at most one, and both sides are themselves balanced. It recomputes height at every node, so the work is O(n²) on a spindly tree — the price of separating the two questions the single-pass version answers together.",
+        "package main
+
+func isBalanced(root *TreeNode) bool {
+	// Check each node by measuring both subtrees from scratch.
+	if root == nil {
+		return true
+	}
+	difference := height(root.Left) - height(root.Right)
+	if difference > 1 || difference < -1 {
+		return false
+	}
+	return isBalanced(root.Left) && isBalanced(root.Right)
+}
+
+func height(node *TreeNode) int {
+	if node == nil {
+		return 0
+	}
+	return 1 + max(height(node.Left), height(node.Right))
+}",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Height and balance in one walk. A subtree reports its height, or reports that something below it is already unbalanced — and once that happens nothing above needs measuring. Using -1 as the \"not balanced\" height is what lets a single return value carry both answers.",
+        "package main
+
+func isBalanced(root *TreeNode) bool {
+	// One pass: a subtree reports its height, or -1 the moment any
+	// subtree inside it is unbalanced, and -1 propagates straight up.
+	var check func(node *TreeNode) int
+	check = func(node *TreeNode) int {
+		if node == nil {
+			return 0
+		}
+		left := check(node.Left)
+		if left < 0 {
+			return -1
+		}
+		right := check(node.Right)
+		if right < 0 || left-right > 1 || right-left > 1 {
+			return -1
+		}
+		return 1 + max(left, right)
+	}
+	return check(root) >= 0
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func isBalanced(root *TreeNode) bool",
+      starter: "package main
+
+func isBalanced(root *TreeNode) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"isBalanced([3,9,20,null,null,15,7])\", true, isBalanced(tree(3, 9, 20, x, x, 15, 7))),
+			tc(\"isBalanced([1,2,2,3,3,null,null,4,4])\", false, isBalanced(tree(1, 2, 2, 3, 3, x, x, 4, 4))),
+			tc(\"isBalanced([])\", true, isBalanced(tree())),
+			tc(\"isBalanced([1,2,null,3]) -- a chain of three\", false, isBalanced(tree(1, 2, x, 3))),
+			tc(\"isBalanced(balanced at every node but the root)\", false, isBalanced(tree(1, 2, 2, 3, x, x, 3, 4, x, x, 4))),
 		}
 	})
 }",
@@ -4089,6 +5401,833 @@ func main() {
 			tc(\"lengthOfLongestSubstring('pwwkew')\", 3, lengthOfLongestSubstring(\"pwwkew\")),
 			tc(\"lengthOfLongestSubstring('')\", 0, lengthOfLongestSubstring(\"\")),
 			tc(\"lengthOfLongestSubstring('abba')\", 2, lengthOfLongestSubstring(\"abba\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc140_same_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Serialisation",
+        "O(n) time · O(n) space",
+        "Turn each tree into a string and compare those. It works *only* because the serialisation records the empty children: without a marker for them, different trees flatten to the same sequence — the same trap [[nc150_serialize_deserialize]] turns on.",
+        "package main
+
+import (
+	\"strconv\"
+	\"strings\"
+)
+
+func isSameTree(p *TreeNode, q *TreeNode) bool {
+	// Two trees are equal exactly when their pre-order serialisations
+	// (with explicit nils) are.
+	return serialise(p) == serialise(q)
+}
+
+func serialise(node *TreeNode) string {
+	if node == nil {
+		return \"#\"
+	}
+	return strings.Join([]string{strconv.Itoa(node.Val), serialise(node.Left), serialise(node.Right)}, \",\")
+}",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Walk both trees in step. Two empties match, an empty and a node never do, and two nodes match when their values do and both pairs of children do. The same shape is what [[nc141_subtree_of_another_tree]] is built from, which is why it is worth writing out rather than leaning on the language's equality.",
+        "package main
+
+func isSameTree(p *TreeNode, q *TreeNode) bool {
+	if p == nil || q == nil {
+		return p == q
+	}
+	return p.Val == q.Val && isSameTree(p.Left, q.Left) && isSameTree(p.Right, q.Right)
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func isSameTree(p *TreeNode, q *TreeNode) bool",
+      starter: "package main
+
+func isSameTree(p *TreeNode, q *TreeNode) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"isSameTree([1,2,3], [1,2,3])\", true, isSameTree(tree(1, 2, 3), tree(1, 2, 3))),
+			tc(\"isSameTree([1,2], [1,null,2])\", false, isSameTree(tree(1, 2), tree(1, x, 2))),
+			tc(\"isSameTree([1,2,1], [1,1,2])\", false, isSameTree(tree(1, 2, 1), tree(1, 1, 2))),
+			tc(\"isSameTree([], [])\", true, isSameTree(tree(), tree())),
+			tc(\"isSameTree([1], [])\", false, isSameTree(tree(1), tree())),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc141_subtree_of_another_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(n·m) time · O(n+m) space",
+        "Try to match at every node. The two questions are kept apart on purpose: \"are these two trees identical\" is the whole of the work, and \"is it a subtree\" is that question asked once per node. O(n·m) in the worst case, and a partial match that fails deep is what makes it so.",
+        "package main
+
+func isSubtree(root *TreeNode, subRoot *TreeNode) bool {
+	// At every node of the big tree, ask whether the small tree starts here.
+	if subRoot == nil {
+		return true
+	}
+	if root == nil {
+		return false
+	}
+	return isSame(root, subRoot) || isSubtree(root.Left, subRoot) || isSubtree(root.Right, subRoot)
+}
+
+func isSame(p, q *TreeNode) bool {
+	if p == nil || q == nil {
+		return p == q
+	}
+	return p.Val == q.Val && isSame(p.Left, q.Left) && isSame(p.Right, q.Right)
+}",
+      ),
+      #(
+        "Serialisation",
+        "O(n+m) time · O(n+m) space",
+        "Serialise both trees and ask whether one string contains the other — an O(n·m) tree comparison turned into substring search. It is only sound because the serialisation marks the empty children: without them \"2\" inside \"12\" would match, and so would a subtree that starts the same way but is missing a child.",
+        "package main
+
+import (
+	\"strconv\"
+	\"strings\"
+)
+
+func isSubtree(root *TreeNode, subRoot *TreeNode) bool {
+	// Serialise both with explicit nils and a marker before each value, so
+	// a subtree is a substring and \"2\" cannot match inside \"12\".
+	return strings.Contains(serialise(root), serialise(subRoot))
+}
+
+func serialise(node *TreeNode) string {
+	if node == nil {
+		return \",#\"
+	}
+	return \",^\" + strconv.Itoa(node.Val) + serialise(node.Left) + serialise(node.Right)
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func isSubtree(root *TreeNode, subRoot *TreeNode) bool
+
+func isSame(p, q *TreeNode) bool",
+      starter: "package main
+
+func isSubtree(root *TreeNode, subRoot *TreeNode) bool {
+	panic(\"todo\")
+}
+
+func isSame(p, q *TreeNode) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"isSubtree([3,4,5,1,2], [4,1,2])\", true, isSubtree(tree(3, 4, 5, 1, 2), tree(4, 1, 2))),
+			tc(\"isSubtree(a near match with an extra node)\", false, isSubtree(tree(3, 4, 5, 1, 2, x, x, x, x, 0), tree(4, 1, 2))),
+			tc(\"isSubtree([1], [1]) -- a tree is its own subtree\", true, isSubtree(tree(1), tree(1))),
+			tc(\"isSubtree([], [1])\", false, isSubtree(tree(), tree(1))),
+			tc(\"isSubtree([1], []) -- the empty tree is in everything\", true, isSubtree(tree(1), tree())),
+			tc(\"isSubtree([12], [2]) -- values are not digits\", false, isSubtree(tree(12), tree(2))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc142_lowest_common_ancestor_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Path Comparison",
+        "O(n) time · O(n) space",
+        "Find the path from the root to each target, then take the last node they share. It ignores the ordering entirely, which is why it is the version that also works on a plain binary tree — at the cost of two searches and two stored paths rather than one walk and nothing.",
+        "package main
+
+func lowestCommonAncestor(root, p, q *TreeNode) *TreeNode {
+	// Record the root-to-node path for each; the last node the two paths
+	// share is the answer. Works on any binary tree, not only a BST.
+	pathP, pathQ := pathTo(root, p.Val), pathTo(root, q.Val)
+	var common *TreeNode
+	for i := 0; i < len(pathP) && i < len(pathQ) && pathP[i] == pathQ[i]; i++ {
+		common = pathP[i]
+	}
+	return common
+}
+
+func pathTo(root *TreeNode, val int) []*TreeNode {
+	path := []*TreeNode{}
+	for node := root; node != nil; {
+		path = append(path, node)
+		switch {
+		case val < node.Val:
+			node = node.Left
+		case val > node.Val:
+			node = node.Right
+		default:
+			return path
+		}
+	}
+	return path
+}",
+      ),
+      #(
+        "BST Walk",
+        "O(h) time · O(1) space",
+        "The ordering does all the work. Both targets below the current value means go left, both above means go right, and anything else means this node is the split point — which is the answer. No searching for either node first, and no comparing of paths.",
+        "package main
+
+func lowestCommonAncestor(root, p, q *TreeNode) *TreeNode {
+	// In a BST the split point is the first node between the two values:
+	// both smaller means go left, both larger means go right, else here.
+	node := root
+	for node != nil {
+		switch {
+		case p.Val < node.Val && q.Val < node.Val:
+			node = node.Left
+		case p.Val > node.Val && q.Val > node.Val:
+			node = node.Right
+		default:
+			return node
+		}
+	}
+	return nil
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func lowestCommonAncestor(root, p, q *TreeNode) *TreeNode",
+      starter: "package main
+
+func lowestCommonAncestor(root, p, q *TreeNode) *TreeNode {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func ancestor(root *TreeNode, p, q int) int {
+	return lowestCommonAncestor(root, find(root, p), find(root, q)).Val
+}
+
+func main() {
+	run(func() []testCase {
+		bst := tree(6, 2, 8, 0, 4, 7, 9, x, x, 3, 5)
+		return []testCase{
+			tc(\"lowestCommonAncestor(bst, 2, 8)\", 6, ancestor(bst, 2, 8)),
+			tc(\"lowestCommonAncestor(bst, 2, 4) -- an ancestor counts\", 2, ancestor(bst, 2, 4)),
+			tc(\"lowestCommonAncestor(bst, 3, 5)\", 4, ancestor(bst, 3, 5)),
+			tc(\"lowestCommonAncestor(bst, 7, 9)\", 8, ancestor(bst, 7, 9)),
+			tc(\"lowestCommonAncestor([1], 1, 1)\", 1, ancestor(tree(1), 1, 1)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc143_level_order_traversal() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(n) time · O(n) space",
+        "Walk depth-first and file each value under its depth. The traversal order is wrong for the answer, but appending to the right bucket puts it right — and within a level, left is still visited before right, which is all the ordering the answer needs.",
+        "package main
+
+func levelOrder(root *TreeNode) [][]int {
+	// Depth-first, appending each node to the row for its depth; visiting
+	// left before right keeps every row in left-to-right order.
+	result := [][]int{}
+	var visit func(node *TreeNode, depth int)
+	visit = func(node *TreeNode, depth int) {
+		if node == nil {
+			return
+		}
+		if depth == len(result) {
+			result = append(result, []int{})
+		}
+		result[depth] = append(result[depth], node.Val)
+		visit(node.Left, depth+1)
+		visit(node.Right, depth+1)
+	}
+	visit(root, 0)
+	return result
+}",
+      ),
+      #(
+        "BFS",
+        "O(n) time · O(n) space",
+        "Take the whole frontier at once rather than one node at a time: everything on it is the current level, and its children are the next. That is what makes the grouping fall out without tracking any depth — a plain queue gives the right order but no idea where each level ends.",
+        "package main
+
+func levelOrder(root *TreeNode) [][]int {
+	result := [][]int{}
+	if root == nil {
+		return result
+	}
+	// The queue holds exactly one level at a time; drain it into a row
+	// while collecting the next level.
+	queue := []*TreeNode{root}
+	for len(queue) > 0 {
+		row := []int{}
+		next := []*TreeNode{}
+		for _, node := range queue {
+			row = append(row, node.Val)
+			if node.Left != nil {
+				next = append(next, node.Left)
+			}
+			if node.Right != nil {
+				next = append(next, node.Right)
+			}
+		}
+		result = append(result, row)
+		queue = next
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func levelOrder(root *TreeNode) [][]int",
+      starter: "package main
+
+func levelOrder(root *TreeNode) [][]int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"levelOrder([3,9,20,null,null,15,7])\", [][]int{{3}, {9, 20}, {15, 7}}, levelOrder(tree(3, 9, 20, x, x, 15, 7))),
+			tc(\"levelOrder([1])\", [][]int{{1}}, levelOrder(tree(1))),
+			tc(\"levelOrder([])\", [][]int{}, levelOrder(tree())),
+			tc(\"levelOrder([1,2,null,3]) -- a chain\", [][]int{{1}, {2}, {3}}, levelOrder(tree(1, 2, x, 3))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc144_right_side_view() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Depth-first, visiting the right child first, and recording a value only when its depth is met for the first time. No frontier at all — being first to reach a depth is the same thing as being rightmost on it, given that order of visiting.",
+        "package main
+
+func rightSideView(root *TreeNode) []int {
+	// Depth-first, right child first: the first node reached at each
+	// depth is the rightmost one.
+	result := []int{}
+	var visit func(node *TreeNode, depth int)
+	visit = func(node *TreeNode, depth int) {
+		if node == nil {
+			return
+		}
+		if depth == len(result) {
+			result = append(result, node.Val)
+		}
+		visit(node.Right, depth+1)
+		visit(node.Left, depth+1)
+	}
+	visit(root, 0)
+	return result
+}",
+      ),
+      #(
+        "BFS",
+        "O(n) time · O(n) space",
+        "The last value on each level, which is what \"seen from the right\" means once the question is asked level by level. Walking down the right children alone is the tempting wrong answer: where the right side is short, a node further left is the one that shows.",
+        "package main
+
+func rightSideView(root *TreeNode) []int {
+	result := []int{}
+	if root == nil {
+		return result
+	}
+	// Level by level; the last node of each level is the one seen.
+	queue := []*TreeNode{root}
+	for len(queue) > 0 {
+		result = append(result, queue[len(queue)-1].Val)
+		next := []*TreeNode{}
+		for _, node := range queue {
+			if node.Left != nil {
+				next = append(next, node.Left)
+			}
+			if node.Right != nil {
+				next = append(next, node.Right)
+			}
+		}
+		queue = next
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func rightSideView(root *TreeNode) []int",
+      starter: "package main
+
+func rightSideView(root *TreeNode) []int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"rightSideView([1,2,3,null,5,null,4])\", []int{1, 3, 4}, rightSideView(tree(1, 2, 3, x, 5, x, 4))),
+			tc(\"rightSideView([1,null,3])\", []int{1, 3}, rightSideView(tree(1, x, 3))),
+			tc(\"rightSideView([])\", []int{}, rightSideView(tree())),
+			tc(\"rightSideView([1,2,3,4]) -- a left node shows below\", []int{1, 3, 4}, rightSideView(tree(1, 2, 3, 4))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc145_count_good_nodes() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Full-Path DFS",
+        "O(n·h) time · O(h²) space",
+        "Carry the whole path instead of just its maximum, and take the maximum at each node. The same answer for O(depth) memory per node rather than one number — worth writing once, because it makes plain that the running maximum is a fold of the path, not a separate idea.",
+        "package main
+
+func goodNodes(root *TreeNode) int {
+	// Keep the whole path in a stack and scan it at each node. Same
+	// answer, more work, but the definition is written out literally.
+	path := []int{}
+	var count func(node *TreeNode) int
+	count = func(node *TreeNode) int {
+		if node == nil {
+			return 0
+		}
+		good := 1
+		for _, ancestor := range path {
+			if ancestor > node.Val {
+				good = 0
+				break
+			}
+		}
+		path = append(path, node.Val)
+		total := good + count(node.Left) + count(node.Right)
+		path = path[:len(path)-1]
+		return total
+	}
+	return count(root)
+}",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Carry the largest value seen on the way down. A node is good when nothing above it is bigger, so the check needs no knowledge of the tree below — which is what makes one pass enough. The root is always good, and passing its own value down as the initial maximum is what says so.",
+        "package main
+
+func goodNodes(root *TreeNode) int {
+	// Carry the largest value on the path so far; a node is good when it
+	// is at least that, and it becomes the new maximum for its subtree.
+	var count func(node *TreeNode, largest int) int
+	count = func(node *TreeNode, largest int) int {
+		if node == nil {
+			return 0
+		}
+		good := 0
+		if node.Val >= largest {
+			good = 1
+			largest = node.Val
+		}
+		return good + count(node.Left, largest) + count(node.Right, largest)
+	}
+	if root == nil {
+		return 0
+	}
+	return count(root, root.Val)
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func goodNodes(root *TreeNode) int",
+      starter: "package main
+
+func goodNodes(root *TreeNode) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"goodNodes([3,1,4,3,null,1,5])\", 4, goodNodes(tree(3, 1, 4, 3, x, 1, 5))),
+			tc(\"goodNodes([])\", 0, goodNodes(tree())),
+			tc(\"goodNodes([1])\", 1, goodNodes(tree(1))),
+			tc(\"goodNodes([2,2]) -- equal counts as good\", 2, goodNodes(tree(2, 2))),
+			tc(\"goodNodes([3,3,null,4,2])\", 3, goodNodes(tree(3, 3, x, 4, 2))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc146_validate_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "In-Order Traversal",
+        "O(n) time · O(n) space",
+        "A binary search tree is exactly a tree whose in-order walk is strictly increasing — the definition, restated so that no bounds have to be threaded anywhere. The cost is the list: O(n) memory against the range check's O(depth).",
+        "package main
+
+func isValidBST(root *TreeNode) bool {
+	// An in-order walk of a BST is strictly increasing; check each value
+	// against the previous one as the walk goes.
+	var previous *int
+	var walk func(node *TreeNode) bool
+	walk = func(node *TreeNode) bool {
+		if node == nil {
+			return true
+		}
+		if !walk(node.Left) {
+			return false
+		}
+		if previous != nil && node.Val <= *previous {
+			return false
+		}
+		previous = &node.Val
+		return walk(node.Right)
+	}
+	return walk(root)
+}",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Check against a range, not against the parent. A node can be larger than its own parent and still break the order, because the constraint comes from an ancestor further up — and that is the whole difficulty. Going left tightens the upper bound, going right the lower one.",
+        "package main
+
+import \"math\"
+
+func isValidBST(root *TreeNode) bool {
+	// Every node must lie strictly inside the bounds its ancestors set:
+	// going left tightens the upper bound, going right the lower.
+	var valid func(node *TreeNode, low, high int) bool
+	valid = func(node *TreeNode, low, high int) bool {
+		if node == nil {
+			return true
+		}
+		if node.Val <= low || node.Val >= high {
+			return false
+		}
+		return valid(node.Left, low, node.Val) && valid(node.Right, node.Val, high)
+	}
+	return valid(root, math.MinInt, math.MaxInt)
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func isValidBST(root *TreeNode) bool",
+      starter: "package main
+
+func isValidBST(root *TreeNode) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"isValidBST([2,1,3])\", true, isValidBST(tree(2, 1, 3))),
+			tc(\"isValidBST([5,1,4,null,null,3,6])\", false, isValidBST(tree(5, 1, 4, x, x, 3, 6))),
+			tc(\"isValidBST([5,4,6,null,null,3,7]) -- the 3 breaks an ancestor's bound\", false, isValidBST(tree(5, 4, 6, x, x, 3, 7))),
+			tc(\"isValidBST([2,2,2]) -- equal values are not allowed\", false, isValidBST(tree(2, 2, 2))),
+			tc(\"isValidBST([])\", true, isValidBST(tree())),
+			tc(\"isValidBST([1])\", true, isValidBST(tree(1))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc147_kth_smallest_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Subtree Counting",
+        "O(n·h) time · O(h) space",
+        "Count the left subtree and decide which way to go — fewer than k on the left means the answer is this node or to its right. It descends one path instead of walking in order, and it is the version that adapts when the tree stores its own subtree sizes, which turns the whole thing into O(depth).",
+        "package main
+
+func kthSmallest(root *TreeNode, k int) int {
+	// Count the left subtree: if it has k-1 nodes the root is the answer,
+	// fewer means the answer is on the right (with k reduced), more means
+	// it is on the left.
+	for node := root; node != nil; {
+		leftSize := size(node.Left)
+		switch {
+		case k == leftSize+1:
+			return node.Val
+		case k <= leftSize:
+			node = node.Left
+		default:
+			k -= leftSize + 1
+			node = node.Right
+		}
+	}
+	return -1
+}
+
+func size(node *TreeNode) int {
+	if node == nil {
+		return 0
+	}
+	return 1 + size(node.Left) + size(node.Right)
+}",
+      ),
+      #(
+        "Iterative In-Order",
+        "O(h+k) time · O(h) space",
+        "An in-order walk of a search tree visits the values in order, so the answer is the kth thing it reaches. Stopping there is the point: the tree below the kth value is never touched, which is what separates this from sorting everything.",
+        "package main
+
+func kthSmallest(root *TreeNode, k int) int {
+	// An iterative in-order walk with an explicit stack; stop at the kth
+	// value rather than collecting them all.
+	stack := []*TreeNode{}
+	node := root
+	for {
+		for node != nil {
+			stack = append(stack, node)
+			node = node.Left
+		}
+		node = stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		k--
+		if k == 0 {
+			return node.Val
+		}
+		node = node.Right
+	}
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func kthSmallest(root *TreeNode, k int) int",
+      starter: "package main
+
+func kthSmallest(root *TreeNode, k int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		bst := tree(5, 3, 6, 2, 4, x, x, 1)
+		return []testCase{
+			tc(\"kthSmallest(bst, 1)\", 1, kthSmallest(bst, 1)),
+			tc(\"kthSmallest(bst, 2)\", 2, kthSmallest(bst, 2)),
+			tc(\"kthSmallest(bst, 3)\", 3, kthSmallest(bst, 3)),
+			tc(\"kthSmallest(bst, 4)\", 4, kthSmallest(bst, 4)),
+			tc(\"kthSmallest(bst, 6)\", 6, kthSmallest(bst, 6)),
+			tc(\"kthSmallest([7], 1)\", 7, kthSmallest(tree(7), 1)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc148_build_tree_preorder_inorder() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Recursion",
+        "O(n²) time · O(n²) space",
+        "Pre-order names the root; in-order says how much of the rest belongs to each side. Neither traversal alone determines a tree, and this is precisely why together they do — the split point found in the in-order list is the size of the left subtree, which is what carves up the pre-order list too.",
+        "package main
+
+func buildTree(preorder []int, inorder []int) *TreeNode {
+	// The first pre-order value is the root; its position in the in-order
+	// list splits both lists into the left and right subtrees.
+	if len(preorder) == 0 {
+		return nil
+	}
+	root := &TreeNode{Val: preorder[0]}
+	split := 0
+	for inorder[split] != preorder[0] {
+		split++
+	}
+	root.Left = buildTree(preorder[1:split+1], inorder[:split])
+	root.Right = buildTree(preorder[split+1:], inorder[split+1:])
+	return root
+}",
+      ),
+      #(
+        "Hash Map",
+        "O(n) time · O(n) space",
+        "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+The same construction without slicing anything: a map from value to its in-order position, plus a low and a high bound saying which slice each call owns. Building the map once turns the repeated search for the root — the hidden O(n) inside the slicing version — into a lookup.",
+        "package main
+
+func buildTree(preorder []int, inorder []int) *TreeNode {
+	// Consume pre-order values in sequence; an in-order index map gives
+	// each subtree its bounds, so no slices are copied.
+	position := map[int]int{}
+	for i, v := range inorder {
+		position[v] = i
+	}
+	next := 0
+	var build func(low, high int) *TreeNode
+	build = func(low, high int) *TreeNode {
+		if low > high {
+			return nil
+		}
+		node := &TreeNode{Val: preorder[next]}
+		next++
+		split := position[node.Val]
+		node.Left = build(low, split-1)
+		node.Right = build(split+1, high)
+		return node
+	}
+	return build(0, len(inorder)-1)
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func buildTree(preorder []int, inorder []int) *TreeNode",
+      starter: "package main
+
+func buildTree(preorder []int, inorder []int) *TreeNode {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"buildTree([3,9,20,15,7], [9,3,15,20,7])\", tree(3, 9, 20, x, x, 15, 7), buildTree([]int{3, 9, 20, 15, 7}, []int{9, 3, 15, 20, 7})),
+			tc(\"buildTree([], [])\", tree(), buildTree([]int{}, []int{})),
+			tc(\"buildTree([-1], [-1])\", tree(-1), buildTree([]int{-1}, []int{-1})),
+			tc(\"buildTree([1,2,3], [3,2,1]) -- leaning left\", tree(1, 2, x, 3), buildTree([]int{1, 2, 3}, []int{3, 2, 1})),
+			tc(\"buildTree([1,2,3], [1,2,3]) -- leaning right\", tree(1, x, 2, x, 3), buildTree([]int{1, 2, 3}, []int{1, 2, 3})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc149_max_path_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "Every path through every node, measured outright: for each node, take the best downward run on each side and add them. It recomputes those runs from scratch at every node, so it is O(n²) on a spindly tree — the cost of asking the two questions separately instead of returning both from one walk.",
+        "package main
+
+import \"math\"
+
+func maxPathSum(root *TreeNode) int {
+	// For every node as the path's top, take its best downward branches
+	// each side, recomputed from scratch: quadratic, but no shared state.
+	if root == nil {
+		return math.MinInt
+	}
+	through := root.Val + max(0, bestDown(root.Left)) + max(0, bestDown(root.Right))
+	return max(through, max(maxPathSum(root.Left), maxPathSum(root.Right)))
+}
+
+func bestDown(node *TreeNode) int {
+	if node == nil {
+		return 0
+	}
+	return node.Val + max(0, max(bestDown(node.Left), bestDown(node.Right)))
+}",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Two different quantities, which is the whole trick. What a node *returns* is the best path that can continue upwards, so at most one of its children. What it *records* is the best path through it, which may use both. A negative branch is dropped rather than added, because a path is allowed to stop. Same shape as [[nc138_diameter_of_binary_tree]].",
+        "package main
+
+import \"math\"
+
+func maxPathSum(root *TreeNode) int {
+	best := math.MinInt
+	// Each node reports the best downward path starting at it (never
+	// negative: a bad branch is simply not taken). The best path through
+	// it joins both branches, and is recorded as a side effect.
+	var down func(node *TreeNode) int
+	down = func(node *TreeNode) int {
+		if node == nil {
+			return 0
+		}
+		left := max(0, down(node.Left))
+		right := max(0, down(node.Right))
+		best = max(best, node.Val+left+right)
+		return node.Val + max(left, right)
+	}
+	down(root)
+	return best
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func maxPathSum(root *TreeNode) int",
+      starter: "package main
+
+func maxPathSum(root *TreeNode) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"maxPathSum([1,2,3])\", 6, maxPathSum(tree(1, 2, 3))),
+			tc(\"maxPathSum([-10,9,20,null,null,15,7])\", 42, maxPathSum(tree(-10, 9, 20, x, x, 15, 7))),
+			tc(\"maxPathSum([-3]) -- a single negative node\", -3, maxPathSum(tree(-3))),
+			tc(\"maxPathSum([-2,-1]) -- all negative\", -1, maxPathSum(tree(-2, -1))),
+			tc(\"maxPathSum([0])\", 0, maxPathSum(tree(0))),
 		}
 	})
 }",
@@ -4174,6 +6313,141 @@ func main() {
 			tc(\"characterReplacement('AABABBA', 1)\", 4, characterReplacement(\"AABABBA\", 1)),
 			tc(\"characterReplacement('AAAA', 0)\", 4, characterReplacement(\"AAAA\", 0)),
 			tc(\"characterReplacement('ABCDE', 1)\", 2, characterReplacement(\"ABCDE\", 1)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc150_serialize_deserialize() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Post-Order DFS",
+        "O(n) time · O(n) space",
+        "Post-order instead of pre-order, still with a marker for every empty child. The root is then the *last* token, so the reader works backwards — and reading backwards means taking the right subtree before the left. The format is what decides the parse direction, and nothing else about the two versions differs.",
+        "package main
+
+import (
+	\"strconv\"
+	\"strings\"
+)
+
+// Post-order: children before the node. Reading from the END of the token
+// list, the root comes first and the right subtree before the left.
+func serialize(root *TreeNode) string {
+	tokens := []string{}
+	var write func(node *TreeNode)
+	write = func(node *TreeNode) {
+		if node == nil {
+			tokens = append(tokens, \"#\")
+			return
+		}
+		write(node.Left)
+		write(node.Right)
+		tokens = append(tokens, strconv.Itoa(node.Val))
+	}
+	write(root)
+	return strings.Join(tokens, \",\")
+}
+
+func deserialize(data string) *TreeNode {
+	tokens := strings.Split(data, \",\")
+	next := len(tokens) - 1
+	var read func() *TreeNode
+	read = func() *TreeNode {
+		token := tokens[next]
+		next--
+		if token == \"#\" {
+			return nil
+		}
+		val, _ := strconv.Atoi(token)
+		node := &TreeNode{Val: val}
+		node.Right = read()
+		node.Left = read()
+		return node
+	}
+	return read()
+}",
+      ),
+      #(
+        "Pre-Order DFS",
+        "O(n) time · O(n) space",
+        "Pre-order with a marker for every empty child. Recording the empties is what makes the format unambiguous — a pre-order list of values alone matches many different trees — and it is also what lets the reader work with no length information at all: it stops as soon as it has consumed a whole subtree.",
+        "package main
+
+import (
+	\"strconv\"
+	\"strings\"
+)
+
+// Pre-order with an explicit marker for nil: the reader consumes tokens
+// in the same order the writer produced them, so no lengths are needed.
+func serialize(root *TreeNode) string {
+	tokens := []string{}
+	var write func(node *TreeNode)
+	write = func(node *TreeNode) {
+		if node == nil {
+			tokens = append(tokens, \"#\")
+			return
+		}
+		tokens = append(tokens, strconv.Itoa(node.Val))
+		write(node.Left)
+		write(node.Right)
+	}
+	write(root)
+	return strings.Join(tokens, \",\")
+}
+
+func deserialize(data string) *TreeNode {
+	tokens := strings.Split(data, \",\")
+	next := 0
+	var read func() *TreeNode
+	read = func() *TreeNode {
+		token := tokens[next]
+		next++
+		if token == \"#\" {
+			return nil
+		}
+		val, _ := strconv.Atoi(token)
+		node := &TreeNode{Val: val}
+		node.Left = read()
+		node.Right = read()
+		return node
+	}
+	return read()
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func serialize(root *TreeNode) string
+
+func deserialize(data string) *TreeNode",
+      starter: "package main
+
+func serialize(root *TreeNode) string {
+	panic(\"todo\")
+}
+
+func deserialize(data string) *TreeNode {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func roundTrip(values ...any) *TreeNode {
+	return deserialize(serialize(tree(values...)))
+}
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"deserialize(serialize([1,2,3,null,null,4,5]))\", tree(1, 2, 3, x, x, 4, 5), roundTrip(1, 2, 3, x, x, 4, 5)),
+			tc(\"deserialize(serialize([]))\", tree(), roundTrip()),
+			tc(\"deserialize(serialize([0]))\", tree(0), roundTrip(0)),
+			tc(\"deserialize(serialize(a lopsided tree))\", tree(1, 2, x, 3, x, x, 4), roundTrip(1, 2, x, 3, x, x, 4)),
+			tc(\"deserialize(serialize([-1,-2,-3])) -- negatives survive\", tree(-1, -2, -3), roundTrip(-1, -2, -3)),
 		}
 	})
 }",
@@ -12125,10 +14399,36 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc122_swim_in_water" -> Ok(nc122_swim_in_water())
     "nc123_alien_dictionary" -> Ok(nc123_alien_dictionary())
     "nc124_cheapest_flights" -> Ok(nc124_cheapest_flights())
+    "nc125_reverse_linked_list" -> Ok(nc125_reverse_linked_list())
+    "nc126_merge_two_sorted_lists" -> Ok(nc126_merge_two_sorted_lists())
+    "nc127_reorder_list" -> Ok(nc127_reorder_list())
+    "nc128_remove_nth_from_end" -> Ok(nc128_remove_nth_from_end())
+    "nc129_copy_random_list" -> Ok(nc129_copy_random_list())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
+    "nc130_add_two_numbers" -> Ok(nc130_add_two_numbers())
+    "nc131_linked_list_cycle" -> Ok(nc131_linked_list_cycle())
+    "nc132_find_the_duplicate" -> Ok(nc132_find_the_duplicate())
+    "nc133_lru_cache" -> Ok(nc133_lru_cache())
+    "nc134_merge_k_sorted_lists" -> Ok(nc134_merge_k_sorted_lists())
+    "nc135_reverse_k_group" -> Ok(nc135_reverse_k_group())
     "nc136_invert_binary_tree" -> Ok(nc136_invert_binary_tree())
+    "nc137_maximum_depth" -> Ok(nc137_maximum_depth())
+    "nc138_diameter_of_binary_tree" -> Ok(nc138_diameter_of_binary_tree())
+    "nc139_balanced_binary_tree" -> Ok(nc139_balanced_binary_tree())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())
+    "nc140_same_tree" -> Ok(nc140_same_tree())
+    "nc141_subtree_of_another_tree" -> Ok(nc141_subtree_of_another_tree())
+    "nc142_lowest_common_ancestor_bst" -> Ok(nc142_lowest_common_ancestor_bst())
+    "nc143_level_order_traversal" -> Ok(nc143_level_order_traversal())
+    "nc144_right_side_view" -> Ok(nc144_right_side_view())
+    "nc145_count_good_nodes" -> Ok(nc145_count_good_nodes())
+    "nc146_validate_bst" -> Ok(nc146_validate_bst())
+    "nc147_kth_smallest_bst" -> Ok(nc147_kth_smallest_bst())
+    "nc148_build_tree_preorder_inorder" ->
+      Ok(nc148_build_tree_preorder_inorder())
+    "nc149_max_path_sum" -> Ok(nc149_max_path_sum())
     "nc14_character_replacement" -> Ok(nc14_character_replacement())
+    "nc150_serialize_deserialize" -> Ok(nc150_serialize_deserialize())
     "nc15_permutation_in_string" -> Ok(nc15_permutation_in_string())
     "nc16_valid_parentheses" -> Ok(nc16_valid_parentheses())
     "nc17_min_stack" -> Ok(nc17_min_stack())

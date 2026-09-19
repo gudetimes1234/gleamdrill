@@ -8,10 +8,10 @@ pub type Lesson {
 
 pub fn lessons() -> List(Lesson) {
   [
-  Lesson(
-    chapter: "Basics",
-    title: "Hello world",
-    prose: "<p>
+    Lesson(
+      chapter: "Basics",
+      title: "Hello world",
+      prose: "<p>
   Here is a tiny program that prints out the text \"Hello, Joe!\". We'll explain
   how it works shortly.
 </p>
@@ -25,16 +25,16 @@ pub fn lessons() -> List(Lesson) {
   Try changing the text being printed to <code>Hello, Mike!</code> and see what
   happens.
 </p>",
-    code: "import gleam/io
+      code: "import gleam/io
 
 pub fn main() {
   io.println(\"Hello, Joe!\")
 }",
-  ),
-  Lesson(
-    chapter: "Basics",
-    title: "Modules",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Basics",
+      title: "Modules",
+      prose: "<p>
   Gleam code is organized into units called <em>modules</em>. A module is a
   bunch of definitions (of types, functions, etc.) that seem to belong together.
   For example, the
@@ -79,7 +79,7 @@ pub fn main() {
   Comments in Gleam start with <code>//</code> and continue to the end of the
   line. Comments go on the line before the item they are about, not after.
 </p>",
-    code: "import gleam/io
+      code: "import gleam/io
 import gleam/string as text
 
 pub fn main() {
@@ -89,11 +89,11 @@ pub fn main() {
   // Use a function from the `gleam/string` module
   io.println(text.reverse(\"Hello, Joe!\"))
 }",
-  ),
-  Lesson(
-    chapter: "Basics",
-    title: "Unqualified imports",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Basics",
+      title: "Unqualified imports",
+      prose: "<p>
   Normally functions from other modules are used in a
   <em>qualified</em> fashion, meaning the name used to refer the module goes
   before function name with a dot between them. For example,
@@ -110,7 +110,7 @@ pub fn main() {
   Generally it is best to use qualified imports, as this makes it clear where
   the function is defined, making the code easier to read.
 </p>",
-    code: "// Import the module and one of its functions
+      code: "// Import the module and one of its functions
 import gleam/io.{println}
 
 pub fn main() {
@@ -120,11 +120,11 @@ pub fn main() {
   // Or an unqualified fashion
   println(\"This is unqualified\")
 }",
-  ),
-  Lesson(
-    chapter: "Basics",
-    title: "Type checking",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Basics",
+      title: "Type checking",
+      prose: "<p>
   Gleam has a robust static type system that helps you as you write and edit
   code, catching mistakes and showing you where to make changes.
 </p>
@@ -149,7 +149,7 @@ pub fn main() {
   always performs full type checking. If the code compiles you can be reasonably
   confident it does not have any inconsistencies that may cause bugs or crashes.
 </p>",
-    code: "import gleam/io
+      code: "import gleam/io
 
 pub fn main() {
   io.println(\"My lucky number is:\")
@@ -159,11 +159,11 @@ pub fn main() {
   // echo 4
   // 👆️ You can use `echo` to debug print a value of any type!
 }",
-  ),
-  Lesson(
-    chapter: "Basics",
-    title: "Ints",
-    prose: "<p>Gleam's <code>Int</code> type represents whole numbers.</p>
+    ),
+    Lesson(
+      chapter: "Basics",
+      title: "Ints",
+      prose: "<p>Gleam's <code>Int</code> type represents whole numbers.</p>
 <p>
   There are arithmetic and comparison operators for ints, as well as the
   equality operator which works on all types.
@@ -180,7 +180,7 @@ pub fn main() {
   </a>
   standard library module contains functions for working with ints.
 </p>",
-    code: "import gleam/int
+      code: "import gleam/int
 
 pub fn main() {
   // Int arithmetic
@@ -204,11 +204,11 @@ pub fn main() {
   echo int.max(42, 77)
   echo int.clamp(5, 10, 20)
 }",
-  ),
-  Lesson(
-    chapter: "Basics",
-    title: "Floats",
-    prose: "<p>Gleam's <code>Float</code> type represents numbers that are not integers.</p>
+    ),
+    Lesson(
+      chapter: "Basics",
+      title: "Floats",
+      prose: "<p>Gleam's <code>Float</code> type represents numbers that are not integers.</p>
 <p>
   Gleam's numerical operators are not overloaded, so there are dedicated
   operators for working with floats.
@@ -240,7 +240,7 @@ pub fn main() {
   </a> 
   standard library module contains functions for working with floats.
 </p>",
-    code: "import gleam/float
+      code: "import gleam/float
 
 pub fn main() {
   // Float arithmetic
@@ -267,11 +267,11 @@ pub fn main() {
   echo float.max(2.0, 9.5)
   echo float.ceiling(5.4)
 }",
-  ),
-  Lesson(
-    chapter: "Basics",
-    title: "Number formats",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Basics",
+      title: "Number formats",
+      prose: "<p>
   Underscores can be added to numbers for clarity. For example, 
   <code>1000000</code> can be tricky to read quickly, while 
   <code>1_000_000</code> can be easier.
@@ -283,7 +283,7 @@ pub fn main() {
 <p>
   Floats can be written in a scientific notation.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   // Underscores
   echo 1_000_000
   echo 10_000.01
@@ -297,11 +297,11 @@ pub fn main() {
   echo 7.0e7
   echo 3.0e-4
 }",
-  ),
-  Lesson(
-    chapter: "Basics",
-    title: "Equality",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Basics",
+      title: "Equality",
+      prose: "<p>
   Gleam has the <code>==</code> and <code>!=</code> operators for checking
   equality.
 </p>
@@ -314,15 +314,15 @@ pub fn main() {
   if they have the same structure rather than if they are at the same memory
   location.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   echo 100 == 50 + 50
   echo 1.5 != 0.1 *. 10.0
 }",
-  ),
-  Lesson(
-    chapter: "Basics",
-    title: "Strings",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Basics",
+      title: "Strings",
+      prose: "<p>
   In Gleam strings are written as text surrounded by double quotes, and
   can span multiple lines and contain unicode characters.
 </p>
@@ -348,7 +348,7 @@ pub fn main() {
   </a> 
   standard library module contains functions for working with strings.
 </p>",
-    code: "import gleam/io
+      code: "import gleam/io
 import gleam/string
 
 pub fn main() {
@@ -371,11 +371,11 @@ pub fn main() {
   io.println(string.reverse(\"1 2 3 4 5\"))
   io.println(string.append(\"abc\", \"def\"))
 }",
-  ),
-  Lesson(
-    chapter: "Basics",
-    title: "Bools",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Basics",
+      title: "Bools",
+      prose: "<p>
   A <code>Bool</code> is either <code>True</code> or <code>False</code>.
 </p>
 <p>
@@ -395,7 +395,7 @@ pub fn main() {
   </a> 
   standard library module contains functions for working with bools.
 </p>",
-    code: "import gleam/bool
+      code: "import gleam/bool
 
 pub fn main() {
   // Bool operators
@@ -407,11 +407,11 @@ pub fn main() {
   // Bool functions
   echo bool.to_string(True)
 }",
-  ),
-  Lesson(
-    chapter: "Basics",
-    title: "Assignments",
-    prose: "<p>A value can be assigned to a variable using <code>let</code>.</p>
+    ),
+    Lesson(
+      chapter: "Basics",
+      title: "Assignments",
+      prose: "<p>A value can be assigned to a variable using <code>let</code>.</p>
 <p>
   Variable names can be reused by later let bindings, but the values they
   reference are immutable, so the values themselves are not changed or mutated
@@ -420,7 +420,7 @@ pub fn main() {
 <p>
   In Gleam variable and function names are written in <code>snake_case</code>.
 </p>",
-    code: "import gleam/io
+      code: "import gleam/io
 
 pub fn main() {
   let x = \"Original\"
@@ -437,11 +437,11 @@ pub fn main() {
   // The `y` still refers to the original value
   io.println(y)
 }",
-  ),
-  Lesson(
-    chapter: "Basics",
-    title: "Discard patterns",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Basics",
+      title: "Discard patterns",
+      prose: "<p>
   If a variable is assigned but not used then Gleam will emit a warning.
 </p>
 <p>
@@ -451,15 +451,15 @@ pub fn main() {
 <p>
   Try changing the variable name to <code>score</code> to see the warning.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   // This variable is never used
   let _score = 1000
 }",
-  ),
-  Lesson(
-    chapter: "Basics",
-    title: "Type annotations",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Basics",
+      title: "Type annotations",
+      prose: "<p>
   Let assignments can be written with a type annotation after the name.
 </p>
 <p>
@@ -474,18 +474,18 @@ pub fn main() {
   Try changing a type annotation to something incorrect to see the compile
   error.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   let _name: String = \"Gleam\"
 
   let _is_cool: Bool = True
 
   let _version: Int = 1
 }",
-  ),
-  Lesson(
-    chapter: "Basics",
-    title: "Type imports",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Basics",
+      title: "Type imports",
+      prose: "<p>
   Other modules may also define types that we wish to refer to. In this case we
   need to import them.
 </p>
@@ -501,7 +501,7 @@ pub fn main() {
 <p>
   Unlike functions, Gleam types are commonly imported in an unqualified way.
 </p>",
-    code: "import gleam/bytes_tree
+      code: "import gleam/bytes_tree
 import gleam/string_tree.{type StringTree}
 
 pub fn main() {
@@ -511,11 +511,11 @@ pub fn main() {
   // Refering to a type in an unqualified way
   let _text: StringTree = string_tree.new()
 }",
-  ),
-  Lesson(
-    chapter: "Basics",
-    title: "Type aliases",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Basics",
+      title: "Type aliases",
+      prose: "<p>
   A type alias can be used to refer to a type by a different name. Giving a type
   an alias doesn't make a new type, it is still the same type.
 </p>
@@ -532,7 +532,7 @@ pub fn main() {
   less clear what it is, and does not provide the type safety benefits that
   using a custom type would give.
 </p>",
-    code: "pub type Number =
+      code: "pub type Number =
   Int
 
 pub fn main() {
@@ -542,11 +542,11 @@ pub fn main() {
   // Number and Int are two names for the same type
   echo one == two
 }",
-  ),
-  Lesson(
-    chapter: "Basics",
-    title: "Blocks",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Basics",
+      title: "Blocks",
+      prose: "<p>
   Blocks are one or more expressions grouped together with curly braces. Each
   expression is evaluated in order and the value of the last expression is
   returned.
@@ -569,7 +569,7 @@ pub fn main() {
  wrapped in a block: <code>{ 1 + 2 } * 3</code>. This is similar to grouping
  with parentheses in some other languages.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   let fahrenheit = {
     let degrees = 64
     degrees
@@ -581,11 +581,11 @@ pub fn main() {
   let celsius = { fahrenheit - 32 } * 5 / 9
   echo celsius
 }",
-  ),
-  Lesson(
-    chapter: "Basics",
-    title: "Lists",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Basics",
+      title: "Lists",
+      prose: "<p>
   Lists are ordered collections of values.
 </p>
 <p>
@@ -606,7 +606,7 @@ pub fn main() {
   into sequences in Gleam, but when they are written a list is not the right
   choice of data structure.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   let ints = [1, 2, 3]
 
   echo ints
@@ -620,11 +620,11 @@ pub fn main() {
   // The original lists are unchanged
   echo ints
 }",
-  ),
-  Lesson(
-    chapter: "Basics",
-    title: "Constants",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Basics",
+      title: "Constants",
+      prose: "<p>
   As well as let assignments Gleam also has constants, which are defined at the
   top level of a module.
 </p>
@@ -642,7 +642,7 @@ pub fn main() {
   multiple functions, though the exact performance characteristics will depend
   on the runtime and whether compiling to Erlang or JavaScript.
 </p>",
-    code: "const ints: List(Int) = [1, 2, 3]
+      code: "const ints: List(Int) = [1, 2, 3]
 
 const floats = [1.1, 2.2, 3.3]
 
@@ -653,11 +653,11 @@ pub fn main() {
   echo floats
   echo floats == [1.1, 2.2, 3.3]
 }",
-  ),
-  Lesson(
-    chapter: "Functions",
-    title: "Functions",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Functions",
+      title: "Functions",
+      prose: "<p>
   The <code>fn</code> keyword is used to define new functions.
 </p>
 <p>
@@ -678,7 +678,7 @@ pub fn main() {
   and return values. It is considered good practice to use type annotations for
   functions, for clarity and to encourage intentional and thoughtful design.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   echo double(10)
 }
 
@@ -689,11 +689,11 @@ fn double(a: Int) -> Int {
 fn multiply(a: Int, b: Int) -> Int {
   a * b
 }",
-  ),
-  Lesson(
-    chapter: "Functions",
-    title: "Higher order functions",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Functions",
+      title: "Higher order functions",
+      prose: "<p>
   In Gleam functions are values. They can be assigned to variables, passed to
   other functions, and anything else you can do with values.
 </p>
@@ -705,7 +705,7 @@ fn multiply(a: Int, b: Int) -> Int {
   Notice the <code>fn</code> keyword is also used to describe the type of the
   function that <code>twice</code> takes as its second argument.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   // Call a function with another function
   echo twice(1, add_one)
 
@@ -721,11 +721,11 @@ fn twice(argument: Int, passed_function: fn(Int) -> Int) -> Int {
 fn add_one(argument: Int) -> Int {
   argument + 1
 }",
-  ),
-  Lesson(
-    chapter: "Functions",
-    title: "Anonymous functions",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Functions",
+      title: "Anonymous functions",
+      prose: "<p>
   As well as module-level named functions, Gleam has anonymous function
   literals, written with the <code>fn() { ... }</code> syntax.
 </p>
@@ -734,7 +734,7 @@ fn add_one(argument: Int) -> Int {
   Anonymous functions can reference variables that were in scope when they were
   defined, making them <em>closures</em>.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   // Assign an anonymous function to a variable
   let add_one = fn(a) { a + 1 }
   echo twice(1, add_one)
@@ -751,11 +751,11 @@ fn add_one(argument: Int) -> Int {
 fn twice(argument: Int, my_function: fn(Int) -> Int) -> Int {
   my_function(my_function(argument))
 }",
-  ),
-  Lesson(
-    chapter: "Functions",
-    title: "Function captures",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Functions",
+      title: "Function captures",
+      prose: "<p>
   Gleam has a shorthand syntax for creating anonymous functions that take one
   argument and immediately call another function with that argument: the
   function capture syntax.
@@ -767,7 +767,7 @@ fn twice(argument: Int, my_function: fn(Int) -> Int) -> Int {
   <code>_</code> is a placeholder for the argument, equivalent to
   <code>a</code> in <code>fn(a) { some_function(..., a, ...) }</code>.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   // These two statements are equivalent
   let add_one_v1 = fn(x) { add(1, x) }
   let add_one_v2 = add(1, _)
@@ -779,11 +779,11 @@ fn twice(argument: Int, my_function: fn(Int) -> Int) -> Int {
 fn add(a: Int, b: Int) -> Int {
   a + b
 }",
-  ),
-  Lesson(
-    chapter: "Functions",
-    title: "Generic functions",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Functions",
+      title: "Generic functions",
+      prose: "<p>
   Up until now each function has accepted precisely one type for each of its
   arguments.
 </p>
@@ -809,7 +809,7 @@ fn add(a: Int, b: Int) -> Int {
   <code>twice(10, exclaim)</code> to see the compiler error from trying to use a
   type variable as an int and a string at the same time.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   let add_one = fn(x) { x + 1 }
   let exclaim = fn(x) { x <> \"!\" }
 
@@ -827,11 +827,11 @@ fn add(a: Int, b: Int) -> Int {
 fn twice(argument: value, my_function: fn(value) -> value) -> value {
   my_function(my_function(argument))
 }",
-  ),
-  Lesson(
-    chapter: "Functions",
-    title: "Pipelines",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Functions",
+      title: "Pipelines",
+      prose: "<p>
   It's common to want to call a series of functions, passing the result of one
   to the next. With the regular function call syntax this can be a little
   difficult to read as you have to read the code from the inside out.
@@ -866,7 +866,7 @@ fn twice(argument: value, my_function: fn(value) -> value) -> value {
   If you need to debug print a value in the middle of a pipeline you can use
   <code>|> echo</code> to do it.
 </p>",
-    code: "import gleam/io
+      code: "import gleam/io
 import gleam/string
 
 pub fn main() {
@@ -885,11 +885,11 @@ pub fn main() {
   |> string.append(\"3\", _)
   |> io.println
 }",
-  ),
-  Lesson(
-    chapter: "Functions",
-    title: "Labelled arguments",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Functions",
+      title: "Labelled arguments",
+      prose: "<p>
   When functions take several arguments it can be difficult to remember what the
   arguments are, and what order they are expected in.
 </p>
@@ -910,7 +910,7 @@ pub fn main() {
   Labels are optional when calling a function, it is up to the programmer to
   decide what is clearest in their code.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   // Without using labels
   echo calculate(1, 2, 3)
 
@@ -924,17 +924,17 @@ pub fn main() {
 fn calculate(value: Int, add addend: Int, multiply multiplier: Int) {
   value * multiplier + addend
 }",
-  ),
-  Lesson(
-    chapter: "Functions",
-    title: "Label shorthand syntax",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Functions",
+      title: "Label shorthand syntax",
+      prose: "<p>
   When local variables have the same names as a function's labelled arguments,
   the variable names can be omitted when calling the function. This is known as
   shorthand syntax for labels.
 </p>
 <p>The shorthand syntax can also be used for record constructor arguments.</p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   let quantity = 5.0
   let unit_price = 10.0
   let discount = 0.2
@@ -959,11 +959,11 @@ fn calculate_total_cost(
   let discount = subtotal *. discount
   subtotal -. discount
 }",
-  ),
-  Lesson(
-    chapter: "Functions",
-    title: "Documentation comments",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Functions",
+      title: "Documentation comments",
+      prose: "<p>
   Documentation and comments are important tools for making your code easier to
   work with and understand.
 </p>
@@ -979,7 +979,7 @@ fn calculate_total_cost(
   <code>////</code> is used for documenting modules, and should be placed
   at the top of the module.
 </p>",
-    code: "//// A module containing some unusual functions and types.
+      code: "//// A module containing some unusual functions and types.
 
 /// A type where the value can never be constructed.
 /// Can you work out why?
@@ -998,11 +998,11 @@ pub fn twice(argument: value, my_function: fn(value) -> value) -> value {
 pub fn thrice(argument: value, my_function: fn(value) -> value) -> value {
   my_function(my_function(my_function(argument)))
 }",
-  ),
-  Lesson(
-    chapter: "Functions",
-    title: "Deprecations",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Functions",
+      title: "Deprecations",
+      prose: "<p>
   Functions and other definitions can be marked as deprecated using the
   <code>@deprecated</code>
   attribute.
@@ -1016,7 +1016,7 @@ pub fn thrice(argument: value, my_function: fn(value) -> value) -> value {
   user in the warning. In the message explain to the user the new approach or
   replacement function, or direct them to documentation on how to upgrade.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   echo old_function()
   echo new_function()
 }
@@ -1029,11 +1029,11 @@ fn old_function() {
 fn new_function() {
   Nil
 }",
-  ),
-  Lesson(
-    chapter: "Flow control",
-    title: "Case expressions",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Flow control",
+      title: "Case expressions",
+      prose: "<p>
   The case expression is the most common kind of flow control in Gleam code. It
   is similar to <code>switch</code> in some other languages, but more powerful
   than most.
@@ -1051,7 +1051,7 @@ fn new_function() {
   Try commenting out patterns or adding new redundant ones, and see what
   problems the compiler reports.
 </p>",
-    code: "import gleam/int
+      code: "import gleam/int
 
 pub fn main() {
   let x = int.random(5)
@@ -1067,18 +1067,18 @@ pub fn main() {
   }
   echo result
 }",
-  ),
-  Lesson(
-    chapter: "Flow control",
-    title: "Variable patterns",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Flow control",
+      title: "Variable patterns",
+      prose: "<p>
   Patterns in case expressions can also assign variables.
 </p>
 <p>
   When a variable name is used in a pattern the value that is matched against is
   assigned to that name, and can be used in the body of that clause.
 </p>",
-    code: "import gleam/int
+      code: "import gleam/int
 
 pub fn main() {
   let result = case int.random(5) {
@@ -1091,11 +1091,11 @@ pub fn main() {
   }
   echo result
 }",
-  ),
-  Lesson(
-    chapter: "Flow control",
-    title: "String patterns",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Flow control",
+      title: "String patterns",
+      prose: "<p>
   When pattern matching on strings the <code>&lt;&gt;</code> operator can be
   used to match on strings with a specific prefix.
 </p>
@@ -1104,7 +1104,7 @@ pub fn main() {
   <code>\"Hello, \"</code> and assigns the rest of the string to the variable
   <code>name</code>.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   echo get_name(\"Hello, Joe\")
   echo get_name(\"Hello, Mike\")
   echo get_name(\"System still working?\")
@@ -1116,11 +1116,11 @@ fn get_name(x: String) -> String {
     _ -> \"Unknown\"
   }
 }",
-  ),
-  Lesson(
-    chapter: "Flow control",
-    title: "List patterns",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Flow control",
+      title: "List patterns",
+      prose: "<p>
   Lists and the values they contain can be pattern matched on in case
   expressions.
 </p>
@@ -1135,7 +1135,7 @@ fn get_name(x: String) -> String {
   <code>1</code>. The pattern <code>[_, _, ..]</code> matches any list that has
   at least two elements.
 </p>",
-    code: "import gleam/int
+      code: "import gleam/int
 import gleam/list
 
 pub fn main() {
@@ -1151,11 +1151,11 @@ pub fn main() {
   }
   echo result
 }",
-  ),
-  Lesson(
-    chapter: "Flow control",
-    title: "Recursion",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Flow control",
+      title: "Recursion",
+      prose: "<p>
   Gleam doesn't have loops, instead iteration is done through recursion, that is
   through top-level functions calling themselves with different arguments.
 </p>
@@ -1175,7 +1175,7 @@ pub fn main() {
   languages that have special looping features, but stick with it! With time
   it'll become just as familiar and comfortable as any other way of iterating.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   echo factorial(5)
   echo factorial(7)
 }
@@ -1198,11 +1198,11 @@ fn step_towards_zero(x: Int) -> Int {
     False -> x + 1
   }
 }",
-  ),
-  Lesson(
-    chapter: "Flow control",
-    title: "Tail calls",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Flow control",
+      title: "Tail calls",
+      prose: "<p>
   When a function is called a new stack frame is created in memory to store the
   arguments and local variables of the function. If lots of these frames are
   created during recursion then the program would use a large amount of memory,
@@ -1225,7 +1225,7 @@ fn step_towards_zero(x: Int) -> Int {
   internal implementation details. To do this write a public function that calls
   a recursive private function with the initial accumulator value.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   echo factorial(5)
   echo factorial(7)
 }
@@ -1245,11 +1245,11 @@ fn factorial_loop(x: Int, accumulator: Int) -> Int {
     _ -> factorial_loop(x - 1, accumulator * x)
   }
 }",
-  ),
-  Lesson(
-    chapter: "Flow control",
-    title: "List recursion",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Flow control",
+      title: "List recursion",
+      prose: "<p>
   While it is more common to use functions in the
   <a target=\"_blank\" rel=\"noopener\" href=\"https://hexdocs.pm/gleam_stdlib/gleam/list.html\" target=\"_blank\">
     <code>gleam/list</code>
@@ -1268,7 +1268,7 @@ fn factorial_loop(x: Int, accumulator: Int) -> Int {
   This code sums a list by recursing over the list and adding each int to a
   <code>total</code> argument, returning it when the end is reached.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   let sum = sum_list([18, 56, 35, 85, 91], 0)
   echo sum
 }
@@ -1279,11 +1279,11 @@ fn sum_list(list: List(Int), total: Int) -> Int {
     [] -> total
   }
 }",
-  ),
-  Lesson(
-    chapter: "Flow control",
-    title: "Multiple subjects",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Flow control",
+      title: "Multiple subjects",
+      prose: "<p>
   Sometimes it is useful to pattern match on multiple values at the same time in
   one case expression.
 </p>
@@ -1296,7 +1296,7 @@ fn sum_list(list: List(Int), total: Int) -> Int {
   as there are subjects. Try removing one of the <code>_,</code> sub-patterns to
   see the compile time error that is returned.
 </p>",
-    code: "import gleam/int
+      code: "import gleam/int
 
 pub fn main() {
   let x = int.random(2)
@@ -1312,11 +1312,11 @@ pub fn main() {
   }
   echo result
 }",
-  ),
-  Lesson(
-    chapter: "Flow control",
-    title: "Alternative patterns",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Flow control",
+      title: "Alternative patterns",
+      prose: "<p>
   Alternative patterns can be given for a case clause using the
   <code>|</code> operator. If any of the patterns match then the clause matches.
 </p>
@@ -1328,7 +1328,7 @@ pub fn main() {
   Currently it is not possible to have nested alternative patterns, so the
   pattern <code>[1 | 2 | 3]</code> is not valid.
 </p>",
-    code: "import gleam/int
+      code: "import gleam/int
 
 pub fn main() {
   let number = int.random(10)
@@ -1341,18 +1341,18 @@ pub fn main() {
   }
   echo result
 }",
-  ),
-  Lesson(
-    chapter: "Flow control",
-    title: "Pattern aliases",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Flow control",
+      title: "Pattern aliases",
+      prose: "<p>
   The <code>as</code> operator can be used to assign sub patterns to variables.
 </p>
 <p>
   The pattern <code>[_, ..] as first</code> will match any non-empty list and
   assign that list to the variable <code>first</code>.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   echo get_first_non_empty([[], [1, 2, 3], [4, 5]])
   echo get_first_non_empty([[1, 2], [3, 4, 5], []])
   echo get_first_non_empty([[], [], []])
@@ -1365,11 +1365,11 @@ fn get_first_non_empty(lists: List(List(t))) -> List(t) {
     [] -> []
   }
 }",
-  ),
-  Lesson(
-    chapter: "Flow control",
-    title: "Guards",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Flow control",
+      title: "Guards",
+      prose: "<p>
   The <code>if</code> keyword can be used with case expressions to add a
   <em>guard</em> to a pattern. A guard is an expression that must evaluate to
   <code>True</code> for the pattern to match.
@@ -1377,7 +1377,7 @@ fn get_first_non_empty(lists: List(List(t))) -> List(t) {
 <p>
   Guard expressions <em>cannot</em> contain function calls, case expressions, or blocks.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   let numbers = [1, 2, 3, 4, 5]
   echo get_first_larger(numbers, 3)
   echo get_first_larger(numbers, 5)
@@ -1390,11 +1390,11 @@ fn get_first_larger(numbers: List(Int), limit: Int) -> Int {
     [] -> 0
   }
 }",
-  ),
-  Lesson(
-    chapter: "Data types",
-    title: "Tuples",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Data types",
+      title: "Tuples",
+      prose: "<p>
   Lists are good for when we want a collection of one type, but sometimes we
   want to combine multiple values of different types. In this case tuples are a
   quick and convenient option.
@@ -1414,7 +1414,7 @@ fn get_first_larger(numbers: List(Int), limit: Int) -> Int {
   it is clearer to use a <em>custom type</em> where a tuple could be used. We
   will cover custom types next.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   let triple = #(1, 2.2, \"three\")
   echo triple
 
@@ -1422,11 +1422,11 @@ fn get_first_larger(numbers: List(Int), limit: Int) -> Int {
   echo a
   echo triple.1
 }",
-  ),
-  Lesson(
-    chapter: "Data types",
-    title: "Custom types",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Data types",
+      title: "Custom types",
+      prose: "<p>
   Gleam has a few built in types such as <code>Int</code> and
   <code>String</code>, but custom types allow the creation of entirely new
   types.
@@ -1437,7 +1437,7 @@ fn get_first_larger(numbers: List(Int), limit: Int) -> Int {
   the type name and the names of the constructors start with uppercase letters.
 </p>
 <p>Custom type variants can be pattern matched on using a case expression.</p>",
-    code: "pub type Season {
+      code: "pub type Season {
   Spring
   Summer
   Autumn
@@ -1457,11 +1457,11 @@ fn weather(season: Season) -> String {
     Winter -> \"Cold\"
   }
 }",
-  ),
-  Lesson(
-    chapter: "Data types",
-    title: "Records",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Data types",
+      title: "Records",
+      prose: "<p>
   A variant of a custom type can hold other data within it. In this case
   the variant is called a record.
 </p>
@@ -1478,7 +1478,7 @@ fn weather(season: Season) -> String {
   When defining custom types with one variant, the single variant is often named the
   same as the custom type, although it doesn't have to be.
 </p>",
-    code: "pub type Person {
+      code: "pub type Person {
   Person(name: String, age: Int, needs_glasses: Bool)
 }
 
@@ -1490,11 +1490,11 @@ pub fn main() {
   let friends = [amy, jared, tom]
   echo friends
 }",
-  ),
-  Lesson(
-    chapter: "Data types",
-    title: "Record accessors",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Data types",
+      title: "Record accessors",
+      prose: "<p>
   The record accessor syntax <code>record.field_label</code> can be used to get
   contained values from a custom type record.
 </p>
@@ -1514,7 +1514,7 @@ pub fn main() {
   Uncomment the <code>student.subject</code> line to see the compile error from
   trying to use this accessor.
 </p>",
-    code: "pub type SchoolPerson {
+      code: "pub type SchoolPerson {
   Teacher(name: String, subject: String)
   Student(name: String)
 }
@@ -1527,11 +1527,11 @@ pub fn main() {
   echo student.name
   // echo student.subject
 }",
-  ),
-  Lesson(
-    chapter: "Data types",
-    title: "Record pattern matching",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Data types",
+      title: "Record pattern matching",
+      prose: "<p>
   It is possible to pattern match on a record, this allows for the extraction of
   multiple field values from a record into distinct variables, similar to
   matching on a tuple or a list.
@@ -1545,7 +1545,7 @@ pub fn main() {
   It is possible to use underscore <code>_</code> or the <code>..</code> syntax
   to discard fields that are not required.
 </p>",
-    code: "import gleam/io
+      code: "import gleam/io
 
 pub type Fish {
   Starfish(name: String, favourite_colour: String)
@@ -1574,11 +1574,11 @@ fn handle_ice_cream(ice_cream: IceCream) {
   let IceCream(flavour) = ice_cream
   io.println(flavour)
 }",
-  ),
-  Lesson(
-    chapter: "Data types",
-    title: "Record updates",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Data types",
+      title: "Record updates",
+      prose: "<p>
   The record update syntax can be used to create a new record from an existing
   one of the same type, but with some fields changed.
 </p>
@@ -1586,7 +1586,7 @@ fn handle_ice_cream(ice_cream: IceCream) {
   Gleam is an immutable language, so using the record update syntax does not
   mutate or otherwise change the original record.
 </p>",
-    code: "pub type SchoolPerson {
+      code: "pub type SchoolPerson {
   Teacher(name: String, subject: String, floor: Int, room: Int)
 }
 
@@ -1599,11 +1599,11 @@ pub fn main() {
   echo teacher1
   echo teacher2
 }",
-  ),
-  Lesson(
-    chapter: "Data types",
-    title: "Generic custom types",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Data types",
+      title: "Generic custom types",
+      prose: "<p>
   Like functions, custom types can also be generic, taking contained types as
   parameters.
 </p>
@@ -1615,7 +1615,7 @@ pub fn main() {
   </a> 
   module defines it so you can use it in your Gleam projects.
 </p>",
-    code: "pub type Option(inner) {
+      code: "pub type Option(inner) {
   Some(inner)
   None
 }
@@ -1625,11 +1625,11 @@ pub const name: Option(String) = Some(\"Annah\")
 
 // An option of int
 pub const level: Option(Int) = Some(10)",
-  ),
-  Lesson(
-    chapter: "Data types",
-    title: "Nil",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Data types",
+      title: "Nil",
+      prose: "<p>
   <code>Nil</code> is Gleam's unit type. It is a value that is returned by
   functions that have nothing else to return, as all functions must return
   something.
@@ -1644,7 +1644,7 @@ pub const level: Option(Int) = Some(10)",
   Uncomment the line that assigns <code>Nil</code> to a variable with an
   incompatible type annotation to see the compile time error it produces.
 </p>",
-    code: "import gleam/io
+      code: "import gleam/io
 
 pub fn main() {
   let x = Nil
@@ -1655,11 +1655,11 @@ pub fn main() {
   let result = io.println(\"Hello!\")
   echo result == Nil
 }",
-  ),
-  Lesson(
-    chapter: "Data types",
-    title: "Results",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Data types",
+      title: "Results",
+      prose: "<p>
   Gleam doesn't use exceptions, instead computations that can either succeed or
   fail return a value of the built-in <code>Result(value, error)</code> type. It
   has two variants:
@@ -1698,7 +1698,7 @@ pub fn main() {
   standard library module and <code>use</code> expressions when working with results, 
   both of which will be covered in later chapters.
 </p>",
-    code: "import gleam/int
+      code: "import gleam/int
 
 pub fn main() {
   let _ = echo buy_pastry(10)
@@ -1722,11 +1722,11 @@ fn buy_pastry(money: Int) -> Result(Int, PurchaseError) {
     False -> Error(NotEnoughMoney(required: 5))
   }
 }",
-  ),
-  Lesson(
-    chapter: "Data types",
-    title: "Bit arrays",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Data types",
+      title: "Bit arrays",
+      prose: "<p>
   Bit arrays represent a sequence of 1s and 0s, and are a convenient syntax for
   constructing and manipulating binary data.
 </p>
@@ -1770,7 +1770,7 @@ fn buy_pastry(money: Int) -> Result(Int, PurchaseError) {
     >Erlang bit syntax documentation</a
   >.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   // 8 bit int. In binary: 00000011
   echo <<3>>
   echo <<3>> == <<3:size(8)>>
@@ -1786,11 +1786,11 @@ fn buy_pastry(money: Int) -> Result(Int, PurchaseError) {
   let second = <<2>>
   echo <<first:bits, second:bits>>
 }",
-  ),
-  Lesson(
-    chapter: "Standard library",
-    title: "Standard library package",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Standard library",
+      title: "Standard library package",
+      prose: "<p>
   The Gleam standard library is a regular Gleam package that has been published
   to the <a target=\"_blank\" rel=\"noopener\" href=\"https://hex.pm\">Hex</a> package repository. You could opt to
   not use it if you wish, though almost all Gleam projects depend on it.
@@ -1807,17 +1807,17 @@ fn buy_pastry(money: Int) -> Result(Int, PurchaseError) {
   <a target=\"_blank\" rel=\"noopener\" href=\"https://hexdocs.pm/gleam_stdlib/\">HexDocs</a>. We will go over some
   of the most commonly used modules now.
 </p>",
-    code: "import gleam/io
+      code: "import gleam/io
 
 pub fn main() {
   io.println(\"Hello, Joe!\")
   io.println(\"Hello, Mike!\")
 }",
-  ),
-  Lesson(
-    chapter: "Standard library",
-    title: "List module",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Standard library",
+      title: "List module",
+      prose: "<p>
   The
   <a target=\"_blank\" rel=\"noopener\" href=\"https://hexdocs.pm/gleam_stdlib/gleam/list.html\" target=\"_blank\">
     <code>gleam/list</code>
@@ -1859,7 +1859,7 @@ pub fn main() {
   It's worth getting familiar with all the functions in this module when writing
   Gleam code, you'll be using them a lot!
 </p>",
-    code: "import gleam/io
+      code: "import gleam/io
 import gleam/list
 
 pub fn main() {
@@ -1878,11 +1878,11 @@ pub fn main() {
   let _ = echo list.find(ints, fn(x) { x > 3 })
   echo list.find(ints, fn(x) { x > 13 })
 }",
-  ),
-  Lesson(
-    chapter: "Standard library",
-    title: "Result module",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Standard library",
+      title: "Result module",
+      prose: "<p>
   The
   <a target=\"_blank\" rel=\"noopener\" href=\"https://hexdocs.pm/gleam_stdlib/gleam/result.html\" target=\"_blank\">
     <code>gleam/result</code>
@@ -1922,7 +1922,7 @@ pub fn main() {
   Result functions are often used with pipelines to chain together multiple
   calls to result-returning functions.
 </p>",
-    code: "import gleam/int
+      code: "import gleam/int
 import gleam/io
 import gleam/result
 
@@ -1946,11 +1946,11 @@ pub fn main() {
   |> result.try(int.remainder(_, 42))
   |> echo
 }",
-  ),
-  Lesson(
-    chapter: "Standard library",
-    title: "Dict module",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Standard library",
+      title: "Dict module",
+      prose: "<p>
   The
   <a target=\"_blank\" rel=\"noopener\" href=\"https://hexdocs.pm/gleam_stdlib/gleam/dict.html\"
     ><code>gleam/dict</code></a
@@ -1990,7 +1990,7 @@ pub fn main() {
   order, it is incidental and should not be relied upon. Any ordering may
   change without warning in future versions or on different runtimes.
 </p>",
-    code: "import gleam/dict
+      code: "import gleam/dict
 
 pub fn main() {
   let scores = dict.from_list([#(\"Lucy\", 13), #(\"Drew\", 15)])
@@ -2003,11 +2003,11 @@ pub fn main() {
     |> dict.delete(\"Drew\")
   echo dict.to_list(scores)
 }",
-  ),
-  Lesson(
-    chapter: "Standard library",
-    title: "Option module",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Standard library",
+      title: "Option module",
+      prose: "<p>
   Values in Gleam are not nullable, so the
   <a target=\"_blank\" rel=\"noopener\" href=\"https://hexdocs.pm/gleam_stdlib/gleam/option.html\" target=\"_blank\">
     <code>gleam/option</code>
@@ -2026,7 +2026,7 @@ pub fn main() {
   fallible functions consistent and removes any boilerplate that would be
   required when mixing functions that use each type.
 </p>",
-    code: "import gleam/option.{type Option, None, Some}
+      code: "import gleam/option.{type Option, None, Some}
 
 pub type Person {
   Person(name: String, pet: Option(String))
@@ -2039,11 +2039,11 @@ pub fn main() {
   echo person_with_pet
   echo person_without_pet
 }",
-  ),
-  Lesson(
-    chapter: "Advanced features",
-    title: "Opaque types",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Advanced features",
+      title: "Opaque types",
+      prose: "<p>
   <em>Opaque types</em> are types where a custom type itself is public and can
   be used by other modules, but the constructors for the type are private and
   can only be used by the module that defines the type. This prevents other
@@ -2060,7 +2060,7 @@ pub fn main() {
   modules want to construct one they have to use the <code>new</code> function,
   which ensures that the integer is positive.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   let positive = new(1)
   let zero = new(0)
   let negative = new(-1)
@@ -2084,11 +2084,11 @@ pub fn new(i: Int) -> PositiveInt {
 pub fn to_int(i: PositiveInt) -> Int {
   i.inner
 }",
-  ),
-  Lesson(
-    chapter: "Advanced features",
-    title: "Use",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Advanced features",
+      title: "Use",
+      prose: "<p>
   Gleam lacks exceptions, macros, type classes, early returns, and a variety of
   other features, instead going all-in with just first-class-functions and
   pattern matching. This makes Gleam code easier to understand, but it can
@@ -2140,7 +2140,7 @@ pub fn main() -> Nil {
   <code>use</code> may result in unclear code, especially to beginners. Usually
   the regular function call syntax results in more approachable code!
 </p>",
-    code: "import gleam/result
+      code: "import gleam/result
 
 pub fn main() {
   // These two functions do exactly the same thing, but one is written with
@@ -2179,11 +2179,11 @@ fn get_password() -> Result(String, Nil) {
 fn log_in(_username: String, _password: String) -> Result(String, Nil) {
   Ok(\"Welcome\")
 }",
-  ),
-  Lesson(
-    chapter: "Advanced features",
-    title: "Todo",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Advanced features",
+      title: "Todo",
+      prose: "<p>
   The <code>todo</code> keyword is used to specify that some code is not yet
   implemented.
 </p>
@@ -2197,18 +2197,18 @@ fn log_in(_username: String, _password: String) -> Result(String, Nil) {
   unfinished, and if the code is run then the program will crash with the given
   message.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   todo as \"I haven't written this code yet!\"
 }
 
 pub fn todo_without_reason() {
   todo
 }",
-  ),
-  Lesson(
-    chapter: "Advanced features",
-    title: "Panic",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Advanced features",
+      title: "Panic",
+      prose: "<p>
   The <code>panic</code> keyword is similar to the <code>todo</code> keyword,
   but it is used to crash the program when the program has reached a point that
   should never be reached.
@@ -2219,7 +2219,7 @@ pub fn todo_without_reason() {
   a sign that the design could be improved. With well designed types the type
   system can typically be used to make these invalid states unrepresentable.
 </p>",
-    code: "import gleam/io
+      code: "import gleam/io
 
 pub fn main() {
   print_score(10)
@@ -2234,11 +2234,11 @@ pub fn print_score(score: Int) {
     _ -> panic as \"Scores should never be negative!\"
   }
 }",
-  ),
-  Lesson(
-    chapter: "Advanced features",
-    title: "Let assert",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Advanced features",
+      title: "Let assert",
+      prose: "<p>
   <code>let assert</code> is another way to intentionally crash your Gleam
   program. It is similar to the <code>panic</code> keyword in that it crashes
   when the program has reached a point that should never be reached.
@@ -2258,7 +2258,7 @@ pub fn print_score(score: Int) {
   Like <code>panic</code> this feature should be used sparingly, and likely not
   at all in libraries.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   let a = unsafely_get_first_element([123])
   echo a
 
@@ -2272,11 +2272,11 @@ pub fn unsafely_get_first_element(items: List(a)) -> a {
   let assert [first, ..] = items as \"List should not be empty\"
   first
 }",
-  ),
-  Lesson(
-    chapter: "Advanced features",
-    title: "Bool assert",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Advanced features",
+      title: "Bool assert",
+      prose: "<p>
   Bool <code>assert</code> is the final way to cause a panic in Gleam, used for
   writing test assertions. It is similar to <code>let assert</code>, except instead
   of asserting that a value matches a specific pattern, it asserts that a boolean
@@ -2291,7 +2291,7 @@ pub fn unsafely_get_first_element(items: List(a)) -> a {
   Bool <code>assert</code> is designed to be used in test code, and should almost
   never be used in applications or libraries.
 </p>",
-    code: "pub fn main() {
+      code: "pub fn main() {
   assert add(1, 2) == 3
 
   assert add(1, 2) < add(1, 3)
@@ -2304,11 +2304,11 @@ pub fn unsafely_get_first_element(items: List(a)) -> a {
 fn add(a: Int, b: Int) -> Int {
   a + b
 }",
-  ),
-  Lesson(
-    chapter: "Advanced features",
-    title: "Externals",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Advanced features",
+      title: "Externals",
+      prose: "<p>
   Sometimes in our projects we want to use code written in other languages, most
   commonly Erlang and JavaScript, depending on which runtime is being used.
   Gleam's <em>external functions</em> and <em>external types</em> allow us to
@@ -2333,7 +2333,7 @@ fn add(a: Int, b: Int) -> Int {
   External functions are useful but should be used sparingly. Prefer to write
   Gleam code where possible.
 </p>",
-    code: "// A type with no Gleam constructors
+      code: "// A type with no Gleam constructors
 pub type DateTime
 
 // An external function that creates an instance of the type
@@ -2348,11 +2348,11 @@ pub fn now() -> DateTime
 pub fn main() {
   echo now()
 }",
-  ),
-  Lesson(
-    chapter: "Advanced features",
-    title: "Multi target externals",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Advanced features",
+      title: "Multi target externals",
+      prose: "<p>
   Multiple external implementations can be specified for the same function,
   enabling the function to work on both Erlang and JavaScript.
 </p>
@@ -2374,7 +2374,7 @@ pub fn main() {
   Libraries that make use of concurrent IO will typically have to decide whether
   they support Erlang or JavaScript, and document this in their README.
 </p>",
-    code: "pub type DateTime
+      code: "pub type DateTime
 
 @external(erlang, \"calendar\", \"local_time\")
 @external(javascript, \"./my_package_ffi.mjs\", \"now\")
@@ -2383,11 +2383,11 @@ pub fn now() -> DateTime
 pub fn main() {
   echo now()
 }",
-  ),
-  Lesson(
-    chapter: "Advanced features",
-    title: "External gleam fallbacks",
-    prose: "<p>
+    ),
+    Lesson(
+      chapter: "Advanced features",
+      title: "External gleam fallbacks",
+      prose: "<p>
   It's possible for a function to have both a Gleam implementation and an
   external implementation. If there exists an external implementation for the
   currently compiled-for target then it will be used, otherwise the Gleam
@@ -2405,7 +2405,7 @@ pub fn main() {
   <a target=\"_blank\" rel=\"noopener\" href=\"https://gleam.run/documentation/externals/\" target=\"_blank\"
     >externals guide</a> on the Gleam website.
 </p>",
-    code: "@external(erlang, \"lists\", \"reverse\")
+      code: "@external(erlang, \"lists\", \"reverse\")
 pub fn reverse_list(items: List(e)) -> List(e) {
   tail_recursive_reverse(items, [])
 }
@@ -2421,6 +2421,6 @@ pub fn main() {
   echo reverse_list([1, 2, 3, 4, 5])
   echo reverse_list([\"a\", \"b\", \"c\", \"d\", \"e\"])
 }",
-  ),
+    ),
   ]
 }

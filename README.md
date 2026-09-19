@@ -29,7 +29,7 @@ if you looked at the solution. The first encounter grades from the moment it
 opens. From the second scheduled review on, a run is required first — the
 tests are feedback to grade against, not a verdict. The review log still
 records every failed run and every reveal, so the stats stay honest. A drill
-this browser cannot run — an Elixir drill as a guest — has nothing to run, so
+this browser cannot run — an Elixir or Go drill as a guest — has nothing to run, so
 it grades from open every time. Study reps always start from the starter
 stub — your last answer is never sitting in the editor.
 
@@ -120,6 +120,12 @@ client-side for three of the four languages:
   (`server/src/server/exec.gleam`, `server/priv/run.exs`). Runs are
   rate-limited per user and capped node-wide. A guest gets the reveal-only
   flashcard instead, with free grading, since the server wants a session.
+- **Go** drills run on the server the same way (`server/priv/run-go`). The
+  attempt, its harness and `drills/go/prelude.go` (the report writer, list
+  and tree builders) are one `package main`; `go build` runs first, and a
+  build failure comes back as a compile error at its line in the attempt.
+  The container warms a build cache for the runner user at image build so
+  an attempt compiles in about a second.
 
 It works on a phone: the layout collapses to one column, the side panels scroll
 in place so the editor is always on the first screen, the run bar sticks to the
@@ -140,6 +146,7 @@ practice.
 | NeetCode 150 (Gleam) | Gleam | 150 | 301 | yes |
 | NeetCode 150 (TypeScript) | TypeScript | 150 | 302 | yes |
 | NeetCode 150 (Elixir) | Elixir | 150 | 302 | yes — on the server |
+| NeetCode 150 (Go) | Go | 150 | 302 | yes — on the server |
 | Gleam Language Tour | Gleam | 63 lessons | — | runs as you type; its own screen, not scheduled |
 | Python Tips / Idioms | Python | 8 | 16 | yes |
 | Gleam Tips / Idioms | Gleam | 10 | 20 | yes |
@@ -181,8 +188,8 @@ Every problem carries at least two solutions taking genuinely different
 approaches, each with its own write-up. Where a language cannot do a thing —
 Gleam has no heap, no deque and no mutable references — the drill says so rather
 than claiming a complexity it does not have, and the representation changes to
-suit: linked lists are real nodes in Python and TypeScript, cons lists in Gleam
-and Elixir.
+suit: linked lists are real nodes in Python, TypeScript and Go, cons lists in
+Gleam and Elixir.
 
 Every drill carries a required signature, a starter stub, a progressive
 **Approach** hint ladder — a vague nudge, then the plan as a walkthrough
@@ -271,16 +278,17 @@ Transport stays each side's own business: HTTP clients, error types and wisp
 responses do not belong in the shared package.
 
 Drill content is data: each drill is a real, runnable source file in
-`drills/{src,python/solutions,ts/solutions,elixir/solutions}` plus a harness
+`drills/{src,python/solutions,ts/solutions,elixir/solutions,go/solutions}` plus a harness
 next to it; `gleam run -m generate` embeds them into the app and derives
 signatures and starter stubs. Alternates live as `<module>__<variant>` files,
 and are labelled from the filename — adding one is a new file and nothing else.
 
-Every solution — primaries and alternates, all four languages — is verified
+Every solution — primaries and alternates, all five languages — is verified
 against its harness natively by `make verify`. Gleam's checks are hand-written
-and typed (`drills/src/solutions.gleam`); the Python, TypeScript and Elixir
-verifiers are *generated*, so the list of variants they run can never drift
-from the list the app embeds. They need `python3`, `bun` and `elixir` on PATH.
+and typed (`drills/src/solutions.gleam`); the Python, TypeScript, Elixir and
+Go verifiers are *generated*, so the list of variants they run can never drift
+from the list the app embeds. They need `python3`, `bun`, `elixir` and `go` on
+PATH.
 
 ## Develop / ship
 

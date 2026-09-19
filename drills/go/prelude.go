@@ -43,6 +43,13 @@ type Node struct {
 	Neighbors []*Node
 }
 
+// RandomNode is LeetCode's node for Copy List with Random Pointer.
+type RandomNode struct {
+	Val    int
+	Next   *RandomNode
+	Random *RandomNode
+}
+
 type testCase struct {
 	label, expected, actual string
 }
@@ -280,6 +287,18 @@ func adjacency(node *Node) [][]int {
 		out[val-1] = row
 	}
 	return out
+}
+
+// find is the node holding a value, for problems that take nodes as
+// arguments (lowest common ancestor). Nil when absent.
+func find(root *TreeNode, val int) *TreeNode {
+	if root == nil || root.Val == val {
+		return root
+	}
+	if left := find(root.Left, val); left != nil {
+		return left
+	}
+	return find(root.Right, val)
 }
 
 // sortInts is a sorted copy, for answers whose order is free.

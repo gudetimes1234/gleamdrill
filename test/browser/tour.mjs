@@ -1991,6 +1991,37 @@ await exitDrill();
 await page.waitForTimeout(800);
 await goHome();
 
+// ---------------------------------------------------------------- act 9c
+act = "09c-go-server";
+console.log(act);
+
+// Go runs the same way: the attempt is compiled and run on the API, and a
+// build error is a compile error at its line. Still signed in.
+await page.click("text=Browse problems");
+await page.waitForSelector(".menu-container", { timeout: 10000 });
+await openByHand("Go", "Arrays & Hashing", "Contains Duplicate");
+check("signed in, a Go drill offers Run",
+  (await page.$$(".run-button")).length === 1 && (await page.$$(".run-unavailable")).length === 0);
+check("the Go starter is a package with a todo body",
+  (await page.$eval("gleam-editor", (el) => el.doc)).includes('panic("todo")'));
+await waitForRunnable();
+await setCode("package main\n\nimport \"fmt\"\n\nfunc containsDuplicate(nums []int) bool {\n\tfmt.Println(\"checking\", len(nums), \"numbers\")\n\tseen := map[int]bool{}\n\tfor _, n := range nums {\n\t\tif seen[n] {\n\t\t\treturn true\n\t\t}\n\t\tseen[n] = true\n\t}\n\treturn false\n}\n");
+await page.click(".run-button");
+await page.waitForFunction(() => {
+  const s = document.querySelector(".results-summary");
+  return s && !s.classList.contains("running");
+}, { timeout: 60000 });
+check("the server built and ran it and every case passed",
+  (await page.$$(".case.pass")).length === 4 && (await page.$$(".case.fail")).length === 0,
+  `${(await page.$$(".case.pass")).length} passed`);
+check("what it printed came back with it",
+  (await page.textContent(".output-pane")).includes("checking 4 numbers"));
+await capture("go-passed", "Go solution compiled and run on the server: four cases green, output shown",
+  "Go attempt ran on the server");
+await exitDrill();
+await page.waitForTimeout(800);
+await goHome();
+
 // ---------------------------------------------------------------- act 10
 act = "10-failures";
 console.log(act);
