@@ -131,6 +131,13 @@ jobs:
           # No module dependencies, so there is no go.sum to key a cache on.
           cache: false
 
+      # An attempt's build shares the standard library cache; cold, that
+      # first compile alone outlasts the attempt's clock and the exec tests
+      # report a timeout. Warm it once, with the flags priv/run-go sets so
+      # the cache keys match (server/Dockerfile does the same for the image).
+      - name: Warm the Go build cache
+        run: CGO_ENABLED=0 go build std
+
       # The app half of the tree is not built here, but `server` path-depends
       # on ../fsrs, which is why the whole repo is checked out.
       - name: Build
