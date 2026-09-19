@@ -5417,6 +5417,3621 @@ func main() {
   )
 }
 
+pub fn nc64_climbing_stairs() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(n) time · O(n) space",
+        "The same recurrence from the top down, with a cache. Heavier than the rolling pair, but it is the shape you reach for first when the recurrence is not obviously a straight line — and the memo is the entire difference between O(n) and O(2ⁿ).",
+        "package main
+
+func climbStairs(n int) int {
+	memo := map[int]int{}
+	var ways func(i int) int
+	ways = func(i int) int {
+		if i <= 1 {
+			return 1
+		}
+		if v, ok := memo[i]; ok {
+			return v
+		}
+		memo[i] = ways(i-1) + ways(i-2)
+		return memo[i]
+	}
+	return ways(n)
+}",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "The last move was either one step or two, so the ways to reach step n are the ways to reach n−1 plus the ways to reach n−2 — Fibonacci with a staircase painted on it. Only the last two values ever matter, so two variables replace the whole table.",
+        "package main
+
+func climbStairs(n int) int {
+	// Ways to reach step i = ways to reach i-1 + ways to reach i-2: the
+	// Fibonacci recurrence, kept in two variables.
+	previous, current := 1, 1
+	for i := 2; i <= n; i++ {
+		previous, current = current, previous+current
+	}
+	return current
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func climbStairs(n int) int",
+      starter: "package main
+
+func climbStairs(n int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"climbStairs(2)\", 2, climbStairs(2)),
+			tc(\"climbStairs(3)\", 3, climbStairs(3)),
+			tc(\"climbStairs(1)\", 1, climbStairs(1)),
+			tc(\"climbStairs(10)\", 89, climbStairs(10)),
+			tc(\"climbStairs(45)\", 1836311903, climbStairs(45)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc65_min_cost_climbing_stairs() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backward DP",
+        "O(n) time · O(1) space",
+        "The same recurrence read the other way: not \"what did it cost to get here\" but \"what will it cost to finish from here\". Walking backwards, each step's answer is its own price plus the cheaper of the two ahead. Worth writing both — one direction is usually far easier to state than the other, and which one varies by problem.",
+        "package main
+
+func minCostClimbingStairs(cost []int) int {
+	// Recurse from the top down with a memo: the cost to finish from step
+	// i is its own cost plus the cheaper of finishing from i+1 or i+2.
+	memo := map[int]int{}
+	var from func(i int) int
+	from = func(i int) int {
+		if i >= len(cost) {
+			return 0
+		}
+		if v, ok := memo[i]; ok {
+			return v
+		}
+		memo[i] = cost[i] + min(from(i+1), from(i+2))
+		return memo[i]
+	}
+	return min(from(0), from(1))
+}",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "Cost to stand on each step, carried forward: getting here means having paid for one of the two steps below, whichever was cheaper. Two variables again, because nothing older than two steps back can matter. Either of the first two steps is a legal start, which is what the final min covers.",
+        "package main
+
+func minCostClimbingStairs(cost []int) int {
+	// Cheapest way to stand on step i, having paid for it, comes from the
+	// cheaper of the two steps below. The top is one past the last step.
+	twoBack, oneBack := cost[0], cost[1]
+	for i := 2; i < len(cost); i++ {
+		twoBack, oneBack = oneBack, cost[i]+min(twoBack, oneBack)
+	}
+	return min(twoBack, oneBack)
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func minCostClimbingStairs(cost []int) int",
+      starter: "package main
+
+func minCostClimbingStairs(cost []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"minCostClimbingStairs([10,15,20])\", 15, minCostClimbingStairs([]int{10, 15, 20})),
+			tc(\"minCostClimbingStairs([1,100,1,1,1,100,1,1,100,1])\", 6, minCostClimbingStairs([]int{1, 100, 1, 1, 1, 100, 1, 1, 100, 1})),
+			tc(\"minCostClimbingStairs([0,0])\", 0, minCostClimbingStairs([]int{0, 0})),
+			tc(\"minCostClimbingStairs([5,1])\", 1, minCostClimbingStairs([]int{5, 1})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc66_house_robber() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(n) time · O(n) space",
+        "The same choice written as a recursion from the front: rob this house and skip the next, or skip this one. Exponential without the cache and linear with it — which is the lesson, because the rolling pair hides that the problem ever had a tree of choices at all.",
+        "package main
+
+func rob(nums []int) int {
+	memo := map[int]int{}
+	var from func(i int) int
+	from = func(i int) int {
+		if i >= len(nums) {
+			return 0
+		}
+		if v, ok := memo[i]; ok {
+			return v
+		}
+		memo[i] = max(nums[i]+from(i+2), from(i+1))
+		return memo[i]
+	}
+	return from(0)
+}",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "At each house the choice is take it and add what was safe two houses back, or skip it and keep the best so far. Both of those are one number, so the whole table collapses to a pair of running values.",
+        "package main
+
+func rob(nums []int) int {
+	// Best haul up to each house: rob it (plus the best two back) or skip
+	// it (the best one back).
+	twoBack, oneBack := 0, 0
+	for _, n := range nums {
+		twoBack, oneBack = oneBack, max(oneBack, twoBack+n)
+	}
+	return oneBack
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func rob(nums []int) int",
+      starter: "package main
+
+func rob(nums []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"rob([1,2,3,1])\", 4, rob([]int{1, 2, 3, 1})),
+			tc(\"rob([2,7,9,3,1])\", 12, rob([]int{2, 7, 9, 3, 1})),
+			tc(\"rob([5])\", 5, rob([]int{5})),
+			tc(\"rob([])\", 0, rob([]int{})),
+			tc(\"rob([2,1,1,2])\", 4, rob([]int{2, 1, 1, 2})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc67_house_robber_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "One-Pass DP",
+        "O(n) time · O(1) space",
+        "One pass carrying both stories at the same time: the run allowed to take the first house, and the run that is not. Neither ever consults the other, so this is exactly the two-pass version interleaved — worth knowing when the input can only be walked once.",
+        "package main
+
+func rob(nums []int) int {
+	if len(nums) == 1 {
+		return nums[0]
+	}
+	// One pass over the array, carrying two states: the best excluding the
+	// first house and the best excluding the last.
+	var skipFirst, skipLast [2]int // {twoBack, oneBack}
+	for i, n := range nums {
+		if i > 0 {
+			skipFirst = [2]int{skipFirst[1], max(skipFirst[1], skipFirst[0]+n)}
+		}
+		if i < len(nums)-1 {
+			skipLast = [2]int{skipLast[1], max(skipLast[1], skipLast[0]+n)}
+		}
+	}
+	return max(skipFirst[1], skipLast[1])
+}",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(n) space",
+        "The circle matters through exactly one constraint: the first and last houses are neighbours, so at most one of them is robbed. Ruling each out in turn leaves two ordinary straight-line problems, and the answer is the better of the two — reusing a solved problem rather than inventing a circular recurrence.",
+        "package main
+
+func rob(nums []int) int {
+	if len(nums) == 1 {
+		return nums[0]
+	}
+	// The circle means the first and last house cannot both be robbed, so
+	// the answer is the better of the two straight-line problems that
+	// leave one of them out.
+	return max(robLine(nums[1:]), robLine(nums[:len(nums)-1]))
+}
+
+func robLine(nums []int) int {
+	twoBack, oneBack := 0, 0
+	for _, n := range nums {
+		twoBack, oneBack = oneBack, max(oneBack, twoBack+n)
+	}
+	return oneBack
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func rob(nums []int) int
+
+func robLine(nums []int) int",
+      starter: "package main
+
+func rob(nums []int) int {
+	panic(\"todo\")
+}
+
+func robLine(nums []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"rob([2,3,2])\", 3, rob([]int{2, 3, 2})),
+			tc(\"rob([1,2,3,1])\", 4, rob([]int{1, 2, 3, 1})),
+			tc(\"rob([1,2,3])\", 3, rob([]int{1, 2, 3})),
+			tc(\"rob([1])\", 1, rob([]int{1})),
+			tc(\"rob([1,2])\", 2, rob([]int{1, 2})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc68_longest_palindrome() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n³) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every start with every length, each checked against its own reverse. O(n³), and the thing centre expansion optimises: it never re-checks the inside of a palindrome it has already grown through.",
+        "package main
+
+func longestPalindrome(s string) string {
+	best := \"\"
+	for i := 0; i < len(s); i++ {
+		for j := i + 1; j <= len(s); j++ {
+			if j-i > len(best) && isPalindrome(s[i:j]) {
+				best = s[i:j]
+			}
+		}
+	}
+	return best
+}
+
+func isPalindrome(s string) bool {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		if s[i] != s[j] {
+			return false
+		}
+	}
+	return true
+}",
+      ),
+      #(
+        "Centre Expansion",
+        "O(n²) time · O(1) space",
+        "Every palindrome has a centre, and there are only 2n of them — n characters and n gaps between them. Growing outwards from each is O(n²) with no table at all. The gaps are what people forget: without them, every even-length palindrome is invisible.",
+        "package main
+
+func longestPalindrome(s string) string {
+	best := \"\"
+	// Every palindrome has a centre: a character, or the gap between two.
+	// Expand from each of the 2n-1 centres while the ends match.
+	for centre := 0; centre < len(s); centre++ {
+		for _, candidate := range []string{expand(s, centre, centre), expand(s, centre, centre+1)} {
+			if len(candidate) > len(best) {
+				best = candidate
+			}
+		}
+	}
+	return best
+}
+
+func expand(s string, left, right int) string {
+	for left >= 0 && right < len(s) && s[left] == s[right] {
+		left--
+		right++
+	}
+	return s[left+1 : right]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func longestPalindrome(s string) string
+
+func expand(s string, left, right int) string",
+      starter: "package main
+
+func longestPalindrome(s string) string {
+	panic(\"todo\")
+}
+
+func expand(s string, left, right int) string {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"longestPalindrome('babad')\", \"bab\", longestPalindrome(\"babad\")),
+			tc(\"longestPalindrome('cbbd')\", \"bb\", longestPalindrome(\"cbbd\")),
+			tc(\"longestPalindrome('a')\", \"a\", longestPalindrome(\"a\")),
+			tc(\"longestPalindrome('forgeeksskeegfor')\", \"geeksskeeg\", longestPalindrome(\"forgeeksskeegfor\")),
+			tc(\"len(longestPalindrome('abcd'))\", 1, len(longestPalindrome(\"abcd\"))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc69_palindromic_substrings() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bottom-Up DP",
+        "O(n²) time · O(n²) space",
+        "A table over spans: s[i..j] is a palindrome when its ends match and the span inside already was. That dependency forces the fill order — shortest spans first — which is the only real content of the outer loop and the thing to get right.",
+        "package main
+
+func countSubstrings(s string) int {
+	n := len(s)
+	// table[i][j]: is s[i..j] a palindrome? True when the ends match and
+	// the inside is one (or is at most one character).
+	table := make([][]bool, n)
+	for i := range table {
+		table[i] = make([]bool, n)
+	}
+	count := 0
+	for i := n - 1; i >= 0; i-- {
+		for j := i; j < n; j++ {
+			if s[i] == s[j] && (j-i < 2 || table[i+1][j-1]) {
+				table[i][j] = true
+				count++
+			}
+		}
+	}
+	return count
+}",
+      ),
+      #(
+        "Centre Expansion",
+        "O(n²) time · O(1) space",
+        "The same 2n centres as finding the longest one, except that here every successful widening is itself an answer. So the count is how many times the expansion succeeded rather than how far it got — one line different, same scan.",
+        "package main
+
+func countSubstrings(s string) int {
+	count := 0
+	// Expand from each of the 2n-1 centres; every successful widening is
+	// one more palindrome.
+	for centre := 0; centre < len(s); centre++ {
+		count += expandCount(s, centre, centre) + expandCount(s, centre, centre+1)
+	}
+	return count
+}
+
+func expandCount(s string, left, right int) int {
+	count := 0
+	for left >= 0 && right < len(s) && s[left] == s[right] {
+		count++
+		left--
+		right++
+	}
+	return count
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func countSubstrings(s string) int
+
+func expandCount(s string, left, right int) int",
+      starter: "package main
+
+func countSubstrings(s string) int {
+	panic(\"todo\")
+}
+
+func expandCount(s string, left, right int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"countSubstrings('abc')\", 3, countSubstrings(\"abc\")),
+			tc(\"countSubstrings('aaa')\", 6, countSubstrings(\"aaa\")),
+			tc(\"countSubstrings('')\", 0, countSubstrings(\"\")),
+			tc(\"countSubstrings('abba')\", 6, countSubstrings(\"abba\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc70_decode_ways() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(n) time · O(n) space",
+        "The same two choices as a recursion from the front: take one character, or take two if they form a legal pair. Reaching the end is one complete decoding, which is why the base case returns 1 and not 0 — the single most common place to get this problem wrong.",
+        "package main
+
+func numDecodings(s string) int {
+	memo := map[int]int{}
+	var from func(i int) int
+	from = func(i int) int {
+		if i == len(s) {
+			return 1
+		}
+		if s[i] == '0' {
+			return 0
+		}
+		if v, ok := memo[i]; ok {
+			return v
+		}
+		ways := from(i + 1)
+		if i+1 < len(s) && (s[i] == '1' || s[i] == '2' && s[i+1] <= '6') {
+			ways += from(i + 2)
+		}
+		memo[i] = ways
+		return ways
+	}
+	return from(0)
+}",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "Two rolling counts. The ways to decode up to here are the ways up to the previous character, if this one can stand alone, plus the ways up to the one before that, if this one and its predecessor read as 10 to 26. A leading zero kills the first branch; anything outside that range kills the second.",
+        "package main
+
+func numDecodings(s string) int {
+	if len(s) == 0 || s[0] == '0' {
+		return 0
+	}
+	// Ways to decode the prefix ending here: the last digit alone (if not
+	// zero) plus the last two digits together (if 10..26).
+	twoBack, oneBack := 1, 1
+	for i := 1; i < len(s); i++ {
+		current := 0
+		if s[i] != '0' {
+			current += oneBack
+		}
+		pair := int(s[i-1]-'0')*10 + int(s[i]-'0')
+		if pair >= 10 && pair <= 26 {
+			current += twoBack
+		}
+		twoBack, oneBack = oneBack, current
+	}
+	return oneBack
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func numDecodings(s string) int",
+      starter: "package main
+
+func numDecodings(s string) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"numDecodings('12')\", 2, numDecodings(\"12\")),
+			tc(\"numDecodings('226')\", 3, numDecodings(\"226\")),
+			tc(\"numDecodings('06')\", 0, numDecodings(\"06\")),
+			tc(\"numDecodings('10')\", 1, numDecodings(\"10\")),
+			tc(\"numDecodings('27')\", 1, numDecodings(\"27\")),
+			tc(\"numDecodings('100')\", 0, numDecodings(\"100\")),
+			tc(\"numDecodings('1111')\", 5, numDecodings(\"1111\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc71_coin_change() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "BFS",
+        "O(amount·coins) time · O(amount) space",
+        "The amounts reachable with k coins are one level of a breadth-first search from zero, so the first level containing the target is the answer. Same bound as the table, but it stops the moment it arrives rather than filling in every amount below the target — and it makes clear why the answer is a shortest path.",
+        "package main
+
+func coinChange(coins []int, amount int) int {
+	// Amounts are nodes, coins are edges: the fewest coins is the shortest
+	// path from 0 to amount, which breadth-first search finds level by level.
+	if amount == 0 {
+		return 0
+	}
+	seen := make([]bool, amount+1)
+	seen[0] = true
+	frontier := []int{0}
+	for steps := 1; len(frontier) > 0; steps++ {
+		next := []int{}
+		for _, a := range frontier {
+			for _, coin := range coins {
+				b := a + coin
+				if b == amount {
+					return steps
+				}
+				if b < amount && !seen[b] {
+					seen[b] = true
+					next = append(next, b)
+				}
+			}
+		}
+		frontier = next
+	}
+	return -1
+}",
+      ),
+      #(
+        "Bottom-Up DP",
+        "O(amount·coins) time · O(amount) space",
+        "Build up from zero: the cheapest way to make a target is one coin more than the cheapest way to make what is left after removing some coin. Leaving unreachable amounts simply absent from the table saves inventing a sentinel for infinity and the comparisons that go with it.",
+        "package main
+
+func coinChange(coins []int, amount int) int {
+	// fewest[a] is the fewest coins making a; a sentinel above any real
+	// answer stands for \"not yet reachable\".
+	unreachable := amount + 1
+	fewest := make([]int, amount+1)
+	for a := 1; a <= amount; a++ {
+		fewest[a] = unreachable
+		for _, coin := range coins {
+			if coin <= a {
+				fewest[a] = min(fewest[a], fewest[a-coin]+1)
+			}
+		}
+	}
+	if fewest[amount] == unreachable {
+		return -1
+	}
+	return fewest[amount]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func coinChange(coins []int, amount int) int",
+      starter: "package main
+
+func coinChange(coins []int, amount int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"coinChange([1,2,5], 11)\", 3, coinChange([]int{1, 2, 5}, 11)),
+			tc(\"coinChange([2], 3)\", -1, coinChange([]int{2}, 3)),
+			tc(\"coinChange([1], 0)\", 0, coinChange([]int{1}, 0)),
+			tc(\"coinChange([186,419,83,408], 6249)\", 20, coinChange([]int{186, 419, 83, 408}, 6249)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc72_maximum_product_subarray() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Prefix & Suffix Products",
+        "O(n) time · O(n) space",
+        "A different argument entirely: the best subarray always runs to one end of the zero-free block it sits in, so running products swept from both directions — reset at each zero — cover every candidate. No min to track, and the reason it works is worth being able to state.",
+        "package main
+
+func maxProduct(nums []int) int {
+	// The best subarray is a prefix or a suffix of some zero-free stretch:
+	// take running products from both ends, restarting after a zero.
+	best := nums[0]
+	prefix, suffix := 1, 1
+	n := len(nums)
+	for i := 0; i < n; i++ {
+		if prefix == 0 {
+			prefix = 1
+		}
+		if suffix == 0 {
+			suffix = 1
+		}
+		prefix *= nums[i]
+		suffix *= nums[n-1-i]
+		best = max(best, max(prefix, suffix))
+	}
+	return best
+}",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "A negative number turns the best running product into the worst and the worst into the best, so both have to be carried. Zero resets them, which falls out for free from taking the element itself as one of the candidates rather than special-casing it.",
+        "package main
+
+func maxProduct(nums []int) int {
+	// A negative flips the largest and smallest products ending here, so
+	// carry both: the smallest may become the largest at the next negative.
+	best := nums[0]
+	largest, smallest := 1, 1
+	for _, n := range nums {
+		candidates := []int{n, largest * n, smallest * n}
+		largest = max(candidates[0], max(candidates[1], candidates[2]))
+		smallest = min(candidates[0], min(candidates[1], candidates[2]))
+		best = max(best, largest)
+	}
+	return best
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func maxProduct(nums []int) int",
+      starter: "package main
+
+func maxProduct(nums []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"maxProduct([2,3,-2,4])\", 6, maxProduct([]int{2, 3, -2, 4})),
+			tc(\"maxProduct([-2,0,-1])\", 0, maxProduct([]int{-2, 0, -1})),
+			tc(\"maxProduct([-2])\", -2, maxProduct([]int{-2})),
+			tc(\"maxProduct([-2,3,-4])\", 24, maxProduct([]int{-2, 3, -4})),
+			tc(\"maxProduct([0,2])\", 2, maxProduct([]int{0, 2})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc73_word_break() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(n³) time · O(n) space",
+        "Top-down: from this position, does a dictionary word start here and leave a suffix that also breaks? Without the cache the same suffix is asked about once per way of reaching it, which is where the exponential blow-up on inputs like \"aaaa…b\" comes from.",
+        "package main
+
+import \"strings\"
+
+func wordBreak(s string, wordDict []string) bool {
+	memo := map[int]bool{}
+	var from func(i int) bool
+	from = func(i int) bool {
+		if i == len(s) {
+			return true
+		}
+		if v, ok := memo[i]; ok {
+			return v
+		}
+		for _, w := range wordDict {
+			if strings.HasPrefix(s[i:], w) && from(i+len(w)) {
+				memo[i] = true
+				return true
+			}
+		}
+		memo[i] = false
+		return false
+	}
+	return from(0)
+}",
+      ),
+      #(
+        "Bottom-Up DP",
+        "O(n³) time · O(n) space",
+        "Reachable positions rather than a table of booleans: position 0 is reachable, and a position becomes reachable when some dictionary word bridges the gap from one already reached. The answer is whether the end is reachable.",
+        "package main
+
+func wordBreak(s string, wordDict []string) bool {
+	words := map[string]bool{}
+	for _, w := range wordDict {
+		words[w] = true
+	}
+	// breakable[i]: can s[:i] be segmented? True when some word ends at i
+	// and the prefix before it was breakable.
+	breakable := make([]bool, len(s)+1)
+	breakable[0] = true
+	for end := 1; end <= len(s); end++ {
+		for start := 0; start < end; start++ {
+			if breakable[start] && words[s[start:end]] {
+				breakable[end] = true
+				break
+			}
+		}
+	}
+	return breakable[len(s)]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func wordBreak(s string, wordDict []string) bool",
+      starter: "package main
+
+func wordBreak(s string, wordDict []string) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"wordBreak('leetcode', ['leet','code'])\", true, wordBreak(\"leetcode\", []string{\"leet\", \"code\"})),
+			tc(\"wordBreak('applepenapple', ['apple','pen'])\", true, wordBreak(\"applepenapple\", []string{\"apple\", \"pen\"})),
+			tc(\"wordBreak('catsandog', ['cats','dog','sand','and','cat'])\", false, wordBreak(\"catsandog\", []string{\"cats\", \"dog\", \"sand\", \"and\", \"cat\"})),
+			tc(\"wordBreak('', ['a'])\", true, wordBreak(\"\", []string{\"a\"})),
+			tc(\"wordBreak('a', [])\", false, wordBreak(\"a\", []string{})),
+			tc(\"wordBreak('aaaaaaa', ['aaa','aaaa'])\", true, wordBreak(\"aaaaaaa\", []string{\"aaa\", \"aaaa\"})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc74_longest_increasing_subsequence() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bottom-Up DP",
+        "O(n²) time · O(n) space",
+        "The longest subsequence ending at each position: one plus the best of every earlier position holding a smaller value. O(n²), and the version to reach for first because the recurrence is stated directly rather than encoded.",
+        "package main
+
+func lengthOfLIS(nums []int) int {
+	if len(nums) == 0 {
+		return 0
+	}
+	// longest[i]: length of the longest increasing subsequence ending at i,
+	// one more than the best among smaller earlier elements.
+	longest := make([]int, len(nums))
+	best := 1
+	for i := range nums {
+		longest[i] = 1
+		for j := 0; j < i; j++ {
+			if nums[j] < nums[i] {
+				longest[i] = max(longest[i], longest[j]+1)
+			}
+		}
+		best = max(best, longest[i])
+	}
+	return best
+}",
+      ),
+      #(
+        "Patience Sorting",
+        "O(n log n) time · O(n) space",
+        "Patience sorting. Keep the smallest value that a subsequence of each length can end with; that list stays sorted, so each number either extends it or replaces the first entry it is no bigger than — a halving search, giving O(n log n). Note what the list is not: it is not the answer subsequence, only its length is meaningful.",
+        "package main
+
+import \"sort\"
+
+func lengthOfLIS(nums []int) int {
+	// tails[k] is the smallest tail of any increasing subsequence of
+	// length k+1. Each number replaces the first tail not below it (or
+	// extends the list); the list's length is the answer. O(n log n).
+	tails := []int{}
+	for _, n := range nums {
+		i := sort.SearchInts(tails, n)
+		if i == len(tails) {
+			tails = append(tails, n)
+		} else {
+			tails[i] = n
+		}
+	}
+	return len(tails)
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func lengthOfLIS(nums []int) int",
+      starter: "package main
+
+func lengthOfLIS(nums []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"lengthOfLIS([10,9,2,5,3,7,101,18])\", 4, lengthOfLIS([]int{10, 9, 2, 5, 3, 7, 101, 18})),
+			tc(\"lengthOfLIS([0,1,0,3,2,3])\", 4, lengthOfLIS([]int{0, 1, 0, 3, 2, 3})),
+			tc(\"lengthOfLIS([7,7,7,7])\", 1, lengthOfLIS([]int{7, 7, 7, 7})),
+			tc(\"lengthOfLIS([])\", 0, lengthOfLIS([]int{})),
+			tc(\"lengthOfLIS([5,4,3,2,1])\", 1, lengthOfLIS([]int{5, 4, 3, 2, 1})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc75_partition_equal_subset() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(n·sum) time · O(n·sum) space",
+        "Take this number or leave it, keyed by how much is still owed and how far along the list you are. As a recursion it is obviously a search over subsets, which the reachable-sums version hides — and the cache is what stops it enumerating all 2ⁿ of them.",
+        "package main
+
+func canPartition(nums []int) bool {
+	total := 0
+	for _, n := range nums {
+		total += n
+	}
+	if total%2 == 1 {
+		return false
+	}
+	memo := map[[2]int]bool{}
+	var from func(i, remaining int) bool
+	from = func(i, remaining int) bool {
+		if remaining == 0 {
+			return true
+		}
+		if i == len(nums) || remaining < 0 {
+			return false
+		}
+		key := [2]int{i, remaining}
+		if v, ok := memo[key]; ok {
+			return v
+		}
+		memo[key] = from(i+1, remaining-nums[i]) || from(i+1, remaining)
+		return memo[key]
+	}
+	return from(0, total/2)
+}",
+      ),
+      #(
+        "Bottom-Up DP",
+        "O(n·sum) time · O(sum) space",
+        "Subset sum in disguise: an equal split exists exactly when some subset adds to half the total, and an odd total rules it out before any work. Carrying the set of reachable sums needs no ordering and no table, and duplicates cost nothing because a set collapses them.",
+        "package main
+
+func canPartition(nums []int) bool {
+	total := 0
+	for _, n := range nums {
+		total += n
+	}
+	if total%2 == 1 {
+		return false
+	}
+	target := total / 2
+	// reachable[s]: can some subset sum to s? Each number extends every
+	// sum reached so far; walk downwards so a number is used once.
+	reachable := make([]bool, target+1)
+	reachable[0] = true
+	for _, n := range nums {
+		for s := target; s >= n; s-- {
+			if reachable[s-n] {
+				reachable[s] = true
+			}
+		}
+	}
+	return reachable[target]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func canPartition(nums []int) bool",
+      starter: "package main
+
+func canPartition(nums []int) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"canPartition([1,5,11,5])\", true, canPartition([]int{1, 5, 11, 5})),
+			tc(\"canPartition([1,2,3,5])\", false, canPartition([]int{1, 2, 3, 5})),
+			tc(\"canPartition([2,2])\", true, canPartition([]int{2, 2})),
+			tc(\"canPartition([1])\", false, canPartition([]int{1})),
+			tc(\"canPartition([1,2,5])\", false, canPartition([]int{1, 2, 5})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc76_kth_largest_stream() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n log n) per add · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Keep the whole stream and sort on demand. Wrong for a real stream — memory grows without bound and every query costs a sort — but it is the definition, and it is what the bounded version has to be checked against.",
+        "package main
+
+import \"sort\"
+
+// Keep every value sorted; the kth largest is k from the end. Each add is
+// a binary search plus an insertion shift, O(n) rather than O(log k).
+type KthLargest struct {
+	k      int
+	sorted []int
+}
+
+func Constructor(k int, nums []int) KthLargest {
+	store := KthLargest{k: k, sorted: []int{}}
+	for _, n := range nums {
+		store.Add(n)
+	}
+	return store
+}
+
+func (s *KthLargest) Add(val int) int {
+	i := sort.SearchInts(s.sorted, val)
+	s.sorted = append(s.sorted, 0)
+	copy(s.sorted[i+1:], s.sorted[i:])
+	s.sorted[i] = val
+	if len(s.sorted) < s.k {
+		return -1
+	}
+	return s.sorted[len(s.sorted)-s.k]
+}",
+      ),
+      #(
+        "Heap",
+        "O(log k) per add · O(k) space",
+        "Only the k largest values can ever be the answer, so everything else is discarded on arrival and the store never grows past k. That is exactly the shape a bounded min-heap gives you: the smallest thing in it is the answer, and anything smaller than that never gets in. The other thing to get right is that there is no answer at all until k values have arrived.",
+        "package main
+
+import \"container/heap\"
+
+type intHeap []int
+
+func (h intHeap) Len() int           { return len(h) }
+func (h intHeap) Less(i, j int) bool { return h[i] < h[j] }
+func (h intHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *intHeap) Push(x any)        { *h = append(*h, x.(int)) }
+func (h *intHeap) Pop() any {
+	old := *h
+	x := old[len(old)-1]
+	*h = old[:len(old)-1]
+	return x
+}
+
+// A min-heap of the k largest seen so far: its smallest is the kth largest.
+type KthLargest struct {
+	k    int
+	heap *intHeap
+}
+
+func Constructor(k int, nums []int) KthLargest {
+	store := KthLargest{k: k, heap: &intHeap{}}
+	for _, n := range nums {
+		store.Add(n)
+	}
+	return store
+}
+
+func (s *KthLargest) Add(val int) int {
+	heap.Push(s.heap, val)
+	if s.heap.Len() > s.k {
+		heap.Pop(s.heap)
+	}
+	return (*s.heap)[0]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "type intHeap []int
+
+func (h intHeap) Len() int           { return len(h) }
+
+func (h intHeap) Less(i, j int) bool { return h[i] < h[j] }
+
+func (h intHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *intHeap) Push(x any)        { *h = append(*h, x.(int)) }
+
+func (h *intHeap) Pop() any
+
+type KthLargest struct { … }
+
+func Constructor(k int, nums []int) KthLargest
+
+func (s *KthLargest) Add(val int) int",
+      starter: "package main
+
+type intHeap []int
+
+func (h intHeap) Len() int           { return len(h) } {
+	panic(\"todo\")
+}
+
+func (h intHeap) Less(i, j int) bool { return h[i] < h[j] } {
+	panic(\"todo\")
+}
+
+func (h intHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] } {
+	panic(\"todo\")
+}
+
+func (h *intHeap) Push(x any)        { *h = append(*h, x.(int)) } {
+	panic(\"todo\")
+}
+
+func (h *intHeap) Pop() any {
+	panic(\"todo\")
+}
+
+type KthLargest struct {
+	// todo
+}
+
+func Constructor(k int, nums []int) KthLargest {
+	panic(\"todo\")
+}
+
+func (s *KthLargest) Add(val int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func stream(k int, initial []int, added []int) []int {
+	store := Constructor(k, initial)
+	out := []int{}
+	for _, n := range added {
+		out = append(out, store.Add(n))
+	}
+	return out
+}
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"k = 3 over [4, 5, 8, 2] then 3, 5, 10, 9, 4\", []int{4, 5, 5, 8, 8}, stream(3, []int{4, 5, 8, 2}, []int{3, 5, 10, 9, 4})),
+			tc(\"k = 1 over [] then 1, 2, 0\", []int{1, 2, 2}, stream(1, []int{}, []int{1, 2, 0})),
+			tc(\"k = 2 over [7] then 5, 5\", []int{5, 5}, stream(2, []int{7}, []int{5, 5})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc77_last_stone_weight() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "No ordering kept at all: scan for the heaviest, remove it, scan again. O(n) per round rather than O(log n), and worth writing precisely because it makes the interface obvious — the only thing the problem ever asks of the collection is \"give me the largest\".",
+        "package main
+
+import \"sort\"
+
+func lastStoneWeight(stones []int) int {
+	remaining := append([]int{}, stones...)
+	// Sort every round and take the two at the end: O(n log n) per smash,
+	// but nothing to get wrong.
+	for len(remaining) > 1 {
+		sort.Ints(remaining)
+		first := remaining[len(remaining)-1]
+		second := remaining[len(remaining)-2]
+		remaining = remaining[:len(remaining)-2]
+		if first != second {
+			remaining = append(remaining, first-second)
+		}
+	}
+	if len(remaining) == 0 {
+		return 0
+	}
+	return remaining[0]
+}",
+      ),
+      #(
+        "Heap",
+        "O(n log n) time · O(n) space",
+        "Always the two heaviest, so the collection has to give up its maximum over and over — which is exactly what a heap is for, and why this problem exists. Keeping the stones sorted is the same idea at a worse constant; the operation being asked for is what matters.",
+        "package main
+
+import \"container/heap\"
+
+type maxHeap []int
+
+func (h maxHeap) Len() int           { return len(h) }
+func (h maxHeap) Less(i, j int) bool { return h[i] > h[j] }
+func (h maxHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *maxHeap) Push(x any)        { *h = append(*h, x.(int)) }
+func (h *maxHeap) Pop() any {
+	old := *h
+	x := old[len(old)-1]
+	*h = old[:len(old)-1]
+	return x
+}
+
+func lastStoneWeight(stones []int) int {
+	h := &maxHeap{}
+	for _, s := range stones {
+		heap.Push(h, s)
+	}
+	// Smash the two heaviest; the difference, if any, goes back in.
+	for h.Len() > 1 {
+		first := heap.Pop(h).(int)
+		second := heap.Pop(h).(int)
+		if first != second {
+			heap.Push(h, first-second)
+		}
+	}
+	if h.Len() == 0 {
+		return 0
+	}
+	return (*h)[0]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "type maxHeap []int
+
+func (h maxHeap) Len() int           { return len(h) }
+
+func (h maxHeap) Less(i, j int) bool { return h[i] > h[j] }
+
+func (h maxHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *maxHeap) Push(x any)        { *h = append(*h, x.(int)) }
+
+func (h *maxHeap) Pop() any
+
+func lastStoneWeight(stones []int) int",
+      starter: "package main
+
+type maxHeap []int
+
+func (h maxHeap) Len() int           { return len(h) } {
+	panic(\"todo\")
+}
+
+func (h maxHeap) Less(i, j int) bool { return h[i] > h[j] } {
+	panic(\"todo\")
+}
+
+func (h maxHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] } {
+	panic(\"todo\")
+}
+
+func (h *maxHeap) Push(x any)        { *h = append(*h, x.(int)) } {
+	panic(\"todo\")
+}
+
+func (h *maxHeap) Pop() any {
+	panic(\"todo\")
+}
+
+func lastStoneWeight(stones []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"lastStoneWeight([2,7,4,1,8,1])\", 1, lastStoneWeight([]int{2, 7, 4, 1, 8, 1})),
+			tc(\"lastStoneWeight([1])\", 1, lastStoneWeight([]int{1})),
+			tc(\"lastStoneWeight([2,2])\", 0, lastStoneWeight([]int{2, 2})),
+			tc(\"lastStoneWeight([])\", 0, lastStoneWeight([]int{})),
+			tc(\"lastStoneWeight([10,4,2,10])\", 2, lastStoneWeight([]int{10, 4, 2, 10})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc78_k_closest_points() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sort by *squared* distance, not distance: the square root is monotonic so it cannot change the order, and skipping it keeps everything in integers with no rounding to argue about. Recognising that a monotonic transform can be dropped is worth more than the sort itself.",
+        "package main
+
+import \"container/heap\"
+
+type farthestFirst [][]int
+
+func (h farthestFirst) Len() int { return len(h) }
+func (h farthestFirst) Less(i, j int) bool {
+	return h[i][0]*h[i][0]+h[i][1]*h[i][1] > h[j][0]*h[j][0]+h[j][1]*h[j][1]
+}
+func (h farthestFirst) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
+func (h *farthestFirst) Push(x any)   { *h = append(*h, x.([]int)) }
+func (h *farthestFirst) Pop() any {
+	old := *h
+	x := old[len(old)-1]
+	*h = old[:len(old)-1]
+	return x
+}
+
+func kClosest(points [][]int, k int) [][]int {
+	// A max-heap (by distance) of size k: pushing a point and popping the
+	// farthest keeps exactly the k nearest, in O(n log k).
+	h := &farthestFirst{}
+	for _, p := range points {
+		heap.Push(h, p)
+		if h.Len() > k {
+			heap.Pop(h)
+		}
+	}
+	return append([][]int{}, *h...)
+}",
+      ),
+      #(
+        "Heap",
+        "O(n log k) time · O(k) space",
+        "Pull the nearest point out k times rather than ordering everything. O(n·k) against a full sort's O(n log n), so it wins exactly when k is small — the same argument that makes a bounded heap of size k the textbook answer here.",
+        "package main
+
+func kClosest(points [][]int, k int) [][]int {
+	remaining := append([][]int{}, points...)
+	result := [][]int{}
+	// Pick the nearest of what is left, k times: O(nk), no heap.
+	for len(result) < k {
+		nearest := 0
+		for i, p := range remaining {
+			if p[0]*p[0]+p[1]*p[1] < remaining[nearest][0]*remaining[nearest][0]+remaining[nearest][1]*remaining[nearest][1] {
+				nearest = i
+			}
+		}
+		result = append(result, remaining[nearest])
+		remaining = append(remaining[:nearest], remaining[nearest+1:]...)
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "type farthestFirst [][]int
+
+func (h farthestFirst) Len() int { return len(h) }
+
+func (h farthestFirst) Less(i, j int) bool
+
+func (h farthestFirst) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
+
+func (h *farthestFirst) Push(x any)   { *h = append(*h, x.([]int)) }
+
+func (h *farthestFirst) Pop() any
+
+func kClosest(points [][]int, k int) [][]int",
+      starter: "package main
+
+type farthestFirst [][]int
+
+func (h farthestFirst) Len() int { return len(h) } {
+	panic(\"todo\")
+}
+
+func (h farthestFirst) Less(i, j int) bool {
+	panic(\"todo\")
+}
+
+func (h farthestFirst) Swap(i, j int) { h[i], h[j] = h[j], h[i] } {
+	panic(\"todo\")
+}
+
+func (h *farthestFirst) Push(x any)   { *h = append(*h, x.([]int)) } {
+	panic(\"todo\")
+}
+
+func (h *farthestFirst) Pop() any {
+	panic(\"todo\")
+}
+
+func kClosest(points [][]int, k int) [][]int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"kClosest([[1,3],[-2,2]], 1)\", [][]int{{-2, 2}}, sortRows(kClosest([][]int{{1, 3}, {-2, 2}}, 1))),
+			tc(\"kClosest([[3,3],[5,-1],[-2,4]], 2)\", [][]int{{-2, 4}, {3, 3}}, sortRows(kClosest([][]int{{3, 3}, {5, -1}, {-2, 4}}, 2))),
+			tc(\"kClosest([], 0)\", [][]int{}, sortRows(kClosest([][]int{}, 0))),
+			tc(\"kClosest([[1,1],[2,2],[3,3]], 2)\", [][]int{{1, 1}, {2, 2}}, sortRows(kClosest([][]int{{1, 1}, {2, 2}, {3, 3}}, 2))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc79_kth_largest_array() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sorting answers every k at once, which is more than was asked but is the version nobody gets wrong. O(n log n), and usually the right thing to write first before offering anything cleverer.",
+        "package main
+
+import \"container/heap\"
+
+type intHeap []int
+
+func (h intHeap) Len() int           { return len(h) }
+func (h intHeap) Less(i, j int) bool { return h[i] < h[j] }
+func (h intHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *intHeap) Push(x any)        { *h = append(*h, x.(int)) }
+func (h *intHeap) Pop() any {
+	old := *h
+	x := old[len(old)-1]
+	*h = old[:len(old)-1]
+	return x
+}
+
+func findKthLargest(nums []int, k int) int {
+	// A min-heap of size k holds the k largest; its top is the kth.
+	h := &intHeap{}
+	for _, n := range nums {
+		heap.Push(h, n)
+		if h.Len() > k {
+			heap.Pop(h)
+		}
+	}
+	return (*h)[0]
+}",
+      ),
+      #(
+        "Quickselect",
+        "O(n) average time · O(n) space",
+        "Partition around a pivot, then recurse only into the side that must contain the answer. Expected O(n), because the work halves each time instead of being done on both halves — the same saving binary search makes over a scan. Worst case is still O(n²) on adversarial pivots, which is worth saying out loud.",
+        "package main
+
+func findKthLargest(nums []int, k int) int {
+	// Quickselect: partition around a pivot and recurse into the one side
+	// that holds the target index. Average O(n).
+	values := append([]int{}, nums...)
+	target := len(values) - k
+	low, high := 0, len(values)-1
+	for {
+		pivot := values[high]
+		store := low
+		for i := low; i < high; i++ {
+			if values[i] < pivot {
+				values[i], values[store] = values[store], values[i]
+				store++
+			}
+		}
+		values[store], values[high] = values[high], values[store]
+		switch {
+		case store == target:
+			return values[store]
+		case store < target:
+			low = store + 1
+		default:
+			high = store - 1
+		}
+	}
+}",
+      ),
+    ],
+    check: Check(
+      signature: "type intHeap []int
+
+func (h intHeap) Len() int           { return len(h) }
+
+func (h intHeap) Less(i, j int) bool { return h[i] < h[j] }
+
+func (h intHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *intHeap) Push(x any)        { *h = append(*h, x.(int)) }
+
+func (h *intHeap) Pop() any
+
+func findKthLargest(nums []int, k int) int",
+      starter: "package main
+
+type intHeap []int
+
+func (h intHeap) Len() int           { return len(h) } {
+	panic(\"todo\")
+}
+
+func (h intHeap) Less(i, j int) bool { return h[i] < h[j] } {
+	panic(\"todo\")
+}
+
+func (h intHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] } {
+	panic(\"todo\")
+}
+
+func (h *intHeap) Push(x any)        { *h = append(*h, x.(int)) } {
+	panic(\"todo\")
+}
+
+func (h *intHeap) Pop() any {
+	panic(\"todo\")
+}
+
+func findKthLargest(nums []int, k int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"findKthLargest([3,2,1,5,6,4], 2)\", 5, findKthLargest([]int{3, 2, 1, 5, 6, 4}, 2)),
+			tc(\"findKthLargest([3,2,3,1,2,4,5,5,6], 4)\", 4, findKthLargest([]int{3, 2, 3, 1, 2, 4, 5, 5, 6}, 4)),
+			tc(\"findKthLargest([1], 1)\", 1, findKthLargest([]int{1}, 1)),
+			tc(\"findKthLargest([2,1], 2)\", 1, findKthLargest([]int{2, 1}, 2)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc80_task_scheduler() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Simulation",
+        "O(n·k log k) time · O(k) space",
+        "Run the schedule instead of computing it: each round runs the n+1 most frequent tasks still outstanding, which is the greedy choice and needs the collection to give up its largest values over and over. The trap is the finished tasks — a task at zero is not an idle slot, and counting it as one inflates the answer.",
+        "package main
+
+func leastInterval(tasks []byte, n int) int {
+	counts := map[byte]int{}
+	for _, t := range tasks {
+		counts[t]++
+	}
+	// Tick by tick: run the available task with the most left, else idle.
+	// A task is available once n ticks have passed since its last run.
+	lastRun := map[byte]int{}
+	remaining := len(tasks)
+	ticks := 0
+	for remaining > 0 {
+		var pick byte
+		for t, c := range counts {
+			if c == 0 {
+				continue
+			}
+			if last, ran := lastRun[t]; ran && ticks-last <= n {
+				continue
+			}
+			if pick == 0 || c > counts[pick] || c == counts[pick] && t < pick {
+				pick = t
+			}
+		}
+		if pick != 0 {
+			counts[pick]--
+			lastRun[pick] = ticks
+			remaining--
+		}
+		ticks++
+	}
+	return ticks
+}",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(k) space",
+        "Lay the most frequent task out first with gaps of n between its copies. That skeleton is (busiest − 1) frames of n+1 slots plus a final row of every task tied for busiest — and everything else either drops into an idle slot or has already pushed the total past the skeleton, in which case nothing idles and the answer is simply the number of tasks. Hence the max of the two.",
+        "package main
+
+func leastInterval(tasks []byte, n int) int {
+	counts := map[byte]int{}
+	most := 0
+	for _, t := range tasks {
+		counts[t]++
+		most = max(most, counts[t])
+	}
+	// The most frequent task fixes a frame of (most-1) gaps of n slots;
+	// every task tied for most frequent adds a slot to the last row. If
+	// the frame has room for everything else, that is the answer;
+	// otherwise there is no idling and the length is the task count.
+	tiedForMost := 0
+	for _, c := range counts {
+		if c == most {
+			tiedForMost++
+		}
+	}
+	return max(len(tasks), (most-1)*(n+1)+tiedForMost)
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func leastInterval(tasks []byte, n int) int",
+      starter: "package main
+
+func leastInterval(tasks []byte, n int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"leastInterval(['A','A','A','B','B','B'], 2)\", 8, leastInterval([]byte(\"AAABBB\"), 2)),
+			tc(\"leastInterval(['A','A','A','B','B','B'], 0)\", 6, leastInterval([]byte(\"AAABBB\"), 0)),
+			tc(\"leastInterval(['A','A','A','B','B','B'], 3)\", 10, leastInterval([]byte(\"AAABBB\"), 3)),
+			tc(\"leastInterval([], 2)\", 0, leastInterval([]byte{}, 2)),
+			tc(\"leastInterval(['A'], 5)\", 1, leastInterval([]byte(\"A\"), 5)),
+			tc(\"leastInterval(four As and six singles, 2)\", 10, leastInterval([]byte(\"AAAABCDEFG\"), 2)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc81_design_twitter() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Design",
+        "O(all tweets) per feed · O(all tweets) space",
+        "A counter standing in for time is the whole design: it orders tweets across every user without any real timestamps. Then the feed is a filter over one global timeline — simple, correct, and the wrong shape at scale, since it walks every tweet ever posted to produce ten.",
+        "package main
+
+import (
+	\"container/heap\"
+	\"sort\"
+)
+
+type tweet struct {
+	time, id int
+}
+
+type feedEntry struct {
+	tweet  tweet
+	userID int
+	index  int // position in that user's tweets, counting from the newest
+}
+
+type newestFirst []feedEntry
+
+func (h newestFirst) Len() int           { return len(h) }
+func (h newestFirst) Less(i, j int) bool { return h[i].tweet.time > h[j].tweet.time }
+func (h newestFirst) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *newestFirst) Push(x any)        { *h = append(*h, x.(feedEntry)) }
+func (h *newestFirst) Pop() any {
+	old := *h
+	x := old[len(old)-1]
+	*h = old[:len(old)-1]
+	return x
+}
+
+// Each user's tweets in posting order; a feed merges the followed users'
+// lists (plus the user's own) newest-first with a heap, k-way-merge style,
+// stopping after ten.
+type Twitter struct {
+	clock   int
+	tweets  map[int][]tweet
+	follows map[int]map[int]bool
+}
+
+func Constructor() Twitter {
+	return Twitter{tweets: map[int][]tweet{}, follows: map[int]map[int]bool{}}
+}
+
+func (t *Twitter) PostTweet(userId int, tweetId int) {
+	t.clock++
+	t.tweets[userId] = append(t.tweets[userId], tweet{t.clock, tweetId})
+}
+
+func (t *Twitter) GetNewsFeed(userId int) []int {
+	sources := []int{userId}
+	for followee := range t.follows[userId] {
+		if followee != userId {
+			sources = append(sources, followee)
+		}
+	}
+	sort.Ints(sources)
+	h := &newestFirst{}
+	for _, source := range sources {
+		if list := t.tweets[source]; len(list) > 0 {
+			heap.Push(h, feedEntry{list[len(list)-1], source, len(list) - 1})
+		}
+	}
+	feed := []int{}
+	for h.Len() > 0 && len(feed) < 10 {
+		entry := heap.Pop(h).(feedEntry)
+		feed = append(feed, entry.tweet.id)
+		if entry.index > 0 {
+			list := t.tweets[entry.userID]
+			heap.Push(h, feedEntry{list[entry.index-1], entry.userID, entry.index - 1})
+		}
+	}
+	return feed
+}
+
+func (t *Twitter) Follow(followerId int, followeeId int) {
+	if t.follows[followerId] == nil {
+		t.follows[followerId] = map[int]bool{}
+	}
+	t.follows[followerId][followeeId] = true
+}
+
+func (t *Twitter) Unfollow(followerId int, followeeId int) {
+	delete(t.follows[followerId], followeeId)
+}",
+      ),
+      #(
+        "Heap",
+        "O(followees) per feed · O(all tweets) space",
+        "Store tweets per author and the feed becomes a k-way merge over the timelines being followed — and since only the ten newest are wanted, a heap over the heads of those k lists produces them without touching the rest. This is the version that survives a follow-up about scale.",
+        "package main
+
+import \"sort\"
+
+type tweet struct {
+	time, id int
+}
+
+// Gather every candidate tweet from the user and their followees, sort by
+// time, take ten. Simpler than a heap merge; fine while feeds are small.
+type Twitter struct {
+	clock   int
+	tweets  map[int][]tweet
+	follows map[int]map[int]bool
+}
+
+func Constructor() Twitter {
+	return Twitter{tweets: map[int][]tweet{}, follows: map[int]map[int]bool{}}
+}
+
+func (t *Twitter) PostTweet(userId int, tweetId int) {
+	t.clock++
+	t.tweets[userId] = append(t.tweets[userId], tweet{t.clock, tweetId})
+}
+
+func (t *Twitter) GetNewsFeed(userId int) []int {
+	candidates := append([]tweet{}, t.tweets[userId]...)
+	for followee := range t.follows[userId] {
+		if followee != userId {
+			candidates = append(candidates, t.tweets[followee]...)
+		}
+	}
+	sort.Slice(candidates, func(i, j int) bool { return candidates[i].time > candidates[j].time })
+	feed := []int{}
+	for i := 0; i < len(candidates) && i < 10; i++ {
+		feed = append(feed, candidates[i].id)
+	}
+	return feed
+}
+
+func (t *Twitter) Follow(followerId int, followeeId int) {
+	if t.follows[followerId] == nil {
+		t.follows[followerId] = map[int]bool{}
+	}
+	t.follows[followerId][followeeId] = true
+}
+
+func (t *Twitter) Unfollow(followerId int, followeeId int) {
+	delete(t.follows[followerId], followeeId)
+}",
+      ),
+    ],
+    check: Check(
+      signature: "type tweet struct { … }
+
+type feedEntry struct { … }
+
+type newestFirst []feedEntry
+
+func (h newestFirst) Len() int           { return len(h) }
+
+func (h newestFirst) Less(i, j int) bool { return h[i].tweet.time > h[j].tweet.time }
+
+func (h newestFirst) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *newestFirst) Push(x any)        { *h = append(*h, x.(feedEntry)) }
+
+func (h *newestFirst) Pop() any
+
+type Twitter struct { … }
+
+func Constructor() Twitter
+
+func (t *Twitter) PostTweet(userId int, tweetId int)
+
+func (t *Twitter) GetNewsFeed(userId int) []int
+
+func (t *Twitter) Follow(followerId int, followeeId int)
+
+func (t *Twitter) Unfollow(followerId int, followeeId int)",
+      starter: "package main
+
+type tweet struct {
+	// todo
+}
+
+type feedEntry struct {
+	// todo
+}
+
+type newestFirst []feedEntry
+
+func (h newestFirst) Len() int           { return len(h) } {
+	panic(\"todo\")
+}
+
+func (h newestFirst) Less(i, j int) bool { return h[i].tweet.time > h[j].tweet.time } {
+	panic(\"todo\")
+}
+
+func (h newestFirst) Swap(i, j int)      { h[i], h[j] = h[j], h[i] } {
+	panic(\"todo\")
+}
+
+func (h *newestFirst) Push(x any)        { *h = append(*h, x.(feedEntry)) } {
+	panic(\"todo\")
+}
+
+func (h *newestFirst) Pop() any {
+	panic(\"todo\")
+}
+
+type Twitter struct {
+	// todo
+}
+
+func Constructor() Twitter {
+	panic(\"todo\")
+}
+
+func (t *Twitter) PostTweet(userId int, tweetId int) {
+	panic(\"todo\")
+}
+
+func (t *Twitter) GetNewsFeed(userId int) []int {
+	panic(\"todo\")
+}
+
+func (t *Twitter) Follow(followerId int, followeeId int) {
+	panic(\"todo\")
+}
+
+func (t *Twitter) Unfollow(followerId int, followeeId int) {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		t := Constructor()
+		t.PostTweet(1, 5)
+		cases := []testCase{
+			tc(\"getNewsFeed(1) after posting 5\", []int{5}, t.GetNewsFeed(1)),
+		}
+		t.Follow(1, 2)
+		t.PostTweet(2, 6)
+		cases = append(cases,
+			tc(\"getNewsFeed(1) after following 2 who posted 6\", []int{6, 5}, t.GetNewsFeed(1)),
+			tc(\"getNewsFeed(2) sees only its own\", []int{6}, t.GetNewsFeed(2)),
+			tc(\"getNewsFeed(3) for a user with nothing\", []int{}, t.GetNewsFeed(3)))
+		t.Unfollow(1, 2)
+		cases = append(cases, tc(\"getNewsFeed(1) after unfollowing 2\", []int{5}, t.GetNewsFeed(1)))
+		eleven := Constructor()
+		for i := 1; i <= 11; i++ {
+			eleven.PostTweet(1, i)
+		}
+		cases = append(cases, tc(\"getNewsFeed(1) caps at the ten most recent\", []int{11, 10, 9, 8, 7, 6, 5, 4, 3, 2}, eleven.GetNewsFeed(1)))
+		return cases
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc82_find_median_stream() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sorted List",
+        "O(n) per operation · O(n) space",
+        "One sorted list, kept in order on insertion, and the median is a lookup. Easier to believe and easier to write, at the cost of an O(n) insert where two heaps pay O(log n) — the trade that decides which one belongs in a streaming answer.",
+        "package main
+
+import \"sort\"
+
+// Keep every number in a sorted slice: an insertion is a binary search
+// plus a shift, and the median is read off the middle.
+type MedianFinder struct {
+	sorted []int
+}
+
+func Constructor() MedianFinder {
+	return MedianFinder{sorted: []int{}}
+}
+
+func (m *MedianFinder) AddNum(num int) {
+	i := sort.SearchInts(m.sorted, num)
+	m.sorted = append(m.sorted, 0)
+	copy(m.sorted[i+1:], m.sorted[i:])
+	m.sorted[i] = num
+}
+
+func (m *MedianFinder) FindMedian() float64 {
+	n := len(m.sorted)
+	if n == 0 {
+		return 0
+	}
+	if n%2 == 1 {
+		return float64(m.sorted[n/2])
+	}
+	return float64(m.sorted[n/2-1]+m.sorted[n/2]) / 2
+}",
+      ),
+      #(
+        "Two Heaps",
+        "O(log n) per operation · O(n) space",
+        "Split the values into a smaller half and a larger half, and the median is always sitting at one or both of the two inner ends. Each half only ever has to surrender its extreme value, which is exactly a heap — a max-heap below, a min-heap above. The whole difficulty is the rebalancing rule: sizes within one, and nothing below bigger than anything above.",
+        "package main
+
+import \"container/heap\"
+
+type minHeap []int
+
+func (h minHeap) Len() int           { return len(h) }
+func (h minHeap) Less(i, j int) bool { return h[i] < h[j] }
+func (h minHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *minHeap) Push(x any)        { *h = append(*h, x.(int)) }
+func (h *minHeap) Pop() any {
+	old := *h
+	x := old[len(old)-1]
+	*h = old[:len(old)-1]
+	return x
+}
+
+type maxHeap struct{ minHeap }
+
+func (h maxHeap) Less(i, j int) bool { return h.minHeap[i] > h.minHeap[j] }
+
+// The lower half in a max-heap, the upper half in a min-heap, the lower
+// allowed one extra: the median is the lower's top, or the mean of both tops.
+type MedianFinder struct {
+	lower *maxHeap
+	upper *minHeap
+}
+
+func Constructor() MedianFinder {
+	return MedianFinder{lower: &maxHeap{}, upper: &minHeap{}}
+}
+
+func (m *MedianFinder) AddNum(num int) {
+	heap.Push(m.lower, num)
+	// Rebalance: the lower's largest belongs above if it beats the upper's smallest.
+	heap.Push(m.upper, heap.Pop(m.lower))
+	if m.upper.Len() > m.lower.Len() {
+		heap.Push(m.lower, heap.Pop(m.upper))
+	}
+}
+
+func (m *MedianFinder) FindMedian() float64 {
+	if m.lower.Len() == 0 {
+		return 0
+	}
+	if m.lower.Len() > m.upper.Len() {
+		return float64(m.lower.minHeap[0])
+	}
+	return float64(m.lower.minHeap[0]+(*m.upper)[0]) / 2
+}",
+      ),
+    ],
+    check: Check(
+      signature: "type minHeap []int
+
+func (h minHeap) Len() int           { return len(h) }
+
+func (h minHeap) Less(i, j int) bool { return h[i] < h[j] }
+
+func (h minHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *minHeap) Push(x any)        { *h = append(*h, x.(int)) }
+
+func (h *minHeap) Pop() any
+
+type maxHeap struct{ minHeap }
+
+func (h maxHeap) Less(i, j int) bool { return h.minHeap[i] > h.minHeap[j] }
+
+type MedianFinder struct { … }
+
+func Constructor() MedianFinder
+
+func (m *MedianFinder) AddNum(num int)
+
+func (m *MedianFinder) FindMedian() float64",
+      starter: "package main
+
+type minHeap []int
+
+func (h minHeap) Len() int           { return len(h) } {
+	panic(\"todo\")
+}
+
+func (h minHeap) Less(i, j int) bool { return h[i] < h[j] } {
+	panic(\"todo\")
+}
+
+func (h minHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] } {
+	panic(\"todo\")
+}
+
+func (h *minHeap) Push(x any)        { *h = append(*h, x.(int)) } {
+	panic(\"todo\")
+}
+
+func (h *minHeap) Pop() any {
+	panic(\"todo\")
+}
+
+type maxHeap struct{ minHeap }
+
+func (h maxHeap) Less(i, j int) bool { return h.minHeap[i] > h.minHeap[j] } {
+	panic(\"todo\")
+}
+
+type MedianFinder struct {
+	// todo
+}
+
+func Constructor() MedianFinder {
+	panic(\"todo\")
+}
+
+func (m *MedianFinder) AddNum(num int) {
+	panic(\"todo\")
+}
+
+func (m *MedianFinder) FindMedian() float64 {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func medians(values []int) []float64 {
+	finder := Constructor()
+	out := []float64{}
+	for _, v := range values {
+		finder.AddNum(v)
+		out = append(out, finder.FindMedian())
+	}
+	return out
+}
+
+func main() {
+	run(func() []testCase {
+		empty := Constructor()
+		return []testCase{
+			tc(\"medians of 1, 2, 3\", []float64{1, 1.5, 2}, medians([]int{1, 2, 3})),
+			tc(\"medians of 1, 2, 3, 4, 5\", []float64{1, 1.5, 2, 2.5, 3}, medians([]int{1, 2, 3, 4, 5})),
+			tc(\"medians arriving out of order\", []float64{5, 3, 2, 2.5}, medians([]int{5, 1, 2, 3})),
+			tc(\"medians of negatives\", []float64{-1, -1.5}, medians([]int{-1, -2})),
+			tc(\"median before anything is added\", 0.0, empty.FindMedian()),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc83_subsets() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bit Manipulation",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "The in-or-out choices *are* the bits of a number, so counting from 0 to 2ⁿ−1 enumerates every subset exactly once with no recursion at all. It also gives every subset a stable index, which matters the moment subsets have to be compared, cached or keyed on.",
+        "package main
+
+func subsets(nums []int) [][]int {
+	// Each of the 2^n subsets is a bit pattern: bit i set means nums[i] in.
+	n := len(nums)
+	result := make([][]int, 0, 1<<n)
+	for mask := 0; mask < 1<<n; mask++ {
+		subset := []int{}
+		for i := 0; i < n; i++ {
+			if mask&(1<<i) != 0 {
+				subset = append(subset, nums[i])
+			}
+		}
+		result = append(result, subset)
+	}
+	return result
+}",
+      ),
+      #(
+        "Recursion",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "Every element is either in or out, independently, so the subsets of a list are the subsets of its tail twice over — once with the head added and once without. That recursion is the whole answer, and it is also why there are exactly 2ⁿ of them.",
+        "package main
+
+func subsets(nums []int) [][]int {
+	result := [][]int{}
+	var build func(start int, current []int)
+	build = func(start int, current []int) {
+		// Every partial choice is itself a subset; record it, then try
+		// adding each later element.
+		result = append(result, append([]int{}, current...))
+		for i := start; i < len(nums); i++ {
+			build(i+1, append(current, nums[i]))
+		}
+	}
+	build(0, []int{})
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func subsets(nums []int) [][]int",
+      starter: "package main
+
+func subsets(nums []int) [][]int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"subsets([1,2,3])\", [][]int{{}, {1}, {1, 2}, {1, 2, 3}, {1, 3}, {2}, {2, 3}, {3}}, sortRows(subsets([]int{1, 2, 3}))),
+			tc(\"subsets([0])\", [][]int{{}, {0}}, sortRows(subsets([]int{0}))),
+			tc(\"subsets([])\", [][]int{{}}, sortRows(subsets([]int{}))),
+			tc(\"len(subsets([1,2,3,4,5]))\", 32, len(subsets([]int{1, 2, 3, 4, 5}))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc84_combination_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bottom-Up DP",
+        "O(t·2ᵗ) time · O(t·2ᵗ) space",
+        "Bottom-up: the combinations making a target are every combination making a smaller amount with one more candidate added. Requiring the added candidate to be no smaller than the combination's largest plays the same role the index does in the recursion — it fixes one order per combination.",
+        "package main
+
+func combinationSum(candidates []int, target int) [][]int {
+	// ways[t] is every combination summing to t, built up one candidate
+	// at a time so each combination is generated in one order only.
+	ways := make([][][]int, target+1)
+	ways[0] = [][]int{{}}
+	for _, c := range candidates {
+		for t := c; t <= target; t++ {
+			for _, combo := range ways[t-c] {
+				ways[t] = append(ways[t], append(append([]int{}, combo...), c))
+			}
+		}
+	}
+	if ways[target] == nil {
+		return [][]int{}
+	}
+	return ways[target]
+}",
+      ),
+      #(
+        "Backtracking",
+        "O(2ᵗ) time · O(t) space",
+        "Each step either takes the current candidate again — reuse is allowed — or drops it for good. Never returning to a dropped candidate is what stops the same combination appearing in several orders, so there is no deduplication anywhere. That constraint doing the work is the pattern to carry to the harder variants.",
+        "package main
+
+func combinationSum(candidates []int, target int) [][]int {
+	result := [][]int{}
+	var build func(start, remaining int, current []int)
+	build = func(start, remaining int, current []int) {
+		if remaining == 0 {
+			result = append(result, append([]int{}, current...))
+			return
+		}
+		// Candidates may repeat, so the recursion restarts at i, not i+1;
+		// never going back before start keeps each combination unique.
+		for i := start; i < len(candidates); i++ {
+			if candidates[i] <= remaining {
+				build(i, remaining-candidates[i], append(current, candidates[i]))
+			}
+		}
+	}
+	build(0, target, []int{})
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func combinationSum(candidates []int, target int) [][]int",
+      starter: "package main
+
+func combinationSum(candidates []int, target int) [][]int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"combinationSum([2,3,6,7], 7)\", [][]int{{2, 2, 3}, {7}}, sortRows(combinationSum([]int{2, 3, 6, 7}, 7))),
+			tc(\"combinationSum([2,3,5], 8)\", [][]int{{2, 2, 2, 2}, {2, 3, 3}, {3, 5}}, sortRows(combinationSum([]int{2, 3, 5}, 8))),
+			tc(\"combinationSum([2], 1)\", [][]int{}, sortRows(combinationSum([]int{2}, 1))),
+			tc(\"combinationSum([1], 2)\", [][]int{{1, 1}}, sortRows(combinationSum([]int{1}, 2))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc85_permutations() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Iterative Insertion",
+        "O(n·n!) time · O(n·n!) space",
+        "Build up rather than choose: every permutation of n elements is a permutation of n−1 with the new element wedged into one of its n positions. No recursion into a shrinking remainder, and it explains the factorial directly — one more choice of position at every step.",
+        "package main
+
+func permute(nums []int) [][]int {
+	// Start from the empty permutation; each number is inserted into every
+	// position of every permutation built so far.
+	result := [][]int{{}}
+	for _, n := range nums {
+		next := [][]int{}
+		for _, p := range result {
+			for i := 0; i <= len(p); i++ {
+				extended := make([]int, 0, len(p)+1)
+				extended = append(extended, p[:i]...)
+				extended = append(extended, n)
+				extended = append(extended, p[i:]...)
+				next = append(next, extended)
+			}
+		}
+		result = next
+	}
+	return result
+}",
+      ),
+      #(
+        "Backtracking",
+        "O(n·n!) time · O(n·n!) space",
+        "Pick each element in turn as the first, then permute what is left. Removing the chosen element from the remainder is exactly what a \"used\" set does in an in-place version; here the remainder is simply a shorter list, and nothing has to be undone afterwards.",
+        "package main
+
+func permute(nums []int) [][]int {
+	result := [][]int{}
+	used := make([]bool, len(nums))
+	var build func(current []int)
+	build = func(current []int) {
+		if len(current) == len(nums) {
+			result = append(result, append([]int{}, current...))
+			return
+		}
+		for i, n := range nums {
+			if used[i] {
+				continue
+			}
+			used[i] = true
+			build(append(current, n))
+			used[i] = false
+		}
+	}
+	build([]int{})
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func permute(nums []int) [][]int",
+      starter: "package main
+
+func permute(nums []int) [][]int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"permute([1,2,3])\", [][]int{{1, 2, 3}, {1, 3, 2}, {2, 1, 3}, {2, 3, 1}, {3, 1, 2}, {3, 2, 1}}, sortSeqs(permute([]int{1, 2, 3}))),
+			tc(\"permute([0,1])\", [][]int{{0, 1}, {1, 0}}, sortSeqs(permute([]int{0, 1}))),
+			tc(\"permute([1])\", [][]int{{1}}, permute([]int{1})),
+			tc(\"len(permute([1,2,3,4]))\", 24, len(permute([]int{1, 2, 3, 4}))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc86_subsets_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Counting",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "A different framing: the choice is not per *element* but per distinct *value* — how many copies to take, from none up to however many exist. Duplicates then cannot arise, so there is no skipping rule to remember and nothing to sort for correctness.",
+        "package main
+
+import \"sort\"
+
+func subsetsWithDup(nums []int) [][]int {
+	// Count each distinct value; a subset is a choice of how many copies of
+	// each to take, so duplicates never arise.
+	counts := map[int]int{}
+	for _, n := range nums {
+		counts[n]++
+	}
+	distinct := make([]int, 0, len(counts))
+	for n := range counts {
+		distinct = append(distinct, n)
+	}
+	sort.Ints(distinct)
+	result := [][]int{}
+	var build func(i int, current []int)
+	build = func(i int, current []int) {
+		if i == len(distinct) {
+			result = append(result, append([]int{}, current...))
+			return
+		}
+		build(i+1, current)
+		for copies := 1; copies <= counts[distinct[i]]; copies++ {
+			current = append(current, distinct[i])
+			build(i+1, current)
+		}
+	}
+	build(0, []int{})
+	return result
+}",
+      ),
+      #(
+        "Backtracking",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "Sorting puts equal values next to each other, which is what makes the duplicate rule expressible at all: when a value is skipped, skip *every* copy of it at once. Skipping one copy and keeping the next rebuilds the same subset from a different copy, which is exactly the repeat you are trying to avoid.",
+        "package main
+
+func subsetsWithDup(nums []int) [][]int {
+	sorted := sortInts(nums)
+	result := [][]int{}
+	var build func(start int, current []int)
+	build = func(start int, current []int) {
+		result = append(result, append([]int{}, current...))
+		for i := start; i < len(sorted); i++ {
+			// Sorted, so equal values are adjacent: skipping a repeat at the
+			// same depth avoids building the same subset twice.
+			if i > start && sorted[i] == sorted[i-1] {
+				continue
+			}
+			build(i+1, append(current, sorted[i]))
+		}
+	}
+	build(0, []int{})
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func subsetsWithDup(nums []int) [][]int",
+      starter: "package main
+
+func subsetsWithDup(nums []int) [][]int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"subsetsWithDup([1,2,2])\", [][]int{{}, {1}, {1, 2}, {1, 2, 2}, {2}, {2, 2}}, sortRows(subsetsWithDup([]int{1, 2, 2}))),
+			tc(\"subsetsWithDup([0])\", [][]int{{}, {0}}, sortRows(subsetsWithDup([]int{0}))),
+			tc(\"subsetsWithDup([4,4,4,1,4])\", [][]int{{}, {1}, {1, 4}, {1, 4, 4}, {1, 4, 4, 4}, {1, 4, 4, 4, 4}, {4}, {4, 4}, {4, 4, 4}, {4, 4, 4, 4}}, sortRows(subsetsWithDup([]int{4, 4, 4, 1, 4}))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc87_combination_sum_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n·4ⁿ) time · O(n·2ⁿ) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Generate every subset that hits the target and collapse the repeats afterwards. Correct, and exponentially wasteful on inputs with many equal values — which is precisely the cost the skipping rule avoids.",
+        "package main
+
+func combinationSum2(candidates []int, target int) [][]int {
+	// Generate every index-distinct combination, then drop the ones whose
+	// sorted values were already seen.
+	sorted := sortInts(candidates)
+	seen := map[string]bool{}
+	result := [][]int{}
+	var build func(start, remaining int, current []int)
+	build = func(start, remaining int, current []int) {
+		if remaining == 0 {
+			key := show(current)
+			if !seen[key] {
+				seen[key] = true
+				result = append(result, append([]int{}, current...))
+			}
+			return
+		}
+		for i := start; i < len(sorted) && sorted[i] <= remaining; i++ {
+			build(i+1, remaining-sorted[i], append(current, sorted[i]))
+		}
+	}
+	build(0, target, []int{})
+	return result
+}",
+      ),
+      #(
+        "Backtracking",
+        "O(2ⁿ) time · O(n²) space",
+        "Each candidate is used at most once, so taking one moves past it. The duplicate rule is the same as Subsets II — skipping a value means skipping every copy of it — and that shared rule is the reason to drill the two problems together.",
+        "package main
+
+func combinationSum2(candidates []int, target int) [][]int {
+	sorted := sortInts(candidates)
+	result := [][]int{}
+	var build func(start, remaining int, current []int)
+	build = func(start, remaining int, current []int) {
+		if remaining == 0 {
+			result = append(result, append([]int{}, current...))
+			return
+		}
+		for i := start; i < len(sorted); i++ {
+			if sorted[i] > remaining {
+				break
+			}
+			// Each candidate once (i+1), and no repeat value at the same depth.
+			if i > start && sorted[i] == sorted[i-1] {
+				continue
+			}
+			build(i+1, remaining-sorted[i], append(current, sorted[i]))
+		}
+	}
+	build(0, target, []int{})
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func combinationSum2(candidates []int, target int) [][]int",
+      starter: "package main
+
+func combinationSum2(candidates []int, target int) [][]int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"combinationSum2([10,1,2,7,6,1,5], 8)\", [][]int{{1, 1, 6}, {1, 2, 5}, {1, 7}, {2, 6}}, sortRows(combinationSum2([]int{10, 1, 2, 7, 6, 1, 5}, 8))),
+			tc(\"combinationSum2([2,5,2,1,2], 5)\", [][]int{{1, 2, 2}, {5}}, sortRows(combinationSum2([]int{2, 5, 2, 1, 2}, 5))),
+			tc(\"combinationSum2([3], 1)\", [][]int{}, sortRows(combinationSum2([]int{3}, 1))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc88_word_search() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backtracking",
+        "O(m·n·4ᴸ) time · O(L²) space",
+        "Depth-first from every square, with the path so far in a set so no letter is reused within one attempt. The set has to be per-path, not global: a square rejected on one route must still be available on another, and that distinction is the whole difference between backtracking and plain search.",
+        "package main
+
+func exist(board [][]byte, word string) bool {
+	rows, cols := len(board), len(board[0])
+	var search func(r, c, i int) bool
+	search = func(r, c, i int) bool {
+		if i == len(word) {
+			return true
+		}
+		if r < 0 || r >= rows || c < 0 || c >= cols || board[r][c] != word[i] {
+			return false
+		}
+		// Mark the cell in place while exploring from it, then restore it.
+		saved := board[r][c]
+		board[r][c] = '#'
+		found := search(r+1, c, i+1) || search(r-1, c, i+1) || search(r, c+1, i+1) || search(r, c-1, i+1)
+		board[r][c] = saved
+		return found
+	}
+	for r := 0; r < rows; r++ {
+		for c := 0; c < cols; c++ {
+			if search(r, c, 0) {
+				return true
+			}
+		}
+	}
+	return false
+}",
+      ),
+      #(
+        "Pruned Backtracking",
+        "O(m·n·4ᴸ) time · O(L²) space",
+        "Two cheap checks before any searching. If the board does not hold enough copies of some letter, no search can succeed at all. And starting from whichever end of the word is rarer on the board begins from fewer squares — the branching factor at the root is what dominates, so halving it there is worth more than any saving deeper in.",
+        "package main
+
+func exist(board [][]byte, word string) bool {
+	// Before searching, count letters: if the board lacks enough of any
+	// letter the word needs, no path can exist. Also start from the rarer
+	// end of the word, which cuts the branching when one end is common.
+	available := map[byte]int{}
+	for _, row := range board {
+		for _, cell := range row {
+			available[cell]++
+		}
+	}
+	needed := map[byte]int{}
+	for i := 0; i < len(word); i++ {
+		needed[word[i]]++
+	}
+	for letter, n := range needed {
+		if available[letter] < n {
+			return false
+		}
+	}
+	if available[word[0]] > available[word[len(word)-1]] {
+		reversed := []byte(word)
+		for i, j := 0, len(reversed)-1; i < j; i, j = i+1, j-1 {
+			reversed[i], reversed[j] = reversed[j], reversed[i]
+		}
+		word = string(reversed)
+	}
+	rows, cols := len(board), len(board[0])
+	var search func(r, c, i int) bool
+	search = func(r, c, i int) bool {
+		if i == len(word) {
+			return true
+		}
+		if r < 0 || r >= rows || c < 0 || c >= cols || board[r][c] != word[i] {
+			return false
+		}
+		saved := board[r][c]
+		board[r][c] = '#'
+		found := search(r+1, c, i+1) || search(r-1, c, i+1) || search(r, c+1, i+1) || search(r, c-1, i+1)
+		board[r][c] = saved
+		return found
+	}
+	for r := 0; r < rows; r++ {
+		for c := 0; c < cols; c++ {
+			if search(r, c, 0) {
+				return true
+			}
+		}
+	}
+	return false
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func exist(board [][]byte, word string) bool",
+      starter: "package main
+
+func exist(board [][]byte, word string) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func grid(rows ...string) [][]byte {
+	out := make([][]byte, len(rows))
+	for i, row := range rows {
+		out[i] = []byte(row)
+	}
+	return out
+}
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"exist(board, 'ABCCED')\", true, exist(grid(\"ABCE\", \"SFCS\", \"ADEE\"), \"ABCCED\")),
+			tc(\"exist(board, 'SEE')\", true, exist(grid(\"ABCE\", \"SFCS\", \"ADEE\"), \"SEE\")),
+			tc(\"exist(board, 'ABCB') -- a cell may not be reused\", false, exist(grid(\"ABCE\", \"SFCS\", \"ADEE\"), \"ABCB\")),
+			tc(\"exist([['a']], 'a')\", true, exist(grid(\"a\"), \"a\")),
+			tc(\"exist([['a']], 'b')\", false, exist(grid(\"a\"), \"b\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc89_palindrome_partitioning() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backtracking",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "Every partition begins with some palindromic prefix, so the only choice at each step is how long that prefix is. Cutting there and recursing on the rest reaches each partition exactly once, in order, with nothing to deduplicate.",
+        "package main
+
+func partition(s string) [][]string {
+	result := [][]string{}
+	var build func(start int, current []string)
+	build = func(start int, current []string) {
+		if start == len(s) {
+			result = append(result, append([]string{}, current...))
+			return
+		}
+		// Cut off every palindromic prefix of what remains and recurse.
+		for end := start + 1; end <= len(s); end++ {
+			if isPalindrome(s[start:end]) {
+				build(end, append(current, s[start:end]))
+			}
+		}
+	}
+	build(0, []string{})
+	return result
+}
+
+func isPalindrome(s string) bool {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		if s[i] != s[j] {
+			return false
+		}
+	}
+	return true
+}",
+      ),
+      #(
+        "DP + Backtracking",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "Work out which spans are palindromes once, up front, instead of re-testing the same prefix on every branch. The search then becomes pure choice — a table lookup where there was a linear scan. Precomputing the predicate rather than the answer is a move worth having.",
+        "package main
+
+func partition(s string) [][]string {
+	n := len(s)
+	// Precompute which substrings are palindromes so each check in the
+	// search is a table lookup rather than a scan.
+	table := make([][]bool, n)
+	for i := range table {
+		table[i] = make([]bool, n)
+	}
+	for i := n - 1; i >= 0; i-- {
+		for j := i; j < n; j++ {
+			table[i][j] = s[i] == s[j] && (j-i < 2 || table[i+1][j-1])
+		}
+	}
+	result := [][]string{}
+	var build func(start int, current []string)
+	build = func(start int, current []string) {
+		if start == n {
+			result = append(result, append([]string{}, current...))
+			return
+		}
+		for end := start; end < n; end++ {
+			if table[start][end] {
+				build(end+1, append(current, s[start:end+1]))
+			}
+		}
+	}
+	build(0, []string{})
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func partition(s string) [][]string
+
+func isPalindrome(s string) bool",
+      starter: "package main
+
+func partition(s string) [][]string {
+	panic(\"todo\")
+}
+
+func isPalindrome(s string) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+import \"strings\"
+
+func joined(s string) []string {
+	out := []string{}
+	for _, pieces := range partition(s) {
+		out = append(out, strings.Join(pieces, \",\"))
+	}
+	return sortStrings(out)
+}
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"partition('aab')\", []string{\"a,a,b\", \"aa,b\"}, joined(\"aab\")),
+			tc(\"partition('a')\", []string{\"a\"}, joined(\"a\")),
+			tc(\"partition('')\", []string{\"\"}, joined(\"\")),
+			tc(\"partition('aba')\", []string{\"a,b,a\", \"aba\"}, joined(\"aba\")),
+			tc(\"partition('abc')\", []string{\"a,b,c\"}, joined(\"abc\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc90_letter_combinations() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Iterative",
+        "O(n·4ⁿ) time · O(n·4ⁿ) space",
+        "The same cross product built by folding rather than recursing: hold every combination of the digits so far and extend each by every letter of the next. No call stack, and the growth is visible in the code — the list multiplies in size at each step.",
+        "package main
+
+func letterCombinations(digits string) []string {
+	if digits == \"\" {
+		return []string{}
+	}
+	keys := map[byte]string{
+		'2': \"abc\", '3': \"def\", '4': \"ghi\", '5': \"jkl\",
+		'6': \"mno\", '7': \"pqrs\", '8': \"tuv\", '9': \"wxyz\",
+	}
+	// A cartesian product built one digit at a time: every prefix so far
+	// gets every letter of the next key appended.
+	result := []string{\"\"}
+	for i := 0; i < len(digits); i++ {
+		next := []string{}
+		for _, prefix := range result {
+			for j := 0; j < len(keys[digits[i]]); j++ {
+				next = append(next, prefix+string(keys[digits[i]][j]))
+			}
+		}
+		result = next
+	}
+	return result
+}",
+      ),
+      #(
+        "Recursion",
+        "O(n·4ⁿ) time · O(n·4ⁿ) space",
+        "One choice per digit, independently, so the answer is the cross product of the letter sets. There is no pruning and no constraint between choices — which makes this the cleanest place to see what backtracking degenerates to when nothing can fail.",
+        "package main
+
+func letterCombinations(digits string) []string {
+	if digits == \"\" {
+		return []string{}
+	}
+	keys := map[byte]string{
+		'2': \"abc\", '3': \"def\", '4': \"ghi\", '5': \"jkl\",
+		'6': \"mno\", '7': \"pqrs\", '8': \"tuv\", '9': \"wxyz\",
+	}
+	result := []string{}
+	var build func(i int, current []byte)
+	build = func(i int, current []byte) {
+		if i == len(digits) {
+			result = append(result, string(current))
+			return
+		}
+		for j := 0; j < len(keys[digits[i]]); j++ {
+			build(i+1, append(current, keys[digits[i]][j]))
+		}
+	}
+	build(0, []byte{})
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func letterCombinations(digits string) []string",
+      starter: "package main
+
+func letterCombinations(digits string) []string {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"letterCombinations('23')\", []string{\"ad\", \"ae\", \"af\", \"bd\", \"be\", \"bf\", \"cd\", \"ce\", \"cf\"}, sortStrings(letterCombinations(\"23\"))),
+			tc(\"letterCombinations('')\", []string{}, letterCombinations(\"\")),
+			tc(\"letterCombinations('2')\", []string{\"a\", \"b\", \"c\"}, sortStrings(letterCombinations(\"2\"))),
+			tc(\"len(letterCombinations('79'))\", 16, len(letterCombinations(\"79\"))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc91_n_queens() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²·n!) time · O(n) space",
+        "One queen per row with no two sharing a column *is* a permutation of the columns, so the row and column rules hold by construction and only the diagonals are left. Generating all n! and filtering is far slower than pruning as you go — it explores arrangements a backtracker abandons at the second queen — but it names what the search space actually is.",
+        "package main
+
+import \"strings\"
+
+func solveNQueens(n int) [][]string {
+	// One queen per row and per column means a placement is a permutation
+	// of columns; generate them all and keep those with no diagonal clash.
+	result := [][]string{}
+	used := make([]bool, n)
+	queens := []int{}
+	var build func()
+	build = func() {
+		if len(queens) == n {
+			if noDiagonalClash(queens) {
+				result = append(result, render(queens))
+			}
+			return
+		}
+		for c := 0; c < n; c++ {
+			if used[c] {
+				continue
+			}
+			used[c] = true
+			queens = append(queens, c)
+			build()
+			queens = queens[:len(queens)-1]
+			used[c] = false
+		}
+	}
+	build()
+	return result
+}
+
+func noDiagonalClash(queens []int) bool {
+	for r1, c1 := range queens {
+		for r2 := r1 + 1; r2 < len(queens); r2++ {
+			if r2-r1 == queens[r2]-c1 || r2-r1 == c1-queens[r2] {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func render(queens []int) []string {
+	board := make([]string, len(queens))
+	for r, c := range queens {
+		board[r] = strings.Repeat(\".\", c) + \"Q\" + strings.Repeat(\".\", len(queens)-c-1)
+	}
+	return board
+}",
+      ),
+      #(
+        "Backtracking",
+        "O(n!) time · O(n²) space",
+        "One queen per row, so the only choice is the column. A diagonal is identified by row − column and an anti-diagonal by row + column, which turns \"is this square attacked?\" into three set lookups — and lets the search abandon an entire subtree the moment one of them fails.",
+        "package main
+
+import \"strings\"
+
+func solveNQueens(n int) [][]string {
+	result := [][]string{}
+	cols := map[int]bool{}
+	diagonals := map[int]bool{}     // r - c is constant along one diagonal
+	antiDiagonals := map[int]bool{} // r + c along the other
+	queens := make([]int, n)        // column of the queen in each row
+	var place func(r int)
+	place = func(r int) {
+		if r == n {
+			result = append(result, render(queens))
+			return
+		}
+		for c := 0; c < n; c++ {
+			if cols[c] || diagonals[r-c] || antiDiagonals[r+c] {
+				continue
+			}
+			cols[c], diagonals[r-c], antiDiagonals[r+c] = true, true, true
+			queens[r] = c
+			place(r + 1)
+			delete(cols, c)
+			delete(diagonals, r-c)
+			delete(antiDiagonals, r+c)
+		}
+	}
+	place(0)
+	return result
+}
+
+func render(queens []int) []string {
+	board := make([]string, len(queens))
+	for r, c := range queens {
+		board[r] = strings.Repeat(\".\", c) + \"Q\" + strings.Repeat(\".\", len(queens)-c-1)
+	}
+	return board
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func solveNQueens(n int) [][]string
+
+func render(queens []int) []string",
+      starter: "package main
+
+func solveNQueens(n int) [][]string {
+	panic(\"todo\")
+}
+
+func render(queens []int) []string {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+import \"strings\"
+
+func boards(n int) []string {
+	out := []string{}
+	for _, board := range solveNQueens(n) {
+		out = append(out, strings.Join(board, \"|\"))
+	}
+	return sortStrings(out)
+}
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"solveNQueens(4)\", []string{\"..Q.|Q...|...Q|.Q..\", \".Q..|...Q|Q...|..Q.\"}, boards(4)),
+			tc(\"solveNQueens(1)\", []string{\"Q\"}, boards(1)),
+			tc(\"solveNQueens(2)\", []string{}, boards(2)),
+			tc(\"solveNQueens(3)\", []string{}, boards(3)),
+			tc(\"len(solveNQueens(6))\", 4, len(solveNQueens(6))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc92_unique_paths() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Only right and down moves, so the ways to reach a square are the ways to reach the one above plus the one to its left. Rows fill top to bottom and only the previous row is ever needed, so one row of counters does for the whole grid.",
+        "package main
+
+func uniquePaths(m int, n int) int {
+	// Paths into a cell = paths into the cell above + the cell to the left.
+	// One row suffices: each entry is the cell above until overwritten.
+	row := make([]int, n)
+	for c := range row {
+		row[c] = 1
+	}
+	for r := 1; r < m; r++ {
+		for c := 1; c < n; c++ {
+			row[c] += row[c-1]
+		}
+	}
+	return row[n-1]
+}",
+      ),
+      #(
+        "Math",
+        "O(min(m,n)) time · O(1) space",
+        "There is no grid at all. Every path is exactly m−1 downs and n−1 rights in some order, so the count is the number of ways to choose which of the m+n−2 moves are downs — a binomial coefficient. Multiplying and dividing in step keeps every intermediate an exact integer, which is what makes it safe without big numbers.",
+        "package main
+
+func uniquePaths(m int, n int) int {
+	// Every path is m-1 downs and n-1 rights in some order: choose which
+	// of the m+n-2 steps are downs. Compute the binomial without overflow
+	// by multiplying and dividing alternately.
+	total, downs := m+n-2, m-1
+	result := 1
+	for i := 1; i <= downs; i++ {
+		result = result * (total - downs + i) / i
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func uniquePaths(m int, n int) int",
+      starter: "package main
+
+func uniquePaths(m int, n int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"uniquePaths(3, 7)\", 28, uniquePaths(3, 7)),
+			tc(\"uniquePaths(3, 2)\", 3, uniquePaths(3, 2)),
+			tc(\"uniquePaths(1, 1)\", 1, uniquePaths(1, 1)),
+			tc(\"uniquePaths(10, 10)\", 48620, uniquePaths(10, 10)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc93_longest_common_subsequence() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(m·n) time · O(m·n) space",
+        "The same recurrence from the front with a cache. Written this way the choice is explicit — match and advance both, or give up one character from one side — which the rolling row hides behind its indices. Usually the version to write first, then flatten.",
+        "package main
+
+func longestCommonSubsequence(text1 string, text2 string) int {
+	memo := map[[2]int]int{}
+	var from func(i, j int) int
+	from = func(i, j int) int {
+		if i == len(text1) || j == len(text2) {
+			return 0
+		}
+		key := [2]int{i, j}
+		if v, ok := memo[key]; ok {
+			return v
+		}
+		if text1[i] == text2[j] {
+			memo[key] = 1 + from(i+1, j+1)
+		} else {
+			memo[key] = max(from(i+1, j), from(i, j+1))
+		}
+		return memo[key]
+	}
+	return from(0, 0)
+}",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Compare the two current characters: equal means both are used and the answer is one more than the rest; different means the best of dropping one or the other. Filled row by row, only the previous row is ever needed. This recurrence is the backbone of edit distance and distinct subsequences too.",
+        "package main
+
+func longestCommonSubsequence(text1 string, text2 string) int {
+	// table[i][j]: LCS of text1[i:] and text2[j:]. Matching characters
+	// extend the diagonal; otherwise take the better of dropping one.
+	m, n := len(text1), len(text2)
+	table := make([][]int, m+1)
+	for i := range table {
+		table[i] = make([]int, n+1)
+	}
+	for i := m - 1; i >= 0; i-- {
+		for j := n - 1; j >= 0; j-- {
+			if text1[i] == text2[j] {
+				table[i][j] = 1 + table[i+1][j+1]
+			} else {
+				table[i][j] = max(table[i+1][j], table[i][j+1])
+			}
+		}
+	}
+	return table[0][0]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func longestCommonSubsequence(text1 string, text2 string) int",
+      starter: "package main
+
+func longestCommonSubsequence(text1 string, text2 string) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"longestCommonSubsequence('abcde', 'ace')\", 3, longestCommonSubsequence(\"abcde\", \"ace\")),
+			tc(\"longestCommonSubsequence('abc', 'abc')\", 3, longestCommonSubsequence(\"abc\", \"abc\")),
+			tc(\"longestCommonSubsequence('abc', 'def')\", 0, longestCommonSubsequence(\"abc\", \"def\")),
+			tc(\"longestCommonSubsequence('', 'a')\", 0, longestCommonSubsequence(\"\", \"a\")),
+			tc(\"longestCommonSubsequence('bsbininm', 'jmjkbkjkv')\", 1, longestCommonSubsequence(\"bsbininm\", \"jmjkbkjkv\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc94_coin_change_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(n·t) time · O(n·t) space",
+        "The same rule stated as a choice rather than a loop order: use this coin again, or set it aside for good. Setting it aside permanently is what fixes one order per combination — the identical constraint the outer loop encodes, made visible.",
+        "package main
+
+func change(amount int, coins []int) int {
+	// Count combinations using coins[i:] only: either skip coin i, or use
+	// it (staying at i, since coins repeat). Memoised on (i, remaining).
+	memo := map[[2]int]int{}
+	var from func(i, remaining int) int
+	from = func(i, remaining int) int {
+		if remaining == 0 {
+			return 1
+		}
+		if remaining < 0 || i == len(coins) {
+			return 0
+		}
+		key := [2]int{i, remaining}
+		if v, ok := memo[key]; ok {
+			return v
+		}
+		memo[key] = from(i+1, remaining) + from(i, remaining-coins[i])
+		return memo[key]
+	}
+	return from(0, amount)
+}",
+      ),
+      #(
+        "Bottom-Up DP",
+        "O(n·t) time · O(t) space",
+        "Combinations, not permutations, and that is decided entirely by the loop order. Coins on the outside means each coin is considered once and for all before the next is looked at, so 1+2 and 2+1 can never both be counted. Swapping the two loops silently counts orderings instead — the single most instructive bug in this problem.",
+        "package main
+
+func change(amount int, coins []int) int {
+	// ways[a]: combinations making a. Taking the coins in the outer loop
+	// means each combination is counted in one coin order only.
+	ways := make([]int, amount+1)
+	ways[0] = 1
+	for _, coin := range coins {
+		for a := coin; a <= amount; a++ {
+			ways[a] += ways[a-coin]
+		}
+	}
+	return ways[amount]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func change(amount int, coins []int) int",
+      starter: "package main
+
+func change(amount int, coins []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"change(5, [1,2,5])\", 4, change(5, []int{1, 2, 5})),
+			tc(\"change(3, [2])\", 0, change(3, []int{2})),
+			tc(\"change(10, [10])\", 1, change(10, []int{10})),
+			tc(\"change(0, [1,2])\", 1, change(0, []int{1, 2})),
+			tc(\"change(500, [3,5,7,8,9,10,11])\", 35502874, change(500, []int{3, 5, 7, 8, 9, 10, 11})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc95_target_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bottom-Up DP",
+        "O(n·S) time · O(S) space",
+        "The only state that matters is the running total, not which signs produced it. Carrying a map from reachable total to how many ways reach it means different sign choices landing on the same total merge — which is exactly what turns an exponential search into a polynomial one.",
+        "package main
+
+func findTargetSumWays(nums []int, target int) int {
+	// ways[s] counts the sign assignments of the prefix summing to s,
+	// offset so negative sums index the slice.
+	total := 0
+	for _, n := range nums {
+		total += n
+	}
+	if target > total || target < -total {
+		return 0
+	}
+	ways := make([]int, 2*total+1)
+	ways[total] = 1
+	for _, n := range nums {
+		next := make([]int, 2*total+1)
+		for s, count := range ways {
+			if count == 0 {
+				continue
+			}
+			next[s+n] += count
+			next[s-n] += count
+		}
+		ways = next
+	}
+	return ways[target+total]
+}",
+      ),
+      #(
+        "Subset Sum",
+        "O(n·S) time · O(S) space",
+        "Rewrite the problem. If P is the set given a plus and N the set given a minus then P − N = target and P + N = total, so P = (total + target)/2. A sign-assignment question becomes \"how many subsets sum to a fixed value\" — a knapsack, with no negative totals to track at all. Reformulating rather than optimising is the move.",
+        "package main
+
+func findTargetSumWays(nums []int, target int) int {
+	// Let P be the positives' sum: P - (total - P) = target, so
+	// P = (total + target) / 2. The question becomes how many subsets
+	// sum to P, a plain subset-sum count.
+	total := 0
+	for _, n := range nums {
+		total += n
+	}
+	if target > total || target < -total || (total+target)%2 != 0 {
+		return 0
+	}
+	goal := (total + target) / 2
+	ways := make([]int, goal+1)
+	ways[0] = 1
+	for _, n := range nums {
+		for s := goal; s >= n; s-- {
+			ways[s] += ways[s-n]
+		}
+	}
+	return ways[goal]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func findTargetSumWays(nums []int, target int) int",
+      starter: "package main
+
+func findTargetSumWays(nums []int, target int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"findTargetSumWays([1,1,1,1,1], 3)\", 5, findTargetSumWays([]int{1, 1, 1, 1, 1}, 3)),
+			tc(\"findTargetSumWays([1], 1)\", 1, findTargetSumWays([]int{1}, 1)),
+			tc(\"findTargetSumWays([1], 2)\", 0, findTargetSumWays([]int{1}, 2)),
+			tc(\"findTargetSumWays([0,0,0,0,0], 0)\", 32, findTargetSumWays([]int{0, 0, 0, 0, 0}, 0)),
+			tc(\"findTargetSumWays([], 0)\", 1, findTargetSumWays([]int{}, 0)),
+			tc(\"findTargetSumWays([1,2,3,4,5], 3)\", 3, findTargetSumWays([]int{1, 2, 3, 4, 5}, 3)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc96_stock_with_cooldown() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(n) time · O(n) space",
+        "The same three states as an explicit choice each day: buy, sell, or do nothing. After selling the recursion skips a day, which puts the cooldown where it actually happens rather than encoding it in which value gets read.",
+        "package main
+
+func maxProfit(prices []int) int {
+	memo := map[[2]int]int{}
+	// from(i, holding): best profit from day i on, given whether a share
+	// is held. Selling skips a day for the cooldown.
+	var from func(i int, holding bool) int
+	from = func(i int, holding bool) int {
+		if i >= len(prices) {
+			return 0
+		}
+		key := [2]int{i, 0}
+		if holding {
+			key[1] = 1
+		}
+		if v, ok := memo[key]; ok {
+			return v
+		}
+		skip := from(i+1, holding)
+		var act int
+		if holding {
+			act = prices[i] + from(i+2, false)
+		} else {
+			act = -prices[i] + from(i+1, true)
+		}
+		memo[key] = max(skip, act)
+		return memo[key]
+	}
+	return from(0, false)
+}",
+      ),
+      #(
+        "State Machine DP",
+        "O(n) time · O(1) space",
+        "Three states rather than one number: holding, just sold (so today is the cooldown), and free to act. Each day depends only on yesterday, so it is three rolling values — and the cooldown is expressed simply by \"free\" never reading \"sold\" from the same day. Naming the states is most of the work.",
+        "package main
+
+func maxProfit(prices []int) int {
+	// Three states carried day to day: holding a share, just sold (must
+	// cool down tomorrow), and free to buy.
+	holding, cooling, free := -1<<31, 0, 0
+	for _, price := range prices {
+		holding, cooling, free = max(holding, free-price), holding+price, max(free, cooling)
+	}
+	return max(cooling, free)
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func maxProfit(prices []int) int",
+      starter: "package main
+
+func maxProfit(prices []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"maxProfit([1,2,3,0,2])\", 3, maxProfit([]int{1, 2, 3, 0, 2})),
+			tc(\"maxProfit([1])\", 0, maxProfit([]int{1})),
+			tc(\"maxProfit([2,1])\", 0, maxProfit([]int{2, 1})),
+			tc(\"maxProfit([1,2,4])\", 3, maxProfit([]int{1, 2, 4})),
+			tc(\"maxProfit([6,1,3,2,4,7])\", 6, maxProfit([]int{6, 1, 3, 2, 4, 7})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc97_interleaving_string() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(m·n) time · O(m·n) space",
+        "How much of each source has been used is the entire state — the position in the target is their sum, so it never has to be tracked. That collapse from three indices to two is what makes the table two-dimensional, and spotting it is the problem.",
+        "package main
+
+func isInterleave(s1 string, s2 string, s3 string) bool {
+	m, n := len(s1), len(s2)
+	if m+n != len(s3) {
+		return false
+	}
+	// table[i][j]: can s1[:i] and s2[:j] interleave into s3[:i+j]? The
+	// last character of that prefix came from one of them.
+	table := make([][]bool, m+1)
+	for i := range table {
+		table[i] = make([]bool, n+1)
+	}
+	table[0][0] = true
+	for i := 0; i <= m; i++ {
+		for j := 0; j <= n; j++ {
+			if i > 0 && table[i-1][j] && s1[i-1] == s3[i+j-1] {
+				table[i][j] = true
+			}
+			if j > 0 && table[i][j-1] && s2[j-1] == s3[i+j-1] {
+				table[i][j] = true
+			}
+		}
+	}
+	return table[m][n]
+}",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Bottom-up over the same two-index state. Row i says which prefixes of s2 pair with the first i characters of s1, and each row depends only on the one above and itself to the left, so a single row suffices. Note the length check first: without it the recursion can succeed on a target that is too short.",
+        "package main
+
+func isInterleave(s1 string, s2 string, s3 string) bool {
+	m, n := len(s1), len(s2)
+	if m+n != len(s3) {
+		return false
+	}
+	// Only the previous row of the table is ever read, so keep one row.
+	row := make([]bool, n+1)
+	row[0] = true
+	for j := 1; j <= n; j++ {
+		row[j] = row[j-1] && s2[j-1] == s3[j-1]
+	}
+	for i := 1; i <= m; i++ {
+		row[0] = row[0] && s1[i-1] == s3[i-1]
+		for j := 1; j <= n; j++ {
+			row[j] = row[j] && s1[i-1] == s3[i+j-1] || row[j-1] && s2[j-1] == s3[i+j-1]
+		}
+	}
+	return row[n]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func isInterleave(s1 string, s2 string, s3 string) bool",
+      starter: "package main
+
+func isInterleave(s1 string, s2 string, s3 string) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"isInterleave('aabcc', 'dbbca', 'aadbbcbcac')\", true, isInterleave(\"aabcc\", \"dbbca\", \"aadbbcbcac\")),
+			tc(\"isInterleave('aabcc', 'dbbca', 'aadbbbaccc')\", false, isInterleave(\"aabcc\", \"dbbca\", \"aadbbbaccc\")),
+			tc(\"isInterleave('', '', '')\", true, isInterleave(\"\", \"\", \"\")),
+			tc(\"isInterleave('a', '', 'a')\", true, isInterleave(\"a\", \"\", \"a\")),
+			tc(\"isInterleave('', 'b', 'b')\", true, isInterleave(\"\", \"b\", \"b\")),
+			tc(\"isInterleave('abc', 'def', 'adbecf')\", true, isInterleave(\"abc\", \"def\", \"adbecf\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc98_longest_increasing_path() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sort + DP",
+        "O(m·n log(m·n)) time · O(m·n) space",
+        "The same acyclicity used the other way round: walk the squares from largest value to smallest and everything a square can move to is already settled. Sorting by value *is* a topological order, so the graph never has to be built.",
+        "package main
+
+import \"sort\"
+
+func longestIncreasingPath(matrix [][]int) int {
+	rows, cols := len(matrix), len(matrix[0])
+	// Process cells in increasing value order: by the time a cell is
+	// reached, every smaller neighbour already knows its best path, so no
+	// recursion is needed.
+	cells := make([][2]int, 0, rows*cols)
+	for r := 0; r < rows; r++ {
+		for c := 0; c < cols; c++ {
+			cells = append(cells, [2]int{r, c})
+		}
+	}
+	sort.Slice(cells, func(i, j int) bool {
+		return matrix[cells[i][0]][cells[i][1]] < matrix[cells[j][0]][cells[j][1]]
+	})
+	longest := make([][]int, rows)
+	for r := range longest {
+		longest[r] = make([]int, cols)
+	}
+	answer := 0
+	for _, cell := range cells {
+		r, c := cell[0], cell[1]
+		best := 1
+		for _, d := range [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
+			nr, nc := r+d[0], c+d[1]
+			if nr >= 0 && nr < rows && nc >= 0 && nc < cols && matrix[nr][nc] < matrix[r][c] {
+				best = max(best, 1+longest[nr][nc])
+			}
+		}
+		longest[r][c] = best
+		answer = max(answer, best)
+	}
+	return answer
+}",
+      ),
+      #(
+        "DFS + Memo",
+        "O(m·n) time · O(m·n) space",
+        "Strictly increasing means the moves can never form a cycle, so the grid is a directed acyclic graph and the longest path from each square is well-defined. That is what makes caching sound — with cycles, a memo on an in-progress square would be reading an answer that does not exist yet.",
+        "package main
+
+func longestIncreasingPath(matrix [][]int) int {
+	rows, cols := len(matrix), len(matrix[0])
+	// longest[r][c]: the longest increasing path starting here, memoised.
+	// Increasing paths cannot cycle, so no visited set is needed.
+	longest := make([][]int, rows)
+	for r := range longest {
+		longest[r] = make([]int, cols)
+	}
+	var from func(r, c int) int
+	from = func(r, c int) int {
+		if longest[r][c] > 0 {
+			return longest[r][c]
+		}
+		best := 1
+		for _, d := range [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
+			nr, nc := r+d[0], c+d[1]
+			if nr >= 0 && nr < rows && nc >= 0 && nc < cols && matrix[nr][nc] > matrix[r][c] {
+				best = max(best, 1+from(nr, nc))
+			}
+		}
+		longest[r][c] = best
+		return best
+	}
+	answer := 0
+	for r := 0; r < rows; r++ {
+		for c := 0; c < cols; c++ {
+			answer = max(answer, from(r, c))
+		}
+	}
+	return answer
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func longestIncreasingPath(matrix [][]int) int",
+      starter: "package main
+
+func longestIncreasingPath(matrix [][]int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"longestIncreasingPath([[9,9,4],[6,6,8],[2,1,1]])\", 4, longestIncreasingPath([][]int{{9, 9, 4}, {6, 6, 8}, {2, 1, 1}})),
+			tc(\"longestIncreasingPath([[3,4,5],[3,2,6],[2,2,1]])\", 4, longestIncreasingPath([][]int{{3, 4, 5}, {3, 2, 6}, {2, 2, 1}})),
+			tc(\"longestIncreasingPath([[1]])\", 1, longestIncreasingPath([][]int{{1}})),
+			tc(\"longestIncreasingPath([[7,7],[7,7]])\", 1, longestIncreasingPath([][]int{{7, 7}, {7, 7}})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc99_distinct_subsequences() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(m·n) time · O(m·n) space",
+        "The choice written out: on a match, use this source character or skip it; otherwise skip. Running out of target is one complete subsequence, which is why the base case returns 1 and not 0 — the usual place this one goes wrong.",
+        "package main
+
+func numDistinct(s string, t string) int {
+	memo := map[[2]int]int{}
+	var from func(i, j int) int
+	from = func(i, j int) int {
+		if j == len(t) {
+			return 1
+		}
+		if i == len(s) {
+			return 0
+		}
+		key := [2]int{i, j}
+		if v, ok := memo[key]; ok {
+			return v
+		}
+		ways := from(i+1, j)
+		if s[i] == t[j] {
+			ways += from(i+1, j+1)
+		}
+		memo[key] = ways
+		return ways
+	}
+	return from(0, 0)
+}",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Row j counts the ways to build the first j characters of the target from the source seen so far, and a new source character extends a count at j−1 into one at j when it matches. In a mutable array the row must be swept right to left, or one source character gets used twice; building a fresh row removes the hazard entirely.",
+        "package main
+
+func numDistinct(s string, t string) int {
+	m, n := len(s), len(t)
+	// table[i][j]: ways s[i:] can produce t[j:]. Skip s[i] always; use it
+	// too when it matches t[j].
+	table := make([][]int, m+1)
+	for i := range table {
+		table[i] = make([]int, n+1)
+		table[i][n] = 1
+	}
+	for i := m - 1; i >= 0; i-- {
+		for j := n - 1; j >= 0; j-- {
+			table[i][j] = table[i+1][j]
+			if s[i] == t[j] {
+				table[i][j] += table[i+1][j+1]
+			}
+		}
+	}
+	return table[0][0]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func numDistinct(s string, t string) int",
+      starter: "package main
+
+func numDistinct(s string, t string) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"numDistinct('rabbbit', 'rabbit')\", 3, numDistinct(\"rabbbit\", \"rabbit\")),
+			tc(\"numDistinct('babgbag', 'bag')\", 5, numDistinct(\"babgbag\", \"bag\")),
+			tc(\"numDistinct('', 'a')\", 0, numDistinct(\"\", \"a\")),
+			tc(\"numDistinct('a', '')\", 1, numDistinct(\"a\", \"\")),
+			tc(\"numDistinct('abc', 'abc')\", 1, numDistinct(\"abc\", \"abc\")),
+			tc(\"numDistinct('aaa', 'aa')\", 3, numDistinct(\"aaa\", \"aa\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
 pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
@@ -5483,6 +9098,43 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc61_pow" -> Ok(nc61_pow())
     "nc62_multiply_strings" -> Ok(nc62_multiply_strings())
     "nc63_detect_squares" -> Ok(nc63_detect_squares())
+    "nc64_climbing_stairs" -> Ok(nc64_climbing_stairs())
+    "nc65_min_cost_climbing_stairs" -> Ok(nc65_min_cost_climbing_stairs())
+    "nc66_house_robber" -> Ok(nc66_house_robber())
+    "nc67_house_robber_ii" -> Ok(nc67_house_robber_ii())
+    "nc68_longest_palindrome" -> Ok(nc68_longest_palindrome())
+    "nc69_palindromic_substrings" -> Ok(nc69_palindromic_substrings())
+    "nc70_decode_ways" -> Ok(nc70_decode_ways())
+    "nc71_coin_change" -> Ok(nc71_coin_change())
+    "nc72_maximum_product_subarray" -> Ok(nc72_maximum_product_subarray())
+    "nc73_word_break" -> Ok(nc73_word_break())
+    "nc74_longest_increasing_subsequence" ->
+      Ok(nc74_longest_increasing_subsequence())
+    "nc75_partition_equal_subset" -> Ok(nc75_partition_equal_subset())
+    "nc76_kth_largest_stream" -> Ok(nc76_kth_largest_stream())
+    "nc77_last_stone_weight" -> Ok(nc77_last_stone_weight())
+    "nc78_k_closest_points" -> Ok(nc78_k_closest_points())
+    "nc79_kth_largest_array" -> Ok(nc79_kth_largest_array())
+    "nc80_task_scheduler" -> Ok(nc80_task_scheduler())
+    "nc81_design_twitter" -> Ok(nc81_design_twitter())
+    "nc82_find_median_stream" -> Ok(nc82_find_median_stream())
+    "nc83_subsets" -> Ok(nc83_subsets())
+    "nc84_combination_sum" -> Ok(nc84_combination_sum())
+    "nc85_permutations" -> Ok(nc85_permutations())
+    "nc86_subsets_ii" -> Ok(nc86_subsets_ii())
+    "nc87_combination_sum_ii" -> Ok(nc87_combination_sum_ii())
+    "nc88_word_search" -> Ok(nc88_word_search())
+    "nc89_palindrome_partitioning" -> Ok(nc89_palindrome_partitioning())
+    "nc90_letter_combinations" -> Ok(nc90_letter_combinations())
+    "nc91_n_queens" -> Ok(nc91_n_queens())
+    "nc92_unique_paths" -> Ok(nc92_unique_paths())
+    "nc93_longest_common_subsequence" -> Ok(nc93_longest_common_subsequence())
+    "nc94_coin_change_ii" -> Ok(nc94_coin_change_ii())
+    "nc95_target_sum" -> Ok(nc95_target_sum())
+    "nc96_stock_with_cooldown" -> Ok(nc96_stock_with_cooldown())
+    "nc97_interleaving_string" -> Ok(nc97_interleaving_string())
+    "nc98_longest_increasing_path" -> Ok(nc98_longest_increasing_path())
+    "nc99_distinct_subsequences" -> Ok(nc99_distinct_subsequences())
     _ -> Error(Nil)
   }
 }

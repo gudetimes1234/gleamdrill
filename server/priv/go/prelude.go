@@ -247,8 +247,26 @@ func sortRows(rows [][]int) [][]int {
 	for _, row := range rows {
 		out = append(out, sortInts(row))
 	}
-	sort.Slice(out, func(i, j int) bool { return show(out[i]) < show(out[j]) })
+	sort.Slice(out, func(i, j int) bool { return lessInts(out[i], out[j]) })
 	return out
+}
+
+// sortSeqs orders the rows but keeps each row as it is, for answers that
+// are a set of sequences (permutations, paths).
+func sortSeqs(rows [][]int) [][]int {
+	out := append([][]int{}, rows...)
+	sort.Slice(out, func(i, j int) bool { return lessInts(out[i], out[j]) })
+	return out
+}
+
+// lessInts is lexicographic order on int slices, a proper prefix first.
+func lessInts(a, b []int) bool {
+	for i := 0; i < len(a) && i < len(b); i++ {
+		if a[i] != b[i] {
+			return a[i] < b[i]
+		}
+	}
+	return len(a) < len(b)
 }
 
 func sortGroups(groups [][]string) [][]string {
@@ -256,7 +274,15 @@ func sortGroups(groups [][]string) [][]string {
 	for _, group := range groups {
 		out = append(out, sortStrings(group))
 	}
-	sort.Slice(out, func(i, j int) bool { return show(out[i]) < show(out[j]) })
+	sort.Slice(out, func(i, j int) bool {
+		a, b := out[i], out[j]
+		for k := 0; k < len(a) && k < len(b); k++ {
+			if a[k] != b[k] {
+				return a[k] < b[k]
+			}
+		}
+		return len(a) < len(b)
+	})
 	return out
 }
 
