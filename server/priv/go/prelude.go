@@ -37,6 +37,12 @@ type TreeNode struct {
 	Right *TreeNode
 }
 
+// Node is LeetCode's graph node (Clone Graph): values are 1-based.
+type Node struct {
+	Val       int
+	Neighbors []*Node
+}
+
 type testCase struct {
 	label, expected, actual string
 }
@@ -226,6 +232,55 @@ func tree(values ...any) *TreeNode {
 
 // x is a missing child in tree(...).
 var x any = nil
+
+// graph builds an undirected graph from an adjacency list: node i+1 has
+// the neighbours adj[i] (1-based). Nil for an empty list.
+func graph(adj [][]int) *Node {
+	if len(adj) == 0 {
+		return nil
+	}
+	nodes := make([]*Node, len(adj))
+	for i := range nodes {
+		nodes[i] = &Node{Val: i + 1}
+	}
+	for i, neighbours := range adj {
+		for _, n := range neighbours {
+			nodes[i].Neighbors = append(nodes[i].Neighbors, nodes[n-1])
+		}
+	}
+	return nodes[0]
+}
+
+// adjacency is the list form of a graph reached from node: row i holds
+// the neighbour values of node i+1, so a clone compares equal to its
+// original exactly when the structure matches.
+func adjacency(node *Node) [][]int {
+	if node == nil {
+		return [][]int{}
+	}
+	seen := map[int]*Node{}
+	queue := []*Node{node}
+	seen[node.Val] = node
+	for len(queue) > 0 {
+		current := queue[0]
+		queue = queue[1:]
+		for _, n := range current.Neighbors {
+			if seen[n.Val] == nil {
+				seen[n.Val] = n
+				queue = append(queue, n)
+			}
+		}
+	}
+	out := make([][]int, len(seen))
+	for val, n := range seen {
+		row := []int{}
+		for _, neighbour := range n.Neighbors {
+			row = append(row, neighbour.Val)
+		}
+		out[val-1] = row
+	}
+	return out
+}
 
 // sortInts is a sorted copy, for answers whose order is free.
 func sortInts(values []int) []int {

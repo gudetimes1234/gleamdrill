@@ -691,6 +691,1153 @@ func main() {
   )
 }
 
+pub fn nc100_edit_distance() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(m·n) time · O(m·n) space",
+        "The same three edits as an explicit choice from the front. Running out of one word costs whatever remains of the other, since every leftover character must be inserted or deleted — the base case that the table encodes in its first row and column.",
+        "package main
+
+func minDistance(word1 string, word2 string) int {
+	memo := map[[2]int]int{}
+	var from func(i, j int) int
+	from = func(i, j int) int {
+		if i == len(word1) {
+			return len(word2) - j
+		}
+		if j == len(word2) {
+			return len(word1) - i
+		}
+		key := [2]int{i, j}
+		if v, ok := memo[key]; ok {
+			return v
+		}
+		if word1[i] == word2[j] {
+			memo[key] = from(i+1, j+1)
+		} else {
+			memo[key] = 1 + min(from(i+1, j+1), min(from(i+1, j), from(i, j+1)))
+		}
+		return memo[key]
+	}
+	return from(0, 0)
+}",
+      ),
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Three edits, three neighbours in the table: replace from the diagonal, delete from above, insert from the left. Equal characters cost nothing and take the diagonal outright. The first row and column are the cost of building a string from nothing, which is simply its length.",
+        "package main
+
+func minDistance(word1 string, word2 string) int {
+	m, n := len(word1), len(word2)
+	// table[i][j]: edits to turn word1[:i] into word2[:j]. Equal last
+	// characters cost nothing; otherwise one edit plus the best of
+	// replace, delete or insert.
+	table := make([][]int, m+1)
+	for i := range table {
+		table[i] = make([]int, n+1)
+		table[i][0] = i
+	}
+	for j := 0; j <= n; j++ {
+		table[0][j] = j
+	}
+	for i := 1; i <= m; i++ {
+		for j := 1; j <= n; j++ {
+			if word1[i-1] == word2[j-1] {
+				table[i][j] = table[i-1][j-1]
+			} else {
+				table[i][j] = 1 + min(table[i-1][j-1], min(table[i-1][j], table[i][j-1]))
+			}
+		}
+	}
+	return table[m][n]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func minDistance(word1 string, word2 string) int",
+      starter: "package main
+
+func minDistance(word1 string, word2 string) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"minDistance('horse', 'ros')\", 3, minDistance(\"horse\", \"ros\")),
+			tc(\"minDistance('intention', 'execution')\", 5, minDistance(\"intention\", \"execution\")),
+			tc(\"minDistance('', 'abc')\", 3, minDistance(\"\", \"abc\")),
+			tc(\"minDistance('abc', '')\", 3, minDistance(\"abc\", \"\")),
+			tc(\"minDistance('same', 'same')\", 0, minDistance(\"same\", \"same\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc101_burst_balloons() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bottom-Up DP",
+        "O(n³) time · O(n²) space",
+        "The same recurrence filled by hand, shortest spans first — because a span needs both of the shorter spans a chosen last balloon splits it into. Writing the loop order out makes that dependency visible where the recursion leaves it implicit.",
+        "package main
+
+func maxCoins(nums []int) int {
+	padded := append(append([]int{1}, nums...), 1)
+	memo := map[[2]int]int{}
+	// Top-down on the same recurrence: the range (l, r) exclusive, with
+	// k the last balloon burst inside it.
+	var from func(l, r int) int
+	from = func(l, r int) int {
+		if r-l < 2 {
+			return 0
+		}
+		key := [2]int{l, r}
+		if v, ok := memo[key]; ok {
+			return v
+		}
+		best := 0
+		for k := l + 1; k < r; k++ {
+			best = max(best, from(l, k)+padded[l]*padded[k]*padded[r]+from(k, r))
+		}
+		memo[key] = best
+		return best
+	}
+	return from(0, len(padded)-1)
+}",
+      ),
+      #(
+        "Top-Down Memo",
+        "O(n³) time · O(n²) space",
+        "Ask which balloon is burst *last* in a span, not first. The last one still has both span boundaries as neighbours — they are untouched by definition — so its value is known and the two sides become independent subproblems. Asking \"first\" leaves neighbours that depend on the other side and the recursion never closes. Padding with a 1 at each end removes the edge cases.",
+        "package main
+
+func maxCoins(nums []int) int {
+	// Pad with 1s; best[l][r] is the most from bursting everything
+	// strictly between l and r, deciding which balloon is burst LAST in
+	// that range (its neighbours are then l and r themselves).
+	padded := append(append([]int{1}, nums...), 1)
+	n := len(padded)
+	best := make([][]int, n)
+	for i := range best {
+		best[i] = make([]int, n)
+	}
+	for width := 2; width < n; width++ {
+		for l := 0; l+width < n; l++ {
+			r := l + width
+			for k := l + 1; k < r; k++ {
+				best[l][r] = max(best[l][r], best[l][k]+padded[l]*padded[k]*padded[r]+best[k][r])
+			}
+		}
+	}
+	return best[0][n-1]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func maxCoins(nums []int) int",
+      starter: "package main
+
+func maxCoins(nums []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"maxCoins([3,1,5,8])\", 167, maxCoins([]int{3, 1, 5, 8})),
+			tc(\"maxCoins([1,5])\", 10, maxCoins([]int{1, 5})),
+			tc(\"maxCoins([])\", 0, maxCoins([]int{})),
+			tc(\"maxCoins([5])\", 5, maxCoins([]int{5})),
+			tc(\"maxCoins([1,2,3,4])\", 40, maxCoins([]int{1, 2, 3, 4})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc102_regular_expression_matching() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Recursion",
+        "O(2ⁿ) time · O(n²) space",
+        "The same rules with no table at all, which is shorter and far easier to trust. It is exponential on patterns like \"a*a*a*a*b\", where the same suffix is reached along many different splits — so write this first, get it right, and add the cache afterwards.",
+        "package main
+
+func isMatch(s string, p string) bool {
+	// Plain recursion on the same rule, no memo: exponential in the worst
+	// case, but the rule itself is the whole idea.
+	if p == \"\" {
+		return s == \"\"
+	}
+	first := s != \"\" && (p[0] == '.' || p[0] == s[0])
+	if len(p) > 1 && p[1] == '*' {
+		return isMatch(s, p[2:]) || first && isMatch(s[1:], p)
+	}
+	return first && isMatch(s[1:], p[1:])
+}",
+      ),
+      #(
+        "Top-Down Memo",
+        "O(m·n) time · O(m·n) space",
+        "A star binds to the character *before* it, so the pattern is read two symbols at a time. Given \"x*\": either skip the pair entirely — zero copies — or, if x matches here, consume one character of the text and stay on the same pair. Everything else is a single-character match. Getting the zero-copies branch right is most of the problem.",
+        "package main
+
+func isMatch(s string, p string) bool {
+	m, n := len(s), len(p)
+	// table[i][j]: does s[i:] match p[j:]? A star (p[j+1]) means either
+	// skip the pair, or consume one matching character and stay on the pair.
+	table := make([][]bool, m+1)
+	for i := range table {
+		table[i] = make([]bool, n+1)
+	}
+	table[m][n] = true
+	for i := m; i >= 0; i-- {
+		for j := n - 1; j >= 0; j-- {
+			first := i < m && (p[j] == '.' || p[j] == s[i])
+			if j+1 < n && p[j+1] == '*' {
+				table[i][j] = table[i][j+2] || first && table[i+1][j]
+			} else {
+				table[i][j] = first && table[i+1][j+1]
+			}
+		}
+	}
+	return table[0][0]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func isMatch(s string, p string) bool",
+      starter: "package main
+
+func isMatch(s string, p string) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"isMatch('aa', 'a')\", false, isMatch(\"aa\", \"a\")),
+			tc(\"isMatch('aa', 'a*')\", true, isMatch(\"aa\", \"a*\")),
+			tc(\"isMatch('ab', '.*')\", true, isMatch(\"ab\", \".*\")),
+			tc(\"isMatch('aab', 'c*a*b')\", true, isMatch(\"aab\", \"c*a*b\")),
+			tc(\"isMatch('mississippi', 'mis*is*p*.')\", false, isMatch(\"mississippi\", \"mis*is*p*.\")),
+			tc(\"isMatch('', '.*')\", true, isMatch(\"\", \".*\")),
+			tc(\"isMatch('', '')\", true, isMatch(\"\", \"\")),
+			tc(\"isMatch('abc', 'abc')\", true, isMatch(\"abc\", \"abc\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc103_implement_trie() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Hash Set",
+        "O(k²) per insert · O(total prefixes) space",
+        "Two sets — the whole words, and every prefix of every word — and both questions answer in one lookup. Correct and shorter, at the cost of storing O(total letters) strings rather than sharing them. That shared storage is precisely what a trie is for, so this is the version that shows what is being bought.",
+        "package main
+
+// Two sets instead of a tree: every word, and every prefix of every word.
+// Insertion is O(len^2) in the prefixes stored, lookups are O(1) hashes.
+type Trie struct {
+	words    map[string]bool
+	prefixes map[string]bool
+}
+
+func Constructor() Trie {
+	return Trie{words: map[string]bool{}, prefixes: map[string]bool{}}
+}
+
+func (t *Trie) Insert(word string) {
+	t.words[word] = true
+	for i := 0; i <= len(word); i++ {
+		t.prefixes[word[:i]] = true
+	}
+}
+
+func (t *Trie) Search(word string) bool {
+	return t.words[word]
+}
+
+func (t *Trie) StartsWith(prefix string) bool {
+	return t.prefixes[prefix]
+}",
+      ),
+      #(
+        "Trie",
+        "O(k) per operation · O(total letters) space",
+        "One node per prefix, with a flag marking which prefixes are whole words. That flag is the entire difference between search and startsWith — without it, \"app\" and \"apple\" are indistinguishable once both are stored. The other detail worth keeping: the empty prefix always exists, because the root does.",
+        "package main
+
+type trieNode struct {
+	children map[byte]*trieNode
+	terminal bool
+}
+
+// One node per prefix; a word's last node is marked terminal, which is
+// what tells search from startsWith.
+type Trie struct {
+	root *trieNode
+}
+
+func Constructor() Trie {
+	return Trie{root: &trieNode{children: map[byte]*trieNode{}}}
+}
+
+func (t *Trie) Insert(word string) {
+	node := t.root
+	for i := 0; i < len(word); i++ {
+		next, ok := node.children[word[i]]
+		if !ok {
+			next = &trieNode{children: map[byte]*trieNode{}}
+			node.children[word[i]] = next
+		}
+		node = next
+	}
+	node.terminal = true
+}
+
+func (t *Trie) Search(word string) bool {
+	node := t.walk(word)
+	return node != nil && node.terminal
+}
+
+func (t *Trie) StartsWith(prefix string) bool {
+	return t.walk(prefix) != nil
+}
+
+func (t *Trie) walk(s string) *trieNode {
+	node := t.root
+	for i := 0; i < len(s); i++ {
+		node = node.children[s[i]]
+		if node == nil {
+			return nil
+		}
+	}
+	return node
+}",
+      ),
+    ],
+    check: Check(
+      signature: "type trieNode struct { … }
+
+type Trie struct { … }
+
+func Constructor() Trie
+
+func (t *Trie) Insert(word string)
+
+func (t *Trie) Search(word string) bool
+
+func (t *Trie) StartsWith(prefix string) bool
+
+func (t *Trie) walk(s string) *trieNode",
+      starter: "package main
+
+type trieNode struct {
+	// todo
+}
+
+type Trie struct {
+	// todo
+}
+
+func Constructor() Trie {
+	panic(\"todo\")
+}
+
+func (t *Trie) Insert(word string) {
+	panic(\"todo\")
+}
+
+func (t *Trie) Search(word string) bool {
+	panic(\"todo\")
+}
+
+func (t *Trie) StartsWith(prefix string) bool {
+	panic(\"todo\")
+}
+
+func (t *Trie) walk(s string) *trieNode {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		t := Constructor()
+		t.Insert(\"apple\")
+		cases := []testCase{
+			tc(\"search('apple') after inserting it\", true, t.Search(\"apple\")),
+			tc(\"search('app') -- a prefix, not a word\", false, t.Search(\"app\")),
+			tc(\"startsWith('app')\", true, t.StartsWith(\"app\")),
+			tc(\"startsWith('b')\", false, t.StartsWith(\"b\")),
+		}
+		t.Insert(\"app\")
+		cases = append(cases, tc(\"search('app') after inserting it too\", true, t.Search(\"app\")))
+		return cases
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc104_word_dictionary() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n·k) per search · O(total letters) space",
+        "Bucket the words by length and compare position by position. A pattern can only match words of its own length, so that one check throws away most of the collection before any character is compared — often enough on its own, and it needs no tree at all.",
+        "package main
+
+// Words bucketed by length: a query only has to be compared against the
+// words of its own length, position by position with dots as wildcards.
+type WordDictionary struct {
+	byLength map[int][]string
+}
+
+func Constructor() WordDictionary {
+	return WordDictionary{byLength: map[int][]string{}}
+}
+
+func (d *WordDictionary) AddWord(word string) {
+	d.byLength[len(word)] = append(d.byLength[len(word)], word)
+}
+
+func (d *WordDictionary) Search(word string) bool {
+	for _, candidate := range d.byLength[len(word)] {
+		matches := true
+		for i := 0; i < len(word); i++ {
+			if word[i] != '.' && word[i] != candidate[i] {
+				matches = false
+				break
+			}
+		}
+		if matches {
+			return true
+		}
+	}
+	return false
+}",
+      ),
+      #(
+        "Trie",
+        "O(total letters) per search · O(total letters) space",
+        "A dot has to try every child, which turns the lookup from a walk into a search. The trie is what keeps that search from being over the whole dictionary: a branch that cannot match is abandoned at the first letter, so shared prefixes are explored once rather than once per word.",
+        "package main
+
+type dictNode struct {
+	children map[byte]*dictNode
+	terminal bool
+}
+
+// A trie; a dot in the query branches into every child at that depth.
+type WordDictionary struct {
+	root *dictNode
+}
+
+func Constructor() WordDictionary {
+	return WordDictionary{root: &dictNode{children: map[byte]*dictNode{}}}
+}
+
+func (d *WordDictionary) AddWord(word string) {
+	node := d.root
+	for i := 0; i < len(word); i++ {
+		next, ok := node.children[word[i]]
+		if !ok {
+			next = &dictNode{children: map[byte]*dictNode{}}
+			node.children[word[i]] = next
+		}
+		node = next
+	}
+	node.terminal = true
+}
+
+func (d *WordDictionary) Search(word string) bool {
+	var match func(node *dictNode, i int) bool
+	match = func(node *dictNode, i int) bool {
+		if i == len(word) {
+			return node.terminal
+		}
+		if word[i] != '.' {
+			next := node.children[word[i]]
+			return next != nil && match(next, i+1)
+		}
+		for _, child := range node.children {
+			if match(child, i+1) {
+				return true
+			}
+		}
+		return false
+	}
+	return match(d.root, 0)
+}",
+      ),
+    ],
+    check: Check(
+      signature: "type dictNode struct { … }
+
+type WordDictionary struct { … }
+
+func Constructor() WordDictionary
+
+func (d *WordDictionary) AddWord(word string)
+
+func (d *WordDictionary) Search(word string) bool",
+      starter: "package main
+
+type dictNode struct {
+	// todo
+}
+
+type WordDictionary struct {
+	// todo
+}
+
+func Constructor() WordDictionary {
+	panic(\"todo\")
+}
+
+func (d *WordDictionary) AddWord(word string) {
+	panic(\"todo\")
+}
+
+func (d *WordDictionary) Search(word string) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		d := Constructor()
+		d.AddWord(\"bad\")
+		d.AddWord(\"dad\")
+		d.AddWord(\"mad\")
+		return []testCase{
+			tc(\"search('pad')\", false, d.Search(\"pad\")),
+			tc(\"search('bad')\", true, d.Search(\"bad\")),
+			tc(\"search('.ad')\", true, d.Search(\".ad\")),
+			tc(\"search('b..')\", true, d.Search(\"b..\")),
+			tc(\"search('...')\", true, d.Search(\"...\")),
+			tc(\"search('b') -- too short\", false, d.Search(\"b\")),
+			tc(\"search('....') -- too long\", false, d.Search(\"....\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc105_word_search_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backtracking",
+        "O(W·m·n·4ᴸ) time · O(L²) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Word Search, once per word. Correct, and it redoes the search for every shared prefix — a hundred words beginning \"ab\" each re-walk that \"ab\" from every square. Worth writing to feel the repetition the trie removes.",
+        "package main
+
+func findWords(board [][]byte, words []string) []string {
+	// Run the single-word search once per word: correct, and simple, at
+	// the cost of rewalking the board for every word.
+	found := []string{}
+	seen := map[string]bool{}
+	for _, w := range words {
+		if !seen[w] && exists(board, w) {
+			seen[w] = true
+			found = append(found, w)
+		}
+	}
+	return found
+}
+
+func exists(board [][]byte, word string) bool {
+	var search func(r, c, i int) bool
+	search = func(r, c, i int) bool {
+		if i == len(word) {
+			return true
+		}
+		if r < 0 || r >= len(board) || c < 0 || c >= len(board[0]) || board[r][c] != word[i] {
+			return false
+		}
+		saved := board[r][c]
+		board[r][c] = '#'
+		found := search(r+1, c, i+1) || search(r-1, c, i+1) || search(r, c+1, i+1) || search(r, c-1, i+1)
+		board[r][c] = saved
+		return found
+	}
+	for r := range board {
+		for c := range board[r] {
+			if search(r, c, 0) {
+				return true
+			}
+		}
+	}
+	return false
+}",
+      ),
+      #(
+        "Trie",
+        "O(m·n·4ᴸ) time · O(total letters) space",
+        "Build one trie of all the words and walk it *alongside* the board. Searching for each word separately re-walks every shared prefix once per word; the trie walks each prefix once and abandons a square the moment no word continues that way. That is where nearly all the saving is, and it is the reason this problem exists rather than being Word Search in a loop.",
+        "package main
+
+type searchNode struct {
+	children map[byte]*searchNode
+	word     string
+}
+
+func findWords(board [][]byte, words []string) []string {
+	// Put every word in a trie, then walk the board once, descending the
+	// trie in step: a dead branch prunes every word sharing that prefix.
+	root := &searchNode{children: map[byte]*searchNode{}}
+	for _, w := range words {
+		node := root
+		for i := 0; i < len(w); i++ {
+			next, ok := node.children[w[i]]
+			if !ok {
+				next = &searchNode{children: map[byte]*searchNode{}}
+				node.children[w[i]] = next
+			}
+			node = next
+		}
+		node.word = w
+	}
+	found := []string{}
+	var walk func(r, c int, node *searchNode)
+	walk = func(r, c int, node *searchNode) {
+		if r < 0 || r >= len(board) || c < 0 || c >= len(board[0]) {
+			return
+		}
+		next := node.children[board[r][c]]
+		if next == nil {
+			return
+		}
+		if next.word != \"\" {
+			found = append(found, next.word)
+			next.word = \"\" // each word once
+		}
+		saved := board[r][c]
+		board[r][c] = '#'
+		walk(r+1, c, next)
+		walk(r-1, c, next)
+		walk(r, c+1, next)
+		walk(r, c-1, next)
+		board[r][c] = saved
+	}
+	for r := range board {
+		for c := range board[r] {
+			walk(r, c, root)
+		}
+	}
+	return found
+}",
+      ),
+    ],
+    check: Check(
+      signature: "type searchNode struct { … }
+
+func findWords(board [][]byte, words []string) []string",
+      starter: "package main
+
+type searchNode struct {
+	// todo
+}
+
+func findWords(board [][]byte, words []string) []string {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func letters(rows ...string) [][]byte {
+	out := make([][]byte, len(rows))
+	for i, row := range rows {
+		out[i] = []byte(row)
+	}
+	return out
+}
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"findWords(board, ['oath','pea','eat','rain'])\", []string{\"eat\", \"oath\"}, sortStrings(findWords(letters(\"oaan\", \"etae\", \"ihkr\", \"iflv\"), []string{\"oath\", \"pea\", \"eat\", \"rain\"}))),
+			tc(\"findWords([['a','b'],['c','d']], ['abcb'])\", []string{}, sortStrings(findWords(letters(\"ab\", \"cd\"), []string{\"abcb\"}))),
+			tc(\"findWords([['a']], ['a'])\", []string{\"a\"}, sortStrings(findWords(letters(\"a\"), []string{\"a\"}))),
+			tc(\"findWords(board, [])\", []string{}, sortStrings(findWords(letters(\"oaan\", \"etae\"), []string{}))),
+			tc(\"findWords(board, ['oa', 'oa']) -- once each\", []string{\"oa\"}, sortStrings(findWords(letters(\"oaan\", \"etae\", \"ihkr\", \"iflv\"), []string{\"oa\", \"oa\"}))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc106_number_of_islands() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Union-Find",
+        "O(m·n·α(m·n)) time · O(m·n) space",
+        "The same count without recursing: join each land cell to the land above and to its left, and the answer is the number of land cells minus the number of joins that actually merged two components. Worth having because a deep enough grid overflows the recursive walk, and because union-find can take cells as they arrive rather than needing the whole grid first.",
+        "package main
+
+func numIslands(grid [][]byte) int {
+	if len(grid) == 0 {
+		return 0
+	}
+	rows, cols := len(grid), len(grid[0])
+	// Every land cell is its own set; union it with land to the right and
+	// below. The islands are the sets left standing.
+	parent := make([]int, rows*cols)
+	for i := range parent {
+		parent[i] = i
+	}
+	var find func(i int) int
+	find = func(i int) int {
+		for parent[i] != i {
+			parent[i] = parent[parent[i]]
+			i = parent[i]
+		}
+		return i
+	}
+	count := 0
+	for r := 0; r < rows; r++ {
+		for c := 0; c < cols; c++ {
+			if grid[r][c] == '1' {
+				count++
+			}
+		}
+	}
+	for r := 0; r < rows; r++ {
+		for c := 0; c < cols; c++ {
+			if grid[r][c] != '1' {
+				continue
+			}
+			for _, d := range [][2]int{{1, 0}, {0, 1}} {
+				nr, nc := r+d[0], c+d[1]
+				if nr < rows && nc < cols && grid[nr][nc] == '1' {
+					a, b := find(r*cols+c), find(nr*cols+nc)
+					if a != b {
+						parent[a] = b
+						count--
+					}
+				}
+			}
+		}
+	}
+	return count
+}",
+      ),
+      #(
+        "DFS",
+        "O(m·n) time · O(m·n) space",
+        "The grid is the graph: cells are nodes, the four neighbours are the edges, and nothing is ever built. Walk out from each unvisited land cell, mark everything it reaches, and add one — the traversal itself does the counting, which is why the answer needs no extra bookkeeping.",
+        "package main
+
+func numIslands(grid [][]byte) int {
+	count := 0
+	// Each unvisited land cell starts a new island; sink it whole so its
+	// other cells are not counted again.
+	var sink func(r, c int)
+	sink = func(r, c int) {
+		if r < 0 || r >= len(grid) || c < 0 || c >= len(grid[0]) || grid[r][c] != '1' {
+			return
+		}
+		grid[r][c] = '0'
+		sink(r+1, c)
+		sink(r-1, c)
+		sink(r, c+1)
+		sink(r, c-1)
+	}
+	for r := range grid {
+		for c := range grid[r] {
+			if grid[r][c] == '1' {
+				count++
+				sink(r, c)
+			}
+		}
+	}
+	return count
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func numIslands(grid [][]byte) int",
+      starter: "package main
+
+func numIslands(grid [][]byte) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func cells(rows ...string) [][]byte {
+	out := make([][]byte, len(rows))
+	for i, row := range rows {
+		out[i] = []byte(row)
+	}
+	return out
+}
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"numIslands(one big island)\", 1, numIslands(cells(\"11110\", \"11010\", \"11000\", \"00000\"))),
+			tc(\"numIslands(three islands)\", 3, numIslands(cells(\"11000\", \"11000\", \"00100\", \"00011\"))),
+			tc(\"numIslands(all water)\", 0, numIslands(cells(\"000\", \"000\"))),
+			tc(\"numIslands([['1']])\", 1, numIslands(cells(\"1\"))),
+			tc(\"numIslands(diagonals do not connect)\", 2, numIslands(cells(\"10\", \"01\"))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc107_clone_graph() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(V log V + E) time · O(V+E) space",
+        "Same map, depth-first instead of breadth-first — proof that the traversal order is irrelevant here. The copy is created and registered *before* its neighbours are visited, which is the ordering that makes a cycle find the half-built copy instead of recursing into it.",
+        "package main
+
+func cloneGraph(node *Node) *Node {
+	if node == nil {
+		return nil
+	}
+	// Breadth-first: clone nodes as they are discovered, then wire each
+	// clone's neighbours from the map once every node has a clone.
+	clones := map[*Node]*Node{node: {Val: node.Val}}
+	queue := []*Node{node}
+	for len(queue) > 0 {
+		current := queue[0]
+		queue = queue[1:]
+		for _, neighbour := range current.Neighbors {
+			if _, seen := clones[neighbour]; !seen {
+				clones[neighbour] = &Node{Val: neighbour.Val}
+				queue = append(queue, neighbour)
+			}
+			clones[current].Neighbors = append(clones[current].Neighbors, clones[neighbour])
+		}
+	}
+	return clones[node]
+}",
+      ),
+      #(
+        "BFS",
+        "O(V log V + E) time · O(V+E) space",
+        "The map from original node to its copy is the whole problem. Consulting it before copying anything is what makes a cycle terminate: a node already in the map is returned rather than copied again. Without that check any cycle recurses forever.",
+        "package main
+
+func cloneGraph(node *Node) *Node {
+	if node == nil {
+		return nil
+	}
+	// One clone per original, made the first time the original is seen;
+	// the map is also the visited set, so cycles terminate.
+	clones := map[*Node]*Node{}
+	var clone func(n *Node) *Node
+	clone = func(n *Node) *Node {
+		if c, ok := clones[n]; ok {
+			return c
+		}
+		c := &Node{Val: n.Val}
+		clones[n] = c
+		for _, neighbour := range n.Neighbors {
+			c.Neighbors = append(c.Neighbors, clone(neighbour))
+		}
+		return c
+	}
+	return clone(node)
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func cloneGraph(node *Node) *Node",
+      starter: "package main
+
+func cloneGraph(node *Node) *Node {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+// A clone must have the original's shape and share none of its nodes.
+func cloned(adj [][]int) [][]int {
+	original := graph(adj)
+	copy := cloneGraph(original)
+	if original != nil && (copy == original || copy.Neighbors != nil && len(copy.Neighbors) > 0 && copy.Neighbors[0] == original.Neighbors[0]) {
+		return [][]int{{-1}}
+	}
+	return adjacency(copy)
+}
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"cloneGraph(the 4-cycle)\", [][]int{{2, 4}, {1, 3}, {2, 4}, {1, 3}}, cloned([][]int{{2, 4}, {1, 3}, {2, 4}, {1, 3}})),
+			tc(\"cloneGraph(two nodes)\", [][]int{{2}, {1}}, cloned([][]int{{2}, {1}})),
+			tc(\"cloneGraph(one node)\", [][]int{{}}, cloned([][]int{{}})),
+			tc(\"cloneGraph(nil)\", [][]int{}, cloned([][]int{})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc108_max_area_of_island() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "BFS",
+        "O(m·n) time · O(m·n) space",
+        "The same areas found wave by wave. Nothing is gained over the depth-first version here, but the frontier is explicit rather than living on the call stack, which is what a grid deep enough to overflow the stack needs.",
+        "package main
+
+func maxAreaOfIsland(grid [][]int) int {
+	best := 0
+	for r := range grid {
+		for c := range grid[r] {
+			if grid[r][c] != 1 {
+				continue
+			}
+			// Flood the island with a queue, counting cells as they are sunk.
+			area := 0
+			queue := [][2]int{{r, c}}
+			grid[r][c] = 0
+			for len(queue) > 0 {
+				cell := queue[0]
+				queue = queue[1:]
+				area++
+				for _, d := range [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
+					nr, nc := cell[0]+d[0], cell[1]+d[1]
+					if nr >= 0 && nr < len(grid) && nc >= 0 && nc < len(grid[0]) && grid[nr][nc] == 1 {
+						grid[nr][nc] = 0
+						queue = append(queue, [2]int{nr, nc})
+					}
+				}
+			}
+			best = max(best, area)
+		}
+	}
+	return best
+}",
+      ),
+      #(
+        "DFS",
+        "O(m·n) time · O(m·n) space",
+        "Number of Islands with the count replaced by a size. Depth-first suits it because the size falls out of the return value — one for this cell plus whatever the four neighbours return — rather than needing a counter threaded through the walk.",
+        "package main
+
+func maxAreaOfIsland(grid [][]int) int {
+	best := 0
+	var area func(r, c int) int
+	area = func(r, c int) int {
+		if r < 0 || r >= len(grid) || c < 0 || c >= len(grid[0]) || grid[r][c] != 1 {
+			return 0
+		}
+		grid[r][c] = 0
+		return 1 + area(r+1, c) + area(r-1, c) + area(r, c+1) + area(r, c-1)
+	}
+	for r := range grid {
+		for c := range grid[r] {
+			best = max(best, area(r, c))
+		}
+	}
+	return best
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func maxAreaOfIsland(grid [][]int) int",
+      starter: "package main
+
+func maxAreaOfIsland(grid [][]int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"maxAreaOfIsland(the 8x13 example)\", 6, maxAreaOfIsland([][]int{
+				{0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0},
+				{0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
+				{0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0},
+				{0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0},
+				{0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0}})),
+			tc(\"maxAreaOfIsland([[0,0,0,0,0,0,0,0]])\", 0, maxAreaOfIsland([][]int{{0, 0, 0, 0, 0, 0, 0, 0}})),
+			tc(\"maxAreaOfIsland([[1]])\", 1, maxAreaOfIsland([][]int{{1}})),
+			tc(\"maxAreaOfIsland([[1,1],[1,0]])\", 3, maxAreaOfIsland([][]int{{1, 1}, {1, 0}})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc109_pacific_atlantic() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(m²·n²) time · O(m·n) space",
+        "The literal reading: from every cell, search downhill and see which oceans it reaches. O(cells) searches over O(cells) each, against two searches total — and the two are answering the same question, which is what makes the reversal legitimate rather than a trick.",
+        "package main
+
+func pacificAtlantic(heights [][]int) [][]int {
+	if len(heights) == 0 {
+		return [][]int{}
+	}
+	rows, cols := len(heights), len(heights[0])
+	// From every cell, flow downhill and see which oceans are reached.
+	// Simple, and quadratic in the grid size.
+	result := [][]int{}
+	for r := 0; r < rows; r++ {
+		for c := 0; c < cols; c++ {
+			seen := map[[2]int]bool{}
+			pacific, atlantic := false, false
+			var flow func(r, c int)
+			flow = func(r, c int) {
+				if seen[[2]int{r, c}] {
+					return
+				}
+				seen[[2]int{r, c}] = true
+				if r == 0 || c == 0 {
+					pacific = true
+				}
+				if r == rows-1 || c == cols-1 {
+					atlantic = true
+				}
+				for _, d := range [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
+					nr, nc := r+d[0], c+d[1]
+					if nr >= 0 && nr < rows && nc >= 0 && nc < cols && heights[nr][nc] <= heights[r][c] {
+						flow(nr, nc)
+					}
+				}
+			}
+			flow(r, c)
+			if pacific && atlantic {
+				result = append(result, []int{r, c})
+			}
+		}
+	}
+	return result
+}",
+      ),
+      #(
+        "BFS",
+        "O(m·n log(m·n)) time · O(m·n) space",
+        "Reverse the question. Asking of each cell whether water can get from there to both oceans repeats the same searches over and over; asking instead which cells an ocean could reach if water flowed uphill is two searches from the borders, and the answer is where the two sets meet. Flipping a search to start from the goal is the idea worth taking away.",
+        "package main
+
+func pacificAtlantic(heights [][]int) [][]int {
+	if len(heights) == 0 {
+		return [][]int{}
+	}
+	rows, cols := len(heights), len(heights[0])
+	// Flow uphill from each ocean's coast: the cells an ocean can reach
+	// going up are exactly the cells that drain down into it.
+	reach := func(coast [][2]int) [][]bool {
+		seen := make([][]bool, rows)
+		for r := range seen {
+			seen[r] = make([]bool, cols)
+		}
+		var climb func(r, c int)
+		climb = func(r, c int) {
+			seen[r][c] = true
+			for _, d := range [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
+				nr, nc := r+d[0], c+d[1]
+				if nr >= 0 && nr < rows && nc >= 0 && nc < cols && !seen[nr][nc] && heights[nr][nc] >= heights[r][c] {
+					climb(nr, nc)
+				}
+			}
+		}
+		for _, cell := range coast {
+			if !seen[cell[0]][cell[1]] {
+				climb(cell[0], cell[1])
+			}
+		}
+		return seen
+	}
+	pacificCoast, atlanticCoast := [][2]int{}, [][2]int{}
+	for r := 0; r < rows; r++ {
+		pacificCoast = append(pacificCoast, [2]int{r, 0})
+		atlanticCoast = append(atlanticCoast, [2]int{r, cols - 1})
+	}
+	for c := 0; c < cols; c++ {
+		pacificCoast = append(pacificCoast, [2]int{0, c})
+		atlanticCoast = append(atlanticCoast, [2]int{rows - 1, c})
+	}
+	pacific, atlantic := reach(pacificCoast), reach(atlanticCoast)
+	result := [][]int{}
+	for r := 0; r < rows; r++ {
+		for c := 0; c < cols; c++ {
+			if pacific[r][c] && atlantic[r][c] {
+				result = append(result, []int{r, c})
+			}
+		}
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func pacificAtlantic(heights [][]int) [][]int",
+      starter: "package main
+
+func pacificAtlantic(heights [][]int) [][]int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		example := [][]int{{1, 2, 2, 3, 5}, {3, 2, 3, 4, 4}, {2, 4, 5, 3, 1}, {6, 7, 1, 4, 5}, {5, 1, 1, 2, 4}}
+		return []testCase{
+			tc(\"pacificAtlantic(the 5x5 example)\", [][]int{{0, 4}, {1, 3}, {1, 4}, {2, 2}, {3, 0}, {3, 1}, {4, 0}}, sortSeqs(pacificAtlantic(example))),
+			tc(\"pacificAtlantic([[1]])\", [][]int{{0, 0}}, sortSeqs(pacificAtlantic([][]int{{1}}))),
+			tc(\"pacificAtlantic([])\", [][]int{}, sortSeqs(pacificAtlantic([][]int{}))),
+			tc(\"pacificAtlantic([[1,1],[1,1]])\", [][]int{{0, 0}, {0, 1}, {1, 0}, {1, 1}}, sortSeqs(pacificAtlantic([][]int{{1, 1}, {1, 1}}))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
 pub fn nc10_three_sum() -> Embedded {
   Embedded(
     solutions: [
@@ -787,6 +1934,1164 @@ func main() {
   )
 }
 
+pub fn nc110_surrounded_regions() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Per-Region DFS",
+        "O(m·n) time · O(m·n) space",
+        "The direct reading: gather each region, then flip it only if no cell in it sits on the border. Honest, and it makes explicit what the border-first version is exploiting — but it has to collect the whole region before it can decide anything about it.",
+        "package main
+
+func solve(board [][]byte) {
+	if len(board) == 0 {
+		return
+	}
+	rows, cols := len(board), len(board[0])
+	visited := make([][]bool, rows)
+	for r := range visited {
+		visited[r] = make([]bool, cols)
+	}
+	// Flood each region of Os, remembering whether it touched the border;
+	// capture the whole region afterwards if it did not.
+	for r := 0; r < rows; r++ {
+		for c := 0; c < cols; c++ {
+			if board[r][c] != 'O' || visited[r][c] {
+				continue
+			}
+			region := [][2]int{}
+			touchesBorder := false
+			queue := [][2]int{{r, c}}
+			visited[r][c] = true
+			for len(queue) > 0 {
+				cell := queue[0]
+				queue = queue[1:]
+				region = append(region, cell)
+				if cell[0] == 0 || cell[0] == rows-1 || cell[1] == 0 || cell[1] == cols-1 {
+					touchesBorder = true
+				}
+				for _, d := range [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
+					nr, nc := cell[0]+d[0], cell[1]+d[1]
+					if nr >= 0 && nr < rows && nc >= 0 && nc < cols && board[nr][nc] == 'O' && !visited[nr][nc] {
+						visited[nr][nc] = true
+						queue = append(queue, [2]int{nr, nc})
+					}
+				}
+			}
+			if !touchesBorder {
+				for _, cell := range region {
+					board[cell[0]][cell[1]] = 'X'
+				}
+			}
+		}
+	}
+}",
+      ),
+      #(
+        "Boundary DFS",
+        "O(m·n) time · O(m·n) space",
+        "Easier backwards. Rather than finding the surrounded regions, mark the ones that are not — everything reachable from a border O — and flip whatever is left. That side-steps having to notice mid-traversal that a region touches the edge, and costs one pass from the border rather than one per region.",
+        "package main
+
+func solve(board [][]byte) {
+	if len(board) == 0 {
+		return
+	}
+	rows, cols := len(board), len(board[0])
+	// An O survives only if it touches the border through other Os. Mark
+	// every O reachable from the border, then flip the rest.
+	var keep func(r, c int)
+	keep = func(r, c int) {
+		if r < 0 || r >= rows || c < 0 || c >= cols || board[r][c] != 'O' {
+			return
+		}
+		board[r][c] = 'S'
+		keep(r+1, c)
+		keep(r-1, c)
+		keep(r, c+1)
+		keep(r, c-1)
+	}
+	for r := 0; r < rows; r++ {
+		keep(r, 0)
+		keep(r, cols-1)
+	}
+	for c := 0; c < cols; c++ {
+		keep(0, c)
+		keep(rows-1, c)
+	}
+	for r := range board {
+		for c := range board[r] {
+			switch board[r][c] {
+			case 'O':
+				board[r][c] = 'X'
+			case 'S':
+				board[r][c] = 'O'
+			}
+		}
+	}
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func solve(board [][]byte)",
+      starter: "package main
+
+func solve(board [][]byte) {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func solved(rows ...string) []string {
+	board := make([][]byte, len(rows))
+	for i, row := range rows {
+		board[i] = []byte(row)
+	}
+	solve(board)
+	out := make([]string, len(board))
+	for i, row := range board {
+		out[i] = string(row)
+	}
+	return out
+}
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"solve(the 4x4 example)\", []string{\"XXXX\", \"XXXX\", \"XXXX\", \"XOXX\"}, solved(\"XXXX\", \"XOOX\", \"XXOX\", \"XOXX\")),
+			tc(\"solve([['X']])\", []string{\"X\"}, solved(\"X\")),
+			tc(\"solve(an O on the border survives)\", []string{\"OX\", \"XX\"}, solved(\"OX\", \"XX\")),
+			tc(\"solve(a region linked to the border survives)\", []string{\"OOX\", \"XOX\", \"XXX\"}, solved(\"OOX\", \"XOX\", \"XXX\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc111_rotting_oranges() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Simulation",
+        "O(m·n·(m+n)) time · O(m·n) space",
+        "Rebuild the grid one minute at a time, exactly as described. The same complexity as the wave search, and it makes the equivalence visible: a round of simulation and a level of breadth-first search are the same step written two ways.",
+        "package main
+
+func orangesRotting(grid [][]int) int {
+	rows, cols := len(grid), len(grid[0])
+	// Simulate minute by minute over the whole grid, rotting the fresh
+	// neighbours of what was rotten at the start of the minute, until a
+	// minute changes nothing.
+	minutes := 0
+	for {
+		toRot := [][2]int{}
+		for r := 0; r < rows; r++ {
+			for c := 0; c < cols; c++ {
+				if grid[r][c] != 2 {
+					continue
+				}
+				for _, d := range [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
+					nr, nc := r+d[0], c+d[1]
+					if nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc] == 1 {
+						toRot = append(toRot, [2]int{nr, nc})
+					}
+				}
+			}
+		}
+		if len(toRot) == 0 {
+			break
+		}
+		for _, cell := range toRot {
+			grid[cell[0]][cell[1]] = 2
+		}
+		minutes++
+	}
+	for _, row := range grid {
+		for _, cell := range row {
+			if cell == 1 {
+				return -1
+			}
+		}
+	}
+	return minutes
+}",
+      ),
+      #(
+        "Multi-Source BFS",
+        "O(m·n) time · O(m·n) space",
+        "Multi-source breadth-first search: every rotten orange is on the frontier at minute zero, so each wave of the search *is* one minute and the number of waves is the answer. A separate search per source would give distances from each and then still need combining. Any fresh orange left unreached is what makes the answer -1.",
+        "package main
+
+func orangesRotting(grid [][]int) int {
+	rows, cols := len(grid), len(grid[0])
+	// Multi-source breadth-first search from every rotten orange at once:
+	// each level of the search is one minute.
+	queue := [][2]int{}
+	fresh := 0
+	for r := 0; r < rows; r++ {
+		for c := 0; c < cols; c++ {
+			switch grid[r][c] {
+			case 2:
+				queue = append(queue, [2]int{r, c})
+			case 1:
+				fresh++
+			}
+		}
+	}
+	minutes := 0
+	for len(queue) > 0 && fresh > 0 {
+		next := [][2]int{}
+		for _, cell := range queue {
+			for _, d := range [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
+				nr, nc := cell[0]+d[0], cell[1]+d[1]
+				if nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc] == 1 {
+					grid[nr][nc] = 2
+					fresh--
+					next = append(next, [2]int{nr, nc})
+				}
+			}
+		}
+		queue = next
+		minutes++
+	}
+	if fresh > 0 {
+		return -1
+	}
+	return minutes
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func orangesRotting(grid [][]int) int",
+      starter: "package main
+
+func orangesRotting(grid [][]int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"orangesRotting([[2,1,1],[1,1,0],[0,1,1]])\", 4, orangesRotting([][]int{{2, 1, 1}, {1, 1, 0}, {0, 1, 1}})),
+			tc(\"orangesRotting([[2,1,1],[0,1,1],[1,0,1]]) -- one is unreachable\", -1, orangesRotting([][]int{{2, 1, 1}, {0, 1, 1}, {1, 0, 1}})),
+			tc(\"orangesRotting([[0,2]])\", 0, orangesRotting([][]int{{0, 2}})),
+			tc(\"orangesRotting([[1]]) -- nothing rotten to begin with\", -1, orangesRotting([][]int{{1}})),
+			tc(\"orangesRotting([[2,2],[1,1],[0,0],[2,0]])\", 1, orangesRotting([][]int{{2, 2}, {1, 1}, {0, 0}, {2, 0}})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc112_walls_and_gates() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(m²·n²) time · O(m·n) space",
+        "A search outward from each empty room until it meets a gate. One full search per room for an answer the single multi-source pass already has, which is the cost the wave avoids — but it is the version that says the problem statement outright.",
+        "package main
+
+const inf = 2147483647
+
+func wallsAndGates(rooms [][]int) {
+	if len(rooms) == 0 {
+		return
+	}
+	rows, cols := len(rooms), len(rooms[0])
+	// From each empty room, a breadth-first search until the first gate.
+	// One search per room rather than one in total.
+	distances := make([][]int, rows)
+	for r := range distances {
+		distances[r] = append([]int{}, rooms[r]...)
+	}
+	for r := 0; r < rows; r++ {
+		for c := 0; c < cols; c++ {
+			if rooms[r][c] != inf {
+				continue
+			}
+			seen := map[[2]int]bool{{r, c}: true}
+			queue := [][3]int{{r, c, 0}}
+			for len(queue) > 0 {
+				cell := queue[0]
+				queue = queue[1:]
+				if rooms[cell[0]][cell[1]] == 0 {
+					distances[r][c] = cell[2]
+					break
+				}
+				for _, d := range [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
+					nr, nc := cell[0]+d[0], cell[1]+d[1]
+					if nr >= 0 && nr < rows && nc >= 0 && nc < cols && rooms[nr][nc] != -1 && !seen[[2]int{nr, nc}] {
+						seen[[2]int{nr, nc}] = true
+						queue = append(queue, [3]int{nr, nc, cell[2] + 1})
+					}
+				}
+			}
+		}
+	}
+	for r := range rooms {
+		copy(rooms[r], distances[r])
+	}
+}",
+      ),
+      #(
+        "Multi-Source BFS",
+        "O(m·n) time · O(m·n) space",
+        "The same multi-source wave as rotting oranges, writing the wave number into the cell instead of counting waves. Starting from every gate at once is what makes the first arrival at a room its nearest gate — no comparison between gates is ever needed.",
+        "package main
+
+const inf = 2147483647
+
+func wallsAndGates(rooms [][]int) {
+	if len(rooms) == 0 {
+		return
+	}
+	rows, cols := len(rooms), len(rooms[0])
+	// Breadth-first from every gate at once: the first time a room is
+	// reached is by its nearest gate, so each room is written once.
+	queue := [][2]int{}
+	for r := 0; r < rows; r++ {
+		for c := 0; c < cols; c++ {
+			if rooms[r][c] == 0 {
+				queue = append(queue, [2]int{r, c})
+			}
+		}
+	}
+	for len(queue) > 0 {
+		cell := queue[0]
+		queue = queue[1:]
+		for _, d := range [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
+			nr, nc := cell[0]+d[0], cell[1]+d[1]
+			if nr >= 0 && nr < rows && nc >= 0 && nc < cols && rooms[nr][nc] == inf {
+				rooms[nr][nc] = rooms[cell[0]][cell[1]] + 1
+				queue = append(queue, [2]int{nr, nc})
+			}
+		}
+	}
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func wallsAndGates(rooms [][]int)",
+      starter: "package main
+
+func wallsAndGates(rooms [][]int) {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func filled(rooms [][]int) [][]int {
+	wallsAndGates(rooms)
+	return rooms
+}
+
+func main() {
+	run(func() []testCase {
+		const far = 2147483647
+		return []testCase{
+			tc(\"wallsAndGates(the classic 4x4)\", [][]int{{3, -1, 0, 1}, {2, 2, 1, -1}, {1, -1, 2, -1}, {0, -1, 3, 4}}, filled([][]int{{far, -1, 0, far}, {far, far, far, -1}, {far, -1, far, -1}, {0, -1, far, far}})),
+			tc(\"wallsAndGates([[0]])\", [][]int{{0}}, filled([][]int{{0}})),
+			tc(\"wallsAndGates([[-1]])\", [][]int{{-1}}, filled([][]int{{-1}})),
+			tc(\"wallsAndGates([])\", [][]int{}, filled([][]int{})),
+			tc(\"wallsAndGates(no gate at all)\", [][]int{{far, far}}, filled([][]int{{far, far}})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc113_course_schedule() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS Colouring",
+        "O(V+E) time · O(V+E) space",
+        "Depth-first needs three states, not two. \"Seen\" is not enough: a node reached again down a *different* branch is fine, while one reached again while still on the current path is a cycle. The in-progress set is exactly what tells those apart.",
+        "package main
+
+func canFinish(numCourses int, prerequisites [][]int) bool {
+	next := make([][]int, numCourses)
+	for _, p := range prerequisites {
+		next[p[1]] = append(next[p[1]], p[0])
+	}
+	// Three colours: unvisited, on the current path, finished. Reaching a
+	// node on the current path is a cycle.
+	const unvisited, onPath, done = 0, 1, 2
+	colour := make([]int, numCourses)
+	var acyclic func(course int) bool
+	acyclic = func(course int) bool {
+		switch colour[course] {
+		case onPath:
+			return false
+		case done:
+			return true
+		}
+		colour[course] = onPath
+		for _, dependent := range next[course] {
+			if !acyclic(dependent) {
+				return false
+			}
+		}
+		colour[course] = done
+		return true
+	}
+	for course := 0; course < numCourses; course++ {
+		if !acyclic(course) {
+			return false
+		}
+	}
+	return true
+}",
+      ),
+      #(
+        "Topological Sort",
+        "O(V+E) time · O(V+E) space",
+        "\"Can every course be finished\" is \"is this graph acyclic\". Kahn's algorithm takes whatever has no outstanding prerequisites, releases what depended on it, and stalls exactly when a cycle remains — so the cycle check is the algorithm running out of work early, not a separate test.",
+        "package main
+
+func canFinish(numCourses int, prerequisites [][]int) bool {
+	// Kahn's algorithm: repeatedly take a course with no remaining
+	// prerequisites. If every course gets taken, there was no cycle.
+	indegree := make([]int, numCourses)
+	next := make([][]int, numCourses)
+	for _, p := range prerequisites {
+		course, prerequisite := p[0], p[1]
+		next[prerequisite] = append(next[prerequisite], course)
+		indegree[course]++
+	}
+	queue := []int{}
+	for course, n := range indegree {
+		if n == 0 {
+			queue = append(queue, course)
+		}
+	}
+	taken := 0
+	for len(queue) > 0 {
+		course := queue[0]
+		queue = queue[1:]
+		taken++
+		for _, dependent := range next[course] {
+			indegree[dependent]--
+			if indegree[dependent] == 0 {
+				queue = append(queue, dependent)
+			}
+		}
+	}
+	return taken == numCourses
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func canFinish(numCourses int, prerequisites [][]int) bool",
+      starter: "package main
+
+func canFinish(numCourses int, prerequisites [][]int) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"canFinish(2, [[1,0]])\", true, canFinish(2, [][]int{{1, 0}})),
+			tc(\"canFinish(2, [[1,0],[0,1]])\", false, canFinish(2, [][]int{{1, 0}, {0, 1}})),
+			tc(\"canFinish(1, [])\", true, canFinish(1, [][]int{})),
+			tc(\"canFinish(5, [[1,4],[2,4],[3,1],[3,2]])\", true, canFinish(5, [][]int{{1, 4}, {2, 4}, {3, 1}, {3, 2}})),
+			tc(\"canFinish(3, [[0,1],[1,2],[2,0]])\", false, canFinish(3, [][]int{{0, 1}, {1, 2}, {2, 0}})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc114_course_schedule_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS Postorder",
+        "O(V+E) time · O(V+E) space",
+        "Record a course only after everything it depends on has been recorded. That post-order is a valid schedule by construction, with no indegrees to maintain — and it comes out reversed, which is the tell that it was built from the dependencies up.",
+        "package main
+
+func findOrder(numCourses int, prerequisites [][]int) []int {
+	next := make([][]int, numCourses)
+	for _, p := range prerequisites {
+		next[p[1]] = append(next[p[1]], p[0])
+	}
+	// Depth-first: a course is appended after everything that depends on
+	// it, so the reversed post-order is a schedule. Path colouring finds
+	// a cycle.
+	const unvisited, onPath, done = 0, 1, 2
+	colour := make([]int, numCourses)
+	postorder := []int{}
+	var visit func(course int) bool
+	visit = func(course int) bool {
+		switch colour[course] {
+		case onPath:
+			return false
+		case done:
+			return true
+		}
+		colour[course] = onPath
+		for _, dependent := range next[course] {
+			if !visit(dependent) {
+				return false
+			}
+		}
+		colour[course] = done
+		postorder = append(postorder, course)
+		return true
+	}
+	for course := 0; course < numCourses; course++ {
+		if !visit(course) {
+			return []int{}
+		}
+	}
+	for i, j := 0, len(postorder)-1; i < j; i, j = i+1, j-1 {
+		postorder[i], postorder[j] = postorder[j], postorder[i]
+	}
+	return postorder
+}",
+      ),
+      #(
+        "Topological Sort",
+        "O(V+E) time · O(V+E) space",
+        "The same computation as deciding whether it is possible — the order courses come off the ready list is the answer. Detecting the cycle and producing the schedule are not two passes.",
+        "package main
+
+func findOrder(numCourses int, prerequisites [][]int) []int {
+	indegree := make([]int, numCourses)
+	next := make([][]int, numCourses)
+	for _, p := range prerequisites {
+		next[p[1]] = append(next[p[1]], p[0])
+		indegree[p[0]]++
+	}
+	// Kahn's algorithm; the order the courses leave the queue is a valid
+	// schedule, and a short one means a cycle.
+	queue := []int{}
+	for course, n := range indegree {
+		if n == 0 {
+			queue = append(queue, course)
+		}
+	}
+	order := []int{}
+	for len(queue) > 0 {
+		course := queue[0]
+		queue = queue[1:]
+		order = append(order, course)
+		for _, dependent := range next[course] {
+			indegree[dependent]--
+			if indegree[dependent] == 0 {
+				queue = append(queue, dependent)
+			}
+		}
+	}
+	if len(order) != numCourses {
+		return []int{}
+	}
+	return order
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func findOrder(numCourses int, prerequisites [][]int) []int",
+      starter: "package main
+
+func findOrder(numCourses int, prerequisites [][]int) []int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+// Any order that respects the prerequisites is right, so check the order
+// rather than compare it to one answer.
+func valid(numCourses int, prerequisites [][]int) bool {
+	order := findOrder(numCourses, prerequisites)
+	if len(order) != numCourses {
+		return false
+	}
+	position := map[int]int{}
+	for i, course := range order {
+		position[course] = i
+	}
+	for _, p := range prerequisites {
+		if position[p[1]] > position[p[0]] {
+			return false
+		}
+	}
+	return true
+}
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"findOrder(2, [[1,0]])\", []int{0, 1}, findOrder(2, [][]int{{1, 0}})),
+			tc(\"findOrder(4, [[1,0],[2,0],[3,1],[3,2]]) is a valid order\", true, valid(4, [][]int{{1, 0}, {2, 0}, {3, 1}, {3, 2}})),
+			tc(\"findOrder(1, [])\", []int{0}, findOrder(1, [][]int{})),
+			tc(\"findOrder(2, [[1,0],[0,1]]) -- a cycle\", []int{}, findOrder(2, [][]int{{1, 0}, {0, 1}})),
+			tc(\"findOrder(3, []) is a valid order\", true, valid(3, [][]int{})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc115_redundant_connection() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Try removing each edge, latest first, and keep the first removal that leaves a tree. O(n^2) against near-linear, but it needs no new structure and it is the specification read literally.",
+        "package main
+
+func findRedundantConnection(edges [][]int) []int {
+	// Try removing each edge from the last to the first; the first removal
+	// that leaves the graph a tree (connected, n-1 edges) is the answer.
+	n := len(edges)
+	for skip := n - 1; skip >= 0; skip-- {
+		adjacent := make([][]int, n+1)
+		for i, edge := range edges {
+			if i == skip {
+				continue
+			}
+			adjacent[edge[0]] = append(adjacent[edge[0]], edge[1])
+			adjacent[edge[1]] = append(adjacent[edge[1]], edge[0])
+		}
+		seen := make([]bool, n+1)
+		stack := []int{1}
+		seen[1] = true
+		reached := 0
+		for len(stack) > 0 {
+			node := stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+			reached++
+			for _, next := range adjacent[node] {
+				if !seen[next] {
+					seen[next] = true
+					stack = append(stack, next)
+				}
+			}
+		}
+		if reached == n {
+			return edges[skip]
+		}
+	}
+	return []int{}
+}",
+      ),
+      #(
+        "Union-Find",
+        "O(n·α(n)) time · O(n) space",
+        "n nodes and n edges means exactly one cycle, and union-find finds it the moment an edge joins two nodes already connected. Processing the edges in the order given is what makes the first such edge the *last* removable one, which is what the problem asks for.",
+        "package main
+
+func findRedundantConnection(edges [][]int) []int {
+	// Union-find over the edges in order: the first edge whose endpoints
+	// are already connected closes the cycle, and it is the last such edge
+	// in the input among those on the cycle.
+	parent := make([]int, len(edges)+1)
+	for i := range parent {
+		parent[i] = i
+	}
+	var find func(i int) int
+	find = func(i int) int {
+		for parent[i] != i {
+			parent[i] = parent[parent[i]]
+			i = parent[i]
+		}
+		return i
+	}
+	for _, edge := range edges {
+		a, b := find(edge[0]), find(edge[1])
+		if a == b {
+			return edge
+		}
+		parent[a] = b
+	}
+	return []int{}
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func findRedundantConnection(edges [][]int) []int",
+      starter: "package main
+
+func findRedundantConnection(edges [][]int) []int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"findRedundantConnection([[1,2],[1,3],[2,3]])\", []int{2, 3}, findRedundantConnection([][]int{{1, 2}, {1, 3}, {2, 3}})),
+			tc(\"findRedundantConnection([[1,2],[2,3],[3,4],[1,4],[1,5]])\", []int{1, 4}, findRedundantConnection([][]int{{1, 2}, {2, 3}, {3, 4}, {1, 4}, {1, 5}})),
+			tc(\"findRedundantConnection([[1,2],[2,1]])\", []int{2, 1}, findRedundantConnection([][]int{{1, 2}, {2, 1}})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc116_connected_components() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(V+E) time · O(V+E) space",
+        "One search per unvisited node, exactly as with islands on a grid — the same counting idea with an adjacency list instead of coordinates. The contrast with union-find is the point: this needs the whole graph up front, the other can take edges as they arrive.",
+        "package main
+
+func countComponents(n int, edges [][]int) int {
+	adjacent := make([][]int, n)
+	for _, edge := range edges {
+		adjacent[edge[0]] = append(adjacent[edge[0]], edge[1])
+		adjacent[edge[1]] = append(adjacent[edge[1]], edge[0])
+	}
+	// Each unvisited node starts a component; flood it so the rest of it
+	// is not counted again.
+	seen := make([]bool, n)
+	components := 0
+	for start := 0; start < n; start++ {
+		if seen[start] {
+			continue
+		}
+		components++
+		stack := []int{start}
+		seen[start] = true
+		for len(stack) > 0 {
+			node := stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+			for _, next := range adjacent[node] {
+				if !seen[next] {
+					seen[next] = true
+					stack = append(stack, next)
+				}
+			}
+		}
+	}
+	return components
+}",
+      ),
+      #(
+        "Union-Find",
+        "O(E·α(V)) time · O(V) space",
+        "Start at n components and subtract a merge for every edge that actually joins two different ones. No adjacency list, no traversal — the count falls straight out of how many merges happened.",
+        "package main
+
+func countComponents(n int, edges [][]int) int {
+	// Union-find: start with n components and lose one per union that
+	// joins two different sets.
+	parent := make([]int, n)
+	for i := range parent {
+		parent[i] = i
+	}
+	var find func(i int) int
+	find = func(i int) int {
+		for parent[i] != i {
+			parent[i] = parent[parent[i]]
+			i = parent[i]
+		}
+		return i
+	}
+	components := n
+	for _, edge := range edges {
+		a, b := find(edge[0]), find(edge[1])
+		if a != b {
+			parent[a] = b
+			components--
+		}
+	}
+	return components
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func countComponents(n int, edges [][]int) int",
+      starter: "package main
+
+func countComponents(n int, edges [][]int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"countComponents(5, [[0,1],[1,2],[3,4]])\", 2, countComponents(5, [][]int{{0, 1}, {1, 2}, {3, 4}})),
+			tc(\"countComponents(5, [[0,1],[1,2],[2,3],[3,4]])\", 1, countComponents(5, [][]int{{0, 1}, {1, 2}, {2, 3}, {3, 4}})),
+			tc(\"countComponents(3, [])\", 3, countComponents(3, [][]int{})),
+			tc(\"countComponents(0, [])\", 0, countComponents(0, [][]int{})),
+			tc(\"countComponents(4, [[0,1],[1,0]])\", 3, countComponents(4, [][]int{{0, 1}, {1, 0}})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc117_graph_valid_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Union-Find",
+        "O(n·α(n)) time · O(n) space",
+        "Both conditions from one pass. An edge inside a component is a cycle, so if none is, the graph is a forest — and a forest with n-1 merges is a single tree. No adjacency list and no traversal.",
+        "package main
+
+func validTree(n int, edges [][]int) bool {
+	// Union-find: an edge inside one set is a cycle; after every edge,
+	// one set means connected.
+	parent := make([]int, n)
+	for i := range parent {
+		parent[i] = i
+	}
+	var find func(i int) int
+	find = func(i int) int {
+		for parent[i] != i {
+			parent[i] = parent[parent[i]]
+			i = parent[i]
+		}
+		return i
+	}
+	components := n
+	for _, edge := range edges {
+		a, b := find(edge[0]), find(edge[1])
+		if a == b {
+			return false
+		}
+		parent[a] = b
+		components--
+	}
+	return components <= 1
+}",
+      ),
+      #(
+        "DFS",
+        "O(n) time · O(n) space",
+        "A tree is connected *and* acyclic, but with exactly n-1 edges either condition implies the other, so the edge count plus one of them is enough. Here it is the count plus reachability. The n = 0 case has to be stated separately, since the n-1 count says otherwise.",
+        "package main
+
+func validTree(n int, edges [][]int) bool {
+	// A tree on n nodes has exactly n-1 edges and is connected. With the
+	// edge count right, connectivity from node 0 is the only thing to check.
+	if n == 0 {
+		return true
+	}
+	if len(edges) != n-1 {
+		return false
+	}
+	adjacent := make([][]int, n)
+	for _, edge := range edges {
+		adjacent[edge[0]] = append(adjacent[edge[0]], edge[1])
+		adjacent[edge[1]] = append(adjacent[edge[1]], edge[0])
+	}
+	seen := make([]bool, n)
+	stack := []int{0}
+	seen[0] = true
+	reached := 0
+	for len(stack) > 0 {
+		node := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		reached++
+		for _, next := range adjacent[node] {
+			if !seen[next] {
+				seen[next] = true
+				stack = append(stack, next)
+			}
+		}
+	}
+	return reached == n
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func validTree(n int, edges [][]int) bool",
+      starter: "package main
+
+func validTree(n int, edges [][]int) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"validTree(5, [[0,1],[0,2],[0,3],[1,4]])\", true, validTree(5, [][]int{{0, 1}, {0, 2}, {0, 3}, {1, 4}})),
+			tc(\"validTree(5, [[0,1],[1,2],[2,3],[1,3],[1,4]])\", false, validTree(5, [][]int{{0, 1}, {1, 2}, {2, 3}, {1, 3}, {1, 4}})),
+			tc(\"validTree(1, [])\", true, validTree(1, [][]int{})),
+			tc(\"validTree(0, [])\", true, validTree(0, [][]int{})),
+			tc(\"validTree(2, []) -- disconnected\", false, validTree(2, [][]int{})),
+			tc(\"validTree(4, [[0,1],[2,3]]) -- two trees\", false, validTree(4, [][]int{{0, 1}, {2, 3}})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc118_word_ladder() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²·k) time · O(n·k) space",
+        "Neighbours found by comparing against every remaining word. Simpler to state, and O(n) comparisons per expansion instead of a constant number of lookups — which is exactly the cost the wildcard buckets remove.",
+        "package main
+
+func ladderLength(beginWord string, endWord string, wordList []string) int {
+	// Build the adjacency explicitly by comparing every pair of words
+	// (O(n^2 * len)), then a plain breadth-first search over it.
+	words := append([]string{beginWord}, wordList...)
+	target := -1
+	for i, w := range words {
+		if w == endWord {
+			target = i
+		}
+	}
+	if target < 0 {
+		return 0
+	}
+	adjacent := make([][]int, len(words))
+	for i := 0; i < len(words); i++ {
+		for j := i + 1; j < len(words); j++ {
+			if oneLetterApart(words[i], words[j]) {
+				adjacent[i] = append(adjacent[i], j)
+				adjacent[j] = append(adjacent[j], i)
+			}
+		}
+	}
+	seen := make([]bool, len(words))
+	seen[0] = true
+	queue := []int{0}
+	for length := 1; len(queue) > 0; length++ {
+		next := []int{}
+		for _, i := range queue {
+			if words[i] == endWord {
+				return length
+			}
+			for _, j := range adjacent[i] {
+				if !seen[j] {
+					seen[j] = true
+					next = append(next, j)
+				}
+			}
+		}
+		queue = next
+	}
+	return 0
+}
+
+func oneLetterApart(a, b string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	differences := 0
+	for i := 0; i < len(a); i++ {
+		if a[i] != b[i] {
+			differences++
+		}
+	}
+	return differences == 1
+}",
+      ),
+      #(
+        "BFS",
+        "O(n·k²) time · O(n·k) space",
+        "Shortest path on an unweighted graph, so breadth-first — but the graph is never built. Two words are neighbours when they share a wildcard pattern like \"*ot\", so bucketing every word under each of its patterns gives the adjacency in linear time.",
+        "package main
+
+func ladderLength(beginWord string, endWord string, wordList []string) int {
+	words := map[string]bool{}
+	for _, w := range wordList {
+		words[w] = true
+	}
+	if !words[endWord] {
+		return 0
+	}
+	// Breadth-first over words, generating each neighbour by changing one
+	// letter and keeping the ones in the list. Level = ladder length.
+	queue := []string{beginWord}
+	delete(words, beginWord)
+	for length := 1; len(queue) > 0; length++ {
+		next := []string{}
+		for _, word := range queue {
+			if word == endWord {
+				return length
+			}
+			letters := []byte(word)
+			for i := range letters {
+				original := letters[i]
+				for c := byte('a'); c <= 'z'; c++ {
+					letters[i] = c
+					candidate := string(letters)
+					if words[candidate] {
+						delete(words, candidate)
+						next = append(next, candidate)
+					}
+				}
+				letters[i] = original
+			}
+		}
+		queue = next
+	}
+	return 0
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func ladderLength(beginWord string, endWord string, wordList []string) int",
+      starter: "package main
+
+func ladderLength(beginWord string, endWord string, wordList []string) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"ladderLength('hit','cog', full list)\", 5, ladderLength(\"hit\", \"cog\", []string{\"hot\", \"dot\", \"dog\", \"lot\", \"log\", \"cog\"})),
+			tc(\"ladderLength('hit','cog', without cog)\", 0, ladderLength(\"hit\", \"cog\", []string{\"hot\", \"dot\", \"dog\", \"lot\", \"log\"})),
+			tc(\"ladderLength('a','c', ['a','b','c'])\", 2, ladderLength(\"a\", \"c\", []string{\"a\", \"b\", \"c\"})),
+			tc(\"ladderLength('hit','hit', ['hit'])\", 1, ladderLength(\"hit\", \"hit\", []string{\"hit\"})),
+			tc(\"ladderLength('hot','dog', ['hot','dog']) -- no bridge\", 0, ladderLength(\"hot\", \"dog\", []string{\"hot\", \"dog\"})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc119_reconstruct_itinerary() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backtracking",
+        "O(E!) time · O(E²) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every ticket used, smallest option first, undoing a choice that leads nowhere. Because the options are sorted, the first complete itinerary found is already the smallest — no candidates to compare. Exponential in the worst case, which is precisely what Hierholzer's one-pass walk removes.",
+        "package main
+
+import \"sort\"
+
+func findItinerary(tickets [][]string) []string {
+	// Try destinations in lexical order and backtrack when a choice
+	// strands the rest of the tickets. The first complete route found is
+	// the smallest.
+	next := map[string][]string{}
+	for _, t := range tickets {
+		next[t[0]] = append(next[t[0]], t[1])
+	}
+	used := map[string][]bool{}
+	for airport, destinations := range next {
+		sort.Strings(destinations)
+		used[airport] = make([]bool, len(destinations))
+	}
+	route := []string{\"JFK\"}
+	var build func() bool
+	build = func() bool {
+		if len(route) == len(tickets)+1 {
+			return true
+		}
+		airport := route[len(route)-1]
+		for i, destination := range next[airport] {
+			if used[airport][i] {
+				continue
+			}
+			used[airport][i] = true
+			route = append(route, destination)
+			if build() {
+				return true
+			}
+			route = route[:len(route)-1]
+			used[airport][i] = false
+		}
+		return false
+	}
+	build()
+	return route
+}",
+      ),
+      #(
+        "Hierholzer",
+        "O(E log E) time · O(E) space",
+        "Hierholzer's algorithm. Take the smallest unused ticket every time and never look back — an airport is only recorded once it has no tickets left, so the dead end the greedy choice walks into is exactly where the route has to *end*, and recording it first is what puts it last. Nothing is ever undone, which is the whole difference from the backtracking version.",
+        "package main
+
+import \"sort\"
+
+func findItinerary(tickets [][]string) []string {
+	// Hierholzer's algorithm for an Eulerian path: from each airport take
+	// the smallest unused destination first; an airport is appended once
+	// it has no tickets left, and the reversed order is the itinerary.
+	next := map[string][]string{}
+	for _, t := range tickets {
+		next[t[0]] = append(next[t[0]], t[1])
+	}
+	for _, destinations := range next {
+		sort.Strings(destinations)
+	}
+	route := []string{}
+	var visit func(airport string)
+	visit = func(airport string) {
+		for len(next[airport]) > 0 {
+			destination := next[airport][0]
+			next[airport] = next[airport][1:]
+			visit(destination)
+		}
+		route = append(route, airport)
+	}
+	visit(\"JFK\")
+	for i, j := 0, len(route)-1; i < j; i, j = i+1, j-1 {
+		route[i], route[j] = route[j], route[i]
+	}
+	return route
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func findItinerary(tickets [][]string) []string",
+      starter: "package main
+
+func findItinerary(tickets [][]string) []string {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"findItinerary(MUC/LHR/SFO/SJC chain)\", []string{\"JFK\", \"MUC\", \"LHR\", \"SFO\", \"SJC\"}, findItinerary([][]string{{\"MUC\", \"LHR\"}, {\"JFK\", \"MUC\"}, {\"SFO\", \"SJC\"}, {\"LHR\", \"SFO\"}})),
+			tc(\"findItinerary(two ways out of JFK -- smallest first)\", []string{\"JFK\", \"ATL\", \"JFK\", \"SFO\", \"ATL\", \"SFO\"}, findItinerary([][]string{{\"JFK\", \"SFO\"}, {\"JFK\", \"ATL\"}, {\"SFO\", \"ATL\"}, {\"ATL\", \"JFK\"}, {\"ATL\", \"SFO\"}})),
+			tc(\"findItinerary(KUL is a dead end, so it must come last)\", []string{\"JFK\", \"NRT\", \"JFK\", \"KUL\"}, findItinerary([][]string{{\"JFK\", \"KUL\"}, {\"JFK\", \"NRT\"}, {\"NRT\", \"JFK\"}})),
+			tc(\"findItinerary([])\", []string{\"JFK\"}, findItinerary([][]string{})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
 pub fn nc11_container_water() -> Embedded {
   Embedded(
     solutions: [
@@ -849,6 +3154,755 @@ func main() {
 		return []testCase{
 			tc(\"maxArea([1, 8, 6, 2, 5, 4, 8, 3, 7])\", 49, maxArea([]int{1, 8, 6, 2, 5, 4, 8, 3, 7})),
 			tc(\"maxArea([1, 1])\", 1, maxArea([]int{1, 1})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc120_min_cost_connect_points() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Kruskal",
+        "O(n² log n) time · O(n²) space",
+        "Every edge, cheapest first, kept only when it joins two pieces that are not already connected — union-find is what makes that test cheap. The trade against Prim's is the sort, but Kruskal never looks at the points themselves, only at the edge list, which is why it is the one that generalises to a sparse graph.",
+        "package main
+
+import \"sort\"
+
+func minCostConnectPoints(points [][]int) int {
+	n := len(points)
+	// Kruskal's algorithm: every pair is an edge; sort them and take each
+	// one that joins two different components, until n-1 are taken.
+	type edge struct{ cost, a, b int }
+	edges := []edge{}
+	for i := 0; i < n; i++ {
+		for j := i + 1; j < n; j++ {
+			edges = append(edges, edge{manhattan(points[i], points[j]), i, j})
+		}
+	}
+	sort.Slice(edges, func(i, j int) bool { return edges[i].cost < edges[j].cost })
+	parent := make([]int, n)
+	for i := range parent {
+		parent[i] = i
+	}
+	var find func(i int) int
+	find = func(i int) int {
+		for parent[i] != i {
+			parent[i] = parent[parent[i]]
+			i = parent[i]
+		}
+		return i
+	}
+	total, taken := 0, 0
+	for _, e := range edges {
+		if taken == n-1 {
+			break
+		}
+		a, b := find(e.a), find(e.b)
+		if a != b {
+			parent[a] = b
+			total += e.cost
+			taken++
+		}
+	}
+	return total
+}
+
+func manhattan(a, b []int) int {
+	dx, dy := a[0]-b[0], a[1]-b[1]
+	if dx < 0 {
+		dx = -dx
+	}
+	if dy < 0 {
+		dy = -dy
+	}
+	return dx + dy
+}",
+      ),
+      #(
+        "Prim",
+        "O(n²) time · O(n) space",
+        "Prim's algorithm. Each outside point remembers only its distance to the tree so far, so adding one is a pass to find the nearest and a pass to update — O(n^2), which is what a complete graph costs anyway, and it needs no heap. Taking the cheapest edge is safe because the cheapest edge leaving any set of points is in some minimum spanning tree.",
+        "package main
+
+func minCostConnectPoints(points [][]int) int {
+	n := len(points)
+	if n < 2 {
+		return 0
+	}
+	// Prim's algorithm on the complete graph: keep the cheapest known
+	// distance from the tree to each point, add the nearest point, update.
+	// O(n^2), no heap, which suits a dense graph.
+	inTree := make([]bool, n)
+	distance := make([]int, n)
+	for i := range distance {
+		distance[i] = 1 << 30
+	}
+	distance[0] = 0
+	total := 0
+	for added := 0; added < n; added++ {
+		nearest := -1
+		for i := 0; i < n; i++ {
+			if !inTree[i] && (nearest < 0 || distance[i] < distance[nearest]) {
+				nearest = i
+			}
+		}
+		inTree[nearest] = true
+		total += distance[nearest]
+		for i := 0; i < n; i++ {
+			if !inTree[i] {
+				distance[i] = min(distance[i], manhattan(points[nearest], points[i]))
+			}
+		}
+	}
+	return total
+}
+
+func manhattan(a, b []int) int {
+	dx, dy := a[0]-b[0], a[1]-b[1]
+	if dx < 0 {
+		dx = -dx
+	}
+	if dy < 0 {
+		dy = -dy
+	}
+	return dx + dy
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func minCostConnectPoints(points [][]int) int
+
+func manhattan(a, b []int) int",
+      starter: "package main
+
+func minCostConnectPoints(points [][]int) int {
+	panic(\"todo\")
+}
+
+func manhattan(a, b []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"minCostConnectPoints(the five-point example)\", 20, minCostConnectPoints([][]int{{0, 0}, {2, 2}, {3, 10}, {5, 2}, {7, 0}})),
+			tc(\"minCostConnectPoints([[3,12],[-2,5],[-4,1]])\", 18, minCostConnectPoints([][]int{{3, 12}, {-2, 5}, {-4, 1}})),
+			tc(\"minCostConnectPoints([])\", 0, minCostConnectPoints([][]int{})),
+			tc(\"minCostConnectPoints([[1,1]]) -- nothing to connect\", 0, minCostConnectPoints([][]int{{1, 1}})),
+			tc(\"minCostConnectPoints([[0,0],[0,5]])\", 5, minCostConnectPoints([][]int{{0, 0}, {0, 5}})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc121_network_delay_time() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bellman-Ford",
+        "O(V·E) time · O(V) space",
+        "No choosing what to settle next: relax every edge, n-1 times over, and the times settle by themselves — a shortest path is at most n-1 edges long, and each round fixes at least one more of them. Slower at O(V·E), and worth knowing because it survives negative weights.",
+        "package main
+
+func networkDelayTime(times [][]int, n int, k int) int {
+	// Bellman-Ford: relax every edge n-1 times. No heap and no adjacency
+	// list, at O(n * edges).
+	const unreached = 1 << 30
+	best := make([]int, n+1)
+	for i := range best {
+		best[i] = unreached
+	}
+	best[k] = 0
+	for round := 1; round < n; round++ {
+		changed := false
+		for _, t := range times {
+			from, to, cost := t[0], t[1], t[2]
+			if best[from] != unreached && best[from]+cost < best[to] {
+				best[to] = best[from] + cost
+				changed = true
+			}
+		}
+		if !changed {
+			break
+		}
+	}
+	answer := 0
+	for node := 1; node <= n; node++ {
+		if best[node] == unreached {
+			return -1
+		}
+		answer = max(answer, best[node])
+	}
+	return answer
+}",
+      ),
+      #(
+        "Dijkstra",
+        "O(E log V) time · O(V+E) space",
+        "Dijkstra's algorithm. Taking the smallest tentative arrival settles that node for good, because any other route to it would have to start with an edge at least as long. That argument is exactly where a negative edge would break it — which is the reason to know Bellman-Ford as well.",
+        "package main
+
+import \"container/heap\"
+
+type item struct{ node, distance int }
+
+type nearestFirst []item
+
+func (h nearestFirst) Len() int           { return len(h) }
+func (h nearestFirst) Less(i, j int) bool { return h[i].distance < h[j].distance }
+func (h nearestFirst) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *nearestFirst) Push(x any)        { *h = append(*h, x.(item)) }
+func (h *nearestFirst) Pop() any {
+	old := *h
+	x := old[len(old)-1]
+	*h = old[:len(old)-1]
+	return x
+}
+
+func networkDelayTime(times [][]int, n int, k int) int {
+	// Dijkstra from k: the time the signal reaches every node is the
+	// longest of the shortest paths, or -1 if any node is never reached.
+	next := make([][]item, n+1)
+	for _, t := range times {
+		next[t[0]] = append(next[t[0]], item{t[1], t[2]})
+	}
+	best := make([]int, n+1)
+	for i := range best {
+		best[i] = -1
+	}
+	h := &nearestFirst{{k, 0}}
+	for h.Len() > 0 {
+		current := heap.Pop(h).(item)
+		if best[current.node] >= 0 {
+			continue
+		}
+		best[current.node] = current.distance
+		for _, edge := range next[current.node] {
+			if best[edge.node] < 0 {
+				heap.Push(h, item{edge.node, current.distance + edge.distance})
+			}
+		}
+	}
+	answer := 0
+	for node := 1; node <= n; node++ {
+		if best[node] < 0 {
+			return -1
+		}
+		answer = max(answer, best[node])
+	}
+	return answer
+}",
+      ),
+    ],
+    check: Check(
+      signature: "type item struct{ node, distance int }
+
+type nearestFirst []item
+
+func (h nearestFirst) Len() int           { return len(h) }
+
+func (h nearestFirst) Less(i, j int) bool { return h[i].distance < h[j].distance }
+
+func (h nearestFirst) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *nearestFirst) Push(x any)        { *h = append(*h, x.(item)) }
+
+func (h *nearestFirst) Pop() any
+
+func networkDelayTime(times [][]int, n int, k int) int",
+      starter: "package main
+
+type item struct{ node, distance int }
+
+type nearestFirst []item
+
+func (h nearestFirst) Len() int           { return len(h) } {
+	panic(\"todo\")
+}
+
+func (h nearestFirst) Less(i, j int) bool { return h[i].distance < h[j].distance } {
+	panic(\"todo\")
+}
+
+func (h nearestFirst) Swap(i, j int)      { h[i], h[j] = h[j], h[i] } {
+	panic(\"todo\")
+}
+
+func (h *nearestFirst) Push(x any)        { *h = append(*h, x.(item)) } {
+	panic(\"todo\")
+}
+
+func (h *nearestFirst) Pop() any {
+	panic(\"todo\")
+}
+
+func networkDelayTime(times [][]int, n int, k int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"networkDelayTime([[2,1,1],[2,3,1],[3,4,1]], 4, 2)\", 2, networkDelayTime([][]int{{2, 1, 1}, {2, 3, 1}, {3, 4, 1}}, 4, 2)),
+			tc(\"networkDelayTime([[1,2,1]], 2, 1)\", 1, networkDelayTime([][]int{{1, 2, 1}}, 2, 1)),
+			tc(\"networkDelayTime([[1,2,1]], 2, 2) -- node 1 is unreachable\", -1, networkDelayTime([][]int{{1, 2, 1}}, 2, 2)),
+			tc(\"networkDelayTime([], 1, 1)\", 0, networkDelayTime([][]int{}, 1, 1)),
+			tc(\"networkDelayTime(the long way round is shorter, 3, 1)\", 3, networkDelayTime([][]int{{1, 2, 1}, {2, 3, 2}, {1, 3, 4}}, 3, 1)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc122_swim_in_water() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Binary Search",
+        "O(n² log n) time · O(n²) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Reachability at time t is monotone: once the corner can be reached, it stays reachable as the water rises. That is the shape binary search needs, and it turns the question from \"what is the cheapest path\" into \"is it possible yet\", answered by a plain flood fill.",
+        "package main
+
+func swimInWater(grid [][]int) int {
+	n := len(grid)
+	// Binary search the water level: at level t, can the corner be reached
+	// through cells at most t high? Feasibility is monotone in t.
+	reachable := func(t int) bool {
+		if grid[0][0] > t {
+			return false
+		}
+		seen := make([][]bool, n)
+		for r := range seen {
+			seen[r] = make([]bool, n)
+		}
+		stack := [][2]int{{0, 0}}
+		seen[0][0] = true
+		for len(stack) > 0 {
+			current := stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+			if current[0] == n-1 && current[1] == n-1 {
+				return true
+			}
+			for _, d := range [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
+				nr, nc := current[0]+d[0], current[1]+d[1]
+				if nr >= 0 && nr < n && nc >= 0 && nc < n && !seen[nr][nc] && grid[nr][nc] <= t {
+					seen[nr][nc] = true
+					stack = append(stack, [2]int{nr, nc})
+				}
+			}
+		}
+		return false
+	}
+	low, high := 0, n*n-1
+	for low < high {
+		mid := low + (high-low)/2
+		if reachable(mid) {
+			high = mid
+		} else {
+			low = mid + 1
+		}
+	}
+	return low
+}",
+      ),
+      #(
+        "Dijkstra",
+        "O(n² log n) time · O(n²) space",
+        "Dijkstra's, with the cost of a path redefined from the sum of its steps to the largest step in it — the water only has to rise once. Everything else about the algorithm is untouched, which is the point: the shortest-path machinery works for any cost that only grows along a path.",
+        "package main
+
+import \"container/heap\"
+
+type cell struct{ height, r, c int }
+
+type lowestFirst []cell
+
+func (h lowestFirst) Len() int           { return len(h) }
+func (h lowestFirst) Less(i, j int) bool { return h[i].height < h[j].height }
+func (h lowestFirst) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *lowestFirst) Push(x any)        { *h = append(*h, x.(cell)) }
+func (h *lowestFirst) Pop() any {
+	old := *h
+	x := old[len(old)-1]
+	*h = old[:len(old)-1]
+	return x
+}
+
+func swimInWater(grid [][]int) int {
+	n := len(grid)
+	// Dijkstra where a path's cost is its highest cell: always expand the
+	// lowest reachable cell, and the answer is the highest cell popped
+	// before the corner.
+	seen := make([][]bool, n)
+	for r := range seen {
+		seen[r] = make([]bool, n)
+	}
+	h := &lowestFirst{{grid[0][0], 0, 0}}
+	seen[0][0] = true
+	highest := 0
+	for {
+		current := heap.Pop(h).(cell)
+		highest = max(highest, current.height)
+		if current.r == n-1 && current.c == n-1 {
+			return highest
+		}
+		for _, d := range [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
+			nr, nc := current.r+d[0], current.c+d[1]
+			if nr >= 0 && nr < n && nc >= 0 && nc < n && !seen[nr][nc] {
+				seen[nr][nc] = true
+				heap.Push(h, cell{grid[nr][nc], nr, nc})
+			}
+		}
+	}
+}",
+      ),
+    ],
+    check: Check(
+      signature: "type cell struct{ height, r, c int }
+
+type lowestFirst []cell
+
+func (h lowestFirst) Len() int           { return len(h) }
+
+func (h lowestFirst) Less(i, j int) bool { return h[i].height < h[j].height }
+
+func (h lowestFirst) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *lowestFirst) Push(x any)        { *h = append(*h, x.(cell)) }
+
+func (h *lowestFirst) Pop() any
+
+func swimInWater(grid [][]int) int",
+      starter: "package main
+
+type cell struct{ height, r, c int }
+
+type lowestFirst []cell
+
+func (h lowestFirst) Len() int           { return len(h) } {
+	panic(\"todo\")
+}
+
+func (h lowestFirst) Less(i, j int) bool { return h[i].height < h[j].height } {
+	panic(\"todo\")
+}
+
+func (h lowestFirst) Swap(i, j int)      { h[i], h[j] = h[j], h[i] } {
+	panic(\"todo\")
+}
+
+func (h *lowestFirst) Push(x any)        { *h = append(*h, x.(cell)) } {
+	panic(\"todo\")
+}
+
+func (h *lowestFirst) Pop() any {
+	panic(\"todo\")
+}
+
+func swimInWater(grid [][]int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"swimInWater([[0,2],[1,3]])\", 3, swimInWater([][]int{{0, 2}, {1, 3}})),
+			tc(\"swimInWater(the 5x5 spiral)\", 16, swimInWater([][]int{{0, 1, 2, 3, 4}, {24, 23, 22, 21, 5}, {12, 13, 14, 15, 16}, {11, 17, 18, 19, 20}, {10, 9, 8, 7, 6}})),
+			tc(\"swimInWater([[0]])\", 0, swimInWater([][]int{{0}})),
+			tc(\"swimInWater([[3,2],[1,0]]) -- the start is the deepest cell\", 3, swimInWater([][]int{{3, 2}, {1, 0}})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc123_alien_dictionary() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS Topological Sort",
+        "O(C) time · O(V+E) space",
+        "Record a letter only once everything that must follow it has been recorded, and prepend rather than append — that is what puts it back in front of them. The in-progress set is the cycle check, exactly as in Course Schedule: a letter met again on the current path contradicts itself.",
+        "package main
+
+func alienOrder(words []string) string {
+	next := map[byte]map[byte]bool{}
+	for _, w := range words {
+		for i := 0; i < len(w); i++ {
+			if next[w[i]] == nil {
+				next[w[i]] = map[byte]bool{}
+			}
+		}
+	}
+	for i := 0; i+1 < len(words); i++ {
+		a, b := words[i], words[i+1]
+		if len(a) > len(b) && a[:len(b)] == b {
+			return \"\"
+		}
+		for j := 0; j < len(a) && j < len(b); j++ {
+			if a[j] != b[j] {
+				next[a[j]][b[j]] = true
+				break
+			}
+		}
+	}
+	// Depth-first post-order with path colouring: a letter is emitted after
+	// everything that must follow it, so the reversed order is the answer.
+	const unvisited, onPath, done = 0, 1, 2
+	colour := map[byte]int{}
+	postorder := []byte{}
+	var visit func(c byte) bool
+	visit = func(c byte) bool {
+		switch colour[c] {
+		case onPath:
+			return false
+		case done:
+			return true
+		}
+		colour[c] = onPath
+		for d := byte('a'); d <= 'z'; d++ {
+			if next[c][d] && !visit(d) {
+				return false
+			}
+		}
+		colour[c] = done
+		postorder = append(postorder, c)
+		return true
+	}
+	for c := byte('a'); c <= 'z'; c++ {
+		if _, present := next[c]; present && !visit(c) {
+			return \"\"
+		}
+	}
+	for i, j := 0, len(postorder)-1; i < j; i, j = i+1, j-1 {
+		postorder[i], postorder[j] = postorder[j], postorder[i]
+	}
+	return string(postorder)
+}",
+      ),
+      #(
+        "Topological Sort",
+        "O(C) time · O(V+E) space",
+        "The words are the input but the graph is over letters. Two adjacent words agree up to their first difference, and that difference is the only ordering they establish — everything after it says nothing at all. Then it is a topological sort, with two distinct ways to fail: a cycle, and a word followed by its own prefix.",
+        "package main
+
+func alienOrder(words []string) string {
+	// Adjacent words give one ordering each: the first differing letter.
+	// Then a topological sort (Kahn) over the letters; a leftover means a cycle.
+	next := map[byte]map[byte]bool{}
+	indegree := map[byte]int{}
+	for _, w := range words {
+		for i := 0; i < len(w); i++ {
+			if next[w[i]] == nil {
+				next[w[i]] = map[byte]bool{}
+				indegree[w[i]] = 0
+			}
+		}
+	}
+	for i := 0; i+1 < len(words); i++ {
+		a, b := words[i], words[i+1]
+		if len(a) > len(b) && a[:len(b)] == b {
+			return \"\"
+		}
+		for j := 0; j < len(a) && j < len(b); j++ {
+			if a[j] != b[j] {
+				if !next[a[j]][b[j]] {
+					next[a[j]][b[j]] = true
+					indegree[b[j]]++
+				}
+				break
+			}
+		}
+	}
+	queue := []byte{}
+	for c := byte('a'); c <= 'z'; c++ {
+		if n, present := indegree[c]; present && n == 0 {
+			queue = append(queue, c)
+		}
+	}
+	order := []byte{}
+	for len(queue) > 0 {
+		c := queue[0]
+		queue = queue[1:]
+		order = append(order, c)
+		for d := byte('a'); d <= 'z'; d++ {
+			if next[c][d] {
+				indegree[d]--
+				if indegree[d] == 0 {
+					queue = append(queue, d)
+				}
+			}
+		}
+	}
+	if len(order) != len(indegree) {
+		return \"\"
+	}
+	return string(order)
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func alienOrder(words []string) string",
+      starter: "package main
+
+func alienOrder(words []string) string {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+// Letters no rule orders may come in any order, so a result is checked
+// against the rules rather than against one string.
+func consistent(words []string, expectedLetters int) bool {
+	order := alienOrder(words)
+	if len(order) != expectedLetters {
+		return false
+	}
+	position := map[byte]int{}
+	for i := 0; i < len(order); i++ {
+		position[order[i]] = i
+	}
+	for i := 0; i+1 < len(words); i++ {
+		a, b := words[i], words[i+1]
+		for j := 0; j < len(a) && j < len(b); j++ {
+			if a[j] != b[j] {
+				if position[a[j]] > position[b[j]] {
+					return false
+				}
+				break
+			}
+		}
+	}
+	return true
+}
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"alienOrder(['wrt','wrf','er','ett','rftt'])\", \"wertf\", alienOrder([]string{\"wrt\", \"wrf\", \"er\", \"ett\", \"rftt\"})),
+			tc(\"alienOrder(['z','x'])\", \"zx\", alienOrder([]string{\"z\", \"x\"})),
+			tc(\"alienOrder(['z','x','z']) -- contradictory\", \"\", alienOrder([]string{\"z\", \"x\", \"z\"})),
+			tc(\"alienOrder(['abc','ab']) -- a word before its own prefix\", \"\", alienOrder([]string{\"abc\", \"ab\"})),
+			tc(\"alienOrder(['z','z'])\", \"z\", alienOrder([]string{\"z\", \"z\"})),
+			tc(\"alienOrder(['ac','ab','zc','zb']) respects every rule\", true, consistent([]string{\"ac\", \"ab\", \"zc\", \"zb\"}, 4)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc124_cheapest_flights() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "BFS",
+        "O(k·E) time · O(V+E) space",
+        "Breadth-first by number of flights taken, which makes the stop limit the depth limit — the same bound Bellman-Ford gets from its round count, arrived at from the other direction. The cheapest-so-far table is what stops it exploding: a city is expanded again only when this route reached it for less.",
+        "package main
+
+func findCheapestPrice(n int, flights [][]int, src int, dst int, k int) int {
+	next := make([][][2]int, n)
+	for _, f := range flights {
+		next[f[0]] = append(next[f[0]], [2]int{f[1], f[2]})
+	}
+	// Breadth-first by number of flights, k+1 levels deep, keeping the
+	// cheapest cost seen at each node to prune worse arrivals.
+	const unreached = 1 << 30
+	best := make([]int, n)
+	for i := range best {
+		best[i] = unreached
+	}
+	best[src] = 0
+	frontier := [][2]int{{src, 0}}
+	for level := 0; level <= k && len(frontier) > 0; level++ {
+		following := [][2]int{}
+		for _, state := range frontier {
+			node, cost := state[0], state[1]
+			for _, edge := range next[node] {
+				to, price := edge[0], edge[1]
+				if cost+price < best[to] {
+					best[to] = cost + price
+					following = append(following, [2]int{to, cost + price})
+				}
+			}
+		}
+		frontier = following
+	}
+	if best[dst] == unreached {
+		return -1
+	}
+	return best[dst]
+}",
+      ),
+      #(
+        "Bellman-Ford",
+        "O(k·E) time · O(V) space",
+        "The stop limit is what stops this being plain Dijkstra: cheapest-so-far no longer settles a city, because a costlier route with fewer stops may still be the one that gets through. Bellman-Ford handles it by construction — one round is one flight — provided each round reads a snapshot of the last, or two flights leak into a single round.",
+        "package main
+
+func findCheapestPrice(n int, flights [][]int, src int, dst int, k int) int {
+	const unreached = 1 << 30
+	// Bellman-Ford limited to k+1 rounds: after round i, best[v] is the
+	// cheapest route using at most i flights. Relaxing from a copy of the
+	// previous round keeps a round from chaining two flights.
+	best := make([]int, n)
+	for i := range best {
+		best[i] = unreached
+	}
+	best[src] = 0
+	for round := 0; round <= k; round++ {
+		previous := append([]int{}, best...)
+		for _, f := range flights {
+			from, to, price := f[0], f[1], f[2]
+			if previous[from] != unreached && previous[from]+price < best[to] {
+				best[to] = previous[from] + price
+			}
+		}
+	}
+	if best[dst] == unreached {
+		return -1
+	}
+	return best[dst]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func findCheapestPrice(n int, flights [][]int, src int, dst int, k int) int",
+      starter: "package main
+
+func findCheapestPrice(n int, flights [][]int, src int, dst int, k int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"findCheapestPrice(4, the loop example, 0, 3, 1)\", 700, findCheapestPrice(4, [][]int{{0, 1, 100}, {1, 2, 100}, {2, 0, 100}, {1, 3, 600}, {2, 3, 200}}, 0, 3, 1)),
+			tc(\"findCheapestPrice(3, two hops allowed, 0, 2, 1)\", 200, findCheapestPrice(3, [][]int{{0, 1, 100}, {1, 2, 100}, {0, 2, 500}}, 0, 2, 1)),
+			tc(\"findCheapestPrice(3, no stop allowed, 0, 2, 0)\", 500, findCheapestPrice(3, [][]int{{0, 1, 100}, {1, 2, 100}, {0, 2, 500}}, 0, 2, 0)),
+			tc(\"findCheapestPrice(2, no flights at all, 0, 1, 5)\", -1, findCheapestPrice(2, [][]int{}, 0, 1, 5)),
+			tc(\"findCheapestPrice(1, already there, 0, 0, 0)\", 0, findCheapestPrice(1, [][]int{}, 0, 0, 0)),
+			tc(\"findCheapestPrice(5, cheapest route needs the third hop, 0, 2, 2)\", 7, findCheapestPrice(5, [][]int{{0, 1, 5}, {1, 2, 5}, {0, 3, 2}, {3, 1, 2}, {1, 4, 1}, {4, 2, 1}}, 0, 2, 2)),
 		}
 	})
 }",
@@ -9043,8 +12097,34 @@ pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
     "nc07_longest_consecutive" -> Ok(nc07_longest_consecutive())
     "nc08_valid_palindrome" -> Ok(nc08_valid_palindrome())
     "nc09_two_sum_sorted" -> Ok(nc09_two_sum_sorted())
+    "nc100_edit_distance" -> Ok(nc100_edit_distance())
+    "nc101_burst_balloons" -> Ok(nc101_burst_balloons())
+    "nc102_regular_expression_matching" ->
+      Ok(nc102_regular_expression_matching())
+    "nc103_implement_trie" -> Ok(nc103_implement_trie())
+    "nc104_word_dictionary" -> Ok(nc104_word_dictionary())
+    "nc105_word_search_ii" -> Ok(nc105_word_search_ii())
+    "nc106_number_of_islands" -> Ok(nc106_number_of_islands())
+    "nc107_clone_graph" -> Ok(nc107_clone_graph())
+    "nc108_max_area_of_island" -> Ok(nc108_max_area_of_island())
+    "nc109_pacific_atlantic" -> Ok(nc109_pacific_atlantic())
     "nc10_three_sum" -> Ok(nc10_three_sum())
+    "nc110_surrounded_regions" -> Ok(nc110_surrounded_regions())
+    "nc111_rotting_oranges" -> Ok(nc111_rotting_oranges())
+    "nc112_walls_and_gates" -> Ok(nc112_walls_and_gates())
+    "nc113_course_schedule" -> Ok(nc113_course_schedule())
+    "nc114_course_schedule_ii" -> Ok(nc114_course_schedule_ii())
+    "nc115_redundant_connection" -> Ok(nc115_redundant_connection())
+    "nc116_connected_components" -> Ok(nc116_connected_components())
+    "nc117_graph_valid_tree" -> Ok(nc117_graph_valid_tree())
+    "nc118_word_ladder" -> Ok(nc118_word_ladder())
+    "nc119_reconstruct_itinerary" -> Ok(nc119_reconstruct_itinerary())
     "nc11_container_water" -> Ok(nc11_container_water())
+    "nc120_min_cost_connect_points" -> Ok(nc120_min_cost_connect_points())
+    "nc121_network_delay_time" -> Ok(nc121_network_delay_time())
+    "nc122_swim_in_water" -> Ok(nc122_swim_in_water())
+    "nc123_alien_dictionary" -> Ok(nc123_alien_dictionary())
+    "nc124_cheapest_flights" -> Ok(nc124_cheapest_flights())
     "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
     "nc136_invert_binary_tree" -> Ok(nc136_invert_binary_tree())
     "nc13_longest_substring" -> Ok(nc13_longest_substring())
