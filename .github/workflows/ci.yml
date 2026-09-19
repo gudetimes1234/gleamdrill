@@ -24,6 +24,10 @@ jobs:
           gleam-version: "1.18.1"
           # Some transitive Erlang dependencies (hpack, glisten) build with it.
           rebar3-version: "3"
+          # `make content` runs drills/elixir/surface.exs before generating
+          # the embedded drills, so the build needs Elixir as well. Same pin
+          # as the server job below.
+          elixir-version: "1.18"
 
       # Pinned, because `make worker` minifies the three worker bundles with
       # whatever bun is on PATH and the output differs between bun versions.
@@ -124,6 +128,8 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
+          # No module dependencies, so there is no go.sum to key a cache on.
+          cache: false
 
       # The app half of the tree is not built here, but `server` path-depends
       # on ../fsrs, which is why the whole repo is checked out.

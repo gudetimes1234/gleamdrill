@@ -39,9 +39,9 @@ ulimit -v 4194304
 ulimit -t 10
 ulimit -f 262144
 
-# Per uid and host-wide, so only for the dedicated container user (see
-# run-elixir for the reasoning).
-if [ "$(id -un)" = runner ]; then
+# Per uid and host-wide, so only for the dedicated container user, known by
+# its uid (see run-elixir for the reasoning).
+if [ "$(id -u)" = 31337 ]; then
   ulimit -u 256
 fi
 

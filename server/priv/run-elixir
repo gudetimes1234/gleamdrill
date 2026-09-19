@@ -24,8 +24,10 @@ ulimit -t 10
 # developer's machine it would count every process they own and refuse to
 # fork. A VM with one scheduler needs a couple of dozen threads; 256 leaves
 # room for a few attempts at once and stops a fork bomb well short of the
-# container's pid budget.
-if [ "$(id -un)" = runner ]; then
+# container's pid budget. Keyed on the uid the Dockerfile assigns, not the
+# name: GitHub Actions runs as a user called `runner` too, under a dash
+# whose ulimit has no -u.
+if [ "$(id -u)" = 31337 ]; then
   ulimit -u 256
 fi
 
