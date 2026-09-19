@@ -208,37 +208,35 @@ fn generate_go_verifier(rows: List(#(String, String, String))) -> Nil {
 }
 
 /// Go surface: every top-level `func` header (plain functions and methods)
-/// and every `type` declaration, a struct kept whole through its closing
-/// brace. The signature shows the headers; the starter adds a todo body to
-/// each function and keeps the types, which a solution has to declare
+/// and every `type` declaration. A struct's fields are the design, so both
+/// the signature and the starter elide them; the starter adds a todo body to
+/// each function and to each struct, which a solution has to declare
 /// itself. `package main` is included because the attempt is compiled as a
 /// file of that package.
 fn go_surface(source: String) -> #(String, String) {
   let items = go_items(string.split(source, "\n"), [])
-  let sig =
-    items
-    |> list.map(fn(item) { string.join(item, "\n") })
-    |> string.join("\n\n")
+  let sig = string.join(items, "\n\n")
   let stub =
     items
-    |> list.map(fn(item) {
-      case item {
-        [header] ->
-          case string.starts_with(header, "func ") {
-            True -> header <> " {\n\tpanic(\"todo\")\n}"
-            False -> header
-          }
-        lines -> string.join(lines, "\n")
+    |> list.map(fn(header) {
+      case
+        string.starts_with(header, "func "),
+        string.ends_with(header, "struct { … }")
+      {
+        True, _ -> header <> " {\n\tpanic(\"todo\")\n}"
+        _, True ->
+          string.drop_end(header, string.length("{ … }")) <> "{\n\t// todo\n}"
+        False, False -> header
       }
     })
     |> string.join("\n\n")
   #(sig, "package main\n\n" <> stub)
 }
 
-fn go_items(
-  lines: List(String),
-  acc: List(List(String)),
-) -> List(List(String)) {
+/// One header per item: a `func` line without its brace, a struct as
+/// `type Name struct { … }` (its body skipped through the closing brace),
+/// any other `type` line as written.
+fn go_items(lines: List(String), acc: List(String)) -> List(String) {
   case lines {
     [] -> list.reverse(acc)
     [line, ..rest] ->
@@ -246,17 +244,15 @@ fn go_items(
         string.starts_with(line, "func "),
         string.starts_with(line, "type ") && string.ends_with(line, "{")
       {
-        True, _ -> go_items(rest, [[strip_brace(line)], ..acc])
+        True, _ -> go_items(rest, [strip_brace(line), ..acc])
         _, True -> {
-          let #(body, remaining) = list.split_while(rest, fn(l) { l != "}" })
-          go_items(list.drop(remaining, 1), [
-            list.append([line, ..body], ["}"]),
-            ..acc
-          ])
+          let remaining =
+            rest |> list.drop_while(fn(l) { l != "}" }) |> list.drop(1)
+          go_items(remaining, [strip_brace(line) <> " { … }", ..acc])
         }
         False, False ->
           case string.starts_with(line, "type ") {
-            True -> go_items(rest, [[line], ..acc])
+            True -> go_items(rest, [line, ..acc])
             False -> go_items(rest, acc)
           }
       }

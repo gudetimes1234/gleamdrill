@@ -70,6 +70,859 @@ func main() {
   )
 }
 
+pub fn nc02_valid_anagram() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+Sorted letters are the canonical form, so the whole check is one equality. No counting to get wrong.",
+        "package main
+
+import \"sort\"
+
+func isAnagram(s string, t string) bool {
+	return sortedRunes(s) == sortedRunes(t)
+}
+
+func sortedRunes(s string) string {
+	runes := []rune(s)
+	sort.Slice(runes, func(i, j int) bool { return runes[i] < runes[j] })
+	return string(runes)
+}",
+      ),
+      #(
+        "Count Map",
+        "O(n) time · O(1) space",
+        "Two strings are anagrams exactly when every character occurs the same number of times in both, so build a count per string and compare the two maps.",
+        "package main
+
+func isAnagram(s string, t string) bool {
+	if len(s) != len(t) {
+		return false
+	}
+	counts := map[rune]int{}
+	for _, c := range s {
+		counts[c]++
+	}
+	for _, c := range t {
+		if counts[c] == 0 {
+			return false
+		}
+		counts[c]--
+	}
+	return true
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func isAnagram(s string, t string) bool",
+      starter: "package main
+
+func isAnagram(s string, t string) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"isAnagram('anagram', 'nagaram')\", true, isAnagram(\"anagram\", \"nagaram\")),
+			tc(\"isAnagram('rat', 'car')\", false, isAnagram(\"rat\", \"car\")),
+			tc(\"isAnagram('', '')\", true, isAnagram(\"\", \"\")),
+			tc(\"isAnagram('a', 'ab')\", false, isAnagram(\"a\", \"ab\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc03_two_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every ordered pair, checked, stopping at the first hit.",
+        "package main
+
+func twoSum(nums []int, target int) []int {
+	for i := 0; i < len(nums); i++ {
+		for j := i + 1; j < len(nums); j++ {
+			if nums[i]+nums[j] == target {
+				return []int{i, j}
+			}
+		}
+	}
+	return []int{}
+}",
+      ),
+      #(
+        "Hash Map",
+        "O(n) time · O(n) space",
+        "Every number seen so far is already in the map, so the complement is one lookup away — one pass, O(1) per step, and the map hands back the index for free.",
+        "package main
+
+func twoSum(nums []int, target int) []int {
+	seen := map[int]int{}
+	for i, n := range nums {
+		if j, ok := seen[target-n]; ok {
+			return []int{j, i}
+		}
+		seen[n] = i
+	}
+	return []int{}
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func twoSum(nums []int, target int) []int",
+      starter: "package main
+
+func twoSum(nums []int, target int) []int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"twoSum([2, 7, 11, 15], 9)\", []int{0, 1}, twoSum([]int{2, 7, 11, 15}, 9)),
+			tc(\"twoSum([3, 2, 4], 6)\", []int{1, 2}, twoSum([]int{3, 2, 4}, 6)),
+			tc(\"twoSum([3, 3], 6)\", []int{0, 1}, twoSum([]int{3, 3}, 6)),
+			tc(\"twoSum([1, 2], 7)\", []int{}, twoSum([]int{1, 2}, 7)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc04_group_anagrams() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Count Key",
+        "O(n·k) time · O(n·k) space",
+        "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len) to build against sorting's O(len log len); the sorted word needs no assumption about the alphabet.",
+        "package main
+
+import \"sort\"
+
+func groupAnagrams(strs []string) [][]string {
+	groups := map[string][]string{}
+	order := []string{}
+	for _, s := range strs {
+		runes := []rune(s)
+		sort.Slice(runes, func(i, j int) bool { return runes[i] < runes[j] })
+		key := string(runes)
+		if _, seen := groups[key]; !seen {
+			order = append(order, key)
+		}
+		groups[key] = append(groups[key], s)
+	}
+	result := make([][]string, 0, len(order))
+	for _, key := range order {
+		result = append(result, groups[key])
+	}
+	return result
+}",
+      ),
+      #(
+        "Solution 2 · Count key",
+        "",
+        "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+A letter tally is anagram-invariant too, and costs O(len) to build rather than O(len log len).",
+        "package main
+
+func groupAnagrams(strs []string) [][]string {
+	groups := map[[26]int][]string{}
+	order := [][26]int{}
+	for _, s := range strs {
+		// A 26-slot tally is an anagram-invariant key that costs O(len)
+		// rather than O(len log len) to build, and an array is a valid map key.
+		var key [26]int
+		for i := 0; i < len(s); i++ {
+			key[s[i]-'a']++
+		}
+		if _, seen := groups[key]; !seen {
+			order = append(order, key)
+		}
+		groups[key] = append(groups[key], s)
+	}
+	result := make([][]string, 0, len(order))
+	for _, key := range order {
+		result = append(result, groups[key])
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func groupAnagrams(strs []string) [][]string",
+      starter: "package main
+
+func groupAnagrams(strs []string) [][]string {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+// Groups may come back in any order, and so may their members.
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"groupAnagrams(['eat','tea','tan','ate','nat','bat'])\",
+				[][]string{{\"ate\", \"eat\", \"tea\"}, {\"bat\"}, {\"nat\", \"tan\"}},
+				sortGroups(groupAnagrams([]string{\"eat\", \"tea\", \"tan\", \"ate\", \"nat\", \"bat\"}))),
+			tc(\"groupAnagrams([])\", [][]string{}, sortGroups(groupAnagrams([]string{}))),
+			tc(\"groupAnagrams(['a'])\", [][]string{{\"a\"}}, sortGroups(groupAnagrams([]string{\"a\"}))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc05_top_k_frequent() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bucket Sort",
+        "O(n) time · O(n) space",
+        "Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.",
+        "package main
+
+import \"sort\"
+
+func topKFrequent(nums []int, k int) []int {
+	counts := map[int]int{}
+	for _, n := range nums {
+		counts[n]++
+	}
+	distinct := make([]int, 0, len(counts))
+	for n := range counts {
+		distinct = append(distinct, n)
+	}
+	sort.Slice(distinct, func(i, j int) bool { return counts[distinct[i]] > counts[distinct[j]] })
+	return distinct[:k]
+}",
+      ),
+      #(
+        "Solution 2 · Bucket sort",
+        "",
+        "A count can never exceed the input length, so one bucket per frequency covers every possibility. Reading the buckets downwards gives the answer in O(n) and replaces the comparison sort entirely.",
+        "package main
+
+func topKFrequent(nums []int, k int) []int {
+	counts := map[int]int{}
+	for _, n := range nums {
+		counts[n]++
+	}
+	// A count can never exceed the input length, so one bucket per frequency
+	// covers everything and the answer falls out of a single downward walk.
+	buckets := make([][]int, len(nums)+1)
+	for n, count := range counts {
+		buckets[count] = append(buckets[count], n)
+	}
+	result := []int{}
+	for count := len(buckets) - 1; count > 0; count-- {
+		for _, n := range buckets[count] {
+			result = append(result, n)
+			if len(result) == k {
+				return result
+			}
+		}
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func topKFrequent(nums []int, k int) []int",
+      starter: "package main
+
+func topKFrequent(nums []int, k int) []int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"topKFrequent([1, 1, 1, 2, 2, 3], 2)\", []int{1, 2}, sortInts(topKFrequent([]int{1, 1, 1, 2, 2, 3}, 2))),
+			tc(\"topKFrequent([1], 1)\", []int{1}, topKFrequent([]int{1}, 1)),
+			tc(\"topKFrequent([5, 5, 4, 4, 4, 3], 1)\", []int{4}, topKFrequent([]int{5, 5, 4, 4, 4, 3}, 1)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc06_product_except_self() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+For each slot, multiply everything that is not in it. O(n^2), and exactly what the prefix/suffix pass replaces.",
+        "package main
+
+func productExceptSelf(nums []int) []int {
+	result := make([]int, len(nums))
+	for i := range nums {
+		product := 1
+		for j, n := range nums {
+			if j != i {
+				product *= n
+			}
+		}
+		result[i] = product
+	}
+	return result
+}",
+      ),
+      #(
+        "Prefix & Suffix Products",
+        "O(n) time · O(1) extra space",
+        "The answer at each slot is everything before it times everything after it. One forward pass builds the prefixes, one reverse pass folds in the suffixes — and no division, so a zero in the input costs nothing special.",
+        "package main
+
+func productExceptSelf(nums []int) []int {
+	result := make([]int, len(nums))
+	prefix := 1
+	for i, n := range nums {
+		result[i] = prefix
+		prefix *= n
+	}
+	suffix := 1
+	for i := len(nums) - 1; i >= 0; i-- {
+		result[i] *= suffix
+		suffix *= nums[i]
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func productExceptSelf(nums []int) []int",
+      starter: "package main
+
+func productExceptSelf(nums []int) []int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"productExceptSelf([1, 2, 3, 4])\", []int{24, 12, 8, 6}, productExceptSelf([]int{1, 2, 3, 4})),
+			tc(\"productExceptSelf([-1, 1, 0, -3, 3])\", []int{0, 0, 9, 0, 0}, productExceptSelf([]int{-1, 1, 0, -3, 3})),
+			tc(\"productExceptSelf([2, 3])\", []int{3, 2}, productExceptSelf([]int{2, 3})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc07_longest_consecutive() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+
+Runs are contiguous once sorted, so one pass counting steps of exactly one finds the longest. Duplicates neither extend a run nor break it, which is the only case worth care.",
+        "package main
+
+import \"sort\"
+
+func longestConsecutive(nums []int) int {
+	if len(nums) == 0 {
+		return 0
+	}
+	sorted := append([]int(nil), nums...)
+	sort.Ints(sorted)
+	longest, length := 1, 1
+	for i := 1; i < len(sorted); i++ {
+		switch {
+		case sorted[i] == sorted[i-1]:
+			continue
+		case sorted[i] == sorted[i-1]+1:
+			length++
+		default:
+			length = 1
+		}
+		if length > longest {
+			longest = length
+		}
+	}
+	return longest
+}",
+      ),
+      #(
+        "Hash Set",
+        "O(n) time · O(n) space",
+        "Put everything in a set, then only start counting at numbers with no predecessor. That guard is what keeps it O(n): every run is walked exactly once instead of once per member.",
+        "package main
+
+func longestConsecutive(nums []int) int {
+	all := map[int]bool{}
+	for _, n := range nums {
+		all[n] = true
+	}
+	longest := 0
+	for n := range all {
+		// Only count from the start of a run, so each run is walked once.
+		if all[n-1] {
+			continue
+		}
+		length := 1
+		for all[n+length] {
+			length++
+		}
+		if length > longest {
+			longest = length
+		}
+	}
+	return longest
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func longestConsecutive(nums []int) int",
+      starter: "package main
+
+func longestConsecutive(nums []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"longestConsecutive([100, 4, 200, 1, 3, 2])\", 4, longestConsecutive([]int{100, 4, 200, 1, 3, 2})),
+			tc(\"longestConsecutive([0, 3, 7, 2, 5, 8, 4, 6, 0, 1])\", 9, longestConsecutive([]int{0, 3, 7, 2, 5, 8, 4, 6, 0, 1})),
+			tc(\"longestConsecutive([])\", 0, longestConsecutive([]int{})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc08_valid_palindrome() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.",
+        "package main
+
+import (
+	\"strings\"
+	\"unicode\"
+)
+
+func isPalindrome(s string) bool {
+	cleaned := []rune{}
+	for _, c := range strings.ToLower(s) {
+		if unicode.IsLetter(c) || unicode.IsDigit(c) {
+			cleaned = append(cleaned, c)
+		}
+	}
+	for i, j := 0, len(cleaned)-1; i < j; i, j = i+1, j-1 {
+		if cleaned[i] != cleaned[j] {
+			return false
+		}
+	}
+	return true
+}",
+      ),
+      #(
+        "Solution 2 · Two pointers",
+        "",
+        "Compare inwards from both ends, skipping anything that is not alphanumeric as you go. No second string is built.",
+        "package main
+
+import \"unicode\"
+
+func isPalindrome(s string) bool {
+	runes := []rune(s)
+	left, right := 0, len(runes)-1
+	for left < right {
+		// Skip the punctuation in place: no cleaned copy is ever built.
+		if !isAlphanumeric(runes[left]) {
+			left++
+			continue
+		}
+		if !isAlphanumeric(runes[right]) {
+			right--
+			continue
+		}
+		if unicode.ToLower(runes[left]) != unicode.ToLower(runes[right]) {
+			return false
+		}
+		left++
+		right--
+	}
+	return true
+}
+
+func isAlphanumeric(c rune) bool {
+	return unicode.IsLetter(c) || unicode.IsDigit(c)
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func isPalindrome(s string) bool",
+      starter: "package main
+
+func isPalindrome(s string) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"isPalindrome('A man, a plan, a canal: Panama')\", true, isPalindrome(\"A man, a plan, a canal: Panama\")),
+			tc(\"isPalindrome('race a car')\", false, isPalindrome(\"race a car\")),
+			tc(\"isPalindrome(' ')\", true, isPalindrome(\" \")),
+			tc(\"isPalindrome('0P')\", false, isPalindrome(\"0P\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc09_two_sum_sorted() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Binary Search",
+        "O(n log n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Fix each number in turn and search the tail for its complement, rather than converging two pointers. O(n log n), and it reuses a search you already know instead of a second pointer discipline.",
+        "package main
+
+import \"sort\"
+
+func twoSum(numbers []int, target int) []int {
+	for i, n := range numbers {
+		// For each element, binary search the rest for its complement.
+		rest := numbers[i+1:]
+		j := sort.SearchInts(rest, target-n)
+		if j < len(rest) && rest[j] == target-n {
+			return []int{i + 1, i + 1 + j + 1}
+		}
+	}
+	return []int{}
+}",
+      ),
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Sorted input plus a pointer at each end. A sum that is too small can only be fixed by raising the low end, one that is too large by lowering the high end, so neither pointer ever needs to go back. They meet in O(n) with no extra memory.
+
+Positions are 1-based here, which is the only trap.",
+        "package main
+
+func twoSum(numbers []int, target int) []int {
+	left, right := 0, len(numbers)-1
+	for left < right {
+		total := numbers[left] + numbers[right]
+		switch {
+		case total == target:
+			return []int{left + 1, right + 1}
+		case total < target:
+			left++
+		default:
+			right--
+		}
+	}
+	return []int{}
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func twoSum(numbers []int, target int) []int",
+      starter: "package main
+
+func twoSum(numbers []int, target int) []int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"twoSum([2, 7, 11, 15], 9)\", []int{1, 2}, twoSum([]int{2, 7, 11, 15}, 9)),
+			tc(\"twoSum([2, 3, 4], 6)\", []int{1, 3}, twoSum([]int{2, 3, 4}, 6)),
+			tc(\"twoSum([-1, 0], -1)\", []int{1, 2}, twoSum([]int{-1, 0}, -1)),
+			tc(\"twoSum([1, 2, 3], 100)\", []int{}, twoSum([]int{1, 2, 3}, 100)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc10_three_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n³) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every triple, checked. Sorting first means each triple comes out in ascending order, so collapsing the duplicates that repeated values produce is plain equality — no set needed.",
+        "package main
+
+import \"sort\"
+
+func threeSum(nums []int) [][]int {
+	seen := map[[3]int]bool{}
+	result := [][]int{}
+	for i := 0; i < len(nums); i++ {
+		for j := i + 1; j < len(nums); j++ {
+			for k := j + 1; k < len(nums); k++ {
+				if nums[i]+nums[j]+nums[k] != 0 {
+					continue
+				}
+				triple := []int{nums[i], nums[j], nums[k]}
+				sort.Ints(triple)
+				key := [3]int{triple[0], triple[1], triple[2]}
+				if !seen[key] {
+					seen[key] = true
+					result = append(result, triple)
+				}
+			}
+		}
+	}
+	return result
+}",
+      ),
+      #(
+        "Sort + Two Pointers",
+        "O(n²) time · O(1) extra space",
+        "Sort, fix one number, then run the two-pointer scan on the remainder looking for its negation. Sorting is what makes the duplicate triples skippable: equal values are adjacent, so stepping past them is a while loop, not a set.",
+        "package main
+
+import \"sort\"
+
+func threeSum(nums []int) [][]int {
+	ordered := append([]int(nil), nums...)
+	sort.Ints(ordered)
+	result := [][]int{}
+	for i := 0; i < len(ordered); i++ {
+		if i > 0 && ordered[i] == ordered[i-1] {
+			continue
+		}
+		left, right := i+1, len(ordered)-1
+		for left < right {
+			total := ordered[i] + ordered[left] + ordered[right]
+			switch {
+			case total < 0:
+				left++
+			case total > 0:
+				right--
+			default:
+				result = append(result, []int{ordered[i], ordered[left], ordered[right]})
+				left++
+				for left < right && ordered[left] == ordered[left-1] {
+					left++
+				}
+			}
+		}
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func threeSum(nums []int) [][]int",
+      starter: "package main
+
+func threeSum(nums []int) [][]int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+// Triples are compared as a set: only their contents are meaningful.
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"threeSum([-1, 0, 1, 2, -1, -4])\", [][]int{{-1, -1, 2}, {-1, 0, 1}}, sortRows(threeSum([]int{-1, 0, 1, 2, -1, -4}))),
+			tc(\"threeSum([0, 1, 1])\", [][]int{}, sortRows(threeSum([]int{0, 1, 1}))),
+			tc(\"threeSum([0, 0, 0])\", [][]int{{0, 0, 0}}, sortRows(threeSum([]int{0, 0, 0}))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc11_container_water() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every pair of lines, measured. O(n^2), but it makes what the two-pointer sweep is maximising explicit: shorter line times distance.",
+        "package main
+
+func maxArea(height []int) int {
+	best := 0
+	for i := 0; i < len(height); i++ {
+		for j := i + 1; j < len(height); j++ {
+			area := (j - i) * min(height[i], height[j])
+			if area > best {
+				best = area
+			}
+		}
+	}
+	return best
+}",
+      ),
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Start at both ends. The area is capped by the shorter line, so moving the taller one in can never help — always move the shorter, and track the best area seen.",
+        "package main
+
+func maxArea(height []int) int {
+	left, right, best := 0, len(height)-1, 0
+	for left < right {
+		area := (right - left) * min(height[left], height[right])
+		if area > best {
+			best = area
+		}
+		// Moving the taller line in can never help: the shorter one caps the area.
+		if height[left] < height[right] {
+			left++
+		} else {
+			right--
+		}
+	}
+	return best
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func maxArea(height []int) int",
+      starter: "package main
+
+func maxArea(height []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"maxArea([1, 8, 6, 2, 5, 4, 8, 3, 7])\", 49, maxArea([]int{1, 8, 6, 2, 5, 4, 8, 3, 7})),
+			tc(\"maxArea([1, 1])\", 1, maxArea([]int{1, 1})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc12_best_time_stock() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every buy day against every later sell day. O(n^2), and the problem statement written out.",
+        "package main
+
+func maxProfit(prices []int) int {
+	best := 0
+	for buy := 0; buy < len(prices); buy++ {
+		for sell := buy + 1; sell < len(prices); sell++ {
+			if prices[sell]-prices[buy] > best {
+				best = prices[sell] - prices[buy]
+			}
+		}
+	}
+	return best
+}",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Carry the cheapest price seen so far; today's best sale is today's price against that minimum. One pass, two variables.",
+        "package main
+
+func maxProfit(prices []int) int {
+	lowest, best := prices[0], 0
+	for _, price := range prices[1:] {
+		if price-lowest > best {
+			best = price - lowest
+		}
+		if price < lowest {
+			lowest = price
+		}
+	}
+	return best
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func maxProfit(prices []int) int",
+      starter: "package main
+
+func maxProfit(prices []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"maxProfit([7, 1, 5, 3, 6, 4])\", 5, maxProfit([]int{7, 1, 5, 3, 6, 4})),
+			tc(\"maxProfit([7, 6, 4, 3, 1])\", 0, maxProfit([]int{7, 6, 4, 3, 1})),
+			tc(\"maxProfit([2])\", 0, maxProfit([]int{2})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
 pub fn nc136_invert_binary_tree() -> Embedded {
   Embedded(
     solutions: [
@@ -115,10 +968,4521 @@ func main() {
   )
 }
 
+pub fn nc13_longest_substring() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sliding Window",
+        "O(n) time · O(n) space",
+        "Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.",
+        "package main
+
+func lengthOfLongestSubstring(s string) int {
+	lastSeen := map[byte]int{}
+	start, best := 0, 0
+	for i := 0; i < len(s); i++ {
+		// Jump the window start past the previous copy of this character;
+		// never backwards, or a stale position would reopen the window.
+		if last, ok := lastSeen[s[i]]; ok && last >= start {
+			start = last + 1
+		}
+		lastSeen[s[i]] = i
+		if i-start+1 > best {
+			best = i - start + 1
+		}
+	}
+	return best
+}",
+      ),
+      #(
+        "Solution 2 · Shrinking window",
+        "",
+        "The window itself is the bookkeeping: on a repeat, drop everything up to and including the earlier copy. No last-seen map at all, at the cost of scanning the window on each repeat.",
+        "package main
+
+func lengthOfLongestSubstring(s string) int {
+	inWindow := map[byte]bool{}
+	start, best := 0, 0
+	for end := 0; end < len(s); end++ {
+		// Shrink one character at a time until the newcomer is unique.
+		for inWindow[s[end]] {
+			delete(inWindow, s[start])
+			start++
+		}
+		inWindow[s[end]] = true
+		if end-start+1 > best {
+			best = end - start + 1
+		}
+	}
+	return best
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func lengthOfLongestSubstring(s string) int",
+      starter: "package main
+
+func lengthOfLongestSubstring(s string) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"lengthOfLongestSubstring('abcabcbb')\", 3, lengthOfLongestSubstring(\"abcabcbb\")),
+			tc(\"lengthOfLongestSubstring('bbbbb')\", 1, lengthOfLongestSubstring(\"bbbbb\")),
+			tc(\"lengthOfLongestSubstring('pwwkew')\", 3, lengthOfLongestSubstring(\"pwwkew\")),
+			tc(\"lengthOfLongestSubstring('')\", 0, lengthOfLongestSubstring(\"\")),
+			tc(\"lengthOfLongestSubstring('abba')\", 2, lengthOfLongestSubstring(\"abba\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc14_character_replacement() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Per-Letter Window",
+        "O(26·n) time · O(1) space",
+        "One sweep per letter, asking a much simpler question each time: how long a window can I hold if *this* is the letter I keep? No running frequency map and no max-count bookkeeping — 26 easy passes instead of one subtle one.",
+        "package main
+
+func characterReplacement(s string, k int) int {
+	best := 0
+	// For each letter, the longest window where everything else is replaced.
+	for letter := byte('A'); letter <= 'Z'; letter++ {
+		start, others := 0, 0
+		for end := 0; end < len(s); end++ {
+			if s[end] != letter {
+				others++
+			}
+			for others > k {
+				if s[start] != letter {
+					others--
+				}
+				start++
+			}
+			if end-start+1 > best {
+				best = end - start + 1
+			}
+		}
+	}
+	return best
+}",
+      ),
+      #(
+        "Sliding Window",
+        "O(n) time · O(1) space",
+        "A window can be made uniform with k changes when its size minus its most-frequent-character count is at most k. Grow the right edge, shrink from the left when that breaks, and the biggest valid window is the answer.",
+        "package main
+
+func characterReplacement(s string, k int) int {
+	counts := [26]int{}
+	start, mostFrequent, best := 0, 0, 0
+	for end := 0; end < len(s); end++ {
+		counts[s[end]-'A']++
+		if counts[s[end]-'A'] > mostFrequent {
+			mostFrequent = counts[s[end]-'A']
+		}
+		// The window is valid while its non-majority characters fit in k.
+		// mostFrequent is never lowered: a stale high can only keep the
+		// window at a length already achieved, never over-count.
+		if end-start+1-mostFrequent > k {
+			counts[s[start]-'A']--
+			start++
+		}
+		if end-start+1 > best {
+			best = end - start + 1
+		}
+	}
+	return best
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func characterReplacement(s string, k int) int",
+      starter: "package main
+
+func characterReplacement(s string, k int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"characterReplacement('ABAB', 2)\", 4, characterReplacement(\"ABAB\", 2)),
+			tc(\"characterReplacement('AABABBA', 1)\", 4, characterReplacement(\"AABABBA\", 1)),
+			tc(\"characterReplacement('AAAA', 0)\", 4, characterReplacement(\"AAAA\", 0)),
+			tc(\"characterReplacement('ABCDE', 1)\", 2, characterReplacement(\"ABCDE\", 1)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc15_permutation_in_string() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n·m log m) time · O(m) space",
+        "Every window of the right length, sorted and compared against the sorted needle. Slower than sliding counts, but there is no incremental state to get wrong: the whole method is \"is this window an anagram?\".",
+        "package main
+
+import \"sort\"
+
+func checkInclusion(s1 string, s2 string) bool {
+	if len(s1) > len(s2) {
+		return false
+	}
+	target := sortedString(s1)
+	// Sort every window of len(s1): a permutation sorts to the same string.
+	for i := 0; i+len(s1) <= len(s2); i++ {
+		if sortedString(s2[i:i+len(s1)]) == target {
+			return true
+		}
+	}
+	return false
+}
+
+func sortedString(s string) string {
+	b := []byte(s)
+	sort.Slice(b, func(i, j int) bool { return b[i] < b[j] })
+	return string(b)
+}",
+      ),
+      #(
+        "Sliding Window",
+        "O(26·n) time · O(1) space",
+        "A permutation of s1 is any window of length |s1| in s2 with identical character counts. Slide one character at a time, adding the entering character and removing the leaving one, so each step is O(1) rather than a recount.",
+        "package main
+
+func checkInclusion(s1 string, s2 string) bool {
+	if len(s1) > len(s2) {
+		return false
+	}
+	var need, window [26]int
+	for i := 0; i < len(s1); i++ {
+		need[s1[i]-'a']++
+		window[s2[i]-'a']++
+	}
+	if need == window {
+		return true
+	}
+	// Slide a window of len(s1): one character enters, one leaves.
+	for i := len(s1); i < len(s2); i++ {
+		window[s2[i]-'a']++
+		window[s2[i-len(s1)]-'a']--
+		if need == window {
+			return true
+		}
+	}
+	return false
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func checkInclusion(s1 string, s2 string) bool",
+      starter: "package main
+
+func checkInclusion(s1 string, s2 string) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"checkInclusion('ab', 'eidbaooo')\", true, checkInclusion(\"ab\", \"eidbaooo\")),
+			tc(\"checkInclusion('ab', 'eidboaoo')\", false, checkInclusion(\"ab\", \"eidboaoo\")),
+			tc(\"checkInclusion('abc', 'ab')\", false, checkInclusion(\"abc\", \"ab\")),
+			tc(\"checkInclusion('a', 'a')\", true, checkInclusion(\"a\", \"a\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc16_valid_parentheses() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Python · Replace",
+        "O(n²) time · O(n) space",
+        "No stack: strip every matched pair, over and over, until nothing more can go. Whatever survives is unmatched. It is also why \"([)]\" fails — neither pair is ever adjacent.",
+        "package main
+
+import \"strings\"
+
+func isValid(s string) bool {
+	// Delete innermost pairs until nothing changes; only the empty string
+	// survives if the brackets were balanced. Quadratic, but obviously right.
+	for {
+		next := strings.NewReplacer(\"()\", \"\", \"[]\", \"\", \"{}\", \"\").Replace(s)
+		if next == s {
+			return s == \"\"
+		}
+		s = next
+	}
+}",
+      ),
+      #(
+        "Stack",
+        "O(n) time · O(n) space",
+        "On every opener, push the closer you expect; on every closer, it must match the top. Valid means never mismatching and finishing with an empty stack — both halves are needed.",
+        "package main
+
+func isValid(s string) bool {
+	pairs := map[byte]byte{')': '(', ']': '[', '}': '{'}
+	stack := []byte{}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		opener, isCloser := pairs[c]
+		if !isCloser {
+			stack = append(stack, c)
+			continue
+		}
+		if len(stack) == 0 || stack[len(stack)-1] != opener {
+			return false
+		}
+		stack = stack[:len(stack)-1]
+	}
+	return len(stack) == 0
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func isValid(s string) bool",
+      starter: "package main
+
+func isValid(s string) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"isValid('()')\", true, isValid(\"()\")),
+			tc(\"isValid('()[]{}')\", true, isValid(\"()[]{}\")),
+			tc(\"isValid('(]')\", false, isValid(\"(]\")),
+			tc(\"isValid('([)]')\", false, isValid(\"([)]\")),
+			tc(\"isValid('{[]}')\", true, isValid(\"{[]}\")),
+			tc(\"isValid('(')\", false, isValid(\"(\")),
+			tc(\"isValid(')')\", false, isValid(\")\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc17_min_stack() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Two Stacks",
+        "O(1) per operation · O(n) space",
+        "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.",
+        "package main
+
+// Each entry remembers the minimum of everything at or below it, so the
+// minimum is always the top's note and never needs recomputing on pop.
+type MinStack struct {
+	values []int
+	mins   []int
+}
+
+func Constructor() MinStack {
+	return MinStack{}
+}
+
+func (s *MinStack) Push(val int) {
+	s.values = append(s.values, val)
+	if len(s.mins) == 0 || val < s.mins[len(s.mins)-1] {
+		s.mins = append(s.mins, val)
+	} else {
+		s.mins = append(s.mins, s.mins[len(s.mins)-1])
+	}
+}
+
+func (s *MinStack) Pop() {
+	s.values = s.values[:len(s.values)-1]
+	s.mins = s.mins[:len(s.mins)-1]
+}
+
+func (s *MinStack) Top() int {
+	return s.values[len(s.values)-1]
+}
+
+func (s *MinStack) GetMin() int {
+	return s.mins[len(s.mins)-1]
+}",
+      ),
+      #(
+        "Solution 2 · Two stacks",
+        "",
+        "Values in one stack, running minimums in a parallel one. The two concerns stay separate, which is what makes adding a max stack a copy-paste.",
+        "package main
+
+// The second stack holds only the running minima: push to it when a new
+// value ties or beats the current minimum, pop from it when that value leaves.
+type MinStack struct {
+	values []int
+	mins   []int
+}
+
+func Constructor() MinStack {
+	return MinStack{}
+}
+
+func (s *MinStack) Push(val int) {
+	s.values = append(s.values, val)
+	if len(s.mins) == 0 || val <= s.mins[len(s.mins)-1] {
+		s.mins = append(s.mins, val)
+	}
+}
+
+func (s *MinStack) Pop() {
+	top := s.values[len(s.values)-1]
+	s.values = s.values[:len(s.values)-1]
+	if top == s.mins[len(s.mins)-1] {
+		s.mins = s.mins[:len(s.mins)-1]
+	}
+}
+
+func (s *MinStack) Top() int {
+	return s.values[len(s.values)-1]
+}
+
+func (s *MinStack) GetMin() int {
+	return s.mins[len(s.mins)-1]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "type MinStack struct { … }
+
+func Constructor() MinStack
+
+func (s *MinStack) Push(val int)
+
+func (s *MinStack) Pop()
+
+func (s *MinStack) Top() int
+
+func (s *MinStack) GetMin() int",
+      starter: "package main
+
+type MinStack struct {
+	// todo
+}
+
+func Constructor() MinStack {
+	panic(\"todo\")
+}
+
+func (s *MinStack) Push(val int) {
+	panic(\"todo\")
+}
+
+func (s *MinStack) Pop() {
+	panic(\"todo\")
+}
+
+func (s *MinStack) Top() int {
+	panic(\"todo\")
+}
+
+func (s *MinStack) GetMin() int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		s := Constructor()
+		s.Push(-2)
+		s.Push(0)
+		s.Push(-3)
+		minWithThree := s.GetMin()
+		s.Pop()
+		topAfterPop := s.Top()
+		minAfterPop := s.GetMin()
+		d := Constructor()
+		d.Push(2)
+		d.Push(2)
+		d.Pop()
+		return []testCase{
+			tc(\"push -2, 0, -3; getMin\", -3, minWithThree),
+			tc(\"pop; top\", 0, topAfterPop),
+			tc(\"getMin after pop\", -2, minAfterPop),
+			tc(\"push 2, 2; pop; getMin -- a duplicate minimum survives one pop\", 2, d.GetMin()),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc18_daily_temperatures() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+For each day, scan forward until it gets warmer. O(n^2) — the monotonic stack exists only to avoid rescanning the same cold stretch once per day.",
+        "package main
+
+func dailyTemperatures(temperatures []int) []int {
+	answer := make([]int, len(temperatures))
+	for i, t := range temperatures {
+		for j := i + 1; j < len(temperatures); j++ {
+			if temperatures[j] > t {
+				answer[i] = j - i
+				break
+			}
+		}
+	}
+	return answer
+}",
+      ),
+      #(
+        "Monotonic Stack",
+        "O(n) time · O(n) space",
+        "A stack of days still waiting for something warmer, kept in decreasing temperature order. Each new day resolves and pops every colder day below it, so every day is pushed once and popped once — O(n).",
+        "package main
+
+func dailyTemperatures(temperatures []int) []int {
+	answer := make([]int, len(temperatures))
+	// Indices of days still waiting for a warmer one, temperatures decreasing.
+	stack := []int{}
+	for i, t := range temperatures {
+		for len(stack) > 0 && temperatures[stack[len(stack)-1]] < t {
+			j := stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+			answer[j] = i - j
+		}
+		stack = append(stack, i)
+	}
+	return answer
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func dailyTemperatures(temperatures []int) []int",
+      starter: "package main
+
+func dailyTemperatures(temperatures []int) []int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"dailyTemperatures([73,74,75,71,69,72,76,73])\", []int{1, 1, 4, 2, 1, 1, 0, 0}, dailyTemperatures([]int{73, 74, 75, 71, 69, 72, 76, 73})),
+			tc(\"dailyTemperatures([30,40,50,60])\", []int{1, 1, 1, 0}, dailyTemperatures([]int{30, 40, 50, 60})),
+			tc(\"dailyTemperatures([30,60,90])\", []int{1, 1, 0}, dailyTemperatures([]int{30, 60, 90})),
+			tc(\"dailyTemperatures([90])\", []int{0}, dailyTemperatures([]int{90})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc19_binary_search() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Binary Search",
+        "O(log n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Worth writing until the bounds are automatic: this is the search every rotated-array problem is built on top of.",
+        "package main
+
+func search(nums []int, target int) int {
+	low, high := 0, len(nums)-1
+	for low <= high {
+		mid := low + (high-low)/2
+		switch {
+		case nums[mid] == target:
+			return mid
+		case nums[mid] < target:
+			low = mid + 1
+		default:
+			high = mid - 1
+		}
+	}
+	return -1
+}",
+      ),
+      #(
+        "Solution 2 · First match scan",
+        "",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+A plain indexed scan. O(n), so it fails the stated requirement — but it is what the halving has to beat, and it shows exactly what the sortedness buys.",
+        "package main
+
+func search(nums []int, target int) int {
+	for i, n := range nums {
+		if n == target {
+			return i
+		}
+		if n > target {
+			break
+		}
+	}
+	return -1
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func search(nums []int, target int) int",
+      starter: "package main
+
+func search(nums []int, target int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"search([-1, 0, 3, 5, 9, 12], 9)\", 4, search([]int{-1, 0, 3, 5, 9, 12}, 9)),
+			tc(\"search([-1, 0, 3, 5, 9, 12], 2)\", -1, search([]int{-1, 0, 3, 5, 9, 12}, 2)),
+			tc(\"search([5], 5)\", 0, search([]int{5}, 5)),
+			tc(\"search([], 1)\", -1, search([]int{}, 1)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc20_find_min_rotated() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Linear Scan",
+        "O(n) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+O(n) rather than O(log n), but it makes the shape obvious: a rotated sorted array drops in value exactly once, and that drop is the minimum. No drop means it was never rotated, so the head wins.",
+        "package main
+
+func findMin(nums []int) int {
+	smallest := nums[0]
+	for _, n := range nums[1:] {
+		if n < smallest {
+			smallest = n
+		}
+	}
+	return smallest
+}",
+      ),
+      #(
+        "Binary Search",
+        "O(log n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The minimum is the one place order breaks. Compare the midpoint against a boundary: a segment that still looks sorted cannot hold the break, so the answer is in the other half.",
+        "package main
+
+func findMin(nums []int) int {
+	low, high := 0, len(nums)-1
+	for low < high {
+		mid := low + (high-low)/2
+		// The minimum is where the rotation broke the order: if mid is above
+		// the right end, the break is to the right; otherwise mid or left.
+		if nums[mid] > nums[high] {
+			low = mid + 1
+		} else {
+			high = mid
+		}
+	}
+	return nums[low]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func findMin(nums []int) int",
+      starter: "package main
+
+func findMin(nums []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"findMin([3, 4, 5, 1, 2])\", 1, findMin([]int{3, 4, 5, 1, 2})),
+			tc(\"findMin([4, 5, 6, 7, 0, 1, 2])\", 0, findMin([]int{4, 5, 6, 7, 0, 1, 2})),
+			tc(\"findMin([11, 13, 15, 17])\", 11, findMin([]int{11, 13, 15, 17})),
+			tc(\"findMin([2, 1])\", 1, findMin([]int{2, 1})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc21_search_rotated() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Pivot + Binary Search",
+        "O(n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Two plain steps instead of one clever one: find where the rotation wrapped, which leaves two ordinary sorted runs, then search each. Nothing has to reason mid-search about which half is sorted.",
+        "package main
+
+func search(nums []int, target int) int {
+	// Find the rotation point first, then binary search the one sorted
+	// half the target can be in.
+	low, high := 0, len(nums)-1
+	for low < high {
+		mid := low + (high-low)/2
+		if nums[mid] > nums[high] {
+			low = mid + 1
+		} else {
+			high = mid
+		}
+	}
+	pivot := low
+	low, high = 0, len(nums)-1
+	if nums[pivot] <= target && target <= nums[len(nums)-1] {
+		low = pivot
+	} else {
+		high = pivot - 1
+	}
+	for low <= high {
+		mid := low + (high-low)/2
+		switch {
+		case nums[mid] == target:
+			return mid
+		case nums[mid] < target:
+			low = mid + 1
+		default:
+			high = mid - 1
+		}
+	}
+	return -1
+}",
+      ),
+      #(
+        "Binary Search",
+        "O(log n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The twist: after a rotation, one half around the midpoint is always sorted. Work out which, then use its endpoints to decide whether the target lies inside it.",
+        "package main
+
+func search(nums []int, target int) int {
+	low, high := 0, len(nums)-1
+	for low <= high {
+		mid := low + (high-low)/2
+		if nums[mid] == target {
+			return mid
+		}
+		// One half is always sorted; check whether the target lies in it.
+		if nums[low] <= nums[mid] {
+			if nums[low] <= target && target < nums[mid] {
+				high = mid - 1
+			} else {
+				low = mid + 1
+			}
+		} else {
+			if nums[mid] < target && target <= nums[high] {
+				low = mid + 1
+			} else {
+				high = mid - 1
+			}
+		}
+	}
+	return -1
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func search(nums []int, target int) int",
+      starter: "package main
+
+func search(nums []int, target int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"search([4, 5, 6, 7, 0, 1, 2], 0)\", 4, search([]int{4, 5, 6, 7, 0, 1, 2}, 0)),
+			tc(\"search([4, 5, 6, 7, 0, 1, 2], 3)\", -1, search([]int{4, 5, 6, 7, 0, 1, 2}, 3)),
+			tc(\"search([1], 0)\", -1, search([]int{1}, 0)),
+			tc(\"search([1, 3], 3)\", 1, search([]int{1, 3}, 3)),
+			tc(\"search([3, 1], 1)\", 1, search([]int{3, 1}, 1)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc22_encode_decode() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Separator + Escaping",
+        "O(n) time · O(n) space",
+        "The other honest answer: pick a separator and make it safe by escaping it, and escaping the escape. Note the leading separator rather than a join — without it, [] and [\"\"] both encode to the empty string, which is the case that catches most first attempts.",
+        "package main
+
+import \"strings\"
+
+// Escape the delimiter instead of counting: a backslash before every
+// backslash and every comma, and a plain comma closing each string -- a
+// terminator rather than a separator, so [\"\"] and [] encode differently.
+func encode(strs []string) string {
+	var b strings.Builder
+	for _, s := range strs {
+		b.WriteString(strings.NewReplacer(`\\`, `\\\\`, \",\", `\\,`).Replace(s))
+		b.WriteByte(',')
+	}
+	return b.String()
+}
+
+func decode(s string) []string {
+	result := []string{}
+	var current strings.Builder
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case '\\\\':
+			i++
+			current.WriteByte(s[i])
+		case ',':
+			result = append(result, current.String())
+			current.Reset()
+		default:
+			current.WriteByte(s[i])
+		}
+	}
+	return result
+}",
+      ),
+      #(
+        "Length Prefix",
+        "O(n) time · O(n) space",
+        "Length-prefix each string: its length, a delimiter, then the string itself. Decoding reads a number and then takes exactly that many characters, so nothing inside a payload can ever be mistaken for structure — the delimiter appearing in the data is harmless, because the decoder was never scanning for it.",
+        "package main
+
+import (
+	\"strconv\"
+	\"strings\"
+)
+
+// Length-prefix each string: \"4#code3#abc\". The length tells the decoder
+// exactly how far to read, so the strings can contain anything at all.
+func encode(strs []string) string {
+	var b strings.Builder
+	for _, s := range strs {
+		b.WriteString(strconv.Itoa(len(s)))
+		b.WriteByte('#')
+		b.WriteString(s)
+	}
+	return b.String()
+}
+
+func decode(s string) []string {
+	result := []string{}
+	i := 0
+	for i < len(s) {
+		hash := strings.IndexByte(s[i:], '#') + i
+		length, _ := strconv.Atoi(s[i:hash])
+		result = append(result, s[hash+1:hash+1+length])
+		i = hash + 1 + length
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func encode(strs []string) string
+
+func decode(s string) []string",
+      starter: "package main
+
+func encode(strs []string) string {
+	panic(\"todo\")
+}
+
+func decode(s string) []string {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"decode(encode(['lint','code','love','you']))\", []string{\"lint\", \"code\", \"love\", \"you\"}, decode(encode([]string{\"lint\", \"code\", \"love\", \"you\"}))),
+			tc(\"decode(encode(['we','say',':','yes']))\", []string{\"we\", \"say\", \":\", \"yes\"}, decode(encode([]string{\"we\", \"say\", \":\", \"yes\"}))),
+			tc(\"decode(encode(['']))\", []string{\"\"}, decode(encode([]string{\"\"}))),
+			tc(\"decode(encode([]))\", []string{}, decode(encode([]string{}))),
+			tc(\"decode(encode(['a#b,c', '3#', '']))\", []string{\"a#b,c\", \"3#\", \"\"}, decode(encode([]string{\"a#b,c\", \"3#\", \"\"}))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc23_valid_sudoku() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Check Each Unit",
+        "O(9²) time · O(9²) space",
+        "Turn the board into the 27 things being constrained — nine rows, nine columns, nine boxes — and the problem collapses to \"does any of these contain a repeat?\". More passes than the signature set, but the constraint is stated once and the box arithmetic is confined to building the units.",
+        "package main
+
+func isValidSudoku(board [][]byte) bool {
+	// Check each of the 27 units on its own: nine rows, nine columns, nine boxes.
+	for i := 0; i < 9; i++ {
+		row := make([]byte, 0, 9)
+		col := make([]byte, 0, 9)
+		box := make([]byte, 0, 9)
+		for j := 0; j < 9; j++ {
+			row = append(row, board[i][j])
+			col = append(col, board[j][i])
+			box = append(box, board[(i/3)*3+j/3][(i%3)*3+j%3])
+		}
+		if hasRepeat(row) || hasRepeat(col) || hasRepeat(box) {
+			return false
+		}
+	}
+	return true
+}
+
+func hasRepeat(unit []byte) bool {
+	seen := map[byte]bool{}
+	for _, cell := range unit {
+		if cell == '.' {
+			continue
+		}
+		if seen[cell] {
+			return true
+		}
+		seen[cell] = true
+	}
+	return false
+}",
+      ),
+      #(
+        "One Pass + Seen Set",
+        "O(9²) time · O(9²) space",
+        "One pass, one set. Each filled cell contributes three signatures — this value in this row, in this column, in this box — and the first one already present is the duplicate. Nothing has to be gathered up first, and the scan stops the moment it fails.",
+        "package main
+
+func isValidSudoku(board [][]byte) bool {
+	var rows, cols, boxes [9][10]bool
+	for r := 0; r < 9; r++ {
+		for c := 0; c < 9; c++ {
+			if board[r][c] == '.' {
+				continue
+			}
+			digit := board[r][c] - '0'
+			box := (r/3)*3 + c/3
+			if rows[r][digit] || cols[c][digit] || boxes[box][digit] {
+				return false
+			}
+			rows[r][digit], cols[c][digit], boxes[box][digit] = true, true, true
+		}
+	}
+	return true
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func isValidSudoku(board [][]byte) bool",
+      starter: "package main
+
+func isValidSudoku(board [][]byte) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func board(rows ...string) [][]byte {
+	out := make([][]byte, len(rows))
+	for i, row := range rows {
+		out[i] = []byte(row)
+	}
+	return out
+}
+
+func main() {
+	run(func() []testCase {
+		valid := board(
+			\"53..7....\", \"6..195...\", \".98....6.\",
+			\"8...6...3\", \"4..8.3..1\", \"7...2...6\",
+			\".6....28.\", \"...419..5\", \"....8..79\")
+		rowRepeat := board(
+			\"53..7...5\", \"6..195...\", \".98....6.\",
+			\"8...6...3\", \"4..8.3..1\", \"7...2...6\",
+			\".6....28.\", \"...419..5\", \"....8..79\")
+		boxRepeat := board(
+			\"83..7....\", \"6..195...\", \".98....6.\",
+			\"8...6...3\", \"4..8.3..1\", \"7...2...6\",
+			\".6....28.\", \"...419..5\", \"....8..79\")
+		return []testCase{
+			tc(\"a valid board\", true, isValidSudoku(valid)),
+			tc(\"a 5 twice in the first row\", false, isValidSudoku(rowRepeat)),
+			tc(\"an 8 twice in the top-left box\", false, isValidSudoku(boxRepeat)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc24_trapping_rain_water() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Prefix Maxima",
+        "O(n) time · O(n) space",
+        "State the definition and compute it. Water above a position is min(tallest to its left, tallest to its right) minus its own height, so build both running maxima and sum the differences. Two extra arrays against the two-pointer version's none, but the formula is right there in the code.",
+        "package main
+
+func trap(height []int) int {
+	n := len(height)
+	if n == 0 {
+		return 0
+	}
+	// Water above a bar is bounded by the tallest bar to each side.
+	leftMax := make([]int, n)
+	rightMax := make([]int, n)
+	leftMax[0] = height[0]
+	for i := 1; i < n; i++ {
+		leftMax[i] = max(leftMax[i-1], height[i])
+	}
+	rightMax[n-1] = height[n-1]
+	for i := n - 2; i >= 0; i-- {
+		rightMax[i] = max(rightMax[i+1], height[i])
+	}
+	water := 0
+	for i, h := range height {
+		water += min(leftMax[i], rightMax[i]) - h
+	}
+	return water
+}",
+      ),
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Two pointers, moving whichever side is shorter. The trick is that the shorter side alone decides how much water sits above it: whatever is on the far side is at least as tall, so the running maximum behind the short pointer is the water level, and there is no need to know the far maximum exactly. One pass, no extra arrays.",
+        "package main
+
+func trap(height []int) int {
+	left, right := 0, len(height)-1
+	leftMax, rightMax, water := 0, 0, 0
+	// The lower side is bounded by its own maximum: the other side is at
+	// least as high, so that water level is certain.
+	for left < right {
+		if height[left] < height[right] {
+			leftMax = max(leftMax, height[left])
+			water += leftMax - height[left]
+			left++
+		} else {
+			rightMax = max(rightMax, height[right])
+			water += rightMax - height[right]
+			right--
+		}
+	}
+	return water
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func trap(height []int) int",
+      starter: "package main
+
+func trap(height []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"trap([0,1,0,2,1,0,1,3,2,1,2,1])\", 6, trap([]int{0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1})),
+			tc(\"trap([4,2,0,3,2,5])\", 9, trap([]int{4, 2, 0, 3, 2, 5})),
+			tc(\"trap([])\", 0, trap([]int{})),
+			tc(\"trap([3,2,1])\", 0, trap([]int{3, 2, 1})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc25_min_window_substring() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Filtered Sliding Window",
+        "O(n+m) time · O(n) space",
+        "Two changes from the counting version, both worth knowing. First, throw away every position whose character is not in the needle: for a long haystack and a short needle, that is nearly the whole walk gone. Second, track how many distinct requirements are fully covered rather than how many characters remain — the counter only moves when a count crosses its requirement.",
+        "package main
+
+func minWindow(s string, t string) string {
+	need := map[byte]int{}
+	for i := 0; i < len(t); i++ {
+		need[t[i]]++
+	}
+	// Only positions holding a character of t can move a window's edges,
+	// so slide over that filtered list rather than every index of s.
+	positions := []int{}
+	for i := 0; i < len(s); i++ {
+		if need[s[i]] > 0 {
+			positions = append(positions, i)
+		}
+	}
+	have := map[byte]int{}
+	covered, required := 0, len(need)
+	bestStart, bestLength := 0, len(s)+1
+	left := 0
+	for right, pos := range positions {
+		c := s[pos]
+		have[c]++
+		if have[c] == need[c] {
+			covered++
+		}
+		for covered == required {
+			startPos := positions[left]
+			if pos-startPos+1 < bestLength {
+				bestStart, bestLength = startPos, pos-startPos+1
+			}
+			out := s[startPos]
+			if have[out] == need[out] {
+				covered--
+			}
+			have[out]--
+			left++
+		}
+		_ = right
+	}
+	if bestLength > len(s) {
+		return \"\"
+	}
+	return s[bestStart : bestStart+bestLength]
+}",
+      ),
+      #(
+        "Sliding Window",
+        "O(n+m) time · O(1) space",
+        "Count what is still missing, not what is present. Every character the window takes in decrements its requirement, and only a character that was actually still needed moves the counter — so \"missing == 0\" is a single integer test rather than a map comparison. Once the window is valid, shrink from the left until it stops being valid, recording the best as you go.",
+        "package main
+
+func minWindow(s string, t string) string {
+	if len(t) == 0 || len(t) > len(s) {
+		return \"\"
+	}
+	need := map[byte]int{}
+	for i := 0; i < len(t); i++ {
+		need[t[i]]++
+	}
+	missing := len(t)
+	bestStart, bestLength := 0, len(s)+1
+	start := 0
+	for end := 0; end < len(s); end++ {
+		if need[s[end]] > 0 {
+			missing--
+		}
+		need[s[end]]--
+		// Once every character is covered, shrink from the left as far as
+		// the coverage allows, recording the window each time.
+		for missing == 0 {
+			if end-start+1 < bestLength {
+				bestStart, bestLength = start, end-start+1
+			}
+			need[s[start]]++
+			if need[s[start]] > 0 {
+				missing++
+			}
+			start++
+		}
+	}
+	if bestLength > len(s) {
+		return \"\"
+	}
+	return s[bestStart : bestStart+bestLength]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func minWindow(s string, t string) string",
+      starter: "package main
+
+func minWindow(s string, t string) string {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"minWindow('ADOBECODEBANC', 'ABC')\", \"BANC\", minWindow(\"ADOBECODEBANC\", \"ABC\")),
+			tc(\"minWindow('a', 'a')\", \"a\", minWindow(\"a\", \"a\")),
+			tc(\"minWindow('a', 'aa')\", \"\", minWindow(\"a\", \"aa\")),
+			tc(\"minWindow('ab', 'b')\", \"b\", minWindow(\"ab\", \"b\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc26_sliding_window_maximum() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n·k) time · O(k) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every window, maximised. O(n·k) rather than O(n), which is exactly the rescanning the other two variants exist to avoid.",
+        "package main
+
+func maxSlidingWindow(nums []int, k int) []int {
+	result := make([]int, 0, len(nums)-k+1)
+	for i := 0; i+k <= len(nums); i++ {
+		best := nums[i]
+		for _, n := range nums[i+1 : i+k] {
+			best = max(best, n)
+		}
+		result = append(result, best)
+	}
+	return result
+}",
+      ),
+      #(
+        "Monotonic Deque",
+        "O(n) time · O(k) space",
+        "The classic answer. Hold the indices whose value could still be the maximum, kept in decreasing order: a new value pops every smaller one off the back, because they can never win again while it is in the window. The front is always the answer, and the front leaves once it falls out of range. Each index is pushed and popped once.",
+        "package main
+
+func maxSlidingWindow(nums []int, k int) []int {
+	// The deque holds values, not indices, and each value is popped from the
+	// front when the element leaving the window equals it: the same monotone
+	// idea, with the window edge handled by comparing values.
+	result := make([]int, 0, len(nums)-k+1)
+	deque := []int{}
+	for i, n := range nums {
+		for len(deque) > 0 && deque[len(deque)-1] < n {
+			deque = deque[:len(deque)-1]
+		}
+		deque = append(deque, n)
+		if i >= k-1 {
+			result = append(result, deque[0])
+			if nums[i-k+1] == deque[0] {
+				deque = deque[1:]
+			}
+		}
+	}
+	return result
+}",
+      ),
+      #(
+        "Prefix & Suffix Maxima",
+        "O(n) time · O(n) space",
+        "Cut the array into blocks of k and pre-compute, within each block, the running maximum forwards and backwards. Any window of width k straddles at most one block boundary, so it is exactly a suffix of one block and a prefix of the next — one max from each, and the whole thing is O(n) with no queue at all.",
+        "package main
+
+func maxSlidingWindow(nums []int, k int) []int {
+	result := make([]int, 0, len(nums)-k+1)
+	// Indices whose values are decreasing: the front is the window's max.
+	deque := []int{}
+	for i, n := range nums {
+		if len(deque) > 0 && deque[0] <= i-k {
+			deque = deque[1:]
+		}
+		// A smaller value behind a larger newcomer can never be a maximum again.
+		for len(deque) > 0 && nums[deque[len(deque)-1]] < n {
+			deque = deque[:len(deque)-1]
+		}
+		deque = append(deque, i)
+		if i >= k-1 {
+			result = append(result, nums[deque[0]])
+		}
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func maxSlidingWindow(nums []int, k int) []int",
+      starter: "package main
+
+func maxSlidingWindow(nums []int, k int) []int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"maxSlidingWindow([1,3,-1,-3,5,3,6,7], 3)\", []int{3, 3, 5, 5, 6, 7}, maxSlidingWindow([]int{1, 3, -1, -3, 5, 3, 6, 7}, 3)),
+			tc(\"maxSlidingWindow([1], 1)\", []int{1}, maxSlidingWindow([]int{1}, 1)),
+			tc(\"maxSlidingWindow([9, 8, 7], 2)\", []int{9, 8}, maxSlidingWindow([]int{9, 8, 7}, 2)),
+			tc(\"maxSlidingWindow([1, 1, 1], 2)\", []int{1, 1}, maxSlidingWindow([]int{1, 1, 1}, 2)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc27_eval_rpn() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Recursion",
+        "O(n) time · O(n) space",
+        "The same grammar, read as a recursive descent instead of a loop. The last token is the outermost operator; each operator asks for its right operand first, because that is what sits nearer the end. What the stack version stores in a list, this one stores in the call stack.",
+        "package main
+
+import \"strconv\"
+
+func evalRPN(tokens []string) int {
+	// Read from the end: the last token is an operator whose operands are
+	// the two expressions before it, right one first.
+	i := len(tokens) - 1
+	return evalFrom(tokens, &i)
+}
+
+func evalFrom(tokens []string, i *int) int {
+	token := tokens[*i]
+	*i--
+	if n, err := strconv.Atoi(token); err == nil {
+		return n
+	}
+	b := evalFrom(tokens, i)
+	a := evalFrom(tokens, i)
+	switch token {
+	case \"+\":
+		return a + b
+	case \"-\":
+		return a - b
+	case \"*\":
+		return a * b
+	default:
+		return a / b
+	}
+}",
+      ),
+      #(
+        "Stack",
+        "O(n) time · O(n) space",
+        "A stack is the whole evaluator. Numbers go on; an operator takes the top two off and puts its result back. The one detail worth remembering is the order — the value popped first is the right operand — and that the division truncates towards zero, which is not what a flooring division does for negatives.",
+        "package main
+
+import \"strconv\"
+
+func evalRPN(tokens []string) int {
+	stack := []int{}
+	for _, token := range tokens {
+		if n, err := strconv.Atoi(token); err == nil {
+			stack = append(stack, n)
+			continue
+		}
+		b, a := stack[len(stack)-1], stack[len(stack)-2]
+		stack = stack[:len(stack)-2]
+		switch token {
+		case \"+\":
+			stack = append(stack, a+b)
+		case \"-\":
+			stack = append(stack, a-b)
+		case \"*\":
+			stack = append(stack, a*b)
+		case \"/\":
+			stack = append(stack, a/b)
+		}
+	}
+	return stack[0]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func evalRPN(tokens []string) int",
+      starter: "package main
+
+func evalRPN(tokens []string) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"evalRPN(['2','1','+','3','*'])\", 9, evalRPN([]string{\"2\", \"1\", \"+\", \"3\", \"*\"})),
+			tc(\"evalRPN(['4','13','5','/','+'])\", 6, evalRPN([]string{\"4\", \"13\", \"5\", \"/\", \"+\"})),
+			tc(\"evalRPN(['10','6','9','3','+','-11','*','/','*','17','+','5','+'])\", 22, evalRPN([]string{\"10\", \"6\", \"9\", \"3\", \"+\", \"-11\", \"*\", \"/\", \"*\", \"17\", \"+\", \"5\", \"+\"})),
+			tc(\"evalRPN(['7','-3','/'])\", -2, evalRPN([]string{\"7\", \"-3\", \"/\"})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc28_generate_parentheses() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Divide & Conquer",
+        "O(4ⁿ/√n) time · O(4ⁿ/√n) space",
+        "Structure instead of search. Every non-empty balanced string is \"(\" + A + \")\" + B for exactly one split: A is what the first bracket encloses, B is what follows it. Enumerating the splits enumerates the strings, and there is no validity rule anywhere — the shape of the recursion is the rule.",
+        "package main
+
+func generateParenthesis(n int) []string {
+	// Every balanced string is \"(\" + inner + \")\" + rest, with inner and
+	// rest balanced and their pair counts summing to n-1.
+	if n == 0 {
+		return []string{\"\"}
+	}
+	result := []string{}
+	for inside := 0; inside < n; inside++ {
+		for _, inner := range generateParenthesis(inside) {
+			for _, rest := range generateParenthesis(n - 1 - inside) {
+				result = append(result, \"(\"+inner+\")\"+rest)
+			}
+		}
+	}
+	return result
+}",
+      ),
+      #(
+        "Backtracking",
+        "O(4ⁿ/√n) time · O(n) space",
+        "Backtracking with two counters and one rule each: an opener is legal while any are left, a closer only while more are outstanding than openers. Nothing invalid is ever built, so there is no filtering step — every leaf reached with both counters at zero is an answer.",
+        "package main
+
+func generateParenthesis(n int) []string {
+	result := []string{}
+	var build func(current []byte, open, closed int)
+	build = func(current []byte, open, closed int) {
+		if len(current) == 2*n {
+			result = append(result, string(current))
+			return
+		}
+		// An opener is allowed while some remain; a closer only while it
+		// would not outnumber the openers so far.
+		if open < n {
+			build(append(current, '('), open+1, closed)
+		}
+		if closed < open {
+			build(append(current, ')'), open, closed+1)
+		}
+	}
+	build([]byte{}, 0, 0)
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func generateParenthesis(n int) []string",
+      starter: "package main
+
+func generateParenthesis(n int) []string {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"generateParenthesis(3)\", []string{\"((()))\", \"(()())\", \"(())()\", \"()(())\", \"()()()\"}, sortStrings(generateParenthesis(3))),
+			tc(\"generateParenthesis(1)\", []string{\"()\"}, generateParenthesis(1)),
+			tc(\"len(generateParenthesis(4))\", 14, len(generateParenthesis(4))),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc29_car_fleet() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+A car leads a fleet exactly when it arrives strictly later than every car ahead of it. Checking that directly needs no sort and no running state — O(n²), and it is the definition the sorted scan is a consequence of.",
+        "package main
+
+import \"sort\"
+
+func carFleet(target int, position []int, speed []int) int {
+	// Sort by position, then walk from the back of the road: a car catches
+	// the car ahead (and any fleet it leads) only if its own arrival time
+	// is no later than that fleet's.
+	cars := make([][2]int, len(position))
+	for i := range position {
+		cars[i] = [2]int{position[i], speed[i]}
+	}
+	sort.Slice(cars, func(i, j int) bool { return cars[i][0] < cars[j][0] })
+	stack := []float64{}
+	for _, car := range cars {
+		arrival := float64(target-car[0]) / float64(car[1])
+		// Any fleet ahead that this car reaches in time is absorbed.
+		for len(stack) > 0 && stack[len(stack)-1] <= arrival {
+			stack = stack[:len(stack)-1]
+		}
+		stack = append(stack, arrival)
+	}
+	return len(stack)
+}",
+      ),
+      #(
+        "Sort + Greedy",
+        "O(n log n) time · O(n) space",
+        "Sort from the front backwards and carry the arrival time of the fleet ahead. A car that would arrive later than that fleet can never catch it, so it starts a new one and becomes the time to beat; anything else merges. Comparing times as distance × speed cross-multiplied keeps the whole thing in integers.",
+        "package main
+
+import \"sort\"
+
+func carFleet(target int, position []int, speed []int) int {
+	order := make([]int, len(position))
+	for i := range order {
+		order[i] = i
+	}
+	// Closest to the target first. A car that would arrive sooner than the
+	// fleet ahead is stuck behind it and joins; one that arrives later
+	// starts a new fleet.
+	sort.Slice(order, func(i, j int) bool { return position[order[i]] > position[order[j]] })
+	fleets := 0
+	slowest := 0.0
+	for _, i := range order {
+		arrival := float64(target-position[i]) / float64(speed[i])
+		if arrival > slowest {
+			fleets++
+			slowest = arrival
+		}
+	}
+	return fleets
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func carFleet(target int, position []int, speed []int) int",
+      starter: "package main
+
+func carFleet(target int, position []int, speed []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"carFleet(12, [10,8,0,5,3], [2,4,1,1,3])\", 3, carFleet(12, []int{10, 8, 0, 5, 3}, []int{2, 4, 1, 1, 3})),
+			tc(\"carFleet(10, [3], [3])\", 1, carFleet(10, []int{3}, []int{3})),
+			tc(\"carFleet(100, [0,2,4], [4,2,1])\", 1, carFleet(100, []int{0, 2, 4}, []int{4, 2, 1})),
+			tc(\"carFleet(10, [6,8], [3,2])\", 2, carFleet(10, []int{6, 8}, []int{3, 2})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc30_largest_rectangle() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every rectangle is some bar taken as far as it will go, so take each bar and walk outwards while the neighbours are at least as tall. O(n²), and it makes plain what the stack is actually computing: the two boundaries where a bar stops fitting.",
+        "package main
+
+func largestRectangleArea(heights []int) int {
+	best := 0
+	// Each bar is the shortest of some best rectangle: widen from it in
+	// both directions while the neighbours are at least as tall.
+	for i, h := range heights {
+		left := i
+		for left > 0 && heights[left-1] >= h {
+			left--
+		}
+		right := i
+		for right < len(heights)-1 && heights[right+1] >= h {
+			right++
+		}
+		best = max(best, h*(right-left+1))
+	}
+	return best
+}",
+      ),
+      #(
+        "Monotonic Stack",
+        "O(n) time · O(n) space",
+        "A monotonic stack of (starting index, height), heights increasing. A shorter bar arriving means every taller entry can never extend further, so each is closed off and measured — and the earliest position they reached back to becomes the new bar's own start, because it can extend back over all of them. Whatever is left at the end was never cut off, so it runs to the far edge.",
+        "package main
+
+func largestRectangleArea(heights []int) int {
+	best := 0
+	// Indices with increasing heights. When a lower bar arrives, every
+	// taller bar on the stack has found its right edge; its left edge is
+	// the bar beneath it on the stack.
+	stack := []int{}
+	for i := 0; i <= len(heights); i++ {
+		current := 0
+		if i < len(heights) {
+			current = heights[i]
+		}
+		for len(stack) > 0 && heights[stack[len(stack)-1]] >= current {
+			height := heights[stack[len(stack)-1]]
+			stack = stack[:len(stack)-1]
+			width := i
+			if len(stack) > 0 {
+				width = i - stack[len(stack)-1] - 1
+			}
+			best = max(best, height*width)
+		}
+		stack = append(stack, i)
+	}
+	return best
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func largestRectangleArea(heights []int) int",
+      starter: "package main
+
+func largestRectangleArea(heights []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"largestRectangleArea([2,1,5,6,2,3])\", 10, largestRectangleArea([]int{2, 1, 5, 6, 2, 3})),
+			tc(\"largestRectangleArea([2,4])\", 4, largestRectangleArea([]int{2, 4})),
+			tc(\"largestRectangleArea([1])\", 1, largestRectangleArea([]int{1})),
+			tc(\"largestRectangleArea([3,3,3])\", 9, largestRectangleArea([]int{3, 3, 3})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc31_search_2d_matrix() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Staircase Search",
+        "O(m+n) time · O(1) space",
+        "Start at the top-right corner and every step is forced: a value too big rules out its whole column, a value too small rules out its whole row. O(m + n) rather than O(log mn), but it never uses the fact that the rows do not overlap, so it still works on a matrix that is merely sorted along both axes.",
+        "package main
+
+func searchMatrix(matrix [][]int, target int) bool {
+	// Start at the top-right corner: every step left makes the value
+	// smaller, every step down makes it larger, so each comparison rules
+	// out a whole row or column.
+	row, col := 0, len(matrix[0])-1
+	for row < len(matrix) && col >= 0 {
+		switch {
+		case matrix[row][col] == target:
+			return true
+		case matrix[row][col] > target:
+			col--
+		default:
+			row++
+		}
+	}
+	return false
+}",
+      ),
+      #(
+        "Binary Search",
+        "O(log(m·n)) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Twice: the rows do not overlap, so which row a value could be in is itself a halving question — compare the target against a row's first and last entries — and then the row is an ordinary sorted array.",
+        "package main
+
+func searchMatrix(matrix [][]int, target int) bool {
+	rows, cols := len(matrix), len(matrix[0])
+	// Rows run on from each other, so the matrix is one sorted list of
+	// rows*cols cells; index it with a division and a remainder.
+	low, high := 0, rows*cols-1
+	for low <= high {
+		mid := low + (high-low)/2
+		value := matrix[mid/cols][mid%cols]
+		switch {
+		case value == target:
+			return true
+		case value < target:
+			low = mid + 1
+		default:
+			high = mid - 1
+		}
+	}
+	return false
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func searchMatrix(matrix [][]int, target int) bool",
+      starter: "package main
+
+func searchMatrix(matrix [][]int, target int) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		matrix := [][]int{{1, 3, 5, 7}, {10, 11, 16, 20}, {23, 30, 34, 60}}
+		return []testCase{
+			tc(\"searchMatrix(matrix, 3)\", true, searchMatrix(matrix, 3)),
+			tc(\"searchMatrix(matrix, 13)\", false, searchMatrix(matrix, 13)),
+			tc(\"searchMatrix(matrix, 60)\", true, searchMatrix(matrix, 60)),
+			tc(\"searchMatrix([[1]], 2)\", false, searchMatrix([][]int{{1}}, 2)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc32_koko_bananas() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n·m) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Try 1, then 2, then 3, and stop at the first speed that fits. O(max pile) calls to the same feasibility check the halving version makes O(log max pile) of — worth writing once, because getting the check right is most of the problem.",
+        "package main
+
+func minEatingSpeed(piles []int, h int) int {
+	// Try every speed from 1 up; the first that fits the hours is the answer.
+	for speed := 1; ; speed++ {
+		hours := 0
+		for _, pile := range piles {
+			hours += (pile + speed - 1) / speed
+		}
+		if hours <= h {
+			return speed
+		}
+	}
+}",
+      ),
+      #(
+        "Binary Search",
+        "O(n log m) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The search space is the answer, not the input. What makes it work is that feasibility is monotone: if a speed finishes in time then so does every faster one, so \"the smallest speed that works\" is a boundary to halve towards.",
+        "package main
+
+func minEatingSpeed(piles []int, h int) int {
+	hoursAt := func(speed int) int {
+		hours := 0
+		for _, pile := range piles {
+			hours += (pile + speed - 1) / speed
+		}
+		return hours
+	}
+	// Feasibility is monotone in the speed, so binary search the smallest
+	// speed that finishes in time.
+	low, high := 1, 0
+	for _, pile := range piles {
+		high = max(high, pile)
+	}
+	for low < high {
+		mid := low + (high-low)/2
+		if hoursAt(mid) <= h {
+			high = mid
+		} else {
+			low = mid + 1
+		}
+	}
+	return low
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func minEatingSpeed(piles []int, h int) int",
+      starter: "package main
+
+func minEatingSpeed(piles []int, h int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"minEatingSpeed([3,6,7,11], 8)\", 4, minEatingSpeed([]int{3, 6, 7, 11}, 8)),
+			tc(\"minEatingSpeed([30,11,23,4,20], 5)\", 30, minEatingSpeed([]int{30, 11, 23, 4, 20}, 5)),
+			tc(\"minEatingSpeed([30,11,23,4,20], 6)\", 23, minEatingSpeed([]int{30, 11, 23, 4, 20}, 6)),
+			tc(\"minEatingSpeed([1], 1)\", 1, minEatingSpeed([]int{1}, 1)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc33_time_map() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Linear Scan",
+        "O(n) per operation · O(n) space",
+        "Store newest first and the lookup is the first entry old enough — one `find`, no split arithmetic. O(n) per lookup against the halving version's O(log n), which for a key with a handful of versions is the faster of the two in practice.",
+        "package main
+
+type entry struct {
+	timestamp int
+	value     string
+}
+
+// Walk each key's history from the newest entry back to the first one that
+// is not after the asked-for time. Linear per lookup, but no ordering
+// assumption is needed beyond append order.
+type TimeMap struct {
+	history map[string][]entry
+}
+
+func Constructor() TimeMap {
+	return TimeMap{history: map[string][]entry{}}
+}
+
+func (m *TimeMap) Set(key string, value string, timestamp int) {
+	m.history[key] = append(m.history[key], entry{timestamp, value})
+}
+
+func (m *TimeMap) Get(key string, timestamp int) string {
+	entries := m.history[key]
+	for i := len(entries) - 1; i >= 0; i-- {
+		if entries[i].timestamp <= timestamp {
+			return entries[i].value
+		}
+	}
+	return \"\"
+}",
+      ),
+      #(
+        "Binary Search",
+        "O(log n) per get · O(n) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Timestamps only ever increase, so each key's history is already sorted and needs no sorting on write. The lookup is \"newest entry at or before this time\", which is a halving question: keep the candidate, then keep looking on the newer side for a better one.",
+        "package main
+
+import \"sort\"
+
+type entry struct {
+	timestamp int
+	value     string
+}
+
+// Timestamps arrive in increasing order, so each key's history is already
+// sorted and a lookup is a binary search for the last entry at or before
+// the asked-for time.
+type TimeMap struct {
+	history map[string][]entry
+}
+
+func Constructor() TimeMap {
+	return TimeMap{history: map[string][]entry{}}
+}
+
+func (m *TimeMap) Set(key string, value string, timestamp int) {
+	m.history[key] = append(m.history[key], entry{timestamp, value})
+}
+
+func (m *TimeMap) Get(key string, timestamp int) string {
+	entries := m.history[key]
+	i := sort.Search(len(entries), func(i int) bool { return entries[i].timestamp > timestamp })
+	if i == 0 {
+		return \"\"
+	}
+	return entries[i-1].value
+}",
+      ),
+    ],
+    check: Check(
+      signature: "type entry struct { … }
+
+type TimeMap struct { … }
+
+func Constructor() TimeMap
+
+func (m *TimeMap) Set(key string, value string, timestamp int)
+
+func (m *TimeMap) Get(key string, timestamp int) string",
+      starter: "package main
+
+type entry struct {
+	// todo
+}
+
+type TimeMap struct {
+	// todo
+}
+
+func Constructor() TimeMap {
+	panic(\"todo\")
+}
+
+func (m *TimeMap) Set(key string, value string, timestamp int) {
+	panic(\"todo\")
+}
+
+func (m *TimeMap) Get(key string, timestamp int) string {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		m := Constructor()
+		m.Set(\"foo\", \"bar\", 1)
+		atOne := m.Get(\"foo\", 1)
+		atThree := m.Get(\"foo\", 3)
+		m.Set(\"foo\", \"bar2\", 4)
+		return []testCase{
+			tc(\"set foo=bar @1; get foo @1\", \"bar\", atOne),
+			tc(\"get foo @3 -- the latest value at or before 3\", \"bar\", atThree),
+			tc(\"set foo=bar2 @4; get foo @4\", \"bar2\", m.Get(\"foo\", 4)),
+			tc(\"get foo @5\", \"bar2\", m.Get(\"foo\", 5)),
+			tc(\"get foo @0 -- before any set\", \"\", m.Get(\"foo\", 0)),
+			tc(\"get missing @1\", \"\", m.Get(\"missing\", 1)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc34_median_two_sorted() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sorting",
+        "O((m+n) log (m+n)) time · O(m+n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Concatenate, sort, take the middle. O((m+n) log(m+n)) and it throws away the fact that both inputs were already sorted — but the indexing is worth seeing once, because averaging positions n/2 and (n-1)/2 handles both parities in one expression.",
+        "package main
+
+import \"sort\"
+
+func findMedianSortedArrays(nums1 []int, nums2 []int) float64 {
+	all := append(append([]int{}, nums1...), nums2...)
+	sort.Ints(all)
+	n := len(all)
+	if n%2 == 1 {
+		return float64(all[n/2])
+	}
+	return float64(all[n/2-1]+all[n/2]) / 2
+}",
+      ),
+      #(
+        "Two Pointers",
+        "O(m+n) time · O(1) space",
+        "Merging, but stopping at the middle and keeping only the last two values seen. The merged array is never built, so it is O(m + n) time and O(1) space. The two values are what makes the even case work: the median is then the average of the middle pair.",
+        "package main
+
+func findMedianSortedArrays(nums1 []int, nums2 []int) float64 {
+	// Merge just far enough: the median sits at index (total-1)/2 and
+	// total/2 of the merged order, so stop once those are read.
+	total := len(nums1) + len(nums2)
+	i, j := 0, 0
+	previous, current := 0, 0
+	for k := 0; k <= total/2; k++ {
+		previous = current
+		if i < len(nums1) && (j >= len(nums2) || nums1[i] <= nums2[j]) {
+			current = nums1[i]
+			i++
+		} else {
+			current = nums2[j]
+			j++
+		}
+	}
+	if total%2 == 1 {
+		return float64(current)
+	}
+	return float64(previous+current) / 2
+}",
+      ),
+      #(
+        "Binary Search",
+        "O(log min(m,n)) time · O(1) space",
+        "The O(log min(m, n)) answer, and the reason the problem is rated hard. Do not look for the median: look for a cut through both arrays with exactly half the elements to its left. Such a cut is correct when both left-hand values are no bigger than both right-hand values, and that condition is monotone in where you cut the shorter array — so halve on the cut position.",
+        "package main
+
+import \"math\"
+
+func findMedianSortedArrays(nums1 []int, nums2 []int) float64 {
+	// Binary search a cut of the shorter array; the matching cut of the
+	// longer one is forced by the half size. The cut is right when every
+	// element left of both cuts is at most every element right of them.
+	if len(nums1) > len(nums2) {
+		nums1, nums2 = nums2, nums1
+	}
+	m, n := len(nums1), len(nums2)
+	half := (m + n + 1) / 2
+	low, high := 0, m
+	for {
+		i := (low + high) / 2
+		j := half - i
+		left1, right1 := math.MinInt, math.MaxInt
+		left2, right2 := math.MinInt, math.MaxInt
+		if i > 0 {
+			left1 = nums1[i-1]
+		}
+		if i < m {
+			right1 = nums1[i]
+		}
+		if j > 0 {
+			left2 = nums2[j-1]
+		}
+		if j < n {
+			right2 = nums2[j]
+		}
+		switch {
+		case left1 > right2:
+			high = i - 1
+		case left2 > right1:
+			low = i + 1
+		default:
+			if (m+n)%2 == 1 {
+				return float64(max(left1, left2))
+			}
+			return float64(max(left1, left2)+min(right1, right2)) / 2
+		}
+	}
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func findMedianSortedArrays(nums1 []int, nums2 []int) float64",
+      starter: "package main
+
+func findMedianSortedArrays(nums1 []int, nums2 []int) float64 {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"findMedianSortedArrays([1,3], [2])\", 2.0, findMedianSortedArrays([]int{1, 3}, []int{2})),
+			tc(\"findMedianSortedArrays([1,2], [3,4])\", 2.5, findMedianSortedArrays([]int{1, 2}, []int{3, 4})),
+			tc(\"findMedianSortedArrays([], [1])\", 1.0, findMedianSortedArrays([]int{}, []int{1})),
+			tc(\"findMedianSortedArrays([1,2,3,4,5], [6,7,8,9,10])\", 5.5, findMedianSortedArrays([]int{1, 2, 3, 4, 5}, []int{6, 7, 8, 9, 10})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc35_insert_interval() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sort + Merge",
+        "O(n log n) time · O(n) space",
+        "Drop the new interval on the end and run the general merge. It throws away the sortedness — O(n log n) rather than O(n) — but it is a solution you already have rather than a three-way split to get right, and that trade is often the correct one under time pressure.",
+        "package main
+
+import \"sort\"
+
+func insert(intervals [][]int, newInterval []int) [][]int {
+	// Append, sort, then the ordinary merge-intervals pass.
+	all := append(append([][]int{}, intervals...), newInterval)
+	sort.Slice(all, func(i, j int) bool { return all[i][0] < all[j][0] })
+	result := [][]int{}
+	for _, interval := range all {
+		last := len(result) - 1
+		if last >= 0 && interval[0] <= result[last][1] {
+			result[last][1] = max(result[last][1], interval[1])
+		} else {
+			result = append(result, []int{interval[0], interval[1]})
+		}
+	}
+	return result
+}",
+      ),
+      #(
+        "Intervals",
+        "O(n) time · O(n) space",
+        "The input is already sorted, which turns the problem into a three-way split: everything that finishes before the new interval starts passes through untouched, everything that touches it collapses into one, and everything after it passes through too. One pass, no sorting.",
+        "package main
+
+func insert(intervals [][]int, newInterval []int) [][]int {
+	result := [][]int{}
+	i := 0
+	// Everything that ends before the new one starts is untouched.
+	for i < len(intervals) && intervals[i][1] < newInterval[0] {
+		result = append(result, intervals[i])
+		i++
+	}
+	// Everything overlapping the new one is absorbed into it.
+	merged := []int{newInterval[0], newInterval[1]}
+	for i < len(intervals) && intervals[i][0] <= merged[1] {
+		merged[0] = min(merged[0], intervals[i][0])
+		merged[1] = max(merged[1], intervals[i][1])
+		i++
+	}
+	result = append(result, merged)
+	return append(result, intervals[i:]...)
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func insert(intervals [][]int, newInterval []int) [][]int",
+      starter: "package main
+
+func insert(intervals [][]int, newInterval []int) [][]int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"insert([[1,3],[6,9]], [2,5])\", [][]int{{1, 5}, {6, 9}}, insert([][]int{{1, 3}, {6, 9}}, []int{2, 5})),
+			tc(\"insert([[1,2],[3,5],[6,7],[8,10],[12,16]], [4,8])\", [][]int{{1, 2}, {3, 10}, {12, 16}}, insert([][]int{{1, 2}, {3, 5}, {6, 7}, {8, 10}, {12, 16}}, []int{4, 8})),
+			tc(\"insert([], [5,7])\", [][]int{{5, 7}}, insert([][]int{}, []int{5, 7})),
+			tc(\"insert([[1,5]], [6,8])\", [][]int{{1, 5}, {6, 8}}, insert([][]int{{1, 5}}, []int{6, 8})),
+			tc(\"insert([[3,5]], [1,2])\", [][]int{{1, 2}, {3, 5}}, insert([][]int{{3, 5}}, []int{1, 2})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc36_merge_intervals() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sweep Line",
+        "O(n log n) time · O(n) space",
+        "Forget the intervals and keep only their edges: +1 where one opens, −1 where one closes. A merged interval runs from the edge that lifts the running count off zero to the edge that drops it back. Ordering opens before closes at the same coordinate is what makes touching intervals join.",
+        "package main
+
+import \"sort\"
+
+func merge(intervals [][]int) [][]int {
+	// Sweep the number line: +1 at each start, -1 just after each end. A
+	// merged interval runs from where the count leaves zero to where it
+	// returns. Ends are keyed at end+1 so touching intervals stay joined.
+	if len(intervals) == 0 {
+		return [][]int{}
+	}
+	delta := map[int]int{}
+	for _, interval := range intervals {
+		delta[interval[0]]++
+		delta[interval[1]+1]--
+	}
+	points := make([]int, 0, len(delta))
+	for p := range delta {
+		points = append(points, p)
+	}
+	sort.Ints(points)
+	result := [][]int{}
+	open, start := 0, 0
+	for _, p := range points {
+		if open == 0 {
+			start = p
+		}
+		open += delta[p]
+		if open == 0 {
+			result = append(result, []int{start, p - 1})
+		}
+	}
+	return result
+}",
+      ),
+      #(
+        "Intervals",
+        "O(n log n) time · O(n) space",
+        "Sort by start and the problem collapses: an interval can only ever overlap the one currently being built, because anything it could have overlapped earlier was already absorbed into that. So a single pass either extends the interval in hand or begins a new one.",
+        "package main
+
+import \"sort\"
+
+func merge(intervals [][]int) [][]int {
+	sorted := append([][]int{}, intervals...)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i][0] < sorted[j][0] })
+	result := [][]int{}
+	for _, interval := range sorted {
+		last := len(result) - 1
+		// Sorted by start, so an overlap can only be with the last merged one.
+		if last >= 0 && interval[0] <= result[last][1] {
+			result[last][1] = max(result[last][1], interval[1])
+		} else {
+			result = append(result, []int{interval[0], interval[1]})
+		}
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func merge(intervals [][]int) [][]int",
+      starter: "package main
+
+func merge(intervals [][]int) [][]int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"merge([[1,3],[2,6],[8,10],[15,18]])\", [][]int{{1, 6}, {8, 10}, {15, 18}}, merge([][]int{{1, 3}, {2, 6}, {8, 10}, {15, 18}})),
+			tc(\"merge([[1,4],[4,5]])\", [][]int{{1, 5}}, merge([][]int{{1, 4}, {4, 5}})),
+			tc(\"merge([[1,4],[0,4]])\", [][]int{{0, 4}}, merge([][]int{{1, 4}, {0, 4}})),
+			tc(\"merge([])\", [][]int{}, merge([][]int{})),
+			tc(\"merge([[1,4],[2,3]])\", [][]int{{1, 4}}, merge([][]int{{1, 4}, {2, 3}})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc37_non_overlapping() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Greedy by Start",
+        "O(n log n) time · O(n) space",
+        "Sorted by start instead. On an overlap one of the two has to go, and dropping whichever ends later is always at least as good — so the greedy choice is made at the moment of the clash rather than baked into the sort order. Same answer, and it needs the running end to be lowered rather than replaced.",
+        "package main
+
+import \"sort\"
+
+func eraseOverlapIntervals(intervals [][]int) int {
+	sorted := append([][]int{}, intervals...)
+	// Sort by start; on an overlap, drop whichever reaches further right,
+	// since it is the one more likely to collide with what follows.
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i][0] < sorted[j][0] })
+	removed := 0
+	lastEnd := sorted[0][1]
+	for _, interval := range sorted[1:] {
+		if interval[0] < lastEnd {
+			removed++
+			lastEnd = min(lastEnd, interval[1])
+		} else {
+			lastEnd = interval[1]
+		}
+	}
+	return removed
+}",
+      ),
+      #(
+        "Greedy",
+        "O(n log n) time · O(n) space",
+        "Greedy on the end time. Among intervals competing for the same space, keeping the one that finishes earliest leaves the most room for whatever comes next and can never be worse — which is the exchange argument that makes the greedy correct, and the reason sorting by start is the classic wrong first answer.",
+        "package main
+
+import \"sort\"
+
+func eraseOverlapIntervals(intervals [][]int) int {
+	sorted := append([][]int{}, intervals...)
+	// Sort by end: keeping the interval that ends earliest leaves the most
+	// room for the rest, so everything overlapping it is what goes.
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i][1] < sorted[j][1] })
+	removed := 0
+	lastEnd := sorted[0][1]
+	for _, interval := range sorted[1:] {
+		if interval[0] < lastEnd {
+			removed++
+		} else {
+			lastEnd = interval[1]
+		}
+	}
+	return removed
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func eraseOverlapIntervals(intervals [][]int) int",
+      starter: "package main
+
+func eraseOverlapIntervals(intervals [][]int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"eraseOverlapIntervals([[1,2],[2,3],[3,4],[1,3]])\", 1, eraseOverlapIntervals([][]int{{1, 2}, {2, 3}, {3, 4}, {1, 3}})),
+			tc(\"eraseOverlapIntervals([[1,2],[1,2],[1,2]])\", 2, eraseOverlapIntervals([][]int{{1, 2}, {1, 2}, {1, 2}})),
+			tc(\"eraseOverlapIntervals([[1,2],[2,3]])\", 0, eraseOverlapIntervals([][]int{{1, 2}, {2, 3}})),
+			tc(\"eraseOverlapIntervals([[1,100],[11,22],[1,11],[2,12]])\", 2, eraseOverlapIntervals([][]int{{1, 100}, {11, 22}, {1, 11}, {2, 12}})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc38_meeting_rooms() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Every pair, checked. Worth writing once for the overlap test itself: two intervals overlap when each starts before the other ends, which is far easier to get right than trying to enumerate the ways they miss.",
+        "package main
+
+func canAttendMeetings(intervals [][]int) bool {
+	for i := 0; i < len(intervals); i++ {
+		for j := i + 1; j < len(intervals); j++ {
+			if intervals[i][0] < intervals[j][1] && intervals[j][0] < intervals[i][1] {
+				return false
+			}
+		}
+	}
+	return true
+}",
+      ),
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sorted by start, the only meeting a given one can clash with is the one immediately before it: anything earlier started earlier still, so it would have clashed with that one first. The whole check is then adjacent pairs.",
+        "package main
+
+import \"sort\"
+
+func canAttendMeetings(intervals [][]int) bool {
+	sorted := append([][]int{}, intervals...)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i][0] < sorted[j][0] })
+	for i := 1; i < len(sorted); i++ {
+		if sorted[i][0] < sorted[i-1][1] {
+			return false
+		}
+	}
+	return true
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func canAttendMeetings(intervals [][]int) bool",
+      starter: "package main
+
+func canAttendMeetings(intervals [][]int) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"canAttendMeetings([[0,30],[5,10],[15,20]])\", false, canAttendMeetings([][]int{{0, 30}, {5, 10}, {15, 20}})),
+			tc(\"canAttendMeetings([[7,10],[2,4]])\", true, canAttendMeetings([][]int{{7, 10}, {2, 4}})),
+			tc(\"canAttendMeetings([])\", true, canAttendMeetings([][]int{})),
+			tc(\"canAttendMeetings([[1,5],[5,10]])\", true, canAttendMeetings([][]int{{1, 5}, {5, 10}})),
+			tc(\"canAttendMeetings([[5,10],[1,6]])\", false, canAttendMeetings([][]int{{5, 10}, {1, 6}})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc39_meeting_rooms_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+The busiest moment is always the start of some meeting, so only n moments are worth testing at all. Count how many meetings cover each and take the largest: no sort, no edge bookkeeping, and it makes clear what the sweep is measuring.",
+        "package main
+
+func minMeetingRooms(intervals [][]int) int {
+	// The rooms needed is the most meetings in progress at any moment, and
+	// that peak always happens at some meeting's start: count them there.
+	best := 0
+	for _, meeting := range intervals {
+		inProgress := 0
+		for _, other := range intervals {
+			if other[0] <= meeting[0] && meeting[0] < other[1] {
+				inProgress++
+			}
+		}
+		best = max(best, inProgress)
+	}
+	return best
+}",
+      ),
+      #(
+        "Sweep Line",
+        "O(n log n) time · O(n) space",
+        "Rooms needed is the most meetings ever running at once, so the meetings stop mattering and only their edges do: +1 at a start, −1 at an end, and the answer is how high the running count gets. Closes come before opens at the same time here — a room freed at that moment can be reused — which is the opposite of what merging intervals wants.",
+        "package main
+
+import \"sort\"
+
+func minMeetingRooms(intervals [][]int) int {
+	starts := make([]int, len(intervals))
+	ends := make([]int, len(intervals))
+	for i, interval := range intervals {
+		starts[i], ends[i] = interval[0], interval[1]
+	}
+	sort.Ints(starts)
+	sort.Ints(ends)
+	// Walk the starts in order; a meeting needs a new room unless the
+	// earliest unfinished meeting has ended by then.
+	rooms, best, e := 0, 0, 0
+	for _, start := range starts {
+		if start >= ends[e] {
+			e++
+		} else {
+			rooms++
+		}
+		best = max(best, rooms)
+	}
+	return best
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func minMeetingRooms(intervals [][]int) int",
+      starter: "package main
+
+func minMeetingRooms(intervals [][]int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"minMeetingRooms([[0,30],[5,10],[15,20]])\", 2, minMeetingRooms([][]int{{0, 30}, {5, 10}, {15, 20}})),
+			tc(\"minMeetingRooms([[7,10],[2,4]])\", 1, minMeetingRooms([][]int{{7, 10}, {2, 4}})),
+			tc(\"minMeetingRooms([])\", 0, minMeetingRooms([][]int{})),
+			tc(\"minMeetingRooms([[1,5],[5,10]])\", 1, minMeetingRooms([][]int{{1, 5}, {5, 10}})),
+			tc(\"minMeetingRooms(six overlapping meetings)\", 4, minMeetingRooms([][]int{{1, 10}, {2, 7}, {3, 19}, {8, 12}, {10, 20}, {11, 30}})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc40_min_interval() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n·q) time · O(n+q) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+For each query, the smallest interval containing it. O(q·n), and the definition — worth having before the clever version, because it is what you check the clever version against.",
+        "package main
+
+import (
+	\"container/heap\"
+	\"sort\"
+)
+
+type sizeHeap [][2]int // {size, end}
+
+func (h sizeHeap) Len() int           { return len(h) }
+func (h sizeHeap) Less(i, j int) bool { return h[i][0] < h[j][0] }
+func (h sizeHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *sizeHeap) Push(x any)        { *h = append(*h, x.([2]int)) }
+func (h *sizeHeap) Pop() any          { old := *h; x := old[len(old)-1]; *h = old[:len(old)-1]; return x }
+
+func minInterval(intervals [][]int, queries []int) []int {
+	// Answer the queries in increasing order: intervals become eligible by
+	// start, sit in a heap by size, and are discarded from the top once
+	// their end is behind the current query.
+	sorted := append([][]int{}, intervals...)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i][0] < sorted[j][0] })
+	order := make([]int, len(queries))
+	for i := range order {
+		order[i] = i
+	}
+	sort.Slice(order, func(i, j int) bool { return queries[order[i]] < queries[order[j]] })
+
+	result := make([]int, len(queries))
+	h := &sizeHeap{}
+	next := 0
+	for _, qi := range order {
+		q := queries[qi]
+		for next < len(sorted) && sorted[next][0] <= q {
+			heap.Push(h, [2]int{sorted[next][1] - sorted[next][0] + 1, sorted[next][1]})
+			next++
+		}
+		for h.Len() > 0 && (*h)[0][1] < q {
+			heap.Pop(h)
+		}
+		if h.Len() == 0 {
+			result[qi] = -1
+		} else {
+			result[qi] = (*h)[0][0]
+		}
+	}
+	return result
+}",
+      ),
+      #(
+        "Greedy",
+        "O(n log n + n·q) time · O(n+q) space",
+        "Answer each query once and never revisit it. Taking the intervals shortest first means the first interval to cover a query is already its answer, so a query leaves the pool the moment it is settled and the pool only shrinks. Reordering the work so each answer is final is the technique here, and it generalises well beyond this problem.",
+        "package main
+
+import \"sort\"
+
+func minInterval(intervals [][]int, queries []int) []int {
+	// Take the intervals shortest first; the first one to cover a query is
+	// its answer, so each query is settled exactly once. Points are found
+	// by binary search over the sorted distinct queries.
+	sorted := append([][]int{}, intervals...)
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i][1]-sorted[i][0] < sorted[j][1]-sorted[j][0]
+	})
+	distinct := sortInts(queries)
+	answer := map[int]int{}
+	for _, interval := range sorted {
+		from := sort.SearchInts(distinct, interval[0])
+		for i := from; i < len(distinct) && distinct[i] <= interval[1]; i++ {
+			if _, done := answer[distinct[i]]; !done {
+				answer[distinct[i]] = interval[1] - interval[0] + 1
+			}
+		}
+	}
+	result := make([]int, len(queries))
+	for i, q := range queries {
+		if size, ok := answer[q]; ok {
+			result[i] = size
+		} else {
+			result[i] = -1
+		}
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "type sizeHeap [][2]int // {size, end}
+
+func (h sizeHeap) Len() int           { return len(h) }
+
+func (h sizeHeap) Less(i, j int) bool { return h[i][0] < h[j][0] }
+
+func (h sizeHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *sizeHeap) Push(x any)        { *h = append(*h, x.([2]int)) }
+
+func (h *sizeHeap) Pop() any          { old := *h; x := old[len(old)-1]; *h = old[:len(old)-1]; return x }
+
+func minInterval(intervals [][]int, queries []int) []int",
+      starter: "package main
+
+type sizeHeap [][2]int // {size, end}
+
+func (h sizeHeap) Len() int           { return len(h) } {
+	panic(\"todo\")
+}
+
+func (h sizeHeap) Less(i, j int) bool { return h[i][0] < h[j][0] } {
+	panic(\"todo\")
+}
+
+func (h sizeHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] } {
+	panic(\"todo\")
+}
+
+func (h *sizeHeap) Push(x any)        { *h = append(*h, x.([2]int)) } {
+	panic(\"todo\")
+}
+
+func (h *sizeHeap) Pop() any          { old := *h; x := old[len(old)-1]; *h = old[:len(old)-1]; return x } {
+	panic(\"todo\")
+}
+
+func minInterval(intervals [][]int, queries []int) []int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"minInterval([[1,4],[2,4],[3,6],[4,4]], [2,3,4,5])\", []int{3, 3, 1, 4}, minInterval([][]int{{1, 4}, {2, 4}, {3, 6}, {4, 4}}, []int{2, 3, 4, 5})),
+			tc(\"minInterval([[2,3],[2,5],[1,8],[20,25]], [2,19,5,22])\", []int{2, -1, 4, 6}, minInterval([][]int{{2, 3}, {2, 5}, {1, 8}, {20, 25}}, []int{2, 19, 5, 22})),
+			tc(\"minInterval([], [1,2])\", []int{-1, -1}, minInterval([][]int{}, []int{1, 2})),
+			tc(\"minInterval([[1,10]], [])\", []int{}, minInterval([][]int{{1, 10}}, []int{})),
+			tc(\"minInterval([[1,3]], [0,4])\", []int{-1, -1}, minInterval([][]int{{1, 3}}, []int{0, 4})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc41_maximum_subarray() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Prefix Sums",
+        "O(n) time · O(1) space",
+        "The same answer from prefix sums. The sum from i to j is prefix[j] − prefix[i−1], so the best subarray ending at j is prefix[j] minus the smallest prefix seen before it. One pass carrying that minimum. Worth knowing because the prefix framing generalises to problems Kadane cannot touch — subarrays summing to k, divisible by k, and so on.",
+        "package main
+
+func maxSubArray(nums []int) int {
+	// A subarray sum is a difference of prefix sums, so the best ending
+	// here is the prefix so far minus the smallest prefix before it.
+	best := nums[0]
+	prefix, lowest := 0, 0
+	for _, n := range nums {
+		prefix += n
+		best = max(best, prefix-lowest)
+		lowest = min(lowest, prefix)
+	}
+	return best
+}",
+      ),
+      #(
+        "Kadane",
+        "O(n) time · O(1) space",
+        "Kadane. At each position the best subarray ending here either extends the one ending just before it or starts fresh — and the choice is decided by a single question: has the running total gone negative? A negative prefix can only hurt whatever follows, so it is dropped. Note the answer is not clamped at zero: an all-negative array's answer is its least bad element.",
+        "package main
+
+func maxSubArray(nums []int) int {
+	best, current := nums[0], nums[0]
+	for _, n := range nums[1:] {
+		// Extend the run, unless it has gone negative: then start over here.
+		current = max(n, current+n)
+		best = max(best, current)
+	}
+	return best
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func maxSubArray(nums []int) int",
+      starter: "package main
+
+func maxSubArray(nums []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"maxSubArray([-2,1,-3,4,-1,2,1,-5,4])\", 6, maxSubArray([]int{-2, 1, -3, 4, -1, 2, 1, -5, 4})),
+			tc(\"maxSubArray([1])\", 1, maxSubArray([]int{1})),
+			tc(\"maxSubArray([5,4,-1,7,8])\", 23, maxSubArray([]int{5, 4, -1, 7, 8})),
+			tc(\"maxSubArray([-3,-1,-2])\", -1, maxSubArray([]int{-3, -1, -2})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc42_jump_game() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backwards Greedy",
+        "O(n) time · O(1) space",
+        "Walk backwards carrying the leftmost index known to reach the end. Any index that can reach *that* can reach the end, so it becomes the new goal — and the answer is whether the goal walks all the way back to zero. The same greedy from the other side, and often the easier one to convince yourself of.",
+        "package main
+
+func canJump(nums []int) bool {
+	// Walk back from the end, moving the goal to any index that can reach it.
+	goal := len(nums) - 1
+	for i := len(nums) - 2; i >= 0; i-- {
+		if i+nums[i] >= goal {
+			goal = i
+		}
+	}
+	return goal == 0
+}",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Only one number matters: the furthest index reachable so far. Walk forward extending it, and the moment the walk gets past it nothing further is reachable. No search, no visited set — the reachable set from the left is always a prefix, which is what collapses the whole problem to one integer.",
+        "package main
+
+func canJump(nums []int) bool {
+	furthest := 0
+	for i, n := range nums {
+		if i > furthest {
+			return false
+		}
+		furthest = max(furthest, i+n)
+	}
+	return true
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func canJump(nums []int) bool",
+      starter: "package main
+
+func canJump(nums []int) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"canJump([2,3,1,1,4])\", true, canJump([]int{2, 3, 1, 1, 4})),
+			tc(\"canJump([3,2,1,0,4])\", false, canJump([]int{3, 2, 1, 0, 4})),
+			tc(\"canJump([0])\", true, canJump([]int{0})),
+			tc(\"canJump([0, 1])\", false, canJump([]int{0, 1})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc43_jump_game_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Reverse Greedy",
+        "O(n²) time · O(1) space",
+        "From the goal, step back to the earliest index that can reach it. Taking the earliest can never cost more jumps — anything later is reachable from it too — so the choice is safe at every step. O(n²), and it makes the greedy argument visible in a way the window version hides.",
+        "package main
+
+func jump(nums []int) int {
+	// From the goal, jump back to the leftmost index that reaches it; each
+	// such hop is one jump of the forward path.
+	jumps, goal := 0, len(nums)-1
+	for goal > 0 {
+		for i := 0; i < goal; i++ {
+			if i+nums[i] >= goal {
+				goal = i
+				jumps++
+				break
+			}
+		}
+	}
+	return jumps
+}",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Breadth-first search without a queue. Everything reachable in k jumps is a contiguous window, so the levels of the search are just ranges: when the walk reaches the current window's end, one more jump is spent and the next window runs to the furthest index seen so far. Recognising that the frontier stays contiguous is the whole trick.",
+        "package main
+
+func jump(nums []int) int {
+	jumps, end, furthest := 0, 0, 0
+	// Treat the indices reachable in j jumps as a window; when the walk
+	// reaches its end, one more jump opens the next window.
+	for i := 0; i < len(nums)-1; i++ {
+		furthest = max(furthest, i+nums[i])
+		if i == end {
+			jumps++
+			end = furthest
+		}
+	}
+	return jumps
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func jump(nums []int) int",
+      starter: "package main
+
+func jump(nums []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"jump([2,3,1,1,4])\", 2, jump([]int{2, 3, 1, 1, 4})),
+			tc(\"jump([2,3,0,1,4])\", 2, jump([]int{2, 3, 0, 1, 4})),
+			tc(\"jump([0])\", 0, jump([]int{0})),
+			tc(\"jump([1,1,1,1])\", 3, jump([]int{1, 1, 1, 1})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc44_gas_station() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n²) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Drive the whole loop from each start and watch the tank. O(n²), and the thing worth extracting from it: the single pass is not a different algorithm, it is this one with the starts that cannot possibly work skipped.",
+        "package main
+
+func canCompleteCircuit(gas []int, cost []int) int {
+	n := len(gas)
+	for start := 0; start < n; start++ {
+		tank := 0
+		completed := true
+		for step := 0; step < n; step++ {
+			i := (start + step) % n
+			tank += gas[i] - cost[i]
+			if tank < 0 {
+				completed = false
+				break
+			}
+		}
+		if completed {
+			return start
+		}
+	}
+	return -1
+}",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Two facts do all the work. If the total gas falls short of the total cost, no start works at all. And if the tank runs dry travelling from i to j, no station between them can start either — each would begin with even less — so the search jumps straight to j+1 rather than restarting at i+1. Together they turn an O(n²) search into one pass.",
+        "package main
+
+func canCompleteCircuit(gas []int, cost []int) int {
+	total, tank, start := 0, 0, 0
+	for i := range gas {
+		total += gas[i] - cost[i]
+		tank += gas[i] - cost[i]
+		// Running dry here means no start between the last reset and here
+		// can work either: they would all arrive with even less.
+		if tank < 0 {
+			start = i + 1
+			tank = 0
+		}
+	}
+	if total < 0 {
+		return -1
+	}
+	return start
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func canCompleteCircuit(gas []int, cost []int) int",
+      starter: "package main
+
+func canCompleteCircuit(gas []int, cost []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"canCompleteCircuit([1,2,3,4,5], [3,4,5,1,2])\", 3, canCompleteCircuit([]int{1, 2, 3, 4, 5}, []int{3, 4, 5, 1, 2})),
+			tc(\"canCompleteCircuit([2,3,4], [3,4,3])\", -1, canCompleteCircuit([]int{2, 3, 4}, []int{3, 4, 3})),
+			tc(\"canCompleteCircuit([5], [4])\", 0, canCompleteCircuit([]int{5}, []int{4})),
+			tc(\"canCompleteCircuit([1,2], [2,1])\", 1, canCompleteCircuit([]int{1, 2}, []int{2, 1})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc45_hand_of_straights() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sorting",
+        "O(n²) time · O(n) space",
+        "No counts at all: sort, then peel one full run off the front, removing each card as it is used. Slower, since every removal is a list walk, but the only thing you have to believe is the same greedy claim — a group begins with the smallest card left.",
+        "package main
+
+import \"sort\"
+
+func isNStraightHand(hand []int, groupSize int) bool {
+	if len(hand)%groupSize != 0 {
+		return false
+	}
+	remaining := sortInts(hand)
+	// Repeatedly deal a group from the smallest card left, deleting each
+	// card as it is used. Quadratic, but the invariant is plain to see.
+	for len(remaining) > 0 {
+		start := remaining[0]
+		for next := start; next < start+groupSize; next++ {
+			i := sort.SearchInts(remaining, next)
+			if i == len(remaining) || remaining[i] != next {
+				return false
+			}
+			remaining = append(remaining[:i], remaining[i+1:]...)
+		}
+	}
+	return true
+}",
+      ),
+      #(
+        "Greedy",
+        "O(n log n) time · O(n) space",
+        "The smallest card left has no smaller neighbour to hide behind, so whatever group it belongs to must begin with it. That removes all choice, which is exactly what makes a greedy correct here. Every copy of that smallest card needs its own group and they are indistinguishable, so all of them are taken in one step.",
+        "package main
+
+import \"sort\"
+
+func isNStraightHand(hand []int, groupSize int) bool {
+	if len(hand)%groupSize != 0 {
+		return false
+	}
+	counts := map[int]int{}
+	for _, card := range hand {
+		counts[card]++
+	}
+	// The smallest remaining card must start a group; take the run above
+	// it, one of each, or the hand cannot be dealt.
+	cards := make([]int, 0, len(counts))
+	for card := range counts {
+		cards = append(cards, card)
+	}
+	sort.Ints(cards)
+	for _, card := range cards {
+		for counts[card] > 0 {
+			for next := card; next < card+groupSize; next++ {
+				if counts[next] == 0 {
+					return false
+				}
+				counts[next]--
+			}
+		}
+	}
+	return true
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func isNStraightHand(hand []int, groupSize int) bool",
+      starter: "package main
+
+func isNStraightHand(hand []int, groupSize int) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"isNStraightHand([1,2,3,6,2,3,4,7,8], 3)\", true, isNStraightHand([]int{1, 2, 3, 6, 2, 3, 4, 7, 8}, 3)),
+			tc(\"isNStraightHand([1,2,3,4,5], 4)\", false, isNStraightHand([]int{1, 2, 3, 4, 5}, 4)),
+			tc(\"isNStraightHand([1,2,3,4,5,6], 2)\", true, isNStraightHand([]int{1, 2, 3, 4, 5, 6}, 2)),
+			tc(\"isNStraightHand([], 1)\", true, isNStraightHand([]int{}, 1)),
+			tc(\"isNStraightHand([1,1,2,2,3,3], 3)\", true, isNStraightHand([]int{1, 1, 2, 2, 3, 3}, 3)),
+			tc(\"isNStraightHand([8,10,12], 3)\", false, isNStraightHand([]int{8, 10, 12}, 3)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc46_merge_triplets() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Coverage Check",
+        "O(n) time · O(n) space",
+        "Same filter, different question: rather than merging the survivors, ask whether each of the three positions is hit exactly by some survivor. It is the same condition — a componentwise max equals the target exactly when every component is attained somewhere — but arrived at without computing the merge.",
+        "package main
+
+func mergeTriplets(triplets [][]int, target []int) bool {
+	// Merge every usable triplet into one running maximum and compare it
+	// to the target at the end.
+	merged := []int{0, 0, 0}
+	for _, t := range triplets {
+		if t[0] > target[0] || t[1] > target[1] || t[2] > target[2] {
+			continue
+		}
+		for i := 0; i < 3; i++ {
+			merged[i] = max(merged[i], t[i])
+		}
+	}
+	return merged[0] == target[0] && merged[1] == target[1] && merged[2] == target[2]
+}",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Merging takes componentwise maxima, and a max never comes back down. So any triplet with a component above the target is permanently poisonous and must be discarded; and once discarded, every remaining triplet can be merged freely, because a max can only help. The answer is then just whether their maximum is the target.",
+        "package main
+
+func mergeTriplets(triplets [][]int, target []int) bool {
+	// A triplet is usable only if no coordinate exceeds the target. Among
+	// usable ones, the max is the target exactly when each coordinate is
+	// hit by at least one of them.
+	var hit [3]bool
+	for _, t := range triplets {
+		if t[0] > target[0] || t[1] > target[1] || t[2] > target[2] {
+			continue
+		}
+		for i := 0; i < 3; i++ {
+			if t[i] == target[i] {
+				hit[i] = true
+			}
+		}
+	}
+	return hit[0] && hit[1] && hit[2]
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func mergeTriplets(triplets [][]int, target []int) bool",
+      starter: "package main
+
+func mergeTriplets(triplets [][]int, target []int) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"mergeTriplets([[2,5,3],[1,8,4],[1,7,5]], [2,7,5])\", true, mergeTriplets([][]int{{2, 5, 3}, {1, 8, 4}, {1, 7, 5}}, []int{2, 7, 5})),
+			tc(\"mergeTriplets([[3,4,5],[4,5,6]], [3,2,5])\", false, mergeTriplets([][]int{{3, 4, 5}, {4, 5, 6}}, []int{3, 2, 5})),
+			tc(\"mergeTriplets([[2,5,3],[2,3,4],[1,2,5],[5,2,3]], [5,5,5])\", true, mergeTriplets([][]int{{2, 5, 3}, {2, 3, 4}, {1, 2, 5}, {5, 2, 3}}, []int{5, 5, 5})),
+			tc(\"mergeTriplets([], [1,1,1])\", false, mergeTriplets([][]int{}, []int{1, 1, 1})),
+			tc(\"mergeTriplets([[1,2,3]], [3,2,1])\", false, mergeTriplets([][]int{{1, 2, 3}}, []int{3, 2, 1})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc47_partition_labels() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n³) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Grow the piece one character at a time until nothing inside it also appears in the tail. No last-position map — the tail is asked directly — so it is far slower, but it is the condition stated outright rather than pre-computed.",
+        "package main
+
+import \"strings\"
+
+func partitionLabels(s string) []int {
+	sizes := []int{}
+	start := 0
+	for start < len(s) {
+		// Grow the part's end until every letter inside it last appears
+		// inside it too, rescanning as the end moves.
+		end := strings.LastIndexByte(s, s[start])
+		for i := start; i <= end; i++ {
+			end = max(end, strings.LastIndexByte(s, s[i]))
+		}
+		sizes = append(sizes, end-start+1)
+		start = end + 1
+	}
+	return sizes
+}",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "A piece can only end where every character inside it has run out, so map each character to its last position first. Then sweep, pushing the piece's end out to the furthest last-position seen; when the walk catches up with that end, nothing inside can reappear and the piece is closed.",
+        "package main
+
+func partitionLabels(s string) []int {
+	last := map[byte]int{}
+	for i := 0; i < len(s); i++ {
+		last[s[i]] = i
+	}
+	// A part must run at least to the last occurrence of every letter in
+	// it; when the walk reaches that furthest point, the part closes.
+	sizes := []int{}
+	start, end := 0, 0
+	for i := 0; i < len(s); i++ {
+		end = max(end, last[s[i]])
+		if i == end {
+			sizes = append(sizes, end-start+1)
+			start = i + 1
+		}
+	}
+	return sizes
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func partitionLabels(s string) []int",
+      starter: "package main
+
+func partitionLabels(s string) []int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"partitionLabels('ababcbacadefegdehijhklij')\", []int{9, 7, 8}, partitionLabels(\"ababcbacadefegdehijhklij\")),
+			tc(\"partitionLabels('eccbbbbdec')\", []int{10}, partitionLabels(\"eccbbbbdec\")),
+			tc(\"partitionLabels('abc')\", []int{1, 1, 1}, partitionLabels(\"abc\")),
+			tc(\"partitionLabels('a')\", []int{1}, partitionLabels(\"a\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc48_valid_parenthesis_string() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Two Passes",
+        "O(n) time · O(n) space",
+        "Two one-sided checks instead of a range. Left to right with every star an opener asks whether there are ever too many closers; right to left with every star a closer asks whether there are ever too many openers. Passing both is exactly the condition — and each pass is the ordinary balance check you already know.",
+        "package main
+
+func checkValidString(s string) bool {
+	// Left to right, stars count as openers: no closer may go unmatched.
+	// Right to left, stars count as closers: no opener may go unmatched.
+	// Both passing means some assignment of the stars balances the string.
+	balance := 0
+	for i := 0; i < len(s); i++ {
+		if s[i] == ')' {
+			balance--
+		} else {
+			balance++
+		}
+		if balance < 0 {
+			return false
+		}
+	}
+	balance = 0
+	for i := len(s) - 1; i >= 0; i-- {
+		if s[i] == '(' {
+			balance--
+		} else {
+			balance++
+		}
+		if balance < 0 {
+			return false
+		}
+	}
+	return true
+}",
+      ),
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Do not guess what each star should be — carry the range of open counts still possible. Low is the count if every star so far were a closer, high if every one were an opener. High going negative means even the most generous reading has too many closers, so bail; low is clamped at zero because a star can always be nothing. Valid exactly when low reaches zero at the end.",
+        "package main
+
+func checkValidString(s string) bool {
+	// Track the range of possible open counts: a star can widen it either
+	// way. The low end never goes below zero (a star read as ')' when
+	// nothing is open is better read as nothing).
+	low, high := 0, 0
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case '(':
+			low++
+			high++
+		case ')':
+			low--
+			high--
+		default:
+			low--
+			high++
+		}
+		if high < 0 {
+			return false
+		}
+		low = max(low, 0)
+	}
+	return low == 0
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func checkValidString(s string) bool",
+      starter: "package main
+
+func checkValidString(s string) bool {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"checkValidString('()')\", true, checkValidString(\"()\")),
+			tc(\"checkValidString('(*)')\", true, checkValidString(\"(*)\")),
+			tc(\"checkValidString('(*))')\", true, checkValidString(\"(*))\")),
+			tc(\"checkValidString(')(')\", false, checkValidString(\")(\")),
+			tc(\"checkValidString('(((**')\", false, checkValidString(\"(((**\")),
+			tc(\"checkValidString('**((')\", false, checkValidString(\"**((\")),
+			tc(\"checkValidString('')\", true, checkValidString(\"\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc49_single_number() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Math",
+        "O(n) time · O(n) space",
+        "Twice the sum of the distinct values counts every pair twice and the lone value twice; subtracting the real total leaves the lone value. No bit tricks, but it leans harder on the promise that everything else appears exactly twice — three copies of something and it is wrong.",
+        "package main
+
+func singleNumber(nums []int) int {
+	// Every value but one appears twice: twice the sum of the distinct
+	// values, minus the sum of everything, is the one that appeared once.
+	distinct := map[int]bool{}
+	total, uniqueTotal := 0, 0
+	for _, n := range nums {
+		total += n
+		if !distinct[n] {
+			distinct[n] = true
+			uniqueTotal += n
+		}
+	}
+	return 2*uniqueTotal - total
+}",
+      ),
+      #(
+        "Bit Manipulation",
+        "O(n) time · O(1) space",
+        "XOR is its own inverse and does not care about order, so every value appearing twice cancels itself out wherever the two copies happen to sit, and the lone one is what is left. Constant space, one pass, and no reliance on the values being small or positive.",
+        "package main
+
+func singleNumber(nums []int) int {
+	// x ^ x == 0 and x ^ 0 == x, so every pair cancels and the loner remains.
+	result := 0
+	for _, n := range nums {
+		result ^= n
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func singleNumber(nums []int) int",
+      starter: "package main
+
+func singleNumber(nums []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"singleNumber([2,2,1])\", 1, singleNumber([]int{2, 2, 1})),
+			tc(\"singleNumber([4,1,2,1,2])\", 4, singleNumber([]int{4, 1, 2, 1, 2})),
+			tc(\"singleNumber([1])\", 1, singleNumber([]int{1})),
+			tc(\"singleNumber([-1,-1,-7])\", -7, singleNumber([]int{-1, -1, -7})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc50_number_of_one_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Shift & Test",
+        "O(log n) time · O(1) space",
+        "One step per bit position rather than per set bit: 32 iterations whatever the input, but nothing to remember beyond \"look at the bottom bit, shift\". In a fixed-width language mind the shift — an arithmetic right shift on a negative number never terminates.",
+        "package main
+
+func hammingWeight(n uint32) int {
+	count := 0
+	for n != 0 {
+		count += int(n & 1)
+		n >>= 1
+	}
+	return count
+}",
+      ),
+      #(
+        "Bit Manipulation",
+        "O(k) time · O(1) space",
+        "n & (n − 1) clears the lowest set bit and touches nothing else, so the loop runs once per one bit rather than once per bit position. Worth having in the fingers: the same trick tests for powers of two, and shows up in half the bit problems there are.",
+        "package main
+
+func hammingWeight(n uint32) int {
+	count := 0
+	// n & (n-1) clears the lowest set bit, so this loops once per one bit.
+	for n != 0 {
+		n &= n - 1
+		count++
+	}
+	return count
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func hammingWeight(n uint32) int",
+      starter: "package main
+
+func hammingWeight(n uint32) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"hammingWeight(11)\", 3, hammingWeight(11)),
+			tc(\"hammingWeight(128)\", 1, hammingWeight(128)),
+			tc(\"hammingWeight(4294967293)\", 31, hammingWeight(4294967293)),
+			tc(\"hammingWeight(0)\", 0, hammingWeight(0)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc51_counting_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bit Manipulation",
+        "O(n log n) time · O(n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Each number counted from scratch with the clear-lowest-bit trick. O(n log n), and it remembers nothing between numbers — which is precisely the redundancy the dynamic version exploits.",
+        "package main
+
+import \"math/bits\"
+
+func countBits(n int) []int {
+	result := make([]int, n+1)
+	for i := range result {
+		result[i] = bits.OnesCount(uint(i))
+	}
+	return result
+}",
+      ),
+      #(
+        "Bottom-Up DP",
+        "O(n) time · O(n) space",
+        "Every number is some smaller number with one more bit stuck on the end, so count(i) is count(i >> 1) plus that last bit. Each answer costs a single lookup into what has already been computed, which is what makes the whole array O(n) rather than O(n log n).",
+        "package main
+
+func countBits(n int) []int {
+	result := make([]int, n+1)
+	// i >> 1 drops the lowest bit, whose count is already known; add it back.
+	for i := 1; i <= n; i++ {
+		result[i] = result[i>>1] + i&1
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func countBits(n int) []int",
+      starter: "package main
+
+func countBits(n int) []int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"countBits(2)\", []int{0, 1, 1}, countBits(2)),
+			tc(\"countBits(5)\", []int{0, 1, 1, 2, 1, 2}, countBits(5)),
+			tc(\"countBits(0)\", []int{0}, countBits(0)),
+			tc(\"countBits(8)\", []int{0, 1, 1, 2, 1, 2, 2, 3, 1}, countBits(8)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc52_reverse_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Python · Strings",
+        "O(1) time · O(1) space",
+        "Write the number in binary, pad to the full width, reverse the text, read it back. Slower and it allocates, but the explicit padding makes the thing the bit version keeps implicit — that the width is 32, not however many bits this value happens to need — impossible to forget.",
+        "package main
+
+import (
+	\"fmt\"
+	\"strconv\"
+)
+
+func reverseBits(num uint32) uint32 {
+	text := []byte(fmt.Sprintf(\"%032b\", num))
+	for i, j := 0, len(text)-1; i < j; i, j = i+1, j-1 {
+		text[i], text[j] = text[j], text[i]
+	}
+	result, _ := strconv.ParseUint(string(text), 2, 32)
+	return uint32(result)
+}",
+      ),
+      #(
+        "Bit Manipulation",
+        "O(1) time · O(1) space",
+        "Peel the bottom bit off the input and push it onto the bottom of the result: the first bit out is the last bit in. Fixed at 32 rounds, because the width is part of the problem rather than a property of the value — stopping when the input hits zero silently drops the leading zeros that should have become trailing ones.",
+        "package main
+
+func reverseBits(num uint32) uint32 {
+	var result uint32
+	for i := 0; i < 32; i++ {
+		result = result<<1 | num&1
+		num >>= 1
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func reverseBits(num uint32) uint32",
+      starter: "package main
+
+func reverseBits(num uint32) uint32 {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"reverseBits(43261596)\", uint32(964176192), reverseBits(43261596)),
+			tc(\"reverseBits(4294967293)\", uint32(3221225471), reverseBits(4294967293)),
+			tc(\"reverseBits(0)\", uint32(0), reverseBits(0)),
+			tc(\"reverseBits(1)\", uint32(2147483648), reverseBits(1)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc53_missing_number() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Math",
+        "O(n) time · O(1) space",
+        "The numbers 0..n sum to n(n+1)/2 whatever order they arrive in, so the gap between that and the actual total is the missing value. Shorter than the XOR version, and the trade worth knowing: in a fixed-width language it overflows on inputs the XOR version handles without complaint.",
+        "package main
+
+func missingNumber(nums []int) int {
+	n := len(nums)
+	expected := n * (n + 1) / 2
+	for _, x := range nums {
+		expected -= x
+	}
+	return expected
+}",
+      ),
+      #(
+        "Bit Manipulation",
+        "O(n) time · O(1) space",
+        "XOR every value against every index it should have had. Each present number meets its own index and cancels, so the missing one leaves its index without a partner and that index survives. No sum, so nothing can overflow.",
+        "package main
+
+func missingNumber(nums []int) int {
+	// XOR every index and every value: the pairs cancel, the missing one
+	// (which appears only as an index) survives.
+	result := len(nums)
+	for i, n := range nums {
+		result ^= i ^ n
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func missingNumber(nums []int) int",
+      starter: "package main
+
+func missingNumber(nums []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"missingNumber([3,0,1])\", 2, missingNumber([]int{3, 0, 1})),
+			tc(\"missingNumber([0,1])\", 2, missingNumber([]int{0, 1})),
+			tc(\"missingNumber([9,6,4,2,3,5,7,0,1])\", 8, missingNumber([]int{9, 6, 4, 2, 3, 5, 7, 0, 1})),
+			tc(\"missingNumber([0])\", 1, missingNumber([]int{0})),
+			tc(\"missingNumber([1])\", 0, missingNumber([]int{1})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc54_sum_of_two_integers() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Full Adder",
+        "O(1) time · O(1) space",
+        "The same addition written as hardware: thirty-two full adders in a row, each taking two input bits and a carry and producing a sum bit and a carry out. Slower than the XOR loop, which stops as soon as no carries remain, but it is where the XOR loop comes from — and it never uses arithmetic at all.",
+        "package main
+
+func getSum(a int, b int) int {
+	// One bit at a time, with an explicit carry, over 32-bit two's complement.
+	x, y := uint32(int32(a)), uint32(int32(b))
+	var result, carry uint32
+	for i := 0; i < 32; i++ {
+		bitA := (x >> i) & 1
+		bitB := (y >> i) & 1
+		sum := bitA ^ bitB ^ carry
+		carry = (bitA & bitB) | (bitA & carry) | (bitB & carry)
+		result |= sum << i
+	}
+	return int(int32(result))
+}",
+      ),
+      #(
+        "Bit Manipulation",
+        "O(1) time · O(1) space",
+        "Addition without +. XOR is addition that forgets to carry; AND finds exactly the places a carry was owed, and shifting it left one puts it where it belongs. Repeat until nothing is owed. In an arbitrary-precision language the negatives are the difficulty: mask to 32 bits so the carry loop terminates, then read the sign bit back by hand.",
+        "package main
+
+func getSum(a int, b int) int {
+	// XOR adds without carrying; AND finds where a carry is due, shifted
+	// left one place. Repeat until nothing is left to carry.
+	for b != 0 {
+		carry := (a & b) << 1
+		a ^= b
+		b = carry
+	}
+	return a
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func getSum(a int, b int) int",
+      starter: "package main
+
+func getSum(a int, b int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"getSum(1, 2)\", 3, getSum(1, 2)),
+			tc(\"getSum(2, 3)\", 5, getSum(2, 3)),
+			tc(\"getSum(-1, 1)\", 0, getSum(-1, 1)),
+			tc(\"getSum(-2, -3)\", -5, getSum(-2, -3)),
+			tc(\"getSum(0, 0)\", 0, getSum(0, 0)),
+			tc(\"getSum(5, -3)\", 2, getSum(5, -3)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc55_reverse_integer() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Python · Strings",
+        "O(log n) time · O(log n) space",
+        "Reverse the digits as text and read them back. It cannot overflow along the way, so the range check is a plain comparison at the end — which is honest here and dishonest in C, and worth being able to say which language you are in when you offer it.",
+        "package main
+
+import (
+	\"math\"
+	\"strconv\"
+)
+
+func reverse(x int) int {
+	sign := 1
+	if x < 0 {
+		sign, x = -1, -x
+	}
+	digits := []byte(strconv.Itoa(x))
+	for i, j := 0, len(digits)-1; i < j; i, j = i+1, j-1 {
+		digits[i], digits[j] = digits[j], digits[i]
+	}
+	result, _ := strconv.Atoi(string(digits))
+	result *= sign
+	if result > math.MaxInt32 || result < math.MinInt32 {
+		return 0
+	}
+	return result
+}",
+      ),
+      #(
+        "Math",
+        "O(log n) time · O(1) space",
+        "Peel a digit off the bottom of the input and push it onto the bottom of the result. The whole difficulty is that the test has to happen *before* the multiply: in a fixed-width language the multiply is the moment the value would be lost, so checking afterwards is checking a number that no longer exists.",
+        "package main
+
+import \"math\"
+
+func reverse(x int) int {
+	result := 0
+	for x != 0 {
+		digit := x % 10
+		x /= 10
+		result = result*10 + digit
+		// The answer must fit a signed 32-bit int, whatever the platform's int is.
+		if result > math.MaxInt32 || result < math.MinInt32 {
+			return 0
+		}
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func reverse(x int) int",
+      starter: "package main
+
+func reverse(x int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"reverse(123)\", 321, reverse(123)),
+			tc(\"reverse(-123)\", -321, reverse(-123)),
+			tc(\"reverse(120)\", 21, reverse(120)),
+			tc(\"reverse(0)\", 0, reverse(0)),
+			tc(\"reverse(1534236469) -- overflows\", 0, reverse(1534236469)),
+			tc(\"reverse(-2147483648) -- overflows\", 0, reverse(-2147483648)),
+			tc(\"reverse(1463847412)\", 2147483641, reverse(1463847412)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc56_rotate_image() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Index Mapping",
+        "O(n²) time · O(n²) space",
+        "Straight from where each element lands: after a clockwise quarter turn the entry at (row, column) came from (n − 1 − column, row). Deriving that mapping once, on paper, is the surest way to stop guessing which way round the rotation goes.",
+        "package main
+
+func rotate(matrix [][]int) {
+	n := len(matrix)
+	// Build the rotated copy from the index rule: (r, c) lands at (c, n-1-r).
+	rotated := make([][]int, n)
+	for r := range rotated {
+		rotated[r] = make([]int, n)
+	}
+	for r := 0; r < n; r++ {
+		for c := 0; c < n; c++ {
+			rotated[c][n-1-r] = matrix[r][c]
+		}
+	}
+	for r := range matrix {
+		copy(matrix[r], rotated[r])
+	}
+}",
+      ),
+      #(
+        "Nifty Python · Zip",
+        "O(n²) time · O(n²) space",
+        "A quarter turn is two reflections: through the main diagonal, then through the vertical centre line. Both are trivial to write and neither needs index arithmetic, which is why this beats memorising the four-way element cycle — and why it is easy to get the direction right by reasoning rather than recall.",
+        "package main
+
+func rotate(matrix [][]int) {
+	n := len(matrix)
+	// Transpose, then reverse each row: together they are a quarter turn
+	// clockwise, and both are in place.
+	for r := 0; r < n; r++ {
+		for c := r + 1; c < n; c++ {
+			matrix[r][c], matrix[c][r] = matrix[c][r], matrix[r][c]
+		}
+	}
+	for _, row := range matrix {
+		for i, j := 0, n-1; i < j; i, j = i+1, j-1 {
+			row[i], row[j] = row[j], row[i]
+		}
+	}
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func rotate(matrix [][]int)",
+      starter: "package main
+
+func rotate(matrix [][]int) {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func rotated(matrix [][]int) [][]int {
+	rotate(matrix)
+	return matrix
+}
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"rotate([[1,2,3],[4,5,6],[7,8,9]])\", [][]int{{7, 4, 1}, {8, 5, 2}, {9, 6, 3}}, rotated([][]int{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}})),
+			tc(\"rotate([[5,1,9,11],[2,4,8,10],[13,3,6,7],[15,14,12,16]])\", [][]int{{15, 13, 2, 5}, {14, 3, 4, 1}, {12, 6, 8, 9}, {16, 7, 10, 11}}, rotated([][]int{{5, 1, 9, 11}, {2, 4, 8, 10}, {13, 3, 6, 7}, {15, 14, 12, 16}})),
+			tc(\"rotate([[1]])\", [][]int{{1}}, rotated([][]int{{1}})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc57_spiral_matrix() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Python · Rotate",
+        "O(m·n·min(m,n)) time · O(m·n) space",
+        "Take the top row, then turn the problem ninety degrees and do it again. Rotating what is left anticlockwise puts the column you would have walked down next along the top, so there is only ever one move to make and no boundary bookkeeping at all.",
+        "package main
+
+func spiralOrder(matrix [][]int) []int {
+	result := []int{}
+	top, bottom := 0, len(matrix)-1
+	left, right := 0, len(matrix[0])-1
+	// Peel the outer ring: top row, right column, bottom row, left column,
+	// then shrink the bounds. The inner two checks stop a single leftover
+	// row or column from being read twice.
+	for top <= bottom && left <= right {
+		for c := left; c <= right; c++ {
+			result = append(result, matrix[top][c])
+		}
+		for r := top + 1; r <= bottom; r++ {
+			result = append(result, matrix[r][right])
+		}
+		if top < bottom {
+			for c := right - 1; c >= left; c-- {
+				result = append(result, matrix[bottom][c])
+			}
+		}
+		if left < right {
+			for r := bottom - 1; r > top; r-- {
+				result = append(result, matrix[r][left])
+			}
+		}
+		top++
+		bottom--
+		left++
+		right--
+	}
+	return result
+}",
+      ),
+      #(
+        "Simulation",
+        "O(m·n) time · O(1) space",
+        "Four boundaries closing in, each side walked and then retired. The two guards are the whole difficulty: on a single remaining row the top and bottom edges are the same edge, and on a single column the left and right are, so walking both emits those cells twice.",
+        "package main
+
+func spiralOrder(matrix [][]int) []int {
+	// Walk one cell at a time, turning right whenever the next cell is off
+	// the grid or already visited.
+	rows, cols := len(matrix), len(matrix[0])
+	visited := make([][]bool, rows)
+	for r := range visited {
+		visited[r] = make([]bool, cols)
+	}
+	moves := [][2]int{{0, 1}, {1, 0}, {0, -1}, {-1, 0}}
+	result := make([]int, 0, rows*cols)
+	r, c, direction := 0, 0, 0
+	for len(result) < rows*cols {
+		result = append(result, matrix[r][c])
+		visited[r][c] = true
+		nr, nc := r+moves[direction][0], c+moves[direction][1]
+		if nr < 0 || nr >= rows || nc < 0 || nc >= cols || visited[nr][nc] {
+			direction = (direction + 1) % 4
+			nr, nc = r+moves[direction][0], c+moves[direction][1]
+		}
+		r, c = nr, nc
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func spiralOrder(matrix [][]int) []int",
+      starter: "package main
+
+func spiralOrder(matrix [][]int) []int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"spiralOrder([[1,2,3],[4,5,6],[7,8,9]])\", []int{1, 2, 3, 6, 9, 8, 7, 4, 5}, spiralOrder([][]int{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}})),
+			tc(\"spiralOrder([[1,2,3,4],[5,6,7,8],[9,10,11,12]])\", []int{1, 2, 3, 4, 8, 12, 11, 10, 9, 5, 6, 7}, spiralOrder([][]int{{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}})),
+			tc(\"spiralOrder([[1],[2],[3]])\", []int{1, 2, 3}, spiralOrder([][]int{{1}, {2}, {3}})),
+			tc(\"spiralOrder([[1,2,3]])\", []int{1, 2, 3}, spiralOrder([][]int{{1, 2, 3}})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc58_set_matrix_zeroes() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(m·n·(m+n)) time · O(m·n) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+The condition stated outright: a cell clears exactly when its own row holds a zero or its own column does. Nothing recorded, nothing ordered, so the two-pass trap cannot arise — at the cost of rescanning a row and a column for every cell.",
+        "package main
+
+func setZeroes(matrix [][]int) {
+	zeroRows := map[int]bool{}
+	zeroCols := map[int]bool{}
+	for r, row := range matrix {
+		for c, cell := range row {
+			if cell == 0 {
+				zeroRows[r] = true
+				zeroCols[c] = true
+			}
+		}
+	}
+	for r, row := range matrix {
+		for c := range row {
+			if zeroRows[r] || zeroCols[c] {
+				row[c] = 0
+			}
+		}
+	}
+}",
+      ),
+      #(
+        "Hash Set",
+        "O(m·n) time · O(m·n) space",
+        "Two passes, and they cannot be one: a zero written as you go is indistinguishable from a zero that was already there, so the grid would clear itself entirely. Record which rows and columns are doomed first, then apply. Recognising why one pass fails is the point of the problem.",
+        "package main
+
+func setZeroes(matrix [][]int) {
+	rows, cols := len(matrix), len(matrix[0])
+	// Use the first row and first column as the markers for the rest, with
+	// one extra flag for the first column itself (matrix[0][0] covers the
+	// first row).
+	firstColZero := false
+	for r := 0; r < rows; r++ {
+		if matrix[r][0] == 0 {
+			firstColZero = true
+		}
+		for c := 1; c < cols; c++ {
+			if matrix[r][c] == 0 {
+				matrix[r][0] = 0
+				matrix[0][c] = 0
+			}
+		}
+	}
+	for r := rows - 1; r >= 0; r-- {
+		for c := cols - 1; c >= 1; c-- {
+			if matrix[r][0] == 0 || matrix[0][c] == 0 {
+				matrix[r][c] = 0
+			}
+		}
+		if firstColZero {
+			matrix[r][0] = 0
+		}
+	}
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func setZeroes(matrix [][]int)",
+      starter: "package main
+
+func setZeroes(matrix [][]int) {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func zeroed(matrix [][]int) [][]int {
+	setZeroes(matrix)
+	return matrix
+}
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"setZeroes([[1,1,1],[1,0,1],[1,1,1]])\", [][]int{{1, 0, 1}, {0, 0, 0}, {1, 0, 1}}, zeroed([][]int{{1, 1, 1}, {1, 0, 1}, {1, 1, 1}})),
+			tc(\"setZeroes([[0,1,2,0],[3,4,5,2],[1,3,1,5]])\", [][]int{{0, 0, 0, 0}, {0, 4, 5, 0}, {0, 3, 1, 0}}, zeroed([][]int{{0, 1, 2, 0}, {3, 4, 5, 2}, {1, 3, 1, 5}})),
+			tc(\"setZeroes([[1,2],[3,4]])\", [][]int{{1, 2}, {3, 4}}, zeroed([][]int{{1, 2}, {3, 4}})),
+			tc(\"setZeroes([[1,0]])\", [][]int{{0, 0}}, zeroed([][]int{{1, 0}})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc59_happy_number() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Fast & Slow Pointers",
+        "O(log n) time · O(1) space",
+        "The same question with no memory at all. One pointer steps once per round, another twice, and they meet inside whatever cycle exists — meeting at 1 means the cycle is the fixed point, meeting anywhere else means it is not. Constant space, and the same trick that finds a cycle in a linked list.",
+        "package main
+
+func isHappy(n int) bool {
+	// The sequence either reaches 1 (and stays) or loops: tortoise and
+	// hare detect the loop with no set at all.
+	slow, fast := n, digitSquareSum(n)
+	for fast != 1 && slow != fast {
+		slow = digitSquareSum(slow)
+		fast = digitSquareSum(digitSquareSum(fast))
+	}
+	return fast == 1
+}
+
+func digitSquareSum(n int) int {
+	total := 0
+	for n > 0 {
+		total += (n % 10) * (n % 10)
+		n /= 10
+	}
+	return total
+}",
+      ),
+      #(
+        "Hash Set",
+        "O(log n) time · O(log n) space",
+        "The sequence must repeat: sums of squared digits are bounded, so only finitely many values are reachable and the walk has to revisit one. That turns \"does it loop?\" into a set lookup, and the answer is whether the value it settles on is 1.",
+        "package main
+
+func isHappy(n int) bool {
+	seen := map[int]bool{}
+	for n != 1 && !seen[n] {
+		seen[n] = true
+		n = digitSquareSum(n)
+	}
+	return n == 1
+}
+
+func digitSquareSum(n int) int {
+	total := 0
+	for n > 0 {
+		total += (n % 10) * (n % 10)
+		n /= 10
+	}
+	return total
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func isHappy(n int) bool
+
+func digitSquareSum(n int) int",
+      starter: "package main
+
+func isHappy(n int) bool {
+	panic(\"todo\")
+}
+
+func digitSquareSum(n int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"isHappy(19)\", true, isHappy(19)),
+			tc(\"isHappy(2)\", false, isHappy(2)),
+			tc(\"isHappy(1)\", true, isHappy(1)),
+			tc(\"isHappy(7)\", true, isHappy(7)),
+			tc(\"isHappy(4)\", false, isHappy(4)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc60_plus_one() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Python · Big Int",
+        "O(n²) time · O(n) space",
+        "Fold the digits into a number, add one, take it apart again. Shorter, and safe in a language with arbitrary-precision integers; in one without, this is exactly the version that breaks, and being handed digits rather than a number is the problem telling you so.",
+        "package main
+
+import \"math/big\"
+
+func plusOne(digits []int) []int {
+	// Convert to a number, add one, convert back. A big.Int keeps this
+	// honest for inputs longer than a machine word.
+	n := new(big.Int)
+	ten := big.NewInt(10)
+	for _, d := range digits {
+		n.Mul(n, ten)
+		n.Add(n, big.NewInt(int64(d)))
+	}
+	n.Add(n, big.NewInt(1))
+	text := n.String()
+	result := make([]int, len(text))
+	for i := range text {
+		result[i] = int(text[i] - '0')
+	}
+	return result
+}",
+      ),
+      #(
+        "Math",
+        "O(n) time · O(n) space",
+        "Adding one is a carry that starts at 1 and dies as soon as a digit below nine absorbs it. The only case worth care is when it never does — all nines — and the number grows a digit at the front.",
+        "package main
+
+func plusOne(digits []int) []int {
+	result := append([]int{}, digits...)
+	// Carry from the right; a 9 becomes 0 and the carry moves on. If the
+	// carry survives every digit, the number grew a digit.
+	for i := len(result) - 1; i >= 0; i-- {
+		if result[i] < 9 {
+			result[i]++
+			return result
+		}
+		result[i] = 0
+	}
+	return append([]int{1}, result...)
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func plusOne(digits []int) []int",
+      starter: "package main
+
+func plusOne(digits []int) []int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"plusOne([1,2,3])\", []int{1, 2, 4}, plusOne([]int{1, 2, 3})),
+			tc(\"plusOne([4,3,2,1])\", []int{4, 3, 2, 2}, plusOne([]int{4, 3, 2, 1})),
+			tc(\"plusOne([9])\", []int{1, 0}, plusOne([]int{9})),
+			tc(\"plusOne([9,9,9])\", []int{1, 0, 0, 0}, plusOne([]int{9, 9, 9})),
+			tc(\"plusOne([0])\", []int{1}, plusOne([]int{0})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc61_pow() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+Multiply n times. Fine for small exponents, and it makes the saving obvious: the fast version does about log₂(n) multiplications where this one does n — thirty against a billion.",
+        "package main
+
+func myPow(x float64, n int) float64 {
+	if n < 0 {
+		x, n = 1/x, -n
+	}
+	result := 1.0
+	for i := 0; i < n; i++ {
+		result *= x
+	}
+	return result
+}",
+      ),
+      #(
+        "Binary Exponentiation",
+        "O(log n) time · O(log n) space",
+        "Halving the exponent halves the work: x^n is (x^(n/2))², with one extra multiplication when n is odd. O(log n) multiplications rather than n. A negative exponent is one reciprocal at the end, and the recursion bottoms out at n = 0 returning 1.",
+        "package main
+
+func myPow(x float64, n int) float64 {
+	if n < 0 {
+		x, n = 1/x, -n
+	}
+	// Square and multiply: each bit of n either contributes the current
+	// power or not, and the power squares as the bits move up.
+	result := 1.0
+	for n > 0 {
+		if n&1 == 1 {
+			result *= x
+		}
+		x *= x
+		n >>= 1
+	}
+	return result
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func myPow(x float64, n int) float64",
+      starter: "package main
+
+func myPow(x float64, n int) float64 {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"myPow(2.0, 10)\", 1024.0, myPow(2.0, 10)),
+			tc(\"myPow(2.0, -2)\", 0.25, myPow(2.0, -2)),
+			tc(\"myPow(2.0, 0)\", 1.0, myPow(2.0, 0)),
+			tc(\"myPow(0.5, 3)\", 0.125, myPow(0.5, 3)),
+			tc(\"myPow(-2.0, 3)\", -8.0, myPow(-2.0, 3)),
+			tc(\"myPow(0.0, 5)\", 0.0, myPow(0.0, 5)),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc62_multiply_strings() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Simulation",
+        "O(n·(m+n)) time · O(m+n) space",
+        "Long multiplication exactly as taught: one partial product per digit of the second number, each shifted left by its position, all added up. It needs string addition as well as string multiplication — which is why the accumulating version exists, and why writing add once is worth it anyway.",
+        "package main
+
+func multiply(num1 string, num2 string) string {
+	if num1 == \"0\" || num2 == \"0\" {
+		return \"0\"
+	}
+	// Long multiplication as written by hand: one partial product per
+	// digit of num2, shifted, and summed as strings.
+	total := \"0\"
+	for j := len(num2) - 1; j >= 0; j-- {
+		partial := multiplyByDigit(num1, int(num2[j]-'0'))
+		for shift := len(num2) - 1 - j; shift > 0; shift-- {
+			partial += \"0\"
+		}
+		total = addStrings(total, partial)
+	}
+	return total
+}
+
+func multiplyByDigit(num string, digit int) string {
+	if digit == 0 {
+		return \"0\"
+	}
+	out := []byte{}
+	carry := 0
+	for i := len(num) - 1; i >= 0; i-- {
+		value := int(num[i]-'0')*digit + carry
+		out = append(out, byte('0'+value%10))
+		carry = value / 10
+	}
+	for carry > 0 {
+		out = append(out, byte('0'+carry%10))
+		carry /= 10
+	}
+	for i, j := 0, len(out)-1; i < j; i, j = i+1, j-1 {
+		out[i], out[j] = out[j], out[i]
+	}
+	return string(out)
+}
+
+func addStrings(a, b string) string {
+	out := []byte{}
+	carry := 0
+	for i, j := len(a)-1, len(b)-1; i >= 0 || j >= 0 || carry > 0; i, j = i-1, j-1 {
+		value := carry
+		if i >= 0 {
+			value += int(a[i] - '0')
+		}
+		if j >= 0 {
+			value += int(b[j] - '0')
+		}
+		out = append(out, byte('0'+value%10))
+		carry = value / 10
+	}
+	for i, j := 0, len(out)-1; i < j; i, j = i+1, j-1 {
+		out[i], out[j] = out[j], out[i]
+	}
+	return string(out)
+}",
+      ),
+      #(
+        "Math",
+        "O(m·n) time · O(m+n) space",
+        "Long multiplication with the carrying postponed. Digit i of one number times digit j of the other always lands at position i + j, so every product drops straight into its slot and the carries are settled in one sweep at the end. Deferring the carry is what keeps the inner loop free of bookkeeping.",
+        "package main
+
+import \"strings\"
+
+func multiply(num1 string, num2 string) string {
+	if num1 == \"0\" || num2 == \"0\" {
+		return \"0\"
+	}
+	// Digit i of num1 times digit j of num2 lands at position i+j+1 (and
+	// carries into i+j) of the product, counted from the left.
+	product := make([]int, len(num1)+len(num2))
+	for i := len(num1) - 1; i >= 0; i-- {
+		for j := len(num2) - 1; j >= 0; j-- {
+			total := int(num1[i]-'0')*int(num2[j]-'0') + product[i+j+1]
+			product[i+j+1] = total % 10
+			product[i+j] += total / 10
+		}
+	}
+	var b strings.Builder
+	for _, d := range product {
+		if b.Len() == 0 && d == 0 {
+			continue
+		}
+		b.WriteByte(byte('0' + d))
+	}
+	return b.String()
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func multiply(num1 string, num2 string) string",
+      starter: "package main
+
+func multiply(num1 string, num2 string) string {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		return []testCase{
+			tc(\"multiply('2', '3')\", \"6\", multiply(\"2\", \"3\")),
+			tc(\"multiply('123', '456')\", \"56088\", multiply(\"123\", \"456\")),
+			tc(\"multiply('0', '52')\", \"0\", multiply(\"0\", \"52\")),
+			tc(\"multiply('99', '99')\", \"9801\", multiply(\"99\", \"99\")),
+			tc(\"multiply('123456789', '987654321')\", \"121932631112635269\", multiply(\"123456789\", \"987654321\")),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc63_detect_squares() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Side Length Scan",
+        "O(n) per count · O(n) space",
+        "Choose the corner directly above or below instead. That fixes the side length rather than the square, so there are two candidates to check per partner — the remaining corners can be to the left or to the right. Same complexity, and a useful reminder that which corner you pivot on changes how much is determined.",
+        "package main
+
+// Index the stored points by x. For a query, every stored point sharing
+// its x (at a different y) fixes the side length; try the square to the
+// right and the square to the left of that side.
+type DetectSquares struct {
+	counts   map[[2]int]int
+	byColumn map[int]map[int]int
+}
+
+func Constructor() DetectSquares {
+	return DetectSquares{counts: map[[2]int]int{}, byColumn: map[int]map[int]int{}}
+}
+
+func (d *DetectSquares) Add(point []int) {
+	x, y := point[0], point[1]
+	d.counts[[2]int{x, y}]++
+	if d.byColumn[x] == nil {
+		d.byColumn[x] = map[int]int{}
+	}
+	d.byColumn[x][y]++
+}
+
+func (d *DetectSquares) Count(point []int) int {
+	x, y := point[0], point[1]
+	total := 0
+	for otherY, n := range d.byColumn[x] {
+		side := otherY - y
+		if side == 0 {
+			continue
+		}
+		for _, dx := range []int{side, -side} {
+			total += n * d.counts[[2]int{x + dx, y}] * d.counts[[2]int{x + dx, otherY}]
+		}
+	}
+	return total
+}",
+      ),
+      #(
+        "Hash Map",
+        "O(n) per count · O(n) space",
+        "Choosing the corner diagonally opposite fixes the entire square: the other two corners can only be at (x, py) and (px, y). So the scan is over stored points that share neither coordinate and sit on a true diagonal, and the three corner counts multiply — a repeated point genuinely forms a separate square.",
+        "package main
+
+// Count each point; for a query, every stored point on a diagonal from it
+// (|dx| == |dy| != 0) fixes a square whose other two corners are then
+// looked up by count.
+type DetectSquares struct {
+	counts map[[2]int]int
+}
+
+func Constructor() DetectSquares {
+	return DetectSquares{counts: map[[2]int]int{}}
+}
+
+func (d *DetectSquares) Add(point []int) {
+	d.counts[[2]int{point[0], point[1]}]++
+}
+
+func (d *DetectSquares) Count(point []int) int {
+	x, y := point[0], point[1]
+	total := 0
+	for corner, n := range d.counts {
+		dx, dy := corner[0]-x, corner[1]-y
+		if dx == 0 || dx != dy && dx != -dy {
+			continue
+		}
+		total += n * d.counts[[2]int{x + dx, y}] * d.counts[[2]int{x, y + dy}]
+	}
+	return total
+}",
+      ),
+    ],
+    check: Check(
+      signature: "type DetectSquares struct { … }
+
+func Constructor() DetectSquares
+
+func (d *DetectSquares) Add(point []int)
+
+func (d *DetectSquares) Count(point []int) int",
+      starter: "package main
+
+type DetectSquares struct {
+	// todo
+}
+
+func Constructor() DetectSquares {
+	panic(\"todo\")
+}
+
+func (d *DetectSquares) Add(point []int) {
+	panic(\"todo\")
+}
+
+func (d *DetectSquares) Count(point []int) int {
+	panic(\"todo\")
+}",
+      harness: "package main
+
+func main() {
+	run(func() []testCase {
+		store := Constructor()
+		store.Add([]int{3, 10})
+		store.Add([]int{11, 2})
+		store.Add([]int{3, 2})
+		oneEach := store.Count([]int{11, 10})
+		noSquare := store.Count([]int{14, 8})
+		store.Add([]int{11, 2})
+		return []testCase{
+			tc(\"count([11, 10]) with one of each corner\", 1, oneEach),
+			tc(\"count([14, 8]) -- no square\", 0, noSquare),
+			tc(\"count([11, 10]) after a duplicate corner\", 2, store.Count([]int{11, 10})),
+			tc(\"count([3, 10]) -- the query point is itself stored\", 0, store.Count([]int{3, 10})),
+		}
+	})
+}",
+      graded: True,
+    ),
+  )
+}
+
 pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
+    "nc02_valid_anagram" -> Ok(nc02_valid_anagram())
+    "nc03_two_sum" -> Ok(nc03_two_sum())
+    "nc04_group_anagrams" -> Ok(nc04_group_anagrams())
+    "nc05_top_k_frequent" -> Ok(nc05_top_k_frequent())
+    "nc06_product_except_self" -> Ok(nc06_product_except_self())
+    "nc07_longest_consecutive" -> Ok(nc07_longest_consecutive())
+    "nc08_valid_palindrome" -> Ok(nc08_valid_palindrome())
+    "nc09_two_sum_sorted" -> Ok(nc09_two_sum_sorted())
+    "nc10_three_sum" -> Ok(nc10_three_sum())
+    "nc11_container_water" -> Ok(nc11_container_water())
+    "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
     "nc136_invert_binary_tree" -> Ok(nc136_invert_binary_tree())
+    "nc13_longest_substring" -> Ok(nc13_longest_substring())
+    "nc14_character_replacement" -> Ok(nc14_character_replacement())
+    "nc15_permutation_in_string" -> Ok(nc15_permutation_in_string())
+    "nc16_valid_parentheses" -> Ok(nc16_valid_parentheses())
+    "nc17_min_stack" -> Ok(nc17_min_stack())
+    "nc18_daily_temperatures" -> Ok(nc18_daily_temperatures())
+    "nc19_binary_search" -> Ok(nc19_binary_search())
+    "nc20_find_min_rotated" -> Ok(nc20_find_min_rotated())
+    "nc21_search_rotated" -> Ok(nc21_search_rotated())
+    "nc22_encode_decode" -> Ok(nc22_encode_decode())
+    "nc23_valid_sudoku" -> Ok(nc23_valid_sudoku())
+    "nc24_trapping_rain_water" -> Ok(nc24_trapping_rain_water())
+    "nc25_min_window_substring" -> Ok(nc25_min_window_substring())
+    "nc26_sliding_window_maximum" -> Ok(nc26_sliding_window_maximum())
+    "nc27_eval_rpn" -> Ok(nc27_eval_rpn())
+    "nc28_generate_parentheses" -> Ok(nc28_generate_parentheses())
+    "nc29_car_fleet" -> Ok(nc29_car_fleet())
+    "nc30_largest_rectangle" -> Ok(nc30_largest_rectangle())
+    "nc31_search_2d_matrix" -> Ok(nc31_search_2d_matrix())
+    "nc32_koko_bananas" -> Ok(nc32_koko_bananas())
+    "nc33_time_map" -> Ok(nc33_time_map())
+    "nc34_median_two_sorted" -> Ok(nc34_median_two_sorted())
+    "nc35_insert_interval" -> Ok(nc35_insert_interval())
+    "nc36_merge_intervals" -> Ok(nc36_merge_intervals())
+    "nc37_non_overlapping" -> Ok(nc37_non_overlapping())
+    "nc38_meeting_rooms" -> Ok(nc38_meeting_rooms())
+    "nc39_meeting_rooms_ii" -> Ok(nc39_meeting_rooms_ii())
+    "nc40_min_interval" -> Ok(nc40_min_interval())
+    "nc41_maximum_subarray" -> Ok(nc41_maximum_subarray())
+    "nc42_jump_game" -> Ok(nc42_jump_game())
+    "nc43_jump_game_ii" -> Ok(nc43_jump_game_ii())
+    "nc44_gas_station" -> Ok(nc44_gas_station())
+    "nc45_hand_of_straights" -> Ok(nc45_hand_of_straights())
+    "nc46_merge_triplets" -> Ok(nc46_merge_triplets())
+    "nc47_partition_labels" -> Ok(nc47_partition_labels())
+    "nc48_valid_parenthesis_string" -> Ok(nc48_valid_parenthesis_string())
+    "nc49_single_number" -> Ok(nc49_single_number())
+    "nc50_number_of_one_bits" -> Ok(nc50_number_of_one_bits())
+    "nc51_counting_bits" -> Ok(nc51_counting_bits())
+    "nc52_reverse_bits" -> Ok(nc52_reverse_bits())
+    "nc53_missing_number" -> Ok(nc53_missing_number())
+    "nc54_sum_of_two_integers" -> Ok(nc54_sum_of_two_integers())
+    "nc55_reverse_integer" -> Ok(nc55_reverse_integer())
+    "nc56_rotate_image" -> Ok(nc56_rotate_image())
+    "nc57_spiral_matrix" -> Ok(nc57_spiral_matrix())
+    "nc58_set_matrix_zeroes" -> Ok(nc58_set_matrix_zeroes())
+    "nc59_happy_number" -> Ok(nc59_happy_number())
+    "nc60_plus_one" -> Ok(nc60_plus_one())
+    "nc61_pow" -> Ok(nc61_pow())
+    "nc62_multiply_strings" -> Ok(nc62_multiply_strings())
+    "nc63_detect_squares" -> Ok(nc63_detect_squares())
     _ -> Error(Nil)
   }
 }

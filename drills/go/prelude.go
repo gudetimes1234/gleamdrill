@@ -19,6 +19,7 @@ import (
 	"io"
 	"os"
 	"runtime/debug"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -77,6 +78,10 @@ func show(v any) string {
 			return "[]"
 		}
 	case [][]int:
+		if t == nil {
+			return "[]"
+		}
+	case [][]string:
 		if t == nil {
 			return "[]"
 		}
@@ -221,6 +226,39 @@ func tree(values ...any) *TreeNode {
 
 // x is a missing child in tree(...).
 var x any = nil
+
+// sortInts is a sorted copy, for answers whose order is free.
+func sortInts(values []int) []int {
+	out := append([]int{}, values...)
+	sort.Ints(out)
+	return out
+}
+
+func sortStrings(values []string) []string {
+	out := append([]string{}, values...)
+	sort.Strings(out)
+	return out
+}
+
+// sortRows sorts each row, then the rows, for answers that are a set of
+// sets (triples, subsets, anagram groups): only membership is meaningful.
+func sortRows(rows [][]int) [][]int {
+	out := make([][]int, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, sortInts(row))
+	}
+	sort.Slice(out, func(i, j int) bool { return show(out[i]) < show(out[j]) })
+	return out
+}
+
+func sortGroups(groups [][]string) [][]string {
+	out := make([][]string, 0, len(groups))
+	for _, group := range groups {
+		out = append(out, sortStrings(group))
+	}
+	sort.Slice(out, func(i, j int) bool { return show(out[i]) < show(out[j]) })
+	return out
+}
 
 // treeValues is the level-order form back, trailing nils trimmed.
 func treeValues(root *TreeNode) []any {
