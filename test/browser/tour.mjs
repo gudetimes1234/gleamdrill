@@ -241,12 +241,12 @@ const openByHand = async (language, subcategory, title) => {
 };
 
 const countServerCards = async () =>
-  await page.evaluate(async (token) => {
-    const r = await fetch("http://127.0.0.1:1637/api/state", {
+  await page.evaluate(async ([api, token]) => {
+    const r = await fetch(`${api}/api/state`, {
       headers: { authorization: "Bearer " + token },
     });
     return (await r.json()).cards.length;
-  }, await page.evaluate(() => localStorage.getItem("gleamDrill.token")));
+  }, [API, await page.evaluate(() => localStorage.getItem("gleamDrill.token"))]);
 
 const gradeWhatever = async () => {
   // Selector-based click, resolved at action time: a banner appearing (the
@@ -1848,12 +1848,12 @@ await page.unroute("**/api/state", slow);
 check("signing up signs you in",
   (await page.textContent(".study-email")) === upgraded);
 check("the guest strip is gone", !(await page.isVisible(".guest-strip")));
-const serverCards = await page.evaluate(async (token) => {
-  const r = await fetch("http://127.0.0.1:1637/api/state", {
+const serverCards = await page.evaluate(async ([api, token]) => {
+  const r = await fetch(`${api}/api/state`, {
     headers: { authorization: "Bearer " + token },
   });
   return (await r.json()).cards.length;
-}, await page.evaluate(() => localStorage.getItem("gleamDrill.token")));
+}, [API, await page.evaluate(() => localStorage.getItem("gleamDrill.token"))]);
 // Against what the guest actually held rather than a fixed number: the queue
 // is chosen now, so how many cards a guest has is a property of the tour's
 // own clicking, and the invariant is that all of them travel.
