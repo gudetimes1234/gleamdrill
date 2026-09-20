@@ -3967,49 +3967,8 @@ pub fn nc130_add_two_numbers() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Simulation",
+        "Via Arrays",
         "O(n+m) time · O(n+m) space",
-        "The digits arrive least significant first, which is exactly the order addition wants — no reversing and no length matching. The case worth writing down is the carry outliving both numbers: 5 + 5 produces a digit neither input has a node for.",
-        "export class ListNode {
-  val: number;
-  next: ListNode | null;
-
-  constructor(val = 0, next: ListNode | null = null) {
-    this.val = val;
-    this.next = next;
-  }
-}
-
-export function addTwoNumbers(l1: ListNode | null, l2: ListNode | null): ListNode | null {
-  // Both numbers arrive least significant digit first, which is exactly the
-  // order addition wants -- no reversing and no length matching. The loop
-  // condition includes the carry, because 5 + 5 produces a digit that neither
-  // input has a node for.
-  const dummy = new ListNode();
-  let tail = dummy;
-  let carry = 0;
-
-  while (l1 !== null || l2 !== null || carry !== 0) {
-    let total = carry;
-    if (l1 !== null) {
-      total += l1.val;
-      l1 = l1.next;
-    }
-    if (l2 !== null) {
-      total += l2.val;
-      l2 = l2.next;
-    }
-    carry = Math.floor(total / 10);
-    tail.next = new ListNode(total % 10);
-    tail = tail.next;
-  }
-
-  return dummy.next;
-}",
-      ),
-      #(
-        "Solution 2 · Via digits array",
-        "",
         "Read both lists into arrays, add positionally, then rebuild. The same arithmetic with the carry handled after the fact rather than during the walk — which is what makes clear that the single-pass version is doing two things at once. Converting to whole numbers instead would be simpler and quietly wrong: a long list overflows a double.",
         "export class ListNode {
   val: number;
@@ -4049,6 +4008,47 @@ function digits(node: ListNode | null): number[] {
   const out: number[] = [];
   for (; node !== null; node = node.next) out.push(node.val);
   return out;
+}",
+      ),
+      #(
+        "Simulation",
+        "O(n+m) time · O(n+m) space",
+        "The digits arrive least significant first, which is exactly the order addition wants — no reversing and no length matching. The case worth writing down is the carry outliving both numbers: 5 + 5 produces a digit neither input has a node for.",
+        "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function addTwoNumbers(l1: ListNode | null, l2: ListNode | null): ListNode | null {
+  // Both numbers arrive least significant digit first, which is exactly the
+  // order addition wants -- no reversing and no length matching. The loop
+  // condition includes the carry, because 5 + 5 produces a digit that neither
+  // input has a node for.
+  const dummy = new ListNode();
+  let tail = dummy;
+  let carry = 0;
+
+  while (l1 !== null || l2 !== null || carry !== 0) {
+    let total = carry;
+    if (l1 !== null) {
+      total += l1.val;
+      l1 = l1.next;
+    }
+    if (l2 !== null) {
+      total += l2.val;
+      l2 = l2.next;
+    }
+    carry = Math.floor(total / 10);
+    tail.next = new ListNode(total % 10);
+    tail = tail.next;
+  }
+
+  return dummy.next;
 }",
       ),
     ],
@@ -4320,7 +4320,7 @@ pub fn nc133_lru_cache() -> Embedded {
 }",
       ),
       #(
-        "Design",
+        "Linked Nodes",
         "O(1) per operation · O(capacity) space",
         "The structure the problem is really about: a doubly linked list of keys, newest first, plus a map from key to its node. The map makes finding a node O(1) and the back-pointers make unlinking it O(1) — neither alone is enough, which is the entire point.",
         "type Entry = { key: number; value: number; prev: Entry | null; next: Entry | null };
@@ -4437,6 +4437,44 @@ pub fn nc134_merge_k_sorted_lists() -> Embedded {
   Embedded(
     solutions: [
       #(
+        "Smallest Head Scan",
+        "O(n·k) time · O(1) space",
+        "The heap solution with the heap spelled out as a scan, for languages that have no priority queue: O(k) per element rather than O(log k), which is the entire difference the heap makes. What it does not need is any pairing structure — it works on lists arriving one at a time.",
+        "export class ListNode {
+  val: number;
+  next: ListNode | null;
+
+  constructor(val = 0, next: ListNode | null = null) {
+    this.val = val;
+    this.next = next;
+  }
+}
+
+export function mergeKLists(lists: (ListNode | null)[]): ListNode | null {
+  // Take the smallest head across all the lists, over and over. This is the
+  // heap solution with the heap spelled out as a scan, since JavaScript has no
+  // priority queue: O(k) per element rather than O(log k), which is the entire
+  // difference the heap makes. What it does not need is any pairing structure
+  // -- it works just as well on lists arriving one at a time.
+  const heads = lists.filter((head): head is ListNode => head !== null);
+  const dummy = new ListNode();
+  let tail = dummy;
+
+  while (heads.length > 0) {
+    let best = 0;
+    for (let i = 1; i < heads.length; i++) if (heads[i].val < heads[best].val) best = i;
+    const node = heads[best];
+    tail.next = node;
+    tail = node;
+    if (node.next !== null) heads[best] = node.next;
+    else heads.splice(best, 1);
+  }
+
+  tail.next = null;
+  return dummy.next;
+}",
+      ),
+      #(
         "Divide & Conquer",
         "O(n log k) time · O(k) space",
         "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.",
@@ -4483,44 +4521,6 @@ function merge(first: ListNode | null, second: ListNode | null): ListNode | null
     tail = tail.next;
   }
   tail.next = first !== null ? first : second;
-  return dummy.next;
-}",
-      ),
-      #(
-        "Solution 2 · Smallest head",
-        "",
-        "The heap solution with the heap spelled out as a scan, for languages that have no priority queue: O(k) per element rather than O(log k), which is the entire difference the heap makes. What it does not need is any pairing structure — it works on lists arriving one at a time.",
-        "export class ListNode {
-  val: number;
-  next: ListNode | null;
-
-  constructor(val = 0, next: ListNode | null = null) {
-    this.val = val;
-    this.next = next;
-  }
-}
-
-export function mergeKLists(lists: (ListNode | null)[]): ListNode | null {
-  // Take the smallest head across all the lists, over and over. This is the
-  // heap solution with the heap spelled out as a scan, since JavaScript has no
-  // priority queue: O(k) per element rather than O(log k), which is the entire
-  // difference the heap makes. What it does not need is any pairing structure
-  // -- it works just as well on lists arriving one at a time.
-  const heads = lists.filter((head): head is ListNode => head !== null);
-  const dummy = new ListNode();
-  let tail = dummy;
-
-  while (heads.length > 0) {
-    let best = 0;
-    for (let i = 1; i < heads.length; i++) if (heads[i].val < heads[best].val) best = i;
-    const node = heads[best];
-    tail.next = node;
-    tail = node;
-    if (node.next !== null) heads[best] = node.next;
-    else heads.splice(best, 1);
-  }
-
-  tail.next = null;
   return dummy.next;
 }",
       ),

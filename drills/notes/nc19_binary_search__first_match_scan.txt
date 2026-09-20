@@ -1,2 +1,5 @@
+@kind Linear Scan
+@big-o O(n) time · O(1) space
+@order 1
 @shared/brute-force-baseline
 A plain indexed scan. O(n), so it fails the stated requirement — but it is what the halving has to beat, and it shows exactly what the sortedness buys.

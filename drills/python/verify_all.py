@@ -101,7 +101,7 @@ VARIANTS = [
     ("nc132_find_the_duplicate", "Binary Search", "nc132_find_the_duplicate__counting"),
     ("nc132_find_the_duplicate", "Fast & Slow Pointers", "nc132_find_the_duplicate"),
     ("nc133_lru_cache", "Nifty Python · Dict Order", "nc133_lru_cache"),
-    ("nc133_lru_cache", "Design", "nc133_lru_cache__linked_nodes"),
+    ("nc133_lru_cache", "Linked Nodes", "nc133_lru_cache__linked_nodes"),
     ("nc134_merge_k_sorted_lists", "Heap", "nc134_merge_k_sorted_lists__min_heap"),
     ("nc134_merge_k_sorted_lists", "Divide & Conquer", "nc134_merge_k_sorted_lists"),
     ("nc135_reverse_k_group", "Two Pass", "nc135_reverse_k_group__count_first"),

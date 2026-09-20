@@ -3993,7 +3993,7 @@ pub fn nc133_lru_cache() -> Embedded {
             del self.entries[oldest]",
       ),
       #(
-        "Design",
+        "Linked Nodes",
         "O(1) per operation · O(capacity) space",
         "The structure the problem is really about: a doubly linked list of keys, newest first, plus a map from key to its node. The map makes finding a node O(1) and the back-pointers make unlinking it O(1) — neither alone is enough, which is the entire point.",
         "class LRUCache:

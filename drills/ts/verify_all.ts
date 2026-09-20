@@ -85,16 +85,16 @@ import * as v80 from "./.verify/nc129_copy_random_list__interleaved/harness";
 import * as v81 from "./.verify/nc129_copy_random_list/harness";
 import * as v82 from "./.verify/nc12_best_time_stock__brute_force/harness";
 import * as v83 from "./.verify/nc12_best_time_stock/harness";
-import * as v84 from "./.verify/nc130_add_two_numbers/harness";
-import * as v85 from "./.verify/nc130_add_two_numbers__via_digits_array/harness";
+import * as v84 from "./.verify/nc130_add_two_numbers__via_digits_array/harness";
+import * as v85 from "./.verify/nc130_add_two_numbers/harness";
 import * as v86 from "./.verify/nc131_linked_list_cycle__seen_set/harness";
 import * as v87 from "./.verify/nc131_linked_list_cycle/harness";
 import * as v88 from "./.verify/nc132_find_the_duplicate__counting/harness";
 import * as v89 from "./.verify/nc132_find_the_duplicate/harness";
 import * as v90 from "./.verify/nc133_lru_cache/harness";
 import * as v91 from "./.verify/nc133_lru_cache__linked_nodes/harness";
-import * as v92 from "./.verify/nc134_merge_k_sorted_lists/harness";
-import * as v93 from "./.verify/nc134_merge_k_sorted_lists__smallest_head/harness";
+import * as v92 from "./.verify/nc134_merge_k_sorted_lists__smallest_head/harness";
+import * as v93 from "./.verify/nc134_merge_k_sorted_lists/harness";
 import * as v94 from "./.verify/nc135_reverse_k_group__count_first/harness";
 import * as v95 from "./.verify/nc135_reverse_k_group/harness";
 import * as v96 from "./.verify/nc136_invert_binary_tree__by_rebuilding/harness";
@@ -391,16 +391,16 @@ const VARIANTS: [string, string, () => Case[]][] = [
   ["nc129_copy_random_list", "Hash Map", v81.run],
   ["nc12_best_time_stock", "Brute Force", v82.run],
   ["nc12_best_time_stock", "Greedy", v83.run],
-  ["nc130_add_two_numbers", "Simulation", v84.run],
-  ["nc130_add_two_numbers", "Solution 2 · Via digits array", v85.run],
+  ["nc130_add_two_numbers", "Via Arrays", v84.run],
+  ["nc130_add_two_numbers", "Simulation", v85.run],
   ["nc131_linked_list_cycle", "Hash Set", v86.run],
   ["nc131_linked_list_cycle", "Fast & Slow Pointers", v87.run],
   ["nc132_find_the_duplicate", "Binary Search", v88.run],
   ["nc132_find_the_duplicate", "Fast & Slow Pointers", v89.run],
   ["nc133_lru_cache", "Nifty Python · Dict Order", v90.run],
-  ["nc133_lru_cache", "Design", v91.run],
-  ["nc134_merge_k_sorted_lists", "Divide & Conquer", v92.run],
-  ["nc134_merge_k_sorted_lists", "Solution 2 · Smallest head", v93.run],
+  ["nc133_lru_cache", "Linked Nodes", v91.run],
+  ["nc134_merge_k_sorted_lists", "Smallest Head Scan", v92.run],
+  ["nc134_merge_k_sorted_lists", "Divide & Conquer", v93.run],
   ["nc135_reverse_k_group", "Two Pass", v94.run],
   ["nc135_reverse_k_group", "Linked List", v95.run],
   ["nc136_invert_binary_tree", "Flatten & Rebuild", v96.run],

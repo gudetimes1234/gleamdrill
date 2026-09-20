@@ -142,23 +142,28 @@ crashing is when you most want to read it.
 
 Each solution carries its own note explaining that particular approach. The
 notes live in `drills/notes/<variant>.txt`, one file per variant rather than one
-comment per language, so the Gleam, Python, TypeScript and Elixir mirrors of a
-solution share a single write-up. A note starting with `@shared/<name>` pulls in
-`drills/notes/shared/<name>.txt` first — the two-pointer convergence, the case
-for keeping a brute force around — and then adds its own line, so the technique
-is written once and the specifics stay per variant.
+comment per language, so the Gleam, Python, TypeScript, Elixir and Go mirrors
+of a solution share a single write-up. A note starting with `@shared/<name>`
+pulls in `drills/notes/shared/<name>.txt` first — the two-pointer convergence,
+the case for keeping a brute force around — and then adds its own line, so the
+technique is written once and the specifics stay per variant.
+
+Sharing by stem assumes the same stem is the same algorithm in every language,
+and the file layout keeps it so: the primary file of every language is the
+same technique, and alternates carry the same suffixes. Where one language
+genuinely cannot follow — an LRU cache that leans on an insertion-ordered
+dict has no honest Gleam, Elixir or Go twin, so their primary is the linked
+list instead — a `drills/notes/<stem>.<ext>.txt` (`nc133_lru_cache.go.txt`)
+speaks for that language alone and the shared note is not consulted.
 
 A note can also open with directive lines, which are metadata rather than
 prose: `@kind` names the technique and becomes the solution's button label
 ("Brute Force", "Hash Map", "Nifty Python"), `@big-o` is the complexity badge
 ("O(n²) time · O(1) space"), and `@order` places the variant — solutions are
-shown worst runtime first, the accepted canonical version last. Unannotated
-notes fall back to the old "Solution N · Variant" labels and no badge, so
-annotation can land language by language. The Python catalogue is annotated;
-**TODO: sweep the Gleam, TypeScript and Elixir variants** (their extra stems —
-`__bucket_sort` and friends — still need directives, and each language wants
-its own normalized-vs-idiomatic alternates the way Python has "Nifty Python"
-variants).
+shown worst runtime first, the accepted canonical version last. Every NeetCode
+variant in every language is annotated; a note without directives falls back
+to a "Solution N · Variant" label and no badge, which is how a new alternate
+can land before its write-up.
 
 The alternates are the point of having more than one: they are chosen to reach
 for a *different* technique rather than reword the same one — sorting instead

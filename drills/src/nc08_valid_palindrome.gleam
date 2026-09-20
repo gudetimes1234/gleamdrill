@@ -6,7 +6,25 @@ pub fn is_palindrome(s: String) -> Bool {
     string.lowercase(s)
     |> string.to_graphemes
     |> list.filter(is_alphanumeric)
-  cleaned == list.reverse(cleaned)
+  converge(cleaned, list.reverse(cleaned), list.length(cleaned) / 2)
+}
+
+/// Walks the sequence and its reverse together — the closest a linked list
+/// gets to converging index pointers.
+fn converge(
+  from_front: List(String),
+  from_back: List(String),
+  remaining: Int,
+) -> Bool {
+  case remaining <= 0 {
+    True -> True
+    False ->
+      case from_front, from_back {
+        [a, ..front], [b, ..back] ->
+          a == b && converge(front, back, remaining - 1)
+        _, _ -> True
+      }
+  }
 }
 
 fn is_alphanumeric(g: String) -> Bool {

@@ -319,11 +319,11 @@ pub fn nc04_group_anagrams() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Count Key",
-        "O(n·k) time · O(n·k) space",
+        "Sorted Key",
+        "O(n·k log k) time · O(n·k) space",
         "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
 
-Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len) to build against sorting's O(len log len); the sorted word needs no assumption about the alphabet.",
+The sorted word itself is the key. Shorter than tallying letters, and it works for any alphabet rather than just a-z.",
         "import gleam/dict
 import gleam/list
 import gleam/option
@@ -348,11 +348,11 @@ pub fn group_anagrams(strs: List(String)) -> List(List(String)) {
 }",
       ),
       #(
-        "Solution 2 · Count key",
-        "",
+        "Count Key",
+        "O(n·k) time · O(n·k) space",
         "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
 
-A letter tally is anagram-invariant too, and costs O(len) to build rather than O(len log len).",
+Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len) to build against sorting's O(len log len); the sorted word needs no assumption about the alphabet.",
         "import gleam/dict
 import gleam/int
 import gleam/list
@@ -437,9 +437,11 @@ pub fn nc05_top_k_frequent() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Bucket Sort",
-        "O(n) time · O(n) space",
-        "Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.",
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+
+Straight sort by frequency: O(n log n) rather than the bucket version's O(n), but it is the version you can write without thinking.",
         "import gleam/dict
 import gleam/int
 import gleam/list
@@ -457,9 +459,9 @@ pub fn top_k_frequent(nums: List(Int), k: Int) -> List(Int) {
 }",
       ),
       #(
-        "Solution 2 · Bucket sort",
-        "",
-        "A count can never exceed the input length, so one bucket per frequency covers every possibility. Reading the buckets downwards gives the answer in O(n) and replaces the comparison sort entirely.",
+        "Bucket Sort",
+        "O(n) time · O(n) space",
+        "Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.",
         "import gleam/dict
 import gleam/list
 import gleam/option
@@ -709,9 +711,9 @@ pub fn nc08_valid_palindrome() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Two Pointers",
-        "O(n) time · O(1) space",
-        "Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.",
+        "Nifty Python · Reverse",
+        "O(n) time · O(n) space",
+        "Strip, then compare against the reverse. Allocates a second string instead of converging two pointers, but it is one line of intent.",
         "import gleam/list
 import gleam/string
 
@@ -742,9 +744,9 @@ fn is_lowercase_letter(n: Int) -> Bool {
 }",
       ),
       #(
-        "Solution 2 · Two pointers",
-        "",
-        "Compare inwards from both ends, skipping anything that is not alphanumeric as you go. No second string is built.",
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.",
         "import gleam/list
 import gleam/string
 
@@ -6026,8 +6028,8 @@ fn walk(remaining: List(Int), reversed: List(Int)) -> List(Int) {
 }",
       ),
       #(
-        "Solution 2 · By folding",
-        "",
+        "By Folding",
+        "O(n) time · O(n) space",
         "The accumulator, named by the standard library instead of written out. Worth putting next to the hand-written loop: a left fold that prepends is the definition of reversing, which is why the built-in exists at all.",
         "import gleam/list
 
@@ -6080,9 +6082,9 @@ pub fn nc126_merge_two_sorted_lists() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Iterative",
-        "O(n+m) time · O(1) space",
-        "Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.",
+        "Recursion",
+        "O(n+m) time · O(n+m) space",
+        "The same merge with the return value doing the joining: no dummy, no tail reference. One frame per node is the cost, and it is exactly what the loop trades away.",
         "pub fn merge_two_lists(first: List(Int), second: List(Int)) -> List(Int) {
   // Take the smaller head and recurse on the rest. Because both inputs are
   // already sorted, whichever head is smaller is smaller than everything still
@@ -6099,8 +6101,8 @@ pub fn nc126_merge_two_sorted_lists() -> Embedded {
 }",
       ),
       #(
-        "Solution 2 · Iterative",
-        "",
+        "Iterative",
+        "O(n+m) time · O(1) space",
         "The same merge with the recursion turned into a loop: build the answer backwards in an accumulator and reverse once at the end. That accumulator is the functional twin of the dummy head, and the reversal costs one extra pass rather than one extra frame per node.",
         "import gleam/list
 
@@ -6167,32 +6169,8 @@ pub fn nc127_reorder_list() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Fast & Slow Pointers",
-        "O(n) time · O(1) space",
-        "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.",
-        "import gleam/list
-
-pub fn reorder_list(values: List(Int)) -> List(Int) {
-  // Three separate steps, each of which is its own drill: find the middle,
-  // reverse the back half, then interleave. That decomposition is the whole
-  // trick — none of the three needs to know about the others.
-  let half = { list.length(values) + 1 } / 2
-  let front = list.take(values, half)
-  let back = list.reverse(list.drop(values, half))
-  interleave(front, back)
-}
-
-fn interleave(front: List(Int), back: List(Int)) -> List(Int) {
-  case front, back {
-    [], rest -> rest
-    rest, [] -> rest
-    [a, ..a_rest], [b, ..b_rest] -> [a, b, ..interleave(a_rest, b_rest)]
-  }
-}",
-      ),
-      #(
-        "Solution 2 · From both ends",
-        "",
+        "Two-Ended Walk",
+        "O(n²) time · O(1) space",
         "Take from the front, then from the back, until they meet. Reads exactly like the specification and needs no midpoint and no reversal — but reaching the back is a full walk of what is left each time, so it is O(n²) where the split-and-reverse version is O(n).",
         "import gleam/list
 
@@ -6213,6 +6191,30 @@ fn take_ends(remaining: List(Int), out: List(Int)) -> List(Int) {
       let middle = list.take(rest, list.length(rest) - 1)
       take_ends(middle, [last, first, ..out])
     }
+  }
+}",
+      ),
+      #(
+        "Fast & Slow Pointers",
+        "O(n) time · O(1) space",
+        "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.",
+        "import gleam/list
+
+pub fn reorder_list(values: List(Int)) -> List(Int) {
+  // Three separate steps, each of which is its own drill: find the middle,
+  // reverse the back half, then interleave. That decomposition is the whole
+  // trick — none of the three needs to know about the others.
+  let half = { list.length(values) + 1 } / 2
+  let front = list.take(values, half)
+  let back = list.reverse(list.drop(values, half))
+  interleave(front, back)
+}
+
+fn interleave(front: List(Int), back: List(Int)) -> List(Int) {
+  case front, back {
+    [], rest -> rest
+    rest, [] -> rest
+    [a, ..a_rest], [b, ..b_rest] -> [a, b, ..interleave(a_rest, b_rest)]
   }
 }",
       ),
@@ -6362,35 +6364,8 @@ pub fn nc129_copy_random_list() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Hash Map",
-        "O(n) time · O(n) space",
-        "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.",
-        "import gleam/dict
-import gleam/list
-import gleam/result
-
-/// Nodes arrive as #(id, value, random_id), where the ids are arbitrary and a
-/// random_id of -1 means no link. The copy is returned as #(value, random) with
-/// random naming a *position* in the copy, or -1 — so producing it means
-/// translating every id into the place the copied node ended up.
-pub fn copy_random_list(nodes: List(#(Int, Int, Int))) -> List(#(Int, Int)) {
-  // One pass to learn where each original node lands, a second to resolve the
-  // links. Trying to resolve a link on first sight cannot work: it may point at
-  // a node not yet seen, which is the whole difficulty of the problem, and a
-  // map from old node to new is what removes it.
-  let places =
-    list.index_fold(nodes, dict.new(), fn(acc, node: #(Int, Int, Int), i) {
-      dict.insert(acc, node.0, i)
-    })
-
-  list.map(nodes, fn(node: #(Int, Int, Int)) {
-    #(node.1, result.unwrap(dict.get(places, node.2), -1))
-  })
-}",
-      ),
-      #(
-        "Solution 2 · By searching",
-        "",
+        "Brute Force",
+        "O(n²) time · O(1) extra space",
         "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
 The same translation without the map: for each link, search for the node it names. O(n²) against O(n), and the contrast is the lesson — the map is not an optimisation bolted on afterwards, it is the same lookup, paid for once instead of once per node.",
@@ -6415,6 +6390,33 @@ fn position_of(nodes: List(#(Int, Int, Int)), id: Int, at: Int) -> Int {
         False -> position_of(rest, id, at + 1)
       }
   }
+}",
+      ),
+      #(
+        "Hash Map",
+        "O(n) time · O(n) space",
+        "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.",
+        "import gleam/dict
+import gleam/list
+import gleam/result
+
+/// Nodes arrive as #(id, value, random_id), where the ids are arbitrary and a
+/// random_id of -1 means no link. The copy is returned as #(value, random) with
+/// random naming a *position* in the copy, or -1 — so producing it means
+/// translating every id into the place the copied node ended up.
+pub fn copy_random_list(nodes: List(#(Int, Int, Int))) -> List(#(Int, Int)) {
+  // One pass to learn where each original node lands, a second to resolve the
+  // links. Trying to resolve a link on first sight cannot work: it may point at
+  // a node not yet seen, which is the whole difficulty of the problem, and a
+  // map from old node to new is what removes it.
+  let places =
+    list.index_fold(nodes, dict.new(), fn(acc, node: #(Int, Int, Int), i) {
+      dict.insert(acc, node.0, i)
+    })
+
+  list.map(nodes, fn(node: #(Int, Int, Int)) {
+    #(node.1, result.unwrap(dict.get(places, node.2), -1))
+  })
 }",
       ),
     ],
@@ -6896,61 +6898,8 @@ pub fn nc133_lru_cache() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Nifty Python · Dict Order",
-        "O(1) per operation · O(capacity) space",
-        "Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A map alone gives the first and a list alone gives the second — the structure is whatever supplies both. Where the language's map already remembers insertion order, deleting a key and putting it back *is* the recency list.",
-        "import gleam/dict.{type Dict}
-import gleam/list
-
-pub type LruCache {
-  LruCache(capacity: Int, entries: Dict(Int, Int), recent: List(Int))
-}
-
-pub fn new(capacity: Int) -> LruCache {
-  LruCache(capacity, dict.new(), [])
-}
-
-/// Missing keys answer -1. Reading counts as use, so the cache comes back
-/// changed — which is the part that makes an LRU cache awkward to express with
-/// immutable values, and the reason the signature has to return both.
-pub fn get(cache: LruCache, key: Int) -> #(Int, LruCache) {
-  case dict.get(cache.entries, key) {
-    Error(Nil) -> #(-1, cache)
-    Ok(value) -> #(value, LruCache(..cache, recent: touch(cache.recent, key)))
-  }
-}
-
-pub fn put(cache: LruCache, key: Int, value: Int) -> LruCache {
-  let recent = touch(cache.recent, key)
-  let entries = dict.insert(cache.entries, key, value)
-  // Over capacity by exactly one, so exactly one key goes: the last in the
-  // recency order, which is what \"least recently used\" names.
-  case list.length(recent) > cache.capacity {
-    False -> LruCache(..cache, entries: entries, recent: recent)
-    True -> {
-      let keep = list.take(recent, cache.capacity)
-      let dropped = list.drop(recent, cache.capacity)
-      LruCache(
-        ..cache,
-        entries: list.fold(dropped, entries, fn(acc, stale) {
-          dict.delete(acc, stale)
-        }),
-        recent: keep,
-      )
-    }
-  }
-}
-
-/// The recency order, most recently used first. Moving a key to the front is
-/// what a real implementation does by unlinking and relinking a node; here it
-/// costs a walk, which is the price of having no back-pointers.
-fn touch(recent: List(Int), key: Int) -> List(Int) {
-  [key, ..list.filter(recent, fn(other) { other != key })]
-}",
-      ),
-      #(
-        "Solution 2 · Timestamps",
-        "",
+        "Timestamps",
+        "O(1) get · O(capacity) evict",
         "No recency order at all — just a counter, bumped on every use. Eviction becomes a scan for the smallest stamp, trading the reordering walk for a search. Worth seeing because it makes plain that \"least recently used\" is a minimum, not a position.",
         "import gleam/dict.{type Dict}
 import gleam/list
@@ -7003,6 +6952,59 @@ fn oldest(cache: LruCache) -> Int {
       }
     })
   found.0
+}",
+      ),
+      #(
+        "Linked Nodes",
+        "O(1) per operation · O(capacity) space",
+        "The structure the problem is really about: a doubly linked list of keys, newest first, plus a map from key to its node. The map makes finding a node O(1) and the back-pointers make unlinking it O(1) — neither alone is enough, which is the entire point.",
+        "import gleam/dict.{type Dict}
+import gleam/list
+
+pub type LruCache {
+  LruCache(capacity: Int, entries: Dict(Int, Int), recent: List(Int))
+}
+
+pub fn new(capacity: Int) -> LruCache {
+  LruCache(capacity, dict.new(), [])
+}
+
+/// Missing keys answer -1. Reading counts as use, so the cache comes back
+/// changed — which is the part that makes an LRU cache awkward to express with
+/// immutable values, and the reason the signature has to return both.
+pub fn get(cache: LruCache, key: Int) -> #(Int, LruCache) {
+  case dict.get(cache.entries, key) {
+    Error(Nil) -> #(-1, cache)
+    Ok(value) -> #(value, LruCache(..cache, recent: touch(cache.recent, key)))
+  }
+}
+
+pub fn put(cache: LruCache, key: Int, value: Int) -> LruCache {
+  let recent = touch(cache.recent, key)
+  let entries = dict.insert(cache.entries, key, value)
+  // Over capacity by exactly one, so exactly one key goes: the last in the
+  // recency order, which is what \"least recently used\" names.
+  case list.length(recent) > cache.capacity {
+    False -> LruCache(..cache, entries: entries, recent: recent)
+    True -> {
+      let keep = list.take(recent, cache.capacity)
+      let dropped = list.drop(recent, cache.capacity)
+      LruCache(
+        ..cache,
+        entries: list.fold(dropped, entries, fn(acc, stale) {
+          dict.delete(acc, stale)
+        }),
+        recent: keep,
+      )
+    }
+  }
+}
+
+/// The recency order, most recently used first. Moving a key to the front is
+/// what a real implementation does by unlinking and relinking a node; here it
+/// costs a walk, which is the price of having no back-pointers.
+fn touch(recent: List(Int), key: Int) -> List(Int) {
+  [key, ..list.filter(recent, fn(other) { other != key })]
 }",
       ),
     ],
@@ -7096,43 +7098,8 @@ pub fn nc134_merge_k_sorted_lists() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Divide & Conquer",
-        "O(n log k) time · O(k) space",
-        "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.",
-        "pub fn merge_k_lists(lists: List(List(Int))) -> List(Int) {
-  // Merge in pairs, halving the number of lists each round. Folding them in one
-  // at a time re-walks the growing result every time — O(k·n) — while pairing
-  // gives O(n log k) for the same merges, because each element is copied only
-  // once per round and there are log k rounds.
-  case lists {
-    [] -> []
-    [only] -> only
-    _ -> merge_k_lists(pair_up(lists))
-  }
-}
-
-fn pair_up(lists: List(List(Int))) -> List(List(Int)) {
-  case lists {
-    [first, second, ..rest] -> [merge(first, second), ..pair_up(rest)]
-    rest -> rest
-  }
-}
-
-fn merge(first: List(Int), second: List(Int)) -> List(Int) {
-  case first, second {
-    [], rest -> rest
-    rest, [] -> rest
-    [a, ..a_rest], [b, ..b_rest] ->
-      case a <= b {
-        True -> [a, ..merge(a_rest, second)]
-        False -> [b, ..merge(first, b_rest)]
-      }
-  }
-}",
-      ),
-      #(
-        "Solution 2 · Smallest head",
-        "",
+        "Smallest Head Scan",
+        "O(n·k) time · O(1) space",
         "The heap solution with the heap spelled out as a scan, for languages that have no priority queue: O(k) per element rather than O(log k), which is the entire difference the heap makes. What it does not need is any pairing structure — it works on lists arriving one at a time.",
         "import gleam/list
 
@@ -7189,6 +7156,41 @@ fn first_of(values: List(Int)) -> Int {
   case values {
     [head, ..] -> head
     [] -> 0
+  }
+}",
+      ),
+      #(
+        "Divide & Conquer",
+        "O(n log k) time · O(k) space",
+        "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.",
+        "pub fn merge_k_lists(lists: List(List(Int))) -> List(Int) {
+  // Merge in pairs, halving the number of lists each round. Folding them in one
+  // at a time re-walks the growing result every time — O(k·n) — while pairing
+  // gives O(n log k) for the same merges, because each element is copied only
+  // once per round and there are log k rounds.
+  case lists {
+    [] -> []
+    [only] -> only
+    _ -> merge_k_lists(pair_up(lists))
+  }
+}
+
+fn pair_up(lists: List(List(Int))) -> List(List(Int)) {
+  case lists {
+    [first, second, ..rest] -> [merge(first, second), ..pair_up(rest)]
+    rest -> rest
+  }
+}
+
+fn merge(first: List(Int), second: List(Int)) -> List(Int) {
+  case first, second {
+    [], rest -> rest
+    rest, [] -> rest
+    [a, ..a_rest], [b, ..b_rest] ->
+      case a <= b {
+        True -> [a, ..merge(a_rest, second)]
+        False -> [b, ..merge(first, b_rest)]
+      }
   }
 }",
       ),
@@ -7917,31 +7919,8 @@ pub fn nc13_longest_substring() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Sliding Window",
-        "O(n) time · O(n) space",
-        "Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.",
-        "import gleam/dict
-import gleam/int
-import gleam/list
-import gleam/string
-
-pub fn length_of_longest_substring(s: String) -> Int {
-  let #(_, _, best) =
-    string.to_graphemes(s)
-    |> list.index_fold(#(dict.new(), 0, 0), fn(acc, g, i) {
-      let #(last_seen, start, best) = acc
-      let start = case dict.get(last_seen, g) {
-        Ok(j) if j >= start -> j + 1
-        _ -> start
-      }
-      #(dict.insert(last_seen, g, i), start, int.max(best, i - start + 1))
-    })
-  best
-}",
-      ),
-      #(
-        "Solution 2 · Shrinking window",
-        "",
+        "Shrinking Window",
+        "O(n) time · O(k) space",
         "The window itself is the bookkeeping: on a repeat, drop everything up to and including the earlier copy. No last-seen map at all, at the cost of scanning the window on each repeat.",
         "import gleam/int
 import gleam/list
@@ -7970,6 +7949,29 @@ fn drop_through(window: List(String), g: String) -> List(String) {
         False -> drop_through(rest, g)
       }
   }
+}",
+      ),
+      #(
+        "Sliding Window",
+        "O(n) time · O(n) space",
+        "Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.",
+        "import gleam/dict
+import gleam/int
+import gleam/list
+import gleam/string
+
+pub fn length_of_longest_substring(s: String) -> Int {
+  let #(_, _, best) =
+    string.to_graphemes(s)
+    |> list.index_fold(#(dict.new(), 0, 0), fn(acc, g, i) {
+      let #(last_seen, start, best) = acc
+      let start = case dict.get(last_seen, g) {
+        Ok(j) if j >= start -> j + 1
+        _ -> start
+      }
+      #(dict.insert(last_seen, g, i), start, int.max(best, i - start + 1))
+    })
+  best
 }",
       ),
     ],
@@ -9968,9 +9970,9 @@ pub fn nc17_min_stack() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Two Stacks",
+        "Pair Stack",
         "O(1) per operation · O(n) space",
-        "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.",
+        "Each entry carries the minimum of everything at or below it, so getMin is a peek. One structure instead of two, at the cost of a second number per value.",
         "import gleam/int
 
 pub type MinStack {
@@ -10011,9 +10013,9 @@ pub fn get_min(stack: MinStack) -> Result(Int, Nil) {
 }",
       ),
       #(
-        "Solution 2 · Two stacks",
-        "",
-        "Values in one stack, running minimums in a parallel one. The two concerns stay separate, which is what makes adding a max stack a copy-paste.",
+        "Two Stacks",
+        "O(1) per operation · O(n) space",
+        "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.",
         "import gleam/int
 
 /// Values in one stack, the running minimum in a parallel one. Same O(1)
@@ -10059,7 +10061,7 @@ pub fn get_min(stack: MinStack) -> Result(Int, Nil) {
     ],
     check: Check(
       signature: "pub type MinStack {
-  MinStack(entries: List(#(Int, Int)))
+  MinStack(values: List(Int), minimums: List(Int))
 }
 
 pub fn new() -> MinStack
@@ -10072,7 +10074,7 @@ pub fn top(stack: MinStack) -> Result(Int, Nil)
 
 pub fn get_min(stack: MinStack) -> Result(Int, Nil)",
       starter: "pub type MinStack {
-  MinStack(entries: List(#(Int, Int)))
+  MinStack(values: List(Int), minimums: List(Int))
 }
 
 pub fn new() -> MinStack {
@@ -10232,6 +10234,23 @@ pub fn nc19_binary_search() -> Embedded {
   Embedded(
     solutions: [
       #(
+        "Linear Scan",
+        "O(n) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+A plain indexed scan. O(n), so it fails the stated requirement — but it is what the halving has to beat, and it shows exactly what the sortedness buys.",
+        "import gleam/list
+
+pub fn search(nums: List(Int), target: Int) -> Result(Int, Nil) {
+  list.index_fold(nums, Error(Nil), fn(found, n, i) {
+    case found, n == target {
+      Error(Nil), True -> Ok(i)
+      _, _ -> found
+    }
+  })
+}",
+      ),
+      #(
         "Binary Search",
         "O(log n) time · O(1) space",
         "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
@@ -10262,23 +10281,6 @@ fn halve(nums: List(Int), target: Int, offset: Int) -> Result(Int, Nil) {
       }
     }
   }
-}",
-      ),
-      #(
-        "Solution 2 · First match scan",
-        "",
-        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-A plain indexed scan. O(n), so it fails the stated requirement — but it is what the halving has to beat, and it shows exactly what the sortedness buys.",
-        "import gleam/list
-
-pub fn search(nums: List(Int), target: Int) -> Result(Int, Nil) {
-  list.index_fold(nums, Error(Nil), fn(found, n, i) {
-    case found, n == target {
-      Error(Nil), True -> Ok(i)
-      _, _ -> found
-    }
-  })
 }",
       ),
     ],

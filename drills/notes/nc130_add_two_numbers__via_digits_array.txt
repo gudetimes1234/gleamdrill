@@ -1,1 +1,4 @@
+@kind Via Arrays
+@big-o O(n+m) time · O(n+m) space
+@order 1
 Read both lists into arrays, add positionally, then rebuild. The same arithmetic with the carry handled after the fact rather than during the walk — which is what makes clear that the single-pass version is doing two things at once. Converting to whole numbers instead would be simpler and quietly wrong: a long list overflows a double.

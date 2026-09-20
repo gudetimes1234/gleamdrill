@@ -978,37 +978,48 @@ type Meta {
 /// `@big-o`, `@order`) are metadata, stripped from the prose; a `@shared/<name>`
 /// line resolves to notes/shared/<name>.txt — that one hop is the entire
 /// mechanism for prose that repeats across problems. Missing file: no note.
-fn note_meta(stem: String) -> Meta {
-  case simplifile.read("notes/" <> stem <> ".txt") {
-    Error(_) -> Meta(kind: "", complexity: "", order: default_order, note: "")
-    Ok(text) -> {
-      let #(directives, prose) =
-        string.trim(text)
-        |> string.split("\n")
-        |> list.partition(fn(line) {
-          string.starts_with(line, "@kind ")
-          || string.starts_with(line, "@big-o ")
-          || string.starts_with(line, "@order ")
-        })
-      let value = fn(prefix: String) {
-        directives
-        |> list.find_map(fn(line) {
-          case string.starts_with(line, prefix) {
-            True ->
-              Ok(string.trim(string.drop_start(line, string.length(prefix))))
-            False -> Error(Nil)
-          }
-        })
-        |> result.unwrap("")
+/// A note is shared across languages by stem, on the assumption that the
+/// same stem is the same algorithm everywhere. Where one language's file
+/// genuinely is a different technique -- an LRU cache leaning on an
+/// insertion-ordered dict has no honest Gleam, Elixir or Go twin -- a
+/// `notes/<stem><ext>.txt` (`nc133_lru_cache.go.txt`) speaks for that
+/// language alone and the shared note is not consulted.
+fn note_meta(stem: String, extension: String) -> Meta {
+  case simplifile.read("notes/" <> stem <> extension <> ".txt") {
+    Ok(text) -> parse_note(text)
+    Error(_) ->
+      case simplifile.read("notes/" <> stem <> ".txt") {
+        Error(_) -> Meta(kind: "", complexity: "", order: default_order, note: "")
+        Ok(text) -> parse_note(text)
       }
-      Meta(
-        kind: value("@kind "),
-        complexity: value("@big-o "),
-        order: value("@order ") |> int.parse |> result.unwrap(default_order),
-        note: resolve_note(string.join(prose, "\n")),
-      )
-    }
   }
+}
+
+fn parse_note(text: String) -> Meta {
+  let #(directives, prose) =
+    string.trim(text)
+    |> string.split("\n")
+    |> list.partition(fn(line) {
+      string.starts_with(line, "@kind ")
+      || string.starts_with(line, "@big-o ")
+      || string.starts_with(line, "@order ")
+    })
+  let value = fn(prefix: String) {
+    directives
+    |> list.find_map(fn(line) {
+      case string.starts_with(line, prefix) {
+        True -> Ok(string.trim(string.drop_start(line, string.length(prefix))))
+        False -> Error(Nil)
+      }
+    })
+    |> result.unwrap("")
+  }
+  Meta(
+    kind: value("@kind "),
+    complexity: value("@big-o "),
+    order: value("@order ") |> int.parse |> result.unwrap(default_order),
+    note: resolve_note(string.join(prose, "\n")),
+  )
 }
 
 /// The primary plus any `<module>__<variant>` alternates, as
@@ -1032,7 +1043,7 @@ fn variant_entries(
     |> list.map(string.drop_end(_, string.length(extension)))
 
   [module, ..alternates]
-  |> list.map(fn(stem) { #(stem, note_meta(stem)) })
+  |> list.map(fn(stem) { #(stem, note_meta(stem, extension)) })
   |> list.sort(fn(a, b) {
     let #(stem_a, meta_a) = a
     let #(stem_b, meta_b) = b
@@ -1079,7 +1090,7 @@ fn variant_sources(
   |> list.map(fn(entry) {
     let #(label, complexity, stem) = entry
     let assert Ok(code) = simplifile.read(directory <> stem <> extension)
-    #(label, complexity, note_meta(stem).note, string.trim_end(code))
+    #(label, complexity, note_meta(stem, extension).note, string.trim_end(code))
   })
 }
 

@@ -1,24 +1,24 @@
 defmodule Solution do
-  # Immutable, so the "stack" is a value that each operation returns a new
-  # version of. Each entry carries the minimum of everything at or below it.
-  def new, do: []
+  # Values in one list, running minimums in a parallel one. The two concerns
+  # stay separate, which is what makes adding a max stack a copy-paste.
+  def new, do: {[], []}
 
-  def push(stack, value) do
+  def push({values, minimums}, value) do
     smallest =
-      case stack do
-        [{_value, current} | _] -> min(value, current)
+      case minimums do
+        [current | _] -> min(value, current)
         [] -> value
       end
 
-    [{value, smallest} | stack]
+    {[value | values], [smallest | minimums]}
   end
 
-  def pop([_top | rest]), do: rest
-  def pop([]), do: []
+  def pop({[_v | values], [_m | minimums]}), do: {values, minimums}
+  def pop(empty), do: empty
 
-  def top([{value, _min} | _]), do: value
-  def top([]), do: nil
+  def top({[value | _], _minimums}), do: value
+  def top({[], _minimums}), do: nil
 
-  def get_min([{_value, minimum} | _]), do: minimum
-  def get_min([]), do: nil
+  def get_min({_values, [minimum | _]}), do: minimum
+  def get_min({_values, []}), do: nil
 end

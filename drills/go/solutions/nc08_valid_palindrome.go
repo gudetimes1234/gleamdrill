@@ -1,21 +1,29 @@
 package main
 
-import (
-	"strings"
-	"unicode"
-)
+import "unicode"
 
 func isPalindrome(s string) bool {
-	cleaned := []rune{}
-	for _, c := range strings.ToLower(s) {
-		if unicode.IsLetter(c) || unicode.IsDigit(c) {
-			cleaned = append(cleaned, c)
+	runes := []rune(s)
+	left, right := 0, len(runes)-1
+	for left < right {
+		// Skip the punctuation in place: no cleaned copy is ever built.
+		if !isAlphanumeric(runes[left]) {
+			left++
+			continue
 		}
-	}
-	for i, j := 0, len(cleaned)-1; i < j; i, j = i+1, j-1 {
-		if cleaned[i] != cleaned[j] {
+		if !isAlphanumeric(runes[right]) {
+			right--
+			continue
+		}
+		if unicode.ToLower(runes[left]) != unicode.ToLower(runes[right]) {
 			return false
 		}
+		left++
+		right--
 	}
 	return true
+}
+
+func isAlphanumeric(c rune) bool {
+	return unicode.IsLetter(c) || unicode.IsDigit(c)
 }

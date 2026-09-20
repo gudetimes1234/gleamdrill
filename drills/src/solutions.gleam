@@ -21,15 +21,15 @@ import nc03_two_sum
 import nc03_two_sum__brute_force
 import nc03_two_sum__sorted_two_pointer
 import nc04_group_anagrams
-import nc04_group_anagrams__count_key
+import nc04_group_anagrams__sorted_key
 import nc05_top_k_frequent
-import nc05_top_k_frequent__bucket_sort
+import nc05_top_k_frequent__sorting
 import nc06_product_except_self
 import nc06_product_except_self__brute_force
 import nc07_longest_consecutive
 import nc07_longest_consecutive__sorting
 import nc08_valid_palindrome
-import nc08_valid_palindrome__two_pointers
+import nc08_valid_palindrome__cleaned_reverse
 import nc09_two_sum_sorted
 import nc09_two_sum_sorted__binary_search
 import nc100_edit_distance
@@ -89,7 +89,7 @@ import nc124_cheapest_flights__breadth_first
 import nc125_reverse_linked_list
 import nc125_reverse_linked_list__by_folding
 import nc126_merge_two_sorted_lists
-import nc126_merge_two_sorted_lists__iterative
+import nc126_merge_two_sorted_lists__by_recursion
 import nc127_reorder_list
 import nc127_reorder_list__from_both_ends
 import nc128_remove_nth_from_end
@@ -149,7 +149,7 @@ import nc15_permutation_in_string__sorted_windows
 import nc16_valid_parentheses
 import nc16_valid_parentheses__reduction
 import nc17_min_stack
-import nc17_min_stack__two_stacks
+import nc17_min_stack__pair_stack
 import nc18_daily_temperatures
 import nc18_daily_temperatures__brute_force
 import nc19_binary_search
@@ -348,9 +348,9 @@ pub fn main() {
     check_two_sum(nc03_two_sum__brute_force.two_sum),
     check_two_sum(nc03_two_sum__sorted_two_pointer.two_sum),
     check_group_anagrams(nc04_group_anagrams.group_anagrams),
-    check_group_anagrams(nc04_group_anagrams__count_key.group_anagrams),
+    check_group_anagrams(nc04_group_anagrams__sorted_key.group_anagrams),
     check_top_k_frequent(nc05_top_k_frequent.top_k_frequent),
-    check_top_k_frequent(nc05_top_k_frequent__bucket_sort.top_k_frequent),
+    check_top_k_frequent(nc05_top_k_frequent__sorting.top_k_frequent),
     check_product_except_self(nc06_product_except_self.product_except_self),
     check_product_except_self(
       nc06_product_except_self__brute_force.product_except_self,
@@ -360,7 +360,7 @@ pub fn main() {
       nc07_longest_consecutive__sorting.longest_consecutive,
     ),
     check_valid_palindrome(nc08_valid_palindrome.is_palindrome),
-    check_valid_palindrome(nc08_valid_palindrome__two_pointers.is_palindrome),
+    check_valid_palindrome(nc08_valid_palindrome__cleaned_reverse.is_palindrome),
     check_two_sum_sorted(nc09_two_sum_sorted.two_sum_sorted),
     check_two_sum_sorted(nc09_two_sum_sorted__binary_search.two_sum_sorted),
     check_three_sum(nc10_three_sum.three_sum),
@@ -393,11 +393,11 @@ pub fn main() {
       nc17_min_stack.get_min,
     ),
     check_min_stack(
-      nc17_min_stack__two_stacks.new,
-      nc17_min_stack__two_stacks.push,
-      nc17_min_stack__two_stacks.pop,
-      nc17_min_stack__two_stacks.top,
-      nc17_min_stack__two_stacks.get_min,
+      nc17_min_stack__pair_stack.new,
+      nc17_min_stack__pair_stack.push,
+      nc17_min_stack__pair_stack.pop,
+      nc17_min_stack__pair_stack.top,
+      nc17_min_stack__pair_stack.get_min,
     ),
     check_daily_temperatures(nc18_daily_temperatures.daily_temperatures),
     check_daily_temperatures(
@@ -750,7 +750,7 @@ pub fn main() {
     check_reverse_list(nc125_reverse_linked_list__by_folding.reverse_list),
     check_merge_two_lists(nc126_merge_two_sorted_lists.merge_two_lists),
     check_merge_two_lists(
-      nc126_merge_two_sorted_lists__iterative.merge_two_lists,
+      nc126_merge_two_sorted_lists__by_recursion.merge_two_lists,
     ),
     check_reorder_list(nc127_reorder_list.reorder_list),
     check_reorder_list(nc127_reorder_list__from_both_ends.reorder_list),

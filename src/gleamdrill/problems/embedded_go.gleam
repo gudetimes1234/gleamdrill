@@ -209,11 +209,11 @@ pub fn nc04_group_anagrams() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Count Key",
-        "O(n·k) time · O(n·k) space",
+        "Sorted Key",
+        "O(n·k log k) time · O(n·k) space",
         "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
 
-Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len) to build against sorting's O(len log len); the sorted word needs no assumption about the alphabet.",
+The sorted word itself is the key. Shorter than tallying letters, and it works for any alphabet rather than just a-z.",
         "package main
 
 import \"sort\"
@@ -238,11 +238,11 @@ func groupAnagrams(strs []string) [][]string {
 }",
       ),
       #(
-        "Solution 2 · Count key",
-        "",
+        "Count Key",
+        "O(n·k) time · O(n·k) space",
         "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
 
-A letter tally is anagram-invariant too, and costs O(len) to build rather than O(len log len).",
+Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len) to build against sorting's O(len log len); the sorted word needs no assumption about the alphabet.",
         "package main
 
 func groupAnagrams(strs []string) [][]string {
@@ -298,9 +298,11 @@ pub fn nc05_top_k_frequent() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Bucket Sort",
-        "O(n) time · O(n) space",
-        "Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.",
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+
+Straight sort by frequency: O(n log n) rather than the bucket version's O(n), but it is the version you can write without thinking.",
         "package main
 
 import \"sort\"
@@ -319,9 +321,9 @@ func topKFrequent(nums []int, k int) []int {
 }",
       ),
       #(
-        "Solution 2 · Bucket sort",
-        "",
-        "A count can never exceed the input length, so one bucket per frequency covers every possibility. Reading the buckets downwards gives the answer in O(n) and replaces the comparison sort entirely.",
+        "Bucket Sort",
+        "O(n) time · O(n) space",
+        "Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.",
         "package main
 
 func topKFrequent(nums []int, k int) []int {
@@ -533,9 +535,9 @@ pub fn nc08_valid_palindrome() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Two Pointers",
-        "O(n) time · O(1) space",
-        "Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.",
+        "Nifty Python · Reverse",
+        "O(n) time · O(n) space",
+        "Strip, then compare against the reverse. Allocates a second string instead of converging two pointers, but it is one line of intent.",
         "package main
 
 import (
@@ -559,9 +561,9 @@ func isPalindrome(s string) bool {
 }",
       ),
       #(
-        "Solution 2 · Two pointers",
-        "",
-        "Compare inwards from both ends, skipping anything that is not alphanumeric as you go. No second string is built.",
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.",
         "package main
 
 import \"unicode\"
@@ -594,10 +596,16 @@ func isAlphanumeric(c rune) bool {
       ),
     ],
     check: Check(
-      signature: "func isPalindrome(s string) bool",
+      signature: "func isPalindrome(s string) bool
+
+func isAlphanumeric(c rune) bool",
       starter: "package main
 
 func isPalindrome(s string) bool {
+	panic(\"todo\")
+}
+
+func isAlphanumeric(c rune) bool {
 	panic(\"todo\")
 }",
       harness: "package main
@@ -3930,8 +3938,8 @@ func reverseList(head *ListNode) *ListNode {
 }",
       ),
       #(
-        "Solution 2 · By folding",
-        "",
+        "By Folding",
+        "O(n) time · O(n) space",
         "The accumulator, named by the standard library instead of written out. Worth putting next to the hand-written loop: a left fold that prepends is the definition of reversing, which is why the built-in exists at all.",
         "package main
 
@@ -3976,9 +3984,9 @@ pub fn nc126_merge_two_sorted_lists() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Iterative",
-        "O(n+m) time · O(1) space",
-        "Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.",
+        "Recursion",
+        "O(n+m) time · O(n+m) space",
+        "The same merge with the return value doing the joining: no dummy, no tail reference. One frame per node is the cost, and it is exactly what the loop trades away.",
         "package main
 
 func mergeTwoLists(list1 *ListNode, list2 *ListNode) *ListNode {
@@ -3998,9 +4006,9 @@ func mergeTwoLists(list1 *ListNode, list2 *ListNode) *ListNode {
 }",
       ),
       #(
-        "Solution 2 · Iterative",
-        "",
-        "The same merge with the recursion turned into a loop: build the answer backwards in an accumulator and reverse once at the end. That accumulator is the functional twin of the dummy head, and the reversal costs one extra pass rather than one extra frame per node.",
+        "Iterative",
+        "O(n+m) time · O(1) space",
+        "Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.",
         "package main
 
 func mergeTwoLists(list1 *ListNode, list2 *ListNode) *ListNode {
@@ -4052,34 +4060,8 @@ pub fn nc127_reorder_list() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Fast & Slow Pointers",
-        "O(n) time · O(1) space",
-        "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.",
-        "package main
-
-func reorderList(head *ListNode) {
-	if head == nil || head.Next == nil {
-		return
-	}
-	// Find the middle, reverse the second half, then interleave the two.
-	slow, fast := head, head
-	for fast.Next != nil && fast.Next.Next != nil {
-		slow, fast = slow.Next, fast.Next.Next
-	}
-	var second *ListNode
-	for node := slow.Next; node != nil; {
-		node.Next, second, node = second, node, node.Next
-	}
-	slow.Next = nil
-	first := head
-	for second != nil {
-		first.Next, second.Next, first, second = second, first.Next, first.Next, second.Next
-	}
-}",
-      ),
-      #(
-        "Solution 2 · From both ends",
-        "",
+        "Two-Ended Walk",
+        "O(n²) time · O(1) space",
         "Take from the front, then from the back, until they meet. Reads exactly like the specification and needs no midpoint and no reversal — but reaching the back is a full walk of what is left each time, so it is O(n²) where the split-and-reverse version is O(n).",
         "package main
 
@@ -4102,6 +4084,32 @@ func reorderList(head *ListNode) {
 	}
 	if len(nodes) > 0 {
 		nodes[left].Next = nil
+	}
+}",
+      ),
+      #(
+        "Fast & Slow Pointers",
+        "O(n) time · O(1) space",
+        "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.",
+        "package main
+
+func reorderList(head *ListNode) {
+	if head == nil || head.Next == nil {
+		return
+	}
+	// Find the middle, reverse the second half, then interleave the two.
+	slow, fast := head, head
+	for fast.Next != nil && fast.Next.Next != nil {
+		slow, fast = slow.Next, fast.Next.Next
+	}
+	var second *ListNode
+	for node := slow.Next; node != nil; {
+		node.Next, second, node = second, node, node.Next
+	}
+	slow.Next = nil
+	first := head
+	for second != nil {
+		first.Next, second.Next, first, second = second, first.Next, first.Next, second.Next
 	}
 }",
       ),
@@ -4211,29 +4219,8 @@ pub fn nc129_copy_random_list() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Hash Map",
-        "O(n) time · O(n) space",
-        "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.",
-        "package main
-
-func copyRandomList(head *RandomNode) *RandomNode {
-	// Two passes with a map from original to copy: make every copy first,
-	// then wire Next and Random through the map, so a Random pointing
-	// forward finds its copy already made.
-	copies := map[*RandomNode]*RandomNode{}
-	for node := head; node != nil; node = node.Next {
-		copies[node] = &RandomNode{Val: node.Val}
-	}
-	for node := head; node != nil; node = node.Next {
-		copies[node].Next = copies[node.Next]
-		copies[node].Random = copies[node.Random]
-	}
-	return copies[head]
-}",
-      ),
-      #(
-        "Solution 2 · By searching",
-        "",
+        "Brute Force",
+        "O(n²) time · O(1) extra space",
         "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
 
 The same translation without the map: for each link, search for the node it names. O(n²) against O(n), and the contrast is the lesson — the map is not an optimisation bolted on afterwards, it is the same lookup, paid for once instead of once per node.",
@@ -4263,6 +4250,27 @@ func copyRandomList(head *RandomNode) *RandomNode {
 		}
 	}
 	return dummy.Next
+}",
+      ),
+      #(
+        "Hash Map",
+        "O(n) time · O(n) space",
+        "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.",
+        "package main
+
+func copyRandomList(head *RandomNode) *RandomNode {
+	// Two passes with a map from original to copy: make every copy first,
+	// then wire Next and Random through the map, so a Random pointing
+	// forward finds its copy already made.
+	copies := map[*RandomNode]*RandomNode{}
+	for node := head; node != nil; node = node.Next {
+		copies[node] = &RandomNode{Val: node.Val}
+	}
+	for node := head; node != nil; node = node.Next {
+		copies[node].Next = copies[node.Next]
+		copies[node].Random = copies[node.Random]
+	}
+	return copies[head]
 }",
       ),
     ],
@@ -4643,9 +4651,59 @@ pub fn nc133_lru_cache() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Nifty Python · Dict Order",
+        "Timestamps",
+        "O(1) get · O(capacity) evict",
+        "No recency order at all — just a counter, bumped on every use. Eviction becomes a scan for the smallest stamp, trading the reordering walk for a search. Worth seeing because it makes plain that \"least recently used\" is a minimum, not a position.",
+        "package main
+
+type stamped struct {
+	value, lastUsed int
+}
+
+// Stamp each entry with the tick of its last use; eviction scans for the
+// oldest stamp. O(capacity) per eviction, no linked list.
+type LRUCache struct {
+	capacity int
+	clock    int
+	entries  map[int]*stamped
+}
+
+func Constructor(capacity int) LRUCache {
+	return LRUCache{capacity: capacity, entries: map[int]*stamped{}}
+}
+
+func (c *LRUCache) Get(key int) int {
+	e, ok := c.entries[key]
+	if !ok {
+		return -1
+	}
+	c.clock++
+	e.lastUsed = c.clock
+	return e.value
+}
+
+func (c *LRUCache) Put(key int, value int) {
+	c.clock++
+	if e, ok := c.entries[key]; ok {
+		e.value, e.lastUsed = value, c.clock
+		return
+	}
+	if len(c.entries) == c.capacity {
+		oldestKey, oldestTick := 0, c.clock+1
+		for k, e := range c.entries {
+			if e.lastUsed < oldestTick {
+				oldestKey, oldestTick = k, e.lastUsed
+			}
+		}
+		delete(c.entries, oldestKey)
+	}
+	c.entries[key] = &stamped{value, c.clock}
+}",
+      ),
+      #(
+        "Linked Nodes",
         "O(1) per operation · O(capacity) space",
-        "Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A map alone gives the first and a list alone gives the second — the structure is whatever supplies both. Where the language's map already remembers insertion order, deleting a key and putting it back *is* the recency list.",
+        "The structure the problem is really about: a doubly linked list of keys, newest first, plus a map from key to its node. The map makes finding a node O(1) and the back-pointers make unlinking it O(1) — neither alone is enough, which is the entire point.",
         "package main
 
 type entry struct {
@@ -4702,56 +4760,6 @@ func (c *LRUCache) unlink(e *entry) {
 func (c *LRUCache) pushFront(e *entry) {
 	e.next, e.prev = c.head.next, c.head
 	c.head.next.prev, c.head.next = e, e
-}",
-      ),
-      #(
-        "Solution 2 · Timestamps",
-        "",
-        "No recency order at all — just a counter, bumped on every use. Eviction becomes a scan for the smallest stamp, trading the reordering walk for a search. Worth seeing because it makes plain that \"least recently used\" is a minimum, not a position.",
-        "package main
-
-type stamped struct {
-	value, lastUsed int
-}
-
-// Stamp each entry with the tick of its last use; eviction scans for the
-// oldest stamp. O(capacity) per eviction, no linked list.
-type LRUCache struct {
-	capacity int
-	clock    int
-	entries  map[int]*stamped
-}
-
-func Constructor(capacity int) LRUCache {
-	return LRUCache{capacity: capacity, entries: map[int]*stamped{}}
-}
-
-func (c *LRUCache) Get(key int) int {
-	e, ok := c.entries[key]
-	if !ok {
-		return -1
-	}
-	c.clock++
-	e.lastUsed = c.clock
-	return e.value
-}
-
-func (c *LRUCache) Put(key int, value int) {
-	c.clock++
-	if e, ok := c.entries[key]; ok {
-		e.value, e.lastUsed = value, c.clock
-		return
-	}
-	if len(c.entries) == c.capacity {
-		oldestKey, oldestTick := 0, c.clock+1
-		for k, e := range c.entries {
-			if e.lastUsed < oldestTick {
-				oldestKey, oldestTick = k, e.lastUsed
-			}
-		}
-		delete(c.entries, oldestKey)
-	}
-	c.entries[key] = &stamped{value, c.clock}
 }",
       ),
     ],
@@ -4829,9 +4837,9 @@ pub fn nc134_merge_k_sorted_lists() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Divide & Conquer",
+        "Heap",
         "O(n log k) time · O(k) space",
-        "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.",
+        "Take the smallest head across all the lists, over and over — the heap is what makes \"smallest of k\" cost O(log k) instead of a scan of k. The tie-break in the heap entry matters: two equal values would otherwise send the comparison on to the nodes themselves, which have no ordering.",
         "package main
 
 import \"container/heap\"
@@ -4872,8 +4880,8 @@ func mergeKLists(lists []*ListNode) *ListNode {
 }",
       ),
       #(
-        "Solution 2 · Smallest head",
-        "",
+        "Smallest Head Scan",
+        "O(n·k) time · O(1) space",
         "The heap solution with the heap spelled out as a scan, for languages that have no priority queue: O(k) per element rather than O(log k), which is the entire difference the heap makes. What it does not need is any pairing structure — it works on lists arriving one at a time.",
         "package main
 
@@ -4898,46 +4906,71 @@ func mergeKLists(lists []*ListNode) *ListNode {
 	}
 }",
       ),
-    ],
-    check: Check(
-      signature: "type headHeap []*ListNode
-
-func (h headHeap) Len() int           { return len(h) }
-
-func (h headHeap) Less(i, j int) bool { return h[i].Val < h[j].Val }
-
-func (h headHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-
-func (h *headHeap) Push(x any)        { *h = append(*h, x.(*ListNode)) }
-
-func (h *headHeap) Pop() any
-
-func mergeKLists(lists []*ListNode) *ListNode",
-      starter: "package main
-
-type headHeap []*ListNode
-
-func (h headHeap) Len() int           { return len(h) } {
-	panic(\"todo\")
-}
-
-func (h headHeap) Less(i, j int) bool { return h[i].Val < h[j].Val } {
-	panic(\"todo\")
-}
-
-func (h headHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] } {
-	panic(\"todo\")
-}
-
-func (h *headHeap) Push(x any)        { *h = append(*h, x.(*ListNode)) } {
-	panic(\"todo\")
-}
-
-func (h *headHeap) Pop() any {
-	panic(\"todo\")
-}
+      #(
+        "Divide & Conquer",
+        "O(n log k) time · O(k) space",
+        "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.",
+        "package main
 
 func mergeKLists(lists []*ListNode) *ListNode {
+	// Merge in pairs, halving the number of lists each round. Folding them in
+	// one at a time re-walks the growing result every time -- O(k*n) -- while
+	// pairing gives O(n log k) for the same merges, because each element is
+	// copied once per round and there are log k rounds.
+	remaining := []*ListNode{}
+	for _, head := range lists {
+		if head != nil {
+			remaining = append(remaining, head)
+		}
+	}
+	if len(remaining) == 0 {
+		return nil
+	}
+	for len(remaining) > 1 {
+		merged := []*ListNode{}
+		for i := 0; i < len(remaining); i += 2 {
+			if i+1 < len(remaining) {
+				merged = append(merged, merge(remaining[i], remaining[i+1]))
+			} else {
+				merged = append(merged, remaining[i])
+			}
+		}
+		remaining = merged
+	}
+	return remaining[0]
+}
+
+func merge(first, second *ListNode) *ListNode {
+	dummy := &ListNode{}
+	tail := dummy
+	for first != nil && second != nil {
+		if first.Val <= second.Val {
+			tail.Next, first = first, first.Next
+		} else {
+			tail.Next, second = second, second.Next
+		}
+		tail = tail.Next
+	}
+	if first != nil {
+		tail.Next = first
+	} else {
+		tail.Next = second
+	}
+	return dummy.Next
+}",
+      ),
+    ],
+    check: Check(
+      signature: "func mergeKLists(lists []*ListNode) *ListNode
+
+func merge(first, second *ListNode) *ListNode",
+      starter: "package main
+
+func mergeKLists(lists []*ListNode) *ListNode {
+	panic(\"todo\")
+}
+
+func merge(first, second *ListNode) *ListNode {
 	panic(\"todo\")
 }",
       harness: "package main
@@ -5338,6 +5371,29 @@ pub fn nc13_longest_substring() -> Embedded {
   Embedded(
     solutions: [
       #(
+        "Shrinking Window",
+        "O(n) time · O(k) space",
+        "The window itself is the bookkeeping: on a repeat, drop everything up to and including the earlier copy. No last-seen map at all, at the cost of scanning the window on each repeat.",
+        "package main
+
+func lengthOfLongestSubstring(s string) int {
+	inWindow := map[byte]bool{}
+	start, best := 0, 0
+	for end := 0; end < len(s); end++ {
+		// Shrink one character at a time until the newcomer is unique.
+		for inWindow[s[end]] {
+			delete(inWindow, s[start])
+			start++
+		}
+		inWindow[s[end]] = true
+		if end-start+1 > best {
+			best = end - start + 1
+		}
+	}
+	return best
+}",
+      ),
+      #(
         "Sliding Window",
         "O(n) time · O(n) space",
         "Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.",
@@ -5355,29 +5411,6 @@ func lengthOfLongestSubstring(s string) int {
 		lastSeen[s[i]] = i
 		if i-start+1 > best {
 			best = i - start + 1
-		}
-	}
-	return best
-}",
-      ),
-      #(
-        "Solution 2 · Shrinking window",
-        "",
-        "The window itself is the bookkeeping: on a repeat, drop everything up to and including the earlier copy. No last-seen map at all, at the cost of scanning the window on each repeat.",
-        "package main
-
-func lengthOfLongestSubstring(s string) int {
-	inWindow := map[byte]bool{}
-	start, best := 0, 0
-	for end := 0; end < len(s); end++ {
-		// Shrink one character at a time until the newcomer is unique.
-		for inWindow[s[end]] {
-			delete(inWindow, s[start])
-			start++
-		}
-		inWindow[s[end]] = true
-		if end-start+1 > best {
-			best = end - start + 1
 		}
 	}
 	return best
@@ -6620,9 +6653,9 @@ pub fn nc17_min_stack() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Two Stacks",
+        "Pair Stack",
         "O(1) per operation · O(n) space",
-        "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.",
+        "Each entry carries the minimum of everything at or below it, so getMin is a peek. One structure instead of two, at the cost of a second number per value.",
         "package main
 
 // Each entry remembers the minimum of everything at or below it, so the
@@ -6659,9 +6692,9 @@ func (s *MinStack) GetMin() int {
 }",
       ),
       #(
-        "Solution 2 · Two stacks",
-        "",
-        "Values in one stack, running minimums in a parallel one. The two concerns stay separate, which is what makes adding a max stack a copy-paste.",
+        "Two Stacks",
+        "O(1) per operation · O(n) space",
+        "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.",
         "package main
 
 // The second stack holds only the running minima: push to it when a new
@@ -6839,6 +6872,26 @@ pub fn nc19_binary_search() -> Embedded {
   Embedded(
     solutions: [
       #(
+        "Linear Scan",
+        "O(n) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+A plain indexed scan. O(n), so it fails the stated requirement — but it is what the halving has to beat, and it shows exactly what the sortedness buys.",
+        "package main
+
+func search(nums []int, target int) int {
+	for i, n := range nums {
+		if n == target {
+			return i
+		}
+		if n > target {
+			break
+		}
+	}
+	return -1
+}",
+      ),
+      #(
         "Binary Search",
         "O(log n) time · O(1) space",
         "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
@@ -6857,26 +6910,6 @@ func search(nums []int, target int) int {
 			low = mid + 1
 		default:
 			high = mid - 1
-		}
-	}
-	return -1
-}",
-      ),
-      #(
-        "Solution 2 · First match scan",
-        "",
-        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-A plain indexed scan. O(n), so it fails the stated requirement — but it is what the halving has to beat, and it shows exactly what the sortedness buys.",
-        "package main
-
-func search(nums []int, target int) int {
-	for i, n := range nums {
-		if n == target {
-			return i
-		}
-		if n > target {
-			break
 		}
 	}
 	return -1

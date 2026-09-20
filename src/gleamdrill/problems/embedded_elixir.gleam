@@ -170,11 +170,11 @@ pub fn nc04_group_anagrams() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Count Key",
-        "O(n·k) time · O(n·k) space",
+        "Sorted Key",
+        "O(n·k log k) time · O(n·k) space",
         "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
 
-Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len) to build against sorting's O(len log len); the sorted word needs no assumption about the alphabet.",
+The sorted word itself is the key. Shorter than tallying letters, and it works for any alphabet rather than just a-z.",
         "defmodule Solution do
   def group_anagrams(strs) do
     strs
@@ -184,11 +184,11 @@ Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len
 end",
       ),
       #(
-        "Solution 2 · Count key",
-        "",
+        "Count Key",
+        "O(n·k) time · O(n·k) space",
         "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
 
-A letter tally is anagram-invariant too, and costs O(len) to build rather than O(len log len).",
+Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len) to build against sorting's O(len log len); the sorted word needs no assumption about the alphabet.",
         "defmodule Solution do
   def group_anagrams(strs) do
     strs
@@ -226,9 +226,11 @@ pub fn nc05_top_k_frequent() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Bucket Sort",
-        "O(n) time · O(n) space",
-        "Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.",
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sorting first buys order instead of O(1) lookup: what you want to compare ends up adjacent, so one linear pass finishes the job. O(n log n) rather than O(n), but nothing has to hold every value at once and there is no hash structure to reason about.
+
+Straight sort by frequency: O(n log n) rather than the bucket version's O(n), but it is the version you can write without thinking.",
         "defmodule Solution do
   def top_k_frequent(nums, k) do
     nums
@@ -240,9 +242,9 @@ pub fn nc05_top_k_frequent() -> Embedded {
 end",
       ),
       #(
-        "Solution 2 · Bucket sort",
-        "",
-        "A count can never exceed the input length, so one bucket per frequency covers every possibility. Reading the buckets downwards gives the answer in O(n) and replaces the comparison sort entirely.",
+        "Bucket Sort",
+        "O(n) time · O(n) space",
+        "Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.",
         "defmodule Solution do
   def top_k_frequent(nums, k) do
     buckets =
@@ -408,9 +410,9 @@ pub fn nc08_valid_palindrome() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Two Pointers",
-        "O(n) time · O(1) space",
-        "Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.",
+        "Nifty Python · Reverse",
+        "O(n) time · O(n) space",
+        "Strip, then compare against the reverse. Allocates a second string instead of converging two pointers, but it is one line of intent.",
         "defmodule Solution do
   def palindrome?(s) do
     cleaned = clean(s)
@@ -426,9 +428,9 @@ pub fn nc08_valid_palindrome() -> Embedded {
 end",
       ),
       #(
-        "Solution 2 · Two pointers",
-        "",
-        "Compare inwards from both ends, skipping anything that is not alphanumeric as you go. No second string is built.",
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.",
         "defmodule Solution do
   def palindrome?(s) do
     cleaned =
@@ -3673,8 +3675,8 @@ pub fn nc125_reverse_linked_list() -> Embedded {
 end",
       ),
       #(
-        "Solution 2 · By folding",
-        "",
+        "By Folding",
+        "O(n) time · O(n) space",
         "The accumulator, named by the standard library instead of written out. Worth putting next to the hand-written loop: a left fold that prepends is the definition of reversing, which is why the built-in exists at all.",
         "defmodule Solution do
   # The same accumulator, named by the standard library instead of written out.
@@ -3711,9 +3713,9 @@ pub fn nc126_merge_two_sorted_lists() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Iterative",
-        "O(n+m) time · O(1) space",
-        "Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.",
+        "Recursion",
+        "O(n+m) time · O(n+m) space",
+        "The same merge with the return value doing the joining: no dummy, no tail reference. One frame per node is the cost, and it is exactly what the loop trades away.",
         "defmodule Solution do
   # Take the smaller head and recurse on the rest. Because both inputs are
   # already sorted, whichever head is smaller is smaller than everything still
@@ -3729,8 +3731,8 @@ pub fn nc126_merge_two_sorted_lists() -> Embedded {
 end",
       ),
       #(
-        "Solution 2 · Iterative",
-        "",
+        "Iterative",
+        "O(n+m) time · O(1) space",
         "The same merge with the recursion turned into a loop: build the answer backwards in an accumulator and reverse once at the end. That accumulator is the functional twin of the dummy head, and the reversal costs one extra pass rather than one extra frame per node.",
         "defmodule Solution do
   # The same merge with the recursion turned into a loop: build the answer
@@ -3751,9 +3753,9 @@ end",
       ),
     ],
     check: Check(
-      signature: "def merge_two_lists(rest, rest)",
+      signature: "def merge_two_lists(first, second)",
       starter: "defmodule Solution do
-  def merge_two_lists(rest, rest) do
+  def merge_two_lists(first, second) do
     raise \"todo\"
   end
 end
@@ -3777,6 +3779,26 @@ pub fn nc127_reorder_list() -> Embedded {
   Embedded(
     solutions: [
       #(
+        "Two-Ended Walk",
+        "O(n²) time · O(1) space",
+        "Take from the front, then from the back, until they meet. Reads exactly like the specification and needs no midpoint and no reversal — but reaching the back is a full walk of what is left each time, so it is O(n²) where the split-and-reverse version is O(n).",
+        "defmodule Solution do
+  # Take from the front, then from the back, until they meet. Reads exactly like
+  # the specification and needs no midpoint and no reversal -- but each \"take
+  # from the back\" is a full walk of what is left, so it is O(n^2) where the
+  # split-and-reverse version is O(n).
+  def reorder_list(values), do: take_ends(values, [])
+
+  defp take_ends([], out), do: Enum.reverse(out)
+  defp take_ends([only], out), do: Enum.reverse([only | out])
+
+  defp take_ends([first | rest], out) do
+    {middle, [last]} = Enum.split(rest, length(rest) - 1)
+    take_ends(middle, [last, first | out])
+  end
+end",
+      ),
+      #(
         "Fast & Slow Pointers",
         "O(n) time · O(1) space",
         "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.",
@@ -3793,26 +3815,6 @@ pub fn nc127_reorder_list() -> Embedded {
   defp interleave([], rest), do: rest
   defp interleave(rest, []), do: rest
   defp interleave([a | a_rest], [b | b_rest]), do: [a, b | interleave(a_rest, b_rest)]
-end",
-      ),
-      #(
-        "Solution 2 · From both ends",
-        "",
-        "Take from the front, then from the back, until they meet. Reads exactly like the specification and needs no midpoint and no reversal — but reaching the back is a full walk of what is left each time, so it is O(n²) where the split-and-reverse version is O(n).",
-        "defmodule Solution do
-  # Take from the front, then from the back, until they meet. Reads exactly like
-  # the specification and needs no midpoint and no reversal -- but each \"take
-  # from the back\" is a full walk of what is left, so it is O(n^2) where the
-  # split-and-reverse version is O(n).
-  def reorder_list(values), do: take_ends(values, [])
-
-  defp take_ends([], out), do: Enum.reverse(out)
-  defp take_ends([only], out), do: Enum.reverse([only | out])
-
-  defp take_ends([first | rest], out) do
-    {middle, [last]} = Enum.split(rest, length(rest) - 1)
-    take_ends(middle, [last, first | out])
-  end
 end",
       ),
     ],
@@ -3918,6 +3920,30 @@ pub fn nc129_copy_random_list() -> Embedded {
   Embedded(
     solutions: [
       #(
+        "Brute Force",
+        "O(n²) time · O(1) extra space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+The same translation without the map: for each link, search for the node it names. O(n²) against O(n), and the contrast is the lesson — the map is not an optimisation bolted on afterwards, it is the same lookup, paid for once instead of once per node.",
+        "defmodule Solution do
+  # The same translation without the map: for each link, search the list for the
+  # node it names. O(n^2) against O(n), and the contrast is the lesson -- the
+  # map is not an optimisation bolted on afterwards, it is the same lookup the
+  # search does, paid for once instead of once per node.
+  def copy_random_list(nodes) do
+    Enum.map(nodes, fn {_id, value, random} ->
+      {value, position_of(nodes, random, 0)}
+    end)
+  end
+
+  defp position_of([], _id, _at), do: -1
+
+  defp position_of([{id, _value, _random} | _rest], id, at), do: at
+
+  defp position_of([_node | rest], id, at), do: position_of(rest, id, at + 1)
+end",
+      ),
+      #(
         "Hash Map",
         "O(n) time · O(n) space",
         "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.",
@@ -3943,30 +3969,6 @@ pub fn nc129_copy_random_list() -> Embedded {
       {value, Map.get(places, random, -1)}
     end)
   end
-end",
-      ),
-      #(
-        "Solution 2 · By searching",
-        "",
-        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-The same translation without the map: for each link, search for the node it names. O(n²) against O(n), and the contrast is the lesson — the map is not an optimisation bolted on afterwards, it is the same lookup, paid for once instead of once per node.",
-        "defmodule Solution do
-  # The same translation without the map: for each link, search the list for the
-  # node it names. O(n^2) against O(n), and the contrast is the lesson -- the
-  # map is not an optimisation bolted on afterwards, it is the same lookup the
-  # search does, paid for once instead of once per node.
-  def copy_random_list(nodes) do
-    Enum.map(nodes, fn {_id, value, random} ->
-      {value, position_of(nodes, random, 0)}
-    end)
-  end
-
-  defp position_of([], _id, _at), do: -1
-
-  defp position_of([{id, _value, _random} | _rest], id, at), do: at
-
-  defp position_of([_node | rest], id, at), do: position_of(rest, id, at + 1)
 end",
       ),
     ],
@@ -4309,47 +4311,8 @@ pub fn nc133_lru_cache() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Nifty Python · Dict Order",
-        "O(1) per operation · O(capacity) space",
-        "Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A map alone gives the first and a list alone gives the second — the structure is whatever supplies both. Where the language's map already remembers insertion order, deleting a key and putting it back *is* the recency list.",
-        "defmodule Solution do
-  def new(capacity), do: %{capacity: capacity, entries: %{}, recent: []}
-
-  @doc \"\"\"
-  Missing keys answer -1. Reading counts as use, so the cache comes back changed
-  -- which is the part that makes an LRU cache awkward to express with immutable
-  values, and the reason the return is a pair.
-  \"\"\"
-  def get(cache, key) do
-    case Map.fetch(cache.entries, key) do
-      :error -> {-1, cache}
-      {:ok, value} -> {value, %{cache | recent: touch(cache.recent, key)}}
-    end
-  end
-
-  def put(cache, key, value) do
-    recent = touch(cache.recent, key)
-    entries = Map.put(cache.entries, key, value)
-
-    # Over capacity by exactly one, so exactly one key goes: the last in the
-    # recency order, which is what \"least recently used\" names.
-    if length(recent) > cache.capacity do
-      {keep, dropped} = Enum.split(recent, cache.capacity)
-      %{cache | entries: Map.drop(entries, dropped), recent: keep}
-    else
-      %{cache | entries: entries, recent: recent}
-    end
-  end
-
-  # The recency order, most recently used first. Moving a key to the front is
-  # what a real implementation does by unlinking and relinking a node; here it
-  # costs a walk, which is the price of having no back-pointers.
-  defp touch(recent, key), do: [key | Enum.reject(recent, &(&1 == key))]
-end",
-      ),
-      #(
-        "Solution 2 · Timestamps",
-        "",
+        "Timestamps",
+        "O(1) get · O(capacity) evict",
         "No recency order at all — just a counter, bumped on every use. Eviction becomes a scan for the smallest stamp, trading the reordering walk for a search. Worth seeing because it makes plain that \"least recently used\" is a minimum, not a position.",
         "defmodule Solution do
   def new(capacity), do: %{capacity: capacity, clock: 0, entries: %{}}
@@ -4388,6 +4351,45 @@ end",
 
     key
   end
+end",
+      ),
+      #(
+        "Linked Nodes",
+        "O(1) per operation · O(capacity) space",
+        "The structure the problem is really about: a doubly linked list of keys, newest first, plus a map from key to its node. The map makes finding a node O(1) and the back-pointers make unlinking it O(1) — neither alone is enough, which is the entire point.",
+        "defmodule Solution do
+  def new(capacity), do: %{capacity: capacity, entries: %{}, recent: []}
+
+  @doc \"\"\"
+  Missing keys answer -1. Reading counts as use, so the cache comes back changed
+  -- which is the part that makes an LRU cache awkward to express with immutable
+  values, and the reason the return is a pair.
+  \"\"\"
+  def get(cache, key) do
+    case Map.fetch(cache.entries, key) do
+      :error -> {-1, cache}
+      {:ok, value} -> {value, %{cache | recent: touch(cache.recent, key)}}
+    end
+  end
+
+  def put(cache, key, value) do
+    recent = touch(cache.recent, key)
+    entries = Map.put(cache.entries, key, value)
+
+    # Over capacity by exactly one, so exactly one key goes: the last in the
+    # recency order, which is what \"least recently used\" names.
+    if length(recent) > cache.capacity do
+      {keep, dropped} = Enum.split(recent, cache.capacity)
+      %{cache | entries: Map.drop(entries, dropped), recent: keep}
+    else
+      %{cache | entries: entries, recent: recent}
+    end
+  end
+
+  # The recency order, most recently used first. Moving a key to the front is
+  # what a real implementation does by unlinking and relinking a node; here it
+  # costs a walk, which is the price of having no back-pointers.
+  defp touch(recent, key), do: [key | Enum.reject(recent, &(&1 == key))]
 end",
       ),
     ],
@@ -4446,34 +4448,8 @@ pub fn nc134_merge_k_sorted_lists() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Divide & Conquer",
-        "O(n log k) time · O(k) space",
-        "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.",
-        "defmodule Solution do
-  # Merge in pairs, halving the number of lists each round. Folding them in one
-  # at a time re-walks the growing result every time -- O(k*n) -- while pairing
-  # gives O(n log k) for the same merges, because each element is copied only
-  # once per round and there are log k rounds.
-  def merge_k_lists([]), do: []
-  def merge_k_lists([only]), do: only
-  def merge_k_lists(lists), do: merge_k_lists(pair_up(lists))
-
-  defp pair_up([first, second | rest]), do: [merge(first, second) | pair_up(rest)]
-  defp pair_up(rest), do: rest
-
-  defp merge([], rest), do: rest
-  defp merge(rest, []), do: rest
-
-  defp merge([a | a_rest] = first, [b | b_rest] = second) do
-    if a <= b,
-      do: [a | merge(a_rest, second)],
-      else: [b | merge(first, b_rest)]
-  end
-end",
-      ),
-      #(
-        "Solution 2 · Smallest head",
-        "",
+        "Smallest Head Scan",
+        "O(n·k) time · O(1) space",
         "The heap solution with the heap spelled out as a scan, for languages that have no priority queue: O(k) per element rather than O(log k), which is the entire difference the heap makes. What it does not need is any pairing structure — it works on lists arriving one at a time.",
         "defmodule Solution do
   # Take the smallest head across all the lists, over and over. This is the heap
@@ -4504,6 +4480,32 @@ end",
       [] -> take_smallest(rest, [taken | out])
       _ -> take_smallest([remainder | rest], [taken | out])
     end
+  end
+end",
+      ),
+      #(
+        "Divide & Conquer",
+        "O(n log k) time · O(k) space",
+        "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.",
+        "defmodule Solution do
+  # Merge in pairs, halving the number of lists each round. Folding them in one
+  # at a time re-walks the growing result every time -- O(k*n) -- while pairing
+  # gives O(n log k) for the same merges, because each element is copied only
+  # once per round and there are log k rounds.
+  def merge_k_lists([]), do: []
+  def merge_k_lists([only]), do: only
+  def merge_k_lists(lists), do: merge_k_lists(pair_up(lists))
+
+  defp pair_up([first, second | rest]), do: [merge(first, second) | pair_up(rest)]
+  defp pair_up(rest), do: rest
+
+  defp merge([], rest), do: rest
+  defp merge(rest, []), do: rest
+
+  defp merge([a | a_rest] = first, [b | b_rest] = second) do
+    if a <= b,
+      do: [a | merge(a_rest, second)],
+      else: [b | merge(first, b_rest)]
   end
 end",
       ),
@@ -4913,6 +4915,29 @@ pub fn nc13_longest_substring() -> Embedded {
   Embedded(
     solutions: [
       #(
+        "Shrinking Window",
+        "O(n) time · O(k) space",
+        "The window itself is the bookkeeping: on a repeat, drop everything up to and including the earlier copy. No last-seen map at all, at the cost of scanning the window on each repeat.",
+        "defmodule Solution do
+  def length_of_longest_substring(s) do
+    {_window, best} =
+      s
+      |> String.graphemes()
+      |> Enum.reduce({[], 0}, fn g, {window, best} ->
+        window = if g in window, do: drop_through(window, g), else: window
+        window = window ++ [g]
+        {window, max(best, length(window))}
+      end)
+
+    best
+  end
+
+  defp drop_through([g | rest], g), do: rest
+  defp drop_through([_other | rest], g), do: drop_through(rest, g)
+  defp drop_through([], _g), do: []
+end",
+      ),
+      #(
         "Sliding Window",
         "O(n) time · O(n) space",
         "Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.",
@@ -4935,29 +4960,6 @@ pub fn nc13_longest_substring() -> Embedded {
 
     best
   end
-end",
-      ),
-      #(
-        "Solution 2 · Shrinking window",
-        "",
-        "The window itself is the bookkeeping: on a repeat, drop everything up to and including the earlier copy. No last-seen map at all, at the cost of scanning the window on each repeat.",
-        "defmodule Solution do
-  def length_of_longest_substring(s) do
-    {_window, best} =
-      s
-      |> String.graphemes()
-      |> Enum.reduce({[], 0}, fn g, {window, best} ->
-        window = if g in window, do: drop_through(window, g), else: window
-        window = window ++ [g]
-        {window, max(best, length(window))}
-      end)
-
-    best
-  end
-
-  defp drop_through([g | rest], g), do: rest
-  defp drop_through([_other | rest], g), do: drop_through(rest, g)
-  defp drop_through([], _g), do: []
 end",
       ),
     ],
@@ -6114,9 +6116,9 @@ pub fn nc17_min_stack() -> Embedded {
   Embedded(
     solutions: [
       #(
-        "Two Stacks",
+        "Pair Stack",
         "O(1) per operation · O(n) space",
-        "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.",
+        "Each entry carries the minimum of everything at or below it, so getMin is a peek. One structure instead of two, at the cost of a second number per value.",
         "defmodule Solution do
   # Immutable, so the \"stack\" is a value that each operation returns a new
   # version of. Each entry carries the minimum of everything at or below it.
@@ -6143,9 +6145,9 @@ pub fn nc17_min_stack() -> Embedded {
 end",
       ),
       #(
-        "Solution 2 · Two stacks",
-        "",
-        "Values in one stack, running minimums in a parallel one. The two concerns stay separate, which is what makes adding a max stack a copy-paste.",
+        "Two Stacks",
+        "O(1) per operation · O(n) space",
+        "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.",
         "defmodule Solution do
   # Values in one list, running minimums in a parallel one. The two concerns
   # stay separate, which is what makes adding a max stack a copy-paste.
@@ -6174,8 +6176,8 @@ end",
     ],
     check: Check(
       signature: "def new
-def push(stack, value)
-def pop(arg1)
+def push(arg1, value)
+def pop(empty)
 def top(arg1)
 def get_min(arg1)",
       starter: "defmodule Solution do
@@ -6183,11 +6185,11 @@ def get_min(arg1)",
     raise \"todo\"
   end
 
-  def push(stack, value) do
+  def push(arg1, value) do
     raise \"todo\"
   end
 
-  def pop(arg1) do
+  def pop(empty) do
     raise \"todo\"
   end
 
@@ -6285,6 +6287,18 @@ pub fn nc19_binary_search() -> Embedded {
   Embedded(
     solutions: [
       #(
+        "Linear Scan",
+        "O(n) time · O(1) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+A plain indexed scan. O(n), so it fails the stated requirement — but it is what the halving has to beat, and it shows exactly what the sortedness buys.",
+        "defmodule Solution do
+  def search(nums, target) do
+    Enum.find_index(nums, &(&1 == target))
+  end
+end",
+      ),
+      #(
         "Binary Search",
         "O(log n) time · O(1) space",
         "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
@@ -6305,18 +6319,6 @@ Worth writing until the bounds are automatic: this is the search every rotated-a
       value when value < target -> halve(tuple, target, mid + 1, high)
       _ -> halve(tuple, target, low, mid - 1)
     end
-  end
-end",
-      ),
-      #(
-        "Solution 2 · First match scan",
-        "",
-        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
-
-A plain indexed scan. O(n), so it fails the stated requirement — but it is what the halving has to beat, and it shows exactly what the sortedness buys.",
-        "defmodule Solution do
-  def search(nums, target) do
-    Enum.find_index(nums, &(&1 == target))
   end
 end",
       ),

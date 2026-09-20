@@ -1,14 +1,15 @@
 package main
 
-import "sort"
-
 func groupAnagrams(strs []string) [][]string {
-	groups := map[string][]string{}
-	order := []string{}
+	groups := map[[26]int][]string{}
+	order := [][26]int{}
 	for _, s := range strs {
-		runes := []rune(s)
-		sort.Slice(runes, func(i, j int) bool { return runes[i] < runes[j] })
-		key := string(runes)
+		// A 26-slot tally is an anagram-invariant key that costs O(len)
+		// rather than O(len log len) to build, and an array is a valid map key.
+		var key [26]int
+		for i := 0; i < len(s); i++ {
+			key[s[i]-'a']++
+		}
 		if _, seen := groups[key]; !seen {
 			order = append(order, key)
 		}

@@ -1,1 +1,4 @@
+@kind Iterative
+@big-o O(n+m) time · O(1) space
+@order 2
 The same merge with the recursion turned into a loop: build the answer backwards in an accumulator and reverse once at the end. That accumulator is the functional twin of the dummy head, and the reversal costs one extra pass rather than one extra frame per node.
