@@ -533,6 +533,29 @@ pub fn statistics_derive_from_local_state_test() -> Nil {
 
 /// Drafts are user-typed code and unbounded in principle, so the store keeps
 /// the most recently touched and drops the rest.
+pub fn a_review_drops_the_problems_draft_test() -> Nil {
+  let problem = a_problem("Two Sum")
+  let other = a_problem("Valid Anagram")
+  let store =
+    local.empty()
+    |> local.put_draft(problem, "def twoSum(nums, target): ...")
+    |> local.put_draft(other, "def isAnagram(s, t): ...")
+  let #(after, _card) =
+    local.record(
+      store,
+      wire.default_settings(),
+      answer(problem, fsrs.Good),
+      fsrs.from_epoch(1_787_788_818.0),
+      0,
+      0.0,
+    )
+  // The graded problem starts from the stub next time; the other keeps
+  // its work in progress.
+  assert model.assoc_get(after.drafts, problem) == Error(Nil)
+  assert model.assoc_get(after.drafts, other)
+    == Ok("def isAnagram(s, t): ...")
+}
+
 pub fn drafts_evict_oldest_first_test() -> Nil {
   let store: local.Local =
     int.range(from: 0, to: 320, with: local.empty(), run: fn(store, index) {

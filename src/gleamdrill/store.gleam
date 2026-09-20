@@ -73,9 +73,13 @@ pub fn record_review(m: Model, review: api.Review) -> Effect(Msg) {
         local.record(store, m.settings, review, now, day.index, fuzz_sample())
 
       // Cards and history change together on a review, so both are written;
-      // a failure in either means progress is not being kept.
+      // a failure in either means progress is not being kept. The drafts
+      // are written too, since the review just dropped this problem's.
       let saved = case local.save_cards(updated), local.save_history(updated) {
-        Ok(Nil), Ok(Nil) -> Ok(Nil)
+        Ok(Nil), Ok(Nil) -> {
+          let _ = local.save_drafts(updated)
+          Ok(Nil)
+        }
         _, _ -> Error(Nil)
       }
 
@@ -254,6 +258,26 @@ pub fn remove_from_queue(m: Model, problems: List(ProblemRef)) -> Effect(Msg) {
             )),
           )
       })
+    }
+  }
+}
+
+/// Drops a draft with no review to hang it on: a Blitz card that ran out
+/// of time is a miss, not work in progress.
+pub fn delete_draft(m: Model, problem: ProblemRef) -> Effect(Msg) {
+  case m.mode {
+    Account(token) -> api.delete_draft(base(), token, problem, DraftSynced)
+    Guest -> {
+      use dispatch <- effect.from
+      let store = local.load()
+      let updated =
+        local.Local(..store, drafts: local.drop_draft(store.drafts, problem))
+      dispatch(
+        DraftSynced(case local.save_drafts(updated) {
+          Ok(Nil) -> Ok(Nil)
+          Error(_) -> Error(storage_full())
+        }),
+      )
     }
   }
 }

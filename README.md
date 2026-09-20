@@ -51,7 +51,8 @@ shared between them as one package that compiles to both targets.
 - **Diff against the reference** after a pass: your code with the closest
   solution's lines struck through.
 - **Grading is yours.** The harness is feedback, not a verdict; every failed
-  run and every reveal goes on the log so the stats stay honest.
+  run and every reveal goes on the log so the stats stay honest. A graded
+  problem starts from the stub next time — retyping from memory is the drill.
 - **Stats that mean something** — problems you can write from memory in
   under three minutes, a calibration panel per grade, a per-problem timeline.
 - **You choose the queue**: nothing is scheduled you did not put there; the

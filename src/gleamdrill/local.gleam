@@ -210,9 +210,19 @@ pub fn record(
       history:,
       log: [#(review.problem, logged), ..local.log]
         |> list.take(review_log_limit),
+      // A graded problem starts from the stub next time: the draft goes
+      // with the review, as it does on the server.
+      drafts: drop_draft(local.drafts, review.problem),
     ),
     updated,
   )
+}
+
+pub fn drop_draft(
+  drafts: List(#(ProblemRef, String)),
+  problem: ProblemRef,
+) -> List(#(ProblemRef, String)) {
+  list.filter(drafts, fn(entry) { entry.0 != problem })
 }
 
 /// The inverse of `record`, for the newest review only: the log row goes,

@@ -365,6 +365,22 @@ pub fn put_draft(
   )
 }
 
+pub fn delete_draft(
+  base: String,
+  token: String,
+  problem: ProblemRef,
+  handler: fn(Result(Nil, ApiError)) -> message,
+) -> Effect(message) {
+  send_expecting_nothing(
+    base,
+    http.Delete,
+    "/api/drafts",
+    Some(token),
+    Some(json.object(wire.ref_fields(problem))),
+    handler,
+  )
+}
+
 pub fn put_note(
   base: String,
   token: String,

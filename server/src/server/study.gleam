@@ -490,6 +490,10 @@ pub fn record_review(
       input,
       snapshot(existing, created),
     ))
+    // A graded problem starts from the stub next time: retyping from
+    // memory is the drill. The draft goes in the same transaction as the
+    // review, so a late save cannot resurrect it.
+    use _ <- result.try(delete_draft(tx, user_id, input.problem))
     Ok(record)
   })
   |> result.map_error(flatten_transaction_error)
@@ -740,6 +744,27 @@ pub fn save_draft(
   |> pog.parameter(pog.text(problem.subcategory))
   |> pog.parameter(pog.text(problem.title))
   |> pog.parameter(pog.text(body))
+  |> pog.execute(db)
+  |> result.replace(Nil)
+  |> result.map_error(database_error)
+}
+
+/// Drops a draft, if there is one. Called from the review transaction and
+/// from `DELETE /api/drafts` (a Blitz card that ran out of time).
+pub fn delete_draft(
+  db: pog.Connection,
+  user_id: String,
+  problem: ProblemRef,
+) -> Result(Nil, StudyError) {
+  pog.query(
+    "delete from drafts
+      where user_id = $1::uuid and category = $2
+        and subcategory = $3 and title = $4",
+  )
+  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(pog.text(problem.category))
+  |> pog.parameter(pog.text(problem.subcategory))
+  |> pog.parameter(pog.text(problem.title))
   |> pog.execute(db)
   |> result.replace(Nil)
   |> result.map_error(database_error)

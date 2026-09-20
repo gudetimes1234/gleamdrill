@@ -884,6 +884,38 @@ check("a failed manual run still offers every grade",
   JSON.stringify(await gradeLabels()) === ALL_FOUR,
   JSON.stringify(await gradeLabels()));
 await capture("manual-free", "Manual later review, failed run: still every grade");
+
+// Drafts: work left without a grade comes back; a graded problem starts
+// from the stub, always -- retyping from memory is the drill.
+await setCode("def containsDuplicate(nums):\n    # half done, came back later\n    pass\n");
+await page.waitForTimeout(700);
+await exitDrill();
+await page.waitForTimeout(600);
+// Back through the study screen: the menu keeps its selection, and
+// clicking the same row again would deselect it.
+await goHome();
+await page.click("text=Browse problems");
+await page.waitForSelector(".menu-container", { timeout: 10000 });
+await openByHand("Python", "Arrays & Hashing", "Contains Duplicate");
+check("a problem left without a grade restores what was typed",
+  (await page.$eval("gleam-editor", (el) => el.doc)).includes("half done"));
+await waitForRunnable();
+await setCode("def containsDuplicate(nums):\n    return len(set(nums)) != len(nums)\n");
+await page.click(".run-button");
+await verdict();
+await page.click(".grade-good");
+await page.waitForTimeout(1500);
+// The sitting may have more passes queued from act 3's iteration field;
+// leaving now is fine, the grade already landed.
+if (await page.isVisible(".run-bar")) await exitDrill();
+await page.waitForTimeout(600);
+await goHome();
+await page.click("text=Browse problems");
+await page.waitForSelector(".menu-container", { timeout: 10000 });
+await openByHand("Python", "Arrays & Hashing", "Contains Duplicate");
+check("a graded problem starts from the stub next time",
+  !(await page.$eval("gleam-editor", (el) => el.doc)).includes("len(set(nums))"),
+  (await page.$eval("gleam-editor", (el) => el.doc)).slice(0, 60));
 await exitDrill();
 await page.waitForTimeout(800);
 

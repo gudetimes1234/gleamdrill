@@ -8,6 +8,14 @@ export function debounce(key, ms, callback) {
   timers.set(key, setTimeout(callback, ms));
 }
 
+// Drops a pending debounced call. A grade cancels the draft save queued by
+// the keystroke before it, or the save would resurrect what the grade
+// just deleted.
+export function cancelDebounce(key) {
+  clearTimeout(timers.get(key));
+  timers.delete(key);
+}
+
 // Used to sample and order exam questions. Gleam has no stdlib randomness on
 // the JavaScript target, and an exam that asks the same questions in the same
 // order every sitting measures memory of the exam, not of the material.

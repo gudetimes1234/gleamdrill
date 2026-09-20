@@ -183,6 +183,20 @@ check "a draft saves" 204 "$(status -X PUT "$B/api/drafts" -H "$AUTH" -H "$CT" -
 S=$(curl -s "$B/api/state" -H "$AUTH")
 check "the draft round-trips" "def f(): pass" "$(echo "$S" | j "['drafts'][0]['body']")"
 check "state now holds one card" 1 "$(echo "$S" | j "len(d['cards'])")"
+# A graded problem starts from the stub next time: the review takes the
+# draft with it, in the same transaction. On its own account, so the
+# review counts the rest of this script asserts are not disturbed.
+DT=$(curl -s -X POST "$B/api/auth/signup" -H "$CT" -d "{\"email\":\"drafts-$RANDOM@example.com\",\"password\":\"$PW\"}" | j "['token']")
+DA="authorization: Bearer $DT"
+curl -s -o /dev/null -X PUT "$B/api/drafts" -H "$DA" -H "$CT" -d "{$REF,\"body\":\"def f(): pass\"}"
+curl -s -o /dev/null -X POST "$B/api/reviews" -H "$DA" -H "$CT" -d "{$REF,\"rating\":3,\"durationMs\":1000}"
+S=$(curl -s "$B/api/state" -H "$DA")
+check "a review deletes the problem's draft" 0 "$(echo "$S" | j "len(d['drafts'])")"
+check "a draft saves again after the review" 204 "$(status -X PUT "$B/api/drafts" -H "$DA" -H "$CT" -d "{$REF,\"body\":\"half done\"}")"
+check "a draft can be dropped without a review" 204 "$(status -X DELETE "$B/api/drafts" -H "$DA" -H "$CT" -d "{$REF}")"
+S=$(curl -s "$B/api/state" -H "$DA")
+check "and it is gone" 0 "$(echo "$S" | j "len(d['drafts'])")"
+check "dropping a draft without a token is 401" 401 "$(status -X DELETE "$B/api/drafts" -H "$CT" -d "{$REF}")"
 
 echo "== notes"
 check "a note saves" 204 "$(status -X PUT "$B/api/notes" -H "$AUTH" -H "$CT" -d "{$REF,\"body\":\"forgot the empty list\"}")"

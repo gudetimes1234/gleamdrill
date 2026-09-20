@@ -494,18 +494,39 @@ pub fn note(request: wisp.Request, context: Context) -> wisp.Response {
 }
 
 pub fn draft(request: wisp.Request, context: Context) -> wisp.Response {
-  use <- wisp.require_method(request, http.Put)
   use user <- web.require_user(request, context)
-  use body <- wisp.require_json(request)
-
-  case decode.run(body, draft_decoder()) {
-    Error(_) ->
-      web.error(422, "invalid_body", "Expected a problem reference and a body.")
-    Ok(#(problem, draft_body)) ->
-      case study.save_draft(context.db, user.id, problem, draft_body) {
-        Error(failure) -> study_error(failure)
-        Ok(Nil) -> wisp.no_content()
+  case request.method {
+    http.Put -> {
+      use body <- wisp.require_json(request)
+      case decode.run(body, draft_decoder()) {
+        Error(_) ->
+          web.error(
+            422,
+            "invalid_body",
+            "Expected a problem reference and a body.",
+          )
+        Ok(#(problem, draft_body)) ->
+          case study.save_draft(context.db, user.id, problem, draft_body) {
+            Error(failure) -> study_error(failure)
+            Ok(Nil) -> wisp.no_content()
+          }
       }
+    }
+    // A draft dropped without a review: a Blitz card that ran out of time.
+    // Graded problems lose theirs inside the review transaction instead.
+    http.Delete -> {
+      use body <- wisp.require_json(request)
+      case decode.run(body, wire.ref_decoder()) {
+        Error(_) ->
+          web.error(422, "invalid_body", "Expected a problem reference.")
+        Ok(problem) ->
+          case study.delete_draft(context.db, user.id, problem) {
+            Error(failure) -> study_error(failure)
+            Ok(Nil) -> wisp.no_content()
+          }
+      }
+    }
+    _ -> wisp.method_not_allowed([http.Put, http.Delete])
   }
 }
 

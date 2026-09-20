@@ -13,8 +13,10 @@ opens. From the second scheduled review on, a run is required first — the
 tests are feedback to grade against, not a verdict. The review log still
 records every failed run and every reveal, so the stats stay honest. A drill
 this browser cannot run — an Elixir or Go drill as a guest — has nothing to run, so
-it grades from open every time. Study reps always start from the starter
-stub — your last answer is never sitting in the editor.
+it grades from open every time. Every open starts from the starter stub
+once the problem has been graded — grading deletes the draft, on the server
+and in the browser alike, in the same transaction as the review. The only
+thing that ever comes back is work you left without grading.
 
 Scheduling is **FSRS-6** — the algorithm Anki uses by default. Every drill you
 answer is recorded against your account and the scheduler decides when that

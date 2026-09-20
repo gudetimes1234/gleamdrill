@@ -1178,72 +1178,77 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         // must not be recorded twice.
         SubmittingGrade, _ -> #(m, effect.none())
         _, Error(Nil) -> #(m, effect.none())
-        _, Ok(ref) -> #(
-          Model(
-            ..m,
-            grading: SubmittingGrade,
-            sitting: [
-              model.SittingEntry(
+        _, Ok(ref) -> {
+          // The review deletes this problem's draft; a save still queued
+          // from the last keystroke must not put it back.
+          browser.cancel_debounce("draft-save")
+          #(
+            Model(
+              ..m,
+              grading: SubmittingGrade,
+              sitting: [
+                model.SittingEntry(
+                  problem: ref,
+                  pressed: rating,
+                  duration_ms: browser.now_ms() - m.opened_at_ms,
+                  passed: model.run_passed(m.run),
+                  clean: model.run_passed(m.run) && !answer_given_away(m),
+                ),
+                ..m.sitting
+              ],
+              // Everything needed to stand here again if the grade was a slip.
+              undo: Some(model.UndoPoint(
                 problem: ref,
-                pressed: rating,
+                selected: m.selected,
+                problem_index: m.problem_index,
+                current_iteration: m.current_iteration,
+                iteration_count: m.iteration_count,
+                studying: m.studying,
+                recall: m.recall,
+                draft: m.draft,
+                run: m.run,
+                revealed_solution: m.revealed_solution,
+                hints_revealed: m.hints_revealed,
                 duration_ms: browser.now_ms() - m.opened_at_ms,
-                passed: model.run_passed(m.run),
-                clean: model.run_passed(m.run) && !answer_given_away(m),
-              ),
-              ..m.sitting
-            ],
-            // Everything needed to stand here again if the grade was a slip.
-            undo: Some(model.UndoPoint(
-              problem: ref,
-              selected: m.selected,
-              problem_index: m.problem_index,
-              current_iteration: m.current_iteration,
-              iteration_count: m.iteration_count,
-              studying: m.studying,
-              recall: m.recall,
-              draft: m.draft,
-              run: m.run,
-              revealed_solution: m.revealed_solution,
-              hints_revealed: m.hints_revealed,
-              duration_ms: browser.now_ms() - m.opened_at_ms,
-              card_before: model.card_for(m, ref),
-            )),
-          ),
-          store.record_review(m, case m.recall {
-            // Revealing is the mechanism here, not a peek, and there was no
-            // code to time: the row says "recall" and nothing else.
-            True ->
-              wire.Review(
-                problem: ref,
-                rating:,
-                duration_ms: None,
-                auto_failed: False,
-                revealed: False,
-                practice: !m.studying,
-                recall: True,
-              )
-            False ->
-              wire.Review(
-                problem: ref,
-                rating:,
-                duration_ms: Some(browser.now_ms() - m.opened_at_ms),
-                // An ungraded card's run is a demonstration, not a test, so
-                // it is never logged as a failure.
-                auto_failed: case current_problem(m) {
-                  Ok(current) ->
-                    problem.graded(current) && model.run_failed(m.run)
-                  Error(Nil) -> model.run_failed(m.run)
-                },
-                revealed: case current_problem(m) {
-                  Ok(current) -> model.answer_revealed(m, current.approach)
-                  Error(Nil) -> m.revealed_solution != None
-                },
-                // A hand-picked sitting is practice, not a scheduled review.
-                practice: !m.studying,
-                recall: False,
-              )
-          }),
-        )
+                card_before: model.card_for(m, ref),
+              )),
+            ),
+            store.record_review(m, case m.recall {
+              // Revealing is the mechanism here, not a peek, and there was no
+              // code to time: the row says "recall" and nothing else.
+              True ->
+                wire.Review(
+                  problem: ref,
+                  rating:,
+                  duration_ms: None,
+                  auto_failed: False,
+                  revealed: False,
+                  practice: !m.studying,
+                  recall: True,
+                )
+              False ->
+                wire.Review(
+                  problem: ref,
+                  rating:,
+                  duration_ms: Some(browser.now_ms() - m.opened_at_ms),
+                  // An ungraded card's run is a demonstration, not a test, so
+                  // it is never logged as a failure.
+                  auto_failed: case current_problem(m) {
+                    Ok(current) ->
+                      problem.graded(current) && model.run_failed(m.run)
+                    Error(Nil) -> model.run_failed(m.run)
+                  },
+                  revealed: case current_problem(m) {
+                    Ok(current) -> model.answer_revealed(m, current.approach)
+                    Error(Nil) -> m.revealed_solution != None
+                  },
+                  // A hand-picked sitting is practice, not a scheduled review.
+                  practice: !m.studying,
+                  recall: False,
+                )
+            }),
+          )
+        }
       }
 
     ReviewRecorded(Ok(outcome)) -> {
@@ -1254,6 +1259,9 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           now: outcome.now,
           today: outcome.today,
           cards:,
+          // The store dropped the draft with the review; so does the copy
+          // in memory, or a reopen this session would still restore it.
+          drafts: local.drop_draft(m.drafts, outcome.card.problem),
           upgrade_prompt: escalate(m),
         )
       case m.grading {
@@ -1642,10 +1650,14 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               duration_ms: blitz.per_card_ms,
               expired: True,
             )
+          // No review to carry the draft away, so it is dropped here: an
+          // expired card is a miss, not work in progress.
+          browser.cancel_debounce("draft-save")
           let #(next, fx) =
             advance(
               Model(
                 ..m,
+                drafts: local.drop_draft(m.drafts, ref),
                 blitz: Some(
                   model.Blitz(
                     ..blitz,
@@ -1655,6 +1667,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                 ),
               ),
             )
+          let fx = effect.batch([store.delete_draft(m, ref), fx])
           // The flash clears on the next tick; the deadline restarts with
           // the card. An ended Blitz keeps its results for the summary.
           #(
@@ -2591,8 +2604,8 @@ fn open_first(m: Model, queue: List(ProblemRef)) -> Model {
         problem_index: 0,
         current_iteration: 1,
         // A study rep starts from the stub: retyping from memory is the whole
-        // product, and restoring your previous answer would defeat it. Manual
-        // sittings keep restoring work in progress.
+        // product. A manual sitting restores a draft only if one survived --
+        // grading deletes it, so what comes back is work left unfinished.
         draft: case m.studying {
           True -> starter_for(first)
           False -> draft_for(m, first)
@@ -2821,8 +2834,9 @@ fn advance_inner(m: Model) -> #(Model, Effect(Msg)) {
           graded: False,
         )
       // Retyping is the drill, so a repeat pass starts from the stub. The
-      // first time a problem comes up in a sitting, though, whatever you last
-      // typed is restored — that is the point of syncing drafts at all.
+      // first time a problem comes up in a manual sitting, a draft is
+      // restored if one survived: grading deletes it, so only work you left
+      // without grading ever comes back.
       let advanced = case model.current_ref(advanced) {
         Ok(ref) ->
           Model(
