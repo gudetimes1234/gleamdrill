@@ -6,6 +6,7 @@
 
 import fsrs
 import gleam/dict
+import gleam/float
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
@@ -26,6 +27,7 @@ import gleamdrill/view/nav
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
+import lustre/element/svg
 import lustre/event
 
 pub fn view(m: Model) -> Element(Msg) {
@@ -47,6 +49,7 @@ pub fn view(m: Model) -> Element(Msg) {
       html.h1([attribute.class("study-title")], [html.text("GleamDrill")]),
       nav.bar(m, StudyRoute),
     ]),
+    hero(m, ready),
     html.div([attribute.class("study-counts")], [
       count("Due", due, "due"),
       count("New", fresh, "new"),
@@ -222,6 +225,123 @@ fn due_on(m: Model, offset: Int) -> Int {
 ///
 /// A card count is not a workload here: a problem typed from memory is
 /// minutes, so "12 cards" is only actionable once it also says "about an
+/// The habit hook: a ring that fills as today's cards get done, and the
+/// streak beside it. The goal is what "Study now" would serve today -- what
+/// is ready plus what has been done -- so the ring closes exactly when the
+/// queue empties, and never asks for more than the daily caps allow.
+fn hero(m: Model, ready: Int) -> Element(Msg) {
+  let done = m.today.reviews_done
+  let goal = int.max(done + ready, 1)
+  let complete = ready == 0 && done > 0
+  let streak = case m.stats {
+    Some(stats) -> stats.streak_days
+    None -> 0
+  }
+  html.div([attribute.class("study-hero")], [
+    goal_ring(done, goal, complete),
+    streak_tile(streak, done),
+  ])
+}
+
+/// Circumference of the ring's circle (r = 28), the dash length a full
+/// ring needs. Written out rather than computed: Gleam has no pi constant
+/// in the stdlib and the radius is fixed by the stylesheet.
+const ring_circumference = 176.0
+
+fn goal_ring(done: Int, goal: Int, complete: Bool) -> Element(Msg) {
+  let fraction = case done >= goal {
+    True -> 1.0
+    False -> int.to_float(done) /. int.to_float(goal)
+  }
+  let dash = float_text(fraction *. ring_circumference)
+  html.div(
+    [
+      attribute.class(case complete {
+        True -> "goal-ring ring-complete"
+        False -> "goal-ring"
+      }),
+    ],
+    [
+      svg.svg(
+        [
+          attribute.attribute("viewBox", "0 0 72 72"),
+          attribute.attribute("width", "72"),
+          attribute.attribute("height", "72"),
+          attribute.attribute("aria-hidden", "true"),
+        ],
+        [
+          svg.circle([
+            attribute.class("goal-ring-track"),
+            attribute.attribute("cx", "36"),
+            attribute.attribute("cy", "36"),
+            attribute.attribute("r", "28"),
+          ]),
+          svg.circle([
+            attribute.class("goal-ring-fill"),
+            attribute.attribute("cx", "36"),
+            attribute.attribute("cy", "36"),
+            attribute.attribute("r", "28"),
+            attribute.attribute(
+              "stroke-dasharray",
+              dash <> " " <> float_text(ring_circumference),
+            ),
+          ]),
+        ],
+      ),
+      html.div([attribute.class("goal-ring-count")], [
+        html.span([attribute.class("goal-ring-done")], [
+          html.text(int.to_string(done)),
+        ]),
+        html.span([attribute.class("goal-ring-goal")], [
+          html.text("/" <> int.to_string(goal)),
+        ]),
+      ]),
+      html.span([attribute.class("goal-ring-label")], [
+        html.text(case complete {
+          True -> "Done for today \u{2713}"
+          False -> "Today's goal"
+        }),
+      ]),
+    ],
+  )
+}
+
+/// The streak, with the one state that matters said out loud: a run that
+/// ends tonight unless one card gets done.
+fn streak_tile(days: Int, done_today: Int) -> Element(Msg) {
+  let at_risk = days > 0 && done_today == 0
+  html.div(
+    [
+      attribute.class(case days, at_risk {
+        0, _ -> "streak-tile streak-none"
+        _, True -> "streak-tile streak-at-risk"
+        _, False -> "streak-tile"
+      }),
+    ],
+    [
+      html.span([attribute.class("streak-flame")], [html.text("\u{1f525}")]),
+      html.span([attribute.class("streak-days")], [
+        html.text(int.to_string(days)),
+      ]),
+      html.span([attribute.class("streak-label")], [
+        html.text(case days, at_risk {
+          0, _ -> "Start a streak"
+          1, True -> "day \u{b7} keep it alive"
+          _, True -> "days \u{b7} keep it alive"
+          1, False -> "day streak"
+          _, False -> "day streak"
+        }),
+      ]),
+    ],
+  )
+}
+
+fn float_text(value: Float) -> String {
+  // One decimal is plenty for a dash length; more only bloats the DOM.
+  let tenths = float.round(value *. 10.0)
+  int.to_string(tenths / 10) <> "." <> int.to_string(tenths % 10)
+}
+
 /// hour". Both halves need payloads that arrive after boot, so each is omitted
 /// until it can be answered rather than shown as a zero.
 fn estimate(m: Model) -> Element(Msg) {
@@ -235,29 +355,14 @@ fn estimate(m: Model) -> Element(Msg) {
       ))
     _, None -> None
   }
-  let streak = case m.stats {
-    Some(stats) if stats.streak_days > 0 -> Some(stats.streak_days)
-    _ -> None
-  }
-
-  case minutes, streak {
-    None, None -> element.none()
-    _, _ ->
+  // The streak moved up into the hero row; this is the time alone now.
+  case minutes {
+    None -> element.none()
+    Some(ms) ->
       html.div([attribute.class("study-estimate")], [
-        case minutes {
-          Some(ms) ->
-            html.span([attribute.class("study-estimate-time")], [
-              html.text("about " <> insights.duration_label(ms)),
-            ])
-          None -> element.none()
-        },
-        case streak {
-          Some(days) ->
-            html.span([attribute.class("study-estimate-streak")], [
-              html.text(int.to_string(days) <> " day streak"),
-            ])
-          None -> element.none()
-        },
+        html.span([attribute.class("study-estimate-time")], [
+          html.text("about " <> insights.duration_label(ms)),
+        ]),
       ])
   }
 }

@@ -2310,12 +2310,6 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
     color: var(--text-primary);
 }
 
-.study-estimate-streak::before {
-    content: "\00b7";
-    margin-right: 14px;
-    color: var(--border);
-}
-
 .study-preview {
     background: var(--bg-secondary);
     border: 1px solid var(--border);
@@ -2867,6 +2861,143 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
     color: var(--text-secondary);
 }
 
+/* The hero row: the ring that closes when today's queue is empty, and the
+   streak beside it. The two things a habit is made of, above everything. */
+.study-hero {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding: 16px 20px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.goal-ring {
+    position: relative;
+    display: grid;
+    grid-template-columns: 72px auto;
+    grid-template-areas: 'ring count' 'ring label';
+    column-gap: 14px;
+    align-items: center;
+}
+
+.goal-ring svg {
+    grid-area: ring;
+    transform: rotate(-90deg);
+}
+
+.goal-ring-track {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 7;
+}
+
+.goal-ring-fill {
+    fill: none;
+    stroke: var(--warning);
+    stroke-width: 7;
+    stroke-linecap: round;
+    transition: stroke-dasharray 600ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.ring-complete .goal-ring-fill {
+    stroke: var(--success);
+}
+
+.goal-ring-count {
+    grid-area: count;
+    align-self: end;
+    font-family: var(--font-mono);
+    line-height: 1;
+}
+
+.goal-ring-done {
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.goal-ring-goal {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-left: 2px;
+}
+
+.goal-ring-label {
+    grid-area: label;
+    align-self: start;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.ring-complete .goal-ring-label {
+    color: var(--success);
+}
+
+/* One pulse when the ring closes: the moment deserves a beat, not a show. */
+@keyframes ring-done {
+    0% { transform: rotate(-90deg) scale(1); }
+    40% { transform: rotate(-90deg) scale(1.08); }
+    100% { transform: rotate(-90deg) scale(1); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .ring-complete svg {
+        animation: ring-done 700ms cubic-bezier(0.2, 0, 0, 1) 1;
+    }
+}
+
+.streak-tile {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-areas: 'flame days' 'flame label';
+    column-gap: 10px;
+    align-items: center;
+    margin-left: auto;
+    padding-left: 28px;
+    border-left: 1px solid var(--border);
+}
+
+.streak-flame {
+    grid-area: flame;
+    font-size: 30px;
+    line-height: 1;
+}
+
+.streak-days {
+    grid-area: days;
+    align-self: end;
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.streak-label {
+    grid-area: label;
+    align-self: start;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.streak-none .streak-flame {
+    filter: grayscale(1);
+    opacity: 0.4;
+}
+
+.streak-none .streak-days {
+    color: var(--text-secondary);
+}
+
+/* A streak with nothing done today ends at the rollover; say so. */
+.streak-at-risk .streak-flame {
+    opacity: 0.55;
+}
+
+.streak-at-risk .streak-label {
+    color: var(--warning);
+}
+
 .study-counts {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -3275,6 +3406,34 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
 }
 
 @media (max-width: 560px) {
+    .study-hero {
+        gap: 16px;
+        padding: 14px 16px;
+    }
+
+    .goal-ring {
+        grid-template-columns: 60px auto;
+        column-gap: 10px;
+    }
+
+    .goal-ring svg {
+        width: 60px;
+        height: 60px;
+    }
+
+    .goal-ring-done,
+    .streak-days {
+        font-size: 24px;
+    }
+
+    .streak-tile {
+        padding-left: 16px;
+    }
+
+    .streak-flame {
+        font-size: 24px;
+    }
+
     .study-counts {
         grid-template-columns: repeat(3, 1fr);
     }

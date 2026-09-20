@@ -359,6 +359,13 @@ check("the guest strip states where data lives",
   (await page.textContent(".guest-strip-text")).includes("only in this browser"));
 check("a seven-day forecast renders", (await page.$$(".forecast-day")).length === 7);
 check("counts render", (await page.$$(".study-count")).length === 3);
+// The habit row: a ring for today's goal and the streak. A fresh guest
+// with a queue has a goal to fill and no streak yet.
+check("the goal ring shows what today will serve",
+  /^0\/\d+$/.test((await page.textContent(".goal-ring-count")).trim()),
+  await page.textContent(".goal-ring-count"));
+check("a fresh browser is invited to start a streak",
+  (await page.textContent(".streak-tile")).includes("Start a streak"));
 await capture("landing", "Guest landing: strip, counts, forecast, actions",
   "The study screen: counts and the queue, no language filter");
 
