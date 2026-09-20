@@ -19,8 +19,8 @@ import gleamdrill/legacy
 import gleamdrill/local
 import gleamdrill/model.{
   type Model, type Msg, Account, ArchiveReady, ArchiveRestored, AuthCompleted,
-  AuthForm, AuthRoute, AwaitingGrade, CacheMeasured, CacheWarmed, CardSuspended,
-  CaseResult, Cases, ClockTicked, DayStartHour, DesiredRetention,
+  AuthForm, AuthRoute, AwaitingGrade, BlitzExpired, CacheMeasured, CacheWarmed,
+  CardSuspended, CaseResult, Cases, ClockTicked, DayStartHour, DesiredRetention,
   DraftSaveTicked, DraftSynced, DrillRoute, EditorChanged, EditorFocusRequested,
   EditorResized, Errored, ExamSampled, ExitConfirmed, Guest, HelpToggled,
   HistoryLoaded, ImportConfirmed, ImportPicked, InsightsLoaded, KeyPressed,
@@ -56,10 +56,10 @@ import gleamdrill/model.{
   UserOpenedDetail, UserOpenedLesson, UserOpenedWalk, UserPickedChoice,
   UserPickedQueueLanguage, UserRemovedAllShown, UserResetLesson,
   UserRevealedHint, UserRevealedRecall, UserSearched, UserSearchedQueue,
-  UserSubmittedAnswer, UserSubmittedAuth, UserToggledAuthMode, UserToggledDiff,
-  UserToggledProblem, UserToggledQueued, UserToggledResults, UserToggledSide,
-  UserToggledSolution, UserToggledSuspend, WalkAdvanced, WalkBacked,
-  WalkCodeShown, WalkHintShown, WalkWhyShown,
+  UserStartedBlitz, UserSubmittedAnswer, UserSubmittedAuth, UserToggledAuthMode,
+  UserToggledBlitz, UserToggledDiff, UserToggledProblem, UserToggledQueued,
+  UserToggledResults, UserToggledSide, UserToggledSolution, UserToggledSuspend,
+  WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
@@ -1187,6 +1187,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                 problem: ref,
                 pressed: rating,
                 duration_ms: browser.now_ms() - m.opened_at_ms,
+                passed: model.run_passed(m.run),
+                clean: model.run_passed(m.run) && !answer_given_away(m),
               ),
               ..m.sitting
             ],
@@ -1257,7 +1259,35 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       case m.grading {
         // A graded drill moves on by itself; a quiz waits for Next, because
         // the explanation is worth reading first.
-        SubmittingGrade -> advance(Model(..recorded, grading: NotGrading))
+        SubmittingGrade -> {
+          // A Blitz card that was graded was solved in time: its result is
+          // the sitting entry just recorded, and the next card's clock
+          // starts from now.
+          let recorded = case m.blitz, m.sitting {
+            Some(blitz), [entry, ..] ->
+              Model(
+                ..recorded,
+                blitz: Some(
+                  model.Blitz(
+                    ..blitz,
+                    results: [
+                      model.BlitzResult(
+                        problem: entry.problem,
+                        passed: entry.passed,
+                        duration_ms: entry.duration_ms,
+                        expired: False,
+                      ),
+                      ..blitz.results
+                    ],
+                    deadline_ms: browser.now_ms() + blitz.per_card_ms,
+                    expired_flash: False,
+                  ),
+                ),
+              )
+            _, _ -> recorded
+          }
+          advance(Model(..recorded, grading: NotGrading))
+        }
         _ -> #(recorded, effect.none())
       }
     }
@@ -1547,10 +1577,104 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
     ExitConfirmed(False) -> #(Model(..m, exit_prompt: None), effect.none())
 
-    ClockTicked ->
-      case m.route {
-        DrillRoute -> #(Model(..m, now_ms: browser.now_ms()), tick())
-        _ -> #(m, effect.none())
+    ClockTicked -> {
+      let now_ms = browser.now_ms()
+      case m.route, m.blitz {
+        // A Blitz card past its deadline is over: recorded as a miss and
+        // the next one opens. Grading is skipped -- nothing was solved.
+        DrillRoute, Some(blitz) if now_ms >= blitz.deadline_ms ->
+          handle(Model(..m, now_ms:), BlitzExpired)
+        DrillRoute, _ -> #(Model(..m, now_ms:), tick())
+        _, _ -> #(m, effect.none())
+      }
+    }
+
+    UserToggledBlitz -> #(
+      Model(..m, blitz_chooser: !m.blitz_chooser),
+      effect.none(),
+    )
+
+    UserStartedBlitz(count, per_card_ms) ->
+      case blitz_pool(m) {
+        [] -> #(
+          Model(
+            ..m,
+            blitz_chooser: False,
+            notice: Some(
+              "Nothing to blitz: queue some problems this browser can run.",
+            ),
+          ),
+          effect.none(),
+        )
+        pool -> {
+          let picked = sample(pool, count)
+          with_prefetch(#(
+            Model(
+              ..open_first(
+                Model(
+                  ..m,
+                  studying: False,
+                  recall: False,
+                  blitz_chooser: False,
+                  blitz: Some(model.Blitz(
+                    per_card_ms:,
+                    deadline_ms: browser.now_ms() + per_card_ms,
+                    results: [],
+                    expired_flash: False,
+                  )),
+                ),
+                picked,
+              ),
+              iteration_count: 1,
+            ),
+            effect.none(),
+          ))
+        }
+      }
+
+    BlitzExpired ->
+      case m.blitz, model.current_ref(m) {
+        Some(blitz), Ok(ref) -> {
+          let expired =
+            model.BlitzResult(
+              problem: ref,
+              passed: False,
+              duration_ms: blitz.per_card_ms,
+              expired: True,
+            )
+          let #(next, fx) =
+            advance(
+              Model(
+                ..m,
+                blitz: Some(
+                  model.Blitz(
+                    ..blitz,
+                    results: [expired, ..blitz.results],
+                    expired_flash: True,
+                  ),
+                ),
+              ),
+            )
+          // The flash clears on the next tick; the deadline restarts with
+          // the card. An ended Blitz keeps its results for the summary.
+          #(
+            case next.route, next.blitz {
+              DrillRoute, Some(b) ->
+                Model(
+                  ..next,
+                  blitz: Some(
+                    model.Blitz(
+                      ..b,
+                      deadline_ms: browser.now_ms() + b.per_card_ms,
+                    ),
+                  ),
+                )
+              _, _ -> next
+            },
+            effect.batch([fx, tick()]),
+          )
+        }
+        _, _ -> #(m, tick())
       }
 
     UserRevealedHint -> {
@@ -2219,6 +2343,21 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           ..m,
           runtimes: model.assoc_put(m.runtimes, language, RuntimeReady),
         )
+      // A Blitz card whose runtime was still downloading has not had a
+      // fair clock: it restarts now that a run is actually possible.
+      let m = case m.blitz, m.route, current_language(m) {
+        Some(blitz), DrillRoute, Ok(current) if current == language ->
+          Model(
+            ..m,
+            blitz: Some(
+              model.Blitz(
+                ..blitz,
+                deadline_ms: browser.now_ms() + blitz.per_card_ms,
+              ),
+            ),
+          )
+        _, _, _ -> m
+      }
       case language, m.run {
         // A tour lesson opened before the compiler was ready runs now.
         "gleam", RunIdle -> run_tour_lesson(m)
@@ -2485,6 +2624,9 @@ fn open_first(m: Model, queue: List(ProblemRef)) -> Model {
 /// flipping a card. Otherwise a run is required before grading.
 fn initial_grading(m: Model, ref: ProblemRef) -> model.Grading {
   use <- bool.guard(m.recall, NotGrading)
+  // A Blitz is scored on the run, so the grade waits for one: pressing
+  // Good on a card never attempted is not a solve.
+  use <- bool.guard(m.blitz != None, NotGrading)
   case problem_kind(m, ref) {
     // Quizzes grade themselves on submit.
     QuizProblem -> NotGrading
@@ -2658,6 +2800,7 @@ fn advance_inner(m: Model) -> #(Model, Effect(Msg)) {
         route: SummaryRoute,
         studying: m.studying,
         recall: m.recall,
+        blitz: m.blitz,
         sitting: m.sitting,
         undo: m.undo,
       ),
@@ -2723,9 +2866,66 @@ fn reset_home(m: Model) -> Model {
     },
     studying: False,
     recall: False,
+    blitz: None,
     grading: NotGrading,
     undo: None,
   )
+}
+
+/// Which of the queued cards a Blitz may draw from: anything this browser
+/// can actually run against the clock. Concept cards have no code, and a
+/// guest cannot run the server-side languages, so neither can pass.
+fn blitz_pool(m: Model) -> List(ProblemRef) {
+  dict.keys(m.cards)
+  |> list.filter(fn(ref) {
+    case problems.find(ref.category, ref.subcategory, ref.title) {
+      Ok(current) ->
+        current.quiz == None
+        && current.check != None
+        && model.run_available(m, current.language)
+      Error(Nil) -> False
+    }
+  })
+}
+
+/// `count` refs drawn without replacement, in a random order. Fewer if
+/// the pool is smaller.
+fn sample(pool: List(ProblemRef), count: Int) -> List(ProblemRef) {
+  do_sample(pool, list.length(pool), count, [])
+}
+
+fn do_sample(
+  pool: List(ProblemRef),
+  size: Int,
+  remaining: Int,
+  acc: List(ProblemRef),
+) -> List(ProblemRef) {
+  case remaining <= 0 || size <= 0 {
+    True -> list.reverse(acc)
+    False -> {
+      let index = browser.random_int(size)
+      let #(before, rest) = list.split(pool, index)
+      case rest {
+        [chosen, ..after] ->
+          do_sample(list.append(before, after), size - 1, remaining - 1, [
+            chosen,
+            ..acc
+          ])
+        [] -> list.reverse(acc)
+      }
+    }
+  }
+}
+
+/// A solve is clean when nothing was given away: no ladder rung past the
+/// nudge, no solution shown, no walk code. The nudge is a question, not an
+/// answer, which is why it is allowed.
+fn answer_given_away(m: Model) -> Bool {
+  case current_problem(m) {
+    Ok(current) ->
+      model.answer_revealed(m, current.approach) || m.hints_revealed > 1
+    Error(Nil) -> False
+  }
 }
 
 fn draft_for(m: Model, ref: ProblemRef) -> String {

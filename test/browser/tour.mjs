@@ -1230,6 +1230,75 @@ for (const [language, subcategory, title, code, runnable] of languages) {
   await page.waitForTimeout(800);
 }
 
+// ---------------------------------------------------------------- act 5a
+act = "05a-blitz";
+console.log(act);
+
+// The game: random problems against a clock. A card that runs out is a
+// miss; a card that passes is graded as usual. Scored at the end. Runs
+// after act 5 on purpose: every browser runtime is warm by then, and a
+// Blitz draws from the whole queue.
+exercises("UserToggledBlitz", "UserStartedBlitz");
+await goHome();
+await page.keyboard.press("z");
+await page.waitForSelector(".blitz-chooser", { timeout: 5000 });
+check("z opens the Blitz chooser", true);
+check("four presets, one marked as the default",
+  (await page.$$(".blitz-option")).length === 4 && (await page.$$(".blitz-option-default")).length === 1);
+await capture("chooser", "Blitz: how many problems, how long each", "A timed Blitz mode, two clicks from the study screen");
+await page.click(".blitz-cancel");
+check("Not now closes it", !(await page.isVisible(".blitz-chooser")));
+await page.keyboard.press("z");
+await page.waitForSelector(".blitz-chooser", { timeout: 5000 });
+await page.click(".blitz-option:nth-child(3)");
+await page.waitForSelector(".run-bar", { timeout: 30000 });
+await page.waitForTimeout(1200);
+// However many cards the pool had: a small queue is drawn whole.
+const blitzTotal = Number((await page.textContent(".drill-countdown")).match(/\/(\d+)/)?.[1] ?? 0);
+check("the header clock counts down",
+  /\d:\d\d/.test(await page.textContent(".drill-countdown")) && blitzTotal >= 1,
+  await page.textContent(".drill-countdown"));
+check("the status bar says it is a Blitz",
+  (await page.textContent(".statusbar")).startsWith("BLITZ"));
+check("no grade is offered before a run: the score is the run",
+  (await page.$$(".grade-button")).length === 0);
+await capture("countdown", "A Blitz card: the clock counts down beside the card count");
+// Solve one card with whatever it is, to prove a pass records; the rest
+// are graded through as misses so the scorecard is reached in the tour's
+// time budget. (Expiry itself is the clock reaching zero, covered by the
+// unit tests: two minutes per card is too slow to photograph.)
+const blitzSolutions = {
+  "Contains Duplicate": "def containsDuplicate(nums):\n    return len(set(nums)) != len(nums)\n",
+  "Valid Anagram": "def isAnagram(s, t):\n    return sorted(s) == sorted(t)\n",
+  "Two Sum": "def twoSum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        if target - n in seen:\n            return [seen[target - n], i]\n        seen[n] = i\n    return []\n",
+};
+let blitzPassed = 0;
+for (let i = 0; i < blitzTotal; i++) {
+  if (await page.isVisible(".summary-container")) break;
+  const title = (await page.textContent(".drill-title")).replace(/(Python|Gleam|TypeScript|Elixir|Go).*$/, "").trim();
+  await waitForRunnable(240000);
+  await setCode(blitzSolutions[title] ?? "def nope():\n    pass\n");
+  await page.click(".run-button");
+  await verdict();
+  if ((await page.textContent(".results-summary")).includes("passed")) blitzPassed++;
+  await page.waitForSelector(".grade-button", { timeout: 5000 });
+  await page.click(".grade-button:nth-child(3)");
+  await page.waitForTimeout(1200);
+}
+await page.waitForSelector(".summary-container", { timeout: 20000 });
+check("the Blitz ends on a scorecard",
+  (await page.textContent(".drill-title")).includes("Blitz over"));
+check("the score is the passes over the cards",
+  (await page.textContent(".scorecard-score")).trim() === `${blitzPassed}/${blitzTotal}`,
+  await page.textContent(".scorecard-score"));
+check("and it is ranked", (await page.$$(".scorecard-rank")).length === 1);
+check("a solved card is marked clean when nothing was given away",
+  (await page.$$(".row-badge-clean")).length === blitzPassed,
+  `${(await page.$$(".row-badge-clean")).length} clean badges for ${blitzPassed} passes`);
+await capture("scorecard", "Blitz over: the score, the rank, the fastest solve", "A Blitz ends on a scorecard");
+await page.keyboard.press("Escape");
+await page.waitForTimeout(500);
+
 // ---------------------------------------------------------------- act 5b
 act = "05b-gleam-tour";
 console.log(act);
@@ -2196,6 +2265,7 @@ const declared = [
   "UserChangedKeymap",
   "UserClickedRun", "UserClickedStopRun", "UserClickedRetryRuntime",
   "UserToggledSide", "UserToggledResults", "UserToggledSuspend", "UserClickedRecall", "UserRevealedRecall",
+  "UserToggledBlitz", "UserStartedBlitz",
   "UserClickedUndo", "UserToggledDiff", "UserDismissedDiff",
   "UserClickedExport", "UserClickedImport", "ImportConfirmed",
   "UserClickedWarmCache", "UserOpenedWalk", "UserClosedWalk",

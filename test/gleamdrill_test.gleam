@@ -1008,7 +1008,8 @@ pub fn dispatch_resolves_from_the_same_table_it_documents_test() -> Nil {
   assert press("q") == Ok(model.UserClickedQueue)
   assert press("t") == Ok(model.UserClickedStats)
   assert press("Enter") == Ok(model.UserClickedStudy)
-  assert press("z") == Error(Nil)
+  assert press("z") == Ok(model.UserToggledBlitz)
+  assert press("v") == Error(Nil)
 }
 
 /// The queue screen's row cursor is its own list, and `space` there means
@@ -1461,4 +1462,19 @@ pub fn every_problem_is_rated_test() -> Nil {
     problems.find("NeetCode 150", "Arrays & Hashing", "Two Sum")
   assert gleam_two_sum.difficulty == python_two_sum.difficulty
   assert python_two_sum.difficulty == Some(problem.Easy)
+}
+
+// --- Blitz ------------------------------------------------------------------
+
+pub fn blitz_rank_tiers_by_share_passed_test() -> Nil {
+  assert model.blitz_rank(5, 5) == "Perfect"
+  assert model.blitz_rank(4, 5) == "Blazing"
+  assert model.blitz_rank(3, 5) == "Sharp"
+  assert model.blitz_rank(2, 5) == "Steady"
+  assert model.blitz_rank(1, 5) == "Warmup"
+  assert model.blitz_rank(0, 5) == "Warmup"
+  // Nothing attempted is not a perfect score.
+  assert model.blitz_rank(0, 0) == "Warmup"
+  assert model.blitz_rank(8, 10) == "Blazing"
+  assert model.blitz_rank(6, 10) == "Sharp"
 }

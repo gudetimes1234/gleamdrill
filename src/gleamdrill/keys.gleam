@@ -30,9 +30,9 @@ import gleamdrill/model.{
   UserClickedTourNext, UserClickedTourPrev, UserClickedUndo, UserClosedDetail,
   UserClosedWalk, UserFilteredQueue, UserGraded, UserOpenedWalk,
   UserPickedChoice, UserRemovedAllShown, UserRevealedHint, UserRevealedRecall,
-  UserSearched, UserSubmittedAnswer, UserToggledDiff, UserToggledResults,
-  UserToggledSide, UserToggledSolution, WalkAdvanced, WalkBacked, WalkCodeShown,
-  WalkHintShown, WalkWhyShown,
+  UserSearched, UserSubmittedAnswer, UserToggledBlitz, UserToggledDiff,
+  UserToggledResults, UserToggledSide, UserToggledSolution, WalkAdvanced,
+  WalkBacked, WalkCodeShown, WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/problem
 import gleamdrill/problems
@@ -171,6 +171,7 @@ fn study_bindings() -> List(Binding) {
       UserClickedStudy,
     ),
     Binding(["c"], "recall", "Recall what is due, no editor", UserClickedRecall),
+    Binding(["z"], "blitz", "A timed run of random problems", UserToggledBlitz),
     Binding(["q"], "queue", "Manage the study queue", UserClickedQueue),
     Binding(["b"], "browse", "Browse problems by hand", UserClickedBrowse),
     Binding(["t"], "stats", "Statistics", UserClickedStats),
@@ -651,7 +652,11 @@ pub fn context_label(m: Model) -> String {
         Error(Nil), False ->
           case current_problem(m) {
             Ok(current) ->
-              "DRILL \u{b7} "
+              case m.blitz {
+                Some(_) -> "BLITZ"
+                None -> "DRILL"
+              }
+              <> " \u{b7} "
               <> string.uppercase(problem.language_label(current.language))
             Error(Nil) -> "DRILL"
           }

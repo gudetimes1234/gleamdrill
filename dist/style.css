@@ -626,6 +626,98 @@ details.approach summary:focus-visible {
     color: var(--accent);
 }
 
+/* The Blitz clock counts down, and the last thirty seconds are red. */
+.drill-countdown {
+    font-weight: 600;
+}
+
+.drill-clock-urgent {
+    color: var(--error);
+}
+
+@keyframes blitz-flash {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    20% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+    80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* "Time!": one beat, centred, as an expired card gives way to the next. */
+.blitz-flash {
+    position: fixed;
+    top: 40%;
+    left: 50%;
+    z-index: 40;
+    padding: 14px 32px;
+    background: var(--error);
+    color: var(--bg-raised);
+    border-radius: var(--radius);
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    pointer-events: none;
+    animation: blitz-flash 1s ease-out 1 forwards;
+}
+
+/* The chooser: four presets as tiles, the default outlined. */
+.blitz-chooser {
+    width: min(520px, 100%);
+}
+
+.blitz-blurb {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.blitz-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.blitz-option {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color var(--ease), background var(--ease);
+}
+
+.blitz-option:hover,
+.blitz-option:focus-visible {
+    border-color: var(--accent);
+    background: var(--bg-hover);
+}
+
+.blitz-option-default {
+    border-color: color-mix(in srgb, var(--warning) 60%, var(--border));
+}
+
+.blitz-option-count {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.blitz-option-pace {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.blitz-chip {
+    color: var(--warning);
+    border-color: color-mix(in srgb, var(--warning) 55%, var(--border));
+}
+
 /* A card forgotten again and again. The badge rides the title and the
    approach panel opens itself; the tint is the same one a returning note
    wears, because both mean "read this before you type". */
@@ -2379,9 +2471,75 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
     gap: 16px;
 }
 
+/* The scorecard: what the sitting achieved, said first and large. */
+.scorecard {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.scorecard-headline {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.scorecard-best {
+    color: var(--warning);
+}
+
+.scorecard-note {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.scorecard-score {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    color: var(--warning);
+}
+
+.scorecard-rank {
+    font-family: var(--font-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.rank-perfect { color: var(--success); }
+.rank-blazing { color: var(--warning); }
+.rank-sharp { color: var(--accent); }
+.rank-steady,
+.rank-warmup { color: var(--text-secondary); }
+
+.summary-row-expired .summary-row-time,
+.summary-row-expired .summary-row-grade {
+    color: var(--error);
+}
+
+/* Row marks: a clean solve, a personal best. */
+.row-badge {
+    margin-left: 8px;
+    padding: 1px 7px;
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.row-badge-clean {
+    color: var(--success);
+    border: 1px solid color-mix(in srgb, var(--success) 50%, var(--border));
+}
+
+.row-badge-best {
+    color: var(--warning);
+    border: 1px solid color-mix(in srgb, var(--warning) 50%, var(--border));
+}
+
 .summary-totals {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 10px;
 }
 
@@ -3406,6 +3564,14 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
 }
 
 @media (max-width: 560px) {
+    .summary-totals {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .blitz-grid {
+        grid-template-columns: 1fr;
+    }
+
     .study-hero {
         gap: 16px;
         padding: 14px 16px;

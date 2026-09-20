@@ -15,7 +15,7 @@ import gleamdrill/model.{
   type Model, type Msg, Guest, PromptShowing, Registering, StudyRoute,
   UserAddedStarterSet, UserClickedBrowse, UserClickedQueue, UserClickedRecall,
   UserClickedSignIn, UserClickedStartExam, UserClickedStudy, UserClickedTour,
-  UserDismissedUpgradePrompt,
+  UserDismissedUpgradePrompt, UserStartedBlitz, UserToggledBlitz,
 }
 import gleamdrill/problem
 import gleamdrill/problems
@@ -108,6 +108,14 @@ pub fn view(m: Model) -> Element(Msg) {
         ],
         [html.text("Recall only")],
       ),
+      // The game: random problems against a clock, scored at the end.
+      html.button(
+        [
+          attribute.class("study-secondary study-blitz"),
+          event.on_click(UserToggledBlitz),
+        ],
+        [html.text("\u{26a1} Blitz")],
+      ),
       html.button(
         [attribute.class("study-secondary"), event.on_click(UserClickedQueue)],
         [html.text("Manage queue")],
@@ -138,6 +146,7 @@ pub fn view(m: Model) -> Element(Msg) {
         ],
       ),
     ]),
+    blitz_chooser(m),
     queue_preview(m),
     forecast(m),
     footer(),
@@ -225,6 +234,80 @@ fn due_on(m: Model, offset: Int) -> Int {
 ///
 /// A card count is not a workload here: a problem typed from memory is
 /// minutes, so "12 cards" is only actionable once it also says "about an
+/// How many, how long: the two dials of a Blitz, as buttons so a game is
+/// two clicks from the study screen. The chosen pair starts it.
+fn blitz_chooser(m: Model) -> Element(Msg) {
+  case m.blitz_chooser {
+    False -> element.none()
+    True ->
+      html.div([attribute.class("exit-overlay")], [
+        html.div(
+          [
+            attribute.class("exit-prompt blitz-chooser"),
+            attribute.role("dialog"),
+            attribute.attribute("aria-modal", "true"),
+            attribute.attribute("aria-labelledby", "blitz-title"),
+          ],
+          [
+            html.p(
+              [
+                attribute.class("exit-prompt-title"),
+                attribute.id("blitz-title"),
+              ],
+              [html.text("\u{26a1} Blitz")],
+            ),
+            html.p([attribute.class("blitz-blurb")], [
+              html.text(
+                "Random problems from your queue, each against the clock. Run out of time and the card is a miss; solve it and grade as usual. Practice for the schedule, a score for you.",
+              ),
+            ]),
+            html.div([attribute.class("blitz-grid")], [
+              blitz_option("5 problems", "3 min each", 5, 180_000, True),
+              blitz_option("10 problems", "3 min each", 10, 180_000, False),
+              blitz_option("5 problems", "2 min each", 5, 120_000, False),
+              blitz_option("15 problems", "5 min each", 15, 300_000, False),
+            ]),
+            html.div([attribute.class("exit-prompt-actions")], [
+              html.button(
+                [
+                  attribute.class("btn-secondary blitz-cancel"),
+                  event.on_click(UserToggledBlitz),
+                ],
+                [html.text("Not now")],
+              ),
+            ]),
+          ],
+        ),
+      ])
+  }
+}
+
+fn blitz_option(
+  count_label: String,
+  pace_label: String,
+  count: Int,
+  per_card_ms: Int,
+  default: Bool,
+) -> Element(Msg) {
+  html.button(
+    [
+      attribute.class(case default {
+        True -> "blitz-option blitz-option-default"
+        False -> "blitz-option"
+      }),
+      event.on_click(UserStartedBlitz(count, per_card_ms)),
+    ],
+    [
+      html.span([attribute.class("blitz-option-count")], [
+        html.text(count_label),
+      ]),
+      html.span([attribute.class("blitz-option-pace")], [
+        html.text(pace_label),
+      ]),
+    ],
+  )
+}
+
 /// The habit hook: a ring that fills as today's cards get done, and the
 /// streak beside it. The goal is what "Study now" would serve today -- what
 /// is ready plus what has been done -- so the ring closes exactly when the

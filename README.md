@@ -60,6 +60,10 @@ shared between them as one package that compiles to both targets.
   the editor, a tmux-style status bar that shows the live bindings.
 - **Recall-only sittings**, notes to your future self per problem, undo the
   last grade, export/import your whole history as JSON.
+- **A goal ring and a streak** on the study screen; **Blitz mode** — random
+  problems against a clock, scored and ranked at the end; and a
+  **scorecard** after every sitting: clean solves, personal bests, cards
+  that graduated to a month or more.
 - **System Design** multiple-choice deck with a scored 40-question exam mode,
   and the **Gleam Language Tour** playable in the app.
 - **Works offline** as a guest (service worker, runtimes cached on demand)

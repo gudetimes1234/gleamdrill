@@ -372,6 +372,11 @@ pub type Model {
     /// and solutions are revealed, and the grade is given from memory. Set
     /// alongside `studying`, cleared with it.
     recall: Bool,
+    /// A Blitz: N random problems against a clock, scored pass or fail.
+    /// Practice as far as the schedule is concerned; the game is the clock.
+    blitz: Option(Blitz),
+    /// The chooser is open on the study screen.
+    blitz_chooser: Bool,
     grading: Grading,
     /// Wall-clock milliseconds when the current problem was opened, for the
     /// review log's `duration_ms`.
@@ -509,6 +514,8 @@ pub fn default() -> Model {
     diff_open: True,
     diff_mode: True,
     recall: False,
+    blitz: None,
+    blitz_chooser: False,
     leader_armed: False,
     queue_search: "",
     queue_language: None,
@@ -738,8 +745,59 @@ pub type WalkState {
   WalkState(step: Int, hint_shown: Bool, why_shown: Bool, code_shown: Bool)
 }
 
+/// `clean` is a solve with nothing given away: no rung past the nudge, no
+/// solution, no walk code, and the harness passed. `passed` is the harness
+/// alone. Both are read off the model at grade time, since after that the
+/// next card has reset them.
 pub type SittingEntry {
-  SittingEntry(problem: ProblemRef, pressed: fsrs.Rating, duration_ms: Int)
+  SittingEntry(
+    problem: ProblemRef,
+    pressed: fsrs.Rating,
+    duration_ms: Int,
+    passed: Bool,
+    clean: Bool,
+  )
+}
+
+/// A timed sitting. `deadline_ms` is the wall clock at which the current
+/// card expires; `results` accumulate newest first, one per card, whether
+/// it was solved or ran out of time.
+pub type Blitz {
+  Blitz(
+    per_card_ms: Int,
+    deadline_ms: Int,
+    results: List(BlitzResult),
+    /// True for the beat after a card expires, so the drill can flash
+    /// "Time!" before the next card is on screen.
+    expired_flash: Bool,
+  )
+}
+
+pub type BlitzResult {
+  BlitzResult(
+    problem: ProblemRef,
+    passed: Bool,
+    duration_ms: Int,
+    /// The clock ran out: no grade was asked, nothing was scheduled.
+    expired: Bool,
+  )
+}
+
+/// The five tiers a Blitz score lands in, by share of cards passed.
+pub fn blitz_rank(passed: Int, total: Int) -> String {
+  case total {
+    0 -> "Warmup"
+    _ -> {
+      let share = passed * 100 / total
+      case share {
+        100 -> "Perfect"
+        s if s >= 80 -> "Blazing"
+        s if s >= 60 -> "Sharp"
+        s if s >= 40 -> "Steady"
+        _ -> "Warmup"
+      }
+    }
+  }
 }
 
 /// Enough of the moment before the latest grade to go back to it: which
@@ -902,6 +960,12 @@ pub type Msg {
   UndoRecorded(UndoPoint, Result(api.UndoOutcome, ApiError))
   /// Start a recall-only sitting over the study queue.
   UserClickedRecall
+  /// Open the Blitz chooser on the study screen, or close it.
+  UserToggledBlitz
+  /// Start a Blitz: this many problems, this many milliseconds each.
+  UserStartedBlitz(Int, Int)
+  /// The Blitz clock passed the current card's deadline.
+  BlitzExpired
   /// Show the approach and solutions for the current recall card.
   UserRevealedRecall
   /// The editor's resize handle was released at this many px; 0 resets.
