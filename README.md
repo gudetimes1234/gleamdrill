@@ -298,28 +298,9 @@ make dev-app       # frontend only (guest mode works; signed-in needs the api)
 make dev-api       # backend only, reading server/.env
 make verify        # every solution variant, plus the scheduler and API tests
 make build         # minified bundle -> dist/
-make up            # the whole stack in containers, on :8080
-make install       # ...and keep it there: `gleamdrill` on PATH + a user service
+make run           # the whole stack in containers, on :8080 (detached)
 make deploy        # build + railway up
 ```
-
-## Run it locally
-
-One command brings the whole app up on <http://localhost:8080>, the same
-three images Railway runs (Caddy, the api with Go and Elixir inside,
-Postgres), and keeps it there:
-
-```sh
-make install       # once: ~/.local/bin/gleamdrill + a systemd user unit
-gleamdrill         # up (builds if needed) and opens the browser
-gleamdrill logs api
-gleamdrill down    # the unit brings it back at your next login
-gleamdrill reset   # drop the local database
-```
-
-`bin/gleamdrill` serves the committed `dist/`, exactly like production, so
-after a frontend change run `make build` and then `gleamdrill up` again.
-Docker when its daemon answers, otherwise Podman.
 
 Narrower targets, for when `verify` is more than you need:
 
@@ -373,19 +354,24 @@ source tree. They apply once each, in order, inside a transaction.
 
 ## Containers
 
-`make up` (or `gleamdrill up`, above) brings up the whole stack — Caddy, the
-backend, Postgres — on <http://localhost:8080>. Copy `.env.example` to `.env`
-and put a `SECRET_KEY_BASE` in it first (`openssl rand -hex 48`); the server
-refuses to start with anything shorter than 64 characters.
+`make run` brings up the whole stack — Caddy, the backend (with Go and
+Elixir inside, so server-side drills work), Postgres — on
+<http://localhost:8080>, detached, restarting with the container runtime.
+Copy `.env.example` to `.env` and put a `SECRET_KEY_BASE` in it first
+(`openssl rand -hex 48`); the server refuses to start with anything shorter
+than 64 characters. `GLEAMDRILL_PORT` in `.env` moves it off 8080. It serves
+the committed `dist/`, like production: `make build` first after a frontend
+change.
 
 ```sh
-make up            # compose up -d --build, wait for /health
+make run           # compose up -d --build
+make logs          # follow all three
 make down          # stop
 make down-clean    # stop and drop the database volume
 ```
 
-`bin/gleamdrill` picks `docker compose` when the daemon answers and
-`podman compose` otherwise (`COMPOSE=...` overrides). Both images build from the **repository
+`docker compose` when the daemon answers, `podman compose` otherwise
+(`COMPOSE=...` overrides). Both images build from the **repository
 root** — the backend needs `fsrs/` and `wire/` alongside `server/`, and the web image copies
 the committed `dist/`. A `.dockerignore` keeps the context to the ~14M that is
 actually used rather than the whole 278M tree.

@@ -8,7 +8,7 @@ BRYTHON_VERSION := 3.14.3
 BUN_VERSION     := 1.3.14
 PY_RUNTIME_DIR  := assets/python-runtime/$(BRYTHON_VERSION)
 
-.PHONY: dev dev-app dev-api build deploy vendor content verify worker install \
+.PHONY: dev dev-app dev-api build deploy vendor content verify worker run logs \
         clean-vendor fsrs-test fsrs-vectors server-dev server-test \
         server-smoke app-test api-fixtures e2e tour serve-dist up down \
         down-clean check-versions check-format wire-test tour-check \
@@ -137,26 +137,29 @@ api-fixtures:
 serve-dist:
 	cd dist && python3 -m http.server 4173 --bind 127.0.0.1
 
-# The whole stack -- Caddy, the backend, Postgres -- on http://localhost:8080,
-# behind one origin, through bin/gleamdrill. Needs SECRET_KEY_BASE in .env;
-# see .env.example. Serves the committed dist/, like production: `make build`
+# The whole stack -- Caddy, the backend (Go and Elixir inside), Postgres --
+# on http://localhost:8080, behind one origin: the same three images Railway
+# runs. Needs SECRET_KEY_BASE in .env (see .env.example); GLEAMDRILL_PORT there
+# moves it off 8080. Serves the committed dist/, like production: `make build`
 # first when the frontend has changed. Docker when its daemon answers, else
 # Podman; COMPOSE="podman compose" forces it.
-COMPOSE ?=
+COMPOSE ?= $(shell docker info >/dev/null 2>&1 && echo "docker compose" || echo "podman compose")
 
-up:
-	COMPOSE="$(COMPOSE)" bin/gleamdrill up
+run:
+	$(COMPOSE) up -d --build
+	@echo "GleamDrill: http://localhost:$$(sed -n 's/^GLEAMDRILL_PORT=//p' .env 2>/dev/null | grep . || echo 8080)"
 
-# `gleamdrill` on PATH and a systemd user unit: up whenever you are logged in.
-install:
-	COMPOSE="$(COMPOSE)" bin/gleamdrill install
+up: run
 
 down:
-	COMPOSE="$(COMPOSE)" bin/gleamdrill down
+	$(COMPOSE) down
+
+logs:
+	$(COMPOSE) logs -f
 
 # Drops the database volume too. Everything stored locally is lost.
 down-clean:
-	COMPOSE="$(COMPOSE)" bin/gleamdrill reset
+	$(COMPOSE) down --volumes
 
 # Drives a real browser against a built app and a running backend. Checks the
 # things only a browser can: the grading rule in the DOM, a session surviving a
