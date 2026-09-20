@@ -1,0 +1,129 @@
+#!/bin/sh
+# The whole app on this machine, one command: Caddy + the api + Postgres from
+# compose.yaml, on http://localhost:8080, the same images Railway runs. The
+# committed dist/ is what gets served, exactly as in production -- hacking on
+# the frontend? `make build`, then `gleamdrill up` again.
+#
+#   gleamdrill [up] [--no-open]   build if needed, start, open the browser
+#   gleamdrill down | restart | status | logs [service] | open
+#   gleamdrill reset              down, and drop the database volume
+#   gleamdrill install            ~/.local/bin/gleamdrill + a systemd user
+#                                 unit, so it is up whenever you are logged in
+#   gleamdrill uninstall
+#
+# Runtime: `docker compose` when the daemon answers, else `podman compose`;
+# COMPOSE=... overrides both.
+
+set -eu
+
+here="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+unit="$HOME/.config/systemd/user/gleamdrill.service"
+
+# GLEAMDRILL_PORT in .env moves the front door (compose.yaml reads it too).
+port=8080
+if [ -f "$here/.env" ]; then
+  port="$(sed -n 's/^GLEAMDRILL_PORT=//p' "$here/.env" | tail -n 1)"
+  port="${port:-8080}"
+fi
+url="http://localhost:$port"
+
+if [ -z "${COMPOSE:-}" ]; then
+  if docker info >/dev/null 2>&1; then
+    COMPOSE="docker compose"
+  else
+    COMPOSE="podman compose"
+  fi
+fi
+
+compose() {
+  # shellcheck disable=SC2086
+  (cd "$here" && $COMPOSE "$@")
+}
+
+need_env() {
+  [ -f "$here/.env" ] && grep -q '^SECRET_KEY_BASE=.\{64,\}' "$here/.env" && return
+  echo "gleamdrill: $here/.env needs SECRET_KEY_BASE (64+ characters); see .env.example" >&2
+  exit 1
+}
+
+# The api's own answer, not whatever else is on the port: 8080 is popular.
+wait_healthy() {
+  i=0
+  while [ $i -lt 120 ]; do
+    if curl -sf "$url/health" 2>/dev/null | grep -q '"status":"ok"'; then
+      return 0
+    fi
+    i=$((i + 1))
+    sleep 1
+  done
+  echo "gleamdrill: $url/health did not answer in two minutes; try: gleamdrill logs api" >&2
+  return 1
+}
+
+up() {
+  need_env
+  log="$(mktemp)"
+  if ! compose up -d --build --quiet-pull >"$log" 2>&1; then
+    grep -v "level=error\|Executing external compose provider\|podman-compose(1)" "$log" | tail -n 20 >&2
+    rm -f "$log"
+    echo "gleamdrill: compose failed (port $port taken? set GLEAMDRILL_PORT in .env)" >&2
+    exit 1
+  fi
+  rm -f "$log"
+  wait_healthy
+  echo "GleamDrill is up: $url"
+  case "${1:-}" in
+    --no-open) ;;
+    *) command -v xdg-open >/dev/null 2>&1 && xdg-open "$url" >/dev/null 2>&1 || true ;;
+  esac
+}
+
+install() {
+  mkdir -p "$HOME/.local/bin" "$(dirname "$unit")"
+  ln -sf "$here/bin/gleamdrill" "$HOME/.local/bin/gleamdrill"
+  cat > "$unit" <<UNIT
+[Unit]
+Description=GleamDrill on http://localhost:8080
+After=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=$here
+ExecStart=$here/bin/gleamdrill up --no-open
+ExecStop=$here/bin/gleamdrill down
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target
+UNIT
+  systemctl --user daemon-reload
+  systemctl --user enable --now gleamdrill.service
+  echo "installed: ~/.local/bin/gleamdrill and $unit"
+  echo "GleamDrill is up: $url (and will be, whenever you are logged in)"
+}
+
+uninstall() {
+  systemctl --user disable --now gleamdrill.service 2>/dev/null || true
+  rm -f "$unit" "$HOME/.local/bin/gleamdrill"
+  systemctl --user daemon-reload
+  echo "uninstalled"
+}
+
+case "${1:-up}" in
+  up) shift; up "$@" ;;
+  down) compose down ;;
+  restart) compose down; up --no-open ;;
+  status) compose ps ;;
+  logs) shift; compose logs -f "$@" ;;
+  open) xdg-open "$url" ;;
+  reset)
+    printf 'Drop the local database (every local account and review)? [y/N] '
+    read -r answer
+    case "$answer" in y|Y) compose down --volumes; echo "reset" ;; *) echo "kept" ;; esac
+    ;;
+  install) install ;;
+  uninstall) uninstall ;;
+  -h|--help|help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//' ;;
+  *) echo "gleamdrill: unknown command '$1' (try --help)" >&2; exit 2 ;;
+esac

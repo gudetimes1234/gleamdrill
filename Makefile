@@ -8,7 +8,7 @@ BRYTHON_VERSION := 3.14.3
 BUN_VERSION     := 1.3.14
 PY_RUNTIME_DIR  := assets/python-runtime/$(BRYTHON_VERSION)
 
-.PHONY: dev dev-app dev-api build deploy vendor content verify worker \
+.PHONY: dev dev-app dev-api build deploy vendor content verify worker install \
         clean-vendor fsrs-test fsrs-vectors server-dev server-test \
         server-smoke app-test api-fixtures e2e tour serve-dist up down \
         down-clean check-versions check-format wire-test tour-check \
@@ -138,20 +138,25 @@ serve-dist:
 	cd dist && python3 -m http.server 4173 --bind 127.0.0.1
 
 # The whole stack -- Caddy, the backend, Postgres -- on http://localhost:8080,
-# behind one origin. Needs SECRET_KEY_BASE in .env; see .env.example.
-# Docker by default so `lazydocker` can see the containers; Podman works too,
-# with COMPOSE="podman compose".
-COMPOSE ?= docker compose
+# behind one origin, through bin/gleamdrill. Needs SECRET_KEY_BASE in .env;
+# see .env.example. Serves the committed dist/, like production: `make build`
+# first when the frontend has changed. Docker when its daemon answers, else
+# Podman; COMPOSE="podman compose" forces it.
+COMPOSE ?=
 
-up: build
-	$(COMPOSE) up --build
+up:
+	COMPOSE="$(COMPOSE)" bin/gleamdrill up
+
+# `gleamdrill` on PATH and a systemd user unit: up whenever you are logged in.
+install:
+	COMPOSE="$(COMPOSE)" bin/gleamdrill install
 
 down:
-	$(COMPOSE) down
+	COMPOSE="$(COMPOSE)" bin/gleamdrill down
 
 # Drops the database volume too. Everything stored locally is lost.
 down-clean:
-	$(COMPOSE) down --volumes
+	COMPOSE="$(COMPOSE)" bin/gleamdrill reset
 
 # Drives a real browser against a built app and a running backend. Checks the
 # things only a browser can: the grading rule in the DOM, a session surviving a

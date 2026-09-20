@@ -8,6 +8,8 @@
 # Only `web` publishes a port. The browser reaches the API through Caddy at
 # /api/*, which is what keeps this a single origin.
 
+name: gleamdrill
+
 services:
   db:
     image: docker.io/library/postgres:17-alpine
@@ -34,13 +36,17 @@ services:
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:?set SECRET_KEY_BASE in .env, 64+ chars}
       # Same-origin means the browser sends no preflight, but the server still
       # requires this to be set, so it names the origin Caddy answers on.
-      ALLOWED_ORIGIN: http://localhost:8080
+      ALLOWED_ORIGIN: http://localhost:${GLEAMDRILL_PORT:-8080}
       PORT: "8080"
       BIND: 0.0.0.0
       # Elixir attempts run as this user inside the api container (the API
       # itself is root there, so it can `su`); see server/Dockerfile. It is
       # the image's default, repeated so it is visible.
       RUN_AS_USER: runner
+      # The daily reminder mail, if you want it locally: set these in .env.
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      REMINDER_FROM: ${REMINDER_FROM:-GleamDrill <reminders@localhost>}
+      APP_URL: http://localhost:${GLEAMDRILL_PORT:-8080}
     depends_on:
       db:
         condition: service_healthy
@@ -54,7 +60,8 @@ services:
       API_UPSTREAM: api:8080
       PORT: "8080"
     ports:
-      - "8080:8080"
+      # GLEAMDRILL_PORT in .env moves the front door when 8080 is taken.
+      - "${GLEAMDRILL_PORT:-8080}:8080"
     depends_on:
       - api
     restart: unless-stopped

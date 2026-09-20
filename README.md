@@ -299,8 +299,27 @@ make dev-api       # backend only, reading server/.env
 make verify        # every solution variant, plus the scheduler and API tests
 make build         # minified bundle -> dist/
 make up            # the whole stack in containers, on :8080
+make install       # ...and keep it there: `gleamdrill` on PATH + a user service
 make deploy        # build + railway up
 ```
+
+## Run it locally
+
+One command brings the whole app up on <http://localhost:8080>, the same
+three images Railway runs (Caddy, the api with Go and Elixir inside,
+Postgres), and keeps it there:
+
+```sh
+make install       # once: ~/.local/bin/gleamdrill + a systemd user unit
+gleamdrill         # up (builds if needed) and opens the browser
+gleamdrill logs api
+gleamdrill down    # the unit brings it back at your next login
+gleamdrill reset   # drop the local database
+```
+
+`bin/gleamdrill` serves the committed `dist/`, exactly like production, so
+after a frontend change run `make build` and then `gleamdrill up` again.
+Docker when its daemon answers, otherwise Podman.
 
 Narrower targets, for when `verify` is more than you need:
 
@@ -354,19 +373,19 @@ source tree. They apply once each, in order, inside a transaction.
 
 ## Containers
 
-`make up` brings up the whole stack — Caddy, the backend, Postgres — on
-<http://localhost:8080>. Copy `.env.example` to `.env` and put a
-`SECRET_KEY_BASE` in it first (`openssl rand -hex 48`); the server refuses to
-start with anything shorter than 64 characters.
+`make up` (or `gleamdrill up`, above) brings up the whole stack — Caddy, the
+backend, Postgres — on <http://localhost:8080>. Copy `.env.example` to `.env`
+and put a `SECRET_KEY_BASE` in it first (`openssl rand -hex 48`); the server
+refuses to start with anything shorter than 64 characters.
 
 ```sh
-make up            # docker compose up --build (COMPOSE="podman compose" for Podman)
+make up            # compose up -d --build, wait for /health
 make down          # stop
 make down-clean    # stop and drop the database volume
 ```
 
-Docker by default, so `lazydocker` and friends can see the containers; for
-rootless Podman use `make up COMPOSE="podman compose"`. Both images build from the **repository
+`bin/gleamdrill` picks `docker compose` when the daemon answers and
+`podman compose` otherwise (`COMPOSE=...` overrides). Both images build from the **repository
 root** — the backend needs `fsrs/` and `wire/` alongside `server/`, and the web image copies
 the committed `dist/`. A `.dockerignore` keeps the context to the ~14M that is
 actually used rather than the whole 278M tree.
