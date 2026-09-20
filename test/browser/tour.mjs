@@ -585,7 +585,10 @@ check("i focuses the editor",
     || document.activeElement?.tagName === "GLEAM-EDITOR"
     || !!document.querySelector("gleam-editor .cm-focused")));
 
-// Write, Ctrl+Enter, digit: the whole rep without the mouse.
+// Write, Ctrl+Enter, digit: the whole rep without the mouse. Against a
+// remote host the runtime is still downloading at this point, and a run
+// pressed before it is ready is refused with a notice rather than queued.
+await waitForRunnable();
 await setCode("def containsDuplicate(nums):\n    return len(set(nums)) != len(nums)");
 await page.click(".cm-content");
 await page.keyboard.press("Control+Enter");
