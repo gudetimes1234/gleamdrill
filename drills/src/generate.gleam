@@ -989,7 +989,8 @@ fn note_meta(stem: String, extension: String) -> Meta {
     Ok(text) -> parse_note(text)
     Error(_) ->
       case simplifile.read("notes/" <> stem <> ".txt") {
-        Error(_) -> Meta(kind: "", complexity: "", order: default_order, note: "")
+        Error(_) ->
+          Meta(kind: "", complexity: "", order: default_order, note: "")
         Ok(text) -> parse_note(text)
       }
   }
