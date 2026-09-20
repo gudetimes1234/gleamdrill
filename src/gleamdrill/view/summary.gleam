@@ -101,7 +101,8 @@ pub fn view(m: Model) -> Element(Msg) {
 fn row(m: Model, entry: SittingEntry) -> Element(Msg) {
   html.li([attribute.class("summary-row")], [
     html.span([attribute.class("summary-row-title")], [
-      html.text(entry.problem.title),
+      format.language_tag(entry.problem.category),
+      html.text(" " <> entry.problem.title),
     ]),
     html.span([attribute.class("summary-row-time")], [
       html.text(insights.duration_label(entry.duration_ms)),

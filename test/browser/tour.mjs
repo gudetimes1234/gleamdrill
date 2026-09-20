@@ -294,8 +294,10 @@ await page.waitForSelector(".queue-screen", { timeout: 20000 });
 check("the picker hands a first-time user to the queue", true);
 await capture("picker-to-queue", "Straight from the picker to choosing problems");
 await seedQueue();
+// The per-row tags in the preview list are labels, not a filter: nothing
+// on this screen narrows the queue by language any more.
 check("the study screen has no language filter: the queue is what you queued",
-  (await page.$$(".language-chip")).length === 0);
+  (await page.$$(".language-filter, .study-chips, button.language-chip")).length === 0);
 const queueTags = await page.$$eval(".study-preview-item .study-preview-tag",
   (n) => n.map((e) => e.textContent.trim()));
 // The topic was queued in every language, and the sitting round-robins
@@ -1181,6 +1183,15 @@ for (const [language, subcategory, title, code, runnable] of languages) {
   await page.click("text=Browse problems");
   await page.waitForSelector(".menu-container", { timeout: 10000 });
   await openByHand(language, subcategory, title);
+
+  // "Two Sum" is the same title in five languages, so the language is said
+  // three times: a pill by the title, a strip on the editor, the status bar.
+  check(`${language} is named beside the title`,
+    (await page.textContent(".drill-title .language-chip")) === language);
+  check(`${language}'s editor frame is labelled`,
+    (await page.getAttribute(".editor-frame", "data-language")) === slug);
+  check(`the status bar says ${language}`,
+    (await page.textContent(".statusbar")).toUpperCase().includes(`DRILL · ${language.toUpperCase()}`));
 
   if (runnable) {
     // A cold runtime is a multi-megabyte download; the button stays disabled
@@ -2089,6 +2100,8 @@ await goHome();
 await page.click(".study-start");
 await page.waitForSelector(".run-bar", { timeout: 30000 });
 await capture("drill", "Drill on a phone: editor on the first screen, run bar pinned");
+check("the language pill is on screen at phone width",
+  await page.isVisible(".drill-title .language-chip"));
 await waitForRunnable();
 await page.click(".run-button");
 await page.waitForSelector(".grade-bar", { timeout: 90000 });

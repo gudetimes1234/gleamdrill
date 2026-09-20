@@ -646,7 +646,15 @@ pub fn context_label(m: Model) -> String {
       case current_quiz(m), m.recall {
         Ok(_), _ -> "QUIZ"
         Error(Nil), True -> "RECALL"
-        Error(Nil), False -> "DRILL"
+        // The language rides in the context, since Elixir and Python are
+        // different sittings and the title alone does not say which.
+        Error(Nil), False ->
+          case current_problem(m) {
+            Ok(current) ->
+              "DRILL \u{b7} "
+              <> string.uppercase(problem.language_label(current.language))
+            Error(Nil) -> "DRILL"
+          }
       }
     StatsRoute -> "STATS"
     ReportRoute -> "REPORT"

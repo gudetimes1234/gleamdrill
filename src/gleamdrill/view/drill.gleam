@@ -102,7 +102,7 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
       html.h2(
         [attribute.class("drill-title")],
         list.flatten([
-          [html.text(current.title)],
+          [html.text(current.title), format.language_chip(current.language)],
           case model.is_leech(m, ref) {
             True -> [
               html.span(
@@ -164,20 +164,30 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
           None, True -> recall_main(m, current)
           None, False -> [
             html.div([attribute.class("work-row")], [
-              keyed.div([attribute.class("editor-frame")], [
-                #(
-                  body_key,
-                  editor.view([
-                    editor.doc(m.draft),
-                    editor.language(problem.language_slug(current.language)),
-                    editor.keymap(m.editor_keymap),
-                    editor.height(m.editor_height),
-                    editor.on_change(EditorChanged),
-                    editor.on_resize(EditorResized),
-                    editor.diagnostics(editor_diagnostics(m)),
-                  ]),
-                ),
-              ]),
+              keyed.div(
+                [
+                  attribute.class("editor-frame"),
+                  // The frame's top strip names the language (style.css).
+                  attribute.attribute(
+                    "data-language",
+                    problem.language_slug(current.language),
+                  ),
+                ],
+                [
+                  #(
+                    body_key,
+                    editor.view([
+                      editor.doc(m.draft),
+                      editor.language(problem.language_slug(current.language)),
+                      editor.keymap(m.editor_keymap),
+                      editor.height(m.editor_height),
+                      editor.on_change(EditorChanged),
+                      editor.on_resize(EditorResized),
+                      editor.diagnostics(editor_diagnostics(m)),
+                    ]),
+                  ),
+                ],
+              ),
               ..case m.walk_open, m.walk {
                 True, Some(state) -> walk_panel(current, state)
                 _, _ -> answer_panel(m, current)

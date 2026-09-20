@@ -282,9 +282,7 @@ fn queue_preview(m: Model) -> Element(Msg) {
           [attribute.class("study-preview-list")],
           list.map(upcoming, fn(ref: problem.ProblemRef) {
             html.li([attribute.class("study-preview-item")], [
-              html.span([attribute.class("study-preview-tag")], [
-                html.text(problems.language_tag(ref.category)),
-              ]),
+              format.language_tag(ref.category),
               html.span([attribute.class("study-preview-title")], [
                 html.text(ref.title),
               ]),

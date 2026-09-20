@@ -5,7 +5,8 @@ import gleam/int
 import gleam/option.{type Option, None, Some}
 import gleam/time/timestamp.{type Timestamp}
 import gleamdrill/api.{type CardState}
-import gleamdrill/problem.{type Difficulty}
+import gleamdrill/problem.{type Difficulty, type Language}
+import gleamdrill/problems
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -30,6 +31,48 @@ pub fn interval(seconds: Int) -> String {
 /// A problem's LeetCode rating as a small bordered pill, or nothing for a
 /// problem without one. Its own `difficulty-` class family, never `grade-`:
 /// the grade bar also says "Hard" and "Easy", and the two must not look alike.
+/// The language a drill is in, as a filled pill in that language's colour.
+/// Nothing for a concept drill: there is no code to write.
+pub fn language_chip(language: Language) -> Element(msg) {
+  case language {
+    problem.Concept -> element.none()
+    _ ->
+      html.span(
+        [
+          attribute.class(
+            "language-chip language-" <> problem.language_slug(language),
+          ),
+        ],
+        [html.text(problem.language_label(language))],
+      )
+  }
+}
+
+/// The two-letter form for a list row, coloured the same way. Takes the
+/// category name because a row holds a ref, not a problem.
+pub fn language_tag(category: String) -> Element(msg) {
+  let tag = problems.language_tag(category)
+  html.span(
+    [
+      attribute.class(
+        "language-chip language-tag study-preview-tag language-" <> slug_of(tag),
+      ),
+    ],
+    [html.text(tag)],
+  )
+}
+
+fn slug_of(tag: String) -> String {
+  case tag {
+    "py" -> "python"
+    "gl" -> "gleam"
+    "ts" -> "typescript"
+    "ex" -> "elixir"
+    "go" -> "go"
+    _ -> "concept"
+  }
+}
+
 pub fn difficulty_badge(difficulty: Option(Difficulty)) -> Element(msg) {
   case difficulty {
     None -> element.none()

@@ -13,6 +13,14 @@
     --error: #f38ba8;
     --warning: #f9e2af;
 
+    /* One colour per language, worn by the header chip and the editor's top
+       strip so the two always agree. Catppuccin Mocha, like the rest. */
+    --lang-python: #f9e2af;
+    --lang-gleam: #f5c2e7;
+    --lang-typescript: #89b4fa;
+    --lang-elixir: #cba6f7;
+    --lang-go: #94e2d5;
+
     --radius: 6px;
     --radius-sm: 4px;
     --radius-pill: 999px;
@@ -510,6 +518,56 @@ details.approach summary:focus-visible {
     text-align: center;
 }
 
+/* The language, unmissable: a filled pill beside the title in the language's
+   own colour. "Two Sum" is the same title in five languages; this is what
+   tells them apart before the first keystroke. */
+.language-chip {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 10px;
+    padding: 2px 10px;
+    border-radius: var(--radius-pill);
+    background: var(--language-color, var(--accent));
+    color: var(--bg-raised);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.5;
+}
+
+/* The list-row form: two letters, same colour, no fill so a column of them
+   reads as a margin note rather than a row of buttons. */
+.language-tag {
+    margin-left: 0;
+    padding: 0 6px;
+    background: transparent;
+    border: 1px solid var(--language-color, var(--border));
+    color: var(--language-color, var(--text-secondary));
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    min-width: 2.6em;
+    text-align: center;
+}
+
+.language-concept {
+    --language-color: var(--text-secondary);
+}
+
+.language-python,
+.editor-frame[data-language='python'] { --language-color: var(--lang-python); }
+.language-gleam,
+.editor-frame[data-language='gleam'] { --language-color: var(--lang-gleam); }
+.language-typescript,
+.editor-frame[data-language='typescript'] { --language-color: var(--lang-typescript); }
+.language-elixir,
+.editor-frame[data-language='elixir'] { --language-color: var(--lang-elixir); }
+.language-go,
+.editor-frame[data-language='go'] { --language-color: var(--lang-go); }
+
 .keymap-picker {
     display: flex;
     border: 1px solid var(--border);
@@ -999,6 +1057,25 @@ details.approach[open] summary.panel-title {
 
 .editor-frame:focus-within {
     border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+}
+
+/* The frame's top strip names the language of the code beneath it, in the
+   same colour as the header chip. Pure CSS off the data attribute: nothing
+   inside the CodeMirror host changes, so undo history and cursor survive. */
+.editor-frame[data-language]::before {
+    content: attr(data-language);
+    display: block;
+    padding: 3px 10px;
+    background: var(--bg-raised);
+    border-bottom: 1px solid var(--border);
+    box-shadow: inset 3px 0 0 var(--language-color, var(--accent));
+    color: var(--language-color, var(--accent));
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    line-height: 1.6;
 }
 
 /* The host is a column: the CodeMirror view fills it and the drag handle sits
@@ -2282,14 +2359,6 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
     padding: 6px 0;
     border-top: 1px solid var(--border);
     font-size: 13px;
-}
-
-.study-preview-tag {
-    color: var(--text-secondary);
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    min-width: 2.2em;
 }
 
 .study-preview-title {
