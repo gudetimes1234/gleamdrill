@@ -70,8 +70,13 @@ body {
     padding: 20px;
 }
 
-.menu-container,
-.drill-container {
+/* The drill is the one screen that wants the whole width: editor and
+   solution side by side, out to the edges. */
+#app:has(.drill-container) {
+    padding: 12px;
+}
+
+.menu-container {
     max-width: 1280px;
     margin: 0 auto;
 }
@@ -175,11 +180,10 @@ body {
 /* Themed scrollbars everywhere something scrolls inside a panel — the default
    light-grey ones read as a rendering glitch against Catppuccin Mocha. */
 .pane-list,
-.drill-side,
 .drill-main,
 .search-results,
 .output-pane,
-.answer-content.answer-side,
+.slot-pane,
 gleam-editor .cm-scroller {
     scrollbar-width: thin;
     scrollbar-color: var(--bg-hover) transparent;
@@ -496,8 +500,7 @@ gleam-editor .cm-scroller {
 .keymap-option:focus-visible,
 .selected-item:focus-visible,
 .solution-button:focus-visible,
-.results-details summary:focus-visible,
-details.approach summary:focus-visible {
+.results-details summary:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
 }
@@ -831,20 +834,37 @@ details.approach summary:focus-visible {
     transition: width var(--ease);
 }
 
-.drill-grid {
-    display: grid;
-    grid-template-columns: minmax(280px, 380px) 1fr;
-    gap: 16px;
-    align-items: start;
+/* The prompt page sits over the editor page. The editor page is parked
+   rather than removed -- CodeMirror stays mounted with its history -- and
+   made inert so nothing under the sheet can take focus. */
+.drill-body {
+    position: relative;
 }
 
-.drill-side {
+.drill-main.parked {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    visibility: hidden;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.drill-tools {
     display: flex;
-    flex-direction: column;
-    gap: 16px;
-    max-height: calc(100vh - 140px);
-    max-height: calc(100svh - 140px);
-    overflow-y: auto;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.read-toggle {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+.read-toggle.active {
+    border-color: var(--accent);
+    color: var(--text-primary);
 }
 
 
@@ -929,16 +949,6 @@ details.approach summary:focus-visible {
 .problem-prompt.prose ul {
     margin: 0 0 10px;
     padding-left: 20px;
-}
-
-details.approach summary.panel-title {
-    cursor: pointer;
-    margin-bottom: 0;
-    list-style: revert;
-}
-
-details.approach[open] summary.panel-title {
-    margin-bottom: 10px;
 }
 
 .approach-text {
@@ -1146,14 +1156,6 @@ details.approach[open] summary.panel-title {
     color: var(--text-secondary);
     font-size: 13px;
     overflow-wrap: anywhere;
-}
-
-.case-list .case.pass .case-icon {
-    color: var(--success);
-}
-
-.case-list .case.fail .case-icon {
-    color: var(--error);
 }
 
 .drill-main {
@@ -1632,7 +1634,7 @@ button.results-summary:focus-visible {
 .answer-content pre {
     color: var(--text-primary);
     font-family: inherit;
-    white-space: pre-wrap;
+    white-space: pre;
 }
 
 .hidden {
@@ -1653,12 +1655,42 @@ button.results-summary:focus-visible {
     min-width: 0;
 }
 
-.answer-content.answer-side {
+/* The slot beside the editor: one pane at a time, the editor's height. */
+.slot-pane {
+    display: flex;
+    flex-direction: column;
     flex: 1 1 46%;
     min-width: 280px;
     max-height: var(--editor-default-height);
     overflow-y: auto;
     margin: 0;
+}
+
+/* Every pane has its own close, at every width. */
+.slot-pane .answer-close {
+    display: inline-flex;
+    align-items: center;
+}
+
+.solution-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.solution-picker .solution-button {
+    font-size: 12px;
+    padding: 4px 10px;
+}
+
+.note-pane .note-input {
+    flex: 1;
+    min-height: 120px;
+}
+
+.note-pane .answer-header {
+    margin-bottom: 10px;
 }
 
 /* Your code against the reference, after a pass. The changed lines carry the
@@ -1685,13 +1717,6 @@ button.results-summary:focus-visible {
     margin-left: 8px;
 }
 
-/* The panel a pass opened has no run-bar toggle of its own, so its close
-   button shows at every width. */
-.answer-content.auto .answer-close {
-    display: inline-flex;
-    align-items: center;
-}
-
 .answer-diff-key {
     margin: 0 0 8px;
     color: var(--text-secondary);
@@ -1707,8 +1732,10 @@ gleam-diff {
     overflow: hidden;
 }
 
+/* The element sets --diff-font-size to whatever lets its longest line fit
+   (editor_ffi.mjs, GleamDiff.#fit): 13px down to 9px, then it scrolls. */
 gleam-diff .cm-editor {
-    font-size: 13px;
+    font-size: var(--diff-font-size, 13px);
 }
 
 gleam-diff .cm-changedLine,
@@ -1909,16 +1936,6 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
     cursor: pointer;
 }
 
-/* Collapsed, the prompt column is just the toggle standing on end. */
-.drill-grid.side-collapsed {
-    grid-template-columns: auto 1fr;
-}
-
-.drill-grid.side-collapsed .side-toggle {
-    writing-mode: vertical-rl;
-    padding: 14px 6px;
-}
-
 /* Desktop only: a split pane. The column is the viewport's height; the
    editor sits at its default (or dragged) height and never gives it up; the
    results take what is left and scroll inside themselves. Before this the
@@ -1990,19 +2007,6 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
         min-width: unset;
     }
 
-    .drill-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .drill-grid.side-collapsed {
-        grid-template-columns: 1fr;
-    }
-
-    .drill-grid.side-collapsed .side-toggle {
-        writing-mode: horizontal-tb;
-        padding: 8px 14px;
-    }
-
     /* One column: the revealed solution is a temporary overlay on top of the
        editor rather than a panel under it, so the run bar stays put and the
        same button (or `s`) flips between reading and typing. The editor keeps
@@ -2014,7 +2018,7 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
         flex-direction: column;
     }
 
-    .answer-content.answer-side {
+    .slot-pane {
         position: absolute;
         top: 0;
         left: 0;
@@ -2024,18 +2028,6 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
         min-height: 100%;
         max-height: 60svh;
         overflow-y: auto;
-    }
-
-    .answer-content.answer-side .answer-close {
-        display: inline-flex;
-        align-items: center;
-    }
-
-    /* There is still room here for the panels to run their natural height. The
-       phone block below deliberately takes this back. */
-    .drill-side {
-        max-height: none;
-        overflow-y: visible;
     }
 
     .drill-header {
@@ -2131,27 +2123,16 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
         min-width: 150px;
     }
 
-    /* Without this the prompt, approach, signature and test list stack to full
-       height and the editor starts below the fold on every single problem. */
-    .drill-side {
-        max-height: 34svh;
-        overflow-y: auto;
-        scrollbar-gutter: stable;
+    .read-sheet {
+        padding: 12px 2px 32px;
     }
 
-    /* A panel clipped by the scroller reads as broken rendering rather than as
-       "there is more below". Sticky flex item, so the fade rides the bottom
-       edge while the panels scroll under it. Phone only: at this height the
-       panels always overflow, so the fade is never covering a short list. */
-    .drill-side::after {
-        content: '';
-        position: sticky;
-        bottom: -1px;
-        flex-shrink: 0;
-        height: 24px;
-        margin-top: -40px;
-        pointer-events: none;
-        background: linear-gradient(transparent, var(--bg-primary));
+    .read-title {
+        font-size: 20px;
+    }
+
+    .read-start {
+        width: 100%;
     }
 
     gleam-editor {
@@ -2202,14 +2183,6 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
     .keymap-option {
         padding: 0 16px;
         font-size: 13px;
-    }
-
-
-    /* Padding rather than flex centring: display:flex on a <summary> drops the
-       disclosure triangle. */
-    details.approach summary.panel-title {
-        min-height: 44px;
-        padding: 11px 0;
     }
 }
 
@@ -2986,13 +2959,86 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
 /* --- study screen --- */
 
 .study-screen,
-.stats-screen {
+.stats-screen,
+.read-sheet {
     max-width: 780px;
     margin: 0 auto;
     padding: 28px 20px 48px;
     display: flex;
     flex-direction: column;
     gap: 22px;
+}
+
+/* --- the prompt page --- */
+
+.read-sheet {
+    width: 100%;
+}
+
+.read-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.read-sheet .problem-category {
+    margin: -12px 0 0;
+}
+
+.read-sheet .problem-prompt {
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+.read-sheet .signature {
+    margin: 0;
+}
+
+.read-examples .panel-title,
+.read-approach .panel-title {
+    margin-bottom: 8px;
+}
+
+.read-examples .case {
+    padding: 4px 0;
+    font-size: 13px;
+}
+
+.read-sheet .note-text {
+    margin: 0;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+}
+
+.read-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.read-start {
+    font-size: 15px;
+    padding: 12px 22px;
+}
+
+.read-start kbd {
+    margin-left: 6px;
+    opacity: 0.7;
+}
+
+/* The recall card keeps the prompt on the page above it, narrower gaps. */
+.recall-read {
+    padding-top: 8px;
+    padding-bottom: 16px;
+}
+
+.quiz-question {
+    padding-top: 8px;
+    padding-bottom: 8px;
 }
 
 .study-header {

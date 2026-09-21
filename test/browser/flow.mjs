@@ -58,6 +58,14 @@ const answerPickerIfShown = async () => {
   await page.waitForSelector(".study-screen", { timeout: 20000 });
 };
 
+/// A drill opens on its prompt page; the editor page is behind Enter.
+const startCoding = async () => {
+  await page.waitForSelector(".read-sheet", { timeout: 20000 });
+  await page.click(".read-start");
+  await page.waitForSelector(".run-bar", { timeout: 20000 });
+  await page.evaluate(() => document.activeElement?.blur());
+};
+
 await page.goto(APP, { waitUntil: "networkidle" });
 await answerPickerIfShown();
 
@@ -94,7 +102,7 @@ check("forecast renders 7 days",
 
 console.log("== start a scheduled session");
 await page.click(".study-start");
-await page.waitForSelector(".run-bar", { timeout: 20000 });
+await startCoding();
 check("opens a drill", true);
 // A first encounter grades freely: all four buttons before any run.
 check("a first encounter grades from the start",
@@ -123,7 +131,7 @@ await page.click(".grade-again");
 // The next card opens once the review has round-tripped; the grade bar of
 // the old one goes first.
 await page.waitForFunction(() => !document.querySelector(".grade-bar"), { timeout: 25000 });
-await page.waitForSelector(".run-bar", { timeout: 25000 });
+await startCoding();
 check("advances to the next problem after grading",
   await page.isVisible(".run-bar"));
 

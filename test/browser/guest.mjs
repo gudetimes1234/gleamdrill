@@ -82,6 +82,14 @@ const answerPickerIfShown = async () => {
   await page.waitForSelector(".study-screen", { timeout: 20000 });
 };
 
+/// A drill opens on its prompt page; the editor page is behind Enter.
+const startCoding = async () => {
+  await page.waitForSelector(".read-sheet", { timeout: 20000 });
+  await page.click(".read-start");
+  await page.waitForSelector(".run-bar", { timeout: 20000 });
+  await page.evaluate(() => document.activeElement?.blur());
+};
+
 await page.goto(APP, { waitUntil: "networkidle" });
 await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 15000 });
@@ -104,7 +112,7 @@ check("and is not a trap", await page.isVisible(".guest-strip"));
 
 console.log("== real scheduling, with no server");
 await page.click(".study-start");
-await page.waitForSelector(".run-bar", { timeout: 20000 });
+await startCoding();
 await solve();
 const labels = await page.$$eval(".grade-button", (n) =>
   n.map((e) => e.querySelector(".grade-label").textContent));
@@ -117,7 +125,7 @@ check("with real intervals", intervals[3] === "6d", intervals.join("/"));
 
 await page.click(".grade-good");
 await page.waitForTimeout(1200);
-check("grading advances", await page.isVisible(".run-bar"));
+check("grading advances to the next problem, on its prompt page", await page.isVisible(".read-sheet"));
 
 console.log("== progress survives a reload");
 await page.goto(APP, { waitUntil: "networkidle" });
@@ -183,7 +191,7 @@ await page.goto(APP, { waitUntil: "networkidle" });
 await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 15000 });
 await page.click(".study-start");
-await page.waitForSelector(".run-bar", { timeout: 20000 });
+await startCoding();
 await runAndGrade();
 await page.goto(APP, { waitUntil: "networkidle" });
 await answerPickerIfShown();
@@ -296,7 +304,7 @@ check("localStorage could be filled for the test", filled);
 
 if (filled) {
   await page.click(".study-start");
-  await page.waitForSelector(".run-bar", { timeout: 20000 });
+  await startCoding();
   await runAndGrade();
   await page.waitForSelector(".storage-warning", { timeout: 10000 })
     .then(() => check("a failed write raises a warning", true))

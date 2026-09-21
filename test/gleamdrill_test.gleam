@@ -674,6 +674,15 @@ pub fn a_leech_opens_with_the_approach_shown_test() -> Nil {
   assert shown == rungs - 1
   let opened = model.Model(..lapsed(4), hints_revealed: shown)
   assert !model.pseudocode_revealed(opened, found.approach)
+
+  // Opened, a leech reads first like any problem, with the ladder already
+  // waiting in the slot; nothing is chosen.
+  let view = model.open_problem_view(lapsed(4), problem)
+  assert view.stage == model.Reading
+  assert view.slot == model.HintPane
+  assert view.hints_revealed == shown
+  assert view.revealed_solution == None
+  assert model.open_problem_view(lapsed(3), problem).slot == model.NoPane
 }
 
 /// A walk step's code slice is a piece of the pseudocode; its hint and why
@@ -1003,6 +1012,7 @@ pub fn the_review_log_is_a_ring_buffer_test() -> Nil {
 
 pub fn every_context_documents_escape_and_help_test() -> Nil {
   let base = model.default()
+  let drill = on_a_drill()
   let contexts = [
     model.Model(..base, route: model.StudyRoute),
     model.Model(..base, route: model.MenuRoute),
@@ -1012,6 +1022,21 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
     model.Model(..base, route: model.PickerRoute),
     model.Model(..base, route: model.SettingsRoute),
     model.Model(..base, route: model.SummaryRoute),
+    drill,
+    model.Model(..drill, stage: model.Coding),
+    model.Model(..drill, stage: model.Coding, slot: model.HintPane),
+    model.Model(
+      ..drill,
+      stage: model.Coding,
+      slot: model.WalkPane,
+      walk: Some(model.WalkState(
+        step: 0,
+        hint_shown: False,
+        why_shown: False,
+        code_shown: False,
+      )),
+    ),
+    model.Model(..drill, recall: True),
   ]
   use m <- list.each(contexts)
   let table = keys.bindings(m)
@@ -1032,6 +1057,96 @@ pub fn dispatch_resolves_from_the_same_table_it_documents_test() -> Nil {
   assert press("Enter") == Ok(model.UserClickedStudy)
   assert press("z") == Ok(model.UserToggledBlitz)
   assert press("v") == Error(Nil)
+}
+
+/// A drill opens on the prompt page. Enter or `i` turns to the editor, the
+/// panes are a key away, and Escape is the way out; the grades are not
+/// offered while reading.
+pub fn the_read_page_starts_coding_and_offers_the_panes_test() -> Nil {
+  let m = on_a_drill()
+  let press = fn(key) {
+    keys.dispatch(
+      m,
+      model.Key(key: key, ctrl: False, shift: False, editing: "none"),
+    )
+  }
+  assert m.stage == model.Reading
+  assert press("Enter") == Ok(model.UserStartedCoding)
+  assert press("i") == Ok(model.UserStartedCoding)
+  assert press("a") == Ok(model.UserToggledPane(model.HintPane))
+  assert press("s") == Ok(model.UserToggledPane(model.SolutionPane))
+  assert press("p") == Ok(model.UserToggledRead)
+  assert press("Escape") == Ok(model.UserClickedExitDrill)
+  assert press("1") == Error(Nil)
+  assert keys.context_label(m) == "READ \u{b7} PYTHON"
+  assert keys.context_label(model.Model(..m, stage: model.Coding))
+    == "DRILL \u{b7} PYTHON"
+}
+
+/// On the editor page a pane's key opens it and, pressed again, closes it;
+/// Escape puts away whatever is open before it means exit.
+pub fn escape_closes_the_open_pane_before_it_exits_test() -> Nil {
+  let coding = model.Model(..on_a_drill(), stage: model.Coding)
+  let press = fn(m, key) {
+    keys.dispatch(
+      m,
+      model.Key(key: key, ctrl: False, shift: False, editing: "none"),
+    )
+  }
+  assert press(coding, "Escape") == Ok(model.UserClickedExitDrill)
+  assert press(coding, "a") == Ok(model.UserToggledPane(model.HintPane))
+
+  let hinting = model.toggle_pane(coding, model.HintPane)
+  assert hinting.slot == model.HintPane
+  assert press(hinting, "Escape") == Ok(model.UserToggledPane(model.HintPane))
+  assert press(hinting, "a") == Ok(model.UserToggledPane(model.HintPane))
+  assert model.toggle_pane(hinting, model.HintPane).slot == model.NoPane
+  assert model.toggle_pane(hinting, model.SolutionPane).slot
+    == model.SolutionPane
+
+  let walking =
+    model.Model(
+      ..hinting,
+      slot: model.WalkPane,
+      walk: Some(model.WalkState(
+        step: 0,
+        hint_shown: False,
+        why_shown: False,
+        code_shown: False,
+      )),
+    )
+  assert press(walking, "Escape") == Ok(model.UserClosedWalk)
+  // Opening a pane from the prompt page turns to the editor page.
+  assert model.toggle_pane(on_a_drill(), model.NotePane).stage == model.Coding
+}
+
+/// A passing run puts the reference beside your code without that being a
+/// reveal; a failing run takes back only a diff the last pass had opened.
+pub fn a_pass_opens_the_solution_pane_without_a_reveal_test() -> Nil {
+  assert model.pane_after_run(model.NoPane, None, True) == model.SolutionPane
+  assert model.pane_after_run(model.HintPane, None, True) == model.SolutionPane
+  assert model.pane_after_run(model.SolutionPane, None, False) == model.NoPane
+  assert model.pane_after_run(model.SolutionPane, Some(0), False)
+    == model.SolutionPane
+  assert model.pane_after_run(model.HintPane, None, False) == model.HintPane
+  let m = model.Model(..on_a_drill(), slot: model.SolutionPane)
+  assert !model.answer_revealed(m, [])
+}
+
+/// Every ladder starts with a nudge, so opening the hint pane always has a
+/// first rung to show that is not the answer.
+pub fn every_ladder_opens_with_a_nudge_test() -> Nil {
+  problems.all_refs()
+  |> list.filter_map(fn(ref: problem.ProblemRef) {
+    problems.find(ref.category, ref.subcategory, ref.title)
+  })
+  |> list.each(fn(found: problem.Problem) {
+    case found.approach {
+      [] -> Nil
+      [problem.Nudge(_), ..] -> Nil
+      _ -> panic as { "ladder does not start with a nudge: " <> found.title }
+    }
+  })
 }
 
 /// The queue screen's row cursor is its own list, and `space` there means
@@ -1254,6 +1369,17 @@ fn fresh_model_of(
 fn a_catalogue_ref() -> problem.ProblemRef {
   let assert Ok(ref) = list.first(problems.all_refs())
   ref
+}
+
+/// A drill just opened on a Python problem, as `open_problem_view` leaves it.
+fn on_a_drill() -> model.Model {
+  let ref =
+    wire.ProblemRef("NeetCode 150", "Arrays & Hashing", "Contains Duplicate")
+  model.Model(
+    ..model.open_problem_view(model.default(), ref),
+    route: model.DrillRoute,
+    selected: [ref],
+  )
 }
 
 /// The opt-in rule, stated on its own: a problem with no card is not a

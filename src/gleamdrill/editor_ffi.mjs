@@ -1139,6 +1139,7 @@ class GleamDiff extends HTMLElement {
   #view = null;
   #doc = "";
   #original = "";
+  #resizer = null;
 
   set doc(value) {
     this.#doc = value ?? "";
@@ -1163,10 +1164,14 @@ class GleamDiff extends HTMLElement {
   }
 
   connectedCallback() {
+    this.#resizer = new ResizeObserver(() => this.#fit());
+    this.#resizer.observe(this);
     this.#rebuild();
   }
 
   disconnectedCallback() {
+    this.#resizer?.disconnect();
+    this.#resizer = null;
     this.#view?.destroy();
     this.#view = null;
   }
@@ -1181,7 +1186,9 @@ class GleamDiff extends HTMLElement {
         EditorView.editable.of(false),
         EditorState.readOnly.of(true),
         lineNumbers(),
-        EditorView.lineWrapping,
+        // No line wrapping: a wrapped line of indented code reads as two
+        // lines of nonsense. The font shrinks to fit instead (#fit), and
+        // past the floor the pane scrolls sideways.
         languageExtension(this.getAttribute("language") ?? "gleam"),
         syntaxHighlighting(highlight),
         theme,
@@ -1202,6 +1209,43 @@ class GleamDiff extends HTMLElement {
     } else {
       this.#view = new EditorView({ state, parent: this });
     }
+    this.#fit();
+  }
+
+  // The font size that lets the longest line of either text fit the pane's
+  // width, between 9px and the stylesheet's 13px. Both texts count: the
+  // reference's lines are shown struck through at the same size. Through the
+  // view's own measure cycle, because `defaultCharacterWidth` is a guess
+  // until the view has measured itself once.
+  #fit() {
+    const view = this.#view;
+    if (!view || !this.isConnected) return;
+    const longest = Math.max(
+      0,
+      ...[this.#doc, this.#original].flatMap((text) =>
+        text.split("\n").map((line) => line.replace(/\t/g, "    ").length),
+      ),
+    );
+    if (longest === 0) return;
+    view.requestMeasure({
+      read: (v) => ({
+        // 32: the line's own padding, the deleted chunk's extra indent, the
+        // border, a scrollbar.
+        available: this.clientWidth - 32,
+        charWidth: v.defaultCharacterWidth,
+        gutter: v.dom.querySelector(".cm-gutters")?.offsetWidth ?? 0,
+        current: parseFloat(getComputedStyle(v.dom).fontSize) || 13,
+      }),
+      write: ({ available, charWidth, gutter, current }) => {
+        if (available <= 0) return;
+        // Everything in ems so the answer does not depend on the size
+        // currently applied: a fixed point, not a resize loop.
+        const emsWide = (longest * charWidth + gutter) / current;
+        const fit = available / emsWide;
+        const size = Math.min(13, Math.max(9, Math.floor(fit * 2) / 2));
+        this.style.setProperty("--diff-font-size", `${size}px`);
+      },
+    });
   }
 }
 

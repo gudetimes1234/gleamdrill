@@ -20,21 +20,22 @@ import gleamdrill/local
 import gleamdrill/model.{
   type Model, type Msg, Account, ArchiveReady, ArchiveRestored, AuthCompleted,
   AuthForm, AuthRoute, AwaitingGrade, BlitzExpired, CacheMeasured, CacheWarmed,
-  CardSuspended, CaseResult, Cases, ClockTicked, DayStartHour, DesiredRetention,
-  DraftSaveTicked, DraftSynced, DrillRoute, EditorChanged, EditorFocusRequested,
-  EditorResized, Errored, ExamSampled, ExitConfirmed, Guest, HelpToggled,
-  HistoryLoaded, ImportConfirmed, ImportPicked, InsightsLoaded, KeyPressed,
-  MenuActivated, MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
-  MenuSuspendedAtCursor, MenuToggledAtCursor, Model, NewPerDay, NotGrading,
-  NotStarted, NoteChanged, NoteFocusRequested, NoteSaveTicked, NoteSynced,
-  PickerConfirmed, PickerConfirmedWithStarter, PickerRoute,
-  PickerToggledLanguage, PromptDismissed, QueueChanged, QueueCursorJumped,
-  QueueCursorMoved, QueueRoute, QueueToggledAtCursor, QuizMoved, Ran,
-  Registering, ReminderHour, RemoteRunFinished, ReportRoute, ReviewRecorded,
-  ReviewsPerDay, RunError, RunFinished, RunIdle, RunTimedOut, RunnerFailed,
-  RunnerReady, Running, RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading,
-  RuntimeNotLoaded, RuntimeReady, SearchFocusRequested, SettingsRoute,
-  SettingsSaved, SignOutCompleted, SigningIn, StateImported, StateLoaded,
+  CardSuspended, CaseResult, Cases, ClockTicked, Coding, DayStartHour,
+  DesiredRetention, DraftSaveTicked, DraftSynced, DrillRoute, EditorChanged,
+  EditorFocusRequested, EditorResized, Errored, ExamSampled, ExitConfirmed,
+  Guest, HelpToggled, HintPane, HistoryLoaded, ImportConfirmed, ImportPicked,
+  InsightsLoaded, KeyPressed, MenuActivated, MenuCursorJumped, MenuCursorMoved,
+  MenuPaneFocused, MenuRoute, MenuSuspendedAtCursor, MenuToggledAtCursor, Model,
+  NewPerDay, NoPane, NotGrading, NotStarted, NoteChanged, NoteFocusRequested,
+  NotePane, NoteSaveTicked, NoteSynced, PickerConfirmed,
+  PickerConfirmedWithStarter, PickerRoute, PickerToggledLanguage,
+  PromptDismissed, QueueChanged, QueueCursorJumped, QueueCursorMoved, QueueRoute,
+  QueueToggledAtCursor, QuizMoved, Ran, Reading, Registering, ReminderHour,
+  RemoteRunFinished, ReportRoute, ReviewRecorded, ReviewsPerDay, RunError,
+  RunFinished, RunIdle, RunTimedOut, RunnerFailed, RunnerReady, Running,
+  RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded,
+  RuntimeReady, SearchFocusRequested, SettingsRoute, SettingsSaved,
+  SignOutCompleted, SigningIn, SolutionPane, StateImported, StateLoaded,
   StatsActivated, StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute,
   SubmittingGrade, SummaryRoute, SyncFailed, Synced, Syncing, TimedOut,
   TourActivated, TourContents, TourCursorMoved, TourEditorChanged, TourLesson,
@@ -56,11 +57,11 @@ import gleamdrill/model.{
   UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded, UserOpenedDetail,
   UserOpenedLesson, UserOpenedWalk, UserPickedChoice, UserPickedQueueLanguage,
   UserRemovedAllShown, UserResetLesson, UserRevealedHint, UserRevealedRecall,
-  UserSearched, UserSearchedQueue, UserStartedBlitz, UserSubmittedAnswer,
-  UserSubmittedAuth, UserToggledAuthMode, UserToggledBlitz, UserToggledDiff,
-  UserToggledProblem, UserToggledQueued, UserToggledResults, UserToggledSide,
-  UserToggledSolution, UserToggledSuspend, WalkAdvanced, WalkBacked,
-  WalkCodeShown, WalkHintShown, WalkWhyShown,
+  UserSearched, UserSearchedQueue, UserStartedBlitz, UserStartedCoding,
+  UserSubmittedAnswer, UserSubmittedAuth, UserToggledAuthMode, UserToggledBlitz,
+  UserToggledDiff, UserToggledPane, UserToggledProblem, UserToggledQueued,
+  UserToggledRead, UserToggledResults, UserToggledSolution, UserToggledSuspend,
+  WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown, WalkPane, WalkWhyShown,
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
@@ -105,7 +106,6 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
     Model(
       ..base,
       editor_keymap: preferences.editor_keymap,
-      side_collapsed: preferences.side_collapsed,
       editor_height: preferences.editor_height,
       languages_chosen: preferences.languages_chosen,
       tour_lesson: preferences.tour_lesson,
@@ -459,6 +459,13 @@ fn scroll_to(id: String) -> Effect(Msg) {
 fn run_effect(action: fn() -> Nil) -> Effect(Msg) {
   use _dispatch <- effect.from
   action()
+}
+
+/// Focus something the same message puts on screen. `effect.from` runs
+/// before the render, when the element is not there yet to focus.
+fn focus_after_render(selector: String) -> Effect(Msg) {
+  use _dispatch, _root <- effect.before_paint
+  browser.focus_element(selector)
 }
 
 fn keyboard_effect() -> Effect(Msg) {
@@ -918,7 +925,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         Model(
           ..model.default(),
           editor_keymap: m.editor_keymap,
-          side_collapsed: m.side_collapsed,
           editor_height: m.editor_height,
           // An expired session drops you to guest; it does not un-ask the
           // language question this browser has already answered.
@@ -990,7 +996,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         Model(
           ..model.default(),
           editor_keymap: m.editor_keymap,
-          side_collapsed: m.side_collapsed,
           // Signing out is not a factory reset of this browser. Without this
           // it sends someone who has already chosen their languages back to
           // the first-run picker.
@@ -1317,7 +1322,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UserToggledDiff -> #(Model(..m, diff_mode: !m.diff_mode), effect.none())
 
-    UserDismissedDiff -> #(Model(..m, diff_open: False), effect.none())
+    UserDismissedDiff -> #(Model(..m, slot: NoPane), effect.none())
 
     UserClickedUndo ->
       case m.undo, m.grading {
@@ -1353,6 +1358,11 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           run: point.run,
           revealed_solution: point.revealed_solution,
           hints_revealed: point.hints_revealed,
+          stage: Coding,
+          slot: case point.revealed_solution {
+            Some(_) -> SolutionPane
+            None -> NoPane
+          },
           grading: AwaitingGrade,
           opened_at_ms: browser.now_ms() - point.duration_ms,
           sitting: case m.sitting {
@@ -1438,20 +1448,14 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         [first, ..] ->
           with_prefetch(#(
             Model(
-              ..m,
+              ..model.open_problem_view(m, first),
               route: DrillRoute,
               problem_index: 0,
               current_iteration: 1,
               // A hand-picked sitting still ends where it started.
               studying: False,
               draft: draft_for(m, first),
-              revealed_solution: None,
-              hints_revealed: model.opening_hints(m, first),
-              walk: None,
-              walk_open: False,
-              walk_code_seen: False,
               run: RunIdle,
-              diff_open: True,
               // Without this a reveal-only drill -- Elixir has no harness at
               // all -- would sit forever on "run the tests to grade this" with
               // no tests to run, and could never be scheduled.
@@ -1496,6 +1500,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             graded: False,
             revealed_solution: None,
             hints_revealed: 0,
+            slot: NoPane,
             run: RunIdle,
             draft: "",
           ),
@@ -1711,7 +1716,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             Some(rung) -> #(
               Model(
                 ..m,
-                walk_open: True,
+                stage: Coding,
+                slot: WalkPane,
                 walk: Some(case m.walk {
                   Some(state) -> state
                   None ->
@@ -1723,8 +1729,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                     )
                 }),
                 hints_revealed: int.max(m.hints_revealed, rung + 1),
-                // One side panel at a time: the walk takes the answer's slot.
-                revealed_solution: None,
               ),
               effect.none(),
             )
@@ -1733,7 +1737,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         Error(Nil) -> #(m, effect.none())
       }
 
-    UserClosedWalk -> #(Model(..m, walk_open: False), effect.none())
+    UserClosedWalk -> #(Model(..m, slot: NoPane), effect.none())
 
     WalkHintShown -> #(
       Model(
@@ -1801,14 +1805,64 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         None -> #(m, effect.none())
       }
 
-    UserToggledSolution(index) -> {
-      let m = Model(..m, walk_open: False)
-      let revealed = case m.revealed_solution {
-        Some(current) if current == index -> None
-        _ -> Some(index)
+    // The solution shown is chosen; its button again closes the pane, but
+    // the choice stands -- the log records that it was seen.
+    UserToggledSolution(index) ->
+      case m.slot, m.revealed_solution {
+        SolutionPane, Some(current) if current == index -> #(
+          Model(..m, slot: NoPane),
+          effect.none(),
+        )
+        _, _ -> #(
+          Model(
+            ..m,
+            stage: Coding,
+            slot: SolutionPane,
+            revealed_solution: Some(index),
+          ),
+          effect.none(),
+        )
       }
-      #(Model(..m, revealed_solution: revealed), effect.none())
-    }
+
+    UserStartedCoding -> #(
+      Model(..m, stage: Coding),
+      focus_after_render("gleam-editor"),
+    )
+
+    UserToggledRead -> #(
+      Model(..m, stage: case m.stage {
+        Reading -> Coding
+        Coding -> Reading
+      }),
+      effect.none(),
+    )
+
+    UserToggledPane(pane) ->
+      case pane, m.slot == pane {
+        WalkPane, True -> handle(m, UserClosedWalk)
+        WalkPane, False -> handle(m, UserOpenedWalk)
+        // Opening the note is focusing it; closing is just closing.
+        NotePane, True -> #(Model(..m, slot: NoPane), effect.none())
+        NotePane, False -> handle(m, NoteFocusRequested)
+        // Every ladder starts with a nudge, so an open pane always has a
+        // rung to show; the nudge is not a reveal.
+        HintPane, _ -> #(
+          Model(
+            ..model.toggle_pane(m, HintPane),
+            hints_revealed: int.max(m.hints_revealed, 1),
+          ),
+          effect.none(),
+        )
+        // With no passing run there is no diff to show instead of the
+        // reference, so opening the pane is choosing the first solution.
+        SolutionPane, False ->
+          case m.revealed_solution, model.test_passed(m) {
+            None, False -> handle(m, UserToggledSolution(0))
+            _, _ -> #(model.toggle_pane(m, SolutionPane), effect.none())
+          }
+        SolutionPane, True -> #(Model(..m, slot: NoPane), effect.none())
+        NoPane, _ -> #(m, effect.none())
+      }
 
     UserClickedNext -> advance(m)
 
@@ -1816,11 +1870,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UserChangedKeymap(mode) -> {
       let m = Model(..m, editor_keymap: mode)
-      #(m, save_preferences(m))
-    }
-
-    UserToggledSide -> {
-      let m = Model(..m, side_collapsed: !m.side_collapsed)
       #(m, save_preferences(m))
     }
 
@@ -2277,8 +2326,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
 
     NoteFocusRequested -> #(
-      m,
-      run_effect(fn() { browser.focus_element(".note-input") }),
+      Model(..m, stage: Coding, slot: NotePane),
+      focus_after_render(".note-input"),
     )
 
     DraftSaveTicked ->
@@ -2347,22 +2396,41 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     RunFinished(id, outcome, stdout) ->
       case m.run {
-        Running(current, _) if current == id -> #(
-          // Whatever the harness said, the drill is now answerable: the
-          // grading bar decides what the buttons offer. A scratch run is
-          // not an answer, though; it leaves the gate where it was.
-          Model(..m, run: Ran(outcome, stdout), grading: case m.run_kind {
-            model.TestRun -> AwaitingGrade
-            model.ScratchRun -> m.grading
-          }),
-          // Blur the editor so 1-4 grade immediately: the whole rep is
-          // type, Ctrl+Enter, digit. Not on the tour, where a run follows
-          // every pause in typing and must not take the cursor away.
-          case m.route {
-            DrillRoute -> run_effect(browser.blur_active)
-            _ -> effect.none()
-          },
-        )
+        Running(current, _) if current == id -> {
+          let run = Ran(outcome, stdout)
+          // A pass opens the reference beside your code, as a diff. Only a
+          // real answer counts: something typed, on a problem with a
+          // reference, from the test run and not a scratch one.
+          let passed =
+            m.run_kind == model.TestRun
+            && model.run_passed(run)
+            && string.trim(m.draft) != ""
+            && case current_problem(m) {
+              Ok(current) -> current.solutions != []
+              Error(Nil) -> False
+            }
+          #(
+            // Whatever the harness said, the drill is now answerable: the
+            // grading bar decides what the buttons offer. A scratch run is
+            // not an answer, though; it leaves the gate where it was.
+            Model(
+              ..m,
+              run:,
+              grading: case m.run_kind {
+                model.TestRun -> AwaitingGrade
+                model.ScratchRun -> m.grading
+              },
+              slot: model.pane_after_run(m.slot, m.revealed_solution, passed),
+            ),
+            // Blur the editor so 1-4 grade immediately: the whole rep is
+            // type, Ctrl+Enter, digit. Not on the tour, where a run follows
+            // every pause in typing and must not take the cursor away.
+            case m.route {
+              DrillRoute -> run_effect(browser.blur_active)
+              _ -> effect.none()
+            },
+          )
+        }
         _ -> #(m, effect.none())
       }
 
@@ -2559,7 +2627,7 @@ fn open_first(m: Model, queue: List(ProblemRef)) -> Model {
     [] -> m
     [first, ..] ->
       Model(
-        ..m,
+        ..model.open_problem_view(m, first),
         route: DrillRoute,
         selected: queue,
         problem_index: 0,
@@ -2571,13 +2639,7 @@ fn open_first(m: Model, queue: List(ProblemRef)) -> Model {
           True -> starter_for(first)
           False -> draft_for(m, first)
         },
-        revealed_solution: None,
-        hints_revealed: model.opening_hints(m, first),
-        walk: None,
-        walk_open: False,
-        walk_code_seen: False,
         run: RunIdle,
-        diff_open: True,
         grading: initial_grading(m, first),
         opened_at_ms: browser.now_ms(),
         exam_answers: [],
@@ -2645,7 +2707,6 @@ fn problem_kind(m: Model, ref: ProblemRef) -> ProblemKind {
 fn save_preferences(m: Model) -> Effect(Msg) {
   session.save_preferences(session.Preferences(
     editor_keymap: m.editor_keymap,
-    side_collapsed: m.side_collapsed,
     editor_height: m.editor_height,
     tour_lesson: m.tour_lesson,
     languages_chosen: m.languages_chosen,
@@ -2806,7 +2867,9 @@ fn advance(m: Model) -> #(Model, Effect(Msg)) {
   // in flight, which is the only moment its language can be resolved.
   let #(m, abandoned) = abandon_run(m)
   let #(next, fx) = advance_inner(m)
-  #(next, effect.batch([abandoned, fx]))
+  // The grade button just pressed is still under the next problem's prompt
+  // page; focused, it would take the Enter meant to start coding.
+  #(next, effect.batch([abandoned, fx, run_effect(browser.blur_active)]))
 }
 
 fn advance_inner(m: Model) -> #(Model, Effect(Msg)) {
@@ -2849,6 +2912,7 @@ fn advance_inner(m: Model) -> #(Model, Effect(Msg)) {
           problem_index: index,
           revealed_solution: None,
           hints_revealed: 0,
+          slot: NoPane,
           run: RunIdle,
           grading: NotGrading,
           opened_at_ms: browser.now_ms(),
@@ -2862,15 +2926,11 @@ fn advance_inner(m: Model) -> #(Model, Effect(Msg)) {
       let advanced = case model.current_ref(advanced) {
         Ok(ref) ->
           Model(
-            ..advanced,
+            ..model.open_problem_view(advanced, ref),
             draft: case iteration == 1 && !m.studying {
               True -> draft_for(advanced, ref)
               False -> starter_for(ref)
             },
-            hints_revealed: model.opening_hints(m, ref),
-            walk: None,
-            walk_open: False,
-            walk_code_seen: False,
             grading: initial_grading(m, ref),
           )
         Error(Nil) -> Model(..advanced, draft: "")

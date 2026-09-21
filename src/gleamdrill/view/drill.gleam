@@ -8,15 +8,17 @@ import gleamdrill/editor
 import gleamdrill/insights
 import gleamdrill/model.{
   type CaseResult, type Model, type Msg, type RunError, AwaitingGrade, Cases,
-  EditorChanged, EditorResized, Errored, ExitConfirmed, NotGrading, NoteChanged,
-  Ran, RunIdle, Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded,
-  RuntimeReady, SubmittingGrade, TimedOut, UserChangedKeymap,
-  UserClickedExitDrill, UserClickedNext, UserClickedRetryRuntime, UserClickedRun,
+  Coding, EditorChanged, EditorResized, Errored, ExitConfirmed, HintPane, NoPane,
+  NotGrading, NoteChanged, NotePane, Ran, Reading, RunIdle, Running,
+  RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady, SolutionPane,
+  SubmittingGrade, TimedOut, UserChangedKeymap, UserClickedExitDrill,
+  UserClickedNext, UserClickedRetryRuntime, UserClickedRun,
   UserClickedScratchRun, UserClickedStopRun, UserClickedUndo, UserClosedWalk,
   UserDismissedDiff, UserGraded, UserOpenedWalk, UserPickedChoice,
-  UserRevealedHint, UserRevealedRecall, UserSubmittedAnswer, UserToggledDiff,
-  UserToggledResults, UserToggledSide, UserToggledSolution, WalkAdvanced,
-  WalkBacked, WalkCodeShown, WalkHintShown, WalkWhyShown,
+  UserRevealedHint, UserRevealedRecall, UserStartedCoding, UserSubmittedAnswer,
+  UserToggledDiff, UserToggledPane, UserToggledRead, UserToggledResults,
+  UserToggledSolution, WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown,
+  WalkPane, WalkWhyShown,
 }
 import gleamdrill/problem.{
   type Problem, type ProblemRef, type Quiz, type Solution,
@@ -125,12 +127,34 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
         ]),
       ),
       // Nothing to type in a quiz or a recall card, so the keybinding
-      // picker is noise; a recall card says what it is instead.
+      // picker is noise; a recall card says what it is instead. The editor
+      // page also gets the way back to the problem, for a thumb: `p` is
+      // no use on a phone.
       case current.quiz, m.recall {
         Some(_), _ -> element.none()
         None, True ->
           html.span([attribute.class("recall-chip")], [html.text("Recall")])
-        None, False -> keymap_picker(m)
+        None, False ->
+          html.div([attribute.class("drill-tools")], [
+            html.button(
+              [
+                attribute.classes([
+                  #("btn-secondary", True),
+                  #("read-toggle", True),
+                  #("active", m.stage == Reading),
+                ]),
+                attribute.type_("button"),
+                event.on_click(UserToggledRead),
+              ],
+              [
+                html.text(case m.stage {
+                  Reading -> "Editor"
+                  Coding -> "Problem"
+                }),
+              ],
+            ),
+            keymap_picker(m),
+          ])
       },
       html.div(
         [
@@ -152,74 +176,263 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
     ]),
     exit_prompt(m),
     blitz_flash(m),
-    html.div(
-      [
-        attribute.classes([
-          #("drill-grid", True),
-          #("side-collapsed", m.side_collapsed),
-        ]),
-      ],
-      [
-        html.div([attribute.class("drill-side")], side_panels(m, ref, current)),
-        // The editor's keyed frame stays the permanent first child of
-        // .work-row: appending the answer panel after it cannot remount
-        // CodeMirror, which would drop undo history and cursor.
-        html.div([attribute.class("drill-main")], case current.quiz, m.recall {
-          Some(quiz), _ -> quiz_main(m, quiz)
-          None, True -> recall_main(m, current)
-          None, False -> [
-            html.div([attribute.class("work-row")], [
-              keyed.div(
-                [
-                  attribute.class("editor-frame"),
-                  // The frame's top strip names the language (style.css).
-                  attribute.attribute(
-                    "data-language",
-                    problem.language_slug(current.language),
-                  ),
-                ],
-                [
-                  #(
-                    body_key,
-                    editor.view([
-                      editor.doc(m.draft),
-                      editor.language(problem.language_slug(current.language)),
-                      editor.keymap(m.editor_keymap),
-                      editor.height(m.editor_height),
-                      editor.on_change(EditorChanged),
-                      editor.on_resize(EditorResized),
-                      editor.diagnostics(editor_diagnostics(m)),
-                    ]),
-                  ),
-                ],
-              ),
-              ..case m.walk_open, m.walk {
-                True, Some(state) -> walk_panel(current, state)
-                _, _ -> answer_panel(m, current)
-              }
-            ]),
-            ..list.flatten([
-              // Its own pane, right under the code it narrates: watching
-              // what your program prints is half of debugging it.
-              case current.check {
-                Some(_) -> [
-                  html.section([attribute.class("panel output-below")], [
-                    html.h3([attribute.class("panel-title")], [
-                      html.text("Output"),
-                    ]),
-                    output_panel(m),
-                  ]),
-                ]
-                None -> []
-              },
-              [run_bar(m, current)],
-              results_only(m, current),
-            ])
-          ]
-        }),
-      ],
-    ),
+    case current.quiz, m.recall {
+      Some(quiz), _ ->
+        html.div(
+          [attribute.class("drill-main")],
+          quiz_main(m, ref, current, quiz),
+        )
+      None, True ->
+        html.div([attribute.class("drill-main")], recall_main(m, ref, current))
+      // The prompt page is a sheet over the editor page, not a route of its
+      // own: the editor stays mounted underneath, child 0 of the same
+      // parent whichever page is up, so CodeMirror keeps its undo history
+      // and cursor. Parked, it is inert so a button under the sheet cannot
+      // take the Enter meant to start.
+      None, False ->
+        keyed.div([attribute.class("drill-body")], [
+          #(
+            "main",
+            html.div(
+              [
+                attribute.classes([
+                  #("drill-main", True),
+                  #("parked", m.stage == Reading),
+                ]),
+                attribute.inert(m.stage == Reading),
+              ],
+              code_main(m, ref, current, body_key),
+            ),
+          ),
+          ..case m.stage {
+            Reading -> [#("read", read_sheet(m, ref, current))]
+            Coding -> []
+          }
+        ])
+    },
   ])
+}
+
+/// The editor page: the editor with the slot beside it, output, the run
+/// bar, the results.
+fn code_main(
+  m: Model,
+  ref: ProblemRef,
+  current: Problem,
+  body_key: String,
+) -> List(Element(Msg)) {
+  [
+    // The editor's keyed frame stays the permanent first child of
+    // .work-row: appending a pane after it cannot remount CodeMirror,
+    // which would drop undo history and cursor.
+    html.div([attribute.class("work-row")], [
+      keyed.div(
+        [
+          attribute.class("editor-frame"),
+          // The frame's top strip names the language (style.css).
+          attribute.attribute(
+            "data-language",
+            problem.language_slug(current.language),
+          ),
+        ],
+        [
+          #(
+            body_key,
+            editor.view([
+              editor.doc(m.draft),
+              editor.language(problem.language_slug(current.language)),
+              editor.keymap(m.editor_keymap),
+              editor.height(m.editor_height),
+              editor.on_change(EditorChanged),
+              editor.on_resize(EditorResized),
+              editor.diagnostics(editor_diagnostics(m)),
+            ]),
+          ),
+        ],
+      ),
+      ..slot_pane(m, ref, current)
+    ]),
+    ..list.flatten([
+      // Its own pane, right under the code it narrates: watching
+      // what your program prints is half of debugging it.
+      case current.check {
+        Some(_) -> [
+          html.section([attribute.class("panel output-below")], [
+            html.h3([attribute.class("panel-title")], [
+              html.text("Output"),
+            ]),
+            output_panel(m),
+          ]),
+        ]
+        None -> []
+      },
+      [run_bar(m, current)],
+      results_only(m, current),
+    ])
+  ]
+}
+
+/// The prompt page. Everything there is to read before the first
+/// keystroke, and one way forward.
+fn read_sheet(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
+  html.section(
+    [attribute.class("read-sheet")],
+    list.append(read_blocks(m, ref, current), [
+      html.div([attribute.class("read-actions")], [
+        html.button(
+          [
+            attribute.class("btn-primary read-start"),
+            event.on_click(UserStartedCoding),
+          ],
+          [html.text("Start coding "), html.kbd([], [html.text("\u{21b5}")])],
+        ),
+      ]),
+    ]),
+  )
+}
+
+/// The problem as a page: title, where it sits, the prompt, the signature,
+/// the examples once a run has produced them, the ladder rungs already
+/// turned, and the note left last time. Shared with the recall card, which
+/// keeps it on screen rather than behind a sheet.
+fn read_blocks(
+  m: Model,
+  ref: ProblemRef,
+  current: Problem,
+) -> List(Element(Msg)) {
+  let note = model.assoc_get(m.notes, ref) |> result.unwrap("")
+  list.flatten([
+    [
+      html.h1([attribute.class("read-title")], [
+        html.text(current.title),
+        format.language_chip(current.language),
+        format.difficulty_badge(current.difficulty),
+      ]),
+      html.div([attribute.class("problem-category")], [
+        html.text(ref.category <> " \u{203a} " <> ref.subcategory),
+      ]),
+      prompt_block(current),
+    ],
+    case current.check {
+      // A read-and-run card has no function to sign: the whole program
+      // is already in the editor.
+      Some(check) if check.signature != "" -> [
+        html.pre([attribute.class("signature")], [
+          html.code([], [html.text(check.signature)]),
+        ]),
+      ]
+      _ -> []
+    },
+    read_examples(m),
+    case current.approach, m.hints_revealed {
+      [], _ | _, 0 -> []
+      stages, shown -> [
+        html.section([attribute.class("read-approach approach")], [
+          html.h3([attribute.class("panel-title")], [html.text("Approach")]),
+          ..stages
+          |> list.take(shown)
+          |> list.map(fn(stage) {
+            case m.recall {
+              True -> recall_stage(stage)
+              False -> approach_stage(stage)
+            }
+          })
+        ]),
+      ]
+    },
+    case note != "" && !model.first_encounter(m, ref) {
+      True -> [
+        html.section([attribute.class("panel note-panel has-note")], [
+          html.h3([attribute.class("panel-title")], [
+            html.text("Your note from last time"),
+          ]),
+          html.p([attribute.class("note-text")], [html.text(note)]),
+        ]),
+      ]
+      False -> []
+    },
+  ])
+}
+
+fn prompt_block(current: Problem) -> Element(Msg) {
+  case current.prompt_html {
+    // Repository-vendored lesson HTML, never user input; see
+    // problem.Problem.prompt_html.
+    True ->
+      element.unsafe_raw_html(
+        "",
+        "div",
+        [attribute.class("problem-prompt prose")],
+        current.prompt,
+      )
+    False ->
+      html.div([attribute.class("problem-prompt")], [html.text(current.prompt)])
+  }
+}
+
+/// The cases as examples: call and expected answer, once a run has produced
+/// them. The harness is source, so before a run there is nothing to list.
+fn read_examples(m: Model) -> List(Element(Msg)) {
+  case m.run {
+    Ran(Cases(cases), _) if cases != [] -> [
+      html.section([attribute.class("read-examples")], [
+        html.h3([attribute.class("panel-title")], [html.text("Examples")]),
+        html.ul(
+          [attribute.class("case-list")],
+          list.map(cases, fn(c: CaseResult) {
+            html.li([attribute.class("case")], [
+              html.code([], [html.text(c.label)]),
+              html.text(" \u{2192} "),
+              html.code([], [html.text(c.expected)]),
+            ])
+          }),
+        ),
+      ]),
+    ]
+    _ -> []
+  }
+}
+
+/// What the slot beside the editor shows: one pane, or nothing.
+fn slot_pane(
+  m: Model,
+  ref: ProblemRef,
+  current: Problem,
+) -> List(Element(Msg)) {
+  case m.slot, m.walk {
+    NoPane, _ -> []
+    HintPane, _ ->
+      case current.approach {
+        [] -> []
+        stages -> [hint_pane(m, stages)]
+      }
+    WalkPane, Some(state) -> walk_panel(current, state)
+    WalkPane, None -> []
+    SolutionPane, _ -> solution_pane(m, current)
+    NotePane, _ -> [note_pane(m, ref)]
+  }
+}
+
+/// A pane's top strip: what it is, and the way to put it away.
+fn pane_header(
+  children: List(Element(Msg)),
+  close: Msg,
+  label: String,
+) -> Element(Msg) {
+  html.div(
+    [attribute.class("answer-header")],
+    list.append(children, [
+      html.button(
+        [
+          attribute.class("answer-close"),
+          attribute.type_("button"),
+          attribute.attribute("aria-label", label),
+          event.on_click(close),
+        ],
+        [html.text("\u{00d7}")],
+      ),
+    ]),
+  )
 }
 
 /// The quiz replaces the editor and the run bar entirely: there is nothing to
@@ -228,9 +441,21 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
 /// A recall card: no editor. Think it through, reveal, grade from memory.
 /// Every solution is shown on reveal, label and complexity first, because
 /// naming the technique is the thing being tested.
-fn recall_main(m: Model, current: Problem) -> List(Element(Msg)) {
+fn recall_main(
+  m: Model,
+  ref: ProblemRef,
+  current: Problem,
+) -> List(Element(Msg)) {
+  // The prompt stays on the page rather than behind a sheet: the card asks
+  // you to think it through, and that needs the question in view.
+  let reading =
+    html.section(
+      [attribute.class("read-sheet recall-read")],
+      list.append(read_blocks(m, ref, current), [note_pane(m, ref)]),
+    )
   case m.revealed_solution {
     None -> [
+      reading,
       html.div([attribute.class("recall-card")], [
         html.p([attribute.class("recall-lead")], [
           html.text(
@@ -255,12 +480,13 @@ fn recall_main(m: Model, current: Problem) -> List(Element(Msg)) {
       ]),
     ]
     Some(_) -> [
+      reading,
       html.div([attribute.class("recall-answers")], case current.solutions {
         [] -> [
           html.div([attribute.class("recall-card")], [
             html.p([attribute.class("recall-lead")], [
               html.text(
-                "This drill has no reference solution; the approach is in the side panel.",
+                "This drill has no reference solution; the approach is above.",
               ),
             ]),
           ]),
@@ -316,7 +542,19 @@ fn recall_solution(solution: Solution) -> Element(Msg) {
   )
 }
 
-fn quiz_main(m: Model, quiz: Quiz) -> List(Element(Msg)) {
+fn quiz_main(
+  m: Model,
+  ref: ProblemRef,
+  current: Problem,
+  quiz: Quiz,
+) -> List(Element(Msg)) {
+  let question =
+    html.section([attribute.class("read-sheet quiz-question")], [
+      html.div([attribute.class("problem-category")], [
+        html.text(ref.category <> " \u{203a} " <> ref.subcategory),
+      ]),
+      prompt_block(current),
+    ])
   let options =
     html.div(
       [attribute.class("quiz-choices")],
@@ -369,7 +607,7 @@ fn quiz_main(m: Model, quiz: Quiz) -> List(Element(Msg)) {
       ]
     })
 
-  [options, bar, ..quiz_verdict(m, quiz)]
+  [question, options, bar, ..quiz_verdict(m, quiz)]
 }
 
 fn quiz_verdict(m: Model, quiz: Quiz) -> List(Element(Msg)) {
@@ -432,123 +670,39 @@ fn keymap_picker(m: Model) -> Element(Msg) {
   )
 }
 
-fn side_panels(
-  m: Model,
-  ref: ProblemRef,
-  current: Problem,
-) -> List(Element(Msg)) {
-  let toggle =
-    html.button(
-      [
-        attribute.class("btn-secondary side-toggle"),
-        event.on_click(UserToggledSide),
-      ],
-      [
-        html.text(case m.side_collapsed {
-          True -> "Prompt \u{27e9}"
-          False -> "\u{27e8} Hide prompt"
-        }),
-      ],
-    )
-  case m.side_collapsed {
-    True -> [toggle]
-    False -> [toggle, ..expanded_panels(m, ref, current)]
-  }
-}
-
-fn expanded_panels(
-  m: Model,
-  ref: ProblemRef,
-  current: Problem,
-) -> List(Element(Msg)) {
-  let prompt =
-    panel("Prompt", [
-      html.div([attribute.class("problem-category")], [
-        html.text(
-          ref.category
-          <> " \u{203a} "
-          <> ref.subcategory
-          <> " \u{b7} "
-          <> problem.language_label(current.language)
-          <> " ",
-        ),
-        format.difficulty_badge(current.difficulty),
-      ]),
-      case current.prompt_html {
-        // Repository-vendored lesson HTML, never user input; see
-        // problem.Problem.prompt_html.
-        True ->
-          element.unsafe_raw_html(
-            "",
-            "div",
-            [attribute.class("problem-prompt prose")],
-            current.prompt,
-          )
-        False ->
-          html.div([attribute.class("problem-prompt")], [
-            html.text(current.prompt),
-          ])
-      },
-    ])
-
-  let approach = case current.approach {
-    [] -> []
-    stages -> [approach_panel(m, stages)]
-  }
-
-  // Output rides with the checkable panes: a drill that cannot run cannot
-  // print, and a permanently empty pane is just noise.
-  let checked = case current.check {
-    Some(check) ->
-      list.flatten([
-        // A read-and-run card has no function to sign: the whole program
-        // is already in the editor.
-        case check.signature {
-          "" -> []
-          signature -> [
-            panel("Signature", [
-              html.pre([attribute.class("signature")], [
-                html.code([], [html.text(signature)]),
-              ]),
-            ]),
-          ]
-        },
-        case m.recall {
-          True -> []
-          False -> [panel("Tests", [tests_panel(m)])]
-        },
-      ])
-    None -> []
-  }
-
-  [prompt, note_panel(m, ref), ..list.flatten([approach, checked])]
-}
-
 /// The note you left yourself last time, and the box to leave the next one.
-/// It sits right under the prompt so it is read before the code is written;
-/// a note from an earlier visit is lit so it cannot be missed.
-fn note_panel(m: Model, ref: ProblemRef) -> Element(Msg) {
+/// A note from an earlier visit is lit so it cannot be missed. In the slot
+/// it has a close button; on the recall card it just sits there.
+fn note_pane(m: Model, ref: ProblemRef) -> Element(Msg) {
   let body = model.assoc_get(m.notes, ref) |> result.unwrap("")
   let returning = body != "" && !model.first_encounter(m, ref)
+  let title =
+    html.div([attribute.class("answer-label")], [
+      html.text(case returning {
+        True -> "Your note from last time"
+        False -> "Note to future me"
+      }),
+    ])
   html.section(
     [
       attribute.classes([
+        #("slot-pane", m.slot == NotePane && !m.recall),
         #("panel", True),
+        #("note-pane", True),
         #("note-panel", True),
         #("has-note", returning),
       ]),
     ],
     [
-      html.h3([attribute.class("panel-title")], [
-        html.text(case returning {
-          True -> "Your note from last time"
-          False -> "Note to future me"
-        }),
-      ]),
+      case m.recall {
+        True -> html.div([attribute.class("answer-header")], [title])
+        False ->
+          pane_header([title], UserToggledPane(NotePane), "Close the note")
+      },
       html.textarea(
         [
           attribute.class("note-input"),
-          attribute.rows(2),
+          attribute.rows(6),
           attribute.placeholder(
             "What tripped you up, what to try first next time\u{2026}",
           ),
@@ -593,39 +747,6 @@ fn output_panel(m: Model) -> Element(Msg) {
     RunIdle ->
       html.div([attribute.class("output-empty")], [
         html.text("Nothing printed yet."),
-      ])
-  }
-}
-
-fn tests_panel(m: Model) -> Element(Msg) {
-  case m.run {
-    Ran(Cases(cases), _) ->
-      html.ul(
-        [attribute.class("case-list")],
-        list.map(cases, fn(c: CaseResult) {
-          html.li(
-            [
-              attribute.classes([
-                #("case", True),
-                #("pass", c.passed),
-                #("fail", !c.passed),
-              ]),
-            ],
-            [
-              html.span([attribute.class("case-icon")], [
-                html.text(case c.passed {
-                  True -> "\u{2713}"
-                  False -> "\u{2717}"
-                }),
-              ]),
-              html.text(" " <> c.label),
-            ],
-          )
-        }),
-      )
-    _ ->
-      html.div([attribute.class("pane-empty")], [
-        html.text("Run the tests to see the cases."),
       ])
   }
 }
@@ -700,7 +821,6 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
     [attribute.class("run-bar")],
     list.flatten([
       run_control,
-      solution_buttons(m, current),
       undo_button(m),
       [grade_controls(m, current)],
     ]),
@@ -950,20 +1070,26 @@ fn preview_interval(m: Model, rating: fsrs.Rating) -> String {
   format.interval(fsrs.interval_seconds(scheduled, m.now))
 }
 
-fn solution_buttons(m: Model, current: Problem) -> List(Element(Msg)) {
-  list.index_map(current.solutions, fn(solution: Solution, index) {
-    html.button(
-      [
-        attribute.classes([
-          #("btn-secondary", True),
-          #("solution-button", True),
-          #("revealed", m.revealed_solution == Some(index)),
-        ]),
-        event.on_click(UserToggledSolution(index)),
-      ],
-      [html.text(solution.label)],
-    )
-  })
+/// One button per reference, in the solution pane's header. The one showing
+/// is lit; choosing another is choosing it, which the log records.
+fn solution_picker(current: Problem, shown: Int) -> Element(Msg) {
+  html.div(
+    [attribute.class("solution-picker")],
+    list.index_map(current.solutions, fn(solution: Solution, index) {
+      html.button(
+        [
+          attribute.classes([
+            #("btn-secondary", True),
+            #("solution-button", True),
+            #("revealed", shown == index),
+          ]),
+          attribute.type_("button"),
+          event.on_click(UserToggledSolution(index)),
+        ],
+        [html.text(solution.label)],
+      )
+    }),
+  )
 }
 
 /// The code alone, no harness: for reading what it prints while you work.
@@ -1175,7 +1301,7 @@ fn walk_panel(current: Problem, state: model.WalkState) -> List(Element(Msg)) {
   }
   [
     html.div(
-      [attribute.class("answer-content answer-side walk-side")],
+      [attribute.class("slot-pane answer-content answer-side walk-side")],
       list.flatten([
         [header],
         case done {
@@ -1223,9 +1349,9 @@ fn reveal_button(
 
 /// The revealed solution, rendered beside the editor so code and answer can be
 /// compared line by line rather than by scrolling.
-fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
-  // A passing run opens the panel by itself, as a diff of your code against
-  // the first solution. That is not a reveal -- the answer was already
+fn solution_pane(m: Model, current: Problem) -> List(Element(Msg)) {
+  // A passing run opens the pane by itself, as a diff of your code against
+  // the closest solution. That is not a reveal -- the answer was already
   // given -- so `revealed_solution` is left alone and the review's
   // `revealed` stays honest.
   let passed =
@@ -1233,7 +1359,7 @@ fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
     && string.trim(m.draft) != ""
     && current.solutions != []
   let diffing = passed && m.diff_mode
-  let shown = case revealed(m, current), passed && m.diff_open {
+  let shown = case revealed(m, current), passed {
     Ok(pair), _ -> Ok(#(True, pair))
     Error(Nil), True ->
       closest_solution(m.draft, current.solutions)
@@ -1245,6 +1371,7 @@ fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
       html.div(
         [
           attribute.classes([
+            #("slot-pane", True),
             #("answer-content", True),
             #("answer-side", True),
             #("diffing", diffing),
@@ -1292,9 +1419,6 @@ fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
                   ]
                   False -> []
                 },
-                // On a narrow screen the panel overlays the editor, and the
-                // run bar's toggle may be off-screen; the stylesheet shows
-                // this only there.
                 [
                   html.button(
                     [
@@ -1302,7 +1426,7 @@ fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
                       attribute.type_("button"),
                       attribute.attribute("aria-label", "Hide solution"),
                       event.on_click(case by_choice {
-                        True -> UserToggledSolution(index)
+                        True -> UserToggledPane(SolutionPane)
                         False -> UserDismissedDiff
                       }),
                     ],
@@ -1312,6 +1436,17 @@ fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
               ]),
             ),
           ],
+          // The other references, one press away. Only the chosen one is
+          // lit: an auto-opened diff has chosen nothing.
+          case current.solutions {
+            [_] | [] -> []
+            _ -> [
+              solution_picker(current, case by_choice {
+                True -> index
+                False -> -1
+              }),
+            ]
+          },
           // Solutions written before their note exists simply have none; an
           // empty div would still draw its margins.
           case solution.note {
@@ -1623,10 +1758,7 @@ fn first_lines(message: String) -> String {
 /// The hint ladder: rungs reveal one at a time, vaguest first. The last rung
 /// is pseudocode and revealing it counts as seeing the answer, which the
 /// button says out loud before it is pressed.
-fn approach_panel(
-  m: Model,
-  stages: List(problem.ApproachStage),
-) -> Element(Msg) {
+fn hint_pane(m: Model, stages: List(problem.ApproachStage)) -> Element(Msg) {
   let total = list.length(stages)
   let shown = int.min(m.hints_revealed, total)
   let revealed =
@@ -1638,7 +1770,7 @@ fn approach_panel(
         // A walk in progress lists only the steps already walked: the
         // panel is where the next one is read, one at a time.
         False, problem.Walk(steps), Some(state) ->
-          walk_summary(list.take(steps, state.step), !m.walk_open)
+          walk_summary(list.take(steps, state.step), m.slot != WalkPane)
         False, problem.Walk(steps), None -> walk_summary(steps, True)
         False, _, _ -> approach_stage(stage)
       }
@@ -1685,8 +1817,21 @@ fn approach_panel(
     ]
   }
 
-  html.section([attribute.class("panel approach")], [
-    html.h3([attribute.class("panel-title")], [html.text("Approach")]),
+  html.section([attribute.class("slot-pane panel approach")], [
+    pane_header(
+      [
+        html.div([attribute.class("answer-label")], [
+          html.text(
+            "Approach \u{b7} "
+            <> int.to_string(shown)
+            <> "/"
+            <> int.to_string(total),
+          ),
+        ]),
+      ],
+      UserToggledPane(HintPane),
+      "Close the hints",
+    ),
     ..list.append(revealed, [
       html.div([attribute.class("hint-controls")], control),
     ])
@@ -1755,11 +1900,4 @@ fn recall_stage(stage: problem.ApproachStage) -> Element(Msg) {
       )
     other -> approach_stage(other)
   }
-}
-
-fn panel(title: String, contents: List(Element(Msg))) -> Element(Msg) {
-  html.section([attribute.class("panel")], [
-    html.h3([attribute.class("panel-title")], [html.text(title)]),
-    ..contents
-  ])
 }

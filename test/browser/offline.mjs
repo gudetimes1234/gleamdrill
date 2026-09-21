@@ -21,6 +21,14 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
 
 console.log("== the worker installs and fills the cache");
+/// A drill opens on its prompt page; the editor page is behind Enter.
+const startCoding = async () => {
+  await page.waitForSelector(".read-sheet", { timeout: 20000 });
+  await page.click(".read-start");
+  await page.waitForSelector(".run-bar", { timeout: 20000 });
+  await page.evaluate(() => document.activeElement?.blur());
+};
+
 await page.goto(APP, { waitUntil: "networkidle" });
 await page.evaluate(() => {
   localStorage.clear();
@@ -60,7 +68,7 @@ await page.reload({ waitUntil: "domcontentloaded" });
 await page.waitForSelector(".study-screen", { timeout: 20000 }).catch(() => {});
 check("the app opens from the cache", await page.isVisible(".study-screen"));
 await page.click(".study-start");
-await page.waitForSelector(".run-bar", { timeout: 20000 });
+await startCoding();
 await page.waitForFunction(
   () => { const b = document.querySelector(".run-button"); return b && !b.disabled; },
   { timeout: 120000 });

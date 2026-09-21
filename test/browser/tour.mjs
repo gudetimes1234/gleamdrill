@@ -237,7 +237,19 @@ const openByHand = async (language, subcategory, title) => {
     { timeout: 5000 },
   );
   await page.click("#startDrill");
+  await startCoding();
+};
+
+/// A drill opens on its prompt page; the editor page is behind Enter. Every
+/// code sitting in the tour comes through here, so the page is exercised on
+/// each open and the run bar is what the next line finds. The editor takes
+/// focus on the way in; it is let go so the next key goes to the table.
+const startCoding = async () => {
+  await page.waitForSelector(".read-sheet", { timeout: 30000 });
+  exercises("UserStartedCoding");
+  await page.click(".read-start");
   await page.waitForSelector(".run-bar", { timeout: 30000 });
+  await page.evaluate(() => document.activeElement?.blur());
 };
 
 const countServerCards = async () =>
@@ -581,18 +593,25 @@ check("Esc leaves it",
   !(await page.evaluate(() => document.activeElement?.classList.contains("search"))));
 
 await page.keyboard.press("d");
-await page.waitForSelector(".run-bar", { timeout: 30000 });
-check("d starts the drill", true);
-check("the status bar switched to drill keys",
-  (await page.textContent(".statusbar")).includes("again"));
+await page.waitForSelector(".read-sheet", { timeout: 30000 });
+check("d starts the drill, on the problem alone", true);
+check("the status bar switched to the read keys",
+  (await page.textContent(".statusbar")).includes("start"));
+check("the editor page is parked underneath, inert",
+  await page.$eval(".drill-main", (el) => el.classList.contains("parked") && el.inert === true));
+await capture("read", "A drill opens on the problem alone: prompt, signature, one way forward",
+  "Read the problem first, on its own page");
 
 const titleBefore = await page.textContent(".drill-title").catch(() => "");
 await page.keyboard.press("i");
-await page.waitForTimeout(200);
-check("i focuses the editor",
+exercises("UserStartedCoding");
+await page.waitForSelector(".run-bar", { timeout: 5000 });
+check("i turns to the editor and focuses it",
   await page.evaluate(() => document.activeElement?.closest?.("gleam-editor") !== null
     || document.activeElement?.tagName === "GLEAM-EDITOR"
     || !!document.querySelector("gleam-editor .cm-focused")));
+check("the status bar switched to drill keys",
+  (await page.textContent(".statusbar")).includes("again"));
 
 // Write, Ctrl+Enter, digit: the whole rep without the mouse. Against a
 // remote host the runtime is still downloading at this point, and a run
@@ -626,7 +645,7 @@ exercises("UserClickedStudy", "UserClickedRun", "UserGraded",
 
 await freshGuest();
 await page.click(".study-start");
-await page.waitForSelector(".run-bar", { timeout: 30000 });
+await startCoding();
 check("a scheduled session opens a drill", await page.isVisible(".run-bar"));
 await page.waitForTimeout(1200);
 check("the header shows time on the problem",
@@ -660,12 +679,14 @@ check("a first encounter still grades freely after a scratch run",
   JSON.stringify(await gradeLabels()) === ALL_FOUR,
   JSON.stringify(await gradeLabels()));
 await capture("scratch", "Run alone: what the code printed, no verdict", "Run your code and read its output, no harness");
-check("the approach starts unrevealed",
-  (await page.$$(".approach-nudge, .approach-steps, .approach-pseudocode")).length === 0
-    && await page.isVisible(".hint-button"));
+check("the slot beside the editor starts empty",
+  (await page.$(".slot-pane")) === null
+    && (await page.$$(".approach-nudge, .approach-steps, .approach-pseudocode")).length === 0);
 await page.keyboard.press("a");
+exercises("UserToggledPane");
 await page.waitForTimeout(300);
-check("a reveals the nudge first", await page.isVisible(".approach-nudge"));
+check("a opens the hints beside the editor, nudge first",
+  await page.isVisible(".slot-pane.approach .approach-nudge") && await page.isVisible(".hint-button"));
 
 // The plan rung, as a walkthrough: one step at a time beside the editor,
 // each with a hint and a why that cost nothing, and a code slice that is
@@ -673,10 +694,9 @@ check("a reveals the nudge first", await page.isVisible(".approach-nudge"));
 await page.keyboard.press("w");
 exercises("UserOpenedWalk");
 await page.waitForSelector(".walk-side", { timeout: 5000 });
-check("w opens the walkthrough beside the editor",
-  (await page.textContent(".walk-side .answer-label")).includes("Step 1 of"));
-check("the ladder shows no steps that have not been walked",
-  (await page.$$(".approach-steps li")).length === 0);
+check("w opens the walkthrough beside the editor, in the hints' place",
+  (await page.textContent(".walk-side .answer-label")).includes("Step 1 of")
+    && (await page.$(".slot-pane.approach")) === null);
 check("the hint and why are free; only the code is a reveal",
   (await page.$$(".walk-side .hint-warning")).length === 1
     && (await page.$(".walk-reveal-code")) !== null);
@@ -695,9 +715,8 @@ check("c shows this step's slice of the pseudocode", await page.isVisible(".walk
 await page.keyboard.press("Enter");
 exercises("WalkAdvanced");
 await page.waitForTimeout(300);
-check("Enter advances, and the walked step joins the ladder",
+check("Enter advances, and the walked step is listed as done",
   (await page.textContent(".walk-side .answer-label")).includes("Step 2 of")
-    && (await page.$$(".approach-steps li")).length === 1
     && (await page.$$(".walk-step-done")).length === 1);
 await page.keyboard.press("Backspace");
 exercises("WalkBacked");
@@ -708,8 +727,12 @@ await page.keyboard.press("Escape");
 exercises("UserClosedWalk");
 await page.waitForTimeout(300);
 check("Escape closes the walkthrough without leaving the drill",
-  (await page.$(".walk-side")) === null && await page.isVisible(".run-bar"));
-check("the ladder offers the walk again", await page.isVisible(".approach-walk-open"));
+  (await page.$(".walk-side")) === null && (await page.$(".slot-pane")) === null
+    && await page.isVisible(".run-bar"));
+await page.keyboard.press("a");
+await page.waitForTimeout(300);
+check("the ladder lists only the step walked so far, and offers the walk again",
+  (await page.$$(".approach-steps li")).length === 1 && await page.isVisible(".approach-walk-open"));
 await page.click(".approach-walk-open");
 await page.waitForTimeout(300);
 check("reopening resumes where it was",
@@ -717,7 +740,10 @@ check("reopening resumes where it was",
 await page.keyboard.press("Escape");
 await page.waitForTimeout(200);
 
+// With the ladder open, Enter turns the next rung.
 await page.keyboard.press("a");
+await page.waitForTimeout(200);
+await page.keyboard.press("Enter");
 await page.waitForTimeout(300);
 check("then the pseudocode", await page.isVisible(".approach-pseudocode"));
 check("the pseudocode button warned before it spoiled", true);
@@ -832,7 +858,7 @@ exercises("UserDismissedDiff");
 await page.waitForTimeout(300);
 check("and its close button puts it away", (await page.$(".answer-content")) === null);
 
-await page.click(".solution-button");
+await page.keyboard.press("s");
 await page.waitForTimeout(500);
 check("revealing on a first encounter keeps the choice",
   JSON.stringify(await gradeLabels()) === ALL_FOUR,
@@ -844,9 +870,12 @@ check("a solution offers a way to suggest a better one",
   suggestHref !== null && suggestHref.includes("/issues/new?template=solution.yml"), suggestHref);
 check("naming the problem, language and variant",
   suggestHref !== null && decodeURIComponent(suggestHref).includes("[Python] Contains Duplicate"), suggestHref);
+check("the other references are a click away inside the pane",
+  (await page.$$(".slot-pane .solution-button")).length >= 2 && (await page.$(".run-bar .solution-button")) === null);
 await capture("revealed", "Solution revealed on a first encounter: note, code, grades intact");
-await page.click(".solution-button");
+await page.keyboard.press("s");
 await page.waitForTimeout(400);
+check("s again puts it away", (await page.$(".slot-pane")) === null);
 
 for (const mode of ["Vim", "Emacs", "Std"]) {
   await page.click(`.keymap-picker >> text="${mode}"`);
@@ -876,7 +905,7 @@ console.log(act);
 // button. Reached by re-opening the same problem manually — a manual drill
 // posts a review regardless of due dates.
 await page.click(".study-start");
-await page.waitForSelector(".run-bar", { timeout: 30000 });
+await startCoding();
 await page.click(".grade-good");
 await page.waitForTimeout(2000);
 await exitDrill();
@@ -891,11 +920,13 @@ await capture("gated", "Second review: grading waits for a run");
 
 // A note to your future self, typed under the prompt and saved on its own
 // after a pause. `m` puts the cursor there from anywhere on the screen.
-check("the drill offers a note box", await page.isVisible(".note-input"));
+check("the note waits in its pane", (await page.$(".note-input")) === null);
 check("a fresh problem has no lit note", (await page.$(".note-panel.has-note")) === null);
 await page.keyboard.press("m");
 exercises("NoteFocusRequested");
-check("m focuses the note", await page.evaluate(() => document.activeElement?.classList.contains("note-input")));
+await page.waitForSelector(".slot-pane .note-input", { timeout: 5000 });
+check("m opens the note beside the editor and focuses it",
+  await page.evaluate(() => document.activeElement?.classList.contains("note-input")));
 await page.keyboard.type("Set beats sort here: O(n) and one line.");
 exercises("NoteChanged");
 await page.waitForTimeout(1200);
@@ -935,7 +966,7 @@ await page.click(".grade-good");
 await page.waitForTimeout(1500);
 // The sitting may have more passes queued from act 3's iteration field;
 // leaving now is fine, the grade already landed.
-if (await page.isVisible(".run-bar")) await exitDrill();
+if (await page.$(".drill-container")) await exitDrill();
 await page.waitForTimeout(600);
 await goHome();
 await page.click("text=Browse problems");
@@ -961,15 +992,25 @@ await page.evaluate(() => {
 });
 await goHome();
 await page.click(".study-start");
-await page.waitForSelector(".run-bar", { timeout: 30000 });
-// The note typed by hand a moment ago comes back lit: this is a later
-// review of the same problem, and the note is the first thing to read.
-check("a note from an earlier visit is shown lit", (await page.$(".note-panel.has-note")) !== null);
+await page.waitForSelector(".read-sheet", { timeout: 30000 });
+// The note typed by hand a moment ago comes back lit on the prompt page:
+// this is a later review of the same problem, and the note is the first
+// thing to read.
+check("a note from an earlier visit is shown lit", (await page.$(".read-sheet .note-panel.has-note")) !== null);
 check("with what was written, and nothing else",
-  (await page.inputValue(".note-input")) === "Set beats sort here: O(n) and one line.",
-  await page.inputValue(".note-input"));
+  (await page.textContent(".read-sheet .note-text")) === "Set beats sort here: O(n) and one line.",
+  await page.textContent(".read-sheet .note-text"));
 await capture("note-returns", "The note from last time, lit under the prompt",
   "Your note from last time comes back lit");
+await startCoding();
+await page.keyboard.press("m");
+await page.waitForSelector(".slot-pane .note-input", { timeout: 5000 });
+check("and m opens it for editing, as written",
+  (await page.inputValue(".note-input")) === "Set beats sort here: O(n) and one line.");
+await page.keyboard.press("Escape");
+await page.waitForTimeout(150);
+await page.keyboard.press("Escape");
+await page.waitForTimeout(150);
 await waitForRunnable();
 await page.click(".run-button");
 await verdict();
@@ -986,10 +1027,13 @@ await verdict();
 check("a passing scheduled run offers every grade",
   JSON.stringify(await gradeLabels()) === ALL_FOUR,
   JSON.stringify(await gradeLabels()));
-for (let i = 0; i < 3; i++) {
-  await page.keyboard.press("a");
-  await page.waitForTimeout(200);
+// Down the ladder: the nudge, the walk (which opens its own pane and is
+// closed again), then the pseudocode.
+for (const key of ["a", "Enter", "Escape", "a", "Enter"]) {
+  await page.keyboard.press(key);
+  await page.waitForTimeout(250);
 }
+check("the pseudocode is showing", await page.isVisible(".approach-pseudocode"));
 check("revealing the pseudocode keeps every grade",
   JSON.stringify(await gradeLabels()) === ALL_FOUR,
   JSON.stringify(await gradeLabels()));
@@ -1003,7 +1047,7 @@ await page.evaluate(() => localStorage.clear());
 // ---------------------------------------------------------------- act 4c
 act = "04c-run-controls";
 console.log(act);
-exercises("UserClickedStopRun", "UserToggledSide");
+exercises("UserClickedStopRun", "UserToggledRead");
 
 // Stop: an infinite loop is interruptible, and stopping one must not poison
 // the next run with a stale timeout verdict.
@@ -1027,28 +1071,33 @@ check("the run after a Stop gets a correct verdict, not a stale timeout",
   (await page.textContent(".results-summary")).includes("passed"),
   await page.textContent(".results-summary"));
 
-// Collapsible prompt + the solution panel beside the editor.
-await page.keyboard.press("p");
-await page.waitForTimeout(400);
-check("p collapses the prompt column to the toggle rail",
-  (await page.$$(".drill-side .panel")).length === 0
-    && await page.isVisible(".side-toggle"));
-await capture("collapsed", "Prompt collapsed: editor takes the width");
-await page.click(".solution-button");
-await page.waitForTimeout(500);
+// The pass opened the solution beside the editor; the prompt page comes
+// back over both and goes away again, the editor the same node throughout.
+await page.waitForSelector(".slot-pane.answer-content", { timeout: 5000 });
 const editorBox = await page.locator(".editor-frame").boundingBox();
-const answerBox = await page.locator(".answer-content").boundingBox();
-check("the revealed solution sits beside the editor, not under it",
+const answerBox = await page.locator(".slot-pane").boundingBox();
+check("the solution sits beside the editor, not under it",
   editorBox && answerBox
     && answerBox.x >= editorBox.x + editorBox.width - 1
     && answerBox.y < editorBox.y + editorBox.height,
   JSON.stringify({ editorBox, answerBox }));
-await capture("side-solution", "Solution panel to the right of the editor");
-await page.click(".solution-button");
-await page.click(".side-toggle");
+await capture("side-solution", "Solution pane to the right of the editor");
+await page.evaluate(() => { window.__editor = document.querySelector("gleam-editor"); });
+await page.keyboard.press("p");
+await page.waitForSelector(".read-sheet", { timeout: 5000 });
+check("p brings the problem back over the editor",
+  await page.$eval(".drill-main", (el) => el.classList.contains("parked") && el.inert === true));
+check("with the examples from the last run",
+  (await page.$$(".read-examples .case")).length > 0);
+await capture("read-again", "The problem page, back over the editor after a run: examples included");
+await page.keyboard.press("p");
+await page.waitForFunction(() => !document.querySelector(".drill-main").classList.contains("parked"), null, { timeout: 5000 });
+check("p again returns to the same editor, pane still there",
+  await page.evaluate(() => window.__editor === document.querySelector("gleam-editor"))
+    && (await page.$(".slot-pane.answer-content")) !== null);
+await page.keyboard.press("s");
 await page.waitForTimeout(300);
-check("the toggle restores the prompt column",
-  (await page.$$(".drill-side .panel")).length > 0);
+check("s puts the solution away", (await page.$(".slot-pane")) === null);
 await exitDrill();
 await page.waitForTimeout(800);
 
@@ -1099,18 +1148,20 @@ await page.evaluate(() => {
 });
 await goHome();
 await page.click(".study-start");
-await page.waitForSelector(".run-bar", { timeout: 30000 });
+await page.waitForSelector(".read-sheet", { timeout: 30000 });
 check("the clock shows your median on this problem",
   (await page.textContent(".drill-median").catch(() => "")).includes("median 3m10s"),
   await page.textContent(".drill-median").catch(() => ""));
 check("a card forgotten four times is badged a leech",
   (await page.textContent(".leech-badge").catch(() => "")).includes("Leech"));
-const rungsOpen = await page.$$eval(".panel.approach .approach-nudge, .panel.approach .approach-steps", (n) => n.length);
+const rungsOpen = await page.$$eval(".read-approach .approach-nudge, .read-approach .approach-steps", (n) => n.length);
 check("and opens with the approach read up to the pseudocode", rungsOpen >= 1, String(rungsOpen));
 check("without the pseudocode", (await page.$(".approach-pseudocode")) === null);
-check("so nothing counts as a reveal yet",
-  (await page.textContent(".hint-button").catch(() => "")).includes("pseudocode"));
-await capture("leech", "A leech: badge on the title, approach already open, your median beside the clock");
+await capture("leech", "A leech: badge on the title, approach already on the problem page, your median beside the clock");
+await startCoding();
+check("and the ladder is already beside the editor, pseudocode still folded",
+  await page.isVisible(".slot-pane.approach")
+    && (await page.textContent(".hint-button").catch(() => "")).includes("pseudocode"));
 await exitDrill();
 await page.waitForTimeout(800);
 await page.evaluate(() => localStorage.removeItem("gleamDrill.guest.reviews.v1"));
@@ -1139,8 +1190,8 @@ await page.waitForSelector(".recall-card", { timeout: 15000 });
 check("a recall card opens with no editor",
   (await page.$("gleam-editor")) === null && await page.isVisible(".recall-reveal"));
 check("and says so in the header", (await page.textContent(".recall-chip")).trim() === "Recall");
-check("nothing to run, so no Tests panel",
-  !(await page.$$eval(".drill-side .panel-title", (n) => n.map((e) => e.textContent))).includes("Tests"));
+check("the prompt stays on the page, with nothing to start",
+  await page.isVisible(".recall-read .problem-prompt") && (await page.$(".read-start")) === null);
 check("no grade before the reveal", (await page.$(".grade-bar")) === null);
 await capture("recall-think", "Recall card before the reveal: prompt, note, and a question to answer in your head");
 await page.keyboard.press(" ");
@@ -1280,7 +1331,7 @@ for (const [language, subcategory, title, code, runnable] of languages) {
     check(`${language} is a flashcard proper: all four grades, no run`,
       (await page.$$(".grade-button")).length === 4,
       `${(await page.$$(".grade-button")).length} buttons`);
-    await page.click(".solution-button");
+    await page.keyboard.press("s");
     await page.waitForTimeout(500);
   }
   await capture(slug,
@@ -1311,13 +1362,14 @@ check("Not now closes it", !(await page.isVisible(".blitz-chooser")));
 await page.keyboard.press("z");
 await page.waitForSelector(".blitz-chooser", { timeout: 5000 });
 await page.click(".blitz-option:nth-child(3)");
-await page.waitForSelector(".run-bar", { timeout: 30000 });
+await page.waitForSelector(".read-sheet", { timeout: 30000 });
 await page.waitForTimeout(1200);
 // However many cards the pool had: a small queue is drawn whole.
 const blitzTotal = Number((await page.textContent(".drill-countdown")).match(/\/(\d+)/)?.[1] ?? 0);
-check("the header clock counts down",
+check("the header clock counts down while the problem is read",
   /\d:\d\d/.test(await page.textContent(".drill-countdown")) && blitzTotal >= 1,
   await page.textContent(".drill-countdown"));
+await startCoding();
 check("the status bar says it is a Blitz",
   (await page.textContent(".statusbar")).startsWith("BLITZ"));
 check("no grade is offered before a run: the score is the run",
@@ -1335,6 +1387,7 @@ const blitzSolutions = {
 let blitzPassed = 0;
 for (let i = 0; i < blitzTotal; i++) {
   if (await page.isVisible(".summary-container")) break;
+  if (i > 0) await startCoding();
   const title = (await page.textContent(".drill-title")).replace(/(Python|Gleam|TypeScript|Elixir|Go).*$/, "").trim();
   await waitForRunnable(240000);
   await setCode(blitzSolutions[title] ?? "def nope():\n    pass\n");
@@ -1678,14 +1731,15 @@ await page.waitForSelector(".study-screen", { timeout: 10000 });
 // One clean solve, then a second problem graded through a reveal, so every
 // panel has something true to say.
 await page.click(".study-start");
-await page.waitForSelector(".run-bar", { timeout: 30000 });
+await startCoding();
 await waitForRunnable();
 await setCode("def containsDuplicate(nums):\n    return len(set(nums)) != len(nums)");
 await page.click(".run-button");
 await verdict();
 await page.click(".grade-good");
 await page.waitForTimeout(1500);
-await page.click(".solution-button");
+await startCoding();
+await page.keyboard.press("s");
 await page.waitForTimeout(400);
 await page.click(".grade-hard");
 await page.waitForTimeout(1500);
@@ -1925,7 +1979,7 @@ check("the queue screen offers Study now once there is something to study",
 await capture("queue-study-now", "Study now straight from the queue screen",
   "First card is one click from the queue screen");
 await page.click(".queue-study-now");
-await page.waitForSelector(".run-bar", { timeout: 30000 });
+await startCoding();
 check("and it opens the first card", await page.isVisible(".run-bar"));
 await exitDrill();
 await page.waitForTimeout(800);
@@ -2062,7 +2116,7 @@ check("signing out drops to guest, not a wall", await page.isVisible(".guest-str
 await page.click('.study-account .link-button:text-is("Queue")');
 await seedQueue();
 await page.click(".study-start");
-await page.waitForSelector(".run-bar", { timeout: 30000 });
+await startCoding();
 await waitForRunnable();
 await page.click(".run-button");
 await page.waitForSelector(".grade-bar", { timeout: 90000 });
@@ -2200,7 +2254,7 @@ const stuffed = await page.evaluate(() => {
 check("localStorage could be filled for the test", stuffed);
 if (stuffed) {
   await page.click(".study-start");
-  await page.waitForSelector(".run-bar", { timeout: 30000 });
+  await startCoding();
   await waitForRunnable();
   await page.click(".run-button");
   await page.waitForSelector(".grade-bar", { timeout: 90000 });
@@ -2234,7 +2288,11 @@ check("the menu does not scroll sideways",
 
 await goHome();
 await page.click(".study-start");
-await page.waitForSelector(".run-bar", { timeout: 30000 });
+await page.waitForSelector(".read-sheet", { timeout: 30000 });
+check("the problem page fits a phone",
+  (await page.evaluate(() => document.documentElement.scrollWidth)) <= 390 + 1);
+await capture("read-phone", "The problem alone on a phone, Start coding full width");
+await startCoding();
 await capture("drill", "Drill on a phone: editor on the first screen, run bar pinned");
 check("the language pill is on screen at phone width",
   await page.isVisible(".drill-title .language-chip"));
@@ -2255,7 +2313,7 @@ await capture("tour-phone", "A tour lesson stacked for a phone");
 await page.keyboard.press("Escape");
 await page.waitForSelector(".study-screen", { timeout: 10000 });
 await page.click(".study-start");
-await page.waitForSelector(".run-bar", { timeout: 30000 });
+await startCoding();
 check("a help button is on screen where the status bar is not",
   await page.isVisible(".help-fab"));
 await page.click(".help-fab");
@@ -2271,7 +2329,7 @@ check("the drill does not scroll sideways",
 // At phone width the solution is an overlay on the editor, not a panel under
 // it: the desktop assertion above ("beside, not under") has a narrow-screen
 // counterpart, and the overlay carries its own close button.
-await page.click(".solution-button");
+await page.keyboard.press("s");
 await page.waitForSelector(".answer-content", { timeout: 10000 });
 {
   const editorBox = await page.locator(".editor-frame").boundingBox();
@@ -2324,7 +2382,7 @@ const declared = [
   "UserToggledSolution", "UserRevealedHint", "UserClickedNext", "UserSearched",
   "UserChangedKeymap",
   "UserClickedRun", "UserClickedStopRun", "UserClickedRetryRuntime",
-  "UserToggledSide", "UserToggledResults", "UserToggledSuspend", "UserClickedRecall", "UserRevealedRecall",
+  "UserToggledPane", "UserStartedCoding", "UserToggledRead", "UserToggledResults", "UserToggledSuspend", "UserClickedRecall", "UserRevealedRecall",
   "UserToggledBlitz", "UserStartedBlitz", "UserClickedScratchRun",
   "UserClickedUndo", "UserToggledDiff", "UserDismissedDiff",
   "UserClickedExport", "UserClickedImport", "ImportConfirmed",

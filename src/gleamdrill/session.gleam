@@ -36,7 +36,6 @@ const prefix = "gleamDrill."
 pub type Preferences {
   Preferences(
     editor_keymap: String,
-    side_collapsed: Bool,
     /// Where the editor's resize handle was left, in px. `None` is the default.
     editor_height: Option(Int),
     /// The last Gleam Tour lesson opened on this device, so "Continue the
@@ -52,7 +51,6 @@ pub type Preferences {
 pub fn default_preferences() -> Preferences {
   Preferences(
     editor_keymap: "default",
-    side_collapsed: False,
     editor_height: None,
     tour_lesson: 0,
     languages_chosen: False,
@@ -123,11 +121,6 @@ pub fn load_preferences() -> Preferences {
         json.parse(raw, {
           use keymap <- decode.field("editorKeymap", decode.string)
           // Optional so blobs written before the field existed still parse.
-          use collapsed <- decode.optional_field(
-            "sideCollapsed",
-            False,
-            decode.bool,
-          )
           use editor_height <- decode.optional_field(
             "editorHeight",
             None,
@@ -144,7 +137,6 @@ pub fn load_preferences() -> Preferences {
           use tour_lesson <- decode.optional_field("tourLesson", 0, decode.int)
           decode.success(Preferences(
             editor_keymap: keymap,
-            side_collapsed: collapsed,
             editor_height: editor_height,
             tour_lesson: tour_lesson,
             languages_chosen: chosen,
@@ -163,7 +155,6 @@ pub fn save_preferences(preferences: Preferences) -> Effect(message) {
     json.to_string(
       json.object([
         #("editorKeymap", json.string(preferences.editor_keymap)),
-        #("sideCollapsed", json.bool(preferences.side_collapsed)),
         #("editorHeight", json.nullable(preferences.editor_height, json.int)),
         #("languagesChosen", json.bool(preferences.languages_chosen)),
         #("tourLesson", json.int(preferences.tour_lesson)),

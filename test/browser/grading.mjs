@@ -89,6 +89,14 @@ const answerPickerIfShown = async () => {
   await page.waitForSelector(".study-screen", { timeout: 20000 });
 };
 
+/// A drill opens on its prompt page; the editor page is behind Enter.
+const startCoding = async () => {
+  await page.waitForSelector(".read-sheet", { timeout: 20000 });
+  await page.click(".read-start");
+  await page.waitForSelector(".run-bar", { timeout: 20000 });
+  await page.evaluate(() => document.activeElement?.blur());
+};
+
 await page.goto(APP, { waitUntil: "networkidle" });
 await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 15000 });
@@ -101,15 +109,15 @@ await page.waitForSelector(".study-screen", { timeout: 20000 });
 
 console.log("== first encounter: grading is free");
 await page.click(".study-start");
-await page.waitForSelector(".run-bar", { timeout: 20000 });
+await startCoding();
 check("all four buttons from the moment the drill opens",
   JSON.stringify(await labels()) === ALL_FOUR, JSON.stringify(await labels()));
 
-await page.click(".solution-button");
+await page.keyboard.press("s");
 await page.waitForTimeout(400);
 check("revealing the solution does not collapse a first encounter",
   JSON.stringify(await labels()) === ALL_FOUR, JSON.stringify(await labels()));
-await page.click(".solution-button");
+await page.keyboard.press("s");
 await page.waitForTimeout(400);
 
 await runTests();
@@ -146,7 +154,7 @@ await page.waitForTimeout(300);
 await page.click('.pane-item:text-is("Contains Duplicate")');
 await page.waitForTimeout(300);
 await page.click("#startDrill");
-await page.waitForSelector(".run-bar", { timeout: 20000 });
+await startCoding();
 
 check("a later review requires a run before grading",
   (await page.textContent(".grade-hint").catch(() => "")).includes("Run the tests"));
@@ -160,11 +168,11 @@ await runTests();
 check("a passing manual run offers all four",
   JSON.stringify(await labels()) === ALL_FOUR, JSON.stringify(await labels()));
 
-await page.click(".solution-button");
+await page.keyboard.press("s");
 await page.waitForTimeout(400);
 check("revealing on a manual review keeps the choice",
   JSON.stringify(await labels()) === ALL_FOUR, JSON.stringify(await labels()));
-await page.click(".solution-button");
+await page.keyboard.press("s");
 await page.waitForTimeout(400);
 
 await page.click(".grade-good");
@@ -187,7 +195,7 @@ await page.waitForTimeout(300);
 await page.click('.pane-item:text-is("Contains Duplicate")');
 await page.waitForTimeout(300);
 await page.click("#startDrill");
-await page.waitForSelector(".run-bar", { timeout: 20000 });
+await startCoding();
 check("the Elixir starter is a module of todo stubs",
   (await page.$eval("gleam-editor", (el) => el.doc)).includes('raise "todo"'));
 check("an Elixir first encounter grades freely before any run",
@@ -238,7 +246,7 @@ await page.goto(APP, { waitUntil: "networkidle" });
 await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 15000 });
 await page.click(".study-start");
-await page.waitForSelector(".run-bar", { timeout: 20000 });
+await startCoding();
 await runTests();
 check("a failed run in the study queue still offers every grade",
   JSON.stringify(await labels()) === ALL_FOUR, JSON.stringify(await labels()));
@@ -246,7 +254,7 @@ await typeSolution("def containsDuplicate(nums):\n    return len(set(nums)) != l
 await runTests();
 check("a passing study run offers every grade",
   JSON.stringify(await labels()) === ALL_FOUR, JSON.stringify(await labels()));
-await page.click(".solution-button");
+await page.keyboard.press("s");
 await page.waitForTimeout(400);
 check("revealing in the study queue keeps every grade",
   JSON.stringify(await labels()) === ALL_FOUR, JSON.stringify(await labels()));

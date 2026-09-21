@@ -13,27 +13,27 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
 import gleamdrill/model.{
-  type Key, type Model, type Msg, AuthRoute, AwaitingGrade, DrillRoute,
-  EditorFocusRequested, ExitConfirmed, HelpToggled, ImportConfirmed,
+  type Key, type Model, type Msg, AuthRoute, AwaitingGrade, Coding, DrillRoute,
+  EditorFocusRequested, ExitConfirmed, HelpToggled, HintPane, ImportConfirmed,
   MenuActivated, MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
-  MenuSuspendedAtCursor, MenuToggledAtCursor, NoteFocusRequested,
-  PickerConfirmed, PickerConfirmedWithStarter, PickerRoute, QueueCursorJumped,
-  QueueCursorMoved, QueueRoute, QueueToggledAtCursor, QuizMoved, Ran,
-  ReportRoute, SearchFocusRequested, SettingsRoute, StatsActivated,
-  StatsCursorMoved, StatsRoute, StudyRoute, SummaryRoute, TourActivated,
-  TourContents, TourCursorMoved, TourLesson, TourRoute, TourRunTicked,
-  UserAddedAllShown, UserClickedBackToStudy, UserClickedBrowse,
-  UserClickedClearSelection, UserClickedExitDrill, UserClickedExitReport,
-  UserClickedNext, UserClickedQueue, UserClickedRecall, UserClickedRun,
-  UserClickedScratchRun, UserClickedSelectAll, UserClickedStartDrill,
-  UserClickedStartExam, UserClickedStats, UserClickedStudy, UserClickedTour,
-  UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
-  UserClickedUndo, UserClosedDetail, UserClosedWalk, UserFilteredQueue,
-  UserGraded, UserOpenedWalk, UserPickedChoice, UserRemovedAllShown,
-  UserRevealedHint, UserRevealedRecall, UserSearched, UserSubmittedAnswer,
-  UserToggledBlitz, UserToggledDiff, UserToggledResults, UserToggledSide,
-  UserToggledSolution, WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown,
-  WalkWhyShown,
+  MenuSuspendedAtCursor, MenuToggledAtCursor, NoPane, NoteFocusRequested,
+  NotePane, PickerConfirmed, PickerConfirmedWithStarter, PickerRoute,
+  QueueCursorJumped, QueueCursorMoved, QueueRoute, QueueToggledAtCursor,
+  QuizMoved, Ran, Reading, ReportRoute, SearchFocusRequested, SettingsRoute,
+  SolutionPane, StatsActivated, StatsCursorMoved, StatsRoute, StudyRoute,
+  SummaryRoute, TourActivated, TourContents, TourCursorMoved, TourLesson,
+  TourRoute, TourRunTicked, UserAddedAllShown, UserClickedBackToStudy,
+  UserClickedBrowse, UserClickedClearSelection, UserClickedExitDrill,
+  UserClickedExitReport, UserClickedNext, UserClickedQueue, UserClickedRecall,
+  UserClickedRun, UserClickedScratchRun, UserClickedSelectAll,
+  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
+  UserClickedStudy, UserClickedTour, UserClickedTourContents,
+  UserClickedTourNext, UserClickedTourPrev, UserClickedUndo, UserClosedDetail,
+  UserClosedWalk, UserFilteredQueue, UserGraded, UserOpenedWalk,
+  UserPickedChoice, UserRemovedAllShown, UserRevealedHint, UserRevealedRecall,
+  UserSearched, UserStartedCoding, UserSubmittedAnswer, UserToggledBlitz,
+  UserToggledDiff, UserToggledPane, UserToggledRead, UserToggledResults,
+  WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown, WalkPane, WalkWhyShown,
 }
 import gleamdrill/problem
 import gleamdrill/problems
@@ -350,14 +350,39 @@ fn menu_bindings(m: Model) -> List(Binding) {
 }
 
 fn drill_bindings(m: Model) -> List(Binding) {
-  case current_quiz(m), m.recall, m.walk_open, m.walk {
-    Ok(_), _, _, _ -> quiz_bindings(m)
-    Error(Nil), True, _, _ -> recall_bindings(m)
+  case current_quiz(m), m.recall, m.stage, m.slot, m.walk {
+    Ok(_), _, _, _, _ -> quiz_bindings(m)
+    Error(Nil), True, _, _, _ -> recall_bindings(m)
+    Error(Nil), False, Reading, _, _ -> read_bindings(m)
     // While the walkthrough is open it owns the keyboard: its layers, its
     // steps, and Escape to put it away. The grades stay reachable.
-    Error(Nil), False, True, Some(state) -> walk_bindings(m, state)
-    Error(Nil), False, _, _ -> code_bindings(m)
+    Error(Nil), False, Coding, WalkPane, Some(state) -> walk_bindings(m, state)
+    Error(Nil), False, Coding, _, _ -> code_bindings(m)
   }
+}
+
+/// The prompt page: read, then start. The panes are reachable from here
+/// too, and opening one is what turns the editor page over.
+fn read_bindings(m: Model) -> List(Binding) {
+  list.flatten([
+    [
+      Binding(["Enter", "i"], "start", "Start coding", UserStartedCoding),
+    ],
+    hint_binding(m),
+    [
+      Binding(["Escape"], "exit", "Exit the sitting", UserClickedExitDrill),
+      // The same key that brought the page up puts it away.
+      Binding(["p"], "editor", "Back to the editor", UserToggledRead),
+    ],
+    walk_binding(m),
+    solution_binding(m),
+    [
+      Binding(["m"], "note", "Write a note to future you", NoteFocusRequested),
+      Binding(["n"], "skip", "Skip to the next problem", UserClickedNext),
+    ],
+    undo_binding(m),
+    [help_binding()],
+  ])
 }
 
 fn walk_bindings(m: Model, state: model.WalkState) -> List(Binding) {
@@ -402,6 +427,12 @@ fn walk_bindings(m: Model, state: model.WalkState) -> List(Binding) {
       Binding(["w", "Escape"], "close", "Close the walkthrough", UserClosedWalk),
       help_binding(),
     ],
+    hint_binding(m),
+    solution_binding(m),
+    [
+      Binding(["m"], "note", "Write a note to future you", NoteFocusRequested),
+      Binding(["p"], "read", "Back to the problem", UserToggledRead),
+    ],
   ])
 }
 
@@ -433,12 +464,6 @@ fn recall_bindings(m: Model) -> List(Binding) {
     [
       Binding(["m"], "note", "Write a note to future you", NoteFocusRequested),
       Binding(["a"], "hint", "Reveal the next approach hint", UserRevealedHint),
-      Binding(
-        ["p"],
-        "prompt",
-        "Hide or show the problem prompt",
-        UserToggledSide,
-      ),
       Binding(["n"], "skip", "Skip to the next card", UserClickedNext),
       Binding(["Escape"], "exit", "Exit the sitting", UserClickedExitDrill),
       help_binding(),
@@ -473,34 +498,115 @@ fn code_bindings(m: Model) -> List(Binding) {
     grades,
     undo_binding(m),
     runnable,
-    [
-      Binding(["i", "e"], "edit", "Focus the editor", EditorFocusRequested),
-      Binding(["m"], "note", "Write a note to future you", NoteFocusRequested),
-      Binding(["a"], "hint", "Reveal the next approach hint", UserRevealedHint),
-    ],
+    [Binding(["i", "e"], "edit", "Focus the editor", EditorFocusRequested)],
+    hint_binding(m),
+    next_rung_binding(m),
     walk_binding(m),
+    solution_binding(m),
     [
-      Binding(
-        ["p"],
-        "prompt",
-        "Hide or show the problem prompt",
-        UserToggledSide,
-      ),
-      Binding(
-        ["s"],
-        "solution",
-        "Toggle the first solution",
-        UserToggledSolution(0),
-      ),
+      Binding(["m"], "note", "Write a note to future you", case m.slot {
+        NotePane -> UserToggledPane(NotePane)
+        _ -> NoteFocusRequested
+      }),
+      Binding(["p"], "read", "Back to the problem", UserToggledRead),
     ],
     results_binding(m),
     diff_binding(m),
     [
       Binding(["n"], "next", "Next problem", UserClickedNext),
-      Binding(["Escape"], "exit", "Exit the sitting", UserClickedExitDrill),
+      // Escape puts away whatever is in the slot first; only an empty slot
+      // makes it the way out.
+      case m.slot {
+        NoPane ->
+          Binding(["Escape"], "exit", "Exit the sitting", UserClickedExitDrill)
+        pane ->
+          Binding(["Escape"], "close", "Close the pane", UserToggledPane(pane))
+      },
       help_binding(),
     ],
   ])
+}
+
+/// Only for problems with a hint ladder. The key opens the pane, or closes
+/// it when it is the one showing.
+fn hint_binding(m: Model) -> List(Binding) {
+  case current_problem(m) {
+    Ok(current) if current.approach != [] -> [
+      case m.slot {
+        HintPane ->
+          Binding(["a"], "close", "Close the hints", UserToggledPane(HintPane))
+        _ ->
+          Binding(
+            ["a"],
+            "hint",
+            "Open the approach hints",
+            UserToggledPane(HintPane),
+          )
+      },
+    ]
+    _ -> []
+  }
+}
+
+/// With the ladder open, Enter turns the next rung: the walk form of the
+/// plan opens the guided pane, the other rungs unfold in place.
+fn next_rung_binding(m: Model) -> List(Binding) {
+  case m.slot, current_problem(m) {
+    HintPane, Ok(current) ->
+      case list.drop(current.approach, m.hints_revealed) {
+        [] -> []
+        [problem.Walk(_), ..] -> [
+          Binding(
+            ["Enter"],
+            "walk",
+            "Walk through the approach",
+            UserOpenedWalk,
+          ),
+        ]
+        [problem.Pseudocode(_), ..] -> [
+          Binding(
+            ["Enter"],
+            "pseudocode",
+            "Show the pseudocode (a reveal)",
+            UserRevealedHint,
+          ),
+        ]
+        [problem.Nudge(_), ..] -> [
+          Binding(
+            ["Enter"],
+            "next hint",
+            "Show the next hint",
+            UserRevealedHint,
+          ),
+        ]
+      }
+    _, _ -> []
+  }
+}
+
+/// Only for problems with a reference solution. Same key to close.
+fn solution_binding(m: Model) -> List(Binding) {
+  case current_problem(m) {
+    Ok(current) if current.solutions != [] -> [
+      case m.slot {
+        SolutionPane ->
+          Binding(
+            ["s"],
+            "close",
+            "Close the solution",
+            UserToggledPane(SolutionPane),
+          )
+        _ ->
+          Binding(
+            ["s"],
+            "solution",
+            "Show the reference solution",
+            UserToggledPane(SolutionPane),
+          )
+      },
+    ]
+    _ -> []
+  }
 }
 
 fn quiz_bindings(m: Model) -> List(Binding) {
@@ -661,9 +767,10 @@ pub fn context_label(m: Model) -> String {
         Error(Nil), False ->
           case current_problem(m) {
             Ok(current) ->
-              case m.blitz {
-                Some(_) -> "BLITZ"
-                None -> "DRILL"
+              case m.stage, m.blitz {
+                Reading, _ -> "READ"
+                Coding, Some(_) -> "BLITZ"
+                Coding, None -> "DRILL"
               }
               <> " \u{b7} "
               <> string.uppercase(problem.language_label(current.language))

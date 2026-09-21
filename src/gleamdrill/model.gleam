@@ -370,11 +370,8 @@ pub type Model {
     cache_bytes: Int,
     /// A runtime download in progress: (done, total). None when idle.
     warming: Option(#(Int, Int)),
-    /// After a passing run the solution panel opens by itself with your
-    /// code diffed against the reference. `diff_open` is that panel, until
-    /// dismissed (reset each sitting); `diff_mode` is whether the panel
-    /// shows the diff or the plain reference, flipped with `d`.
-    diff_open: Bool,
+    /// Whether the solution pane shows your code diffed against the
+    /// reference or the plain reference, flipped with `d`.
     diff_mode: Bool,
     /// A recall-only sitting: no editor. The prompt is read, the approach
     /// and solutions are revealed, and the grade is given from memory. Set
@@ -396,14 +393,21 @@ pub type Model {
     /// drill is on screen.
     now_ms: Int,
     draft: String,
+    /// Which page of the drill is up: the problem alone, or the editor.
+    stage: Stage,
+    /// What the slot beside the editor shows, if anything. One thing at a
+    /// time: opening a pane replaces whatever was there.
+    slot: Pane,
+    /// The solution chosen by hand on this problem, sticky until the next
+    /// problem. It is the review log's reveal, not the pane's visibility:
+    /// the diff a passing run opens by itself leaves it `None`.
     revealed_solution: Option(Int),
     /// How many rungs of the approach hint ladder are shown, top down.
     hints_revealed: Int,
     /// The guided walkthrough of the plan: which step, and which of its
-    /// layers have been turned over. Kept while the panel is closed, so
+    /// layers have been turned over. Kept while the pane is closed, so
     /// reopening resumes and the ladder only lists the steps walked so far.
     walk: Option(WalkState),
-    walk_open: Bool,
     /// Whether any step's code slice has been shown on this problem. A
     /// slice is a piece of the pseudocode, so it counts as a reveal.
     walk_code_seen: Bool,
@@ -417,8 +421,6 @@ pub type Model {
     search: String,
     next_run_id: Int,
     editor_keymap: String,
-    /// Whether the drill's prompt column is collapsed to a slim rail.
-    side_collapsed: Bool,
     /// Whether the run results are folded to their one-line verdict. Lives for
     /// the session only: a new run keeps whatever you chose.
     results_collapsed: Bool,
@@ -502,10 +504,11 @@ pub fn default() -> Model {
     opened_at_ms: 0,
     now_ms: 0,
     draft: "",
+    stage: Reading,
+    slot: NoPane,
     revealed_solution: None,
     hints_revealed: 0,
     walk: None,
-    walk_open: False,
     walk_code_seen: False,
     runtimes: [],
     run: RunIdle,
@@ -514,14 +517,12 @@ pub fn default() -> Model {
     search: "",
     next_run_id: 1,
     editor_keymap: "default",
-    side_collapsed: False,
     results_collapsed: False,
     editor_height: None,
     undo: None,
     import_pending: None,
     cache_bytes: 0,
     warming: None,
-    diff_open: True,
     diff_mode: True,
     recall: False,
     run_kind: TestRun,
@@ -655,6 +656,66 @@ pub fn pseudocode_revealed(
       _ -> False
     }
   })
+}
+
+/// The drill's pages. A problem opens on its prompt alone; the editor is a
+/// keypress away and the prompt a keypress back.
+pub type Stage {
+  Reading
+  Coding
+}
+
+/// What the slot beside the editor can show.
+pub type Pane {
+  NoPane
+  HintPane
+  WalkPane
+  SolutionPane
+  NotePane
+}
+
+/// The view state a problem opens with, whichever way it was reached:
+/// reading first, nothing revealed. A leech opens with the ladder already
+/// in the slot, so the approach is beside the editor before the first
+/// keystroke without the open counting as a reveal.
+pub fn open_problem_view(m: Model, problem: ProblemRef) -> Model {
+  let hints = opening_hints(m, problem)
+  Model(
+    ..m,
+    stage: Reading,
+    slot: case hints > 0 {
+      True -> HintPane
+      False -> NoPane
+    },
+    revealed_solution: None,
+    hints_revealed: hints,
+    walk: None,
+    walk_code_seen: False,
+  )
+}
+
+/// The pane's key pressed again closes it; any other pane replaces it.
+/// Either way the editor page is the one that shows it.
+pub fn toggle_pane(m: Model, pane: Pane) -> Model {
+  Model(..m, stage: Coding, slot: case m.slot == pane {
+    True -> NoPane
+    False -> pane
+  })
+}
+
+/// What the slot shows once a test run is in: a pass opens the reference
+/// beside your code, as a diff; a fail takes away a diff that was only there
+/// because of the last pass, and leaves anything chosen by hand alone.
+pub fn pane_after_run(
+  slot: Pane,
+  revealed_solution: Option(Int),
+  passed: Bool,
+) -> Pane {
+  case passed, slot, revealed_solution {
+    True, _, _ -> SolutionPane
+    False, SolutionPane, None -> NoPane
+    False, _, _ -> slot
+  }
 }
 
 /// The one definition of "the answer was seen": a flipped solution or the
@@ -951,7 +1012,12 @@ pub type Msg {
   UserClickedRun
   UserClickedStopRun
   UserClickedRetryRuntime(String)
-  UserToggledSide
+  /// Enter or `i` on the prompt page: over to the editor.
+  UserStartedCoding
+  /// `p`: the prompt page over the editor, and back.
+  UserToggledRead
+  /// A pane's key: open it in the slot, or close it if it is the one shown.
+  UserToggledPane(Pane)
   UserToggledResults
   /// Fetch every runtime file into the offline cache.
   UserClickedWarmCache
