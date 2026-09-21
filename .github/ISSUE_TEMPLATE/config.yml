@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Contributing a problem or a solution
+    url: https://github.com/gudetimes1234/gleamdrill#contributing
+    about: How drills are laid out and verified, for a pull request.

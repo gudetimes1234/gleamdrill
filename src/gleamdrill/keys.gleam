@@ -25,14 +25,15 @@ import gleamdrill/model.{
   UserAddedAllShown, UserClickedBackToStudy, UserClickedBrowse,
   UserClickedClearSelection, UserClickedExitDrill, UserClickedExitReport,
   UserClickedNext, UserClickedQueue, UserClickedRecall, UserClickedRun,
-  UserClickedSelectAll, UserClickedStartDrill, UserClickedStartExam,
-  UserClickedStats, UserClickedStudy, UserClickedTour, UserClickedTourContents,
-  UserClickedTourNext, UserClickedTourPrev, UserClickedUndo, UserClosedDetail,
-  UserClosedWalk, UserFilteredQueue, UserGraded, UserOpenedWalk,
-  UserPickedChoice, UserRemovedAllShown, UserRevealedHint, UserRevealedRecall,
-  UserSearched, UserSubmittedAnswer, UserToggledBlitz, UserToggledDiff,
-  UserToggledResults, UserToggledSide, UserToggledSolution, WalkAdvanced,
-  WalkBacked, WalkCodeShown, WalkHintShown, WalkWhyShown,
+  UserClickedScratchRun, UserClickedSelectAll, UserClickedStartDrill,
+  UserClickedStartExam, UserClickedStats, UserClickedStudy, UserClickedTour,
+  UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
+  UserClickedUndo, UserClosedDetail, UserClosedWalk, UserFilteredQueue,
+  UserGraded, UserOpenedWalk, UserPickedChoice, UserRemovedAllShown,
+  UserRevealedHint, UserRevealedRecall, UserSearched, UserSubmittedAnswer,
+  UserToggledBlitz, UserToggledDiff, UserToggledResults, UserToggledSide,
+  UserToggledSolution, WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown,
+  WalkWhyShown,
 }
 import gleamdrill/problem
 import gleamdrill/problems
@@ -456,7 +457,15 @@ fn code_bindings(m: Model) -> List(Binding) {
     _ -> []
   }
   let runnable = case current_check(m) {
-    Ok(_) -> [Binding(["r"], "run", "Run the tests", UserClickedRun)]
+    Ok(_) -> [
+      Binding(
+        ["r"],
+        "run",
+        "Run your code alone and read its output",
+        UserClickedScratchRun,
+      ),
+      Binding(["t"], "test", "Run the tests", UserClickedRun),
+    ]
     Error(Nil) -> []
   }
 

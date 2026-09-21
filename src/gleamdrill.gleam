@@ -46,20 +46,21 @@ import gleamdrill/model.{
   UserClickedExitDrill, UserClickedExitReport, UserClickedExport,
   UserClickedImport, UserClickedMergeGuest, UserClickedNext, UserClickedQueue,
   UserClickedRecall, UserClickedRetryRuntime, UserClickedRetrySync,
-  UserClickedRun, UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
-  UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
-  UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
-  UserClickedTour, UserClickedTourContents, UserClickedTourNext,
-  UserClickedTourPrev, UserClickedUndo, UserClickedWarmCache, UserClosedDetail,
-  UserClosedWalk, UserDismissedDiff, UserDismissedMergeOffer,
-  UserDismissedNotice, UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded,
-  UserOpenedDetail, UserOpenedLesson, UserOpenedWalk, UserPickedChoice,
-  UserPickedQueueLanguage, UserRemovedAllShown, UserResetLesson,
-  UserRevealedHint, UserRevealedRecall, UserSearched, UserSearchedQueue,
-  UserStartedBlitz, UserSubmittedAnswer, UserSubmittedAuth, UserToggledAuthMode,
-  UserToggledBlitz, UserToggledDiff, UserToggledProblem, UserToggledQueued,
-  UserToggledResults, UserToggledSide, UserToggledSolution, UserToggledSuspend,
-  WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown, WalkWhyShown,
+  UserClickedRun, UserClickedScratchRun, UserClickedSelectAll,
+  UserClickedSettings, UserClickedSignIn, UserClickedSignOut,
+  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
+  UserClickedStopRun, UserClickedStudy, UserClickedSubcategory, UserClickedTour,
+  UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
+  UserClickedUndo, UserClickedWarmCache, UserClosedDetail, UserClosedWalk,
+  UserDismissedDiff, UserDismissedMergeOffer, UserDismissedNotice,
+  UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded, UserOpenedDetail,
+  UserOpenedLesson, UserOpenedWalk, UserPickedChoice, UserPickedQueueLanguage,
+  UserRemovedAllShown, UserResetLesson, UserRevealedHint, UserRevealedRecall,
+  UserSearched, UserSearchedQueue, UserStartedBlitz, UserSubmittedAnswer,
+  UserSubmittedAuth, UserToggledAuthMode, UserToggledBlitz, UserToggledDiff,
+  UserToggledProblem, UserToggledQueued, UserToggledResults, UserToggledSide,
+  UserToggledSolution, UserToggledSuspend, WalkAdvanced, WalkBacked,
+  WalkCodeShown, WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
@@ -1191,8 +1192,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                   problem: ref,
                   pressed: rating,
                   duration_ms: browser.now_ms() - m.opened_at_ms,
-                  passed: model.run_passed(m.run),
-                  clean: model.run_passed(m.run) && !answer_given_away(m),
+                  passed: model.test_passed(m),
+                  clean: model.test_passed(m) && !answer_given_away(m),
                 ),
                 ..m.sitting
               ],
@@ -2289,56 +2290,9 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         Error(Nil), _ -> #(m, effect.none())
       }
 
-    UserClickedRun ->
-      case m.run {
-        // One run at a time: `r` and Ctrl+Enter bypass the disabled button,
-        // and a queued second run just doubles the wait.
-        Running(_, _) -> #(m, effect.none())
-        _ ->
-          case current_language(m), current_check(m) {
-            Ok(language), Ok(check) ->
-              case model.runtime_for(m, language) {
-                // Elixir and Go run on the server, and the server wants a
-                // session. The button is disabled for a guest; the keyboard
-                // lands here.
-                RuntimeReady if m.mode == Guest ->
-                  case runner.is_remote(language) {
-                    True -> #(
-                      Model(
-                        ..m,
-                        notice: Some(
-                          "This drill runs on the server \u{2014} sign in to run it.",
-                        ),
-                      ),
-                      effect.none(),
-                    )
-                    False -> start_run(m, language, check)
-                  }
-                RuntimeReady -> start_run(m, language, check)
-                // The button is disabled in these states, but the keyboard
-                // paths land here too and silence reads as a broken key.
-                RuntimeLoading | RuntimeNotLoaded -> #(
-                  Model(
-                    ..m,
-                    notice: Some(
-                      "The runtime is still loading \u{2014} the Run button enables when it's ready.",
-                    ),
-                  ),
-                  effect.none(),
-                )
-                RuntimeFailed(_) -> #(
-                  Model(
-                    ..m,
-                    notice: Some(
-                      "The runtime failed to load \u{2014} use Retry next to the Run button.",
-                    ),
-                  ),
-                  effect.none(),
-                )
-              }
-            _, _ -> #(m, effect.none())
-          }
-      }
+    UserClickedRun -> request_run(m, model.TestRun)
+
+    UserClickedScratchRun -> request_run(m, model.ScratchRun)
 
     UserClickedStopRun -> abandon_run(m)
 
@@ -2395,8 +2349,12 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       case m.run {
         Running(current, _) if current == id -> #(
           // Whatever the harness said, the drill is now answerable: the
-          // grading bar decides what the buttons offer.
-          Model(..m, run: Ran(outcome, stdout), grading: AwaitingGrade),
+          // grading bar decides what the buttons offer. A scratch run is
+          // not an answer, though; it leaves the gate where it was.
+          Model(..m, run: Ran(outcome, stdout), grading: case m.run_kind {
+            model.TestRun -> AwaitingGrade
+            model.ScratchRun -> m.grading
+          }),
           // Blur the editor so 1-4 grade immediately: the whole rep is
           // type, Ctrl+Enter, digit. Not on the tour, where a run follows
           // every pause in typing and must not take the cursor away.
@@ -2441,7 +2399,10 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       case m.run {
         Running(current, _) if current == id -> {
           let timed_out =
-            Model(..m, run: Ran(TimedOut, ""), grading: AwaitingGrade)
+            Model(..m, run: Ran(TimedOut, ""), grading: case m.run_kind {
+              model.TestRun -> AwaitingGrade
+              model.ScratchRun -> m.grading
+            })
           // The worker cannot be interrupted, only replaced. A server-side
           // run has no worker: the server has already killed it.
           case m.route, current_language(m) {
@@ -2728,17 +2689,75 @@ fn handle_key(m: Model, key: model.Key) -> #(Model, Effect(Msg)) {
 
 /// A run the button or keyboard asked for, once the runtime is ready: posted
 /// to the server for a remote language, spawned in a worker otherwise.
+/// A run of either kind, with every reason it cannot start said out loud:
+/// the button is disabled in those states, but `r`, `t` and Ctrl+Enter
+/// land here too and silence reads as a broken key.
+fn request_run(m: Model, kind: model.RunKind) -> #(Model, Effect(Msg)) {
+  case m.run {
+    // One run at a time: a queued second run just doubles the wait.
+    Running(_, _) -> #(m, effect.none())
+    _ ->
+      case current_language(m), current_check(m) {
+        Ok(language), Ok(check) -> {
+          let harness = case kind {
+            model.TestRun -> check.harness
+            model.ScratchRun -> runner.scratch_harness(language)
+          }
+          case model.runtime_for(m, language) {
+            // Elixir and Go run on the server, and the server wants a
+            // session.
+            RuntimeReady if m.mode == Guest ->
+              case runner.is_remote(language) {
+                True -> #(
+                  Model(
+                    ..m,
+                    notice: Some(
+                      "This drill runs on the server \u{2014} sign in to run it.",
+                    ),
+                  ),
+                  effect.none(),
+                )
+                False -> start_run(m, language, harness, kind)
+              }
+            RuntimeReady -> start_run(m, language, harness, kind)
+            RuntimeLoading | RuntimeNotLoaded -> #(
+              Model(
+                ..m,
+                notice: Some(
+                  "The runtime is still loading \u{2014} the Run button enables when it's ready.",
+                ),
+              ),
+              effect.none(),
+            )
+            RuntimeFailed(_) -> #(
+              Model(
+                ..m,
+                notice: Some(
+                  "The runtime failed to load \u{2014} use Retry next to the Run button.",
+                ),
+              ),
+              effect.none(),
+            )
+          }
+        }
+        _, _ -> #(m, effect.none())
+      }
+  }
+}
+
 fn start_run(
   m: Model,
   language: String,
-  check: problem.Check,
+  harness: String,
+  kind: model.RunKind,
 ) -> #(Model, Effect(Msg)) {
   let id = m.next_run_id
   let previous = case m.run {
     Ran(_, stdout) -> stdout
     _ -> ""
   }
-  let started = Model(..m, run: Running(id, previous), next_run_id: id + 1)
+  let started =
+    Model(..m, run: Running(id, previous), run_kind: kind, next_run_id: id + 1)
   case runner.is_remote(language), m.mode {
     True, Account(token) -> #(
       started,
@@ -2746,15 +2765,18 @@ fn start_run(
         api.post_run(
           api_base(),
           token,
-          wire.RunRequest(language, m.draft, check.harness),
+          wire.RunRequest(language, m.draft, harness),
           RemoteRunFinished(id, _),
         ),
         runner.arm_remote_timeout(id),
       ]),
     )
-    // Unreachable: UserClickedRun catches a guest first.
+    // Unreachable: request_run catches a guest first.
     True, Guest -> #(m, effect.none())
-    False, _ -> start_local_run(m, language, m.draft, check.harness)
+    False, _ -> {
+      let #(next, fx) = start_local_run(m, language, m.draft, harness)
+      #(Model(..next, run_kind: kind), fx)
+    }
   }
 }
 

@@ -202,6 +202,19 @@ check("a correct Elixir solution passes every case on the server",
   `${(await page.$$(".case.pass")).length} passed`);
 check("what the attempt printed comes back with it",
   (await page.textContent(".output-pane")).includes("checking"));
+// A scratch run goes to the server the same way, through the same
+// throttle: the code alone, its output back, no cases.
+await typeSolution("IO.puts(\"scratch on the server\")\n\ndefmodule Solution do\n  def contains_duplicate?(_nums), do: false\nend\n");
+await page.click(".scratch-button");
+await page.waitForFunction(() => {
+  const s = document.querySelector(".results-summary");
+  return s && !s.classList.contains("running");
+}, { timeout: 60000 });
+check("a scratch run on the server reports it ran",
+  (await page.textContent(".results-summary")).includes("Ran"),
+  await page.textContent(".results-summary"));
+check("and brings back what it printed, with no cases",
+  (await page.textContent(".output-pane")).includes("scratch on the server") && (await page.$$(".case")).length === 0);
 await page.goto(APP, { waitUntil: "networkidle" });
 await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 15000 });

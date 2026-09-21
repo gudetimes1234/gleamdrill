@@ -29,6 +29,37 @@ const run_timeout_ms = 8000
 /// fetch or init is presumed dead and the user is offered a Retry.
 const load_timeout_ms = 30_000
 
+/// The harness for a scratch run: yields no cases, so the Output pane is the
+/// whole result. Python and Elixir are scripts whose top level already ran;
+/// Gleam, TypeScript and Go are libraries with nothing to run until called,
+/// so their scratch harness calls an entry point the attempt may define --
+/// `main` in Gleam and TypeScript, `scratch` in Go, where `main` belongs to
+/// the prelude. A missing entry point is an ordinary compile error.
+pub fn scratch_harness(language: String) -> String {
+  case language {
+    "python" -> "__results__ = []\n"
+    "typescript" ->
+      "import * as solution from \"./solution\";\nexport function run(): [string, string, string][] {\n  if (typeof (solution as any).main === \"function\") (solution as any).main();\n  return [];\n}\n"
+    "gleam" ->
+      "import solution\n\npub fn run() -> List(#(String, String, String)) {\n  solution.main()\n  []\n}\n"
+    "elixir" -> "[]\n"
+    "go" ->
+      "package main\n\nfunc main() {\n\trun(func() []testCase {\n\t\tscratch()\n\t\treturn []testCase{}\n\t})\n}\n"
+    _ -> ""
+  }
+}
+
+/// What the Run button should say the scratch run does, per language.
+pub fn scratch_hint(language: String) -> String {
+  case language {
+    "gleam" | "typescript" ->
+      "Runs your code alone, calling main() if you define one. Output shows below."
+    "go" ->
+      "Runs your code alone, calling scratch() if you define one. Output shows below."
+    _ -> "Runs your code alone, no tests. Output shows below."
+  }
+}
+
 /// Languages with no browser runtime at all: the run is an HTTP request to
 /// the server instead (api.post_run), and "the runtime" is ready the moment
 /// it is asked for. Elixir and Go; see problem.Check.

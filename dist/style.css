@@ -631,6 +631,29 @@ details.approach summary:focus-visible {
     font-weight: 600;
 }
 
+/* Two runs: the code alone (secondary, first) and the tests (primary). */
+.scratch-button {
+    padding: 10px 16px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+}
+
+.results-summary.scratch {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Under every solution: the way to disagree with it. */
+.answer-suggest {
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.answer-suggest .footer-link {
+    font-size: 12px;
+}
+
 .drill-clock-urgent {
     color: var(--error);
 }

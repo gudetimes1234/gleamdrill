@@ -639,6 +639,27 @@ check("a first encounter grades freely from the start",
   JSON.stringify(await gradeLabels()));
 check("the output pane starts empty",
   (await page.textContent(".output-empty")).includes("Nothing printed"));
+
+// Two runs: the code alone, for reading what it prints while you work, and
+// the tests. Only the tests answer the card; a scratch run leaves the grade
+// bar exactly where it was.
+exercises("UserClickedScratchRun");
+await waitForRunnable();
+check("Run and Run tests are both offered",
+  (await page.$$(".scratch-button")).length === 1 && (await page.$$(".run-button")).length === 1);
+await setCode("print('scratch', 1 + 1)\n\ndef containsDuplicate(nums):\n    pass\n");
+await page.keyboard.press("r");
+await verdict();
+check("r runs the code alone and reports it ran",
+  (await page.textContent(".results-summary")).includes("Ran"),
+  await page.textContent(".results-summary"));
+check("what it printed is in the Output pane",
+  (await page.textContent(".output-pane")).includes("scratch 2"));
+check("a scratch run shows no cases", (await page.$$(".case")).length === 0);
+check("a first encounter still grades freely after a scratch run",
+  JSON.stringify(await gradeLabels()) === ALL_FOUR,
+  JSON.stringify(await gradeLabels()));
+await capture("scratch", "Run alone: what the code printed, no verdict", "Run your code and read its output, no harness");
 check("the approach starts unrevealed",
   (await page.$$(".approach-nudge, .approach-steps, .approach-pseudocode")).length === 0
     && await page.isVisible(".hint-button"));
@@ -816,6 +837,13 @@ await page.waitForTimeout(500);
 check("revealing on a first encounter keeps the choice",
   JSON.stringify(await gradeLabels()) === ALL_FOUR,
   JSON.stringify(await gradeLabels()));
+// Every solution is a file in a public repository; the card says how to
+// disagree with it, and the link carries the language, problem and variant.
+const suggestHref = await page.getAttribute(".answer-suggest a", "href");
+check("a solution offers a way to suggest a better one",
+  suggestHref !== null && suggestHref.includes("/issues/new?template=solution.yml"), suggestHref);
+check("naming the problem, language and variant",
+  suggestHref !== null && decodeURIComponent(suggestHref).includes("[Python] Contains Duplicate"), suggestHref);
 await capture("revealed", "Solution revealed on a first encounter: note, code, grades intact");
 await page.click(".solution-button");
 await page.waitForTimeout(400);
@@ -2297,7 +2325,7 @@ const declared = [
   "UserChangedKeymap",
   "UserClickedRun", "UserClickedStopRun", "UserClickedRetryRuntime",
   "UserToggledSide", "UserToggledResults", "UserToggledSuspend", "UserClickedRecall", "UserRevealedRecall",
-  "UserToggledBlitz", "UserStartedBlitz",
+  "UserToggledBlitz", "UserStartedBlitz", "UserClickedScratchRun",
   "UserClickedUndo", "UserToggledDiff", "UserDismissedDiff",
   "UserClickedExport", "UserClickedImport", "ImportConfirmed",
   "UserClickedWarmCache", "UserOpenedWalk", "UserClosedWalk",

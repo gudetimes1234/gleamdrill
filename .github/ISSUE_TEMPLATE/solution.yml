@@ -1,0 +1,39 @@
+# Reached from the "Suggest a better solution" link under every solution in
+# the app, which pre-fills the title and the `problem` field. The file the
+# solution lives in is named below, for anyone who would rather open the
+# pull request themselves.
+name: Suggest a better solution
+description: A reference solution you think is wrong, unidiomatic, or missing a better approach.
+title: "[solution] "
+labels: [solution]
+body:
+  - type: input
+    id: problem
+    attributes:
+      label: Which solution
+      description: Language / problem / variant, as the app shows it.
+      placeholder: "Go / Two Sum / Hash Map"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What is wrong with it, or what would be better
+      description: Wrong output, wrong complexity claim, an idiom the language has and the solution ignores, or a genuinely different approach worth its own variant.
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: Your version
+      description: Optional. Paste the whole solution; it becomes the pull request if we agree.
+      render: text
+  - type: markdown
+    attributes:
+      value: |
+        **Want to open the pull request yourself?** Solutions are real files:
+        `drills/python/solutions/<stem>.py`, `drills/ts/solutions/<stem>.ts`,
+        `drills/src/<stem>.gleam`, `drills/elixir/solutions/<stem>.exs`,
+        `drills/go/solutions/<stem>.go`. Alternates are `<stem>__<variant>`,
+        their write-ups live in `drills/notes/`, and `make verify` runs every
+        one against its harness. See the README's Contributing section.

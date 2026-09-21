@@ -12,18 +12,20 @@ import gleamdrill/model.{
   Ran, RunIdle, Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded,
   RuntimeReady, SubmittingGrade, TimedOut, UserChangedKeymap,
   UserClickedExitDrill, UserClickedNext, UserClickedRetryRuntime, UserClickedRun,
-  UserClickedStopRun, UserClickedUndo, UserClosedWalk, UserDismissedDiff,
-  UserGraded, UserOpenedWalk, UserPickedChoice, UserRevealedHint,
-  UserRevealedRecall, UserSubmittedAnswer, UserToggledDiff, UserToggledResults,
-  UserToggledSide, UserToggledSolution, WalkAdvanced, WalkBacked, WalkCodeShown,
-  WalkHintShown, WalkWhyShown,
+  UserClickedScratchRun, UserClickedStopRun, UserClickedUndo, UserClosedWalk,
+  UserDismissedDiff, UserGraded, UserOpenedWalk, UserPickedChoice,
+  UserRevealedHint, UserRevealedRecall, UserSubmittedAnswer, UserToggledDiff,
+  UserToggledResults, UserToggledSide, UserToggledSolution, WalkAdvanced,
+  WalkBacked, WalkCodeShown, WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/problem.{
   type Problem, type ProblemRef, type Quiz, type Solution,
 }
 import gleamdrill/problems
+import gleamdrill/runner
 import gleamdrill/view/banner
 import gleamdrill/view/format
+import gleamdrill/view/links
 import gleamdrill/view/nav
 import lustre/attribute
 import lustre/element.{type Element}
@@ -655,7 +657,13 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
         m.run
       {
         _, Running(_, _) -> [
-          run_button("Running\u{2026}", True),
+          run_button(
+            case m.run_kind {
+              model.ScratchRun -> "Running\u{2026}"
+              model.TestRun -> "Testing\u{2026}"
+            },
+            True,
+          ),
           html.button(
             [
               attribute.class("btn-secondary stop-button"),
@@ -664,7 +672,10 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
             [html.text("Stop")],
           ),
         ]
-        RuntimeReady, _ -> [run_button("\u{25b6} Run tests", False)]
+        RuntimeReady, _ -> [
+          scratch_button(current),
+          run_button("\u{25b6} Run tests", False),
+        ]
         RuntimeLoading, _ -> [run_button("Loading runtime\u{2026}", True)]
         RuntimeNotLoaded, _ -> [run_button("Loading runtime\u{2026}", True)]
         RuntimeFailed(message), _ -> [
@@ -955,6 +966,21 @@ fn solution_buttons(m: Model, current: Problem) -> List(Element(Msg)) {
   })
 }
 
+/// The code alone, no harness: for reading what it prints while you work.
+fn scratch_button(current: Problem) -> Element(Msg) {
+  html.button(
+    [
+      attribute.class("btn-secondary scratch-button"),
+      attribute.attribute(
+        "title",
+        runner.scratch_hint(problem.language_slug(current.language)),
+      ),
+      event.on_click(UserClickedScratchRun),
+    ],
+    [html.text("\u{25b6} Run")],
+  )
+}
+
 fn run_button(label: String, disabled: Bool) -> Element(Msg) {
   html.button(
     [
@@ -980,7 +1006,11 @@ fn results_only(m: Model, current: Problem) -> List(Element(Msg)) {
         ]),
       ]),
     ]
-    Ran(Cases(cases), _) -> [case_results(m, cases)]
+    Ran(Cases(cases), stdout) ->
+      case m.run_kind {
+        model.ScratchRun -> [scratch_results(stdout)]
+        model.TestRun -> [case_results(m, cases)]
+      }
     Ran(Errored(error), _) -> [error_results(m, error, current)]
     Ran(TimedOut, _) -> [
       results_box(
@@ -1199,7 +1229,7 @@ fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
   // given -- so `revealed_solution` is left alone and the review's
   // `revealed` stays honest.
   let passed =
-    model.run_passed(m.run)
+    model.test_passed(m)
     && string.trim(m.draft) != ""
     && current.solutions != []
   let diffing = passed && m.diff_mode
@@ -1305,6 +1335,21 @@ fn answer_panel(m: Model, current: Problem) -> List(Element(Msg)) {
             ]
             False -> [html.pre([], [html.code([], [html.text(solution.code)])])]
           },
+          // Every solution is a file in a public repository. Say so where
+          // someone is most likely to disagree with one.
+          [
+            html.p([attribute.class("answer-suggest")], [
+              html.text("Not happy with this one? "),
+              links.external(
+                "Suggest a better solution \u{2197}",
+                links.suggest_solution(
+                  problem.language_label(current.language),
+                  current.title,
+                  solution.label,
+                ),
+              ),
+            ]),
+          ],
         ]),
       ),
     ]
@@ -1351,6 +1396,25 @@ fn revealed(m: Model, current: Problem) -> Result(#(Int, Solution), Nil) {
       |> result.map(fn(solution) { #(index, solution) })
     None -> Error(Nil)
   }
+}
+
+/// A scratch run's result is what it printed, in the Output pane; this is
+/// the one line that says it ran.
+fn scratch_results(stdout: String) -> Element(Msg) {
+  let lines =
+    stdout
+    |> string.split("\n")
+    |> list.filter(fn(line) { line != "" })
+    |> list.length
+  html.div([attribute.class("results")], [
+    html.div([attribute.class("results-summary scratch")], [
+      html.text(case lines {
+        0 -> "Ran \u{b7} nothing printed"
+        1 -> "Ran \u{b7} 1 line printed"
+        n -> "Ran \u{b7} " <> int.to_string(n) <> " lines printed"
+      }),
+    ]),
+  ])
 }
 
 fn case_results(m: Model, cases: List(CaseResult)) -> Element(Msg) {

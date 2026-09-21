@@ -264,6 +264,14 @@ pub type RunOutcome {
   TimedOut
 }
 
+/// What the last run was for. A test run is the harness, and is what
+/// gates grading; a scratch run is the code alone, for reading what it
+/// prints, and counts for nothing.
+pub type RunKind {
+  TestRun
+  ScratchRun
+}
+
 pub type RunState {
   RunIdle
   /// `stdout` is the previous run's output, carried so the Output panel does
@@ -372,6 +380,8 @@ pub type Model {
     /// and solutions are revealed, and the grade is given from memory. Set
     /// alongside `studying`, cleared with it.
     recall: Bool,
+    /// Which kind of run `run` describes. Set as a run starts.
+    run_kind: RunKind,
     /// A Blitz: N random problems against a clock, scored pass or fail.
     /// Practice as far as the schedule is concerned; the game is the clock.
     blitz: Option(Blitz),
@@ -514,6 +524,7 @@ pub fn default() -> Model {
     diff_open: True,
     diff_mode: True,
     recall: False,
+    run_kind: TestRun,
     blitz: None,
     blitz_chooser: False,
     leader_armed: False,
@@ -578,6 +589,12 @@ pub fn first_encounter(model: Model, problem: ProblemRef) -> Bool {
 
 /// Whether the most recent run passed every case. Only a harness verdict
 /// counts: a reveal-only drill never "passes".
+/// A pass that counts: a test run whose every case passed. A scratch run
+/// has no cases and never passes anything.
+pub fn test_passed(model: Model) -> Bool {
+  model.run_kind == TestRun && run_passed(model.run)
+}
+
 pub fn run_passed(run: RunState) -> Bool {
   case run {
     Ran(Cases(cases), _) -> cases != [] && list.all(cases, fn(c) { c.passed })
@@ -960,6 +977,8 @@ pub type Msg {
   UndoRecorded(UndoPoint, Result(api.UndoOutcome, ApiError))
   /// Start a recall-only sitting over the study queue.
   UserClickedRecall
+  /// Run the code alone, no harness: for reading what it prints.
+  UserClickedScratchRun
   /// Open the Blitz chooser on the study screen, or close it.
   UserToggledBlitz
   /// Start a Blitz: this many problems, this many milliseconds each.
