@@ -552,8 +552,7 @@ pub fn a_review_drops_the_problems_draft_test() -> Nil {
   // The graded problem starts from the stub next time; the other keeps
   // its work in progress.
   assert model.assoc_get(after.drafts, problem) == Error(Nil)
-  assert model.assoc_get(after.drafts, other)
-    == Ok("def isAnagram(s, t): ...")
+  assert model.assoc_get(after.drafts, other) == Ok("def isAnagram(s, t): ...")
 }
 
 pub fn drafts_evict_oldest_first_test() -> Nil {
