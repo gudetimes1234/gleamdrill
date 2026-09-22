@@ -31,13 +31,14 @@ pub fn state(request: wisp.Request, context: Context) -> wisp.Response {
     use cards <- result.try(study.load_cards(context.db, user.id))
     use drafts <- result.try(study.load_drafts(context.db, user.id))
     use notes <- result.try(study.load_notes(context.db, user.id))
+    use queues <- result.try(study.load_queues(context.db, user.id))
     use today <- result.try(study.today(context.db, user.id, settings, now))
-    Ok(#(settings, cards, drafts, notes, today))
+    Ok(#(settings, cards, drafts, notes, queues, today))
   }
 
   case result {
     Error(failure) -> study_error(failure)
-    Ok(#(settings, cards, drafts, notes, today)) ->
+    Ok(#(settings, cards, drafts, notes, queues, today)) ->
       web.json_ok(
         json.object([
           #("now", json.float(fsrs.to_epoch(now))),
@@ -46,9 +47,40 @@ pub fn state(request: wisp.Request, context: Context) -> wisp.Response {
           #("cards", json.array(cards, card_json)),
           #("drafts", json.array(drafts, draft_json)),
           #("notes", json.array(notes, draft_json)),
+          #("queues", json.array(queues, wire.queue_to_json)),
           #("today", today_json(today)),
         ]),
       )
+  }
+}
+
+/// GET and PUT /api/queues -- the user's named queues, as one set. The
+/// client owns the list and sends it whole; the server checks its shape and
+/// replaces what it had.
+pub fn queues(request: wisp.Request, context: Context) -> wisp.Response {
+  use user <- web.require_user(request, context)
+  case request.method {
+    http.Get ->
+      case study.load_queues(context.db, user.id) {
+        Error(failure) -> study_error(failure)
+        Ok(queues) -> web.json_ok(wire.queues_to_json(queues))
+      }
+    http.Put -> {
+      use body <- wisp.require_json(request)
+      case decode.run(body, wire.queues_decoder()) {
+        Error(_) -> web.error(422, "invalid_body", "Expected a list of queues.")
+        Ok(queues) ->
+          case study.validate_queues(queues) {
+            Error(message) -> web.error(422, "invalid_queues", message)
+            Ok(Nil) ->
+              case study.replace_queues(context.db, user.id, queues) {
+                Error(failure) -> study_error(failure)
+                Ok(Nil) -> wisp.no_content()
+              }
+          }
+      }
+    }
+    _ -> wisp.method_not_allowed([http.Get, http.Put])
   }
 }
 
@@ -340,7 +372,7 @@ pub fn import_legacy(request: wisp.Request, context: Context) -> wisp.Response {
         "invalid_body",
         "Expected cards, solved problems and drafts.",
       )
-    Ok(#(solved, cards, drafts, notes)) -> {
+    Ok(#(solved, cards, drafts, notes, queues)) -> {
       let outcome = {
         use settings <- result.try(study.load_settings(context.db, user.id))
         study.import_legacy(
@@ -351,6 +383,7 @@ pub fn import_legacy(request: wisp.Request, context: Context) -> wisp.Response {
           cards,
           drafts,
           notes,
+          queues,
           timestamp.system_time(),
         )
       }
@@ -420,6 +453,7 @@ pub fn export(request: wisp.Request, context: Context) -> wisp.Response {
     use reviews <- result.try(study.all_reviews(context.db, user.id))
     use drafts <- result.try(study.load_drafts(context.db, user.id))
     use notes <- result.try(study.load_notes(context.db, user.id))
+    use queues <- result.try(study.load_queues(context.db, user.id))
     Ok(wire.Archive(
       version: wire.archive_version,
       exported_at: timestamp.system_time(),
@@ -428,6 +462,7 @@ pub fn export(request: wisp.Request, context: Context) -> wisp.Response {
       reviews:,
       drafts:,
       notes:,
+      queues:,
     ))
   }
   case outcome {
@@ -447,7 +482,8 @@ pub fn restore(request: wisp.Request, context: Context) -> wisp.Response {
     Error(_) ->
       web.error(422, "invalid_body", "That is not a GleamDrill export.")
     Ok(archive) ->
-      case archive.version == wire.archive_version {
+      // Older files are fine: each decoder defaults what its version lacks.
+      case archive.version <= wire.archive_version {
         False ->
           web.error(
             422,
@@ -455,9 +491,13 @@ pub fn restore(request: wisp.Request, context: Context) -> wisp.Response {
             "This export was made by a newer GleamDrill.",
           )
         True ->
-          case validate_settings(archive.settings) {
-            Error(message) -> web.error(422, "invalid_settings", message)
-            Ok(_) ->
+          case
+            validate_settings(archive.settings),
+            study.validate_queues(archive.queues)
+          {
+            Error(message), _ -> web.error(422, "invalid_settings", message)
+            _, Error(message) -> web.error(422, "invalid_queues", message)
+            Ok(_), Ok(_) ->
               case
                 study.timezone_is_valid(context.db, archive.settings.timezone)
               {
@@ -674,6 +714,7 @@ fn import_decoder() -> decode.Decoder(
     List(study.ImportCard),
     List(#(study.ProblemRef, String)),
     List(#(study.ProblemRef, String)),
+    List(wire.Queue),
   ),
 ) {
   // `solved` is the pre-account localStorage format (a sticky boolean, no
@@ -695,7 +736,12 @@ fn import_decoder() -> decode.Decoder(
     decode.list(draft_decoder()),
   )
   use notes <- decode.optional_field("notes", [], decode.list(draft_decoder()))
-  decode.success(#(solved, cards, drafts, notes))
+  use queues <- decode.optional_field(
+    "queues",
+    [],
+    decode.list(wire.queue_decoder()),
+  )
+  decode.success(#(solved, cards, drafts, notes, queues))
 }
 
 fn import_card_decoder() -> decode.Decoder(study.ImportCard) {

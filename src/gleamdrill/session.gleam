@@ -38,11 +38,18 @@ pub type Preferences {
     editor_keymap: String,
     /// Where the editor's resize handle was left, in px. `None` is the default.
     editor_height: Option(Int),
+    /// Whether the prompt sidebar is open beside the editor. A device fact:
+    /// a wide screen keeps it, a narrow one may not.
+    prompt_open: Bool,
     /// The last Gleam Tour lesson opened on this device, so "Continue the
     /// tour" lands where you left off. A device fact, like the keymap.
     tour_lesson: Int,
     /// Whether the first-run picker has been answered on this device.
     languages_chosen: Bool,
+    /// The named queue being studied on this device, or None for
+    /// everything. A device fact: which list is today's is a choice made
+    /// where you sit, and the list itself lives with the cards.
+    active_queue: Option(String),
   )
 }
 
@@ -52,8 +59,10 @@ pub fn default_preferences() -> Preferences {
   Preferences(
     editor_keymap: "default",
     editor_height: None,
+    prompt_open: True,
     tour_lesson: 0,
     languages_chosen: False,
+    active_queue: None,
   )
 }
 
@@ -118,34 +127,40 @@ pub fn load_preferences() -> Preferences {
     Ok(local) ->
       storage.get_item(local, preferences_key)
       |> result.try(fn(raw) {
-        json.parse(raw, {
-          use keymap <- decode.field("editorKeymap", decode.string)
-          // Optional so blobs written before the field existed still parse.
-          use editor_height <- decode.optional_field(
-            "editorHeight",
-            None,
-            decode.optional(decode.int),
-          )
-          // True, unlike `default_preferences`: a blob written before this
-          // field existed belongs to someone already using the app, and
-          // showing them a first-run picker would be a lie.
-          use chosen <- decode.optional_field(
-            "languagesChosen",
-            True,
-            decode.bool,
-          )
-          use tour_lesson <- decode.optional_field("tourLesson", 0, decode.int)
-          decode.success(Preferences(
-            editor_keymap: keymap,
-            editor_height: editor_height,
-            tour_lesson: tour_lesson,
-            languages_chosen: chosen,
-          ))
-        })
-        |> result.replace_error(Nil)
+        json.parse(raw, preferences_decoder()) |> result.replace_error(Nil)
       })
       |> result.unwrap(default_preferences())
   }
+}
+
+/// Every field after the first is optional, so a blob written before it
+/// existed still parses.
+pub fn preferences_decoder() -> decode.Decoder(Preferences) {
+  use keymap <- decode.field("editorKeymap", decode.string)
+  use editor_height <- decode.optional_field(
+    "editorHeight",
+    None,
+    decode.optional(decode.int),
+  )
+  // True, unlike `default_preferences`: a blob written before this field
+  // existed belongs to someone already using the app, and showing them a
+  // first-run picker would be a lie.
+  use chosen <- decode.optional_field("languagesChosen", True, decode.bool)
+  use tour_lesson <- decode.optional_field("tourLesson", 0, decode.int)
+  use active_queue <- decode.optional_field(
+    "activeQueue",
+    None,
+    decode.optional(decode.string),
+  )
+  use prompt_open <- decode.optional_field("promptOpen", True, decode.bool)
+  decode.success(Preferences(
+    editor_keymap: keymap,
+    editor_height: editor_height,
+    prompt_open: prompt_open,
+    tour_lesson: tour_lesson,
+    languages_chosen: chosen,
+    active_queue: active_queue,
+  ))
 }
 
 pub fn save_preferences(preferences: Preferences) -> Effect(message) {
@@ -156,8 +171,10 @@ pub fn save_preferences(preferences: Preferences) -> Effect(message) {
       json.object([
         #("editorKeymap", json.string(preferences.editor_keymap)),
         #("editorHeight", json.nullable(preferences.editor_height, json.int)),
+        #("promptOpen", json.bool(preferences.prompt_open)),
         #("languagesChosen", json.bool(preferences.languages_chosen)),
         #("tourLesson", json.int(preferences.tour_lesson)),
+        #("activeQueue", json.nullable(preferences.active_queue, json.string)),
       ]),
     ),
   )

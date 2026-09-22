@@ -376,26 +376,54 @@ check "nor a reveal" 1 "$(echo "$I" | j "['reveals'][0]['count']")"
 check "history without a token is 401" 401 "$(status "$B/api/history?category=x&subcategory=y&title=z")"
 check "history without the key is 422" 422 "$(status "$B/api/history" -H "$AUTH")"
 
+echo "== queues"
+# Named lists the client owns and sends whole. Scheduling is elsewhere.
+QS="{\"queues\":[{\"name\":\"Pointers\",\"problems\":[{$REF}]},{\"name\":\"Later\",\"problems\":[]}]}"
+check "an account starts with no queues" 0 "$(curl -s "$B/api/queues" -H "$AUTH" | j "len(d['queues'])")"
+check "putting the set is 204" 204 "$(status -X PUT "$B/api/queues" -H "$AUTH" -H "$CT" -d "$QS")"
+Q=$(curl -s "$B/api/queues" -H "$AUTH")
+check "both queues come back, in order" "Pointers,Later" "$(echo "$Q" | j "','.join(q['name'] for q in d['queues'])")"
+check "with their problems" "Contains Duplicate" "$(echo "$Q" | j "['queues'][0]['problems'][0]['title']")"
+check "an empty queue survives" 0 "$(echo "$Q" | j "len(d['queues'][1]['problems'])")"
+check "state carries the queues too" 2 "$(curl -s "$B/api/state" -H "$AUTH" | j "len(d['queues'])")"
+check "duplicate names are refused" 422 "$(status -X PUT "$B/api/queues" -H "$AUTH" -H "$CT" -d '{"queues":[{"name":"A","problems":[]},{"name":"A","problems":[]}]}')"
+check "a blank name is refused" 422 "$(status -X PUT "$B/api/queues" -H "$AUTH" -H "$CT" -d '{"queues":[{"name":"  ","problems":[]}]}')"
+check "not a queue set is refused" 422 "$(status -X PUT "$B/api/queues" -H "$AUTH" -H "$CT" -d '{"hello":1}')"
+check "queues without a token is 401" 401 "$(status "$B/api/queues")"
+check "a guest upgrade merges queues by name" 204 \
+  "$(status -X POST "$B/api/import" -H "$AUTH" -H "$CT" -d "{\"cards\":[],\"drafts\":[],\"solved\":[],\"queues\":[{\"name\":\"Later\",\"problems\":[{$REF}]},{\"name\":\"Fresh\",\"problems\":[]}]}")"
+Q=$(curl -s "$B/api/queues" -H "$AUTH")
+check "a known name gained the problem" 1 "$(echo "$Q" | j "len([q for q in d['queues'] if q['name']=='Later'][0]['problems'])")"
+check "a new name was appended" "Pointers,Later,Fresh" "$(echo "$Q" | j "','.join(q['name'] for q in d['queues'])")"
+check "putting the two back" 204 "$(status -X PUT "$B/api/queues" -H "$AUTH" -H "$CT" -d "$QS")"
+
 echo "== export and restore"
 # The main account's whole history as one file, wiped, and put back.
 X=$(curl -s "$B/api/export" -H "$AUTH")
-check "the export is a versioned archive" 1 "$(echo "$X" | j "['gleamdrill']")"
+check "the export is a versioned archive" 2 "$(echo "$X" | j "['gleamdrill']")"
+check "carrying the queues" 2 "$(echo "$X" | j "len(d['queues'])")"
 check "with every review" 5 "$(echo "$X" | j "len(d['reviews'])")"
 check "each naming its problem" "Contains Duplicate" "$(echo "$X" | j "['reviews'][0]['title']")"
 check "the settings" "America/New_York" "$(echo "$X" | j "['settings']['timezone']")"
 check "and the cards" 1 "$(echo "$X" | j "len(d['cards'])")"
-EMPTY=$(echo "$X" | python3 -c "import sys,json;d=json.load(sys.stdin);d.update(cards=[],reviews=[],drafts=[],notes=[]);print(json.dumps(d))")
+EMPTY=$(echo "$X" | python3 -c "import sys,json;d=json.load(sys.stdin);d.update(cards=[],reviews=[],drafts=[],notes=[],queues=[]);print(json.dumps(d))")
 check "restoring an empty archive wipes the account" 204 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$EMPTY")"
 check "no cards remain" 0 "$(curl -s "$B/api/state" -H "$AUTH" | j "len(d['cards'])")"
+check "no queues remain" 0 "$(curl -s "$B/api/queues" -H "$AUTH" | j "len(d['queues'])")"
 check "no reviews remain" 0 "$(curl -s "$B/api/stats" -H "$AUTH" | j "['totalReviews']")"
 check "restoring the export brings it all back" 204 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$X")"
 check "the card is back" 1 "$(curl -s "$B/api/state" -H "$AUTH" | j "len(d['cards'])")"
 check "with its scheduling" "$(echo "$X" | j "['cards'][0]['stability']")" "$(curl -s "$B/api/state" -H "$AUTH" | j "['cards'][0]['stability']")"
 check "every review is back" 5 "$(curl -s "$B/api/stats" -H "$AUTH" | j "['totalReviews']")"
+check "and the queues" 2 "$(curl -s "$B/api/queues" -H "$AUTH" | j "len(d['queues'])")"
 Y=$(curl -s "$B/api/export" -H "$AUTH")
 check "and exporting again gives the same file" "$(echo "$X" | j "json.dumps({k: v for k, v in d.items() if k != 'exportedAt'}, sort_keys=True)")" "$(echo "$Y" | j "json.dumps({k: v for k, v in d.items() if k != 'exportedAt'}, sort_keys=True)")"
 check "a restored review cannot be undone" 409 "$(status -X DELETE "$B/api/reviews" -H "$AUTH")"
 check "a file that is not an export is refused" 422 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d '{"hello":1}')"
+V1=$(echo "$X" | python3 -c "import sys,json;d=json.load(sys.stdin);d['gleamdrill']=1;d.pop('queues');print(json.dumps(d))")
+check "a version 1 file still restores" 204 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$V1")"
+check "leaving no queues, as it had none" 0 "$(curl -s "$B/api/queues" -H "$AUTH" | j "len(d['queues'])")"
+check "restoring the current export again" 204 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$X")"
 check "a newer format is refused" 422 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$(echo "$X" | python3 -c "import sys,json;d=json.load(sys.stdin);d['gleamdrill']=99;print(json.dumps(d))")")"
 check "bad settings in the file are refused" 422 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$(echo "$X" | python3 -c "import sys,json;d=json.load(sys.stdin);d['settings']['desiredRetention']=0.1;print(json.dumps(d))")")"
 check "export without a token is 401" 401 "$(status "$B/api/export")"

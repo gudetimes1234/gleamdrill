@@ -36,6 +36,31 @@ pub type Route {
   StatsRoute
   /// The Gleam Language Tour, played in order from its own screen.
   TourRoute
+  /// Two problems' reference solutions side by side, reached from Browse.
+  CompareRoute
+}
+
+/// The queue screen's name box: a queue being made, or one being renamed.
+pub type QueueNaming {
+  NewQueue(text: String)
+  RenameQueue(from: String, text: String)
+}
+
+/// The compare screen: an anchor on the left and, on the right, one of the
+/// others at a time. Each side shows one of its problem's solutions.
+pub type Compare {
+  Compare(
+    anchor: ProblemRef,
+    others: List(ProblemRef),
+    index: Int,
+    variant_a: Int,
+    variant_b: Int,
+  )
+}
+
+pub type CompareSide {
+  LeftSide
+  RightSide
 }
 
 /// Which face of the tour screen is up: the table of contents, or one lesson.
@@ -393,8 +418,8 @@ pub type Model {
     /// drill is on screen.
     now_ms: Int,
     draft: String,
-    /// Which page of the drill is up: the problem alone, or the editor.
-    stage: Stage,
+    /// Whether the prompt sidebar is beside the editor, on this device.
+    prompt_open: Bool,
     /// What the slot beside the editor shows, if anything. One thing at a
     /// time: opening a pane replaces whatever was there.
     slot: Pane,
@@ -437,6 +462,17 @@ pub type Model {
     queue_search: String,
     queue_language: Option(String),
     queue_status: QueueFilter,
+    /// Named lists to study from. A card is the memory of one problem,
+    /// whichever queues list it; every listed problem has a card.
+    queues: List(wire.Queue),
+    /// The queue the study screen serves today: None is everything with a
+    /// card. A device preference.
+    active_queue: Option(String),
+    /// The queue the queue screen is editing: None is everything, where a
+    /// row toggle adds or removes the card itself.
+    queue_editing: Option(String),
+    queue_naming: Option(QueueNaming),
+    compare: Option(Compare),
     /// Problems whose queue change is in flight, so their row can be disabled
     /// rather than accepting a second click that would race the first.
     queue_pending: List(ProblemRef),
@@ -504,7 +540,7 @@ pub fn default() -> Model {
     opened_at_ms: 0,
     now_ms: 0,
     draft: "",
-    stage: Reading,
+    prompt_open: True,
     slot: NoPane,
     revealed_solution: None,
     hints_revealed: 0,
@@ -532,6 +568,11 @@ pub fn default() -> Model {
     queue_search: "",
     queue_language: None,
     queue_status: AnyStatus,
+    queues: [],
+    active_queue: None,
+    queue_editing: None,
+    queue_naming: None,
+    compare: None,
     queue_pending: [],
     languages_chosen: False,
     picked_languages: [],
@@ -658,13 +699,6 @@ pub fn pseudocode_revealed(
   })
 }
 
-/// The drill's pages. A problem opens on its prompt alone; the editor is a
-/// keypress away and the prompt a keypress back.
-pub type Stage {
-  Reading
-  Coding
-}
-
 /// What the slot beside the editor can show.
 pub type Pane {
   NoPane
@@ -675,14 +709,13 @@ pub type Pane {
 }
 
 /// The view state a problem opens with, whichever way it was reached:
-/// reading first, nothing revealed. A leech opens with the ladder already
+/// nothing revealed. A leech opens with the ladder already
 /// in the slot, so the approach is beside the editor before the first
 /// keystroke without the open counting as a reveal.
 pub fn open_problem_view(m: Model, problem: ProblemRef) -> Model {
   let hints = opening_hints(m, problem)
   Model(
     ..m,
-    stage: Reading,
     slot: case hints > 0 {
       True -> HintPane
       False -> NoPane
@@ -695,9 +728,8 @@ pub fn open_problem_view(m: Model, problem: ProblemRef) -> Model {
 }
 
 /// The pane's key pressed again closes it; any other pane replaces it.
-/// Either way the editor page is the one that shows it.
 pub fn toggle_pane(m: Model, pane: Pane) -> Model {
-  Model(..m, stage: Coding, slot: case m.slot == pane {
+  Model(..m, slot: case m.slot == pane {
     True -> NoPane
     False -> pane
   })
@@ -776,11 +808,52 @@ pub fn is_due(model: Model, problem: ProblemRef) -> Bool {
   }
 }
 
-/// Whether a problem is in the study queue at all. Membership *is* the card:
-/// queueing a problem creates one, removing it deletes it. Nothing else in the
-/// app decides what may be introduced.
+/// Whether a problem is in the study queue at all -- in Everything.
+/// Membership *is* the card: queueing a problem creates one, removing it
+/// deletes it. Nothing else in the app decides what may be introduced; a
+/// named queue only chooses among problems that have one.
 pub fn is_queued(model: Model, problem: ProblemRef) -> Bool {
   card_for(model, problem) != None
+}
+
+pub fn queue_named(m: Model, name: String) -> Result(wire.Queue, Nil) {
+  list.find(m.queues, fn(queue) { queue.name == name })
+}
+
+/// Cards gone are gone from every list: a queue never names a problem
+/// without one.
+pub fn drop_from_queues(
+  queues: List(wire.Queue),
+  removed: List(ProblemRef),
+) -> List(wire.Queue) {
+  case removed {
+    [] -> queues
+    _ ->
+      list.map(queues, fn(queue) {
+        wire.Queue(
+          ..queue,
+          problems: list.filter(queue.problems, fn(ref) {
+            !list.contains(removed, ref)
+          }),
+        )
+      })
+  }
+}
+
+/// The queue after the active one, round the loop that starts and ends at
+/// everything: what `n` on the study screen steps through.
+pub fn next_queue(m: Model) -> Option(String) {
+  let names = list.map(m.queues, fn(queue) { option.Some(queue.name) })
+  let ring = [None, ..names]
+  case ring {
+    [] | [_] -> None
+    _ ->
+      ring
+      |> list.drop_while(fn(name) { name != m.active_queue })
+      |> list.drop(1)
+      |> list.first
+      |> result.unwrap(None)
+  }
 }
 
 /// A queued problem that has never been answered — what the New pile is drawn
@@ -1012,10 +1085,8 @@ pub type Msg {
   UserClickedRun
   UserClickedStopRun
   UserClickedRetryRuntime(String)
-  /// Enter or `i` on the prompt page: over to the editor.
-  UserStartedCoding
-  /// `p`: the prompt page over the editor, and back.
-  UserToggledRead
+  /// `p` or the header button: the prompt sidebar, shown or hidden.
+  UserToggledPrompt
   /// A pane's key: open it in the slot, or close it if it is the one shown.
   UserToggledPane(Pane)
   UserToggledResults
@@ -1085,6 +1156,25 @@ pub type Msg {
   UserToggledQueued(ProblemRef)
   UserAddedAllShown
   UserRemovedAllShown
+  // --- named queues ---
+  /// The study screen's pick: which queue today serves from.
+  UserPickedActiveQueue(Option(String))
+  /// The queue screen's pick: which queue the rows edit.
+  UserSelectedQueue(Option(String))
+  UserStartedNewQueue
+  UserStartedRenameQueue
+  UserChangedQueueName(String)
+  UserSubmittedQueueName
+  UserCancelledQueueName
+  UserDeletedQueue
+  /// Browse: the selection into a queue (None: just give them cards).
+  UserAddedSelectionToQueue(Option(String))
+  QueuesSaved(Result(Nil, ApiError))
+  // --- compare ---
+  UserClickedCompare
+  CompareMoved(Int)
+  ComparePickedVariant(CompareSide, Int)
+  UserClosedCompare
   QueueCursorMoved(Int)
   QueueCursorJumped(Bool)
   QueueToggledAtCursor

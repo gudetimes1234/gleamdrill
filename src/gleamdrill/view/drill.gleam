@@ -8,17 +8,16 @@ import gleamdrill/editor
 import gleamdrill/insights
 import gleamdrill/model.{
   type CaseResult, type Model, type Msg, type RunError, AwaitingGrade, Cases,
-  Coding, EditorChanged, EditorResized, Errored, ExitConfirmed, HintPane, NoPane,
-  NotGrading, NoteChanged, NotePane, Ran, Reading, RunIdle, Running,
-  RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady, SolutionPane,
-  SubmittingGrade, TimedOut, UserChangedKeymap, UserClickedExitDrill,
-  UserClickedNext, UserClickedRetryRuntime, UserClickedRun,
-  UserClickedScratchRun, UserClickedStopRun, UserClickedUndo, UserClosedWalk,
-  UserDismissedDiff, UserGraded, UserOpenedWalk, UserPickedChoice,
-  UserRevealedHint, UserRevealedRecall, UserStartedCoding, UserSubmittedAnswer,
-  UserToggledDiff, UserToggledPane, UserToggledRead, UserToggledResults,
-  UserToggledSolution, WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown,
-  WalkPane, WalkWhyShown,
+  EditorChanged, EditorResized, Errored, ExitConfirmed, HintPane, NoPane,
+  NotGrading, NoteChanged, NotePane, Ran, RunIdle, Running, RuntimeFailed,
+  RuntimeLoading, RuntimeNotLoaded, RuntimeReady, SolutionPane, SubmittingGrade,
+  TimedOut, UserChangedKeymap, UserClickedExitDrill, UserClickedNext,
+  UserClickedRetryRuntime, UserClickedRun, UserClickedScratchRun,
+  UserClickedStopRun, UserClickedUndo, UserClosedWalk, UserDismissedDiff,
+  UserGraded, UserOpenedWalk, UserPickedChoice, UserRevealedHint,
+  UserRevealedRecall, UserSubmittedAnswer, UserToggledDiff, UserToggledPane,
+  UserToggledPrompt, UserToggledResults, UserToggledSolution, WalkAdvanced,
+  WalkBacked, WalkCodeShown, WalkHintShown, WalkPane, WalkWhyShown,
 }
 import gleamdrill/problem.{
   type Problem, type ProblemRef, type Quiz, type Solution,
@@ -127,9 +126,9 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
         ]),
       ),
       // Nothing to type in a quiz or a recall card, so the keybinding
-      // picker is noise; a recall card says what it is instead. The editor
-      // page also gets the way back to the problem, for a thumb: `p` is
-      // no use on a phone.
+      // picker is noise; a recall card says what it is instead. The prompt
+      // sidebar's toggle is here too, for a thumb: `p` is no use on a
+      // phone.
       case current.quiz, m.recall {
         Some(_), _ -> element.none()
         None, True ->
@@ -140,18 +139,13 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
               [
                 attribute.classes([
                   #("btn-secondary", True),
-                  #("read-toggle", True),
-                  #("active", m.stage == Reading),
+                  #("prompt-toggle", True),
+                  #("active", m.prompt_open),
                 ]),
                 attribute.type_("button"),
-                event.on_click(UserToggledRead),
+                event.on_click(UserToggledPrompt),
               ],
-              [
-                html.text(case m.stage {
-                  Reading -> "Editor"
-                  Coding -> "Problem"
-                }),
-              ],
+              [html.text("Problem")],
             ),
             keymap_picker(m),
           ])
@@ -184,29 +178,21 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
         )
       None, True ->
         html.div([attribute.class("drill-main")], recall_main(m, ref, current))
-      // The prompt page is a sheet over the editor page, not a route of its
-      // own: the editor stays mounted underneath, child 0 of the same
-      // parent whichever page is up, so CodeMirror keeps its undo history
-      // and cursor. Parked, it is inert so a button under the sheet cannot
-      // take the Enter meant to start.
+      // The prompt sidebar comes and goes; the editor column stays child 0
+      // of the same parent either way, so CodeMirror keeps its undo history
+      // and cursor. The stylesheet puts the sidebar on the left (order: -1).
       None, False ->
         keyed.div([attribute.class("drill-body")], [
           #(
             "main",
             html.div(
-              [
-                attribute.classes([
-                  #("drill-main", True),
-                  #("parked", m.stage == Reading),
-                ]),
-                attribute.inert(m.stage == Reading),
-              ],
+              [attribute.class("drill-main")],
               code_main(m, ref, current, body_key),
             ),
           ),
-          ..case m.stage {
-            Reading -> [#("read", read_sheet(m, ref, current))]
-            Coding -> []
+          ..case m.prompt_open {
+            True -> [#("prompt", prompt_side(m, ref, current))]
+            False -> []
           }
         ])
     },
@@ -272,22 +258,12 @@ fn code_main(
   ]
 }
 
-/// The prompt page. Everything there is to read before the first
-/// keystroke, and one way forward.
-fn read_sheet(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
-  html.section(
-    [attribute.class("read-sheet")],
-    list.append(read_blocks(m, ref, current), [
-      html.div([attribute.class("read-actions")], [
-        html.button(
-          [
-            attribute.class("btn-primary read-start"),
-            event.on_click(UserStartedCoding),
-          ],
-          [html.text("Start coding "), html.kbd([], [html.text("\u{21b5}")])],
-        ),
-      ]),
-    ]),
+/// The prompt beside the editor: everything there is to read, in a column
+/// the editor keeps the rest of the width from.
+fn prompt_side(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
+  html.aside(
+    [attribute.class("prompt-side read-sheet")],
+    read_blocks(m, ref, current),
   )
 }
 
@@ -821,9 +797,65 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
     [attribute.class("run-bar")],
     list.flatten([
       run_control,
+      [pane_buttons(m, current)],
       undo_button(m),
       [grade_controls(m, current)],
     ]),
+  )
+}
+
+/// One button per thing the slot can show, lit while it is showing: the
+/// same four things the keys a, w, s and m press, for the mouse. A
+/// solution's button is its own, so choosing one is one click.
+fn pane_buttons(m: Model, current: Problem) -> Element(Msg) {
+  let hint = case current.approach {
+    [] -> []
+    _ -> [
+      pane_button("Hint", m.slot == HintPane, UserToggledPane(HintPane), False),
+    ]
+  }
+  let walk = case model.walk_steps(current.approach) {
+    [] -> []
+    _ -> [
+      pane_button("Walk", m.slot == WalkPane, UserToggledPane(WalkPane), False),
+    ]
+  }
+  let solutions =
+    list.index_map(current.solutions, fn(solution: Solution, index) {
+      pane_button(
+        solution.label,
+        m.slot == SolutionPane && m.revealed_solution == Some(index),
+        UserToggledSolution(index),
+        True,
+      )
+    })
+  let note = [
+    pane_button("Note", m.slot == NotePane, UserToggledPane(NotePane), False),
+  ]
+  html.div(
+    [attribute.class("pane-buttons")],
+    list.flatten([hint, walk, solutions, note]),
+  )
+}
+
+fn pane_button(
+  label: String,
+  lit: Bool,
+  msg: Msg,
+  solution: Bool,
+) -> Element(Msg) {
+  html.button(
+    [
+      attribute.classes([
+        #("btn-secondary", True),
+        #("pane-button", True),
+        #("solution-button", solution),
+        #("revealed", lit),
+      ]),
+      attribute.type_("button"),
+      event.on_click(msg),
+    ],
+    [html.text(label)],
   )
 }
 
@@ -1068,28 +1100,6 @@ fn preview_interval(m: Model, rating: fsrs.Rating) -> String {
   }
   let scheduled = fsrs.review(card, rating, m.now, m.settings.scheduler, 0.0)
   format.interval(fsrs.interval_seconds(scheduled, m.now))
-}
-
-/// One button per reference, in the solution pane's header. The one showing
-/// is lit; choosing another is choosing it, which the log records.
-fn solution_picker(current: Problem, shown: Int) -> Element(Msg) {
-  html.div(
-    [attribute.class("solution-picker")],
-    list.index_map(current.solutions, fn(solution: Solution, index) {
-      html.button(
-        [
-          attribute.classes([
-            #("btn-secondary", True),
-            #("solution-button", True),
-            #("revealed", shown == index),
-          ]),
-          attribute.type_("button"),
-          event.on_click(UserToggledSolution(index)),
-        ],
-        [html.text(solution.label)],
-      )
-    }),
-  )
 }
 
 /// The code alone, no harness: for reading what it prints while you work.
@@ -1367,7 +1377,7 @@ fn solution_pane(m: Model, current: Problem) -> List(Element(Msg)) {
     Error(Nil), False -> Error(Nil)
   }
   case shown {
-    Ok(#(by_choice, #(index, solution))) -> [
+    Ok(#(by_choice, #(_, solution))) -> [
       html.div(
         [
           attribute.classes([
@@ -1436,17 +1446,6 @@ fn solution_pane(m: Model, current: Problem) -> List(Element(Msg)) {
               ]),
             ),
           ],
-          // The other references, one press away. Only the chosen one is
-          // lit: an auto-opened diff has chosen nothing.
-          case current.solutions {
-            [_] | [] -> []
-            _ -> [
-              solution_picker(current, case by_choice {
-                True -> index
-                False -> -1
-              }),
-            ]
-          },
           // Solutions written before their note exists simply have none; an
           // empty div would still draw its margins.
           case solution.note {

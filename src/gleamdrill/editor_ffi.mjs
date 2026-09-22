@@ -17,6 +17,7 @@ import {
   StateField,
 } from "@codemirror/state";
 import {
+  Decoration,
   EditorView,
   keymap,
   lineNumbers,
@@ -39,7 +40,7 @@ import {
   indentOnInput,
 } from "@codemirror/language";
 import { setDiagnostics } from "@codemirror/lint";
-import { unifiedMergeView } from "@codemirror/merge";
+import { MergeView, unifiedMergeView } from "@codemirror/merge";
 import {
   closeBrackets,
   closeBracketsKeymap,
@@ -1249,11 +1250,140 @@ class GleamDiff extends HTMLElement {
   }
 }
 
+// The <gleam-compare> custom element: two texts side by side, read-only,
+// the lines they share lit and the rest dimmed. The compare screen shows
+// two problems' reference solutions this way, so the shape a technique
+// keeps from problem to problem is what stands out.
+//
+// "Shared" is a line-level longest common subsequence of the two texts,
+// computed here rather than taken from the merge view's chunks: its diff is
+// by character and folds a matching line between two differing ones into
+// one changed chunk, which is exactly the line worth lighting.
+//
+// Interface, driven from editor.gleam:
+//   property "a"         — the left text
+//   property "b"         — the right text
+//   attribute "language" — highlighting mode, as for <gleam-editor>
+class GleamCompare extends HTMLElement {
+  static observedAttributes = ["language"];
+
+  #view = null;
+  #a = "";
+  #b = "";
+
+  set a(value) {
+    this.#a = value ?? "";
+    this.#rebuild();
+  }
+
+  get a() {
+    return this.#a;
+  }
+
+  set b(value) {
+    this.#b = value ?? "";
+    this.#rebuild();
+  }
+
+  get b() {
+    return this.#b;
+  }
+
+  attributeChangedCallback() {
+    this.#rebuild();
+  }
+
+  connectedCallback() {
+    this.#rebuild();
+  }
+
+  disconnectedCallback() {
+    this.#view?.destroy();
+    this.#view = null;
+  }
+
+  // A MergeView has no setState; both texts change together when the
+  // problems do, and rebuilding is what a fresh pair costs anyway.
+  #rebuild() {
+    if (!this.isConnected) return;
+    this.#view?.destroy();
+    const shared = [
+      EditorView.editable.of(false),
+      EditorState.readOnly.of(true),
+      lineNumbers(),
+      languageExtension(this.getAttribute("language") ?? "gleam"),
+      syntaxHighlighting(highlight),
+      theme,
+    ];
+    const [litA, litB] = sharedLines(this.#a, this.#b);
+    this.#view = new MergeView({
+      a: { doc: this.#a, extensions: [...shared, litLines(this.#a, litA)] },
+      b: { doc: this.#b, extensions: [...shared, litLines(this.#b, litB)] },
+      parent: this,
+      orientation: "a-b",
+      // The stylesheet lights the shared lines; the merge view's own
+      // change tints would only compete with that.
+      highlightChanges: false,
+      gutter: false,
+      // The whole of both: what they share is the point, not a fold.
+      collapseUnchanged: undefined,
+    });
+  }
+}
+
+// Which lines of each text are in a longest common subsequence of the two,
+// compared trimmed. Blank lines never count: every program has them, and
+// lighting them would light nothing. Texts are short, so the quadratic
+// table is fine.
+function sharedLines(a, b) {
+  const la = a.split("\n").map((l) => l.trim());
+  const lb = b.split("\n").map((l) => l.trim());
+  const n = la.length, m = lb.length;
+  const table = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      table[i][j] =
+        la[i] !== "" && la[i] === lb[j]
+          ? table[i + 1][j + 1] + 1
+          : Math.max(table[i + 1][j], table[i][j + 1]);
+    }
+  }
+  const litA = new Set(), litB = new Set();
+  let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (la[i] !== "" && la[i] === lb[j]) {
+      litA.add(i);
+      litB.add(j);
+      i++;
+      j++;
+    } else if (table[i + 1][j] >= table[i][j + 1]) {
+      i++;
+    } else {
+      j++;
+    }
+  }
+  return [litA, litB];
+}
+
+// A line decoration on each shared line. The texts never change inside a
+// view, so a fixed set is enough.
+function litLines(text, lit) {
+  const doc = EditorState.create({ doc: text }).doc;
+  const mark = Decoration.line({ class: "cm-sharedLine" });
+  const ranges = [...lit]
+    .sort((x, y) => x - y)
+    .map((index) => mark.range(doc.line(index + 1).from));
+  return EditorView.decorations.of(Decoration.set(ranges));
+}
+
 export function register() {
   if (!customElements.get("gleam-editor")) {
     customElements.define("gleam-editor", GleamEditor);
   }
   if (!customElements.get("gleam-diff")) {
     customElements.define("gleam-diff", GleamDiff);
+  }
+  if (!customElements.get("gleam-compare")) {
+    customElements.define("gleam-compare", GleamCompare);
   }
 }

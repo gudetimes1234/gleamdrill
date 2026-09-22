@@ -882,8 +882,203 @@ pub fn all_reviews(
   |> result.map_error(database_error)
 }
 
+// --- queues ----------------------------------------------------------------
+
+/// Names are trimmed, short and distinct; a queue is at most a whole
+/// catalogue. The same checks run whether the set arrives by PUT or in
+/// an archive, so nothing unbounded reaches the table.
+pub fn validate_queues(queues: List(wire.Queue)) -> Result(Nil, String) {
+  let names = list.map(queues, fn(queue) { string.trim(queue.name) })
+  use <- bool.guard(
+    list.length(queues) > max_queues,
+    Error("at most " <> int.to_string(max_queues) <> " queues"),
+  )
+  use <- bool.guard(
+    list.any(names, fn(name) { name == "" }),
+    Error("a queue needs a name"),
+  )
+  use <- bool.guard(
+    list.any(names, fn(name) { string.length(name) > max_queue_name }),
+    Error(
+      "a queue name is at most "
+      <> int.to_string(max_queue_name)
+      <> " characters",
+    ),
+  )
+  use <- bool.guard(
+    list.length(list.unique(names)) != list.length(names),
+    Error("queue names must be distinct"),
+  )
+  use <- bool.guard(
+    list.any(queues, fn(queue) { list.length(queue.problems) > max_queue_items }),
+    Error(
+      "a queue holds at most " <> int.to_string(max_queue_items) <> " problems",
+    ),
+  )
+  Ok(Nil)
+}
+
+const max_queues = 50
+
+const max_queue_name = 60
+
+const max_queue_items = 1500
+
+/// Every queue with its problems in order. One query: a left join so an
+/// empty queue still comes back, chunked by name afterwards.
+pub fn load_queues(
+  db: pog.Connection,
+  user_id: String,
+) -> Result(List(wire.Queue), StudyError) {
+  pog.query(
+    "select q.name, i.category, i.subcategory, i.title
+       from queues q
+       left join queue_items i on i.queue_id = q.id
+      where q.user_id = $1::uuid
+      order by q.position, q.name, i.position",
+  )
+  |> pog.parameter(pog.text(user_id))
+  |> pog.returning({
+    use name <- decode.field(0, decode.string)
+    use category <- decode.field(1, decode.optional(decode.string))
+    use subcategory <- decode.field(2, decode.optional(decode.string))
+    use title <- decode.field(3, decode.optional(decode.string))
+    let problem = case category, subcategory, title {
+      Some(category), Some(subcategory), Some(title) ->
+        Some(wire.ProblemRef(category:, subcategory:, title:))
+      _, _, _ -> None
+    }
+    decode.success(#(name, problem))
+  })
+  |> pog.execute(db)
+  |> result.map(fn(returned) {
+    returned.rows
+    |> list.chunk(fn(row) { row.0 })
+    |> list.filter_map(fn(rows) {
+      case rows {
+        [#(name, _), ..] ->
+          Ok(wire.Queue(
+            name:,
+            problems: list.filter_map(rows, fn(row) {
+              option.to_result(row.1, Nil)
+            }),
+          ))
+        [] -> Error(Nil)
+      }
+    })
+  })
+  |> result.map_error(database_error)
+}
+
+/// The client owns the set and sends it whole: everything the user had is
+/// replaced, in one transaction. Positions are list order.
+pub fn replace_queues(
+  db: pog.Connection,
+  user_id: String,
+  queues: List(wire.Queue),
+) -> Result(Nil, StudyError) {
+  pog.transaction(db, fn(tx) { write_queues(tx, user_id, queues) })
+  |> result.map_error(flatten_transaction_error)
+}
+
+fn write_queues(
+  tx: pog.Connection,
+  user_id: String,
+  queues: List(wire.Queue),
+) -> Result(Nil, StudyError) {
+  use _ <- result.try(
+    pog.query("delete from queues where user_id = $1::uuid")
+    |> pog.parameter(pog.text(user_id))
+    |> pog.execute(tx)
+    |> result.replace(Nil)
+    |> result.map_error(database_error),
+  )
+  queues
+  |> list.index_map(fn(queue, position) { #(queue, position) })
+  |> list.try_each(fn(entry) {
+    let #(queue, position) = entry
+    use returned <- result.try(
+      pog.query(
+        "insert into queues (user_id, name, position)
+         values ($1::uuid, $2, $3) returning id::text",
+      )
+      |> pog.parameter(pog.text(user_id))
+      |> pog.parameter(pog.text(string.trim(queue.name)))
+      |> pog.parameter(pog.int(position))
+      |> pog.returning(decode.at([0], decode.string))
+      |> pog.execute(tx)
+      |> result.map_error(database_error),
+    )
+    case returned.rows, queue.problems {
+      _, [] -> Ok(Nil)
+      [id], problems ->
+        pog.query(
+          "insert into queue_items (queue_id, category, subcategory, title, position)
+           select $1::uuid, category, subcategory, title, ordinality
+             from unnest($2::text[], $3::text[], $4::text[])
+             with ordinality as t(category, subcategory, title, ordinality)
+           on conflict do nothing",
+        )
+        |> pog.parameter(pog.text(id))
+        |> pog.parameter(pog.array(
+          pog.text,
+          list.map(problems, fn(ref) { ref.category }),
+        ))
+        |> pog.parameter(pog.array(
+          pog.text,
+          list.map(problems, fn(ref) { ref.subcategory }),
+        ))
+        |> pog.parameter(pog.array(
+          pog.text,
+          list.map(problems, fn(ref) { ref.title }),
+        ))
+        |> pog.execute(tx)
+        |> result.replace(Nil)
+        |> result.map_error(database_error)
+      _, _ -> Error(StudyDatabaseError("queue insert returned no id"))
+    }
+  })
+}
+
+/// Folds a guest's queues into an account's: a queue with the same name
+/// gains the problems it lacks, a new name is appended. Nothing is lost on
+/// either side, so an upgrade or an import retried is harmless.
+pub fn merge_queues(
+  db: pog.Connection,
+  user_id: String,
+  incoming: List(wire.Queue),
+) -> Result(Nil, StudyError) {
+  use existing <- result.try(load_queues(db, user_id))
+  let merged =
+    list.fold(incoming, existing, fn(queues, queue) {
+      case list.any(queues, fn(q) { q.name == queue.name }) {
+        True ->
+          list.map(queues, fn(q) {
+            case q.name == queue.name {
+              True ->
+                wire.Queue(
+                  ..q,
+                  problems: list.append(
+                    q.problems,
+                    list.filter(queue.problems, fn(ref) {
+                      !list.contains(q.problems, ref)
+                    }),
+                  ),
+                )
+              False -> q
+            }
+          })
+        False -> list.append(queues, [queue])
+      }
+    })
+  case merged == existing {
+    True -> Ok(Nil)
+    False -> write_queues(db, user_id, merged)
+  }
+}
+
 /// Replaces everything the user has with the archive's contents, in one
-/// transaction: cards, reviews, drafts, notes and settings. Reviews are
+/// transaction: cards, reviews, drafts, notes, queues and settings. Reviews are
 /// re-attached to their cards by problem; rows for a problem the archive
 /// has no card for are dropped. Restored reviews carry no snapshot, so
 /// they cannot be undone.
@@ -894,13 +1089,16 @@ pub fn restore(
 ) -> Result(Nil, StudyError) {
   pog.transaction(db, fn(tx) {
     use _ <- result.try(
-      list.try_each(["reviews", "cards", "drafts", "notes"], fn(table) {
-        pog.query("delete from " <> table <> " where user_id = $1::uuid")
-        |> pog.parameter(pog.text(user_id))
-        |> pog.execute(tx)
-        |> result.replace(Nil)
-        |> result.map_error(database_error)
-      }),
+      list.try_each(
+        ["reviews", "cards", "drafts", "notes", "queues"],
+        fn(table) {
+          pog.query("delete from " <> table <> " where user_id = $1::uuid")
+          |> pog.parameter(pog.text(user_id))
+          |> pog.execute(tx)
+          |> result.replace(Nil)
+          |> result.map_error(database_error)
+        },
+      ),
     )
     use _ <- result.try(
       list.try_each(archive.cards, fn(card) {
@@ -963,6 +1161,7 @@ pub fn restore(
         save_note(tx, user_id, entry.0, entry.1)
       }),
     )
+    use _ <- result.try(write_queues(tx, user_id, archive.queues))
     save_settings(tx, user_id, archive.settings)
   })
   |> result.map_error(flatten_transaction_error)
@@ -1299,6 +1498,7 @@ pub fn import_legacy(
   cards: List(ImportCard),
   drafts: List(#(ProblemRef, String)),
   notes: List(#(ProblemRef, String)),
+  queues: List(wire.Queue),
   now: Timestamp,
 ) -> Result(Nil, StudyError) {
   let seed = fsrs.initial_memory(settings.scheduler, fsrs.Good)
@@ -1319,7 +1519,12 @@ pub fn import_legacy(
         save_draft(tx, user_id, entry.0, entry.1)
       }),
     )
-    list.try_each(notes, fn(entry) { save_note(tx, user_id, entry.0, entry.1) })
+    use _ <- result.try(
+      list.try_each(notes, fn(entry) {
+        save_note(tx, user_id, entry.0, entry.1)
+      }),
+    )
+    merge_queues(tx, user_id, queues)
   })
   |> result.map_error(flatten_transaction_error)
 }

@@ -4,10 +4,11 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
 import gleamdrill/model.{
-  type Model, type Msg, UserChangedIterations, UserClickedBreadcrumb,
-  UserClickedCategory, UserClickedClearSelection, UserClickedSelectAll,
-  UserClickedStartDrill, UserClickedStartExam, UserClickedSubcategory,
-  UserSearched, UserToggledProblem, UserToggledSuspend,
+  type Model, type Msg, UserAddedSelectionToQueue, UserChangedIterations,
+  UserClickedBreadcrumb, UserClickedCategory, UserClickedClearSelection,
+  UserClickedCompare, UserClickedSelectAll, UserClickedStartDrill,
+  UserClickedStartExam, UserClickedSubcategory, UserSearched, UserToggledProblem,
+  UserToggledSuspend,
 }
 import gleamdrill/problem.{type Problem, type ProblemRef}
 import gleamdrill/problems
@@ -75,6 +76,18 @@ pub fn view(m: Model) -> Element(Msg) {
           ],
           [html.text("Start drill")],
         ),
+        // The selected solutions side by side; one alone is compared with
+        // the rest of its topic.
+        html.button(
+          [
+            attribute.id("compareSelected"),
+            attribute.class("btn-secondary"),
+            attribute.disabled(m.selected == []),
+            event.on_click(UserClickedCompare),
+          ],
+          [html.text("Compare")],
+        ),
+        add_to_queue(m),
         html.button(
           [
             attribute.id("selectAll"),
@@ -481,4 +494,38 @@ fn on_activate_key(msg: Msg) -> attribute.Attribute(Msg) {
         )
     }
   })
+}
+
+/// The selection into a queue. A `<details>` menu rather than a select:
+/// after the pick nothing needs resetting, the menu just closes.
+fn add_to_queue(m: Model) -> Element(Msg) {
+  case m.selected {
+    [] -> element.none()
+    _ ->
+      html.details([attribute.class("add-to-queue")], [
+        html.summary([attribute.class("btn-secondary")], [
+          html.text("Add to queue \u{25be}"),
+        ]),
+        html.div([attribute.class("add-to-queue-menu")], [
+          html.button(
+            [
+              attribute.class("add-to-queue-option"),
+              attribute.type_("button"),
+              event.on_click(UserAddedSelectionToQueue(None)),
+            ],
+            [html.text("Everything")],
+          ),
+          ..list.map(m.queues, fn(queue: wire.Queue) {
+            html.button(
+              [
+                attribute.class("add-to-queue-option"),
+                attribute.type_("button"),
+                event.on_click(UserAddedSelectionToQueue(Some(queue.name))),
+              ],
+              [html.text(queue.name)],
+            )
+          })
+        ]),
+      ])
+  }
 }

@@ -60,6 +60,7 @@ Gleam 1.18.1, Erlang/OTP 27, bun 1.3.14, Postgres 13+; `python3`, `elixir`,
 
 ```sh
 make dev           # frontend :1234 + backend :1637
+make hooks         # pre-push rebuild of dist/, so a stale bundle cannot ship
 make build         # regenerate content, bundle workers, build dist/
 make verify        # every solution + scheduler + app tests
 make e2e           # real browser against built app + backend

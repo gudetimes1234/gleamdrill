@@ -4,6 +4,7 @@
 
 import fsrs
 import gleam/http
+import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
@@ -28,6 +29,34 @@ pub fn main() {
 // These are duplicated verbatim in the browser (src/gleamdrill/api.gleam) and
 // are what a card's persisted `state`/`step` columns mean. Pinning them here
 // means the planned shared `wire` package has a spec to move against.
+
+/// The same checks guard a PUT and an archive: names present, short and
+/// distinct, and nothing unbounded.
+pub fn validate_queues_test() {
+  let ref = wire.ProblemRef("NeetCode 150", "Two Pointers", "3Sum")
+  let good = [wire.Queue("Pointers", [ref, ref]), wire.Queue("Later", [])]
+  assert study.validate_queues(good) == Ok(Nil)
+  assert study.validate_queues([]) == Ok(Nil)
+  assert study.validate_queues([wire.Queue("  ", [])])
+    == Error("a queue needs a name")
+  assert study.validate_queues([wire.Queue("A", []), wire.Queue("A", [])])
+    == Error("queue names must be distinct")
+  assert study.validate_queues([wire.Queue(string.repeat("x", 61), [])])
+    == Error("a queue name is at most 60 characters")
+  let many =
+    list.map(list_range(1, 51), fn(i) { wire.Queue(int.to_string(i), []) })
+  assert study.validate_queues(many) == Error("at most 50 queues")
+  let stuffed = [wire.Queue("big", list.repeat(ref, 1501))]
+  assert study.validate_queues(stuffed)
+    == Error("a queue holds at most 1500 problems")
+}
+
+fn list_range(from: Int, to: Int) -> List(Int) {
+  case from > to {
+    True -> []
+    False -> [from, ..list_range(from + 1, to)]
+  }
+}
 
 pub fn state_code_covers_every_state_test() {
   study.state_code(fsrs.Learning(0)) |> should.equal(1)

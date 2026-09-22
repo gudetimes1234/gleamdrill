@@ -240,14 +240,11 @@ const openByHand = async (language, subcategory, title) => {
   await startCoding();
 };
 
-/// A drill opens on its prompt page; the editor page is behind Enter. Every
-/// code sitting in the tour comes through here, so the page is exercised on
-/// each open and the run bar is what the next line finds. The editor takes
-/// focus on the way in; it is let go so the next key goes to the table.
+/// A drill opens with the prompt beside the editor. Every code sitting in
+/// the tour comes through here, so the run bar is what the next line finds.
+/// Nothing has focus on the way in; blurring is belt and braces so the next
+/// key goes to the table.
 const startCoding = async () => {
-  await page.waitForSelector(".read-sheet", { timeout: 30000 });
-  exercises("UserStartedCoding");
-  await page.click(".read-start");
   await page.waitForSelector(".run-bar", { timeout: 30000 });
   await page.evaluate(() => document.activeElement?.blur());
 };
@@ -593,25 +590,27 @@ check("Esc leaves it",
   !(await page.evaluate(() => document.activeElement?.classList.contains("search"))));
 
 await page.keyboard.press("d");
-await page.waitForSelector(".read-sheet", { timeout: 30000 });
-check("d starts the drill, on the problem alone", true);
-check("the status bar switched to the read keys",
-  (await page.textContent(".statusbar")).includes("start"));
-check("the editor page is parked underneath, inert",
-  await page.$eval(".drill-main", (el) => el.classList.contains("parked") && el.inert === true));
-await capture("read", "A drill opens on the problem alone: prompt, signature, one way forward",
-  "Read the problem first, on its own page");
+await page.waitForSelector(".run-bar", { timeout: 30000 });
+check("d starts the drill", true);
+const promptBox = await page.locator(".prompt-side").boundingBox();
+const openEditorBox = await page.locator(".editor-frame").boundingBox();
+check("the prompt is a sidebar on the left of the editor",
+  promptBox && openEditorBox
+    && promptBox.x + promptBox.width <= openEditorBox.x + 1
+    && promptBox.width <= 520 + 1,
+  JSON.stringify({ promptBox, openEditorBox }));
+check("the status bar shows the drill keys",
+  (await page.textContent(".statusbar")).includes("prompt"));
+await capture("prompt-side", "A drill opens with the prompt beside the editor: title, signature, and the code to the right",
+  "Read the problem beside the editor");
 
 const titleBefore = await page.textContent(".drill-title").catch(() => "");
 await page.keyboard.press("i");
-exercises("UserStartedCoding");
-await page.waitForSelector(".run-bar", { timeout: 5000 });
-check("i turns to the editor and focuses it",
+await page.waitForTimeout(200);
+check("i focuses the editor",
   await page.evaluate(() => document.activeElement?.closest?.("gleam-editor") !== null
     || document.activeElement?.tagName === "GLEAM-EDITOR"
     || !!document.querySelector("gleam-editor .cm-focused")));
-check("the status bar switched to drill keys",
-  (await page.textContent(".statusbar")).includes("again"));
 
 // Write, Ctrl+Enter, digit: the whole rep without the mouse. Against a
 // remote host the runtime is still downloading at this point, and a run
@@ -870,8 +869,10 @@ check("a solution offers a way to suggest a better one",
   suggestHref !== null && suggestHref.includes("/issues/new?template=solution.yml"), suggestHref);
 check("naming the problem, language and variant",
   suggestHref !== null && decodeURIComponent(suggestHref).includes("[Python] Contains Duplicate"), suggestHref);
-check("the other references are a click away inside the pane",
-  (await page.$$(".slot-pane .solution-button")).length >= 2 && (await page.$(".run-bar .solution-button")) === null);
+check("the other references are a click away in the run bar, the shown one lit",
+  (await page.$$(".run-bar .solution-button")).length >= 2
+    && (await page.$$(".run-bar .solution-button.revealed")).length === 1
+    && (await page.$(".slot-pane .solution-button")) === null);
 await capture("revealed", "Solution revealed on a first encounter: note, code, grades intact");
 await page.keyboard.press("s");
 await page.waitForTimeout(400);
@@ -992,14 +993,14 @@ await page.evaluate(() => {
 });
 await goHome();
 await page.click(".study-start");
-await page.waitForSelector(".read-sheet", { timeout: 30000 });
-// The note typed by hand a moment ago comes back lit on the prompt page:
+await page.waitForSelector(".prompt-side", { timeout: 30000 });
+// The note typed by hand a moment ago comes back lit under the prompt:
 // this is a later review of the same problem, and the note is the first
 // thing to read.
-check("a note from an earlier visit is shown lit", (await page.$(".read-sheet .note-panel.has-note")) !== null);
+check("a note from an earlier visit is shown lit", (await page.$(".prompt-side .note-panel.has-note")) !== null);
 check("with what was written, and nothing else",
-  (await page.textContent(".read-sheet .note-text")) === "Set beats sort here: O(n) and one line.",
-  await page.textContent(".read-sheet .note-text"));
+  (await page.textContent(".prompt-side .note-text")) === "Set beats sort here: O(n) and one line.",
+  await page.textContent(".prompt-side .note-text"));
 await capture("note-returns", "The note from last time, lit under the prompt",
   "Your note from last time comes back lit");
 await startCoding();
@@ -1047,7 +1048,7 @@ await page.evaluate(() => localStorage.clear());
 // ---------------------------------------------------------------- act 4c
 act = "04c-run-controls";
 console.log(act);
-exercises("UserClickedStopRun", "UserToggledRead");
+exercises("UserClickedStopRun", "UserToggledPrompt");
 
 // Stop: an infinite loop is interruptible, and stopping one must not poison
 // the next run with a stale timeout verdict.
@@ -1071,8 +1072,8 @@ check("the run after a Stop gets a correct verdict, not a stale timeout",
   (await page.textContent(".results-summary")).includes("passed"),
   await page.textContent(".results-summary"));
 
-// The pass opened the solution beside the editor; the prompt page comes
-// back over both and goes away again, the editor the same node throughout.
+// The pass opened the solution beside the editor; the prompt sidebar goes
+// away and comes back, the editor the same node throughout.
 await page.waitForSelector(".slot-pane.answer-content", { timeout: 5000 });
 const editorBox = await page.locator(".editor-frame").boundingBox();
 const answerBox = await page.locator(".slot-pane").boundingBox();
@@ -1083,18 +1084,24 @@ check("the solution sits beside the editor, not under it",
   JSON.stringify({ editorBox, answerBox }));
 await capture("side-solution", "Solution pane to the right of the editor");
 await page.evaluate(() => { window.__editor = document.querySelector("gleam-editor"); });
+check("the prompt shows the examples from the last run",
+  (await page.$$(".prompt-side .read-examples .case")).length > 0);
+const wideBefore = (await page.locator(".editor-frame").boundingBox()).width;
 await page.keyboard.press("p");
-await page.waitForSelector(".read-sheet", { timeout: 5000 });
-check("p brings the problem back over the editor",
-  await page.$eval(".drill-main", (el) => el.classList.contains("parked") && el.inert === true));
-check("with the examples from the last run",
-  (await page.$$(".read-examples .case")).length > 0);
-await capture("read-again", "The problem page, back over the editor after a run: examples included");
+await page.waitForFunction(() => !document.querySelector(".prompt-side"), null, { timeout: 5000 });
+check("p hides the prompt and the editor takes the width",
+  (await page.locator(".editor-frame").boundingBox()).width > wideBefore + 100);
+check("the header button says so",
+  !(await page.$eval(".prompt-toggle", (el) => el.classList.contains("active"))));
+await capture("prompt-hidden", "The prompt hidden: editor and solution take the whole width");
 await page.keyboard.press("p");
-await page.waitForFunction(() => !document.querySelector(".drill-main").classList.contains("parked"), null, { timeout: 5000 });
-check("p again returns to the same editor, pane still there",
+await page.waitForSelector(".prompt-side", { timeout: 5000 });
+check("p again brings it back, the same editor, pane still there",
   await page.evaluate(() => window.__editor === document.querySelector("gleam-editor"))
-    && (await page.$(".slot-pane.answer-content")) !== null);
+    && (await page.$(".slot-pane.answer-content")) !== null
+    && await page.$eval(".prompt-toggle", (el) => el.classList.contains("active")));
+check("the choice is remembered on this device",
+  JSON.parse(await page.evaluate(() => localStorage.getItem("gleamDrill.prefs.v1"))).promptOpen === true);
 await page.keyboard.press("s");
 await page.waitForTimeout(300);
 check("s puts the solution away", (await page.$(".slot-pane")) === null);
@@ -1148,16 +1155,16 @@ await page.evaluate(() => {
 });
 await goHome();
 await page.click(".study-start");
-await page.waitForSelector(".read-sheet", { timeout: 30000 });
+await page.waitForSelector(".run-bar", { timeout: 30000 });
 check("the clock shows your median on this problem",
   (await page.textContent(".drill-median").catch(() => "")).includes("median 3m10s"),
   await page.textContent(".drill-median").catch(() => ""));
 check("a card forgotten four times is badged a leech",
   (await page.textContent(".leech-badge").catch(() => "")).includes("Leech"));
-const rungsOpen = await page.$$eval(".read-approach .approach-nudge, .read-approach .approach-steps", (n) => n.length);
+const rungsOpen = await page.$$eval(".prompt-side .read-approach .approach-nudge, .prompt-side .read-approach .approach-steps", (n) => n.length);
 check("and opens with the approach read up to the pseudocode", rungsOpen >= 1, String(rungsOpen));
 check("without the pseudocode", (await page.$(".approach-pseudocode")) === null);
-await capture("leech", "A leech: badge on the title, approach already on the problem page, your median beside the clock");
+await capture("leech", "A leech: badge on the title, approach already under the prompt, your median beside the clock");
 await startCoding();
 check("and the ladder is already beside the editor, pseudocode still folded",
   await page.isVisible(".slot-pane.approach")
@@ -1191,7 +1198,7 @@ check("a recall card opens with no editor",
   (await page.$("gleam-editor")) === null && await page.isVisible(".recall-reveal"));
 check("and says so in the header", (await page.textContent(".recall-chip")).trim() === "Recall");
 check("the prompt stays on the page, with nothing to start",
-  await page.isVisible(".recall-read .problem-prompt") && (await page.$(".read-start")) === null);
+  await page.isVisible(".recall-read .problem-prompt") && (await page.$(".prompt-side")) === null);
 check("no grade before the reveal", (await page.$(".grade-bar")) === null);
 await capture("recall-think", "Recall card before the reveal: prompt, note, and a question to answer in your head");
 await page.keyboard.press(" ");
@@ -1284,6 +1291,80 @@ check("u takes it back and returns to the card",
 await exitDrill();
 await page.waitForTimeout(800);
 
+// ---------------------------------------------------------------- act 4f
+act = "04f-compare";
+console.log(act);
+exercises("UserClickedCompare", "CompareMoved", "ComparePickedVariant", "UserClosedCompare");
+
+// Two problems' reference solutions side by side, the lines they share lit:
+// the shape a technique keeps from problem to problem. From Browse, with a
+// selection, or with one problem against the rest of its topic.
+await goHome();
+await page.click("text=Browse problems");
+await page.waitForSelector(".menu-container", { timeout: 10000 });
+check("Compare waits for a selection", await page.$eval("#compareSelected", (b) => b.disabled));
+for (const item of ["Python", "Two Pointers"]) {
+  await page.click(`.pane-item:text-is("${item}")`);
+  await page.waitForTimeout(250);
+}
+await page.click('.pane-item:text-is("Valid Palindrome")');
+await page.waitForTimeout(150);
+await page.click('.pane-item:text-is("3Sum")');
+await page.waitForTimeout(150);
+await page.evaluate(() => document.activeElement?.blur());
+await page.keyboard.press("v");
+await page.waitForSelector("gleam-compare .cm-merge-a", { timeout: 10000 });
+check("v opens the two side by side", (await page.textContent(".statusbar-context")).includes("COMPARE"));
+check("each side opens on its Two Pointers solution",
+  (await page.$$eval(".compare-head .solution-button.revealed", (n) => n.map((e) => e.textContent)))
+    .every((label) => label.includes("Two Pointers")));
+check("the lines they share are lit",
+  (await page.$$("gleam-compare .cm-merge-a .cm-line.cm-sharedLine")).length > 0
+    && (await page.$$("gleam-compare .cm-merge-b .cm-line.cm-sharedLine")).length > 0);
+check("and the rest is dimmed",
+  (await page.$eval("gleam-compare .cm-merge-a .cm-line:not(.cm-sharedLine)", (l) => getComputedStyle(l).opacity)) < "1");
+await capture("compare", "Two Two-Pointers solutions side by side: shared lines lit, the rest dimmed",
+  "Compare two solutions to see the shape of a technique");
+await page.keyboard.press("]");
+await page.waitForTimeout(200);
+check("] flips the right side to another solution",
+  !(await page.textContent(".compare-heads .compare-head:nth-child(2) .solution-button.revealed")).includes("Two Pointers"));
+await page.keyboard.press("Escape");
+await page.waitForSelector(".menu-container", { timeout: 5000 });
+check("Escape returns to Browse with the selection kept",
+  (await page.textContent(".iteration-control .progress-text")).includes("2 selected"));
+// One alone: the rest of its topic on the right, one at a time.
+await page.click('.pane-item:text-is("3Sum")');
+await page.waitForTimeout(150);
+await page.evaluate(() => document.activeElement?.blur());
+await page.keyboard.press("v");
+await page.waitForSelector("gleam-compare", { timeout: 5000 });
+check("one problem is compared against the rest of its topic",
+  (await page.$$(".compare-other")).length === 4);
+const rightTitle = async () => page.textContent(".compare-heads .compare-head:nth-child(2) .compare-problem");
+const firstRight = await rightTitle();
+await page.keyboard.press("j");
+await page.waitForTimeout(200);
+check("j moves the right side to the next one", (await rightTitle()) !== firstRight);
+await page.click(".compare-other:first-child");
+await page.waitForTimeout(200);
+check("a chip jumps straight to that one", (await rightTitle()) === firstRight);
+await page.click("text=Browse");
+await page.waitForSelector(".menu-container", { timeout: 5000 });
+// Two languages cannot be compared: the button says so and stays put.
+await page.click('.pane-item:text-is("Gleam")');
+await page.waitForTimeout(250);
+await page.click('.pane-item:text-is("Two Pointers")');
+await page.waitForTimeout(250);
+await page.click('.pane-item:text-is("3Sum")');
+await page.waitForTimeout(150);
+await page.click("#compareSelected");
+await page.waitForTimeout(300);
+check("mixed languages are refused with a reason",
+  await page.isVisible(".menu-container") && (await page.textContent("body")).includes("one language"));
+await page.click("#clearSelection");
+await page.waitForTimeout(200);
+
 // ---------------------------------------------------------------- act 5
 act = "05-languages";
 console.log(act);
@@ -1362,7 +1443,7 @@ check("Not now closes it", !(await page.isVisible(".blitz-chooser")));
 await page.keyboard.press("z");
 await page.waitForSelector(".blitz-chooser", { timeout: 5000 });
 await page.click(".blitz-option:nth-child(3)");
-await page.waitForSelector(".read-sheet", { timeout: 30000 });
+await page.waitForSelector(".run-bar", { timeout: 30000 });
 await page.waitForTimeout(1200);
 // However many cards the pool had: a small queue is drawn whole.
 const blitzTotal = Number((await page.textContent(".drill-countdown")).match(/\/(\d+)/)?.[1] ?? 0);
@@ -1985,6 +2066,117 @@ await exitDrill();
 await page.waitForTimeout(800);
 await goHome();
 
+// ---------------------------------------------------------------- act 7d
+act = "07d-named-queues";
+console.log(act);
+exercises("UserPickedActiveQueue", "UserSelectedQueue", "UserStartedNewQueue",
+  "UserStartedRenameQueue", "UserChangedQueueName", "UserSubmittedQueueName",
+  "UserCancelledQueueName", "UserDeletedQueue", "UserAddedSelectionToQueue");
+
+// Many queues, one studied at a time. A queue is a list; the cards it names
+// keep their scheduling in Everything, and a problem added to a list gets a
+// card if it had none.
+await page.click(".study-account .link-button:text-is(\"Queue\")");
+await page.waitForSelector(".queue-screen", { timeout: 10000 });
+const everythingCount = await queuedCount();
+check("the queue screen opens on Everything", (await page.textContent(".queue-total")).includes("in queue"));
+await page.click(".queue-new");
+await page.waitForSelector(".queue-name-input", { timeout: 3000 });
+check("New queue opens a name box and focuses it",
+  await page.evaluate(() => document.activeElement?.classList.contains("queue-name-input")));
+await page.click(".queue-name-form .btn-secondary");
+await page.waitForTimeout(200);
+check("Cancel closes it", (await page.$(".queue-name-input")) === null);
+await page.click(".queue-new");
+await page.waitForSelector(".queue-name-input", { timeout: 3000 });
+await page.keyboard.type("Pointers");
+await page.keyboard.press("Enter");
+await page.waitForTimeout(400);
+check("a new queue is selected and empty", (await page.textContent(".queue-total")).startsWith("0 in Pointers"));
+await page.selectOption(".queue-language", "py");
+await page.waitForTimeout(300);
+const pointersHead = '.queue-group:has(.queue-group-title:text-is("Two Pointers"))';
+await page.click(`${pointersHead} .queue-group-add`);
+await page.waitForTimeout(900);
+const inPointers = await queuedCount();
+check("a topic header fills the queue", inPointers === 5, String(inPointers));
+check("its rows now offer to leave the list", (await page.$$(`${pointersHead} .queue-remove`)).length === 5);
+await capture("named-queue", "A named queue with one topic in it, the rest of the catalogue waiting",
+  "Many queues: pick which one today serves from");
+await page.click(".queue-pick:text-is('Everything')");
+await page.waitForTimeout(300);
+check("Everything gained cards for the problems the list needed",
+  (await queuedCount()) === everythingCount + 5, `${await queuedCount()} vs ${everythingCount + 5}`);
+await page.selectOption(".queue-language", "");
+await page.waitForTimeout(200);
+
+// The study screen picks which queue today serves from.
+await page.click(".queue-header .link-button");
+await page.waitForSelector(".study-screen", { timeout: 10000 });
+check("the study screen shows a picker once a queue exists",
+  (await page.$$(".study-screen .queue-pick")).length === 2);
+await page.click(".study-screen .queue-pick:text-is('Pointers')");
+await page.waitForTimeout(400);
+check("picking a queue scopes the preview to it",
+  (await page.$$eval(".study-preview-item", (n) => n.map((e) => e.textContent))).every((t) => /Two Pointers|Palindrome|3Sum|Water|Two Sum II|Trapping/.test(t)));
+await capture("study-queue", "Study screen serving one named queue");
+await page.evaluate(() => document.activeElement?.blur());
+await page.keyboard.press("n");
+await page.waitForTimeout(200);
+check("n rings round to Everything",
+  (await page.textContent(".study-screen .queue-pick.current")) === "Everything");
+await page.keyboard.press("n");
+await page.waitForTimeout(200);
+check("and on to the queue again",
+  (await page.textContent(".study-screen .queue-pick.current")) === "Pointers");
+await page.keyboard.press("Enter");
+await startCoding();
+check("Study serves from the queue", (await page.textContent(".drill-title")).match(/Palindrome|3Sum|Water|Two Sum|Trapping/) !== null,
+  await page.textContent(".drill-title"));
+await exitDrill();
+await page.waitForSelector(".study-screen", { timeout: 10000 });
+
+// Browse puts a selection into any queue.
+await page.click("text=Browse problems");
+await page.waitForSelector(".menu-container", { timeout: 10000 });
+for (const item of ["Python", "Stack", "Min Stack"]) {
+  await page.click(`.pane-item:text-is("${item}")`);
+  await page.waitForTimeout(250);
+}
+await page.click(".add-to-queue > summary");
+await page.click(".add-to-queue-option:text-is('Pointers')");
+await page.waitForTimeout(600);
+check("Add to queue puts the selection in the named queue",
+  (await page.textContent("body")).includes("added to Pointers"));
+await page.click("#clearSelection");
+await goHome();
+
+// Rename follows the active pick; delete falls back to Everything and
+// leaves the cards where they are.
+await page.click(".study-account .link-button:text-is(\"Queue\")");
+await page.waitForSelector(".queue-screen", { timeout: 10000 });
+check("the queue screen opens on the queue being studied",
+  (await page.textContent(".queue-total")).includes("in Pointers"));
+check("with the problem Browse added", (await queuedCount()) === 6, String(await queuedCount()));
+await page.click(".queue-rename");
+await page.waitForSelector(".queue-name-input", { timeout: 3000 });
+await page.keyboard.press("Control+a");
+await page.keyboard.type("Two Pointers");
+await page.keyboard.press("Enter");
+await page.waitForTimeout(400);
+check("rename shows through", (await page.textContent(".queue-total")).includes("in Two Pointers"));
+check("and the guest store keeps it",
+  (await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("gleamDrill.guest.queues.v1")).queues
+      .map((q) => `${q.name}:${q.problems.length}`).join(","))) === "Two Pointers:6");
+await page.click(".queue-delete");
+await page.waitForTimeout(400);
+check("delete falls back to Everything", (await page.textContent(".queue-total")).includes("in queue"));
+check("and the cards stay", (await queuedCount()) === everythingCount + 6, `${await queuedCount()}`);
+await page.click(".queue-header .link-button");
+await page.waitForSelector(".study-screen", { timeout: 10000 });
+check("with no queue left the picker goes away", (await page.$$(".study-screen .queue-pick")).length === 0);
+
 // ---------------------------------------------------------------- act 8
 act = "08-upgrade";
 console.log(act);
@@ -2288,10 +2480,10 @@ check("the menu does not scroll sideways",
 
 await goHome();
 await page.click(".study-start");
-await page.waitForSelector(".read-sheet", { timeout: 30000 });
-check("the problem page fits a phone",
+await page.waitForSelector(".prompt-side", { timeout: 30000 });
+check("the prompt fits a phone",
   (await page.evaluate(() => document.documentElement.scrollWidth)) <= 390 + 1);
-await capture("read-phone", "The problem alone on a phone, Start coding full width");
+await capture("prompt-phone", "The prompt above the editor on a phone, capped so the editor is on the first screen");
 await startCoding();
 await capture("drill", "Drill on a phone: editor on the first screen, run bar pinned");
 check("the language pill is on screen at phone width",
@@ -2382,7 +2574,7 @@ const declared = [
   "UserToggledSolution", "UserRevealedHint", "UserClickedNext", "UserSearched",
   "UserChangedKeymap",
   "UserClickedRun", "UserClickedStopRun", "UserClickedRetryRuntime",
-  "UserToggledPane", "UserStartedCoding", "UserToggledRead", "UserToggledResults", "UserToggledSuspend", "UserClickedRecall", "UserRevealedRecall",
+  "UserToggledPane", "UserToggledPrompt", "UserToggledResults", "UserToggledSuspend", "UserClickedRecall", "UserRevealedRecall",
   "UserToggledBlitz", "UserStartedBlitz", "UserClickedScratchRun",
   "UserClickedUndo", "UserToggledDiff", "UserDismissedDiff",
   "UserClickedExport", "UserClickedImport", "ImportConfirmed",
@@ -2390,7 +2582,11 @@ const declared = [
   "MenuSuspendedAtCursor", "UserClickedQueue", "UserSearchedQueue",
   "UserFilteredQueue", "UserPickedQueueLanguage",
   "UserToggledQueued", "UserAddedAllShown", "UserRemovedAllShown",
-  "UserChangedGroup",
+  "UserChangedGroup", "UserPickedActiveQueue", "UserSelectedQueue",
+  "UserStartedNewQueue", "UserStartedRenameQueue", "UserChangedQueueName",
+  "UserSubmittedQueueName", "UserCancelledQueueName", "UserDeletedQueue",
+  "UserAddedSelectionToQueue", "UserClickedCompare", "CompareMoved",
+  "ComparePickedVariant", "UserClosedCompare",
   "UserClickedTour", "UserOpenedLesson", "UserClickedTourNext",
   "UserClickedTourPrev", "UserClickedTourContents", "UserResetLesson",
   "TourEditorChanged", "TourCursorMoved", "TourActivated",

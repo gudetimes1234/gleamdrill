@@ -49,6 +49,10 @@ const flags_key = "gleamDrill.guest.flags.v1"
 
 const reviews_key = "gleamDrill.guest.reviews.v1"
 
+/// Named queues, as the wire set (`{"queues": [...]}`) so the encoder and
+/// decoder are the same pair the server speaks.
+const queues_key = "gleamDrill.guest.queues.v1"
+
 /// A guest's scheduler settings. Its own key rather than a field on `Local`
 /// because it is read at boot, before anything else is loaded, and written
 /// only from the settings screen -- neither path wants the card store.
@@ -103,6 +107,8 @@ pub type Local {
     /// Newest first, capped. The raw material for the insight screens; the
     /// same rows the server keeps in its `reviews` table.
     log: List(#(ProblemRef, api.ReviewRow)),
+    /// Named lists to study from; scheduling stays in `cards`.
+    queues: List(wire.Queue),
   )
 }
 
@@ -113,6 +119,7 @@ pub fn empty() -> Local {
     notes: [],
     history: empty_history(),
     log: [],
+    queues: [],
   )
 }
 
@@ -121,7 +128,10 @@ fn empty_history() -> History {
 }
 
 pub fn is_empty(local: Local) -> Bool {
-  dict.is_empty(local.cards) && local.drafts == [] && local.notes == []
+  dict.is_empty(local.cards)
+  && local.drafts == []
+  && local.notes == []
+  && local.queues == []
 }
 
 // --- recording a review ----------------------------------------------------
@@ -366,6 +376,7 @@ pub fn archive(
     reviews: list.reverse(local.log),
     drafts: local.drafts,
     notes: local.notes,
+    queues: local.queues,
   )
 }
 
@@ -404,6 +415,7 @@ pub fn restore(archive: wire.Archive) -> Local {
     notes: archive.notes,
     history:,
     log:,
+    queues: archive.queues,
   )
 }
 
@@ -413,6 +425,7 @@ pub fn save_all(local: Local, settings: Settings) -> Result(Nil, Nil) {
   use _ <- result.try(save_cards(local))
   use _ <- result.try(save_drafts(local))
   use _ <- result.try(save_notes(local))
+  use _ <- result.try(save_queues(local))
   save_history(local)
 }
 
@@ -700,6 +713,7 @@ pub fn load() -> Local {
       |> option.unwrap(empty_history()),
     log: read(reviews_key, decode.list(log_row_decoder()))
       |> option.unwrap([]),
+    queues: read(queues_key, wire.queues_decoder()) |> option.unwrap([]),
   )
 }
 
@@ -752,6 +766,10 @@ pub fn save_notes(local: Local) -> Result(Nil, Nil) {
   write(notes_key, json.to_string(json.array(local.notes, draft_json)))
 }
 
+pub fn save_queues(local: Local) -> Result(Nil, Nil) {
+  write(queues_key, json.to_string(wire.queues_to_json(local.queues)))
+}
+
 pub fn save_history(local: Local) -> Result(Nil, Nil) {
   case write(history_key, json.to_string(history_json(local.history))) {
     Ok(Nil) ->
@@ -774,6 +792,7 @@ pub fn clear() -> Nil {
           history_key,
           flags_key,
           reviews_key,
+          queues_key,
           settings_key,
         ],
         fn(key) { storage.remove_item(local, key) },

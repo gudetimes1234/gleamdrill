@@ -16,11 +16,14 @@
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/set.{type Set}
 import gleamdrill/api
 import gleamdrill/model.{
-  type Model, type Msg, GroupChange, UserAddedAllShown, UserChangedGroup,
-  UserFilteredQueue, UserPickedQueueLanguage, UserRemovedAllShown,
-  UserSearchedQueue, UserToggledQueued,
+  type Model, type Msg, GroupChange, UserAddedAllShown, UserCancelledQueueName,
+  UserChangedGroup, UserChangedQueueName, UserDeletedQueue, UserFilteredQueue,
+  UserPickedQueueLanguage, UserRemovedAllShown, UserSearchedQueue,
+  UserSelectedQueue, UserStartedNewQueue, UserStartedRenameQueue,
+  UserSubmittedQueueName, UserToggledQueued,
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
@@ -33,10 +36,13 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/element/keyed
 import lustre/event
+import wire
 
 pub fn view(m: Model) -> Element(Msg) {
   let rows = queue.listed(m)
-  let queued = list.length(queue.queued(m))
+  // What the rows toggle: the cards themselves, or one named list.
+  let here = queue.members(m, m.queue_editing)
+  let queued = set.size(here)
 
   // Straight from here to the first card: the queue screen is the second
   // screen a new user sees, and "go back, then press Study now" was the
@@ -49,7 +55,13 @@ pub fn view(m: Model) -> Element(Msg) {
     html.header([attribute.class("queue-header")], [
       html.h1([attribute.class("queue-title")], [html.text("Study queue")]),
       html.span([attribute.class("queue-total")], [
-        html.text(int.to_string(queued) <> " in queue"),
+        html.text(
+          int.to_string(queued)
+          <> case m.queue_editing {
+            None -> " in queue"
+            Some(name) -> " in " <> name
+          },
+        ),
       ]),
       case ready {
         0 -> element.none()
@@ -64,17 +76,129 @@ pub fn view(m: Model) -> Element(Msg) {
       },
       nav.bar(m, model.QueueRoute),
     ]),
+    queue_selector(m),
     html.p([attribute.class("queue-lede")], [
-      html.text(
-        "Only queued problems are scheduled. Adding one puts it in line to be "
-        <> "introduced against your daily new limit; removing one takes it out "
-        <> "entirely.",
-      ),
+      html.text(case m.queue_editing {
+        None ->
+          "Only queued problems are scheduled. Adding one puts it in line to be "
+          <> "introduced against your daily new limit; removing one takes it out "
+          <> "entirely."
+        Some(_) ->
+          "A queue is a list to study from. Adding a problem here schedules it "
+          <> "too; removing it leaves its card in Everything."
+      }),
     ]),
     controls(m),
-    bulk_actions(m, rows),
-    groups(m, rows),
+    bulk_actions(m, rows, here),
+    groups(m, rows, here),
   ])
+}
+
+/// Which list the rows edit: everything, or one of the named queues -- and
+/// the buttons to make, rename and drop one. The name box is inline so a
+/// new queue is two keystrokes and an Enter away.
+fn queue_selector(m: Model) -> Element(Msg) {
+  let pick = fn(label, name) {
+    html.button(
+      [
+        attribute.classes([
+          #("queue-pick", True),
+          #("current", m.queue_editing == name),
+        ]),
+        attribute.type_("button"),
+        event.on_click(UserSelectedQueue(name)),
+      ],
+      [html.text(label)],
+    )
+  }
+  html.div(
+    [attribute.class("queue-selector")],
+    list.flatten([
+      [
+        html.div(
+          [attribute.class("queue-picker")],
+          list.flatten([
+            [pick("Everything", None)],
+            list.map(m.queues, fn(queue: wire.Queue) {
+              pick(queue.name, Some(queue.name))
+            }),
+            [
+              html.button(
+                [
+                  attribute.class("queue-pick queue-new"),
+                  attribute.type_("button"),
+                  event.on_click(UserStartedNewQueue),
+                ],
+                [html.text("+ New queue")],
+              ),
+            ],
+            case m.queue_editing {
+              None -> []
+              Some(_) -> [
+                html.button(
+                  [
+                    attribute.class("link-button queue-rename"),
+                    attribute.type_("button"),
+                    event.on_click(UserStartedRenameQueue),
+                  ],
+                  [html.text("Rename")],
+                ),
+                html.button(
+                  [
+                    attribute.class("link-button queue-delete"),
+                    attribute.type_("button"),
+                    event.on_click(UserDeletedQueue),
+                  ],
+                  [html.text("Delete")],
+                ),
+              ]
+            },
+          ]),
+        ),
+      ],
+      case m.queue_naming {
+        None -> []
+        Some(naming) -> [
+          html.form(
+            [
+              attribute.class("queue-name-form"),
+              event.on_submit(fn(_) { UserSubmittedQueueName }),
+            ],
+            [
+              html.input([
+                attribute.class("queue-name-input"),
+                attribute.type_("text"),
+                attribute.placeholder("Queue name"),
+                attribute.attribute("aria-label", "Queue name"),
+                attribute.value(case naming {
+                  model.NewQueue(text) -> text
+                  model.RenameQueue(_, text) -> text
+                }),
+                event.on_input(UserChangedQueueName),
+              ]),
+              html.button(
+                [attribute.class("btn-primary"), attribute.type_("submit")],
+                [
+                  html.text(case naming {
+                    model.NewQueue(_) -> "Create"
+                    model.RenameQueue(_, _) -> "Rename"
+                  }),
+                ],
+              ),
+              html.button(
+                [
+                  attribute.class("btn-secondary"),
+                  attribute.type_("button"),
+                  event.on_click(UserCancelledQueueName),
+                ],
+                [html.text("Cancel")],
+              ),
+            ],
+          ),
+        ]
+      },
+    ]),
+  )
 }
 
 /// Search, language and status: three controls, none of them saved. They
@@ -138,9 +262,19 @@ fn option(value: String, label: String, picked: Bool) -> Element(Msg) {
 /// cleared search is 1200 problems and that has to be visible before it is
 /// pressed rather than after. Removal counts only never-answered cards: a card
 /// with review history cannot leave the queue, it can only be paused.
-fn bulk_actions(m: Model, rows: List(ProblemRef)) -> Element(Msg) {
-  let addable = list.count(rows, fn(ref) { !model.is_queued(m, ref) })
-  let removable = list.count(rows, fn(ref) { model.is_new(m, ref) })
+fn bulk_actions(
+  m: Model,
+  rows: List(ProblemRef),
+  here: Set(ProblemRef),
+) -> Element(Msg) {
+  let addable = list.count(rows, fn(ref) { !set.contains(here, ref) })
+  let removable =
+    list.count(rows, fn(ref) {
+      case m.queue_editing {
+        None -> model.is_new(m, ref)
+        Some(_) -> set.contains(here, ref)
+      }
+    })
 
   html.div([attribute.class("queue-bulk")], [
     html.span([attribute.class("queue-shown")], [
@@ -152,7 +286,16 @@ fn bulk_actions(m: Model, rows: List(ProblemRef)) -> Element(Msg) {
         attribute.disabled(addable == 0),
         event.on_click(UserAddedAllShown),
       ],
-      [html.text("Add " <> int.to_string(addable) <> " to queue")],
+      [
+        html.text(
+          "Add "
+          <> int.to_string(addable)
+          <> case m.queue_editing {
+            None -> " to queue"
+            Some(name) -> " to " <> name
+          },
+        ),
+      ],
     ),
     html.button(
       [
@@ -168,7 +311,11 @@ fn bulk_actions(m: Model, rows: List(ProblemRef)) -> Element(Msg) {
 /// The list, one section per topic. Rows keep their index in the flat list
 /// so the keyboard cursor (which walks `queue.listed`) lands on the row it
 /// thinks it is on.
-fn groups(m: Model, rows: List(ProblemRef)) -> Element(Msg) {
+fn groups(
+  m: Model,
+  rows: List(ProblemRef),
+  here: Set(ProblemRef),
+) -> Element(Msg) {
   case rows {
     [] ->
       html.div([attribute.class("queue-empty")], [html.text("Nothing matches.")])
@@ -179,7 +326,15 @@ fn groups(m: Model, rows: List(ProblemRef)) -> Element(Msg) {
           let #(category, subcategory, members) = group
           let section = #(
             category <> "|" <> subcategory,
-            group_section(m, category, subcategory, members, offset, length),
+            group_section(
+              m,
+              here,
+              category,
+              subcategory,
+              members,
+              offset,
+              length,
+            ),
           )
           #(offset + list.length(members), section)
         })
@@ -190,6 +345,7 @@ fn groups(m: Model, rows: List(ProblemRef)) -> Element(Msg) {
 
 fn group_section(
   m: Model,
+  here: Set(ProblemRef),
   category: String,
   subcategory: String,
   members: List(ProblemRef),
@@ -197,11 +353,11 @@ fn group_section(
   length: Int,
 ) -> Element(Msg) {
   html.section([attribute.class("queue-group")], [
-    group_head(m, category, subcategory, members),
+    group_head(m, here, category, subcategory, members),
     keyed.div(
       [attribute.class("queue-group-rows")],
       list.index_map(members, fn(ref: ProblemRef, index) {
-        #(row_key(ref), row(m, ref, offset + index, length))
+        #(row_key(ref), row(m, here, ref, offset + index, length))
       }),
     ),
   ])
@@ -212,18 +368,25 @@ fn group_section(
 /// topic reads as done rather than as a row of disabled controls.
 fn group_head(
   m: Model,
+  here: Set(ProblemRef),
   category: String,
   subcategory: String,
   members: List(ProblemRef),
 ) -> Element(Msg) {
   let total = list.length(members)
-  let queued = list.count(members, fn(ref) { model.is_queued(m, ref) })
-  let addable = list.filter(members, fn(ref) { !model.is_queued(m, ref) })
+  let queued = list.count(members, fn(ref) { set.contains(here, ref) })
+  let addable = list.filter(members, fn(ref) { !set.contains(here, ref) })
   let easy =
     list.count(addable, fn(ref) {
       problems.difficulty_of(ref) == Some(problem.Easy)
     })
-  let removable = list.count(members, fn(ref) { model.is_new(m, ref) })
+  let removable =
+    list.count(members, fn(ref) {
+      case m.queue_editing {
+        None -> model.is_new(m, ref)
+        Some(_) -> set.contains(here, ref)
+      }
+    })
   let change = fn(easy_only, add) {
     UserChangedGroup(GroupChange(category:, subcategory:, easy_only:, add:))
   }
@@ -286,9 +449,15 @@ fn row_key(ref: ProblemRef) -> String {
   ref.category <> "|" <> ref.subcategory <> "|" <> ref.title
 }
 
-fn row(m: Model, ref: ProblemRef, index: Int, length: Int) -> Element(Msg) {
+fn row(
+  m: Model,
+  here: Set(ProblemRef),
+  ref: ProblemRef,
+  index: Int,
+  length: Int,
+) -> Element(Msg) {
   let state = model.card_for(m, ref)
-  let queued = state != None
+  let queued = set.contains(here, ref)
   let #(badge_class, badge_text) = format.card_badge(state, m.now)
   let busy = list.contains(m.queue_pending, ref)
   let here = int.clamp(m.nav.queue, 0, int.max(0, length - 1)) == index
@@ -314,8 +483,38 @@ fn row(m: Model, ref: ProblemRef, index: Int, length: Int) -> Element(Msg) {
       html.span([attribute.class("queue-row-title")], [html.text(ref.title)]),
       format.difficulty_badge(problems.difficulty_of(ref)),
       html.span([attribute.class(badge_class)], [html.text(badge_text)]),
-      action(ref, state, busy),
+      case m.queue_editing {
+        None -> action(ref, state, busy)
+        Some(name) -> list_action(ref, name, queued, busy)
+      },
     ],
+  )
+}
+
+/// In a named queue a row is in the list or out of it, nothing else: the
+/// card's history is not at stake, so there is no pause to offer.
+fn list_action(
+  ref: ProblemRef,
+  name: String,
+  member: Bool,
+  busy: Bool,
+) -> Element(Msg) {
+  let #(class, label, title) = case member {
+    False -> #("queue-add", "Add", "Put this problem in " <> name)
+    True -> #(
+      "queue-remove",
+      "Remove",
+      "Take this problem out of " <> name <> ". Its card stays scheduled.",
+    )
+  }
+  html.button(
+    [
+      attribute.classes([#("queue-action", True), #(class, True)]),
+      attribute.title(title),
+      attribute.disabled(busy),
+      event.on_click(UserToggledQueued(ref)),
+    ],
+    [html.text(label)],
   )
 }
 

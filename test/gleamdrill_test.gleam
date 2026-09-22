@@ -20,6 +20,7 @@ import gleam/option.{None, Some}
 import gleam/string
 import gleam/time/timestamp
 import gleamdrill/api
+import gleamdrill/compare
 import gleamdrill/insights
 import gleamdrill/keys
 import gleamdrill/local
@@ -27,6 +28,7 @@ import gleamdrill/model
 import gleamdrill/problem
 import gleamdrill/problems
 import gleamdrill/queue
+import gleamdrill/session
 import gleamdrill/tour
 import gleamdrill/view/format
 import gleeunit
@@ -675,10 +677,9 @@ pub fn a_leech_opens_with_the_approach_shown_test() -> Nil {
   let opened = model.Model(..lapsed(4), hints_revealed: shown)
   assert !model.pseudocode_revealed(opened, found.approach)
 
-  // Opened, a leech reads first like any problem, with the ladder already
-  // waiting in the slot; nothing is chosen.
+  // Opened, a leech has the ladder already waiting in the slot; nothing is
+  // chosen.
   let view = model.open_problem_view(lapsed(4), problem)
-  assert view.stage == model.Reading
   assert view.slot == model.HintPane
   assert view.hints_revealed == shown
   assert view.revealed_solution == None
@@ -967,6 +968,10 @@ pub fn a_guest_archive_restores_to_the_same_store_test() -> Nil {
     })
     |> local.put_draft(a_problem("Two Sum"), "def twoSum(nums, target): pass")
     |> local.put_note(a_problem("Valid Anagram"), "sort both")
+  let store =
+    local.Local(..store, queues: [
+      wire.Queue("Pointers", [a_problem("Two Sum")]),
+    ])
 
   let archive = local.archive(store, settings, at_epoch(1_800_010_000))
   assert archive.version == wire.archive_version
@@ -982,6 +987,7 @@ pub fn a_guest_archive_restores_to_the_same_store_test() -> Nil {
   assert restored.log == store.log
   assert restored.drafts == store.drafts
   assert restored.notes == store.notes
+  assert restored.queues == store.queues
   assert restored.history.total_reviews == 3
   assert restored.history.mature_reviews == store.history.mature_reviews
   assert restored.history.mature_correct == store.history.mature_correct
@@ -1023,11 +1029,9 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
     model.Model(..base, route: model.SettingsRoute),
     model.Model(..base, route: model.SummaryRoute),
     drill,
-    model.Model(..drill, stage: model.Coding),
-    model.Model(..drill, stage: model.Coding, slot: model.HintPane),
+    model.Model(..drill, slot: model.HintPane),
     model.Model(
       ..drill,
-      stage: model.Coding,
       slot: model.WalkPane,
       walk: Some(model.WalkState(
         step: 0,
@@ -1037,6 +1041,11 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
       )),
     ),
     model.Model(..drill, recall: True),
+    model.Model(
+      ..base,
+      route: model.CompareRoute,
+      compare: Some(model.Compare(a_catalogue_ref(), [], 0, 0, 0)),
+    ),
   ]
   use m <- list.each(contexts)
   let table = keys.bindings(m)
@@ -1059,34 +1068,33 @@ pub fn dispatch_resolves_from_the_same_table_it_documents_test() -> Nil {
   assert press("v") == Error(Nil)
 }
 
-/// A drill opens on the prompt page. Enter or `i` turns to the editor, the
-/// panes are a key away, and Escape is the way out; the grades are not
-/// offered while reading.
-pub fn the_read_page_starts_coding_and_offers_the_panes_test() -> Nil {
+/// A drill opens with the prompt beside the editor. `p` hides and shows
+/// it, the panes are a key away, `i` is the editor, and Escape is the way
+/// out; no grade is offered before a run.
+pub fn p_toggles_the_prompt_and_the_panes_have_keys_test() -> Nil {
   let m = on_a_drill()
-  let press = fn(key) {
+  let press = fn(m, key) {
     keys.dispatch(
       m,
       model.Key(key: key, ctrl: False, shift: False, editing: "none"),
     )
   }
-  assert m.stage == model.Reading
-  assert press("Enter") == Ok(model.UserStartedCoding)
-  assert press("i") == Ok(model.UserStartedCoding)
-  assert press("a") == Ok(model.UserToggledPane(model.HintPane))
-  assert press("s") == Ok(model.UserToggledPane(model.SolutionPane))
-  assert press("p") == Ok(model.UserToggledRead)
-  assert press("Escape") == Ok(model.UserClickedExitDrill)
-  assert press("1") == Error(Nil)
-  assert keys.context_label(m) == "READ \u{b7} PYTHON"
-  assert keys.context_label(model.Model(..m, stage: model.Coding))
-    == "DRILL \u{b7} PYTHON"
+  assert m.prompt_open
+  assert press(m, "p") == Ok(model.UserToggledPrompt)
+  assert press(model.Model(..m, prompt_open: False), "p")
+    == Ok(model.UserToggledPrompt)
+  assert press(m, "i") == Ok(model.EditorFocusRequested)
+  assert press(m, "a") == Ok(model.UserToggledPane(model.HintPane))
+  assert press(m, "s") == Ok(model.UserToggledPane(model.SolutionPane))
+  assert press(m, "Escape") == Ok(model.UserClickedExitDrill)
+  assert press(m, "1") == Error(Nil)
+  assert keys.context_label(m) == "DRILL \u{b7} PYTHON"
 }
 
-/// On the editor page a pane's key opens it and, pressed again, closes it;
-/// Escape puts away whatever is open before it means exit.
+/// A pane's key opens it and, pressed again, closes it; Escape puts away
+/// whatever is open before it means exit.
 pub fn escape_closes_the_open_pane_before_it_exits_test() -> Nil {
-  let coding = model.Model(..on_a_drill(), stage: model.Coding)
+  let coding = on_a_drill()
   let press = fn(m, key) {
     keys.dispatch(
       m,
@@ -1116,8 +1124,6 @@ pub fn escape_closes_the_open_pane_before_it_exits_test() -> Nil {
       )),
     )
   assert press(walking, "Escape") == Ok(model.UserClosedWalk)
-  // Opening a pane from the prompt page turns to the editor page.
-  assert model.toggle_pane(on_a_drill(), model.NotePane).stage == model.Coding
 }
 
 /// A passing run puts the reference beside your code without that being a
@@ -1147,6 +1153,37 @@ pub fn every_ladder_opens_with_a_nudge_test() -> Nil {
       _ -> panic as { "ladder does not start with a nudge: " <> found.title }
     }
   })
+}
+
+/// The compare screen: j/k walk the right side, brackets flip solutions,
+/// Escape goes back; Browse offers `v`; Study offers `n` once a queue exists.
+pub fn the_compare_screen_binds_its_own_verbs_test() -> Nil {
+  let c = model.Compare(a_catalogue_ref(), [a_catalogue_ref()], 0, 1, 2)
+  let m =
+    model.Model(..model.default(), route: model.CompareRoute, compare: Some(c))
+  let press = fn(m, key) {
+    keys.dispatch(
+      m,
+      model.Key(key: key, ctrl: False, shift: False, editing: "none"),
+    )
+  }
+  assert press(m, "j") == Ok(model.CompareMoved(1))
+  assert press(m, "k") == Ok(model.CompareMoved(-1))
+  assert press(m, "]") == Ok(model.ComparePickedVariant(model.RightSide, 3))
+  assert press(m, "[") == Ok(model.ComparePickedVariant(model.RightSide, 1))
+  assert press(m, "}") == Ok(model.ComparePickedVariant(model.LeftSide, 2))
+  assert press(m, "{") == Ok(model.ComparePickedVariant(model.LeftSide, 0))
+  assert press(m, "Escape") == Ok(model.UserClosedCompare)
+  assert keys.context_label(m) == "COMPARE"
+
+  let browse = model.Model(..model.default(), route: model.MenuRoute)
+  assert press(browse, "v") == Ok(model.UserClickedCompare)
+
+  let study = model.Model(..model.default(), route: model.StudyRoute)
+  assert press(study, "n") == Error(Nil)
+  let with_queue = model.Model(..study, queues: [wire.Queue("Pointers", [])])
+  assert press(with_queue, "n")
+    == Ok(model.UserPickedActiveQueue(Some("Pointers")))
 }
 
 /// The queue screen's row cursor is its own list, and `space` there means
@@ -1521,6 +1558,169 @@ pub fn the_rotation_survives_a_language_running_out_test() -> Nil {
   // Python has 150 problems; asking for 300 must yield all of them and stop,
   // not loop or truncate at the first round.
   assert list.length(picked) == 150
+}
+
+/// A named queue is a lens on the cards: the day is drawn from its members
+/// alone, and a name nobody has is an empty queue, not everything.
+pub fn a_named_queue_scopes_what_is_served_test() -> Nil {
+  let by_tag = fn(tag) {
+    list.filter(problems.all_refs(), fn(ref: problem.ProblemRef) {
+      problems.language_tag(ref.category) == tag
+    })
+  }
+  let python = by_tag("py")
+  let gleam = by_tag("gl")
+  let both = fresh_model_of(8, list.append(python, gleam))
+  let queued =
+    model.Model(..both, queues: [wire.Queue("py", list.take(python, 20))])
+  let tags = fn(refs) {
+    refs
+    |> list.map(fn(ref: problem.ProblemRef) {
+      problems.language_tag(ref.category)
+    })
+    |> list.unique
+  }
+
+  assert tags(queue.fresh(queued)) == ["py", "gl"]
+  let scoped = model.Model(..queued, active_queue: Some("py"))
+  assert tags(queue.fresh(scoped)) == ["py"]
+  assert queue.waiting_count(scoped) == 20
+  assert list.length(queue.queued(scoped)) == 20
+  assert queue.build(model.Model(..queued, active_queue: Some("missing"))) == []
+}
+
+/// The queue screen lists membership in the queue it is editing: the card
+/// itself under everything, the list under a named queue -- and in a list
+/// any member can be removed, history or not.
+pub fn a_named_queue_lists_its_own_members_test() -> Nil {
+  let python =
+    list.filter(problems.all_refs(), fn(ref: problem.ProblemRef) {
+      problems.language_tag(ref.category) == "py"
+    })
+  let assert [first, second, ..] = python
+  let m =
+    model.Model(
+      ..fresh_model_of(8, python),
+      queues: [wire.Queue("Pointers", [first])],
+      queue_editing: Some("Pointers"),
+      queue_status: model.Queued,
+    )
+  assert queue.listed(m) == [first]
+  assert queue.listed(model.Model(..m, queue_status: model.Unqueued))
+    |> list.contains(second)
+  assert !list.contains(
+    queue.listed(model.Model(..m, queue_status: model.Unqueued)),
+    first,
+  )
+  // Everything: the card is what counts, so every queued Python row shows.
+  let everything =
+    model.Model(..m, queue_editing: None, queue_status: model.Queued)
+  assert list.length(queue.listed(everything)) == 150
+
+  let remove =
+    model.GroupChange(
+      category: first.category,
+      subcategory: first.subcategory,
+      easy_only: False,
+      add: False,
+    )
+  assert queue.group_rows(
+      model.Model(..m, queue_status: model.AnyStatus),
+      remove,
+    )
+    == [first]
+}
+
+/// A card gone is gone from every list.
+pub fn deleting_a_card_drops_it_from_every_queue_test() -> Nil {
+  let a = a_problem("Two Sum")
+  let b = a_problem("Valid Anagram")
+  let queues = [wire.Queue("x", [a, b]), wire.Queue("y", [b])]
+  assert model.drop_from_queues(queues, [b])
+    == [wire.Queue("x", [a]), wire.Queue("y", [])]
+  assert model.drop_from_queues(queues, []) == queues
+}
+
+/// `n` on the study screen walks the ring: everything, each queue, back.
+pub fn the_next_queue_rings_round_test() -> Nil {
+  let m =
+    model.Model(..model.default(), queues: [
+      wire.Queue("a", []),
+      wire.Queue("b", []),
+    ])
+  assert model.next_queue(m) == Some("a")
+  assert model.next_queue(model.Model(..m, active_queue: Some("a")))
+    == Some("b")
+  assert model.next_queue(model.Model(..m, active_queue: Some("b"))) == None
+  assert model.next_queue(model.default()) == None
+}
+
+/// Two in one language compare first against the rest; one alone compares
+/// against its topic; anything else is refused with a reason.
+pub fn compare_opens_on_one_language_test() -> Nil {
+  let ref = fn(sub, title) { wire.ProblemRef("NeetCode 150", sub, title) }
+  let palindrome = ref("Two Pointers", "Valid Palindrome")
+  let three_sum = ref("Two Pointers", "3Sum")
+  let assert Ok(pair) = compare.open([palindrome, three_sum])
+  assert pair.anchor == palindrome
+  assert pair.others == [three_sum]
+  assert compare.right(pair) == Some(three_sum)
+
+  let assert Ok(alone) = compare.open([palindrome])
+  assert list.length(alone.others) == 4
+  assert !list.contains(alone.others, palindrome)
+  assert list.all(alone.others, fn(other: problem.ProblemRef) {
+    other.subcategory == "Two Pointers"
+  })
+  // The right side rings round and opens each problem on its own default.
+  assert compare.moved(alone, 4).index == 0
+  assert compare.moved(alone, -1).index == 3
+  assert compare.picked(alone, model.LeftSide, 99).variant_a
+    == list.length(compare.solutions_of(palindrome)) - 1
+  assert compare.picked(alone, model.RightSide, -5).variant_b == 0
+  // A Two Pointers solution opens on its Two Pointers variant.
+  let labels =
+    compare.solutions_of(palindrome)
+    |> list.map(fn(solution: problem.Solution) { solution.label })
+  assert list.drop(labels, alone.variant_a) |> list.first == Ok("Two Pointers")
+
+  let gleam = wire.ProblemRef("NeetCode 150 (Gleam)", "Two Pointers", "3Sum")
+  assert compare.open([palindrome, gleam])
+    == Error("Pick problems in one language to compare them.")
+  assert compare.open([]) == Error("Select a problem to compare.")
+  let assert Ok(concept) =
+    list.find(problems.all_refs(), fn(r: problem.ProblemRef) {
+      r.category == "System Design"
+    })
+  assert compare.open([concept])
+    == Error("That problem has no solution to compare.")
+}
+
+/// A preferences blob from before queues reads as studying everything.
+pub fn preferences_without_an_active_queue_decode_test() -> Nil {
+  let assert Ok(old) =
+    json.parse("{\"editorKeymap\":\"vim\"}", session.preferences_decoder())
+  assert old.active_queue == None
+  assert old.editor_keymap == "vim"
+  let assert Ok(new) =
+    json.parse(
+      "{\"editorKeymap\":\"vim\",\"activeQueue\":\"Pointers\"}",
+      session.preferences_decoder(),
+    )
+  assert new.active_queue == Some("Pointers")
+}
+
+/// A preferences blob from before the sidebar reads as having it open.
+pub fn preferences_default_the_prompt_open_test() -> Nil {
+  let assert Ok(old) =
+    json.parse("{\"editorKeymap\":\"vim\"}", session.preferences_decoder())
+  assert old.prompt_open
+  let assert Ok(hidden) =
+    json.parse(
+      "{\"editorKeymap\":\"vim\",\"promptOpen\":false}",
+      session.preferences_decoder(),
+    )
+  assert !hidden.prompt_open
 }
 
 /// The budget is the cap, not a suggestion.

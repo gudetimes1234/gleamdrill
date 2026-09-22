@@ -91,6 +91,29 @@ across whatever languages are queued rather than draining the first one dry.
 A language that runs out drops out of the rotation without ending it. A
 browser that was already using the app skips the picker.
 
+**You can keep many queues.** A queue is a named list of problems, nothing
+more: no rule decides what goes in one. The study screen serves one queue at
+a time -- Everything, which is every card, or a named list -- and a chip row
+on it says which; `n` steps through them. Scheduling stays per problem: a
+card is the memory of one problem whichever lists name it, so a problem in
+three queues is one card, and a review counts for all three. Adding a problem
+to a list gives it a card if it had none; taking it out of a list leaves the
+card in Everything, and a card removed outright leaves every list. The queue
+screen edits one list at a time, Browse can put a selection into any of them,
+and the lists ride along in the export and in a guest's upgrade. Which list a
+device is studying is that device's preference, like its keymap.
+
+**Compare two solutions side by side.** Browse's Compare puts two problems'
+reference solutions next to each other, same language, with the lines they
+share lit and the rest dimmed. Two Pointers solutions all open with
+`left, right = ...` and loop on `while left < right`, and that shape is what
+this is for: the eye lands on what the technique keeps from problem to
+problem. "Shared" is a line-level longest common subsequence of the two texts
+rather than the merge view's own diff, whose character-level chunks swallow
+a matching line between two differing ones. One problem alone is compared
+with the rest of its topic, one at a time; each side opens on the solution
+named after the topic when there is one.
+
 ## It drives like a TUI
 
 **It drives like a TUI.** Vim-style keys everywhere outside the editor —
@@ -318,7 +341,9 @@ What a guest gives up, and the app says so on screen rather than in a footnote:
   see below.
 
 Signed in, localStorage keeps only the session token and your preferences —
-editor keymap and which languages you chose. A guest's scheduler settings get
+editor keymap, editor height, whether the prompt sidebar is open, which
+languages you chose, and which queue this device is studying. A guest's
+scheduler settings get
 their own key too, encoded with the shared `wire` codec, and are cleared with
 the rest on sign-up: the new account starts from the defaults, not from what
 the browser held.

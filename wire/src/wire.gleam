@@ -77,6 +77,13 @@ pub type Today {
   )
 }
 
+/// A named list of problems to study from. Scheduling stays per problem:
+/// a card is the memory of one problem, whichever queues it is in. The
+/// list is the whole of a queue -- the client owns it and sends it entire.
+pub type Queue {
+  Queue(name: String, problems: List(ProblemRef))
+}
+
 pub type Settings {
   Settings(
     scheduler: fsrs.Config,
@@ -103,6 +110,7 @@ pub type BootState {
     /// The user's own note on each problem -- what to remember next time.
     /// Same shape as a draft: a body keyed by the problem.
     notes: List(#(ProblemRef, String)),
+    queues: List(Queue),
     today: Today,
   )
 }
@@ -125,10 +133,12 @@ pub type Archive {
     reviews: List(#(ProblemRef, ReviewRow)),
     drafts: List(#(ProblemRef, String)),
     notes: List(#(ProblemRef, String)),
+    queues: List(Queue),
   )
 }
 
-pub const archive_version = 1
+/// Version 2 added `queues`; a version 1 file has none and reads as such.
+pub const archive_version = 2
 
 /// What undoing the latest review leaves behind. `card` is None when the
 /// undone review had created the card: it is out of the queue again.
@@ -358,6 +368,18 @@ pub fn draft_to_json(entry: #(ProblemRef, String)) -> Json {
   )
 }
 
+pub fn queue_to_json(queue: Queue) -> Json {
+  json.object([
+    #("name", json.string(queue.name)),
+    #("problems", json.array(queue.problems, ref_to_json)),
+  ])
+}
+
+/// The whole set, as PUT /api/queues takes it and GET returns it.
+pub fn queues_to_json(queues: List(Queue)) -> Json {
+  json.object([#("queues", json.array(queues, queue_to_json))])
+}
+
 pub fn today_to_json(today: Today) -> Json {
   json.object([
     #("dayStart", json.float(fsrs.to_epoch(today.day_start))),
@@ -395,6 +417,7 @@ pub fn boot_state_to_json(state: BootState) -> Json {
     #("cards", json.array(state.cards, card_to_json)),
     #("drafts", json.array(state.drafts, draft_to_json)),
     #("notes", json.array(state.notes, draft_to_json)),
+    #("queues", json.array(state.queues, queue_to_json)),
     #("today", today_to_json(state.today)),
   ])
 }
@@ -414,6 +437,7 @@ pub fn archive_to_json(archive: Archive) -> Json {
     ),
     #("drafts", json.array(archive.drafts, draft_to_json)),
     #("notes", json.array(archive.notes, draft_to_json)),
+    #("queues", json.array(archive.queues, queue_to_json)),
   ])
 }
 
@@ -658,6 +682,16 @@ pub fn draft_decoder() -> Decoder(#(ProblemRef, String)) {
   decode.success(#(problem, body))
 }
 
+pub fn queue_decoder() -> Decoder(Queue) {
+  use name <- decode.field("name", decode.string)
+  use problems <- decode.field("problems", decode.list(ref_decoder()))
+  decode.success(Queue(name:, problems:))
+}
+
+pub fn queues_decoder() -> Decoder(List(Queue)) {
+  decode.field("queues", decode.list(queue_decoder()), decode.success)
+}
+
 pub fn today_decoder() -> Decoder(Today) {
   use day_start <- decode.field("dayStart", moment())
   use day_end <- decode.field("dayEnd", moment())
@@ -722,6 +756,11 @@ pub fn boot_state_decoder() -> Decoder(BootState) {
   use drafts <- decode.field("drafts", decode.list(draft_decoder()))
   // Optional: a server from before notes existed sends none.
   use notes <- decode.optional_field("notes", [], decode.list(draft_decoder()))
+  use queues <- decode.optional_field(
+    "queues",
+    [],
+    decode.list(queue_decoder()),
+  )
   use today <- decode.field("today", today_decoder())
   decode.success(BootState(
     now:,
@@ -730,6 +769,7 @@ pub fn boot_state_decoder() -> Decoder(BootState) {
     cards:,
     drafts:,
     notes:,
+    queues:,
     today:,
   ))
 }
@@ -753,6 +793,12 @@ pub fn archive_decoder() -> Decoder(Archive) {
     decode.list(draft_decoder()),
   )
   use notes <- decode.optional_field("notes", [], decode.list(draft_decoder()))
+  // A version 1 file predates queues.
+  use queues <- decode.optional_field(
+    "queues",
+    [],
+    decode.list(queue_decoder()),
+  )
   decode.success(Archive(
     version:,
     exported_at:,
@@ -761,6 +807,7 @@ pub fn archive_decoder() -> Decoder(Archive) {
     reviews:,
     drafts:,
     notes:,
+    queues:,
   ))
 }
 

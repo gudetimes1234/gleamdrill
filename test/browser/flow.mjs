@@ -58,10 +58,8 @@ const answerPickerIfShown = async () => {
   await page.waitForSelector(".study-screen", { timeout: 20000 });
 };
 
-/// A drill opens on its prompt page; the editor page is behind Enter.
+/// A drill opens with the prompt beside the editor and nothing focused.
 const startCoding = async () => {
-  await page.waitForSelector(".read-sheet", { timeout: 20000 });
-  await page.click(".read-start");
   await page.waitForSelector(".run-bar", { timeout: 20000 });
   await page.evaluate(() => document.activeElement?.blur());
 };

@@ -9,13 +9,14 @@ import gleam/dict
 import gleam/float
 import gleam/int
 import gleam/list
-import gleam/option.{None, Some}
+import gleam/option.{type Option, None, Some}
 import gleamdrill/insights
 import gleamdrill/model.{
   type Model, type Msg, Guest, PromptShowing, Registering, StudyRoute,
   UserAddedStarterSet, UserClickedBrowse, UserClickedQueue, UserClickedRecall,
   UserClickedSignIn, UserClickedStartExam, UserClickedStudy, UserClickedTour,
-  UserDismissedUpgradePrompt, UserStartedBlitz, UserToggledBlitz,
+  UserDismissedUpgradePrompt, UserPickedActiveQueue, UserStartedBlitz,
+  UserToggledBlitz,
 }
 import gleamdrill/problem
 import gleamdrill/problems
@@ -29,6 +30,7 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/element/svg
 import lustre/event
+import wire
 
 pub fn view(m: Model) -> Element(Msg) {
   // Counted client-side: the client holds every card, and the budget the
@@ -39,6 +41,8 @@ pub fn view(m: Model) -> Element(Msg) {
   // Told apart from "done for today" deliberately: the queue being empty is
   // something only the user can fix, and the fix is one screen away.
   let nothing_queued = dict.size(m.cards) == 0
+  // A named queue with nothing in it is the same dead end, one screen away.
+  let queue_empty = m.active_queue != None && queue.scope(m) == []
 
   html.div([attribute.class("study-screen")], [
     banner.storage_warning(m),
@@ -50,6 +54,7 @@ pub fn view(m: Model) -> Element(Msg) {
       nav.bar(m, StudyRoute),
     ]),
     hero(m, ready),
+    queue_picker(m),
     html.div([attribute.class("study-counts")], [
       count("Due", due, "due"),
       count("New", fresh, "new"),
@@ -62,6 +67,8 @@ pub fn view(m: Model) -> Element(Msg) {
         // nothing has been queued, and no amount of waiting changes that.
         0, _ if nothing_queued ->
           "Nothing is in your study queue yet. Add problems to start scheduling them."
+        0, _ if queue_empty ->
+          "This queue is empty. Add problems to it on the queue screen."
         0, 0 ->
           "Nothing due today, and today's new cards are spent. Queue more problems, or come back tomorrow."
         0, _ ->
@@ -219,15 +226,60 @@ fn week() -> List(Int) {
 /// Cards falling due `offset` days from now. Anything already overdue counts
 /// against today, which is where it will actually be studied.
 fn due_on(m: Model, offset: Int) -> Int {
-  use total, _problem, state <- dict.fold(m.cards, 0)
-  let days = int.max(0, fsrs.interval_seconds(state.card, m.now) / 86_400)
-  // A queued card that has never been answered is due immediately by date,
-  // but it is not a review -- counting it here would pile the whole New pile
-  // onto today's bar and make the week look like a wall.
-  case state.reps > 0 && days == offset && !state.suspended {
-    True -> total + 1
-    False -> total
+  // The active queue's cards, so the week matches the picker above it.
+  use total, ref <- list.fold(queue.scope(m), 0)
+  case model.card_for(m, ref) {
+    None -> total
+    Some(state) -> {
+      let days = int.max(0, fsrs.interval_seconds(state.card, m.now) / 86_400)
+      // A queued card that has never been answered is due immediately by
+      // date, but it is not a review -- counting it here would pile the
+      // whole New pile onto today's bar and make the week look like a wall.
+      case state.reps > 0 && days == offset && !state.suspended {
+        True -> total + 1
+        False -> total
+      }
+    }
   }
+}
+
+/// Which queue today serves from: everything, or one of the named lists.
+/// Absent until a list exists, so a fresh screen is as it always was.
+fn queue_picker(m: Model) -> Element(Msg) {
+  case m.queues {
+    [] -> element.none()
+    queues ->
+      html.div(
+        [
+          attribute.class("queue-picker"),
+          attribute.attribute(
+            "title",
+            "Today's cards come from the lit queue. Done today counts every queue.",
+          ),
+        ],
+        [
+          queue_pick("Everything", None, m.active_queue),
+          ..list.map(queues, fn(queue: wire.Queue) {
+            queue_pick(queue.name, Some(queue.name), m.active_queue)
+          })
+        ],
+      )
+  }
+}
+
+fn queue_pick(
+  label: String,
+  name: Option(String),
+  active: Option(String),
+) -> Element(Msg) {
+  html.button(
+    [
+      attribute.classes([#("queue-pick", True), #("current", name == active)]),
+      attribute.type_("button"),
+      event.on_click(UserPickedActiveQueue(name)),
+    ],
+    [html.text(label)],
+  )
 }
 
 /// How long today's queue is likely to take, and the streak it continues.

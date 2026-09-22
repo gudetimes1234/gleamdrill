@@ -7,11 +7,13 @@ import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
+import gleam/set
 import gleam/string
 import gleam/time/calendar
 import gleam/time/timestamp
 import gleamdrill/api
 import gleamdrill/browser
+import gleamdrill/compare
 import gleamdrill/editor
 import gleamdrill/insights
 import gleamdrill/keys
@@ -20,48 +22,53 @@ import gleamdrill/local
 import gleamdrill/model.{
   type Model, type Msg, Account, ArchiveReady, ArchiveRestored, AuthCompleted,
   AuthForm, AuthRoute, AwaitingGrade, BlitzExpired, CacheMeasured, CacheWarmed,
-  CardSuspended, CaseResult, Cases, ClockTicked, Coding, DayStartHour,
-  DesiredRetention, DraftSaveTicked, DraftSynced, DrillRoute, EditorChanged,
-  EditorFocusRequested, EditorResized, Errored, ExamSampled, ExitConfirmed,
-  Guest, HelpToggled, HintPane, HistoryLoaded, ImportConfirmed, ImportPicked,
-  InsightsLoaded, KeyPressed, MenuActivated, MenuCursorJumped, MenuCursorMoved,
-  MenuPaneFocused, MenuRoute, MenuSuspendedAtCursor, MenuToggledAtCursor, Model,
-  NewPerDay, NoPane, NotGrading, NotStarted, NoteChanged, NoteFocusRequested,
-  NotePane, NoteSaveTicked, NoteSynced, PickerConfirmed,
-  PickerConfirmedWithStarter, PickerRoute, PickerToggledLanguage,
-  PromptDismissed, QueueChanged, QueueCursorJumped, QueueCursorMoved, QueueRoute,
-  QueueToggledAtCursor, QuizMoved, Ran, Reading, Registering, ReminderHour,
-  RemoteRunFinished, ReportRoute, ReviewRecorded, ReviewsPerDay, RunError,
-  RunFinished, RunIdle, RunTimedOut, RunnerFailed, RunnerReady, Running,
-  RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded,
-  RuntimeReady, SearchFocusRequested, SettingsRoute, SettingsSaved,
-  SignOutCompleted, SigningIn, SolutionPane, StateImported, StateLoaded,
-  StatsActivated, StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute,
-  SubmittingGrade, SummaryRoute, SyncFailed, Synced, Syncing, TimedOut,
-  TourActivated, TourContents, TourCursorMoved, TourEditorChanged, TourLesson,
-  TourRoute, TourRunTicked, UndoRecorded, UserAddedAllShown, UserAddedStarterSet,
-  UserChangedAuthEmail, UserChangedAuthPassword, UserChangedGroup,
-  UserChangedIterations, UserChangedKeymap, UserChangedSetting,
+  CardSuspended, CaseResult, Cases, ClockTicked, CompareMoved,
+  ComparePickedVariant, CompareRoute, DayStartHour, DesiredRetention,
+  DraftSaveTicked, DraftSynced, DrillRoute, EditorChanged, EditorFocusRequested,
+  EditorResized, Errored, ExamSampled, ExitConfirmed, Guest, HelpToggled,
+  HintPane, HistoryLoaded, ImportConfirmed, ImportPicked, InsightsLoaded,
+  KeyPressed, MenuActivated, MenuCursorJumped, MenuCursorMoved, MenuPaneFocused,
+  MenuRoute, MenuSuspendedAtCursor, MenuToggledAtCursor, Model, NewPerDay,
+  NoPane, NotGrading, NotStarted, NoteChanged, NoteFocusRequested, NotePane,
+  NoteSaveTicked, NoteSynced, PickerConfirmed, PickerConfirmedWithStarter,
+  PickerRoute, PickerToggledLanguage, PromptDismissed, QueueChanged,
+  QueueCursorJumped, QueueCursorMoved, QueueRoute, QueueToggledAtCursor,
+  QueuesSaved, QuizMoved, Ran, Registering, ReminderHour, RemoteRunFinished,
+  ReportRoute, ReviewRecorded, ReviewsPerDay, RunError, RunFinished, RunIdle,
+  RunTimedOut, RunnerFailed, RunnerReady, Running, RuntimeFailed,
+  RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded, RuntimeReady,
+  SearchFocusRequested, SettingsRoute, SettingsSaved, SignOutCompleted,
+  SigningIn, SolutionPane, StateImported, StateLoaded, StatsActivated,
+  StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute, SubmittingGrade,
+  SummaryRoute, SyncFailed, Synced, Syncing, TimedOut, TourActivated,
+  TourContents, TourCursorMoved, TourEditorChanged, TourLesson, TourRoute,
+  TourRunTicked, UndoRecorded, UserAddedAllShown, UserAddedSelectionToQueue,
+  UserAddedStarterSet, UserCancelledQueueName, UserChangedAuthEmail,
+  UserChangedAuthPassword, UserChangedGroup, UserChangedIterations,
+  UserChangedKeymap, UserChangedQueueName, UserChangedSetting,
   UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
-  UserClickedCategory, UserClickedClearSelection, UserClickedDeviceTimezone,
-  UserClickedExitDrill, UserClickedExitReport, UserClickedExport,
-  UserClickedImport, UserClickedMergeGuest, UserClickedNext, UserClickedQueue,
-  UserClickedRecall, UserClickedRetryRuntime, UserClickedRetrySync,
-  UserClickedRun, UserClickedScratchRun, UserClickedSelectAll,
-  UserClickedSettings, UserClickedSignIn, UserClickedSignOut,
-  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
-  UserClickedStopRun, UserClickedStudy, UserClickedSubcategory, UserClickedTour,
-  UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
-  UserClickedUndo, UserClickedWarmCache, UserClosedDetail, UserClosedWalk,
-  UserDismissedDiff, UserDismissedMergeOffer, UserDismissedNotice,
-  UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded, UserOpenedDetail,
-  UserOpenedLesson, UserOpenedWalk, UserPickedChoice, UserPickedQueueLanguage,
-  UserRemovedAllShown, UserResetLesson, UserRevealedHint, UserRevealedRecall,
-  UserSearched, UserSearchedQueue, UserStartedBlitz, UserStartedCoding,
-  UserSubmittedAnswer, UserSubmittedAuth, UserToggledAuthMode, UserToggledBlitz,
-  UserToggledDiff, UserToggledPane, UserToggledProblem, UserToggledQueued,
-  UserToggledRead, UserToggledResults, UserToggledSolution, UserToggledSuspend,
-  WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown, WalkPane, WalkWhyShown,
+  UserClickedCategory, UserClickedClearSelection, UserClickedCompare,
+  UserClickedDeviceTimezone, UserClickedExitDrill, UserClickedExitReport,
+  UserClickedExport, UserClickedImport, UserClickedMergeGuest, UserClickedNext,
+  UserClickedQueue, UserClickedRecall, UserClickedRetryRuntime,
+  UserClickedRetrySync, UserClickedRun, UserClickedScratchRun,
+  UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
+  UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
+  UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
+  UserClickedTour, UserClickedTourContents, UserClickedTourNext,
+  UserClickedTourPrev, UserClickedUndo, UserClickedWarmCache, UserClosedCompare,
+  UserClosedDetail, UserClosedWalk, UserDeletedQueue, UserDismissedDiff,
+  UserDismissedMergeOffer, UserDismissedNotice, UserDismissedUpgradePrompt,
+  UserFilteredQueue, UserGraded, UserOpenedDetail, UserOpenedLesson,
+  UserOpenedWalk, UserPickedActiveQueue, UserPickedChoice,
+  UserPickedQueueLanguage, UserRemovedAllShown, UserResetLesson,
+  UserRevealedHint, UserRevealedRecall, UserSearched, UserSearchedQueue,
+  UserSelectedQueue, UserStartedBlitz, UserStartedNewQueue,
+  UserStartedRenameQueue, UserSubmittedAnswer, UserSubmittedAuth,
+  UserSubmittedQueueName, UserToggledAuthMode, UserToggledBlitz, UserToggledDiff,
+  UserToggledPane, UserToggledProblem, UserToggledPrompt, UserToggledQueued,
+  UserToggledResults, UserToggledSolution, UserToggledSuspend, WalkAdvanced,
+  WalkBacked, WalkCodeShown, WalkHintShown, WalkPane, WalkWhyShown,
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
@@ -71,6 +78,7 @@ import gleamdrill/session
 import gleamdrill/store
 import gleamdrill/tour
 import gleamdrill/view/auth
+import gleamdrill/view/compare as compare_view
 import gleamdrill/view/drill
 import gleamdrill/view/help
 import gleamdrill/view/manage
@@ -107,8 +115,10 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
       ..base,
       editor_keymap: preferences.editor_keymap,
       editor_height: preferences.editor_height,
+      prompt_open: preferences.prompt_open,
       languages_chosen: preferences.languages_chosen,
       tour_lesson: preferences.tour_lesson,
+      active_queue: preferences.active_queue,
     )
 
   case session.load_token() {
@@ -909,6 +919,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                   [],
                   old.drafts,
                   [],
+                  [],
                   StateImported,
                 ),
                 legacy.mark_imported(),
@@ -926,9 +937,11 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           ..model.default(),
           editor_keymap: m.editor_keymap,
           editor_height: m.editor_height,
+          prompt_open: m.prompt_open,
           // An expired session drops you to guest; it does not un-ask the
           // language question this browser has already answered.
           languages_chosen: m.languages_chosen,
+          active_queue: m.active_queue,
           // Mid-session this is a refresh, not a reboot: whatever was on
           // screen stays there. At boot the loading card stays up.
           boot: m.boot,
@@ -996,10 +1009,13 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         Model(
           ..model.default(),
           editor_keymap: m.editor_keymap,
+          editor_height: m.editor_height,
+          prompt_open: m.prompt_open,
           // Signing out is not a factory reset of this browser. Without this
           // it sends someone who has already chosen their languages back to
           // the first-run picker.
           languages_chosen: m.languages_chosen,
+          active_queue: m.active_queue,
           tour_lesson: m.tour_lesson,
           boot: Syncing,
         )
@@ -1041,9 +1057,12 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         [] -> #(
           Model(
             ..m,
-            notice: Some(
-              "Nothing to study right now. Come back when cards are due, or pick problems by hand.",
-            ),
+            notice: Some(case m.active_queue, queue.scope(m) {
+              Some(name), [] ->
+                "\"" <> name <> "\" is empty. Add problems on the queue screen."
+              _, _ ->
+                "Nothing to study right now. Come back when cards are due, or pick problems by hand."
+            }),
           ),
           effect.none(),
         )
@@ -1339,6 +1358,16 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         Some(card) -> dict.insert(m.cards, card.problem, card)
         None -> dict.delete(m.cards, point.problem)
       }
+      // Undoing the review that created the card un-creates it, and a
+      // queue never names a problem without one.
+      let queues = case outcome.card {
+        Some(_) -> m.queues
+        None -> model.drop_from_queues(m.queues, [point.problem])
+      }
+      let queues_effect = case queues == m.queues {
+        True -> effect.none()
+        False -> store.save_queues(Model(..m, queues:))
+      }
       // Back on the problem as it was when the grade was pressed, with the
       // clock where it stood, waiting for the grade you meant.
       #(
@@ -1347,6 +1376,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           now: outcome.now,
           today: outcome.today,
           cards:,
+          queues:,
           route: DrillRoute,
           selected: point.selected,
           problem_index: point.problem_index,
@@ -1358,7 +1388,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           run: point.run,
           revealed_solution: point.revealed_solution,
           hints_revealed: point.hints_revealed,
-          stage: Coding,
           slot: case point.revealed_solution {
             Some(_) -> SolutionPane
             None -> NoPane
@@ -1374,7 +1403,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           graded: False,
           notice: None,
         ),
-        effect.none(),
+        queues_effect,
       )
     }
 
@@ -1716,7 +1745,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             Some(rung) -> #(
               Model(
                 ..m,
-                stage: Coding,
                 slot: WalkPane,
                 walk: Some(case m.walk {
                   Some(state) -> state
@@ -1814,28 +1842,15 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           effect.none(),
         )
         _, _ -> #(
-          Model(
-            ..m,
-            stage: Coding,
-            slot: SolutionPane,
-            revealed_solution: Some(index),
-          ),
+          Model(..m, slot: SolutionPane, revealed_solution: Some(index)),
           effect.none(),
         )
       }
 
-    UserStartedCoding -> #(
-      Model(..m, stage: Coding),
-      focus_after_render("gleam-editor"),
-    )
-
-    UserToggledRead -> #(
-      Model(..m, stage: case m.stage {
-        Reading -> Coding
-        Coding -> Reading
-      }),
-      effect.none(),
-    )
+    UserToggledPrompt -> {
+      let m = Model(..m, prompt_open: !m.prompt_open)
+      #(m, save_preferences(m))
+    }
 
     UserToggledPane(pane) ->
       case pane, m.slot == pane {
@@ -2085,7 +2100,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     // export is refused without ever offering to replace anything with it.
     ImportPicked(text) ->
       case json.parse(text, wire.archive_decoder()) {
-        Ok(archive) if archive.version == wire.archive_version -> #(
+        Ok(archive) if archive.version <= wire.archive_version -> #(
           Model(..m, import_pending: Some(archive)),
           effect.none(),
         )
@@ -2164,7 +2179,203 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
 
     // --- managing the queue ---
-    UserClickedQueue -> #(Model(..m, route: QueueRoute), effect.none())
+    UserClickedQueue -> #(
+      Model(
+        ..m,
+        route: QueueRoute,
+        // Open on the queue being studied: the one most likely to need a
+        // problem added.
+        queue_editing: m.active_queue,
+        queue_naming: None,
+      ),
+      effect.none(),
+    )
+
+    // --- named queues ---
+    UserPickedActiveQueue(name) -> {
+      let m = Model(..m, active_queue: name, blitz_chooser: False)
+      #(m, save_preferences(m))
+    }
+
+    UserSelectedQueue(name) -> #(
+      Model(
+        ..m,
+        queue_editing: name,
+        queue_naming: None,
+        nav: model.MenuNav(..m.nav, queue: 0),
+      ),
+      effect.none(),
+    )
+
+    UserStartedNewQueue -> #(
+      Model(..m, queue_naming: Some(model.NewQueue(""))),
+      focus_after_render(".queue-name-input"),
+    )
+
+    UserStartedRenameQueue ->
+      case m.queue_editing {
+        Some(name) -> #(
+          Model(..m, queue_naming: Some(model.RenameQueue(name, name))),
+          focus_after_render(".queue-name-input"),
+        )
+        None -> #(m, effect.none())
+      }
+
+    UserChangedQueueName(text) -> #(
+      Model(..m, queue_naming: case m.queue_naming {
+        Some(model.NewQueue(_)) -> Some(model.NewQueue(text))
+        Some(model.RenameQueue(from, _)) -> Some(model.RenameQueue(from, text))
+        None -> None
+      }),
+      effect.none(),
+    )
+
+    UserCancelledQueueName -> #(Model(..m, queue_naming: None), effect.none())
+
+    UserSubmittedQueueName ->
+      case m.queue_naming {
+        None -> #(m, effect.none())
+        Some(naming) -> {
+          let name =
+            string.trim(case naming {
+              model.NewQueue(text) -> text
+              model.RenameQueue(_, text) -> text
+            })
+          let taken =
+            list.any(m.queues, fn(queue) { queue.name == name })
+            && case naming {
+              model.RenameQueue(from, _) -> from != name
+              model.NewQueue(_) -> True
+            }
+          case name, taken, naming {
+            "", _, _ -> #(
+              Model(..m, notice: Some("A queue needs a name.")),
+              effect.none(),
+            )
+            _, True, _ -> #(
+              Model(
+                ..m,
+                notice: Some("There is already a queue called " <> name <> "."),
+              ),
+              effect.none(),
+            )
+            _, False, model.NewQueue(_) -> {
+              let m =
+                Model(
+                  ..m,
+                  queues: list.append(m.queues, [wire.Queue(name, [])]),
+                  queue_editing: Some(name),
+                  queue_naming: None,
+                )
+              #(m, store.save_queues(m))
+            }
+            _, False, model.RenameQueue(from, _) -> {
+              let rename = fn(current) {
+                case current == Some(from) {
+                  True -> Some(name)
+                  False -> current
+                }
+              }
+              let m =
+                Model(
+                  ..m,
+                  queues: list.map(m.queues, fn(queue) {
+                    case queue.name == from {
+                      True -> wire.Queue(..queue, name:)
+                      False -> queue
+                    }
+                  }),
+                  queue_editing: Some(name),
+                  active_queue: rename(m.active_queue),
+                  queue_naming: None,
+                )
+              #(m, effect.batch([store.save_queues(m), save_preferences(m)]))
+            }
+          }
+        }
+      }
+
+    // The list goes; the cards it named stay scheduled in everything.
+    UserDeletedQueue ->
+      case m.queue_editing {
+        None -> #(m, effect.none())
+        Some(name) -> {
+          let m =
+            Model(
+              ..m,
+              queues: list.filter(m.queues, fn(queue) { queue.name != name }),
+              queue_editing: None,
+              queue_naming: None,
+              active_queue: case m.active_queue == Some(name) {
+                True -> None
+                False -> m.active_queue
+              },
+            )
+          #(m, effect.batch([store.save_queues(m), save_preferences(m)]))
+        }
+      }
+
+    UserAddedSelectionToQueue(target) ->
+      case m.selected {
+        [] -> #(m, effect.none())
+        refs -> {
+          let #(m, saved) = case target {
+            None -> #(m, effect.none())
+            Some(name) -> {
+              let m = add_to_named_queue(m, name, refs)
+              #(m, store.save_queues(m))
+            }
+          }
+          let carded = enqueue_missing(m, refs)
+          #(
+            Model(
+              ..carded.0,
+              notice: Some(
+                int.to_string(list.length(refs))
+                <> " added to "
+                <> option.unwrap(target, "the queue")
+                <> ".",
+              ),
+            ),
+            effect.batch([saved, carded.1]),
+          )
+        }
+      }
+
+    QueuesSaved(Ok(Nil)) -> #(m, effect.none())
+    QueuesSaved(Error(failure)) -> #(
+      Model(
+        ..m,
+        storage_full: m.mode == Guest || m.storage_full,
+        notice: Some(api.error_message(failure)),
+      ),
+      effect.none(),
+    )
+
+    // --- compare ---
+    UserClickedCompare ->
+      case compare.open(m.selected) {
+        Ok(c) -> #(
+          Model(..m, compare: Some(c), route: CompareRoute),
+          effect.none(),
+        )
+        Error(reason) -> #(Model(..m, notice: Some(reason)), effect.none())
+      }
+
+    CompareMoved(delta) -> #(
+      Model(..m, compare: option.map(m.compare, compare.moved(_, delta))),
+      effect.none(),
+    )
+
+    ComparePickedVariant(side, index) -> #(
+      Model(..m, compare: option.map(m.compare, compare.picked(_, side, index))),
+      effect.none(),
+    )
+
+    UserClosedCompare -> #(
+      Model(..m, route: MenuRoute, compare: None),
+      effect.none(),
+    )
 
     UserSearchedQueue(text) -> #(
       Model(..m, queue_search: text, nav: model.MenuNav(..m.nav, queue: 0)),
@@ -2193,10 +2404,15 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
 
     UserChangedGroup(change) ->
-      case queue.group_rows(m, change), change.add {
-        [], _ -> #(m, effect.none())
-        refs, True -> #(pending(m, refs), store.add_to_queue(m, refs))
-        refs, False -> #(pending(m, refs), store.remove_from_queue(m, refs))
+      case queue.group_rows(m, change), change.add, m.queue_editing {
+        [], _, _ -> #(m, effect.none())
+        refs, True, None -> #(pending(m, refs), store.add_to_queue(m, refs))
+        refs, False, None -> #(
+          pending(m, refs),
+          store.remove_from_queue(m, refs),
+        )
+        refs, True, Some(name) -> named_queue_add(m, name, refs)
+        refs, False, Some(name) -> named_queue_remove(m, name, refs)
       }
 
     // One verb for both directions, because the row shows one control. A card
@@ -2204,29 +2420,57 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     // to delete it either way, and asking it to is a round trip that can only
     // end in `refused`.
     UserToggledQueued(ref) ->
-      case model.card_for(m, ref) {
-        None -> #(pending(m, [ref]), store.add_to_queue(m, [ref]))
-        Some(state) ->
-          case state.reps == 0 {
-            True -> #(pending(m, [ref]), store.remove_from_queue(m, [ref]))
-            False -> #(m, store.set_suspended(m, ref, !state.suspended))
+      case m.queue_editing {
+        // A named queue is a list: in or out, and the card comes along
+        // when a problem joins without one.
+        Some(name) ->
+          case set.contains(queue.members(m, m.queue_editing), ref) {
+            True -> named_queue_remove(m, name, [ref])
+            False -> named_queue_add(m, name, [ref])
+          }
+        None ->
+          case model.card_for(m, ref) {
+            None -> #(pending(m, [ref]), store.add_to_queue(m, [ref]))
+            Some(state) ->
+              case state.reps == 0 {
+                True -> #(pending(m, [ref]), store.remove_from_queue(m, [ref]))
+                False -> #(m, store.set_suspended(m, ref, !state.suspended))
+              }
           }
       }
 
-    UserAddedAllShown ->
-      case list.filter(queue.listed(m), fn(ref) { !model.is_queued(m, ref) }) {
-        [] -> #(m, effect.none())
-        refs -> #(pending(m, refs), store.add_to_queue(m, refs))
+    UserAddedAllShown -> {
+      let here = queue.members(m, m.queue_editing)
+      case
+        list.filter(queue.listed(m), fn(ref) { !set.contains(here, ref) }),
+        m.queue_editing
+      {
+        [], _ -> #(m, effect.none())
+        refs, None -> #(pending(m, refs), store.add_to_queue(m, refs))
+        refs, Some(name) -> named_queue_add(m, name, refs)
       }
+    }
 
     // Only the ones it can actually remove. Sending the studied rows too would
     // get them back as `refused` and raise a notice about cards the user never
     // asked to touch -- they are not in this list because they cannot leave the
     // queue, only be paused.
     UserRemovedAllShown ->
-      case list.filter(queue.listed(m), fn(ref) { model.is_new(m, ref) }) {
-        [] -> #(m, effect.none())
-        refs -> #(pending(m, refs), store.remove_from_queue(m, refs))
+      case m.queue_editing {
+        None ->
+          case list.filter(queue.listed(m), fn(ref) { model.is_new(m, ref) }) {
+            [] -> #(m, effect.none())
+            refs -> #(pending(m, refs), store.remove_from_queue(m, refs))
+          }
+        Some(name) -> {
+          let here = queue.members(m, m.queue_editing)
+          case
+            list.filter(queue.listed(m), fn(ref) { set.contains(here, ref) })
+          {
+            [] -> #(m, effect.none())
+            refs -> named_queue_remove(m, name, refs)
+          }
+        }
       }
 
     QueueCursorMoved(delta) ->
@@ -2251,6 +2495,10 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         list.fold(change.cards, m.cards, fn(cards, card: api.CardState) {
           dict.insert(cards, card.problem, card)
         })
+      // A card gone is gone from every list too.
+      let queues = model.drop_from_queues(m.queues, change.removed)
+      let changed = queues != m.queues
+      let m = Model(..m, queues:)
       #(
         Model(
           ..m,
@@ -2271,7 +2519,10 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               )
           },
         ),
-        effect.none(),
+        case changed {
+          True -> store.save_queues(m)
+          False -> effect.none()
+        },
       )
     }
     QueueChanged(Error(failure)) -> #(
@@ -2326,7 +2577,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
 
     NoteFocusRequested -> #(
-      Model(..m, stage: Coding, slot: NotePane),
+      Model(..m, slot: NotePane),
       focus_after_render(".note-input"),
     )
 
@@ -2540,6 +2791,11 @@ fn apply_state(m: Model, state: api.BootState) -> Model {
     today: state.today,
     drafts: state.drafts,
     notes: state.notes,
+    queues: state.queues,
+    // A device remembers which queue it studies; the list may have gone
+    // on another device, in which case today is everything again.
+    active_queue: known_queue(state.queues, m.active_queue),
+    queue_editing: known_queue(state.queues, m.queue_editing),
     // The one place that decides where boot lands. A browser that has never
     // answered the language question goes to the picker instead of the study
     // screen, because the queue it would otherwise build is one language deep
@@ -2554,6 +2810,20 @@ fn apply_state(m: Model, state: api.BootState) -> Model {
     // the threshold in a previous session should still be told.
     upgrade_prompt: escalate(m),
   )
+}
+
+fn known_queue(
+  queues: List(wire.Queue),
+  name: Option(String),
+) -> Option(String) {
+  case name {
+    Some(n) ->
+      case list.any(queues, fn(queue) { queue.name == n }) {
+        True -> name
+        False -> None
+      }
+    None -> None
+  }
 }
 
 /// Parse one settings input and clamp it into range.
@@ -2708,8 +2978,10 @@ fn save_preferences(m: Model) -> Effect(Msg) {
   session.save_preferences(session.Preferences(
     editor_keymap: m.editor_keymap,
     editor_height: m.editor_height,
+    prompt_open: m.prompt_open,
     tour_lesson: m.tour_lesson,
     languages_chosen: m.languages_chosen,
+    active_queue: m.active_queue,
   ))
 }
 
@@ -2971,8 +3243,77 @@ fn reset_home(m: Model) -> Model {
 /// Which of the queued cards a Blitz may draw from: anything this browser
 /// can actually run against the clock. Concept cards have no code, and a
 /// guest cannot run the server-side languages, so neither can pass.
+/// Problems into a named queue, and cards for the ones without. The list
+/// is saved whole; the cards go up as one batch, as the queue screen's
+/// bulk add does.
+fn named_queue_add(
+  m: Model,
+  name: String,
+  refs: List(ProblemRef),
+) -> #(Model, Effect(Msg)) {
+  let m = add_to_named_queue(m, name, refs)
+  let #(m, carded) = enqueue_missing(m, refs)
+  #(m, effect.batch([store.save_queues(m), carded]))
+}
+
+fn named_queue_remove(
+  m: Model,
+  name: String,
+  refs: List(ProblemRef),
+) -> #(Model, Effect(Msg)) {
+  let m =
+    Model(
+      ..m,
+      queues: list.map(m.queues, fn(queue) {
+        case queue.name == name {
+          True ->
+            wire.Queue(
+              ..queue,
+              problems: list.filter(queue.problems, fn(ref) {
+                !list.contains(refs, ref)
+              }),
+            )
+          False -> queue
+        }
+      }),
+    )
+  #(m, store.save_queues(m))
+}
+
+/// Appends what the queue lacks, in the order given.
+fn add_to_named_queue(m: Model, name: String, refs: List(ProblemRef)) -> Model {
+  Model(
+    ..m,
+    queues: list.map(m.queues, fn(queue) {
+      case queue.name == name {
+        True ->
+          wire.Queue(
+            ..queue,
+            problems: list.append(
+              queue.problems,
+              list.filter(list.unique(refs), fn(ref) {
+                !list.contains(queue.problems, ref)
+              }),
+            ),
+          )
+        False -> queue
+      }
+    }),
+  )
+}
+
+/// Cards for whichever of these problems have none yet.
+fn enqueue_missing(m: Model, refs: List(ProblemRef)) -> #(Model, Effect(Msg)) {
+  case list.filter(refs, fn(ref) { !model.is_queued(m, ref) }) {
+    [] -> #(m, effect.none())
+    missing -> #(pending(m, missing), store.add_to_queue(m, missing))
+  }
+}
+
+/// Every card in the active queue that a Blitz can time: a problem with a
+/// harness, in a language this browser can run.
 fn blitz_pool(m: Model) -> List(ProblemRef) {
-  dict.keys(m.cards)
+  queue.scope(m)
   |> list.filter(fn(ref) {
     case problems.find(ref.category, ref.subcategory, ref.title) {
       Ok(current) ->
@@ -3151,6 +3492,11 @@ fn view(m: Model) -> Element(Msg) {
           case drill.view(m) {
             Ok(el) -> el
             Error(Nil) -> menu.view(m)
+          }
+        CompareRoute ->
+          case m.compare {
+            Some(c) -> compare_view.view(m, c)
+            None -> menu.view(m)
           }
         ReportRoute -> report.view(m)
         MenuRoute -> menu.view(m)

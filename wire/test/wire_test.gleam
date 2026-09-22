@@ -5,6 +5,7 @@
 import fsrs
 import gleam/json
 import gleam/option.{None, Some}
+import gleam/string
 import gleeunit
 import gleeunit/should
 import wire
@@ -184,9 +185,50 @@ pub fn boot_state_round_trips_test() {
       cards: [a_card()],
       drafts: [#(a_ref(), "draft body")],
       notes: [#(a_ref(), "watch the empty-list case")],
+      queues: [a_queue()],
       today: a_today(),
     )
   round_trip(state, wire.boot_state_to_json, wire.boot_state_decoder())
+}
+
+/// A boot state from a server that predates queues carries none.
+pub fn boot_state_without_queues_decodes_test() {
+  let state =
+    wire.BootState(
+      now: fsrs.from_epoch(1_787_788_818.0),
+      user: a_user(),
+      settings: wire.default_settings(),
+      cards: [],
+      drafts: [],
+      notes: [],
+      queues: [],
+      today: a_today(),
+    )
+  let body =
+    wire.boot_state_to_json(state)
+    |> json.to_string
+    |> string.replace("\"queues\":[],", "")
+  let assert Ok(decoded) =
+    json.parse(from: body, using: wire.boot_state_decoder())
+  assert decoded.queues == []
+}
+
+pub fn queue_round_trips_test() {
+  round_trip(a_queue(), wire.queue_to_json, wire.queue_decoder())
+  round_trip(
+    wire.Queue(name: "empty", problems: []),
+    wire.queue_to_json,
+    wire.queue_decoder(),
+  )
+}
+
+/// The PUT body and the GET response: the set, wrapped.
+pub fn queues_payload_round_trips_test() {
+  round_trip(
+    [a_queue(), wire.Queue(name: "later", problems: [a_ref(), a_ref()])],
+    wire.queues_to_json,
+    wire.queues_decoder(),
+  )
 }
 
 pub fn archive_round_trips_test() {
@@ -214,8 +256,21 @@ pub fn archive_round_trips_test() {
       ],
       drafts: [#(a_ref(), "draft body")],
       notes: [#(a_ref(), "note body")],
+      queues: [a_queue()],
     )
   round_trip(archive, wire.archive_to_json, wire.archive_decoder())
+}
+
+/// A version 1 file has no queues and must still restore.
+pub fn a_version_1_archive_decodes_without_queues_test() {
+  let body =
+    "{\"gleamdrill\":1,\"exportedAt\":1787788818.0,"
+    <> "\"settings\":"
+    <> json.to_string(wire.settings_to_json(wire.default_settings()))
+    <> ",\"cards\":[],\"reviews\":[]}"
+  let assert Ok(archive) = json.parse(from: body, using: wire.archive_decoder())
+  assert archive.version == 1
+  assert archive.queues == []
 }
 
 pub fn undo_outcome_round_trips_test() {
@@ -454,6 +509,10 @@ pub fn card_without_introduced_at_decodes_test() {
 }
 
 // --- fixtures --------------------------------------------------------------
+
+fn a_queue() -> wire.Queue {
+  wire.Queue(name: "Two Pointers · Go", problems: [a_ref()])
+}
 
 fn a_ref() -> wire.ProblemRef {
   wire.ProblemRef(

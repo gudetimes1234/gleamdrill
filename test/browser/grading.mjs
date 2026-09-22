@@ -89,10 +89,8 @@ const answerPickerIfShown = async () => {
   await page.waitForSelector(".study-screen", { timeout: 20000 });
 };
 
-/// A drill opens on its prompt page; the editor page is behind Enter.
+/// A drill opens with the prompt beside the editor and nothing focused.
 const startCoding = async () => {
-  await page.waitForSelector(".read-sheet", { timeout: 20000 });
-  await page.click(".read-start");
   await page.waitForSelector(".run-bar", { timeout: 20000 });
   await page.evaluate(() => document.activeElement?.blur());
 };
@@ -205,9 +203,10 @@ check("running the stub is a crash, reported as one",
   (await page.textContent(".results-summary")).includes("crashed"));
 await typeSolution("defmodule Solution do\n  def contains_duplicate?(nums) do\n    IO.puts(\"checking\")\n    MapSet.size(MapSet.new(nums)) != length(nums)\n  end\nend\n");
 await runTests();
+// Only failures get a row of their own; a pass is the summary line.
 check("a correct Elixir solution passes every case on the server",
-  (await page.$$(".case.pass")).length === 4 && (await page.$$(".case.fail")).length === 0,
-  `${(await page.$$(".case.pass")).length} passed`);
+  (await page.textContent(".results-summary")).includes("4/4 passed") && (await page.$$(".case.fail")).length === 0,
+  await page.textContent(".results-summary"));
 check("what the attempt printed comes back with it",
   (await page.textContent(".output-pane")).includes("checking"));
 // A scratch run goes to the server the same way, through the same

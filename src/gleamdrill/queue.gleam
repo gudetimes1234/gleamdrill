@@ -18,9 +18,11 @@
 //// answer it once and then suspend it.
 
 import fsrs
+import gleam/dict
 import gleam/int
 import gleam/list
-import gleam/option.{None, Some}
+import gleam/option.{type Option, None, Some}
+import gleam/set.{type Set}
 import gleam/string
 import gleamdrill/model.{type Model}
 import gleamdrill/problem.{type ProblemRef}
@@ -32,9 +34,29 @@ pub fn build(m: Model) -> List(ProblemRef) {
   list.append(due(m), fresh(m))
 }
 
+/// The problems a queue holds: every card for everything (`None`), or the
+/// named list. A name nobody has is an empty queue, not everything.
+pub fn members(m: Model, name: Option(String)) -> Set(ProblemRef) {
+  case name {
+    None -> set.from_list(dict.keys(m.cards))
+    Some(name) ->
+      case model.queue_named(m, name) {
+        Ok(queue) -> set.from_list(queue.problems)
+        Error(Nil) -> set.new()
+      }
+  }
+}
+
+/// The catalogue narrowed to the active queue, in catalogue order -- the
+/// order `fresh` relies on to interleave languages.
+pub fn scope(m: Model) -> List(ProblemRef) {
+  let here = members(m, m.active_queue)
+  problems.all_refs() |> list.filter(fn(ref) { set.contains(here, ref) })
+}
+
 /// Due cards the sitting would serve, most overdue first.
 pub fn due(m: Model) -> List(ProblemRef) {
-  problems.all_refs()
+  scope(m)
   |> list.filter(fn(ref) { model.is_due(m, ref) })
   |> list.sort(fn(a, b) { int.compare(due_seconds(m, a), due_seconds(m, b)) })
   |> list.take(m.today.reviews_remaining)
@@ -49,7 +71,7 @@ pub fn due(m: Model) -> List(ProblemRef) {
 /// from each in turn is what makes a two-language choice mean anything on day
 /// one.
 pub fn fresh(m: Model) -> List(ProblemRef) {
-  problems.all_refs()
+  scope(m)
   |> list.filter(fn(ref) { model.is_new(m, ref) })
   |> list.chunk(fn(ref) { ref.category })
   |> interleave
@@ -59,14 +81,14 @@ pub fn fresh(m: Model) -> List(ProblemRef) {
 /// Everything in the queue regardless of today's budget --
 /// what the queue screen manages, as opposed to what this sitting serves.
 pub fn queued(m: Model) -> List(ProblemRef) {
-  problems.all_refs() |> list.filter(fn(ref) { model.is_queued(m, ref) })
+  scope(m)
 }
 
 /// Queued problems still waiting for their first outing, budget ignored. The
 /// study screen needs this to tell "you have nothing queued" apart from
 /// "you have queued plenty and spent today's allowance".
 pub fn waiting_count(m: Model) -> Int {
-  problems.all_refs()
+  scope(m)
   |> list.count(fn(ref) { model.is_new(m, ref) })
 }
 
@@ -90,6 +112,9 @@ pub fn listed(m: Model) -> List(ProblemRef) {
     query -> problems.search_refs(query)
   }
 
+  // Membership in the queue being edited: the card itself for everything,
+  // the list for a named queue. Built once for the whole walk.
+  let here = members(m, m.queue_editing)
   refs
   |> list.filter(fn(ref) {
     case m.queue_language {
@@ -97,7 +122,7 @@ pub fn listed(m: Model) -> List(ProblemRef) {
       None -> True
     }
   })
-  |> list.filter(fn(ref) { matches_status(m, ref) })
+  |> list.filter(fn(ref) { matches_status(m, here, ref) })
 }
 
 /// `listed`, cut into topics: (category, subcategory, its rows), in order.
@@ -120,14 +145,19 @@ pub fn grouped(m: Model) -> List(#(String, String, List(ProblemRef))) {
 /// The rows a topic's bulk button would touch: its listed rows, narrowed to
 /// the ones the action can apply to, and to Easy when asked.
 pub fn group_rows(m: Model, change: model.GroupChange) -> List(ProblemRef) {
+  let here = members(m, m.queue_editing)
   listed(m)
   |> list.filter(fn(ref) {
     ref.category == change.category && ref.subcategory == change.subcategory
   })
   |> list.filter(fn(ref) {
-    case change.add {
-      True -> !model.is_queued(m, ref)
-      False -> model.is_new(m, ref)
+    // Under everything only an unanswered card can be removed (its log
+    // is the one thing that cannot be rebuilt); a named queue is a list,
+    // and any member can leave it.
+    case change.add, m.queue_editing {
+      True, _ -> !set.contains(here, ref)
+      False, None -> model.is_new(m, ref)
+      False, Some(_) -> set.contains(here, ref)
     }
   })
   |> list.filter(fn(ref) {
@@ -138,18 +168,20 @@ pub fn group_rows(m: Model, change: model.GroupChange) -> List(ProblemRef) {
   })
 }
 
-fn matches_status(m: Model, ref: ProblemRef) -> Bool {
+fn matches_status(m: Model, here: Set(ProblemRef), ref: ProblemRef) -> Bool {
+  let member = set.contains(here, ref)
   case m.queue_status {
     model.AnyStatus -> True
-    model.Queued -> model.is_queued(m, ref)
-    model.QueuedNew -> model.is_new(m, ref)
-    model.QueuedDue -> model.is_due(m, ref)
+    model.Queued -> member
+    model.QueuedNew -> member && model.is_new(m, ref)
+    model.QueuedDue -> member && model.is_due(m, ref)
     model.QueuedPaused ->
-      case model.card_for(m, ref) {
+      member
+      && case model.card_for(m, ref) {
         Some(state) -> state.suspended
         None -> False
       }
-    model.Unqueued -> !model.is_queued(m, ref)
+    model.Unqueued -> !member
   }
 }
 

@@ -34,8 +34,9 @@
     /* Overridden on narrow screens: anything under 16px makes iOS Safari zoom
        the page when the control takes focus. */
     --editor-font-size: 14px;
-    /* The editor's height on desktop until the handle under it is dragged. */
-    --editor-default-height: clamp(280px, 46svh, 800px);
+    /* The fixed status bar's height: the body pads for it, the drill screen
+       subtracts it. Zero on touch, where the bar is hidden. */
+    --statusbar-h: 30px;
 }
 
 * {
@@ -64,16 +65,18 @@ body {
 
 /* svh, not vh: on mobile browsers vh is the height *without* the address bar,
    so 100vh is taller than what you can actually see. */
+/* The viewport less the status bar, or every screen scrolls by the bar's
+   height for nothing. */
 #app {
-    min-height: 100vh;
-    min-height: 100svh;
+    min-height: calc(100vh - var(--statusbar-h));
+    min-height: calc(100svh - var(--statusbar-h));
     padding: 20px;
 }
 
-/* The drill is the one screen that wants the whole width: editor and
-   solution side by side, out to the edges. */
+/* The drill is the one screen that wants the whole viewport: editor and
+   solution side by side, flush with the browser's edges like an IDE. */
 #app:has(.drill-container) {
-    padding: 12px;
+    padding: 0;
 }
 
 .menu-container {
@@ -511,7 +514,15 @@ gleam-editor .cm-scroller {
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-bottom: 16px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+/* Banners above the header keep a gutter; everything below runs edge to
+   edge. */
+.drill-container > .storage-warning,
+.drill-container > .notices {
+    margin: 8px 12px 0;
 }
 
 .drill-title {
@@ -834,20 +845,18 @@ gleam-editor .cm-scroller {
     transition: width var(--ease);
 }
 
-/* The prompt page sits over the editor page. The editor page is parked
-   rather than removed -- CodeMirror stays mounted with its history -- and
-   made inert so nothing under the sheet can take focus. */
+/* The editor column and, beside it, the prompt sidebar. The sidebar is
+   the later child in the DOM -- the keyed editor column stays child 0 so
+   CodeMirror keeps its history whatever toggles -- and `order` puts it on
+   the left. */
 .drill-body {
-    position: relative;
+    display: flex;
+    min-height: 0;
 }
 
-.drill-main.parked {
-    position: absolute;
-    inset: 0;
-    height: 100%;
-    visibility: hidden;
-    overflow: hidden;
-    pointer-events: none;
+.drill-body > .drill-main {
+    flex: 1 1 0;
+    min-width: 0;
 }
 
 .drill-tools {
@@ -857,12 +866,12 @@ gleam-editor .cm-scroller {
     flex-shrink: 0;
 }
 
-.read-toggle {
+.prompt-toggle {
     padding: 6px 12px;
     font-size: 13px;
 }
 
-.read-toggle.active {
+.prompt-toggle.active {
     border-color: var(--accent);
     color: var(--text-primary);
 }
@@ -1161,7 +1170,6 @@ gleam-editor .cm-scroller {
 .drill-main {
     display: flex;
     flex-direction: column;
-    gap: 12px;
     min-width: 0;
 }
 
@@ -1174,6 +1182,34 @@ gleam-editor .cm-scroller {
 
 .editor-frame:focus-within {
     border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+}
+
+/* On the drill screen the panes are tiles, not cards: no radius, no shadow,
+   a 1px rule where two of them meet. The editor's focus ring becomes the
+   rule between it and the slot beside it. */
+.drill-container .editor-frame,
+.drill-container .results,
+.drill-container .output-below {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.drill-container .results,
+.drill-container .output-below {
+    border-top: 1px solid var(--border);
+}
+
+.drill-container .results-summary {
+    border-radius: 0;
+}
+
+.drill-container .editor-frame {
+    border-right: 1px solid var(--border);
+}
+
+.drill-container .editor-frame:focus-within {
+    border-right-color: color-mix(in srgb, var(--accent) 55%, var(--border));
 }
 
 /* The frame's top strip names the language of the code beneath it, in the
@@ -1247,6 +1283,8 @@ gleam-editor.resizing {
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
+    padding: 8px 12px;
+    border-top: 1px solid var(--border);
 }
 
 .run-unavailable {
@@ -1645,7 +1683,6 @@ button.results-summary:focus-visible {
    editor frame never remounts when the answer appears next to it. */
 .work-row {
     display: flex;
-    gap: 16px;
     align-items: stretch;
     min-width: 0;
 }
@@ -1655,15 +1692,24 @@ button.results-summary:focus-visible {
     min-width: 0;
 }
 
-/* The slot beside the editor: one pane at a time, the editor's height. */
+/* The slot beside the editor: one pane at a time, the editor's height. A
+   tile like the editor: its only border is the rule between the two, in the
+   pane's own colour. */
 .slot-pane {
     display: flex;
     flex-direction: column;
     flex: 1 1 46%;
     min-width: 280px;
-    max-height: var(--editor-default-height);
     overflow-y: auto;
     margin: 0;
+    border: 0;
+    border-left: 1px solid var(--border);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.slot-pane.answer-content {
+    border-left-color: var(--success);
 }
 
 /* Every pane has its own close, at every width. */
@@ -1672,6 +1718,7 @@ button.results-summary:focus-visible {
     align-items: center;
 }
 
+/* The compare screen's per-solution picker. */
 .solution-picker {
     display: flex;
     flex-wrap: wrap;
@@ -1679,9 +1726,28 @@ button.results-summary:focus-visible {
     margin-bottom: 10px;
 }
 
-.solution-picker .solution-button {
+/* The run bar's pane toggles: one per thing the slot can show, the open
+   one lit. A solution's is lit in the solution colour (above). */
+.pane-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.solution-picker .solution-button,
+.pane-button {
     font-size: 12px;
     padding: 4px 10px;
+}
+
+.pane-button.revealed {
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
+.pane-button.solution-button.revealed {
+    border-color: var(--success);
+    color: var(--success);
 }
 
 .note-pane .note-input {
@@ -1759,6 +1825,216 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
     background: none;
     text-decoration: line-through;
     text-decoration-color: color-mix(in srgb, var(--warning) 70%, transparent);
+}
+
+/* ---------- Compare ---------- */
+
+.compare-screen {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 8px 4px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.compare-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.compare-title {
+    margin: 0;
+    font-size: 18px;
+    color: var(--accent);
+}
+
+.compare-heads {
+    display: flex;
+    gap: 16px;
+}
+
+.compare-head {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.compare-problem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 8px;
+    font-size: 16px;
+}
+
+.compare-key {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-style: italic;
+}
+
+gleam-compare {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+gleam-compare .cm-editor {
+    font-size: 13px;
+}
+
+gleam-compare .cm-mergeView {
+    max-height: calc(100svh - 260px);
+}
+
+/* The differences are the noise here: what each problem does on its own is
+   dimmed, and the lines both share -- the technique's skeleton -- stay lit
+   with a bar down their side. The element marks them (editor_ffi.mjs,
+   sharedLines). */
+gleam-compare .cm-line {
+    border-left: 2px solid transparent;
+    opacity: 0.45;
+}
+
+gleam-compare .cm-line.cm-sharedLine {
+    border-left-color: var(--accent);
+    opacity: 1;
+}
+
+gleam-compare .cm-mergeSpacer {
+    background: transparent !important;
+}
+
+.compare-others {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.compare-other {
+    padding: 5px 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.compare-other.current {
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
+.compare-other-index {
+    opacity: 0.6;
+}
+
+/* ---------- Named queues ---------- */
+
+.queue-picker {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.queue-pick {
+    padding: 6px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.queue-pick:hover {
+    color: var(--text-primary);
+}
+
+.queue-pick.current {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg-primary);
+    font-weight: 600;
+}
+
+.queue-new {
+    border-style: dashed;
+}
+
+.queue-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.queue-name-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.queue-name-input {
+    flex: 1;
+    max-width: 320px;
+    padding: 8px 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+    font-size: 14px;
+}
+
+.add-to-queue {
+    position: relative;
+}
+
+.add-to-queue > summary {
+    list-style: none;
+    display: inline-block;
+}
+
+.add-to-queue > summary::-webkit-details-marker {
+    display: none;
+}
+
+.add-to-queue-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    min-width: 180px;
+    padding: 4px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+}
+
+.add-to-queue-option {
+    padding: 8px 10px;
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.add-to-queue-option:hover {
+    background: var(--bg-hover);
 }
 
 /* ---------- The walkthrough ---------- */
@@ -1936,20 +2212,40 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
     cursor: pointer;
 }
 
-/* Desktop only: a split pane. The column is the viewport's height; the
-   editor sits at its default (or dragged) height and never gives it up; the
-   results take what is left and scroll inside themselves. Before this the
-   work row was the column's only shrinkable child, so a long compile error
-   squeezed the editor to a sliver. */
+/* Desktop only: an IDE. The drill is exactly the viewport (less the status
+   bar) and never scrolls as a page: the header, output strip, run bar and
+   results are content-sized, and the work row -- editor beside the slot --
+   takes every pixel left over. The results are the one strip allowed to grow
+   into that space, and only to under half of it, so a long compile error
+   scrolls inside its box rather than squeezing the editor to a sliver. */
 @media (min-width: 901px) {
+    .drill-container {
+        display: flex;
+        flex-direction: column;
+        height: calc(100svh - var(--statusbar-h));
+        min-height: 0;
+    }
+
+    .drill-container > * {
+        flex: none;
+    }
+
+    /* The code drill's body, and the quiz and recall columns that stand in
+       for it, fill the container; whatever is inside scrolls. */
+    .drill-body,
+    .drill-container > .drill-main {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
     .drill-main {
-        height: calc(100vh - 140px);
-        height: calc(100svh - 140px);
+        flex: 1 1 auto;
+        min-height: 0;
         overflow-y: auto;
     }
 
     .work-row {
-        flex: none;
+        flex: 1 1 0;
         min-height: 0;
     }
 
@@ -1961,13 +2257,24 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
     .work-row .editor-frame gleam-editor {
         flex: 1 1 auto;
         min-height: 200px;
-        height: var(--editor-default-height);
     }
 
-    /* Content-sized, but the one child allowed to shrink: when the column is
-       short the body scrolls, and the summary line never leaves the screen. */
+    /* A dragged height pins the editor: the row stops growing and the space
+       goes back to the results. Double-clicking the handle clears it. */
+    gleam-editor[style*="height"] {
+        flex: none;
+    }
+
+    .work-row:has(gleam-editor[style*="height"]) {
+        flex: none;
+    }
+
+    /* Content-sized, capped, and the one child allowed to shrink: when the
+       column is short the body scrolls, and the summary line never leaves
+       the screen. */
     .drill-main .results {
         flex: 0 1 auto;
+        max-height: 45%;
     }
 
     /* Only a box with a body needs a floor; a bare verdict is one line. */
@@ -2007,7 +2314,20 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
         min-width: unset;
     }
 
-    /* One column: the revealed solution is a temporary overlay on top of the
+    /* One column: the prompt sits above the editor, capped so the editor
+       is still on the first screen, and scrolls inside itself. */
+    .drill-body {
+        flex-direction: column;
+    }
+
+    .prompt-side {
+        flex: none;
+        max-height: 45svh;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    /* The revealed solution is a temporary overlay on top of the
        editor rather than a panel under it, so the run bar stays put and the
        same button (or `s`) flips between reading and typing. The editor keeps
        its draft underneath: it is still the first child of .work-row and is
@@ -2094,7 +2414,6 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
             'title keymap';
         gap: 8px 12px;
         align-items: center;
-        margin-bottom: 12px;
     }
 
     .drill-header > .btn-secondary {
@@ -2131,10 +2450,6 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
         font-size: 20px;
     }
 
-    .read-start {
-        width: 100%;
-    }
-
     gleam-editor {
         min-height: min(45svh, 300px);
         max-height: 60svh;
@@ -2149,8 +2464,7 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
         position: sticky;
         bottom: 0;
         z-index: 2;
-        padding: 10px 0;
-        margin-bottom: -10px;
+        padding: 10px 12px;
         background: var(--bg-primary);
         border-top: 1px solid var(--border);
     }
@@ -2969,10 +3283,32 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
     gap: 22px;
 }
 
-/* --- the prompt page --- */
+/* --- the prompt: the recall card's page, and the drill's sidebar --- */
 
 .read-sheet {
     width: 100%;
+}
+
+/* The sidebar: the sheet's content in the column's chrome. After the sheet
+   rules on purpose, so its tighter measures win. */
+.prompt-side {
+    order: -1;
+    flex: 0 0 clamp(280px, 30%, 520px);
+    max-width: none;
+    margin: 0;
+    padding: 16px 18px 28px;
+    gap: 14px;
+    min-height: 0;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+}
+
+.prompt-side .read-title {
+    font-size: 18px;
+}
+
+.prompt-side .problem-prompt {
+    font-size: 14px;
 }
 
 .read-title {
@@ -3012,22 +3348,6 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
     margin: 0;
     color: var(--text-primary);
     white-space: pre-wrap;
-}
-
-.read-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.read-start {
-    font-size: 15px;
-    padding: 12px 22px;
-}
-
-.read-start kbd {
-    margin-left: 6px;
-    opacity: 0.7;
 }
 
 /* The recall card keeps the prompt on the page above it, narrower gaps. */
@@ -3891,16 +4211,16 @@ gleam-diff .cm-deletedChunk .cm-deletedText {
 /* The status bar is a keyboard artifact; on touch there is no keyboard and
    the 30px are better spent on content. */
 body {
-    padding-bottom: 30px;
+    padding-bottom: var(--statusbar-h);
 }
 
 @media (hover: none) {
-    .statusbar {
-        display: none;
+    :root {
+        --statusbar-h: 0px;
     }
 
-    body {
-        padding-bottom: 0;
+    .statusbar {
+        display: none;
     }
 }
 

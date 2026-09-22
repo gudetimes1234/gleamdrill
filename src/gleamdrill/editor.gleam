@@ -47,6 +47,24 @@ pub fn diagnostics(items: List(Diagnostic)) -> Attribute(msg) {
   )
 }
 
+/// Two texts side by side, differences marked: the compare screen.
+/// Rendered by the <gleam-compare> custom element.
+pub fn compare_view(
+  a: String,
+  b: String,
+  language_name: String,
+) -> Element(msg) {
+  element.element(
+    "gleam-compare",
+    [
+      attribute.property("a", json.string(a)),
+      attribute.property("b", json.string(b)),
+      attribute.attribute("language", language_name),
+    ],
+    [],
+  )
+}
+
 /// The user's code with the reference solution's differences marked inline,
 /// read-only. Rendered by the <gleam-diff> custom element.
 pub fn diff_view(

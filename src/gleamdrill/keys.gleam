@@ -13,27 +13,30 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
 import gleamdrill/model.{
-  type Key, type Model, type Msg, AuthRoute, AwaitingGrade, Coding, DrillRoute,
+  type CompareSide, type Key, type Model, type Msg, AuthRoute, AwaitingGrade,
+  CompareMoved, ComparePickedVariant, CompareRoute, DrillRoute,
   EditorFocusRequested, ExitConfirmed, HelpToggled, HintPane, ImportConfirmed,
-  MenuActivated, MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
-  MenuSuspendedAtCursor, MenuToggledAtCursor, NoPane, NoteFocusRequested,
-  NotePane, PickerConfirmed, PickerConfirmedWithStarter, PickerRoute,
-  QueueCursorJumped, QueueCursorMoved, QueueRoute, QueueToggledAtCursor,
-  QuizMoved, Ran, Reading, ReportRoute, SearchFocusRequested, SettingsRoute,
-  SolutionPane, StatsActivated, StatsCursorMoved, StatsRoute, StudyRoute,
-  SummaryRoute, TourActivated, TourContents, TourCursorMoved, TourLesson,
-  TourRoute, TourRunTicked, UserAddedAllShown, UserClickedBackToStudy,
-  UserClickedBrowse, UserClickedClearSelection, UserClickedExitDrill,
+  LeftSide, MenuActivated, MenuCursorJumped, MenuCursorMoved, MenuPaneFocused,
+  MenuRoute, MenuSuspendedAtCursor, MenuToggledAtCursor, NoPane,
+  NoteFocusRequested, NotePane, PickerConfirmed, PickerConfirmedWithStarter,
+  PickerRoute, QueueCursorJumped, QueueCursorMoved, QueueRoute,
+  QueueToggledAtCursor, QuizMoved, Ran, ReportRoute, RightSide,
+  SearchFocusRequested, SettingsRoute, SolutionPane, StatsActivated,
+  StatsCursorMoved, StatsRoute, StudyRoute, SummaryRoute, TourActivated,
+  TourContents, TourCursorMoved, TourLesson, TourRoute, TourRunTicked,
+  UserAddedAllShown, UserClickedBackToStudy, UserClickedBrowse,
+  UserClickedClearSelection, UserClickedCompare, UserClickedExitDrill,
   UserClickedExitReport, UserClickedNext, UserClickedQueue, UserClickedRecall,
   UserClickedRun, UserClickedScratchRun, UserClickedSelectAll,
   UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
   UserClickedStudy, UserClickedTour, UserClickedTourContents,
-  UserClickedTourNext, UserClickedTourPrev, UserClickedUndo, UserClosedDetail,
-  UserClosedWalk, UserFilteredQueue, UserGraded, UserOpenedWalk,
-  UserPickedChoice, UserRemovedAllShown, UserRevealedHint, UserRevealedRecall,
-  UserSearched, UserStartedCoding, UserSubmittedAnswer, UserToggledBlitz,
-  UserToggledDiff, UserToggledPane, UserToggledRead, UserToggledResults,
-  WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown, WalkPane, WalkWhyShown,
+  UserClickedTourNext, UserClickedTourPrev, UserClickedUndo, UserClosedCompare,
+  UserClosedDetail, UserClosedWalk, UserFilteredQueue, UserGraded,
+  UserOpenedWalk, UserPickedActiveQueue, UserPickedChoice, UserRemovedAllShown,
+  UserRevealedHint, UserRevealedRecall, UserSearched, UserSubmittedAnswer,
+  UserToggledBlitz, UserToggledDiff, UserToggledPane, UserToggledPrompt,
+  UserToggledResults, WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown,
+  WalkPane, WalkWhyShown,
 }
 import gleamdrill/problem
 import gleamdrill/problems
@@ -63,9 +66,10 @@ pub fn bindings(m: Model) -> List(Binding) {
     ]
     False, None, None ->
       case m.route {
-        StudyRoute -> study_bindings()
+        StudyRoute -> study_bindings(m)
         MenuRoute -> menu_bindings(m)
         DrillRoute -> drill_bindings(m)
+        CompareRoute -> compare_bindings()
         StatsRoute ->
           case m.detail {
             Some(_) -> [
@@ -163,21 +167,74 @@ pub fn bindings(m: Model) -> List(Binding) {
   }
 }
 
-fn study_bindings() -> List(Binding) {
+fn study_bindings(m: Model) -> List(Binding) {
+  list.flatten([
+    [
+      Binding(
+        ["Enter", "s"],
+        "study",
+        "Start studying what is due",
+        UserClickedStudy,
+      ),
+      Binding(
+        ["c"],
+        "recall",
+        "Recall what is due, no editor",
+        UserClickedRecall,
+      ),
+      Binding(
+        ["z"],
+        "blitz",
+        "A timed run of random problems",
+        UserToggledBlitz,
+      ),
+    ],
+    // Only once there is a second queue to step to.
+    case m.queues {
+      [] -> []
+      _ -> [
+        Binding(
+          ["n"],
+          "next queue",
+          "Study from the next queue",
+          UserPickedActiveQueue(model.next_queue(m)),
+        ),
+      ]
+    },
+    [
+      Binding(["q"], "queue", "Manage the study queue", UserClickedQueue),
+      Binding(["b"], "browse", "Browse problems by hand", UserClickedBrowse),
+      Binding(["t"], "stats", "Statistics", UserClickedStats),
+      Binding(["x"], "exam", "System design exam", UserClickedStartExam),
+      Binding(["g"], "tour", "Play the Gleam Language Tour", UserClickedTour),
+      help_binding(),
+    ],
+  ])
+}
+
+/// Two solutions side by side: the right one steps through the others,
+/// each side flips through its problem's solutions.
+fn compare_bindings() -> List(Binding) {
   [
     Binding(
-      ["Enter", "s"],
-      "study",
-      "Start studying what is due",
-      UserClickedStudy,
+      ["j", "k"],
+      "next / prev",
+      "The next or previous problem on the right",
+      CompareMoved(1),
     ),
-    Binding(["c"], "recall", "Recall what is due, no editor", UserClickedRecall),
-    Binding(["z"], "blitz", "A timed run of random problems", UserToggledBlitz),
-    Binding(["q"], "queue", "Manage the study queue", UserClickedQueue),
-    Binding(["b"], "browse", "Browse problems by hand", UserClickedBrowse),
-    Binding(["t"], "stats", "Statistics", UserClickedStats),
-    Binding(["x"], "exam", "System design exam", UserClickedStartExam),
-    Binding(["g"], "tour", "Play the Gleam Language Tour", UserClickedTour),
+    Binding(
+      ["]", "["],
+      "variant",
+      "The right side's next or previous solution",
+      ComparePickedVariant(RightSide, 0),
+    ),
+    Binding(
+      ["}", "{"],
+      "left variant",
+      "The left side's next or previous solution",
+      ComparePickedVariant(LeftSide, 0),
+    ),
+    Binding(["Escape", "b"], "browse", "Back to Browse", UserClosedCompare),
     help_binding(),
   ]
 }
@@ -312,6 +369,12 @@ fn menu_bindings(m: Model) -> List(Binding) {
         "Start drilling the selection",
         UserClickedStartDrill,
       ),
+      Binding(
+        ["v"],
+        "compare",
+        "Compare the selected solutions side by side",
+        UserClickedCompare,
+      ),
       Binding(["/"], "search", "Search problems", SearchFocusRequested),
       Binding(["g"], "top", "Jump to the first row", MenuCursorJumped(True)),
       Binding(["G"], "bottom", "Jump to the last row", MenuCursorJumped(False)),
@@ -350,39 +413,27 @@ fn menu_bindings(m: Model) -> List(Binding) {
 }
 
 fn drill_bindings(m: Model) -> List(Binding) {
-  case current_quiz(m), m.recall, m.stage, m.slot, m.walk {
-    Ok(_), _, _, _, _ -> quiz_bindings(m)
-    Error(Nil), True, _, _, _ -> recall_bindings(m)
-    Error(Nil), False, Reading, _, _ -> read_bindings(m)
+  case current_quiz(m), m.recall, m.slot, m.walk {
+    Ok(_), _, _, _ -> quiz_bindings(m)
+    Error(Nil), True, _, _ -> recall_bindings(m)
     // While the walkthrough is open it owns the keyboard: its layers, its
     // steps, and Escape to put it away. The grades stay reachable.
-    Error(Nil), False, Coding, WalkPane, Some(state) -> walk_bindings(m, state)
-    Error(Nil), False, Coding, _, _ -> code_bindings(m)
+    Error(Nil), False, WalkPane, Some(state) -> walk_bindings(m, state)
+    Error(Nil), False, _, _ -> code_bindings(m)
   }
 }
 
-/// The prompt page: read, then start. The panes are reachable from here
-/// too, and opening one is what turns the editor page over.
-fn read_bindings(m: Model) -> List(Binding) {
-  list.flatten([
-    [
-      Binding(["Enter", "i"], "start", "Start coding", UserStartedCoding),
-    ],
-    hint_binding(m),
-    [
-      Binding(["Escape"], "exit", "Exit the sitting", UserClickedExitDrill),
-      // The same key that brought the page up puts it away.
-      Binding(["p"], "editor", "Back to the editor", UserToggledRead),
-    ],
-    walk_binding(m),
-    solution_binding(m),
-    [
-      Binding(["m"], "note", "Write a note to future you", NoteFocusRequested),
-      Binding(["n"], "skip", "Skip to the next problem", UserClickedNext),
-    ],
-    undo_binding(m),
-    [help_binding()],
-  ])
+/// The prompt sidebar's key: the same one shows it and hides it.
+fn prompt_binding(m: Model) -> Binding {
+  Binding(
+    ["p"],
+    "prompt",
+    case m.prompt_open {
+      True -> "Hide the problem"
+      False -> "Show the problem"
+    },
+    UserToggledPrompt,
+  )
 }
 
 fn walk_bindings(m: Model, state: model.WalkState) -> List(Binding) {
@@ -431,7 +482,7 @@ fn walk_bindings(m: Model, state: model.WalkState) -> List(Binding) {
     solution_binding(m),
     [
       Binding(["m"], "note", "Write a note to future you", NoteFocusRequested),
-      Binding(["p"], "read", "Back to the problem", UserToggledRead),
+      prompt_binding(m),
     ],
   ])
 }
@@ -508,7 +559,7 @@ fn code_bindings(m: Model) -> List(Binding) {
         NotePane -> UserToggledPane(NotePane)
         _ -> NoteFocusRequested
       }),
-      Binding(["p"], "read", "Back to the problem", UserToggledRead),
+      prompt_binding(m),
     ],
     results_binding(m),
     diff_binding(m),
@@ -705,6 +756,13 @@ pub fn dispatch(m: Model, key: Key) -> Result(Msg, Nil) {
     "l", MenuRoute, False, False -> Ok(MenuPaneFocused(1))
     "k", QueueRoute, False, _ -> Ok(QueueCursorMoved(-1))
     "j", QueueRoute, False, _ -> Ok(QueueCursorMoved(1))
+    "k", CompareRoute, False, _ -> Ok(CompareMoved(-1))
+    "j", CompareRoute, False, _ -> Ok(CompareMoved(1))
+    // Shifted brackets arrive as braces, so the left side needs no leader.
+    "]", CompareRoute, False, _ -> compare_variant(m, RightSide, 1)
+    "[", CompareRoute, False, _ -> compare_variant(m, RightSide, -1)
+    "}", CompareRoute, False, _ -> compare_variant(m, LeftSide, 1)
+    "{", CompareRoute, False, _ -> compare_variant(m, LeftSide, -1)
     "k", TourRoute, False, _ ->
       case m.tour_page {
         TourContents -> Ok(TourCursorMoved(-1))
@@ -739,6 +797,25 @@ pub fn dispatch(m: Model, key: Key) -> Result(Msg, Nil) {
   }
 }
 
+fn compare_variant(
+  m: Model,
+  side: CompareSide,
+  delta: Int,
+) -> Result(Msg, Nil) {
+  case m.compare {
+    Some(c) ->
+      Ok(ComparePickedVariant(
+        side,
+        delta
+          + case side {
+          LeftSide -> c.variant_a
+          RightSide -> c.variant_b
+        },
+      ))
+    None -> Error(Nil)
+  }
+}
+
 fn lookup(m: Model, key: Key) -> Result(Msg, Nil) {
   bindings(m)
   |> list.find(fn(binding) { list.contains(binding.keys, key.key) })
@@ -758,6 +835,7 @@ pub fn context_label(m: Model) -> String {
     StudyRoute -> "STUDY"
     MenuRoute -> "BROWSE"
     QueueRoute -> "QUEUE"
+    CompareRoute -> "COMPARE"
     DrillRoute ->
       case current_quiz(m), m.recall {
         Ok(_), _ -> "QUIZ"
@@ -767,10 +845,9 @@ pub fn context_label(m: Model) -> String {
         Error(Nil), False ->
           case current_problem(m) {
             Ok(current) ->
-              case m.stage, m.blitz {
-                Reading, _ -> "READ"
-                Coding, Some(_) -> "BLITZ"
-                Coding, None -> "DRILL"
+              case m.blitz {
+                Some(_) -> "BLITZ"
+                None -> "DRILL"
               }
               <> " \u{b7} "
               <> string.uppercase(problem.language_label(current.language))

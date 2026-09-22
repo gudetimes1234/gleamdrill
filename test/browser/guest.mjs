@@ -82,10 +82,8 @@ const answerPickerIfShown = async () => {
   await page.waitForSelector(".study-screen", { timeout: 20000 });
 };
 
-/// A drill opens on its prompt page; the editor page is behind Enter.
+/// A drill opens with the prompt beside the editor and nothing focused.
 const startCoding = async () => {
-  await page.waitForSelector(".read-sheet", { timeout: 20000 });
-  await page.click(".read-start");
   await page.waitForSelector(".run-bar", { timeout: 20000 });
   await page.evaluate(() => document.activeElement?.blur());
 };
@@ -125,7 +123,7 @@ check("with real intervals", intervals[3] === "6d", intervals.join("/"));
 
 await page.click(".grade-good");
 await page.waitForTimeout(1200);
-check("grading advances to the next problem, on its prompt page", await page.isVisible(".read-sheet"));
+check("grading advances to the next problem, prompt beside the editor", await page.isVisible(".prompt-side"));
 
 console.log("== progress survives a reload");
 await page.goto(APP, { waitUntil: "networkidle" });
@@ -208,6 +206,12 @@ console.log("== upgrading keeps the schedule");
 await page.evaluate(() => {
   window.__guestCardCount =
     JSON.parse(localStorage.getItem("gleamDrill.guest.cards.v1") ?? "[]").length;
+  // A named queue rides up with the cards. Seeded straight into the store:
+  // this suite is about the upgrade, not the queue screen.
+  const first = JSON.parse(localStorage.getItem("gleamDrill.guest.cards.v1"))[0];
+  localStorage.setItem("gleamDrill.guest.queues.v1", JSON.stringify({
+    queues: [{ name: "Carried", problems: [{ category: first.category, subcategory: first.subcategory, title: first.title }] }],
+  }));
 });
 const EMAIL = `guest-${Math.floor(Math.random() * 1e9)}@example.com`;
 await page.click(".upgrade-prompt-cta");
@@ -228,6 +232,8 @@ const local = await page.evaluate(() =>
   localStorage.getItem("gleamDrill.guest.cards.v1"));
 check("the local copy was cleared", local === null || JSON.parse(local).length === 0,
   String(local).slice(0, 40));
+check("and so was the local queue",
+  (await page.evaluate(() => localStorage.getItem("gleamDrill.guest.queues.v1"))) === null);
 
 // The decisive check: the server holds the card the guest actually earned.
 const onServer = await page.evaluate(async (token) => {
@@ -236,6 +242,15 @@ const onServer = await page.evaluate(async (token) => {
   });
   return (await r.json()).cards;
 }, await page.evaluate(() => localStorage.getItem("gleamDrill.token")));
+const queuesOnServer = await page.evaluate(async (token) => {
+  const r = await fetch("http://127.0.0.1:1637/api/queues", {
+    headers: { authorization: "Bearer " + token },
+  });
+  return (await r.json()).queues;
+}, await page.evaluate(() => localStorage.getItem("gleamDrill.token")));
+check("the named queue went up with the cards",
+  queuesOnServer.length === 1 && queuesOnServer[0].name === "Carried" && queuesOnServer[0].problems.length === 1,
+  JSON.stringify(queuesOnServer));
 
 // Matched on category as well as title: the same problem exists once per
 // language, and queueing a topic brings all of those copies along, so a

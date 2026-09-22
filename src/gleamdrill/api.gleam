@@ -44,6 +44,9 @@ pub type CardState =
 pub type Today =
   wire.Today
 
+pub type Queue =
+  wire.Queue
+
 pub type Settings =
   wire.Settings
 
@@ -400,6 +403,23 @@ pub fn put_note(
   )
 }
 
+/// The whole set of named queues; the server replaces what it had.
+pub fn put_queues(
+  base: String,
+  token: String,
+  queues: List(Queue),
+  handler: fn(Result(Nil, ApiError)) -> message,
+) -> Effect(message) {
+  send_expecting_nothing(
+    base,
+    http.Put,
+    "/api/queues",
+    Some(token),
+    Some(wire.queues_to_json(queues)),
+    handler,
+  )
+}
+
 pub fn put_settings(
   base: String,
   token: String,
@@ -430,6 +450,7 @@ pub fn import_legacy(
   cards: List(CardState),
   drafts: List(#(ProblemRef, String)),
   notes: List(#(ProblemRef, String)),
+  queues: List(Queue),
   handler: fn(Result(Nil, ApiError)) -> message,
 ) -> Effect(message) {
   send_expecting_nothing(
@@ -446,6 +467,7 @@ pub fn import_legacy(
           }),
         ),
         #("cards", json.array(cards, card_json)),
+        #("queues", json.array(queues, wire.queue_to_json)),
         #("drafts", json.array(drafts, wire.draft_to_json)),
         #("notes", json.array(notes, wire.draft_to_json)),
       ]),

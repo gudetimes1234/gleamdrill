@@ -201,6 +201,7 @@ export function timeZone() {
 const APP_KEYS = new Set([
   "j", "k", "h", "l", "g", "G", "x", "a", "c", "d", "s", "n", "r", "b", "t",
   "i", "e", "m", "z", ",", "?", "/", "1", "2", "3", "4", "Enter", " ",
+  "v", "[", "]", "{", "}",
 ]);
 
 export function onKey(callback) {

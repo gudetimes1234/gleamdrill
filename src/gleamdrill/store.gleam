@@ -21,8 +21,8 @@ import gleamdrill/local
 import gleamdrill/model.{
   type Model, type Msg, type UndoPoint, Account, ArchiveReady, ArchiveRestored,
   CardSuspended, DraftSynced, Guest, HistoryLoaded, InsightsLoaded, NoteSynced,
-  QueueChanged, ReviewRecorded, SettingsSaved, StateLoaded, StatsLoaded,
-  UndoRecorded,
+  QueueChanged, QueuesSaved, ReviewRecorded, SettingsSaved, StateLoaded,
+  StatsLoaded, UndoRecorded,
 }
 import gleamdrill/problem.{type ProblemRef}
 import lustre/effect.{type Effect}
@@ -50,6 +50,7 @@ pub fn load_state(m: Model) -> Effect(Msg) {
             cards: dict.values(store.cards),
             drafts: store.drafts,
             notes: store.notes,
+            queues: store.queues,
             today: local.today(store, settings, now, day),
           )),
         ),
@@ -314,6 +315,24 @@ pub fn save_note(m: Model, problem: ProblemRef, body: String) -> Effect(Msg) {
   }
 }
 
+/// Persist the named queues, whole: the model owns the list, so the guest
+/// branch writes what it is given rather than merging.
+pub fn save_queues(m: Model) -> Effect(Msg) {
+  case m.mode {
+    Account(token) -> api.put_queues(base(), token, m.queues, QueuesSaved)
+    Guest -> {
+      use dispatch <- effect.from
+      let updated = local.Local(..local.load(), queues: m.queues)
+      dispatch(
+        QueuesSaved(case local.save_queues(updated) {
+          Ok(Nil) -> Ok(Nil)
+          Error(Nil) -> Error(storage_full())
+        }),
+      )
+    }
+  }
+}
+
 /// Persist the scheduler settings. Same shape as `save_draft`, with one
 /// difference worth naming: the server answers with the settings it stored, so
 /// the guest branch has to dispatch what it just wrote rather than `Nil`.
@@ -390,6 +409,7 @@ pub fn upgrade(
     dict.values(store.cards),
     store.drafts,
     store.notes,
+    store.queues,
     handler,
   )
 }

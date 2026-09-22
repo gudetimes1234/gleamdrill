@@ -40,6 +40,7 @@ pub fn handle(request: wisp.Request, context: Context) -> wisp.Response {
     ["api", "export"] -> study.export(request, context)
     ["api", "restore"] -> study.restore(request, context)
     ["api", "settings"] -> study.settings(request, context)
+    ["api", "queues"] -> study.queues(request, context)
     ["api", "stats"] -> study.stats(request, context)
     ["api", "insights"] -> study.insights(request, context)
     ["api", "history"] -> study.history(request, context)

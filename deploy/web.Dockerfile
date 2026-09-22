@@ -5,8 +5,9 @@
 #
 # `dist/` is committed and needs no build step to serve, which is how this has
 # always been deployed. The tradeoff is that a stale `dist/` ships silently, so
-# run `make build` before deploying. Building it in here instead would drag the
-# whole gleam + bun + vendored-runtime toolchain into the image.
+# run `make build` before deploying -- or `make hooks` once, which installs a
+# pre-push hook that does it for you. Building it in here instead would drag
+# the whole gleam + bun + vendored-runtime toolchain into the image.
 FROM docker.io/library/caddy:2-alpine
 
 COPY dist /srv

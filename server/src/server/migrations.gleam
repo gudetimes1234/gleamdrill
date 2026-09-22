@@ -24,8 +24,30 @@ pub fn all() -> List(Migration) {
     Migration(4, "recall_reviews", recall_reviews),
     Migration(5, "review_snapshots", review_snapshots),
     Migration(6, "reminders", reminders),
+    Migration(7, "queues", queues),
   ]
 }
+
+/// Named queues: a list of problems each, owned by the user and sent whole.
+/// Scheduling is untouched -- a card is still the memory of one problem,
+/// whichever queues list it. Dropping a queue drops its items with it.
+const queues: List(String) = [
+  "create table queues (
+     id       uuid primary key default gen_random_uuid(),
+     user_id  uuid not null references users(id) on delete cascade,
+     name     text not null,
+     position int not null default 0,
+     unique (user_id, name)
+   )",
+  "create table queue_items (
+     queue_id    uuid not null references queues(id) on delete cascade,
+     category    text not null,
+     subcategory text not null,
+     title       text not null,
+     position    int not null default 0,
+     primary key (queue_id, category, subcategory, title)
+   )",
+]
 
 /// The daily reminder: the local hour a user wants it (null is off), and a
 /// log of which study days one has gone out for, so a restart -- or a

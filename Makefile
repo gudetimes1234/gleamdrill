@@ -12,7 +12,7 @@ PY_RUNTIME_DIR  := assets/python-runtime/$(BRYTHON_VERSION)
         clean-vendor fsrs-test fsrs-vectors server-dev server-test \
         server-smoke app-test api-fixtures e2e tour serve-dist up down \
         down-clean check-versions check-format wire-test tour-check \
-        tour-vendor tour-report
+        tour-vendor tour-report hooks
 
 # The whole dev stack in one terminal: frontend on :1234, backend on :1637.
 # The app on :1234 points at 127.0.0.1:1637 (ffi.mjs apiBase), so the frontend
@@ -33,6 +33,13 @@ dev-api:
 
 build: vendor content worker
 	gleam run -m lustre/dev build
+
+# Turns on .githooks, whose pre-push rebuilds dist/ and refuses a push that
+# would ship a stale one. Idempotent; `git config --get core.hooksPath` says
+# whether it is on.
+hooks:
+	git config core.hooksPath .githooks
+	@echo "hooks on: $$(git config --get core.hooksPath)"
 
 # Both Railway services build from the repository root, so `dist/` must be
 # current before pushing: the web image copies it verbatim rather than building
