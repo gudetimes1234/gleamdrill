@@ -25,12 +25,27 @@ COPY --from=docker.io/oven/bun:1.3.14-alpine /usr/local/bin/bun /usr/local/bin/b
 RUN apk add --no-cache make
 
 WORKDIR /build
-COPY . .
+
+# Dependencies first, in their own layers, so editing a drill or a view does
+# not re-fetch anything. That is not only about speed: Hex rate-limits per IP,
+# CI builds this image and the api image back to back on one runner, and the
+# first version of this file failed there because `make bundle` re-resolved
+# from scratch on every build. A cached layer is what keeps a busy runner --
+# or a busy Railway builder -- from failing on somebody else's traffic.
+#
+# `gleam deps download` needs the path dependencies present to read their
+# manifests, which is why fsrs and wire are copied before the rest.
+COPY gleam.toml manifest.toml ./
+COPY fsrs fsrs
+COPY wire wire
+RUN gleam deps download
 
 # The TypeScript worker bundles `sucrase` out of node_modules, so the bundle
 # step needs the dependency tree even though nothing else here does.
+COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
+COPY . .
 RUN make bundle
 
 FROM docker.io/library/caddy:2-alpine
