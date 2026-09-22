@@ -11,32 +11,33 @@
 import fsrs
 import gleam/list
 import gleam/option.{None, Some}
+import gleam/result
 import gleam/string
 import gleamdrill/model.{
   type CompareSide, type Key, type Model, type Msg, AuthRoute, AwaitingGrade,
-  CompareMoved, ComparePickedVariant, CompareRoute, DrillRoute,
-  EditorFocusRequested, ExitConfirmed, HelpToggled, HintPane, ImportConfirmed,
-  LeftSide, MenuActivated, MenuCursorJumped, MenuCursorMoved, MenuPaneFocused,
-  MenuRoute, MenuSuspendedAtCursor, MenuToggledAtCursor, NoPane,
-  NoteFocusRequested, NotePane, PickerConfirmed, PickerConfirmedWithStarter,
-  PickerRoute, QueueCursorJumped, QueueCursorMoved, QueueRoute,
-  QueueToggledAtCursor, QuizMoved, Ran, ReportRoute, RightSide,
-  SearchFocusRequested, SettingsRoute, SolutionPane, StatsActivated,
-  StatsCursorMoved, StatsRoute, StudyRoute, SummaryRoute, TourActivated,
-  TourContents, TourCursorMoved, TourLesson, TourRoute, TourRunTicked,
-  UserAddedAllShown, UserClickedBackToStudy, UserClickedBrowse,
-  UserClickedClearSelection, UserClickedCompare, UserClickedExitDrill,
-  UserClickedExitReport, UserClickedNext, UserClickedQueue, UserClickedRecall,
-  UserClickedRun, UserClickedScratchRun, UserClickedSelectAll,
+  BoardJumped, BoardMoved, BoardShelfMoved, BoardToggledAtCursor, CompareMoved,
+  ComparePickedVariant, CompareRoute, DrillRoute, EditorFocusRequested,
+  ExitConfirmed, HelpToggled, HintPane, ImportConfirmed, LeftSide, MenuActivated,
+  MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
+  MenuSuspendedAtCursor, MenuToggledAtCursor, NoPane, NoteFocusRequested,
+  NotePane, PickerConfirmed, PickerConfirmedWithStarter, PickerRoute,
+  QueueCursorJumped, QueueCursorMoved, QueueRoute, QueueToggledAtCursor,
+  QuizMoved, Ran, ReportRoute, RightSide, SearchFocusRequested, SettingsRoute,
+  SolutionPane, StatsActivated, StatsCursorMoved, StatsRoute, StudyRoute,
+  SummaryRoute, TourActivated, TourContents, TourCursorMoved, TourLesson,
+  TourRoute, TourRunTicked, UserAddedAllShown, UserClickedBackToStudy,
+  UserClickedBrowse, UserClickedClearSelection, UserClickedCompare,
+  UserClickedExitDrill, UserClickedExitReport, UserClickedNext, UserClickedQueue,
+  UserClickedRecall, UserClickedRun, UserClickedScratchRun, UserClickedSelectAll,
   UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
   UserClickedStudy, UserClickedTour, UserClickedTourContents,
   UserClickedTourNext, UserClickedTourPrev, UserClickedUndo, UserClosedCompare,
   UserClosedDetail, UserClosedWalk, UserFilteredQueue, UserGraded,
   UserOpenedWalk, UserPickedActiveQueue, UserPickedChoice, UserRemovedAllShown,
   UserRevealedHint, UserRevealedRecall, UserSearched, UserSubmittedAnswer,
-  UserToggledBlitz, UserToggledDiff, UserToggledPane, UserToggledPrompt,
-  UserToggledResults, WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown,
-  WalkPane, WalkWhyShown,
+  UserSubmittedBoard, UserToggledBlitz, UserToggledDiff, UserToggledPane,
+  UserToggledPrompt, UserToggledResults, WalkAdvanced, WalkBacked, WalkCodeShown,
+  WalkHintShown, WalkPane, WalkWhyShown,
 }
 import gleamdrill/problem
 import gleamdrill/problems
@@ -413,13 +414,14 @@ fn menu_bindings(m: Model) -> List(Binding) {
 }
 
 fn drill_bindings(m: Model) -> List(Binding) {
-  case current_quiz(m), m.recall, m.slot, m.walk {
-    Ok(_), _, _, _ -> quiz_bindings(m)
-    Error(Nil), True, _, _ -> recall_bindings(m)
+  case current_kind(m), m.recall, m.slot, m.walk {
+    Ok(problem.QuizDrill), _, _, _ -> quiz_bindings(m)
+    Ok(problem.BoardDrill), _, _, _ -> board_bindings(m)
+    _, True, _, _ -> recall_bindings(m)
     // While the walkthrough is open it owns the keyboard: its layers, its
     // steps, and Escape to put it away. The grades stay reachable.
-    Error(Nil), False, WalkPane, Some(state) -> walk_bindings(m, state)
-    Error(Nil), False, _, _ -> code_bindings(m)
+    _, False, WalkPane, Some(state) -> walk_bindings(m, state)
+    _, False, _, _ -> code_bindings(m)
   }
 }
 
@@ -684,6 +686,54 @@ fn quiz_bindings(m: Model) -> List(Binding) {
   }
 }
 
+/// Thirty-six pieces is far too many for number keys, and 1-4 are the grade
+/// keys in every other context. The board borrows the queue screen's cursor
+/// shape instead, so the muscle memory transfers.
+fn board_bindings(m: Model) -> List(Binding) {
+  case m.graded {
+    False ->
+      list.flatten([
+        [
+          Binding(["j", "k"], "move", "Move between pieces", BoardMoved(1)),
+          Binding(
+            ["h", "l"],
+            "shelf",
+            "Previous/next shelf",
+            BoardShelfMoved(1),
+          ),
+          Binding(["g", "G"], "ends", "First/last piece", BoardJumped(True)),
+          Binding(
+            [" "],
+            "place",
+            "Put the piece on the board, or take it off",
+            BoardToggledAtCursor,
+          ),
+        ],
+        // Submitting nothing is not an answer, so the key is absent until
+        // something is on the board rather than present and inert.
+        case m.board_picks {
+          [] -> []
+          _ -> [
+            Binding(["Enter"], "submit", "Submit the board", UserSubmittedBoard),
+          ]
+        },
+        [
+          Binding(["Escape"], "exit", "Exit the drill", UserClickedExitDrill),
+          help_binding(),
+        ],
+      ])
+    True ->
+      list.flatten([
+        [Binding(["Enter", "n"], "next", "Next drill", UserClickedNext)],
+        results_binding(m),
+        [
+          Binding(["Escape"], "exit", "Exit the drill", UserClickedExitDrill),
+          help_binding(),
+        ],
+      ])
+  }
+}
+
 /// Only for problems whose plan is written as a walkthrough.
 fn walk_binding(m: Model) -> List(Binding) {
   case current_problem(m) {
@@ -783,15 +833,35 @@ pub fn dispatch(m: Model, key: Key) -> Result(Msg, Nil) {
         None -> Ok(StatsCursorMoved(1))
         Some(_) -> Error(Nil)
       }
+    // j/k and h/l share one Binding row each, so without these the second
+    // key of a pair would resolve to the first one's message and k would move
+    // down the list.
     "k", DrillRoute, False, _ ->
-      case current_quiz(m) {
-        Ok(_) -> Ok(QuizMoved(-1))
-        Error(Nil) -> lookup(m, key)
+      case current_kind(m) {
+        Ok(problem.QuizDrill) -> Ok(QuizMoved(-1))
+        Ok(problem.BoardDrill) -> Ok(BoardMoved(-1))
+        _ -> lookup(m, key)
       }
     "j", DrillRoute, False, _ ->
-      case current_quiz(m) {
-        Ok(_) -> Ok(QuizMoved(1))
-        Error(Nil) -> lookup(m, key)
+      case current_kind(m) {
+        Ok(problem.QuizDrill) -> Ok(QuizMoved(1))
+        Ok(problem.BoardDrill) -> Ok(BoardMoved(1))
+        _ -> lookup(m, key)
+      }
+    "h", DrillRoute, False, _ ->
+      case current_kind(m) {
+        Ok(problem.BoardDrill) -> Ok(BoardShelfMoved(-1))
+        _ -> lookup(m, key)
+      }
+    "l", DrillRoute, False, _ ->
+      case current_kind(m) {
+        Ok(problem.BoardDrill) -> Ok(BoardShelfMoved(1))
+        _ -> lookup(m, key)
+      }
+    "G", DrillRoute, False, _ ->
+      case current_kind(m) {
+        Ok(problem.BoardDrill) -> Ok(BoardJumped(False))
+        _ -> lookup(m, key)
       }
     _, _, _, _ -> lookup(m, key)
   }
@@ -837,12 +907,13 @@ pub fn context_label(m: Model) -> String {
     QueueRoute -> "QUEUE"
     CompareRoute -> "COMPARE"
     DrillRoute ->
-      case current_quiz(m), m.recall {
-        Ok(_), _ -> "QUIZ"
-        Error(Nil), True -> "RECALL"
+      case current_kind(m), m.recall {
+        Ok(problem.QuizDrill), _ -> "QUIZ"
+        Ok(problem.BoardDrill), _ -> "BOARD"
+        _, True -> "RECALL"
         // The language rides in the context, since Elixir and Python are
         // different sittings and the title alone does not say which.
-        Error(Nil), False ->
+        _, False ->
           case current_problem(m) {
             Ok(current) ->
               case m.blitz {
@@ -871,15 +942,12 @@ fn current_problem(m: Model) -> Result(problem.Problem, Nil) {
   }
 }
 
-fn current_quiz(m: Model) -> Result(problem.Quiz, Nil) {
-  case model.current_ref(m) {
-    Ok(ref) ->
-      case problems.find(ref.category, ref.subcategory, ref.title) {
-        Ok(found) -> option.to_result(found.quiz, Nil)
-        Error(Nil) -> Error(Nil)
-      }
-    Error(Nil) -> Error(Nil)
-  }
+/// What the open drill is, or `Error` when nothing is open. Every branch that
+/// used to ask "is there a quiz?" asks this instead, so a kind the table has
+/// no arm for is a compile error rather than a drill that silently gets the
+/// code editor's keys.
+fn current_kind(m: Model) -> Result(problem.Kind, Nil) {
+  current_problem(m) |> result.map(problem.kind)
 }
 
 /// The current problem's check, if it has one this browser can run.

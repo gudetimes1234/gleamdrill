@@ -9,6 +9,7 @@ import gleamdrill/problems/neetcode_go
 import gleamdrill/problems/neetcode_python
 import gleamdrill/problems/neetcode_ts
 import gleamdrill/problems/system_design
+import gleamdrill/problems/system_design_board
 import wire.{ProblemRef}
 
 /// Memoised: see problems_ffi.mjs. Deterministic, so the first call builds and
@@ -31,6 +32,7 @@ fn build() -> List(Category) {
     neetcode_elixir.category(),
     neetcode_go.category(),
     system_design.category(),
+    system_design_board.category(),
   ]
 }
 
@@ -48,11 +50,20 @@ pub fn quiz_pool() -> List(#(String, List(ProblemRef))) {
     #(
       sub,
       problems_in(system_design.name, sub)
+        // The sampler renders a multiple-choice question. Anything without a
+        // Quiz is not an exam question whatever category it landed in -- the
+        // board drills have their own, but the filter is what makes that a
+        // property of the problem rather than a convention about categories.
+        |> list.filter(fn(p: Problem) { p.quiz != None })
         |> list.map(fn(p: Problem) {
           ProblemRef(system_design.name, sub, p.title)
         }),
     )
   })
+  // Empty sections are dropped, not merely hidden: `sample_exam` divides the
+  // forty questions by the number of sections, so a section contributing
+  // nothing would shrink every other section's slice.
+  |> list.filter(fn(entry: #(String, List(ProblemRef))) { entry.1 != [] })
 }
 
 pub fn category_names() -> List(String) {
@@ -167,7 +178,9 @@ pub fn language_options() -> List(#(String, String)) {
 
 fn label_for(category: Category) -> String {
   case first_language(category) {
-    Ok(problem.Concept) | Error(Nil) -> category.name
+    // A concept or board category's name already says what it is ("System
+    // Design", "System Design Board"); the language label would only repeat it.
+    Ok(problem.Concept) | Ok(problem.Board) | Error(Nil) -> category.name
     Ok(language) -> problem.language_label(language)
   }
 }
@@ -197,6 +210,7 @@ pub fn language_tag(category_name: String) -> String {
         Ok(problem.TypeScript) -> "ts"
         Ok(problem.Elixir) -> "ex"
         Ok(problem.Go) -> "go"
+        Ok(problem.Board) -> "bd"
         Ok(problem.Concept) | Error(Nil) -> "sd"
       }
     Error(Nil) -> "??"

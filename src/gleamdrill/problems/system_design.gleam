@@ -375,6 +375,7 @@ fn q(
       explanation: explanation,
       page: page,
     )),
+    board: None,
     difficulty: None,
   )
 }

@@ -3,16 +3,17 @@ RUNTIME_DIR     := assets/gleam-runtime/$(GLEAM_VERSION)
 TARBALL_URL     := https://github.com/gleam-lang/gleam/releases/download/v$(GLEAM_VERSION)/gleam-v$(GLEAM_VERSION)-browser.tar.gz
 BRYTHON_VERSION := 3.14.3
 # `make worker` minifies with whatever bun is on PATH, and the output differs
-# between bun versions. dist/ is committed and CI checks it is current, so the
-# local bun and the one in ci.yml have to agree.
+# between bun versions. Pinned so a bundle built locally, in CI and in the web
+# image are the same bytes -- an unpinned bun makes a deploy differ from what
+# was tested for no reason anyone can see.
 BUN_VERSION     := 1.3.14
 PY_RUNTIME_DIR  := assets/python-runtime/$(BRYTHON_VERSION)
 
-.PHONY: dev dev-app dev-api build deploy vendor content verify worker run logs \
-        clean-vendor fsrs-test fsrs-vectors server-dev server-test \
+.PHONY: dev dev-app dev-api build bundle deploy vendor content verify worker \
+        run logs clean-vendor fsrs-test fsrs-vectors server-dev server-test \
         server-smoke app-test api-fixtures e2e tour serve-dist up down \
         down-clean check-versions check-format wire-test tour-check \
-        tour-vendor tour-report hooks
+        tour-vendor tour-report audit
 
 # The whole dev stack in one terminal: frontend on :1234, backend on :1637.
 # The app on :1234 points at 127.0.0.1:1637 (ffi.mjs apiBase), so the frontend
@@ -31,20 +32,20 @@ dev-api:
 	@[ -f server/.env ] || { echo "server/.env missing — copy server/.env.example and fill it in"; exit 1; }
 	cd server && set -a && . ./.env; set +a; gleam run
 
-build: vendor content worker
+build: vendor content bundle
+
+# dist/ from exactly the committed sources, with no content regeneration.
+#
+# This is what deploy/web.Dockerfile runs, which is why it is split out: the
+# image needs neither Elixir nor the drills tree, and it cannot silently ship a
+# bundle built from drill content the commit does not actually contain.
+bundle: worker
 	gleam run -m lustre/dev build
 
-# Turns on .githooks, whose pre-push rebuilds dist/ and refuses a push that
-# would ship a stale one. Idempotent; `git config --get core.hooksPath` says
-# whether it is on.
-hooks:
-	git config core.hooksPath .githooks
-	@echo "hooks on: $$(git config --get core.hooksPath)"
-
-# Both Railway services build from the repository root, so `dist/` must be
-# current before pushing: the web image copies it verbatim rather than building
-# it. `railway up` picks the service from the linked environment.
-deploy: build
+# Both Railway services build from the repository root; the web image builds
+# dist/ itself, so nothing has to be current here first. `railway up` picks the
+# service from the linked environment.
+deploy:
 	railway up
 
 # Regenerates src/gleamdrill/problems/embedded*.gleam from the drill sources,
@@ -176,6 +177,7 @@ e2e:
 	bun test/browser/flow.mjs
 	bun test/browser/grading.mjs
 	bun test/browser/guest.mjs
+	bun test/browser/board.mjs
 	bun test/browser/offline.mjs
 
 # Walks every route and every user-initiated message, photographing each state.
@@ -212,6 +214,17 @@ server-smoke:
 # The Makefile's own variables are the source of truth; this asserts the rest.
 check-versions:
 	./tools/check-versions.sh
+
+# Asks Jev (TypeSafe's System One model) the same rubric about every first-party
+# Gleam file, then ranks what is worth improving. Needs network and a key:
+# export TYPESAFE_API_KEY, see https://typesafe.ai. Deliberately out of `verify`
+# — it costs money and its output is a reading list, not a pass/fail.
+# Answers are cached under build/jev_audit by content hash, so a re-run only
+# pays for files that changed.
+AUDIT_TOP ?= 20
+audit:
+	tools/jev_audit.py fetch
+	tools/jev_audit.py report --top $(AUDIT_TOP)
 
 # Every package, including the generated content that `make content` formats.
 check-format:

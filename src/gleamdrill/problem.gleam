@@ -1,5 +1,6 @@
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleamdrill/board.{type Board}
 import wire
 
 /// Identifies one drill in the catalogue.
@@ -28,6 +29,11 @@ pub type Language {
   /// Used by the system design quiz, whose problems carry a Quiz instead of a
   /// Check.
   Concept
+  /// A fixed-palette board drill. Its own variant rather than reusing
+  /// `Concept` so the board gets its own two-letter tag, which the queue
+  /// filter and the first-run picker key on. Named for the type it goes with;
+  /// only `type Board` is imported here, so the constructor namespace is free.
+  Board
 }
 
 /// Everything needed to compile and grade an attempt in the browser. Gleam,
@@ -150,9 +156,38 @@ pub type Problem {
     language: Language,
     check: Option(Check),
     quiz: Option(Quiz),
+    /// The fixed-palette component-selection drill, if this is one. See
+    /// `gleamdrill/board`.
+    board: Option(Board),
     /// `None` for a quiz question, which has no LeetCode rating.
     difficulty: Option(Difficulty),
   )
+}
+
+/// What a drill *is*, derived from which slots it fills.
+///
+/// Every screen that renders a drill and every key table branches on this
+/// rather than on the Option fields, so adding a fourth kind is a compile
+/// error at each of them rather than a silent fall-through into the editor --
+/// which is exactly what a board drill (`check: None, quiz: None`) would have
+/// been.
+///
+/// Derived rather than stored: the three shapes of a code drill (harness,
+/// read-and-run, reveal-only) are already a function of `check`, and `recall`
+/// turns any of them into a flashcard at runtime. One more stored field would
+/// be one more thing to keep in agreement with the fields it is a function of.
+pub type Kind {
+  CodeDrill
+  QuizDrill
+  BoardDrill
+}
+
+pub fn kind(problem: Problem) -> Kind {
+  case problem.quiz, problem.board {
+    Some(_), _ -> QuizDrill
+    _, Some(_) -> BoardDrill
+    None, None -> CodeDrill
+  }
 }
 
 pub type Subcategory {
@@ -171,6 +206,7 @@ pub fn language_label(language: Language) -> String {
     Elixir -> "Elixir"
     Go -> "Go"
     Concept -> "Concept"
+    Board -> "System Design Board"
   }
 }
 
@@ -183,6 +219,7 @@ pub fn language_slug(language: Language) -> String {
     Elixir -> "elixir"
     Go -> "go"
     Concept -> "concept"
+    Board -> "board"
   }
 }
 

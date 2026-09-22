@@ -2592,6 +2592,176 @@ gleam-compare .cm-mergeSpacer {
     opacity: 0.7;
 }
 
+/* ---------- System design board ---------- */
+
+.board-palette {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.board-shelf-label {
+    margin: 0 0 8px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+/* Auto-fill rather than a fixed column count: the cursor walks the palette as
+   a flat list, so the grid is free to reflow without the keyboard caring. */
+.board-shelf-pieces {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 8px;
+}
+
+.board-chip {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    text-align: left;
+    font-family: inherit;
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 9px 11px;
+    cursor: pointer;
+    transition: border-color var(--ease), background var(--ease);
+}
+
+.board-chip:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: var(--bg-raised);
+}
+
+.board-chip.picked {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg-secondary));
+}
+
+/* The keyboard position, which is not a pick: an outline rather than a fill,
+   so a cursor resting on a piece never reads as having chosen it. */
+.board-chip.cursor {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+/* The four below are only ever applied after grading — before that they would
+   give the board away. */
+.board-chip.hit {
+    border-color: var(--success);
+    background: color-mix(in srgb, var(--success) 12%, var(--bg-secondary));
+    color: var(--success);
+}
+
+/* Required and not picked: the same green as a hit would say you got it. */
+.board-chip.missed {
+    border-color: var(--warning);
+    background: color-mix(in srgb, var(--warning) 10%, var(--bg-secondary));
+    color: var(--warning);
+}
+
+.board-chip.wrong {
+    border-color: var(--error);
+    background: color-mix(in srgb, var(--error) 12%, var(--bg-secondary));
+    color: var(--error);
+}
+
+/* Neither credited nor penalised, and it has to look like neither. */
+.board-chip.neutral {
+    border-color: var(--text-secondary);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+/* Graded chips are disabled, but they are the record of what you answered, so
+   they must not read as unavailable. */
+.board-chip:disabled {
+    cursor: default;
+    opacity: 1;
+}
+
+.board-chip-label {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.board-chip-why {
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    opacity: 0.75;
+}
+
+.board-chip.hit .board-chip-why,
+.board-chip.missed .board-chip-why,
+.board-chip.wrong .board-chip-why,
+.board-chip.neutral .board-chip-why {
+    color: inherit;
+    opacity: 0.7;
+}
+
+.board-count {
+    font-size: 12px;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+.board-verdict-group + .board-verdict-group {
+    margin-top: 14px;
+}
+
+.board-verdict-title {
+    margin: 0 0 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.board-missed .board-verdict-title {
+    color: var(--warning);
+}
+
+.board-wrong .board-verdict-title {
+    color: var(--error);
+}
+
+.board-neutral .board-verdict-title {
+    color: var(--text-secondary);
+}
+
+.board-verdict-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.board-verdict-list li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.board-verdict-piece {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.board-verdict-why {
+    font-size: 12px;
+    line-height: 1.65;
+    color: var(--text-secondary);
+}
+
 /* ---------- Report ---------- */
 
 .report-container {
@@ -3358,7 +3528,8 @@ gleam-compare .cm-mergeSpacer {
     padding-bottom: 16px;
 }
 
-.quiz-question {
+.quiz-question,
+.board-question {
     padding-top: 8px;
     padding-bottom: 8px;
 }

@@ -49,6 +49,7 @@ open http://localhost:8080
 | NeetCode 150 — Elixir, Go | 150 each, 2+ solutions per problem | server sandbox |
 | Gleam Language Tour | 63 lessons | browser, not scheduled |
 | System Design | 20 multiple-choice + exam mode | self-graded |
+| System Design Board | 6 component-selection boards, 36-piece palette | auto-graded |
 
 Every drill is a runnable file under `drills/` with its harness beside it;
 `make verify` checks every solution. Authoring conventions: [docs/design.md](docs/design.md#content).
@@ -60,16 +61,37 @@ Gleam 1.18.1, Erlang/OTP 27, bun 1.3.14, Postgres 13+; `python3`, `elixir`,
 
 ```sh
 make dev           # frontend :1234 + backend :1637
-make hooks         # pre-push rebuild of dist/, so a stale bundle cannot ship
 make build         # regenerate content, bundle workers, build dist/
+make bundle        # dist/ only, no content regeneration — what the web image runs
 make verify        # every solution + scheduler + app tests
 make e2e           # real browser against built app + backend
 make check-format  # gleam format --check, all four projects
 ```
 
 Layout: `src/` Lustre app, `server/` Wisp backend, `fsrs/` and `wire/`
-shared between both targets, `drills/` content, `dist/` committed build.
+shared between both targets, `drills/` content. `dist/` is build output, not
+committed — run `make build` once before `make e2e`, `make run` or
+`make serve-dist`, which all serve it.
 Why it is shaped this way, and how it deploys: [docs/design.md](docs/design.md).
+
+### Code audit
+
+`tools/jev_audit.py` asks [Jev](https://typesafe.ai) the same rubric about every
+first-party Gleam file — duplication, complexity, error handling, naming, risk if
+silently wrong — and ranks the answers. It needs `TYPESAFE_API_KEY` and network,
+so it is not part of `make verify`.
+
+```sh
+tools/jev_audit.py fetch --dry-run   # what would be asked, no network
+make audit                           # fetch, then the ranked list
+tools/jev_audit.py explain src/gleamdrill/model.gleam
+tools/jev_audit.py deep --top 10     # follow-up pass on the worst-ranked files
+```
+
+Answers are cached under `build/jev_audit/` by content hash: a re-run only pays
+for files that changed, and re-weighting in `WEIGHTS` costs nothing. The output
+is a ranked reading list, not a verdict — every row cites a path so it can be
+checked by hand.
 
 ## Contributing
 

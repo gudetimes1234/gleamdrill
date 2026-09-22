@@ -4,6 +4,7 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
+import gleamdrill/board
 import gleamdrill/editor
 import gleamdrill/insights
 import gleamdrill/model.{
@@ -15,9 +16,10 @@ import gleamdrill/model.{
   UserClickedRetryRuntime, UserClickedRun, UserClickedScratchRun,
   UserClickedStopRun, UserClickedUndo, UserClosedWalk, UserDismissedDiff,
   UserGraded, UserOpenedWalk, UserPickedChoice, UserRevealedHint,
-  UserRevealedRecall, UserSubmittedAnswer, UserToggledDiff, UserToggledPane,
-  UserToggledPrompt, UserToggledResults, UserToggledSolution, WalkAdvanced,
-  WalkBacked, WalkCodeShown, WalkHintShown, WalkPane, WalkWhyShown,
+  UserRevealedRecall, UserSubmittedAnswer, UserSubmittedBoard, UserToggledDiff,
+  UserToggledPane, UserToggledPiece, UserToggledPrompt, UserToggledResults,
+  UserToggledSolution, WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown,
+  WalkPane, WalkWhyShown,
 }
 import gleamdrill/problem.{
   type Problem, type ProblemRef, type Quiz, type Solution,
@@ -50,15 +52,15 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
   // An iteration is a pass over the whole selection, not a repeat of one
   // problem, so it reads first.
   let count = list.length(m.selected)
-  let progress = case current.quiz {
+  let progress = case problem.kind(current) {
     // An exam is a single pass, so the repetition counter would only ever read
     // "Pass 1/1".
-    Some(_) ->
+    problem.QuizDrill ->
       "Question "
       <> int.to_string(m.problem_index + 1)
       <> "/"
       <> int.to_string(count)
-    None ->
+    problem.BoardDrill | problem.CodeDrill ->
       "Pass "
       <> int.to_string(m.current_iteration)
       <> "/"
@@ -129,11 +131,14 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
       // picker is noise; a recall card says what it is instead. The prompt
       // sidebar's toggle is here too, for a thumb: `p` is no use on a
       // phone.
-      case current.quiz, m.recall {
-        Some(_), _ -> element.none()
-        None, True ->
+      case problem.kind(current), m.recall {
+        problem.QuizDrill, _ -> element.none()
+        // A board has nothing to type either, and its prompt is already the
+        // first thing on the page rather than a sidebar.
+        problem.BoardDrill, _ -> element.none()
+        problem.CodeDrill, True ->
           html.span([attribute.class("recall-chip")], [html.text("Recall")])
-        None, False ->
+        problem.CodeDrill, False ->
           html.div([attribute.class("drill-tools")], [
             html.button(
               [
@@ -159,29 +164,45 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
           html.text(progress),
           // A quiz is not timed against anything; a drill is timed against
           // the three-minute promise the stats screen measures.
-          case current.quiz, m.blitz {
-            Some(_), _ -> element.none()
+          case problem.kind(current), m.blitz {
+            problem.QuizDrill, _ -> element.none()
+            // A board is timed -- the fluent line is what separates an Easy
+            // from a Good -- so it keeps the clock the quiz does without.
+            problem.BoardDrill, _ -> clock(m)
             // A Blitz counts down; every other sitting counts up.
-            None, Some(blitz) -> countdown(m, blitz)
-            None, None -> clock(m)
+            problem.CodeDrill, Some(blitz) -> countdown(m, blitz)
+            problem.CodeDrill, None -> clock(m)
           },
         ],
       ),
     ]),
     exit_prompt(m),
     blitz_flash(m),
-    case current.quiz, m.recall {
-      Some(quiz), _ ->
-        html.div(
-          [attribute.class("drill-main")],
-          quiz_main(m, ref, current, quiz),
-        )
-      None, True ->
+    case problem.kind(current), m.recall {
+      problem.QuizDrill, _ ->
+        case current.quiz {
+          Some(quiz) ->
+            html.div(
+              [attribute.class("drill-main")],
+              quiz_main(m, ref, current, quiz),
+            )
+          None -> element.none()
+        }
+      problem.BoardDrill, _ ->
+        case current.board {
+          Some(answer) ->
+            html.div(
+              [attribute.class("drill-main")],
+              board_main(m, ref, current, answer),
+            )
+          None -> element.none()
+        }
+      problem.CodeDrill, True ->
         html.div([attribute.class("drill-main")], recall_main(m, ref, current))
       // The prompt sidebar comes and goes; the editor column stays child 0
       // of the same parent either way, so CodeMirror keeps its undo history
       // and cursor. The stylesheet puts the sidebar on the left (order: -1).
-      None, False ->
+      problem.CodeDrill, False ->
         keyed.div([attribute.class("drill-body")], [
           #(
             "main",
@@ -614,6 +635,206 @@ fn quiz_verdict(m: Model, quiz: Quiz) -> List(Element(Msg)) {
   }
 }
 
+// --- The system design board ------------------------------------------------
+
+/// The board replaces the editor and the run bar entirely, like the quiz. The
+/// whole palette is on screen from the moment it opens -- that is the point:
+/// a shortlist would turn recall into recognition -- and every piece stays
+/// clickable until Submit, after which all thirty-six are annotated and only
+/// Next remains.
+fn board_main(
+  m: Model,
+  ref: ProblemRef,
+  current: Problem,
+  answer: board.Board,
+) -> List(Element(Msg)) {
+  let question =
+    html.section([attribute.class("read-sheet board-question")], [
+      html.div([attribute.class("problem-category")], [
+        html.text(ref.category <> " \u{203a} " <> ref.subcategory),
+      ]),
+      prompt_block(current),
+    ])
+
+  [question, board_palette(m, answer), board_bar(m), ..board_verdict(m, answer)]
+}
+
+/// The palette, six labelled shelves in family order. One flat cursor index
+/// walks it: the columns are responsive, so true two-dimensional movement
+/// would be a lie about a layout that reflows.
+fn board_palette(m: Model, answer: board.Board) -> Element(Msg) {
+  html.div(
+    [attribute.class("board-palette")],
+    list.map(board.families(), fn(family) { board_shelf(m, answer, family) }),
+  )
+}
+
+fn board_shelf(
+  m: Model,
+  answer: board.Board,
+  family: board.Family,
+) -> Element(Msg) {
+  html.section(
+    [attribute.class("board-shelf board-shelf-" <> board.family_slug(family))],
+    [
+      html.h3([attribute.class("board-shelf-label")], [
+        html.text(board.family_label(family)),
+      ]),
+      html.div(
+        [attribute.class("board-shelf-pieces")],
+        list.map(board.pieces_in(family), fn(piece) {
+          board_chip(m, answer, piece)
+        }),
+      ),
+    ],
+  )
+}
+
+fn board_chip(
+  m: Model,
+  answer: board.Board,
+  piece: board.Piece,
+) -> Element(Msg) {
+  let index = board.index_of(piece)
+  let picked = list.contains(m.board_picks, piece.id)
+  let verdict = board.verdict(answer, piece, m.board_picks)
+  html.button(
+    [
+      attribute.id(model.board_chip_id(index)),
+      attribute.type_("button"),
+      attribute.classes([
+        #("board-chip", True),
+        #("picked", picked),
+        #("cursor", m.board_cursor == index),
+        // Only after grading does the styling say anything true about the
+        // answer, otherwise the board would give itself away.
+        #("hit", m.graded && verdict == board.Hit),
+        #("missed", m.graded && verdict == board.Missed),
+        #("wrong", m.graded && verdict == board.WrongPick),
+        #("neutral", m.graded && verdict == board.NeutralPick),
+      ]),
+      attribute.disabled(m.graded),
+      event.on_click(UserToggledPiece(piece.id)),
+    ],
+    [
+      html.span([attribute.class("board-chip-label")], [html.text(piece.label)]),
+      html.span([attribute.class("board-chip-why")], [html.text(piece.why)]),
+    ],
+  )
+}
+
+fn board_bar(m: Model) -> Element(Msg) {
+  html.div([attribute.class("run-bar")], case m.graded {
+    False -> [
+      html.button(
+        [
+          attribute.class("btn-primary"),
+          // Submitting nothing is not an answer; it is a way to mark a card
+          // Again without reading it.
+          attribute.disabled(m.board_picks == []),
+          event.on_click(UserSubmittedBoard),
+        ],
+        [html.text("Submit board")],
+      ),
+      html.span([attribute.class("board-count")], [
+        html.text(case list.length(m.board_picks) {
+          1 -> "1 piece on the board"
+          n -> int.to_string(n) <> " pieces on the board"
+        }),
+      ]),
+    ]
+    True -> [
+      html.button(
+        [
+          attribute.class("btn-primary next-button"),
+          event.on_click(UserClickedNext),
+        ],
+        [html.text("Next")],
+      ),
+    ]
+  })
+}
+
+/// After submitting: the score, then what was missed and what was spurious,
+/// each with the line that says why. Pieces answered correctly are not listed
+/// -- they are already green on the board, and the list is for reading what
+/// you got wrong.
+fn board_verdict(m: Model, answer: board.Board) -> List(Element(Msg)) {
+  case m.graded {
+    False -> []
+    True -> {
+      let graded = board.grade(m.board_picks, answer, 0)
+      let headline =
+        int.to_string(list.length(graded.hit))
+        <> "/"
+        <> int.to_string(list.length(answer.required))
+        <> case list.length(graded.wrong) {
+          0 -> ""
+          1 -> " \u{b7} 1 you do not need"
+          n -> " \u{b7} " <> int.to_string(n) <> " you do not need"
+        }
+      [
+        results_box(
+          m,
+          headline,
+          graded.rating != fsrs.Again,
+          None,
+          list.flatten([
+            board_list("Missing", "board-missed", graded.missed, fn(piece) {
+              board.why(answer, piece)
+            }),
+            board_list(
+              "Not needed here",
+              "board-wrong",
+              graded.wrong,
+              fn(piece) { piece.why },
+            ),
+            case graded.neutral {
+              [] -> []
+              picked ->
+                board_list(
+                  "Defensible, not required",
+                  "board-neutral",
+                  picked,
+                  fn(piece) { board.why(answer, piece) },
+                )
+            },
+          ]),
+        ),
+      ]
+    }
+  }
+}
+
+fn board_list(
+  title: String,
+  class: String,
+  pieces: List(board.Piece),
+  line: fn(board.Piece) -> String,
+) -> List(Element(Msg)) {
+  case pieces {
+    [] -> []
+    _ -> [
+      html.div([attribute.class("board-verdict-group " <> class)], [
+        html.h4([attribute.class("board-verdict-title")], [html.text(title)]),
+        html.ul(
+          [attribute.class("board-verdict-list")],
+          list.map(pieces, fn(piece) {
+            html.li([], [
+              html.span([attribute.class("board-verdict-piece")], [
+                html.text(piece.label),
+              ]),
+              html.span([attribute.class("board-verdict-why")], [
+                html.text(line(piece)),
+              ]),
+            ])
+          }),
+        ),
+      ]),
+    ]
+  }
+}
+
 fn marker(index: Int) -> String {
   case index {
     0 -> "A"
@@ -1020,7 +1241,7 @@ fn exit_prompt(m: Model) -> Element(Msg) {
 /// The grading bar: how a drill turns into a scheduled review.
 ///
 /// The rules, in order of precedence:
-///   * A quiz grades itself on submit — plain Next button.
+///   * A quiz or a board grades itself on submit — plain Next button.
 ///   * The FIRST encounter of a problem grades from the moment it opens.
 ///     Revealing the solution is how you learn something the first time —
 ///     flip the card, judge yourself.
@@ -1033,8 +1254,8 @@ fn exit_prompt(m: Model) -> Element(Msg) {
 ///     run and the reveal, so the stats stay honest without the buttons
 ///     policing you.
 fn grade_controls(m: Model, current: Problem) -> Element(Msg) {
-  case current.quiz {
-    Some(_) ->
+  case problem.kind(current) {
+    problem.QuizDrill | problem.BoardDrill ->
       html.button(
         [
           attribute.class("btn-primary next-button"),
@@ -1042,7 +1263,7 @@ fn grade_controls(m: Model, current: Problem) -> Element(Msg) {
         ],
         [html.text("Next")],
       )
-    None ->
+    problem.CodeDrill ->
       case m.grading {
         NotGrading ->
           html.span([attribute.class("grade-hint")], [

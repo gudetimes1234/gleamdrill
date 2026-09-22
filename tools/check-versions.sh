@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# The Gleam and Brython versions are pinned independently in eight places, and
-# the comments beside each one say they must agree. Nothing enforced that, so
-# this does: it takes the Makefile's variables as the source of truth and
-# asserts every other site names the same version.
+# The Gleam, Brython and bun versions are pinned independently in a dozen
+# places, and the comments beside each one say they must agree. Nothing
+# enforced that, so this does: it takes the Makefile's variables as the source
+# of truth and asserts every other site names the same version.
 #
 # A mismatch is not cosmetic. The browser runtime under assets/gleam-runtime is
 # the wasm build of exactly the compiler in GLEAM_VERSION, and runner.gleam
@@ -36,6 +36,7 @@ expect() {
 echo "Gleam $gleam_version (from Makefile GLEAM_VERSION)"
 expect .github/workflows/ci.yml      "gleam-version: \"$gleam_version\""        "ci.yml setup-beam"
 expect server/Dockerfile             "gleam:v$gleam_version-elixir-alpine"      "server/Dockerfile images"
+expect deploy/web.Dockerfile         "gleam:v$gleam_version-erlang-alpine"      "web.Dockerfile builder"
 expect src/gleamdrill/runner.gleam    "pub const gleam_version = \"$gleam_version\"" "runner.gleam gleam_version"
 expect src/gleamdrill/worker.gleam    "const default_version = \"$gleam_version\""   "worker.gleam default_version"
 expect drills/src/bundle_stdlib.gleam "const runtime_version = \"$gleam_version\""  "bundle_stdlib.gleam"
@@ -48,10 +49,11 @@ expect assets/sw.js                   "const PYTHON_RUNTIME = \"/python-runtime/
 
 echo "Bun $bun_version (from Makefile BUN_VERSION)"
 expect .github/workflows/ci.yml "bun-version: \"$bun_version\"" "ci.yml setup-bun"
+expect deploy/web.Dockerfile    "oven/bun:$bun_version-alpine"   "web.Dockerfile builder bun"
 
-# The bundles in dist/ were minified by whichever bun ran `make worker`, so a
-# local bun that disagrees with the pin produces a diff CI reads as staleness.
-# Warn rather than fail: not every task in this repo rebuilds dist.
+# `make worker` minifies with whichever bun is on PATH, so a local bun that
+# disagrees with the pin produces a bundle that differs from the one the web
+# image ships. Warn rather than fail: not every task in this repo rebuilds it.
 if command -v bun > /dev/null 2>&1; then
   installed=$(bun --version 2>/dev/null)
   if [ "$installed" = "$bun_version" ]; then

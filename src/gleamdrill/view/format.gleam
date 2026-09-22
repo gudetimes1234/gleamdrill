@@ -35,7 +35,9 @@ pub fn interval(seconds: Int) -> String {
 /// Nothing for a concept drill: there is no code to write.
 pub fn language_chip(language: Language) -> Element(msg) {
   case language {
-    problem.Concept -> element.none()
+    // Neither a concept drill nor a board has code to write, so neither gets
+    // a language chip.
+    problem.Concept | problem.Board -> element.none()
     _ ->
       html.span(
         [

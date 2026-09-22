@@ -1,13 +1,34 @@
 # Allow-list, because the excludes vastly outnumber the includes: the repo is
-# 278M but the two images between them need only `dist/` and the two Gleam
-# source trees. Sending the rest costs a multi-second upload on every build.
+# 278M and the two images between them need a fraction of it. Sending the rest
+# costs a multi-second upload on every build.
+#
+# Two things to know before editing:
+#
+#  1. A new path dependency in gleam.toml or server/gleam.toml must be added
+#     HERE as well as in the Dockerfile's own COPY, or the deploy fails while
+#     CI stays green -- a checkout simply has the package, so `gleam build`
+#     cannot catch it. Adding `wire` broke four consecutive api deploys.
+#  2. Everything from `!src` down is here for deploy/web.Dockerfile, which now
+#     builds dist/ instead of copying a committed one. None of it is
+#     convenience: `assets/` holds the vendored wasm compiler and the Brython
+#     runtime that the bundle copies into dist/, and package.json + bun.lock
+#     are there because the TypeScript worker bundles `sucrase` out of
+#     node_modules, so the builder has to `bun install` first. It costs the
+#     server image ~18M of context it does not use; one shared ignore file is
+#     worth more than shaving that.
 *
 
 !fsrs
 !wire
 !server
-!dist
 !deploy
+!src
+!assets
+!gleam.toml
+!manifest.toml
+!Makefile
+!package.json
+!bun.lock
 
 # Build output inside the allowed trees. These are stale host artifacts; the
 # image compiles its own.

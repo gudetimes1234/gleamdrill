@@ -20,6 +20,7 @@ import gleam/option.{None, Some}
 import gleam/string
 import gleam/time/timestamp
 import gleamdrill/api
+import gleamdrill/board
 import gleamdrill/compare
 import gleamdrill/insights
 import gleamdrill/keys
@@ -1046,6 +1047,8 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
       route: model.CompareRoute,
       compare: Some(model.Compare(a_catalogue_ref(), [], 0, 0, 0)),
     ),
+    on_a_board(),
+    model.Model(..on_a_board(), graded: True),
   ]
   use m <- list.each(contexts)
   let table = keys.bindings(m)
@@ -1409,6 +1412,56 @@ fn a_catalogue_ref() -> problem.ProblemRef {
 }
 
 /// A drill just opened on a Python problem, as `open_problem_view` leaves it.
+fn on_a_board() -> model.Model {
+  let ref =
+    wire.ProblemRef("System Design Board", "Designs", "Design a URL shortener")
+  model.Model(
+    ..model.open_problem_view(model.default(), ref),
+    route: model.DrillRoute,
+    selected: [ref],
+  )
+}
+
+/// The board's keys, and the one that must NOT be there: 1-4 are the grade
+/// keys everywhere else, and a board grades itself.
+pub fn the_board_has_cursor_keys_and_no_grade_keys_test() -> Nil {
+  let m = on_a_board()
+  let press = fn(m, key) {
+    keys.dispatch(
+      m,
+      model.Key(key: key, ctrl: False, shift: False, editing: "none"),
+    )
+  }
+
+  assert keys.context_label(m) == "BOARD"
+  assert press(m, "j") == Ok(model.BoardMoved(1))
+  assert press(m, "k") == Ok(model.BoardMoved(-1))
+  assert press(m, "l") == Ok(model.BoardShelfMoved(1))
+  assert press(m, "h") == Ok(model.BoardShelfMoved(-1))
+  assert press(m, "g") == Ok(model.BoardJumped(True))
+  assert press(m, "G") == Ok(model.BoardJumped(False))
+  assert press(m, " ") == Ok(model.BoardToggledAtCursor)
+  assert press(m, "Escape") == Ok(model.UserClickedExitDrill)
+
+  // Nothing on the board is not an answer, so Enter is absent rather than
+  // present and inert.
+  assert press(m, "Enter") == Error(Nil)
+  let placed = model.Model(..m, board_picks: ["memory_cache"])
+  assert press(placed, "Enter") == Ok(model.UserSubmittedBoard)
+
+  // The grade keys, and the editor, belong to a code drill.
+  assert press(m, "1") == Error(Nil)
+  assert press(m, "4") == Error(Nil)
+  assert press(m, "i") == Error(Nil)
+
+  // Graded, the board is a verdict: Next, fold the results, leave.
+  let graded = model.Model(..m, graded: True)
+  assert press(graded, "Enter") == Ok(model.UserClickedNext)
+  assert press(graded, "n") == Ok(model.UserClickedNext)
+  assert press(graded, "x") == Ok(model.UserToggledResults)
+  assert press(graded, " ") == Error(Nil)
+}
+
 fn on_a_drill() -> model.Model {
   let ref =
     wire.ProblemRef("NeetCode 150", "Arrays & Hashing", "Contains Duplicate")
@@ -1522,11 +1575,11 @@ pub fn new_cards_rotate_across_languages_test() -> Nil {
     |> list.unique
 
   assert list.length(picked) == 8
-  // Four NeetCode languages and System Design, so the first five cards are
-  // five different categories. A flat prefix would have yielded eight Python
-  // problems and one distinct language.
-  assert list.length(picked |> list.take(6)) == 6
-  assert list.length(languages) == 6
+  // Five NeetCode languages, the System Design quiz and the System Design
+  // board, so the first seven cards are seven different categories. A flat
+  // prefix would have yielded eight Python problems and one distinct language.
+  assert list.length(picked |> list.take(7)) == 7
+  assert list.length(languages) == 7
 }
 
 /// The queue is exactly what was queued: a language nobody added never
@@ -1825,4 +1878,312 @@ pub fn blitz_rank_tiers_by_share_passed_test() -> Nil {
   assert model.blitz_rank(0, 0) == "Warmup"
   assert model.blitz_rank(8, 10) == "Blazing"
   assert model.blitz_rank(6, 10) == "Sharp"
+}
+
+// --- The system design board ------------------------------------------------
+
+/// A six-piece design and a two-piece primitive, built from real palette
+/// pieces so the tests exercise the same equality the content does.
+fn six_piece_design() -> board.Board {
+  board.Board(
+    tier: board.Design,
+    required: [
+      board.relational_db,
+      board.memory_cache,
+      board.cdn,
+      board.l7_proxy,
+      board.sharding,
+      board.metrics,
+    ],
+    neutral: [board.read_replicas, board.geodns],
+    why: [#(board.sharding, "One store cannot hold it.")],
+  )
+}
+
+fn two_piece_primitive() -> board.Board {
+  board.Board(
+    tier: board.Primitive,
+    required: [board.memory_cache, board.cache_aside],
+    neutral: [board.cdn],
+    why: [],
+  )
+}
+
+fn ids(pieces: List(board.Piece)) -> List(String) {
+  list.map(pieces, fn(piece: board.Piece) { piece.id })
+}
+
+pub fn board_thresholds_are_the_documented_four_test() -> Nil {
+  let design = board.Design
+  // Easy needs a clean board inside the fluent line.
+  assert board.rating(100, 0, design, board.design_easy_ms) == fsrs.Easy
+  // One millisecond past it is a Good, not an Easy.
+  assert board.rating(100, 0, design, board.design_easy_ms + 1) == fsrs.Good
+  // A wrong pick costs Easy even at a hundred percent.
+  assert board.rating(100, 1, design, 0) == fsrs.Good
+
+  // The three boundaries, hit exactly.
+  assert board.rating(99, 0, design, 0) == fsrs.Good
+  assert board.rating(75, 0, design, 0) == fsrs.Good
+  assert board.rating(74, 0, design, 0) == fsrs.Hard
+  assert board.rating(50, 0, design, 0) == fsrs.Hard
+  assert board.rating(49, 0, design, 0) == fsrs.Again
+  assert board.rating(0, 0, design, 0) == fsrs.Again
+
+  // A primitive's fluent line is a third of a design's, and it is the tier
+  // that decides -- the same duration is Easy on one and Good on the other.
+  assert board.rating(100, 0, board.Primitive, board.primitive_easy_ms)
+    == fsrs.Easy
+  assert board.rating(100, 0, board.Primitive, board.design_easy_ms)
+    == fsrs.Good
+}
+
+pub fn a_wrong_pick_cancels_a_right_one_test() -> Nil {
+  let design = six_piece_design()
+  // Everything right, plus three pieces the design does not need.
+  let picks =
+    list.append(ids(design.required), [
+      board.message_queue.id,
+      board.search_index.id,
+      board.stream_log.id,
+    ])
+  let graded = board.grade(picks, design, 0)
+
+  assert list.length(graded.hit) == 6
+  assert list.length(graded.wrong) == 3
+  assert graded.missed == []
+  // Six right minus three spurious, over six required.
+  assert graded.percent == 50
+  assert graded.rating == fsrs.Hard
+}
+
+pub fn neutral_picks_are_neither_credited_nor_penalised_test() -> Nil {
+  let design = six_piece_design()
+  let bare = board.grade(ids(design.required), design, 0)
+  let padded =
+    board.grade(
+      list.append(ids(design.required), ids(design.neutral)),
+      design,
+      0,
+    )
+
+  // The denominator does not move and neither does the score.
+  assert bare.percent == padded.percent
+  assert bare.rating == padded.rating
+  assert bare.neutral == []
+  assert list.length(padded.neutral) == 2
+  assert padded.wrong == []
+}
+
+pub fn a_board_score_never_goes_below_again_test() -> Nil {
+  let primitive = two_piece_primitive()
+  // Pick the entire palette on a two-piece board: two hits, thirty-three
+  // wrong picks, a raw score of -31.
+  let graded = board.grade(ids(board.palette()), primitive, 0)
+
+  assert graded.percent == 0
+  assert graded.rating == fsrs.Again
+  assert list.length(graded.hit) == 2
+  assert list.length(graded.neutral) == 1
+  assert list.length(graded.wrong) == 33
+}
+
+pub fn an_empty_board_is_not_a_perfect_score_test() -> Nil {
+  // An authoring bug, caught by the content tests -- but the grader must not
+  // divide by zero or call it a hundred percent either way.
+  let empty =
+    board.Board(tier: board.Design, required: [], neutral: [], why: [])
+  let graded = board.grade([], empty, 0)
+  assert graded.percent == 0
+  assert graded.rating == fsrs.Again
+}
+
+pub fn the_board_easy_line_is_the_fluent_line_test() -> Nil {
+  // `board` cannot import `insights` without closing a cycle, so the number is
+  // repeated. This is the test that keeps the two copies in agreement.
+  assert board.design_easy_ms == insights.fluent_ms
+  assert board.primitive_easy_ms == insights.fluent_ms / 3
+}
+
+pub fn a_partial_board_grades_on_what_was_named_test() -> Nil {
+  let design = six_piece_design()
+  // Five of six, nothing spurious.
+  let graded =
+    board.grade(
+      [board.metrics.id, ..ids(list.take(design.required, 4))],
+      design,
+      0,
+    )
+  assert list.length(graded.hit) == 5
+  assert list.length(graded.missed) == 1
+  assert graded.percent == 83
+  assert graded.rating == fsrs.Good
+}
+
+pub fn every_piece_gets_a_verdict_test() -> Nil {
+  let design = six_piece_design()
+  let picks = [
+    board.relational_db.id,
+    board.read_replicas.id,
+    board.message_queue.id,
+  ]
+  // Required and picked, required and not, neutral and picked, spurious, and
+  // the untouched majority.
+  assert board.verdict(design, board.relational_db, picks) == board.Hit
+  assert board.verdict(design, board.cdn, picks) == board.Missed
+  assert board.verdict(design, board.read_replicas, picks) == board.NeutralPick
+  assert board.verdict(design, board.message_queue, picks) == board.WrongPick
+  assert board.verdict(design, board.search_index, picks) == board.Ignored
+}
+
+pub fn a_drill_can_override_why_a_piece_belongs_test() -> Nil {
+  let design = six_piece_design()
+  // Written for this drill.
+  assert board.why(design, board.sharding) == "One store cannot hold it."
+  // Not written, so the palette's own line stands.
+  assert board.why(design, board.cdn) == board.cdn.why
+}
+
+pub fn the_palette_is_six_shelves_of_six_test() -> Nil {
+  assert list.length(board.palette()) == 36
+  list.each(board.families(), fn(family) {
+    assert list.length(board.pieces_in(family)) == 6
+  })
+
+  // Ids are the stable key a pick is recorded as; two pieces sharing one would
+  // make a pick ambiguous.
+  let unique =
+    board.palette()
+    |> list.map(fn(piece: board.Piece) { piece.id })
+    |> list.unique
+  assert list.length(unique) == 36
+
+  // The palette is laid out shelf by shelf, so a flat cursor walking it never
+  // jumps between families mid-shelf.
+  let families =
+    list.map(board.palette(), fn(piece: board.Piece) { piece.family })
+  assert list.unique(families) == board.families()
+}
+
+pub fn the_cursor_addresses_the_palette_test() -> Nil {
+  assert board.at(0) == Ok(board.relational_db)
+  assert board.at(35) == Ok(board.canary_deploy)
+  assert board.at(36) == Error(Nil)
+  assert board.index_of(board.relational_db) == 0
+  assert board.index_of(board.canary_deploy) == 35
+  assert board.find("memory_cache") == Ok(board.memory_cache)
+  assert board.find("no_such_piece") == Error(Nil)
+}
+
+/// Every board drill in the catalogue, with its ref.
+fn all_boards() -> List(#(problem.ProblemRef, board.Board)) {
+  use ref <- list.filter_map(problems.all_refs())
+  case problems.find(ref.category, ref.subcategory, ref.title) {
+    Ok(found) ->
+      case found.board {
+        Some(b) -> Ok(#(ref, b))
+        None -> Error(Nil)
+      }
+    Error(Nil) -> Error(Nil)
+  }
+}
+
+pub fn every_board_piece_is_on_the_palette_test() -> Nil {
+  let boards = all_boards()
+  // The content is hand-authored; if this yields nothing the rest of the
+  // content tests would pass by vacancy.
+  assert boards != []
+
+  use #(ref, b) <- list.each(boards)
+  let named =
+    list.flatten([
+      b.required,
+      b.neutral,
+      list.map(b.why, fn(entry: #(board.Piece, String)) { entry.0 }),
+    ])
+  use piece <- list.each(named)
+  case board.find(piece.id) {
+    Ok(found) if found == piece -> Nil
+    _ -> panic as { ref.title <> " names a piece that is not on the palette" }
+  }
+}
+
+pub fn no_piece_is_both_required_and_neutral_test() -> Nil {
+  use #(ref, b) <- list.each(all_boards())
+  use piece <- list.each(b.neutral)
+  case list.contains(b.required, piece) {
+    // Required wins in the grader, so the neutral entry would be dead content
+    // -- and the author clearly meant one or the other.
+    True -> panic as { ref.title <> " lists " <> piece.id <> " twice" }
+    False -> Nil
+  }
+}
+
+pub fn a_primitive_is_one_family_and_at_most_three_pieces_test() -> Nil {
+  use #(ref, b) <- list.each(all_boards())
+  case b.tier {
+    board.Design -> Nil
+    board.Primitive -> {
+      let families =
+        b.required
+        |> list.map(fn(piece: board.Piece) { piece.family })
+        |> list.unique
+      case list.length(families), list.length(b.required) {
+        1, n if n >= 1 && n <= 3 -> Nil
+        _, _ ->
+          panic as {
+            ref.title <> " is a primitive but is not one family of one to three"
+          }
+      }
+    }
+  }
+}
+
+pub fn a_design_crosses_families_test() -> Nil {
+  use #(ref, b) <- list.each(all_boards())
+  case b.tier {
+    board.Primitive -> Nil
+    board.Design -> {
+      let families =
+        b.required
+        |> list.map(fn(piece: board.Piece) { piece.family })
+        |> list.unique
+      case list.length(families) >= 2, list.length(b.required) {
+        True, n if n >= 5 && n <= 9 -> Nil
+        _, _ ->
+          panic as {
+            ref.title
+            <> " is a design but is not five to nine pieces across families"
+          }
+      }
+    }
+  }
+}
+
+pub fn a_board_drill_is_never_in_the_exam_pool_test() -> Nil {
+  let refs = list.flat_map(problems.quiz_pool(), fn(entry) { entry.1 })
+  assert refs != []
+
+  use ref <- list.each(refs)
+  let assert Ok(found) = problems.find(ref.category, ref.subcategory, ref.title)
+  // The sampler renders a multiple-choice question. Anything else in the pool
+  // would render as a question with no choices.
+  assert problem.kind(found) == problem.QuizDrill
+}
+
+pub fn a_board_drill_is_classified_as_one_test() -> Nil {
+  let assert Ok(shortener) =
+    problems.find("System Design Board", "Designs", "Design a URL shortener")
+  assert problem.kind(shortener) == problem.BoardDrill
+  assert shortener.language == problem.Board
+  // No harness, no LeetCode rating, and -- like the quiz -- no hint ladder,
+  // because on a board the plan would be the answer.
+  assert shortener.check == None
+  assert shortener.difficulty == None
+  assert shortener.approach == []
+
+  // And the board gets its own tag, so the queue filter and the first-run
+  // picker can tell it from the quiz.
+  assert problems.language_tag("System Design Board") == "bd"
+  assert problems.language_tag("System Design") == "sd"
 }

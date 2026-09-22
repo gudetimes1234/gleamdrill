@@ -157,6 +157,12 @@ pub fn queue_row_id(index: Int) -> String {
   "queue-" <> int.to_string(index)
 }
 
+/// The board chip ids, shared by its renderer and the scroll effect for the
+/// same reason `queue_row_id` is.
+pub fn board_chip_id(index: Int) -> String {
+  "board-" <> int.to_string(index)
+}
+
 pub fn default_nav() -> MenuNav {
   MenuNav(
     focus: LanguagesPane,
@@ -483,8 +489,17 @@ pub type Model {
     picked_languages: List(String),
     /// Quiz option currently picked, before Submit is pressed.
     choice: Option(Int),
-    /// Whether the current quiz question has been submitted and graded.
+    /// Whether the current quiz question or board has been submitted and
+    /// graded.
     graded: Bool,
+    /// Pieces currently on the board, by id, before Submit is pressed. A list
+    /// rather than a set: there are thirty-six of them, and a list is what the
+    /// view maps over and what a test can write out literally.
+    board_picks: List(String),
+    /// Where the keyboard cursor sits in the flattened palette. The columns
+    /// reflow with the viewport, so the cursor walks the list rather than
+    /// pretending to be two-dimensional.
+    board_cursor: Int,
     /// This sitting's answers, in the order given. The report is computed from
     /// this rather than from card history, because a score must reflect one
     /// sitting and card state deliberately does not.
@@ -578,6 +593,8 @@ pub fn default() -> Model {
     picked_languages: [],
     choice: None,
     graded: False,
+    board_picks: [],
+    board_cursor: 0,
     exam_answers: [],
     sitting: [],
   )
@@ -724,6 +741,11 @@ pub fn open_problem_view(m: Model, problem: ProblemRef) -> Model {
     hints_revealed: hints,
     walk: None,
     walk_code_seen: False,
+    // Reset here rather than at each call site: this is the one function both
+    // `open_first` and `advance_inner` go through with a ref, so a board
+    // cannot open carrying the last one's picks.
+    board_picks: [],
+    board_cursor: 0,
   )
 }
 
@@ -998,6 +1020,14 @@ pub type Msg {
   MenuToggledAtCursor
   /// Move the quiz choice cursor by a delta.
   QuizMoved(Int)
+  /// Move the board cursor by a delta, within the flattened palette.
+  BoardMoved(Int)
+  /// Jump the board cursor to the first piece of the previous/next shelf.
+  BoardShelfMoved(Int)
+  /// Jump the board cursor to the first (True) or last piece.
+  BoardJumped(Bool)
+  /// Space on the cursor: put the piece on the board, or take it off.
+  BoardToggledAtCursor
   EditorFocusRequested
   SearchFocusRequested
   // --- session ---
@@ -1188,6 +1218,10 @@ pub type Msg {
   RuntimeLoadTimedOut(language: String)
   UserPickedChoice(Int)
   UserSubmittedAnswer
+  /// A board chip was clicked. Carries the piece id rather than its index, so
+  /// the click path does not depend on how the palette is ordered.
+  UserToggledPiece(String)
+  UserSubmittedBoard
   UserClickedStartExam
   ExamSampled(List(ProblemRef))
   UserClickedExitReport

@@ -224,6 +224,43 @@ turns a four-way question into a two-way one), and the correct answer is
 spread evenly across the four positions. Sections with no questions written
 yet are dropped from the menu rather than shown as dead ends.
 
+### The System Design Board
+
+A design interview is not a recall test about caching; it is a series of
+choices about which components a set of constraints forces. The **System
+Design Board** drills that directly. A scenario opens with the whole
+thirty-six piece palette on screen — six shelves of six, from Relational DB to
+Canary deploy — and you place the pieces the constraints demand. The palette is
+fixed: the *same* board on every drill, never a per-drill shortlist, because
+learning which thirty-six things exist and which shelf each sits on is half of
+what the drill teaches, and a shortlist would turn recall into recognition.
+
+Grading is the app's, not yours. A right piece counts, a piece the design does
+not need cancels one out, and pieces marked `neutral` — defensible but not
+forced, a CDN in front of a chat system — are neither credited nor penalised,
+so a thorough answer is not punished for being thorough. The score is
+`hit - wrong` over `required`, floored at zero, and the four thresholds are
+coarse on purpose: everything with nothing spurious inside the fluent line is
+Easy, three quarters is Good, half is Hard, less is Again. Time only ever costs
+you Easy; a board is thirty-six things to read, and a clock anywhere else on
+the scale would punish care. Submitting annotates every chip — what was
+missing, what was spurious, what was merely defensible — each with the line
+saying why.
+
+Two layers, listed in that order because catalogue order is introduction order:
+**Primitives** are one family and one to three pieces ("what do you reach for
+when reads repeat?"), and **Designs** are five to nine pieces across families
+("design a URL shortener"). There is no gate between them; the queue serves
+primitives first because the catalogue lists them first.
+
+Two authoring rules, both there to stop the score being a lie: `required` holds
+only what the scenario *forces*, and everything merely sensible goes in
+`neutral`; and every constraint in the prompt has to change which pieces are
+right, because decoration teaches the reader to skim the constraints — the one
+habit a design interview cannot afford. The palette lives in `board.gleam` as
+constants, so a drill's answer key references values rather than id strings and
+a typo is a compile error.
+
 ## Architecture
 
 ### The shared scheduler and wire format
@@ -251,9 +288,10 @@ until a drill of that language opens.
 
 Bun is pinned (1.3.14) alongside Gleam and Brython because `make worker`
 minifies the three worker bundles with whatever bun is on PATH, and the bytes
-differ between versions — enough to make CI's "is `dist/` stale?" check fail on
-minifier drift alone. `check-versions` warns when the bun on PATH disagrees
-with the pin. CI also builds both container images from the repository root,
+differ between versions — so the pin is what makes the bundle CI tested and the
+bundle the web image ships the same bytes. `check-versions` warns when the bun
+on PATH disagrees with the pin, and asserts the pin against every site that
+names it, `deploy/web.Dockerfile` included. CI also builds both container images from the repository root,
 the same context Railway uses, because the Dockerfiles were the one piece of
 configuration no test ever executed until a missing `COPY` failed four deploys
 in a row.
@@ -280,9 +318,12 @@ service needs `API_UPSTREAM=api.railway.internal:8080`; the api service needs
 `DATABASE_URL`, `SECRET_KEY_BASE`, `ALLOWED_ORIGIN` set to the public domain,
 and **`BIND=::`** rather than `0.0.0.0`, because Railway's private network is
 IPv6-only. Both services deploy from the GitHub `main` branch on push;
-`make deploy` (`railway up`) is the manual alternative. Either way, run
-`make build` and commit `dist/` first: the web image copies it verbatim rather
-than building it.
+`make deploy` (`railway up`) is the manual alternative. Nothing has to be built
+first: `deploy/web.Dockerfile` is multi-stage and compiles `dist/` itself, from
+exactly the sources in the commit. A broken build fails the deploy and leaves
+the last good image serving, which is why `dist/` is no longer committed — it
+used to be, and a commit could ship a bundle built from source it did not
+contain.
 
 Only ever run **one** api instance. It migrates the schema at boot assuming it
 is the sole writer; more than one needs a migration story first.
@@ -304,9 +345,12 @@ service needs `API_UPSTREAM=api.railway.internal:8080`; the api service needs
 `DATABASE_URL`, `SECRET_KEY_BASE`, `ALLOWED_ORIGIN` set to the public domain,
 and **`BIND=::`** rather than `0.0.0.0`, because Railway's private network is
 IPv6-only. Both services deploy from the GitHub `main` branch on push;
-`make deploy` (`railway up`) is the manual alternative. Either way, run
-`make build` and commit `dist/` first: the web image copies it verbatim rather
-than building it.
+`make deploy` (`railway up`) is the manual alternative. Nothing has to be built
+first: `deploy/web.Dockerfile` is multi-stage and compiles `dist/` itself, from
+exactly the sources in the commit. A broken build fails the deploy and leaves
+the last good image serving, which is why `dist/` is no longer committed — it
+used to be, and a commit could ship a bundle built from source it did not
+contain.
 
 Only ever run **one** api instance. It migrates the schema at boot assuming it
 is the sole writer; more than one needs a migration story first.

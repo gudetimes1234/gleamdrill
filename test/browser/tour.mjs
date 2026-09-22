@@ -457,7 +457,7 @@ await page.waitForSelector(".menu-container", { timeout: 10000 });
 check("the pane browser renders", (await page.$$(".pane")).length >= 2);
 const languageRows = await page.$$eval(".pane:first-child .pane-item", (n) => n.map((e) => e.textContent.trim()));
 check("the first pane is languages",
-  JSON.stringify(languageRows) === '["Python","Gleam","TypeScript","Elixir","Go","System Design"]',
+  JSON.stringify(languageRows) === '["Python","Gleam","TypeScript","Elixir","Go","System Design","System Design Board"]',
   JSON.stringify(languageRows));
 check("tips categories are hidden",
   !languageRows.some((l) => l.includes("Tips")));
@@ -1657,6 +1657,73 @@ if (reported) {
 check("the report returns to where the exam started",
   await page.isVisible(".study-screen").catch(() => false));
 
+// ---------------------------------------------------------------- act 6a
+act = "06a-design-board";
+console.log(act);
+exercises("UserClickedStartDrill", "UserToggledPiece", "UserSubmittedBoard",
+  "BoardMoved", "BoardShelfMoved", "BoardJumped", "BoardToggledAtCursor");
+
+await goHome();
+await page.click("text=Browse problems");
+await page.waitForSelector(".menu-container", { timeout: 10000 });
+await page.click('.pane-item:text-is("System Design Board")');
+await page.waitForTimeout(300);
+await page.click('.pane-item:text-is("Designs")');
+await page.waitForTimeout(300);
+await page.click('.pane-item:text-is("Design a URL shortener")');
+await page.waitForTimeout(300);
+await page.waitForFunction(
+  () => { const b = document.querySelector("#startDrill"); return b && !b.disabled; },
+  { timeout: 5000 },
+);
+await page.click("#startDrill");
+await page.waitForSelector(".board-palette", { timeout: 20000 });
+
+const chips = (await page.$$(".board-chip")).length;
+check("the whole palette opens with the board", chips === 36, `${chips} chips`);
+check("the palette is laid out in shelves",
+  (await page.$$(".board-shelf")).length === 6);
+// The two regression guards: a board must not get the code editor, and it must
+// not get the four self-grade buttons on top of a drill that grades itself.
+check("a board has no editor", (await page.$("gleam-editor")) === null);
+check("a board has no grade bar", (await page.$(".grade-bar")) === null);
+check("nothing says anything true about the answer before submitting",
+  (await page.$$(".board-chip.hit, .board-chip.missed, .board-chip.wrong")).length === 0);
+await capture("board-open", "System design board: scenario and the full palette");
+
+// Keyboard: move, jump a shelf, jump to the ends, then place a piece.
+await page.keyboard.press("j");
+await page.keyboard.press("l");
+await page.keyboard.press("G");
+await page.keyboard.press("g");
+await page.keyboard.press(" ");
+await page.waitForTimeout(300);
+check("space places the piece under the cursor",
+  (await page.$$(".board-chip.picked")).length === 1);
+
+// And the mouse, for two more.
+const spare = await page.$$(".board-chip:not(.picked)");
+await spare[3].click();
+await spare[9].click();
+await page.waitForTimeout(300);
+check("clicking a chip places it",
+  (await page.$$(".board-chip.picked")).length === 3);
+await capture("board-picked", "Three pieces placed, before submitting");
+
+await page.click('button:text-is("Submit board")');
+await page.waitForSelector(".results-summary", { timeout: 10000 });
+check("submitting grades the board",
+  (await page.$$(".results-summary")).length === 1);
+check("the verdict annotates the palette",
+  (await page.$$(".board-chip.missed")).length > 0);
+check("a graded board offers Next, not a grade bar",
+  (await page.$(".grade-bar")) === null);
+await capture("board-graded", "Graded: score, what was missed, what was spurious");
+
+await page.click('button:text-is("Next")').catch(() => {});
+await page.waitForTimeout(600);
+await goHome();
+
 // ---------------------------------------------------------------- act 7
 act = "06b-settings";
 console.log(act);
@@ -2592,6 +2659,8 @@ const declared = [
   "TourEditorChanged", "TourCursorMoved", "TourActivated",
   "QueueCursorMoved", "QueueCursorJumped", "QueueToggledAtCursor",
   "UserPickedChoice", "UserSubmittedAnswer",
+  "UserToggledPiece", "UserSubmittedBoard", "BoardMoved", "BoardShelfMoved",
+  "BoardJumped", "BoardToggledAtCursor",
   "UserClickedStartExam", "UserClickedExitReport",
   "PickerToggledLanguage", "PickerConfirmed", "PickerConfirmedWithStarter",
   "UserAddedStarterSet",

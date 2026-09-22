@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <!-- Catppuccin Mocha: the app's own --bg-primary, --border, --accent, --success. -->
-  <rect width="32" height="32" rx="7" fill="#181825"/>
-  <rect x="0.5" y="0.5" width="31" height="31" rx="6.5" fill="none" stroke="#313244"/>
-  <g fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M9 11 L15 16 L9 21" stroke="#89b4fa"/>
-    <path d="M18 21 L23 21" stroke="#a6e3a1"/>
-  </g>
-</svg>

@@ -3,6 +3,15 @@ build/
 /.lustre
 node_modules/
 
+# Build output. deploy/web.Dockerfile compiles dist/ in a builder stage rather
+# than copying a committed one, so nothing generated needs to be in the tree.
+# `make build` puts it back locally; `make serve-dist`, `make run` and the
+# browser suites want it there first.
+/dist/
+/assets/worker-main.js
+/assets/python-worker-main.js
+/assets/ts-worker-main.js
+
 # Scratch tree `gleam run -m generate` builds so each TypeScript variant gets
 # the sibling ./solution module its harness imports.
 drills/ts/.verify/
@@ -16,3 +25,6 @@ server/.env
 
 # Crash dumps the BEAM drops in the working directory.
 erl_crash.dump
+
+# Python bytecode from tools/.
+__pycache__/

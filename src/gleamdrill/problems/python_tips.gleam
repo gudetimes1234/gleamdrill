@@ -66,6 +66,7 @@ fn drill(title: String, prompt: String, e: Embedded) -> Problem {
     language: Python,
     check: Some(e.check),
     quiz: None,
+    board: None,
     difficulty: None,
   )
 }

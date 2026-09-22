@@ -12,6 +12,7 @@ import gleam/string
 import gleam/time/calendar
 import gleam/time/timestamp
 import gleamdrill/api
+import gleamdrill/board
 import gleamdrill/browser
 import gleamdrill/compare
 import gleamdrill/editor
@@ -21,7 +22,8 @@ import gleamdrill/legacy
 import gleamdrill/local
 import gleamdrill/model.{
   type Model, type Msg, Account, ArchiveReady, ArchiveRestored, AuthCompleted,
-  AuthForm, AuthRoute, AwaitingGrade, BlitzExpired, CacheMeasured, CacheWarmed,
+  AuthForm, AuthRoute, AwaitingGrade, BlitzExpired, BoardJumped, BoardMoved,
+  BoardShelfMoved, BoardToggledAtCursor, CacheMeasured, CacheWarmed,
   CardSuspended, CaseResult, Cases, ClockTicked, CompareMoved,
   ComparePickedVariant, CompareRoute, DayStartHour, DesiredRetention,
   DraftSaveTicked, DraftSynced, DrillRoute, EditorChanged, EditorFocusRequested,
@@ -65,10 +67,11 @@ import gleamdrill/model.{
   UserRevealedHint, UserRevealedRecall, UserSearched, UserSearchedQueue,
   UserSelectedQueue, UserStartedBlitz, UserStartedNewQueue,
   UserStartedRenameQueue, UserSubmittedAnswer, UserSubmittedAuth,
-  UserSubmittedQueueName, UserToggledAuthMode, UserToggledBlitz, UserToggledDiff,
-  UserToggledPane, UserToggledProblem, UserToggledPrompt, UserToggledQueued,
-  UserToggledResults, UserToggledSolution, UserToggledSuspend, WalkAdvanced,
-  WalkBacked, WalkCodeShown, WalkHintShown, WalkPane, WalkWhyShown,
+  UserSubmittedBoard, UserSubmittedQueueName, UserToggledAuthMode,
+  UserToggledBlitz, UserToggledDiff, UserToggledPane, UserToggledPiece,
+  UserToggledProblem, UserToggledPrompt, UserToggledQueued, UserToggledResults,
+  UserToggledSolution, UserToggledSuspend, WalkAdvanced, WalkBacked,
+  WalkCodeShown, WalkHintShown, WalkPane, WalkWhyShown,
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
@@ -761,6 +764,51 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           #(Model(..m, choice: Some(next)), effect.none())
         }
         _, _ -> #(m, effect.none())
+      }
+
+    BoardMoved(delta) ->
+      case m.graded {
+        True -> #(m, effect.none())
+        False -> move_board_cursor(m, m.board_cursor + delta)
+      }
+
+    BoardShelfMoved(delta) ->
+      case m.graded, board.at(m.board_cursor) {
+        False, Ok(piece) -> {
+          // Shelves are six long and laid out in order, so the next one
+          // starts at the first piece whose family differs -- found by
+          // walking the family list rather than by arithmetic, so a shelf
+          // that changes size does not break the jump.
+          let shelves = board.families()
+          let here = index_of_family(shelves, piece.family, 0)
+          let assert Ok(target) =
+            list.drop(
+              shelves,
+              int.clamp(here + delta, 0, list.length(shelves) - 1),
+            )
+            |> list.first
+          case list.first(board.pieces_in(target)) {
+            Ok(first) -> move_board_cursor(m, board.index_of(first))
+            Error(Nil) -> #(m, effect.none())
+          }
+        }
+        _, _ -> #(m, effect.none())
+      }
+
+    BoardJumped(to_top) ->
+      case m.graded {
+        True -> #(m, effect.none())
+        False ->
+          move_board_cursor(m, case to_top {
+            True -> 0
+            False -> list.length(board.palette()) - 1
+          })
+      }
+
+    BoardToggledAtCursor ->
+      case board.at(m.board_cursor) {
+        Ok(piece) -> handle(m, UserToggledPiece(piece.id))
+        Error(Nil) -> #(m, effect.none())
       }
 
     // --- session ---
@@ -1592,6 +1640,69 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           )
         }
         _, _, _, _ -> #(m, effect.none())
+      }
+
+    UserToggledPiece(id) ->
+      case m.graded, board.find(id) {
+        // Once submitted the board is a verdict, not a form.
+        True, _ | _, Error(Nil) -> #(m, effect.none())
+        False, Ok(piece) -> #(
+          Model(
+            ..m,
+            board_picks: case list.contains(m.board_picks, id) {
+              True -> list.filter(m.board_picks, fn(held) { held != id })
+              False -> [id, ..m.board_picks]
+            },
+            // A click moves the cursor to what was clicked, so switching back
+            // to the keyboard carries on from where the mouse left off.
+            board_cursor: board.index_of(piece),
+          ),
+          effect.none(),
+        )
+      }
+
+    UserSubmittedBoard ->
+      case m.graded, current_board(m), model.current_ref(m) {
+        False, Ok(answer), Ok(ref) -> {
+          let duration_ms = browser.now_ms() - m.opened_at_ms
+          let graded = board.grade(m.board_picks, answer, duration_ms)
+          #(
+            Model(
+              ..m,
+              graded: True,
+              // A SittingEntry, not an exam answer: `advance_inner` routes a
+              // sitting with any exam answers to the exam report, and a board
+              // belongs in the summary with every other graded card.
+              sitting: [
+                model.SittingEntry(
+                  problem: ref,
+                  pressed: graded.rating,
+                  duration_ms: duration_ms,
+                  passed: graded.rating != fsrs.Again,
+                  clean: graded.percent == 100 && graded.wrong == [],
+                ),
+                ..m.sitting
+              ],
+            ),
+            // A board grades itself: the selection either names the system or
+            // it does not, so there is no Hard/Good/Easy judgement to ask for.
+            // The review is recorded now and the user still presses Next,
+            // because the verdict is worth reading before moving on.
+            store.record_review(
+              m,
+              wire.Review(
+                problem: ref,
+                rating: graded.rating,
+                duration_ms: Some(duration_ms),
+                auto_failed: graded.rating == fsrs.Again,
+                revealed: False,
+                practice: !m.studying,
+                recall: False,
+              ),
+            ),
+          )
+        }
+        _, _, _ -> #(m, effect.none())
       }
 
     UserClickedExitDrill -> #(
@@ -2934,8 +3045,8 @@ fn initial_grading(m: Model, ref: ProblemRef) -> model.Grading {
   // Good on a card never attempted is not a solve.
   use <- bool.guard(m.blitz != None, NotGrading)
   case problem_kind(m, ref) {
-    // Quizzes grade themselves on submit.
-    QuizProblem -> NotGrading
+    // Quizzes and boards grade themselves on submit.
+    QuizProblem | BoardProblem -> NotGrading
     CheckableProblem ->
       case model.first_encounter(m, ref) {
         True -> AwaitingGrade
@@ -2948,23 +3059,33 @@ fn initial_grading(m: Model, ref: ProblemRef) -> model.Grading {
 type ProblemKind {
   CheckableProblem
   QuizProblem
+  BoardProblem
   RevealOnlyProblem
 }
 
+/// `problem.kind` refined by what this browser and this sitting can actually
+/// do: a check it cannot run grades like a reveal-only card.
 fn problem_kind(m: Model, ref: ProblemRef) -> ProblemKind {
   case problems.find(ref.category, ref.subcategory, ref.title) {
     Ok(found) ->
-      case found.check, found.quiz {
-        _, Some(_) -> QuizProblem
-        // A read-and-run card (Check present, graded: False) is gradeable
-        // from the moment it opens, like a reveal-only one -- and so is a
-        // check this browser cannot run (Elixir, signed out).
-        Some(check), None ->
-          case check.graded && model.run_available(m, found.language) {
-            True -> CheckableProblem
-            False -> RevealOnlyProblem
+      case problem.kind(found) {
+        problem.QuizDrill -> QuizProblem
+        // Without this arm a board would fall through to RevealOnlyProblem
+        // and open with the four self-grade buttons on top of a drill that
+        // grades itself.
+        problem.BoardDrill -> BoardProblem
+        problem.CodeDrill ->
+          case found.check {
+            // A read-and-run card (Check present, graded: False) is gradeable
+            // from the moment it opens, like a reveal-only one -- and so is a
+            // check this browser cannot run (Elixir, signed out).
+            Some(check) ->
+              case check.graded && model.run_available(m, found.language) {
+                True -> CheckableProblem
+                False -> RevealOnlyProblem
+              }
+            None -> RevealOnlyProblem
           }
-        None, None -> RevealOnlyProblem
       }
     Error(Nil) -> RevealOnlyProblem
   }
@@ -3449,19 +3570,37 @@ fn shuffle_loop(remaining: List(a), count: Int, acc: List(a)) -> List(a) {
   }
 }
 
-fn current_quiz(m: Model) -> Result(problem.Quiz, Nil) {
-  case model.current_ref(m) {
-    Ok(ref) ->
-      case problems.find(ref.category, ref.subcategory, ref.title) {
-        Ok(p) ->
-          case p.quiz {
-            Some(quiz) -> Ok(quiz)
-            None -> Error(Nil)
-          }
-        Error(Nil) -> Error(Nil)
+/// Move the board cursor, clamped, and scroll the chip into view -- the
+/// palette is taller than the viewport on a phone, so a cursor that moved
+/// without scrolling would leave the keyboard driving something off screen.
+fn move_board_cursor(m: Model, to: Int) -> #(Model, Effect(Msg)) {
+  let next = int.clamp(to, 0, list.length(board.palette()) - 1)
+  #(Model(..m, board_cursor: next), scroll_to(model.board_chip_id(next)))
+}
+
+fn index_of_family(
+  families: List(board.Family),
+  wanted: board.Family,
+  seen: Int,
+) -> Int {
+  case families {
+    [] -> seen
+    [first, ..rest] ->
+      case first == wanted {
+        True -> seen
+        False -> index_of_family(rest, wanted, seen + 1)
       }
-    Error(Nil) -> Error(Nil)
   }
+}
+
+fn current_board(m: Model) -> Result(board.Board, Nil) {
+  current_problem(m)
+  |> result.try(fn(found) { option.to_result(found.board, Nil) })
+}
+
+fn current_quiz(m: Model) -> Result(problem.Quiz, Nil) {
+  current_problem(m)
+  |> result.try(fn(found) { option.to_result(found.quiz, Nil) })
 }
 
 fn toggle_selection(

@@ -75,6 +75,7 @@ fn drill(title: String, prompt: String, e: embedded.Embedded) -> Problem {
     language: Gleam,
     check: Some(e.check),
     quiz: None,
+    board: None,
     difficulty: None,
   )
 }

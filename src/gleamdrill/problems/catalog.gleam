@@ -1014,6 +1014,7 @@ fn build(
     language: language,
     check: check,
     quiz: None,
+    board: None,
     difficulty: Some(drill.difficulty),
   )
 }
