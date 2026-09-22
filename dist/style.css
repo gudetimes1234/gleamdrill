@@ -2459,11 +2459,13 @@ gleam-compare .cm-mergeSpacer {
         display: none;
     }
 
-    /* Run and Next stay under the thumb no matter how long the results get. */
+    /* Run and Next stay under the thumb no matter how long the results get.
+       Above the pane overlay (z-index 3), or an open solution would cover the
+       very buttons that switch and close it. */
     .run-bar {
         position: sticky;
         bottom: 0;
-        z-index: 2;
+        z-index: 4;
         padding: 10px 12px;
         background: var(--bg-primary);
         border-top: 1px solid var(--border);
