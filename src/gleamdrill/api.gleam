@@ -179,12 +179,13 @@ pub fn logout(
 pub fn fetch_state(
   base: String,
   token: String,
+  track: String,
   handler: fn(Result(BootState, ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
     http.Get,
-    "/api/state",
+    scoped("/api/state", track),
     Some(token),
     None,
     boot_state_decoder(),
@@ -271,12 +272,13 @@ pub fn post_restore(
 pub fn delete_review(
   base: String,
   token: String,
+  track: String,
   handler: fn(Result(UndoOutcome, ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
     http.Delete,
-    "/api/reviews",
+    scoped("/api/reviews", track),
     Some(token),
     None,
     wire.undo_outcome_decoder(),
@@ -404,37 +406,51 @@ pub fn put_note(
 }
 
 /// The whole set of named queues; the server replaces what it had.
+/// One track's set, whole. The track travels on every queue in the body;
+/// the URL carries it too, for the one case the body cannot name -- an empty
+/// set, which is how a track's last queue is cleared.
 pub fn put_queues(
   base: String,
   token: String,
+  track: String,
   queues: List(Queue),
   handler: fn(Result(Nil, ApiError)) -> message,
 ) -> Effect(message) {
   send_expecting_nothing(
     base,
     http.Put,
-    "/api/queues",
+    scoped("/api/queues", track),
     Some(token),
     Some(wire.queues_to_json(queues)),
     handler,
   )
 }
 
+/// Both halves go up in one flat object, and both come back out of the one
+/// the server answers with -- the shape the settings row has always had.
+/// Splitting the endpoint is the server's business, not this release's.
 pub fn put_settings(
   base: String,
   token: String,
-  settings: Settings,
-  handler: fn(Result(Settings, ApiError)) -> message,
+  track: String,
+  profile: wire.Profile,
+  handler: fn(Result(wire.Profile, ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
     http.Put,
-    "/api/settings",
+    scoped("/api/settings", track),
     Some(token),
-    Some(settings_json(settings)),
-    decode.at(["settings"], settings_decoder()),
+    Some(wire.legacy_settings_to_json(profile.account, profile.settings)),
+    decode.at(["settings"], profile_decoder()),
     handler,
   )
+}
+
+fn profile_decoder() -> decode.Decoder(wire.Profile) {
+  use settings <- decode.then(settings_decoder())
+  use account <- decode.then(wire.account_decoder())
+  decode.success(wire.Profile(account:, settings:))
 }
 
 /// Hands the pre-account localStorage state to the server, once.
@@ -479,12 +495,13 @@ pub fn import_legacy(
 pub fn fetch_insights(
   base: String,
   token: String,
+  track: String,
   handler: fn(Result(Insights, ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
     http.Get,
-    "/api/insights",
+    scoped("/api/insights", track),
     Some(token),
     None,
     insights_decoder(),
@@ -517,15 +534,23 @@ pub fn fetch_history(
 @external(javascript, "./ffi.mjs", "uriEncode")
 fn uri_encode(value: String) -> String
 
+/// A track-scoped path. Spelled once: track names hold spaces and brackets
+/// ("NeetCode 150 (Go)"), and an unescaped one is a broken request rather
+/// than a wrong answer, which is at least loud.
+fn scoped(path: String, track: String) -> String {
+  path <> "?track=" <> uri_encode(track)
+}
+
 pub fn fetch_stats(
   base: String,
   token: String,
+  track: String,
   handler: fn(Result(Stats, ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
     http.Get,
-    "/api/stats",
+    scoped("/api/stats", track),
     Some(token),
     None,
     stats_decoder(),

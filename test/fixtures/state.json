@@ -1,9 +1,61 @@
 {
- "now": 1789545348.2587602,
+ "now": 1790381088.4671412,
  "user": {
   "id": "00000000-0000-0000-0000-000000000000",
   "email": "drills@example.com"
  },
+ "account": {
+  "dayStartHour": 4,
+  "timezone": "UTC",
+  "reminderHour": null
+ },
+ "track": "NeetCode 150",
+ "tracks": [
+  {
+   "track": "NeetCode 150",
+   "settings": {
+    "parameters": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "desiredRetention": 0.9,
+    "learningSteps": [
+     1,
+     10
+    ],
+    "relearningSteps": [
+     10
+    ],
+    "maximumInterval": 36500,
+    "enableFuzz": true,
+    "newPerDay": 5,
+    "reviewsPerDay": 100
+   },
+   "cards": 2,
+   "dueNow": 0,
+   "introducedToday": 1,
+   "reviewsToday": 1
+  }
+ ],
  "settings": {
   "parameters": [
    0.212,
@@ -41,23 +93,24 @@
   "newPerDay": 5,
   "reviewsPerDay": 100,
   "dayStartHour": 4,
-  "timezone": "UTC"
+  "timezone": "UTC",
+  "reminderHour": null
  },
  "cards": [
   {
-   "category": "NeetCode 150 · Python",
+   "category": "NeetCode 150",
    "subcategory": "Arrays & Hashing",
    "title": "Contains Duplicate",
    "state": 1,
    "step": 1,
    "stability": 2.3065,
    "difficulty": 2.118103970459015,
-   "due": 1789545948.147084,
-   "lastReview": 1789545348.147084,
+   "due": 1790381688.342624,
+   "lastReview": 1790381088.342624,
    "reps": 1,
    "lapses": 0,
    "suspended": false,
-   "introducedAt": 1789545348.148698
+   "introducedAt": 1790381088.34547
   },
   {
    "category": "NeetCode 150",
@@ -67,7 +120,7 @@
    "step": 0,
    "stability": null,
    "difficulty": null,
-   "due": 1789545348.222722,
+   "due": 1790381088.427886,
    "lastReview": null,
    "reps": 0,
    "lapses": 0,
@@ -77,16 +130,17 @@
  ],
  "drafts": [
   {
-   "category": "NeetCode 150 · Python",
+   "category": "NeetCode 150",
    "subcategory": "Arrays & Hashing",
    "title": "Contains Duplicate",
    "body": "def contains_duplicate(nums):\n    pass"
   }
  ],
  "notes": [],
+ "queues": [],
  "today": {
-  "dayStart": 1789531200.0,
-  "dayEnd": 1789617600.0,
+  "dayStart": 1790308800.0,
+  "dayEnd": 1790395200.0,
   "reviewsDone": 1,
   "newIntroduced": 1,
   "reviewsRemaining": 99,

@@ -75,21 +75,35 @@ topic's header says how much of it is queued and adds or removes the topic
 right there, or just its Easy problems. Every NeetCode problem carries its
 LeetCode rating — Easy, Medium or Hard — as a badge wherever it is listed.
 New cards are still introduced in catalogue order, which is NeetCode's topic
-progression; the rating is a label, not a reordering. The starter set a first
-visit is offered is the first twenty Easy problems of each chosen language. Deciding for you which of twelve hundred problems to
+progression; the rating is a label, not a reordering. The starter set a track offers, on its
+card and again on its empty study screen, is the first twenty Easy problems in
+that track. Deciding for you which of twelve hundred problems to
 introduce is not a decision an app is in a position to make, and the old
 answer, "everything, in catalogue order", meant the only way to refuse a
 problem was to answer it once and then pause it. A problem you have already
 studied is paused rather than removed, because its review history is the one
 thing here that cannot be rebuilt.
 
-**You choose your languages.** The catalogue is the same 150 problems once per
-language, so the first run asks which of the four a starter set should
-cover, nothing pre-ticked. After that the study queue is exactly what you
-put in it -- there is no language filter on top -- and new cards round-robin
-across whatever languages are queued rather than draining the first one dry.
-A language that runs out drops out of the rotation without ending it. A
-browser that was already using the app skips the picker.
+**One track at a time.** The catalogue is the same 150 problems once per
+language, and a **track** is one of those copies: "NeetCode 150" (Python),
+"NeetCode 150 (Go)", "System Design". Study, Queue, Browse and Stats are all
+*inside* a track, so the app's landing page is the switcher, and a browser with
+no track yet lands there -- the same question the old language picker asked,
+one screen earlier and with nothing else on it.
+
+There is no mixing left to do. A sitting is one track's, a queue belongs to one
+track, the daily budget is one track's, the stats are one track's, and each
+track keeps its own scheduler settings. Switching loses nothing and asks
+nothing: the device remembers where you were, per track, down to which named
+queue you were studying. New cards come in catalogue order, which inside a
+track is NeetCode's topic progression -- the old round-robin across languages
+existed only because a flat prefix of five interleaved catalogues meant months
+of nothing but the first, and there is nothing left to interleave.
+
+The account-wide things stay account-wide: the timezone, the hour the study day
+rolls over, the reminder mail. Those are facts about you, not about what you
+are drilling, and four rollover hours would give one person four different
+todays.
 
 **You can keep many queues.** A queue is a named list of problems, nothing
 more: no rule decides what goes in one. The study screen serves one queue at
@@ -101,11 +115,16 @@ to a list gives it a card if it had none; taking it out of a list leaves the
 card in Everything, and a card removed outright leaves every list. The queue
 screen edits one list at a time, Browse can put a selection into any of them,
 and the lists ride along in the export and in a guest's upgrade. Which list a
-device is studying is that device's preference, like its keymap.
+device is studying is that device's preference, like its keymap. Browse shows
+the "added to" notice like every other screen -- it was the one top-level view
+that never rendered `nav.notices`, so the confirmation was set and silently
+never seen.
 
 **Compare two solutions side by side.** Browse's Compare puts two problems'
-reference solutions next to each other, same language, with the lines they
-share lit and the rest dimmed. Two Pointers solutions all open with
+reference solutions next to each other, with the lines they share lit and the
+rest dimmed. They are necessarily in the same language: Browse lists one
+track's catalogue, so a selection has nowhere to pick up a second one from.
+That used to be a check on the button and is now a property of the screen. Two Pointers solutions all open with
 `left, right = ...` and loop on `while left < right`, and that shape is what
 this is for: the eye lands on what the technique keeps from problem to
 problem. "Shared" is a line-level longest common subsequence of the two texts
@@ -119,7 +138,9 @@ named after the topic when there is one.
 **It drives like a TUI.** Vim-style keys everywhere outside the editor —
 `hjkl` panes and cursors, `space` select, `d` drill, `/` search, `1-4` to
 grade (Anki's own bindings), `Ctrl+Enter` to run from inside the editor, `?`
-for the cheatsheet. A `,` leader re-dispatches the next key through the same
+for the cheatsheet. On a drill `j` and `k` walk the step rail instead and `h`
+turns over a hint, which is the same motion applied to the one list that
+screen has. A `,` leader re-dispatches the next key through the same
 binding table when a button has stolen focus; the status bar's leader chip
 lights while it is armed. A tmux-style status bar shows the live bindings for
 wherever you are; every hint is also clickable. One binding table drives the
@@ -149,18 +170,54 @@ than claiming a complexity it does not have, and the representation changes to
 suit: linked lists are real nodes in Python, TypeScript and Go, cons lists in
 Gleam and Elixir.
 
-Every drill carries a required signature, a starter stub, a progressive
-**Approach** hint ladder — a vague nudge, then the plan as a walkthrough
-(`w`): one step at a time beside the editor, each with a hint that points at
-it and a why that explains it, plus its slice of the pseudocode, then the
-full language-neutral pseudocode. Nudge and steps unfold on demand (`a`);
-only the pseudocode, whole or by slice, counts as seeing the answer — at
-least two reference **solutions**, and a test harness with per-case
-expected-vs-actual results. The ladders live in
-`drills/approaches/<slug>.txt` (sections `== nudge` / `== walk` /
-`== pseudocode`, a walk being `# step` blocks with `hint:`, `why:` and an
-optional `code:` slice; `MANIFEST` is the census) and are embedded by the
-generator like the notes. Compile errors underline the offending line; runaway code is
+Every drill carries a required signature, a starter stub, at least two
+reference **solutions**, a test harness with per-case expected-vs-actual
+results, and the plan — on a **step rail** down the left of the drill, for the
+whole drill.
+
+**The plan does not go away while you work.** The rail lists every step's title
+from the moment the problem opens, and nothing closes it: opening a solution,
+or a passing run opening one for you, leaves it exactly where it was. That is
+the whole of it. The panes it replaced showed one thing at a time, so reading
+the answer meant losing the plan you were following, and the walkthrough showed
+one step at a time, so the plan was never on screen at all.
+
+What is gated is what sits *under* a step, not the step. `j` and `k` move the
+focus; `h` turns over that step's hint, `y` its why, `c` its slice of the code,
+and what you turn over stays turned over when the focus moves on. `a` unfolds
+the nudge, and `w` shows the whole plan at once. Only the code — a slice or the
+whole thing — counts as seeing the answer; the titles cost nothing, because
+nobody chose to see a list that was already there. A leech opens with its nudge
+unfolded, which costs it nothing either. The *clean solve* count is stricter
+than the review log's `revealed` flag: a hint is not an answer, but a solve that
+needed one was not from nothing.
+
+Because the rail has the left, the **prompt** gives up its column and becomes a
+sheet over the editor (`p`, or its own close) — it is read once at the start and
+glanced at after, so between the two it is the one that should move. Three
+columns at most: rail, editor, and the slot holding a solution or your note.
+
+**The plan's prose is shared; its code is not.** "Sort the array so duplicates
+become neighbours" is a fact about the algorithm, so the step, the hint and the
+why are written once and read by all five language mirrors — the ladder is keyed
+by title, exactly as it always was. The code is a different matter: a Go drill
+showing Python pseudocode is showing the wrong thing. So a step's slice, and the
+whole plan at the foot of the rail, are written per language and the rail picks
+the one you are typing in.
+
+The ladders live in `drills/approaches/<slug>.txt` (sections `== nudge` /
+`== walk` / `== pseudocode`, a walk being `# step` blocks with `hint:`, `why:`
+and any number of code slices; `MANIFEST` is the census) and are embedded by the
+generator like the notes. A slice opens with a line that is exactly `code:` or
+`code.<language>:` and runs to the next one; the last rung may likewise be
+written as `== pseudocode` and `== pseudocode.go`. Bare `code:` and bare
+`== pseudocode` are the **fallback**: a language with nothing of its own reads
+them, which is what lets this content land one topic at a time without the tree
+ever being broken. `gleam run -m generate` prints per-language coverage after it
+writes the ladders — a report, never a gate. A malformed file fails the build
+(a stray line, a blank hint or why, an empty slice, a language written twice, an
+unknown language, a section after the pseudocode); a *missing* language never
+does. Compile errors underline the offending line; runaway code is
 terminated by a timeout. Anything your code prints is captured and shown under
 **Output** — on a pass, on a failure, and on a crash, since printing and then
 crashing is when you most want to read it.
@@ -271,6 +328,81 @@ the interval the server will actually store. Its tests run on **both** targets
 against vectors generated from the reference `py-fsrs` implementation, so a
 divergence from upstream Anki fails the build rather than quietly producing
 wrong review dates.
+
+**A track is a category name, and that is the whole of it.** "NeetCode 150"
+(Python's, bare), "NeetCode 150 (Go)", "System Design". `ProblemRef.category`
+has always held it, in the browser, in the `cards` table and in the scheduler,
+so cards, reviews, drafts, notes and queue items needed no new column and not
+one row had to move. Two things did: the scheduler's settings, now one row per
+`(user, track)`, and the named queues, whose names are unique only within a
+track — "Arrays" in Python and "Arrays" in Go are two lists.
+
+Renaming Python's bare category to match the others was considered and
+rejected. The undo snapshots in `reviews.card_before` embed the old string, and
+that is the one table that cannot be rebuilt; there is no migration mechanism
+for localStorage *values*, so a browser holding the cached previous bundle would
+keep writing the old name and quietly build a parallel track of orphan cards.
+The display wart is fixed by a `label` function instead.
+
+**The switcher is built from the cards, not from the catalogue.** The server
+ships no catalogue and validates nothing about a category string, so a track
+holding real cards under a name the bundle no longer has — a renamed category, a
+stale offline cache, a typo in a fixture script — would otherwise be
+unreachable. Deriving the rows from `select category, count(*) from cards group
+by category` turns silent loss into a visible oddity. This is not theoretical:
+the change found 1,580 cards in the development database under "NeetCode 150 ·
+Python", a category the catalogue has never had, written there by a typo in the
+fixture script.
+
+**A request that names no track gets the user's busiest one**, rather than an
+error or an empty answer. That is what keeps a client from before tracks
+working across the deploy: it sends no `?track=` and gets a coherent
+single-track view. Two endpoints refuse instead of guessing — a card batch or a
+queue set that spans two tracks is a 422, because one reply carries one daily
+budget and there is no such thing as a budget across two tracks.
+
+**The guest store stays whole.** Every `local.save_*` serialises the entire
+`Local` record, so a track-scoped *load* would mean one debounced draft write
+deleting every other track's cards. The rule is therefore: `load` reads
+everything, every save writes everything, and only the derived functions --
+`today`, `stats`, `insights`, the `*_in` lenses -- take a track. Recording,
+undoing, queueing, drafting and noting take none at all, because the
+`ProblemRef` already carries it.
+
+Two of the eight keys changed shape. `guest.settings.v2` holds the account's
+knobs once and the scheduler's per track; `guest.history.v2` holds the rollups
+per track. Both adopt what the previous release wrote, on first boot, and write
+the result immediately rather than leaving it to the next review — the review
+log is a ring buffer, so a replay done later would yield *smaller* lifetime
+numbers as old rows fall off the end. The `.v1` keys are left in place for a
+release, so a browser that falls back to the cached previous bundle still finds
+its own settings. The cards, drafts, notes and review log did not move at all:
+every entry already carries its category.
+
+That adoption is the same rule in three places — migration 8 in SQL, the guest
+store here, and an old archive's `""` key — so it is written once as a decoder
+and pinned by the wire tests.
+
+`wire/` carries two settings records rather than one. The knobs about the
+person -- the timezone, the hour the study day rolls over, the reminder -- are
+`AccountSettings` and stay one per user; the scheduler's are `Settings` and
+become one per track. A per-track rollover hour would give one person four
+different "todays", and the reminder mail is one mail. They travel together as
+a `Profile` wherever a caller wants "the settings".
+
+Both halves still cross the wire in one flat object, the shape the settings row
+has always had, so a browser running the cached previous bundle keeps decoding
+it across a deploy -- `dist/` and the server are separate artifacts. The new
+decoders read what they want out of it and ignore the rest, and the fallbacks
+that let an old payload through are marked for deletion one release after the
+split ships.
+
+In the database the split finishes immediately: migration 9 drops the eight
+scheduler columns from `settings` in the same release migration 8 copies them
+out, which is why that release must go out as a stop-then-start deploy rather
+than a rolling one -- the note on the migration says so. The legacy wire
+emitter survives the drop untouched; it is built from the in-memory records
+and protects cached *browsers*, not old servers.
 
 `wire/` is shared for the same reason. The encoders and decoders used to be
 written twice — some six hundred lines, whole bodies byte-identical — with

@@ -9,15 +9,17 @@ import gleam/string
 import gleam/time/timestamp.{type Timestamp}
 import gleamdrill/api.{type ApiError, type CardState, type Settings, type User}
 import gleamdrill/problem.{type ProblemRef}
-import gleamdrill/problems
 import wire
 
 pub type Route {
   /// Shown whenever there is no valid session. Everything else is behind it.
   AuthRoute
-  /// The one-off first-run language choice. Shown instead of the study screen
-  /// until it is answered, and never again afterwards.
-  PickerRoute
+  /// Every track and where it stands. The app's landing page: Study, Queue
+  /// and Stats are all *inside* a track, so this is where one is chosen. It
+  /// doubles as the first-run screen -- a browser with no track yet lands
+  /// here, which is the same question the picker used to ask and one fewer
+  /// screen to answer it on.
+  TracksRoute
   /// The scheduler knobs, plus the device preferences that sit beside them.
   SettingsRoute
   /// What a finished sitting did. Replaces the alert that used to be the whole
@@ -115,8 +117,9 @@ pub type Key {
 }
 
 /// Which pane of the browser holds the keyboard cursor.
+/// Three panes, not four: the first used to choose a language, and the track
+/// switcher is where that happens now.
 pub type MenuPane {
-  LanguagesPane
   SubcategoriesPane
   ProblemsPane
   SelectedPane
@@ -127,7 +130,6 @@ pub type MenuPane {
 pub type MenuNav {
   MenuNav(
     focus: MenuPane,
-    language: Int,
     subcategory: Int,
     problem: Int,
     selected: Int,
@@ -143,7 +145,6 @@ pub type MenuNav {
 /// cursor always scrolls to the row it highlights.
 pub fn menu_row_id(pane: MenuPane, index: Int) -> String {
   let prefix = case pane {
-    LanguagesPane -> "lang"
     SubcategoriesPane -> "sub"
     ProblemsPane -> "prob"
     SelectedPane -> "sel"
@@ -165,8 +166,7 @@ pub fn board_chip_id(index: Int) -> String {
 
 pub fn default_nav() -> MenuNav {
   MenuNav(
-    focus: LanguagesPane,
-    language: 0,
+    focus: SubcategoriesPane,
     subcategory: 0,
     problem: 0,
     selected: 0,
@@ -332,7 +332,18 @@ pub type Model {
     /// against this rather than the device clock, so a wrong system time
     /// cannot make cards look due when they are not.
     now: Timestamp,
+    /// The scheduler's knobs. Per track once the store is, which is why the
+    /// account-wide ones live beside them rather than inside them.
     settings: Settings,
+    /// The knobs about the person rather than about what they study: the
+    /// timezone, the hour the study day rolls over, the reminder. One set,
+    /// whatever track is open.
+    account: wire.AccountSettings,
+    /// The track being studied. Everything below that is keyed by problem --
+    /// cards, drafts, notes, queues -- is this track's and no other's.
+    active_track: String,
+    /// Where every track stands, for the switcher. The whole account.
+    tracks: List(wire.TrackStanding),
     /// Every card the account has, keyed by problem. A `Dict` rather than the
     /// association lists used elsewhere here: the menu looks up a badge for
     /// every visible problem on every render, and this can hold a thousand
@@ -382,7 +393,6 @@ pub type Model {
     merge_offer: Bool,
     // --- the current sitting ---
     route: Route,
-    selected_category: Option(String),
     selected_subcategory: Option(String),
     selected: List(ProblemRef),
     problem_index: Int,
@@ -433,12 +443,18 @@ pub type Model {
     /// problem. It is the review log's reveal, not the pane's visibility:
     /// the diff a passing run opens by itself leaves it `None`.
     revealed_solution: Option(Int),
-    /// How many rungs of the approach hint ladder are shown, top down.
-    hints_revealed: Int,
-    /// The guided walkthrough of the plan: which step, and which of its
-    /// layers have been turned over. Kept while the pane is closed, so
-    /// reopening resumes and the ladder only lists the steps walked so far.
-    walk: Option(WalkState),
+    /// Whether the rail's nudge is unfolded. Never a reveal: it is the
+    /// vaguest rung, and the only thing on the rail that is prose about the
+    /// problem rather than a piece of the plan.
+    nudge_shown: Bool,
+    /// Whether the whole pseudocode has been shown at once, from the foot of
+    /// the rail. A reveal.
+    whole_thing_shown: Bool,
+    /// The step rail: which step has the keyboard, and which of each step's
+    /// three layers have been turned over. Every step's *title* is on screen
+    /// from the moment the problem opens, so this is only ever about the
+    /// layers underneath them.
+    walk: WalkState,
     /// Whether any step's code slice has been shown on this problem. A
     /// slice is a piece of the pseudocode, so it counts as a reveal.
     walk_code_seen: Bool,
@@ -461,18 +477,23 @@ pub type Model {
     /// One-shot leader: `,` was pressed, so the next key dispatches through
     /// the app's key table even if a button holds focus.
     leader_armed: Bool,
-    /// The queue screen's lens: a search box, a language and a status, none
-    /// of them persisted. They decide which rows are listed, and "add all
-    /// shown" acts on exactly that list, which is what makes bulk queueing
-    /// precise.
+    /// The queue screen's lens: a search box and a status, neither persisted.
+    /// They decide which rows are listed, and "add all shown" acts on exactly
+    /// that list, which is what makes bulk queueing precise.
+    ///
+    /// There is no language lens any more: the screen is one track's, and the
+    /// track switcher is that lens now.
     queue_search: String,
-    queue_language: Option(String),
     queue_status: QueueFilter,
     /// Named lists to study from. A card is the memory of one problem,
     /// whichever queues list it; every listed problem has a card.
     queues: List(wire.Queue),
-    /// The queue the study screen serves today: None is everything with a
-    /// card. A device preference.
+    /// Every track's remembered queue, as the device stored it. The active
+    /// track's is lifted into `active_queue`; the rest are carried so that
+    /// switching away and back does not forget where you were.
+    remembered_queues: List(#(String, String)),
+    /// The queue the study screen serves today, in the active track: None is
+    /// everything with a card. A device preference.
     active_queue: Option(String),
     /// The queue the queue screen is editing: None is everything, where a
     /// row toggle adds or removes the card itself.
@@ -482,11 +503,6 @@ pub type Model {
     /// Problems whose queue change is in flight, so their row can be disabled
     /// rather than accepting a second click that would race the first.
     queue_pending: List(ProblemRef),
-    /// Whether the first-run picker has been answered on this device.
-    languages_chosen: Bool,
-    /// Language tags ticked in the first-run picker, before it is confirmed:
-    /// the languages a starter set is queued in.
-    picked_languages: List(String),
     /// Quiz option currently picked, before Submit is pressed.
     choice: Option(Int),
     /// Whether the current quiz question or board has been submitted and
@@ -519,6 +535,9 @@ pub fn default() -> Model {
     refreshing: False,
     now: timestamp.from_unix_seconds(0),
     settings: api.default_settings(),
+    account: wire.default_account(),
+    active_track: "",
+    tracks: [],
     cards: dict.new(),
     today: api.empty_today(),
     stats: None,
@@ -544,7 +563,6 @@ pub fn default() -> Model {
     upgrade_prompt: PromptUnseen,
     merge_offer: False,
     route: StudyRoute,
-    selected_category: None,
     selected_subcategory: None,
     selected: [],
     problem_index: 0,
@@ -558,8 +576,9 @@ pub fn default() -> Model {
     prompt_open: True,
     slot: NoPane,
     revealed_solution: None,
-    hints_revealed: 0,
-    walk: None,
+    nudge_shown: False,
+    whole_thing_shown: False,
+    walk: fresh_walk(),
     walk_code_seen: False,
     runtimes: [],
     run: RunIdle,
@@ -581,16 +600,14 @@ pub fn default() -> Model {
     blitz_chooser: False,
     leader_armed: False,
     queue_search: "",
-    queue_language: None,
     queue_status: AnyStatus,
     queues: [],
+    remembered_queues: [],
     active_queue: None,
     queue_editing: None,
     queue_naming: None,
     compare: None,
     queue_pending: [],
-    languages_chosen: False,
-    picked_languages: [],
     choice: None,
     graded: False,
     board_picks: [],
@@ -680,35 +697,23 @@ pub fn is_leech(m: Model, problem: ProblemRef) -> Bool {
   }
 }
 
-/// How many rungs of the ladder a problem opens with: everything short of
-/// the pseudocode for a leech, so the approach is on screen before the
-/// first keystroke without the open counting as a reveal; none otherwise.
-pub fn opening_hints(m: Model, problem: ProblemRef) -> Int {
-  case is_leech(m, problem) {
-    False -> 0
-    True ->
-      case problems.find(problem.category, problem.subcategory, problem.title) {
-        Ok(found) ->
-          found.approach
-          |> list.take_while(fn(stage) {
-            case stage {
-              problem.Pseudocode(_) -> False
-              _ -> True
-            }
-          })
-          |> list.length
-        Error(Nil) -> 0
-      }
-  }
+/// Whether a problem opens with its nudge already unfolded: a leech does, so
+/// there is something to read before the first keystroke. The steps
+/// themselves need no such rule -- the rail always lists them -- and the
+/// nudge is not a reveal, so this cannot cost anyone an honest grade.
+pub fn opens_with_nudge(m: Model, problem: ProblemRef) -> Bool {
+  is_leech(m, problem)
 }
 
+/// Whether the whole pseudocode has been shown. Guarded on the ladder
+/// actually having that rung, so a problem without one can never be recorded
+/// as having given it away.
 pub fn pseudocode_revealed(
   m: Model,
   stages: List(problem.ApproachStage),
 ) -> Bool {
-  stages
-  |> list.take(m.hints_revealed)
-  |> list.any(fn(stage) {
+  m.whole_thing_shown
+  && list.any(stages, fn(stage) {
     case stage {
       problem.Pseudocode(_) -> True
       _ -> False
@@ -717,29 +722,28 @@ pub fn pseudocode_revealed(
 }
 
 /// What the slot beside the editor can show.
+///
+/// The hint ladder and the walkthrough used to be in here too, and taking
+/// them out is the point of the rail: the plan is no longer something the
+/// solution can evict.
 pub type Pane {
   NoPane
-  HintPane
-  WalkPane
   SolutionPane
   NotePane
 }
 
-/// The view state a problem opens with, whichever way it was reached:
-/// nothing revealed. A leech opens with the ladder already
-/// in the slot, so the approach is beside the editor before the first
-/// keystroke without the open counting as a reveal.
+/// The view state a problem opens with, whichever way it was reached: every
+/// step's title listed on the rail, and nothing revealed. A leech opens with
+/// its nudge unfolded as well, so there is something to read before the first
+/// keystroke; neither costs a reveal.
 pub fn open_problem_view(m: Model, problem: ProblemRef) -> Model {
-  let hints = opening_hints(m, problem)
   Model(
     ..m,
-    slot: case hints > 0 {
-      True -> HintPane
-      False -> NoPane
-    },
+    slot: NoPane,
     revealed_solution: None,
-    hints_revealed: hints,
-    walk: None,
+    nudge_shown: opens_with_nudge(m, problem),
+    whole_thing_shown: False,
+    walk: fresh_walk(),
     walk_code_seen: False,
     // Reset here rather than at each call site: this is the one function both
     // `open_first` and `advance_inner` go through with a ref, so a board
@@ -794,14 +798,32 @@ pub fn walk_steps(
   |> result.unwrap([])
 }
 
-/// The index of the plan rung in the ladder, so opening the walkthrough
-/// can count that rung as revealed.
-pub fn plan_rung(stages: List(problem.ApproachStage)) -> Option(Int) {
-  stages
-  |> list.index_map(fn(stage, index) { #(stage, index) })
-  |> list.find_map(fn(pair) {
-    case pair.0 {
-      problem.Walk(_) -> Ok(pair.1)
+/// The ladder's nudge, if it has one. The rail unfolds it in place rather
+/// than counting rungs, so this is a lookup and not an index.
+pub fn nudge_text(stages: List(problem.ApproachStage)) -> Option(String) {
+  list.find_map(stages, fn(stage) {
+    case stage {
+      problem.Nudge(text) -> Ok(text)
+      _ -> Error(Nil)
+    }
+  })
+  |> option.from_result
+}
+
+/// The whole plan written out, in this drill's language -- or the shared
+/// fallback where that language has none of its own yet. `None` when the
+/// ladder has no such rung, or when neither is written.
+pub fn whole_thing(
+  stages: List(problem.ApproachStage),
+  language: problem.Language,
+) -> Option(String) {
+  list.find_map(stages, fn(stage) {
+    case stage {
+      problem.Pseudocode(slices) ->
+        case problem.slice_for(slices, language) {
+          "" -> Error(Nil)
+          code -> Ok(code)
+        }
       _ -> Error(Nil)
     }
   })
@@ -914,8 +936,67 @@ pub fn answered_count(model: Model) -> Int {
 /// `pressed` is what the user chose and what was scheduled. The summary still
 /// reads the resulting interval from `Model.cards` rather than recomputing it,
 /// so the number shown is the one the store actually produced.
+/// The step rail's state.
+///
+/// `focus` is the step the keyboard is on, not how far a walkthrough has got:
+/// every step's title is listed from the moment the problem opens, and moving
+/// the focus reveals nothing. `shown` is which of each step's three layers
+/// have been turned over -- a dict rather than one step's flags, because every
+/// step is on screen at once and any number of them can be open.
 pub type WalkState {
-  WalkState(step: Int, hint_shown: Bool, why_shown: Bool, code_shown: Bool)
+  WalkState(focus: Int, shown: Dict(Int, StepLayers))
+}
+
+/// Which of one step's three layers are turned over. The hint and the why are
+/// free; the code slice is a piece of the pseudocode and is logged as a reveal.
+pub type StepLayers {
+  StepLayers(hint: Bool, why: Bool, code: Bool)
+}
+
+pub const no_layers = StepLayers(hint: False, why: False, code: False)
+
+pub fn fresh_walk() -> WalkState {
+  WalkState(focus: 0, shown: dict.new())
+}
+
+/// What is turned over on one step. A step nobody has touched has nothing.
+pub fn layers_at(state: WalkState, index: Int) -> StepLayers {
+  dict.get(state.shown, index) |> result.unwrap(no_layers)
+}
+
+/// Turn over one layer of the focused step. Idempotent: a layer already shown
+/// stays shown, so a repeated key is not a way to un-reveal a code slice.
+pub fn reveal_layer(state: WalkState, layer: Layer) -> WalkState {
+  let open = layers_at(state, state.focus)
+  let open = case layer {
+    HintLayer -> StepLayers(..open, hint: True)
+    WhyLayer -> StepLayers(..open, why: True)
+    CodeLayer -> StepLayers(..open, code: True)
+  }
+  WalkState(..state, shown: dict.insert(state.shown, state.focus, open))
+}
+
+pub type Layer {
+  HintLayer
+  WhyLayer
+  CodeLayer
+}
+
+/// Whether any step has had any of its layers turned over. Feeds the "clean
+/// solve" count, which is stricter than the log's `revealed` flag: a hint is
+/// not an answer, but a solve that needed one was not from nothing.
+pub fn any_layer_shown(state: WalkState) -> Bool {
+  dict.values(state.shown)
+  |> list.any(fn(open) { open != no_layers })
+}
+
+/// Move the rail's focus, clamped to the steps that exist. Revealing nothing
+/// is the point: the titles were always visible, so walking them is free.
+pub fn focus_step(state: WalkState, index: Int, total: Int) -> WalkState {
+  WalkState(
+    ..state,
+    focus: int.clamp(index, min: 0, max: int.max(total - 1, 0)),
+  )
 }
 
 /// `clean` is a solve with nothing given away: no rung past the nudge, no
@@ -988,7 +1069,12 @@ pub type UndoPoint {
     draft: String,
     run: RunState,
     revealed_solution: Option(Int),
-    hints_revealed: Int,
+    nudge_shown: Bool,
+    whole_thing_shown: Bool,
+    /// The rail as it stood. Restored with the rest, so undoing a grade puts
+    /// back the steps that were open rather than folding them all away.
+    walk: WalkState,
+    walk_code_seen: Bool,
     duration_ms: Int,
     /// None when the grade is what put the card in the queue.
     card_before: Option(CardState),
@@ -1063,7 +1149,6 @@ pub type Msg {
   UserClosedDetail
   HistoryLoaded(ProblemRef, Result(List(api.ReviewRow), ApiError))
   // --- browsing and drilling ---
-  UserClickedCategory(String)
   UserClickedSubcategory(String)
   UserClickedBreadcrumb(Int)
   UserToggledProblem(ProblemRef)
@@ -1092,15 +1177,18 @@ pub type Msg {
   TourCursorMoved(Int)
   TourActivated
   UserToggledSolution(Int)
-  UserRevealedHint
-  /// The guided walkthrough beside the editor.
-  UserOpenedWalk
-  UserClosedWalk
+  /// Unfold or fold the rail's nudge. Not a reveal.
+  UserToggledNudge
+  /// The step rail. Focus moves freely -- the titles were always on screen --
+  /// and the three layer messages act on whichever step has the focus.
+  WalkFocused(Int)
+  WalkAdvanced
+  WalkBacked
   WalkHintShown
   WalkWhyShown
   WalkCodeShown
-  WalkAdvanced
-  WalkBacked
+  /// The whole pseudocode, from the foot of the rail. A reveal.
+  UserRevealedWholeThing
   UserClickedNext
   UserSearched(String)
   UserChangedKeymap(String)
@@ -1162,14 +1250,14 @@ pub type Msg {
   /// Adopt the timezone this browser reports, which is the only way to change
   /// it after signup.
   UserClickedDeviceTimezone
-  SettingsSaved(Result(Settings, ApiError))
-  /// Tick or untick one language in the first-run picker.
-  PickerToggledLanguage(String)
-  /// Accept the picker's selection and go choose problems.
-  PickerConfirmed
-  /// Accept the picker's selection and queue a starter set of problems in
-  /// each chosen language, so the first sitting is one click away.
-  PickerConfirmedWithStarter
+  SettingsSaved(Result(wire.Profile, ApiError))
+  /// Open the track switcher.
+  UserClickedTracks
+  /// Enter a track: everything the app shows becomes that track's.
+  UserPickedTrack(String)
+  /// Enter a track and queue a starter set in it, so the first sitting is one
+  /// click away rather than a trip to the queue screen.
+  UserPickedTrackWithStarter(String)
   /// Queue a starter set from the study screen's empty state.
   UserAddedStarterSet
   UserToggledSuspend(ProblemRef)
@@ -1179,7 +1267,6 @@ pub type Msg {
   UserClickedQueue
   UserSearchedQueue(String)
   UserFilteredQueue(QueueFilter)
-  UserPickedQueueLanguage(String)
   /// Add or remove one topic's listed rows, optionally just its Easy ones.
   UserChangedGroup(GroupChange)
   /// Put one problem in the queue, or take it out -- whichever it is not.

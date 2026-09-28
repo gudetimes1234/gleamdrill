@@ -11,6 +11,7 @@
 //// an added risk here -- user code executes in Web Workers, which have no
 //// access to localStorage.
 
+import gleam/dict
 import gleam/dynamic/decode
 import gleam/json
 import gleam/list
@@ -44,12 +45,14 @@ pub type Preferences {
     /// The last Gleam Tour lesson opened on this device, so "Continue the
     /// tour" lands where you left off. A device fact, like the keymap.
     tour_lesson: Int,
-    /// Whether the first-run picker has been answered on this device.
-    languages_chosen: Bool,
-    /// The named queue being studied on this device, or None for
-    /// everything. A device fact: which list is today's is a choice made
-    /// where you sit, and the list itself lives with the cards.
-    active_queue: Option(String),
+    /// The track being studied on this device. `None` until one is chosen,
+    /// which is what puts a new browser on the track switcher. A device fact,
+    /// like the keymap: which track you are on is where you are sitting.
+    active_track: Option(String),
+    /// The named queue being studied, per track. A device fact, and now a
+    /// per-track one: a queue lives inside a track, so one slot could only
+    /// ever have been right for one of them.
+    active_queue: List(#(String, String)),
   )
 }
 
@@ -61,8 +64,8 @@ pub fn default_preferences() -> Preferences {
     editor_height: None,
     prompt_open: True,
     tour_lesson: 0,
-    languages_chosen: False,
-    active_queue: None,
+    active_track: None,
+    active_queue: [],
   )
 }
 
@@ -142,15 +145,31 @@ pub fn preferences_decoder() -> decode.Decoder(Preferences) {
     None,
     decode.optional(decode.int),
   )
-  // True, unlike `default_preferences`: a blob written before this field
-  // existed belongs to someone already using the app, and showing them a
-  // first-run picker would be a lie.
-  use chosen <- decode.optional_field("languagesChosen", True, decode.bool)
   use tour_lesson <- decode.optional_field("tourLesson", 0, decode.int)
-  use active_queue <- decode.optional_field(
-    "activeQueue",
+  use active_track <- decode.optional_field(
+    "activeTrack",
     None,
     decode.optional(decode.string),
+  )
+  // Two shapes, because this used to be one queue for the whole account and
+  // is now one per track. The old scalar is not discarded: it is held under
+  // the "" key and boot attaches it to whichever track is adopted, so nobody's
+  // active queue quietly resets on the release that splits them.
+  use active_queue <- decode.optional_field(
+    "activeQueue",
+    [],
+    decode.one_of(
+      decode.dict(decode.string, decode.string) |> decode.map(dict.to_list),
+      or: [
+        decode.optional(decode.string)
+        |> decode.map(fn(name) {
+          case name {
+            Some(name) -> [#("", name)]
+            None -> []
+          }
+        }),
+      ],
+    ),
   )
   use prompt_open <- decode.optional_field("promptOpen", True, decode.bool)
   decode.success(Preferences(
@@ -158,7 +177,7 @@ pub fn preferences_decoder() -> decode.Decoder(Preferences) {
     editor_height: editor_height,
     prompt_open: prompt_open,
     tour_lesson: tour_lesson,
-    languages_chosen: chosen,
+    active_track: active_track,
     active_queue: active_queue,
   ))
 }
@@ -172,9 +191,16 @@ pub fn save_preferences(preferences: Preferences) -> Effect(message) {
         #("editorKeymap", json.string(preferences.editor_keymap)),
         #("editorHeight", json.nullable(preferences.editor_height, json.int)),
         #("promptOpen", json.bool(preferences.prompt_open)),
-        #("languagesChosen", json.bool(preferences.languages_chosen)),
         #("tourLesson", json.int(preferences.tour_lesson)),
-        #("activeQueue", json.nullable(preferences.active_queue, json.string)),
+        #("activeTrack", json.nullable(preferences.active_track, json.string)),
+        #(
+          "activeQueue",
+          json.object(
+            list.map(preferences.active_queue, fn(entry) {
+              #(entry.0, json.string(entry.1))
+            }),
+          ),
+        ),
       ]),
     ),
   )

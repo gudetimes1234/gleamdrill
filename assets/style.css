@@ -845,10 +845,11 @@ gleam-editor .cm-scroller {
     transition: width var(--ease);
 }
 
-/* The editor column and, beside it, the prompt sidebar. The sidebar is
-   the later child in the DOM -- the keyed editor column stays child 0 so
-   CodeMirror keeps its history whatever toggles -- and `order` puts it on
-   the left. */
+/* The editor column and, beside it, the step rail. The rail is the later
+   child in the DOM -- the keyed editor column stays child 0 so CodeMirror
+   keeps its history whatever toggles -- and `order` puts it on the left.
+   The prompt is no longer a column: it is a sheet over the editor, so this
+   is three columns at most (rail, editor, slot) and never four. */
 .drill-body {
     display: flex;
     min-height: 0;
@@ -991,18 +992,8 @@ gleam-editor .cm-scroller {
     margin-bottom: 10px;
 }
 
-.hint-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.hint-button {
-    font-size: 12px;
-    padding: 6px 12px;
-}
-
+/* Still used, by the rail: the label beside anything that is logged as a
+   reveal. Its pane is gone. */
 .hint-warning {
     color: var(--warning);
     font-family: var(--font-ui);
@@ -1680,15 +1671,29 @@ button.results-summary:focus-visible {
 }
 
 /* Editor and revealed solution side by side; the row is permanent so the keyed
-   editor frame never remounts when the answer appears next to it. */
+   editor frame never remounts when the answer appears next to it. `relative`
+   at every width, not just on a tablet: the prompt sheet is positioned against
+   this row on a desktop too. */
 .work-row {
+    position: relative;
     display: flex;
     align-items: stretch;
     min-width: 0;
 }
 
-.work-row .editor-frame {
+/* The editor and the prompt sheet share a column, so the sheet covers the
+   editor and only the editor: a revealed solution sits beside it and has to
+   stay readable -- and clickable. */
+.editor-column {
+    position: relative;
+    display: flex;
+    flex-direction: column;
     flex: 1 1 54%;
+    min-width: 0;
+}
+
+.work-row .editor-frame {
+    flex: 1 1 auto;
     min-width: 0;
 }
 
@@ -2037,82 +2042,291 @@ gleam-compare .cm-mergeSpacer {
     background: var(--bg-hover);
 }
 
-/* ---------- The walkthrough ---------- */
+/* ---------- The track switcher ---------- */
 
-/* The plan one step at a time, in the answer panel's slot. Done steps
-   shrink to a numbered list; the current step is the one thing in large
-   type; its layers unfold beneath it on request. */
-.walk-side .answer-header {
-    gap: 12px;
-}
-
-.walk-side .answer-close {
-    display: inline-flex;
-    align-items: center;
-}
-
-.walk-progress {
+/* The landing page: one card per track, and the first-run question rolled
+   into the same screen rather than a picker of its own. */
+.tracks-screen {
     display: flex;
-    gap: 5px;
-    margin-left: auto;
+    flex-direction: column;
+    gap: 18px;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 24px 16px 48px;
 }
 
-.walk-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--border);
-}
-
-.walk-dot.done {
-    background: var(--success);
-}
-
-.walk-dot.current {
-    background: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
-}
-
-.walk-done {
-    margin: 0 0 12px;
-    padding: 0;
-    list-style: none;
-    display: grid;
-    gap: 4px;
-}
-
-.walk-step-done {
-    display: flex;
-    gap: 8px;
-    align-items: baseline;
+.tracks-lead {
+    margin: 0;
+    max-width: 62ch;
+    font-size: 14px;
+    line-height: 1.6;
     color: var(--text-secondary);
-    font-size: 13px;
-    line-height: 1.4;
 }
 
-.walk-step-number {
-    flex: none;
-    min-width: 18px;
-    color: var(--success);
-    font-family: var(--font-mono);
-    font-size: 12px;
+.track-cards {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 }
 
-.walk-step {
-    margin: 0 0 12px;
+.track-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+}
+
+.track-card.current {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+/* A track holding cards under a name the catalogue no longer has. Marked, not
+   hidden: the cards are real and so is the schedule behind them. */
+.track-card.stranded {
+    border-style: dashed;
+}
+
+.track-card-open {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    width: 100%;
+    text-align: left;
+}
+
+.track-card-name {
     font-size: 16px;
-    line-height: 1.5;
+    font-weight: 600;
     color: var(--text-primary);
 }
 
-.walk-finished {
+.track-card-tag {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
     color: var(--text-secondary);
-    font-size: 14px;
 }
 
+.track-card-counts {
+    display: flex;
+    gap: 18px;
+}
+
+.track-count {
+    display: flex;
+    flex-direction: column;
+}
+
+.track-count-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.track-count-label {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.track-card-empty,
+.track-card-done,
+.track-card-stranded {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.track-card-stranded {
+    color: var(--warning);
+}
+
+.track-card-starter {
+    align-self: flex-start;
+}
+
+/* Which track the screens below are about, said once in the nav. */
+.nav-track {
+    margin-right: 12px;
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+}
+
+/* ---------- The step rail ---------- */
+
+/* The plan, on the left, for the whole drill. Every step's title is listed
+   from the moment the problem opens; only what sits under a step is gated.
+   Narrow on purpose -- it holds one line per step, not prose -- so the editor
+   keeps the width it had when this was a pane. */
+.plan-rail {
+    order: -1;
+    flex: 0 0 clamp(220px, 19%, 340px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    min-width: 0;
+    padding: 14px 14px 24px;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+}
+
+.rail-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.rail-header .panel-title {
+    margin: 0;
+}
+
+.rail-count {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.rail-empty {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* The nudge folds away: it is a question about the problem, not a piece of
+   the plan, so it sits above the steps rather than among them. */
+.rail-nudge-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.rail-nudge-toggle.open {
+    color: var(--accent);
+}
+
+.rail-nudge .approach-nudge {
+    margin: 8px 0 0;
+    font-size: 13px;
+}
+
+.rail-steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+/* A step is its number and its title, and a button so a mouse can take the
+   focus the way `j` and `k` do. */
+/* `min-width: 0` all the way down, and a code slice that scrolls rather than
+   pushing: a grid item will not shrink below its content, and one long line of
+   code would otherwise widen the whole rail and clip every step's title. */
+.rail-step {
+    padding: 6px 8px;
+    min-width: 0;
+    border-left: 2px solid transparent;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.rail-step.current {
+    border-left-color: var(--accent);
+    background: var(--bg-raised);
+}
+
+.rail-step-title {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    width: 100%;
+    min-width: 0;
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+}
+
+.rail-step-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.rail-step.current .rail-step-title {
+    color: var(--text-primary);
+}
+
+.rail-step-number {
+    flex: none;
+    min-width: 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* A step with something turned over keeps a mark once the focus moves on, so
+   the rail says at a glance what was leaned on. */
+.rail-step.opened .rail-step-number {
+    color: var(--success);
+}
+
+.rail-step-layers {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.rail-step-layers kbd,
+.rail-foot kbd {
+    margin-left: 6px;
+    padding: 1px 5px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* The whole plan at once, at the foot: the one thing here that is the answer,
+   which is why the warning sits next to it. */
+/* Right after the steps rather than pinned to the bottom with `margin-top:
+   auto`: pinned, a rail whose steps nearly fill it pushes this past the edge
+   and the warning under the button is cut in half. */
+.rail-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+
+
+/* A step's three layers, unfolded underneath it. */
 .walk-layer {
-    margin: 0 0 10px;
-    padding: 10px 12px;
+    margin: 8px 0 0;
+    padding: 8px 10px;
+    min-width: 0;
     border-left: 3px solid var(--border);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     background: var(--bg-raised);
@@ -2120,8 +2334,9 @@ gleam-compare .cm-mergeSpacer {
 
 .walk-layer p {
     margin: 0;
+    overflow-wrap: anywhere;
     font-family: var(--font-ui);
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.5;
     color: var(--text-primary);
 }
@@ -2152,36 +2367,18 @@ gleam-compare .cm-mergeSpacer {
     color: var(--warning);
 }
 
-.walk-code {
-    margin: 0 0 10px;
-}
-
-.walk-controls {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.walk-controls kbd {
-    margin-left: 6px;
-    padding: 1px 5px;
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-secondary);
-}
-
-.walk-next {
-    margin-left: auto;
-}
-
-.approach-walk-open {
-    display: block;
-    margin-top: 8px;
-    font-size: 13px;
+/* A slice wraps rather than scrolling. A rail is narrow and Go and TypeScript
+   lines are long, so a horizontal scrollbar per slice would mean reading three
+   lines of code in three separate little windows. `overflow-x` stays as the
+   backstop for one unbreakable token. */
+.walk-code,
+.rail-whole {
+    margin: 8px 0 0;
+    min-width: 0;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 12px;
 }
 
 /* Recall mode reads the whole plan: each step with its why underneath. */
@@ -2249,7 +2446,8 @@ gleam-compare .cm-mergeSpacer {
         min-height: 0;
     }
 
-    .work-row .editor-frame {
+    .work-row .editor-frame,
+    .editor-column {
         display: flex;
         flex-direction: column;
     }
@@ -2314,17 +2512,22 @@ gleam-compare .cm-mergeSpacer {
         min-width: unset;
     }
 
-    /* One column: the prompt sits above the editor, capped so the editor
-       is still on the first screen, and scrolls inside itself. */
+    /* One column: the rail sits above the editor, capped so the editor is
+       still on the first screen, and scrolls inside itself. The prompt is
+       already an overlay on the editor at every width. */
     .drill-body {
         flex-direction: column;
     }
 
-    .prompt-side {
+    .plan-rail {
         flex: none;
-        max-height: 45svh;
+        max-height: 38svh;
         border-right: 0;
         border-bottom: 1px solid var(--border);
+    }
+
+    .prompt-side {
+        max-height: 60svh;
     }
 
     /* The revealed solution is a temporary overlay on top of the
@@ -3461,18 +3664,42 @@ gleam-compare .cm-mergeSpacer {
     width: 100%;
 }
 
-/* The sidebar: the sheet's content in the column's chrome. After the sheet
-   rules on purpose, so its tighter measures win. */
+/* The prompt: a sheet laid over the editor rather than a column of its own.
+   The rail has the left now, and between the two the prompt is the one that
+   should move -- it is read once at the start and glanced at afterwards, and
+   `p` is one key. Same mechanism the revealed solution already uses on a
+   tablet, and the editor keeps its draft underneath because it is still the
+   first child of .work-row and is never unmounted.
+
+   After the sheet rules on purpose, so its tighter measures win. */
 .prompt-side {
-    order: -1;
-    flex: 0 0 clamp(280px, 30%, 520px);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 4;
+    max-height: 100%;
     max-width: none;
     margin: 0;
     padding: 16px 18px 28px;
     gap: 14px;
     min-height: 0;
     overflow-y: auto;
-    border-right: 1px solid var(--border);
+    background: var(--bg-raised);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 12px 24px -12px rgb(0 0 0 / 55%);
+}
+
+/* `.answer-close` is display:none until a context turns it on -- the slot
+   pane does, and now the prompt sheet does too. */
+.prompt-close {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    top: 10px;
+    right: 12px;
+    z-index: 1;
+    margin-left: 0;
 }
 
 .prompt-side .read-title {

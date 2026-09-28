@@ -6,6 +6,19 @@ hint: What cheap check rules out most non-anagrams?
 why: Different lengths.
 code:
 if length(s) != length(t): return false
+code.python:
+if len(s) != len(t):
+    return False
+code.gleam:
+use <- bool.guard(string.length(s) != string.length(t), False)
+code.typescript:
+if (s.length !== t.length) return false;
+code.elixir:
+if String.length(s) != String.length(t), do: false
+code.go:
+if len(s) != len(t) {
+    return false
+}
 # Build a character-to-count map from the first string.
 hint: What does the first string contribute?
 why: A count of each character.
@@ -13,22 +26,78 @@ code:
 count = empty map
 for ch in s:
     count[ch] += 1
+code.python:
+count = {}
+for char in s:
+    count[char] = count.get(char, 0) + 1
+code.gleam:
+let count =
+  string.to_graphemes(s)
+  |> list.fold(dict.new(), fn(acc, g) {
+    dict.upsert(acc, g, fn(n) { option.unwrap(n, 0) + 1 })
+  })
+code.typescript:
+const counts = new Map<string, number>();
+for (const char of s) counts.set(char, (counts.get(char) ?? 0) + 1);
+code.elixir:
+count = s |> String.graphemes() |> Enum.frequencies()
+code.go:
+counts := map[rune]int{}
+for _, c := range s {
+    counts[c]++
+}
 # Walk the second string, decrementing each character's count.
 hint: What does the second string do to those counts?
 why: Decrements them character by character.
 code:
 for ch in t:
     count[ch] -= 1
+code.python:
+for char in t:
+code.gleam:
+// an immutable map makes decrement-and-check clumsy: count t the same way
+let count_t = counts(t)
+code.typescript:
+for (const char of t) {
+  const remaining = counts.get(char);
+code.elixir:
+count_t = t |> String.graphemes() |> Enum.frequencies()
+code.go:
+for _, c := range t {
+    counts[c]--
 # Fail the moment a character is missing from the map or its count drops below zero.
 hint: What signals a mismatch during the walk?
 why: A character absent from the map or a count going negative.
 code:
     if ch not in count: return false
     if count[ch] < 0: return false
+code.python:
+    if char not in count:
+        return False
+    count[char] -= 1
+    if count[char] < 0:
+        return False
+code.typescript:
+  if (remaining === undefined || remaining === 0) return false;
+  counts.set(char, remaining - 1);
+code.go:
+    if counts[c] < 0 {
+        return false
+    }
 # Reaching the end means every count balanced out — return true.
 hint: What does reaching the end mean?
 why: With equal lengths, every count balanced, so the strings are anagrams; O(n).
 code:
+return true
+code.python:
+return True
+code.gleam:
+count == count_t
+code.typescript:
+return true;
+code.elixir:
+count == count_t
+code.go:
 return true
 # If the interviewer prefers it simple: sort both strings and compare, at O(n log n) against the map's O(n).
 hint: What is the simpler but slower check?
@@ -42,4 +111,64 @@ for ch in t:
     if ch not in count: return false
     count[ch] -= 1
     if count[ch] < 0: return false
+return true
+== pseudocode.python
+if len(s) != len(t):
+    return False
+count = {}
+for char in s:
+    count[char] = count.get(char, 0) + 1
+for char in t:
+    if char not in count:
+        return False
+    count[char] -= 1
+    if count[char] < 0:
+        return False
+return True
+== pseudocode.gleam
+pub fn is_anagram(s: String, t: String) -> Bool {
+  counts(s) == counts(t)
+}
+
+fn counts(word: String) -> dict.Dict(String, Int) {
+  string.to_graphemes(word)
+  |> list.fold(dict.new(), fn(acc, g) {
+    dict.upsert(acc, g, fn(n) { option.unwrap(n, 0) + 1 })
+  })
+}
+== pseudocode.typescript
+if (s.length !== t.length) return false;
+
+const counts = new Map<string, number>();
+for (const char of s) counts.set(char, (counts.get(char) ?? 0) + 1);
+
+for (const char of t) {
+  const remaining = counts.get(char);
+  if (remaining === undefined || remaining === 0) return false;
+  counts.set(char, remaining - 1);
+}
+
+return true;
+== pseudocode.elixir
+def anagram?(s, t) do
+  frequencies(s) == frequencies(t)
+end
+
+defp frequencies(word) do
+  word |> String.graphemes() |> Enum.frequencies()
+end
+== pseudocode.go
+if len(s) != len(t) {
+    return false
+}
+counts := map[rune]int{}
+for _, c := range s {
+    counts[c]++
+}
+for _, c := range t {
+    counts[c]--
+    if counts[c] < 0 {
+        return false
+    }
+}
 return true

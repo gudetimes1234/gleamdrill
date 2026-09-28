@@ -17,27 +17,27 @@ import gleamdrill/model.{
   type CompareSide, type Key, type Model, type Msg, AuthRoute, AwaitingGrade,
   BoardJumped, BoardMoved, BoardShelfMoved, BoardToggledAtCursor, CompareMoved,
   ComparePickedVariant, CompareRoute, DrillRoute, EditorFocusRequested,
-  ExitConfirmed, HelpToggled, HintPane, ImportConfirmed, LeftSide, MenuActivated,
+  ExitConfirmed, HelpToggled, ImportConfirmed, LeftSide, MenuActivated,
   MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
   MenuSuspendedAtCursor, MenuToggledAtCursor, NoPane, NoteFocusRequested,
-  NotePane, PickerConfirmed, PickerConfirmedWithStarter, PickerRoute,
-  QueueCursorJumped, QueueCursorMoved, QueueRoute, QueueToggledAtCursor,
-  QuizMoved, Ran, ReportRoute, RightSide, SearchFocusRequested, SettingsRoute,
-  SolutionPane, StatsActivated, StatsCursorMoved, StatsRoute, StudyRoute,
-  SummaryRoute, TourActivated, TourContents, TourCursorMoved, TourLesson,
-  TourRoute, TourRunTicked, UserAddedAllShown, UserClickedBackToStudy,
-  UserClickedBrowse, UserClickedClearSelection, UserClickedCompare,
-  UserClickedExitDrill, UserClickedExitReport, UserClickedNext, UserClickedQueue,
-  UserClickedRecall, UserClickedRun, UserClickedScratchRun, UserClickedSelectAll,
+  NotePane, QueueCursorJumped, QueueCursorMoved, QueueRoute,
+  QueueToggledAtCursor, QuizMoved, Ran, ReportRoute, RightSide,
+  SearchFocusRequested, SettingsRoute, SolutionPane, StatsActivated,
+  StatsCursorMoved, StatsRoute, StudyRoute, SummaryRoute, TourActivated,
+  TourContents, TourCursorMoved, TourLesson, TourRoute, TourRunTicked,
+  TracksRoute, UserAddedAllShown, UserClickedBackToStudy, UserClickedBrowse,
+  UserClickedClearSelection, UserClickedCompare, UserClickedExitDrill,
+  UserClickedExitReport, UserClickedNext, UserClickedQueue, UserClickedRecall,
+  UserClickedRun, UserClickedScratchRun, UserClickedSelectAll,
   UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
   UserClickedStudy, UserClickedTour, UserClickedTourContents,
-  UserClickedTourNext, UserClickedTourPrev, UserClickedUndo, UserClosedCompare,
-  UserClosedDetail, UserClosedWalk, UserFilteredQueue, UserGraded,
-  UserOpenedWalk, UserPickedActiveQueue, UserPickedChoice, UserRemovedAllShown,
-  UserRevealedHint, UserRevealedRecall, UserSearched, UserSubmittedAnswer,
-  UserSubmittedBoard, UserToggledBlitz, UserToggledDiff, UserToggledPane,
-  UserToggledPrompt, UserToggledResults, WalkAdvanced, WalkBacked, WalkCodeShown,
-  WalkHintShown, WalkPane, WalkWhyShown,
+  UserClickedTourNext, UserClickedTourPrev, UserClickedTracks, UserClickedUndo,
+  UserClosedCompare, UserClosedDetail, UserFilteredQueue, UserGraded,
+  UserPickedActiveQueue, UserPickedChoice, UserRemovedAllShown,
+  UserRevealedRecall, UserRevealedWholeThing, UserSearched, UserSubmittedAnswer,
+  UserSubmittedBoard, UserToggledBlitz, UserToggledDiff, UserToggledNudge,
+  UserToggledPane, UserToggledPrompt, UserToggledResults, WalkAdvanced,
+  WalkBacked, WalkCodeShown, WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/problem
 import gleamdrill/problems
@@ -113,19 +113,24 @@ pub fn bindings(m: Model) -> List(Binding) {
           ),
           help_binding(),
         ]
-        // The picker is a single deliberate choice, so it gets Enter to
-        // confirm and nothing else. No Escape: there is nowhere to escape to
-        // yet, and dismissing it would leave the queue unanswered.
-        PickerRoute -> [
-          Binding(
-            ["Enter"],
-            "start",
-            "Start with a starter set",
-            PickerConfirmedWithStarter,
-          ),
-          Binding(["c"], "choose", "Choose my own problems", PickerConfirmed),
-          help_binding(),
-        ]
+        // The switcher is a list of choices made with the mouse or with
+        // Enter on a focused card; there is no cursor to drive. Escape goes
+        // back to the track you were on, unless there is not one yet.
+        TracksRoute ->
+          list.flatten([
+            case m.active_track {
+              "" -> []
+              _ -> [
+                Binding(
+                  ["Escape", "b"],
+                  "back",
+                  "Back to study",
+                  UserClickedBackToStudy,
+                ),
+              ]
+            },
+            [help_binding()],
+          ])
         SettingsRoute -> [
           Binding(
             ["Escape", "b"],
@@ -177,6 +182,9 @@ fn study_bindings(m: Model) -> List(Binding) {
         "Start studying what is due",
         UserClickedStudy,
       ),
+      // Shift, like `G`: lowercase `t` has meant Stats since before tracks
+      // existed, and moving it would cost more than it bought.
+      Binding(["T"], "tracks", "Switch track", UserClickedTracks),
       Binding(
         ["c"],
         "recall",
@@ -414,14 +422,14 @@ fn menu_bindings(m: Model) -> List(Binding) {
 }
 
 fn drill_bindings(m: Model) -> List(Binding) {
-  case current_kind(m), m.recall, m.slot, m.walk {
-    Ok(problem.QuizDrill), _, _, _ -> quiz_bindings(m)
-    Ok(problem.BoardDrill), _, _, _ -> board_bindings(m)
-    _, True, _, _ -> recall_bindings(m)
-    // While the walkthrough is open it owns the keyboard: its layers, its
-    // steps, and Escape to put it away. The grades stay reachable.
-    _, False, WalkPane, Some(state) -> walk_bindings(m, state)
-    _, False, _, _ -> code_bindings(m)
+  case current_kind(m), m.recall {
+    Ok(problem.QuizDrill), _ -> quiz_bindings(m)
+    Ok(problem.BoardDrill), _ -> board_bindings(m)
+    _, True -> recall_bindings(m)
+    // The walkthrough no longer owns the keyboard, because it is no longer a
+    // pane that opens: the rail is always up, and its keys live alongside the
+    // editor's in `code_bindings`.
+    _, False -> code_bindings(m)
   }
 }
 
@@ -436,57 +444,6 @@ fn prompt_binding(m: Model) -> Binding {
     },
     UserToggledPrompt,
   )
-}
-
-fn walk_bindings(m: Model, state: model.WalkState) -> List(Binding) {
-  let grades = case m.grading {
-    AwaitingGrade -> [
-      Binding(["1"], "again", "Grade: Again", UserGraded(fsrs.Again)),
-      Binding(["2"], "hard", "Grade: Hard", UserGraded(fsrs.Hard)),
-      Binding(["3"], "good", "Grade: Good", UserGraded(fsrs.Good)),
-      Binding(["4"], "easy", "Grade: Easy", UserGraded(fsrs.Easy)),
-    ]
-    _ -> []
-  }
-  list.flatten([
-    [
-      Binding(
-        ["Enter"],
-        "next step",
-        "Next step of the walkthrough",
-        WalkAdvanced,
-      ),
-    ],
-    case state.hint_shown {
-      True -> []
-      False -> [Binding(["h"], "hint", "Show this step's hint", WalkHintShown)]
-    },
-    case state.why_shown {
-      True -> []
-      False -> [Binding(["y"], "why", "Explain this step", WalkWhyShown)]
-    },
-    case state.code_shown {
-      True -> []
-      False -> [
-        Binding(["c"], "code", "Show this step's pseudocode", WalkCodeShown),
-      ]
-    },
-    [
-      Binding(["Backspace"], "back", "Previous step", WalkBacked),
-      Binding(["i", "e"], "edit", "Focus the editor", EditorFocusRequested),
-    ],
-    grades,
-    [
-      Binding(["w", "Escape"], "close", "Close the walkthrough", UserClosedWalk),
-      help_binding(),
-    ],
-    hint_binding(m),
-    solution_binding(m),
-    [
-      Binding(["m"], "note", "Write a note to future you", NoteFocusRequested),
-      prompt_binding(m),
-    ],
-  ])
 }
 
 /// A recall card has two moments: before the reveal, and grading after it.
@@ -516,7 +473,6 @@ fn recall_bindings(m: Model) -> List(Binding) {
     undo_binding(m),
     [
       Binding(["m"], "note", "Write a note to future you", NoteFocusRequested),
-      Binding(["a"], "hint", "Reveal the next approach hint", UserRevealedHint),
       Binding(["n"], "skip", "Skip to the next card", UserClickedNext),
       Binding(["Escape"], "exit", "Exit the sitting", UserClickedExitDrill),
       help_binding(),
@@ -552,9 +508,6 @@ fn code_bindings(m: Model) -> List(Binding) {
     undo_binding(m),
     runnable,
     [Binding(["i", "e"], "edit", "Focus the editor", EditorFocusRequested)],
-    hint_binding(m),
-    next_rung_binding(m),
-    walk_binding(m),
     solution_binding(m),
     [
       Binding(["m"], "note", "Write a note to future you", case m.slot {
@@ -563,6 +516,12 @@ fn code_bindings(m: Model) -> List(Binding) {
       }),
       prompt_binding(m),
     ],
+    // After the panes, not before: the status bar shows the first eight
+    // bindings, and the rail advertises its own keys inline -- every step
+    // carries "Hint h", "Why y", "Code c" on the button itself. Putting it
+    // first pushed the solution, the note and the prompt off the bar, which
+    // is exactly backwards: those have no label anywhere else.
+    rail_bindings(m),
     results_binding(m),
     diff_binding(m),
     [
@@ -580,61 +539,94 @@ fn code_bindings(m: Model) -> List(Binding) {
   ])
 }
 
-/// Only for problems with a hint ladder. The key opens the pane, or closes
-/// it when it is the one showing.
-fn hint_binding(m: Model) -> List(Binding) {
+/// The step rail's keys.
+///
+/// Every step's title is listed from the moment the problem opens, so there is
+/// nothing here that opens or closes a walkthrough: `j` and `k` move the focus,
+/// and `h`/`y`/`c` turn over what is under whichever step has it. Only `c` and
+/// `w` are reveals, and both say so.
+fn rail_bindings(m: Model) -> List(Binding) {
   case current_problem(m) {
-    Ok(current) if current.approach != [] -> [
-      case m.slot {
-        HintPane ->
-          Binding(["a"], "close", "Close the hints", UserToggledPane(HintPane))
-        _ ->
+    Error(Nil) -> []
+    Ok(current) -> {
+      let steps = model.walk_steps(current.approach)
+      let nudge = case model.nudge_text(current.approach) {
+        None -> []
+        Some(_) -> [
           Binding(
             ["a"],
-            "hint",
-            "Open the approach hints",
-            UserToggledPane(HintPane),
-          )
-      },
-    ]
-    _ -> []
-  }
-}
-
-/// With the ladder open, Enter turns the next rung: the walk form of the
-/// plan opens the guided pane, the other rungs unfold in place.
-fn next_rung_binding(m: Model) -> List(Binding) {
-  case m.slot, current_problem(m) {
-    HintPane, Ok(current) ->
-      case list.drop(current.approach, m.hints_revealed) {
-        [] -> []
-        [problem.Walk(_), ..] -> [
-          Binding(
-            ["Enter"],
-            "walk",
-            "Walk through the approach",
-            UserOpenedWalk,
-          ),
-        ]
-        [problem.Pseudocode(_), ..] -> [
-          Binding(
-            ["Enter"],
-            "pseudocode",
-            "Show the pseudocode (a reveal)",
-            UserRevealedHint,
-          ),
-        ]
-        [problem.Nudge(_), ..] -> [
-          Binding(
-            ["Enter"],
-            "next hint",
-            "Show the next hint",
-            UserRevealedHint,
+            "nudge",
+            case m.nudge_shown {
+              True -> "Fold the nudge away"
+              False -> "Unfold the nudge"
+            },
+            UserToggledNudge,
           ),
         ]
       }
-    _, _ -> []
+      let walk = case steps {
+        [] -> []
+        _ -> {
+          let open = model.layers_at(m.walk, m.walk.focus)
+          let has_code = case focused_step(steps, m.walk.focus) {
+            Ok(step) -> problem.slice_for(step.code, current.language) != ""
+            Error(Nil) -> False
+          }
+          list.flatten([
+            [
+              Binding(["j"], "next step", "Focus the next step", WalkAdvanced),
+              Binding(["k"], "prev step", "Focus the previous step", WalkBacked),
+            ],
+            case open.hint {
+              True -> []
+              False -> [
+                Binding(["h"], "hint", "Show this step's hint", WalkHintShown),
+              ]
+            },
+            case open.why {
+              True -> []
+              False -> [
+                Binding(["y"], "why", "Explain this step", WalkWhyShown),
+              ]
+            },
+            case has_code, open.code {
+              True, False -> [
+                Binding(
+                  ["c"],
+                  "code",
+                  "Show this step's code (a reveal)",
+                  WalkCodeShown,
+                ),
+              ]
+              _, _ -> []
+            },
+          ])
+        }
+      }
+      let whole = case
+        model.whole_thing(current.approach, current.language),
+        m.whole_thing_shown
+      {
+        Some(_), False -> [
+          Binding(
+            ["w"],
+            "whole thing",
+            "Show the whole approach at once (a reveal)",
+            UserRevealedWholeThing,
+          ),
+        ]
+        _, _ -> []
+      }
+      list.flatten([nudge, walk, whole])
+    }
   }
+}
+
+fn focused_step(
+  steps: List(problem.WalkStep),
+  index: Int,
+) -> Result(problem.WalkStep, Nil) {
+  list.drop(steps, index) |> list.first
 }
 
 /// Only for problems with a reference solution. Same key to close.
@@ -671,6 +663,7 @@ fn quiz_bindings(m: Model) -> List(Binding) {
       Binding(["3"], "C", "Pick choice C", UserPickedChoice(2)),
       Binding(["4"], "D", "Pick choice D", UserPickedChoice(3)),
       Binding(["Enter"], "submit", "Submit the answer", UserSubmittedAnswer),
+      Binding(["n"], "skip", "Skip to the next question", UserClickedNext),
       Binding(["Escape"], "exit", "Exit the exam", UserClickedExitDrill),
       help_binding(),
     ]
@@ -718,6 +711,7 @@ fn board_bindings(m: Model) -> List(Binding) {
           ]
         },
         [
+          Binding(["n"], "skip", "Skip to the next drill", UserClickedNext),
           Binding(["Escape"], "exit", "Exit the drill", UserClickedExitDrill),
           help_binding(),
         ],
@@ -731,20 +725,6 @@ fn board_bindings(m: Model) -> List(Binding) {
           help_binding(),
         ],
       ])
-  }
-}
-
-/// Only for problems whose plan is written as a walkthrough.
-fn walk_binding(m: Model) -> List(Binding) {
-  case current_problem(m) {
-    Ok(current) ->
-      case model.walk_steps(current.approach) {
-        [] -> []
-        _ -> [
-          Binding(["w"], "walk", "Walk through the approach", UserOpenedWalk),
-        ]
-      }
-    Error(Nil) -> []
   }
 }
 
@@ -927,7 +907,7 @@ pub fn context_label(m: Model) -> String {
       }
     StatsRoute -> "STATS"
     ReportRoute -> "REPORT"
-    PickerRoute -> "SETUP"
+    TracksRoute -> "TRACKS"
     SettingsRoute -> "SETTINGS"
     SummaryRoute -> "SUMMARY"
     TourRoute -> "TOUR"

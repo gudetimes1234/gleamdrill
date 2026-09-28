@@ -5,14 +5,15 @@ import gleam/option.{None, Some}
 import gleam/string
 import gleamdrill/model.{
   type Model, type Msg, UserAddedSelectionToQueue, UserChangedIterations,
-  UserClickedBreadcrumb, UserClickedCategory, UserClickedClearSelection,
-  UserClickedCompare, UserClickedSelectAll, UserClickedStartDrill,
-  UserClickedStartExam, UserClickedSubcategory, UserSearched, UserToggledProblem,
-  UserToggledSuspend,
+  UserClickedBreadcrumb, UserClickedClearSelection, UserClickedCompare,
+  UserClickedSelectAll, UserClickedStartDrill, UserClickedStartExam,
+  UserClickedSubcategory, UserSearched, UserToggledProblem, UserToggledSuspend,
 }
 import gleamdrill/problem.{type Problem, type ProblemRef}
 import gleamdrill/problems
+import gleamdrill/track
 import gleamdrill/view/format
+import gleamdrill/view/nav
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -21,12 +22,15 @@ import lustre/event
 import wire.{ProblemRef}
 
 pub fn view(m: Model) -> Element(Msg) {
-  let listed_problems = case m.selected_category, m.selected_subcategory {
-    Some(cat), Some(sub) -> problems.problems_in(cat, sub)
-    _, _ -> []
+  let listed_problems = case m.selected_subcategory {
+    Some(sub) -> problems.problems_in(m.active_track, sub)
+    None -> []
   }
 
   html.div([attribute.class("menu-container")], [
+    // Every other top-level screen shows these; Browse never did, so the
+    // "added to <queue>" confirmation was set and silently never seen.
+    nav.notices(m),
     html.div([attribute.class("menu-top")], [
       html.h1([attribute.class("menu-title")], [html.text("GleamDrill")]),
       html.input([
@@ -41,7 +45,6 @@ pub fn view(m: Model) -> Element(Msg) {
       "" -> [
         breadcrumbs(m),
         html.div([attribute.class("panes-container")], [
-          language_pane(m),
           subcategory_pane(m),
           problem_pane(m, listed_problems),
           selected_pane(m),
@@ -206,7 +209,7 @@ fn selected_pane(m: Model) -> Element(Msg) {
                   html.text(ref.title),
                 ]),
                 html.span([attribute.class("lang-tag")], [
-                  html.text(problems.language_tag(ref.category)),
+                  html.text(track.tag(ref.category)),
                 ]),
                 html.span(
                   [
@@ -225,10 +228,7 @@ fn selected_pane(m: Model) -> Element(Msg) {
 
 fn breadcrumbs(m: Model) -> Element(Msg) {
   let crumbs =
-    ["Languages"]
-    |> list.append(
-      option.values([m.selected_category]) |> list.map(problems.language_label),
-    )
+    [track.label(m.active_track)]
     |> list.append(option.values([m.selected_subcategory]))
   let last = list.length(crumbs) - 1
 
@@ -258,40 +258,10 @@ fn breadcrumbs(m: Model) -> Element(Msg) {
   )
 }
 
-/// The first question is which language you are drilling in, so it is the
-/// first pane. Each row opens its category — `selected_category` still stores
-/// the real category name, so nothing downstream (cards, refs, the server)
-/// changes. The day a language has a second collection, a Category pane
-/// re-inserts itself here as a view-only change.
-fn language_pane(m: Model) -> Element(Msg) {
-  let entries = problems.language_entries()
-  let length = list.length(entries)
-  pane(
-    "Language",
-    m.nav.focus == model.LanguagesPane,
-    keyed.div(
-      [attribute.class("pane-list")],
-      list.index_map(entries, fn(entry, index) {
-        let #(label, category) = entry
-        #(
-          category,
-          nav_item(
-            label,
-            m.selected_category == Some(category),
-            cursor_attributes(m, model.LanguagesPane, index, length),
-            UserClickedCategory(category),
-          ),
-        )
-      }),
-    ),
-  )
-}
-
+/// Topics, the first pane now. The track decides which catalogue these come
+/// from, so there is no language to choose first.
 fn subcategory_pane(m: Model) -> Element(Msg) {
-  let subcategories = case m.selected_category {
-    Some(cat) -> problems.subcategory_names(cat)
-    None -> []
-  }
+  let subcategories = problems.subcategory_names(m.active_track)
   let length = list.length(subcategories)
   pane(
     "Subcategory",
@@ -332,7 +302,7 @@ fn problem_pane(m: Model, listed_problems: List(Problem)) -> Element(Msg) {
         ]),
       ])
     _ -> {
-      let assert Some(cat) = m.selected_category
+      let cat = m.active_track
       let assert Some(sub) = m.selected_subcategory
       keyed.div(
         [attribute.class("pane-list")],
@@ -452,7 +422,6 @@ fn pane(title: String, focused: Bool, contents: Element(Msg)) -> Element(Msg) {
 /// the same clamp the update side applies, so highlight and action agree.
 fn cursor_row(m: Model, pane: model.MenuPane, length: Int) -> Int {
   let raw = case pane {
-    model.LanguagesPane -> m.nav.language
     model.SubcategoriesPane -> m.nav.subcategory
     model.ProblemsPane -> m.nav.problem
     model.SelectedPane -> m.nav.selected

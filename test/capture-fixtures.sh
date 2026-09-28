@@ -15,7 +15,12 @@ CT='content-type: application/json'
 HERE="$(cd "$(dirname "$0")" && pwd)"
 
 EMAIL="fixture-$RANDOM$RANDOM@example.com"
-REF='"category":"NeetCode 150 · Python","subcategory":"Arrays & Hashing","title":"Contains Duplicate"'
+# The Python catalogue's category is the bare name -- only the other four
+# carry a suffix (src/gleamdrill/problems/neetcode_python.gleam). The server
+# validates nothing about category strings, so the "NeetCode 150 · Python"
+# this used to say was a category the catalogue has never had: cards under a
+# name nothing can reach. Under tracks it would have been a phantom track.
+REF='"category":"NeetCode 150","subcategory":"Arrays & Hashing","title":"Contains Duplicate"'
 
 SIGNUP=$(curl -sf -X POST "$B/api/auth/signup" -H "$CT" \
   -d "{\"email\":\"$EMAIL\",\"password\":\"correct-horse-battery\"}")
@@ -52,7 +57,7 @@ curl -sf -X POST "$B/api/reviews" -H "$AUTH2" -H "$CT" \
 curl -sf -X POST "$B/api/reviews" -H "$AUTH2" -H "$CT" \
   -d "{$REF,\"rating\":3,\"durationMs\":90000}" > /dev/null
 INSIGHTS=$(curl -sf "$B/api/insights" -H "$AUTH2")
-HISTORY=$(curl -sf "$B/api/history?category=NeetCode%20150%20%C2%B7%20Python&subcategory=Arrays%20%26%20Hashing&title=Contains%20Duplicate" -H "$AUTH2")
+HISTORY=$(curl -sf "$B/api/history?category=NeetCode%20150&subcategory=Arrays%20%26%20Hashing&title=Contains%20Duplicate" -H "$AUTH2")
 
 mkdir -p "$HERE/fixtures"
 python3 - "$HERE/fixtures" "$SIGNUP" "$STATE" "$REVIEW" "$STATS" "$INSIGHTS" "$HISTORY" <<'PY'

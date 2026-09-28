@@ -6,30 +6,129 @@ hint: You need to answer "have I met this before?" many times. Which structure a
 why: A hash set gives O(1) membership checks, which turns the naive O(n²) compare-every-pair into a single pass; the price is O(n) extra space.
 code:
 seen = empty set
+code.python:
+seen = set()
+code.gleam:
+check(nums, set.new())
+code.typescript:
+const seen = new Set<number>();
+code.elixir:
+Enum.reduce_while(nums, MapSet.new(), fn n, seen ->
+code.go:
+seen := map[int]bool{}
 # Walk the array once; for each value, ask the set whether it's already there.
 hint: How many passes over the array should this take if the set is doing its job?
 why: One pass is enough because the set remembers everything to the left of the current position, so each value only has to be compared with the set, not with every earlier value.
 code:
 for value in nums:
     if value in seen:
+code.python:
+for num in nums:
+    if num in seen:
+code.gleam:
+case nums {
+  [n, ..rest] ->
+    case set.contains(seen, n) {
+code.typescript:
+for (const num of nums) {
+  if (seen.has(num)) {
+code.elixir:
+  if MapSet.member?(seen, n) do
+code.go:
+for _, n := range nums {
+    if seen[n] {
 # If it is, stop — the answer is true, no need to know where or how many.
 hint: The moment you find a repeat, is there anything left to learn from the rest of the array?
 why: Returning at the first repeat is correct and makes the best case O(1); the problem asks whether any duplicate exists, not which or how many.
 code:
+        return true
+code.python:
+        return True
+code.gleam:
+      True -> True
+code.typescript:
+    return true;
+code.elixir:
+    {:halt, true}
+code.go:
         return true
 # Otherwise add the value and keep walking.
 hint: If a value is new, what has to happen so a later copy of it is caught?
 why: Adding after the check, not before, is what stops a value from matching itself.
 code:
     seen.add(value)
+code.python:
+    seen.add(num)
+code.gleam:
+      False -> check(rest, set.insert(seen, n))
+code.typescript:
+  seen.add(num);
+code.elixir:
+    {:cont, MapSet.put(seen, n)}
+code.go:
+    seen[n] = true
 # Fall off the end: every value was new, answer false.
 hint: What does reaching the end of the loop without returning tell you?
 why: If the loop finishes, every value was inserted without a hit, so there is no duplicate; the false lives after the loop, not inside it.
 code:
+return false
+code.python:
+return False
+code.gleam:
+[] -> False
+code.typescript:
+return false;
+code.elixir:
+end) == true
+code.go:
 return false
 == pseudocode
 seen = empty set
 for value in nums:
     if value in seen: return true
     seen.add(value)
+return false
+== pseudocode.python
+seen = set()
+for num in nums:
+    if num in seen:
+        return True
+    seen.add(num)
+return False
+== pseudocode.gleam
+pub fn contains_duplicate(nums: List(Int)) -> Bool {
+  check(nums, set.new())
+}
+
+fn check(nums: List(Int), seen: set.Set(Int)) -> Bool {
+  case nums {
+    [] -> False
+    [n, ..rest] ->
+      case set.contains(seen, n) {
+        True -> True
+        False -> check(rest, set.insert(seen, n))
+      }
+  }
+}
+== pseudocode.typescript
+const seen = new Set<number>();
+for (const num of nums) {
+  if (seen.has(num)) return true;
+  seen.add(num);
+}
+return false;
+== pseudocode.elixir
+Enum.reduce_while(nums, MapSet.new(), fn n, seen ->
+  if MapSet.member?(seen, n),
+    do: {:halt, true},
+    else: {:cont, MapSet.put(seen, n)}
+end) == true
+== pseudocode.go
+seen := map[int]bool{}
+for _, n := range nums {
+    if seen[n] {
+        return true
+    }
+    seen[n] = true
+}
 return false

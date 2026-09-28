@@ -156,11 +156,56 @@ pub fn customised_settings_round_trip_test() {
       ..wire.default_settings(),
       new_per_day: 3,
       reviews_per_day: 12,
+    )
+  round_trip(settings, wire.settings_to_json, wire.settings_decoder())
+}
+
+pub fn account_settings_round_trip_test() {
+  round_trip(
+    wire.default_account(),
+    wire.account_to_json,
+    wire.account_decoder(),
+  )
+  round_trip(
+    wire.AccountSettings(
+      day_start_hour: 2,
+      timezone: "Europe/Lisbon",
+      reminder_hour: Some(8),
+    ),
+    wire.account_to_json,
+    wire.account_decoder(),
+  )
+}
+
+pub fn track_standing_round_trips_test() {
+  round_trip(
+    a_standing(),
+    wire.track_standing_to_json,
+    wire.track_standing_decoder(),
+  )
+}
+
+/// The one flat blob every settings object was before tracks: both halves
+/// read out of it, which is what lets a pre-split file, a pre-split server
+/// and a guest's stored settings all be adopted by the same rule.
+pub fn a_legacy_settings_blob_splits_in_two_test() {
+  let account =
+    wire.AccountSettings(
       day_start_hour: 2,
       timezone: "Europe/Lisbon",
       reminder_hour: Some(8),
     )
-  round_trip(settings, wire.settings_to_json, wire.settings_decoder())
+  let settings =
+    wire.Settings(
+      ..wire.default_settings(),
+      new_per_day: 3,
+      reviews_per_day: 12,
+    )
+  let body = json.to_string(wire.legacy_settings_to_json(account, settings))
+  let assert Ok(back) = json.parse(from: body, using: wire.settings_decoder())
+  assert back == settings
+  let assert Ok(back) = json.parse(from: body, using: wire.account_decoder())
+  assert back == account
 }
 
 /// Settings saved before reminders existed carry no hour: off, not 422.
@@ -171,9 +216,8 @@ pub fn settings_without_a_reminder_hour_default_to_off_test() {
     <> "\"learningSteps\":[1,10],\"relearningSteps\":[10],"
     <> "\"maximumInterval\":36500,\"enableFuzz\":true,\"newPerDay\":5,"
     <> "\"reviewsPerDay\":100,\"dayStartHour\":4,\"timezone\":\"UTC\"}"
-  let assert Ok(settings) =
-    json.parse(from: body, using: wire.settings_decoder())
-  assert settings.reminder_hour == None
+  let assert Ok(account) = json.parse(from: body, using: wire.account_decoder())
+  assert account.reminder_hour == None
 }
 
 pub fn boot_state_round_trips_test() {
@@ -181,6 +225,9 @@ pub fn boot_state_round_trips_test() {
     wire.BootState(
       now: fsrs.from_epoch(1_787_788_818.0),
       user: a_user(),
+      account: wire.default_account(),
+      track: "NeetCode 150 (Go)",
+      tracks: [a_standing()],
       settings: wire.default_settings(),
       cards: [a_card()],
       drafts: [#(a_ref(), "draft body")],
@@ -191,12 +238,58 @@ pub fn boot_state_round_trips_test() {
   round_trip(state, wire.boot_state_to_json, wire.boot_state_decoder())
 }
 
+/// A server from before the split sends no `account` and no `track`: the
+/// account-wide knobs are still inside `settings`, and that is where the new
+/// decoder finds them. This is what keeps a browser running the cached
+/// previous bundle working across the deploy -- and the reverse, a new client
+/// against a server that has not rolled yet.
+pub fn a_boot_state_without_an_account_reads_the_legacy_fields_test() {
+  let account =
+    wire.AccountSettings(
+      day_start_hour: 3,
+      timezone: "Europe/Lisbon",
+      reminder_hour: Some(7),
+    )
+  let state =
+    wire.BootState(
+      now: fsrs.from_epoch(1_787_788_818.0),
+      user: a_user(),
+      account:,
+      track: "",
+      tracks: [],
+      settings: wire.default_settings(),
+      cards: [],
+      drafts: [],
+      notes: [],
+      queues: [],
+      today: a_today(),
+    )
+  let body =
+    wire.boot_state_to_json(state)
+    |> json.to_string
+    |> string.replace(
+      "\"account\":" <> json.to_string(wire.account_to_json(account)) <> ",",
+      "",
+    )
+    |> string.replace("\"track\":\"\",", "")
+    |> string.replace("\"tracks\":[],", "")
+  let assert Ok(decoded) =
+    json.parse(from: body, using: wire.boot_state_decoder())
+  assert decoded.account == account
+  assert decoded.track == ""
+  assert decoded.tracks == []
+  assert decoded.settings == wire.default_settings()
+}
+
 /// A boot state from a server that predates queues carries none.
 pub fn boot_state_without_queues_decodes_test() {
   let state =
     wire.BootState(
       now: fsrs.from_epoch(1_787_788_818.0),
       user: a_user(),
+      account: wire.default_account(),
+      track: "NeetCode 150",
+      tracks: [],
       settings: wire.default_settings(),
       cards: [],
       drafts: [],
@@ -216,16 +309,43 @@ pub fn boot_state_without_queues_decodes_test() {
 pub fn queue_round_trips_test() {
   round_trip(a_queue(), wire.queue_to_json, wire.queue_decoder())
   round_trip(
-    wire.Queue(name: "empty", problems: []),
+    wire.Queue(track: "System Design", name: "empty", problems: []),
     wire.queue_to_json,
     wire.queue_decoder(),
   )
 }
 
+/// A queue stored before tracks existed takes its first problem's category,
+/// which is the track that problem is in: available, and lossless for any
+/// non-empty list. An empty one has nothing to go on and lands inert.
+pub fn a_queue_without_a_track_takes_its_first_problems_test() {
+  let body =
+    a_queue()
+    |> wire.queue_to_json
+    |> json.to_string
+    |> string.replace("\"track\":\"NeetCode 150\",", "")
+  let assert Ok(decoded) = json.parse(from: body, using: wire.queue_decoder())
+  assert decoded.track == a_ref().category
+
+  let body =
+    wire.Queue(track: "NeetCode 150", name: "empty", problems: [])
+    |> wire.queue_to_json
+    |> json.to_string
+    |> string.replace("\"track\":\"NeetCode 150\",", "")
+  let assert Ok(decoded) = json.parse(from: body, using: wire.queue_decoder())
+  assert decoded.track == ""
+}
+
 /// The PUT body and the GET response: the set, wrapped.
 pub fn queues_payload_round_trips_test() {
   round_trip(
-    [a_queue(), wire.Queue(name: "later", problems: [a_ref(), a_ref()])],
+    [
+      a_queue(),
+      wire.Queue(track: "NeetCode 150 (Go)", name: "later", problems: [
+        a_ref(),
+        a_ref(),
+      ]),
+    ],
     wire.queues_to_json,
     wire.queues_decoder(),
   )
@@ -236,7 +356,14 @@ pub fn archive_round_trips_test() {
     wire.Archive(
       version: wire.archive_version,
       exported_at: fsrs.from_epoch(1_787_788_818.0),
-      settings: wire.default_settings(),
+      account: wire.default_account(),
+      tracks: [
+        #("NeetCode 150", wire.default_settings()),
+        #(
+          "NeetCode 150 (Go)",
+          wire.Settings(..wire.default_settings(), new_per_day: 2),
+        ),
+      ],
       cards: [a_card()],
       reviews: [
         #(
@@ -266,11 +393,54 @@ pub fn a_version_1_archive_decodes_without_queues_test() {
   let body =
     "{\"gleamdrill\":1,\"exportedAt\":1787788818.0,"
     <> "\"settings\":"
-    <> json.to_string(wire.settings_to_json(wire.default_settings()))
+    <> json.to_string(wire.legacy_settings_to_json(
+      wire.default_account(),
+      wire.default_settings(),
+    ))
     <> ",\"cards\":[],\"reviews\":[]}"
   let assert Ok(archive) = json.parse(from: body, using: wire.archive_decoder())
   assert archive.version == 1
   assert archive.queues == []
+}
+
+/// An account whose every track is on the defaults exports no settings at
+/// all -- a version 3 file writes nothing rather than N copies of the
+/// defaults. That is a valid file, not a broken one.
+pub fn an_archive_with_no_settings_at_all_decodes_test() {
+  let body =
+    "{\"gleamdrill\":3,\"exportedAt\":1787788818.0,"
+    <> "\"cards\":[],\"reviews\":[]}"
+  let assert Ok(archive) = json.parse(from: body, using: wire.archive_decoder())
+  assert archive.tracks == []
+  assert archive.account == wire.default_account()
+}
+
+/// A file from before tracks had one settings blob and no idea there were
+/// tracks, so its per-track half applies to all of them -- the "" key, the
+/// same fallback convention the approach code slices use -- and its
+/// account-wide half becomes `account`. Nobody's export stops restoring.
+pub fn a_version_2_archive_splits_its_settings_test() {
+  let account =
+    wire.AccountSettings(
+      day_start_hour: 3,
+      timezone: "Europe/Lisbon",
+      reminder_hour: Some(7),
+    )
+  let settings =
+    wire.Settings(
+      ..wire.default_settings(),
+      new_per_day: 9,
+      reviews_per_day: 40,
+    )
+  let body =
+    "{\"gleamdrill\":2,\"exportedAt\":1787788818.0,"
+    <> "\"settings\":"
+    <> json.to_string(wire.legacy_settings_to_json(account, settings))
+    <> ",\"cards\":[],\"reviews\":[]}"
+  let assert Ok(archive) = json.parse(from: body, using: wire.archive_decoder())
+  assert archive.version == 2
+  assert archive.account == account
+  assert archive.tracks == [#("", settings)]
 }
 
 pub fn undo_outcome_round_trips_test() {
@@ -511,12 +681,14 @@ pub fn card_without_introduced_at_decodes_test() {
 // --- fixtures --------------------------------------------------------------
 
 fn a_queue() -> wire.Queue {
-  wire.Queue(name: "Two Pointers · Go", problems: [a_ref()])
+  wire.Queue(track: "NeetCode 150", name: "Two Pointers · Go", problems: [
+    a_ref(),
+  ])
 }
 
 fn a_ref() -> wire.ProblemRef {
   wire.ProblemRef(
-    category: "NeetCode 150 · Python",
+    category: "NeetCode 150",
     subcategory: "Arrays & Hashing",
     title: "Contains Duplicate",
   )
@@ -539,6 +711,17 @@ fn a_card() -> wire.CardState {
     lapses: 2,
     suspended: False,
     introduced_at: Some(fsrs.from_epoch(1_780_000_000.0)),
+  )
+}
+
+fn a_standing() -> wire.TrackStanding {
+  wire.TrackStanding(
+    track: "NeetCode 150 (Go)",
+    settings: wire.Settings(..wire.default_settings(), new_per_day: 2),
+    cards: 48,
+    due_now: 12,
+    introduced_today: 3,
+    reviews_today: 9,
   )
 }
 

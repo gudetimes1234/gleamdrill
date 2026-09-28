@@ -13,7 +13,10 @@
 
 import gleam/dict
 import gleam/int
+import gleam/list
+import gleam/order
 import gleam/result
+import gleam/string
 import gleam/time/timestamp
 import gleamdrill/api
 import gleamdrill/browser
@@ -30,15 +33,31 @@ import wire
 
 pub fn load_state(m: Model) -> Effect(Msg) {
   case m.mode {
-    Account(token) -> api.fetch_state(base(), token, StateLoaded)
+    Account(token) ->
+      api.fetch_state(base(), token, m.active_track, StateLoaded)
     Guest -> {
       use dispatch <- effect.from
+      // The *whole* store, always. Every `local.save_*` serialises all of
+      // `Local`, so a filtered load followed by one debounced draft write
+      // would delete every other track's cards. The track narrows what is
+      // reported, never what is read.
       let store = local.load()
       // Read, not defaulted. This line used to hardcode the defaults, so a
       // guest's settings survived exactly until the next page load.
-      let settings = local.load_settings()
+      let stored = local.load_stored()
       let now = timestamp.system_time()
-      let day = local.current_day(settings)
+      let day = local.current_day(stored.account)
+      let settings_for = fn(track) {
+        list.key_find(stored.tracks, track)
+        |> result.unwrap(wire.default_settings())
+      }
+      let standings = local.standings(store, settings_for, now, day)
+      // No track asked for means the busiest one, the same rule the server
+      // answers a bare request with.
+      let track = case m.active_track {
+        "" -> busiest(standings)
+        chosen -> chosen
+      }
       dispatch(
         StateLoaded(
           Ok(wire.BootState(
@@ -46,17 +65,36 @@ pub fn load_state(m: Model) -> Effect(Msg) {
             // A guest has no account, so there is no email to show. The view
             // branches on `mode`, not on this.
             user: wire.User(id: "", email: ""),
-            settings:,
-            cards: dict.values(store.cards),
-            drafts: store.drafts,
-            notes: store.notes,
-            queues: store.queues,
-            today: local.today(store, settings, now, day),
+            account: stored.account,
+            track:,
+            tracks: standings,
+            settings: settings_for(track),
+            cards: local.cards_in(store, track),
+            drafts: local.drafts_in(store, track),
+            notes: local.notes_in(store, track),
+            queues: local.queues_in(store, track),
+            today: local.today(store, track, settings_for(track), now, day),
           )),
         ),
       )
     }
   }
+}
+
+/// The track with the most cards, ties by name; "" when there are none.
+/// Mirrors the server's `default_track`, because a guest who signs up should
+/// land where they already were.
+fn busiest(standings: List(wire.TrackStanding)) -> String {
+  standings
+  |> list.sort(fn(a: wire.TrackStanding, b: wire.TrackStanding) {
+    case int.compare(b.cards, a.cards) {
+      order.Eq -> string.compare(a.track, b.track)
+      other -> other
+    }
+  })
+  |> list.first
+  |> result.map(fn(standing: wire.TrackStanding) { standing.track })
+  |> result.unwrap("")
 }
 
 pub fn record_review(m: Model, review: api.Review) -> Effect(Msg) {
@@ -67,7 +105,7 @@ pub fn record_review(m: Model, review: api.Review) -> Effect(Msg) {
       // The device clock, not a server's. A guest who changes their system
       // time shifts their own due dates; Anki behaves the same way locally.
       let now = timestamp.system_time()
-      let day = local.current_day(m.settings)
+      let day = local.current_day(m.account)
       let store = local.load()
 
       let #(updated, card) =
@@ -91,7 +129,7 @@ pub fn record_review(m: Model, review: api.Review) -> Effect(Msg) {
             Ok(wire.ReviewOutcome(
               now:,
               card:,
-              today: local.today(updated, m.settings, now, day),
+              today: local.today(updated, m.active_track, m.settings, now, day),
             )),
           )
       })
@@ -106,15 +144,18 @@ pub fn export_archive(m: Model) -> Effect(Msg) {
     Account(token) -> api.fetch_export(base(), token, ArchiveReady)
     Guest -> {
       use dispatch <- effect.from
-      dispatch(
-        ArchiveReady(
-          Ok(local.archive(
+      dispatch(ArchiveReady(
+        // The whole account, every track: an archive is the backup.
+        Ok({
+          let stored = local.load_stored()
+          local.archive(
             local.load(),
-            local.load_settings(),
+            stored.account,
+            stored.tracks,
             timestamp.system_time(),
-          )),
-        ),
-      )
+          )
+        }),
+      ))
     }
   }
 }
@@ -128,7 +169,13 @@ pub fn restore_archive(m: Model, archive: api.Archive) -> Effect(Msg) {
       use dispatch <- effect.from
       dispatch(
         ArchiveRestored(
-          case local.save_all(local.restore(archive), archive.settings) {
+          case
+            local.save_all(
+              local.restore(archive),
+              archive.account,
+              local.archive_tracks(archive),
+            )
+          {
             Ok(Nil) -> Ok(Nil)
             Error(Nil) -> Error(storage_full())
           },
@@ -143,11 +190,12 @@ pub fn restore_archive(m: Model, archive: api.Archive) -> Effect(Msg) {
 /// the model kept, and the log loses its newest row.
 pub fn undo_review(m: Model, point: UndoPoint) -> Effect(Msg) {
   case m.mode {
-    Account(token) -> api.delete_review(base(), token, UndoRecorded(point, _))
+    Account(token) ->
+      api.delete_review(base(), token, m.active_track, UndoRecorded(point, _))
     Guest -> {
       use dispatch <- effect.from
       let now = timestamp.system_time()
-      let day = local.current_day(m.settings)
+      let day = local.current_day(m.account)
       let store = local.load()
       let result = {
         use updated <- result.try(
@@ -161,7 +209,7 @@ pub fn undo_review(m: Model, point: UndoPoint) -> Effect(Msg) {
             Ok(wire.UndoOutcome(
               now:,
               card: point.card_before,
-              today: local.today(updated, m.settings, now, day),
+              today: local.today(updated, m.active_track, m.settings, now, day),
             ))
           _, _ -> Error(storage_full())
         }
@@ -184,7 +232,7 @@ pub fn set_suspended(
     Guest -> {
       use dispatch <- effect.from
       let now = timestamp.system_time()
-      let day = local.current_day(m.settings)
+      let day = local.current_day(m.account)
       let store = local.load()
       dispatch(case local.set_suspended(store, problem, suspended) {
         Error(Nil) ->
@@ -199,7 +247,13 @@ pub fn set_suspended(
                 Ok(wire.ReviewOutcome(
                   now:,
                   card:,
-                  today: local.today(updated, m.settings, now, day),
+                  today: local.today(
+                    updated,
+                    m.active_track,
+                    m.settings,
+                    now,
+                    day,
+                  ),
                 )),
               )
           }
@@ -219,7 +273,7 @@ pub fn add_to_queue(m: Model, problems: List(ProblemRef)) -> Effect(Msg) {
     Guest -> {
       use dispatch <- effect.from
       let now = timestamp.system_time()
-      let day = local.current_day(m.settings)
+      let day = local.current_day(m.account)
       let #(updated, cards) = local.enqueue(local.load(), problems, now)
       dispatch(case local.save_cards(updated) {
         Error(Nil) -> QueueChanged(Error(storage_full()))
@@ -230,7 +284,7 @@ pub fn add_to_queue(m: Model, problems: List(ProblemRef)) -> Effect(Msg) {
               cards:,
               removed: [],
               refused: [],
-              today: local.today(updated, m.settings, now, day),
+              today: local.today(updated, m.active_track, m.settings, now, day),
             )),
           )
       })
@@ -244,7 +298,7 @@ pub fn remove_from_queue(m: Model, problems: List(ProblemRef)) -> Effect(Msg) {
     Guest -> {
       use dispatch <- effect.from
       let now = timestamp.system_time()
-      let day = local.current_day(m.settings)
+      let day = local.current_day(m.account)
       let #(updated, removed, refused) = local.dequeue(local.load(), problems)
       dispatch(case local.save_cards(updated) {
         Error(Nil) -> QueueChanged(Error(storage_full()))
@@ -255,7 +309,7 @@ pub fn remove_from_queue(m: Model, problems: List(ProblemRef)) -> Effect(Msg) {
               cards: [],
               removed:,
               refused:,
-              today: local.today(updated, m.settings, now, day),
+              today: local.today(updated, m.active_track, m.settings, now, day),
             )),
           )
       })
@@ -315,14 +369,22 @@ pub fn save_note(m: Model, problem: ProblemRef, body: String) -> Effect(Msg) {
   }
 }
 
-/// Persist the named queues, whole: the model owns the list, so the guest
-/// branch writes what it is given rather than merging.
+/// Persist the named queues. `m.queues` is only the active track's list, so
+/// the guest branch must splice it in beside the other tracks' queues --
+/// replacing the whole stored list with it would delete theirs, the exact
+/// mistake `write_queues`' unscoped delete made on the server.
 pub fn save_queues(m: Model) -> Effect(Msg) {
   case m.mode {
-    Account(token) -> api.put_queues(base(), token, m.queues, QueuesSaved)
+    Account(token) ->
+      api.put_queues(base(), token, m.active_track, m.queues, QueuesSaved)
     Guest -> {
       use dispatch <- effect.from
-      let updated = local.Local(..local.load(), queues: m.queues)
+      let stored = local.load()
+      let updated =
+        local.Local(
+          ..stored,
+          queues: spliced_queues(stored.queues, m.active_track, m.queues),
+        )
       dispatch(
         QueuesSaved(case local.save_queues(updated) {
           Ok(Nil) -> Ok(Nil)
@@ -333,17 +395,31 @@ pub fn save_queues(m: Model) -> Effect(Msg) {
   }
 }
 
+/// The splice itself, pure so a test can pin it: every other track's stored
+/// queues survive untouched, and the active track's list is replaced whole.
+pub fn spliced_queues(
+  stored: List(wire.Queue),
+  track: String,
+  queues: List(wire.Queue),
+) -> List(wire.Queue) {
+  list.append(
+    list.filter(stored, fn(queue: wire.Queue) { queue.track != track }),
+    queues,
+  )
+}
+
 /// Persist the scheduler settings. Same shape as `save_draft`, with one
 /// difference worth naming: the server answers with the settings it stored, so
 /// the guest branch has to dispatch what it just wrote rather than `Nil`.
-pub fn save_settings(m: Model, settings: api.Settings) -> Effect(Msg) {
+pub fn save_settings(m: Model, profile: wire.Profile) -> Effect(Msg) {
   case m.mode {
-    Account(token) -> api.put_settings(base(), token, settings, SettingsSaved)
+    Account(token) ->
+      api.put_settings(base(), token, m.active_track, profile, SettingsSaved)
     Guest -> {
       use dispatch <- effect.from
       dispatch(
-        SettingsSaved(case local.save_settings(settings) {
-          Ok(Nil) -> Ok(settings)
+        SettingsSaved(case local.save_settings(m.active_track, profile) {
+          Ok(Nil) -> Ok(profile)
           Error(Nil) -> Error(storage_full())
         }),
       )
@@ -353,10 +429,11 @@ pub fn save_settings(m: Model, settings: api.Settings) -> Effect(Msg) {
 
 pub fn load_insights(m: Model) -> Effect(Msg) {
   case m.mode {
-    Account(token) -> api.fetch_insights(base(), token, InsightsLoaded)
+    Account(token) ->
+      api.fetch_insights(base(), token, m.active_track, InsightsLoaded)
     Guest -> {
       use dispatch <- effect.from
-      dispatch(InsightsLoaded(Ok(local.insights(local.load()))))
+      dispatch(InsightsLoaded(Ok(local.insights(local.load(), m.active_track))))
     }
   }
 }
@@ -377,13 +454,19 @@ pub fn load_history(m: Model, problem: ProblemRef) -> Effect(Msg) {
 
 pub fn load_stats(m: Model) -> Effect(Msg) {
   case m.mode {
-    Account(token) -> api.fetch_stats(base(), token, StatsLoaded)
+    Account(token) ->
+      api.fetch_stats(base(), token, m.active_track, StatsLoaded)
     Guest -> {
       use dispatch <- effect.from
       let now = timestamp.system_time()
       dispatch(
         StatsLoaded(
-          Ok(local.stats(local.load(), now, local.current_day(m.settings))),
+          Ok(local.stats(
+            local.load(),
+            m.active_track,
+            now,
+            local.current_day(m.account),
+          )),
         ),
       )
     }

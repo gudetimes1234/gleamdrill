@@ -24,20 +24,21 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
 page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
 
-// A fresh browser meets the first-run picker before anything else. The board
-// is opened by hand through the pane browser rather than through the queue, so
-// the picker only has to be got out of the way.
+// A fresh browser meets the track switcher before anything else. The board is
+// opened by hand through the pane browser rather than through the queue, so
+// this only has to enter the track the board lives in.
 const answerPickerIfShown = async () => {
-  await page.waitForSelector(".study-screen, .picker-screen, .queue-screen",
+  await page.waitForSelector(".study-screen, .tracks-screen, .queue-screen",
     { timeout: 20000 });
-  if (await page.isVisible(".picker-screen")) {
-    await page.click(".picker-option:nth-child(1)");
-    await page.waitForTimeout(120);
-    await page.click(".picker-start");
+  if (await page.isVisible(".tracks-screen")) {
+    await page.locator(".track-card", { hasText: "System Design Board" })
+      .first().locator(".track-card-open").click();
     await page.waitForSelector(".study-screen, .queue-screen", { timeout: 20000 });
   }
   if (await page.isVisible(".queue-screen")) {
-    await page.click(".queue-header .link-button");
+    // Named, not positional: the nav gained a Tracks link at the front,
+    // and ".link-button" would take that one instead.
+    await page.click('.queue-header .nav-link:text-is("Study")');
   }
   await page.waitForSelector(".study-screen", { timeout: 20000 });
 };
@@ -45,8 +46,8 @@ const answerPickerIfShown = async () => {
 const openBoard = async (subcategory, title) => {
   await page.click("text=Browse problems");
   await page.waitForSelector(".menu-container", { timeout: 10000 });
-  await page.click('.pane-item:text-is("System Design Board")');
-  await page.waitForTimeout(300);
+  // Browse is three panes now: the first used to choose a language, and the
+  // track switcher is where that happens. So this opens straight into topics.
   await page.click(`.pane-item:text-is("${subcategory}")`);
   await page.waitForTimeout(300);
   await page.click(`.pane-item:text-is("${title}")`);

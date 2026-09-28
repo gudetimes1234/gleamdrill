@@ -60,31 +60,34 @@ const typeSolution = async (code) => {
 };
 
 
-// A browser with no stored preferences meets the first-run language picker
-// before the study screen exists, and with nothing queued the picker hands off
-// to the queue screen -- nothing is scheduled that was not put there. These
-// suites are about what comes after both, so answer the picker with everything
-// selected and queue one topic across every language: enough for a sitting,
-// which is the state they were written against.
+// A browser with no stored preferences meets the track switcher before any
+// study screen exists: Study, Queue and Stats are all inside a track. These
+// suites are about what comes after that, so enter the Python track and queue
+// one topic -- enough for a sitting, which is the state they were written
+// against.
 const answerPickerIfShown = async () => {
-  await page.waitForSelector(".study-screen, .picker-screen, .queue-screen",
+  await page.waitForSelector(".study-screen, .tracks-screen, .queue-screen",
     { timeout: 20000 });
-  if (await page.isVisible(".picker-screen")) {
-    for (const n of [1, 2, 3, 4, 5]) {
-      await page.click(`.picker-option:nth-child(${n})`);
-      await page.waitForTimeout(120);
-    }
-    await page.click(".picker-start");
+  if (await page.isVisible(".tracks-screen")) {
+    await page.locator(".track-card", { hasText: "Python" }).first()
+      .locator(".track-card-open").click();
     // Wait for the handoff to actually render. `isVisible` on an element the
     // app has not drawn yet answers false, and the seeding below would be
     // skipped -- leaving the suite waiting for a study screen that is still
     // behind the queue.
     await page.waitForSelector(".study-screen, .queue-screen", { timeout: 20000 });
   }
+  if (await page.isVisible(".study-screen")
+      && await page.isVisible(".study-starter")) {
+    await page.click(".study-secondary");
+    await page.waitForSelector(".queue-screen", { timeout: 20000 });
+  }
   if (await page.isVisible(".queue-screen")) {
     await page.click('.queue-group:has(.queue-group-title:has-text("Arrays & Hashing")) .queue-group-add');
     await page.waitForTimeout(600);
-    await page.click(".queue-header .link-button");
+    // Named, not positional: the nav gained a Tracks link at the front,
+    // and ".link-button" would take that one instead.
+    await page.click('.queue-header .nav-link:text-is("Study")');
   }
   await page.waitForSelector(".study-screen", { timeout: 20000 });
 };
@@ -145,8 +148,8 @@ await answerPickerIfShown();
 await page.waitForSelector(".study-screen", { timeout: 15000 });
 await page.click("text=Browse problems");
 await page.waitForSelector(".menu-container", { timeout: 10000 });
-await page.click('.pane-item:text-is("Python")');
-await page.waitForTimeout(300);
+// Browse is three panes now: the first used to choose a language, and the
+// track switcher is where that happens.
 await page.click('.pane-item:text-is("Arrays & Hashing")');
 await page.waitForTimeout(300);
 await page.click('.pane-item:text-is("Contains Duplicate")');
@@ -184,10 +187,16 @@ check("both reviews were recorded", counts[2] === "2", `reviews done = ${counts[
 console.log("== Elixir runs on the server for a signed-in user");
 // No browser compiles Elixir; the API does, in a sandboxed subprocess, and
 // the app grades the answer exactly as it grades a worker's.
+//
+// Another language is another track, so getting there is a switch rather than
+// a click in the browser's first pane -- that pane is gone.
+await page.click('button:text-is("Tracks")');
+await page.waitForSelector(".tracks-screen", { timeout: 10000 });
+await page.locator(".track-card", { hasText: "Elixir" }).first()
+  .locator(".track-card-open").click();
+await page.waitForSelector(".study-screen", { timeout: 20000 });
 await page.click("text=Browse problems");
 await page.waitForSelector(".menu-container", { timeout: 10000 });
-await page.click('.pane-item:text-is("Elixir")');
-await page.waitForTimeout(300);
 await page.click('.pane-item:text-is("Arrays & Hashing")');
 await page.waitForTimeout(300);
 await page.click('.pane-item:text-is("Contains Duplicate")');
@@ -240,6 +249,11 @@ await page.evaluate(() => {
     due: longAgo + 86400, lastReview: longAgo, introducedAt: longAgo,
     reps: 1, lapses: 0, suspended: false,
   }]));
+  // The card names its track, so the device preference has to agree: this
+  // browser was left on Elixir by the section above.
+  const prefs = JSON.parse(localStorage.getItem("gleamDrill.prefs.v1") ?? "{}");
+  prefs.activeTrack = "NeetCode 150";
+  localStorage.setItem("gleamDrill.prefs.v1", JSON.stringify(prefs));
 });
 await page.goto(APP, { waitUntil: "networkidle" });
 await answerPickerIfShown();

@@ -1,11 +1,13 @@
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/result
 import gleamdrill/board.{type Board}
 import wire
 
 /// Identifies one drill in the catalogue.
 ///
-/// `category` already encodes the language ("NeetCode 150 · Python"), so this
+/// `category` already names the track ("NeetCode 150" for Python, "NeetCode
+/// 150 (Go)", "System Design"), so this
 /// is the whole key -- it is what localStorage, the server's `cards` table and
 /// the scheduler all agree on.
 ///
@@ -118,21 +120,40 @@ pub fn difficulty_from_slug(slug: String) -> Result(Difficulty, Nil) {
   }
 }
 
-/// One rung of the approach hint ladder, revealed in order: a vague nudge,
-/// then the plan as steps, then (for code drills) language-neutral
-/// pseudocode. Revealing the pseudocode counts as seeing the answer.
+/// One rung of the approach hint ladder: a vague nudge, the plan as steps,
+/// and the whole thing written out. Only the code counts as seeing the answer.
 ///
-/// `Walk` is the plan as a guided walkthrough: the steps, each with a hint
-/// that points at it, a why that explains it, and its slice of the
-/// pseudocode.
+/// `Walk` is the plan as steps, each with a hint that points at it, a why
+/// that explains it, and its slice of the code.
 pub type ApproachStage {
   Nudge(String)
   Walk(List(WalkStep))
-  Pseudocode(String)
+  Pseudocode(Slices)
 }
 
+/// Code written once per language, keyed by `language_slug`.
+///
+/// The prose of a plan is the same whatever you are typing -- "sort the array
+/// so duplicates become neighbours" is a fact about the algorithm -- so the
+/// step, the hint and the why are shared by all five language mirrors. The
+/// code is not: a Go drill showing Python is showing the wrong thing.
+///
+/// The empty-string key is the fallback, written for every language that has
+/// no slice of its own yet, which is what lets the per-language content land
+/// one topic at a time without the tree ever being broken.
+pub type Slices =
+  List(#(String, String))
+
 pub type WalkStep {
-  WalkStep(step: String, hint: String, why: String, code: String)
+  WalkStep(step: String, hint: String, why: String, code: Slices)
+}
+
+/// The code written for this language, or the shared fallback, or nothing.
+pub fn slice_for(slices: Slices, language: Language) -> String {
+  case list.key_find(slices, language_slug(language)) {
+    Ok(code) -> code
+    Error(Nil) -> list.key_find(slices, "") |> result.unwrap("")
+  }
 }
 
 /// The step texts of the plan rung.

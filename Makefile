@@ -188,7 +188,10 @@ e2e:
 # tour: a red report is the thing worth looking at. Open $SHOTS/index.html.
 SHOTS ?= /tmp/gleamdrill-tour
 export SHOTS
-tour:
+# `build` first, always: the tour serves dist/, and a tour run against a stale
+# bundle tests last hour's code while reading this hour's sources -- a failure
+# mode that has already cost a day of chasing "bugs" the source did not have.
+tour: build
 	bun test/browser/tour.mjs; status=$$?; \
 	bun test/browser/report.mjs; \
 	exit $$status

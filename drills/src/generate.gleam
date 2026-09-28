@@ -641,11 +641,91 @@ fn generate_approaches() {
     <> " hint ladders -> "
     <> approaches_out_path,
   )
+  approach_census(entries)
+}
+
+/// The language slugs a code slice may be written for, matching
+/// `problem.language_slug`. Hardcoded because drills/ is its own project and
+/// does not depend on the app package; an unknown slug fails the build, so a
+/// typo cannot quietly become a slice nothing will ever read.
+const code_languages: List(String) = [
+  "python", "gleam", "typescript", "elixir", "go",
+]
+
+/// Per-language coverage of the code slices, printed after the ladders are
+/// emitted.
+///
+/// A report, never a gate. The prose of a plan is shared and complete; the
+/// code is being written one language at a time, and a language with no slice
+/// falls back to the shared one, so a gap is a thing still to do rather than
+/// a broken tree. `make content` fails on a *malformed* file and on nothing
+/// else.
+fn approach_census(slugs: List(String)) {
+  let files =
+    list.filter_map(slugs, fn(slug) {
+      simplifile.read("approaches/" <> slug <> ".txt")
+    })
+  let steps =
+    list.fold(files, 0, fn(total, text) {
+      total + count_lines(text, fn(line) { string.starts_with(line, "# ") })
+    })
+  io.println(
+    "approaches: "
+    <> int.to_string(list.length(files))
+    <> " ladders, "
+    <> int.to_string(steps)
+    <> " steps",
+  )
+  use language <- list.each(["", ..code_languages])
+  let opener = case language {
+    "" -> "code:"
+    _ -> "code." <> language <> ":"
+  }
+  let section = case language {
+    "" -> "== pseudocode"
+    _ -> "== pseudocode." <> language
+  }
+  let sliced =
+    list.fold(files, 0, fn(total, text) {
+      total + count_lines(text, fn(line) { line == opener })
+    })
+  let whole =
+    list.count(files, fn(text) {
+      count_lines(text, fn(line) { line == section }) > 0
+    })
+  io.println(
+    "  "
+    <> string.pad_end(
+      case language {
+        "" -> "shared"
+        _ -> language
+      },
+      11,
+      " ",
+    )
+    <> string.pad_start(int.to_string(sliced), 5, " ")
+    <> " of "
+    <> int.to_string(steps)
+    <> " steps"
+    <> string.pad_start(int.to_string(whole), 6, " ")
+    <> " of "
+    <> int.to_string(list.length(files))
+    <> " whole",
+  )
+}
+
+fn count_lines(text: String, matches: fn(String) -> Bool) -> Int {
+  text |> string.split("\n") |> list.count(fn(line) { matches(line) })
 }
 
 /// Parses one ladder file into emitted Gleam constructors, asserting the
-/// format: >=2 sections, nudge first, pseudocode (when present) last, and a
-/// `== walk` body of `# step` blocks (see `walk_steps`).
+/// format: >=2 sections, nudge first, and every `pseudocode` section in the
+/// trailing run. A `== walk` body is `# step` blocks (see `walk_steps`).
+///
+/// The last rung may be written once per language -- `== pseudocode`,
+/// `== pseudocode.go`, `== pseudocode.elixir` -- and those collapse into a
+/// single `Pseudocode` carrying all of them, keyed by language slug. Bare
+/// `== pseudocode` is the fallback under the empty-string key.
 fn approach_stages(slug: String, text: String) -> String {
   let sections =
     { "\n" <> string.trim(text) }
@@ -659,33 +739,108 @@ fn approach_stages(slug: String, text: String) -> String {
   let assert True = list.length(sections) >= 2
   let assert Ok(#(first_kind, _)) = list.first(sections)
   let assert "nudge" = first_kind
-  let assert False =
-    sections
-    |> list.index_map(fn(section, index) { #(index, section.0) })
-    |> list.any(fn(entry) {
-      entry.1 == "pseudocode" && entry.0 != list.length(sections) - 1
-    })
 
-  sections
-  |> list.map(fn(section) {
-    let #(kind, body) = section
-    case kind {
-      "nudge" -> "      Nudge(\"" <> escape(body) <> "\"),\n"
-      "pseudocode" -> "      Pseudocode(\"" <> escape(body) <> "\"),\n"
-      "walk" -> "      Walk([\n" <> walk_steps(slug, body) <> "      ]),\n"
-      _ -> {
-        io.println("unknown section '" <> kind <> "' in " <> slug)
-        panic as "approach section must be nudge, walk or pseudocode"
-      }
+  // Once a pseudocode section appears, every section after it must be one
+  // too: they become a single rung, and a walk sandwiched between two of
+  // them would silently change the ladder's order.
+  let #(leading, trailing) =
+    list.split_while(sections, fn(section) { !is_pseudocode(section.0) })
+  case list.all(trailing, fn(section) { is_pseudocode(section.0) }) {
+    True -> Nil
+    False -> {
+      io.println("a section follows the pseudocode in " <> slug)
+      panic as "every pseudocode section must be at the end of the ladder"
     }
-  })
-  |> string.concat
+  }
+
+  let front =
+    leading
+    |> list.map(fn(section) {
+      let #(kind, body) = section
+      case kind {
+        "nudge" -> "      Nudge(\"" <> escape(body) <> "\"),\n"
+        "walk" -> "      Walk([\n" <> walk_steps(slug, body) <> "      ]),\n"
+        _ -> {
+          io.println("unknown section '" <> kind <> "' in " <> slug)
+          panic as "approach section must be nudge, walk or pseudocode"
+        }
+      }
+    })
+    |> string.concat
+
+  let back = case trailing {
+    [] -> ""
+    _ -> {
+      let slices =
+        list.map(trailing, fn(section) {
+          #(section_language(slug, section.0), section.1)
+        })
+      "      Pseudocode(" <> slices_literal(slug, slices) <> "),\n"
+    }
+  }
+
+  front <> back
+}
+
+fn is_pseudocode(kind: String) -> Bool {
+  kind == "pseudocode" || string.starts_with(kind, "pseudocode.")
+}
+
+/// `pseudocode` is the shared fallback; `pseudocode.go` is Go's own.
+fn section_language(slug: String, kind: String) -> String {
+  case kind {
+    "pseudocode" -> ""
+    _ -> known_language(slug, string.drop_start(kind, 11))
+  }
+}
+
+fn known_language(slug: String, language: String) -> String {
+  case list.contains(code_languages, language) {
+    True -> language
+    False -> {
+      io.println("unknown language '" <> language <> "' in " <> slug)
+      panic as "a code slice must name a language the catalogue has"
+    }
+  }
+}
+
+/// `[#("", "..."), #("go", "...")]`, refusing a language written twice.
+fn slices_literal(slug: String, slices: List(#(String, String))) -> String {
+  let languages = list.map(slices, fn(entry) { entry.0 })
+  case list.length(list.unique(languages)) == list.length(languages) {
+    True -> Nil
+    False -> {
+      io.println("a language has two code slices in " <> slug)
+      panic as "each language may write one slice per step"
+    }
+  }
+  case list.filter(slices, fn(entry) { entry.1 == "" }) {
+    [] -> Nil
+    _ -> {
+      io.println("an empty code slice in " <> slug)
+      panic as "a code slice with nothing under it is not written yet"
+    }
+  }
+  "["
+  <> {
+    slices
+    |> list.map(fn(entry) {
+      "#(\"" <> entry.0 <> "\", \"" <> escape(entry.1) <> "\")"
+    })
+    |> string.join(", ")
+  }
+  <> "]"
 }
 
 /// A `== walk` body: blocks starting `# <step>`, each with a `hint:` line, a
-/// `why:` line and an optional `code:` block running to the next step. A
-/// missing or blank hint or why fails the build: a walkthrough step that
-/// cannot explain itself is not written yet.
+/// `why:` line and any number of code slices. A missing or blank hint or why
+/// fails the build: a walkthrough step that cannot explain itself is not
+/// written yet.
+///
+/// A slice opens with a line that is exactly `code:` (the shared fallback) or
+/// `code.<language>:`, and runs to the next such line or the end of the block.
+/// `hint:` and `why:` therefore have to come before the first slice, which is
+/// the convention every existing file already follows.
 fn walk_steps(slug: String, body: String) -> String {
   let blocks =
     { "\n" <> string.trim(body) }
@@ -696,35 +851,48 @@ fn walk_steps(slug: String, body: String) -> String {
   |> list.map(fn(block) {
     let assert [step, ..rest] = string.split(block, "\n")
     let step = string.trim(step)
-    let #(hint, why, code) =
-      list.fold(rest, #("", "", []), fn(acc, line) {
-        let #(hint, why, code) = acc
-        case code, line {
-          // Once `code:` has opened, everything else is code.
-          [_, ..], _ -> #(hint, why, [line, ..code])
-          [], "code:" -> #(hint, why, [""])
-          [], _ ->
+    let #(hint, why, _open, slices) =
+      list.fold(rest, #("", "", False, []), fn(acc, line) {
+        let #(hint, why, open, slices) = acc
+        case code_opener(slug, line), open {
+          Ok(language), _ -> #(hint, why, True, [#(language, []), ..slices])
+          // Once a slice has opened, every other line belongs to it.
+          Error(Nil), True -> {
+            let assert [#(language, lines), ..rest] = slices
+            #(hint, why, open, [#(language, [line, ..lines]), ..rest])
+          }
+          Error(Nil), False ->
             case
               string.starts_with(line, "hint:"),
               string.starts_with(line, "why:")
             {
-              True, _ -> #(string.trim(string.drop_start(line, 5)), why, code)
-              _, True -> #(hint, string.trim(string.drop_start(line, 4)), code)
+              True, _ -> #(
+                string.trim(string.drop_start(line, 5)),
+                why,
+                open,
+                slices,
+              )
+              _, True -> #(
+                hint,
+                string.trim(string.drop_start(line, 4)),
+                open,
+                slices,
+              )
               _, _ -> {
                 io.println(
                   "stray line in walk step of " <> slug <> ": " <> line,
                 )
-                panic as "walk step lines are `# step`, `hint:`, `why:` or `code:`"
+                panic as "walk step lines are `# step`, `hint:`, `why:` or `code[.lang]:`"
               }
             }
         }
       })
-    let code =
-      code
+    let slices =
+      slices
       |> list.reverse
-      |> list.drop(1)
-      |> string.join("\n")
-      |> string.trim
+      |> list.map(fn(entry) {
+        #(entry.0, entry.1 |> list.reverse |> string.join("\n") |> string.trim)
+      })
     case step == "" || hint == "" || why == "" {
       True -> {
         io.println(
@@ -740,11 +908,28 @@ fn walk_steps(slug: String, body: String) -> String {
     <> escape(hint)
     <> "\",\n          why: \""
     <> escape(why)
-    <> "\",\n          code: \""
-    <> escape(code)
-    <> "\",\n        ),\n"
+    <> "\",\n          code: "
+    <> slices_literal(slug, slices)
+    <> ",\n        ),\n"
   })
   |> string.concat
+}
+
+/// A line that opens a code slice, and which language it is for. `code:` is
+/// the shared fallback; `code.go:` is Go's own.
+fn code_opener(slug: String, line: String) -> Result(String, Nil) {
+  case line == "code:" {
+    True -> Ok("")
+    False ->
+      case string.starts_with(line, "code.") && string.ends_with(line, ":") {
+        False -> Error(Nil)
+        True ->
+          Ok(known_language(
+            slug,
+            line |> string.drop_start(5) |> string.drop_end(1),
+          ))
+      }
+  }
 }
 
 fn generate_gleam() {

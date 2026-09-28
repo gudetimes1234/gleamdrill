@@ -34,21 +34,33 @@ pub fn main() {
 /// distinct, and nothing unbounded.
 pub fn validate_queues_test() {
   let ref = wire.ProblemRef("NeetCode 150", "Two Pointers", "3Sum")
-  let good = [wire.Queue("Pointers", [ref, ref]), wire.Queue("Later", [])]
+  let good = [a_queue("Pointers", [ref, ref]), a_queue("Later", [])]
   assert study.validate_queues(good) == Ok(Nil)
   assert study.validate_queues([]) == Ok(Nil)
-  assert study.validate_queues([wire.Queue("  ", [])])
+  assert study.validate_queues([a_queue("  ", [])])
     == Error("a queue needs a name")
-  assert study.validate_queues([wire.Queue("A", []), wire.Queue("A", [])])
-    == Error("queue names must be distinct")
-  assert study.validate_queues([wire.Queue(string.repeat("x", 61), [])])
+  assert study.validate_queues([a_queue("A", []), a_queue("A", [])])
+    == Error("queue names must be distinct within a track")
+  // The same name in two tracks is two lists, which is the whole point of a
+  // queue living inside one.
+  assert study.validate_queues([
+      wire.Queue(track: "NeetCode 150", name: "A", problems: []),
+      wire.Queue(track: "NeetCode 150 (Go)", name: "A", problems: []),
+    ])
+    == Ok(Nil)
+  assert study.validate_queues([a_queue(string.repeat("x", 61), [])])
     == Error("a queue name is at most 60 characters")
   let many =
-    list.map(list_range(1, 51), fn(i) { wire.Queue(int.to_string(i), []) })
+    list.map(list_range(1, 51), fn(i) { a_queue(int.to_string(i), []) })
   assert study.validate_queues(many) == Error("at most 50 queues")
-  let stuffed = [wire.Queue("big", list.repeat(ref, 1501))]
+  let stuffed = [a_queue("big", list.repeat(ref, 1501))]
   assert study.validate_queues(stuffed)
     == Error("a queue holds at most 1500 problems")
+}
+
+/// Queue names are unique within one track, so every fixture here shares one.
+fn a_queue(name: String, problems: List(wire.ProblemRef)) -> wire.Queue {
+  wire.Queue(track: "NeetCode 150", name:, problems:)
 }
 
 fn list_range(from: Int, to: Int) -> List(Int) {
@@ -191,8 +203,16 @@ pub fn default_settings_are_the_documented_values_test() {
   let settings = study.default_settings()
   settings.new_per_day |> should.equal(5)
   settings.reviews_per_day |> should.equal(100)
-  settings.day_start_hour |> should.equal(4)
-  settings.timezone |> should.equal("UTC")
+}
+
+/// The knobs about the person rather than about what they study. Split from
+/// the scheduler's in the same change that made settings per track: one
+/// rollover hour, one timezone, one reminder, whatever you are drilling.
+pub fn default_account_settings_are_the_documented_values_test() {
+  let account = study.default_profile().account
+  account.day_start_hour |> should.equal(4)
+  account.timezone |> should.equal("UTC")
+  account.reminder_hour |> should.equal(None)
 }
 
 // --- helpers ---------------------------------------------------------------

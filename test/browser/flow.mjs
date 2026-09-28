@@ -29,31 +29,34 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
 page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
 
-// A browser with no stored preferences meets the first-run language picker
-// before the study screen exists, and with nothing queued the picker hands off
-// to the queue screen -- nothing is scheduled that was not put there. These
-// suites are about what comes after both, so answer the picker with everything
-// selected and queue one topic across every language: enough for a sitting,
-// which is the state they were written against.
+// A browser with no stored preferences meets the track switcher before any
+// study screen exists: Study, Queue and Stats are all inside a track. These
+// suites are about what comes after that, so enter the Python track and queue
+// one topic -- enough for a sitting, which is the state they were written
+// against.
 const answerPickerIfShown = async () => {
-  await page.waitForSelector(".study-screen, .picker-screen, .queue-screen",
+  await page.waitForSelector(".study-screen, .tracks-screen, .queue-screen",
     { timeout: 20000 });
-  if (await page.isVisible(".picker-screen")) {
-    for (const n of [1, 2, 3, 4, 5]) {
-      await page.click(`.picker-option:nth-child(${n})`);
-      await page.waitForTimeout(120);
-    }
-    await page.click(".picker-start");
+  if (await page.isVisible(".tracks-screen")) {
+    await page.locator(".track-card", { hasText: "Python" }).first()
+      .locator(".track-card-open").click();
     // Wait for the handoff to actually render. `isVisible` on an element the
     // app has not drawn yet answers false, and the seeding below would be
     // skipped -- leaving the suite waiting for a study screen that is still
     // behind the queue.
     await page.waitForSelector(".study-screen, .queue-screen", { timeout: 20000 });
   }
+  if (await page.isVisible(".study-screen")
+      && await page.isVisible(".study-starter")) {
+    await page.click(".study-secondary");
+    await page.waitForSelector(".queue-screen", { timeout: 20000 });
+  }
   if (await page.isVisible(".queue-screen")) {
     await page.click('.queue-group:has(.queue-group-title:has-text("Arrays & Hashing")) .queue-group-add');
     await page.waitForTimeout(600);
-    await page.click(".queue-header .link-button");
+    // Named, not positional: the nav gained a Tracks link at the front,
+    // and ".link-button" would take that one instead.
+    await page.click('.queue-header .nav-link:text-is("Study")');
   }
   await page.waitForSelector(".study-screen", { timeout: 20000 });
 };

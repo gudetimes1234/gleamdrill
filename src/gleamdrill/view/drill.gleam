@@ -9,17 +9,16 @@ import gleamdrill/editor
 import gleamdrill/insights
 import gleamdrill/model.{
   type CaseResult, type Model, type Msg, type RunError, AwaitingGrade, Cases,
-  EditorChanged, EditorResized, Errored, ExitConfirmed, HintPane, NoPane,
-  NotGrading, NoteChanged, NotePane, Ran, RunIdle, Running, RuntimeFailed,
-  RuntimeLoading, RuntimeNotLoaded, RuntimeReady, SolutionPane, SubmittingGrade,
-  TimedOut, UserChangedKeymap, UserClickedExitDrill, UserClickedNext,
+  EditorChanged, EditorResized, Errored, ExitConfirmed, NoPane, NotGrading,
+  NoteChanged, NotePane, Ran, RunIdle, Running, RuntimeFailed, RuntimeLoading,
+  RuntimeNotLoaded, RuntimeReady, SolutionPane, SubmittingGrade, TimedOut,
+  UserChangedKeymap, UserClickedExitDrill, UserClickedNext,
   UserClickedRetryRuntime, UserClickedRun, UserClickedScratchRun,
-  UserClickedStopRun, UserClickedUndo, UserClosedWalk, UserDismissedDiff,
-  UserGraded, UserOpenedWalk, UserPickedChoice, UserRevealedHint,
-  UserRevealedRecall, UserSubmittedAnswer, UserSubmittedBoard, UserToggledDiff,
+  UserClickedStopRun, UserClickedUndo, UserDismissedDiff, UserGraded,
+  UserPickedChoice, UserRevealedRecall, UserRevealedWholeThing,
+  UserSubmittedAnswer, UserSubmittedBoard, UserToggledDiff, UserToggledNudge,
   UserToggledPane, UserToggledPiece, UserToggledPrompt, UserToggledResults,
-  UserToggledSolution, WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown,
-  WalkPane, WalkWhyShown,
+  UserToggledSolution, WalkCodeShown, WalkFocused, WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/problem.{
   type Problem, type ProblemRef, type Quiz, type Solution,
@@ -211,10 +210,11 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
               code_main(m, ref, current, body_key),
             ),
           ),
-          ..case m.prompt_open {
-            True -> [#("prompt", prompt_side(m, ref, current))]
-            False -> []
-          }
+          // The rail is the *later* DOM child for the same reason the prompt
+          // sidebar used to be: the keyed editor frame has to stay child 0 of
+          // its own parent or CodeMirror remounts and drops its undo history
+          // and cursor. The stylesheet puts this on the left (order: -1).
+          #("rail", plan_rail(m, current)),
         ])
     },
   ])
@@ -233,30 +233,41 @@ fn code_main(
     // .work-row: appending a pane after it cannot remount CodeMirror,
     // which would drop undo history and cursor.
     html.div([attribute.class("work-row")], [
-      keyed.div(
-        [
-          attribute.class("editor-frame"),
-          // The frame's top strip names the language (style.css).
-          attribute.attribute(
-            "data-language",
-            problem.language_slug(current.language),
-          ),
-        ],
-        [
-          #(
-            body_key,
-            editor.view([
-              editor.doc(m.draft),
-              editor.language(problem.language_slug(current.language)),
-              editor.keymap(m.editor_keymap),
-              editor.height(m.editor_height),
-              editor.on_change(EditorChanged),
-              editor.on_resize(EditorResized),
-              editor.diagnostics(editor_diagnostics(m)),
-            ]),
-          ),
-        ],
-      ),
+      // The editor and, laid over it, the prompt sheet. Its own column so the
+      // sheet covers the editor and *only* the editor: a revealed solution
+      // sits beside it and has to stay readable and clickable. The keyed
+      // frame is still the first child of a parent that never changes, so
+      // CodeMirror keeps its history and cursor.
+      html.div([attribute.class("editor-column")], [
+        keyed.div(
+          [
+            attribute.class("editor-frame"),
+            // The frame's top strip names the language (style.css).
+            attribute.attribute(
+              "data-language",
+              problem.language_slug(current.language),
+            ),
+          ],
+          [
+            #(
+              body_key,
+              editor.view([
+                editor.doc(m.draft),
+                editor.language(problem.language_slug(current.language)),
+                editor.keymap(m.editor_keymap),
+                editor.height(m.editor_height),
+                editor.on_change(EditorChanged),
+                editor.on_resize(EditorResized),
+                editor.diagnostics(editor_diagnostics(m)),
+              ]),
+            ),
+          ],
+        ),
+        ..case m.prompt_open {
+          True -> [prompt_side(m, ref, current)]
+          False -> []
+        }
+      ]),
       ..slot_pane(m, ref, current)
     ]),
     ..list.flatten([
@@ -282,10 +293,21 @@ fn code_main(
 /// The prompt beside the editor: everything there is to read, in a column
 /// the editor keeps the rest of the width from.
 fn prompt_side(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
-  html.aside(
-    [attribute.class("prompt-side read-sheet")],
-    read_blocks(m, ref, current),
-  )
+  html.aside([attribute.class("prompt-side read-sheet")], [
+    // A sheet over the editor needs its own way out, the same as every
+    // pane: the header's Problem button is across the screen, and `p` is
+    // only obvious to someone who has read the cheatsheet.
+    html.button(
+      [
+        attribute.class("answer-close prompt-close"),
+        attribute.type_("button"),
+        attribute.attribute("aria-label", "Hide the problem"),
+        event.on_click(UserToggledPrompt),
+      ],
+      [html.text("\u{00d7}")],
+    ),
+    ..read_blocks(m, ref, current)
+  ])
 }
 
 /// The problem as a page: title, where it sits, the prompt, the signature,
@@ -321,19 +343,15 @@ fn read_blocks(
       _ -> []
     },
     read_examples(m),
-    case current.approach, m.hints_revealed {
-      [], _ | _, 0 -> []
-      stages, shown -> [
+    // Only a recall card reads the approach here. A code drill has the rail,
+    // which shows the same plan and cannot be evicted by the solution -- and
+    // two copies of it on one screen is how they came to disagree.
+    case current.approach, m.recall {
+      [], _ | _, False -> []
+      stages, True -> [
         html.section([attribute.class("read-approach approach")], [
           html.h3([attribute.class("panel-title")], [html.text("Approach")]),
-          ..stages
-          |> list.take(shown)
-          |> list.map(fn(stage) {
-            case m.recall {
-              True -> recall_stage(stage)
-              False -> approach_stage(stage)
-            }
-          })
+          ..list.map(stages, recall_stage(_, current.language))
         ]),
       ]
     },
@@ -396,17 +414,10 @@ fn slot_pane(
   ref: ProblemRef,
   current: Problem,
 ) -> List(Element(Msg)) {
-  case m.slot, m.walk {
-    NoPane, _ -> []
-    HintPane, _ ->
-      case current.approach {
-        [] -> []
-        stages -> [hint_pane(m, stages)]
-      }
-    WalkPane, Some(state) -> walk_panel(current, state)
-    WalkPane, None -> []
-    SolutionPane, _ -> solution_pane(m, current)
-    NotePane, _ -> [note_pane(m, ref)]
+  case m.slot {
+    NoPane -> []
+    SolutionPane -> solution_pane(m, current)
+    NotePane -> [note_pane(m, ref)]
   }
 }
 
@@ -592,6 +603,13 @@ fn quiz_main(
           ],
           [html.text("Submit answer")],
         ),
+        html.button(
+          [
+            attribute.class("btn-secondary skip-button"),
+            event.on_click(UserClickedNext),
+          ],
+          [html.text("Skip")],
+        ),
       ]
       True -> [
         html.button(
@@ -735,6 +753,13 @@ fn board_bar(m: Model) -> Element(Msg) {
           event.on_click(UserSubmittedBoard),
         ],
         [html.text("Submit board")],
+      ),
+      html.button(
+        [
+          attribute.class("btn-secondary skip-button"),
+          event.on_click(UserClickedNext),
+        ],
+        [html.text("Skip")],
       ),
       html.span([attribute.class("board-count")], [
         html.text(case list.length(m.board_picks) {
@@ -1026,21 +1051,12 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
 }
 
 /// One button per thing the slot can show, lit while it is showing: the
-/// same four things the keys a, w, s and m press, for the mouse. A
-/// solution's button is its own, so choosing one is one click.
+/// things the keys s and m press, for the mouse. A solution's button is its
+/// own, so choosing one is one click.
+///
+/// The approach is not among them any more: it is on the rail, always, so
+/// there is nothing to open.
 fn pane_buttons(m: Model, current: Problem) -> Element(Msg) {
-  let hint = case current.approach {
-    [] -> []
-    _ -> [
-      pane_button("Hint", m.slot == HintPane, UserToggledPane(HintPane), False),
-    ]
-  }
-  let walk = case model.walk_steps(current.approach) {
-    [] -> []
-    _ -> [
-      pane_button("Walk", m.slot == WalkPane, UserToggledPane(WalkPane), False),
-    ]
-  }
   let solutions =
     list.index_map(current.solutions, fn(solution: Solution, index) {
       pane_button(
@@ -1053,10 +1069,7 @@ fn pane_buttons(m: Model, current: Problem) -> Element(Msg) {
   let note = [
     pane_button("Note", m.slot == NotePane, UserToggledPane(NotePane), False),
   ]
-  html.div(
-    [attribute.class("pane-buttons")],
-    list.flatten([hint, walk, solutions, note]),
-  )
+  html.div([attribute.class("pane-buttons")], list.flatten([solutions, note]))
 }
 
 fn pane_button(
@@ -1381,100 +1394,162 @@ fn results_only(m: Model, current: Problem) -> List(Element(Msg)) {
   }
 }
 
-/// The guided walkthrough: the plan one step at a time, beside the editor.
-/// Each step has three layers under it -- a hint that points, a why that
-/// explains, and its slice of the pseudocode -- turned over on request.
-/// Only the code slice is logged as a reveal; the panel says so.
-fn walk_panel(current: Problem, state: model.WalkState) -> List(Element(Msg)) {
+/// The step rail: the plan, on the left, for the whole drill.
+///
+/// Every step's *title* is listed from the moment the problem opens. That is
+/// the whole point of it, and it is why moving the focus reveals nothing --
+/// nobody chose to see a list that was already there. Only what sits *under* a
+/// step is gated: its hint, its why, and its slice of the code. Nothing the
+/// solution pane does can take this away, which is the difference from the
+/// pane it replaced.
+fn plan_rail(m: Model, current: Problem) -> Element(Msg) {
   let steps = model.walk_steps(current.approach)
   let total = list.length(steps)
-  let finished = state.step >= total
-  let header =
-    html.div([attribute.class("answer-header")], [
-      html.div([attribute.class("answer-label")], [
-        html.text(case finished {
-          True -> "That's the approach"
-          False ->
-            "Step "
-            <> int.to_string(state.step + 1)
-            <> " of "
-            <> int.to_string(total)
-        }),
-      ]),
-      html.div(
-        [
-          attribute.class("walk-progress"),
-          attribute.attribute("aria-hidden", "true"),
-        ],
-        list.index_map(steps, fn(_, index) {
-          html.span(
-            [
-              attribute.classes([
-                #("walk-dot", True),
-                #("done", index < state.step),
-                #("current", index == state.step),
+  html.aside(
+    [attribute.class("plan-rail")],
+    list.flatten([
+      [
+        html.div([attribute.class("rail-header")], [
+          html.h3([attribute.class("panel-title")], [html.text("Approach")]),
+          ..case total {
+            0 -> []
+            _ -> [
+              html.span([attribute.class("rail-count")], [
+                html.text(
+                  int.to_string(int.min(m.walk.focus + 1, total))
+                  <> "/"
+                  <> int.to_string(total),
+                ),
               ]),
-            ],
-            [],
-          )
-        }),
-      ),
-      html.button(
-        [
-          attribute.class("answer-close"),
-          attribute.type_("button"),
-          attribute.attribute("aria-label", "Close the walkthrough"),
-          event.on_click(UserClosedWalk),
-        ],
-        [html.text("\u{00d7}")],
-      ),
-    ])
-  let done =
-    steps
-    |> list.take(state.step)
-    |> list.index_map(fn(step, index) {
-      html.li([attribute.class("walk-step-done")], [
-        html.span([attribute.class("walk-step-number")], [
-          html.text(int.to_string(index + 1)),
+            ]
+          }
         ]),
-        html.text(step.step),
-      ])
-    })
-  let body = case list.drop(steps, state.step) {
-    [step, ..] -> [
-      html.p([attribute.class("walk-step")], [html.text(step.step)]),
-      ..list.flatten([
-        layer(state.hint_shown, "walk-hint", "Hint", step.hint),
-        layer(state.why_shown, "walk-why", "Why", step.why),
-        case step.code {
-          "" -> []
-          code ->
-            case state.code_shown {
-              True -> [
-                html.pre([attribute.class("approach-pseudocode walk-code")], [
-                  html.code([], [html.text(code)]),
-                ]),
-              ]
-              False -> []
-            }
-        },
-        [
-          html.div(
-            [attribute.class("walk-controls")],
+      ],
+      rail_nudge(m, current),
+      case steps {
+        [] -> [
+          html.p([attribute.class("rail-empty")], [
+            html.text("No plan written for this one yet."),
+          ]),
+        ]
+        _ -> [
+          html.ol(
+            [attribute.class("rail-steps")],
+            list.index_map(steps, fn(step, index) {
+              rail_step(m, current, step, index)
+            }),
+          ),
+        ]
+      },
+      rail_whole_thing(m, current),
+    ]),
+  )
+}
+
+/// The nudge, folded away until asked for. Not a reveal: it is a question
+/// about the problem, not a piece of the answer, so it carries no warning.
+fn rail_nudge(m: Model, current: Problem) -> List(Element(Msg)) {
+  case model.nudge_text(current.approach) {
+    None -> []
+    Some(text) -> [
+      html.div([attribute.class("rail-nudge")], [
+        html.button(
+          [
+            attribute.classes([
+              #("link-button", True),
+              #("rail-nudge-toggle", True),
+              #("open", m.nudge_shown),
+            ]),
+            attribute.type_("button"),
+            event.on_click(UserToggledNudge),
+          ],
+          [
+            html.text(case m.nudge_shown {
+              True -> "Nudge"
+              False -> "Nudge \u{2026}"
+            }),
+            html.kbd([], [html.text("a")]),
+          ],
+        ),
+        ..case m.nudge_shown {
+          False -> []
+          True -> [
+            html.p([attribute.class("approach-nudge")], [html.text(text)]),
+          ]
+        }
+      ]),
+    ]
+  }
+}
+
+/// One step: its number and its title always, whatever is turned over
+/// underneath it, and -- only while it has the focus -- the buttons to turn
+/// over the rest.
+fn rail_step(
+  m: Model,
+  current: Problem,
+  step: problem.WalkStep,
+  index: Int,
+) -> Element(Msg) {
+  let open = model.layers_at(m.walk, index)
+  let focused = index == m.walk.focus
+  // This drill's language, or the shared slice where it has none of its own
+  // written yet. A Go drill showing Python is showing the wrong thing.
+  let slice = problem.slice_for(step.code, current.language)
+  html.li(
+    [
+      attribute.classes([
+        #("rail-step", True),
+        #("current", focused),
+        #("opened", open != model.no_layers),
+      ]),
+    ],
+    list.flatten([
+      [
+        html.button(
+          [
+            attribute.class("link-button rail-step-title"),
+            attribute.type_("button"),
+            event.on_click(WalkFocused(index)),
+          ],
+          [
+            html.span([attribute.class("rail-step-number")], [
+              html.text(int.to_string(index + 1)),
+            ]),
+            html.span([attribute.class("rail-step-text")], [
+              html.text(step.step),
+            ]),
+          ],
+        ),
+      ],
+      layer(open.hint, "walk-hint", "Hint", step.hint),
+      layer(open.why, "walk-why", "Why", step.why),
+      case slice, open.code {
+        "", _ | _, False -> []
+        code, True -> [
+          html.pre([attribute.class("approach-pseudocode walk-code")], [
+            html.code([], [html.text(code)]),
+          ]),
+        ]
+      },
+      case focused {
+        False -> []
+        True -> {
+          let buttons =
             list.flatten([
-              case state.hint_shown {
+              case open.hint {
                 True -> []
                 False -> [
                   reveal_button("walk-reveal-hint", "Hint", "h", WalkHintShown),
                 ]
               },
-              case state.why_shown {
+              case open.why {
                 True -> []
                 False -> [
                   reveal_button("walk-reveal-why", "Why", "y", WalkWhyShown),
                 ]
               },
-              case step.code, state.code_shown {
+              case slice, open.code {
                 "", _ | _, True -> []
                 _, False -> [
                   reveal_button("walk-reveal-code", "Code", "c", WalkCodeShown),
@@ -1483,66 +1558,49 @@ fn walk_panel(current: Problem, state: model.WalkState) -> List(Element(Msg)) {
                   ]),
                 ]
               },
+            ])
+          case buttons {
+            [] -> []
+            _ -> [html.div([attribute.class("rail-step-layers")], buttons)]
+          }
+        }
+      },
+    ]),
+  )
+}
+
+/// The whole plan at once, at the foot of the rail. This one is the answer,
+/// and it says so before it is pressed.
+fn rail_whole_thing(m: Model, current: Problem) -> List(Element(Msg)) {
+  case model.whole_thing(current.approach, current.language) {
+    None -> []
+    Some(code) ->
+      case m.whole_thing_shown {
+        True -> [
+          html.pre([attribute.class("approach-pseudocode rail-whole")], [
+            html.code([], [html.text(code)]),
+          ]),
+        ]
+        False -> [
+          html.div([attribute.class("rail-foot")], [
+            html.button(
               [
-                html.button(
-                  [
-                    attribute.class("btn-primary walk-next"),
-                    attribute.type_("button"),
-                    event.on_click(WalkAdvanced),
-                  ],
-                  [
-                    html.text(case state.step + 1 == total {
-                      True -> "Done"
-                      False -> "Next step"
-                    }),
-                    html.kbd([], [html.text("\u{21b5}")]),
-                  ],
-                ),
+                attribute.class("btn-secondary rail-whole-open"),
+                attribute.type_("button"),
+                event.on_click(UserRevealedWholeThing),
               ],
+              [
+                html.text("Show the whole thing"),
+                html.kbd([], [html.text("w")]),
+              ],
+            ),
+            html.span([attribute.class("hint-warning")], [
+              html.text("logged as a reveal"),
             ]),
-          ),
-        ],
-      ])
-    ]
-    [] -> [
-      html.p([attribute.class("walk-step walk-finished")], [
-        html.text(
-          "Every step is on the left now. Write it, run it, and grade how much of that you had before the walk.",
-        ),
-      ]),
-      html.div([attribute.class("walk-controls")], [
-        html.button(
-          [
-            attribute.class("btn-secondary"),
-            attribute.type_("button"),
-            event.on_click(WalkBacked),
-          ],
-          [html.text("Back")],
-        ),
-        html.button(
-          [
-            attribute.class("btn-primary walk-next"),
-            attribute.type_("button"),
-            event.on_click(UserClosedWalk),
-          ],
-          [html.text("Close"), html.kbd([], [html.text("\u{21b5}")])],
-        ),
-      ]),
-    ]
+          ]),
+        ]
+      }
   }
-  [
-    html.div(
-      [attribute.class("slot-pane answer-content answer-side walk-side")],
-      list.flatten([
-        [header],
-        case done {
-          [] -> []
-          _ -> [html.ol([attribute.class("walk-done")], done)]
-        },
-        body,
-      ]),
-    ),
-  ]
 }
 
 fn layer(
@@ -1975,138 +2033,34 @@ fn first_lines(message: String) -> String {
   |> string.join("\n")
 }
 
-/// The hint ladder: rungs reveal one at a time, vaguest first. The last rung
-/// is pseudocode and revealing it counts as seeing the answer, which the
-/// button says out loud before it is pressed.
-fn hint_pane(m: Model, stages: List(problem.ApproachStage)) -> Element(Msg) {
-  let total = list.length(stages)
-  let shown = int.min(m.hints_revealed, total)
-  let revealed =
-    stages
-    |> list.take(shown)
-    |> list.map(fn(stage) {
-      case m.recall, stage, m.walk {
-        True, _, _ -> recall_stage(stage)
-        // A walk in progress lists only the steps already walked: the
-        // panel is where the next one is read, one at a time.
-        False, problem.Walk(steps), Some(state) ->
-          walk_summary(list.take(steps, state.step), m.slot != WalkPane)
-        False, problem.Walk(steps), None -> walk_summary(steps, True)
-        False, _, _ -> approach_stage(stage)
-      }
-    })
-
-  let control = case list.drop(stages, shown) {
-    [] -> []
-    [next, ..] -> [
-      html.button(
-        [
-          attribute.class("btn-secondary hint-button"),
-          // The walk form of the plan opens the guided panel; the other
-          // rungs just unfold in place.
-          event.on_click(case next {
-            problem.Walk(_) -> UserOpenedWalk
-            _ -> UserRevealedHint
-          }),
-        ],
-        [
-          html.text(
-            case next {
-              problem.Nudge(_) -> "Show hint"
-              problem.Walk(_) -> "Walk me through it"
-              problem.Pseudocode(_) -> "Show pseudocode"
-            }
-            <> " ("
-            <> int.to_string(shown + 1)
-            <> "/"
-            <> int.to_string(total)
-            <> ")",
-          ),
-        ],
-      ),
-      ..case next {
-        // Fair warning before the rung that gives the answer away. It is
-        // recorded as a reveal for the stats; it never changes the grades.
-        problem.Pseudocode(_) -> [
-          html.span([attribute.class("hint-warning")], [
-            html.text("logged as a reveal"),
-          ]),
-        ]
-        _ -> []
-      }
-    ]
-  }
-
-  html.section([attribute.class("slot-pane panel approach")], [
-    pane_header(
-      [
-        html.div([attribute.class("answer-label")], [
-          html.text(
-            "Approach \u{b7} "
-            <> int.to_string(shown)
-            <> "/"
-            <> int.to_string(total),
-          ),
-        ]),
-      ],
-      UserToggledPane(HintPane),
-      "Close the hints",
-    ),
-    ..list.append(revealed, [
-      html.div([attribute.class("hint-controls")], control),
-    ])
-  ])
-}
-
-fn approach_stage(stage: problem.ApproachStage) -> Element(Msg) {
+fn approach_stage(
+  stage: problem.ApproachStage,
+  language: problem.Language,
+) -> Element(Msg) {
   case stage {
     problem.Nudge(text) ->
       html.p([attribute.class("approach-nudge")], [html.text(text)])
-    // In the ladder a walk reads as the plain list; the hints and whys
-    // live in the walkthrough panel, one step at a time.
-    problem.Walk(steps) -> walk_summary(steps, True)
-    problem.Pseudocode(code) ->
+    // Reached only by a recall card's Nudge/Pseudocode rungs in practice --
+    // `recall_stage` intercepts a walk to put each why under its step -- but
+    // kept total so a third caller cannot fall through into nothing.
+    problem.Walk(steps) ->
+      html.ol(
+        [attribute.class("approach-steps")],
+        list.map(steps, fn(step) { html.li([], [html.text(step.step)]) }),
+      )
+    problem.Pseudocode(slices) ->
       html.pre([attribute.class("approach-pseudocode")], [
-        html.code([], [html.text(code)]),
+        html.code([], [html.text(problem.slice_for(slices, language))]),
       ])
   }
 }
 
-/// The plan rung as the ladder shows it: the step texts, and a way into the
-/// walkthrough unless it is already open beside the editor.
-fn walk_summary(steps: List(problem.WalkStep), offer: Bool) -> Element(Msg) {
-  html.div(
-    [attribute.class("approach-walk")],
-    list.flatten([
-      case steps {
-        [] -> []
-        _ -> [
-          html.ol(
-            [attribute.class("approach-steps")],
-            list.map(steps, fn(step) { html.li([], [html.text(step.step)]) }),
-          ),
-        ]
-      },
-      case offer {
-        True -> [
-          html.button(
-            [
-              attribute.class("link-button approach-walk-open"),
-              attribute.type_("button"),
-              event.on_click(UserOpenedWalk),
-            ],
-            [html.text("Walk through the steps \u{2192}")],
-          ),
-        ]
-        False -> []
-      },
-    ]),
-  )
-}
-
 /// The same rung in recall mode, where reading is the point: every step
 /// with its why underneath.
-fn recall_stage(stage: problem.ApproachStage) -> Element(Msg) {
+fn recall_stage(
+  stage: problem.ApproachStage,
+  language: problem.Language,
+) -> Element(Msg) {
   case stage {
     problem.Walk(steps) ->
       html.ol(
@@ -2118,6 +2072,6 @@ fn recall_stage(stage: problem.ApproachStage) -> Element(Msg) {
           ])
         }),
       )
-    other -> approach_stage(other)
+    other -> approach_stage(other, language)
   }
 }

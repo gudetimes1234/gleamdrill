@@ -27,23 +27,51 @@ pub fn state(request: wisp.Request, context: Context) -> wisp.Response {
 
   let now = timestamp.system_time()
   let result = {
-    use settings <- result.try(study.load_settings(context.db, user.id))
-    use cards <- result.try(study.load_cards(context.db, user.id))
-    use drafts <- result.try(study.load_drafts(context.db, user.id))
-    use notes <- result.try(study.load_notes(context.db, user.id))
-    use queues <- result.try(study.load_queues(context.db, user.id))
-    use today <- result.try(study.today(context.db, user.id, settings, now))
-    Ok(#(settings, cards, drafts, notes, queues, today))
+    use account <- result.try(study.load_account(context.db, user.id))
+    use standings <- result.try(study.standings(
+      context.db,
+      user.id,
+      account,
+      now,
+    ))
+    // No `?track=` means "wherever I left off", which the server answers as
+    // the track holding the most cards -- and for a brand new account, the
+    // empty string, which matches nothing and lands on the switcher.
+    let track = requested_track(request, standings)
+    // Same rule as `resolve_track`, off the standings this already has.
+    use settings <- result.try(study.load_settings(context.db, user.id, track))
+    let profile = wire.Profile(account:, settings:)
+    use cards <- result.try(study.load_cards_in(context.db, user.id, track))
+    use drafts <- result.try(study.load_drafts_in(context.db, user.id, track))
+    use notes <- result.try(study.load_notes_in(context.db, user.id, track))
+    use queues <- result.try(study.load_queues_in(context.db, user.id, track))
+    use today <- result.try(study.today(
+      context.db,
+      user.id,
+      track,
+      profile,
+      now,
+    ))
+    Ok(#(track, standings, profile, cards, drafts, notes, queues, today))
   }
 
   case result {
     Error(failure) -> study_error(failure)
-    Ok(#(settings, cards, drafts, notes, queues, today)) ->
+    Ok(#(track, standings, profile, cards, drafts, notes, queues, today)) ->
       web.json_ok(
         json.object([
           #("now", json.float(fsrs.to_epoch(now))),
           #("user", accounts_user_json(user)),
-          #("settings", settings_json(settings)),
+          #("account", wire.account_to_json(profile.account)),
+          #("track", json.string(track)),
+          #("tracks", json.array(standings, wire.track_standing_to_json)),
+          // The fat pre-split object: every field both the old decoder and
+          // the new one want, so a browser on the cached previous bundle
+          // keeps working across the deploy.
+          #(
+            "settings",
+            wire.legacy_settings_to_json(profile.account, profile.settings),
+          ),
           #("cards", json.array(cards, card_json)),
           #("drafts", json.array(drafts, draft_json)),
           #("notes", json.array(notes, draft_json)),
@@ -54,6 +82,70 @@ pub fn state(request: wisp.Request, context: Context) -> wisp.Response {
   }
 }
 
+/// The track a request names, or the one the user has most cards in.
+///
+/// Defaulting rather than refusing is what keeps a client from before tracks
+/// working: it sends no `?track=` and gets a coherent single-track view
+/// instead of a 422.
+fn requested_track(
+  request: wisp.Request,
+  standings: List(wire.TrackStanding),
+) -> String {
+  case list.key_find(wisp.get_query(request), "track") {
+    Ok(track) -> track
+    Error(Nil) ->
+      standings
+      |> list.sort(fn(a: wire.TrackStanding, b: wire.TrackStanding) {
+        int.compare(b.cards, a.cards)
+      })
+      |> list.first
+      |> result.map(fn(standing: wire.TrackStanding) { standing.track })
+      |> result.unwrap("")
+  }
+}
+
+/// The one track a batch of problems is in, or `Error` when it spans more
+/// than one. Same rule as `one_track`, on the other key.
+fn batch_track(problems: List(study.ProblemRef)) -> Result(String, Nil) {
+  case
+    list.unique(list.map(problems, fn(ref: study.ProblemRef) { ref.category }))
+  {
+    [track] -> Ok(track)
+    _ -> Error(Nil)
+  }
+}
+
+/// The one track a batch is in, or `Error` when it spans more than one.
+///
+/// A request that touches two tracks cannot be answered honestly: the reply
+/// carries one `Today`, and there is no such thing as a daily budget across
+/// two tracks. Refusing is cheaper than picking one and being wrong.
+fn one_track(queues: List(wire.Queue)) -> Result(String, Nil) {
+  case list.unique(list.map(queues, fn(queue: wire.Queue) { queue.track })) {
+    [track] -> Ok(track)
+    // Empty: the caller has to say which track it is clearing.
+    [] -> Error(Nil)
+    _ -> Error(Nil)
+  }
+}
+
+/// The track a request names, or the user's default when it names none.
+///
+/// Every track-scoped endpoint goes through this rather than reading the
+/// query parameter raw. A bare "" would match no category at all, so an
+/// un-upgraded client asking for its stats would get zeros rather than its
+/// stats -- silently, which is the worst way to be wrong.
+fn resolve_track(
+  request: wisp.Request,
+  context: Context,
+  user: User,
+) -> Result(String, study.StudyError) {
+  case list.key_find(wisp.get_query(request), "track") {
+    Ok(track) -> Ok(track)
+    Error(Nil) -> study.default_track(context.db, user.id)
+  }
+}
+
 /// GET and PUT /api/queues -- the user's named queues, as one set. The
 /// client owns the list and sends it whole; the server checks its shape and
 /// replaces what it had.
@@ -61,7 +153,10 @@ pub fn queues(request: wisp.Request, context: Context) -> wisp.Response {
   use user <- web.require_user(request, context)
   case request.method {
     http.Get ->
-      case study.load_queues(context.db, user.id) {
+      case
+        resolve_track(request, context, user)
+        |> result.try(study.load_queues_in(context.db, user.id, _))
+      {
         Error(failure) -> study_error(failure)
         Ok(queues) -> web.json_ok(wire.queues_to_json(queues))
       }
@@ -69,15 +164,34 @@ pub fn queues(request: wisp.Request, context: Context) -> wisp.Response {
       use body <- wisp.require_json(request)
       case decode.run(body, wire.queues_decoder()) {
         Error(_) -> web.error(422, "invalid_body", "Expected a list of queues.")
-        Ok(queues) ->
-          case study.validate_queues(queues) {
-            Error(message) -> web.error(422, "invalid_queues", message)
-            Ok(Nil) ->
-              case study.replace_queues(context.db, user.id, queues) {
+        Ok(queues) -> {
+          // The track travels with the set it scopes -- every queue names
+          // its own -- rather than in the URL, so the two cannot disagree. A
+          // PUT replaces exactly that track's queues and no other's. An
+          // *empty* set names nothing, though, and that is the one case that
+          // has to fall back to `?track=`: otherwise clearing a track's last
+          // queue would silently delete nothing.
+          let named = case queues {
+            [] ->
+              resolve_track(request, context, user)
+              |> result.replace_error(Nil)
+            _ -> one_track(queues)
+          }
+          case study.validate_queues(queues), named {
+            Error(message), _ -> web.error(422, "invalid_queues", message)
+            _, Error(Nil) ->
+              web.error(
+                422,
+                "mixed_tracks",
+                "Every queue in one request must be in the same track.",
+              )
+            Ok(Nil), Ok(track) ->
+              case study.replace_queues(context.db, user.id, track, queues) {
                 Error(failure) -> study_error(failure)
                 Ok(Nil) -> wisp.no_content()
               }
           }
+        }
       }
     }
     _ -> wisp.method_not_allowed([http.Get, http.Put])
@@ -91,14 +205,15 @@ pub fn queues(request: wisp.Request, context: Context) -> wisp.Response {
 pub fn undo(request: wisp.Request, context: Context) -> wisp.Response {
   use user <- web.require_user(request, context)
   let now = timestamp.system_time()
-  case study.undo_review(context.db, user.id) {
+  let assert Ok(track) = resolve_track(request, context, user)
+  case study.undo_review(context.db, user.id, track) {
     Error(study.NothingToUndo) ->
       web.error(409, "nothing_to_undo", "There is no review to undo.")
     Error(study.UndoFailed(failure)) -> study_error(failure)
     Ok(study.Undone(card)) -> {
       let outcome = {
-        use settings <- result.try(study.load_settings(context.db, user.id))
-        study.today(context.db, user.id, settings, now)
+        use profile <- result.try(study.load_profile(context.db, user.id, track))
+        study.today(context.db, user.id, track, profile, now)
       }
       case outcome {
         Error(failure) -> study_error(failure)
@@ -133,16 +248,25 @@ pub fn review(request: wisp.Request, context: Context) -> wisp.Response {
     Ok(input) -> {
       let now = timestamp.system_time()
       let outcome = {
-        use settings <- result.try(study.load_settings(context.db, user.id))
+        // The ref carries the track, so a review needs no parameter: it is
+        // scheduled under the settings of the track its own problem is in.
+        let track = input.problem.category
+        use profile <- result.try(study.load_profile(context.db, user.id, track))
         use card <- result.try(study.record_review(
           context.db,
           user.id,
-          settings,
+          profile.settings,
           input,
           now,
           fuzz_sample(),
         ))
-        use today <- result.try(study.today(context.db, user.id, settings, now))
+        use today <- result.try(study.today(
+          context.db,
+          user.id,
+          track,
+          profile,
+          now,
+        ))
         Ok(#(card, today))
       }
 
@@ -178,15 +302,22 @@ pub fn suspend(request: wisp.Request, context: Context) -> wisp.Response {
       )
     Ok(#(problem, suspended)) -> {
       let now = timestamp.system_time()
+      let track = problem.category
       let outcome = {
-        use settings <- result.try(study.load_settings(context.db, user.id))
+        use profile <- result.try(study.load_profile(context.db, user.id, track))
         use card <- result.try(study.set_suspended(
           context.db,
           user.id,
           problem,
           suspended,
         ))
-        use today <- result.try(study.today(context.db, user.id, settings, now))
+        use today <- result.try(study.today(
+          context.db,
+          user.id,
+          track,
+          profile,
+          now,
+        ))
         Ok(#(card, today))
       }
 
@@ -238,14 +369,26 @@ pub fn enqueue(request: wisp.Request, context: Context) -> wisp.Response {
               <> " problems at a time.",
           )
         False ->
-          queue_response(context, user, fn() {
-            use cards <- result.try(study.enqueue_cards(
-              context.db,
-              user.id,
-              problems,
-            ))
-            Ok(#(cards, [], []))
-          })
+          // One reply carries one `Today`, and there is no such thing as a
+          // daily budget across two tracks, so a batch that spans them cannot
+          // be answered honestly. Refusing beats picking one and being wrong.
+          case batch_track(problems) {
+            Error(Nil) ->
+              web.error(
+                422,
+                "mixed_tracks",
+                "Every problem in one request must be in the same track.",
+              )
+            Ok(track) ->
+              queue_response(context, user, track, fn() {
+                use cards <- result.try(study.enqueue_cards(
+                  context.db,
+                  user.id,
+                  problems,
+                ))
+                Ok(#(cards, [], []))
+              })
+          }
       }
   }
 }
@@ -275,15 +418,27 @@ pub fn dequeue(request: wisp.Request, context: Context) -> wisp.Response {
               <> " problems at a time.",
           )
         False ->
-          queue_response(context, user, fn() {
-            use pair <- result.try(study.delete_cards(
-              context.db,
-              user.id,
-              problems,
-            ))
-            let #(removed, refused) = pair
-            Ok(#([], removed, refused))
-          })
+          // One reply carries one `Today`, and there is no such thing as a
+          // daily budget across two tracks, so a batch that spans them cannot
+          // be answered honestly. Refusing beats picking one and being wrong.
+          case batch_track(problems) {
+            Error(Nil) ->
+              web.error(
+                422,
+                "mixed_tracks",
+                "Every problem in one request must be in the same track.",
+              )
+            Ok(track) ->
+              queue_response(context, user, track, fn() {
+                use pair <- result.try(study.delete_cards(
+                  context.db,
+                  user.id,
+                  problems,
+                ))
+                let #(removed, refused) = pair
+                Ok(#([], removed, refused))
+              })
+          }
       }
   }
 }
@@ -294,6 +449,7 @@ pub fn dequeue(request: wisp.Request, context: Context) -> wisp.Response {
 fn queue_response(
   context: Context,
   user: User,
+  track: String,
   change: fn() ->
     Result(
       #(List(CardRecord), List(study.ProblemRef), List(study.ProblemRef)),
@@ -302,9 +458,15 @@ fn queue_response(
 ) -> wisp.Response {
   let now = timestamp.system_time()
   let outcome = {
-    use settings <- result.try(study.load_settings(context.db, user.id))
+    use profile <- result.try(study.load_profile(context.db, user.id, track))
     use #(cards, removed, refused) <- result.try(change())
-    use today <- result.try(study.today(context.db, user.id, settings, now))
+    use today <- result.try(study.today(
+      context.db,
+      user.id,
+      track,
+      profile,
+      now,
+    ))
     Ok(#(cards, removed, refused, today))
   }
 
@@ -346,8 +508,9 @@ pub fn stats(request: wisp.Request, context: Context) -> wisp.Response {
   use user <- web.require_user(request, context)
 
   let outcome = {
-    use settings <- result.try(study.load_settings(context.db, user.id))
-    study.stats(context.db, user.id, settings)
+    use account <- result.try(study.load_account(context.db, user.id))
+    use track <- result.try(resolve_track(request, context, user))
+    study.stats(context.db, user.id, track, account)
   }
 
   case outcome {
@@ -374,11 +537,26 @@ pub fn import_legacy(request: wisp.Request, context: Context) -> wisp.Response {
       )
     Ok(#(solved, cards, drafts, notes, queues)) -> {
       let outcome = {
-        use settings <- result.try(study.load_settings(context.db, user.id))
+        // A legacy import is one track's worth by construction: the
+        // pre-account store only ever held Python.
+        // An upgrade hands over one track's worth by construction: the
+        // pre-account store only ever held Python. Anything in the payload
+        // that names no track is attributed to this one.
+        use track <- result.try(
+          batch_track(solved)
+          |> result.try_recover(fn(_) {
+            study.default_track(context.db, user.id)
+            |> result.map_error(fn(_) { Nil })
+          })
+          |> result.unwrap("")
+          |> Ok,
+        )
+        use profile <- result.try(study.load_profile(context.db, user.id, track))
         study.import_legacy(
           context.db,
           user.id,
-          settings,
+          track,
+          profile.settings,
           solved,
           cards,
           drafts,
@@ -399,7 +577,10 @@ pub fn insights(request: wisp.Request, context: Context) -> wisp.Response {
   use <- wisp.require_method(request, http.Get)
   use user <- web.require_user(request, context)
 
-  case study.insights(context.db, user.id) {
+  case
+    resolve_track(request, context, user)
+    |> result.try(study.insights(context.db, user.id, _))
+  {
     Error(failure) -> study_error(failure)
     Ok(insights) -> web.json_ok(insights_json(insights))
   }
@@ -448,16 +629,21 @@ pub fn export(request: wisp.Request, context: Context) -> wisp.Response {
   use <- wisp.require_method(request, http.Get)
   use user <- web.require_user(request, context)
   let outcome = {
-    use settings <- result.try(study.load_settings(context.db, user.id))
+    use account <- result.try(study.load_account(context.db, user.id))
+    use tracks <- result.try(study.all_track_settings(context.db, user.id))
     use cards <- result.try(study.load_cards(context.db, user.id))
     use reviews <- result.try(study.all_reviews(context.db, user.id))
     use drafts <- result.try(study.load_drafts(context.db, user.id))
     use notes <- result.try(study.load_notes(context.db, user.id))
     use queues <- result.try(study.load_queues(context.db, user.id))
+    // The whole account, every track: an archive is the backup, and a
+    // per-track file would make "restore everything" an N-file operation
+    // with a partial restore as its failure mode.
     Ok(wire.Archive(
       version: wire.archive_version,
       exported_at: timestamp.system_time(),
-      settings:,
+      account:,
+      tracks:,
       cards: list.map(cards, card_state),
       reviews:,
       drafts:,
@@ -490,16 +676,22 @@ pub fn restore(request: wisp.Request, context: Context) -> wisp.Response {
             "unsupported_version",
             "This export was made by a newer GleamDrill.",
           )
-        True ->
+        True -> {
+          // An archive carries a settings blob per track and one account
+          // object; both halves face the same bounds a settings form does,
+          // because a file is just as able to hold an hour of 47.
+          let restored = study.archive_profile(archive)
           case
-            validate_settings(archive.settings),
+            validate_settings(restored.settings),
+            validate_account(restored.account),
             study.validate_queues(archive.queues)
           {
-            Error(message), _ -> web.error(422, "invalid_settings", message)
-            _, Error(message) -> web.error(422, "invalid_queues", message)
-            Ok(_), Ok(_) ->
+            Error(message), _, _ | _, Error(message), _ ->
+              web.error(422, "invalid_settings", message)
+            _, _, Error(message) -> web.error(422, "invalid_queues", message)
+            Ok(_), Ok(_), Ok(_) ->
               case
-                study.timezone_is_valid(context.db, archive.settings.timezone)
+                study.timezone_is_valid(context.db, restored.account.timezone)
               {
                 Ok(False) ->
                   web.error(422, "invalid_settings", "Unknown timezone.")
@@ -511,6 +703,7 @@ pub fn restore(request: wisp.Request, context: Context) -> wisp.Response {
                   }
               }
           }
+        }
       }
   }
 }
@@ -574,10 +767,12 @@ pub fn settings(request: wisp.Request, context: Context) -> wisp.Response {
   use user <- web.require_user(request, context)
   case request.method {
     http.Get ->
-      case study.load_settings(context.db, user.id) {
+      case
+        resolve_track(request, context, user)
+        |> result.try(study.load_profile(context.db, user.id, _))
+      {
         Error(failure) -> study_error(failure)
-        Ok(settings) ->
-          web.json_ok(json.object([#("settings", settings_json(settings))]))
+        Ok(profile) -> web.json_ok(profile_json(profile))
       }
     http.Put -> update_settings(request, context, user)
     _ -> wisp.method_not_allowed([http.Get, http.Put])
@@ -590,31 +785,59 @@ fn update_settings(
   user: User,
 ) -> wisp.Response {
   use body <- wisp.require_json(request)
-  case decode.run(body, settings_decoder()) {
-    Error(_) -> web.error(422, "invalid_body", "Expected a settings object.")
-    Ok(settings) ->
-      case validate_settings(settings) {
-        Error(message) -> web.error(422, "invalid_settings", message)
-        Ok(settings) ->
-          case study.timezone_is_valid(context.db, settings.timezone) {
+  // One flat object still, holding both halves. It splits into two decodes
+  // rather than one because the two halves are two records now.
+  case
+    decode.run(body, settings_decoder()),
+    decode.run(body, account_decoder())
+  {
+    Error(_), _ | _, Error(_) ->
+      web.error(422, "invalid_body", "Expected a settings object.")
+    Ok(settings), Ok(account) ->
+      case validate_settings(settings), validate_account(account) {
+        Error(message), _ | _, Error(message) ->
+          web.error(422, "invalid_settings", message)
+        Ok(settings), Ok(account) ->
+          case study.timezone_is_valid(context.db, account.timezone) {
             Error(failure) -> study_error(failure)
             Ok(False) ->
               web.error(
                 422,
                 "invalid_settings",
-                "Unknown timezone: " <> settings.timezone <> ".",
+                "Unknown timezone: " <> account.timezone <> ".",
               )
-            Ok(True) ->
-              case study.save_settings(context.db, user.id, settings) {
-                Error(failure) -> study_error(failure)
-                Ok(Nil) ->
-                  web.json_ok(
-                    json.object([#("settings", settings_json(settings))]),
-                  )
+            Ok(True) -> {
+              let profile = wire.Profile(account:, settings:)
+              let assert Ok(track) = resolve_track(request, context, user)
+              // Both halves still arrive in one object, so both are written:
+              // the account's row, and this track's. Splitting the endpoint
+              // is a later release's business.
+              let written = {
+                use _ <- result.try(study.save_account(
+                  context.db,
+                  user.id,
+                  account,
+                ))
+                study.save_settings(context.db, user.id, track, settings)
               }
+              case written {
+                Error(failure) -> study_error(failure)
+                Ok(Nil) -> web.json_ok(profile_json(profile))
+              }
+            }
           }
       }
   }
+}
+
+fn profile_json(profile: study.Profile) -> Json {
+  json.object([
+    #("account", wire.account_to_json(profile.account)),
+    #(
+      "settings",
+      wire.legacy_settings_to_json(profile.account, profile.settings),
+    ),
+  ])
 }
 
 /// Guard rails on the knobs a user can turn. These bounds are not arbitrary:
@@ -631,23 +854,16 @@ fn validate_settings(settings: Settings) -> Result(Settings, String) {
     scheduler.desired_retention >=. 0.7 && scheduler.desired_retention <=. 0.99,
     scheduler.maximum_interval >= 1,
     steps_valid,
-    settings.new_per_day >= 0 && settings.reviews_per_day >= 0,
-    settings.day_start_hour >= 0 && settings.day_start_hour <= 23
+    settings.new_per_day >= 0 && settings.reviews_per_day >= 0
   {
-    False, _, _, _, _, _ -> Error("Expected exactly 21 FSRS parameters.")
-    _, False, _, _, _, _ ->
+    False, _, _, _, _ -> Error("Expected exactly 21 FSRS parameters.")
+    _, False, _, _, _ ->
       Error("Desired retention must be between 0.7 and 0.99.")
-    _, _, False, _, _, _ -> Error("Maximum interval must be at least 1 day.")
-    _, _, _, False, _, _ ->
+    _, _, False, _, _ -> Error("Maximum interval must be at least 1 day.")
+    _, _, _, False, _ ->
       Error("Learning and relearning steps must be at least 1 minute.")
-    _, _, _, _, False, _ -> Error("Daily limits cannot be negative.")
-    _, _, _, _, _, False -> Error("Day start hour must be between 0 and 23.")
-    _, _, _, _, _, _ ->
-      case settings.reminder_hour {
-        Some(hour) if hour < 0 || hour > 23 ->
-          Error("Reminder hour must be between 0 and 23.")
-        _ -> Ok(settings)
-      }
+    _, _, _, _, False -> Error("Daily limits cannot be negative.")
+    _, _, _, _, _ -> Ok(settings)
   }
 }
 
@@ -690,7 +906,24 @@ const problem_json = wire.ref_to_json
 
 const stats_json = wire.stats_to_json
 
-const settings_json = wire.settings_to_json
+/// The account-wide knobs have their own bounds, because they are about the
+/// person rather than the scheduler: an hour outside the day is a typo, not
+/// an aggressive setting.
+fn validate_account(
+  account: wire.AccountSettings,
+) -> Result(wire.AccountSettings, String) {
+  case account.day_start_hour >= 0 && account.day_start_hour <= 23 {
+    False -> Error("Day start hour must be between 0 and 23.")
+    True ->
+      case account.reminder_hour {
+        Some(hour) if hour < 0 || hour > 23 ->
+          Error("Reminder hour must be between 0 and 23.")
+        _ -> Ok(account)
+      }
+  }
+}
+
+const account_decoder = wire.account_decoder
 
 const insights_json = wire.insights_to_json
 

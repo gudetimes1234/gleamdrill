@@ -18,6 +18,7 @@ import gleamdrill/model.{
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
+import gleamdrill/track
 import gleamdrill/view/format
 import gleamdrill/view/nav
 import lustre/attribute
@@ -256,7 +257,7 @@ fn problem_row(m: Model, card: CardInsight, index: Int) -> Element(Msg) {
         html.text(card.problem.title),
       ]),
       html.span([attribute.class("lang-tag")], [
-        html.text(problems.language_tag(card.problem.category)),
+        html.text(track.tag(card.problem.category)),
       ]),
       format.difficulty_badge(problems.difficulty_of(card.problem)),
       html.span([attribute.class("problem-row-time")], [
@@ -301,7 +302,7 @@ fn detail_overlay(m: Model) -> Element(Msg) {
             ]),
             html.p([attribute.class("detail-context")], [
               html.text(
-                problems.language_label(problem.category)
+                track.label(problem.category)
                 <> " \u{203a} "
                 <> problem.subcategory,
               ),

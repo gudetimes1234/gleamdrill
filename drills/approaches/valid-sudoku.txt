@@ -10,25 +10,118 @@ for r in 0..8:
     for c in 0..8:
         if board[r][c] == ".": continue
         v = board[r][c]
+code.python:
+seen = set()
+for r, row in enumerate(board):
+    for c, value in enumerate(row):
+        if value == ".":
+            continue
+code.gleam:
+board
+|> list.index_map(fn(row, r) {
+  row
+  |> list.index_map(fn(value, c) { #(r, c, value) })
+  |> list.filter(fn(cell) { cell.2 != "." })
+})
+|> list.flatten
+code.typescript:
+const seen = new Set<string>();
+for (let r = 0; r < board.length; r++) {
+  for (let c = 0; c < board[r].length; c++) {
+    const value = board[r][c];
+    if (value === ".") continue;
+code.elixir:
+board
+|> filled_cells()
+|> Enum.reduce_while(MapSet.new(), fn {r, c, value}, seen ->
+code.go:
+var rows, cols, boxes [9][10]bool
+for r := 0; r < 9; r++ {
+    for c := 0; c < 9; c++ {
+        if board[r][c] == '.' {
+            continue
+        }
 # For each digit, form three signatures: (value, row), (value, column), and (value, box), where the box is named by (row div 3, column div 3).
 hint: How do you name the three units a digit belongs to?
 why: Its row, its column, and its box, with the box named by (row div 3, column div 3).
 code:
         for key in [(v, "row", r), (v, "col", c), (v, "box", r div 3, c div 3)]:
+code.python:
+        keys = (
+            (value, "row", r),
+            (value, "col", c),
+            (value, "box", r // 3, c // 3),
+        )
+code.gleam:
+let keys = [
+  value <> " row " <> int.to_string(r),
+  value <> " col " <> int.to_string(c),
+  value <> " box " <> int.to_string(r / 3 * 3 + c / 3),
+]
+code.typescript:
+    const keys = [
+      `${value} row ${r}`,
+      `${value} col ${c}`,
+      `${value} box ${Math.floor(r / 3) * 3 + Math.floor(c / 3)}`,
+    ];
+code.elixir:
+keys = [
+  "#{value} row #{r}",
+  "#{value} col #{c}",
+  "#{value} box #{div(r, 3) * 3 + div(c, 3)}"
+]
+code.go:
+        digit := board[r][c] - '0'
+        box := (r/3)*3 + c/3
 # Keep one set of every signature seen so far; meeting a signature twice means the same digit twice in one unit — return false.
 hint: What does seeing a signature twice mean?
 why: The same digit twice in one unit, so the board is invalid.
 code:
             if key in seen: return false
+code.python:
+        if any(key in seen for key in keys):
+            return False
+code.gleam:
+case list.any(keys, set.contains(seen, _)) {
+  True -> False
+code.typescript:
+    if (keys.some((key) => seen.has(key))) return false;
+code.elixir:
+if Enum.any?(keys, &MapSet.member?(seen, &1)) do
+  {:halt, false}
+code.go:
+        if rows[r][digit] || cols[c][digit] || boxes[box][digit] {
+            return false
+        }
 # Otherwise add all three signatures and continue.
 hint: What happens on a new signature?
 why: Record all three and move on; one pass over 81 cells.
 code:
             seen.add(key)
+code.python:
+        seen.update(keys)
+code.gleam:
+  False -> walk(rest, list.fold(keys, seen, set.insert))
+code.typescript:
+    for (const key of keys) seen.add(key);
+code.elixir:
+  {:cont, Enum.into(keys, seen)}
+code.go:
+        rows[r][digit], cols[c][digit], boxes[box][digit] = true, true, true
 # Finish the sweep clean and the board is valid, solvable or not.
 hint: What does a clean sweep prove?
 why: The board is valid by the rules, which is different from solvable.
 code:
+return true
+code.python:
+return True
+code.gleam:
+[] -> True
+code.typescript:
+return true;
+code.elixir:
+|> then(fn result -> result != false end)
+code.go:
 return true
 == pseudocode
 seen = empty set
@@ -39,4 +132,91 @@ for r in 0..8:
         for key in [(v, "row", r), (v, "col", c), (v, "box", r div 3, c div 3)]:
             if key in seen: return false
             seen.add(key)
+return true
+== pseudocode.python
+seen = set()
+for r, row in enumerate(board):
+    for c, value in enumerate(row):
+        if value == ".":
+            continue
+        keys = (
+            (value, "row", r),
+            (value, "col", c),
+            (value, "box", r // 3, c // 3),
+        )
+        if any(key in seen for key in keys):
+            return False
+        seen.update(keys)
+return True
+== pseudocode.gleam
+pub fn is_valid_sudoku(board: List(List(String))) -> Bool {
+  board
+  |> filled_cells
+  |> walk(set.new())
+}
+
+fn walk(cells: List(#(Int, Int, String)), seen: set.Set(String)) -> Bool {
+  case cells {
+    [] -> True
+    [#(r, c, value), ..rest] -> {
+      let keys = [
+        value <> " row " <> int.to_string(r),
+        value <> " col " <> int.to_string(c),
+        value <> " box " <> int.to_string(r / 3 * 3 + c / 3),
+      ]
+      case list.any(keys, set.contains(seen, _)) {
+        True -> False
+        False -> walk(rest, list.fold(keys, seen, set.insert))
+      }
+    }
+  }
+}
+== pseudocode.typescript
+const seen = new Set<string>();
+for (let r = 0; r < board.length; r++) {
+  for (let c = 0; c < board[r].length; c++) {
+    const value = board[r][c];
+    if (value === ".") continue;
+    const keys = [
+      `${value} row ${r}`,
+      `${value} col ${c}`,
+      `${value} box ${Math.floor(r / 3) * 3 + Math.floor(c / 3)}`,
+    ];
+    if (keys.some((key) => seen.has(key))) return false;
+    for (const key of keys) seen.add(key);
+  }
+}
+return true;
+== pseudocode.elixir
+board
+|> filled_cells()
+|> Enum.reduce_while(MapSet.new(), fn {r, c, value}, seen ->
+  keys = [
+    "#{value} row #{r}",
+    "#{value} col #{c}",
+    "#{value} box #{div(r, 3) * 3 + div(c, 3)}"
+  ]
+
+  if Enum.any?(keys, &MapSet.member?(seen, &1)) do
+    {:halt, false}
+  else
+    {:cont, Enum.into(keys, seen)}
+  end
+end)
+|> then(fn result -> result != false end)
+== pseudocode.go
+var rows, cols, boxes [9][10]bool
+for r := 0; r < 9; r++ {
+    for c := 0; c < 9; c++ {
+        if board[r][c] == '.' {
+            continue
+        }
+        digit := board[r][c] - '0'
+        box := (r/3)*3 + c/3
+        if rows[r][digit] || cols[c][digit] || boxes[box][digit] {
+            return false
+        }
+        rows[r][digit], cols[c][digit], boxes[box][digit] = true, true, true
+    }
+}
 return true

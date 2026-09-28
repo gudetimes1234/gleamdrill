@@ -34,7 +34,14 @@ status() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
 CT="content-type: application/json"
 PW="correct-horse-battery"
 EMAIL="smoke-$RANDOM$RANDOM@example.com"
-REF='"category":"NeetCode 150 · Python","subcategory":"Arrays & Hashing","title":"Contains Duplicate"'
+# The Python catalogue's category is the bare name; only the other four carry
+# a suffix. This used to say "NeetCode 150 · Python", a category the catalogue
+# has never had -- the server validates nothing about the string, so it was
+# cards under a name nothing could reach, and under tracks a phantom track.
+REF='"category":"NeetCode 150","subcategory":"Arrays & Hashing","title":"Contains Duplicate"'
+# A ref in a *second* track, for everything that has to prove one track
+# cannot reach into another. Its own name: `REF2` is reassigned further down.
+GOREF='"category":"NeetCode 150 (Go)","subcategory":"Arrays & Hashing","title":"Two Sum"'
 
 echo "== accounts ($EMAIL)"
 BODY=$(curl -s -X POST "$B/api/auth/signup" -H "$CT" -d "{\"email\":\"$EMAIL\",\"password\":\"$PW\"}")
@@ -227,10 +234,10 @@ check "with its stability back" "$STAB_BEFORE" "$(echo "$U" | j "['card']['stabi
 check "and the day's count back" "$DONE_BEFORE" "$(echo "$U" | j "['today']['reviewsDone']")"
 S=$(curl -s "$B/api/state" -H "$AUTH")
 check "the state agrees" "$REPS_BEFORE" "$(echo "$S" | j "next(c['reps'] for c in d['cards'] if c['title'] == 'Contains Duplicate')")"
-H=$(curl -s "$B/api/history?category=NeetCode%20150%20%C2%B7%20Python&subcategory=Arrays%20%26%20Hashing&title=Contains%20Duplicate" -H "$AUTH")
+H=$(curl -s "$B/api/history?category=NeetCode%20150&subcategory=Arrays%20%26%20Hashing&title=Contains%20Duplicate" -H "$AUTH")
 check "and the log has forgotten the review" 4 "$(echo "$H" | j "len(d['reviews'])")"
 # A review that created its card: undoing it takes the card out again.
-NEWREF='"category":"NeetCode 150 · Python","subcategory":"Arrays & Hashing","title":"Two Sum"'
+NEWREF='"category":"NeetCode 150","subcategory":"Arrays & Hashing","title":"Two Sum"'
 check "a first review on a new problem" 200 "$(status -X POST "$B/api/reviews" -H "$AUTH" -H "$CT" -d "{$NEWREF,\"rating\":3}")"
 check "made a card" 2 "$(curl -s "$B/api/state" -H "$AUTH" | j "len(d['cards'])")"
 U=$(curl -s -X DELETE "$B/api/reviews" -H "$AUTH")
@@ -357,7 +364,7 @@ check "one timed clean solve" 1 "$(echo "$I" | j "len(d['cleanSolves'])")"
 check "with its real duration" 42000 "$(echo "$I" | j "['cleanSolves'][0]['durationMs']")"
 check "the reveal is counted" 1 "$(echo "$I" | j "['reveals'][0]['count']")"
 check "calibration rows exist" True "$(echo "$I" | j "len(d['calibration']) > 0")"
-H=$(curl -s "$B/api/history?category=NeetCode%20150%20%C2%B7%20Python&subcategory=Arrays%20%26%20Hashing&title=Contains%20Duplicate" -H "$AUTH")
+H=$(curl -s "$B/api/history?category=NeetCode%20150&subcategory=Arrays%20%26%20Hashing&title=Contains%20Duplicate" -H "$AUTH")
 check "history returns every review" 4 "$(echo "$H" | j "len(d['reviews'])")"
 check "with reveal truth per row" "[False, False, False, True]" \
   "$(echo "$H" | j "list(r['revealed'] for r in d['reviews'])")"
@@ -366,7 +373,7 @@ check "and the ratings as pressed" "[3, 3, 4, 4]" \
 # A recall-only review: scheduled like any other, logged as recall, and
 # never a clean solve even though it is a timed-looking pass.
 check "a recall review is accepted" 200 "$(status -X POST "$B/api/reviews" -H "$AUTH" -H "$CT" -d "{$REF,\"rating\":3,\"recall\":true}")"
-H=$(curl -s "$B/api/history?category=NeetCode%20150%20%C2%B7%20Python&subcategory=Arrays%20%26%20Hashing&title=Contains%20Duplicate" -H "$AUTH")
+H=$(curl -s "$B/api/history?category=NeetCode%20150&subcategory=Arrays%20%26%20Hashing&title=Contains%20Duplicate" -H "$AUTH")
 check "the recall row is logged as such" "[False, False, False, False, True]" \
   "$(echo "$H" | j "list(r['recall'] for r in d['reviews'])")"
 check "and bumped the card" 5 "$(curl -s "$B/api/state" -H "$AUTH" | j "next(c['reps'] for c in d['cards'] if c['title'] == 'Contains Duplicate')")"
@@ -378,7 +385,8 @@ check "history without the key is 422" 422 "$(status "$B/api/history" -H "$AUTH"
 
 echo "== queues"
 # Named lists the client owns and sends whole. Scheduling is elsewhere.
-QS="{\"queues\":[{\"name\":\"Pointers\",\"problems\":[{$REF}]},{\"name\":\"Later\",\"problems\":[]}]}"
+TRACK="NeetCode 150"
+QS="{\"queues\":[{\"track\":\"$TRACK\",\"name\":\"Pointers\",\"problems\":[{$REF}]},{\"track\":\"$TRACK\",\"name\":\"Later\",\"problems\":[]}]}"
 check "an account starts with no queues" 0 "$(curl -s "$B/api/queues" -H "$AUTH" | j "len(d['queues'])")"
 check "putting the set is 204" 204 "$(status -X PUT "$B/api/queues" -H "$AUTH" -H "$CT" -d "$QS")"
 Q=$(curl -s "$B/api/queues" -H "$AUTH")
@@ -400,11 +408,11 @@ check "putting the two back" 204 "$(status -X PUT "$B/api/queues" -H "$AUTH" -H 
 echo "== export and restore"
 # The main account's whole history as one file, wiped, and put back.
 X=$(curl -s "$B/api/export" -H "$AUTH")
-check "the export is a versioned archive" 2 "$(echo "$X" | j "['gleamdrill']")"
+check "the export is a versioned archive" 3 "$(echo "$X" | j "['gleamdrill']")"
 check "carrying the queues" 2 "$(echo "$X" | j "len(d['queues'])")"
 check "with every review" 5 "$(echo "$X" | j "len(d['reviews'])")"
 check "each naming its problem" "Contains Duplicate" "$(echo "$X" | j "['reviews'][0]['title']")"
-check "the settings" "America/New_York" "$(echo "$X" | j "['settings']['timezone']")"
+check "the account's settings" "America/New_York" "$(echo "$X" | j "['account']['timezone']")"
 check "and the cards" 1 "$(echo "$X" | j "len(d['cards'])")"
 EMPTY=$(echo "$X" | python3 -c "import sys,json;d=json.load(sys.stdin);d.update(cards=[],reviews=[],drafts=[],notes=[],queues=[]);print(json.dumps(d))")
 check "restoring an empty archive wipes the account" 204 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$EMPTY")"
@@ -420,13 +428,104 @@ Y=$(curl -s "$B/api/export" -H "$AUTH")
 check "and exporting again gives the same file" "$(echo "$X" | j "json.dumps({k: v for k, v in d.items() if k != 'exportedAt'}, sort_keys=True)")" "$(echo "$Y" | j "json.dumps({k: v for k, v in d.items() if k != 'exportedAt'}, sort_keys=True)")"
 check "a restored review cannot be undone" 409 "$(status -X DELETE "$B/api/reviews" -H "$AUTH")"
 check "a file that is not an export is refused" 422 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d '{"hello":1}')"
-V1=$(echo "$X" | python3 -c "import sys,json;d=json.load(sys.stdin);d['gleamdrill']=1;d.pop('queues');print(json.dumps(d))")
+# A version 1 file: one flat settings blob, no tracks, no queues. Built from
+# the current export so the rest of it is real.
+V1=$(echo "$X" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+d['gleamdrill'] = 1
+d.pop('queues', None)
+d['settings'] = {**d['tracks'][0]['settings'], **d.pop('account')}
+d.pop('tracks')
+print(json.dumps(d))")
 check "a version 1 file still restores" 204 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$V1")"
 check "leaving no queues, as it had none" 0 "$(curl -s "$B/api/queues" -H "$AUTH" | j "len(d['queues'])")"
 check "restoring the current export again" 204 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$X")"
 check "a newer format is refused" 422 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$(echo "$X" | python3 -c "import sys,json;d=json.load(sys.stdin);d['gleamdrill']=99;print(json.dumps(d))")")"
-check "bad settings in the file are refused" 422 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$(echo "$X" | python3 -c "import sys,json;d=json.load(sys.stdin);d['settings']['desiredRetention']=0.1;print(json.dumps(d))")")"
+check "bad settings in the file are refused" 422 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$(echo "$X" | python3 -c "import sys,json;d=json.load(sys.stdin);d['tracks'][0]['settings']['desiredRetention']=0.1;print(json.dumps(d))")")"
+check "a bad account hour in the file is refused" 422 "$(status -X POST "$B/api/restore" -H "$AUTH" -H "$CT" -d "$(echo "$X" | python3 -c "import sys,json;d=json.load(sys.stdin);d['account']['dayStartHour']=47;print(json.dumps(d))")")"
 check "export without a token is 401" 401 "$(status "$B/api/export")"
+
+echo "== tracks"
+# One account, two tracks. Everything below is about the wall between them:
+# a budget spent in one, a queue replaced in one, a review undone in one.
+TE="tracks-$RANDOM$RANDOM@example.com"
+TT=$(curl -s -X POST "$B/api/auth/signup" -H "$CT" -d "{\"email\":\"$TE\",\"password\":\"$PW\"}" | j "['token']")
+TA="authorization: Bearer $TT"
+
+check "a new account has no tracks to stand in" 0 "$(curl -s "$B/api/state" -H "$TA" | j "len(d['tracks'])")"
+check "and no track to be on" "" "$(curl -s "$B/api/state" -H "$TA" | j "['track']")"
+
+curl -s -o /dev/null -X POST "$B/api/reviews" -H "$TA" -H "$CT" -d "{$REF,\"rating\":3}"
+curl -s -o /dev/null -X POST "$B/api/reviews" -H "$TA" -H "$CT" -d "{$GOREF,\"rating\":3}"
+S=$(curl -s "$B/api/state" -H "$TA")
+check "both tracks now stand in the switcher" 2 "$(echo "$S" | j "len(d['tracks'])")"
+check "each with its own card" "1,1" "$(echo "$S" | j "','.join(str(t['cards']) for t in sorted(d['tracks'], key=lambda t: t['track']))")"
+check "boot lands on a track that has cards" "True" "$(echo "$S" | j "d['track'] in [t['track'] for t in d['tracks']]")"
+
+# The cards a sitting sees are one track's, and so is the budget.
+S=$(curl -s "$B/api/state?track=NeetCode%20150" -H "$TA")
+check "?track= scopes the cards" 1 "$(echo "$S" | j "len(d['cards'])")"
+check "to that track" "NeetCode 150" "$(echo "$S" | j "['cards'][0]['category']")"
+check "and names the track it answered for" "NeetCode 150" "$(echo "$S" | j "['track']")"
+G=$(curl -s "$B/api/state?track=NeetCode%20150%20(Go)" -H "$TA")
+check "the other track sees only its own" "NeetCode 150 (Go)" "$(echo "$G" | j "['cards'][0]['category']")"
+check "a review in one track spends only its own new budget" 1 \
+  "$(echo "$G" | j "['today']['newIntroduced']")"
+check "and only its own reviews" 1 "$(echo "$G" | j "['today']['reviewsDone']")"
+
+# Stats and insights follow the same wall.
+check "stats are one track's" 1 "$(curl -s "$B/api/stats?track=NeetCode%20150" -H "$TA" | j "['totalReviews']")"
+check "a track nobody has touched has none" 0 "$(curl -s "$B/api/stats?track=Nothing" -H "$TA" | j "['totalReviews']")"
+
+# Queues: a PUT replaces one track's set and must leave the other's alone.
+# This is the single most destructive predicate in the server.
+PYQ="{\"queues\":[{\"track\":\"NeetCode 150\",\"name\":\"Mine\",\"problems\":[{$REF}]}]}"
+GOQ="{\"queues\":[{\"track\":\"NeetCode 150 (Go)\",\"name\":\"Mine\",\"problems\":[{$GOREF}]}]}"
+check "one track's queues go up" 204 "$(status -X PUT "$B/api/queues" -H "$TA" -H "$CT" -d "$PYQ")"
+check "the other's too, same name" 204 "$(status -X PUT "$B/api/queues" -H "$TA" -H "$CT" -d "$GOQ")"
+check "a name may repeat across tracks" 1 "$(curl -s "$B/api/queues?track=NeetCode%20150" -H "$TA" | j "len(d['queues'])")"
+check "and the first track's survived the second's PUT" "Contains Duplicate" \
+  "$(curl -s "$B/api/queues?track=NeetCode%20150" -H "$TA" | j "['queues'][0]['problems'][0]['title']")"
+# An empty set names no track of its own, so clearing has to say which.
+check "clearing a track's queues is 204" 204 \
+  "$(status -X PUT "$B/api/queues?track=NeetCode%20150" -H "$TA" -H "$CT" -d '{"queues":[]}')"
+check "and actually clears them" 0 \
+  "$(curl -s "$B/api/queues?track=NeetCode%20150" -H "$TA" | j "len(d['queues'])")"
+check "leaving the other track's queue standing" 1 \
+  "$(curl -s "$B/api/queues?track=NeetCode%20150%20(Go)" -H "$TA" | j "len(d['queues'])")"
+check "a PUT spanning two tracks is refused" 422 \
+  "$(status -X PUT "$B/api/queues" -H "$TA" -H "$CT" -d "{\"queues\":[{\"track\":\"a\",\"name\":\"x\",\"problems\":[]},{\"track\":\"b\",\"name\":\"y\",\"problems\":[]}]}")"
+
+# Undo takes the newest review *in this track*, not the account's newest.
+check "a card batch spanning two tracks is refused" 422 \
+  "$(status -X POST "$B/api/cards" -H "$TA" -H "$CT" -d "{\"problems\":[{$REF},{$GOREF}]}")"
+check "undo in one track is 200" 200 "$(status -X DELETE "$B/api/reviews?track=NeetCode%20150" -H "$TA")"
+check "and leaves the other track's review alone" 1 \
+  "$(curl -s "$B/api/stats?track=NeetCode%20150%20(Go)" -H "$TA" | j "['totalReviews']")"
+check "while its own is gone" 0 \
+  "$(curl -s "$B/api/stats?track=NeetCode%20150" -H "$TA" | j "['totalReviews']")"
+check "a second undo in an emptied track is 409" 409 \
+  "$(status -X DELETE "$B/api/reviews?track=NeetCode%20150" -H "$TA")"
+
+# Settings are per track; the account's knobs are not.
+check "one track's limits go up" 200 "$(status -X PUT "$B/api/settings?track=NeetCode%20150" -H "$TA" -H "$CT" -d "$(curl -s "$B/api/settings?track=NeetCode%20150" -H "$TA" | python3 -c "import sys,json;d=json.load(sys.stdin)['settings'];d['newPerDay']=9;d['dayStartHour']=6;print(json.dumps(d))")")"
+check "and stay in that track" 9 "$(curl -s "$B/api/settings?track=NeetCode%20150" -H "$TA" | j "['settings']['newPerDay']")"
+check "the other track keeps the default" 5 "$(curl -s "$B/api/settings?track=NeetCode%20150%20(Go)" -H "$TA" | j "['settings']['newPerDay']")"
+check "but the account's hour is everyone's" 6 "$(curl -s "$B/api/settings?track=NeetCode%20150%20(Go)" -H "$TA" | j "['settings']['dayStartHour']")"
+check "a track nobody has opened saves anyway" 200 "$(status -X PUT "$B/api/settings?track=Fresh%20Track" -H "$TA" -H "$CT" -d "$(curl -s "$B/api/settings?track=Fresh%20Track" -H "$TA" | python3 -c "import sys,json;d=json.load(sys.stdin)['settings'];d['reviewsPerDay']=42;print(json.dumps(d))")")"
+check "and remembers it" 42 "$(curl -s "$B/api/settings?track=Fresh%20Track" -H "$TA" | j "['settings']['reviewsPerDay']")"
+
+# The export is the whole account, every track.
+X2=$(curl -s "$B/api/export" -H "$TA")
+# Only a track whose settings were actually changed has a row: an account on
+# the defaults everywhere exports none, and restoring defaults them back.
+check "an export carries the tuned tracks' settings" "True" \
+  "$(echo "$X2" | j "'NeetCode 150' in [t['track'] for t in d['tracks']]")"
+check "and every track's cards, whatever their settings" 1 "$(echo "$X2" | j "len(d['cards'])")"
+check "and every track's queues" "True" "$(echo "$X2" | j "len(d['queues']) >= 1")"
+check "restoring it is 204" 204 "$(status -X POST "$B/api/restore" -H "$TA" -H "$CT" -d "$X2")"
+check "with that track's limit intact" 9 "$(curl -s "$B/api/settings?track=NeetCode%20150" -H "$TA" | j "['settings']['newPerDay']")"
 
 echo "== isolation and routing"
 T2=$(curl -s -X POST "$B/api/auth/signup" -H "$CT" -d "{\"email\":\"other-$RANDOM$RANDOM@example.com\",\"password\":\"$PW\"}" | j "['token']")

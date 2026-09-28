@@ -10,6 +10,25 @@ encode(strs):
     for s in strs:
         out += length(s) + "#" + s
     return out
+code.python:
+def encode(strs):
+    return "".join("%d#%s" % (len(s), s) for s in strs)
+code.gleam:
+strs
+|> list.map(fn(s) { int.to_string(string.length(s)) <> "#" <> s })
+|> string.concat
+code.typescript:
+return strs.map((s) => `${s.length}#${s}`).join("");
+code.elixir:
+Enum.map_join(strs, fn s -> "#{String.length(s)}##{s}" end)
+code.go:
+var b strings.Builder
+for _, s := range strs {
+    b.WriteString(strconv.Itoa(len(s)))
+    b.WriteByte('#')
+    b.WriteString(s)
+}
+return b.String()
 # To decode, read digits up to the marker to recover the next length.
 hint: How does the decoder recover the next length?
 why: Read digits up to the marker; the marker is safe here because the digits before it are always a number.
@@ -20,17 +39,69 @@ decode(data):
     while i < length(data):
         j = position of "#" at or after i
         len = number written in data[i..j-1]
+code.python:
+i = 0
+while i < len(s):
+    hash_at = s.index("#", i)
+    length = int(s[i:hash_at])
+code.gleam:
+case string.split_once(rest, "#") {
+  Ok(#(digits, tail)) ->
+    case int.parse(digits) {
+code.typescript:
+let i = 0;
+while (i < s.length) {
+  const hashAt = s.indexOf("#", i);
+  const length = Number(s.slice(i, hashAt));
+code.elixir:
+[digits, tail] = String.split(rest, "#", parts: 2)
+length = String.to_integer(digits)
+code.go:
+i := 0
+for i < len(s) {
+    hash := strings.IndexByte(s[i:], '#') + i
+    length, _ := strconv.Atoi(s[i:hash])
 # Take exactly that many characters as the next string; the content may contain the marker itself and it does not matter, because you never scan inside a piece.
 hint: What if the string itself contains the marker character?
 why: It does not matter, because the decoder never scans inside a piece; it takes exactly len characters by count.
 code:
         out.append(data[j+1 .. j+len])
+code.python:
+    start = hash_at + 1
+    out.append(s[start:start + length])
+code.gleam:
+string.slice(tail, 0, length)
+code.typescript:
+  const start = hashAt + 1;
+  out.push(s.slice(start, start + length));
+code.elixir:
+String.slice(tail, 0, length)
+code.go:
+    result = append(result, s[hash+1:hash+1+length])
 # Jump past the piece and repeat until the input is exhausted.
 hint: Where does the next piece begin?
 why: Just past the current one, so the decoder jumps rather than scans; both directions are O(total length).
 code:
         i = j + 1 + len
     return out
+code.python:
+    i = start + length
+return out
+code.gleam:
+read(string.drop_start(tail, length), [
+  string.slice(tail, 0, length),
+  ..acc
+])
+code.typescript:
+  i = start + length;
+}
+return out;
+code.elixir:
+read(String.slice(tail, length..-1//1), [String.slice(tail, 0, length) | acc])
+code.go:
+    i = hash + 1 + length
+}
+return result
 # Follow-up: a plain separator only works with escaping, and any scheme must tell an empty list apart from a list holding one empty string.
 hint: What breaks a plain separator scheme, and what must any scheme distinguish?
 why: A separator needs escaping when it appears in content, and an empty list must encode differently from a list with one empty string.
@@ -50,3 +121,95 @@ decode(data):
         out.append(data[j+1 .. j+len])
         i = j + 1 + len
     return out
+== pseudocode.python
+def encode(strs):
+    return "".join("%d#%s" % (len(s), s) for s in strs)
+
+def decode(s):
+    out = []
+    i = 0
+    while i < len(s):
+        hash_at = s.index("#", i)
+        length = int(s[i:hash_at])
+        start = hash_at + 1
+        out.append(s[start:start + length])
+        i = start + length
+    return out
+== pseudocode.gleam
+pub fn encode(strs: List(String)) -> String {
+  strs
+  |> list.map(fn(s) { int.to_string(string.length(s)) <> "#" <> s })
+  |> string.concat
+}
+
+pub fn decode(s: String) -> List(String) {
+  read(s, [])
+}
+
+fn read(rest: String, acc: List(String)) -> List(String) {
+  case string.split_once(rest, "#") {
+    Error(Nil) -> list.reverse(acc)
+    Ok(#(digits, tail)) ->
+      case int.parse(digits) {
+        Error(Nil) -> list.reverse(acc)
+        Ok(length) ->
+          read(string.drop_start(tail, length), [
+            string.slice(tail, 0, length),
+            ..acc
+          ])
+      }
+  }
+}
+== pseudocode.typescript
+export function encode(strs: string[]): string {
+  return strs.map((s) => `${s.length}#${s}`).join("");
+}
+
+export function decode(s: string): string[] {
+  const out: string[] = [];
+  let i = 0;
+  while (i < s.length) {
+    const hashAt = s.indexOf("#", i);
+    const length = Number(s.slice(i, hashAt));
+    const start = hashAt + 1;
+    out.push(s.slice(start, start + length));
+    i = start + length;
+  }
+  return out;
+}
+== pseudocode.elixir
+def encode(strs) do
+  Enum.map_join(strs, fn s -> "#{String.length(s)}##{s}" end)
+end
+
+def decode(s), do: read(s, [])
+
+defp read("", acc), do: Enum.reverse(acc)
+
+defp read(rest, acc) do
+  [digits, tail] = String.split(rest, "#", parts: 2)
+  length = String.to_integer(digits)
+  read(String.slice(tail, length..-1//1), [String.slice(tail, 0, length) | acc])
+end
+== pseudocode.go
+func encode(strs []string) string {
+    var b strings.Builder
+    for _, s := range strs {
+        b.WriteString(strconv.Itoa(len(s)))
+        b.WriteByte('#')
+        b.WriteString(s)
+    }
+    return b.String()
+}
+
+func decode(s string) []string {
+    result := []string{}
+    i := 0
+    for i < len(s) {
+        hash := strings.IndexByte(s[i:], '#') + i
+        length, _ := strconv.Atoi(s[i:hash])
+        result = append(result, s[hash+1:hash+1+length])
+        i = hash + 1 + length
+    }
+    return result
+}

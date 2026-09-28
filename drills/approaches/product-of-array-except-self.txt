@@ -13,6 +13,34 @@ prefix = 1
 for i in 0..n-1:
     result[i] = prefix
     prefix *= nums[i]
+code.python:
+result = [1] * n
+prefix = 1
+for i in range(n):
+    result[i] = prefix
+    prefix *= nums[i]
+code.gleam:
+// scans stand in for the mutating passes: prefix products, shifted right
+let prefixes = [
+  1,
+  ..list.take(list.scan(nums, 1, fn(acc, x) { acc * x }), n - 1)
+]
+code.typescript:
+const result = new Array(nums.length).fill(1);
+let prefix = 1;
+for (let i = 0; i < nums.length; i++) {
+  result[i] = prefix;
+  prefix *= nums[i];
+}
+code.elixir:
+prefixes = nums |> Enum.scan(1, &(&1 * &2)) |> then(&[1 | Enum.drop(&1, -1)])
+code.go:
+result := make([]int, len(nums))
+prefix := 1
+for i, n := range nums {
+    result[i] = prefix
+    prefix *= n
+}
 # Backward pass: carry a running suffix product and multiply it into result[i].
 hint: And the right-to-left pass?
 why: A running suffix product multiplied into each slot, completing the answer in place; O(n).
@@ -21,6 +49,37 @@ suffix = 1
 for i in n-1..0:
     result[i] *= suffix
     suffix *= nums[i]
+code.python:
+suffix = 1
+for i in range(n - 1, -1, -1):
+    result[i] *= suffix
+    suffix *= nums[i]
+code.gleam:
+let suffixes =
+  list.reverse(nums)
+  |> list.scan(1, fn(acc, x) { acc * x })
+  |> list.take(n - 1)
+  |> fn(scanned) { [1, ..scanned] }
+  |> list.reverse
+code.typescript:
+let suffix = 1;
+for (let i = nums.length - 1; i >= 0; i--) {
+  result[i] *= suffix;
+  suffix *= nums[i];
+}
+code.elixir:
+suffixes =
+  nums
+  |> Enum.reverse()
+  |> Enum.scan(1, &(&1 * &2))
+  |> then(&[1 | Enum.drop(&1, -1)])
+  |> Enum.reverse()
+code.go:
+suffix := 1
+for i := len(nums) - 1; i >= 0; i-- {
+    result[i] *= suffix
+    suffix *= nums[i]
+}
 # Start both running products at 1 so the two ends come out right.
 hint: What value should the running products start at?
 why: 1, the identity, so the first element gets the empty product on its left and the last gets it on its right.
@@ -28,6 +87,16 @@ why: 1, the identity, so the first element gets the empty product on its left an
 hint: How much extra space does this use?
 why: Only the output array, which the problem does not count, so the O(1) follow-up is already satisfied.
 code:
+return result
+code.python:
+return result
+code.gleam:
+list.map2(prefixes, suffixes, fn(prefix, suffix) { prefix * suffix })
+code.typescript:
+return result;
+code.elixir:
+Enum.zip_with(prefixes, suffixes, &(&1 * &2))
+code.go:
 return result
 == pseudocode
 result = array of n ones
@@ -39,4 +108,72 @@ suffix = 1
 for i in n-1..0:
     result[i] *= suffix
     suffix *= nums[i]
+return result
+== pseudocode.python
+n = len(nums)
+result = [1] * n
+
+prefix = 1
+for i in range(n):
+    result[i] = prefix
+    prefix *= nums[i]
+
+suffix = 1
+for i in range(n - 1, -1, -1):
+    result[i] *= suffix
+    suffix *= nums[i]
+
+return result
+== pseudocode.gleam
+let n = list.length(nums)
+let prefixes = [
+  1,
+  ..list.take(list.scan(nums, 1, fn(acc, x) { acc * x }), n - 1)
+]
+let suffixes =
+  list.reverse(nums)
+  |> list.scan(1, fn(acc, x) { acc * x })
+  |> list.take(n - 1)
+  |> fn(scanned) { [1, ..scanned] }
+  |> list.reverse
+list.map2(prefixes, suffixes, fn(prefix, suffix) { prefix * suffix })
+== pseudocode.typescript
+const result = new Array(nums.length).fill(1);
+
+let prefix = 1;
+for (let i = 0; i < nums.length; i++) {
+  result[i] = prefix;
+  prefix *= nums[i];
+}
+
+let suffix = 1;
+for (let i = nums.length - 1; i >= 0; i--) {
+  result[i] *= suffix;
+  suffix *= nums[i];
+}
+
+return result;
+== pseudocode.elixir
+prefixes = nums |> Enum.scan(1, &(&1 * &2)) |> then(&[1 | Enum.drop(&1, -1)])
+
+suffixes =
+  nums
+  |> Enum.reverse()
+  |> Enum.scan(1, &(&1 * &2))
+  |> then(&[1 | Enum.drop(&1, -1)])
+  |> Enum.reverse()
+
+Enum.zip_with(prefixes, suffixes, &(&1 * &2))
+== pseudocode.go
+result := make([]int, len(nums))
+prefix := 1
+for i, n := range nums {
+    result[i] = prefix
+    prefix *= n
+}
+suffix := 1
+for i := len(nums) - 1; i >= 0; i-- {
+    result[i] *= suffix
+    suffix *= nums[i]
+}
 return result

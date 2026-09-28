@@ -1,6 +1,5 @@
 import gleam/list
 import gleam/option.{type Option, None}
-import gleam/result
 import gleam/string
 import gleamdrill/problem.{type Category, type Problem, type ProblemRef}
 import gleamdrill/problems/neetcode_elixir
@@ -157,64 +156,19 @@ pub fn all_refs() -> List(ProblemRef) {
   ProblemRef(category.name, subcategory.name, problem.title)
 }
 
-/// The Language pane's rows: display label and the category it opens.
+/// `all_refs` narrowed to one track, in catalogue order.
 ///
-/// The label comes from each category's own content — its first problem's
-/// language — so a new category slots in with no edit here. A `Concept`
-/// category (System Design) is its own label, since "Concept" names nothing.
-pub fn language_entries() -> List(#(String, String)) {
-  use category <- list.map(all())
-  #(label_for(category), category.name)
+/// Order matters and is why this filters the catalogue rather than rebuilding
+/// it: catalogue order is NeetCode's topic progression, and it is the order
+/// queued new cards are introduced in.
+pub fn refs_in(track: String) -> List(ProblemRef) {
+  all_refs() |> list.filter(fn(ref: ProblemRef) { ref.category == track })
 }
 
-/// The study filter's rows: language tag and display label, in catalogue
-/// order. Derived from the content the same way `language_entries` is, so a
-/// new category appears in the first-run picker and the study chips at once
-/// rather than needing a hardcoded list edited in two views.
-pub fn language_options() -> List(#(String, String)) {
-  use category <- list.map(all())
-  #(language_tag(category.name), label_for(category))
-}
-
-fn label_for(category: Category) -> String {
-  case first_language(category) {
-    // A concept or board category's name already says what it is ("System
-    // Design", "System Design Board"); the language label would only repeat it.
-    Ok(problem.Concept) | Ok(problem.Board) | Error(Nil) -> category.name
-    Ok(language) -> problem.language_label(language)
-  }
-}
-
-fn first_language(category: Category) -> Result(problem.Language, Nil) {
-  use subcategory <- result.try(list.first(category.subcategories))
-  use first <- result.try(list.first(subcategory.problems))
-  Ok(first.language)
-}
-
-/// The label the Language pane uses for a category, for breadcrumbs.
-pub fn language_label(category_name: String) -> String {
-  case list.find(all(), fn(c: Category) { c.name == category_name }) {
-    Ok(category) -> label_for(category)
-    Error(Nil) -> category_name
-  }
-}
-
-/// Two-letter tag for the Selected pane, where every language can appear at
-/// once and the full label would drown the titles.
-pub fn language_tag(category_name: String) -> String {
-  case list.find(all(), fn(c: Category) { c.name == category_name }) {
-    Ok(category) ->
-      case first_language(category) {
-        Ok(problem.Python) -> "py"
-        Ok(problem.Gleam) -> "gl"
-        Ok(problem.TypeScript) -> "ts"
-        Ok(problem.Elixir) -> "ex"
-        Ok(problem.Go) -> "go"
-        Ok(problem.Board) -> "bd"
-        Ok(problem.Concept) | Error(Nil) -> "sd"
-      }
-    Error(Nil) -> "??"
-  }
+/// `search_refs` narrowed to one track.
+pub fn search_refs_in(track: String, query: String) -> List(ProblemRef) {
+  search_refs(query)
+  |> list.filter(fn(ref: ProblemRef) { ref.category == track })
 }
 
 /// Every problem whose title contains the query, case-insensitively, in

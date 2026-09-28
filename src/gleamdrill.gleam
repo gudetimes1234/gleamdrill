@@ -28,50 +28,48 @@ import gleamdrill/model.{
   ComparePickedVariant, CompareRoute, DayStartHour, DesiredRetention,
   DraftSaveTicked, DraftSynced, DrillRoute, EditorChanged, EditorFocusRequested,
   EditorResized, Errored, ExamSampled, ExitConfirmed, Guest, HelpToggled,
-  HintPane, HistoryLoaded, ImportConfirmed, ImportPicked, InsightsLoaded,
-  KeyPressed, MenuActivated, MenuCursorJumped, MenuCursorMoved, MenuPaneFocused,
-  MenuRoute, MenuSuspendedAtCursor, MenuToggledAtCursor, Model, NewPerDay,
-  NoPane, NotGrading, NotStarted, NoteChanged, NoteFocusRequested, NotePane,
-  NoteSaveTicked, NoteSynced, PickerConfirmed, PickerConfirmedWithStarter,
-  PickerRoute, PickerToggledLanguage, PromptDismissed, QueueChanged,
-  QueueCursorJumped, QueueCursorMoved, QueueRoute, QueueToggledAtCursor,
-  QueuesSaved, QuizMoved, Ran, Registering, ReminderHour, RemoteRunFinished,
-  ReportRoute, ReviewRecorded, ReviewsPerDay, RunError, RunFinished, RunIdle,
-  RunTimedOut, RunnerFailed, RunnerReady, Running, RuntimeFailed,
-  RuntimeLoadTimedOut, RuntimeLoading, RuntimeNotLoaded, RuntimeReady,
-  SearchFocusRequested, SettingsRoute, SettingsSaved, SignOutCompleted,
-  SigningIn, SolutionPane, StateImported, StateLoaded, StatsActivated,
-  StatsCursorMoved, StatsLoaded, StatsRoute, StudyRoute, SubmittingGrade,
-  SummaryRoute, SyncFailed, Synced, Syncing, TimedOut, TourActivated,
-  TourContents, TourCursorMoved, TourEditorChanged, TourLesson, TourRoute,
-  TourRunTicked, UndoRecorded, UserAddedAllShown, UserAddedSelectionToQueue,
-  UserAddedStarterSet, UserCancelledQueueName, UserChangedAuthEmail,
-  UserChangedAuthPassword, UserChangedGroup, UserChangedIterations,
-  UserChangedKeymap, UserChangedQueueName, UserChangedSetting,
-  UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
-  UserClickedCategory, UserClickedClearSelection, UserClickedCompare,
-  UserClickedDeviceTimezone, UserClickedExitDrill, UserClickedExitReport,
-  UserClickedExport, UserClickedImport, UserClickedMergeGuest, UserClickedNext,
-  UserClickedQueue, UserClickedRecall, UserClickedRetryRuntime,
-  UserClickedRetrySync, UserClickedRun, UserClickedScratchRun,
-  UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
-  UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
-  UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
-  UserClickedTour, UserClickedTourContents, UserClickedTourNext,
-  UserClickedTourPrev, UserClickedUndo, UserClickedWarmCache, UserClosedCompare,
-  UserClosedDetail, UserClosedWalk, UserDeletedQueue, UserDismissedDiff,
-  UserDismissedMergeOffer, UserDismissedNotice, UserDismissedUpgradePrompt,
-  UserFilteredQueue, UserGraded, UserOpenedDetail, UserOpenedLesson,
-  UserOpenedWalk, UserPickedActiveQueue, UserPickedChoice,
-  UserPickedQueueLanguage, UserRemovedAllShown, UserResetLesson,
-  UserRevealedHint, UserRevealedRecall, UserSearched, UserSearchedQueue,
+  HistoryLoaded, ImportConfirmed, ImportPicked, InsightsLoaded, KeyPressed,
+  MenuActivated, MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
+  MenuSuspendedAtCursor, MenuToggledAtCursor, Model, NewPerDay, NoPane,
+  NotGrading, NotStarted, NoteChanged, NoteFocusRequested, NotePane,
+  NoteSaveTicked, NoteSynced, PromptDismissed, QueueChanged, QueueCursorJumped,
+  QueueCursorMoved, QueueRoute, QueueToggledAtCursor, QueuesSaved, QuizMoved,
+  Ran, Registering, ReminderHour, RemoteRunFinished, ReportRoute, ReviewRecorded,
+  ReviewsPerDay, RunError, RunFinished, RunIdle, RunTimedOut, RunnerFailed,
+  RunnerReady, Running, RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading,
+  RuntimeNotLoaded, RuntimeReady, SearchFocusRequested, SettingsRoute,
+  SettingsSaved, SignOutCompleted, SigningIn, SolutionPane, StateImported,
+  StateLoaded, StatsActivated, StatsCursorMoved, StatsLoaded, StatsRoute,
+  StudyRoute, SubmittingGrade, SummaryRoute, SyncFailed, Synced, Syncing,
+  TimedOut, TourActivated, TourContents, TourCursorMoved, TourEditorChanged,
+  TourLesson, TourRoute, TourRunTicked, TracksRoute, UndoRecorded,
+  UserAddedAllShown, UserAddedSelectionToQueue, UserAddedStarterSet,
+  UserCancelledQueueName, UserChangedAuthEmail, UserChangedAuthPassword,
+  UserChangedGroup, UserChangedIterations, UserChangedKeymap,
+  UserChangedQueueName, UserChangedSetting, UserClickedBackToStudy,
+  UserClickedBreadcrumb, UserClickedBrowse, UserClickedClearSelection,
+  UserClickedCompare, UserClickedDeviceTimezone, UserClickedExitDrill,
+  UserClickedExitReport, UserClickedExport, UserClickedImport,
+  UserClickedMergeGuest, UserClickedNext, UserClickedQueue, UserClickedRecall,
+  UserClickedRetryRuntime, UserClickedRetrySync, UserClickedRun,
+  UserClickedScratchRun, UserClickedSelectAll, UserClickedSettings,
+  UserClickedSignIn, UserClickedSignOut, UserClickedStartDrill,
+  UserClickedStartExam, UserClickedStats, UserClickedStopRun, UserClickedStudy,
+  UserClickedSubcategory, UserClickedTour, UserClickedTourContents,
+  UserClickedTourNext, UserClickedTourPrev, UserClickedTracks, UserClickedUndo,
+  UserClickedWarmCache, UserClosedCompare, UserClosedDetail, UserDeletedQueue,
+  UserDismissedDiff, UserDismissedMergeOffer, UserDismissedNotice,
+  UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded, UserOpenedDetail,
+  UserOpenedLesson, UserPickedActiveQueue, UserPickedChoice, UserPickedTrack,
+  UserPickedTrackWithStarter, UserRemovedAllShown, UserResetLesson,
+  UserRevealedRecall, UserRevealedWholeThing, UserSearched, UserSearchedQueue,
   UserSelectedQueue, UserStartedBlitz, UserStartedNewQueue,
   UserStartedRenameQueue, UserSubmittedAnswer, UserSubmittedAuth,
   UserSubmittedBoard, UserSubmittedQueueName, UserToggledAuthMode,
-  UserToggledBlitz, UserToggledDiff, UserToggledPane, UserToggledPiece,
-  UserToggledProblem, UserToggledPrompt, UserToggledQueued, UserToggledResults,
-  UserToggledSolution, UserToggledSuspend, WalkAdvanced, WalkBacked,
-  WalkCodeShown, WalkHintShown, WalkPane, WalkWhyShown,
+  UserToggledBlitz, UserToggledDiff, UserToggledNudge, UserToggledPane,
+  UserToggledPiece, UserToggledProblem, UserToggledPrompt, UserToggledQueued,
+  UserToggledResults, UserToggledSolution, UserToggledSuspend, WalkAdvanced,
+  WalkBacked, WalkCodeShown, WalkFocused, WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
@@ -80,13 +78,13 @@ import gleamdrill/runner
 import gleamdrill/session
 import gleamdrill/store
 import gleamdrill/tour
+import gleamdrill/track
 import gleamdrill/view/auth
 import gleamdrill/view/compare as compare_view
 import gleamdrill/view/drill
 import gleamdrill/view/help
 import gleamdrill/view/manage
 import gleamdrill/view/menu
-import gleamdrill/view/picker
 import gleamdrill/view/report
 import gleamdrill/view/settings
 import gleamdrill/view/stats
@@ -94,6 +92,7 @@ import gleamdrill/view/statusbar
 import gleamdrill/view/study
 import gleamdrill/view/summary
 import gleamdrill/view/tour as tour_view
+import gleamdrill/view/tracks
 import lustre
 import lustre/attribute
 import lustre/effect.{type Effect}
@@ -119,9 +118,20 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
       editor_keymap: preferences.editor_keymap,
       editor_height: preferences.editor_height,
       prompt_open: preferences.prompt_open,
-      languages_chosen: preferences.languages_chosen,
+      active_track: option.unwrap(preferences.active_track, ""),
       tour_lesson: preferences.tour_lesson,
-      active_queue: preferences.active_queue,
+      remembered_queues: preferences.active_queue,
+      // The active track's, lifted out of the map. A blob written before
+      // tracks held one queue under "", which boot attaches to whichever
+      // track it lands on -- so nobody's active queue resets on the release
+      // that splits them.
+      active_queue: case option.unwrap(preferences.active_track, "") {
+        "" -> list.key_find(preferences.active_queue, "") |> option.from_result
+        name ->
+          list.key_find(preferences.active_queue, name)
+          |> result.lazy_or(fn() { list.key_find(preferences.active_queue, "") })
+          |> option.from_result
+      },
     )
 
   case session.load_token() {
@@ -173,7 +183,7 @@ fn adopt_legacy() -> Effect(Msg) {
 fn escalate(m: Model) -> model.UpgradePrompt {
   case m.mode, m.upgrade_prompt {
     Guest, PromptDismissed -> PromptDismissed
-    Guest, _ -> local.prompt_state(local.current_day(m.settings))
+    Guest, _ -> local.prompt_state(local.current_day(m.account))
     _, current -> current
   }
 }
@@ -195,26 +205,19 @@ type PaneRows {
 
 fn pane_rows(m: Model, pane: model.MenuPane) -> PaneRows {
   case pane {
-    model.LanguagesPane ->
-      ChoiceRows(
-        problems.language_entries()
-        |> list.map(fn(entry) { UserClickedCategory(entry.1) }),
-      )
     model.SubcategoriesPane ->
-      ChoiceRows(case m.selected_category {
-        Some(category) ->
-          problems.subcategory_names(category)
-          |> list.map(UserClickedSubcategory)
-        None -> []
-      })
+      ChoiceRows(
+        problems.subcategory_names(m.active_track)
+        |> list.map(UserClickedSubcategory),
+      )
     model.ProblemsPane ->
-      ToggleRows(case m.selected_category, m.selected_subcategory {
-        Some(category), Some(subcategory) ->
-          problems.problems_in(category, subcategory)
+      ToggleRows(case m.selected_subcategory {
+        Some(subcategory) ->
+          problems.problems_in(m.active_track, subcategory)
           |> list.map(fn(found) {
-            ProblemRef(category, subcategory, found.title)
+            ProblemRef(m.active_track, subcategory, found.title)
           })
-        _, _ -> []
+        None -> []
       })
     model.SelectedPane -> ToggleRows(m.selected)
   }
@@ -232,7 +235,6 @@ fn rows_length(rows: PaneRows) -> Int {
 /// clamping on read beats chasing every mutation site.
 pub fn cursor_in(m: Model, pane: model.MenuPane) -> Int {
   let raw = case pane {
-    model.LanguagesPane -> m.nav.language
     model.SubcategoriesPane -> m.nav.subcategory
     model.ProblemsPane -> m.nav.problem
     model.SelectedPane -> m.nav.selected
@@ -242,7 +244,6 @@ pub fn cursor_in(m: Model, pane: model.MenuPane) -> Int {
 
 fn set_cursor(m: Model, pane: model.MenuPane, index: Int) -> Model {
   let nav = case pane {
-    model.LanguagesPane -> model.MenuNav(..m.nav, language: index)
     model.SubcategoriesPane -> model.MenuNav(..m.nav, subcategory: index)
     model.ProblemsPane -> model.MenuNav(..m.nav, problem: index)
     model.SelectedPane -> model.MenuNav(..m.nav, selected: index)
@@ -274,12 +275,14 @@ fn move_cursor(m: Model, next: fn(Int, Int) -> Int) -> #(Model, Effect(Msg)) {
   }
 }
 
-/// h/l between panes. Moving right through an unmade choice makes it: `l` on a
-/// language selects that language and lands in its subcategories, which is how
-/// a TUI drills down.
+/// h/l between panes. Moving right through an unmade choice makes it: `l` on
+/// a topic selects it and lands in its problems, which is how a TUI drills
+/// down.
+///
+/// Three panes, not four: the first used to choose a language, and the track
+/// switcher is where that happens now.
 fn focus_pane(m: Model, direction: Int) -> #(Model, Effect(Msg)) {
   let order = [
-    model.LanguagesPane,
     model.SubcategoriesPane,
     model.ProblemsPane,
     model.SelectedPane,
@@ -291,30 +294,10 @@ fn focus_pane(m: Model, direction: Int) -> #(Model, Effect(Msg)) {
         False -> acc
       }
     })
-  let target = int.clamp(position + direction, 0, 3)
+  let target = int.clamp(position + direction, 0, 2)
 
   case direction > 0, m.nav.focus {
     // Descending picks the cursor row if that level has no pick yet.
-    True, model.LanguagesPane ->
-      case m.selected_category {
-        None -> {
-          let #(chosen, fx) = activate_cursor(m)
-          #(
-            Model(
-              ..chosen,
-              nav: model.MenuNav(..chosen.nav, focus: model.SubcategoriesPane),
-            ),
-            fx,
-          )
-        }
-        Some(_) -> #(
-          Model(
-            ..m,
-            nav: model.MenuNav(..m.nav, focus: model.SubcategoriesPane),
-          ),
-          effect.none(),
-        )
-      }
     True, model.SubcategoriesPane ->
       case m.selected_subcategory {
         None -> {
@@ -335,7 +318,7 @@ fn focus_pane(m: Model, direction: Int) -> #(Model, Effect(Msg)) {
     _, _ -> {
       let focus = case list.drop(order, target) {
         [pane, ..] -> pane
-        [] -> model.LanguagesPane
+        [] -> model.SubcategoriesPane
       }
       #(Model(..m, nav: model.MenuNav(..m.nav, focus: focus)), effect.none())
     }
@@ -395,41 +378,26 @@ fn pending(m: Model, refs: List(ProblemRef)) -> Model {
   Model(..m, queue_pending: list.append(refs, m.queue_pending))
 }
 
-/// Leave the first-run picker. With `starter`, a starter set is queued on the
-/// way out and the study screen is the destination; without it, the queue
-/// screen, because "which languages" is only half the setup and a study
-/// screen with an empty queue is a dead end to land a first-time user on.
-/// Somebody who already has cards (an upgrade, a returning guest) goes to the
-/// study screen either way.
-fn confirm_picker(m: Model, starter starter: Bool) -> #(Model, Effect(Msg)) {
-  case m.picked_languages {
-    // The buttons are disabled in this state; the guard is here so the
-    // keyboard cannot get past it either.
-    [] -> #(m, effect.none())
-    picked -> {
-      let m =
-        Model(
-          ..m,
-          languages_chosen: True,
-          route: case starter || !dict.is_empty(m.cards) {
-            True -> StudyRoute
-            False -> QueueRoute
-          },
-          // The picker's language choice is the obvious first lens on a
-          // catalogue of five copies of the same 150 problems.
-          queue_language: case picked {
-            [only] -> Some(only)
-            _ -> None
-          },
-        )
-      case starter, starter_refs(m, picked) {
-        True, [_, ..] as refs -> #(
-          pending(m, refs),
-          effect.batch([save_preferences(m), store.add_to_queue(m, refs)]),
-        )
-        _, _ -> #(m, save_preferences(m))
-      }
-    }
+/// Enter a track. With `starter`, twenty easy problems are queued in it so
+/// the first sitting is one click away rather than a trip to the queue screen.
+///
+/// Choosing a track is a device preference, so it is saved here: a reload
+/// should land where you were, not back on the switcher.
+fn enter_track(
+  m: Model,
+  track: String,
+  starter starter: Bool,
+) -> #(Model, Effect(Msg)) {
+  let m = Model(..m, active_track: track, route: StudyRoute)
+  // The track's own cards, queues and settings come from a fresh load: the
+  // model holds one track's at a time, and this is the moment it changes.
+  let reload = effect.batch([save_preferences(m), store.load_state(m)])
+  case starter, starter_refs(m, track) {
+    True, [_, ..] as refs -> #(
+      pending(m, refs),
+      effect.batch([reload, store.add_to_queue(m, refs)]),
+    )
+    _, _ -> #(m, reload)
   }
 }
 
@@ -613,6 +581,36 @@ fn current_problem(m: Model) -> Result(problem.Problem, Nil) {
   }
 }
 
+/// Folds one card into the store, unless it belongs to another track.
+///
+/// `m.cards` is the *active track's* cards, so a response that arrives after
+/// the user has switched must not be folded in: a review recorded in Python
+/// answering while the Go track is open would otherwise leave a Python card
+/// sitting in the Go screens. Free and total, so every fold site can use it.
+fn fold_card(
+  m: Model,
+  cards: dict.Dict(ProblemRef, api.CardState),
+  card: api.CardState,
+) -> dict.Dict(ProblemRef, api.CardState) {
+  // The empty string means *no track chosen yet* -- a browser with nothing in
+  // it -- not "a track that matches nothing". Filtering on it would drop the
+  // very first card anyone queued and leave the study screen empty forever.
+  case m.active_track == "" || track.of_ref(card.problem) == m.active_track {
+    True -> dict.insert(cards, card.problem, card)
+    False -> cards
+  }
+}
+
+/// Move the rail's focus, clamped to the steps this problem actually has. A
+/// problem with no walkthrough has none, and the focus stays at zero.
+fn focus_walk(m: Model, index: Int) -> Model {
+  let total = case current_problem(m) {
+    Ok(current) -> list.length(model.walk_steps(current.approach))
+    Error(Nil) -> 0
+  }
+  Model(..m, walk: model.focus_step(m.walk, index, total))
+}
+
 fn current_language(m: Model) -> Result(String, Nil) {
   case model.current_ref(m) {
     Ok(ref) ->
@@ -661,18 +659,15 @@ fn tick() -> Effect(Msg) {
   })
 }
 
-/// The first twenty Easy problems of each chosen language, in catalogue
-/// order, skipping any already queued. Catalogue order is the topic
-/// curriculum, not a difficulty ramp -- its first twenty include Trapping Rain
-/// Water -- so the starter set filters by rating first and only falls back to
-/// plain catalogue order for a category with no ratings (System Design).
-fn starter_refs(m: Model, tags: List(String)) -> List(ProblemRef) {
-  use tag <- list.flat_map(tags)
+/// The first twenty Easy problems of one track, in catalogue order, skipping
+/// any already queued. Catalogue order is the topic curriculum, not a
+/// difficulty ramp -- its first twenty include Trapping Rain Water -- so the
+/// starter set filters by rating first and only falls back to plain catalogue
+/// order for a track with no ratings (System Design).
+fn starter_refs(m: Model, in_track: String) -> List(ProblemRef) {
   let unqueued =
-    problems.all_refs()
-    |> list.filter(fn(ref) {
-      problems.language_tag(ref.category) == tag && !model.is_queued(m, ref)
-    })
+    problems.refs_in(in_track)
+    |> list.filter(fn(ref) { !model.is_queued(m, ref) })
   let easy =
     list.filter(unqueued, fn(ref) {
       problems.difficulty_of(ref) == Some(problem.Easy)
@@ -919,17 +914,10 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     StateLoaded(Ok(state)) -> {
       let loaded = apply_state(m, state)
-      // An account with cards has answered the language question, on some
-      // device; this one remembers that now rather than asking again.
-      let loaded = case
-        loaded.languages_chosen,
-        dict.is_empty(loaded.cards),
-        loaded.mode
-      {
-        False, False, Account(_) -> Model(..loaded, languages_chosen: True)
-        _, _, _ -> loaded
-      }
-      let remembered = case loaded.languages_chosen && !m.languages_chosen {
+      // The server answers a bare request with the track holding the most
+      // cards, so an account that has been used on another device lands where
+      // it left off rather than on the switcher. Remember that here.
+      let remembered = case loaded.active_track != m.active_track {
         True -> save_preferences(loaded)
         False -> effect.none()
       }
@@ -986,9 +974,9 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           editor_keymap: m.editor_keymap,
           editor_height: m.editor_height,
           prompt_open: m.prompt_open,
-          // An expired session drops you to guest; it does not un-ask the
-          // language question this browser has already answered.
-          languages_chosen: m.languages_chosen,
+          // An expired session drops you to guest; it does not un-ask which
+          // track this browser is on.
+          active_track: m.active_track,
           active_queue: m.active_queue,
           // Mid-session this is a refresh, not a reboot: whatever was on
           // screen stays there. At boot the loading card stays up.
@@ -1060,9 +1048,9 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           editor_height: m.editor_height,
           prompt_open: m.prompt_open,
           // Signing out is not a factory reset of this browser. Without this
-          // it sends someone who has already chosen their languages back to
-          // the first-run picker.
-          languages_chosen: m.languages_chosen,
+          // it sends someone who has already chosen a track back to the
+          // switcher.
+          active_track: m.active_track,
           active_queue: m.active_queue,
           tour_lesson: m.tour_lesson,
           boot: Syncing,
@@ -1154,10 +1142,9 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       Model(
         ..m,
         revealed_solution: Some(0),
-        hints_revealed: case current_problem(m) {
-          Ok(current) -> list.length(current.approach)
-          Error(Nil) -> 0
-        },
+        // A recall card is read, not written: the whole ladder is the card.
+        nudge_shown: True,
+        whole_thing_shown: True,
         grading: AwaitingGrade,
       ),
       effect.none(),
@@ -1281,7 +1268,10 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                 draft: m.draft,
                 run: m.run,
                 revealed_solution: m.revealed_solution,
-                hints_revealed: m.hints_revealed,
+                nudge_shown: m.nudge_shown,
+                whole_thing_shown: m.whole_thing_shown,
+                walk: m.walk,
+                walk_code_seen: m.walk_code_seen,
                 duration_ms: browser.now_ms() - m.opened_at_ms,
                 card_before: model.card_for(m, ref),
               )),
@@ -1325,7 +1315,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
 
     ReviewRecorded(Ok(outcome)) -> {
-      let cards = dict.insert(m.cards, outcome.card.problem, outcome.card)
+      let cards = fold_card(m, m.cards, outcome.card)
       let recorded =
         Model(
           ..m,
@@ -1403,7 +1393,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UndoRecorded(point, Ok(outcome)) -> {
       let cards = case outcome.card {
-        Some(card) -> dict.insert(m.cards, card.problem, card)
+        Some(card) -> fold_card(m, m.cards, card)
         None -> dict.delete(m.cards, point.problem)
       }
       // Undoing the review that created the card un-creates it, and a
@@ -1435,7 +1425,10 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           draft: point.draft,
           run: point.run,
           revealed_solution: point.revealed_solution,
-          hints_revealed: point.hints_revealed,
+          nudge_shown: point.nudge_shown,
+          whole_thing_shown: point.whole_thing_shown,
+          walk: point.walk,
+          walk_code_seen: point.walk_code_seen,
           slot: case point.revealed_solution {
             Some(_) -> SolutionPane
             None -> NoPane
@@ -1473,22 +1466,15 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.none(),
     )
 
-    UserClickedCategory(name) -> #(
-      Model(..m, selected_category: Some(name), selected_subcategory: None),
-      effect.none(),
-    )
-
     UserClickedSubcategory(name) -> #(
       Model(..m, selected_subcategory: Some(name)),
       effect.none(),
     )
 
     UserClickedBreadcrumb(level) ->
+      // One crumb deep now: the track is the root, and it is changed on the
+      // switcher rather than here.
       case level {
-        0 -> #(
-          Model(..m, selected_category: None, selected_subcategory: None),
-          effect.none(),
-        )
         _ -> #(Model(..m, selected_subcategory: None), effect.none())
       }
 
@@ -1498,15 +1484,16 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
 
     UserClickedSelectAll ->
-      case m.selected_category, m.selected_subcategory {
-        Some(cat), Some(sub) -> {
+      case m.selected_subcategory {
+        Some(sub) -> {
+          let cat = m.active_track
           let refs =
             problems.problems_in(cat, sub)
             |> list.map(fn(p) { ProblemRef(cat, sub, p.title) })
             |> list.filter(fn(ref) { !list.contains(m.selected, ref) })
           #(Model(..m, selected: list.append(m.selected, refs)), effect.none())
         }
-        _, _ -> #(m, effect.none())
+        None -> #(m, effect.none())
       }
 
     UserClickedClearSelection -> #(Model(..m, selected: []), effect.none())
@@ -1576,7 +1563,10 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             choice: None,
             graded: False,
             revealed_solution: None,
-            hints_revealed: 0,
+            nudge_shown: False,
+            whole_thing_shown: False,
+            walk: model.fresh_walk(),
+            walk_code_seen: False,
             slot: NoPane,
             run: RunIdle,
             draft: "",
@@ -1836,113 +1826,43 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         _, _ -> #(m, tick())
       }
 
-    UserRevealedHint -> {
-      let cap = case current_problem(m) {
-        Ok(current) -> list.length(current.approach)
-        Error(Nil) -> 0
-      }
-      #(
-        Model(..m, hints_revealed: int.min(m.hints_revealed + 1, cap)),
-        effect.none(),
-      )
-    }
+    UserToggledNudge -> #(
+      Model(..m, nudge_shown: !m.nudge_shown),
+      effect.none(),
+    )
 
-    // Opening the walkthrough is the plan rung, just read one step at a
-    // time; it counts as that rung revealed, never as the pseudocode.
-    UserOpenedWalk ->
-      case current_problem(m) {
-        Ok(current) ->
-          case model.plan_rung(current.approach) {
-            Some(rung) -> #(
-              Model(
-                ..m,
-                slot: WalkPane,
-                walk: Some(case m.walk {
-                  Some(state) -> state
-                  None ->
-                    model.WalkState(
-                      step: 0,
-                      hint_shown: False,
-                      why_shown: False,
-                      code_shown: False,
-                    )
-                }),
-                hints_revealed: int.max(m.hints_revealed, rung + 1),
-              ),
-              effect.none(),
-            )
-            None -> #(m, effect.none())
-          }
-        Error(Nil) -> #(m, effect.none())
-      }
-
-    UserClosedWalk -> #(Model(..m, slot: NoPane), effect.none())
+    // Moving the focus reveals nothing: every step's title is on the rail
+    // from the moment the problem opens, so walking them is free. Which is
+    // why this clamps rather than counting how far anyone has got.
+    WalkFocused(index) -> #(focus_walk(m, index), effect.none())
+    WalkAdvanced -> #(focus_walk(m, m.walk.focus + 1), effect.none())
+    WalkBacked -> #(focus_walk(m, m.walk.focus - 1), effect.none())
 
     WalkHintShown -> #(
-      Model(
-        ..m,
-        walk: option.map(m.walk, fn(w) {
-          model.WalkState(..w, hint_shown: True)
-        }),
-      ),
+      Model(..m, walk: model.reveal_layer(m.walk, model.HintLayer)),
       effect.none(),
     )
 
     WalkWhyShown -> #(
-      Model(
-        ..m,
-        walk: option.map(m.walk, fn(w) { model.WalkState(..w, why_shown: True) }),
-      ),
+      Model(..m, walk: model.reveal_layer(m.walk, model.WhyLayer)),
       effect.none(),
     )
 
+    // A slice is a piece of the pseudocode, so this is the one layer that
+    // goes on the review log.
     WalkCodeShown -> #(
       Model(
         ..m,
-        walk: option.map(m.walk, fn(w) {
-          model.WalkState(..w, code_shown: True)
-        }),
+        walk: model.reveal_layer(m.walk, model.CodeLayer),
         walk_code_seen: True,
       ),
       effect.none(),
     )
 
-    WalkAdvanced ->
-      case m.walk, current_problem(m) {
-        Some(w), Ok(current) -> {
-          let total = list.length(model.walk_steps(current.approach))
-          #(
-            Model(
-              ..m,
-              walk: Some(model.WalkState(
-                step: int.min(w.step + 1, total),
-                hint_shown: False,
-                why_shown: False,
-                code_shown: False,
-              )),
-            ),
-            effect.none(),
-          )
-        }
-        _, _ -> #(m, effect.none())
-      }
-
-    WalkBacked ->
-      case m.walk {
-        Some(w) -> #(
-          Model(
-            ..m,
-            walk: Some(model.WalkState(
-              step: int.max(w.step - 1, 0),
-              hint_shown: False,
-              why_shown: False,
-              code_shown: False,
-            )),
-          ),
-          effect.none(),
-        )
-        None -> #(m, effect.none())
-      }
+    UserRevealedWholeThing -> #(
+      Model(..m, whole_thing_shown: True),
+      effect.none(),
+    )
 
     // The solution shown is chosen; its button again closes the pane, but
     // the choice stands -- the log records that it was seen.
@@ -1965,20 +1885,9 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UserToggledPane(pane) ->
       case pane, m.slot == pane {
-        WalkPane, True -> handle(m, UserClosedWalk)
-        WalkPane, False -> handle(m, UserOpenedWalk)
         // Opening the note is focusing it; closing is just closing.
         NotePane, True -> #(Model(..m, slot: NoPane), effect.none())
         NotePane, False -> handle(m, NoteFocusRequested)
-        // Every ladder starts with a nudge, so an open pane always has a
-        // rung to show; the nudge is not a reveal.
-        HintPane, _ -> #(
-          Model(
-            ..model.toggle_pane(m, HintPane),
-            hints_revealed: int.max(m.hints_revealed, 1),
-          ),
-          effect.none(),
-        )
         // With no passing run there is no diff to show instead of the
         // reference, so opening the pane is choosing the first solution.
         SolutionPane, False ->
@@ -2156,20 +2065,25 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     // Committed on blur or Enter, so this fires once per edit rather than per
     // keystroke, and saving immediately is affordable.
     UserChangedSetting(field, raw) -> {
-      let settings = apply_setting(m.settings, field, raw)
-      let m = Model(..m, settings:)
-      #(m, store.save_settings(m, settings))
+      let profile =
+        apply_setting(wire.Profile(m.account, m.settings), field, raw)
+      let m = Model(..m, settings: profile.settings, account: profile.account)
+      #(m, store.save_settings(m, profile))
     }
 
     UserClickedDeviceTimezone -> {
-      let settings = wire.Settings(..m.settings, timezone: browser.time_zone())
-      let m = Model(..m, settings:)
-      #(m, store.save_settings(m, settings))
+      let account =
+        wire.AccountSettings(..m.account, timezone: browser.time_zone())
+      let m = Model(..m, account:)
+      #(m, store.save_settings(m, wire.Profile(account, m.settings)))
     }
 
     // The server answers with what it stored, so this is the authoritative
     // copy -- it may differ from what was sent if a bound was hit.
-    SettingsSaved(Ok(settings)) -> #(Model(..m, settings:), effect.none())
+    SettingsSaved(Ok(profile)) -> #(
+      Model(..m, settings: profile.settings, account: profile.account),
+      effect.none(),
+    )
 
     SettingsSaved(Error(error)) -> #(
       Model(..m, notice: Some(api.error_message(error))),
@@ -2251,23 +2165,17 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.none(),
     )
 
-    PickerToggledLanguage(tag) -> {
-      let picked = case list.contains(m.picked_languages, tag) {
-        True -> list.filter(m.picked_languages, fn(t) { t != tag })
-        False -> [tag, ..m.picked_languages]
+    UserClickedTracks -> #(Model(..m, route: TracksRoute), effect.none())
+    UserPickedTrack(name) -> enter_track(m, name, starter: False)
+    UserPickedTrackWithStarter(name) -> enter_track(m, name, starter: True)
+
+    // From the study screen's empty state: twenty easy problems in the track
+    // already open, no screen in between.
+    UserAddedStarterSet ->
+      case starter_refs(m, m.active_track) {
+        [] -> #(Model(..m, route: TracksRoute), effect.none())
+        refs -> #(pending(m, refs), store.add_to_queue(m, refs))
       }
-      #(Model(..m, picked_languages: picked), effect.none())
-    }
-
-    PickerConfirmed -> confirm_picker(m, starter: False)
-    PickerConfirmedWithStarter -> confirm_picker(m, starter: True)
-
-    // The picker is the starter-set chooser: which languages, then twenty
-    // easy problems in each.
-    UserAddedStarterSet -> #(
-      Model(..m, route: PickerRoute, picked_languages: []),
-      effect.none(),
-    )
 
     UserToggledSuspend(ref) ->
       case model.card_for(m, ref) {
@@ -2280,7 +2188,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         ..m,
         now: outcome.now,
         today: outcome.today,
-        cards: dict.insert(m.cards, outcome.card.problem, outcome.card),
+        cards: fold_card(m, m.cards, outcome.card),
       ),
       effect.none(),
     )
@@ -2374,7 +2282,12 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               let m =
                 Model(
                   ..m,
-                  queues: list.append(m.queues, [wire.Queue(name, [])]),
+                  queues: list.append(m.queues, [
+                    // In the track it was made in. A queue belongs to one,
+                    // and "" belongs to none -- it would vanish from the
+                    // screen that created it the moment anything reloaded.
+                    wire.Queue(track: m.active_track, name:, problems: []),
+                  ]),
                   queue_editing: Some(name),
                   queue_naming: None,
                 )
@@ -2501,19 +2414,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.none(),
     )
 
-    // From a select: the empty option is "all languages".
-    UserPickedQueueLanguage(tag) -> #(
-      Model(
-        ..m,
-        queue_language: case tag {
-          "" -> None
-          _ -> Some(tag)
-        },
-        nav: model.MenuNav(..m.nav, queue: 0),
-      ),
-      effect.none(),
-    )
-
     UserChangedGroup(change) ->
       case queue.group_rows(m, change), change.add, m.queue_editing {
         [], _, _ -> #(m, effect.none())
@@ -2604,8 +2504,16 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     QueueChanged(Ok(change)) -> {
       let cards =
         list.fold(change.cards, m.cards, fn(cards, card: api.CardState) {
-          dict.insert(cards, card.problem, card)
+          fold_card(m, cards, card)
         })
+      // A browser with no track yet takes the one it just put something in:
+      // choosing problems is choosing a track, and asking twice would be a
+      // question with only one possible answer.
+      let active_track = case m.active_track, change.cards {
+        "", [first, ..] -> track.of_ref(first.problem)
+        chosen, _ -> chosen
+      }
+      let m = Model(..m, active_track:)
       // A card gone is gone from every list too.
       let queues = model.drop_from_queues(m.queues, change.removed)
       let changed = queues != m.queues
@@ -2896,6 +2804,9 @@ fn apply_state(m: Model, state: api.BootState) -> Model {
     refreshing: False,
     now: state.now,
     settings: state.settings,
+    account: state.account,
+    active_track: state.track,
+    tracks: state.tracks,
     cards: dict.from_list(
       list.map(state.cards, fn(card) { #(card.problem, card) }),
     ),
@@ -2907,15 +2818,15 @@ fn apply_state(m: Model, state: api.BootState) -> Model {
     // on another device, in which case today is everything again.
     active_queue: known_queue(state.queues, m.active_queue),
     queue_editing: known_queue(state.queues, m.queue_editing),
-    // The one place that decides where boot lands. A browser that has never
-    // answered the language question goes to the picker instead of the study
-    // screen, because the queue it would otherwise build is one language deep
-    // by accident rather than by choice -- unless the account already has a
-    // queue, in which case the question was answered on another device and
-    // asking again would only stand between the user and their cards.
-    route: case m.languages_chosen || state.cards != [] {
-      True -> StudyRoute
-      False -> PickerRoute
+    // The one place that decides where boot lands. A browser with no track
+    // lands on the switcher, because Study, Queue and Stats are all inside a
+    // track and there is nothing honest to show without one. The server names
+    // the track holding the most cards when the request does not, so an
+    // account used on another device lands where it left off rather than
+    // being asked again.
+    route: case state.track {
+      "" -> TracksRoute
+      _ -> StudyRoute
     },
     // Evaluated on every load, not only after a review: a guest who crossed
     // the threshold in a previous session should still be told.
@@ -2945,60 +2856,79 @@ fn known_queue(
 /// is a typo, and snapping it is friendlier than an error. Unparseable text
 /// leaves the setting alone.
 fn apply_setting(
-  settings: api.Settings,
+  profile: wire.Profile,
   field: model.SettingField,
   raw: String,
-) -> api.Settings {
+) -> wire.Profile {
+  let wire.Profile(account:, settings:) = profile
+  // Which half of the profile the field belongs to. Splitting them is the
+  // whole point of the record split: a daily budget is about what you are
+  // studying, a rollover hour is about you.
+  let tuned = fn(settings) { wire.Profile(account:, settings:) }
+  let personal = fn(account) { wire.Profile(account:, settings:) }
   case field {
     NewPerDay ->
       case int.parse(raw) {
         Ok(value) ->
-          wire.Settings(..settings, new_per_day: int.clamp(value, 0, 100))
-        Error(Nil) -> settings
+          tuned(
+            wire.Settings(..settings, new_per_day: int.clamp(value, 0, 100)),
+          )
+        Error(Nil) -> profile
       }
     ReviewsPerDay ->
       case int.parse(raw) {
         Ok(value) ->
-          wire.Settings(..settings, reviews_per_day: int.clamp(value, 0, 500))
-        Error(Nil) -> settings
+          tuned(
+            wire.Settings(..settings, reviews_per_day: int.clamp(value, 0, 500)),
+          )
+        Error(Nil) -> profile
       }
     DayStartHour ->
       case int.parse(raw) {
         Ok(value) ->
-          wire.Settings(..settings, day_start_hour: int.clamp(value, 0, 23))
-        Error(Nil) -> settings
+          personal(
+            wire.AccountSettings(
+              ..account,
+              day_start_hour: int.clamp(value, 0, 23),
+            ),
+          )
+        Error(Nil) -> profile
       }
     ReminderHour ->
       case int.parse(raw) {
         Ok(hour) ->
-          wire.Settings(..settings, reminder_hour: Some(int.clamp(hour, 0, 23)))
+          personal(
+            wire.AccountSettings(
+              ..account,
+              reminder_hour: Some(int.clamp(hour, 0, 23)),
+            ),
+          )
         // The select's "off" option, or anything else: no mail.
-        Error(Nil) -> wire.Settings(..settings, reminder_hour: None)
+        Error(Nil) ->
+          personal(wire.AccountSettings(..account, reminder_hour: None))
       }
-    DesiredRetention ->
-      case float.parse(raw) {
-        Ok(value) ->
+    DesiredRetention -> {
+      let retained = fn(value) {
+        tuned(
           wire.Settings(
             ..settings,
             scheduler: fsrs.Config(
               ..settings.scheduler,
               desired_retention: float.clamp(value, 0.7, 0.99),
             ),
-          )
+          ),
+        )
+      }
+      case float.parse(raw) {
+        Ok(value) -> retained(value)
         // An integer in a step-0.01 field: "1" should mean 1.0, not nothing.
         Error(Nil) ->
           case int.parse(raw) {
-            Ok(whole) ->
-              wire.Settings(
-                ..settings,
-                scheduler: fsrs.Config(
-                  ..settings.scheduler,
-                  desired_retention: float.clamp(int.to_float(whole), 0.7, 0.99),
-                ),
-              )
-            Error(Nil) -> settings
+            Ok(whole) -> retained(int.to_float(whole))
+            Error(Nil) -> profile
           }
       }
+    }
   }
 }
 
@@ -3101,9 +3031,24 @@ fn save_preferences(m: Model) -> Effect(Msg) {
     editor_height: m.editor_height,
     prompt_open: m.prompt_open,
     tour_lesson: m.tour_lesson,
-    languages_chosen: m.languages_chosen,
-    active_queue: m.active_queue,
+    active_track: case m.active_track {
+      "" -> None
+      name -> Some(name)
+    },
+    // The model holds the active track's queue; the rest of the map is left
+    // exactly as it was, so switching away does not forget where you were in
+    // the track you came from.
+    active_queue: remembered_queues(m),
   ))
+}
+
+fn remembered_queues(m: Model) -> List(#(String, String)) {
+  let others =
+    list.filter(m.remembered_queues, fn(entry) { entry.0 != m.active_track })
+  case m.active_queue {
+    Some(name) -> [#(m.active_track, name), ..others]
+    None -> others
+  }
 }
 
 fn handle_key(m: Model, key: model.Key) -> #(Model, Effect(Msg)) {
@@ -3304,7 +3249,6 @@ fn advance_inner(m: Model) -> #(Model, Effect(Msg)) {
           current_iteration: iteration,
           problem_index: index,
           revealed_solution: None,
-          hints_revealed: 0,
           slot: NoPane,
           run: RunIdle,
           grading: NotGrading,
@@ -3475,13 +3419,19 @@ fn do_sample(
   }
 }
 
-/// A solve is clean when nothing was given away: no ladder rung past the
-/// nudge, no solution shown, no walk code. The nudge is a question, not an
-/// answer, which is why it is allowed.
+/// A solve is clean when nothing was given away: no solution shown, no code
+/// slice, no whole pseudocode, and no step opened for its hint or its why.
+///
+/// The step *titles* do not count, because the rail lists them from the moment
+/// the problem opens and nobody chose to see them. That is the difference
+/// between this and the review log's `revealed` flag, which only the code
+/// counts toward: `clean` is "solved it from nothing", and turning over a
+/// step's why is not nothing.
 fn answer_given_away(m: Model) -> Bool {
   case current_problem(m) {
     Ok(current) ->
-      model.answer_revealed(m, current.approach) || m.hints_revealed > 1
+      model.answer_revealed(m, current.approach)
+      || model.any_layer_shown(m.walk)
     Error(Nil) -> False
   }
 }
@@ -3524,7 +3474,10 @@ fn reset_to_menu(m: Model) -> Model {
     current_iteration: 1,
     draft: "",
     revealed_solution: None,
-    hints_revealed: 0,
+    nudge_shown: False,
+    whole_thing_shown: False,
+    walk: model.fresh_walk(),
+    walk_code_seen: False,
     run: RunIdle,
     choice: None,
     graded: False,
@@ -3622,7 +3575,7 @@ fn view(m: Model) -> Element(Msg) {
     Synced -> {
       let screen = case m.route {
         AuthRoute -> auth.view(m)
-        PickerRoute -> picker.view(m)
+        TracksRoute -> tracks.view(m)
         SettingsRoute -> settings.view(m)
         SummaryRoute -> summary.view(m)
         StudyRoute -> study.view(m)

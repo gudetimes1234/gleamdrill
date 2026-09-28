@@ -81,12 +81,12 @@ pub fn view(m: Model) -> Element(Msg) {
             <> "default, so a late-night session counts toward the day it "
             <> "feels like rather than the one the clock says.",
           DayStartHour,
-          int.to_string(settings.day_start_hour),
+          int.to_string(m.account.day_start_hour),
           "0",
           "23",
           "1",
         ),
-        timezone_row(settings.timezone),
+        timezone_row(m.account.timezone),
       ],
     ),
 
@@ -334,7 +334,7 @@ fn reminder_row(m: Model) -> Element(Msg) {
     model.Account(_) -> True
     model.Guest -> False
   }
-  let current = case m.settings.reminder_hour {
+  let current = case m.account.reminder_hour {
     Some(hour) -> int.to_string(hour)
     None -> "off"
   }

@@ -108,21 +108,14 @@ pub fn new_count(m: Model) -> Int {
 /// two callers.
 pub fn listed(m: Model) -> List(ProblemRef) {
   let refs = case string.trim(m.queue_search) {
-    "" -> problems.all_refs()
-    query -> problems.search_refs(query)
+    "" -> problems.refs_in(m.active_track)
+    query -> problems.search_refs_in(m.active_track, query)
   }
 
   // Membership in the queue being edited: the card itself for everything,
   // the list for a named queue. Built once for the whole walk.
   let here = members(m, m.queue_editing)
-  refs
-  |> list.filter(fn(ref) {
-    case m.queue_language {
-      Some(tag) -> problems.language_tag(ref.category) == tag
-      None -> True
-    }
-  })
-  |> list.filter(fn(ref) { matches_status(m, here, ref) })
+  refs |> list.filter(fn(ref) { matches_status(m, here, ref) })
 }
 
 /// `listed`, cut into topics: (category, subcategory, its rows), in order.

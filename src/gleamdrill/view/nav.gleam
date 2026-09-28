@@ -13,13 +13,17 @@ import gleamdrill/model.{
   UserClickedStats, UserClickedTour, UserDismissedMergeOffer,
   UserDismissedNotice,
 }
+import gleamdrill/track
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 
 pub fn bar(m: Model, current: Route) -> Element(Msg) {
+  // Tracks first: Study, Queue and Stats are all inside one, so it is the
+  // thing they hang off rather than a peer of them.
   let places = [
+    #("Tracks", model.TracksRoute, model.UserClickedTracks),
     #("Study", StudyRoute, UserClickedBackToStudy),
     #("Queue", QueueRoute, UserClickedQueue),
     #("Stats", StatsRoute, UserClickedStats),
@@ -72,12 +76,25 @@ pub fn bar(m: Model, current: Route) -> Element(Msg) {
       ),
     ]
   }
+  // Which track these screens are about, said once, beside the links that
+  // lead into them.
+  let here = case m.active_track {
+    "" -> []
+    name -> [
+      html.span([attribute.class("nav-track")], [html.text(track.label(name))]),
+    ]
+  }
   html.nav(
     [
       attribute.class("study-account"),
       attribute.attribute("aria-label", "Screens"),
     ],
-    list.flatten([links, [html.span([attribute.class("nav-gap")], [])], account]),
+    list.flatten([
+      here,
+      links,
+      [html.span([attribute.class("nav-gap")], [])],
+      account,
+    ]),
   )
 }
 

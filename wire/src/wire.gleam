@@ -30,7 +30,8 @@ import gleam/time/timestamp.{type Timestamp}
 
 /// Identifies one drill in the catalogue.
 ///
-/// `category` already encodes the language ("NeetCode 150 · Python"), so this
+/// `category` already names the track ("NeetCode 150" for Python, "NeetCode
+/// 150 (Go)", "System Design"), so this
 /// is the whole key: it is what localStorage, the server's `cards` table and
 /// the scheduler all agree on.
 pub type ProblemRef {
@@ -80,20 +81,59 @@ pub type Today {
 /// A named list of problems to study from. Scheduling stays per problem:
 /// a card is the memory of one problem, whichever queues it is in. The
 /// list is the whole of a queue -- the client owns it and sends it entire.
+///
+/// A queue lives inside one track, because its name is only unique there:
+/// "Arrays" in the Python track and "Arrays" in the Go track are two lists.
 pub type Queue {
-  Queue(name: String, problems: List(ProblemRef))
+  Queue(track: String, name: String, problems: List(ProblemRef))
 }
 
+/// The scheduler's knobs, per track.
+///
+/// Two tracks are two profiles. The parameters FSRS was optimised with for
+/// typing Python from memory are not the ones for a twenty-second multiple
+/// choice question, and a daily budget of five is a different promise in each.
 pub type Settings {
-  Settings(
-    scheduler: fsrs.Config,
-    new_per_day: Int,
-    reviews_per_day: Int,
+  Settings(scheduler: fsrs.Config, new_per_day: Int, reviews_per_day: Int)
+}
+
+/// The knobs that are about the person rather than about what they study.
+///
+/// These stay account-wide on purpose. A per-track rollover hour would give
+/// one person four different "todays", and the reminder mail is one mail.
+pub type AccountSettings {
+  AccountSettings(
     day_start_hour: Int,
     timezone: String,
     /// The local hour a "N problems due" reminder mail goes out, or None
     /// for no mail. Account-only: a guest has no address to send to.
     reminder_hour: Option(Int),
+  )
+}
+
+/// One user's settings, both halves.
+///
+/// They travel together wherever a caller wants "the settings" and are two
+/// records because they answer to different things: the account's knobs are
+/// about the person and stay one per user, the scheduler's are about what is
+/// being studied and become one per track.
+pub type Profile {
+  Profile(account: AccountSettings, settings: Settings)
+}
+
+/// One row of the track switcher: where a track stands, and under what.
+///
+/// It carries that track's own settings so switching needs no second request,
+/// and so no daily budget is ever worked out in SQL against a default
+/// duplicated from `default_settings`.
+pub type TrackStanding {
+  TrackStanding(
+    track: String,
+    settings: Settings,
+    cards: Int,
+    due_now: Int,
+    introduced_today: Int,
+    reviews_today: Int,
   )
 }
 
@@ -104,6 +144,16 @@ pub type BootState {
     /// comparisons in the UI agree with the scheduling that produced them.
     now: Timestamp,
     user: User,
+    account: AccountSettings,
+    /// Which track everything below describes. Carried so a response that
+    /// arrives after the user has switched can be discarded outright rather
+    /// than folded into the wrong track.
+    track: String,
+    /// Every track and where it stands, for the switcher. The whole account,
+    /// not just this track.
+    tracks: List(TrackStanding),
+    /// The active track's. Also present in `tracks`; here so the screens that
+    /// want it do not have to go looking.
     settings: Settings,
     cards: List(CardState),
     drafts: List(#(ProblemRef, String)),
@@ -127,7 +177,14 @@ pub type Archive {
   Archive(
     version: Int,
     exported_at: Timestamp,
-    settings: Settings,
+    account: AccountSettings,
+    /// Each track's settings. The empty-string key means "these apply to
+    /// every track" -- which is how a pre-tracks file reads, since it had one
+    /// set of settings and no idea there were tracks. Same fallback
+    /// convention the approach code slices use.
+    tracks: List(#(String, Settings)),
+    /// The whole account, every track. A card's `category` says which track
+    /// it is in, so nothing here needs splitting.
     cards: List(CardState),
     /// Oldest first, each row with the problem it belongs to.
     reviews: List(#(ProblemRef, ReviewRow)),
@@ -137,8 +194,12 @@ pub type Archive {
   )
 }
 
-/// Version 2 added `queues`; a version 1 file has none and reads as such.
-pub const archive_version = 2
+/// Version 2 added `queues`. Version 3 split the settings: `account` for the
+/// knobs about the person, `tracks` for the scheduler's, per track. A version
+/// 1 or 2 file still restores -- its one settings blob is split on the way in
+/// and applied to every track, and every ref in it already carries its
+/// category, so the tracks are recoverable from the data itself.
+pub const archive_version = 3
 
 /// What undoing the latest review leaves behind. `card` is None when the
 /// undone review had created the card: it is out of the queue again.
@@ -254,10 +315,15 @@ pub fn default_settings() -> Settings {
     // where someone who wants more says so.
     new_per_day: 5,
     reviews_per_day: 100,
-    day_start_hour: 4,
-    timezone: "UTC",
-    reminder_hour: None,
   )
+}
+
+pub fn default_account() -> AccountSettings {
+  AccountSettings(day_start_hour: 4, timezone: "UTC", reminder_hour: None)
+}
+
+pub fn default_profile() -> Profile {
+  Profile(account: default_account(), settings: default_settings())
 }
 
 pub fn empty_today() -> Today {
@@ -370,6 +436,7 @@ pub fn draft_to_json(entry: #(ProblemRef, String)) -> Json {
 
 pub fn queue_to_json(queue: Queue) -> Json {
   json.object([
+    #("track", json.string(queue.track)),
     #("name", json.string(queue.name)),
     #("problems", json.array(queue.problems, ref_to_json)),
   ])
@@ -393,8 +460,12 @@ pub fn today_to_json(today: Today) -> Json {
 }
 
 pub fn settings_to_json(settings: Settings) -> Json {
+  json.object(settings_fields(settings))
+}
+
+fn settings_fields(settings: Settings) -> List(#(String, Json)) {
   let scheduler = settings.scheduler
-  json.object([
+  [
     #("parameters", json.array(scheduler.parameters, json.float)),
     #("desiredRetention", json.float(scheduler.desired_retention)),
     #("learningSteps", json.array(scheduler.learning_steps, json.int)),
@@ -403,9 +474,46 @@ pub fn settings_to_json(settings: Settings) -> Json {
     #("enableFuzz", json.bool(scheduler.enable_fuzz)),
     #("newPerDay", json.int(settings.new_per_day)),
     #("reviewsPerDay", json.int(settings.reviews_per_day)),
-    #("dayStartHour", json.int(settings.day_start_hour)),
-    #("timezone", json.string(settings.timezone)),
-    #("reminderHour", nullable_int(settings.reminder_hour)),
+  ]
+}
+
+pub fn account_to_json(account: AccountSettings) -> Json {
+  json.object(account_fields(account))
+}
+
+fn account_fields(account: AccountSettings) -> List(#(String, Json)) {
+  [
+    #("dayStartHour", json.int(account.day_start_hour)),
+    #("timezone", json.string(account.timezone)),
+    #("reminderHour", nullable_int(account.reminder_hour)),
+  ]
+}
+
+/// The pre-tracks settings object: per-track and account-wide fields in one
+/// flat blob.
+///
+/// Emitted for one release wherever `settings` crosses the wire, so a browser
+/// still running the cached previous bundle keeps decoding it -- its decoder
+/// *requires* `timezone`, `dayStartHour` and `reminderHour` to be in there,
+/// and `dist/` and the server are separate artifacts. The new decoder reads
+/// the same object and simply ignores the three it no longer wants. Delete
+/// this, and the `account` fallback in `settings_decoder`'s callers, one
+/// release after the split ships.
+pub fn legacy_settings_to_json(
+  account: AccountSettings,
+  settings: Settings,
+) -> Json {
+  json.object(list.append(settings_fields(settings), account_fields(account)))
+}
+
+pub fn track_standing_to_json(standing: TrackStanding) -> Json {
+  json.object([
+    #("track", json.string(standing.track)),
+    #("settings", settings_to_json(standing.settings)),
+    #("cards", json.int(standing.cards)),
+    #("dueNow", json.int(standing.due_now)),
+    #("introducedToday", json.int(standing.introduced_today)),
+    #("reviewsToday", json.int(standing.reviews_today)),
   ])
 }
 
@@ -413,7 +521,11 @@ pub fn boot_state_to_json(state: BootState) -> Json {
   json.object([
     #("now", json.float(fsrs.to_epoch(state.now))),
     #("user", user_to_json(state.user)),
-    #("settings", settings_to_json(state.settings)),
+    #("account", account_to_json(state.account)),
+    #("track", json.string(state.track)),
+    #("tracks", json.array(state.tracks, track_standing_to_json)),
+    // The fat legacy object, so a stale cached bundle still decodes it.
+    #("settings", legacy_settings_to_json(state.account, state.settings)),
     #("cards", json.array(state.cards, card_to_json)),
     #("drafts", json.array(state.drafts, draft_to_json)),
     #("notes", json.array(state.notes, draft_to_json)),
@@ -426,7 +538,17 @@ pub fn archive_to_json(archive: Archive) -> Json {
   json.object([
     #("gleamdrill", json.int(archive.version)),
     #("exportedAt", json.float(fsrs.to_epoch(archive.exported_at))),
-    #("settings", settings_to_json(archive.settings)),
+    #("account", account_to_json(archive.account)),
+    #(
+      "tracks",
+      json.array(archive.tracks, fn(entry) {
+        let #(track, settings) = entry
+        json.object([
+          #("track", json.string(track)),
+          #("settings", settings_to_json(settings)),
+        ])
+      }),
+    ),
     #("cards", json.array(archive.cards, card_to_json)),
     #(
       "reviews",
@@ -685,7 +807,20 @@ pub fn draft_decoder() -> Decoder(#(ProblemRef, String)) {
 pub fn queue_decoder() -> Decoder(Queue) {
   use name <- decode.field("name", decode.string)
   use problems <- decode.field("problems", decode.list(ref_decoder()))
-  decode.success(Queue(name:, problems:))
+  // A queue written before tracks existed takes its first problem's
+  // category, which is the track that problem is in. Available, honest and
+  // lossless for any non-empty list; an empty legacy queue has nothing to
+  // lose and lands on "", which no track matches, so it is inert rather than
+  // wrongly attributed.
+  use track <- decode.optional_field(
+    "track",
+    case list.first(problems) {
+      Ok(first) -> first.category
+      Error(Nil) -> ""
+    },
+    decode.string,
+  )
+  decode.success(Queue(track:, name:, problems:))
 }
 
 pub fn queues_decoder() -> Decoder(List(Queue)) {
@@ -711,6 +846,8 @@ pub fn today_decoder() -> Decoder(Today) {
   ))
 }
 
+/// The per-track knobs. A pre-tracks blob decodes fine: its three extra
+/// fields are simply not read here.
 pub fn settings_decoder() -> Decoder(Settings) {
   use parameters <- decode.field("parameters", decode.list(lenient_float()))
   use desired_retention <- decode.field("desiredRetention", lenient_float())
@@ -723,14 +860,6 @@ pub fn settings_decoder() -> Decoder(Settings) {
   use enable_fuzz <- decode.field("enableFuzz", decode.bool)
   use new_per_day <- decode.field("newPerDay", decode.int)
   use reviews_per_day <- decode.field("reviewsPerDay", decode.int)
-  use day_start_hour <- decode.field("dayStartHour", decode.int)
-  use timezone <- decode.field("timezone", decode.string)
-  // Absent from settings saved before reminders existed: off.
-  use reminder_hour <- decode.optional_field(
-    "reminderHour",
-    None,
-    decode.optional(decode.int),
-  )
   decode.success(Settings(
     scheduler: fsrs.Config(
       parameters:,
@@ -742,9 +871,35 @@ pub fn settings_decoder() -> Decoder(Settings) {
     ),
     new_per_day:,
     reviews_per_day:,
-    day_start_hour:,
-    timezone:,
-    reminder_hour:,
+  ))
+}
+
+pub fn account_decoder() -> Decoder(AccountSettings) {
+  use day_start_hour <- decode.field("dayStartHour", decode.int)
+  use timezone <- decode.field("timezone", decode.string)
+  // Absent from settings saved before reminders existed: off.
+  use reminder_hour <- decode.optional_field(
+    "reminderHour",
+    None,
+    decode.optional(decode.int),
+  )
+  decode.success(AccountSettings(day_start_hour:, timezone:, reminder_hour:))
+}
+
+pub fn track_standing_decoder() -> Decoder(TrackStanding) {
+  use track <- decode.field("track", decode.string)
+  use settings <- decode.field("settings", settings_decoder())
+  use cards <- decode.field("cards", decode.int)
+  use due_now <- decode.field("dueNow", decode.int)
+  use introduced_today <- decode.field("introducedToday", decode.int)
+  use reviews_today <- decode.field("reviewsToday", decode.int)
+  decode.success(TrackStanding(
+    track:,
+    settings:,
+    cards:,
+    due_now:,
+    introduced_today:,
+    reviews_today:,
   ))
 }
 
@@ -752,6 +907,24 @@ pub fn boot_state_decoder() -> Decoder(BootState) {
   use now <- decode.field("now", moment())
   use user <- decode.field("user", user_decoder())
   use settings <- decode.field("settings", settings_decoder())
+  // A server from before the split sends no `account` object and no `track`:
+  // the three account-wide knobs are still inside `settings`, where this
+  // reads them from instead. One release, then both fallbacks go.
+  use account <- decode.optional_field(
+    "account",
+    fallback_account,
+    account_decoder(),
+  )
+  use account <- decode.then(case account == fallback_account {
+    False -> decode.success(account)
+    True -> decode.field("settings", account_decoder(), decode.success)
+  })
+  use track <- decode.optional_field("track", "", decode.string)
+  use tracks <- decode.optional_field(
+    "tracks",
+    [],
+    decode.list(track_standing_decoder()),
+  )
   use cards <- decode.field("cards", decode.list(card_decoder()))
   use drafts <- decode.field("drafts", decode.list(draft_decoder()))
   // Optional: a server from before notes existed sends none.
@@ -765,6 +938,9 @@ pub fn boot_state_decoder() -> Decoder(BootState) {
   decode.success(BootState(
     now:,
     user:,
+    account:,
+    track:,
+    tracks:,
     settings:,
     cards:,
     drafts:,
@@ -774,10 +950,60 @@ pub fn boot_state_decoder() -> Decoder(BootState) {
   ))
 }
 
+/// A sentinel no real account can hold -- hour 0 is midnight, but the empty
+/// timezone is not a zone -- so "the object was absent" can be told from "the
+/// object said this".
+const fallback_account = AccountSettings(
+  day_start_hour: -1,
+  timezone: "",
+  reminder_hour: None,
+)
+
 pub fn archive_decoder() -> Decoder(Archive) {
   use version <- decode.field("gleamdrill", decode.int)
   use exported_at <- decode.field("exportedAt", moment())
-  use settings <- decode.field("settings", settings_decoder())
+  // A version 1 or 2 file has one flat `settings` and no notion of tracks.
+  // Its per-track half lands under the "" key, meaning "every track" -- the
+  // same fallback convention the approach code slices use -- and its
+  // account-wide half becomes `account`.
+  use account <- decode.optional_field(
+    "account",
+    fallback_account,
+    account_decoder(),
+  )
+  use account <- decode.then(case account == fallback_account {
+    False -> decode.success(account)
+    True ->
+      decode.optional_field(
+        "settings",
+        default_account(),
+        account_decoder(),
+        decode.success,
+      )
+  })
+  use tracks <- decode.optional_field(
+    "tracks",
+    [],
+    decode.list({
+      use track <- decode.field("track", decode.string)
+      use settings <- decode.field("settings", settings_decoder())
+      decode.success(#(track, settings))
+    }),
+  )
+  // No `tracks` and no `settings` is not a broken file: it is an account
+  // whose every track is on the defaults, which a version 3 export writes as
+  // nothing rather than as N copies of the defaults. Restoring it should
+  // default them, not refuse the file.
+  use tracks <- decode.then(case tracks {
+    [] ->
+      decode.optional_field(
+        "settings",
+        [],
+        decode.map(settings_decoder(), fn(settings) { [#("", settings)] }),
+        decode.success,
+      )
+    _ -> decode.success(tracks)
+  })
   use cards <- decode.field("cards", decode.list(card_decoder()))
   use reviews <- decode.field(
     "reviews",
@@ -802,7 +1028,8 @@ pub fn archive_decoder() -> Decoder(Archive) {
   decode.success(Archive(
     version:,
     exported_at:,
-    settings:,
+    account:,
+    tracks:,
     cards:,
     reviews:,
     drafts:,

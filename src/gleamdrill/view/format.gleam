@@ -6,7 +6,7 @@ import gleam/option.{type Option, None, Some}
 import gleam/time/timestamp.{type Timestamp}
 import gleamdrill/api.{type CardState}
 import gleamdrill/problem.{type Difficulty, type Language}
-import gleamdrill/problems
+import gleamdrill/track
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -53,7 +53,7 @@ pub fn language_chip(language: Language) -> Element(msg) {
 /// The two-letter form for a list row, coloured the same way. Takes the
 /// category name because a row holds a ref, not a problem.
 pub fn language_tag(category: String) -> Element(msg) {
-  let tag = problems.language_tag(category)
+  let tag = track.tag(category)
   html.span(
     [
       attribute.class(

@@ -62,44 +62,209 @@ pub fn default_settings() -> Settings {
   wire.default_settings()
 }
 
-pub fn load_settings(
+/// Both halves of the settings row: the account-wide knobs and the
+/// scheduler's.
+///
+/// Still one row per user -- the per-track split is a schema change, not a
+/// wire one -- but the shapes are now separate, so the callers that want a
+/// timezone and the callers that want a daily budget stop sharing a record
+/// that was only ever one because the table was.
+pub type Profile =
+  wire.Profile
+
+pub fn default_profile() -> Profile {
+  wire.default_profile()
+}
+
+/// The knobs about the person. One row per user, and it stays that way.
+pub fn load_account(
   db: pog.Connection,
   user_id: String,
-) -> Result(Settings, StudyError) {
+) -> Result(wire.AccountSettings, StudyError) {
   pog.query(
-    "select parameters, desired_retention, learning_steps, relearning_steps,
-            maximum_interval, enable_fuzz, new_per_day, reviews_per_day,
-            day_start_hour, timezone, reminder_hour
+    "select day_start_hour, timezone, reminder_hour
        from settings
       where user_id = $1::uuid",
   )
   |> pog.parameter(pog.text(user_id))
-  |> pog.returning(settings_decoder())
+  |> pog.returning({
+    use day_start_hour <- decode.field(0, decode.int)
+    use timezone <- decode.field(1, decode.string)
+    use reminder_hour <- decode.field(2, decode.optional(decode.int))
+    decode.success(wire.AccountSettings(
+      day_start_hour:,
+      timezone:,
+      reminder_hour:,
+    ))
+  })
   |> pog.execute(db)
   |> result.map_error(database_error)
   // A user with no settings row should be impossible -- signup creates one in
   // the same transaction as the account -- but defaulting beats failing every
   // review if it ever happens.
   |> result.map(fn(returned) {
-    list.first(returned.rows) |> result.unwrap(default_settings())
+    list.first(returned.rows) |> result.unwrap(wire.default_account())
   })
 }
 
-pub fn save_settings(
+/// One track's scheduler settings.
+///
+/// A track nobody has opened has no row, and the app's own defaults answer
+/// for it. That is the normal path now, not a can't-happen: `track_settings`
+/// is seeded only for the tracks a user already had something in.
+pub fn load_settings(
   db: pog.Connection,
   user_id: String,
-  settings: Settings,
+  track: String,
+) -> Result(Settings, StudyError) {
+  pog.query(
+    "select parameters, desired_retention, learning_steps, relearning_steps,
+            maximum_interval, enable_fuzz, new_per_day, reviews_per_day
+       from track_settings
+      where user_id = $1::uuid and track = $2",
+  )
+  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(pog.text(track))
+  |> pog.returning(settings_decoder())
+  |> pog.execute(db)
+  |> result.map_error(database_error)
+  |> result.map(fn(returned) {
+    list.first(returned.rows) |> result.unwrap(wire.default_settings())
+  })
+}
+
+/// The track a user has most cards in, ties broken by name; the empty string
+/// when they have none.
+///
+/// What a request that names no track means. Defaulting rather than refusing
+/// is what keeps a client from before tracks working: it sends no `?track=`
+/// and gets a coherent single-track view instead of an empty one.
+pub fn default_track(
+  db: pog.Connection,
+  user_id: String,
+) -> Result(String, StudyError) {
+  pog.query(
+    "select category from cards
+      where user_id = $1::uuid
+      group by category
+      order by count(*) desc, category
+      limit 1",
+  )
+  |> pog.parameter(pog.text(user_id))
+  |> pog.returning(decode.at([0], decode.string))
+  |> pog.execute(db)
+  |> result.map_error(database_error)
+  |> result.map(fn(returned) { list.first(returned.rows) |> result.unwrap("") })
+}
+
+/// Every track's settings, for the export.
+pub fn all_track_settings(
+  db: pog.Connection,
+  user_id: String,
+) -> Result(List(#(String, Settings)), StudyError) {
+  pog.query(
+    "select track, parameters, desired_retention, learning_steps,
+            relearning_steps, maximum_interval, enable_fuzz, new_per_day,
+            reviews_per_day
+       from track_settings
+      where user_id = $1::uuid
+      order by track",
+  )
+  |> pog.parameter(pog.text(user_id))
+  |> pog.returning({
+    use track <- decode.field(0, decode.string)
+    use settings <- decode.then(shifted_settings_decoder())
+    decode.success(#(track, settings))
+  })
+  |> pog.execute(db)
+  |> result.map(fn(returned) { returned.rows })
+  |> result.map_error(database_error)
+}
+
+/// `settings_decoder` with every column one to the right, because `track`
+/// leads the row here and nowhere else.
+fn shifted_settings_decoder() -> decode.Decoder(Settings) {
+  use parameters <- decode.field(1, decode.list(decode.float))
+  use desired_retention <- decode.field(2, decode.float)
+  use learning_steps <- decode.field(3, decode.list(decode.int))
+  use relearning_steps <- decode.field(4, decode.list(decode.int))
+  use maximum_interval <- decode.field(5, decode.int)
+  use enable_fuzz <- decode.field(6, decode.bool)
+  use new_per_day <- decode.field(7, decode.int)
+  use reviews_per_day <- decode.field(8, decode.int)
+  decode.success(wire.Settings(
+    scheduler: fsrs.Config(
+      parameters:,
+      desired_retention:,
+      learning_steps:,
+      relearning_steps:,
+      maximum_interval:,
+      enable_fuzz:,
+    ),
+    new_per_day:,
+    reviews_per_day:,
+  ))
+}
+
+/// Both halves at once, for the callers that want a whole profile.
+pub fn load_profile(
+  db: pog.Connection,
+  user_id: String,
+  track: String,
+) -> Result(Profile, StudyError) {
+  use account <- result.try(load_account(db, user_id))
+  use settings <- result.try(load_settings(db, user_id, track))
+  Ok(wire.Profile(account:, settings:))
+}
+
+pub fn save_account(
+  db: pog.Connection,
+  user_id: String,
+  account: wire.AccountSettings,
 ) -> Result(Nil, StudyError) {
   pog.query(
     "update settings set
-       parameters = $2, desired_retention = $3,
-       learning_steps = $4, relearning_steps = $5,
-       maximum_interval = $6, enable_fuzz = $7,
-       new_per_day = $8, reviews_per_day = $9,
-       day_start_hour = $10, timezone = $11, reminder_hour = $12
+       day_start_hour = $2, timezone = $3, reminder_hour = $4
      where user_id = $1::uuid",
   )
   |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(pog.int(account.day_start_hour))
+  |> pog.parameter(pog.text(account.timezone))
+  |> pog.parameter(pog.nullable(pog.int, account.reminder_hour))
+  |> pog.execute(db)
+  |> result.replace(Nil)
+  |> result.map_error(database_error)
+}
+
+/// An upsert, not an update.
+///
+/// A track nobody has opened has no row, and a bare `update` would touch
+/// nothing: the settings screen would appear to work and then forget, which
+/// is the exact bug the guest store had before its settings were persisted.
+pub fn save_settings(
+  db: pog.Connection,
+  user_id: String,
+  track: String,
+  settings: Settings,
+) -> Result(Nil, StudyError) {
+  pog.query(
+    "insert into track_settings
+       (user_id, track, parameters, desired_retention, learning_steps,
+        relearning_steps, maximum_interval, enable_fuzz, new_per_day,
+        reviews_per_day)
+     values ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+     on conflict (user_id, track) do update set
+       parameters = excluded.parameters,
+       desired_retention = excluded.desired_retention,
+       learning_steps = excluded.learning_steps,
+       relearning_steps = excluded.relearning_steps,
+       maximum_interval = excluded.maximum_interval,
+       enable_fuzz = excluded.enable_fuzz,
+       new_per_day = excluded.new_per_day,
+       reviews_per_day = excluded.reviews_per_day",
+  )
+  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(pog.text(track))
   |> pog.parameter(pog.array(pog.float, settings.scheduler.parameters))
   |> pog.parameter(pog.float(settings.scheduler.desired_retention))
   |> pog.parameter(pog.array(pog.int, settings.scheduler.learning_steps))
@@ -108,9 +273,6 @@ pub fn save_settings(
   |> pog.parameter(pog.bool(settings.scheduler.enable_fuzz))
   |> pog.parameter(pog.int(settings.new_per_day))
   |> pog.parameter(pog.int(settings.reviews_per_day))
-  |> pog.parameter(pog.int(settings.day_start_hour))
-  |> pog.parameter(pog.text(settings.timezone))
-  |> pog.parameter(pog.nullable(pog.int, settings.reminder_hour))
   |> pog.execute(db)
   |> result.replace(Nil)
   |> result.map_error(database_error)
@@ -125,9 +287,6 @@ fn settings_decoder() -> decode.Decoder(Settings) {
   use enable_fuzz <- decode.field(5, decode.bool)
   use new_per_day <- decode.field(6, decode.int)
   use reviews_per_day <- decode.field(7, decode.int)
-  use day_start_hour <- decode.field(8, decode.int)
-  use timezone <- decode.field(9, decode.string)
-  use reminder_hour <- decode.field(10, decode.optional(decode.int))
   decode.success(wire.Settings(
     scheduler: fsrs.Config(
       parameters:,
@@ -139,9 +298,6 @@ fn settings_decoder() -> decode.Decoder(Settings) {
     ),
     new_per_day:,
     reviews_per_day:,
-    day_start_hour:,
-    timezone:,
-    reminder_hour:,
   ))
 }
 
@@ -154,12 +310,33 @@ const card_columns = "id::text, category, subcategory, title, state, step,
    reps, lapses, suspended,
    extract(epoch from introduced_at)::float8"
 
+/// Every card in every track, for the export.
 pub fn load_cards(
   db: pog.Connection,
   user_id: String,
 ) -> Result(List(CardRecord), StudyError) {
-  pog.query("select " <> card_columns <> " from cards where user_id = $1::uuid")
+  load_card_rows(db, user_id, None)
+}
+
+/// One track's cards -- what a sitting, a queue screen and a stats screen all
+/// work from now.
+pub fn load_cards_in(
+  db: pog.Connection,
+  user_id: String,
+  track: String,
+) -> Result(List(CardRecord), StudyError) {
+  load_card_rows(db, user_id, Some(track))
+}
+
+fn load_card_rows(
+  db: pog.Connection,
+  user_id: String,
+  track: Option(String),
+) -> Result(List(CardRecord), StudyError) {
+  pog.query("select " <> card_columns <> " from cards
+        where user_id = $1::uuid and ($2::text is null or category = $2)")
   |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(pog.nullable(pog.text, track))
   |> pog.returning(card_decoder())
   |> pog.execute(db)
   |> result.map(fn(returned) { returned.rows })
@@ -555,21 +732,31 @@ pub type UndoError {
 /// Deletes the user's most recent review and puts its card back exactly as
 /// it was. Refuses when there is no review, or the newest one predates the
 /// snapshot column.
+/// Undoes the newest review **in one track**.
+///
+/// The join is the point. Unscoped, this took the account's globally newest
+/// review, so an undo button in one track would delete a real review in
+/// another and roll that card back -- and `card_before` goes with the row, so
+/// there is nothing left to undo the undo with.
 pub fn undo_review(
   db: pog.Connection,
   user_id: String,
+  track: String,
 ) -> Result(Undone, UndoError) {
   pog.transaction(db, fn(tx) {
     use latest <- result.try(
       pog.query(
         "delete from reviews
           where id = (
-            select id from reviews where user_id = $1::uuid
-             order by reviewed_at desc, id desc limit 1
+            select r.id from reviews r
+              join cards c on c.id = r.card_id
+             where r.user_id = $1::uuid and c.category = $2
+             order by r.reviewed_at desc, r.id desc limit 1
           )
           returning card_id::text, card_before::text",
       )
       |> pog.parameter(pog.text(user_id))
+      |> pog.parameter(pog.text(track))
       |> pog.returning({
         use card_id <- decode.field(0, decode.string)
         use before <- decode.field(1, decode.optional(decode.string))
@@ -706,15 +893,36 @@ fn insert_review(
 
 // --- drafts ----------------------------------------------------------------
 
+/// Every one, in every track, for the export.
 pub fn load_drafts(
   db: pog.Connection,
   user_id: String,
 ) -> Result(List(#(ProblemRef, String)), StudyError) {
+  load_drafts_rows(db, user_id, None)
+}
+
+/// One track's. Two functions rather than an `Option` argument at the call
+/// sites, so "every track" is always something a caller asked for by name.
+pub fn load_drafts_in(
+  db: pog.Connection,
+  user_id: String,
+  track: String,
+) -> Result(List(#(ProblemRef, String)), StudyError) {
+  load_drafts_rows(db, user_id, Some(track))
+}
+
+fn load_drafts_rows(
+  db: pog.Connection,
+  user_id: String,
+  track: Option(String),
+) -> Result(List(#(ProblemRef, String)), StudyError) {
   pog.query(
     "select category, subcategory, title, body
-       from drafts where user_id = $1::uuid",
+       from drafts
+      where user_id = $1::uuid and ($2::text is null or category = $2)",
   )
   |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(pog.nullable(pog.text, track))
   |> pog.returning({
     use category <- decode.field(0, decode.string)
     use subcategory <- decode.field(1, decode.string)
@@ -772,15 +980,36 @@ pub fn delete_draft(
 
 // --- notes -----------------------------------------------------------------
 
+/// Every one, in every track, for the export.
 pub fn load_notes(
   db: pog.Connection,
   user_id: String,
 ) -> Result(List(#(ProblemRef, String)), StudyError) {
+  load_notes_rows(db, user_id, None)
+}
+
+/// One track's. Two functions rather than an `Option` argument at the call
+/// sites, so "every track" is always something a caller asked for by name.
+pub fn load_notes_in(
+  db: pog.Connection,
+  user_id: String,
+  track: String,
+) -> Result(List(#(ProblemRef, String)), StudyError) {
+  load_notes_rows(db, user_id, Some(track))
+}
+
+fn load_notes_rows(
+  db: pog.Connection,
+  user_id: String,
+  track: Option(String),
+) -> Result(List(#(ProblemRef, String)), StudyError) {
   pog.query(
     "select category, subcategory, title, body
-       from notes where user_id = $1::uuid",
+       from notes
+      where user_id = $1::uuid and ($2::text is null or category = $2)",
   )
   |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(pog.nullable(pog.text, track))
   |> pog.returning({
     use category <- decode.field(0, decode.string)
     use subcategory <- decode.field(1, decode.string)
@@ -889,6 +1118,12 @@ pub fn all_reviews(
 /// an archive, so nothing unbounded reaches the table.
 pub fn validate_queues(queues: List(wire.Queue)) -> Result(Nil, String) {
   let names = list.map(queues, fn(queue) { string.trim(queue.name) })
+  // A name is unique within a track, not within an account: "Arrays" in the
+  // Python track and "Arrays" in the Go track are two lists, and the unique
+  // index says the same thing. Comparing names alone would refuse an archive
+  // the database is perfectly happy to hold.
+  let keys =
+    list.map(queues, fn(queue) { #(queue.track, string.trim(queue.name)) })
   use <- bool.guard(
     list.length(queues) > max_queues,
     Error("at most " <> int.to_string(max_queues) <> " queues"),
@@ -906,8 +1141,8 @@ pub fn validate_queues(queues: List(wire.Queue)) -> Result(Nil, String) {
     ),
   )
   use <- bool.guard(
-    list.length(list.unique(names)) != list.length(names),
-    Error("queue names must be distinct"),
+    list.length(list.unique(keys)) != list.length(keys),
+    Error("queue names must be distinct within a track"),
   )
   use <- bool.guard(
     list.any(queues, fn(queue) { list.length(queue.problems) > max_queue_items }),
@@ -924,43 +1159,67 @@ const max_queue_name = 60
 
 const max_queue_items = 1500
 
-/// Every queue with its problems in order. One query: a left join so an
-/// empty queue still comes back, chunked by name afterwards.
+/// Every queue in every track, for the export.
 pub fn load_queues(
   db: pog.Connection,
   user_id: String,
 ) -> Result(List(wire.Queue), StudyError) {
+  queue_rows(db, user_id, None)
+}
+
+/// One track's queues. Names are only unique within a track, so this is what
+/// every screen reads; the unscoped one above is for the archive alone.
+pub fn load_queues_in(
+  db: pog.Connection,
+  user_id: String,
+  track: String,
+) -> Result(List(wire.Queue), StudyError) {
+  queue_rows(db, user_id, Some(track))
+}
+
+/// Every queue with its problems in order. One query: a left join so an
+/// empty queue still comes back, chunked afterwards.
+fn queue_rows(
+  db: pog.Connection,
+  user_id: String,
+  track: Option(String),
+) -> Result(List(wire.Queue), StudyError) {
   pog.query(
-    "select q.name, i.category, i.subcategory, i.title
+    "select q.name, q.track, i.category, i.subcategory, i.title
        from queues q
        left join queue_items i on i.queue_id = q.id
-      where q.user_id = $1::uuid
+      where q.user_id = $1::uuid and ($2::text is null or q.track = $2)
       order by q.position, q.name, i.position",
   )
   |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(pog.nullable(pog.text, track))
   |> pog.returning({
     use name <- decode.field(0, decode.string)
-    use category <- decode.field(1, decode.optional(decode.string))
-    use subcategory <- decode.field(2, decode.optional(decode.string))
-    use title <- decode.field(3, decode.optional(decode.string))
+    use queue_track <- decode.field(1, decode.string)
+    use category <- decode.field(2, decode.optional(decode.string))
+    use subcategory <- decode.field(3, decode.optional(decode.string))
+    use title <- decode.field(4, decode.optional(decode.string))
     let problem = case category, subcategory, title {
       Some(category), Some(subcategory), Some(title) ->
         Some(wire.ProblemRef(category:, subcategory:, title:))
       _, _, _ -> None
     }
-    decode.success(#(name, problem))
+    decode.success(#(queue_track, name, problem))
   })
   |> pog.execute(db)
   |> result.map(fn(returned) {
     returned.rows
-    |> list.chunk(fn(row) { row.0 })
+    // By (track, name), not name: the same name in two tracks is two lists,
+    // and chunking on the name alone would fuse them.
+    |> list.chunk(fn(row) { #(row.0, row.1) })
     |> list.filter_map(fn(rows) {
       case rows {
-        [#(name, _), ..] ->
+        [#(track, name, _), ..] ->
           Ok(wire.Queue(
+            track:,
             name:,
             problems: list.filter_map(rows, fn(row) {
-              option.to_result(row.1, Nil)
+              option.to_result(row.2, Nil)
             }),
           ))
         [] -> Error(Nil)
@@ -970,18 +1229,45 @@ pub fn load_queues(
   |> result.map_error(database_error)
 }
 
-/// The client owns the set and sends it whole: everything the user had is
-/// replaced, in one transaction. Positions are list order.
+/// The client owns one track's set and sends it whole: that track's queues
+/// are replaced, in one transaction, and no other track's are touched.
 pub fn replace_queues(
   db: pog.Connection,
   user_id: String,
+  track: String,
   queues: List(wire.Queue),
 ) -> Result(Nil, StudyError) {
-  pog.transaction(db, fn(tx) { write_queues(tx, user_id, queues) })
+  pog.transaction(db, fn(tx) { write_queues_in(tx, user_id, track, queues) })
   |> result.map_error(flatten_transaction_error)
 }
 
-fn write_queues(
+/// Replaces **one track's** queues. The client sends that track's set whole.
+///
+/// The `and track = $2` on the delete is the single most dangerous character
+/// in this module. Without it, a client that PUTs only the active track's set
+/// -- which is what a track-aware client does -- wipes every other track's
+/// queues, with no error and no log line. `track` is a required argument, not
+/// an Option, so the compiler enumerates every caller.
+fn write_queues_in(
+  tx: pog.Connection,
+  user_id: String,
+  track: String,
+  queues: List(wire.Queue),
+) -> Result(Nil, StudyError) {
+  use _ <- result.try(
+    pog.query("delete from queues where user_id = $1::uuid and track = $2")
+    |> pog.parameter(pog.text(user_id))
+    |> pog.parameter(pog.text(track))
+    |> pog.execute(tx)
+    |> result.replace(Nil)
+    |> result.map_error(database_error),
+  )
+  insert_queues(tx, user_id, queues)
+}
+
+/// Replaces **every** track's queues, for a restore: an archive is the whole
+/// account, so the unscoped delete is right there and wrong anywhere else.
+fn write_all_queues(
   tx: pog.Connection,
   user_id: String,
   queues: List(wire.Queue),
@@ -993,18 +1279,27 @@ fn write_queues(
     |> result.replace(Nil)
     |> result.map_error(database_error),
   )
+  insert_queues(tx, user_id, queues)
+}
+
+fn insert_queues(
+  tx: pog.Connection,
+  user_id: String,
+  queues: List(wire.Queue),
+) -> Result(Nil, StudyError) {
   queues
   |> list.index_map(fn(queue, position) { #(queue, position) })
   |> list.try_each(fn(entry) {
     let #(queue, position) = entry
     use returned <- result.try(
       pog.query(
-        "insert into queues (user_id, name, position)
-         values ($1::uuid, $2, $3) returning id::text",
+        "insert into queues (user_id, name, position, track)
+         values ($1::uuid, $2, $3, $4) returning id::text",
       )
       |> pog.parameter(pog.text(user_id))
       |> pog.parameter(pog.text(string.trim(queue.name)))
       |> pog.parameter(pog.int(position))
+      |> pog.parameter(pog.text(queue.track))
       |> pog.returning(decode.at([0], decode.string))
       |> pog.execute(tx)
       |> result.map_error(database_error),
@@ -1046,15 +1341,30 @@ fn write_queues(
 pub fn merge_queues(
   db: pog.Connection,
   user_id: String,
+  default_track: String,
   incoming: List(wire.Queue),
 ) -> Result(Nil, StudyError) {
   use existing <- result.try(load_queues(db, user_id))
+  // A queue coming from before tracks names none, and an *empty* one has no
+  // first problem to infer it from either. Attributing it to the account's
+  // busiest track beats leaving it in "", which no track matches -- an
+  // upgrade that quietly drops an empty list is still dropping a list.
+  let incoming =
+    list.map(incoming, fn(queue: wire.Queue) {
+      case queue.track {
+        "" -> wire.Queue(..queue, track: default_track)
+        _ -> queue
+      }
+    })
+  let same = fn(a: wire.Queue, b: wire.Queue) {
+    a.track == b.track && a.name == b.name
+  }
   let merged =
     list.fold(incoming, existing, fn(queues, queue) {
-      case list.any(queues, fn(q) { q.name == queue.name }) {
+      case list.any(queues, same(_, queue)) {
         True ->
           list.map(queues, fn(q) {
-            case q.name == queue.name {
+            case same(q, queue) {
               True ->
                 wire.Queue(
                   ..q,
@@ -1071,9 +1381,10 @@ pub fn merge_queues(
         False -> list.append(queues, [queue])
       }
     })
+  // An upgrade hands over every track at once, so this writes the lot.
   case merged == existing {
     True -> Ok(Nil)
-    False -> write_queues(db, user_id, merged)
+    False -> write_all_queues(db, user_id, merged)
   }
 }
 
@@ -1161,10 +1472,43 @@ pub fn restore(
         save_note(tx, user_id, entry.0, entry.1)
       }),
     )
-    use _ <- result.try(write_queues(tx, user_id, archive.queues))
-    save_settings(tx, user_id, archive.settings)
+    use _ <- result.try(write_all_queues(tx, user_id, archive.queues))
+    use _ <- result.try(save_account(tx, user_id, archive.account))
+    list.try_each(archive_tracks(archive), fn(entry) {
+      save_settings(tx, user_id, entry.0, entry.1)
+    })
   })
   |> result.map_error(flatten_transaction_error)
+}
+
+/// Which track gets which settings, out of an archive.
+///
+/// A file from before tracks has one blob under the "" key, meaning "every
+/// track", so it is fanned out across the tracks its own cards name -- the
+/// data says which tracks it has. A newer file already has a row per track
+/// and is taken as it stands. Mirrored in `local.archive_tracks`, because a
+/// file made by a guest has to restore into an account and back.
+pub fn archive_tracks(archive: wire.Archive) -> List(#(String, Settings)) {
+  case list.key_find(archive.tracks, "") {
+    Error(Nil) -> list.filter(archive.tracks, fn(entry) { entry.0 != "" })
+    Ok(shared) ->
+      archive.cards
+      |> list.map(fn(card: wire.CardState) { card.problem.category })
+      |> list.unique
+      |> list.map(fn(track) { #(track, shared) })
+  }
+}
+
+/// The account-wide half, plus whichever settings best describe the file as a
+/// whole -- for the callers that want to validate one profile rather than N.
+pub fn archive_profile(archive: wire.Archive) -> Profile {
+  let settings =
+    list.key_find(archive.tracks, "")
+    |> result.lazy_or(fn() {
+      list.first(archive.tracks) |> result.map(fn(entry) { entry.1 })
+    })
+    |> result.unwrap(wire.default_settings())
+  wire.Profile(account: archive.account, settings:)
 }
 
 // --- errors ----------------------------------------------------------------
@@ -1204,9 +1548,14 @@ pub type Today =
 pub fn today(
   db: pog.Connection,
   user_id: String,
-  settings: Settings,
+  track: String,
+  profile: Profile,
   now: Timestamp,
 ) -> Result(Today, StudyError) {
+  // The study day is a fact about the person, the budgets are about what is
+  // being studied. There is one `bounds` for the account and one set of
+  // counts per track.
+  let wire.Profile(account:, settings:) = profile
   pog.query(
     "with bounds as (
        select date_trunc('day', (to_timestamp($4::float8) at time zone $2)
@@ -1217,22 +1566,24 @@ pub fn today(
        extract(epoch from (local_start at time zone $2))::float8,
        extract(epoch from ((local_start + interval '1 day') at time zone $2))::float8,
        (select count(*) from reviews r
-         where r.user_id = $1::uuid
+          join cards rc on rc.id = r.card_id
+         where r.user_id = $1::uuid and rc.category = $5
            and r.reviewed_at >= (local_start at time zone $2))::int,
        (select count(*) from cards c
-         where c.user_id = $1::uuid
+         where c.user_id = $1::uuid and c.category = $5
            and c.introduced_at >= (local_start at time zone $2))::int,
        (select count(*) from cards c
-         where c.user_id = $1::uuid
+         where c.user_id = $1::uuid and c.category = $5
            and not c.suspended
            and c.reps > 0
            and c.due <= to_timestamp($4::float8))::int
      from bounds",
   )
   |> pog.parameter(pog.text(user_id))
-  |> pog.parameter(pog.text(settings.timezone))
-  |> pog.parameter(pog.int(settings.day_start_hour))
+  |> pog.parameter(pog.text(account.timezone))
+  |> pog.parameter(pog.int(account.day_start_hour))
   |> pog.parameter(pog.float(fsrs.to_epoch(now)))
+  |> pog.parameter(pog.text(track))
   |> pog.returning({
     use day_start <- decode.field(0, decode.float)
     use day_end <- decode.field(1, decode.float)
@@ -1263,6 +1614,134 @@ pub fn today(
 
 /// Postgres rejects an unknown zone name at query time, which would then break
 /// every subsequent `today` call. Checking on write keeps a bad value out.
+/// Where every track stands, for the switcher.
+///
+/// Derived from the **cards**, not from a list of tracks the server keeps,
+/// because the server has no catalogue and validates nothing about a category
+/// string. A track holding real cards under a name the bundle no longer has --
+/// a renamed category, a stale offline cache, a typo in a fixture script --
+/// therefore shows up in the switcher rather than becoming unreachable.
+/// Silent loss becomes a visible oddity, which is the trade to want.
+///
+/// No budget arithmetic here: each row carries that track's `Settings` and
+/// the client subtracts. A `new_per_day` default written into SQL would be a
+/// second place for it to be wrong.
+pub fn standings(
+  db: pog.Connection,
+  user_id: String,
+  account: wire.AccountSettings,
+  now: Timestamp,
+) -> Result(List(wire.TrackStanding), StudyError) {
+  pog.query(
+    "with bounds as (
+       select date_trunc('day', (to_timestamp($4::float8) at time zone $2)
+                                - make_interval(hours => $3))
+              + make_interval(hours => $3) as local_start
+     )
+     select c.category,
+            count(*)::int,
+            count(*) filter (
+              where not c.suspended and c.reps > 0
+                and c.due <= to_timestamp($4::float8))::int,
+            count(*) filter (
+              where c.introduced_at
+                    >= (select local_start at time zone $2 from bounds))::int,
+            (select count(*) from reviews r
+               join cards rc on rc.id = r.card_id
+              where r.user_id = $1::uuid and rc.category = c.category
+                and r.reviewed_at
+                    >= (select local_start at time zone $2 from bounds))::int,
+            t.parameters, t.desired_retention, t.learning_steps,
+            t.relearning_steps, t.maximum_interval, t.enable_fuzz,
+            t.new_per_day, t.reviews_per_day
+       from cards c
+       left join track_settings t
+              on t.user_id = c.user_id and t.track = c.category
+      where c.user_id = $1::uuid
+      group by c.category, t.parameters, t.desired_retention,
+               t.learning_steps, t.relearning_steps, t.maximum_interval,
+               t.enable_fuzz, t.new_per_day, t.reviews_per_day
+      order by c.category",
+  )
+  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(pog.text(account.timezone))
+  |> pog.parameter(pog.int(account.day_start_hour))
+  |> pog.parameter(pog.float(fsrs.to_epoch(now)))
+  |> pog.returning({
+    use track <- decode.field(0, decode.string)
+    use cards <- decode.field(1, decode.int)
+    use due_now <- decode.field(2, decode.int)
+    use introduced_today <- decode.field(3, decode.int)
+    use reviews_today <- decode.field(4, decode.int)
+    // A track with no settings row of its own reads as the defaults, the
+    // same as `load_settings` does. The left join makes every column null
+    // together, so one probe answers for all eight.
+    use parameters <- decode.field(
+      5,
+      decode.optional(decode.list(decode.float)),
+    )
+    use desired_retention <- decode.field(6, decode.optional(decode.float))
+    use learning_steps <- decode.field(
+      7,
+      decode.optional(decode.list(decode.int)),
+    )
+    use relearning_steps <- decode.field(
+      8,
+      decode.optional(decode.list(decode.int)),
+    )
+    use maximum_interval <- decode.field(9, decode.optional(decode.int))
+    use enable_fuzz <- decode.field(10, decode.optional(decode.bool))
+    use new_per_day <- decode.field(11, decode.optional(decode.int))
+    use reviews_per_day <- decode.field(12, decode.optional(decode.int))
+    let fallback = wire.default_settings()
+    let settings = case parameters {
+      None -> fallback
+      Some(parameters) ->
+        wire.Settings(
+          scheduler: fsrs.Config(
+            parameters:,
+            desired_retention: option.unwrap(
+              desired_retention,
+              fallback.scheduler.desired_retention,
+            ),
+            learning_steps: option.unwrap(
+              learning_steps,
+              fallback.scheduler.learning_steps,
+            ),
+            relearning_steps: option.unwrap(
+              relearning_steps,
+              fallback.scheduler.relearning_steps,
+            ),
+            maximum_interval: option.unwrap(
+              maximum_interval,
+              fallback.scheduler.maximum_interval,
+            ),
+            enable_fuzz: option.unwrap(
+              enable_fuzz,
+              fallback.scheduler.enable_fuzz,
+            ),
+          ),
+          new_per_day: option.unwrap(new_per_day, fallback.new_per_day),
+          reviews_per_day: option.unwrap(
+            reviews_per_day,
+            fallback.reviews_per_day,
+          ),
+        )
+    }
+    decode.success(wire.TrackStanding(
+      track:,
+      settings:,
+      cards:,
+      due_now:,
+      introduced_today:,
+      reviews_today:,
+    ))
+  })
+  |> pog.execute(db)
+  |> result.map(fn(returned) { returned.rows })
+  |> result.map_error(database_error)
+}
+
 pub fn timezone_is_valid(
   db: pog.Connection,
   timezone: String,
@@ -1301,12 +1780,13 @@ pub type Stats =
 pub fn stats(
   db: pog.Connection,
   user_id: String,
-  settings: Settings,
+  track: String,
+  account: wire.AccountSettings,
 ) -> Result(Stats, StudyError) {
-  use totals <- result.try(review_totals(db, user_id))
-  use state_counts <- result.try(state_counts(db, user_id))
-  use history <- result.try(review_history(db, user_id, settings))
-  use forecast <- result.try(due_forecast(db, user_id, settings))
+  use totals <- result.try(review_totals(db, user_id, track))
+  use state_counts <- result.try(state_counts(db, user_id, track))
+  use history <- result.try(review_history(db, user_id, track, account))
+  use forecast <- result.try(due_forecast(db, user_id, track, account))
 
   let #(total_reviews, mature_reviews, mature_correct) = totals
   Ok(wire.Stats(
@@ -1344,19 +1824,29 @@ fn count_run(days: List(Int), expected: Int) -> Int {
   }
 }
 
+/// A review reaches a track only through its card, so every one of these
+/// joins. `reviews_card_time_idx` already serves that direction, and the
+/// alternative -- a `track` column on `reviews` -- would be a second source
+/// of truth for a fact `cards.category` already holds, on the one table that
+/// cannot be rebuilt.
 fn review_totals(
   db: pog.Connection,
   user_id: String,
+  track: String,
 ) -> Result(#(Int, Int, Int), StudyError) {
   pog.query(
     "select
-       (select count(*) from reviews where user_id = $1::uuid)::int,
-       (select count(*) from reviews
-         where user_id = $1::uuid and state_before = 2)::int,
-       (select count(*) from reviews
-         where user_id = $1::uuid and state_before = 2 and rating > 1)::int",
+       (select count(*) from reviews r join cards c on c.id = r.card_id
+         where r.user_id = $1::uuid and c.category = $2)::int,
+       (select count(*) from reviews r join cards c on c.id = r.card_id
+         where r.user_id = $1::uuid and c.category = $2
+           and r.state_before = 2)::int,
+       (select count(*) from reviews r join cards c on c.id = r.card_id
+         where r.user_id = $1::uuid and c.category = $2
+           and r.state_before = 2 and r.rating > 1)::int",
   )
   |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(pog.text(track))
   |> pog.returning({
     use total <- decode.field(0, decode.int)
     use mature <- decode.field(1, decode.int)
@@ -1373,12 +1863,15 @@ fn review_totals(
 fn state_counts(
   db: pog.Connection,
   user_id: String,
+  track: String,
 ) -> Result(List(#(Int, Int)), StudyError) {
   pog.query(
     "select state, count(*)::int from cards
-      where user_id = $1::uuid group by state order by state",
+      where user_id = $1::uuid and category = $2
+      group by state order by state",
   )
   |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(pog.text(track))
   |> pog.returning({
     use state <- decode.field(0, decode.int)
     use count <- decode.field(1, decode.int)
@@ -1392,7 +1885,8 @@ fn state_counts(
 fn review_history(
   db: pog.Connection,
   user_id: String,
-  settings: Settings,
+  track: String,
+  account: wire.AccountSettings,
 ) -> Result(List(DayTally), StudyError) {
   pog.query(
     "with study_day as (
@@ -1402,16 +1896,18 @@ fn review_history(
             - date_trunc('day', (reviewed_at at time zone $2)
                                 - make_interval(hours => $3))::date,
             count(*)::int,
-            count(*) filter (where rating > 1)::int
-       from reviews
-      where user_id = $1::uuid
-        and reviewed_at >= now() - interval '365 days'
+            count(*) filter (where r.rating > 1)::int
+       from reviews r
+       join cards c on c.id = r.card_id
+      where r.user_id = $1::uuid and c.category = $4
+        and r.reviewed_at >= now() - interval '365 days'
       group by 1
       order by 1",
   )
   |> pog.parameter(pog.text(user_id))
-  |> pog.parameter(pog.text(settings.timezone))
-  |> pog.parameter(pog.int(settings.day_start_hour))
+  |> pog.parameter(pog.text(account.timezone))
+  |> pog.parameter(pog.int(account.day_start_hour))
+  |> pog.parameter(pog.text(track))
   |> pog.returning({
     use days_ago <- decode.field(0, decode.int)
     use total <- decode.field(1, decode.int)
@@ -1426,7 +1922,8 @@ fn review_history(
 fn due_forecast(
   db: pog.Connection,
   user_id: String,
-  settings: Settings,
+  track: String,
+  account: wire.AccountSettings,
 ) -> Result(List(#(Int, Int)), StudyError) {
   pog.query(
     "with study_day as (
@@ -1440,15 +1937,16 @@ fn due_forecast(
             ),
             count(*)::int
        from cards
-      where user_id = $1::uuid
+      where user_id = $1::uuid and category = $4
         and not suspended
         and due < now() + interval '30 days'
       group by 1
       order by 1",
   )
   |> pog.parameter(pog.text(user_id))
-  |> pog.parameter(pog.text(settings.timezone))
-  |> pog.parameter(pog.int(settings.day_start_hour))
+  |> pog.parameter(pog.text(account.timezone))
+  |> pog.parameter(pog.int(account.day_start_hour))
+  |> pog.parameter(pog.text(track))
   |> pog.returning({
     use offset <- decode.field(0, decode.int)
     use count <- decode.field(1, decode.int)
@@ -1493,6 +1991,7 @@ pub type ImportCard {
 pub fn import_legacy(
   db: pog.Connection,
   user_id: String,
+  track: String,
   settings: Settings,
   solved: List(ProblemRef),
   cards: List(ImportCard),
@@ -1524,7 +2023,7 @@ pub fn import_legacy(
         save_note(tx, user_id, entry.0, entry.1)
       }),
     )
-    merge_queues(tx, user_id, queues)
+    merge_queues(tx, user_id, track, queues)
   })
   |> result.map_error(flatten_transaction_error)
 }
@@ -1648,10 +2147,11 @@ pub type ReviewRow =
 pub fn insights(
   db: pog.Connection,
   user_id: String,
+  track: String,
 ) -> Result(Insights, StudyError) {
-  use clean_solves <- result.try(clean_solves(db, user_id))
-  use reveals <- result.try(reveal_counts(db, user_id))
-  use calibration <- result.try(calibration(db, user_id))
+  use clean_solves <- result.try(clean_solves(db, user_id, track))
+  use reveals <- result.try(reveal_counts(db, user_id, track))
+  use calibration <- result.try(calibration(db, user_id, track))
   Ok(wire.Insights(clean_solves:, reveals:, calibration:))
 }
 
@@ -1660,6 +2160,7 @@ pub fn insights(
 fn clean_solves(
   db: pog.Connection,
   user_id: String,
+  track: String,
 ) -> Result(List(CleanSolve), StudyError) {
   pog.query(
     "select category, subcategory, title, at, duration_ms from (
@@ -1671,7 +2172,7 @@ fn clean_solves(
               ) as recency
          from reviews r
          join cards c on c.id = r.card_id
-        where r.user_id = $1::uuid
+        where r.user_id = $1::uuid and c.category = $2
           and r.rating > 1
           and not r.revealed
           and not r.auto_failed
@@ -1682,6 +2183,7 @@ fn clean_solves(
      order by category, subcategory, title, at",
   )
   |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(pog.text(track))
   |> pog.returning({
     use category <- decode.field(0, decode.string)
     use subcategory <- decode.field(1, decode.string)
@@ -1702,15 +2204,17 @@ fn clean_solves(
 fn reveal_counts(
   db: pog.Connection,
   user_id: String,
+  track: String,
 ) -> Result(List(#(wire.ProblemRef, Int)), StudyError) {
   pog.query(
     "select c.category, c.subcategory, c.title, count(*)::int
        from reviews r
        join cards c on c.id = r.card_id
-      where r.user_id = $1::uuid and r.revealed
+      where r.user_id = $1::uuid and c.category = $2 and r.revealed
       group by 1, 2, 3",
   )
   |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(pog.text(track))
   |> pog.returning({
     use category <- decode.field(0, decode.string)
     use subcategory <- decode.field(1, decode.string)
@@ -1723,9 +2227,15 @@ fn reveal_counts(
   |> result.map_error(database_error)
 }
 
+/// Unlike its two neighbours this did not join `cards` at all, so it needed
+/// the join as well as the predicate. The window stays partitioned by
+/// `card_id`, and every review of a card is in the same track, so no
+/// partition is ever split: a single-track user's numbers come out
+/// unchanged.
 fn calibration(
   db: pog.Connection,
   user_id: String,
+  track: String,
 ) -> Result(List(wire.Calibration), StudyError) {
   pog.query(
     "select rating, count(*)::int,
@@ -1737,13 +2247,15 @@ fn calibration(
                   over (partition by r.card_id order by r.reviewed_at)
                   as next_pass
            from reviews r
-          where r.user_id = $1::uuid
+           join cards c on c.id = r.card_id
+          where r.user_id = $1::uuid and c.category = $2
        ) sequenced
       where next_pass is not null
       group by rating
       order by rating",
   )
   |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(pog.text(track))
   |> pog.returning({
     use rating <- decode.field(0, decode.int)
     use total <- decode.field(1, decode.int)

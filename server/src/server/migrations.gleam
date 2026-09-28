@@ -25,8 +25,128 @@ pub fn all() -> List(Migration) {
     Migration(5, "review_snapshots", review_snapshots),
     Migration(6, "reminders", reminders),
     Migration(7, "queues", queues),
+    Migration(8, "tracks", tracks),
+    Migration(9, "settings_is_account_wide", settings_is_account_wide),
   ]
 }
+
+/// The other half of migration 8: drop what moved to `track_settings`.
+///
+/// `settings` keeps only the account-wide knobs -- timezone, day_start_hour,
+/// reminder_hour. Nothing in this release reads the eight dropped columns
+/// (migration 8's backfill ran before this and read them for the last time),
+/// and signup stopped inserting them in the same release.
+///
+/// DEPLOY NOTE: 8 and 9 shipping in one release means the deploy must not
+/// roll. The currently-live release still selects `settings.parameters` on
+/// every request, so the minute or two of overlap a rolling deploy allows is
+/// a minute or two of guaranteed 500s. Stop, migrate, start.
+const settings_is_account_wide: List(String) = [
+  "alter table settings drop column parameters",
+  "alter table settings drop column desired_retention",
+  "alter table settings drop column learning_steps",
+  "alter table settings drop column relearning_steps",
+  "alter table settings drop column maximum_interval",
+  "alter table settings drop column enable_fuzz",
+  "alter table settings drop column new_per_day",
+  "alter table settings drop column reviews_per_day",
+]
+
+/// Tracks: one profile per track, sharing an account.
+///
+/// A track IS a category name ("NeetCode 150", "NeetCode 150 (Go)", "System
+/// Design"), so cards, reviews, drafts, notes and queue items need no new
+/// column -- their `category` already says which track they are in. Two
+/// things do: the scheduler's settings, now per track, and the named queues,
+/// whose names are only unique within one.
+///
+/// This migration only ever adds. `settings` keeps its per-track columns,
+/// unread, for migration 9 to drop -- which ships in the same release, so see
+/// the deploy note there: this pair must not go out as a rolling deploy.
+const tracks: List(String) = [
+  "create table track_settings (
+     user_id           uuid not null references users(id) on delete cascade,
+     track             text not null,
+     parameters        double precision[] not null,
+     desired_retention double precision not null default 0.9,
+     learning_steps    int[] not null default '{1,10}',
+     relearning_steps  int[] not null default '{10}',
+     maximum_interval  int not null default 36500,
+     enable_fuzz       boolean not null default true,
+     new_per_day       int not null default 10,
+     reviews_per_day   int not null default 100,
+     primary key (user_id, track)
+   )",
+  // Every track a user already has anything in gets the settings they have
+  // actually been studying under: the one row in `settings`. Someone whose
+  // rows all sit in one track therefore lands on that track with every number
+  // unchanged, which is the whole of "nothing may break". A track they have
+  // never touched gets no row at all, and the app's own defaults answer for
+  // it -- one authority for what a default is, not two.
+  "insert into track_settings
+     (user_id, track, parameters, desired_retention, learning_steps,
+      relearning_steps, maximum_interval, enable_fuzz, new_per_day,
+      reviews_per_day)
+   select s.user_id, t.track, s.parameters, s.desired_retention,
+          s.learning_steps, s.relearning_steps, s.maximum_interval,
+          s.enable_fuzz, s.new_per_day, s.reviews_per_day
+     from settings s
+     join (
+       select user_id, category as track from cards
+       union select user_id, category from drafts
+       union select user_id, category from notes
+       union select q.user_id, i.category
+         from queue_items i join queues q on q.id = i.queue_id
+     ) t on t.user_id = s.user_id
+   on conflict (user_id, track) do nothing",
+  // A queue name is unique within a track, not within an account: 'Arrays' in
+  // the Python track and 'Arrays' in the Go track are two lists. An existing
+  // queue takes the track of its first item. One with no items has no track
+  // to infer and keeps '', which no category matches, so it is inert rather
+  // than wrongly attributed.
+  "alter table queues add column track text not null default ''",
+  "update queues q set track = coalesce((
+     select i.category from queue_items i
+      where i.queue_id = q.id
+      order by i.position, i.category
+      limit 1
+   ), '')",
+  "alter table queues drop constraint queues_user_id_name_key",
+  "alter table queues add constraint queues_user_track_name_key
+     unique (user_id, track, name)",
+  // A queue spanning two tracks was two lists wearing one name. Splitting it
+  // is a no-op where none exists -- both statements match nothing -- and the
+  // alternative is silent loss: a track-scoped read returns the queue without
+  // its foreign items, the screen shows it without them, and the first write
+  // back from a track-aware client drops them with no error anywhere.
+  "insert into queues (user_id, name, position, track)
+   select q.user_id, q.name || ' \u{2014} ' || i.category, q.position,
+          i.category
+     from queues q join queue_items i on i.queue_id = q.id
+    where i.category <> q.track
+    group by q.user_id, q.name, q.position, i.category
+   on conflict (user_id, track, name) do nothing",
+  // Comma-joined, not `from ... join ... on`: Postgres will not let the
+  // UPDATE's own target be referenced inside a FROM join condition, and the
+  // new queue is found by the item's category. Every condition therefore
+  // lives in the WHERE, where `i` is in scope.
+  "update queue_items i set queue_id = n.id
+     from queues o, queues n
+    where i.queue_id = o.id
+      and i.category <> o.track
+      and n.user_id = o.user_id
+      and n.track = i.category
+      and n.name = o.name || ' \u{2014} ' || i.category",
+  // Every per-track read narrows by (user, category): the boot payload, the
+  // daily budget, the forecast, the state counts. Reviews reach a track only
+  // through `cards`, and reviews_card_time_idx already serves that join, so
+  // no review index is added.
+  "create index cards_user_track_idx on cards (user_id, category)",
+  "create index cards_track_due_idx on cards (user_id, category, due)
+     where not suspended",
+  "create index drafts_user_track_idx on drafts (user_id, category)",
+  "create index notes_user_track_idx on notes (user_id, category)",
+]
 
 /// Named queues: a list of problems each, owned by the user and sent whole.
 /// Scheduling is untouched -- a card is still the memory of one problem,

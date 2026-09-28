@@ -101,18 +101,29 @@ pub fn moved(c: Compare, delta: Int) -> Compare {
   }
 }
 
-/// One side's solution, held within what that problem has.
+/// One side's solution, wrapped around what that problem has: the sides open
+/// on the technique's own solution, which is often the *last* variant, and a
+/// "next" key that clamps there would be dead on arrival.
 pub fn picked(c: Compare, side: CompareSide, index: Int) -> Compare {
-  let clamp = fn(ref: Option(ProblemRef), wanted) {
+  let wrap = fn(ref: Option(ProblemRef), wanted) {
     let count = case ref {
       Some(ref) -> list.length(solutions_of(ref))
       None -> 0
     }
-    int.clamp(wanted, 0, int.max(count - 1, 0))
+    case count <= 0 {
+      True -> 0
+      False -> {
+        let rem = wanted % count
+        case rem < 0 {
+          True -> rem + count
+          False -> rem
+        }
+      }
+    }
   }
   case side {
-    LeftSide -> Compare(..c, variant_a: clamp(Some(c.anchor), index))
-    RightSide -> Compare(..c, variant_b: clamp(right(c), index))
+    LeftSide -> Compare(..c, variant_a: wrap(Some(c.anchor), index))
+    RightSide -> Compare(..c, variant_b: wrap(right(c), index))
   }
 }
 

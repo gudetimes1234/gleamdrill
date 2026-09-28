@@ -43,7 +43,12 @@ const drafts_key = "gleamDrill.guest.drafts.v1"
 
 const notes_key = "gleamDrill.guest.notes.v1"
 
-const history_key = "gleamDrill.guest.history.v1"
+const history_key = "gleamDrill.guest.history.v2"
+
+/// The pre-tracks rollups: one set for the whole store. Read once, to seed
+/// `.v2`, and then left alone -- for a release, so a browser that falls back
+/// to the cached previous bundle still finds its own. See `adopt_history`.
+const legacy_history_key = "gleamDrill.guest.history.v1"
 
 const flags_key = "gleamDrill.guest.flags.v1"
 
@@ -56,7 +61,12 @@ const queues_key = "gleamDrill.guest.queues.v1"
 /// A guest's scheduler settings. Its own key rather than a field on `Local`
 /// because it is read at boot, before anything else is loaded, and written
 /// only from the settings screen -- neither path wants the card store.
-const settings_key = "gleamDrill.guest.settings.v1"
+const settings_key = "gleamDrill.guest.settings.v2"
+
+/// The pre-tracks settings: one flat blob holding both halves. Read once, to
+/// seed `.v2`, and then left alone, for the same reason. See
+/// `adopt_settings`.
+const legacy_settings_key = "gleamDrill.guest.settings.v1"
 
 /// The review log is a ring buffer: the insight screens read backwards from
 /// now, and two thousand reviews is over a year of heavy use in ~250KB.
@@ -103,7 +113,15 @@ pub type Local {
     /// The user's note on a problem. Unlike drafts these are never evicted:
     /// they are short, and a note is exactly the thing you would miss.
     notes: List(#(ProblemRef, String)),
-    history: History,
+    /// Rollups per track, keyed by track name. A track nobody has answered
+    /// in has no entry and reads as empty.
+    ///
+    /// **This record is always the whole store.** `load` reads every track
+    /// and every save writes every track, because each `save_*` serialises
+    /// the whole of `Local`: a filtered `load` followed by one debounced
+    /// draft write would delete every other track's cards. Only the derived
+    /// functions below take a track.
+    history: List(#(String, History)),
     /// Newest first, capped. The raw material for the insight screens; the
     /// same rows the server keeps in its `reviews` table.
     log: List(#(ProblemRef, api.ReviewRow)),
@@ -117,7 +135,7 @@ pub fn empty() -> Local {
     cards: dict.new(),
     drafts: [],
     notes: [],
-    history: empty_history(),
+    history: [],
     log: [],
     queues: [],
   )
@@ -192,8 +210,20 @@ pub fn record(
       },
     )
 
+  // The ref carries the track, so a review is tallied against its own
+  // problem's track and no other's.
+  let track = review.problem.category
   let history =
-    tally(local.history, day_index, rating != fsrs.Again, was_mature)
+    put_history(
+      local,
+      track,
+      tally(
+        history_for(local, track),
+        day_index,
+        rating != fsrs.Again,
+        was_mature,
+      ),
+    )
 
   let logged =
     wire.ReviewRow(
@@ -255,11 +285,15 @@ pub fn unrecord(
             Some(state) -> dict.insert(local.cards, problem, state)
             None -> dict.delete(local.cards, problem)
           },
-          history: untally(
-            local.history,
-            day_index,
-            row.rating != fsrs.Again,
-            row.state_before == api.state_code(fsrs.Review),
+          history: put_history(
+            local,
+            problem.category,
+            untally(
+              history_for(local, problem.category),
+              day_index,
+              row.rating != fsrs.Again,
+              row.state_before == api.state_code(fsrs.Review),
+            ),
           ),
           log: rest,
         ),
@@ -296,6 +330,22 @@ fn untally(
     mature_reviews: int.max(0, history.mature_reviews - bit(mature)),
     mature_correct: int.max(0, history.mature_correct - bit(mature && correct)),
   )
+}
+
+/// This track's rollups, or empty ones. A track nobody has answered in has
+/// no entry, which is not the same as a stored zero -- and the difference is
+/// only ever invisible, because both read as nothing studied.
+pub fn history_for(local: Local, track: String) -> History {
+  list.key_find(local.history, track) |> result.unwrap(empty_history())
+}
+
+/// Replaces one track's rollups, leaving every other track's alone.
+fn put_history(
+  local: Local,
+  track: String,
+  history: History,
+) -> List(#(String, History)) {
+  [#(track, history), ..list.filter(local.history, fn(e) { e.0 != track })]
 }
 
 fn tally(
@@ -365,19 +415,38 @@ pub fn put_note(local: Local, problem: ProblemRef, body: String) -> Local {
 /// Everything in the guest store as one archive, oldest review first.
 pub fn archive(
   local: Local,
-  settings: Settings,
+  account: wire.AccountSettings,
+  tracks: List(#(String, Settings)),
   now: Timestamp,
 ) -> wire.Archive {
   wire.Archive(
     version: wire.archive_version,
     exported_at: now,
-    settings:,
+    account:,
+    tracks:,
     cards: dict.values(local.cards),
     reviews: list.reverse(local.log),
     drafts: local.drafts,
     notes: local.notes,
     queues: local.queues,
   )
+}
+
+/// Which track gets which settings, out of an archive.
+///
+/// A file from before tracks has one blob under the "" key, meaning "every
+/// track", so it is fanned out across the tracks its own cards name. A newer
+/// file already has a row per track. Mirrors `study.archive_tracks` on the
+/// server, deliberately: a file made by one has to restore into the other.
+pub fn archive_tracks(archive: wire.Archive) -> List(#(String, Settings)) {
+  case list.key_find(archive.tracks, "") {
+    Error(Nil) -> list.filter(archive.tracks, fn(entry) { entry.0 != "" })
+    Ok(shared) ->
+      archive.cards
+      |> list.map(fn(card: CardState) { card.problem.category })
+      |> list.unique
+      |> list.map(fn(track) { #(track, shared) })
+  }
 }
 
 /// A guest store built from an archive, replacing whatever was there. The
@@ -393,19 +462,22 @@ pub fn restore(archive: wire.Archive) -> Local {
   let history =
     log
     |> list.reverse
-    |> list.fold(empty_history(), fn(history, entry) {
-      let #(_, row) = entry
+    |> list.fold([], fn(histories, entry) {
+      let #(problem, row) = entry
+      let track = problem.category
       let day =
         browser.study_day_index_at(
           float.round(fsrs.to_epoch(row.at)),
-          archive.settings.day_start_hour,
+          archive.account.day_start_hour,
         )
-      tally(
-        history,
-        day,
-        row.rating != fsrs.Again,
-        row.state_before == api.state_code(fsrs.Review),
-      )
+      let tallied =
+        tally(
+          list.key_find(histories, track) |> result.unwrap(empty_history()),
+          day,
+          row.rating != fsrs.Again,
+          row.state_before == api.state_code(fsrs.Review),
+        )
+      [#(track, tallied), ..list.filter(histories, fn(e) { e.0 != track })]
     })
   Local(
     cards: archive.cards
@@ -419,9 +491,14 @@ pub fn restore(archive: wire.Archive) -> Local {
   )
 }
 
-/// Writes every key at once, for a restore.
-pub fn save_all(local: Local, settings: Settings) -> Result(Nil, Nil) {
-  use _ <- result.try(save_settings(settings))
+/// Writes every key at once, for a restore. An archive is the whole account,
+/// so this replaces every track's settings rather than one track's.
+pub fn save_all(
+  local: Local,
+  account: wire.AccountSettings,
+  tracks: List(#(String, Settings)),
+) -> Result(Nil, Nil) {
+  use _ <- result.try(write_stored(Stored(account:, tracks:)))
   use _ <- result.try(save_cards(local))
   use _ <- result.try(save_drafts(local))
   use _ <- result.try(save_notes(local))
@@ -527,6 +604,7 @@ pub fn dequeue(
 
 pub fn today(
   local: Local,
+  track: String,
   settings: Settings,
   now: Timestamp,
   day: StudyDay,
@@ -534,7 +612,7 @@ pub fn today(
   let day_start = day.start
   let today_index = day.index
   let reviews_done = case
-    list.find(local.history.days, fn(day) { day.day == today_index })
+    list.find(history_for(local, track).days, fn(day) { day.day == today_index })
   {
     Ok(day) -> day.total
     Error(Nil) -> 0
@@ -542,14 +620,14 @@ pub fn today(
 
   let boundary = fsrs.from_epoch(int.to_float(day_start))
   let new_introduced =
-    dict.fold(local.cards, 0, fn(count, _problem, state) {
-      case state.introduced_at {
-        Some(at) ->
+    dict.fold(local.cards, 0, fn(count, problem: ProblemRef, state) {
+      case problem.category == track, state.introduced_at {
+        True, Some(at) ->
           case fsrs.to_epoch(at) >=. int.to_float(day_start) {
             True -> count + 1
             False -> count
           }
-        None -> count
+        _, _ -> count
       }
     })
 
@@ -560,25 +638,36 @@ pub fn today(
     new_introduced:,
     reviews_remaining: int.max(0, settings.reviews_per_day - reviews_done),
     new_remaining: int.max(0, settings.new_per_day - new_introduced),
-    due_now: due_count(local, now),
+    due_now: due_count(local, track, now),
   )
 }
 
 /// `reps > 0` is what separates a review from a new card: a card queued but
 /// never answered is due from the moment it is created, and counting it here
 /// would report the whole New pile as Due.
-fn due_count(local: Local, now: Timestamp) -> Int {
-  use count, _problem, state <- dict.fold(local.cards, 0)
-  case state.reps > 0 && !state.suspended && fsrs.is_due(state.card, now) {
+fn due_count(local: Local, track: String, now: Timestamp) -> Int {
+  use count, problem: ProblemRef, state <- dict.fold(local.cards, 0)
+  case
+    problem.category == track
+    && state.reps > 0
+    && !state.suspended
+    && fsrs.is_due(state.card, now)
+  {
     True -> count + 1
     False -> count
   }
 }
 
-pub fn stats(local: Local, now: Timestamp, day: StudyDay) -> api.Stats {
+pub fn stats(
+  local: Local,
+  track: String,
+  now: Timestamp,
+  day: StudyDay,
+) -> api.Stats {
   let today_index = day.index
+  let rollup = history_for(local, track)
   let history =
-    local.history.days
+    rollup.days
     |> list.map(fn(day) {
       wire.DayTally(
         days_ago: today_index - day.day,
@@ -589,23 +678,25 @@ pub fn stats(local: Local, now: Timestamp, day: StudyDay) -> api.Stats {
     |> list.filter(fn(day) { day.days_ago >= 0 })
 
   wire.Stats(
-    total_reviews: local.history.total_reviews,
-    mature_reviews: local.history.mature_reviews,
-    mature_correct: local.history.mature_correct,
-    state_counts: state_counts(local),
+    total_reviews: rollup.total_reviews,
+    mature_reviews: rollup.mature_reviews,
+    mature_correct: rollup.mature_correct,
+    state_counts: state_counts(local, track),
     history:,
-    forecast: forecast(local, now),
+    forecast: forecast(local, track, now),
     streak_days: streak(history),
   )
 }
 
-fn state_counts(local: Local) -> List(#(Int, Int)) {
+fn state_counts(local: Local, track: String) -> List(#(Int, Int)) {
   [1, 2, 3]
   |> list.map(fn(code) {
     #(
       code,
-      dict.fold(local.cards, 0, fn(count, _problem, state) {
-        case api.state_code(state.card.state) == code {
+      dict.fold(local.cards, 0, fn(count, problem: ProblemRef, state) {
+        case
+          problem.category == track && api.state_code(state.card.state) == code
+        {
           True -> count + 1
           False -> count
         }
@@ -617,10 +708,10 @@ fn state_counts(local: Local) -> List(#(Int, Int)) {
 
 /// Cards falling due in each of the next 30 days. Anything overdue counts
 /// against today, which is where it will actually be studied.
-fn forecast(local: Local, now: Timestamp) -> List(#(Int, Int)) {
+fn forecast(local: Local, track: String, now: Timestamp) -> List(#(Int, Int)) {
   let counts =
-    dict.fold(local.cards, dict.new(), fn(acc, _problem, state) {
-      case state.suspended {
+    dict.fold(local.cards, dict.new(), fn(acc, problem: ProblemRef, state) {
+      case state.suspended || problem.category != track {
         True -> acc
         False -> {
           let days = int.max(0, fsrs.interval_seconds(state.card, now) / 86_400)
@@ -679,21 +770,84 @@ pub fn prompt_state(day: StudyDay) -> model.UpgradePrompt {
 /// Answered cards, not queued ones. Queueing a topic is a click and can be
 /// redone in another click; a card with reviews behind it is the thing that
 /// cannot be rebuilt, and it is what the warning is about.
+/// Whole-account, deliberately: the warning is that everything in this
+/// browser is at risk, and that is not a per-track fact. A day studied in any
+/// track is a day studied.
 fn worth_warning_about(local: Local, today_index: Int) -> Bool {
   let study_days =
-    list.length(
-      list.filter(local.history.days, fn(day) { today_index - day.day < 365 }),
-    )
-  answered_count(local) >= prompt_card_threshold
+    local.history
+    |> list.flat_map(fn(entry) { { entry.1 }.days })
+    |> list.filter(fn(day) { today_index - day.day < 365 })
+    |> list.map(fn(day) { day.day })
+    |> list.unique
+    |> list.length
+  answered_count_all(local) >= prompt_card_threshold
   || study_days >= prompt_day_threshold
 }
 
-pub fn answered_count(local: Local) -> Int {
+/// Answered cards in every track. The upgrade nudge's number.
+pub fn answered_count_all(local: Local) -> Int {
   dict.fold(local.cards, 0, fn(count, _problem, state) {
     case state.reps > 0 {
       True -> count + 1
       False -> count
     }
+  })
+}
+
+pub fn answered_count(local: Local, track: String) -> Int {
+  dict.fold(local.cards, 0, fn(count, problem: ProblemRef, state) {
+    case problem.category == track && state.reps > 0 {
+      True -> count + 1
+      False -> count
+    }
+  })
+}
+
+/// One track's cards, drafts, notes and queues -- what a boot payload for
+/// that track carries. The store itself stays whole; these are the lenses.
+pub fn cards_in(local: Local, track: String) -> List(CardState) {
+  dict.values(local.cards)
+  |> list.filter(fn(card: CardState) { card.problem.category == track })
+}
+
+pub fn drafts_in(local: Local, track: String) -> List(#(ProblemRef, String)) {
+  list.filter(local.drafts, fn(entry) { { entry.0 }.category == track })
+}
+
+pub fn notes_in(local: Local, track: String) -> List(#(ProblemRef, String)) {
+  list.filter(local.notes, fn(entry) { { entry.0 }.category == track })
+}
+
+pub fn queues_in(local: Local, track: String) -> List(wire.Queue) {
+  list.filter(local.queues, fn(queue: wire.Queue) { queue.track == track })
+}
+
+/// Where every track stands, for the switcher.
+///
+/// Built from the cards for the same reason the server's is: a track holding
+/// real cards under a name the catalogue no longer has should appear rather
+/// than vanish.
+pub fn standings(
+  local: Local,
+  settings: fn(String) -> Settings,
+  now: Timestamp,
+  day: StudyDay,
+) -> List(wire.TrackStanding) {
+  dict.values(local.cards)
+  |> list.map(fn(card: CardState) { card.problem.category })
+  |> list.unique
+  |> list.sort(string.compare)
+  |> list.map(fn(track) {
+    let counts = today(local, track, settings(track), now, day)
+    wire.TrackStanding(
+      track:,
+      settings: settings(track),
+      cards: list.length(cards_in(local, track)),
+      due_now: counts.due_now,
+      introduced_today: counts.new_introduced,
+      reviews_today: counts.reviews_done,
+    )
   })
 }
 
@@ -709,8 +863,9 @@ pub fn load() -> Local {
       |> option.unwrap([]),
     notes: read(notes_key, decode.list(draft_decoder()))
       |> option.unwrap([]),
-    history: read(history_key, history_decoder())
-      |> option.unwrap(empty_history()),
+    history: read(history_key, histories_decoder())
+      |> option.lazy_unwrap(adopt_history),
+    // ^ adoption writes `.v2` as it goes; see `adopt_history`.
     log: read(reviews_key, decode.list(log_row_decoder()))
       |> option.unwrap([]),
     queues: read(queues_key, wire.queues_decoder()) |> option.unwrap([]),
@@ -742,13 +897,121 @@ pub fn dismiss_prompt() -> Result(Nil, Nil) {
 /// Guest settings used to be re-defaulted on every page load, which meant the
 /// settings screen appeared to work and then silently forgot. Every other
 /// guest path already reads `Model.settings`; only boot needed fixing.
-pub fn load_settings() -> wire.Settings {
-  read(settings_key, wire.settings_decoder())
-  |> option.unwrap(wire.default_settings())
+/// The account's knobs, and one set of scheduler settings per track.
+///
+/// One key rather than a key per track. Two reasons: `clear` and the upgrade
+/// path would otherwise have to *enumerate* track names, and a name no longer
+/// in the bundle would leave an orphan key nothing ever deletes; and this is
+/// read at boot before anything else, so one read beats seven.
+pub type Stored {
+  Stored(account: wire.AccountSettings, tracks: List(#(String, Settings)))
 }
 
-pub fn save_settings(settings: wire.Settings) -> Result(Nil, Nil) {
-  write(settings_key, json.to_string(wire.settings_to_json(settings)))
+pub fn load_stored() -> Stored {
+  read(settings_key, stored_decoder()) |> option.lazy_unwrap(adopt_settings)
+}
+
+fn persist_stored(stored: Stored) -> Stored {
+  let _ = write_stored(stored)
+  stored
+}
+
+/// One track's profile: the account's half, and that track's scheduler
+/// settings or the defaults where it has none of its own.
+pub fn load_settings(track: String) -> wire.Profile {
+  let stored = load_stored()
+  wire.Profile(
+    account: stored.account,
+    settings: list.key_find(stored.tracks, track)
+      |> result.unwrap(wire.default_settings()),
+  )
+}
+
+/// Writes one track's settings and the account's, leaving every other
+/// track's alone.
+pub fn save_settings(track: String, profile: wire.Profile) -> Result(Nil, Nil) {
+  let stored = load_stored()
+  write_stored(
+    Stored(account: profile.account, tracks: [
+      #(track, profile.settings),
+      ..list.filter(stored.tracks, fn(entry) { entry.0 != track })
+    ]),
+  )
+}
+
+fn write_stored(stored: Stored) -> Result(Nil, Nil) {
+  write(settings_key, json.to_string(stored_json(stored)))
+}
+
+fn stored_json(stored: Stored) -> Json {
+  json.object([
+    #("account", wire.account_to_json(stored.account)),
+    #(
+      "tracks",
+      json.object(
+        list.map(stored.tracks, fn(entry) {
+          #(entry.0, wire.settings_to_json(entry.1))
+        }),
+      ),
+    ),
+  ])
+}
+
+fn stored_decoder() -> Decoder(Stored) {
+  use account <- decode.field("account", wire.account_decoder())
+  use tracks <- decode.field(
+    "tracks",
+    decode.dict(decode.string, wire.settings_decoder()),
+  )
+  decode.success(Stored(account:, tracks: dict.to_list(tracks)))
+}
+
+/// The pre-tracks settings blob, split.
+///
+/// Its per-track half is copied onto every track this browser has anything
+/// in -- the exact mirror of what migration 8 does in SQL, and of what an old
+/// archive's "" key means. One rule, three places; the wire tests pin that
+/// they agree.
+fn adopt_settings() -> Stored {
+  let account =
+    read(legacy_settings_key, wire.account_decoder())
+    |> option.unwrap(wire.default_account())
+  case read(legacy_settings_key, wire.settings_decoder()) {
+    // Nothing to carry over: a browser that has never had settings.
+    None -> Stored(account:, tracks: [])
+    Some(settings) ->
+      Stored(
+        account:,
+        tracks: list.map(tracks_present(), fn(track) { #(track, settings) }),
+      )
+      |> persist_stored
+  }
+}
+
+/// Every track this browser has anything under, read straight from the keys
+/// rather than from `Local`: this runs *during* `load`.
+fn tracks_present() -> List(String) {
+  let refs =
+    list.flatten([
+      read(cards_key, decode.list(api.card_decoder()))
+        |> option.unwrap([])
+        |> list.map(fn(card: CardState) { card.problem }),
+      read(drafts_key, decode.list(draft_decoder()))
+        |> option.unwrap([])
+        |> list.map(fn(entry) { entry.0 }),
+      read(notes_key, decode.list(draft_decoder()))
+        |> option.unwrap([])
+        |> list.map(fn(entry) { entry.0 }),
+    ])
+  refs
+  |> list.map(fn(ref: ProblemRef) { ref.category })
+  |> list.append(
+    read(queues_key, wire.queues_decoder())
+    |> option.unwrap([])
+    |> list.map(fn(queue: wire.Queue) { queue.track }),
+  )
+  |> list.filter(fn(track) { track != "" })
+  |> list.unique
 }
 
 pub fn save_cards(local: Local) -> Result(Nil, Nil) {
@@ -771,7 +1034,7 @@ pub fn save_queues(local: Local) -> Result(Nil, Nil) {
 }
 
 pub fn save_history(local: Local) -> Result(Nil, Nil) {
-  case write(history_key, json.to_string(history_json(local.history))) {
+  case write(history_key, json.to_string(histories_json(local.history))) {
     Ok(Nil) ->
       write(reviews_key, json.to_string(json.array(local.log, log_row_json)))
     Error(Nil) -> Error(Nil)
@@ -841,6 +1104,73 @@ fn draft_decoder() -> Decoder(#(ProblemRef, String)) {
   decode.success(#(wire.ProblemRef(category:, subcategory:, title:), body))
 }
 
+/// Every track's rollups, as one object keyed by track.
+fn histories_json(histories: List(#(String, History))) -> Json {
+  json.object(
+    list.map(histories, fn(entry) { #(entry.0, history_json(entry.1)) }),
+  )
+}
+
+fn histories_decoder() -> Decoder(List(#(String, History))) {
+  decode.dict(decode.string, history_decoder())
+  |> decode.map(dict.to_list)
+}
+
+/// The pre-tracks rollups, split across the tracks they belong to.
+///
+/// Rebuilt by replaying the review log, which carries the track on every row.
+/// Be honest about what that costs: the log is a ring buffer of the last two
+/// thousand reviews, so a guest past that loses the excess from their
+/// *lifetime* counters. Nothing else moves -- no card, no schedule, no draft,
+/// no note, no queue -- and the 365-day heatmap the screen actually draws is
+/// well inside the ring. The alternative, attributing every old review to one
+/// track, would be wrong rather than merely incomplete.
+fn adopt_history() -> List(#(String, History)) {
+  case read(legacy_history_key, history_decoder()) {
+    None -> []
+    Some(_) -> {
+      // Persisted the moment it is worked out, not left to the next review to
+      // write. The log is a ring: as new reviews push old ones off the end, a
+      // replay done later would yield *smaller* numbers than one done now, so
+      // re-deriving on every boot would quietly walk a guest's lifetime
+      // counters down. One write, once, like the key rename at boot.
+      let account =
+        read(legacy_settings_key, wire.account_decoder())
+        |> option.unwrap(wire.default_account())
+      read(reviews_key, decode.list(log_row_decoder()))
+      |> option.unwrap([])
+      |> list.reverse
+      |> list.fold([], fn(histories, entry) {
+        let #(problem, row) = entry
+        let track = problem.category
+        let day =
+          browser.study_day_index_at(
+            float.round(fsrs.to_epoch(row.at)),
+            account.day_start_hour,
+          )
+        let tallied =
+          tally(
+            list.key_find(histories, track) |> result.unwrap(empty_history()),
+            day,
+            row.rating != fsrs.Again,
+            row.state_before == api.state_code(fsrs.Review),
+          )
+        [#(track, tallied), ..list.filter(histories, fn(e) { e.0 != track })]
+      })
+      |> persist_history
+    }
+  }
+}
+
+fn persist_history(
+  histories: List(#(String, History)),
+) -> List(#(String, History)) {
+  // A failed write is not worth failing a boot over: the numbers are right in
+  // memory either way, and `storage_full` is already surfaced elsewhere.
+  let _ = write(history_key, json.to_string(histories_json(histories)))
+  histories
+}
+
 fn history_json(history: History) -> Json {
   json.object([
     #("totalReviews", json.int(history.total_reviews)),
@@ -894,10 +1224,12 @@ pub type StudyDay {
   StudyDay(start: Int, index: Int)
 }
 
-pub fn current_day(settings: Settings) -> StudyDay {
+/// The study day is a fact about the person, not about what they study, so
+/// this takes the account-wide knobs rather than a track's scheduler.
+pub fn current_day(account: wire.AccountSettings) -> StudyDay {
   StudyDay(
-    start: browser.study_day_start(settings.day_start_hour),
-    index: browser.study_day_index(settings.day_start_hour),
+    start: browser.study_day_start(account.day_start_hour),
+    index: browser.study_day_index(account.day_start_hour),
   )
 }
 
@@ -965,8 +1297,11 @@ pub fn seed_from_legacy(
 
 /// The wire shape `/api/insights` produces, computed from the local log so
 /// `insights.analyse` cannot tell a guest from an account.
-pub fn insights(local: Local) -> api.Insights {
-  let chronological = list.reverse(local.log)
+pub fn insights(local: Local, track: String) -> api.Insights {
+  let chronological =
+    local.log
+    |> list.filter(fn(entry) { { entry.0 }.category == track })
+    |> list.reverse
 
   let clean =
     list.filter_map(chronological, fn(entry) {

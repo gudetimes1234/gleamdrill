@@ -30,7 +30,9 @@ import gleamdrill/problem
 import gleamdrill/problems
 import gleamdrill/queue
 import gleamdrill/session
+import gleamdrill/store
 import gleamdrill/tour
+import gleamdrill/track
 import gleamdrill/view/format
 import gleeunit
 import simplifile
@@ -64,8 +66,11 @@ pub fn boot_state_decodes_test() -> Nil {
 
   assert list.length(state.settings.scheduler.parameters) == 21
   assert state.settings.scheduler.desired_retention == 0.9
-  assert state.settings.day_start_hour == 4
-  assert state.settings.timezone == "UTC"
+  // The knobs about the person, split out of the scheduler's in the same
+  // change that made settings per track.
+  assert state.account.day_start_hour == 4
+  assert state.account.timezone == "UTC"
+  assert state.account.reminder_hour == None
   assert state.user.email == "drills@example.com"
 }
 
@@ -225,6 +230,11 @@ const day = 86_400
 /// it are testing the boundary rather than integer division.
 const boundary = 1_800_057_600
 
+/// Queue names are unique within one track, so every fixture here shares one.
+fn a_queue(name: String, problems: List(wire.ProblemRef)) -> wire.Queue {
+  wire.Queue(track: "NeetCode 150", name:, problems:)
+}
+
 fn at_epoch(seconds: Int) -> timestamp.Timestamp {
   fsrs.from_epoch(int.to_float(seconds))
 }
@@ -246,8 +256,12 @@ fn answer(problem: problem.ProblemRef, rating: fsrs.Rating) -> api.Review {
 }
 
 fn a_problem(title: String) -> problem.ProblemRef {
-  wire.ProblemRef("NeetCode 150 · Python", "Arrays & Hashing", title)
+  wire.ProblemRef(a_track, "Arrays & Hashing", title)
 }
+
+/// The track every fixture in this file is in. Python's category is the bare
+/// name; only the other four carry a suffix.
+const a_track = "NeetCode 150"
 
 /// The whole promise of guest mode: the same answers produce the same card as
 /// the server would. Replayed against the captured server response rather than
@@ -421,6 +435,7 @@ pub fn today_counts_against_the_daily_limits_test() -> Nil {
   let today =
     local.today(
       store,
+      a_track,
       settings,
       now,
       local.StudyDay(day_start, day_start / day),
@@ -461,7 +476,13 @@ pub fn the_rollover_boundary_splits_the_budget_test() -> Nil {
     )
 
   let today =
-    local.today(both, settings, now, local.StudyDay(day_start, day_start / day))
+    local.today(
+      both,
+      a_track,
+      settings,
+      now,
+      local.StudyDay(day_start, day_start / day),
+    )
   assert today.new_introduced == 1
   assert today.reviews_done == 1
 }
@@ -485,6 +506,7 @@ pub fn an_overdue_card_counts_as_due_test() -> Nil {
   let later = at_epoch(day_start + 601)
   assert local.today(
       store,
+      a_track,
       settings,
       later,
       local.StudyDay(day_start, day_start / day),
@@ -524,6 +546,7 @@ pub fn statistics_derive_from_local_state_test() -> Nil {
   let stats =
     local.stats(
       store,
+      a_track,
       at_epoch(day_start + 60),
       local.StudyDay(day_start, day_start / day),
     )
@@ -671,20 +694,22 @@ pub fn a_leech_opens_with_the_approach_shown_test() -> Nil {
   assert rungs >= 2
 
   assert !model.is_leech(lapsed(3), problem)
-  assert model.opening_hints(lapsed(3), problem) == 0
+  assert !model.opens_with_nudge(lapsed(3), problem)
   assert model.is_leech(lapsed(4), problem)
-  let shown = model.opening_hints(lapsed(4), problem)
-  assert shown == rungs - 1
-  let opened = model.Model(..lapsed(4), hints_revealed: shown)
-  assert !model.pseudocode_revealed(opened, found.approach)
+  assert model.opens_with_nudge(lapsed(4), problem)
 
-  // Opened, a leech has the ladder already waiting in the slot; nothing is
-  // chosen.
+  // Opened, a leech has its nudge unfolded and nothing else: the steps were
+  // always listed, no layer is turned over, and no solution is chosen. So the
+  // one thing a leech is given costs it nothing.
   let view = model.open_problem_view(lapsed(4), problem)
-  assert view.slot == model.HintPane
-  assert view.hints_revealed == shown
+  assert view.nudge_shown
+  assert !view.whole_thing_shown
+  assert !model.any_layer_shown(view.walk)
+  assert !model.pseudocode_revealed(view, found.approach)
+  assert !model.answer_revealed(view, found.approach)
+  assert view.slot == model.NoPane
   assert view.revealed_solution == None
-  assert model.open_problem_view(lapsed(3), problem).slot == model.NoPane
+  assert !model.open_problem_view(lapsed(3), problem).nudge_shown
 }
 
 /// A walk step's code slice is a piece of the pseudocode; its hint and why
@@ -693,18 +718,231 @@ pub fn only_the_walk_code_counts_as_a_reveal_test() -> Nil {
   let stages = [
     problem.Nudge("n"),
     problem.Walk([
-      problem.WalkStep(step: "s", hint: "h", why: "w", code: "c"),
+      problem.WalkStep(step: "s", hint: "h", why: "w", code: [#("", "c")]),
     ]),
-    problem.Pseudocode("p"),
+    problem.Pseudocode([#("", "p")]),
   ]
-  let base = model.Model(..model.default(), hints_revealed: 2)
+  let base = model.default()
+  // Every step's title is on the rail from the start, and turning over a
+  // hint or a why is free.
   assert !model.answer_revealed(base, stages)
+  let hinted =
+    model.Model(
+      ..base,
+      walk: model.reveal_layer(
+        model.reveal_layer(base.walk, model.HintLayer),
+        model.WhyLayer,
+      ),
+    )
+  assert !model.answer_revealed(hinted, stages)
+  // A hint is not an answer, but a solve that needed one was not from
+  // nothing, so `clean` is stricter than the log's `revealed`.
+  assert model.any_layer_shown(hinted.walk)
+
   assert model.answer_revealed(
     model.Model(..base, walk_code_seen: True),
     stages,
   )
-  assert model.plan_rung(stages) == Some(1)
+  assert model.answer_revealed(
+    model.Model(..base, whole_thing_shown: True),
+    stages,
+  )
+  // No pseudocode rung, so nothing can record it as having been given away.
+  assert !model.answer_revealed(model.Model(..base, whole_thing_shown: True), [
+    problem.Nudge("n"),
+  ])
+
+  // The prose of a plan is shared; its code is per language. A slice written
+  // for Go is what a Go drill shows, and a language with none of its own
+  // falls back to the shared one rather than showing nothing.
+  let sliced = [
+    problem.Pseudocode([#("", "shared"), #("go", "go-only")]),
+  ]
+  assert model.whole_thing(sliced, problem.Go) == Some("go-only")
+  assert model.whole_thing(sliced, problem.Elixir) == Some("shared")
+  assert model.whole_thing([problem.Pseudocode([#("go", "g")])], problem.Python)
+    == None
+  assert model.nudge_text(stages) == Some("n")
+  assert model.whole_thing(stages, problem.Python) == Some("p")
   assert list.length(model.walk_steps(stages)) == 1
+}
+
+/// The guest store is always the whole store.
+///
+/// Every `local.save_*` serialises the whole of `Local`, so if a track-scoped
+/// read ever became a track-scoped *load*, the next debounced draft write
+/// would delete every other track's cards. This pins the shape that stops it:
+/// the lenses narrow what is reported, `load` and the saves do not.
+pub fn a_track_scoped_read_never_narrows_the_store_test() -> Nil {
+  let other = "NeetCode 150 (Go)"
+  let here = a_problem("Contains Duplicate")
+  let there = wire.ProblemRef(other, "Arrays & Hashing", "Two Sum")
+  let settings = guest_settings()
+  let day_start = boundary
+
+  let #(store, _) =
+    local.record(
+      local.empty(),
+      settings,
+      answer(here, fsrs.Good),
+      at_epoch(day_start),
+      day_start / day,
+      0.0,
+    )
+  let #(store, _) =
+    local.record(
+      store,
+      settings,
+      answer(there, fsrs.Good),
+      at_epoch(day_start + 60),
+      day_start / day,
+      0.0,
+    )
+
+  // The store holds both; the lenses show one each.
+  assert dict.size(store.cards) == 2
+  assert list.length(local.cards_in(store, a_track)) == 1
+  assert list.length(local.cards_in(store, other)) == 1
+
+  // A review is tallied against its own problem's track, not the other's.
+  assert local.history_for(store, a_track).total_reviews == 1
+  assert local.history_for(store, other).total_reviews == 1
+  assert local.stats(
+      store,
+      a_track,
+      at_epoch(day_start + 120),
+      local.StudyDay(day_start, day_start / day),
+    ).total_reviews
+    == 1
+
+  // And a budget spent in one track is not spent in the other.
+  let counts = fn(track) {
+    local.today(
+      store,
+      track,
+      settings,
+      at_epoch(day_start + 120),
+      local.StudyDay(day_start, day_start / day),
+    )
+  }
+  assert counts(a_track).reviews_done == 1
+  assert counts(other).reviews_done == 1
+  assert counts(a_track).new_introduced == 1
+  assert counts(other).new_introduced == 1
+
+  // A track nobody has touched reads as nothing, not as somebody else's.
+  assert local.cards_in(store, "System Design") == []
+  assert local.history_for(store, "System Design").total_reviews == 0
+  assert counts("System Design").reviews_done == 0
+}
+
+/// Saving one track's queues must not take another's with it. The model only
+/// ever holds the active track's list, so the guest save splices that list
+/// into the stored one -- replacing the store's list wholesale is exactly how
+/// saving a queue in one track used to delete every other track's.
+pub fn saving_one_tracks_queues_keeps_the_others_test() -> Nil {
+  let other = "NeetCode 150 (Go)"
+  let theirs = wire.Queue(track: other, name: "Arrays", problems: [])
+  let stored = [
+    wire.Queue(track: a_track, name: "Pointers", problems: []),
+    theirs,
+  ]
+  let mine = [wire.Queue(track: a_track, name: "Sliding", problems: [])]
+
+  let spliced = store.spliced_queues(stored, a_track, mine)
+
+  // The other track's queue survives; the active track's list is replaced.
+  assert list.filter(spliced, fn(q: wire.Queue) { q.track == other })
+    == [theirs]
+  assert list.filter(spliced, fn(q: wire.Queue) { q.track == a_track }) == mine
+
+  // Deleting the last queue in a track deletes only that track's.
+  assert store.spliced_queues(stored, a_track, []) == [theirs]
+}
+
+/// Undo steps back the track its own review was in.
+pub fn undo_steps_back_only_its_own_tracks_tally_test() -> Nil {
+  let other = "NeetCode 150 (Go)"
+  let there = wire.ProblemRef(other, "Arrays & Hashing", "Two Sum")
+  let settings = guest_settings()
+  let day_start = boundary
+  let index = day_start / day
+
+  let #(store, _) =
+    local.record(
+      local.empty(),
+      settings,
+      answer(a_problem("Contains Duplicate"), fsrs.Good),
+      at_epoch(day_start),
+      index,
+      0.0,
+    )
+  let #(store, _) =
+    local.record(
+      store,
+      settings,
+      answer(there, fsrs.Good),
+      at_epoch(day_start + 60),
+      index,
+      0.0,
+    )
+
+  let assert Ok(undone) = local.unrecord(store, there, None, index)
+  assert local.history_for(undone, other).total_reviews == 0
+  assert local.history_for(undone, a_track).total_reviews == 1
+  assert dict.size(undone.cards) == 1
+}
+
+/// The prose of a plan is shared by every language mirror; its code is not.
+///
+/// Two Sum is the proof: its Go mirror shows Go and its Python mirror shows
+/// Python, from one ladder keyed by title. A language with no slice of its own
+/// written yet falls back to the shared one, which is what lets this content
+/// land a topic at a time without the tree ever being broken.
+pub fn a_plans_code_follows_the_language_test() -> Nil {
+  let ladder = fn(category) {
+    let assert Ok(found) =
+      problems.find(category, "Arrays & Hashing", "Two Sum")
+    #(found.language, found.approach)
+  }
+  let #(go_language, go_approach) = ladder("NeetCode 150 (Go)")
+  let #(py_language, py_approach) = ladder("NeetCode 150")
+  let #(ex_language, ex_approach) = ladder("NeetCode 150 (Elixir)")
+
+  // One ladder, keyed by title: the steps themselves are word for word the
+  // same, because "walk the array once, carrying a map" is a fact about the
+  // algorithm rather than about Go.
+  let steps = fn(stages) {
+    model.walk_steps(stages) |> list.map(fn(s: problem.WalkStep) { s.step })
+  }
+  assert steps(go_approach) == steps(py_approach)
+  assert steps(go_approach) == steps(ex_approach)
+
+  let first_slice = fn(stages, language) {
+    let assert Ok(step) = list.first(model.walk_steps(stages))
+    problem.slice_for(step.code, language)
+  }
+  assert string.contains(first_slice(go_approach, go_language), "map[int]int")
+  assert string.contains(first_slice(py_approach, py_language), "enumerate")
+  assert string.contains(
+    first_slice(ex_approach, ex_language),
+    "Enum.with_index",
+  )
+
+  let assert Some(whole) = model.whole_thing(go_approach, go_language)
+  assert string.contains(whole, "return nil")
+  let assert Some(whole) = model.whole_thing(ex_approach, ex_language)
+  assert string.contains(whole, "find_pair")
+
+  // A ladder with no slice for a language falls back to the shared one --
+  // what lets the content land a topic at a time without ever breaking the
+  // tree. 3Sum has only shared slices so far.
+  let assert Ok(fallback) =
+    problems.find("NeetCode 150 (Elixir)", "Two Pointers", "3Sum")
+  assert string.contains(
+    first_slice(fallback.approach, fallback.language),
+    "sort(nums)",
+  )
 }
 
 /// Every walkthrough in the catalogue is complete: at least three steps,
@@ -843,7 +1081,7 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
       0.0,
     )
 
-  let data = local.insights(store)
+  let data = local.insights(store, a_track)
   // The revealed review is not a clean solve, but it is a reveal.
   assert list.length(data.clean_solves) == 2
   assert data.reveals == [#(problem, 1)]
@@ -883,7 +1121,7 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
       0,
       0.0,
     )
-  let data = local.insights(store)
+  let data = local.insights(store, a_track)
   assert list.length(data.clean_solves) == 2
   assert data.reveals == [#(problem, 1)]
   let assert Ok(card) = dict.get(store.cards, problem)
@@ -929,7 +1167,7 @@ pub fn unrecord_is_the_inverse_of_record_test() -> Nil {
       7,
       0.0,
     )
-  assert graded.history.total_reviews == 3
+  assert local.history_for(graded, a_track).total_reviews == 3
   let assert Ok(undone) = local.unrecord(graded, problem, Some(before), 7)
   assert undone.cards == seeded.cards
   assert undone.history == seeded.history
@@ -941,7 +1179,7 @@ pub fn unrecord_is_the_inverse_of_record_test() -> Nil {
   // Undoing the review that created a card removes the card.
   let assert Ok(fresh) = local.unrecord(seeded, problem, None, 7)
   assert dict.get(fresh.cards, problem) == Error(Nil)
-  assert fresh.history.total_reviews == 1
+  assert local.history_for(fresh, a_track).total_reviews == 1
   assert list.length(fresh.log) == 1
 }
 
@@ -971,11 +1209,20 @@ pub fn a_guest_archive_restores_to_the_same_store_test() -> Nil {
     |> local.put_note(a_problem("Valid Anagram"), "sort both")
   let store =
     local.Local(..store, queues: [
-      wire.Queue("Pointers", [a_problem("Two Sum")]),
+      a_queue("Pointers", [a_problem("Two Sum")]),
     ])
 
-  let archive = local.archive(store, settings, at_epoch(1_800_010_000))
+  let archive =
+    local.archive(
+      store,
+      wire.default_account(),
+      [#(a_track, settings)],
+      at_epoch(1_800_010_000),
+    )
   assert archive.version == wire.archive_version
+  // A guest exports every track it has, each with its own settings.
+  assert archive.tracks == [#(a_track, settings)]
+  assert local.archive_tracks(archive) == [#(a_track, settings)]
   assert list.length(archive.reviews) == 3
   // Oldest first in the file, newest first in the store.
   let assert [#(first, _), ..] = archive.reviews
@@ -989,9 +1236,11 @@ pub fn a_guest_archive_restores_to_the_same_store_test() -> Nil {
   assert restored.drafts == store.drafts
   assert restored.notes == store.notes
   assert restored.queues == store.queues
-  assert restored.history.total_reviews == 3
-  assert restored.history.mature_reviews == store.history.mature_reviews
-  assert restored.history.mature_correct == store.history.mature_correct
+  assert local.history_for(restored, a_track).total_reviews == 3
+  assert local.history_for(restored, a_track).mature_reviews
+    == local.history_for(store, a_track).mature_reviews
+  assert local.history_for(restored, a_track).mature_correct
+    == local.history_for(store, a_track).mature_correct
 }
 
 pub fn the_review_log_is_a_ring_buffer_test() -> Nil {
@@ -1026,20 +1275,17 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
     model.Model(..base, route: model.QueueRoute),
     model.Model(..base, route: model.StatsRoute),
     model.Model(..base, route: model.ReportRoute),
-    model.Model(..base, route: model.PickerRoute),
+    model.Model(..base, route: model.TracksRoute),
     model.Model(..base, route: model.SettingsRoute),
     model.Model(..base, route: model.SummaryRoute),
     drill,
-    model.Model(..drill, slot: model.HintPane),
+    model.Model(..drill, slot: model.SolutionPane),
+    model.Model(..drill, slot: model.NotePane),
+    // The rail is always up, so a drill with a step opened is its own context.
     model.Model(
       ..drill,
-      slot: model.WalkPane,
-      walk: Some(model.WalkState(
-        step: 0,
-        hint_shown: False,
-        why_shown: False,
-        code_shown: False,
-      )),
+      nudge_shown: True,
+      walk: model.reveal_layer(drill.walk, model.HintLayer),
     ),
     model.Model(..drill, recall: True),
     model.Model(
@@ -1066,6 +1312,8 @@ pub fn dispatch_resolves_from_the_same_table_it_documents_test() -> Nil {
   assert press("b") == Ok(model.UserClickedBrowse)
   assert press("q") == Ok(model.UserClickedQueue)
   assert press("t") == Ok(model.UserClickedStats)
+  // Shift, so lowercase `t` keeps meaning Stats.
+  assert press("T") == Ok(model.UserClickedTracks)
   assert press("Enter") == Ok(model.UserClickedStudy)
   assert press("z") == Ok(model.UserToggledBlitz)
   assert press("v") == Error(Nil)
@@ -1087,7 +1335,15 @@ pub fn p_toggles_the_prompt_and_the_panes_have_keys_test() -> Nil {
   assert press(model.Model(..m, prompt_open: False), "p")
     == Ok(model.UserToggledPrompt)
   assert press(m, "i") == Ok(model.EditorFocusRequested)
-  assert press(m, "a") == Ok(model.UserToggledPane(model.HintPane))
+  // The rail's keys: the nudge, the focus, and the layers under the step that
+  // has it. None of them opens a pane, because the rail is never closed.
+  assert press(m, "a") == Ok(model.UserToggledNudge)
+  assert press(m, "j") == Ok(model.WalkAdvanced)
+  assert press(m, "k") == Ok(model.WalkBacked)
+  assert press(m, "h") == Ok(model.WalkHintShown)
+  assert press(m, "y") == Ok(model.WalkWhyShown)
+  assert press(m, "c") == Ok(model.WalkCodeShown)
+  assert press(m, "w") == Ok(model.UserRevealedWholeThing)
   assert press(m, "s") == Ok(model.UserToggledPane(model.SolutionPane))
   assert press(m, "Escape") == Ok(model.UserClickedExitDrill)
   assert press(m, "1") == Error(Nil)
@@ -1105,39 +1361,34 @@ pub fn escape_closes_the_open_pane_before_it_exits_test() -> Nil {
     )
   }
   assert press(coding, "Escape") == Ok(model.UserClickedExitDrill)
-  assert press(coding, "a") == Ok(model.UserToggledPane(model.HintPane))
 
-  let hinting = model.toggle_pane(coding, model.HintPane)
-  assert hinting.slot == model.HintPane
-  assert press(hinting, "Escape") == Ok(model.UserToggledPane(model.HintPane))
-  assert press(hinting, "a") == Ok(model.UserToggledPane(model.HintPane))
-  assert model.toggle_pane(hinting, model.HintPane).slot == model.NoPane
-  assert model.toggle_pane(hinting, model.SolutionPane).slot
+  let noting = model.toggle_pane(coding, model.NotePane)
+  assert noting.slot == model.NotePane
+  assert press(noting, "Escape") == Ok(model.UserToggledPane(model.NotePane))
+  assert model.toggle_pane(noting, model.NotePane).slot == model.NoPane
+  assert model.toggle_pane(noting, model.SolutionPane).slot
     == model.SolutionPane
 
-  let walking =
+  // The rail is not a pane and has no close: with a step opened, Escape still
+  // means exit. That is the whole point of moving the plan out of the slot.
+  let railed =
     model.Model(
-      ..hinting,
-      slot: model.WalkPane,
-      walk: Some(model.WalkState(
-        step: 0,
-        hint_shown: False,
-        why_shown: False,
-        code_shown: False,
-      )),
+      ..coding,
+      nudge_shown: True,
+      walk: model.reveal_layer(coding.walk, model.HintLayer),
     )
-  assert press(walking, "Escape") == Ok(model.UserClosedWalk)
+  assert press(railed, "Escape") == Ok(model.UserClickedExitDrill)
 }
 
 /// A passing run puts the reference beside your code without that being a
 /// reveal; a failing run takes back only a diff the last pass had opened.
 pub fn a_pass_opens_the_solution_pane_without_a_reveal_test() -> Nil {
   assert model.pane_after_run(model.NoPane, None, True) == model.SolutionPane
-  assert model.pane_after_run(model.HintPane, None, True) == model.SolutionPane
+  assert model.pane_after_run(model.NotePane, None, True) == model.SolutionPane
   assert model.pane_after_run(model.SolutionPane, None, False) == model.NoPane
   assert model.pane_after_run(model.SolutionPane, Some(0), False)
     == model.SolutionPane
-  assert model.pane_after_run(model.HintPane, None, False) == model.HintPane
+  assert model.pane_after_run(model.NotePane, None, False) == model.NotePane
   let m = model.Model(..on_a_drill(), slot: model.SolutionPane)
   assert !model.answer_revealed(m, [])
 }
@@ -1184,7 +1435,7 @@ pub fn the_compare_screen_binds_its_own_verbs_test() -> Nil {
 
   let study = model.Model(..model.default(), route: model.StudyRoute)
   assert press(study, "n") == Error(Nil)
-  let with_queue = model.Model(..study, queues: [wire.Queue("Pointers", [])])
+  let with_queue = model.Model(..study, queues: [a_queue("Pointers", [])])
   assert press(with_queue, "n")
     == Ok(model.UserPickedActiveQueue(Some("Pointers")))
 }
@@ -1213,7 +1464,14 @@ pub fn the_queue_screen_lists_what_its_filters_say_test() -> Nil {
   let now = fsrs.from_epoch(1_787_788_818.0)
   let ref = a_catalogue_ref()
   let #(store, _) = local.enqueue(local.empty(), [ref], now)
-  let m = model.Model(..model.default(), now:, cards: store.cards)
+  // The screen is one track's, so the model has to be on one.
+  let m =
+    model.Model(
+      ..model.default(),
+      now:,
+      cards: store.cards,
+      active_track: a_track,
+    )
 
   let all = queue.listed(m)
   assert list.length(all) > 1
@@ -1226,8 +1484,9 @@ pub fn the_queue_screen_lists_what_its_filters_say_test() -> Nil {
   assert !list.contains(unqueued, ref)
   assert list.length(queued) + list.length(unqueued) == list.length(all)
 
-  // Language is the same lens from the other direction.
-  let elsewhere = queue.listed(model.Model(..m, queue_language: Some("sd")))
+  // There is no language lens any more: the screen is one track's, and a
+  // problem from another track is simply not among the rows.
+  let elsewhere = queue.listed(model.Model(..m, active_track: "System Design"))
   assert !list.contains(elsewhere, ref)
 
   // The grouped view is the same list cut into topics: nothing added,
@@ -1364,7 +1623,7 @@ pub fn guest_and_server_calibration_agree_test() -> Nil {
       0,
       0.0,
     )
-  let guest = local.insights(store)
+  let guest = local.insights(store, a_track)
 
   assert list.length(guest.clean_solves) == list.length(server.clean_solves)
   assert guest.reveals == server.reveals
@@ -1511,7 +1770,7 @@ pub fn a_queued_card_is_new_until_it_is_answered_test() -> Nil {
   assert list.contains(queue.fresh(m), ref)
   assert !list.contains(queue.due(m), ref)
   // And it must not be counted against the reviews half of the daily budget.
-  assert local.today(store, base.settings, now, local.StudyDay(0, 0)).due_now
+  assert local.today(store, a_track, base.settings, now, local.StudyDay(0, 0)).due_now
     == 0
 }
 
@@ -1569,9 +1828,7 @@ pub fn new_cards_rotate_across_languages_test() -> Nil {
   let picked = queue.fresh(fresh_model(8))
   let languages =
     picked
-    |> list.map(fn(ref: problem.ProblemRef) {
-      problems.language_tag(ref.category)
-    })
+    |> list.map(fn(ref: problem.ProblemRef) { track.tag(ref.category) })
     |> list.unique
 
   assert list.length(picked) == 8
@@ -1587,14 +1844,12 @@ pub fn new_cards_rotate_across_languages_test() -> Nil {
 pub fn only_queued_problems_enter_the_queue_test() -> Nil {
   let python =
     list.filter(problems.all_refs(), fn(ref: problem.ProblemRef) {
-      problems.language_tag(ref.category) == "py"
+      track.tag(ref.category) == "py"
     })
   let picked = queue.fresh(fresh_model_of(8, python))
   let languages =
     picked
-    |> list.map(fn(ref: problem.ProblemRef) {
-      problems.language_tag(ref.category)
-    })
+    |> list.map(fn(ref: problem.ProblemRef) { track.tag(ref.category) })
     |> list.unique
 
   assert languages == ["py"]
@@ -1605,7 +1860,7 @@ pub fn only_queued_problems_enter_the_queue_test() -> Nil {
 pub fn the_rotation_survives_a_language_running_out_test() -> Nil {
   let python =
     list.filter(problems.all_refs(), fn(ref: problem.ProblemRef) {
-      problems.language_tag(ref.category) == "py"
+      track.tag(ref.category) == "py"
     })
   let picked = queue.fresh(fresh_model_of(300, python))
   // Python has 150 problems; asking for 300 must yield all of them and stop,
@@ -1618,19 +1873,17 @@ pub fn the_rotation_survives_a_language_running_out_test() -> Nil {
 pub fn a_named_queue_scopes_what_is_served_test() -> Nil {
   let by_tag = fn(tag) {
     list.filter(problems.all_refs(), fn(ref: problem.ProblemRef) {
-      problems.language_tag(ref.category) == tag
+      track.tag(ref.category) == tag
     })
   }
   let python = by_tag("py")
   let gleam = by_tag("gl")
   let both = fresh_model_of(8, list.append(python, gleam))
   let queued =
-    model.Model(..both, queues: [wire.Queue("py", list.take(python, 20))])
+    model.Model(..both, queues: [a_queue("py", list.take(python, 20))])
   let tags = fn(refs) {
     refs
-    |> list.map(fn(ref: problem.ProblemRef) {
-      problems.language_tag(ref.category)
-    })
+    |> list.map(fn(ref: problem.ProblemRef) { track.tag(ref.category) })
     |> list.unique
   }
 
@@ -1648,13 +1901,14 @@ pub fn a_named_queue_scopes_what_is_served_test() -> Nil {
 pub fn a_named_queue_lists_its_own_members_test() -> Nil {
   let python =
     list.filter(problems.all_refs(), fn(ref: problem.ProblemRef) {
-      problems.language_tag(ref.category) == "py"
+      track.tag(ref.category) == "py"
     })
   let assert [first, second, ..] = python
   let m =
     model.Model(
       ..fresh_model_of(8, python),
-      queues: [wire.Queue("Pointers", [first])],
+      active_track: a_track,
+      queues: [a_queue("Pointers", [first])],
       queue_editing: Some("Pointers"),
       queue_status: model.Queued,
     )
@@ -1688,9 +1942,9 @@ pub fn a_named_queue_lists_its_own_members_test() -> Nil {
 pub fn deleting_a_card_drops_it_from_every_queue_test() -> Nil {
   let a = a_problem("Two Sum")
   let b = a_problem("Valid Anagram")
-  let queues = [wire.Queue("x", [a, b]), wire.Queue("y", [b])]
+  let queues = [a_queue("x", [a, b]), a_queue("y", [b])]
   assert model.drop_from_queues(queues, [b])
-    == [wire.Queue("x", [a]), wire.Queue("y", [])]
+    == [a_queue("x", [a]), a_queue("y", [])]
   assert model.drop_from_queues(queues, []) == queues
 }
 
@@ -1698,8 +1952,8 @@ pub fn deleting_a_card_drops_it_from_every_queue_test() -> Nil {
 pub fn the_next_queue_rings_round_test() -> Nil {
   let m =
     model.Model(..model.default(), queues: [
-      wire.Queue("a", []),
-      wire.Queue("b", []),
+      a_queue("a", []),
+      a_queue("b", []),
     ])
   assert model.next_queue(m) == Some("a")
   assert model.next_queue(model.Model(..m, active_queue: Some("a")))
@@ -1728,9 +1982,13 @@ pub fn compare_opens_on_one_language_test() -> Nil {
   // The right side rings round and opens each problem on its own default.
   assert compare.moved(alone, 4).index == 0
   assert compare.moved(alone, -1).index == 3
-  assert compare.picked(alone, model.LeftSide, 99).variant_a
-    == list.length(compare.solutions_of(palindrome)) - 1
-  assert compare.picked(alone, model.RightSide, -5).variant_b == 0
+  // The variants ring round too: the sides open on the technique's own
+  // solution, often the last, so a "next" that clamped there would be dead.
+  let count = list.length(compare.solutions_of(palindrome))
+  assert compare.picked(alone, model.LeftSide, count).variant_a == 0
+  let assert Some(right_ref) = compare.right(alone)
+  let right_count = list.length(compare.solutions_of(right_ref))
+  assert compare.picked(alone, model.RightSide, -1).variant_b == right_count - 1
   // A Two Pointers solution opens on its Two Pointers variant.
   let labels =
     compare.solutions_of(palindrome)
@@ -1749,18 +2007,31 @@ pub fn compare_opens_on_one_language_test() -> Nil {
     == Error("That problem has no solution to compare.")
 }
 
-/// A preferences blob from before queues reads as studying everything.
+/// A preferences blob from before queues reads as studying everything, and
+/// one from before *tracks* keeps its queue: the old scalar is held under the
+/// "" key so boot can attach it to whichever track it lands on, rather than
+/// being discarded and quietly resetting somebody's active queue.
 pub fn preferences_without_an_active_queue_decode_test() -> Nil {
   let assert Ok(old) =
     json.parse("{\"editorKeymap\":\"vim\"}", session.preferences_decoder())
-  assert old.active_queue == None
+  assert old.active_queue == []
+  assert old.active_track == None
   assert old.editor_keymap == "vim"
   let assert Ok(new) =
     json.parse(
       "{\"editorKeymap\":\"vim\",\"activeQueue\":\"Pointers\"}",
       session.preferences_decoder(),
     )
-  assert new.active_queue == Some("Pointers")
+  assert new.active_queue == [#("", "Pointers")]
+  // And the new shape: one queue per track, with the track it belongs to.
+  let assert Ok(tracked) =
+    json.parse(
+      "{\"editorKeymap\":\"vim\",\"activeTrack\":\"NeetCode 150\","
+        <> "\"activeQueue\":{\"NeetCode 150\":\"Pointers\"}}",
+      session.preferences_decoder(),
+    )
+  assert tracked.active_track == Some("NeetCode 150")
+  assert tracked.active_queue == [#("NeetCode 150", "Pointers")]
 }
 
 /// A preferences blob from before the sidebar reads as having it open.
@@ -1789,10 +2060,7 @@ pub fn the_tour_is_its_own_sequence_test() -> Nil {
   assert list.all(problems.all(), fn(c: problem.Category) {
     c.name != "Gleam Language Tour"
   })
-  assert !list.contains(
-    list.map(problems.language_options(), fn(o) { o.0 }),
-    "gt",
-  )
+  assert !list.contains(list.map(track.entries(), fn(o) { o.0 }), "gt")
 
   assert tour.count() == 63
   assert list.map(tour.chapters(), fn(c) { c.0 })
@@ -2184,6 +2452,6 @@ pub fn a_board_drill_is_classified_as_one_test() -> Nil {
 
   // And the board gets its own tag, so the queue filter and the first-run
   // picker can tell it from the quiz.
-  assert problems.language_tag("System Design Board") == "bd"
-  assert problems.language_tag("System Design") == "sd"
+  assert track.tag("System Design Board") == "bd"
+  assert track.tag("System Design") == "sd"
 }

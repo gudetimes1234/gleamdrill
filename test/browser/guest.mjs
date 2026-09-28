@@ -53,31 +53,34 @@ const solve = async () => {
 };
 
 console.log("== no account required");
-// A browser with no stored preferences meets the first-run language picker
-// before the study screen exists, and with nothing queued the picker hands off
-// to the queue screen -- nothing is scheduled that was not put there. These
-// suites are about what comes after both, so answer the picker with everything
-// selected and queue one topic across every language: enough for a sitting,
-// which is the state they were written against.
+// A browser with no stored preferences meets the track switcher before any
+// study screen exists: Study, Queue and Stats are all inside a track. These
+// suites are about what comes after that, so enter the Python track and queue
+// one topic -- enough for a sitting, which is the state they were written
+// against.
 const answerPickerIfShown = async () => {
-  await page.waitForSelector(".study-screen, .picker-screen, .queue-screen",
+  await page.waitForSelector(".study-screen, .tracks-screen, .queue-screen",
     { timeout: 20000 });
-  if (await page.isVisible(".picker-screen")) {
-    for (const n of [1, 2, 3, 4, 5]) {
-      await page.click(`.picker-option:nth-child(${n})`);
-      await page.waitForTimeout(120);
-    }
-    await page.click(".picker-start");
+  if (await page.isVisible(".tracks-screen")) {
+    await page.locator(".track-card", { hasText: "Python" }).first()
+      .locator(".track-card-open").click();
     // Wait for the handoff to actually render. `isVisible` on an element the
     // app has not drawn yet answers false, and the seeding below would be
     // skipped -- leaving the suite waiting for a study screen that is still
     // behind the queue.
     await page.waitForSelector(".study-screen, .queue-screen", { timeout: 20000 });
   }
+  if (await page.isVisible(".study-screen")
+      && await page.isVisible(".study-starter")) {
+    await page.click(".study-secondary");
+    await page.waitForSelector(".queue-screen", { timeout: 20000 });
+  }
   if (await page.isVisible(".queue-screen")) {
     await page.click('.queue-group:has(.queue-group-title:has-text("Arrays & Hashing")) .queue-group-add');
     await page.waitForTimeout(600);
-    await page.click(".queue-header .link-button");
+    // Named, not positional: the nav gained a Tracks link at the front,
+    // and ".link-button" would take that one instead.
+    await page.click('.queue-header .nav-link:text-is("Study")');
   }
   await page.waitForSelector(".study-screen", { timeout: 20000 });
 };
@@ -173,7 +176,7 @@ await page.evaluate(() => {
       ...cards[0],
       title: `Filler ${i}`,
       subcategory: "Arrays & Hashing",
-      category: "NeetCode 150 · Python",
+      category: "NeetCode 150",
       state: 2, step: null, stability: 30, difficulty: 5,
       due: Math.floor(Date.now() / 1000) + 20 * 86400,
       lastReview: longAgo,
@@ -287,7 +290,8 @@ await page.click('.study-account .link-button:text-is("Queue")');
 await page.waitForSelector(".queue-screen", { timeout: 10000 });
 await page.click('.queue-group:has(.queue-group-title:has-text("Arrays & Hashing")) .queue-group-add');
 await page.waitForTimeout(600);
-await page.click(".queue-header .link-button");
+// Named, not positional: the nav gained a Tracks link at the front.
+await page.click('.queue-header .nav-link:text-is("Study")');
 await page.waitForSelector(".study-screen", { timeout: 10000 });
 
 console.log("== a full store is said out loud");
@@ -329,6 +333,125 @@ if (filled) {
   check("the quiet guest strip yields to it",
     !(await page.isVisible(".guest-strip")));
 }
+
+// --- tracks -----------------------------------------------------------------
+//
+// Two things the guest store has to get right now that a browser holds more
+// than one track: it has to adopt what the previous release wrote, and it has
+// to stay whole while one track is being studied. The second is the dangerous
+// one -- every save serialises the entire store, so a track-scoped *load*
+// would mean one debounced draft write deleting every other track's cards.
+console.log("== tracks");
+
+const readKey = (key) => page.evaluate((key) => {
+  const raw = localStorage.getItem(key);
+  return raw === null ? null : JSON.parse(raw);
+}, key);
+
+await page.goto(APP, { waitUntil: "networkidle" });
+// Exactly the shape the release before tracks wrote: one flat settings blob,
+// one set of rollups, cards in two tracks, and a log that knows which is which.
+await page.evaluate(() => {
+  localStorage.clear();
+  const now = Math.floor(Date.now() / 1000);
+  const longAgo = now - 3 * 86400;
+  localStorage.setItem("gleamDrill.prefs.v1",
+    JSON.stringify({ editorKeymap: "default", languagesChosen: true }));
+  localStorage.setItem("gleamDrill.guest.settings.v1", JSON.stringify({
+    parameters: [0.212, 1.2931, 2.3065, 8.2956, 6.4133, 0.8334, 3.0194, 0.001,
+      1.8722, 0.1666, 0.796, 1.4835, 0.0614, 0.2629, 1.6483, 0.6014, 1.8729,
+      0.5425, 0.0912, 0.0658, 0.1542],
+    desiredRetention: 0.87, learningSteps: [1, 10], relearningSteps: [10],
+    maximumInterval: 36500, enableFuzz: true, newPerDay: 7, reviewsPerDay: 120,
+    dayStartHour: 3, timezone: "Europe/Lisbon", reminderHour: 9,
+  }));
+  // The first is due, so a sitting has something to serve; the second is not,
+  // so it can only be touched by a write that reaches across tracks.
+  const card = (category, title, due) => ({
+    category, subcategory: "Arrays & Hashing", title,
+    state: 2, step: null, stability: 12, difficulty: 5,
+    due, lastReview: longAgo, introducedAt: longAgo,
+    reps: 2, lapses: 0, suspended: false,
+  });
+  localStorage.setItem("gleamDrill.guest.cards.v1", JSON.stringify([
+    card("NeetCode 150", "Contains Duplicate", now - 60),
+    card("NeetCode 150 (Go)", "Two Sum", now + 86400),
+  ]));
+  const row = (category, title, at) => ({
+    category, subcategory: "Arrays & Hashing", title, at,
+    rating: 3, durationMs: 60000, revealed: false, autoFailed: false,
+    stateBefore: 2, scheduledDays: 3, stabilityAfter: 12, recall: false,
+  });
+  localStorage.setItem("gleamDrill.guest.reviews.v1", JSON.stringify([
+    row("NeetCode 150 (Go)", "Two Sum", longAgo + 120),
+    row("NeetCode 150", "Contains Duplicate", longAgo + 60),
+    row("NeetCode 150", "Contains Duplicate", longAgo),
+  ]));
+  localStorage.setItem("gleamDrill.guest.history.v1", JSON.stringify({
+    totalReviews: 3, matureReviews: 3, matureCorrect: 3,
+    days: [{ day: Math.floor(longAgo / 86400), total: 3, correct: 3 }],
+  }));
+});
+await page.reload({ waitUntil: "networkidle" });
+await page.waitForSelector(".study-screen", { timeout: 20000 });
+
+const settings2 = await readKey("gleamDrill.guest.settings.v2");
+check("the pre-tracks settings are adopted on first boot", settings2 !== null);
+check("the account's half carries over whole",
+  settings2?.account.timezone === "Europe/Lisbon"
+    && settings2?.account.dayStartHour === 3
+    && settings2?.account.reminderHour === 9,
+  JSON.stringify(settings2?.account));
+check("and the scheduler's half lands on every track with cards",
+  Object.keys(settings2?.tracks ?? {}).sort().join("|")
+    === "NeetCode 150|NeetCode 150 (Go)",
+  JSON.stringify(Object.keys(settings2?.tracks ?? {})));
+check("keeping the numbers the guest actually had",
+  settings2?.tracks["NeetCode 150"].newPerDay === 7
+    && settings2?.tracks["NeetCode 150 (Go)"].reviewsPerDay === 120);
+
+// The rollups are rebuilt by replaying the log, which names a track per row.
+// Written once, at boot: the log is a ring, so re-deriving it later would
+// yield smaller numbers as old reviews fall off the end.
+const history2 = await readKey("gleamDrill.guest.history.v2");
+check("the rollups are split across the tracks the log names",
+  Object.keys(history2 ?? {}).sort().join("|")
+    === "NeetCode 150|NeetCode 150 (Go)",
+  JSON.stringify(Object.keys(history2 ?? {})));
+check("each track keeping its own reviews",
+  history2?.["NeetCode 150"].totalReviews === 2
+    && history2?.["NeetCode 150 (Go)"].totalReviews === 1,
+  JSON.stringify(history2));
+check("and v1 is left where it was, so a rollback still finds it",
+  (await readKey("gleamDrill.guest.settings.v1")) !== null
+    && (await readKey("gleamDrill.guest.history.v1")) !== null);
+check("no card or review was touched by any of it",
+  (await readKey("gleamDrill.guest.cards.v1")).length === 2
+    && (await readKey("gleamDrill.guest.reviews.v1")).length === 3);
+
+// Now the invariant. Study one track; the other's cards must survive every
+// write a sitting makes.
+const tracksHeld = () => page.evaluate(() => {
+  const all = JSON.parse(localStorage.getItem("gleamDrill.guest.cards.v1") ?? "[]");
+  const by = {};
+  for (const c of all) by[c.category] = (by[c.category] ?? 0) + 1;
+  return Object.entries(by).sort().map(([k, v]) => `${k}=${v}`).join(",");
+});
+const bothTracks = await tracksHeld();
+await page.click(".study-start");
+await startCoding();
+await page.keyboard.press("i");
+// A comment: the point is that a draft write happens, and the harness still
+// has to run afterwards.
+await page.keyboard.type("# drafted\n");
+await page.waitForTimeout(1200);
+check("a draft write leaves the other track's cards alone",
+  (await tracksHeld()) === bothTracks, await tracksHeld());
+await page.evaluate(() => document.activeElement?.blur());
+await runAndGrade();
+await page.waitForTimeout(1200);
+check("and so does a graded review", (await tracksHeld()) === bothTracks,
+  await tracksHeld());
 
 check("no uncaught JavaScript errors", errors.length === 0, errors.slice(0, 3).join(" | "));
 await browser.close();

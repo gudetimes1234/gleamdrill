@@ -21,9 +21,8 @@ import gleamdrill/api
 import gleamdrill/model.{
   type Model, type Msg, GroupChange, UserAddedAllShown, UserCancelledQueueName,
   UserChangedGroup, UserChangedQueueName, UserDeletedQueue, UserFilteredQueue,
-  UserPickedQueueLanguage, UserRemovedAllShown, UserSearchedQueue,
-  UserSelectedQueue, UserStartedNewQueue, UserStartedRenameQueue,
-  UserSubmittedQueueName, UserToggledQueued,
+  UserRemovedAllShown, UserSearchedQueue, UserSelectedQueue, UserStartedNewQueue,
+  UserStartedRenameQueue, UserSubmittedQueueName, UserToggledQueued,
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
@@ -215,23 +214,6 @@ fn controls(m: Model) -> Element(Msg) {
       event.on_input(UserSearchedQueue),
     ]),
     html.label([attribute.class("queue-control")], [
-      html.span([attribute.class("queue-control-label")], [
-        html.text("Language"),
-      ]),
-      html.select(
-        [
-          attribute.class("queue-select queue-language"),
-          event.on_change(UserPickedQueueLanguage),
-        ],
-        [
-          option("", "All languages", m.queue_language == None),
-          ..list.map(problems.language_options(), fn(entry) {
-            option(entry.0, entry.1, m.queue_language == Some(entry.0))
-          })
-        ],
-      ),
-    ]),
-    html.label([attribute.class("queue-control")], [
       html.span([attribute.class("queue-control-label")], [html.text("Show")]),
       html.select(
         [
@@ -393,12 +375,9 @@ fn group_head(
 
   html.div([attribute.class("queue-group-head")], [
     html.span([attribute.class("queue-group-title")], [
-      html.text(case m.queue_language {
-        // With every language listed, the same topic repeats once per
-        // language, so the header says which.
-        None -> subcategory <> " \u{b7} " <> problems.language_label(category)
-        Some(_) -> subcategory
-      }),
+      // The screen is one track's, so the topic name is already unambiguous:
+      // the same topic no longer repeats once per language below it.
+      html.text(subcategory),
     ]),
     html.span([attribute.class("queue-group-count")], [
       html.text(
@@ -472,14 +451,6 @@ fn row(
       ]),
     ],
     [
-      // The group header already names the language when one is chosen.
-      case m.queue_language {
-        None ->
-          html.span([attribute.class("lang-tag")], [
-            html.text(problems.language_tag(ref.category)),
-          ])
-        Some(_) -> element.none()
-      },
       html.span([attribute.class("queue-row-title")], [html.text(ref.title)]),
       format.difficulty_badge(problems.difficulty_of(ref)),
       html.span([attribute.class(badge_class)], [html.text(badge_text)]),

@@ -7,12 +7,47 @@ why: A set of all the numbers; it also removes duplicates for free.
 code:
 present = set of nums
 longest = 0
+code.python:
+num_set = set(nums)
+longest = 0
+code.gleam:
+let all = set.from_list(nums)
+code.typescript:
+const all = new Set(nums);
+let longest = 0;
+code.elixir:
+all = MapSet.new(nums)
+code.go:
+all := map[int]bool{}
+for _, n := range nums {
+    all[n] = true
+}
+longest := 0
 # Only start counting at numbers with no predecessor — where num - 1 is absent from the set.
 hint: Which numbers are worth starting a count from?
 why: Only those with no predecessor in the set; starting from the middle of a run would count it again.
 code:
 for num in present:
     if num - 1 in present: continue
+code.python:
+for num in num_set:
+    if num - 1 not in num_set:
+code.gleam:
+case set.contains(all, n - 1) {
+  True -> best
+  False -> int.max(best, run_length(all, n, 0))
+}
+code.typescript:
+for (const num of all) {
+  if (all.has(num - 1)) continue;
+code.elixir:
+all
+|> Enum.reject(fn n -> MapSet.member?(all, n - 1) end)
+code.go:
+for n := range all {
+    if all[n-1] {
+        continue
+    }
 # From each such start, walk forward while num + length is present, counting as you go.
 hint: From a start, how do you measure the run?
 why: Step forward while the next number is present, counting.
@@ -20,11 +55,52 @@ code:
     length = 1
     while num + length in present:
         length += 1
+code.python:
+        length = 1
+        while num + length in num_set:
+            length += 1
+code.gleam:
+fn run_length(all: set.Set(Int), n: Int, count: Int) -> Int {
+  case set.contains(all, n) {
+    True -> run_length(all, n + 1, count + 1)
+    False -> count
+  }
+}
+code.typescript:
+  let length = 1;
+  while (all.has(num + length)) length++;
+code.elixir:
+defp run_length(all, n, count) do
+  if MapSet.member?(all, n), do: run_length(all, n + 1, count + 1), else: count
+end
+code.go:
+    length := 1
+    for all[n+length] {
+        length++
+    }
 # Track the longest run seen.
 hint: What is kept between starts?
 why: The longest run so far.
 code:
     longest = max(longest, length)
+return longest
+code.python:
+        longest = max(longest, length)
+return longest
+code.gleam:
+int.max(best, run_length(all, n, 0))
+code.typescript:
+  longest = Math.max(longest, length);
+}
+return longest;
+code.elixir:
+|> Enum.map(fn start -> run_length(all, start, 0) end)
+|> Enum.max(fn -> 0 end)
+code.go:
+    if length > longest {
+        longest = length
+    }
+}
 return longest
 # Trust the accounting: every number is visited at most twice across all walks, so the nested-looking loop is still O(n).
 hint: The loop looks nested. Why is it still O(n)?
@@ -38,4 +114,73 @@ for num in present:
     while num + length in present:
         length += 1
     longest = max(longest, length)
+return longest
+== pseudocode.python
+num_set = set(nums)
+longest = 0
+
+for num in num_set:
+    if num - 1 not in num_set:
+        length = 1
+        while num + length in num_set:
+            length += 1
+        longest = max(longest, length)
+
+return longest
+== pseudocode.gleam
+pub fn longest_consecutive(nums: List(Int)) -> Int {
+  let all = set.from_list(nums)
+  all
+  |> set.to_list
+  |> list.fold(0, fn(best, n) {
+    case set.contains(all, n - 1) {
+      True -> best
+      False -> int.max(best, run_length(all, n, 0))
+    }
+  })
+}
+
+fn run_length(all: set.Set(Int), n: Int, count: Int) -> Int {
+  case set.contains(all, n) {
+    True -> run_length(all, n + 1, count + 1)
+    False -> count
+  }
+}
+== pseudocode.typescript
+const all = new Set(nums);
+let longest = 0;
+
+for (const num of all) {
+  if (all.has(num - 1)) continue;
+  let length = 1;
+  while (all.has(num + length)) length++;
+  longest = Math.max(longest, length);
+}
+
+return longest;
+== pseudocode.elixir
+all = MapSet.new(nums)
+
+all
+|> Enum.reject(fn n -> MapSet.member?(all, n - 1) end)
+|> Enum.map(fn start -> run_length(all, start, 0) end)
+|> Enum.max(fn -> 0 end)
+== pseudocode.go
+all := map[int]bool{}
+for _, n := range nums {
+    all[n] = true
+}
+longest := 0
+for n := range all {
+    if all[n-1] {
+        continue
+    }
+    length := 1
+    for all[n+length] {
+        length++
+    }
+    if length > longest {
+        longest = length
+    }
+}
 return longest
