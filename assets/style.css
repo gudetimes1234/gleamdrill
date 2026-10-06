@@ -2606,43 +2606,65 @@ gleam-compare .cm-mergeSpacer {
         max-height: 240px;
     }
 
-    /* Two rows, not four flex children fighting over a 390px line. Every row
-       costs editor space, so the keymap picker shares row two with the title
-       rather than taking a third. */
+    /* Two short rows: Exit, the title and the tools on one line, the
+       progress strip under it. Every pixel here comes out of the editor, so
+       the title truncates instead of wrapping letter by letter. */
     .drill-header {
         display: grid;
-        grid-template-columns: auto 1fr;
+        grid-template-columns: auto minmax(0, 1fr) auto;
         grid-template-areas:
-            'exit progress'
-            'title keymap';
-        gap: 8px 12px;
+            'exit title tools'
+            'progress progress progress';
+        gap: 4px 8px;
         align-items: center;
+        padding: 6px 8px;
     }
 
     .drill-header > .btn-secondary {
         grid-area: exit;
         justify-self: start;
-        padding: 10px 14px;
+        padding: 6px 12px;
     }
 
     .drill-title {
         grid-area: title;
         width: auto;
-        font-size: 16px;
-        overflow-wrap: anywhere;
+        min-width: 0;
+        font-size: 15px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    .keymap-picker,
+    .drill-title .language-chip {
+        font-size: 11px;
+        padding: 1px 6px;
+    }
+
+    .drill-tools,
     .drill-header .recall-chip {
-        grid-area: keymap;
+        grid-area: tools;
         justify-self: end;
+    }
+
+    .drill-tools .prompt-toggle {
+        padding: 6px 12px;
     }
 
     .progress-text {
         grid-area: progress;
-        justify-self: end;
+        justify-self: stretch;
+        text-align: left;
         font-size: 12px;
-        min-width: 150px;
+        min-width: 0;
+    }
+
+    /* The approach rail is a reference, not the workspace: a short strip
+       that scrolls inside itself, so the editor lands on the first screen. */
+    .plan-rail {
+        max-height: 22svh;
+        padding: 8px 12px 12px;
+        gap: 6px;
     }
 
     .read-sheet {
@@ -2669,9 +2691,67 @@ gleam-compare .cm-mergeSpacer {
         position: sticky;
         bottom: 0;
         z-index: 4;
-        padding: 10px 12px;
+        gap: 6px;
+        padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
         background: var(--bg-primary);
         border-top: 1px solid var(--border);
+    }
+
+    /* Being sticky, every wrapped row of the run bar is a row of editor
+       hidden for good. So: Run and the solution buttons share one line (the
+       buttons scroll sideways), and the grades take a second. Nothing else. */
+    .run-bar .pane-buttons {
+        flex: 1 1 0;
+        min-width: 0;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .run-bar .pane-buttons::-webkit-scrollbar {
+        display: none;
+    }
+
+    .run-bar .pane-button {
+        flex: none;
+        white-space: nowrap;
+    }
+
+    /* The full reason is in the results pane; here it would wrap into a
+       third row. One line, truncated. */
+    .run-bar .run-error {
+        flex: 1 1 100%;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .run-bar .grade-bar {
+        width: 100%;
+        margin-left: 0;
+        gap: 6px;
+    }
+
+    .run-bar .grade-button {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 4px 6px;
+    }
+
+    /* The cheatsheet lists keyboard shortcuts, and on a phone the button
+       sits on top of the Easy grade. */
+    body:has(.drill-container) .help-fab {
+        display: none;
+    }
+}
+
+/* Vim and Emacs keybindings mean nothing on a touch keyboard, and the picker
+   is the widest thing in the header. A phone with a hardware keyboard keeps
+   whatever was chosen; it just is not offered here. */
+@media (hover: none) and (max-width: 700px) {
+    .keymap-picker {
+        display: none;
     }
 }
 
