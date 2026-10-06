@@ -41,7 +41,7 @@ COPY wire wire
 RUN attempt=1; \
     while ! gleam deps download > /tmp/deps.log 2>&1; do \
       cat /tmp/deps.log; \
-      if ! grep -Eq "The rate limit for the Hex API has been exceeded|error sending request for url \\(https://repo\\.hex\\.pm/" /tmp/deps.log; then \
+      if ! grep -Eq "The rate limit for the Hex API has been exceeded|request for url \\(https://repo\\.hex\\.pm/" /tmp/deps.log; then \
         exit 1; \
       fi; \
       if [ "$attempt" -ge 5 ]; then exit 1; fi; \
@@ -61,7 +61,7 @@ COPY . .
 RUN attempt=1; \
     while ! make bundle > /tmp/bundle.log 2>&1; do \
       cat /tmp/bundle.log; \
-      if ! grep -Eq "The rate limit for the Hex API has been exceeded|error sending request for url \\(https://repo\\.hex\\.pm/" /tmp/bundle.log; then \
+      if ! grep -Eq "The rate limit for the Hex API has been exceeded|request for url \\(https://repo\\.hex\\.pm/" /tmp/bundle.log; then \
         exit 1; \
       fi; \
       if [ "$attempt" -ge 5 ]; then exit 1; fi; \
