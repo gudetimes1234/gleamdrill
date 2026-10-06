@@ -22,6 +22,7 @@ import gleamdrill/problem
 import gleamdrill/problems
 import gleamdrill/queue
 import gleamdrill/view/banner
+import gleamdrill/view/brand
 import gleamdrill/view/format
 import gleamdrill/view/links
 import gleamdrill/view/nav
@@ -50,7 +51,7 @@ pub fn view(m: Model) -> Element(Msg) {
     upgrade_prompt(m),
     guest_strip(m),
     html.header([attribute.class("study-header")], [
-      html.h1([attribute.class("study-title")], [html.text("GleamDrill")]),
+      html.h1([attribute.class("study-title")], brand.wordmark()),
       nav.bar(m, StudyRoute),
     ]),
     hero(m, ready),

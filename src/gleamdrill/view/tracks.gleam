@@ -20,6 +20,7 @@ import gleamdrill/model.{
 }
 import gleamdrill/track
 import gleamdrill/view/banner
+import gleamdrill/view/brand
 import gleamdrill/view/nav
 import lustre/attribute
 import lustre/element.{type Element}
@@ -33,7 +34,7 @@ pub fn view(m: Model) -> Element(Msg) {
     banner.storage_warning(m),
     nav.notices(m),
     html.header([attribute.class("study-header")], [
-      html.h1([attribute.class("study-title")], [html.text("GleamDrill")]),
+      html.h1([attribute.class("study-title")], brand.wordmark()),
       nav.bar(m, model.TracksRoute),
     ]),
     html.p([attribute.class("tracks-lead")], [

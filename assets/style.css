@@ -93,6 +93,23 @@ body {
     margin-bottom: 20px;
 }
 
+/* The logo beside the name, sized off the heading's own font so it scales
+   with whichever title it sits in. */
+.menu-title,
+.study-title,
+.auth-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+}
+
+.brand-mark {
+    flex: none;
+    width: 1.25em;
+    height: 1.25em;
+    border-radius: 22%;
+}
+
 .menu-title {
     font-size: 20px;
     color: var(--accent);

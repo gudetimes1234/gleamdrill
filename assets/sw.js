@@ -12,7 +12,7 @@
 // The version strings below are pinned by tools/check-versions.sh, like every
 // other copy of them.
 
-const SHELL_CACHE = "gleamdrill-shell-v1";
+const SHELL_CACHE = "gleamdrill-shell-v2";
 const RUNTIME_CACHE = "gleamdrill-runtime";
 
 const GLEAM_RUNTIME = "/gleam-runtime/1.18.1/";
@@ -23,6 +23,9 @@ const SHELL = [
   "/gleamdrill.js",
   "/style.css",
   "/favicon.svg",
+  "/apple-touch-icon.png",
+  "/icon-192.png",
+  "/icon-512.png",
   "/manifest.webmanifest",
   "/gleam-worker.js",
   "/worker-main.js",
