@@ -35,10 +35,20 @@ WORKDIR /build
 #
 # `gleam deps download` needs the path dependencies present to read their
 # manifests, which is why fsrs and wire are copied before the rest.
+#
+# The fingerprint script is what keeps Hex out of this build entirely. Without
+# it, Gleam treats each path dependency it has not fingerprinted yet as changed
+# and re-resolves every version against Hex -- and it records only one per
+# command, so `deps download` here AND the first `gleam build` inside
+# `make bundle` both resolved, ~40 Hex requests each. On a CI runner that had
+# already resolved the server twice, the second one kept coming back 429. With
+# the fingerprints written first, Gleam trusts manifest.toml and only fetches
+# tarballs. See the script for the details.
 COPY gleam.toml manifest.toml ./
 COPY fsrs fsrs
 COPY wire wire
-RUN gleam deps download
+COPY tools/gleam-path-fingerprints.mjs tools/
+RUN bun tools/gleam-path-fingerprints.mjs . && gleam deps download
 
 # The TypeScript worker bundles `sucrase` out of node_modules, so the bundle
 # step needs the dependency tree even though nothing else here does.
