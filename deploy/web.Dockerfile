@@ -46,7 +46,19 @@ COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
 COPY . .
-RUN make bundle
+RUN attempt=1; \
+    while ! make bundle > /tmp/bundle.log 2>&1; do \
+      cat /tmp/bundle.log; \
+      if ! grep -q "The rate limit for the Hex API has been exceeded" /tmp/bundle.log; then \
+        exit 1; \
+      fi; \
+      if [ "$attempt" -ge 5 ]; then exit 1; fi; \
+      delay=$((15 << (attempt - 1))); \
+      echo "Hex API rate limit reached; retrying bundle build in ${delay}s (attempt $((attempt + 1))/5)"; \
+      sleep "$delay"; \
+      attempt=$((attempt + 1)); \
+    done; \
+    cat /tmp/bundle.log
 
 FROM docker.io/library/caddy:2-alpine
 
