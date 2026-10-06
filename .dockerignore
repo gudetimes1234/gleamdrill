@@ -29,6 +29,8 @@
 !Makefile
 !package.json
 !bun.lock
+# deploy/web.Dockerfile runs it before `gleam deps download`; see the script.
+!tools/gleam-path-fingerprints.mjs
 
 # Build output inside the allowed trees. These are stale host artifacts; the
 # image compiles its own.
