@@ -1970,8 +1970,22 @@ fn error_results(m: Model, error: RunError, current: Problem) -> Element(Msg) {
     Some(file), _ -> string.starts_with(file, "check")
     None, _ -> False
   }
-  case is_check_file, current.check {
-    True, Some(check) ->
+  case is_check_file, m.run_kind, current.check {
+    // A scratch run's harness is `run() { solution.main() }`: an error
+    // located there means the attempt has no main(), not a wrong signature.
+    True, model.ScratchRun, _ ->
+      results_box(
+        m,
+        "Scratch runs call your main() \u{2014} add pub fn main() first.",
+        False,
+        None,
+        [
+          html.pre([attribute.class("results-message")], [
+            html.text(error.message),
+          ]),
+        ],
+      )
+    True, _, Some(check) ->
       results_box(
         m,
         "Your solution doesn't match the required signature.",
@@ -1986,7 +2000,7 @@ fn error_results(m: Model, error: RunError, current: Problem) -> Element(Msg) {
           ]),
         ],
       )
-    _, _ ->
+    _, _, _ ->
       results_box(
         m,
         case error.phase {
