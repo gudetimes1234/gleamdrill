@@ -28,6 +28,7 @@ import gleamdrill/model.{
   StatsLoaded, UndoRecorded,
 }
 import gleamdrill/problem.{type ProblemRef}
+import gleamdrill/remote
 import lustre/effect.{type Effect}
 import wire
 
@@ -200,7 +201,7 @@ pub fn undo_review(m: Model, point: UndoPoint) -> Effect(Msg) {
       let result = {
         use updated <- result.try(
           local.unrecord(store, point.problem, point.card_before, day.index)
-          |> result.replace_error(api.Rejected(
+          |> result.replace_error(remote.Rejected(
             "The latest review is not the one to undo.",
           )),
         )
@@ -237,7 +238,9 @@ pub fn set_suspended(
       dispatch(case local.set_suspended(store, problem, suspended) {
         Error(Nil) ->
           CardSuspended(
-            Error(api.Rejected("That problem has no scheduled card to suspend.")),
+            Error(remote.Rejected(
+              "That problem has no scheduled card to suspend.",
+            )),
           )
         Ok(#(updated, card)) ->
           case local.save_cards(updated) {
@@ -510,7 +513,7 @@ fn fuzz_sample() -> Float {
 }
 
 fn storage_full() -> api.ApiError {
-  api.Rejected(
+  remote.Rejected(
     "This browser's storage is full, so your progress was not saved.",
   )
 }

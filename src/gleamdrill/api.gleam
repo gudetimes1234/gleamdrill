@@ -19,6 +19,7 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleamdrill/problem.{type ProblemRef}
+import gleamdrill/remote.{Offline, Rejected, ServerFault, Unauthorised}
 import lustre/effect.{type Effect}
 import rsvp
 import wire
@@ -93,26 +94,13 @@ pub fn empty_today() -> Today {
   wire.empty_today()
 }
 
-pub type ApiError {
-  /// No session, or it expired. The only error the app reacts to structurally:
-  /// it means sign in again.
-  Unauthorised
-  /// The request was refused for a reason worth showing verbatim -- a taken
-  /// email, a password that is too short, too many attempts.
-  Rejected(message: String)
-  /// The request never reached the server.
-  Offline
-  ServerFault(message: String)
-}
+// The error type lives in `remote` now (pure data, importable by the model
+// layer); these transparent re-exports keep existing callers compiling and
+// die with the wire aliases above in the next slice.
+pub type ApiError =
+  remote.ApiError
 
-pub fn error_message(error: ApiError) -> String {
-  case error {
-    Unauthorised -> "Your session has expired. Sign in again."
-    Rejected(message) -> message
-    Offline -> "Can't reach the server. Check your connection."
-    ServerFault(message) -> message
-  }
-}
+pub const error_message = remote.error_message
 
 // --- requests --------------------------------------------------------------
 

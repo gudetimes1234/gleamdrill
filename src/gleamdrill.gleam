@@ -74,6 +74,7 @@ import gleamdrill/model.{
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
 import gleamdrill/queue
+import gleamdrill/remote
 import gleamdrill/runner
 import gleamdrill/session
 import gleamdrill/store
@@ -967,7 +968,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     // The token is dead. Drop it and fall back to guest, which is at least a
     // usable app rather than an error screen.
-    StateLoaded(Error(api.Unauthorised)) -> {
+    StateLoaded(Error(remote.Unauthorised)) -> {
       let guest =
         Model(
           ..model.default(),
@@ -2724,8 +2725,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           }
           handle(m, RunFinished(id, outcome, stdout))
         }
-        Running(current, _), Error(api.Unauthorised) if current == id ->
-          handle(Model(..m, run: RunIdle), StateLoaded(Error(api.Unauthorised)))
+        Running(current, _), Error(remote.Unauthorised) if current == id ->
+          handle(Model(..m, run: RunIdle), StateLoaded(Error(remote.Unauthorised)))
         Running(current, _), Error(failure) if current == id -> #(
           Model(..m, run: RunIdle, notice: Some(api.error_message(failure))),
           effect.none(),
