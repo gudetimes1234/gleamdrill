@@ -8,10 +8,13 @@ import gleamdrill/board
 import gleamdrill/editor
 import gleamdrill/insights
 import gleamdrill/model.{
-  type CaseResult, type Model, type Msg, type RunError, AwaitingGrade, Cases,
-  EditorChanged, EditorResized, Errored, ExitConfirmed, NoPane, NotGrading,
-  NoteChanged, NotePane, Ran, RunIdle, Running, RuntimeFailed, RuntimeLoading,
-  RuntimeNotLoaded, RuntimeReady, SolutionPane, SubmittingGrade, TimedOut,
+  type CaseResult, type Model, type RunError, AwaitingGrade, Cases, Errored,
+  NoPane, NotGrading, NotePane, Ran, RunIdle, Running, RuntimeFailed,
+  RuntimeLoading, RuntimeNotLoaded, RuntimeReady, SolutionPane, SubmittingGrade,
+  TimedOut,
+}
+import gleamdrill/msg.{
+  type Msg, EditorChanged, EditorResized, ExitConfirmed, NoteChanged,
   UserChangedKeymap, UserClickedExitDrill, UserClickedNext,
   UserClickedRetryRuntime, UserClickedRun, UserClickedScratchRun,
   UserClickedStopRun, UserClickedUndo, UserDismissedDiff, UserGraded,

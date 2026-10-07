@@ -25,6 +25,7 @@ import gleamdrill/insights
 import gleamdrill/keys
 import gleamdrill/local
 import gleamdrill/model
+import gleamdrill/msg
 import gleamdrill/problem
 import gleamdrill/problems
 import gleamdrill/queue
@@ -1306,16 +1307,16 @@ pub fn dispatch_resolves_from_the_same_table_it_documents_test() -> Nil {
   let press = fn(key) {
     keys.dispatch(
       m,
-      model.Key(key: key, ctrl: False, shift: False, editing: "none"),
+      msg.Key(key: key, ctrl: False, shift: False, editing: "none"),
     )
   }
-  assert press("b") == Ok(model.UserClickedBrowse)
-  assert press("q") == Ok(model.UserClickedQueue)
-  assert press("t") == Ok(model.UserClickedStats)
+  assert press("b") == Ok(msg.UserClickedBrowse)
+  assert press("q") == Ok(msg.UserClickedQueue)
+  assert press("t") == Ok(msg.UserClickedStats)
   // Shift, so lowercase `t` keeps meaning Stats.
-  assert press("T") == Ok(model.UserClickedTracks)
-  assert press("Enter") == Ok(model.UserClickedStudy)
-  assert press("z") == Ok(model.UserToggledBlitz)
+  assert press("T") == Ok(msg.UserClickedTracks)
+  assert press("Enter") == Ok(msg.UserClickedStudy)
+  assert press("z") == Ok(msg.UserToggledBlitz)
   assert press("v") == Error(Nil)
 }
 
@@ -1327,25 +1328,25 @@ pub fn p_toggles_the_prompt_and_the_panes_have_keys_test() -> Nil {
   let press = fn(m, key) {
     keys.dispatch(
       m,
-      model.Key(key: key, ctrl: False, shift: False, editing: "none"),
+      msg.Key(key: key, ctrl: False, shift: False, editing: "none"),
     )
   }
   assert m.prompt_open
-  assert press(m, "p") == Ok(model.UserToggledPrompt)
+  assert press(m, "p") == Ok(msg.UserToggledPrompt)
   assert press(model.Model(..m, prompt_open: False), "p")
-    == Ok(model.UserToggledPrompt)
-  assert press(m, "i") == Ok(model.EditorFocusRequested)
+    == Ok(msg.UserToggledPrompt)
+  assert press(m, "i") == Ok(msg.EditorFocusRequested)
   // The rail's keys: the nudge, the focus, and the layers under the step that
   // has it. None of them opens a pane, because the rail is never closed.
-  assert press(m, "a") == Ok(model.UserToggledNudge)
-  assert press(m, "j") == Ok(model.WalkAdvanced)
-  assert press(m, "k") == Ok(model.WalkBacked)
-  assert press(m, "h") == Ok(model.WalkHintShown)
-  assert press(m, "y") == Ok(model.WalkWhyShown)
-  assert press(m, "c") == Ok(model.WalkCodeShown)
-  assert press(m, "w") == Ok(model.UserRevealedWholeThing)
-  assert press(m, "s") == Ok(model.UserToggledPane(model.SolutionPane))
-  assert press(m, "Escape") == Ok(model.UserClickedExitDrill)
+  assert press(m, "a") == Ok(msg.UserToggledNudge)
+  assert press(m, "j") == Ok(msg.WalkAdvanced)
+  assert press(m, "k") == Ok(msg.WalkBacked)
+  assert press(m, "h") == Ok(msg.WalkHintShown)
+  assert press(m, "y") == Ok(msg.WalkWhyShown)
+  assert press(m, "c") == Ok(msg.WalkCodeShown)
+  assert press(m, "w") == Ok(msg.UserRevealedWholeThing)
+  assert press(m, "s") == Ok(msg.UserToggledPane(model.SolutionPane))
+  assert press(m, "Escape") == Ok(msg.UserClickedExitDrill)
   assert press(m, "1") == Error(Nil)
   assert keys.context_label(m) == "DRILL \u{b7} PYTHON"
 }
@@ -1357,14 +1358,14 @@ pub fn escape_closes_the_open_pane_before_it_exits_test() -> Nil {
   let press = fn(m, key) {
     keys.dispatch(
       m,
-      model.Key(key: key, ctrl: False, shift: False, editing: "none"),
+      msg.Key(key: key, ctrl: False, shift: False, editing: "none"),
     )
   }
-  assert press(coding, "Escape") == Ok(model.UserClickedExitDrill)
+  assert press(coding, "Escape") == Ok(msg.UserClickedExitDrill)
 
   let noting = model.toggle_pane(coding, model.NotePane)
   assert noting.slot == model.NotePane
-  assert press(noting, "Escape") == Ok(model.UserToggledPane(model.NotePane))
+  assert press(noting, "Escape") == Ok(msg.UserToggledPane(model.NotePane))
   assert model.toggle_pane(noting, model.NotePane).slot == model.NoPane
   assert model.toggle_pane(noting, model.SolutionPane).slot
     == model.SolutionPane
@@ -1377,7 +1378,7 @@ pub fn escape_closes_the_open_pane_before_it_exits_test() -> Nil {
       nudge_shown: True,
       walk: model.reveal_layer(coding.walk, model.HintLayer),
     )
-  assert press(railed, "Escape") == Ok(model.UserClickedExitDrill)
+  assert press(railed, "Escape") == Ok(msg.UserClickedExitDrill)
 }
 
 /// A passing run puts the reference beside your code without that being a
@@ -1418,26 +1419,26 @@ pub fn the_compare_screen_binds_its_own_verbs_test() -> Nil {
   let press = fn(m, key) {
     keys.dispatch(
       m,
-      model.Key(key: key, ctrl: False, shift: False, editing: "none"),
+      msg.Key(key: key, ctrl: False, shift: False, editing: "none"),
     )
   }
-  assert press(m, "j") == Ok(model.CompareMoved(1))
-  assert press(m, "k") == Ok(model.CompareMoved(-1))
-  assert press(m, "]") == Ok(model.ComparePickedVariant(model.RightSide, 3))
-  assert press(m, "[") == Ok(model.ComparePickedVariant(model.RightSide, 1))
-  assert press(m, "}") == Ok(model.ComparePickedVariant(model.LeftSide, 2))
-  assert press(m, "{") == Ok(model.ComparePickedVariant(model.LeftSide, 0))
-  assert press(m, "Escape") == Ok(model.UserClosedCompare)
+  assert press(m, "j") == Ok(msg.CompareMoved(1))
+  assert press(m, "k") == Ok(msg.CompareMoved(-1))
+  assert press(m, "]") == Ok(msg.ComparePickedVariant(model.RightSide, 3))
+  assert press(m, "[") == Ok(msg.ComparePickedVariant(model.RightSide, 1))
+  assert press(m, "}") == Ok(msg.ComparePickedVariant(model.LeftSide, 2))
+  assert press(m, "{") == Ok(msg.ComparePickedVariant(model.LeftSide, 0))
+  assert press(m, "Escape") == Ok(msg.UserClosedCompare)
   assert keys.context_label(m) == "COMPARE"
 
   let browse = model.Model(..model.default(), route: model.MenuRoute)
-  assert press(browse, "v") == Ok(model.UserClickedCompare)
+  assert press(browse, "v") == Ok(msg.UserClickedCompare)
 
   let study = model.Model(..model.default(), route: model.StudyRoute)
   assert press(study, "n") == Error(Nil)
   let with_queue = model.Model(..study, queues: [a_queue("Pointers", [])])
   assert press(with_queue, "n")
-    == Ok(model.UserPickedActiveQueue(Some("Pointers")))
+    == Ok(msg.UserPickedActiveQueue(Some("Pointers")))
 }
 
 /// The queue screen's row cursor is its own list, and `space` there means
@@ -1448,14 +1449,14 @@ pub fn the_queue_screen_binds_its_own_verbs_test() -> Nil {
   let press = fn(key) {
     keys.dispatch(
       m,
-      model.Key(key: key, ctrl: False, shift: False, editing: "none"),
+      msg.Key(key: key, ctrl: False, shift: False, editing: "none"),
     )
   }
-  assert press("j") == Ok(model.QueueCursorMoved(1))
-  assert press("k") == Ok(model.QueueCursorMoved(-1))
-  assert press(" ") == Ok(model.QueueToggledAtCursor)
-  assert press("a") == Ok(model.UserAddedAllShown)
-  assert press("r") == Ok(model.UserRemovedAllShown)
+  assert press("j") == Ok(msg.QueueCursorMoved(1))
+  assert press("k") == Ok(msg.QueueCursorMoved(-1))
+  assert press(" ") == Ok(msg.QueueToggledAtCursor)
+  assert press("a") == Ok(msg.UserAddedAllShown)
+  assert press("r") == Ok(msg.UserRemovedAllShown)
 }
 
 /// `listed` is what "add all shown" acts on, so the filters have to mean
@@ -1532,13 +1533,13 @@ pub fn paired_directions_resolve_to_opposite_deltas_test() -> Nil {
   let press = fn(key) {
     keys.dispatch(
       m,
-      model.Key(key: key, ctrl: False, shift: False, editing: "none"),
+      msg.Key(key: key, ctrl: False, shift: False, editing: "none"),
     )
   }
-  assert press("j") == Ok(model.MenuCursorMoved(1))
-  assert press("k") == Ok(model.MenuCursorMoved(-1))
-  assert press("h") == Ok(model.MenuPaneFocused(-1))
-  assert press("l") == Ok(model.MenuPaneFocused(1))
+  assert press("j") == Ok(msg.MenuCursorMoved(1))
+  assert press("k") == Ok(msg.MenuCursorMoved(-1))
+  assert press("h") == Ok(msg.MenuPaneFocused(-1))
+  assert press("l") == Ok(msg.MenuPaneFocused(1))
 }
 
 pub fn insights_fixture_decodes_test() -> Nil {
@@ -1688,25 +1689,25 @@ pub fn the_board_has_cursor_keys_and_no_grade_keys_test() -> Nil {
   let press = fn(m, key) {
     keys.dispatch(
       m,
-      model.Key(key: key, ctrl: False, shift: False, editing: "none"),
+      msg.Key(key: key, ctrl: False, shift: False, editing: "none"),
     )
   }
 
   assert keys.context_label(m) == "BOARD"
-  assert press(m, "j") == Ok(model.BoardMoved(1))
-  assert press(m, "k") == Ok(model.BoardMoved(-1))
-  assert press(m, "l") == Ok(model.BoardShelfMoved(1))
-  assert press(m, "h") == Ok(model.BoardShelfMoved(-1))
-  assert press(m, "g") == Ok(model.BoardJumped(True))
-  assert press(m, "G") == Ok(model.BoardJumped(False))
-  assert press(m, " ") == Ok(model.BoardToggledAtCursor)
-  assert press(m, "Escape") == Ok(model.UserClickedExitDrill)
+  assert press(m, "j") == Ok(msg.BoardMoved(1))
+  assert press(m, "k") == Ok(msg.BoardMoved(-1))
+  assert press(m, "l") == Ok(msg.BoardShelfMoved(1))
+  assert press(m, "h") == Ok(msg.BoardShelfMoved(-1))
+  assert press(m, "g") == Ok(msg.BoardJumped(True))
+  assert press(m, "G") == Ok(msg.BoardJumped(False))
+  assert press(m, " ") == Ok(msg.BoardToggledAtCursor)
+  assert press(m, "Escape") == Ok(msg.UserClickedExitDrill)
 
   // Nothing on the board is not an answer, so Enter is absent rather than
   // present and inert.
   assert press(m, "Enter") == Error(Nil)
   let placed = model.Model(..m, board_picks: ["memory_cache"])
-  assert press(placed, "Enter") == Ok(model.UserSubmittedBoard)
+  assert press(placed, "Enter") == Ok(msg.UserSubmittedBoard)
 
   // The grade keys, and the editor, belong to a code drill.
   assert press(m, "1") == Error(Nil)
@@ -1715,9 +1716,9 @@ pub fn the_board_has_cursor_keys_and_no_grade_keys_test() -> Nil {
 
   // Graded, the board is a verdict: Next, fold the results, leave.
   let graded = model.Model(..m, graded: True)
-  assert press(graded, "Enter") == Ok(model.UserClickedNext)
-  assert press(graded, "n") == Ok(model.UserClickedNext)
-  assert press(graded, "x") == Ok(model.UserToggledResults)
+  assert press(graded, "Enter") == Ok(msg.UserClickedNext)
+  assert press(graded, "n") == Ok(msg.UserClickedNext)
+  assert press(graded, "x") == Ok(msg.UserToggledResults)
   assert press(graded, " ") == Error(Nil)
 }
 

@@ -9,9 +9,11 @@ import gleam/option.{Some}
 import gleam/string
 import gleamdrill/editor
 import gleamdrill/model.{
-  type Model, type Msg, EditorResized, Errored, Ran, RunIdle, Running,
-  RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady, TimedOut,
-  TourContents, TourEditorChanged, TourLesson, TourRoute, UserClickedBackToStudy,
+  type Model, Errored, Ran, RunIdle, Running, RuntimeFailed, RuntimeLoading,
+  RuntimeNotLoaded, RuntimeReady, TimedOut, TourContents, TourLesson, TourRoute,
+}
+import gleamdrill/msg.{
+  type Msg, EditorResized, TourEditorChanged, UserClickedBackToStudy,
   UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
   UserOpenedLesson, UserResetLesson,
 }

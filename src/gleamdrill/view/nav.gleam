@@ -7,11 +7,13 @@
 import gleam/list
 import gleam/option.{None, Some}
 import gleamdrill/model.{
-  type Model, type Msg, type Route, Account, Guest, QueueRoute, SettingsRoute,
-  SigningIn, StatsRoute, StudyRoute, TourRoute, UserClickedBackToStudy,
-  UserClickedQueue, UserClickedSettings, UserClickedSignIn, UserClickedSignOut,
-  UserClickedStats, UserClickedTour, UserDismissedMergeOffer,
-  UserDismissedNotice,
+  type Model, type Route, Account, Guest, QueueRoute, SettingsRoute, SigningIn,
+  StatsRoute, StudyRoute, TourRoute,
+}
+import gleamdrill/msg.{
+  type Msg, UserClickedBackToStudy, UserClickedQueue, UserClickedSettings,
+  UserClickedSignIn, UserClickedSignOut, UserClickedStats, UserClickedTour,
+  UserDismissedMergeOffer, UserDismissedNotice,
 }
 import gleamdrill/track
 import lustre/attribute
@@ -23,7 +25,7 @@ pub fn bar(m: Model, current: Route) -> Element(Msg) {
   // Tracks first: Study, Queue and Stats are all inside one, so it is the
   // thing they hang off rather than a peer of them.
   let places = [
-    #("Tracks", model.TracksRoute, model.UserClickedTracks),
+    #("Tracks", model.TracksRoute, msg.UserClickedTracks),
     #("Study", StudyRoute, UserClickedBackToStudy),
     #("Queue", QueueRoute, UserClickedQueue),
     #("Stats", StatsRoute, UserClickedStats),
@@ -140,7 +142,7 @@ fn merge_offer(m: Model) -> Element(Msg) {
         html.button(
           [
             attribute.class("guest-strip-action"),
-            event.on_click(model.UserClickedMergeGuest),
+            event.on_click(msg.UserClickedMergeGuest),
           ],
           [html.text("Merge it")],
         ),

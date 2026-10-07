@@ -5,10 +5,10 @@
 //// list — so the copy does not promise one.
 
 import gleam/option.{None, Some}
-import gleamdrill/model.{
-  type Model, type Msg, Guest, Registering, UserChangedAuthEmail,
-  UserChangedAuthPassword, UserClickedBackToStudy, UserSubmittedAuth,
-  UserToggledAuthMode,
+import gleamdrill/model.{type Model, Guest, Registering}
+import gleamdrill/msg.{
+  type Msg, UserChangedAuthEmail, UserChangedAuthPassword,
+  UserClickedBackToStudy, UserSubmittedAuth, UserToggledAuthMode,
 }
 import gleamdrill/view/brand
 import lustre/attribute
@@ -154,7 +154,7 @@ pub fn loading(m: Model) -> Element(Msg) {
               [
                 attribute.class("auth-submit"),
                 attribute.type_("button"),
-                event.on_click(model.UserClickedRetrySync),
+                event.on_click(msg.UserClickedRetrySync),
               ],
               [html.text("Try again")],
             ),
@@ -162,7 +162,7 @@ pub fn loading(m: Model) -> Element(Msg) {
               [
                 attribute.class("auth-switch"),
                 attribute.type_("button"),
-                event.on_click(model.UserClickedSignOut),
+                event.on_click(msg.UserClickedSignOut),
               ],
               [html.text("Sign out and study as a guest")],
             ),

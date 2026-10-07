@@ -3,9 +3,8 @@
 
 import gleam/int
 import gleam/list
-import gleamdrill/model.{
-  type Model, type Msg, type SectionScore, UserClickedExitReport,
-}
+import gleamdrill/model.{type Model, type SectionScore}
+import gleamdrill/msg.{type Msg, UserClickedExitReport}
 import gleamdrill/problems
 import gleamdrill/problems/system_design
 import lustre/attribute

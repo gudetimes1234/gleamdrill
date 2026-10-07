@@ -3,8 +3,9 @@ import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
-import gleamdrill/model.{
-  type Model, type Msg, UserAddedSelectionToQueue, UserChangedIterations,
+import gleamdrill/model.{type Model}
+import gleamdrill/msg.{
+  type Msg, UserAddedSelectionToQueue, UserChangedIterations,
   UserClickedBreadcrumb, UserClickedClearSelection, UserClickedCompare,
   UserClickedSelectAll, UserClickedStartDrill, UserClickedStartExam,
   UserClickedSubcategory, UserSearched, UserToggledProblem, UserToggledSuspend,

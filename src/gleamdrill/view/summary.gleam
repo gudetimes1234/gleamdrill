@@ -15,10 +15,8 @@ import gleam/list
 import gleam/option
 import gleam/string
 import gleamdrill/insights
-import gleamdrill/model.{
-  type Model, type Msg, type SittingEntry, UserClickedExitReport,
-  UserClickedUndo,
-}
+import gleamdrill/model.{type Model, type SittingEntry}
+import gleamdrill/msg.{type Msg, UserClickedExitReport, UserClickedUndo}
 import gleamdrill/view/format
 import lustre/attribute
 import lustre/element.{type Element}

@@ -17,10 +17,11 @@ import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/set.{type Set}
-import gleamdrill/model.{
-  type Model, type Msg, GroupChange, UserAddedAllShown, UserCancelledQueueName,
-  UserChangedGroup, UserChangedQueueName, UserDeletedQueue, UserFilteredQueue,
-  UserRemovedAllShown, UserSearchedQueue, UserSelectedQueue, UserStartedNewQueue,
+import gleamdrill/model.{type Model, GroupChange}
+import gleamdrill/msg.{
+  type Msg, UserAddedAllShown, UserCancelledQueueName, UserChangedGroup,
+  UserChangedQueueName, UserDeletedQueue, UserFilteredQueue, UserRemovedAllShown,
+  UserSearchedQueue, UserSelectedQueue, UserStartedNewQueue,
   UserStartedRenameQueue, UserSubmittedQueueName, UserToggledQueued,
 }
 import gleamdrill/problem.{type ProblemRef}
@@ -67,7 +68,7 @@ pub fn view(m: Model) -> Element(Msg) {
           html.button(
             [
               attribute.class("btn-primary queue-study-now"),
-              event.on_click(model.UserClickedStudy),
+              event.on_click(msg.UserClickedStudy),
             ],
             [html.text("Study now \u{00b7} " <> int.to_string(n))],
           )

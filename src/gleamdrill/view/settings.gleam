@@ -15,8 +15,11 @@ import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleamdrill/model.{
-  type Model, type Msg, DayStartHour, DesiredRetention, ImportConfirmed,
-  NewPerDay, ReminderHour, ReviewsPerDay, UserChangedKeymap, UserChangedSetting,
+  type Model, DayStartHour, DesiredRetention, NewPerDay, ReminderHour,
+  ReviewsPerDay,
+}
+import gleamdrill/msg.{
+  type Msg, ImportConfirmed, UserChangedKeymap, UserChangedSetting,
   UserClickedDeviceTimezone, UserClickedExport, UserClickedImport,
   UserClickedWarmCache,
 }

@@ -7,7 +7,8 @@
 import gleam/list
 import gleam/string
 import gleamdrill/keys
-import gleamdrill/model.{type Model, type Msg}
+import gleamdrill/model.{type Model}
+import gleamdrill/msg.{type Msg}
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html

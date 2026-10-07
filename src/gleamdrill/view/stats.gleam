@@ -12,8 +12,9 @@ import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleamdrill/insights.{type Analysis, type CardInsight}
-import gleamdrill/model.{
-  type Model, type Msg, UserClosedDetail, UserOpenedDetail, UserToggledSuspend,
+import gleamdrill/model.{type Model}
+import gleamdrill/msg.{
+  type Msg, UserClosedDetail, UserOpenedDetail, UserToggledSuspend,
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems

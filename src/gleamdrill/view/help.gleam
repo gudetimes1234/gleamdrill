@@ -3,7 +3,8 @@
 import gleam/list
 import gleam/string
 import gleamdrill/keys
-import gleamdrill/model.{type Model, type Msg, HelpToggled}
+import gleamdrill/model.{type Model}
+import gleamdrill/msg.{type Msg, HelpToggled}
 import gleamdrill/view/links
 import lustre/attribute
 import lustre/element.{type Element}

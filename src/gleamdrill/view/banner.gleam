@@ -1,6 +1,7 @@
 //// Banners that must be visible wherever the user happens to be.
 
-import gleamdrill/model.{type Model, type Msg, Registering, UserClickedSignIn}
+import gleamdrill/model.{type Model, Registering}
+import gleamdrill/msg.{type Msg, UserClickedSignIn}
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html

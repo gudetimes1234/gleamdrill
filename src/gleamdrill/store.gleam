@@ -21,11 +21,11 @@ import gleam/time/timestamp
 import gleamdrill/api
 import gleamdrill/browser
 import gleamdrill/local
-import gleamdrill/model.{
-  type Model, type Msg, type UndoPoint, Account, ArchiveReady, ArchiveRestored,
-  CardSuspended, DraftSynced, Guest, HistoryLoaded, InsightsLoaded, NoteSynced,
-  QueueChanged, QueuesSaved, ReviewRecorded, SettingsSaved, StateLoaded,
-  StatsLoaded, UndoRecorded,
+import gleamdrill/model.{type Model, type UndoPoint, Account, Guest}
+import gleamdrill/msg.{
+  type Msg, ArchiveReady, ArchiveRestored, CardSuspended, DraftSynced,
+  HistoryLoaded, InsightsLoaded, NoteSynced, QueueChanged, QueuesSaved,
+  ReviewRecorded, SettingsSaved, StateLoaded, StatsLoaded, UndoRecorded,
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/remote

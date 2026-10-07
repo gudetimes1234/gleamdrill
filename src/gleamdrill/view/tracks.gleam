@@ -15,9 +15,8 @@
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
-import gleamdrill/model.{
-  type Model, type Msg, UserPickedTrack, UserPickedTrackWithStarter,
-}
+import gleamdrill/model.{type Model}
+import gleamdrill/msg.{type Msg, UserPickedTrack, UserPickedTrackWithStarter}
 import gleamdrill/track
 import gleamdrill/view/banner
 import gleamdrill/view/brand
@@ -165,7 +164,7 @@ fn body(m: Model, row: Row, unknown: Bool) -> List(Element(Msg)) {
               [
                 attribute.class("link-button track-card-stats"),
                 attribute.type_("button"),
-                event.on_click(model.UserClickedStats),
+                event.on_click(msg.UserClickedStats),
               ],
               [html.text("Stats \u{2192}")],
             ),

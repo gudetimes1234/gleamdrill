@@ -8,8 +8,10 @@ import gleam/option.{type Option, None, Some}
 import gleamdrill/compare
 import gleamdrill/editor
 import gleamdrill/model.{
-  type Compare, type CompareSide, type Model, type Msg, CompareMoved,
-  ComparePickedVariant, LeftSide, RightSide, UserClosedCompare,
+  type Compare, type CompareSide, type Model, LeftSide, RightSide,
+}
+import gleamdrill/msg.{
+  type Msg, CompareMoved, ComparePickedVariant, UserClosedCompare,
 }
 import gleamdrill/problem.{type ProblemRef, type Solution}
 import gleamdrill/problems

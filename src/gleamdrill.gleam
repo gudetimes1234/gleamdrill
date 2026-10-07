@@ -21,28 +21,30 @@ import gleamdrill/keys
 import gleamdrill/legacy
 import gleamdrill/local
 import gleamdrill/model.{
-  type Model, type Msg, Account, ArchiveReady, ArchiveRestored, AuthCompleted,
-  AuthForm, AuthRoute, AwaitingGrade, BlitzExpired, BoardJumped, BoardMoved,
-  BoardShelfMoved, BoardToggledAtCursor, CacheMeasured, CacheWarmed,
-  CardSuspended, CaseResult, Cases, ClockTicked, CompareMoved,
-  ComparePickedVariant, CompareRoute, DayStartHour, DesiredRetention,
-  DraftSaveTicked, DraftSynced, DrillRoute, EditorChanged, EditorFocusRequested,
-  EditorResized, Errored, ExamSampled, ExitConfirmed, Guest, HelpToggled,
-  HistoryLoaded, ImportConfirmed, ImportPicked, InsightsLoaded, KeyPressed,
-  MenuActivated, MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuRoute,
-  MenuSuspendedAtCursor, MenuToggledAtCursor, Model, NewPerDay, NoPane,
-  NotGrading, NotStarted, NoteChanged, NoteFocusRequested, NotePane,
-  NoteSaveTicked, NoteSynced, PromptDismissed, QueueChanged, QueueCursorJumped,
-  QueueCursorMoved, QueueRoute, QueueToggledAtCursor, QueuesSaved, QuizMoved,
-  Ran, Registering, ReminderHour, RemoteRunFinished, ReportRoute, ReviewRecorded,
-  ReviewsPerDay, RunError, RunFinished, RunIdle, RunTimedOut, RunnerFailed,
-  RunnerReady, Running, RuntimeFailed, RuntimeLoadTimedOut, RuntimeLoading,
-  RuntimeNotLoaded, RuntimeReady, SearchFocusRequested, SettingsRoute,
-  SettingsSaved, SignOutCompleted, SigningIn, SolutionPane, StateImported,
-  StateLoaded, StatsActivated, StatsCursorMoved, StatsLoaded, StatsRoute,
-  StudyRoute, SubmittingGrade, SummaryRoute, SyncFailed, Synced, Syncing,
-  TimedOut, TourActivated, TourContents, TourCursorMoved, TourEditorChanged,
-  TourLesson, TourRoute, TourRunTicked, TracksRoute, UndoRecorded,
+  type Model, Account, AuthForm, AuthRoute, AwaitingGrade, CaseResult, Cases,
+  CompareRoute, DayStartHour, DesiredRetention, DrillRoute, Errored, Guest,
+  MenuRoute, Model, NewPerDay, NoPane, NotGrading, NotStarted, NotePane,
+  PromptDismissed, QueueRoute, Ran, Registering, ReminderHour, ReportRoute,
+  ReviewsPerDay, RunError, RunIdle, Running, RuntimeFailed, RuntimeLoading,
+  RuntimeNotLoaded, RuntimeReady, SettingsRoute, SigningIn, SolutionPane,
+  StatsRoute, StudyRoute, SubmittingGrade, SummaryRoute, SyncFailed, Synced,
+  Syncing, TimedOut, TourContents, TourLesson, TourRoute, TracksRoute,
+}
+import gleamdrill/msg.{
+  type Msg, ArchiveReady, ArchiveRestored, AuthCompleted, BlitzExpired,
+  BoardJumped, BoardMoved, BoardShelfMoved, BoardToggledAtCursor, CacheMeasured,
+  CacheWarmed, CardSuspended, ClockTicked, CompareMoved, ComparePickedVariant,
+  DraftSaveTicked, DraftSynced, EditorChanged, EditorFocusRequested,
+  EditorResized, ExamSampled, ExitConfirmed, HelpToggled, HistoryLoaded,
+  ImportConfirmed, ImportPicked, InsightsLoaded, KeyPressed, MenuActivated,
+  MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuSuspendedAtCursor,
+  MenuToggledAtCursor, NoteChanged, NoteFocusRequested, NoteSaveTicked,
+  NoteSynced, QueueChanged, QueueCursorJumped, QueueCursorMoved,
+  QueueToggledAtCursor, QueuesSaved, QuizMoved, RemoteRunFinished,
+  ReviewRecorded, RunFinished, RunTimedOut, RunnerFailed, RunnerReady,
+  RuntimeLoadTimedOut, SearchFocusRequested, SettingsSaved, SignOutCompleted,
+  StateImported, StateLoaded, StatsActivated, StatsCursorMoved, StatsLoaded,
+  TourActivated, TourCursorMoved, TourEditorChanged, TourRunTicked, UndoRecorded,
   UserAddedAllShown, UserAddedSelectionToQueue, UserAddedStarterSet,
   UserCancelledQueueName, UserChangedAuthEmail, UserChangedAuthPassword,
   UserChangedGroup, UserChangedIterations, UserChangedKeymap,
@@ -453,7 +455,7 @@ fn focus_after_render(selector: String) -> Effect(Msg) {
 fn keyboard_effect() -> Effect(Msg) {
   use dispatch <- effect.from
   browser.on_keys(fn(key, ctrl, shift, editing) {
-    dispatch(KeyPressed(model.Key(key:, ctrl:, shift:, editing:)))
+    dispatch(KeyPressed(msg.Key(key:, ctrl:, shift:, editing:)))
   })
 }
 
@@ -695,7 +697,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           let m = Model(..m, prefix_armed: False)
           case leader_capable && key.key != "," && key.key != "Escape" {
             True ->
-              case keys.dispatch(m, model.Key(..key, editing: "none")) {
+              case keys.dispatch(m, msg.Key(..key, editing: "none")) {
                 Ok(resolved) -> handle(m, resolved)
                 Error(Nil) -> #(m, effect.none())
               }
@@ -3056,7 +3058,7 @@ fn remembered_queues(m: Model) -> List(#(String, String)) {
   }
 }
 
-fn handle_key(m: Model, key: model.Key) -> #(Model, Effect(Msg)) {
+fn handle_key(m: Model, key: msg.Key) -> #(Model, Effect(Msg)) {
   case key.editing {
     // The editor's own keymaps own the keyboard; the one thing the app
     // claims there is Ctrl+Enter, so write -> run -> grade needs no mouse.

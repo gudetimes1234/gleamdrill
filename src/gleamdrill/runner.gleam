@@ -8,9 +8,10 @@ import gleam/json
 import gleam/list
 import gleam/option.{type Option, None}
 import gleam/string
-import gleamdrill/model.{
-  type Msg, type RunOutcome, CaseResult, Cases, Errored, RunError, RunFinished,
-  RunTimedOut, RunnerFailed, RunnerReady, RuntimeLoadTimedOut,
+import gleamdrill/model.{type RunOutcome, CaseResult, Cases, Errored, RunError}
+import gleamdrill/msg.{
+  type Msg, RunFinished, RunTimedOut, RunnerFailed, RunnerReady,
+  RuntimeLoadTimedOut,
 }
 import lustre/effect.{type Effect}
 

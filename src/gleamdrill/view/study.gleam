@@ -12,11 +12,13 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleamdrill/insights
 import gleamdrill/model.{
-  type Model, type Msg, Guest, PromptShowing, Registering, StudyRoute,
-  UserAddedStarterSet, UserClickedBrowse, UserClickedQueue, UserClickedRecall,
-  UserClickedSignIn, UserClickedStartExam, UserClickedStudy, UserClickedTour,
-  UserDismissedUpgradePrompt, UserPickedActiveQueue, UserStartedBlitz,
-  UserToggledBlitz,
+  type Model, Guest, PromptShowing, Registering, StudyRoute,
+}
+import gleamdrill/msg.{
+  type Msg, UserAddedStarterSet, UserClickedBrowse, UserClickedQueue,
+  UserClickedRecall, UserClickedSignIn, UserClickedStartExam, UserClickedStudy,
+  UserClickedTour, UserDismissedUpgradePrompt, UserPickedActiveQueue,
+  UserStartedBlitz, UserToggledBlitz,
 }
 import gleamdrill/problem
 import gleamdrill/problems
