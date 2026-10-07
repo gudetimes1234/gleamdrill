@@ -247,9 +247,7 @@ pub fn with_warnings(stdout: String, warnings: List(String)) -> String {
   case list.filter(warnings, fn(w) { !harness_warning(w) }) {
     [] -> stdout
     kept ->
-      stdout
-      <> "\n\n\u{26a0} Compiler warnings:\n"
-      <> string.join(kept, "\n\n")
+      stdout <> "\n\n\u{26a0} Compiler warnings:\n" <> string.join(kept, "\n\n")
   }
 }
 
