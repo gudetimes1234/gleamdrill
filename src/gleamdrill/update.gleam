@@ -27,9 +27,8 @@ import gleamdrill/model.{
   MenuRoute, Model, NewPerDay, NoPane, NotGrading, NotePane, PromptDismissed,
   QueueRoute, Ran, Registering, ReminderHour, ReviewsPerDay, RunError, RunIdle,
   Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady,
-  SettingsRoute, SigningIn, SolutionPane, StudyRoute,
-  SubmittingGrade, SyncFailed, Synced, Syncing, TimedOut, TourContents,
-  TourLesson, TourRoute, TracksRoute,
+  SettingsRoute, SigningIn, SolutionPane, StudyRoute, SubmittingGrade,
+  SyncFailed, Synced, Syncing, TimedOut, TourRoute, TracksRoute,
 }
 import gleamdrill/msg.{
   type Msg, ArchiveReady, ArchiveRestored, AuthCompleted, BlitzExpired,
@@ -81,10 +80,10 @@ import gleamdrill/remote
 import gleamdrill/runner
 import gleamdrill/session
 import gleamdrill/store
-import gleamdrill/tour
 import gleamdrill/track
 import gleamdrill/update/common
 import gleamdrill/update/stats
+import gleamdrill/update/tour as tour_update
 import gleamdrill/view/id
 import gleamdrill/walk
 import lustre/effect.{type Effect}
@@ -355,59 +354,6 @@ fn activate_cursor(m: Model) -> #(Model, Effect(Msg)) {
 
 fn row_id(pane: model.MenuPane, index: Int) -> String {
   id.menu_row_id(pane, index)
-}
-
-fn start_local_run(
-  m: Model,
-  language: String,
-  solution: String,
-  harness: String,
-) -> #(Model, Effect(Msg)) {
-  let id = m.next_run_id
-  let previous = case m.run {
-    Ran(_, stdout) -> stdout
-    _ -> ""
-  }
-  #(
-    Model(..m, run: Running(id, previous), next_run_id: id + 1),
-    runner.run(language, id, solution, harness),
-  )
-}
-
-/// Run the tour lesson in the editor if the compiler is ready; otherwise do
-/// nothing, and `RunnerReady` will call back here when it is.
-fn run_tour_lesson(m: Model) -> #(Model, Effect(Msg)) {
-  case m.route, m.tour_page, model.runtime_for(m, "gleam") {
-    TourRoute, TourLesson(_), RuntimeReady ->
-      start_local_run(m, "gleam", m.tour_draft, tour.harness)
-    _, _, _ -> #(m, effect.none())
-  }
-}
-
-/// Open one lesson: its draft is whatever was typed there this session, else
-/// the lesson's own program; the run starts as soon as the compiler allows.
-fn open_lesson(m: Model, index: Int) -> #(Model, Effect(Msg)) {
-  let index = int.clamp(index, 0, tour.last())
-  case tour.at(index) {
-    Error(Nil) -> #(m, effect.none())
-    Ok(lesson) -> {
-      let draft =
-        dict.get(m.tour_edits, index)
-        |> result.unwrap(lesson.code)
-      let m =
-        Model(
-          ..m,
-          route: TourRoute,
-          tour_page: TourLesson(index),
-          tour_draft: draft,
-          tour_cursor: index,
-          tour_lesson: index,
-          run: RunIdle,
-        )
-      let #(m, run) = run_tour_lesson(m)
-      common.with_prefetch(#(m, effect.batch([common.save_preferences(m), run])))
-    }
-  }
 }
 
 fn focus_walk(m: Model, index: Int) -> Model {
@@ -1650,107 +1596,16 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     CacheMeasured(bytes) -> #(Model(..m, cache_bytes: bytes), effect.none())
 
     // --- the Gleam Language Tour ---
-    UserClickedTour -> #(
-      Model(
-        ..m,
-        route: TourRoute,
-        tour_page: TourContents,
-        tour_cursor: m.tour_lesson,
-        run: RunIdle,
-      ),
-      common.scroll_to("tour-" <> int.to_string(m.tour_lesson)),
-    )
-
-    UserOpenedLesson(index) -> open_lesson(m, index)
-
-    UserClickedTourNext -> {
-      let last = tour.last()
-      case m.tour_page {
-        // Next on the last lesson is Finish: back to the study screen.
-        TourLesson(index) if index >= last -> #(
-          Model(..m, route: StudyRoute, run: RunIdle),
-          effect.none(),
-        )
-        TourLesson(index) -> open_lesson(m, index + 1)
-        TourContents -> open_lesson(m, m.tour_cursor)
-      }
-    }
-
-    UserClickedTourPrev ->
-      case m.tour_page {
-        TourLesson(index) if index > 0 -> open_lesson(m, index - 1)
-        _ -> #(m, effect.none())
-      }
-
-    UserClickedTourContents ->
-      case m.tour_page {
-        TourLesson(index) -> #(
-          Model(..m, tour_page: TourContents, tour_cursor: index, run: RunIdle),
-          common.scroll_to("tour-" <> int.to_string(index)),
-        )
-        TourContents -> #(m, effect.none())
-      }
-
-    UserResetLesson ->
-      case m.tour_page {
-        TourLesson(index) ->
-          case tour.at(index) {
-            Ok(lesson) -> {
-              let m =
-                Model(
-                  ..m,
-                  tour_draft: lesson.code,
-                  tour_edits: dict.delete(m.tour_edits, index),
-                )
-              run_tour_lesson(m)
-            }
-            Error(Nil) -> #(m, effect.none())
-          }
-        TourContents -> #(m, effect.none())
-      }
-
-    TourEditorChanged(text) ->
-      case m.tour_page {
-        TourLesson(index) -> #(
-          Model(
-            ..m,
-            tour_draft: text,
-            tour_edits: dict.insert(m.tour_edits, index, text),
-          ),
-          // Compile on a pause in typing, the way the tour site does, rather
-          // than on every keystroke: a run is a whole compiler pass.
-          effect.from(fn(dispatch) {
-            browser.debounce("tour-run", 500, fn() { dispatch(TourRunTicked) })
-          }),
-        )
-        TourContents -> #(m, effect.none())
-      }
-
-    TourRunTicked ->
-      case m.run {
-        // A run already in flight finishes first; the next pause re-runs.
-        Running(_, _) -> #(
-          m,
-          effect.from(fn(dispatch) {
-            browser.debounce("tour-run", 500, fn() { dispatch(TourRunTicked) })
-          }),
-        )
-        _ -> run_tour_lesson(m)
-      }
-
-    TourCursorMoved(delta) -> {
-      let cursor = int.clamp(m.tour_cursor + delta, 0, tour.last())
-      #(
-        Model(..m, tour_cursor: cursor),
-        common.scroll_to("tour-" <> int.to_string(cursor)),
-      )
-    }
-
-    TourActivated ->
-      case m.tour_page {
-        TourContents -> open_lesson(m, m.tour_cursor)
-        TourLesson(_) -> #(m, effect.none())
-      }
+    UserClickedTour -> tour_update.open_contents(m)
+    UserOpenedLesson(index) -> tour_update.open_lesson(m, index)
+    UserClickedTourNext -> tour_update.next(m)
+    UserClickedTourPrev -> tour_update.prev(m)
+    UserClickedTourContents -> tour_update.to_contents(m)
+    UserResetLesson -> tour_update.reset_lesson(m)
+    TourEditorChanged(text) -> tour_update.editor_changed(m, text)
+    TourRunTicked -> tour_update.run_ticked(m)
+    TourCursorMoved(delta) -> tour_update.cursor_moved(m, delta)
+    TourActivated -> tour_update.activated(m)
 
     // Committed on blur or Enter, so this fires once per edit rather than per
     // keystroke, and saving immediately is affordable.
@@ -2345,7 +2200,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
       case language, m.run {
         // A tour lesson opened before the compiler was ready runs now.
-        "gleam", RunIdle -> run_tour_lesson(m)
+        "gleam", RunIdle -> common.run_tour_lesson(m)
         _, _ -> #(m, effect.none())
       }
     }
@@ -2756,7 +2611,7 @@ fn start_run(
     // Unreachable: request_run catches a guest first.
     True, Guest -> #(m, effect.none())
     False, _ -> {
-      let #(next, fx) = start_local_run(m, language, m.draft, harness)
+      let #(next, fx) = common.start_local_run(m, language, m.draft, harness)
       #(Model(..next, run_kind: kind), fx)
     }
   }

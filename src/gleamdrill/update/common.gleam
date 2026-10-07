@@ -9,12 +9,16 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleamdrill/browser
 import gleamdrill/local
-import gleamdrill/model.{type Model, Account, Guest, Model}
+import gleamdrill/model.{
+  type Model, Account, Guest, Model, Ran, Running, RuntimeReady, TourLesson,
+  TourRoute,
+}
 import gleamdrill/msg.{type Msg}
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
 import gleamdrill/runner
 import gleamdrill/session
+import gleamdrill/tour
 import gleamdrill/track
 import gleamdrill/walk
 import lustre/effect.{type Effect}
@@ -579,3 +583,30 @@ pub fn fold_card(
 /// Move the rail's focus, clamped to the steps this problem actually has. A
 /// problem with no walkthrough has none, and the focus stays at zero.
 pub const starter_size = 20
+
+pub fn start_local_run(
+  m: Model,
+  language: String,
+  solution: String,
+  harness: String,
+) -> #(Model, Effect(Msg)) {
+  let id = m.next_run_id
+  let previous = case m.run {
+    Ran(_, stdout) -> stdout
+    _ -> ""
+  }
+  #(
+    Model(..m, run: Running(id, previous), next_run_id: id + 1),
+    runner.run(language, id, solution, harness),
+  )
+}
+
+/// Run the tour lesson in the editor if the compiler is ready; otherwise do
+/// nothing, and `RunnerReady` will call back here when it is.
+pub fn run_tour_lesson(m: Model) -> #(Model, Effect(Msg)) {
+  case m.route, m.tour_page, model.runtime_for(m, "gleam") {
+    TourRoute, TourLesson(_), RuntimeReady ->
+      start_local_run(m, "gleam", m.tour_draft, tour.harness)
+    _, _, _ -> #(m, effect.none())
+  }
+}
