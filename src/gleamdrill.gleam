@@ -96,6 +96,7 @@ import gleamdrill/view/study
 import gleamdrill/view/summary
 import gleamdrill/view/tour as tour_view
 import gleamdrill/view/tracks
+import gleamdrill/walk
 import lustre
 import lustre/attribute
 import lustre/effect.{type Effect}
@@ -608,10 +609,10 @@ fn fold_card(
 /// problem with no walkthrough has none, and the focus stays at zero.
 fn focus_walk(m: Model, index: Int) -> Model {
   let total = case current_problem(m) {
-    Ok(current) -> list.length(model.walk_steps(current.approach))
+    Ok(current) -> list.length(walk.walk_steps(current.approach))
     Error(Nil) -> 0
   }
-  Model(..m, walk: model.focus_step(m.walk, index, total))
+  Model(..m, walk: walk.focus_step(m.walk, index, total))
 }
 
 fn current_language(m: Model) -> Result(String, Nil) {
@@ -1569,7 +1570,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             revealed_solution: None,
             nudge_shown: False,
             whole_thing_shown: False,
-            walk: model.fresh_walk(),
+            walk: walk.fresh_walk(),
             walk_code_seen: False,
             slot: NoPane,
             run: RunIdle,
@@ -1843,12 +1844,12 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     WalkBacked -> #(focus_walk(m, m.walk.focus - 1), effect.none())
 
     WalkHintShown -> #(
-      Model(..m, walk: model.reveal_layer(m.walk, model.HintLayer)),
+      Model(..m, walk: walk.reveal_layer(m.walk, walk.HintLayer)),
       effect.none(),
     )
 
     WalkWhyShown -> #(
-      Model(..m, walk: model.reveal_layer(m.walk, model.WhyLayer)),
+      Model(..m, walk: walk.reveal_layer(m.walk, walk.WhyLayer)),
       effect.none(),
     )
 
@@ -1857,7 +1858,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     WalkCodeShown -> #(
       Model(
         ..m,
-        walk: model.reveal_layer(m.walk, model.CodeLayer),
+        walk: walk.reveal_layer(m.walk, walk.CodeLayer),
         walk_code_seen: True,
       ),
       effect.none(),
@@ -3437,8 +3438,7 @@ fn do_sample(
 fn answer_given_away(m: Model) -> Bool {
   case current_problem(m) {
     Ok(current) ->
-      model.answer_revealed(m, current.approach)
-      || model.any_layer_shown(m.walk)
+      model.answer_revealed(m, current.approach) || walk.any_layer_shown(m.walk)
     Error(Nil) -> False
   }
 }
@@ -3483,7 +3483,7 @@ fn reset_to_menu(m: Model) -> Model {
     revealed_solution: None,
     nudge_shown: False,
     whole_thing_shown: False,
-    walk: model.fresh_walk(),
+    walk: walk.fresh_walk(),
     walk_code_seen: False,
     run: RunIdle,
     choice: None,

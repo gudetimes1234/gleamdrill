@@ -35,6 +35,7 @@ import gleamdrill/store
 import gleamdrill/tour
 import gleamdrill/track
 import gleamdrill/view/format
+import gleamdrill/walk
 import gleeunit
 import simplifile
 import wire
@@ -705,7 +706,7 @@ pub fn a_leech_opens_with_the_approach_shown_test() -> Nil {
   let view = model.open_problem_view(lapsed(4), problem)
   assert view.nudge_shown
   assert !view.whole_thing_shown
-  assert !model.any_layer_shown(view.walk)
+  assert !walk.any_layer_shown(view.walk)
   assert !model.pseudocode_revealed(view, found.approach)
   assert !model.answer_revealed(view, found.approach)
   assert view.slot == model.NoPane
@@ -730,15 +731,15 @@ pub fn only_the_walk_code_counts_as_a_reveal_test() -> Nil {
   let hinted =
     model.Model(
       ..base,
-      walk: model.reveal_layer(
-        model.reveal_layer(base.walk, model.HintLayer),
-        model.WhyLayer,
+      walk: walk.reveal_layer(
+        walk.reveal_layer(base.walk, walk.HintLayer),
+        walk.WhyLayer,
       ),
     )
   assert !model.answer_revealed(hinted, stages)
   // A hint is not an answer, but a solve that needed one was not from
   // nothing, so `clean` is stricter than the log's `revealed`.
-  assert model.any_layer_shown(hinted.walk)
+  assert walk.any_layer_shown(hinted.walk)
 
   assert model.answer_revealed(
     model.Model(..base, walk_code_seen: True),
@@ -759,13 +760,13 @@ pub fn only_the_walk_code_counts_as_a_reveal_test() -> Nil {
   let sliced = [
     problem.Pseudocode([#("", "shared"), #("go", "go-only")]),
   ]
-  assert model.whole_thing(sliced, problem.Go) == Some("go-only")
-  assert model.whole_thing(sliced, problem.Elixir) == Some("shared")
-  assert model.whole_thing([problem.Pseudocode([#("go", "g")])], problem.Python)
+  assert walk.whole_thing(sliced, problem.Go) == Some("go-only")
+  assert walk.whole_thing(sliced, problem.Elixir) == Some("shared")
+  assert walk.whole_thing([problem.Pseudocode([#("go", "g")])], problem.Python)
     == None
-  assert model.nudge_text(stages) == Some("n")
-  assert model.whole_thing(stages, problem.Python) == Some("p")
-  assert list.length(model.walk_steps(stages)) == 1
+  assert walk.nudge_text(stages) == Some("n")
+  assert walk.whole_thing(stages, problem.Python) == Some("p")
+  assert list.length(walk.walk_steps(stages)) == 1
 }
 
 /// The guest store is always the whole store.
@@ -914,13 +915,13 @@ pub fn a_plans_code_follows_the_language_test() -> Nil {
   // same, because "walk the array once, carrying a map" is a fact about the
   // algorithm rather than about Go.
   let steps = fn(stages) {
-    model.walk_steps(stages) |> list.map(fn(s: problem.WalkStep) { s.step })
+    walk.walk_steps(stages) |> list.map(fn(s: problem.WalkStep) { s.step })
   }
   assert steps(go_approach) == steps(py_approach)
   assert steps(go_approach) == steps(ex_approach)
 
   let first_slice = fn(stages, language) {
-    let assert Ok(step) = list.first(model.walk_steps(stages))
+    let assert Ok(step) = list.first(walk.walk_steps(stages))
     problem.slice_for(step.code, language)
   }
   assert string.contains(first_slice(go_approach, go_language), "map[int]int")
@@ -930,9 +931,9 @@ pub fn a_plans_code_follows_the_language_test() -> Nil {
     "Enum.with_index",
   )
 
-  let assert Some(whole) = model.whole_thing(go_approach, go_language)
+  let assert Some(whole) = walk.whole_thing(go_approach, go_language)
   assert string.contains(whole, "return nil")
-  let assert Some(whole) = model.whole_thing(ex_approach, ex_language)
+  let assert Some(whole) = walk.whole_thing(ex_approach, ex_language)
   assert string.contains(whole, "find_pair")
 
   // A ladder with no slice for a language falls back to the shared one --
@@ -1286,7 +1287,7 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
     model.Model(
       ..drill,
       nudge_shown: True,
-      walk: model.reveal_layer(drill.walk, model.HintLayer),
+      walk: walk.reveal_layer(drill.walk, walk.HintLayer),
     ),
     model.Model(..drill, recall: True),
     model.Model(
@@ -1376,7 +1377,7 @@ pub fn escape_closes_the_open_pane_before_it_exits_test() -> Nil {
     model.Model(
       ..coding,
       nudge_shown: True,
-      walk: model.reveal_layer(coding.walk, model.HintLayer),
+      walk: walk.reveal_layer(coding.walk, walk.HintLayer),
     )
   assert press(railed, "Escape") == Ok(msg.UserClickedExitDrill)
 }

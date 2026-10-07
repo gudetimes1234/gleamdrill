@@ -42,6 +42,7 @@ import gleamdrill/msg.{
 }
 import gleamdrill/problem
 import gleamdrill/problems
+import gleamdrill/walk
 
 /// One row of the keymap. `keys` are `KeyboardEvent.key` values; `hint` is the
 /// short form the status bar shows; `help` the sentence the overlay shows.
@@ -550,8 +551,8 @@ fn rail_bindings(m: Model) -> List(Binding) {
   case current_problem(m) {
     Error(Nil) -> []
     Ok(current) -> {
-      let steps = model.walk_steps(current.approach)
-      let nudge = case model.nudge_text(current.approach) {
+      let steps = walk.walk_steps(current.approach)
+      let nudge = case walk.nudge_text(current.approach) {
         None -> []
         Some(_) -> [
           Binding(
@@ -568,7 +569,7 @@ fn rail_bindings(m: Model) -> List(Binding) {
       let walk = case steps {
         [] -> []
         _ -> {
-          let open = model.layers_at(m.walk, m.walk.focus)
+          let open = walk.layers_at(m.walk, m.walk.focus)
           let has_code = case focused_step(steps, m.walk.focus) {
             Ok(step) -> problem.slice_for(step.code, current.language) != ""
             Error(Nil) -> False
@@ -605,7 +606,7 @@ fn rail_bindings(m: Model) -> List(Binding) {
         }
       }
       let whole = case
-        model.whole_thing(current.approach, current.language),
+        walk.whole_thing(current.approach, current.language),
         m.whole_thing_shown
       {
         Some(_), False -> [

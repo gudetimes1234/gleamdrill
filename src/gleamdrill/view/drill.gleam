@@ -32,6 +32,7 @@ import gleamdrill/view/banner
 import gleamdrill/view/format
 import gleamdrill/view/links
 import gleamdrill/view/nav
+import gleamdrill/walk
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -1406,7 +1407,7 @@ fn results_only(m: Model, current: Problem) -> List(Element(Msg)) {
 /// solution pane does can take this away, which is the difference from the
 /// pane it replaced.
 fn plan_rail(m: Model, current: Problem) -> Element(Msg) {
-  let steps = model.walk_steps(current.approach)
+  let steps = walk.walk_steps(current.approach)
   let total = list.length(steps)
   html.aside(
     [attribute.class("plan-rail")],
@@ -1452,7 +1453,7 @@ fn plan_rail(m: Model, current: Problem) -> Element(Msg) {
 /// The nudge, folded away until asked for. Not a reveal: it is a question
 /// about the problem, not a piece of the answer, so it carries no warning.
 fn rail_nudge(m: Model, current: Problem) -> List(Element(Msg)) {
-  case model.nudge_text(current.approach) {
+  case walk.nudge_text(current.approach) {
     None -> []
     Some(text) -> [
       html.div([attribute.class("rail-nudge")], [
@@ -1494,7 +1495,7 @@ fn rail_step(
   step: problem.WalkStep,
   index: Int,
 ) -> Element(Msg) {
-  let open = model.layers_at(m.walk, index)
+  let open = walk.layers_at(m.walk, index)
   let focused = index == m.walk.focus
   // This drill's language, or the shared slice where it has none of its own
   // written yet. A Go drill showing Python is showing the wrong thing.
@@ -1504,7 +1505,7 @@ fn rail_step(
       attribute.classes([
         #("rail-step", True),
         #("current", focused),
-        #("opened", open != model.no_layers),
+        #("opened", open != walk.no_layers),
       ]),
     ],
     list.flatten([
@@ -1575,7 +1576,7 @@ fn rail_step(
 /// The whole plan at once, at the foot of the rail. This one is the answer,
 /// and it says so before it is pressed.
 fn rail_whole_thing(m: Model, current: Problem) -> List(Element(Msg)) {
-  case model.whole_thing(current.approach, current.language) {
+  case walk.whole_thing(current.approach, current.language) {
     None -> []
     Some(code) ->
       case m.whole_thing_shown {
