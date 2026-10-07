@@ -13,6 +13,7 @@
 -- is captured through a pipe, as in the Go prelude, so a user's prints ride
 -- in the report rather than corrupting it. Only boot packages are used:
 -- base, unix.
+{-# LANGUAGE CPP #-}
 module Drill
   ( TestCase
   , tc
@@ -28,9 +29,14 @@ module Drill
 
 import Control.Concurrent (forkIO)
 import Control.Concurrent.MVar (newEmptyMVar, putMVar, takeMVar)
+#if __GLASGOW_HASKELL__ >= 910
 import Control.Exception
-  ( ErrorCall(ErrorCallWithLocation), SomeException, displayException
-  , evaluate, fromException, try )
+  ( SomeException, displayException, evaluate, someExceptionContext, try )
+import Control.Exception.Context (displayExceptionContext)
+#else
+import Control.Exception
+  ( SomeException, displayException, evaluate, try )
+#endif
 import Data.List (isPrefixOf, sort, sortBy)
 import System.IO
 import System.Posix.IO
@@ -119,13 +125,7 @@ report result output = case result of
       , ("error", "null")
       ]
   Left failure ->
-    -- `show` on an exception stopped carrying the call site in newer GHCs
-    -- (the backtrace moved out of Show); ErrorCallWithLocation has stored
-    -- it as a field since base 4.9, on every version.
-    let message = case fromException failure of
-          Just (ErrorCallWithLocation text location) ->
-            text ++ "\n" ++ location
-          Nothing -> displayException failure
+    let message = describe failure
     in object
          [ ("cases", array [])
          , ("stdout", jstr output)
@@ -137,6 +137,22 @@ report result output = case result of
                ]
            )
          ]
+
+-- | The failure's text, call site included. From GHC 9.10 the HasCallStack
+-- backtrace lives exclusively in the exception's context -- show and
+-- displayException both render the bare message -- so the context is
+-- appended explicitly there; older GHCs put the site in displayException
+-- itself. (ErrorCallWithLocation is a trap: 9.14 deprecated it, and
+-- matching its location field itself calls error.)
+describe :: SomeException -> String
+#if __GLASGOW_HASKELL__ >= 910
+describe failure =
+  displayException failure
+    ++ "\n"
+    ++ displayExceptionContext (someExceptionContext failure)
+#else
+describe = displayException
+#endif
 
 caseJson :: TestCase -> String
 caseJson (TestCase label expected actual) =
