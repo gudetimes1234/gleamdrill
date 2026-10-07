@@ -92,7 +92,7 @@ pub fn is_guest(mode: Mode) -> Bool {
 /// the reveal-only experience for them, exactly as every user did before.
 pub fn run_available(model: Model, language: problem.Language) -> Bool {
   case language {
-    problem.Elixir | problem.Go -> !is_guest(model.mode)
+    problem.Elixir | problem.Go | problem.Haskell -> !is_guest(model.mode)
     _ -> True
   }
 }
@@ -474,9 +474,10 @@ pub type Model {
     /// The editor height the user dragged to, in px, on this device. `None`
     /// is the stylesheet's default.
     editor_height: Option(Int),
-    /// One-shot leader: `,` was pressed, so the next key dispatches through
-    /// the app's key table even if a button holds focus.
-    leader_armed: Bool,
+    /// One-shot prefix: Ctrl+b (or the `,` leader) was pressed, so the next
+    /// key resolves against the prefix table -- and, when the table does not
+    /// hold it, through the app's key table even if a button holds focus.
+    prefix_armed: Bool,
     /// The queue screen's lens: a search box and a status, neither persisted.
     /// They decide which rows are listed, and "add all shown" acts on exactly
     /// that list, which is what makes bulk queueing precise.
@@ -598,7 +599,7 @@ pub fn default() -> Model {
     run_kind: TestRun,
     blitz: None,
     blitz_chooser: False,
-    leader_armed: False,
+    prefix_armed: False,
     queue_search: "",
     queue_status: AnyStatus,
     queues: [],

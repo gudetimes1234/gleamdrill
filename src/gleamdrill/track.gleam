@@ -22,6 +22,7 @@ import gleam/list
 import gleam/result
 import gleamdrill/problem.{type Category, type ProblemRef}
 import gleamdrill/problems
+import wire
 
 pub type Track =
   String
@@ -62,6 +63,7 @@ pub fn tag(track: Track) -> String {
     Ok(problem.TypeScript) -> "ts"
     Ok(problem.Elixir) -> "ex"
     Ok(problem.Go) -> "go"
+    Ok(problem.Haskell) -> "hs"
     Ok(problem.Board) -> "bd"
     Ok(problem.Concept) | Error(Nil) ->
       case exists(track) {
@@ -69,6 +71,17 @@ pub fn tag(track: Track) -> String {
         False -> "??"
       }
   }
+}
+
+/// Every track a user can stand on, in one fixed order: the catalogue's
+/// first, because it is the curriculum's, then anything their standings hold
+/// that the catalogue does not (a renamed category, a stale cache). The
+/// switcher's rows, the status bar's window list and the prefix digits all
+/// read this list, so a number can never disagree with the screen it names.
+pub fn ordered(standings: List(wire.TrackStanding)) -> List(Track) {
+  let known = list.map(standings, fn(s: wire.TrackStanding) { s.track })
+  let extra = list.filter(known, fn(name) { !exists(name) })
+  list.append(all(), extra)
 }
 
 /// Every track with its label, in catalogue order: the switcher's rows.

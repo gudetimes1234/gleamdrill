@@ -688,10 +688,10 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       // otherwise swallow. Arms from anywhere but the editor and inputs;
       // the next key routes through the app's table regardless of focus.
       let leader_capable = key.editing != "editor" && key.editing != "input"
-      case m.leader_armed, key.key == "," && leader_capable {
-        False, True -> #(Model(..m, leader_armed: True), effect.none())
+      case m.prefix_armed, key.key == "," && leader_capable {
+        False, True -> #(Model(..m, prefix_armed: True), effect.none())
         True, _ -> {
-          let m = Model(..m, leader_armed: False)
+          let m = Model(..m, prefix_armed: False)
           case leader_capable && key.key != "," && key.key != "Escape" {
             True ->
               case keys.dispatch(m, model.Key(..key, editing: "none")) {

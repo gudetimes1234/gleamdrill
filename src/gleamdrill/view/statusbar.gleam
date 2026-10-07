@@ -27,14 +27,14 @@ pub fn view(m: Model) -> Element(Msg) {
       [
         attribute.classes([
           #("leader-chip", True),
-          #("leader-armed", m.leader_armed),
+          #("leader-armed", m.prefix_armed),
         ]),
         attribute.title(
           "Press , then a key to use a shortcut even while a button has focus",
         ),
       ],
       [
-        html.text(case m.leader_armed {
+        html.text(case m.prefix_armed {
           True -> ", \u{2026}"
           False -> ","
         }),
