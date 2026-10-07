@@ -14,18 +14,17 @@ import gleam/string
 import gleamdrill/api
 import gleamdrill/board
 import gleamdrill/browser
-import gleamdrill/compare
 import gleamdrill/keys
 import gleamdrill/legacy
 import gleamdrill/local
 import gleamdrill/model.{
   type Model, Account, AuthForm, AuthRoute, AwaitingGrade, CaseResult, Cases,
-  CompareRoute, DayStartHour, DesiredRetention, DrillRoute, Errored, Guest,
-  MenuRoute, Model, NewPerDay, NoPane, NotGrading, NotePane, PromptDismissed,
-  QueueRoute, Ran, Registering, ReminderHour, ReviewsPerDay, RunError, RunIdle,
-  Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady,
-  SettingsRoute, SigningIn, SolutionPane, StudyRoute, SubmittingGrade,
-  SyncFailed, Synced, Syncing, TimedOut, TourRoute, TracksRoute,
+  DayStartHour, DesiredRetention, DrillRoute, Errored, Guest, MenuRoute, Model,
+  NewPerDay, NoPane, NotGrading, NotePane, PromptDismissed, QueueRoute, Ran,
+  Registering, ReminderHour, ReviewsPerDay, RunError, RunIdle, Running,
+  RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady, SettingsRoute,
+  SigningIn, SolutionPane, StudyRoute, SubmittingGrade, SyncFailed, Synced,
+  Syncing, TimedOut, TourRoute, TracksRoute,
 }
 import gleamdrill/msg.{
   type Msg, ArchiveReady, ArchiveRestored, AuthCompleted, BlitzExpired,
@@ -79,6 +78,7 @@ import gleamdrill/session
 import gleamdrill/store
 import gleamdrill/track
 import gleamdrill/update/common
+import gleamdrill/update/compare as compare_update
 import gleamdrill/update/stats
 import gleamdrill/update/tour as tour_update
 import gleamdrill/update/transfer
@@ -1856,29 +1856,11 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
 
     // --- compare ---
-    UserClickedCompare ->
-      case compare.open(m.selected) {
-        Ok(c) -> #(
-          Model(..m, compare: Some(c), route: CompareRoute),
-          effect.none(),
-        )
-        Error(reason) -> #(Model(..m, notice: Some(reason)), effect.none())
-      }
-
-    CompareMoved(delta) -> #(
-      Model(..m, compare: option.map(m.compare, compare.moved(_, delta))),
-      effect.none(),
-    )
-
-    ComparePickedVariant(side, index) -> #(
-      Model(..m, compare: option.map(m.compare, compare.picked(_, side, index))),
-      effect.none(),
-    )
-
-    UserClosedCompare -> #(
-      Model(..m, route: MenuRoute, compare: None),
-      effect.none(),
-    )
+    UserClickedCompare -> compare_update.open(m)
+    CompareMoved(delta) -> compare_update.moved(m, delta)
+    ComparePickedVariant(side, index) ->
+      compare_update.picked_variant(m, side, index)
+    UserClosedCompare -> compare_update.close(m)
 
     UserSearchedQueue(text) -> #(
       Model(..m, queue_search: text, nav: model.MenuNav(..m.nav, queue: 0)),
