@@ -29,7 +29,7 @@ module Drill
 import Control.Concurrent (forkIO)
 import Control.Concurrent.MVar (newEmptyMVar, putMVar, takeMVar)
 import Control.Exception (SomeException, evaluate, try)
-import Data.List (sort, sortBy, isInfixOf)
+import Data.List (isPrefixOf, sort, sortBy)
 import System.IO
 import System.Posix.IO
   ( createPipe, dup, dupTo, fdToHandle, closeFd, stdOutput )
@@ -140,16 +140,20 @@ caseJson (TestCase label expected actual) =
     ]
 
 -- | `error` under HasCallStack names its site as "Solution.hs:12:5"; pull
--- the line out so the editor can underline it.
+-- the line out so the editor can underline it. A character-level scan
+-- rather than `words`, because the exception rendering around the site
+-- has changed across GHC releases and only the substring is stable.
 lineInSolution :: String -> Maybe Int
-lineInSolution message =
-  case filter ("Solution.hs:" `isInfixOf`) (words message) of
-    (site : _) ->
-      case break (== ':') (drop 1 (dropWhile (/= ':') site)) of
-        (digits, _) | not (null digits) && all (`elem` "0123456789") digits ->
-          Just (read digits)
-        _ -> Nothing
-    [] -> Nothing
+lineInSolution = scan
+  where
+    site = "Solution.hs:"
+    scan [] = Nothing
+    scan s
+      | site `isPrefixOf` s =
+          case span (`elem` "0123456789") (drop (length site) s) of
+            (digits@(_ : _), _) -> Just (read digits)
+            _ -> scan (drop 1 s)
+      | otherwise = scan (drop 1 s)
 
 -- A JSON emitter small enough to carry: base has no JSON library.
 object :: [(String, String)] -> String

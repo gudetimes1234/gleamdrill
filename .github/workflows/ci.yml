@@ -151,6 +151,7 @@ jobs:
       # One throwaway compile makes every later one take under a second.
       - name: Warm ghc
         run: |
+          ghc --version
           printf 'import qualified Data.Map.Strict as M\nimport qualified Data.Set as S\nmain :: IO ()\nmain = print (M.size (M.empty :: M.Map Int Int) + S.size (S.empty :: S.Set Int))\n' > /tmp/warm.hs
           ghc -v0 -O0 -o /tmp/warm /tmp/warm.hs && /tmp/warm
 
