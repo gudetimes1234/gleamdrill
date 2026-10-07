@@ -29,6 +29,7 @@ import gleamdrill/model
 import gleamdrill/problem
 import gleamdrill/problems
 import gleamdrill/queue
+import gleamdrill/runner
 import gleamdrill/session
 import gleamdrill/store
 import gleamdrill/tour
@@ -2454,4 +2455,32 @@ pub fn a_board_drill_is_classified_as_one_test() -> Nil {
   // picker can tell it from the quiz.
   assert track.tag("System Design Board") == "bd"
   assert track.tag("System Design") == "sd"
+}
+
+/// A warning located in the generated harness never reaches the Output
+/// panel -- the user cannot act on `check.gleam`'s "unused import" of their
+/// own module -- while a warning in their own code still does.
+pub fn harness_warnings_stay_out_of_the_output_test() -> Nil {
+  let unused_import =
+    "warning: Unused imported module\n"
+    <> "  \u{250c}\u{2500} /src/check.gleam:1:1\n"
+    <> "1 \u{2502} import solution"
+  let unused_value =
+    "warning: Unused value\n  \u{250c}\u{2500} /src/check.gleam:4:3"
+  let theirs =
+    "warning: Unused imported module\n"
+    <> "  \u{250c}\u{2500} /src/solution.gleam:1:1\n"
+    <> "1 \u{2502} import gleam/list"
+
+  assert runner.harness_warning(unused_import)
+  assert runner.harness_warning(unused_value)
+  assert !runner.harness_warning(theirs)
+
+  // An all-harness list produces no warning block at all.
+  assert runner.with_warnings("hi", [unused_import, unused_value]) == "hi"
+  // A mixed list keeps only the user's own warning.
+  let mixed = runner.with_warnings("hi", [unused_import, theirs])
+  assert string.contains(mixed, "\u{26a0} Compiler warnings:")
+  assert string.contains(mixed, "solution.gleam")
+  assert !string.contains(mixed, "check.gleam")
 }

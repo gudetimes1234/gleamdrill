@@ -5,7 +5,7 @@ import gleam/http
 import gleam/json
 import gleam/option.{type Option, None, Some}
 import server/auth.{type User}
-import server/study
+import server/study/today
 import server/web.{type Context}
 import wisp
 
@@ -40,7 +40,7 @@ fn checked_timezone(context: Context, requested: Option(String)) -> String {
   case requested {
     None -> "UTC"
     Some(zone) ->
-      case study.timezone_is_valid(context.db, zone) {
+      case today.timezone_is_valid(context.db, zone) {
         Ok(True) -> zone
         _ -> "UTC"
       }

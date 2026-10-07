@@ -5,6 +5,7 @@
 
 import gleam/dynamic/decode.{type Decoder}
 import gleam/json
+import gleam/list
 import gleam/option.{type Option, None}
 import gleam/string
 import gleamdrill/model.{
@@ -52,10 +53,15 @@ pub fn scratch_harness(language: String) -> String {
 /// What the Run button should say the scratch run does, per language.
 pub fn scratch_hint(language: String) -> String {
   case language {
-    "gleam" | "typescript" ->
+    // Gleam and Go REQUIRE the entry point -- without it the scratch run is
+    // a compile error, not a quiet no-op. Only TypeScript's harness checks
+    // before calling.
+    "gleam" ->
+      "Runs your code alone by calling main() — define pub fn main() first. Output shows below."
+    "typescript" ->
       "Runs your code alone, calling main() if you define one. Output shows below."
     "go" ->
-      "Runs your code alone, calling scratch() if you define one. Output shows below."
+      "Runs your code alone by calling scratch() — define func scratch() first. Output shows below."
     _ -> "Runs your code alone, no tests. Output shows below."
   }
 }
@@ -228,13 +234,22 @@ fn warnings_field(next: fn(List(String)) -> Decoder(a)) -> Decoder(a) {
   decode.optional_field("warnings", [], decode.list(decode.string), next)
 }
 
-fn with_warnings(stdout: String, warnings: List(String)) -> String {
-  case warnings {
+/// A warning located in the generated harness module. The user cannot act on
+/// it -- `check.gleam`'s `import solution` goes "unused" whenever the attempt
+/// fails to compile against the harness, because a broken reference is not a
+/// use -- so it stays out of the Output panel. Warnings in the attempt's own
+/// module still ride along.
+pub fn harness_warning(warning: String) -> Bool {
+  string.contains(warning, "/src/check.gleam")
+}
+
+pub fn with_warnings(stdout: String, warnings: List(String)) -> String {
+  case list.filter(warnings, fn(w) { !harness_warning(w) }) {
     [] -> stdout
-    _ ->
+    kept ->
       stdout
       <> "\n\n\u{26a0} Compiler warnings:\n"
-      <> string.join(warnings, "\n\n")
+      <> string.join(kept, "\n\n")
   }
 }
 

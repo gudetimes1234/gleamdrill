@@ -14,7 +14,10 @@ import server/auth
 import server/config
 import server/exec
 import server/reminders
-import server/study
+import server/study/cards
+import server/study/profile
+import server/study/queues
+import server/study/stats
 import server/web
 import wire
 import wisp
@@ -35,26 +38,26 @@ pub fn main() {
 pub fn validate_queues_test() {
   let ref = wire.ProblemRef("NeetCode 150", "Two Pointers", "3Sum")
   let good = [a_queue("Pointers", [ref, ref]), a_queue("Later", [])]
-  assert study.validate_queues(good) == Ok(Nil)
-  assert study.validate_queues([]) == Ok(Nil)
-  assert study.validate_queues([a_queue("  ", [])])
+  assert queues.validate_queues(good) == Ok(Nil)
+  assert queues.validate_queues([]) == Ok(Nil)
+  assert queues.validate_queues([a_queue("  ", [])])
     == Error("a queue needs a name")
-  assert study.validate_queues([a_queue("A", []), a_queue("A", [])])
+  assert queues.validate_queues([a_queue("A", []), a_queue("A", [])])
     == Error("queue names must be distinct within a track")
   // The same name in two tracks is two lists, which is the whole point of a
   // queue living inside one.
-  assert study.validate_queues([
+  assert queues.validate_queues([
       wire.Queue(track: "NeetCode 150", name: "A", problems: []),
       wire.Queue(track: "NeetCode 150 (Go)", name: "A", problems: []),
     ])
     == Ok(Nil)
-  assert study.validate_queues([a_queue(string.repeat("x", 61), [])])
+  assert queues.validate_queues([a_queue(string.repeat("x", 61), [])])
     == Error("a queue name is at most 60 characters")
   let many =
     list.map(list_range(1, 51), fn(i) { a_queue(int.to_string(i), []) })
-  assert study.validate_queues(many) == Error("at most 50 queues")
+  assert queues.validate_queues(many) == Error("at most 50 queues")
   let stuffed = [a_queue("big", list.repeat(ref, 1501))]
-  assert study.validate_queues(stuffed)
+  assert queues.validate_queues(stuffed)
     == Error("a queue holds at most 1500 problems")
 }
 
@@ -71,35 +74,35 @@ fn list_range(from: Int, to: Int) -> List(Int) {
 }
 
 pub fn state_code_covers_every_state_test() {
-  study.state_code(fsrs.Learning(0)) |> should.equal(1)
-  study.state_code(fsrs.Review) |> should.equal(2)
-  study.state_code(fsrs.Relearning(0)) |> should.equal(3)
+  cards.state_code(fsrs.Learning(0)) |> should.equal(1)
+  cards.state_code(fsrs.Review) |> should.equal(2)
+  cards.state_code(fsrs.Relearning(0)) |> should.equal(3)
 }
 
 pub fn state_step_is_present_only_while_stepping_test() {
-  study.state_step(fsrs.Learning(2)) |> should.equal(Some(2))
-  study.state_step(fsrs.Relearning(1)) |> should.equal(Some(1))
-  study.state_step(fsrs.Review) |> should.equal(None)
+  cards.state_step(fsrs.Learning(2)) |> should.equal(Some(2))
+  cards.state_step(fsrs.Relearning(1)) |> should.equal(Some(1))
+  cards.state_step(fsrs.Review) |> should.equal(None)
 }
 
 // --- study.streak ----------------------------------------------------------
 
 pub fn streak_counts_consecutive_days_ending_today_test() {
   [tally(0), tally(1), tally(2)]
-  |> study.streak
+  |> stats.streak
   |> should.equal(3)
 }
 
 /// Not having sat down yet today must not read as a broken streak.
 pub fn streak_tolerates_a_day_that_has_not_started_test() {
   [tally(1), tally(2), tally(3)]
-  |> study.streak
+  |> stats.streak
   |> should.equal(3)
 }
 
 pub fn streak_stops_at_the_first_gap_test() {
   [tally(0), tally(1), tally(3), tally(4)]
-  |> study.streak
+  |> stats.streak
   |> should.equal(2)
 }
 
@@ -107,19 +110,19 @@ pub fn streak_stops_at_the_first_gap_test() {
 /// behind it.
 pub fn streak_is_zero_when_the_run_does_not_reach_today_test() {
   [tally(2), tally(3), tally(4)]
-  |> study.streak
+  |> stats.streak
   |> should.equal(0)
 }
 
 pub fn streak_of_no_history_is_zero_test() {
-  [] |> study.streak |> should.equal(0)
+  [] |> stats.streak |> should.equal(0)
 }
 
 /// `stats` feeds this straight from a SQL `group by`, whose row order is not
 /// guaranteed.
 pub fn streak_does_not_depend_on_row_order_test() {
   [tally(2), tally(0), tally(1)]
-  |> study.streak
+  |> stats.streak
   |> should.equal(3)
 }
 
@@ -200,7 +203,7 @@ pub fn normalise_email_is_idempotent_test() {
 /// meant to be identical, and are checked here so the two cannot part company
 /// unnoticed before the shared `wire` package lands.
 pub fn default_settings_are_the_documented_values_test() {
-  let settings = study.default_settings()
+  let settings = profile.default_settings()
   settings.new_per_day |> should.equal(5)
   settings.reviews_per_day |> should.equal(100)
 }
@@ -209,7 +212,7 @@ pub fn default_settings_are_the_documented_values_test() {
 /// the scheduler's in the same change that made settings per track: one
 /// rollover hour, one timezone, one reminder, whatever you are drilling.
 pub fn default_account_settings_are_the_documented_values_test() {
-  let account = study.default_profile().account
+  let account = profile.default_profile().account
   account.day_start_hour |> should.equal(4)
   account.timezone |> should.equal("UTC")
   account.reminder_hour |> should.equal(None)
@@ -217,7 +220,7 @@ pub fn default_account_settings_are_the_documented_values_test() {
 
 // --- helpers ---------------------------------------------------------------
 
-fn tally(days_ago: Int) -> study.DayTally {
+fn tally(days_ago: Int) -> stats.DayTally {
   wire.DayTally(days_ago:, total: 1, correct: 1)
 }
 

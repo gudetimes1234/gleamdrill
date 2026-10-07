@@ -11,7 +11,18 @@ import gleam/option.{None, Some}
 import gleam/result
 import gleam/time/timestamp
 import server/auth.{type User}
-import server/study.{type CardRecord, type Settings}
+import server/study/archive
+import server/study/cards
+import server/study/drafts
+import server/study/insights
+import server/study/legacy_import
+import server/study/model.{type CardRecord, type Settings}
+import server/study/notes
+import server/study/profile
+import server/study/queues
+import server/study/reviews
+import server/study/stats
+import server/study/today
 import server/web.{type Context}
 import wire
 import wisp
@@ -27,8 +38,8 @@ pub fn state(request: wisp.Request, context: Context) -> wisp.Response {
 
   let now = timestamp.system_time()
   let result = {
-    use account <- result.try(study.load_account(context.db, user.id))
-    use standings <- result.try(study.standings(
+    use account <- result.try(profile.load_account(context.db, user.id))
+    use standings <- result.try(today.standings(
       context.db,
       user.id,
       account,
@@ -39,13 +50,13 @@ pub fn state(request: wisp.Request, context: Context) -> wisp.Response {
     // empty string, which matches nothing and lands on the switcher.
     let track = requested_track(request, standings)
     // Same rule as `resolve_track`, off the standings this already has.
-    use settings <- result.try(study.load_settings(context.db, user.id, track))
+    use settings <- result.try(profile.load_settings(context.db, user.id, track))
     let profile = wire.Profile(account:, settings:)
-    use cards <- result.try(study.load_cards_in(context.db, user.id, track))
-    use drafts <- result.try(study.load_drafts_in(context.db, user.id, track))
-    use notes <- result.try(study.load_notes_in(context.db, user.id, track))
-    use queues <- result.try(study.load_queues_in(context.db, user.id, track))
-    use today <- result.try(study.today(
+    use cards <- result.try(cards.load_cards_in(context.db, user.id, track))
+    use drafts <- result.try(drafts.load_drafts_in(context.db, user.id, track))
+    use notes <- result.try(notes.load_notes_in(context.db, user.id, track))
+    use queues <- result.try(queues.load_queues_in(context.db, user.id, track))
+    use today <- result.try(today.today(
       context.db,
       user.id,
       track,
@@ -106,9 +117,9 @@ fn requested_track(
 
 /// The one track a batch of problems is in, or `Error` when it spans more
 /// than one. Same rule as `one_track`, on the other key.
-fn batch_track(problems: List(study.ProblemRef)) -> Result(String, Nil) {
+fn batch_track(problems: List(model.ProblemRef)) -> Result(String, Nil) {
   case
-    list.unique(list.map(problems, fn(ref: study.ProblemRef) { ref.category }))
+    list.unique(list.map(problems, fn(ref: model.ProblemRef) { ref.category }))
   {
     [track] -> Ok(track)
     _ -> Error(Nil)
@@ -139,10 +150,10 @@ fn resolve_track(
   request: wisp.Request,
   context: Context,
   user: User,
-) -> Result(String, study.StudyError) {
+) -> Result(String, model.StudyError) {
   case list.key_find(wisp.get_query(request), "track") {
     Ok(track) -> Ok(track)
-    Error(Nil) -> study.default_track(context.db, user.id)
+    Error(Nil) -> profile.default_track(context.db, user.id)
   }
 }
 
@@ -155,7 +166,7 @@ pub fn queues(request: wisp.Request, context: Context) -> wisp.Response {
     http.Get ->
       case
         resolve_track(request, context, user)
-        |> result.try(study.load_queues_in(context.db, user.id, _))
+        |> result.try(queues.load_queues_in(context.db, user.id, _))
       {
         Error(failure) -> study_error(failure)
         Ok(queues) -> web.json_ok(wire.queues_to_json(queues))
@@ -177,7 +188,7 @@ pub fn queues(request: wisp.Request, context: Context) -> wisp.Response {
               |> result.replace_error(Nil)
             _ -> one_track(queues)
           }
-          case study.validate_queues(queues), named {
+          case queues.validate_queues(queues), named {
             Error(message), _ -> web.error(422, "invalid_queues", message)
             _, Error(Nil) ->
               web.error(
@@ -186,7 +197,7 @@ pub fn queues(request: wisp.Request, context: Context) -> wisp.Response {
                 "Every queue in one request must be in the same track.",
               )
             Ok(Nil), Ok(track) ->
-              case study.replace_queues(context.db, user.id, track, queues) {
+              case queues.replace_queues(context.db, user.id, track, queues) {
                 Error(failure) -> study_error(failure)
                 Ok(Nil) -> wisp.no_content()
               }
@@ -206,14 +217,18 @@ pub fn undo(request: wisp.Request, context: Context) -> wisp.Response {
   use user <- web.require_user(request, context)
   let now = timestamp.system_time()
   let assert Ok(track) = resolve_track(request, context, user)
-  case study.undo_review(context.db, user.id, track) {
-    Error(study.NothingToUndo) ->
+  case reviews.undo_review(context.db, user.id, track) {
+    Error(reviews.NothingToUndo) ->
       web.error(409, "nothing_to_undo", "There is no review to undo.")
-    Error(study.UndoFailed(failure)) -> study_error(failure)
-    Ok(study.Undone(card)) -> {
+    Error(reviews.UndoFailed(failure)) -> study_error(failure)
+    Ok(reviews.Undone(card)) -> {
       let outcome = {
-        use profile <- result.try(study.load_profile(context.db, user.id, track))
-        study.today(context.db, user.id, track, profile, now)
+        use profile <- result.try(profile.load_profile(
+          context.db,
+          user.id,
+          track,
+        ))
+        today.today(context.db, user.id, track, profile, now)
       }
       case outcome {
         Error(failure) -> study_error(failure)
@@ -251,8 +266,12 @@ pub fn review(request: wisp.Request, context: Context) -> wisp.Response {
         // The ref carries the track, so a review needs no parameter: it is
         // scheduled under the settings of the track its own problem is in.
         let track = input.problem.category
-        use profile <- result.try(study.load_profile(context.db, user.id, track))
-        use card <- result.try(study.record_review(
+        use profile <- result.try(profile.load_profile(
+          context.db,
+          user.id,
+          track,
+        ))
+        use card <- result.try(reviews.record_review(
           context.db,
           user.id,
           profile.settings,
@@ -260,7 +279,7 @@ pub fn review(request: wisp.Request, context: Context) -> wisp.Response {
           now,
           fuzz_sample(),
         ))
-        use today <- result.try(study.today(
+        use today <- result.try(today.today(
           context.db,
           user.id,
           track,
@@ -304,14 +323,18 @@ pub fn suspend(request: wisp.Request, context: Context) -> wisp.Response {
       let now = timestamp.system_time()
       let track = problem.category
       let outcome = {
-        use profile <- result.try(study.load_profile(context.db, user.id, track))
-        use card <- result.try(study.set_suspended(
+        use profile <- result.try(profile.load_profile(
+          context.db,
+          user.id,
+          track,
+        ))
+        use card <- result.try(cards.set_suspended(
           context.db,
           user.id,
           problem,
           suspended,
         ))
-        use today <- result.try(study.today(
+        use today <- result.try(today.today(
           context.db,
           user.id,
           track,
@@ -342,7 +365,7 @@ pub fn suspend(request: wisp.Request, context: Context) -> wisp.Response {
   }
 }
 
-fn suspend_decoder() -> decode.Decoder(#(study.ProblemRef, Bool)) {
+fn suspend_decoder() -> decode.Decoder(#(model.ProblemRef, Bool)) {
   use problem <- decode.then(problem_decoder())
   use suspended <- decode.field("suspended", decode.bool)
   decode.success(#(problem, suspended))
@@ -381,7 +404,7 @@ pub fn enqueue(request: wisp.Request, context: Context) -> wisp.Response {
               )
             Ok(track) ->
               queue_response(context, user, track, fn() {
-                use cards <- result.try(study.enqueue_cards(
+                use cards <- result.try(cards.enqueue_cards(
                   context.db,
                   user.id,
                   problems,
@@ -430,7 +453,7 @@ pub fn dequeue(request: wisp.Request, context: Context) -> wisp.Response {
               )
             Ok(track) ->
               queue_response(context, user, track, fn() {
-                use pair <- result.try(study.delete_cards(
+                use pair <- result.try(cards.delete_cards(
                   context.db,
                   user.id,
                   problems,
@@ -452,15 +475,15 @@ fn queue_response(
   track: String,
   change: fn() ->
     Result(
-      #(List(CardRecord), List(study.ProblemRef), List(study.ProblemRef)),
-      study.StudyError,
+      #(List(CardRecord), List(model.ProblemRef), List(model.ProblemRef)),
+      model.StudyError,
     ),
 ) -> wisp.Response {
   let now = timestamp.system_time()
   let outcome = {
-    use profile <- result.try(study.load_profile(context.db, user.id, track))
+    use profile <- result.try(profile.load_profile(context.db, user.id, track))
     use #(cards, removed, refused) <- result.try(change())
-    use today <- result.try(study.today(
+    use today <- result.try(today.today(
       context.db,
       user.id,
       track,
@@ -498,7 +521,7 @@ fn invalid_queue_body() -> wisp.Response {
 /// single statement.
 const queue_batch_limit = 1500
 
-fn queue_decoder() -> decode.Decoder(List(study.ProblemRef)) {
+fn queue_decoder() -> decode.Decoder(List(model.ProblemRef)) {
   use problems <- decode.field("problems", decode.list(problem_decoder()))
   decode.success(problems)
 }
@@ -508,9 +531,9 @@ pub fn stats(request: wisp.Request, context: Context) -> wisp.Response {
   use user <- web.require_user(request, context)
 
   let outcome = {
-    use account <- result.try(study.load_account(context.db, user.id))
+    use account <- result.try(profile.load_account(context.db, user.id))
     use track <- result.try(resolve_track(request, context, user))
-    study.stats(context.db, user.id, track, account)
+    stats.stats(context.db, user.id, track, account)
   }
 
   case outcome {
@@ -545,14 +568,18 @@ pub fn import_legacy(request: wisp.Request, context: Context) -> wisp.Response {
         use track <- result.try(
           batch_track(solved)
           |> result.try_recover(fn(_) {
-            study.default_track(context.db, user.id)
+            profile.default_track(context.db, user.id)
             |> result.map_error(fn(_) { Nil })
           })
           |> result.unwrap("")
           |> Ok,
         )
-        use profile <- result.try(study.load_profile(context.db, user.id, track))
-        study.import_legacy(
+        use profile <- result.try(profile.load_profile(
+          context.db,
+          user.id,
+          track,
+        ))
+        legacy_import.import_legacy(
           context.db,
           user.id,
           track,
@@ -579,7 +606,7 @@ pub fn insights(request: wisp.Request, context: Context) -> wisp.Response {
 
   case
     resolve_track(request, context, user)
-    |> result.try(study.insights(context.db, user.id, _))
+    |> result.try(insights.insights(context.db, user.id, _))
   {
     Error(failure) -> study_error(failure)
     Ok(insights) -> web.json_ok(insights_json(insights))
@@ -601,7 +628,7 @@ pub fn history(request: wisp.Request, context: Context) -> wisp.Response {
   {
     Ok(category), Ok(subcategory), Ok(title) ->
       case
-        study.history(
+        insights.history(
           context.db,
           user.id,
           wire.ProblemRef(category:, subcategory:, title:),
@@ -629,13 +656,13 @@ pub fn export(request: wisp.Request, context: Context) -> wisp.Response {
   use <- wisp.require_method(request, http.Get)
   use user <- web.require_user(request, context)
   let outcome = {
-    use account <- result.try(study.load_account(context.db, user.id))
-    use tracks <- result.try(study.all_track_settings(context.db, user.id))
-    use cards <- result.try(study.load_cards(context.db, user.id))
-    use reviews <- result.try(study.all_reviews(context.db, user.id))
-    use drafts <- result.try(study.load_drafts(context.db, user.id))
-    use notes <- result.try(study.load_notes(context.db, user.id))
-    use queues <- result.try(study.load_queues(context.db, user.id))
+    use account <- result.try(profile.load_account(context.db, user.id))
+    use tracks <- result.try(profile.all_track_settings(context.db, user.id))
+    use cards <- result.try(cards.load_cards(context.db, user.id))
+    use reviews <- result.try(archive.all_reviews(context.db, user.id))
+    use drafts <- result.try(drafts.load_drafts(context.db, user.id))
+    use notes <- result.try(notes.load_notes(context.db, user.id))
+    use queues <- result.try(queues.load_queues(context.db, user.id))
     // The whole account, every track: an archive is the backup, and a
     // per-track file would make "restore everything" an N-file operation
     // with a partial restore as its failure mode.
@@ -680,24 +707,24 @@ pub fn restore(request: wisp.Request, context: Context) -> wisp.Response {
           // An archive carries a settings blob per track and one account
           // object; both halves face the same bounds a settings form does,
           // because a file is just as able to hold an hour of 47.
-          let restored = study.archive_profile(archive)
+          let restored = archive.archive_profile(archive)
           case
             validate_settings(restored.settings),
             validate_account(restored.account),
-            study.validate_queues(archive.queues)
+            queues.validate_queues(archive.queues)
           {
             Error(message), _, _ | _, Error(message), _ ->
               web.error(422, "invalid_settings", message)
             _, _, Error(message) -> web.error(422, "invalid_queues", message)
             Ok(_), Ok(_), Ok(_) ->
               case
-                study.timezone_is_valid(context.db, restored.account.timezone)
+                today.timezone_is_valid(context.db, restored.account.timezone)
               {
                 Ok(False) ->
                   web.error(422, "invalid_settings", "Unknown timezone.")
                 Error(failure) -> study_error(failure)
                 Ok(True) ->
-                  case study.restore(context.db, user.id, archive) {
+                  case archive.restore(context.db, user.id, archive) {
                     Error(failure) -> study_error(failure)
                     Ok(Nil) -> wisp.no_content()
                   }
@@ -719,7 +746,7 @@ pub fn note(request: wisp.Request, context: Context) -> wisp.Response {
     Error(_) ->
       web.error(422, "invalid_body", "Expected a problem reference and a body.")
     Ok(#(problem, note_body)) ->
-      case study.save_note(context.db, user.id, problem, note_body) {
+      case notes.save_note(context.db, user.id, problem, note_body) {
         Error(failure) -> study_error(failure)
         Ok(Nil) -> wisp.no_content()
       }
@@ -739,7 +766,7 @@ pub fn draft(request: wisp.Request, context: Context) -> wisp.Response {
             "Expected a problem reference and a body.",
           )
         Ok(#(problem, draft_body)) ->
-          case study.save_draft(context.db, user.id, problem, draft_body) {
+          case drafts.save_draft(context.db, user.id, problem, draft_body) {
             Error(failure) -> study_error(failure)
             Ok(Nil) -> wisp.no_content()
           }
@@ -753,7 +780,7 @@ pub fn draft(request: wisp.Request, context: Context) -> wisp.Response {
         Error(_) ->
           web.error(422, "invalid_body", "Expected a problem reference.")
         Ok(problem) ->
-          case study.delete_draft(context.db, user.id, problem) {
+          case drafts.delete_draft(context.db, user.id, problem) {
             Error(failure) -> study_error(failure)
             Ok(Nil) -> wisp.no_content()
           }
@@ -769,7 +796,7 @@ pub fn settings(request: wisp.Request, context: Context) -> wisp.Response {
     http.Get ->
       case
         resolve_track(request, context, user)
-        |> result.try(study.load_profile(context.db, user.id, _))
+        |> result.try(profile.load_profile(context.db, user.id, _))
       {
         Error(failure) -> study_error(failure)
         Ok(profile) -> web.json_ok(profile_json(profile))
@@ -798,7 +825,7 @@ fn update_settings(
         Error(message), _ | _, Error(message) ->
           web.error(422, "invalid_settings", message)
         Ok(settings), Ok(account) ->
-          case study.timezone_is_valid(context.db, account.timezone) {
+          case today.timezone_is_valid(context.db, account.timezone) {
             Error(failure) -> study_error(failure)
             Ok(False) ->
               web.error(
@@ -813,12 +840,12 @@ fn update_settings(
               // the account's row, and this track's. Splitting the endpoint
               // is a later release's business.
               let written = {
-                use _ <- result.try(study.save_account(
+                use _ <- result.try(profile.save_account(
                   context.db,
                   user.id,
                   account,
                 ))
-                study.save_settings(context.db, user.id, track, settings)
+                profile.save_settings(context.db, user.id, track, settings)
               }
               case written {
                 Error(failure) -> study_error(failure)
@@ -830,7 +857,7 @@ fn update_settings(
   }
 }
 
-fn profile_json(profile: study.Profile) -> Json {
+fn profile_json(profile: profile.Profile) -> Json {
   json.object([
     #("account", wire.account_to_json(profile.account)),
     #(
@@ -943,10 +970,10 @@ const settings_decoder = wire.settings_decoder
 
 fn import_decoder() -> decode.Decoder(
   #(
-    List(study.ProblemRef),
-    List(study.ImportCard),
-    List(#(study.ProblemRef, String)),
-    List(#(study.ProblemRef, String)),
+    List(model.ProblemRef),
+    List(legacy_import.ImportCard),
+    List(#(model.ProblemRef, String)),
+    List(#(model.ProblemRef, String)),
     List(wire.Queue),
   ),
 ) {
@@ -977,7 +1004,7 @@ fn import_decoder() -> decode.Decoder(
   decode.success(#(solved, cards, drafts, notes, queues))
 }
 
-fn import_card_decoder() -> decode.Decoder(study.ImportCard) {
+fn import_card_decoder() -> decode.Decoder(legacy_import.ImportCard) {
   use problem <- decode.then(problem_decoder())
   use state <- decode.field("state", decode.int)
   use step <- decode.field("step", decode.optional(decode.int))
@@ -995,7 +1022,7 @@ fn import_card_decoder() -> decode.Decoder(study.ImportCard) {
     None,
     decode.optional(lenient_float()),
   )
-  decode.success(study.ImportCard(
+  decode.success(legacy_import.ImportCard(
     problem:,
     // Anything outside 1..3 would violate the state encoding, so it is
     // clamped rather than trusted.
@@ -1016,9 +1043,9 @@ fn import_card_decoder() -> decode.Decoder(study.ImportCard) {
 
 // --- errors ----------------------------------------------------------------
 
-fn study_error(failure: study.StudyError) -> wisp.Response {
+fn study_error(failure: model.StudyError) -> wisp.Response {
   case failure {
-    study.StudyDatabaseError(detail) -> {
+    model.StudyDatabaseError(detail) -> {
       wisp.log_error("study database error: " <> detail)
       web.error(500, "server_error", "Something went wrong. Try again.")
     }

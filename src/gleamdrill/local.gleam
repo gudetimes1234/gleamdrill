@@ -156,7 +156,7 @@ pub fn is_empty(local: Local) -> Bool {
 
 /// Schedules a review and folds it into local state.
 ///
-/// Mirrors `server/src/server/study.gleam:record_review` deliberately: the
+/// Mirrors `server/src/server/study/reviews.gleam:record_review` deliberately: the
 /// rating is scheduled as given and the log keeps the run/reveal truth. The
 /// rule staying identical is what lets a guest upgrade without their history
 /// changing meaning.
@@ -436,7 +436,7 @@ pub fn archive(
 ///
 /// A file from before tracks has one blob under the "" key, meaning "every
 /// track", so it is fanned out across the tracks its own cards name. A newer
-/// file already has a row per track. Mirrors `study.archive_tracks` on the
+/// file already has a row per track. Mirrors `archive.archive_tracks` on the
 /// server, deliberately: a file made by one has to restore into the other.
 pub fn archive_tracks(archive: wire.Archive) -> List(#(String, Settings)) {
   case list.key_find(archive.tracks, "") {
@@ -538,7 +538,7 @@ pub fn set_suspended(
 ///
 /// `introduced_at` stays `None`: it means "first studied", and `today` counts
 /// it against the daily new budget. `record` stamps it on the first review.
-/// Mirrors `study.enqueue_cards` on the server, including that.
+/// Mirrors `cards.enqueue_cards` on the server, including that.
 pub fn enqueue(
   local: Local,
   problems: List(problem.ProblemRef),
@@ -731,7 +731,7 @@ fn forecast(local: Local, track: String, now: Timestamp) -> List(#(Int, Int)) {
 
 /// Consecutive study days ending today, or ending yesterday if today has no
 /// reviews yet -- a streak should not read as broken just because the user has
-/// not sat down yet. Same rule as `server/src/server/study.gleam:streak`.
+/// not sat down yet. Same rule as `server/src/server/study/stats.gleam:streak`.
 pub fn streak(history: List(api.DayTally)) -> Int {
   let days =
     history |> list.map(fn(day) { day.days_ago }) |> list.sort(int.compare)

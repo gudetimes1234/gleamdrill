@@ -61,6 +61,11 @@ rel = "icon"
 type = "image/svg+xml"
 href = "/favicon.svg"
 
+# iOS ignores the manifest's icons for the home screen and wants this PNG.
+[[tools.lustre.html.links]]
+rel = "apple-touch-icon"
+href = "/apple-touch-icon.png"
+
 [[tools.lustre.html.links]]
 rel = "manifest"
 href = "/manifest.webmanifest"

@@ -12,6 +12,7 @@ import gleamdrill/model.{
 import gleamdrill/problem.{type Problem, type ProblemRef}
 import gleamdrill/problems
 import gleamdrill/track
+import gleamdrill/view/brand
 import gleamdrill/view/format
 import gleamdrill/view/nav
 import lustre/attribute
@@ -32,7 +33,7 @@ pub fn view(m: Model) -> Element(Msg) {
     // "added to <queue>" confirmation was set and silently never seen.
     nav.notices(m),
     html.div([attribute.class("menu-top")], [
-      html.h1([attribute.class("menu-title")], [html.text("GleamDrill")]),
+      html.h1([attribute.class("menu-title")], brand.wordmark()),
       html.input([
         attribute.type_("search"),
         attribute.class("search"),

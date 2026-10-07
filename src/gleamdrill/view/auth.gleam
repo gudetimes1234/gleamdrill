@@ -10,6 +10,7 @@ import gleamdrill/model.{
   UserChangedAuthPassword, UserClickedBackToStudy, UserSubmittedAuth,
   UserToggledAuthMode,
 }
+import gleamdrill/view/brand
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -28,7 +29,7 @@ pub fn view(m: Model) -> Element(Msg) {
         event.on_submit(fn(_fields) { UserSubmittedAuth }),
       ],
       [
-        html.h1([attribute.class("auth-title")], [html.text("GleamDrill")]),
+        html.h1([attribute.class("auth-title")], brand.wordmark()),
         html.p([attribute.class("auth-subtitle")], [
           html.text(case registering, m.mode {
             // Naming what is at stake beats a generic pitch, and as a guest
@@ -168,7 +169,7 @@ pub fn loading(m: Model) -> Element(Msg) {
           ])
         _ ->
           element.fragment([
-            html.h1([attribute.class("auth-title")], [html.text("GleamDrill")]),
+            html.h1([attribute.class("auth-title")], brand.wordmark()),
             html.p([attribute.class("auth-subtitle auth-loading")], [
               html.span(
                 [

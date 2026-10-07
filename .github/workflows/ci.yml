@@ -171,17 +171,40 @@ jobs:
         if: failure()
         run: cat /tmp/server.log || echo "(the server never started)"
 
-      # Both images, from the repository root, which is the context Railway
-      # uses. Until this existed a Dockerfile change was unverifiable until
-      # production tried it: adding the `wire` package to server/gleam.toml
-      # without adding it to .dockerignore and server/Dockerfile broke four
-      # consecutive api deploys while every other check stayed green, because
-      # `gleam build` runs against a checkout where the package is simply there.
-      #
-      # The web image now compiles the bundle rather than copying a committed
-      # one, so this step is also the only check that its builder stage and the
-      # .dockerignore allow-list are complete. It is slower for that reason.
+  # Both images, from the repository root, which is the context Railway uses.
+  # Until this existed a Dockerfile change was unverifiable until production
+  # tried it: adding the `wire` package to server/gleam.toml without adding it
+  # to .dockerignore and server/Dockerfile broke four consecutive api deploys
+  # while every other check stayed green, because `gleam build` runs against a
+  # checkout where the package is simply there.
+  #
+  # The web image compiles the bundle rather than copying a committed one, so
+  # this is also the only check that its builder stage and the .dockerignore
+  # allow-list are complete.
+  #
+  # Its own job, on its own runner, rather than the tail of `server`: Hex
+  # rate-limits per address, and as the last step of a job that had already
+  # resolved the server's dependencies twice, the web image's resolution was
+  # the one that kept getting a 429 (October 2026, five red runs in a row).
+  # The web image no longer resolves at all (tools/gleam-path-fingerprints.mjs);
+  # the retry below is the backstop, and only ever fires on Hex's 429.
+  images:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
       - name: Images build
         run: |
-          docker build -f server/Dockerfile -t gleamdrill-api-ci .
-          docker build -f deploy/web.Dockerfile -t gleamdrill-web-ci .
+          set -o pipefail
+          build() {
+            for attempt in 1 2 3; do
+              if docker build "$@" 2>&1 | tee /tmp/build.log; then return 0; fi
+              grep -q "rate limit for the Hex API" /tmp/build.log || return 1
+              [ "$attempt" -lt 3 ] || return 1
+              echo "::warning::Hex rate limit; retrying in $((attempt * 60))s"
+              sleep $((attempt * 60))
+            done
+          }
+          build -f server/Dockerfile -t gleamdrill-api-ci .
+          build -f deploy/web.Dockerfile -t gleamdrill-web-ci .
