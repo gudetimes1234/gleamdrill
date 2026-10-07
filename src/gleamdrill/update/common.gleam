@@ -7,6 +7,7 @@ import gleam/bool
 import gleam/dict
 import gleam/list
 import gleam/option.{None, Some}
+import gleam/result
 import gleamdrill/browser
 import gleamdrill/local
 import gleamdrill/model.{
@@ -609,4 +610,9 @@ pub fn run_tour_lesson(m: Model) -> #(Model, Effect(Msg)) {
       start_local_run(m, "gleam", m.tour_draft, tour.harness)
     _, _, _ -> #(m, effect.none())
   }
+}
+
+pub fn current_quiz(m: Model) -> Result(problem.Quiz, Nil) {
+  current_problem(m)
+  |> result.try(fn(found) { option.to_result(found.quiz, Nil) })
 }

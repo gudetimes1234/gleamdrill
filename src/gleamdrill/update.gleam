@@ -12,7 +12,6 @@ import gleam/result
 import gleam/set
 import gleam/string
 import gleamdrill/api
-import gleamdrill/board
 import gleamdrill/browser
 import gleamdrill/keys
 import gleamdrill/legacy
@@ -77,6 +76,7 @@ import gleamdrill/runner
 import gleamdrill/session
 import gleamdrill/store
 import gleamdrill/track
+import gleamdrill/update/board as board_update
 import gleamdrill/update/common
 import gleamdrill/update/compare as compare_update
 import gleamdrill/update/stats
@@ -437,69 +437,11 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         Error(Nil) -> #(m, effect.none())
       }
 
-    QuizMoved(delta) ->
-      case m.graded, current_quiz(m) {
-        False, Ok(quiz) -> {
-          let last = list.length(quiz.choices) - 1
-          let next = case m.choice {
-            Some(current) -> int.clamp(current + delta, 0, last)
-            // First press lands on an edge, so j starts at the top and k at
-            // the bottom.
-            None ->
-              case delta > 0 {
-                True -> 0
-                False -> last
-              }
-          }
-          #(Model(..m, choice: Some(next)), effect.none())
-        }
-        _, _ -> #(m, effect.none())
-      }
-
-    BoardMoved(delta) ->
-      case m.graded {
-        True -> #(m, effect.none())
-        False -> move_board_cursor(m, m.board_cursor + delta)
-      }
-
-    BoardShelfMoved(delta) ->
-      case m.graded, board.at(m.board_cursor) {
-        False, Ok(piece) -> {
-          // Shelves are six long and laid out in order, so the next one
-          // starts at the first piece whose family differs -- found by
-          // walking the family list rather than by arithmetic, so a shelf
-          // that changes size does not break the jump.
-          let shelves = board.families()
-          let here = index_of_family(shelves, piece.family, 0)
-          let assert Ok(target) =
-            list.drop(
-              shelves,
-              int.clamp(here + delta, 0, list.length(shelves) - 1),
-            )
-            |> list.first
-          case list.first(board.pieces_in(target)) {
-            Ok(first) -> move_board_cursor(m, board.index_of(first))
-            Error(Nil) -> #(m, effect.none())
-          }
-        }
-        _, _ -> #(m, effect.none())
-      }
-
-    BoardJumped(to_top) ->
-      case m.graded {
-        True -> #(m, effect.none())
-        False ->
-          move_board_cursor(m, case to_top {
-            True -> 0
-            False -> list.length(board.palette()) - 1
-          })
-      }
-
-    BoardToggledAtCursor ->
-      case board.at(m.board_cursor) {
-        Ok(piece) -> handle(m, UserToggledPiece(piece.id))
-        Error(Nil) -> #(m, effect.none())
-      }
+    QuizMoved(delta) -> board_update.quiz_moved(m, delta)
+    BoardMoved(delta) -> board_update.moved(m, delta)
+    BoardShelfMoved(delta) -> board_update.shelf_moved(m, delta)
+    BoardJumped(to_top) -> board_update.jumped(m, to_top)
+    BoardToggledAtCursor -> board_update.toggled_at_cursor(m)
 
     // --- session ---
     UserChangedAuthEmail(value) -> #(
@@ -1220,116 +1162,15 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.none(),
     )
 
-    UserPickedChoice(index) ->
-      case m.graded {
-        True -> #(m, effect.none())
-        False -> #(Model(..m, choice: Some(index)), effect.none())
-      }
-
-    UserSubmittedAnswer ->
-      case m.graded, m.choice, current_quiz(m), model.current_ref(m) {
-        False, Some(picked), Ok(quiz), Ok(ref) -> {
-          let right = picked == quiz.correct
-          #(
-            Model(
-              ..m,
-              graded: True,
-              // Appended at the head; the report only groups and counts, so
-              // the order does not matter.
-              exam_answers: [#(ref, right), ..m.exam_answers],
-            ),
-            // A quiz grades itself: the answer is either right or it is not,
-            // so there is no Hard/Good/Easy judgement to ask for. The review
-            // is recorded now and the user still presses Next, because the
-            // explanation is worth reading before moving on.
-            store.record_review(
-              m,
-              wire.Review(
-                problem: ref,
-                rating: case right {
-                  True -> fsrs.Good
-                  False -> fsrs.Again
-                },
-                duration_ms: Some(browser.now_ms() - m.opened_at_ms),
-                auto_failed: !right,
-                revealed: False,
-                // The exam is an assessment, not practice.
-                practice: False,
-                recall: False,
-              ),
-            ),
-          )
-        }
-        _, _, _, _ -> #(m, effect.none())
-      }
-
-    UserToggledPiece(id) ->
-      case m.graded, board.find(id) {
-        // Once submitted the board is a verdict, not a form.
-        True, _ | _, Error(Nil) -> #(m, effect.none())
-        False, Ok(piece) -> #(
-          Model(
-            ..m,
-            board_picks: case list.contains(m.board_picks, id) {
-              True -> list.filter(m.board_picks, fn(held) { held != id })
-              False -> [id, ..m.board_picks]
-            },
-            // A click moves the cursor to what was clicked, so switching back
-            // to the keyboard carries on from where the mouse left off.
-            board_cursor: board.index_of(piece),
-          ),
-          effect.none(),
-        )
-      }
-
-    UserSubmittedBoard ->
-      case m.graded, current_board(m), model.current_ref(m) {
-        False, Ok(answer), Ok(ref) -> {
-          let duration_ms = browser.now_ms() - m.opened_at_ms
-          let graded = board.grade(m.board_picks, answer, duration_ms)
-          #(
-            Model(
-              ..m,
-              graded: True,
-              // A SittingEntry, not an exam answer: `common.advance_inner` routes a
-              // sitting with any exam answers to the exam report, and a board
-              // belongs in the summary with every other graded card.
-              sitting: [
-                model.SittingEntry(
-                  problem: ref,
-                  pressed: graded.rating,
-                  duration_ms: duration_ms,
-                  passed: graded.rating != fsrs.Again,
-                  clean: graded.percent == 100 && graded.wrong == [],
-                ),
-                ..m.sitting
-              ],
-            ),
-            // A board grades itself: the selection either names the system or
-            // it does not, so there is no Hard/Good/Easy judgement to ask for.
-            // The review is recorded now and the user still presses Next,
-            // because the verdict is worth reading before moving on.
-            store.record_review(
-              m,
-              wire.Review(
-                problem: ref,
-                rating: graded.rating,
-                duration_ms: Some(duration_ms),
-                auto_failed: graded.rating == fsrs.Again,
-                revealed: False,
-                practice: !m.studying,
-                recall: False,
-              ),
-            ),
-          )
-        }
-        _, _, _ -> #(m, effect.none())
-      }
+    UserPickedChoice(index) -> board_update.picked_choice(m, index)
+    UserSubmittedAnswer -> board_update.submitted_answer(m)
+    UserToggledPiece(id) -> board_update.toggle_piece(m, id)
+    UserSubmittedBoard -> board_update.submitted_board(m)
 
     UserClickedExitDrill -> #(
       Model(
         ..m,
-        exit_prompt: Some(case current_quiz(m), m.studying {
+        exit_prompt: Some(case common.current_quiz(m), m.studying {
           Ok(_), _ -> "Exit the exam? You will not get a score for it."
           // Study-rep typing is deliberately not persisted; a manual
           // drill's draft was saved moments after the last keystroke.
@@ -2676,36 +2517,6 @@ fn shuffle_loop(remaining: List(a), count: Int, acc: List(a)) -> List(a) {
 /// Move the board cursor, clamped, and scroll the chip into view -- the
 /// palette is taller than the viewport on a phone, so a cursor that moved
 /// without scrolling would leave the keyboard driving something off screen.
-fn move_board_cursor(m: Model, to: Int) -> #(Model, Effect(Msg)) {
-  let next = int.clamp(to, 0, list.length(board.palette()) - 1)
-  #(Model(..m, board_cursor: next), common.scroll_to(id.board_chip_id(next)))
-}
-
-fn index_of_family(
-  families: List(board.Family),
-  wanted: board.Family,
-  seen: Int,
-) -> Int {
-  case families {
-    [] -> seen
-    [first, ..rest] ->
-      case first == wanted {
-        True -> seen
-        False -> index_of_family(rest, wanted, seen + 1)
-      }
-  }
-}
-
-fn current_board(m: Model) -> Result(board.Board, Nil) {
-  common.current_problem(m)
-  |> result.try(fn(found) { option.to_result(found.board, Nil) })
-}
-
-fn current_quiz(m: Model) -> Result(problem.Quiz, Nil) {
-  common.current_problem(m)
-  |> result.try(fn(found) { option.to_result(found.quiz, Nil) })
-}
-
 fn toggle_selection(
   selected: List(ProblemRef),
   ref: ProblemRef,
