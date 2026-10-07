@@ -17,7 +17,6 @@ import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/set.{type Set}
-import gleamdrill/api
 import gleamdrill/model.{
   type Model, type Msg, GroupChange, UserAddedAllShown, UserCancelledQueueName,
   UserChangedGroup, UserChangedQueueName, UserDeletedQueue, UserFilteredQueue,
@@ -497,7 +496,7 @@ fn list_action(
 /// stops "Remove" from looking broken on exactly the cards you care most about.
 fn action(
   ref: ProblemRef,
-  state: Option(api.CardState),
+  state: Option(wire.CardState),
   busy: Bool,
 ) -> Element(Msg) {
   let #(class, label, title) = case state {

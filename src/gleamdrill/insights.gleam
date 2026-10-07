@@ -27,8 +27,8 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/string
 import gleam/time/timestamp.{type Timestamp}
-import gleamdrill/api.{type CardState, type CleanSolve, type Insights}
 import gleamdrill/problem.{type ProblemRef}
+import wire.{type CardState, type CleanSolve, type Insights}
 
 /// Under three minutes, from memory, three times running: the goal state.
 pub const fluent_ms = 180_000
@@ -187,16 +187,16 @@ fn crossed_recently(solves: List(CleanSolve), now: Timestamp) -> Bool {
 /// matters: if Easy's next-review pass rate sits below Good's, the user is
 /// pressing Easy on cards that were merely Good.
 pub type CalibrationView {
-  CalibrationView(rows: List(api.Calibration), verdict: Option(String))
+  CalibrationView(rows: List(wire.Calibration), verdict: Option(String))
 }
 
 /// How many next-reviews a grade needs before its pass-rate means anything.
 const calibration_floor = 5
 
-pub fn calibration_view(rows: List(api.Calibration)) -> CalibrationView {
+pub fn calibration_view(rows: List(wire.Calibration)) -> CalibrationView {
   let rate = fn(rating: fsrs.Rating) -> Option(Float) {
     case
-      list.find(rows, fn(row: api.Calibration) {
+      list.find(rows, fn(row: wire.Calibration) {
         row.rating == rating && row.total >= calibration_floor
       })
     {

@@ -19,7 +19,6 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
 import gleam/time/timestamp
-import gleamdrill/api
 import gleamdrill/board
 import gleamdrill/compare
 import gleamdrill/insights
@@ -57,13 +56,13 @@ fn decode(name: String, decoder: decode.Decoder(value)) -> value {
 }
 
 pub fn session_decodes_test() -> Nil {
-  let session = decode("session", api.session_decoder())
+  let session = decode("session", wire.session_decoder())
   assert session.token == "fixture-token"
   assert session.user.email == "drills@example.com"
 }
 
 pub fn boot_state_decodes_test() -> Nil {
-  let state = decode("state", api.boot_state_decoder())
+  let state = decode("state", wire.boot_state_decoder())
 
   assert list.length(state.settings.scheduler.parameters) == 21
   assert state.settings.scheduler.desired_retention == 0.9
@@ -80,14 +79,14 @@ pub fn boot_state_decodes_test() -> Nil {
 /// The answered card in the state fixture. The fixture also holds a queued,
 /// never-opened card now, so "the card" has to be named rather than pattern
 /// matched out of a one-element list.
-fn fixture_card(state: api.BootState) -> Result(api.CardState, Nil) {
-  list.find(state.cards, fn(c: api.CardState) { c.reps > 0 })
+fn fixture_card(state: wire.BootState) -> Result(wire.CardState, Nil) {
+  list.find(state.cards, fn(c: wire.CardState) { c.reps > 0 })
 }
 
 pub fn boot_state_card_decodes_test() -> Nil {
-  let state = decode("state", api.boot_state_decoder())
+  let state = decode("state", wire.boot_state_decoder())
   let assert Ok(card) =
-    list.find(state.cards, fn(c: api.CardState) {
+    list.find(state.cards, fn(c: wire.CardState) {
       c.problem.title == "Contains Duplicate"
     })
 
@@ -111,9 +110,9 @@ pub fn boot_state_card_decodes_test() -> Nil {
 /// queue screen made possible -- a card with no memory at all -- and the app
 /// reads it at boot before anything else happens.
 pub fn boot_state_queued_card_decodes_test() -> Nil {
-  let state = decode("state", api.boot_state_decoder())
+  let state = decode("state", wire.boot_state_decoder())
   let assert Ok(card) =
-    list.find(state.cards, fn(c: api.CardState) {
+    list.find(state.cards, fn(c: wire.CardState) {
       c.problem.title == "Valid Anagram"
     })
 
@@ -128,14 +127,14 @@ pub fn boot_state_queued_card_decodes_test() -> Nil {
 }
 
 pub fn boot_state_draft_decodes_test() -> Nil {
-  let state = decode("state", api.boot_state_decoder())
+  let state = decode("state", wire.boot_state_decoder())
   let assert [#(problem, body)] = state.drafts
   assert problem.title == "Contains Duplicate"
   assert body != ""
 }
 
 pub fn today_decodes_test() -> Nil {
-  let state = decode("state", api.boot_state_decoder())
+  let state = decode("state", wire.boot_state_decoder())
   assert state.today.reviews_done == 1
   assert state.today.new_introduced == 1
   // One of the account default's five new cards has been introduced. The
@@ -145,14 +144,14 @@ pub fn today_decodes_test() -> Nil {
 }
 
 pub fn review_outcome_decodes_test() -> Nil {
-  let outcome = decode("review", api.review_outcome_decoder())
+  let outcome = decode("review", wire.review_outcome_decoder())
   assert outcome.card.reps == 1
   assert outcome.card.card.state == fsrs.Learning(1)
   assert outcome.today.reviews_done == 1
 }
 
 pub fn stats_decodes_test() -> Nil {
-  let stats = decode("stats", api.stats_decoder())
+  let stats = decode("stats", wire.stats_decoder())
   assert stats.total_reviews == 1
   assert stats.streak_days == 1
   // The only review was of a card still in learning, so it does not count
@@ -164,7 +163,7 @@ pub fn stats_decodes_test() -> Nil {
 /// with must agree, or the interval on the button is a lie. Replaying the
 /// server's own stored card through the local scheduler is what proves it.
 pub fn preview_agrees_with_the_server_test() -> Nil {
-  let state = decode("state", api.boot_state_decoder())
+  let state = decode("state", wire.boot_state_decoder())
   let assert Ok(card) = fixture_card(state)
 
   // The server put this card on the second learning step, ten minutes out.
@@ -188,7 +187,7 @@ pub fn preview_agrees_with_the_server_test() -> Nil {
 /// Every grade must offer a distinct, non-trivial interval, or the buttons
 /// carry no information.
 pub fn preview_offers_four_distinct_intervals_test() -> Nil {
-  let state = decode("state", api.boot_state_decoder())
+  let state = decode("state", wire.boot_state_decoder())
   let assert Ok(card) = fixture_card(state)
   let previews = fsrs.preview(card.card, state.now, state.settings.scheduler)
 
@@ -240,11 +239,11 @@ fn at_epoch(seconds: Int) -> timestamp.Timestamp {
   fsrs.from_epoch(int.to_float(seconds))
 }
 
-fn guest_settings() -> api.Settings {
-  api.default_settings()
+fn guest_settings() -> wire.Settings {
+  wire.default_settings()
 }
 
-fn answer(problem: problem.ProblemRef, rating: fsrs.Rating) -> api.Review {
+fn answer(problem: problem.ProblemRef, rating: fsrs.Rating) -> wire.Review {
   wire.Review(
     problem:,
     rating:,
@@ -268,7 +267,7 @@ const a_track = "NeetCode 150"
 /// the server would. Replayed against the captured server response rather than
 /// against an expectation written by hand.
 pub fn guest_scheduling_matches_the_server_test() -> Nil {
-  let state = decode("state", api.boot_state_decoder())
+  let state = decode("state", wire.boot_state_decoder())
   let assert Ok(server_card) = fixture_card(state)
 
   // Replayed from the instant the review happened, which is what the server
@@ -620,7 +619,7 @@ pub fn notes_replace_and_blank_clears_test() -> Nil {
 
 /// A boot state from a server that predates notes still decodes.
 pub fn boot_state_without_notes_decodes_test() -> Nil {
-  let state = decode("state", api.boot_state_decoder())
+  let state = decode("state", wire.boot_state_decoder())
   assert state.notes == []
 }
 
@@ -629,11 +628,11 @@ pub fn boot_state_without_notes_decodes_test() -> Nil {
 // The derivations are pure over the wire payloads, so a synthetic review log
 // exercises the whole pipeline with no storage and no server.
 
-fn solve(title: String, at: Int, ms: Int) -> api.CleanSolve {
+fn solve(title: String, at: Int, ms: Int) -> wire.CleanSolve {
   wire.CleanSolve(problem: a_problem(title), at: at_epoch(at), duration_ms: ms)
 }
 
-fn card_named(title: String) -> api.CardState {
+fn card_named(title: String) -> wire.CardState {
   wire.CardState(
     problem: a_problem(title),
     card: fsrs.new_card(at_epoch(1_800_000_000)),
@@ -1089,11 +1088,11 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
   // Every review was graded Good. Review 1 was followed by the reveal: not
   // a pass. Review 2 (the reveal, still Good) was followed by a clean pass.
   let assert Ok(good_row) =
-    list.find(data.calibration, fn(row: api.Calibration) {
+    list.find(data.calibration, fn(row: wire.Calibration) {
       row.rating == fsrs.Good
     })
   assert good_row.total == 2 && good_row.passed == 1
-  assert list.all(data.calibration, fn(row: api.Calibration) {
+  assert list.all(data.calibration, fn(row: wire.Calibration) {
     row.rating == fsrs.Good
   })
 
@@ -1543,7 +1542,7 @@ pub fn paired_directions_resolve_to_opposite_deltas_test() -> Nil {
 }
 
 pub fn insights_fixture_decodes_test() -> Nil {
-  let data = decode("insights", api.insights_decoder())
+  let data = decode("insights", wire.insights_decoder())
   // The fixture account: 150s clean, revealed (coerced), 90s clean.
   assert list.length(data.clean_solves) == 2
   let assert [#(_, reveal_count)] = data.reveals
@@ -1555,7 +1554,7 @@ pub fn history_fixture_decodes_test() -> Nil {
   let rows =
     decode(
       "history",
-      decode.at(["reviews"], decode.list(api.review_row_decoder())),
+      decode.at(["reviews"], decode.list(wire.review_row_decoder())),
     )
   assert list.length(rows) == 3
   // Oldest first, with the reveal in the middle. The grade stays the user's
@@ -1569,7 +1568,7 @@ pub fn history_fixture_decodes_test() -> Nil {
 /// The server's calibration and the guest log's must agree on the same story:
 /// replay the fixture account's three reviews locally and compare.
 pub fn guest_and_server_calibration_agree_test() -> Nil {
-  let server = decode("insights", api.insights_decoder())
+  let server = decode("insights", wire.insights_decoder())
   let settings = guest_settings()
   let problem = a_problem("Contains Duplicate")
 
@@ -1629,7 +1628,7 @@ pub fn guest_and_server_calibration_agree_test() -> Nil {
   assert list.length(guest.clean_solves) == list.length(server.clean_solves)
   assert guest.reveals == server.reveals
   let sort_rows = fn(rows) {
-    list.sort(rows, fn(a: api.Calibration, b: api.Calibration) {
+    list.sort(rows, fn(a: wire.Calibration, b: wire.Calibration) {
       int.compare(fsrs.rating_to_int(a.rating), fsrs.rating_to_int(b.rating))
     })
   }

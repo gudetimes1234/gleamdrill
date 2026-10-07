@@ -24,84 +24,6 @@ import lustre/effect.{type Effect}
 import rsvp
 import wire
 
-// --- types -----------------------------------------------------------------
-//
-// The payload types and their codecs live in `wire`, compiled to both targets
-// from one source so the server cannot rename a field without breaking this
-// build. They are aliased through here because this is where the app has
-// always looked for them; the aliases are transparent, so an `api.CardState`
-// and a `wire.CardState` are the same type. Building one still goes through
-// `wire`, which is the only module that owns the constructors.
-
-pub type User =
-  wire.User
-
-pub type Session =
-  wire.Session
-
-pub type CardState =
-  wire.CardState
-
-pub type Today =
-  wire.Today
-
-pub type Queue =
-  wire.Queue
-
-pub type Settings =
-  wire.Settings
-
-pub type BootState =
-  wire.BootState
-
-pub type ReviewOutcome =
-  wire.ReviewOutcome
-
-pub type UndoOutcome =
-  wire.UndoOutcome
-
-pub type QueueChange =
-  wire.QueueChange
-
-pub type DayTally =
-  wire.DayTally
-
-pub type Stats =
-  wire.Stats
-
-pub type CleanSolve =
-  wire.CleanSolve
-
-pub type Calibration =
-  wire.Calibration
-
-pub type Insights =
-  wire.Insights
-
-pub type ReviewRow =
-  wire.ReviewRow
-
-pub type Review =
-  wire.Review
-
-/// What the app assumes before the first `/api/state` lands. The server
-/// creates new accounts with the same values, from the same definition.
-pub fn default_settings() -> Settings {
-  wire.default_settings()
-}
-
-pub fn empty_today() -> Today {
-  wire.empty_today()
-}
-
-// The error type lives in `remote` now (pure data, importable by the model
-// layer); these transparent re-exports keep existing callers compiling and
-// die with the wire aliases above in the next slice.
-pub type ApiError =
-  remote.ApiError
-
-pub const error_message = remote.error_message
-
 // --- requests --------------------------------------------------------------
 
 pub fn signup(
@@ -109,7 +31,7 @@ pub fn signup(
   email: String,
   password: String,
   timezone: String,
-  handler: fn(Result(Session, ApiError)) -> message,
+  handler: fn(Result(wire.Session, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
@@ -123,7 +45,7 @@ pub fn signup(
         #("timezone", json.string(timezone)),
       ]),
     ),
-    session_decoder(),
+    wire.session_decoder(),
     handler,
   )
 }
@@ -134,7 +56,7 @@ pub fn login(
   base: String,
   email: String,
   password: String,
-  handler: fn(Result(Session, ApiError)) -> message,
+  handler: fn(Result(wire.Session, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
@@ -142,7 +64,7 @@ pub fn login(
     "/api/auth/login",
     None,
     Some(credentials_json(email, password)),
-    session_decoder(),
+    wire.session_decoder(),
     handler,
   )
 }
@@ -152,7 +74,7 @@ pub fn login(
 pub fn logout(
   base: String,
   token: String,
-  handler: fn(Result(Nil, ApiError)) -> message,
+  handler: fn(Result(Nil, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send_expecting_nothing(
     base,
@@ -168,7 +90,7 @@ pub fn fetch_state(
   base: String,
   token: String,
   track: String,
-  handler: fn(Result(BootState, ApiError)) -> message,
+  handler: fn(Result(wire.BootState, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
@@ -176,20 +98,20 @@ pub fn fetch_state(
     scoped("/api/state", track),
     Some(token),
     None,
-    boot_state_decoder(),
+    wire.boot_state_decoder(),
     handler,
   )
 }
 
 /// Runs an attempt on the server. Only Elixir travels this way; see
 /// runner.is_remote. Every server-side refusal (busy, rate limited, session
-/// gone) arrives as an ApiError, never as a failed run: none of them is the
+/// gone) arrives as an remote.ApiError, never as a failed run: none of them is the
 /// attempt's fault, so none of them may cost a grade.
 pub fn post_run(
   base: String,
   token: String,
   request: wire.RunRequest,
-  handler: fn(Result(wire.RunResult, ApiError)) -> message,
+  handler: fn(Result(wire.RunResult, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
@@ -205,8 +127,8 @@ pub fn post_run(
 pub fn post_review(
   base: String,
   token: String,
-  review: Review,
-  handler: fn(Result(ReviewOutcome, ApiError)) -> message,
+  review: wire.Review,
+  handler: fn(Result(wire.ReviewOutcome, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
@@ -214,19 +136,16 @@ pub fn post_review(
     "/api/reviews",
     Some(token),
     Some(wire.review_to_json(review)),
-    review_outcome_decoder(),
+    wire.review_outcome_decoder(),
     handler,
   )
 }
-
-pub type Archive =
-  wire.Archive
 
 /// GET /api/export: the whole account as one archive.
 pub fn fetch_export(
   base: String,
   token: String,
-  handler: fn(Result(Archive, ApiError)) -> message,
+  handler: fn(Result(wire.Archive, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
@@ -243,8 +162,8 @@ pub fn fetch_export(
 pub fn post_restore(
   base: String,
   token: String,
-  archive: Archive,
-  handler: fn(Result(Nil, ApiError)) -> message,
+  archive: wire.Archive,
+  handler: fn(Result(Nil, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send_expecting_nothing(
     base,
@@ -261,7 +180,7 @@ pub fn delete_review(
   base: String,
   token: String,
   track: String,
-  handler: fn(Result(UndoOutcome, ApiError)) -> message,
+  handler: fn(Result(wire.UndoOutcome, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
@@ -281,7 +200,7 @@ pub fn patch_card(
   token: String,
   problem: ProblemRef,
   suspended: Bool,
-  handler: fn(Result(ReviewOutcome, ApiError)) -> message,
+  handler: fn(Result(wire.ReviewOutcome, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
@@ -292,20 +211,20 @@ pub fn patch_card(
       wire.ref_fields(problem)
       |> list.append([#("suspended", json.bool(suspended))]),
     )),
-    review_outcome_decoder(),
+    wire.review_outcome_decoder(),
     handler,
   )
 }
 
 /// Puts problems into the study queue, or takes them out. Both answer the same
-/// `QueueChange`, so one decoder and one message cover the pair -- and a bulk
+/// `wire.QueueChange`, so one decoder and one message cover the pair -- and a bulk
 /// "add this whole topic" is one request, which is what makes the queue screen
 /// usable at catalogue scale.
 pub fn post_cards(
   base: String,
   token: String,
   problems: List(ProblemRef),
-  handler: fn(Result(QueueChange, ApiError)) -> message,
+  handler: fn(Result(wire.QueueChange, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
@@ -313,7 +232,7 @@ pub fn post_cards(
     "/api/cards",
     Some(token),
     Some(problems_json(problems)),
-    queue_change_decoder(),
+    wire.queue_change_decoder(),
     handler,
   )
 }
@@ -322,7 +241,7 @@ pub fn delete_cards(
   base: String,
   token: String,
   problems: List(ProblemRef),
-  handler: fn(Result(QueueChange, ApiError)) -> message,
+  handler: fn(Result(wire.QueueChange, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
@@ -330,7 +249,7 @@ pub fn delete_cards(
     "/api/cards",
     Some(token),
     Some(problems_json(problems)),
-    queue_change_decoder(),
+    wire.queue_change_decoder(),
     handler,
   )
 }
@@ -344,7 +263,7 @@ pub fn put_draft(
   token: String,
   problem: ProblemRef,
   body: String,
-  handler: fn(Result(Nil, ApiError)) -> message,
+  handler: fn(Result(Nil, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send_expecting_nothing(
     base,
@@ -362,7 +281,7 @@ pub fn delete_draft(
   base: String,
   token: String,
   problem: ProblemRef,
-  handler: fn(Result(Nil, ApiError)) -> message,
+  handler: fn(Result(Nil, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send_expecting_nothing(
     base,
@@ -379,7 +298,7 @@ pub fn put_note(
   token: String,
   problem: ProblemRef,
   body: String,
-  handler: fn(Result(Nil, ApiError)) -> message,
+  handler: fn(Result(Nil, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send_expecting_nothing(
     base,
@@ -401,8 +320,8 @@ pub fn put_queues(
   base: String,
   token: String,
   track: String,
-  queues: List(Queue),
-  handler: fn(Result(Nil, ApiError)) -> message,
+  queues: List(wire.Queue),
+  handler: fn(Result(Nil, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send_expecting_nothing(
     base,
@@ -422,7 +341,7 @@ pub fn put_settings(
   token: String,
   track: String,
   profile: wire.Profile,
-  handler: fn(Result(wire.Profile, ApiError)) -> message,
+  handler: fn(Result(wire.Profile, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
@@ -436,7 +355,7 @@ pub fn put_settings(
 }
 
 fn profile_decoder() -> decode.Decoder(wire.Profile) {
-  use settings <- decode.then(settings_decoder())
+  use settings <- decode.then(wire.settings_decoder())
   use account <- decode.then(wire.account_decoder())
   decode.success(wire.Profile(account:, settings:))
 }
@@ -451,11 +370,11 @@ pub fn import_legacy(
   base: String,
   token: String,
   solved: List(ProblemRef),
-  cards: List(CardState),
+  cards: List(wire.CardState),
   drafts: List(#(ProblemRef, String)),
   notes: List(#(ProblemRef, String)),
-  queues: List(Queue),
-  handler: fn(Result(Nil, ApiError)) -> message,
+  queues: List(wire.Queue),
+  handler: fn(Result(Nil, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send_expecting_nothing(
     base,
@@ -470,7 +389,7 @@ pub fn import_legacy(
             json.object(wire.ref_fields(problem))
           }),
         ),
-        #("cards", json.array(cards, card_json)),
+        #("cards", json.array(cards, wire.card_to_json)),
         #("queues", json.array(queues, wire.queue_to_json)),
         #("drafts", json.array(drafts, wire.draft_to_json)),
         #("notes", json.array(notes, wire.draft_to_json)),
@@ -484,7 +403,7 @@ pub fn fetch_insights(
   base: String,
   token: String,
   track: String,
-  handler: fn(Result(Insights, ApiError)) -> message,
+  handler: fn(Result(wire.Insights, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
@@ -492,7 +411,7 @@ pub fn fetch_insights(
     scoped("/api/insights", track),
     Some(token),
     None,
-    insights_decoder(),
+    wire.insights_decoder(),
     handler,
   )
 }
@@ -501,7 +420,7 @@ pub fn fetch_history(
   base: String,
   token: String,
   problem: ProblemRef,
-  handler: fn(Result(List(ReviewRow), ApiError)) -> message,
+  handler: fn(Result(List(wire.ReviewRow), remote.ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
@@ -514,7 +433,7 @@ pub fn fetch_history(
       <> uri_encode(problem.title),
     Some(token),
     None,
-    decode.at(["reviews"], decode.list(review_row_decoder())),
+    decode.at(["reviews"], decode.list(wire.review_row_decoder())),
     handler,
   )
 }
@@ -533,7 +452,7 @@ pub fn fetch_stats(
   base: String,
   token: String,
   track: String,
-  handler: fn(Result(Stats, ApiError)) -> message,
+  handler: fn(Result(wire.Stats, remote.ApiError)) -> message,
 ) -> Effect(message) {
   send(
     base,
@@ -541,7 +460,7 @@ pub fn fetch_stats(
     scoped("/api/stats", track),
     Some(token),
     None,
-    stats_decoder(),
+    wire.stats_decoder(),
     handler,
   )
 }
@@ -555,7 +474,7 @@ fn send(
   token: Option(String),
   body: Option(Json),
   decoder: Decoder(value),
-  handler: fn(Result(value, ApiError)) -> message,
+  handler: fn(Result(value, remote.ApiError)) -> message,
 ) -> Effect(message) {
   case build(base, method, path, token, body) {
     Error(Nil) -> dispatch_error(handler, unreachable_base(base))
@@ -577,7 +496,7 @@ fn send_expecting_nothing(
   path: String,
   token: Option(String),
   body: Option(Json),
-  handler: fn(Result(Nil, ApiError)) -> message,
+  handler: fn(Result(Nil, remote.ApiError)) -> message,
 ) -> Effect(message) {
   case build(base, method, path, token, body) {
     Error(Nil) -> dispatch_error(handler, unreachable_base(base))
@@ -620,7 +539,7 @@ fn build(
   })
 }
 
-fn unreachable_base(base: String) -> ApiError {
+fn unreachable_base(base: String) -> remote.ApiError {
   case base {
     "" -> ServerFault("No backend is configured for this deployment.")
     _ -> ServerFault("The backend address is not a valid URL: " <> base)
@@ -630,14 +549,14 @@ fn unreachable_base(base: String) -> ApiError {
 /// A failure that never left the browser still has to arrive as a message, or
 /// the UI would sit on a spinner forever.
 fn dispatch_error(
-  handler: fn(Result(value, ApiError)) -> message,
-  error: ApiError,
+  handler: fn(Result(value, remote.ApiError)) -> message,
+  error: remote.ApiError,
 ) -> Effect(message) {
   use dispatch <- effect.from
   dispatch(handler(Error(error)))
 }
 
-fn translate(error: rsvp.Error(String)) -> ApiError {
+fn translate(error: rsvp.Error(String)) -> remote.ApiError {
   case error {
     rsvp.NetworkError -> Offline
     rsvp.BadUrl(url) -> ServerFault("Bad request URL: " <> url)
@@ -654,7 +573,7 @@ fn translate(error: rsvp.Error(String)) -> ApiError {
   }
 }
 
-fn from_response(response: Response(String)) -> ApiError {
+fn from_response(response: Response(String)) -> remote.ApiError {
   let message =
     json.parse(response.body, decode.at(["message"], decode.string))
     |> result.unwrap("The server rejected that request.")
@@ -681,38 +600,6 @@ fn from_response(response: Response(String)) -> ApiError {
 
 // --- codecs ----------------------------------------------------------------
 //
-// Re-exported from `wire` so the call sites here and in `local`/`store` read
-// the same as they always did. There is no second implementation behind any
-// of these any more.
-
-pub const card_json = wire.card_to_json
-
-pub const settings_json = wire.settings_to_json
-
-pub const state_code = wire.state_code
-
-pub const state_step = wire.state_step
-
-pub const card_decoder = wire.card_decoder
-
-pub const today_decoder = wire.today_decoder
-
-pub const settings_decoder = wire.settings_decoder
-
-pub const session_decoder = wire.session_decoder
-
-pub const boot_state_decoder = wire.boot_state_decoder
-
-pub const review_outcome_decoder = wire.review_outcome_decoder
-
-pub const queue_change_decoder = wire.queue_change_decoder
-
-pub const stats_decoder = wire.stats_decoder
-
-pub const insights_decoder = wire.insights_decoder
-
-pub const review_row_decoder = wire.review_row_decoder
-
 fn credentials_json(email: String, password: String) -> Json {
   json.object([
     #("email", json.string(email)),

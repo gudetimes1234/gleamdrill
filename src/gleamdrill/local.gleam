@@ -28,12 +28,11 @@ import gleam/order
 import gleam/result
 import gleam/string
 import gleam/time/timestamp.{type Timestamp}
-import gleamdrill/api.{type CardState, type Settings}
 import gleamdrill/browser
 import gleamdrill/model
 import gleamdrill/problem.{type ProblemRef}
 import plinth/javascript/storage
-import wire
+import wire.{type CardState, type Settings}
 
 /// Split across keys so that saving a draft on every keystroke pause does not
 /// rewrite the whole card store.
@@ -124,7 +123,7 @@ pub type Local {
     history: List(#(String, History)),
     /// Newest first, capped. The raw material for the insight screens; the
     /// same rows the server keeps in its `reviews` table.
-    log: List(#(ProblemRef, api.ReviewRow)),
+    log: List(#(ProblemRef, wire.ReviewRow)),
     /// Named lists to study from; scheduling stays in `cards`.
     queues: List(wire.Queue),
   )
@@ -163,7 +162,7 @@ pub fn is_empty(local: Local) -> Bool {
 pub fn record(
   local: Local,
   settings: Settings,
-  review: api.Review,
+  review: wire.Review,
   now: Timestamp,
   day_index: Int,
   fuzz: Float,
@@ -232,7 +231,7 @@ pub fn record(
       duration_ms: review.duration_ms,
       revealed: review.revealed,
       auto_failed: review.auto_failed,
-      state_before: api.state_code(before.state),
+      state_before: wire.state_code(before.state),
       scheduled_days: case before.last_review {
         Some(last) -> fsrs.days_between(last, before.due)
         None -> 0
@@ -292,7 +291,7 @@ pub fn unrecord(
               history_for(local, problem.category),
               day_index,
               row.rating != fsrs.Again,
-              row.state_before == api.state_code(fsrs.Review),
+              row.state_before == wire.state_code(fsrs.Review),
             ),
           ),
           log: rest,
@@ -475,7 +474,7 @@ pub fn restore(archive: wire.Archive) -> Local {
           list.key_find(histories, track) |> result.unwrap(empty_history()),
           day,
           row.rating != fsrs.Again,
-          row.state_before == api.state_code(fsrs.Review),
+          row.state_before == wire.state_code(fsrs.Review),
         )
       [#(track, tallied), ..list.filter(histories, fn(e) { e.0 != track })]
     })
@@ -519,7 +518,7 @@ pub fn set_suspended(
   local: Local,
   problem: problem.ProblemRef,
   suspended: Bool,
-) -> Result(#(Local, api.CardState), Nil) {
+) -> Result(#(Local, wire.CardState), Nil) {
   case dict.get(local.cards, problem) {
     Error(Nil) -> Error(Nil)
     Ok(state) -> {
@@ -543,7 +542,7 @@ pub fn enqueue(
   local: Local,
   problems: List(problem.ProblemRef),
   now: Timestamp,
-) -> #(Local, List(api.CardState)) {
+) -> #(Local, List(wire.CardState)) {
   let cards =
     list.fold(problems, local.cards, fn(cards, problem) {
       case dict.has_key(cards, problem) {
@@ -608,7 +607,7 @@ pub fn today(
   settings: Settings,
   now: Timestamp,
   day: StudyDay,
-) -> api.Today {
+) -> wire.Today {
   let day_start = day.start
   let today_index = day.index
   let reviews_done = case
@@ -663,7 +662,7 @@ pub fn stats(
   track: String,
   now: Timestamp,
   day: StudyDay,
-) -> api.Stats {
+) -> wire.Stats {
   let today_index = day.index
   let rollup = history_for(local, track)
   let history =
@@ -695,7 +694,7 @@ fn state_counts(local: Local, track: String) -> List(#(Int, Int)) {
       code,
       dict.fold(local.cards, 0, fn(count, problem: ProblemRef, state) {
         case
-          problem.category == track && api.state_code(state.card.state) == code
+          problem.category == track && wire.state_code(state.card.state) == code
         {
           True -> count + 1
           False -> count
@@ -732,7 +731,7 @@ fn forecast(local: Local, track: String, now: Timestamp) -> List(#(Int, Int)) {
 /// Consecutive study days ending today, or ending yesterday if today has no
 /// reviews yet -- a streak should not read as broken just because the user has
 /// not sat down yet. Same rule as `server/src/server/study/stats.gleam:streak`.
-pub fn streak(history: List(api.DayTally)) -> Int {
+pub fn streak(history: List(wire.DayTally)) -> Int {
   let days =
     history |> list.map(fn(day) { day.days_ago }) |> list.sort(int.compare)
   case days {
@@ -855,7 +854,7 @@ pub fn standings(
 
 pub fn load() -> Local {
   Local(
-    cards: read(cards_key, decode.list(api.card_decoder()))
+    cards: read(cards_key, decode.list(wire.card_decoder()))
       |> option.unwrap([])
       |> list.map(fn(card: CardState) { #(card.problem, card) })
       |> dict.from_list,
@@ -993,7 +992,7 @@ fn adopt_settings() -> Stored {
 fn tracks_present() -> List(String) {
   let refs =
     list.flatten([
-      read(cards_key, decode.list(api.card_decoder()))
+      read(cards_key, decode.list(wire.card_decoder()))
         |> option.unwrap([])
         |> list.map(fn(card: CardState) { card.problem }),
       read(drafts_key, decode.list(draft_decoder()))
@@ -1017,7 +1016,7 @@ fn tracks_present() -> List(String) {
 pub fn save_cards(local: Local) -> Result(Nil, Nil) {
   write(
     cards_key,
-    json.to_string(json.array(dict.values(local.cards), api.card_json)),
+    json.to_string(json.array(dict.values(local.cards), wire.card_to_json)),
   )
 }
 
@@ -1153,7 +1152,7 @@ fn adopt_history() -> List(#(String, History)) {
             list.key_find(histories, track) |> result.unwrap(empty_history()),
             day,
             row.rating != fsrs.Again,
-            row.state_before == api.state_code(fsrs.Review),
+            row.state_before == wire.state_code(fsrs.Review),
           )
         [#(track, tallied), ..list.filter(histories, fn(e) { e.0 != track })]
       })
@@ -1247,7 +1246,7 @@ pub fn seed_from_legacy(
   drafts: List(#(ProblemRef, String)),
 ) -> Nil {
   let store = load()
-  let settings = api.default_settings()
+  let settings = wire.default_settings()
   let now = timestamp.system_time()
   let seed = fsrs.initial_memory(settings.scheduler, fsrs.Good)
 
@@ -1297,7 +1296,7 @@ pub fn seed_from_legacy(
 
 /// The wire shape `/api/insights` produces, computed from the local log so
 /// `insights.analyse` cannot tell a guest from an account.
-pub fn insights(local: Local, track: String) -> api.Insights {
+pub fn insights(local: Local, track: String) -> wire.Insights {
   let chronological =
     local.log
     |> list.filter(fn(entry) { { entry.0 }.category == track })
@@ -1322,7 +1321,7 @@ pub fn insights(local: Local, track: String) -> api.Insights {
     })
   // Last five per problem, oldest first, matching the server's window.
   let clean_solves =
-    list.fold(clean, dict.new(), fn(acc, solve: api.CleanSolve) {
+    list.fold(clean, dict.new(), fn(acc, solve: wire.CleanSolve) {
       dict.upsert(acc, solve.problem, fn(existing) {
         [solve, ..option.unwrap(existing, [])] |> list.take(5)
       })
@@ -1350,8 +1349,8 @@ pub fn insights(local: Local, track: String) -> api.Insights {
 /// For each grade pressed, what the card's next review did — the guest
 /// version of the server's LEAD window.
 fn calibration(
-  chronological: List(#(ProblemRef, api.ReviewRow)),
-) -> List(api.Calibration) {
+  chronological: List(#(ProblemRef, wire.ReviewRow)),
+) -> List(wire.Calibration) {
   let by_problem =
     list.fold(chronological, dict.new(), fn(acc, entry) {
       let #(problem, row) = entry
@@ -1384,7 +1383,7 @@ fn calibration(
 }
 
 /// One card's review rows, oldest first — the wire shape of `/api/history`.
-pub fn history_of(local: Local, problem: ProblemRef) -> List(api.ReviewRow) {
+pub fn history_of(local: Local, problem: ProblemRef) -> List(wire.ReviewRow) {
   local.log
   |> list.filter_map(fn(entry) {
     case entry.0 == problem {
@@ -1395,7 +1394,7 @@ pub fn history_of(local: Local, problem: ProblemRef) -> List(api.ReviewRow) {
   |> list.reverse
 }
 
-fn log_row_json(entry: #(ProblemRef, api.ReviewRow)) -> Json {
+fn log_row_json(entry: #(ProblemRef, wire.ReviewRow)) -> Json {
   let #(problem, row) = entry
   json.object([
     #("category", json.string(problem.category)),
@@ -1419,10 +1418,10 @@ fn log_row_json(entry: #(ProblemRef, api.ReviewRow)) -> Json {
   ])
 }
 
-fn log_row_decoder() -> Decoder(#(ProblemRef, api.ReviewRow)) {
+fn log_row_decoder() -> Decoder(#(ProblemRef, wire.ReviewRow)) {
   use category <- decode.field("category", decode.string)
   use subcategory <- decode.field("subcategory", decode.string)
   use title <- decode.field("title", decode.string)
-  use row <- decode.then(api.review_row_decoder())
+  use row <- decode.then(wire.review_row_decoder())
   decode.success(#(wire.ProblemRef(category:, subcategory:, title:), row))
 }

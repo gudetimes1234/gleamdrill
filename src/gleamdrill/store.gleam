@@ -98,7 +98,7 @@ fn busiest(standings: List(wire.TrackStanding)) -> String {
   |> result.unwrap("")
 }
 
-pub fn record_review(m: Model, review: api.Review) -> Effect(Msg) {
+pub fn record_review(m: Model, review: wire.Review) -> Effect(Msg) {
   case m.mode {
     Account(token) -> api.post_review(base(), token, review, ReviewRecorded)
     Guest -> {
@@ -163,7 +163,7 @@ pub fn export_archive(m: Model) -> Effect(Msg) {
 
 /// Replaces everything the user has with an archive. The caller reloads
 /// the boot state afterwards; nothing here touches the model.
-pub fn restore_archive(m: Model, archive: api.Archive) -> Effect(Msg) {
+pub fn restore_archive(m: Model, archive: wire.Archive) -> Effect(Msg) {
   case m.mode {
     Account(token) -> api.post_restore(base(), token, archive, ArchiveRestored)
     Guest -> {
@@ -485,7 +485,7 @@ pub fn load_stats(m: Model) -> Effect(Msg) {
 pub fn upgrade(
   token: String,
   solved: List(ProblemRef),
-  handler: fn(Result(Nil, api.ApiError)) -> Msg,
+  handler: fn(Result(Nil, remote.ApiError)) -> Msg,
 ) -> Effect(Msg) {
   let store = local.load()
   api.import_legacy(
@@ -512,7 +512,7 @@ fn fuzz_sample() -> Float {
   int.to_float(browser.random_int(1_000_000)) /. 1_000_000.0
 }
 
-fn storage_full() -> api.ApiError {
+fn storage_full() -> remote.ApiError {
   remote.Rejected(
     "This browser's storage is full, so your progress was not saved.",
   )

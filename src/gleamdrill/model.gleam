@@ -7,9 +7,9 @@ import gleam/order
 import gleam/result
 import gleam/string
 import gleam/time/timestamp.{type Timestamp}
-import gleamdrill/api.{type ApiError, type CardState, type Settings, type User}
 import gleamdrill/problem.{type ProblemRef}
-import wire
+import gleamdrill/remote.{type ApiError}
+import wire.{type CardState, type Settings, type User}
 
 pub type Route {
   /// Shown whenever there is no valid session. Everything else is behind it.
@@ -349,14 +349,14 @@ pub type Model {
     /// every visible problem on every render, and this can hold a thousand
     /// entries.
     cards: Dict(ProblemRef, CardState),
-    today: api.Today,
-    stats: Option(api.Stats),
+    today: wire.Today,
+    stats: Option(wire.Stats),
     /// The raw insight payload; `insights.analyse` turns it into tiers and
     /// calibration at render time.
-    insights: Option(api.Insights),
+    insights: Option(wire.Insights),
     /// The problem whose review timeline is open on the stats screen, and its
     /// rows once they arrive.
-    detail: Option(#(ProblemRef, Option(List(api.ReviewRow)))),
+    detail: Option(#(ProblemRef, Option(List(wire.ReviewRow)))),
     auth: AuthForm,
     /// A transient banner for whatever last went wrong with the server.
     notice: Option(String),
@@ -406,7 +406,7 @@ pub type Model {
     undo: Option(UndoPoint),
     /// An export file read from disk, waiting for the user to confirm that
     /// it replaces everything.
-    import_pending: Option(api.Archive),
+    import_pending: Option(wire.Archive),
     /// Bytes the offline runtime cache holds, measured when settings opens.
     cache_bytes: Int,
     /// A runtime download in progress: (done, total). None when idle.
@@ -535,12 +535,12 @@ pub fn default() -> Model {
     boot: NotStarted,
     refreshing: False,
     now: timestamp.from_unix_seconds(0),
-    settings: api.default_settings(),
+    settings: wire.default_settings(),
     account: wire.default_account(),
     active_track: "",
     tracks: [],
     cards: dict.new(),
-    today: api.empty_today(),
+    today: wire.empty_today(),
     stats: None,
     insights: None,
     detail: None,
@@ -1122,8 +1122,8 @@ pub type Msg {
   UserChangedAuthPassword(String)
   UserToggledAuthMode
   UserSubmittedAuth
-  AuthCompleted(Result(api.Session, ApiError))
-  StateLoaded(Result(api.BootState, ApiError))
+  AuthCompleted(Result(wire.Session, ApiError))
+  StateLoaded(Result(wire.BootState, ApiError))
   StateImported(Result(Nil, ApiError))
   UserClickedMergeGuest
   UserDismissedMergeOffer
@@ -1139,16 +1139,16 @@ pub type Msg {
   UserClickedBrowse
   UserClickedBackToStudy
   UserGraded(fsrs.Rating)
-  ReviewRecorded(Result(api.ReviewOutcome, ApiError))
+  ReviewRecorded(Result(wire.ReviewOutcome, ApiError))
   DraftSynced(Result(Nil, ApiError))
   UserClickedStats
-  StatsLoaded(Result(api.Stats, ApiError))
-  InsightsLoaded(Result(api.Insights, ApiError))
+  StatsLoaded(Result(wire.Stats, ApiError))
+  InsightsLoaded(Result(wire.Insights, ApiError))
   StatsCursorMoved(Int)
   StatsActivated
   UserOpenedDetail(ProblemRef)
   UserClosedDetail
-  HistoryLoaded(ProblemRef, Result(List(api.ReviewRow), ApiError))
+  HistoryLoaded(ProblemRef, Result(List(wire.ReviewRow), ApiError))
   // --- browsing and drilling ---
   UserClickedSubcategory(String)
   UserClickedBreadcrumb(Int)
@@ -1216,7 +1216,7 @@ pub type Msg {
   CacheMeasured(Int)
   /// Download everything as one file.
   UserClickedExport
-  ArchiveReady(Result(api.Archive, ApiError))
+  ArchiveReady(Result(wire.Archive, ApiError))
   /// Pick an export file to restore from.
   UserClickedImport
   /// The chosen file's text.
@@ -1230,7 +1230,7 @@ pub type Msg {
   UserDismissedDiff
   /// Take back the latest grade and reopen that problem.
   UserClickedUndo
-  UndoRecorded(UndoPoint, Result(api.UndoOutcome, ApiError))
+  UndoRecorded(UndoPoint, Result(wire.UndoOutcome, ApiError))
   /// Start a recall-only sitting over the study queue.
   UserClickedRecall
   /// Run the code alone, no harness: for reading what it prints.
@@ -1263,7 +1263,7 @@ pub type Msg {
   UserAddedStarterSet
   UserToggledSuspend(ProblemRef)
   MenuSuspendedAtCursor
-  CardSuspended(Result(api.ReviewOutcome, ApiError))
+  CardSuspended(Result(wire.ReviewOutcome, ApiError))
   // --- managing the queue ---
   UserClickedQueue
   UserSearchedQueue(String)
@@ -1296,7 +1296,7 @@ pub type Msg {
   QueueCursorMoved(Int)
   QueueCursorJumped(Bool)
   QueueToggledAtCursor
-  QueueChanged(Result(api.QueueChange, ApiError))
+  QueueChanged(Result(wire.QueueChange, ApiError))
   RunnerReady(language: String)
   RunnerFailed(language: String, message: String)
   RunFinished(id: Int, outcome: RunOutcome, stdout: String)

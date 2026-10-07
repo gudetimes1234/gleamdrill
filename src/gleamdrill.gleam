@@ -590,9 +590,9 @@ fn current_problem(m: Model) -> Result(problem.Problem, Nil) {
 /// sitting in the Go screens. Free and total, so every fold site can use it.
 fn fold_card(
   m: Model,
-  cards: dict.Dict(ProblemRef, api.CardState),
-  card: api.CardState,
-) -> dict.Dict(ProblemRef, api.CardState) {
+  cards: dict.Dict(ProblemRef, wire.CardState),
+  card: wire.CardState,
+) -> dict.Dict(ProblemRef, wire.CardState) {
   // The empty string means *no track chosen yet* -- a browser with nothing in
   // it -- not "a track that matches nothing". Filtering on it would drop the
   // very first card anyone queued and leave the study screen empty forever.
@@ -907,7 +907,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         auth: AuthForm(
           ..m.auth,
           busy: False,
-          error: Some(api.error_message(failure)),
+          error: Some(remote.error_message(failure)),
         ),
       ),
       effect.none(),
@@ -996,13 +996,14 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             ..m,
             refreshing: False,
             notice: Some(
-              "Couldn't refresh from the server: " <> api.error_message(failure),
+              "Couldn't refresh from the server: "
+              <> remote.error_message(failure),
             ),
           ),
           effect.none(),
         )
         _ -> #(
-          Model(..m, boot: SyncFailed(api.error_message(failure))),
+          Model(..m, boot: SyncFailed(remote.error_message(failure))),
           effect.none(),
         )
       }
@@ -1027,7 +1028,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         merge_offer: True,
         notice: Some(
           "Your progress could not be moved to this account: "
-          <> api.error_message(failure)
+          <> remote.error_message(failure)
           <> " It is still in this browser \u{2014} use Merge it to try again.",
         ),
       ),
@@ -1163,7 +1164,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     StatsLoaded(Ok(loaded)) -> #(Model(..m, stats: Some(loaded)), effect.none())
 
     StatsLoaded(Error(failure)) -> #(
-      Model(..m, notice: Some(api.error_message(failure))),
+      Model(..m, notice: Some(remote.error_message(failure))),
       effect.none(),
     )
 
@@ -1173,7 +1174,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
 
     InsightsLoaded(Error(failure)) -> #(
-      Model(..m, notice: Some(api.error_message(failure))),
+      Model(..m, notice: Some(remote.error_message(failure))),
       effect.none(),
     )
 
@@ -1229,7 +1230,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
 
     HistoryLoaded(_, Error(failure)) -> #(
-      Model(..m, detail: None, notice: Some(api.error_message(failure))),
+      Model(..m, detail: None, notice: Some(remote.error_message(failure))),
       effect.none(),
     )
 
@@ -1373,7 +1374,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           other -> other
         },
         storage_full: m.mode == Guest || m.storage_full,
-        notice: Some(api.error_message(failure)),
+        notice: Some(remote.error_message(failure)),
       ),
       effect.none(),
     )
@@ -1451,7 +1452,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     // The point is handed back so the undo can be tried again.
     UndoRecorded(point, Error(failure)) -> #(
-      Model(..m, undo: Some(point), notice: Some(api.error_message(failure))),
+      Model(..m, undo: Some(point), notice: Some(remote.error_message(failure))),
       effect.none(),
     )
 
@@ -1462,7 +1463,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       Model(
         ..m,
         storage_full: m.mode == Guest || m.storage_full,
-        notice: Some(api.error_message(failure)),
+        notice: Some(remote.error_message(failure)),
       ),
       effect.none(),
     )
@@ -2087,7 +2088,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
 
     SettingsSaved(Error(error)) -> #(
-      Model(..m, notice: Some(api.error_message(error))),
+      Model(..m, notice: Some(remote.error_message(error))),
       effect.none(),
     )
 
@@ -2111,7 +2112,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
 
     ArchiveReady(Error(error)) -> #(
-      Model(..m, notice: Some(api.error_message(error))),
+      Model(..m, notice: Some(remote.error_message(error))),
       effect.none(),
     )
 
@@ -2162,7 +2163,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
 
     ArchiveRestored(Error(error)) -> #(
-      Model(..m, refreshing: False, notice: Some(api.error_message(error))),
+      Model(..m, refreshing: False, notice: Some(remote.error_message(error))),
       effect.none(),
     )
 
@@ -2194,7 +2195,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.none(),
     )
     CardSuspended(Error(failure)) -> #(
-      Model(..m, notice: Some(api.error_message(failure))),
+      Model(..m, notice: Some(remote.error_message(failure))),
       effect.none(),
     )
 
@@ -2372,7 +2373,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       Model(
         ..m,
         storage_full: m.mode == Guest || m.storage_full,
-        notice: Some(api.error_message(failure)),
+        notice: Some(remote.error_message(failure)),
       ),
       effect.none(),
     )
@@ -2504,7 +2505,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     QueueChanged(Ok(change)) -> {
       let cards =
-        list.fold(change.cards, m.cards, fn(cards, card: api.CardState) {
+        list.fold(change.cards, m.cards, fn(cards, card: wire.CardState) {
           fold_card(m, cards, card)
         })
       // A browser with no track yet takes the one it just put something in:
@@ -2546,7 +2547,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       )
     }
     QueueChanged(Error(failure)) -> #(
-      Model(..m, queue_pending: [], notice: Some(api.error_message(failure))),
+      Model(..m, queue_pending: [], notice: Some(remote.error_message(failure))),
       effect.none(),
     )
 
@@ -2591,7 +2592,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       Model(
         ..m,
         storage_full: m.mode == Guest || m.storage_full,
-        notice: Some(api.error_message(failure)),
+        notice: Some(remote.error_message(failure)),
       ),
       effect.none(),
     )
@@ -2726,9 +2727,12 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           handle(m, RunFinished(id, outcome, stdout))
         }
         Running(current, _), Error(remote.Unauthorised) if current == id ->
-          handle(Model(..m, run: RunIdle), StateLoaded(Error(remote.Unauthorised)))
+          handle(
+            Model(..m, run: RunIdle),
+            StateLoaded(Error(remote.Unauthorised)),
+          )
         Running(current, _), Error(failure) if current == id -> #(
-          Model(..m, run: RunIdle, notice: Some(api.error_message(failure))),
+          Model(..m, run: RunIdle, notice: Some(remote.error_message(failure))),
           effect.none(),
         )
         _, _ -> #(m, effect.none())
@@ -2797,7 +2801,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 /// Note the route: a signed-in user lands on the study screen, not the manual
 /// browser. The browser is still there, but what to study today is the
 /// question the app now answers first.
-fn apply_state(m: Model, state: api.BootState) -> Model {
+fn apply_state(m: Model, state: wire.BootState) -> Model {
   Model(
     ..m,
     user: Some(state.user),

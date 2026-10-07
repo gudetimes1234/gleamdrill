@@ -4,12 +4,12 @@ import fsrs
 import gleam/int
 import gleam/option.{type Option, None, Some}
 import gleam/time/timestamp.{type Timestamp}
-import gleamdrill/api.{type CardState}
 import gleamdrill/problem.{type Difficulty, type Language}
 import gleamdrill/track
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
+import wire.{type CardState}
 
 /// Compact "3d" style text for an interval.
 ///

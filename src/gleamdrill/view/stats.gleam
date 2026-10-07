@@ -11,7 +11,6 @@ import fsrs
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
-import gleamdrill/api.{type ReviewRow, type Stats}
 import gleamdrill/insights.{type Analysis, type CardInsight}
 import gleamdrill/model.{
   type Model, type Msg, UserClosedDetail, UserOpenedDetail, UserToggledSuspend,
@@ -25,6 +24,7 @@ import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
+import wire.{type ReviewRow, type Stats}
 
 pub fn view(m: Model) -> Element(Msg) {
   html.div([attribute.class("stats-screen")], [
@@ -179,7 +179,7 @@ fn calibration_panel(m: Model) -> Element(Msg) {
   }
 }
 
-fn calibration_row(row: api.Calibration) -> Element(Msg) {
+fn calibration_row(row: wire.Calibration) -> Element(Msg) {
   let percent = case row.total {
     0 -> 0
     total -> row.passed * 100 / total
