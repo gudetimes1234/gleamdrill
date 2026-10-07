@@ -493,7 +493,7 @@ check("the first pane is this track's topics",
   topicRows[0] === "Arrays & Hashing" && topicRows.length === 18,
   JSON.stringify(topicRows.slice(0, 3)) + ` (${topicRows.length})`);
 check("with no language among them",
-  !topicRows.some((t) => ["Python", "Gleam", "Go", "Elixir", "TypeScript"].includes(t)));
+  !topicRows.some((t) => ["Python", "Gleam", "Go", "Elixir", "TypeScript", "Haskell"].includes(t)));
 check("tips categories are hidden",
   !topicRows.some((l) => l.includes("Tips")));
 check("the selection has a pane of its own",
@@ -1569,7 +1569,7 @@ let blitzPassed = 0;
 for (let i = 0; i < blitzTotal; i++) {
   if (await page.isVisible(".summary-container")) break;
   if (i > 0) await startCoding();
-  const title = (await page.textContent(".drill-title")).replace(/(Python|Gleam|TypeScript|Elixir|Go).*$/, "").trim();
+  const title = (await page.textContent(".drill-title")).replace(/(Python|Gleam|TypeScript|Elixir|Go|Haskell).*$/, "").trim();
   await waitForRunnable(240000);
   await setCode(blitzSolutions[title] ?? "def nope():\n    pass\n");
   await page.click(".run-button");
@@ -2597,6 +2597,35 @@ await exitDrill();
 await page.waitForTimeout(800);
 await goHome();
 
+// ---------------------------------------------------------------- act 9d
+act = "09d-haskell-server";
+console.log(act);
+
+// Haskell runs the same way as Go: ghc compiles the attempt on the API.
+// No print check here — a pure solution has nothing to print, and
+// Debug.Trace goes to stderr, which the report does not carry.
+await openByHand("Haskell", "Arrays & Hashing", "Contains Duplicate");
+check("signed in, a Haskell drill offers Run",
+  (await page.$$(".run-button")).length === 1 && (await page.$$(".run-unavailable")).length === 0);
+check("the Haskell starter stubs the signature with a todo",
+  (await page.$eval("gleam-editor", (el) => el.doc)).includes('error "todo"'));
+await waitForRunnable();
+await setCode("module Solution where\n\nimport qualified Data.Set as Set\n\ncontainsDuplicate :: [Int] -> Bool\ncontainsDuplicate nums = go Set.empty nums\n  where\n    go _ [] = False\n    go seen (n : rest)\n      | Set.member n seen = True\n      | otherwise = go (Set.insert n seen) rest\n");
+await page.click(".run-button");
+await page.waitForFunction(() => {
+  const s = document.querySelector(".results-summary");
+  return s && !s.classList.contains("running");
+}, { timeout: 60000 });
+check("ghc built and ran it and every case passed",
+  (await page.textContent(".results-summary")).includes("4/4 passed")
+    && (await page.$$(".case.fail")).length === 0,
+  (await page.textContent(".results-summary")).trim());
+await capture("haskell-passed", "Haskell solution compiled and run on the server: four cases green",
+  "Haskell attempt ran on the server");
+await exitDrill();
+await page.waitForTimeout(800);
+await goHome();
+
 // ---------------------------------------------------------------- act 10
 act = "10-failures";
 console.log(act);
@@ -2604,9 +2633,9 @@ console.log(act);
 // Storage full. Run late: this poisons localStorage for anything after it.
 await page.click("text=Sign out");
 await page.waitForSelector(".guest-strip", { timeout: 10000 });
-// Signing out keeps the device preferences, and act 9c left the Go track
-// active -- whose drills run on the server, which a guest cannot use, so the
-// run button below would never enable. Back onto Python first.
+// Signing out keeps the device preferences, and act 9d left the Haskell
+// track active -- whose drills run on the server, which a guest cannot use,
+// so the run button below would never enable. Back onto Python first.
 await onTrack();
 // Signing out leaves an empty guest store, and the failed-write act below
 // needs a drill to run. Queue before filling storage, obviously: a queue write

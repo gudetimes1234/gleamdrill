@@ -51,9 +51,8366 @@ main =
   )
 }
 
+pub fn nc02_valid_anagram() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Count Map",
+        "O(n) time · O(1) space",
+        "Two strings are anagrams exactly when every character occurs the same number of times in both, so build a count per string and compare the two maps.",
+        "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+isAnagram :: String -> String -> Bool
+isAnagram s t = counts s == counts t
+  where
+    counts str = Map.fromListWith (+) [(c, 1 :: Int) | c <- str]",
+      ),
+    ],
+    check: Check(
+      signature: "isAnagram :: String -> String -> Bool",
+      starter: "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+isAnagram :: String -> String -> Bool
+isAnagram = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"isAnagram \\\"anagram\\\" \\\"nagaram\\\"\" True (isAnagram \"anagram\" \"nagaram\")
+       , tc \"isAnagram \\\"rat\\\" \\\"car\\\"\" False (isAnagram \"rat\" \"car\")
+       , tc \"isAnagram \\\"\\\" \\\"\\\"\" True (isAnagram \"\" \"\")
+       , tc \"isAnagram \\\"a\\\" \\\"ab\\\"\" False (isAnagram \"a\" \"ab\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc03_two_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Hash Map",
+        "O(n) time · O(n) space",
+        "Every number seen so far is already in the map, so the complement is one lookup away — one pass, O(1) per step, and the map hands back the index for free.",
+        "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+twoSum :: [Int] -> Int -> [Int]
+twoSum nums target = go Map.empty (zip [0 ..] nums)
+  where
+    go _ [] = []
+    go seen ((i, n) : rest) = case Map.lookup (target - n) seen of
+      Just j -> [j, i]
+      Nothing -> go (Map.insert n i seen) rest",
+      ),
+    ],
+    check: Check(
+      signature: "twoSum :: [Int] -> Int -> [Int]",
+      starter: "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+twoSum :: [Int] -> Int -> [Int]
+twoSum = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"twoSum [2, 7, 11, 15] 9\" [0, 1] (twoSum [2, 7, 11, 15] 9)
+       , tc \"twoSum [3, 2, 4] 6\" [1, 2] (twoSum [3, 2, 4] 6)
+       , tc \"twoSum [3, 3] 6\" [0, 1] (twoSum [3, 3] 6)
+       , tc \"twoSum [1, 2] 7\" [] (twoSum [1, 2] 7)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc04_group_anagrams() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Count Key",
+        "O(n·k) time · O(n·k) space",
+        "Bucket by a key that comes out identical for everything that belongs together. Once the key is anagram-invariant the grouping is just a map from key to list, and no pair of words is ever compared directly.
+
+Either key works: the sorted word, or a 26-slot letter tally. The tally is O(len) to build against sorting's O(len log len); the sorted word needs no assumption about the alphabet.",
+        "module Solution where
+
+import Data.List (sort)
+import qualified Data.Map.Strict as Map
+
+-- A sorted copy of a word is an anagram-invariant key, so one map
+-- collects each bucket.
+groupAnagrams :: [String] -> [[String]]
+groupAnagrams strs = Map.elems (Map.fromListWith (flip (++)) [(sort s, [s]) | s <- strs])",
+      ),
+    ],
+    check: Check(
+      signature: "groupAnagrams :: [String] -> [[String]]",
+      starter: "module Solution where
+
+import Data.List (sort)
+import qualified Data.Map.Strict as Map
+
+groupAnagrams :: [String] -> [[String]]
+groupAnagrams = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+-- Groups may come back in any order, and so may their members.
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"groupAnagrams [\\\"eat\\\", \\\"tea\\\", \\\"tan\\\", \\\"ate\\\", \\\"nat\\\", \\\"bat\\\"]\"
+           [[\"ate\", \"eat\", \"tea\"], [\"bat\"], [\"nat\", \"tan\"]]
+           (sortGroups (groupAnagrams [\"eat\", \"tea\", \"tan\", \"ate\", \"nat\", \"bat\"]))
+       , tc \"groupAnagrams []\" [] (sortGroups (groupAnagrams []))
+       , tc \"groupAnagrams [\\\"a\\\"]\" [[\"a\"]] (sortGroups (groupAnagrams [\"a\"]))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc05_top_k_frequent() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bucket Sort",
+        "O(n) time · O(n) space",
+        "Count, then select. The frequencies come first; picking the k largest is a separate question, and which method you use for it is what separates the variants.",
+        "module Solution where
+
+import qualified Data.IntMap.Strict as IntMap
+import qualified Data.Map.Strict as Map
+
+-- Bucket the values by frequency, then walk the buckets from the highest
+-- count down until k values have been taken.
+topKFrequent :: [Int] -> Int -> [Int]
+topKFrequent nums k = take k (concatMap snd (IntMap.toDescList buckets))
+  where
+    counts = Map.fromListWith (+) [(n, 1 :: Int) | n <- nums]
+    buckets = IntMap.fromListWith (++) [(c, [n]) | (n, c) <- Map.toList counts]",
+      ),
+    ],
+    check: Check(
+      signature: "topKFrequent :: [Int] -> Int -> [Int]",
+      starter: "module Solution where
+
+import qualified Data.IntMap.Strict as IntMap
+import qualified Data.Map.Strict as Map
+
+topKFrequent :: [Int] -> Int -> [Int]
+topKFrequent = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"topKFrequent [1, 1, 1, 2, 2, 3] 2\" [1, 2] (sortInts (topKFrequent [1, 1, 1, 2, 2, 3] 2))
+       , tc \"topKFrequent [1] 1\" [1] (topKFrequent [1] 1)
+       , tc \"topKFrequent [5, 5, 4, 4, 4, 3] 1\" [4] (topKFrequent [5, 5, 4, 4, 4, 3] 1)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc06_product_except_self() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Prefix & Suffix Products",
+        "O(n) time · O(1) extra space",
+        "The answer at each slot is everything before it times everything after it. One forward pass builds the prefixes, one reverse pass folds in the suffixes — and no division, so a zero in the input costs nothing special.",
+        "module Solution where
+
+-- The prefix products from the left, the suffix products from the right;
+-- each position is the product of the two scans that exclude it.
+productExceptSelf :: [Int] -> [Int]
+productExceptSelf nums = zipWith (*) (init (scanl (*) 1 nums)) (tail (scanr (*) 1 nums))",
+      ),
+    ],
+    check: Check(
+      signature: "productExceptSelf :: [Int] -> [Int]",
+      starter: "module Solution where
+
+productExceptSelf :: [Int] -> [Int]
+productExceptSelf = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"productExceptSelf [1, 2, 3, 4]\" [24, 12, 8, 6] (productExceptSelf [1, 2, 3, 4])
+       , tc \"productExceptSelf [-1, 1, 0, -3, 3]\" [0, 0, 9, 0, 0] (productExceptSelf [-1, 1, 0, -3, 3])
+       , tc \"productExceptSelf [2, 3]\" [3, 2] (productExceptSelf [2, 3])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc07_longest_consecutive() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Hash Set",
+        "O(n) time · O(n) space",
+        "Put everything in a set, then only start counting at numbers with no predecessor. That guard is what keeps it O(n): every run is walked exactly once instead of once per member.",
+        "module Solution where
+
+import qualified Data.Set as Set
+
+longestConsecutive :: [Int] -> Int
+longestConsecutive nums = maximum (0 : map runLength starts)
+  where
+    everything = Set.fromList nums
+    -- Only count from the start of a run, so each run is walked once.
+    starts = [n | n <- Set.toList everything, not (Set.member (n - 1) everything)]
+    runLength n = go 1
+      where
+        go len
+          | Set.member (n + len) everything = go (len + 1)
+          | otherwise = len",
+      ),
+    ],
+    check: Check(
+      signature: "longestConsecutive :: [Int] -> Int",
+      starter: "module Solution where
+
+import qualified Data.Set as Set
+
+longestConsecutive :: [Int] -> Int
+longestConsecutive = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"longestConsecutive [100, 4, 200, 1, 3, 2]\" 4 (longestConsecutive [100, 4, 200, 1, 3, 2])
+       , tc \"longestConsecutive [0, 3, 7, 2, 5, 8, 4, 6, 0, 1]\" 9 (longestConsecutive [0, 3, 7, 2, 5, 8, 4, 6, 0, 1])
+       , tc \"longestConsecutive []\" 0 (longestConsecutive [])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc08_valid_palindrome() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Normalise first — letters and digits only, lowercased — and the palindrome test is whatever comparison you like: two pointers converging, or the cleaned string against its reverse.",
+        "module Solution where
+
+import Data.Char (isAlphaNum, toLower)
+
+isPalindrome :: String -> Bool
+isPalindrome s = cleaned == reverse cleaned
+  where
+    cleaned = map toLower (filter isAlphaNum s)",
+      ),
+    ],
+    check: Check(
+      signature: "isPalindrome :: String -> Bool",
+      starter: "module Solution where
+
+import Data.Char (isAlphaNum, toLower)
+
+isPalindrome :: String -> Bool
+isPalindrome = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"isPalindrome \\\"A man, a plan, a canal: Panama\\\"\" True (isPalindrome \"A man, a plan, a canal: Panama\")
+       , tc \"isPalindrome \\\"race a car\\\"\" False (isPalindrome \"race a car\")
+       , tc \"isPalindrome \\\" \\\"\" True (isPalindrome \" \")
+       , tc \"isPalindrome \\\"0P\\\"\" False (isPalindrome \"0P\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc09_two_sum_sorted() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Sorted input plus a pointer at each end. A sum that is too small can only be fixed by raising the low end, one that is too large by lowering the high end, so neither pointer ever needs to go back. They meet in O(n) with no extra memory.
+
+Positions are 1-based here, which is the only trap.",
+        "module Solution where
+
+import Data.Array
+
+twoSum :: [Int] -> Int -> [Int]
+twoSum numbers target = go 0 (length numbers - 1)
+  where
+    arr = listArray (0, length numbers - 1) numbers
+    go left right
+      | left >= right = []
+      | total == target = [left + 1, right + 1]
+      | total < target = go (left + 1) right
+      | otherwise = go left (right - 1)
+      where
+        total = arr ! left + arr ! right",
+      ),
+    ],
+    check: Check(
+      signature: "twoSum :: [Int] -> Int -> [Int]",
+      starter: "module Solution where
+
+import Data.Array
+
+twoSum :: [Int] -> Int -> [Int]
+twoSum = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"twoSum [2, 7, 11, 15] 9\" [1, 2] (twoSum [2, 7, 11, 15] 9)
+       , tc \"twoSum [2, 3, 4] 6\" [1, 3] (twoSum [2, 3, 4] 6)
+       , tc \"twoSum [-1, 0] (-1)\" [1, 2] (twoSum [-1, 0] (-1))
+       , tc \"twoSum [1, 2, 3] 100\" [] (twoSum [1, 2, 3] 100)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc100_edit_distance() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Three edits, three neighbours in the table: replace from the diagonal, delete from above, insert from the left. Equal characters cost nothing and take the diagonal outright. The first row and column are the cost of building a string from nothing, which is simply its length.",
+        "module Solution where
+
+import Data.Array
+
+-- table (i, j): edits to turn word1[:i] into word2[:j]. Equal last
+-- characters cost nothing; otherwise one edit plus the best of replace,
+-- delete or insert.
+minDistance :: String -> String -> Int
+minDistance word1 word2 = table ! (m, n)
+  where
+    m = length word1
+    n = length word2
+    a = listArray (1, m) word1
+    b = listArray (1, n) word2
+    table = array ((0, 0), (m, n)) [((i, j), cell i j) | i <- [0 .. m], j <- [0 .. n]]
+    cell i 0 = i
+    cell 0 j = j
+    cell i j
+      | a ! i == b ! j = table ! (i - 1, j - 1)
+      | otherwise = 1 + minimum [table ! (i - 1, j - 1), table ! (i - 1, j), table ! (i, j - 1)]",
+      ),
+    ],
+    check: Check(
+      signature: "minDistance :: String -> String -> Int",
+      starter: "module Solution where
+
+import Data.Array
+
+minDistance :: String -> String -> Int
+minDistance = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"minDistance \\\"horse\\\" \\\"ros\\\"\" 3 (minDistance \"horse\" \"ros\")
+       , tc \"minDistance \\\"intention\\\" \\\"execution\\\"\" 5 (minDistance \"intention\" \"execution\")
+       , tc \"minDistance \\\"\\\" \\\"abc\\\"\" 3 (minDistance \"\" \"abc\")
+       , tc \"minDistance \\\"abc\\\" \\\"\\\"\" 3 (minDistance \"abc\" \"\")
+       , tc \"minDistance \\\"same\\\" \\\"same\\\"\" 0 (minDistance \"same\" \"same\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc101_burst_balloons() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(n³) time · O(n²) space",
+        "Ask which balloon is burst *last* in a span, not first. The last one still has both span boundaries as neighbours — they are untouched by definition — so its value is known and the two sides become independent subproblems. Asking \"first\" leaves neighbours that depend on the other side and the recursion never closes. Padding with a 1 at each end removes the edge cases.",
+        "module Solution where
+
+import Data.Array
+
+-- Pad with 1s; best (l, r) is the most from bursting everything strictly
+-- between l and r, deciding which balloon is burst LAST in that range
+-- (its neighbours are then l and r themselves).
+maxCoins :: [Int] -> Int
+maxCoins nums = best ! (0, n - 1)
+  where
+    n = length nums + 2
+    padded = listArray (0, n - 1) (1 : nums ++ [1])
+    best = array ((0, 0), (n - 1, n - 1)) [((l, r), cell l r) | l <- [0 .. n - 1], r <- [0 .. n - 1]]
+    cell l r
+      | r - l < 2 = 0
+      | otherwise = maximum [best ! (l, k) + padded ! l * padded ! k * padded ! r + best ! (k, r) | k <- [l + 1 .. r - 1]]",
+      ),
+    ],
+    check: Check(
+      signature: "maxCoins :: [Int] -> Int",
+      starter: "module Solution where
+
+import Data.Array
+
+maxCoins :: [Int] -> Int
+maxCoins = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"maxCoins [3,1,5,8]\" 167 (maxCoins [3, 1, 5, 8])
+       , tc \"maxCoins [1,5]\" 10 (maxCoins [1, 5])
+       , tc \"maxCoins []\" 0 (maxCoins [])
+       , tc \"maxCoins [5]\" 5 (maxCoins [5])
+       , tc \"maxCoins [1,2,3,4]\" 40 (maxCoins [1, 2, 3, 4])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc102_regular_expression_matching() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(m·n) time · O(m·n) space",
+        "A star binds to the character *before* it, so the pattern is read two symbols at a time. Given \"x*\": either skip the pair entirely — zero copies — or, if x matches here, consume one character of the text and stay on the same pair. Everything else is a single-character match. Getting the zero-copies branch right is most of the problem.",
+        "module Solution where
+
+import Data.Array
+
+-- table (i, j): does s[i:] match p[j:]? A star (p[j+1]) means either skip
+-- the pair, or consume one matching character and stay on the pair.
+isMatch :: String -> String -> Bool
+isMatch s p = table ! (0, 0)
+  where
+    m = length s
+    n = length p
+    a = listArray (0, m - 1) s
+    b = listArray (0, n - 1) p
+    table = array ((0, 0), (m, n)) [((i, j), cell i j) | i <- [0 .. m], j <- [0 .. n]]
+    cell i j
+      | j == n = i == m
+      | j + 1 < n && b ! (j + 1) == '*' = table ! (i, j + 2) || (first && table ! (i + 1, j))
+      | otherwise = first && table ! (i + 1, j + 1)
+      where
+        first = i < m && (b ! j == '.' || b ! j == a ! i)",
+      ),
+    ],
+    check: Check(
+      signature: "isMatch :: String -> String -> Bool",
+      starter: "module Solution where
+
+import Data.Array
+
+isMatch :: String -> String -> Bool
+isMatch = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"isMatch \\\"aa\\\" \\\"a\\\"\" False (isMatch \"aa\" \"a\")
+       , tc \"isMatch \\\"aa\\\" \\\"a*\\\"\" True (isMatch \"aa\" \"a*\")
+       , tc \"isMatch \\\"ab\\\" \\\".*\\\"\" True (isMatch \"ab\" \".*\")
+       , tc \"isMatch \\\"aab\\\" \\\"c*a*b\\\"\" True (isMatch \"aab\" \"c*a*b\")
+       , tc \"isMatch \\\"mississippi\\\" \\\"mis*is*p*.\\\"\" False (isMatch \"mississippi\" \"mis*is*p*.\")
+       , tc \"isMatch \\\"\\\" \\\".*\\\"\" True (isMatch \"\" \".*\")
+       , tc \"isMatch \\\"\\\" \\\"\\\"\" True (isMatch \"\" \"\")
+       , tc \"isMatch \\\"abc\\\" \\\"abc\\\"\" True (isMatch \"abc\" \"abc\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc103_implement_trie() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Trie",
+        "O(k) per operation · O(total letters) space",
+        "One node per prefix, with a flag marking which prefixes are whole words. That flag is the entire difference between search and startsWith — without it, \"app\" and \"apple\" are indistinguishable once both are stored. The other detail worth keeping: the empty prefix always exists, because the root does.",
+        "module Solution where
+
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+
+-- One node per prefix; a word's last node is marked terminal, which is
+-- what tells search from startsWith.
+data Trie = Trie Bool (Map Char Trie)
+
+emptyTrie :: Trie
+emptyTrie = Trie False Map.empty
+
+insert :: String -> Trie -> Trie
+insert [] (Trie _ children) = Trie True children
+insert (c : rest) (Trie terminal children) = Trie terminal (Map.insert c (insert rest next) children)
+  where
+    next = Map.findWithDefault emptyTrie c children
+
+search :: String -> Trie -> Bool
+search word trie = maybe False isTerminal (walk word trie)
+  where
+    isTerminal (Trie terminal _) = terminal
+
+startsWith :: String -> Trie -> Bool
+startsWith prefix trie = maybe False (const True) (walk prefix trie)
+
+walk :: String -> Trie -> Maybe Trie
+walk [] trie = Just trie
+walk (c : rest) (Trie _ children) = Map.lookup c children >>= walk rest",
+      ),
+    ],
+    check: Check(
+      signature: "data Trie = Trie Bool (Map Char Trie)
+emptyTrie :: Trie
+insert :: String -> Trie -> Trie
+search :: String -> Trie -> Bool
+startsWith :: String -> Trie -> Bool
+walk :: String -> Trie -> Maybe Trie",
+      starter: "module Solution where
+
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+
+data Trie = Trie Bool (Map Char Trie)
+
+emptyTrie :: Trie
+emptyTrie = error \"todo\"
+
+insert :: String -> Trie -> Trie
+insert = error \"todo\"
+
+search :: String -> Trie -> Bool
+search = error \"todo\"
+
+startsWith :: String -> Trie -> Bool
+startsWith = error \"todo\"
+
+walk :: String -> Trie -> Maybe Trie
+walk = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main = runCases (pure cases)
+  where
+    withApple = insert \"apple\" emptyTrie
+    withApp = insert \"app\" withApple
+    cases =
+      [ tc \"search \\\"apple\\\" after inserting it\" True (search \"apple\" withApple)
+      , tc \"search \\\"app\\\" -- a prefix, not a word\" False (search \"app\" withApple)
+      , tc \"startsWith \\\"app\\\"\" True (startsWith \"app\" withApple)
+      , tc \"startsWith \\\"b\\\"\" False (startsWith \"b\" withApple)
+      , tc \"search \\\"app\\\" after inserting it too\" True (search \"app\" withApp)
+      ]",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc104_word_dictionary() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Trie",
+        "O(total letters) per search · O(total letters) space",
+        "A dot has to try every child, which turns the lookup from a walk into a search. The trie is what keeps that search from being over the whole dictionary: a branch that cannot match is abandoned at the first letter, so shared prefixes are explored once rather than once per word.",
+        "module Solution where
+
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+
+-- A trie; a dot in the query branches into every child at that depth.
+data WordDictionary = WordDictionary Bool (Map Char WordDictionary)
+
+emptyDictionary :: WordDictionary
+emptyDictionary = WordDictionary False Map.empty
+
+addWord :: String -> WordDictionary -> WordDictionary
+addWord [] (WordDictionary _ children) = WordDictionary True children
+addWord (c : rest) (WordDictionary terminal children) = WordDictionary terminal (Map.insert c (addWord rest next) children)
+  where
+    next = Map.findWithDefault emptyDictionary c children
+
+search :: String -> WordDictionary -> Bool
+search [] (WordDictionary terminal _) = terminal
+search ('.' : rest) (WordDictionary _ children) = any (search rest) (Map.elems children)
+search (c : rest) (WordDictionary _ children) = maybe False (search rest) (Map.lookup c children)",
+      ),
+    ],
+    check: Check(
+      signature: "data WordDictionary = WordDictionary Bool (Map Char WordDictionary)
+emptyDictionary :: WordDictionary
+addWord :: String -> WordDictionary -> WordDictionary
+search :: String -> WordDictionary -> Bool",
+      starter: "module Solution where
+
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+
+data WordDictionary = WordDictionary Bool (Map Char WordDictionary)
+
+emptyDictionary :: WordDictionary
+emptyDictionary = error \"todo\"
+
+addWord :: String -> WordDictionary -> WordDictionary
+addWord = error \"todo\"
+
+search :: String -> WordDictionary -> Bool
+search = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main = runCases (pure cases)
+  where
+    dictionary = addWord \"mad\" (addWord \"dad\" (addWord \"bad\" emptyDictionary))
+    cases =
+      [ tc \"search \\\"pad\\\"\" False (search \"pad\" dictionary)
+      , tc \"search \\\"bad\\\"\" True (search \"bad\" dictionary)
+      , tc \"search \\\".ad\\\"\" True (search \".ad\" dictionary)
+      , tc \"search \\\"b..\\\"\" True (search \"b..\" dictionary)
+      , tc \"search \\\"...\\\"\" True (search \"...\" dictionary)
+      , tc \"search \\\"b\\\" -- too short\" False (search \"b\" dictionary)
+      , tc \"search \\\"....\\\" -- too long\" False (search \"....\" dictionary)
+      ]",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc105_word_search_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Trie",
+        "O(m·n·4ᴸ) time · O(total letters) space",
+        "Build one trie of all the words and walk it *alongside* the board. Searching for each word separately re-walks every shared prefix once per word; the trie walks each prefix once and abandons a square the moment no word continues that way. That is where nearly all the saving is, and it is the reason this problem exists rather than being Word Search in a loop.",
+        "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+import Data.Set (Set)
+import qualified Data.Set as Set
+
+-- Put every word in a trie, then walk the board once, descending the
+-- trie in step: a dead branch prunes every word sharing that prefix.
+-- Found words land in a set, so each is reported once.
+data Trie = Trie (Maybe String) (Map Char Trie)
+
+findWords :: [String] -> [String] -> [String]
+findWords board wordList = Set.toAscList (foldl' start Set.empty (range bnds))
+  where
+    rows = length board
+    cols = length (head board)
+    bnds = ((0, 0), (rows - 1, cols - 1))
+    grid = listArray bnds (concat board)
+    root = foldl' (flip insertWord) (Trie Nothing Map.empty) wordList
+    insertWord w = go w
+      where
+        go [] (Trie _ children) = Trie (Just w) children
+        go (c : rest) (Trie stored children) = Trie stored (Map.insert c (go rest next) children)
+          where
+            next = Map.findWithDefault (Trie Nothing Map.empty) c children
+    start found pos = walk pos root Set.empty found
+    walk pos@(r, c) (Trie _ children) visited found =
+      case Map.lookup (grid ! pos) children of
+        Nothing -> found
+        Just next@(Trie stored _) -> foldl' (\\acc p -> walk p next visited' acc) found' steps
+          where
+            found' = maybe found (`Set.insert` found) stored
+            visited' = Set.insert pos visited
+            steps = [p | p <- [(r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)], inRange bnds p, not (Set.member p visited')]",
+      ),
+    ],
+    check: Check(
+      signature: "data Trie = Trie (Maybe String) (Map Char Trie)
+findWords :: [String] -> [String] -> [String]",
+      starter: "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+import Data.Set (Set)
+import qualified Data.Set as Set
+
+data Trie = Trie (Maybe String) (Map Char Trie)
+
+findWords :: [String] -> [String] -> [String]
+findWords = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main = runCases (pure cases)
+  where
+    board = [\"oaan\", \"etae\", \"ihkr\", \"iflv\"]
+    cases =
+      [ tc \"findWords board [\\\"oath\\\",\\\"pea\\\",\\\"eat\\\",\\\"rain\\\"]\" [\"eat\", \"oath\"] (sortStrings (findWords board [\"oath\", \"pea\", \"eat\", \"rain\"]))
+      , tc \"findWords [\\\"ab\\\",\\\"cd\\\"] [\\\"abcb\\\"]\" [] (sortStrings (findWords [\"ab\", \"cd\"] [\"abcb\"]))
+      , tc \"findWords [\\\"a\\\"] [\\\"a\\\"]\" [\"a\"] (sortStrings (findWords [\"a\"] [\"a\"]))
+      , tc \"findWords board []\" [] (sortStrings (findWords [\"oaan\", \"etae\"] []))
+      , tc \"findWords board [\\\"oa\\\", \\\"oa\\\"] -- once each\" [\"oa\"] (sortStrings (findWords board [\"oa\", \"oa\"]))
+      ]",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc106_number_of_islands() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(m·n) time · O(m·n) space",
+        "The grid is the graph: cells are nodes, the four neighbours are the edges, and nothing is ever built. Walk out from each unvisited land cell, mark everything it reaches, and add one — the traversal itself does the counting, which is why the answer needs no extra bookkeeping.",
+        "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Set as Set
+
+-- Each unvisited land cell starts a new island; sink it whole so its
+-- other cells are not counted again.
+numIslands :: [String] -> Int
+numIslands grid = snd (foldl' visit (Set.empty, 0) (range bnds))
+  where
+    rows = length grid
+    cols = length (head grid)
+    bnds = ((0, 0), (rows - 1, cols - 1))
+    cells = listArray bnds (concat grid)
+    visit (sunk, count) pos
+      | cells ! pos == '1' && not (Set.member pos sunk) = (sink pos sunk, count + 1)
+      | otherwise = (sunk, count)
+    sink pos@(r, c) sunk
+      | not (inRange bnds pos) || cells ! pos /= '1' || Set.member pos sunk = sunk
+      | otherwise = foldl' (flip sink) (Set.insert pos sunk) [(r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)]",
+      ),
+    ],
+    check: Check(
+      signature: "numIslands :: [String] -> Int",
+      starter: "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Set as Set
+
+numIslands :: [String] -> Int
+numIslands = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"numIslands (one big island)\" 1 (numIslands [\"11110\", \"11010\", \"11000\", \"00000\"])
+       , tc \"numIslands (three islands)\" 3 (numIslands [\"11000\", \"11000\", \"00100\", \"00011\"])
+       , tc \"numIslands (all water)\" 0 (numIslands [\"000\", \"000\"])
+       , tc \"numIslands [\\\"1\\\"]\" 1 (numIslands [\"1\"])
+       , tc \"numIslands (diagonals do not connect)\" 2 (numIslands [\"10\", \"01\"])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc107_clone_graph() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "BFS",
+        "O(V log V + E) time · O(V+E) space",
+        "The map from original node to its copy is the whole problem. Consulting it before copying anything is what makes a cycle terminate: a node already in the map is returned rather than copied again. Without that check any cycle recurses forever.",
+        "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Map.Strict as Map
+
+-- One clone per original, made the first time the original is seen; the
+-- map is also the visited set, so cycles terminate. The graph arrives as
+-- adjacency lists for the labels 1..n, and the clone leaves the same way.
+cloneGraph :: [[Int]] -> [[Int]]
+cloneGraph adjacency
+  | null adjacency = []
+  | otherwise = Map.elems (clone 1 Map.empty)
+  where
+    neighbours = listArray (1, length adjacency) adjacency
+    clone label clones
+      | Map.member label clones = clones
+      | otherwise = foldl' (flip clone) (Map.insert label (neighbours ! label) clones) (neighbours ! label)",
+      ),
+    ],
+    check: Check(
+      signature: "cloneGraph :: [[Int]] -> [[Int]]",
+      starter: "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Map.Strict as Map
+
+cloneGraph :: [[Int]] -> [[Int]]
+cloneGraph = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"cloneGraph (the 4-cycle)\" [[2, 4], [1, 3], [2, 4], [1, 3]] (cloneGraph [[2, 4], [1, 3], [2, 4], [1, 3]])
+       , tc \"cloneGraph (two nodes)\" [[2], [1]] (cloneGraph [[2], [1]])
+       , tc \"cloneGraph (one node)\" [[]] (cloneGraph [[]])
+       , tc \"cloneGraph []\" [] (cloneGraph [])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc108_max_area_of_island() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(m·n) time · O(m·n) space",
+        "Number of Islands with the count replaced by a size. Depth-first suits it because the size falls out of the return value — one for this cell plus whatever the four neighbours return — rather than needing a counter threaded through the walk.",
+        "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Set as Set
+
+-- Flood from each unvisited land cell, counting as the flood spreads;
+-- the visited set keeps an island from being measured twice.
+maxAreaOfIsland :: [[Int]] -> Int
+maxAreaOfIsland grid = snd (foldl' visit (Set.empty, 0) (range bnds))
+  where
+    rows = length grid
+    cols = length (head grid)
+    bnds = ((0, 0), (rows - 1, cols - 1))
+    cells = listArray bnds (concat grid)
+    visit (seen, best) pos = let (size, seen') = area pos seen in (seen', max best size)
+    area pos@(r, c) seen
+      | not (inRange bnds pos) || cells ! pos /= 1 || Set.member pos seen = (0, seen)
+      | otherwise = foldl' step (1, Set.insert pos seen) [(r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)]
+      where
+        step (size, s) next = let (more, s') = area next s in (size + more, s')",
+      ),
+    ],
+    check: Check(
+      signature: "maxAreaOfIsland :: [[Int]] -> Int",
+      starter: "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Set as Set
+
+maxAreaOfIsland :: [[Int]] -> Int
+maxAreaOfIsland = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"maxAreaOfIsland (the 8x13 example)\" 6 (maxAreaOfIsland
+           [ [0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0]
+           , [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0]
+           , [0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+           , [0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0]
+           , [0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0]
+           , [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]
+           , [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0]
+           , [0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0]
+           ])
+       , tc \"maxAreaOfIsland [[0,0,0,0,0,0,0,0]]\" 0 (maxAreaOfIsland [[0, 0, 0, 0, 0, 0, 0, 0]])
+       , tc \"maxAreaOfIsland [[1]]\" 1 (maxAreaOfIsland [[1]])
+       , tc \"maxAreaOfIsland [[1,1],[1,0]]\" 3 (maxAreaOfIsland [[1, 1], [1, 0]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc109_pacific_atlantic() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "BFS",
+        "O(m·n log(m·n)) time · O(m·n) space",
+        "Reverse the question. Asking of each cell whether water can get from there to both oceans repeats the same searches over and over; asking instead which cells an ocean could reach if water flowed uphill is two searches from the borders, and the answer is where the two sets meet. Flipping a search to start from the goal is the idea worth taking away.",
+        "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Set as Set
+
+-- Flow uphill from each ocean's coast: the cells an ocean can reach
+-- going up are exactly the cells that drain down into it.
+pacificAtlantic :: [[Int]] -> [[Int]]
+pacificAtlantic heights
+  | null heights = []
+  | otherwise = [[r, c] | (r, c) <- range bnds, Set.member (r, c) pacific, Set.member (r, c) atlantic]
+  where
+    rows = length heights
+    cols = length (head heights)
+    bnds = ((0, 0), (rows - 1, cols - 1))
+    grid = listArray bnds (concat heights)
+    pacific = reach ([(r, 0) | r <- [0 .. rows - 1]] ++ [(0, c) | c <- [0 .. cols - 1]])
+    atlantic = reach ([(r, cols - 1) | r <- [0 .. rows - 1]] ++ [(rows - 1, c) | c <- [0 .. cols - 1]])
+    reach coast = foldl' (flip climb) Set.empty coast
+    climb pos@(r, c) seen
+      | Set.member pos seen = seen
+      | otherwise = foldl' (flip climb) (Set.insert pos seen) higher
+      where
+        higher = [next | next <- [(r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)], inRange bnds next, grid ! next >= grid ! pos]",
+      ),
+    ],
+    check: Check(
+      signature: "pacificAtlantic :: [[Int]] -> [[Int]]",
+      starter: "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Set as Set
+
+pacificAtlantic :: [[Int]] -> [[Int]]
+pacificAtlantic = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main = runCases (pure cases)
+  where
+    example = [[1, 2, 2, 3, 5], [3, 2, 3, 4, 4], [2, 4, 5, 3, 1], [6, 7, 1, 4, 5], [5, 1, 1, 2, 4]]
+    cases =
+      [ tc \"pacificAtlantic (the 5x5 example)\" [[0, 4], [1, 3], [1, 4], [2, 2], [3, 0], [3, 1], [4, 0]] (sortRows (pacificAtlantic example))
+      , tc \"pacificAtlantic [[1]]\" [[0, 0]] (sortRows (pacificAtlantic [[1]]))
+      , tc \"pacificAtlantic []\" [] (sortRows (pacificAtlantic []))
+      , tc \"pacificAtlantic [[1,1],[1,1]]\" [[0, 0], [0, 1], [1, 0], [1, 1]] (sortRows (pacificAtlantic [[1, 1], [1, 1]]))
+      ]",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc10_three_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sort + Two Pointers",
+        "O(n²) time · O(1) extra space",
+        "Sort, fix one number, then run the two-pointer scan on the remainder looking for its negation. Sorting is what makes the duplicate triples skippable: equal values are adjacent, so stepping past them is a while loop, not a set.",
+        "module Solution where
+
+import Data.Array
+import Data.List (sort)
+
+threeSum :: [Int] -> [[Int]]
+threeSum nums = concatMap triples [0 .. n - 1]
+  where
+    n = length nums
+    arr = listArray (0, n - 1) (sort nums)
+    triples i
+      | i > 0 && arr ! i == arr ! (i - 1) = []
+      | otherwise = go (i + 1) (n - 1)
+      where
+        go left right
+          | left >= right = []
+          | total < 0 = go (left + 1) right
+          | total > 0 = go left (right - 1)
+          | otherwise = [arr ! i, arr ! left, arr ! right] : go (skipDuplicates (left + 1) right) right
+          where
+            total = arr ! i + arr ! left + arr ! right
+        skipDuplicates left right
+          | left < right && arr ! left == arr ! (left - 1) = skipDuplicates (left + 1) right
+          | otherwise = left",
+      ),
+    ],
+    check: Check(
+      signature: "threeSum :: [Int] -> [[Int]]",
+      starter: "module Solution where
+
+import Data.Array
+import Data.List (sort)
+
+threeSum :: [Int] -> [[Int]]
+threeSum = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+-- Triples are compared as a set: only their contents are meaningful.
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"threeSum [-1, 0, 1, 2, -1, -4]\" [[-1, -1, 2], [-1, 0, 1]] (sortRows (threeSum [-1, 0, 1, 2, -1, -4]))
+       , tc \"threeSum [0, 1, 1]\" [] (sortRows (threeSum [0, 1, 1]))
+       , tc \"threeSum [0, 0, 0]\" [[0, 0, 0]] (sortRows (threeSum [0, 0, 0]))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc110_surrounded_regions() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Boundary DFS",
+        "O(m·n) time · O(m·n) space",
+        "Easier backwards. Rather than finding the surrounded regions, mark the ones that are not — everything reachable from a border O — and flip whatever is left. That side-steps having to notice mid-traversal that a region touches the edge, and costs one pass from the border rather than one per region.",
+        "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Set as Set
+
+-- An O survives only if it touches the border through other Os. Mark
+-- every O reachable from the border, then flip the rest.
+solve :: [String] -> [String]
+solve board
+  | null board = []
+  | otherwise = [[rewrite (r, c) | c <- [0 .. cols - 1]] | r <- [0 .. rows - 1]]
+  where
+    rows = length board
+    cols = length (head board)
+    bnds = ((0, 0), (rows - 1, cols - 1))
+    grid = listArray bnds (concat board)
+    border = [(r, c) | (r, c) <- range bnds, r == 0 || r == rows - 1 || c == 0 || c == cols - 1]
+    safe = foldl' (flip keep) Set.empty border
+    keep pos@(r, c) seen
+      | Set.member pos seen || grid ! pos /= 'O' = seen
+      | otherwise = foldl' (flip keep) (Set.insert pos seen) [next | next <- [(r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)], inRange bnds next]
+    rewrite pos
+      | grid ! pos == 'O' && not (Set.member pos safe) = 'X'
+      | otherwise = grid ! pos",
+      ),
+    ],
+    check: Check(
+      signature: "solve :: [String] -> [String]",
+      starter: "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Set as Set
+
+solve :: [String] -> [String]
+solve = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"solve (the 4x4 example)\" [\"XXXX\", \"XXXX\", \"XXXX\", \"XOXX\"] (solve [\"XXXX\", \"XOOX\", \"XXOX\", \"XOXX\"])
+       , tc \"solve [\\\"X\\\"]\" [\"X\"] (solve [\"X\"])
+       , tc \"solve (an O on the border survives)\" [\"OX\", \"XX\"] (solve [\"OX\", \"XX\"])
+       , tc \"solve (a region linked to the border survives)\" [\"OOX\", \"XOX\", \"XXX\"] (solve [\"OOX\", \"XOX\", \"XXX\"])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc111_rotting_oranges() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Multi-Source BFS",
+        "O(m·n) time · O(m·n) space",
+        "Multi-source breadth-first search: every rotten orange is on the frontier at minute zero, so each wave of the search *is* one minute and the number of waves is the answer. A separate search per source would give distances from each and then still need combining. Any fresh orange left unreached is what makes the answer -1.",
+        "module Solution where
+
+import Data.Array
+import qualified Data.Set as Set
+
+-- Multi-source breadth-first search from every rotten orange at once:
+-- each level of the search is one minute.
+orangesRotting :: [[Int]] -> Int
+orangesRotting grid = go rotten fresh 0
+  where
+    rows = length grid
+    cols = length (head grid)
+    bnds = ((0, 0), (rows - 1, cols - 1))
+    cells = listArray bnds (concat grid)
+    rotten = [pos | pos <- range bnds, cells ! pos == 2]
+    fresh = Set.fromList [pos | pos <- range bnds, cells ! pos == 1]
+    go queue remaining minutes
+      | Set.null remaining = minutes
+      | null queue = -1
+      | otherwise = go (Set.toList newly) (Set.difference remaining newly) (minutes + 1)
+      where
+        newly = Set.fromList [next | (r, c) <- queue, next <- [(r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)], Set.member next remaining]",
+      ),
+    ],
+    check: Check(
+      signature: "orangesRotting :: [[Int]] -> Int",
+      starter: "module Solution where
+
+import Data.Array
+import qualified Data.Set as Set
+
+orangesRotting :: [[Int]] -> Int
+orangesRotting = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"orangesRotting [[2,1,1],[1,1,0],[0,1,1]]\" 4 (orangesRotting [[2, 1, 1], [1, 1, 0], [0, 1, 1]])
+       , tc \"orangesRotting [[2,1,1],[0,1,1],[1,0,1]] -- one is unreachable\" (-1) (orangesRotting [[2, 1, 1], [0, 1, 1], [1, 0, 1]])
+       , tc \"orangesRotting [[0,2]]\" 0 (orangesRotting [[0, 2]])
+       , tc \"orangesRotting [[1]] -- nothing rotten to begin with\" (-1) (orangesRotting [[1]])
+       , tc \"orangesRotting [[2,2],[1,1],[0,0],[2,0]]\" 1 (orangesRotting [[2, 2], [1, 1], [0, 0], [2, 0]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc112_walls_and_gates() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Multi-Source BFS",
+        "O(m·n) time · O(m·n) space",
+        "The same multi-source wave as rotting oranges, writing the wave number into the cell instead of counting waves. Starting from every gate at once is what makes the first arrival at a room its nearest gate — no comparison between gates is ever needed.",
+        "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Map.Strict as Map
+
+inf :: Int
+inf = 2147483647
+
+-- Breadth-first from every gate at once: the first time a room is
+-- reached is by its nearest gate, so each room is claimed once.
+wallsAndGates :: [[Int]] -> [[Int]]
+wallsAndGates rooms
+  | null rooms = []
+  | otherwise = [[Map.findWithDefault (grid ! (r, c)) (r, c) distances | c <- [0 .. cols - 1]] | r <- [0 .. rows - 1]]
+  where
+    rows = length rooms
+    cols = length (head rooms)
+    bnds = ((0, 0), (rows - 1, cols - 1))
+    grid = listArray bnds (concat rooms)
+    gates = [pos | pos <- range bnds, grid ! pos == 0]
+    distances = go (Map.fromList [(gate, 0) | gate <- gates]) gates
+    go dist [] = dist
+    go dist (pos@(r, c) : queue) = go dist' (queue ++ claimed)
+      where
+        claimed = [next | next <- [(r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)], inRange bnds next, grid ! next == inf, not (Map.member next dist)]
+        dist' = foldl' (\\m next -> Map.insert next (dist Map.! pos + 1) m) dist claimed",
+      ),
+    ],
+    check: Check(
+      signature: "inf :: Int
+wallsAndGates :: [[Int]] -> [[Int]]",
+      starter: "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Map.Strict as Map
+
+inf :: Int
+inf = error \"todo\"
+
+wallsAndGates :: [[Int]] -> [[Int]]
+wallsAndGates = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+far :: Int
+far = 2147483647
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"wallsAndGates (the classic 4x4)\" [[3, -1, 0, 1], [2, 2, 1, -1], [1, -1, 2, -1], [0, -1, 3, 4]] (wallsAndGates [[far, -1, 0, far], [far, far, far, -1], [far, -1, far, -1], [0, -1, far, far]])
+       , tc \"wallsAndGates [[0]]\" [[0]] (wallsAndGates [[0]])
+       , tc \"wallsAndGates [[-1]]\" [[-1]] (wallsAndGates [[-1]])
+       , tc \"wallsAndGates []\" [] (wallsAndGates [])
+       , tc \"wallsAndGates (no gate at all)\" [[far, far]] (wallsAndGates [[far, far]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc113_course_schedule() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Topological Sort",
+        "O(V+E) time · O(V+E) space",
+        "\"Can every course be finished\" is \"is this graph acyclic\". Kahn's algorithm takes whatever has no outstanding prerequisites, releases what depended on it, and stalls exactly when a cycle remains — so the cycle check is the algorithm running out of work early, not a separate test.",
+        "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Map.Strict as Map
+
+-- Kahn's algorithm: repeatedly take a course with no remaining
+-- prerequisites. If every course gets taken, there was no cycle.
+canFinish :: Int -> [[Int]] -> Bool
+canFinish numCourses prerequisites = taken == numCourses
+  where
+    next = accumArray (flip (:)) [] (0, numCourses - 1) [(p, course) | [course, p] <- prerequisites]
+    indegree = Map.fromListWith (+) ([(course, 0) | course <- [0 .. numCourses - 1]] ++ [(course, 1) | [course, _] <- prerequisites])
+    ready = [course | course <- [0 .. numCourses - 1], indegree Map.! course == 0]
+    taken = go indegree ready 0
+    go _ [] count = count
+    go remaining (course : queue) count = go remaining' (queue ++ newlyReady) (count + 1)
+      where
+        (remaining', newlyReady) = foldl' release (remaining, []) (next ! course)
+        release (m, zs) dependent =
+          let m' = Map.adjust (subtract 1) dependent m
+          in (m', if m' Map.! dependent == 0 then zs ++ [dependent] else zs)",
+      ),
+    ],
+    check: Check(
+      signature: "canFinish :: Int -> [[Int]] -> Bool",
+      starter: "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Map.Strict as Map
+
+canFinish :: Int -> [[Int]] -> Bool
+canFinish = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"canFinish 2 [[1,0]]\" True (canFinish 2 [[1, 0]])
+       , tc \"canFinish 2 [[1,0],[0,1]]\" False (canFinish 2 [[1, 0], [0, 1]])
+       , tc \"canFinish 1 []\" True (canFinish 1 [])
+       , tc \"canFinish 5 [[1,4],[2,4],[3,1],[3,2]]\" True (canFinish 5 [[1, 4], [2, 4], [3, 1], [3, 2]])
+       , tc \"canFinish 3 [[0,1],[1,2],[2,0]]\" False (canFinish 3 [[0, 1], [1, 2], [2, 0]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc114_course_schedule_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Topological Sort",
+        "O(V+E) time · O(V+E) space",
+        "The same computation as deciding whether it is possible — the order courses come off the ready list is the answer. Detecting the cycle and producing the schedule are not two passes.",
+        "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Map.Strict as Map
+
+-- Kahn's algorithm; the order the courses leave the queue is a valid
+-- schedule, and a short one means a cycle.
+findOrder :: Int -> [[Int]] -> [Int]
+findOrder numCourses prerequisites = if length order == numCourses then order else []
+  where
+    next = accumArray (flip (:)) [] (0, numCourses - 1) [(p, course) | [course, p] <- prerequisites]
+    indegree = Map.fromListWith (+) ([(course, 0) | course <- [0 .. numCourses - 1]] ++ [(course, 1) | [course, _] <- prerequisites])
+    ready = [course | course <- [0 .. numCourses - 1], indegree Map.! course == 0]
+    order = go indegree ready []
+    go _ [] done = reverse done
+    go remaining (course : queue) done = go remaining' (queue ++ newlyReady) (course : done)
+      where
+        (remaining', newlyReady) = foldl' release (remaining, []) (next ! course)
+        release (m, zs) dependent =
+          let m' = Map.adjust (subtract 1) dependent m
+          in (m', if m' Map.! dependent == 0 then zs ++ [dependent] else zs)",
+      ),
+    ],
+    check: Check(
+      signature: "findOrder :: Int -> [[Int]] -> [Int]",
+      starter: "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Map.Strict as Map
+
+findOrder :: Int -> [[Int]] -> [Int]
+findOrder = error \"todo\"",
+      harness: "module Main where
+
+import qualified Data.Map.Strict as Map
+import Drill
+import Solution
+
+-- Any order that respects the prerequisites is right, so check the order
+-- rather than compare it to one answer.
+valid :: Int -> [[Int]] -> Bool
+valid numCourses prerequisites = length order == numCourses && all respected prerequisites
+  where
+    order = findOrder numCourses prerequisites
+    position = Map.fromList (zip order [0 :: Int ..])
+    respected [course, prerequisite] = position Map.! prerequisite <= position Map.! course
+    respected _ = True
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"findOrder 2 [[1,0]]\" [0, 1] (findOrder 2 [[1, 0]])
+       , tc \"findOrder 4 [[1,0],[2,0],[3,1],[3,2]] is a valid order\" True (valid 4 [[1, 0], [2, 0], [3, 1], [3, 2]])
+       , tc \"findOrder 1 []\" [0] (findOrder 1 [])
+       , tc \"findOrder 2 [[1,0],[0,1]] -- a cycle\" [] (findOrder 2 [[1, 0], [0, 1]])
+       , tc \"findOrder 3 [] is a valid order\" True (valid 3 [])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc115_redundant_connection() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Union-Find",
+        "O(n·α(n)) time · O(n) space",
+        "n nodes and n edges means exactly one cycle, and union-find finds it the moment an edge joins two nodes already connected. Processing the edges in the order given is what makes the first such edge the *last* removable one, which is what the problem asks for.",
+        "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+-- Union-find over the edges in order: the first edge whose endpoints
+-- are already connected closes the cycle, and it is the last such edge
+-- in the input among those on the cycle.
+findRedundantConnection :: [[Int]] -> [Int]
+findRedundantConnection edges = go (Map.fromList [(i, i) | i <- [1 .. length edges]]) edges
+  where
+    root parent i = let p = parent Map.! i in if p == i then i else root parent p
+    go _ [] = []
+    go parent ([a, b] : rest)
+      | ra == rb = [a, b]
+      | otherwise = go (Map.insert ra rb parent) rest
+      where
+        ra = root parent a
+        rb = root parent b
+    go parent (_ : rest) = go parent rest",
+      ),
+    ],
+    check: Check(
+      signature: "findRedundantConnection :: [[Int]] -> [Int]",
+      starter: "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+findRedundantConnection :: [[Int]] -> [Int]
+findRedundantConnection = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"findRedundantConnection [[1,2],[1,3],[2,3]]\" [2, 3] (findRedundantConnection [[1, 2], [1, 3], [2, 3]])
+       , tc \"findRedundantConnection [[1,2],[2,3],[3,4],[1,4],[1,5]]\" [1, 4] (findRedundantConnection [[1, 2], [2, 3], [3, 4], [1, 4], [1, 5]])
+       , tc \"findRedundantConnection [[1,2],[2,1]]\" [2, 1] (findRedundantConnection [[1, 2], [2, 1]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc116_connected_components() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Union-Find",
+        "O(E·α(V)) time · O(V) space",
+        "Start at n components and subtract a merge for every edge that actually joins two different ones. No adjacency list, no traversal — the count falls straight out of how many merges happened.",
+        "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+-- Union-find: start with n components and lose one per union that joins
+-- two different sets.
+countComponents :: Int -> [[Int]] -> Int
+countComponents n edges = go (Map.fromList [(i, i) | i <- [0 .. n - 1]]) n edges
+  where
+    root parent i = let p = parent Map.! i in if p == i then i else root parent p
+    go _ components [] = components
+    go parent components ([a, b] : rest)
+      | ra == rb = go parent components rest
+      | otherwise = go (Map.insert ra rb parent) (components - 1) rest
+      where
+        ra = root parent a
+        rb = root parent b
+    go parent components (_ : rest) = go parent components rest",
+      ),
+    ],
+    check: Check(
+      signature: "countComponents :: Int -> [[Int]] -> Int",
+      starter: "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+countComponents :: Int -> [[Int]] -> Int
+countComponents = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"countComponents 5 [[0,1],[1,2],[3,4]]\" 2 (countComponents 5 [[0, 1], [1, 2], [3, 4]])
+       , tc \"countComponents 5 [[0,1],[1,2],[2,3],[3,4]]\" 1 (countComponents 5 [[0, 1], [1, 2], [2, 3], [3, 4]])
+       , tc \"countComponents 3 []\" 3 (countComponents 3 [])
+       , tc \"countComponents 0 []\" 0 (countComponents 0 [])
+       , tc \"countComponents 4 [[0,1],[1,0]]\" 3 (countComponents 4 [[0, 1], [1, 0]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc117_graph_valid_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(n) time · O(n) space",
+        "A tree is connected *and* acyclic, but with exactly n-1 edges either condition implies the other, so the edge count plus one of them is enough. Here it is the count plus reachability. The n = 0 case has to be stated separately, since the n-1 count says otherwise.",
+        "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Set as Set
+
+-- A tree on n nodes has exactly n-1 edges and is connected. With the
+-- edge count right, connectivity from node 0 is the only thing to check.
+validTree :: Int -> [[Int]] -> Bool
+validTree n edges
+  | n == 0 = True
+  | length edges /= n - 1 = False
+  | otherwise = Set.size reached == n
+  where
+    adjacent = accumArray (flip (:)) [] (0, n - 1) (concat [[(a, b), (b, a)] | [a, b] <- edges])
+    reached = explore (Set.singleton 0) [0]
+    explore seen [] = seen
+    explore seen (node : stack) = explore seen' (fresh ++ stack)
+      where
+        fresh = [next | next <- adjacent ! node, not (Set.member next seen)]
+        seen' = foldl' (flip Set.insert) seen fresh",
+      ),
+    ],
+    check: Check(
+      signature: "validTree :: Int -> [[Int]] -> Bool",
+      starter: "module Solution where
+
+import Data.Array
+import Data.List (foldl')
+import qualified Data.Set as Set
+
+validTree :: Int -> [[Int]] -> Bool
+validTree = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"validTree 5 [[0,1],[0,2],[0,3],[1,4]]\" True (validTree 5 [[0, 1], [0, 2], [0, 3], [1, 4]])
+       , tc \"validTree 5 [[0,1],[1,2],[2,3],[1,3],[1,4]]\" False (validTree 5 [[0, 1], [1, 2], [2, 3], [1, 3], [1, 4]])
+       , tc \"validTree 1 []\" True (validTree 1 [])
+       , tc \"validTree 0 []\" True (validTree 0 [])
+       , tc \"validTree 2 [] -- disconnected\" False (validTree 2 [])
+       , tc \"validTree 4 [[0,1],[2,3]] -- two trees\" False (validTree 4 [[0, 1], [2, 3]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc118_word_ladder() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "BFS",
+        "O(n·k²) time · O(n·k) space",
+        "Shortest path on an unweighted graph, so breadth-first — but the graph is never built. Two words are neighbours when they share a wildcard pattern like \"*ot\", so bucketing every word under each of its patterns gives the adjacency in linear time.",
+        "module Solution where
+
+import Data.List (foldl')
+import qualified Data.Set as Set
+
+-- Breadth-first over words, generating each neighbour by changing one
+-- letter and keeping the ones in the list. Level = ladder length.
+ladderLength :: String -> String -> [String] -> Int
+ladderLength beginWord endWord wordList
+  | not (Set.member endWord pool) = 0
+  | otherwise = go [beginWord] (Set.delete beginWord pool) 1
+  where
+    pool = Set.fromList wordList
+    go [] _ _ = 0
+    go queue unseen levels
+      | endWord `elem` queue = levels
+      | otherwise = let (next, unseen') = foldl' expand ([], unseen) queue in go next unseen' (levels + 1)
+    expand acc word = foldl' claim acc (rewrites word)
+    claim (next, unseen) candidate
+      | Set.member candidate unseen = (candidate : next, Set.delete candidate unseen)
+      | otherwise = (next, unseen)
+    rewrites word = [before ++ [letter] ++ drop 1 after | i <- [0 .. length word - 1], let (before, after) = splitAt i word, letter <- ['a' .. 'z']]",
+      ),
+    ],
+    check: Check(
+      signature: "ladderLength :: String -> String -> [String] -> Int",
+      starter: "module Solution where
+
+import Data.List (foldl')
+import qualified Data.Set as Set
+
+ladderLength :: String -> String -> [String] -> Int
+ladderLength = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"ladderLength \\\"hit\\\" \\\"cog\\\" (the full list)\" 5 (ladderLength \"hit\" \"cog\" [\"hot\", \"dot\", \"dog\", \"lot\", \"log\", \"cog\"])
+       , tc \"ladderLength \\\"hit\\\" \\\"cog\\\" (without cog)\" 0 (ladderLength \"hit\" \"cog\" [\"hot\", \"dot\", \"dog\", \"lot\", \"log\"])
+       , tc \"ladderLength \\\"a\\\" \\\"c\\\" [\\\"a\\\",\\\"b\\\",\\\"c\\\"]\" 2 (ladderLength \"a\" \"c\" [\"a\", \"b\", \"c\"])
+       , tc \"ladderLength \\\"hit\\\" \\\"hit\\\" [\\\"hit\\\"]\" 1 (ladderLength \"hit\" \"hit\" [\"hit\"])
+       , tc \"ladderLength \\\"hot\\\" \\\"dog\\\" [\\\"hot\\\",\\\"dog\\\"] -- no bridge\" 0 (ladderLength \"hot\" \"dog\" [\"hot\", \"dog\"])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc119_reconstruct_itinerary() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Hierholzer",
+        "O(E log E) time · O(E) space",
+        "Hierholzer's algorithm. Take the smallest unused ticket every time and never look back — an airport is only recorded once it has no tickets left, so the dead end the greedy choice walks into is exactly where the route has to *end*, and recording it first is what puts it last. Nothing is ever undone, which is the whole difference from the backtracking version.",
+        "module Solution where
+
+import Data.List (sort)
+import qualified Data.Map.Strict as Map
+
+-- Hierholzer's algorithm for an Eulerian path: from each airport take
+-- the smallest unused destination first; an airport is finished once it
+-- has no tickets left, and finishing order prepends it to the route, so
+-- the route comes out forwards.
+findItinerary :: [[String]] -> [String]
+findItinerary tickets = snd (visit \"JFK\" (Map.map sort unused, []))
+  where
+    unused = Map.fromListWith (++) [(from, [to]) | [from, to] <- tickets]
+    visit airport (next, route) =
+      case Map.findWithDefault [] airport next of
+        [] -> (next, airport : route)
+        (destination : rest) -> visit airport (visit destination (Map.insert airport rest next, route))",
+      ),
+    ],
+    check: Check(
+      signature: "findItinerary :: [[String]] -> [String]",
+      starter: "module Solution where
+
+import Data.List (sort)
+import qualified Data.Map.Strict as Map
+
+findItinerary :: [[String]] -> [String]
+findItinerary = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"findItinerary (MUC/LHR/SFO/SJC chain)\" [\"JFK\", \"MUC\", \"LHR\", \"SFO\", \"SJC\"] (findItinerary [[\"MUC\", \"LHR\"], [\"JFK\", \"MUC\"], [\"SFO\", \"SJC\"], [\"LHR\", \"SFO\"]])
+       , tc \"findItinerary (two ways out of JFK -- smallest first)\" [\"JFK\", \"ATL\", \"JFK\", \"SFO\", \"ATL\", \"SFO\"] (findItinerary [[\"JFK\", \"SFO\"], [\"JFK\", \"ATL\"], [\"SFO\", \"ATL\"], [\"ATL\", \"JFK\"], [\"ATL\", \"SFO\"]])
+       , tc \"findItinerary (KUL is a dead end, so it must come last)\" [\"JFK\", \"NRT\", \"JFK\", \"KUL\"] (findItinerary [[\"JFK\", \"KUL\"], [\"JFK\", \"NRT\"], [\"NRT\", \"JFK\"]])
+       , tc \"findItinerary []\" [\"JFK\"] (findItinerary [])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc11_container_water() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Start at both ends. The area is capped by the shorter line, so moving the taller one in can never help — always move the shorter, and track the best area seen.",
+        "module Solution where
+
+import Data.Array
+
+maxArea :: [Int] -> Int
+maxArea height = go 0 (length height - 1) 0
+  where
+    arr = listArray (0, length height - 1) height
+    go left right best
+      | left >= right = best
+      -- Moving the taller line in can never help: the shorter one caps the area.
+      | arr ! left < arr ! right = go (left + 1) right best'
+      | otherwise = go left (right - 1) best'
+      where
+        best' = max best ((right - left) * min (arr ! left) (arr ! right))",
+      ),
+    ],
+    check: Check(
+      signature: "maxArea :: [Int] -> Int",
+      starter: "module Solution where
+
+import Data.Array
+
+maxArea :: [Int] -> Int
+maxArea = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"maxArea [1, 8, 6, 2, 5, 4, 8, 3, 7]\" 49 (maxArea [1, 8, 6, 2, 5, 4, 8, 3, 7])
+       , tc \"maxArea [1, 1]\" 1 (maxArea [1, 1])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc120_min_cost_connect_points() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Prim",
+        "O(n²) time · O(n) space",
+        "Prim's algorithm. Each outside point remembers only its distance to the tree so far, so adding one is a pass to find the nearest and a pass to update — O(n^2), which is what a complete graph costs anyway, and it needs no heap. Taking the cheapest edge is safe because the cheapest edge leaving any set of points is in some minimum spanning tree.",
+        "module Solution where
+
+import Data.Array
+import Data.List (minimumBy)
+import qualified Data.Map.Strict as Map
+import Data.Ord (comparing)
+
+-- Prim's algorithm on the complete graph: keep the cheapest known
+-- distance from the tree to each point, add the nearest point, update.
+-- O(n^2), no heap, which suits a dense graph.
+minCostConnectPoints :: [[Int]] -> Int
+minCostConnectPoints points
+  | n < 2 = 0
+  | otherwise = grow 0 (Map.fromList ((0, 0) : [(i, 1073741824) | i <- [1 .. n - 1]]))
+  where
+    n = length points
+    coords = listArray (0, n - 1) [(x, y) | [x, y] <- points]
+    manhattan (ax, ay) (bx, by) = abs (ax - bx) + abs (ay - by)
+    grow total distance
+      | Map.null distance = total
+      | otherwise = grow (total + d) updated
+      where
+        (nearest, d) = minimumBy (comparing snd) (Map.toAscList distance)
+        rest = Map.delete nearest distance
+        updated = Map.mapWithKey (\\i cost -> min cost (manhattan (coords ! nearest) (coords ! i))) rest",
+      ),
+    ],
+    check: Check(
+      signature: "minCostConnectPoints :: [[Int]] -> Int",
+      starter: "module Solution where
+
+import Data.Array
+import Data.List (minimumBy)
+import qualified Data.Map.Strict as Map
+import Data.Ord (comparing)
+
+minCostConnectPoints :: [[Int]] -> Int
+minCostConnectPoints = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"minCostConnectPoints (the five-point example)\" 20 (minCostConnectPoints [[0, 0], [2, 2], [3, 10], [5, 2], [7, 0]])
+       , tc \"minCostConnectPoints [[3,12],[-2,5],[-4,1]]\" 18 (minCostConnectPoints [[3, 12], [-2, 5], [-4, 1]])
+       , tc \"minCostConnectPoints []\" 0 (minCostConnectPoints [])
+       , tc \"minCostConnectPoints [[1,1]] -- nothing to connect\" 0 (minCostConnectPoints [[1, 1]])
+       , tc \"minCostConnectPoints [[0,0],[0,5]]\" 5 (minCostConnectPoints [[0, 0], [0, 5]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc121_network_delay_time() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Dijkstra",
+        "O(E log V) time · O(V+E) space",
+        "Dijkstra's algorithm. Taking the smallest tentative arrival settles that node for good, because any other route to it would have to start with an edge at least as long. That argument is exactly where a negative edge would break it — which is the reason to know Bellman-Ford as well.",
+        "module Solution where
+
+import qualified Data.IntMap.Strict as IntMap
+import qualified Data.Set as Set
+
+-- Dijkstra from k, with a Set as the priority queue: the time the
+-- signal reaches every node is the longest of the shortest paths, or
+-- -1 if any node is never reached.
+networkDelayTime :: [[Int]] -> Int -> Int -> Int
+networkDelayTime times n k = finish (settle (Set.singleton (0, k)) IntMap.empty)
+  where
+    next = IntMap.fromListWith (++) [(from, [(to, cost)]) | [from, to, cost] <- times]
+    edges node = IntMap.findWithDefault [] node next
+    settle frontier best = case Set.minView frontier of
+      Nothing -> best
+      Just ((distance, node), rest)
+        | IntMap.member node best -> settle rest best
+        | otherwise ->
+            settle
+              (foldr Set.insert rest
+                 [(distance + cost, to) | (to, cost) <- edges node, not (IntMap.member to best)])
+              (IntMap.insert node distance best)
+    finish best
+      | IntMap.size best == n = maximum (IntMap.elems best)
+      | otherwise = -1",
+      ),
+    ],
+    check: Check(
+      signature: "networkDelayTime :: [[Int]] -> Int -> Int -> Int",
+      starter: "module Solution where
+
+import qualified Data.IntMap.Strict as IntMap
+import qualified Data.Set as Set
+
+networkDelayTime :: [[Int]] -> Int -> Int -> Int
+networkDelayTime = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"networkDelayTime [[2,1,1],[2,3,1],[3,4,1]] 4 2\" 2 (networkDelayTime [[2, 1, 1], [2, 3, 1], [3, 4, 1]] 4 2)
+       , tc \"networkDelayTime [[1,2,1]] 2 1\" 1 (networkDelayTime [[1, 2, 1]] 2 1)
+       , tc \"networkDelayTime [[1,2,1]] 2 2 -- node 1 is unreachable\" (-1) (networkDelayTime [[1, 2, 1]] 2 2)
+       , tc \"networkDelayTime [] 1 1\" 0 (networkDelayTime [] 1 1)
+       , tc \"networkDelayTime (the long way round is shorter) 3 1\" 3 (networkDelayTime [[1, 2, 1], [2, 3, 2], [1, 3, 4]] 3 1)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc122_swim_in_water() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Dijkstra",
+        "O(n² log n) time · O(n²) space",
+        "Dijkstra's, with the cost of a path redefined from the sum of its steps to the largest step in it — the water only has to rise once. Everything else about the algorithm is untouched, which is the point: the shortest-path machinery works for any cost that only grows along a path.",
+        "module Solution where
+
+import Data.Array
+import qualified Data.Set as Set
+
+-- Dijkstra where a path's cost is its highest cell: always expand the
+-- lowest reachable cell (a Set as the priority queue), and the answer
+-- is the highest cell popped before the corner.
+swimInWater :: [[Int]] -> Int
+swimInWater grid = go (Set.singleton (height (0, 0), (0, 0))) (Set.singleton (0, 0)) 0
+  where
+    n = length grid
+    cells = listArray ((0, 0), (n - 1, n - 1)) (concat grid)
+    height cell = cells ! cell
+    neighbours (r, c) =
+      [ (r + dr, c + dc)
+      | (dr, dc) <- [(1, 0), (-1, 0), (0, 1), (0, -1)]
+      , r + dr >= 0, r + dr < n, c + dc >= 0, c + dc < n
+      ]
+    go frontier seen highest = case Set.minView frontier of
+      Nothing -> highest
+      Just ((h, cell), rest)
+        | cell == (n - 1, n - 1) -> max highest h
+        | otherwise ->
+            let fresh = [q | q <- neighbours cell, not (Set.member q seen)]
+            in go (foldr Set.insert rest [(height q, q) | q <- fresh])
+                  (foldr Set.insert seen fresh)
+                  (max highest h)",
+      ),
+    ],
+    check: Check(
+      signature: "swimInWater :: [[Int]] -> Int",
+      starter: "module Solution where
+
+import Data.Array
+import qualified Data.Set as Set
+
+swimInWater :: [[Int]] -> Int
+swimInWater = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"swimInWater [[0,2],[1,3]]\" 3 (swimInWater [[0, 2], [1, 3]])
+       , tc \"swimInWater (the 5x5 spiral)\" 16 (swimInWater [[0, 1, 2, 3, 4], [24, 23, 22, 21, 5], [12, 13, 14, 15, 16], [11, 17, 18, 19, 20], [10, 9, 8, 7, 6]])
+       , tc \"swimInWater [[0]]\" 0 (swimInWater [[0]])
+       , tc \"swimInWater [[3,2],[1,0]] -- the start is the deepest cell\" 3 (swimInWater [[3, 2], [1, 0]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc123_alien_dictionary() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Topological Sort",
+        "O(C) time · O(V+E) space",
+        "The words are the input but the graph is over letters. Two adjacent words agree up to their first difference, and that difference is the only ordering they establish — everything after it says nothing at all. Then it is a topological sort, with two distinct ways to fail: a cycle, and a word followed by its own prefix.",
+        "module Solution where
+
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
+
+-- Adjacent words give one ordering each: the first differing letter.
+-- Then a topological sort (Kahn) over the letters; a leftover means a cycle.
+alienOrder :: [String] -> String
+alienOrder ws
+  | badPrefix = \"\"
+  | length order /= Map.size indegree = \"\"
+  | otherwise = order
+  where
+    pairs = zip ws (drop 1 ws)
+    badPrefix = any (\\(a, b) -> length a > length b && take (length b) a == b) pairs
+    firstDiff (a, b) = case dropWhile (uncurry (==)) (zip a b) of
+      ((c, d) : _) -> [(c, d)]
+      [] -> []
+    rules = Set.fromList (concatMap firstDiff pairs)
+    next = Map.fromListWith Set.union [(c, Set.singleton d) | (c, d) <- Set.toList rules]
+    following c = Set.toAscList (Map.findWithDefault Set.empty c next)
+    letters = Set.fromList (concat ws)
+    indegree =
+      foldr (\\(_, d) m -> Map.adjust (+ 1) d m)
+        (Map.fromList [(c, 0 :: Int) | c <- Set.toList letters])
+        (Set.toList rules)
+    order = kahn [c | (c, 0) <- Map.toAscList indegree] indegree
+    kahn [] _ = []
+    kahn (c : queue) degrees =
+      let ready = [d | d <- following c, degrees Map.! d == 1]
+          lowered = foldr (Map.adjust (subtract 1)) degrees (following c)
+      in c : kahn (queue ++ ready) lowered",
+      ),
+    ],
+    check: Check(
+      signature: "alienOrder :: [String] -> String",
+      starter: "module Solution where
+
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
+
+alienOrder :: [String] -> String
+alienOrder = error \"todo\"",
+      harness: "module Main where
+
+import qualified Data.Map.Strict as Map
+import Drill
+import Solution
+
+-- Letters no rule orders may come in any order, so a result is checked
+-- against the rules rather than against one string.
+consistent :: [String] -> Int -> Bool
+consistent ws expectedLetters = length order == expectedLetters && all holds (zip ws (drop 1 ws))
+  where
+    order = alienOrder ws
+    position = Map.fromList (zip order [0 :: Int ..])
+    at c = Map.findWithDefault 0 c position
+    holds (a, b) = case dropWhile (uncurry (==)) (zip a b) of
+      ((c, d) : _) -> at c <= at d
+      [] -> True
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"alienOrder [\\\"wrt\\\",\\\"wrf\\\",\\\"er\\\",\\\"ett\\\",\\\"rftt\\\"]\" \"wertf\" (alienOrder [\"wrt\", \"wrf\", \"er\", \"ett\", \"rftt\"])
+       , tc \"alienOrder [\\\"z\\\",\\\"x\\\"]\" \"zx\" (alienOrder [\"z\", \"x\"])
+       , tc \"alienOrder [\\\"z\\\",\\\"x\\\",\\\"z\\\"] -- contradictory\" \"\" (alienOrder [\"z\", \"x\", \"z\"])
+       , tc \"alienOrder [\\\"abc\\\",\\\"ab\\\"] -- a word before its own prefix\" \"\" (alienOrder [\"abc\", \"ab\"])
+       , tc \"alienOrder [\\\"z\\\",\\\"z\\\"]\" \"z\" (alienOrder [\"z\", \"z\"])
+       , tc \"alienOrder [\\\"ac\\\",\\\"ab\\\",\\\"zc\\\",\\\"zb\\\"] respects every rule\" True (consistent [\"ac\", \"ab\", \"zc\", \"zb\"] 4)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc124_cheapest_flights() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bellman-Ford",
+        "O(k·E) time · O(V) space",
+        "The stop limit is what stops this being plain Dijkstra: cheapest-so-far no longer settles a city, because a costlier route with fewer stops may still be the one that gets through. Bellman-Ford handles it by construction — one round is one flight — provided each round reads a snapshot of the last, or two flights leak into a single round.",
+        "module Solution where
+
+import qualified Data.IntMap.Strict as IntMap
+import Data.List (foldl')
+
+-- Bellman-Ford limited to k+1 rounds: after round i, best holds the
+-- cheapest route using at most i flights. Relaxing from the previous
+-- round's map keeps a round from chaining two flights.
+findCheapestPrice :: Int -> [[Int]] -> Int -> Int -> Int -> Int
+findCheapestPrice n flights src dst k
+  | answer == unreached = -1
+  | otherwise = answer
+  where
+    unreached = 2 ^ (30 :: Int)
+    start = IntMap.insert src 0 (IntMap.fromList [(v, unreached) | v <- [0 .. n - 1]])
+    relax previous = foldl' step previous flights
+      where
+        step best [from, to, price]
+          | previous IntMap.! from /= unreached && previous IntMap.! from + price < best IntMap.! to =
+              IntMap.insert to (previous IntMap.! from + price) best
+        step best _ = best
+    answer = iterate relax start !! (k + 1) IntMap.! dst",
+      ),
+    ],
+    check: Check(
+      signature: "findCheapestPrice :: Int -> [[Int]] -> Int -> Int -> Int -> Int",
+      starter: "module Solution where
+
+import qualified Data.IntMap.Strict as IntMap
+import Data.List (foldl')
+
+findCheapestPrice :: Int -> [[Int]] -> Int -> Int -> Int -> Int
+findCheapestPrice = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"findCheapestPrice 4 (the loop example) 0 3 1\" 700 (findCheapestPrice 4 [[0, 1, 100], [1, 2, 100], [2, 0, 100], [1, 3, 600], [2, 3, 200]] 0 3 1)
+       , tc \"findCheapestPrice 3 (two hops allowed) 0 2 1\" 200 (findCheapestPrice 3 [[0, 1, 100], [1, 2, 100], [0, 2, 500]] 0 2 1)
+       , tc \"findCheapestPrice 3 (no stop allowed) 0 2 0\" 500 (findCheapestPrice 3 [[0, 1, 100], [1, 2, 100], [0, 2, 500]] 0 2 0)
+       , tc \"findCheapestPrice 2 (no flights at all) 0 1 5\" (-1) (findCheapestPrice 2 [] 0 1 5)
+       , tc \"findCheapestPrice 1 (already there) 0 0 0\" 0 (findCheapestPrice 1 [] 0 0 0)
+       , tc \"findCheapestPrice 5 (cheapest route needs the third hop) 0 2 2\" 7 (findCheapestPrice 5 [[0, 1, 5], [1, 2, 5], [0, 3, 2], [3, 1, 2], [1, 4, 1], [4, 2, 1]] 0 2 2)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc125_reverse_linked_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Iterative",
+        "O(n) time · O(1) space",
+        "One pass, three references: where you came from, where you are, and where you were going. Losing the look-ahead is the classic bug — once the link has been overwritten, the rest of the list is unreachable. In a language with cons lists the same thing is an accumulator you prepend to, which is the *same* rewiring written as a value.",
+        "module Solution where
+
+-- Walk the list, consing each value onto the reversed front so far --
+-- the accumulator plays the `previous` pointer of the iterative version.
+reverseList :: [Int] -> [Int]
+reverseList = go []
+  where
+    go previous [] = previous
+    go previous (v : rest) = go (v : previous) rest",
+      ),
+    ],
+    check: Check(
+      signature: "reverseList :: [Int] -> [Int]",
+      starter: "module Solution where
+
+reverseList :: [Int] -> [Int]
+reverseList = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"reverseList [1,2,3,4,5]\" [5, 4, 3, 2, 1] (reverseList [1, 2, 3, 4, 5])
+       , tc \"reverseList [1,2]\" [2, 1] (reverseList [1, 2])
+       , tc \"reverseList [1]\" [1] (reverseList [1])
+       , tc \"reverseList []\" [] (reverseList [])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc126_merge_two_sorted_lists() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Iterative",
+        "O(n+m) time · O(1) space",
+        "Take the smaller head and move on. Because both inputs are sorted, whichever head is smaller is smaller than everything still to come — no comparison beyond the two fronts is ever needed. The dummy head is what removes the special case: without it the first node has to be chosen separately from all the others, since there is nothing yet to attach it to.",
+        "module Solution where
+
+-- Take the smaller head each time; when one side runs out, the other
+-- is already sorted and comes along whole.
+mergeTwoLists :: [Int] -> [Int] -> [Int]
+mergeTwoLists [] list2 = list2
+mergeTwoLists list1 [] = list1
+mergeTwoLists (a : as) (b : bs)
+  | a <= b = a : mergeTwoLists as (b : bs)
+  | otherwise = b : mergeTwoLists (a : as) bs",
+      ),
+    ],
+    check: Check(
+      signature: "mergeTwoLists :: [Int] -> [Int] -> [Int]",
+      starter: "module Solution where
+
+mergeTwoLists :: [Int] -> [Int] -> [Int]
+mergeTwoLists = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"mergeTwoLists [1,2,4] [1,3,4]\" [1, 1, 2, 3, 4, 4] (mergeTwoLists [1, 2, 4] [1, 3, 4])
+       , tc \"mergeTwoLists [] []\" [] (mergeTwoLists [] [])
+       , tc \"mergeTwoLists [] [0]\" [0] (mergeTwoLists [] [0])
+       , tc \"mergeTwoLists [5] [1,2]\" [1, 2, 5] (mergeTwoLists [5] [1, 2])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc127_reorder_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Fast & Slow Pointers",
+        "O(n) time · O(1) space",
+        "Three separate steps, each of which is its own drill: find the middle, reverse the back half, weave the two together. That decomposition is the trick — none of the three needs to know about the others, which is why the problem is easier than it looks.",
+        "module Solution where
+
+-- Split at the middle, reverse the second half, then interleave the
+-- two -- the same three steps as the pointer version, returned as a
+-- new list instead of rewiring in place.
+reorderList :: [Int] -> [Int]
+reorderList values = interleave front (reverse back)
+  where
+    (front, back) = splitAt ((length values + 1) `div` 2) values
+    interleave [] _ = []
+    interleave firsts [] = firsts
+    interleave (a : as) (b : bs) = a : b : interleave as bs",
+      ),
+    ],
+    check: Check(
+      signature: "reorderList :: [Int] -> [Int]",
+      starter: "module Solution where
+
+reorderList :: [Int] -> [Int]
+reorderList = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"reorderList [1,2,3,4]\" [1, 4, 2, 3] (reorderList [1, 2, 3, 4])
+       , tc \"reorderList [1,2,3,4,5] -- the middle stays last\" [1, 5, 2, 4, 3] (reorderList [1, 2, 3, 4, 5])
+       , tc \"reorderList [1,2]\" [1, 2] (reorderList [1, 2])
+       , tc \"reorderList [1]\" [1] (reorderList [1])
+       , tc \"reorderList []\" [] (reorderList [])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc128_remove_nth_from_end() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Two walkers n apart. When the leading one runs off the end, the trailing one is on the node to change — the length is never computed, which is the point: one pass instead of two. Opening the gap can fail, and that failure is exactly the \"n is longer than the list\" case.",
+        "module Solution where
+
+-- Two walks n apart: when the front one runs off the end, the back one
+-- stands on the node to drop.
+removeNthFromEnd :: [Int] -> Int -> [Int]
+removeNthFromEnd values n = go (drop n values) values
+  where
+    go _ [] = []
+    go [] (_ : rest) = rest
+    go (_ : front) (v : rest) = v : go front rest",
+      ),
+    ],
+    check: Check(
+      signature: "removeNthFromEnd :: [Int] -> Int -> [Int]",
+      starter: "module Solution where
+
+removeNthFromEnd :: [Int] -> Int -> [Int]
+removeNthFromEnd = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"removeNthFromEnd [1,2,3,4,5] 2\" [1, 2, 3, 5] (removeNthFromEnd [1, 2, 3, 4, 5] 2)
+       , tc \"removeNthFromEnd [1] 1\" [] (removeNthFromEnd [1] 1)
+       , tc \"removeNthFromEnd [1,2] 1\" [1] (removeNthFromEnd [1, 2] 1)
+       , tc \"removeNthFromEnd [1,2] 2 -- the head goes\" [2] (removeNthFromEnd [1, 2] 2)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc129_copy_random_list() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Hash Map",
+        "O(n) time · O(n) space",
+        "The map from original node to its copy is the whole problem. Resolving a link on first sight cannot work: it may point at a node not yet copied, and consulting the map instead removes that ordering problem entirely. The same idea as Clone Graph, with an extra pointer per node.",
+        "module Solution where
+
+import qualified Data.IntMap.Strict as IntMap
+
+-- Nodes as (value, random index or -1). Two passes with a map from
+-- original position to its copy: make every copy first, then wire each
+-- node through the map, so a random link pointing forward finds its
+-- copy already made.
+copyRandomList :: [(Int, Int)] -> [(Int, Int)]
+copyRandomList nodes = [(copies IntMap.! i, random) | (i, (_, random)) <- indexed]
+  where
+    indexed = zip [0 ..] nodes
+    copies = IntMap.fromList [(i, value) | (i, (value, _)) <- indexed]",
+      ),
+    ],
+    check: Check(
+      signature: "copyRandomList :: [(Int, Int)] -> [(Int, Int)]",
+      starter: "module Solution where
+
+import qualified Data.IntMap.Strict as IntMap
+
+copyRandomList :: [(Int, Int)] -> [(Int, Int)]
+copyRandomList = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"copyRandomList [(7,-1),(13,0)]\" [(7, -1), (13, 0)] (copyRandomList [(7, -1), (13, 0)])
+       , tc \"copyRandomList [(1,0)] -- a node pointing at itself\" [(1, 0)] (copyRandomList [(1, 0)])
+       , tc \"copyRandomList (a forward link to a node not yet copied)\" [(1, 2), (2, -1), (3, 0)] (copyRandomList [(1, 2), (2, -1), (3, 0)])
+       , tc \"copyRandomList []\" [] (copyRandomList [])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc12_best_time_stock() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Carry the cheapest price seen so far; today's best sale is today's price against that minimum. One pass, two variables.",
+        "module Solution where
+
+maxProfit :: [Int] -> Int
+maxProfit [] = 0
+maxProfit (first : rest) = snd (foldl step (first, 0) rest)
+  where
+    step (lowest, best) price = (min lowest price, max best (price - lowest))",
+      ),
+    ],
+    check: Check(
+      signature: "maxProfit :: [Int] -> Int",
+      starter: "module Solution where
+
+maxProfit :: [Int] -> Int
+maxProfit = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"maxProfit [7, 1, 5, 3, 6, 4]\" 5 (maxProfit [7, 1, 5, 3, 6, 4])
+       , tc \"maxProfit [7, 6, 4, 3, 1]\" 0 (maxProfit [7, 6, 4, 3, 1])
+       , tc \"maxProfit [2]\" 0 (maxProfit [2])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc130_add_two_numbers() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Simulation",
+        "O(n+m) time · O(n+m) space",
+        "The digits arrive least significant first, which is exactly the order addition wants — no reversing and no length matching. The case worth writing down is the carry outliving both numbers: 5 + 5 produces a digit neither input has a node for.",
+        "module Solution where
+
+-- Digits are least significant first, so add column by column with a
+-- carry, like on paper, and keep going while anything remains.
+addTwoNumbers :: [Int] -> [Int] -> [Int]
+addTwoNumbers = go 0
+  where
+    go carry [] [] = if carry > 0 then [carry] else []
+    go carry l1 l2 =
+      let total = carry + headOr0 l1 + headOr0 l2
+      in total `mod` 10 : go (total `div` 10) (drop 1 l1) (drop 1 l2)
+    headOr0 [] = 0
+    headOr0 (v : _) = v",
+      ),
+    ],
+    check: Check(
+      signature: "addTwoNumbers :: [Int] -> [Int] -> [Int]",
+      starter: "module Solution where
+
+addTwoNumbers :: [Int] -> [Int] -> [Int]
+addTwoNumbers = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"addTwoNumbers [2,4,3] [5,6,4] -- 342 + 465\" [7, 0, 8] (addTwoNumbers [2, 4, 3] [5, 6, 4])
+       , tc \"addTwoNumbers [0] [0]\" [0] (addTwoNumbers [0] [0])
+       , tc \"addTwoNumbers [9,9,9,9,9,9,9] [9,9,9,9]\" [8, 9, 9, 9, 0, 0, 0, 1] (addTwoNumbers [9, 9, 9, 9, 9, 9, 9] [9, 9, 9, 9])
+       , tc \"addTwoNumbers [5] [5] -- a carry makes a new digit\" [0, 1] (addTwoNumbers [5] [5])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc131_linked_list_cycle() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Fast & Slow Pointers",
+        "O(n) time · O(1) space",
+        "Floyd's tortoise and hare. One walker takes single steps, the other double; inside a loop the fast one gains a place per step on the slow one, so it must land on it. Outside one, it runs off the end first. Constant memory and nothing is marked — that is the whole result.",
+        "module Solution where
+
+-- The list as values plus the index the tail links back to (-1 for
+-- none). Tortoise and hare over node indices: in a cycle the fast
+-- pointer laps the slow one; off the end means no cycle.
+hasCycle :: [Int] -> Int -> Bool
+hasCycle [] _ = False
+hasCycle values pos = go 0 0
+  where
+    n = length values
+    step i
+      | i < n - 1 = Just (i + 1)
+      | pos >= 0 = Just pos
+      | otherwise = Nothing
+    go slow fast = case (step slow, step fast >>= step) of
+      (Just s, Just f) -> s == f || go s f
+      _ -> False",
+      ),
+    ],
+    check: Check(
+      signature: "hasCycle :: [Int] -> Int -> Bool",
+      starter: "module Solution where
+
+hasCycle :: [Int] -> Int -> Bool
+hasCycle = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"hasCycle [3,2,0,-4] (tail -> index 1)\" True (hasCycle [3, 2, 0, -4] 1)
+       , tc \"hasCycle [1,2] (no cycle)\" False (hasCycle [1, 2] (-1))
+       , tc \"hasCycle [1] (no cycle)\" False (hasCycle [1] (-1))
+       , tc \"hasCycle [1] (tail -> index 0)\" True (hasCycle [1] 0)
+       , tc \"hasCycle []\" False (hasCycle [] (-1))
+       , tc \"hasCycle [1,2] (tail -> index 0)\" True (hasCycle [1, 2] 0)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc132_find_the_duplicate() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Fast & Slow Pointers",
+        "O(n) time · O(1) space",
+        "Read the array as a linked list: position i points at position nums[i]. Every value is a valid position and one repeats, so two positions point at the same place — the list has a cycle, and the duplicate is its entrance. Then it is Floyd's twice: once to meet inside the loop, once to find where it begins.",
+        "module Solution where
+
+import Data.Array
+
+-- Treat i -> nums[i] as a linked list: values in 1..n over indices
+-- 0..n means a duplicate is a node with two incoming links, the start
+-- of a cycle. Floyd's algorithm finds it with no extra memory.
+findDuplicate :: [Int] -> Int
+findDuplicate nums = meet (next ! 0) (next ! (next ! 0))
+  where
+    next = listArray (0, length nums - 1) nums
+    meet slow fast
+      | slow == fast = finish 0 fast
+      | otherwise = meet (next ! slow) (next ! (next ! fast))
+    finish slow fast
+      | slow == fast = slow
+      | otherwise = finish (next ! slow) (next ! fast)",
+      ),
+    ],
+    check: Check(
+      signature: "findDuplicate :: [Int] -> Int",
+      starter: "module Solution where
+
+import Data.Array
+
+findDuplicate :: [Int] -> Int
+findDuplicate = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"findDuplicate [1,3,4,2,2]\" 2 (findDuplicate [1, 3, 4, 2, 2])
+       , tc \"findDuplicate [3,1,3,4,2]\" 3 (findDuplicate [3, 1, 3, 4, 2])
+       , tc \"findDuplicate [1,1]\" 1 (findDuplicate [1, 1])
+       , tc \"findDuplicate [2,2,2,2,2] -- repeated more than twice\" 2 (findDuplicate [2, 2, 2, 2, 2])
+       , tc \"findDuplicate [1,4,4,2,4]\" 4 (findDuplicate [1, 4, 4, 2, 4])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc133_lru_cache() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Python · Dict Order",
+        "O(1) per operation · O(capacity) space",
+        "Two requirements at once: find a key in O(1), and know which key is oldest in O(1). A map alone gives the first and a list alone gives the second — the structure is whatever supplies both. Where the language's map already remembers insertion order, deleting a key and putting it back *is* the recency list.",
+        "module Solution where
+
+import qualified Data.IntMap.Strict as IntMap
+
+-- A map from key to (value, stamp) plus a map from stamp to key, kept
+-- in step by a ticking clock: the smallest stamp is the least recently
+-- used, so get, put and evict are each a couple of log-time map
+-- operations -- the pure counterpart of the map + doubly linked list.
+data LRUCache = LRUCache Int Int (IntMap.IntMap (Int, Int)) (IntMap.IntMap Int)
+
+newCache :: Int -> LRUCache
+newCache capacity = LRUCache capacity 0 IntMap.empty IntMap.empty
+
+get :: Int -> LRUCache -> (Int, LRUCache)
+get key cache@(LRUCache _ _ entries _) = case IntMap.lookup key entries of
+  Nothing -> (-1, cache)
+  Just (value, _) -> (value, touch key value cache)
+
+put :: Int -> Int -> LRUCache -> LRUCache
+put key value cache@(LRUCache capacity _ entries _)
+  | IntMap.member key entries = touch key value cache
+  | IntMap.size entries == capacity = touch key value (evict cache)
+  | otherwise = touch key value cache
+
+-- touch makes key the most recent: its old stamp leaves the recency
+-- map and the clock's fresh stamp takes its place.
+touch :: Int -> Int -> LRUCache -> LRUCache
+touch key value (LRUCache capacity clock entries recency) =
+  LRUCache capacity (clock + 1) (IntMap.insert key (value, clock) entries) stamped
+  where
+    cleared = case IntMap.lookup key entries of
+      Just (_, stamp) -> IntMap.delete stamp recency
+      Nothing -> recency
+    stamped = IntMap.insert clock key cleared
+
+evict :: LRUCache -> LRUCache
+evict cache@(LRUCache capacity clock entries recency) = case IntMap.minView recency of
+  Nothing -> cache
+  Just (oldest, rest) -> LRUCache capacity clock (IntMap.delete oldest entries) rest",
+      ),
+    ],
+    check: Check(
+      signature: "data LRUCache = LRUCache Int Int (IntMap.IntMap (Int, Int)) (IntMap.IntMap Int)
+newCache :: Int -> LRUCache
+get :: Int -> LRUCache -> (Int, LRUCache)
+put :: Int -> Int -> LRUCache -> LRUCache
+touch :: Int -> Int -> LRUCache -> LRUCache
+evict :: LRUCache -> LRUCache",
+      starter: "module Solution where
+
+import qualified Data.IntMap.Strict as IntMap
+
+data LRUCache = LRUCache Int Int (IntMap.IntMap (Int, Int)) (IntMap.IntMap Int)
+
+newCache :: Int -> LRUCache
+newCache = error \"todo\"
+
+get :: Int -> LRUCache -> (Int, LRUCache)
+get = error \"todo\"
+
+put :: Int -> Int -> LRUCache -> LRUCache
+put = error \"todo\"
+
+touch :: Int -> Int -> LRUCache -> LRUCache
+touch = error \"todo\"
+
+evict :: LRUCache -> LRUCache
+evict = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       (let cache0 = newCache 2
+            cache1 = put 1 1 cache0
+            cache2 = put 2 2 cache1
+            (first, cache3) = get 1 cache2
+            cache4 = put 3 3 cache3
+            (evicted, cache5) = get 2 cache4
+            (kept, cache6) = get 3 cache5
+            cache7 = put 4 4 cache6
+            (gone, cache8) = get 1 cache7
+            (stillThere, cache9) = get 3 cache8
+            (newest, _) = get 4 cache9
+        in [ tc \"get 1 after put 1 1, put 2 2\" 1 first
+           , tc \"get 2 after put 3 3 -- 2 was least recently used\" (-1) evicted
+           , tc \"get 3 after put 3 3\" 3 kept
+           , tc \"get 1 after put 4 4 -- reading 3 saved it, so 1 went\" (-1) gone
+           , tc \"get 3 after put 4 4\" 3 stillThere
+           , tc \"get 4 after put 4 4\" 4 newest
+           ]))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc134_merge_k_sorted_lists() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Divide & Conquer",
+        "O(n log k) time · O(k) space",
+        "Merge in pairs, halving the number of lists each round. Folding them in one at a time re-walks the growing result every time — O(k·n) — while pairing gives O(n log k) for the very same merges, because each element is copied once per round and there are log k rounds.",
+        "module Solution where
+
+-- Merge in pairs, halving the number of lists each round. Folding them in
+-- one at a time re-walks the growing result every time -- O(k*n) -- while
+-- pairing gives O(n log k) for the same merges, because each element is
+-- copied once per round and there are log k rounds.
+mergeKLists :: [[Int]] -> [Int]
+mergeKLists lists = rounds (filter (not . null) lists)
+  where
+    rounds [] = []
+    rounds [only] = only
+    rounds remaining = rounds (pairUp remaining)
+    pairUp (a : b : rest) = merge a b : pairUp rest
+    pairUp leftover = leftover
+    merge [] second = second
+    merge first [] = first
+    merge (a : as) (b : bs)
+      | a <= b = a : merge as (b : bs)
+      | otherwise = b : merge (a : as) bs",
+      ),
+    ],
+    check: Check(
+      signature: "mergeKLists :: [[Int]] -> [Int]",
+      starter: "module Solution where
+
+mergeKLists :: [[Int]] -> [Int]
+mergeKLists = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"mergeKLists [[1,4,5],[1,3,4],[2,6]]\" [1, 1, 2, 3, 4, 4, 5, 6] (mergeKLists [[1, 4, 5], [1, 3, 4], [2, 6]])
+       , tc \"mergeKLists [] -- no lists at all\" [] (mergeKLists [])
+       , tc \"mergeKLists [[]] -- one empty list\" [] (mergeKLists [[]])
+       , tc \"mergeKLists [[1],[],[0]]\" [0, 1] (mergeKLists [[1], [], [0]])
+       , tc \"mergeKLists [[2,2],[2]] -- ties everywhere\" [2, 2, 2] (mergeKLists [[2, 2], [2]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc135_reverse_k_group() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Linked List",
+        "O(n) time · O(1) space",
+        "Look ahead k nodes *before* reversing anything. That check is the whole difficulty: once the rewiring starts there is no way to tell how far it got, so a short final group would be reversed by mistake.",
+        "module Solution where
+
+-- Take k at a time: a full group is reversed, a short final one is
+-- left as it is -- the pointer surgery of the linked-list version
+-- without the pointers.
+reverseKGroup :: [Int] -> Int -> [Int]
+reverseKGroup values k
+  | length group == k = reverse group ++ reverseKGroup rest k
+  | otherwise = values
+  where
+    (group, rest) = splitAt k values",
+      ),
+    ],
+    check: Check(
+      signature: "reverseKGroup :: [Int] -> Int -> [Int]",
+      starter: "module Solution where
+
+reverseKGroup :: [Int] -> Int -> [Int]
+reverseKGroup = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"reverseKGroup [1,2,3,4,5] 2\" [2, 1, 4, 3, 5] (reverseKGroup [1, 2, 3, 4, 5] 2)
+       , tc \"reverseKGroup [1,2,3,4,5] 3 -- the last two are left alone\" [3, 2, 1, 4, 5] (reverseKGroup [1, 2, 3, 4, 5] 3)
+       , tc \"reverseKGroup [1,2,3,4] 4\" [4, 3, 2, 1] (reverseKGroup [1, 2, 3, 4] 4)
+       , tc \"reverseKGroup [1,2,3] 1 -- nothing changes\" [1, 2, 3] (reverseKGroup [1, 2, 3] 1)
+       , tc \"reverseKGroup [1,2] 5 -- the group never fills\" [1, 2] (reverseKGroup [1, 2] 5)
+       , tc \"reverseKGroup [] 2\" [] (reverseKGroup [] 2)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc136_invert_binary_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Swap the children, then invert each of them — the swap and the recursion are the same line. The order does not matter: swapping before or after recursing gives the same tree, which is why this is the shortest tree problem there is.",
+        "module Solution where
+
+import Drill
+
+-- Swap the children, then invert each of them. The swap and the
+-- recursion are the same line, which is why this is the shortest tree
+-- problem there is -- and why the order does not matter.
+invertTree :: Tree -> Tree
+invertTree Leaf = Leaf
+invertTree (Node left v right) = Node (invertTree right) v (invertTree left)",
+      ),
+    ],
+    check: Check(
+      signature: "invertTree :: Tree -> Tree",
+      starter: "module Solution where
+
+import Drill
+
+invertTree :: Tree -> Tree
+invertTree = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"invertTree (tree [4,2,7,1,3,6,9])\" (tree (map Just [4, 7, 2, 9, 6, 3, 1])) (invertTree (tree (map Just [4, 2, 7, 1, 3, 6, 9])))
+       , tc \"invertTree (tree []) -- an empty tree\" (tree []) (invertTree (tree []))
+       , tc \"invertTree (tree [1]) -- a single node\" (tree [Just 1]) (invertTree (tree [Just 1]))
+       , tc \"invertTree twice is the original\" (tree (map Just [1, 2])) (invertTree (invertTree (tree (map Just [1, 2]))))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc137_maximum_depth() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "One more than the deeper of the two children, with an empty tree at zero. The whole problem is that base case; everything else is the definition of depth read aloud.",
+        "module Solution where
+
+import Drill
+
+-- A node's depth is one more than its deeper child's.
+maxDepth :: Tree -> Int
+maxDepth Leaf = 0
+maxDepth (Node left _ right) = 1 + max (maxDepth left) (maxDepth right)",
+      ),
+    ],
+    check: Check(
+      signature: "maxDepth :: Tree -> Int",
+      starter: "module Solution where
+
+import Drill
+
+maxDepth :: Tree -> Int
+maxDepth = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+x :: Maybe Int
+x = Nothing
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"maxDepth (tree [3,9,20,x,x,15,7])\" 3 (maxDepth (tree [Just 3, Just 9, Just 20, x, x, Just 15, Just 7]))
+       , tc \"maxDepth (tree [1,x,2])\" 2 (maxDepth (tree [Just 1, x, Just 2]))
+       , tc \"maxDepth (tree [])\" 0 (maxDepth (tree []))
+       , tc \"maxDepth (tree [1])\" 1 (maxDepth (tree [Just 1]))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc138_diameter_of_binary_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "One walk doing two jobs: each call *returns* its own height, and on the way past it *records* the path through that node — left height plus right height. The answer is the largest such path, so it is never returned, only tracked. That split between return and record is the pattern, and it comes back in [[nc149_max_path_sum]].",
+        "module Solution where
+
+import Drill
+
+-- Each node's height is computed once; the longest path through a
+-- node is its two children's heights added, carried up alongside the
+-- height instead of mutated into a shared best.
+diameterOfBinaryTree :: Tree -> Int
+diameterOfBinaryTree root = snd (measure root)
+  where
+    measure Leaf = (0, 0)
+    measure (Node left _ right) =
+      let (lh, lbest) = measure left
+          (rh, rbest) = measure right
+      in (1 + max lh rh, maximum [lbest, rbest, lh + rh])",
+      ),
+    ],
+    check: Check(
+      signature: "diameterOfBinaryTree :: Tree -> Int",
+      starter: "module Solution where
+
+import Drill
+
+diameterOfBinaryTree :: Tree -> Int
+diameterOfBinaryTree = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+x :: Maybe Int
+x = Nothing
+
+-- The Go harness's lopsided tree, padded to the level-order slots the
+-- Drill builder indexes: 1(2(3, 4(5(_,6), _)), _).
+lopsided :: Tree
+lopsided = tree [Just 1, Just 2, x, Just 3, Just 4, x, x, x, x, Just 5, x, x, x, x, x, x, x, x, x, x, Just 6]
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"diameterOfBinaryTree (tree [1,2,3,4,5])\" 3 (diameterOfBinaryTree (tree (map Just [1, 2, 3, 4, 5])))
+       , tc \"diameterOfBinaryTree (tree [1,2])\" 1 (diameterOfBinaryTree (tree (map Just [1, 2])))
+       , tc \"diameterOfBinaryTree (tree [1])\" 0 (diameterOfBinaryTree (tree [Just 1]))
+       , tc \"diameterOfBinaryTree (tree [])\" 0 (diameterOfBinaryTree (tree []))
+       , tc \"diameterOfBinaryTree (the path avoids the root)\" 4 (diameterOfBinaryTree lopsided)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc139_balanced_binary_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Height and balance in one walk. A subtree reports its height, or reports that something below it is already unbalanced — and once that happens nothing above needs measuring. Using -1 as the \"not balanced\" height is what lets a single return value carry both answers.",
+        "module Solution where
+
+import Drill
+
+-- One pass: a subtree reports its height, or Nothing the moment any
+-- subtree inside it is unbalanced, and the failure propagates straight
+-- up through the Maybe.
+isBalanced :: Tree -> Bool
+isBalanced root = check root /= Nothing
+  where
+    check Leaf = Just 0
+    check (Node left _ right) = do
+      lh <- check left
+      rh <- check right
+      if abs (lh - rh) > 1 then Nothing else Just (1 + max lh rh)",
+      ),
+    ],
+    check: Check(
+      signature: "isBalanced :: Tree -> Bool",
+      starter: "module Solution where
+
+import Drill
+
+isBalanced :: Tree -> Bool
+isBalanced = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+x :: Maybe Int
+x = Nothing
+
+-- The Go harness's last tree, padded to the level-order slots the
+-- Drill builder indexes: 1(2(3(4,_),_), 2(_,3(_,4))).
+offRoot :: Tree
+offRoot = tree [Just 1, Just 2, Just 2, Just 3, x, x, Just 3, Just 4, x, x, x, x, x, x, Just 4]
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"isBalanced (tree [3,9,20,x,x,15,7])\" True (isBalanced (tree [Just 3, Just 9, Just 20, x, x, Just 15, Just 7]))
+       , tc \"isBalanced (tree [1,2,2,3,3,x,x,4,4])\" False (isBalanced (tree [Just 1, Just 2, Just 2, Just 3, Just 3, x, x, Just 4, Just 4]))
+       , tc \"isBalanced (tree [])\" True (isBalanced (tree []))
+       , tc \"isBalanced (tree [1,2,x,3]) -- a chain of three\" False (isBalanced (tree [Just 1, Just 2, x, Just 3]))
+       , tc \"isBalanced (balanced at every node but the root)\" False (isBalanced offRoot)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc13_longest_substring() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sliding Window",
+        "O(n) time · O(n) space",
+        "Grow a window rightwards and, whenever the new character is already inside it, move the start past that character's earlier copy. The window is always repeat-free, so its widest reading is the answer.",
+        "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+lengthOfLongestSubstring :: String -> Int
+lengthOfLongestSubstring s = best
+  where
+    (_, _, best) = foldl step (Map.empty, 0, 0) (zip [0 ..] s)
+    step (lastSeen, start, longest) (i, c) =
+      -- Jump the window start past the previous copy of this character;
+      -- never backwards, or a stale position would reopen the window.
+      let start' = case Map.lookup c lastSeen of
+            Just previous | previous >= start -> previous + 1
+            _ -> start
+      in (Map.insert c i lastSeen, start', max longest (i - start' + 1))",
+      ),
+    ],
+    check: Check(
+      signature: "lengthOfLongestSubstring :: String -> Int",
+      starter: "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+lengthOfLongestSubstring :: String -> Int
+lengthOfLongestSubstring = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"lengthOfLongestSubstring \\\"abcabcbb\\\"\" 3 (lengthOfLongestSubstring \"abcabcbb\")
+       , tc \"lengthOfLongestSubstring \\\"bbbbb\\\"\" 1 (lengthOfLongestSubstring \"bbbbb\")
+       , tc \"lengthOfLongestSubstring \\\"pwwkew\\\"\" 3 (lengthOfLongestSubstring \"pwwkew\")
+       , tc \"lengthOfLongestSubstring \\\"\\\"\" 0 (lengthOfLongestSubstring \"\")
+       , tc \"lengthOfLongestSubstring \\\"abba\\\"\" 2 (lengthOfLongestSubstring \"abba\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc140_same_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Walk both trees in step. Two empties match, an empty and a node never do, and two nodes match when their values do and both pairs of children do. The same shape is what [[nc141_subtree_of_another_tree]] is built from, which is why it is worth writing out rather than leaning on the language's equality.",
+        "module Solution where
+
+import Drill
+
+-- Equal roots and equal subtrees, with a mixed pair of Leaf and Node
+-- failing the match.
+isSameTree :: Tree -> Tree -> Bool
+isSameTree Leaf Leaf = True
+isSameTree (Node pl pv pr) (Node ql qv qr) = pv == qv && isSameTree pl ql && isSameTree pr qr
+isSameTree _ _ = False",
+      ),
+    ],
+    check: Check(
+      signature: "isSameTree :: Tree -> Tree -> Bool",
+      starter: "module Solution where
+
+import Drill
+
+isSameTree :: Tree -> Tree -> Bool
+isSameTree = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+x :: Maybe Int
+x = Nothing
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"isSameTree (tree [1,2,3]) (tree [1,2,3])\" True (isSameTree (tree (map Just [1, 2, 3])) (tree (map Just [1, 2, 3])))
+       , tc \"isSameTree (tree [1,2]) (tree [1,x,2])\" False (isSameTree (tree (map Just [1, 2])) (tree [Just 1, x, Just 2]))
+       , tc \"isSameTree (tree [1,2,1]) (tree [1,1,2])\" False (isSameTree (tree (map Just [1, 2, 1])) (tree (map Just [1, 1, 2])))
+       , tc \"isSameTree (tree []) (tree [])\" True (isSameTree (tree []) (tree []))
+       , tc \"isSameTree (tree [1]) (tree [])\" False (isSameTree (tree [Just 1]) (tree []))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc141_subtree_of_another_tree() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(n·m) time · O(n+m) space",
+        "Try to match at every node. The two questions are kept apart on purpose: \"are these two trees identical\" is the whole of the work, and \"is it a subtree\" is that question asked once per node. O(n·m) in the worst case, and a partial match that fails deep is what makes it so.",
+        "module Solution where
+
+import Drill
+
+-- At every node of the big tree, ask whether the small tree starts here.
+isSubtree :: Tree -> Tree -> Bool
+isSubtree _ Leaf = True
+isSubtree Leaf _ = False
+isSubtree root@(Node left _ right) subRoot = isSame root subRoot || isSubtree left subRoot || isSubtree right subRoot
+
+isSame :: Tree -> Tree -> Bool
+isSame Leaf Leaf = True
+isSame (Node pl pv pr) (Node ql qv qr) = pv == qv && isSame pl ql && isSame pr qr
+isSame _ _ = False",
+      ),
+    ],
+    check: Check(
+      signature: "isSubtree :: Tree -> Tree -> Bool
+isSame :: Tree -> Tree -> Bool",
+      starter: "module Solution where
+
+import Drill
+
+isSubtree :: Tree -> Tree -> Bool
+isSubtree = error \"todo\"
+
+isSame :: Tree -> Tree -> Bool
+isSame = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+x :: Maybe Int
+x = Nothing
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"isSubtree (tree [3,4,5,1,2]) (tree [4,1,2])\" True (isSubtree (tree (map Just [3, 4, 5, 1, 2])) (tree (map Just [4, 1, 2])))
+       , tc \"isSubtree (a near match with an extra node)\" False (isSubtree (tree [Just 3, Just 4, Just 5, Just 1, Just 2, x, x, x, x, Just 0]) (tree (map Just [4, 1, 2])))
+       , tc \"isSubtree (tree [1]) (tree [1]) -- a tree is its own subtree\" True (isSubtree (tree [Just 1]) (tree [Just 1]))
+       , tc \"isSubtree (tree []) (tree [1])\" False (isSubtree (tree []) (tree [Just 1]))
+       , tc \"isSubtree (tree [1]) (tree []) -- the empty tree is in everything\" True (isSubtree (tree [Just 1]) (tree []))
+       , tc \"isSubtree (tree [12]) (tree [2]) -- values are not digits\" False (isSubtree (tree [Just 12]) (tree [Just 2]))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc142_lowest_common_ancestor_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "BST Walk",
+        "O(h) time · O(1) space",
+        "The ordering does all the work. Both targets below the current value means go left, both above means go right, and anything else means this node is the split point — which is the answer. No searching for either node first, and no comparing of paths.",
+        "module Solution where
+
+import Drill
+
+-- In a BST the split point is the first node between the two values:
+-- both smaller means go left, both larger means go right, else here.
+lowestCommonAncestor :: Tree -> Int -> Int -> Int
+lowestCommonAncestor Leaf p _ = p
+lowestCommonAncestor (Node left v right) p q
+  | p < v && q < v = lowestCommonAncestor left p q
+  | p > v && q > v = lowestCommonAncestor right p q
+  | otherwise = v",
+      ),
+    ],
+    check: Check(
+      signature: "lowestCommonAncestor :: Tree -> Int -> Int -> Int",
+      starter: "module Solution where
+
+import Drill
+
+lowestCommonAncestor :: Tree -> Int -> Int -> Int
+lowestCommonAncestor = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+x :: Maybe Int
+x = Nothing
+
+bst :: Tree
+bst = tree [Just 6, Just 2, Just 8, Just 0, Just 4, Just 7, Just 9, x, x, Just 3, Just 5]
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"lowestCommonAncestor bst 2 8\" 6 (lowestCommonAncestor bst 2 8)
+       , tc \"lowestCommonAncestor bst 2 4 -- an ancestor counts\" 2 (lowestCommonAncestor bst 2 4)
+       , tc \"lowestCommonAncestor bst 3 5\" 4 (lowestCommonAncestor bst 3 5)
+       , tc \"lowestCommonAncestor bst 7 9\" 8 (lowestCommonAncestor bst 7 9)
+       , tc \"lowestCommonAncestor (tree [1]) 1 1\" 1 (lowestCommonAncestor (tree [Just 1]) 1 1)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc143_level_order_traversal() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "BFS",
+        "O(n) time · O(n) space",
+        "Take the whole frontier at once rather than one node at a time: everything on it is the current level, and its children are the next. That is what makes the grouping fall out without tracking any depth — a plain queue gives the right order but no idea where each level ends.",
+        "module Solution where
+
+import Drill
+
+-- The queue holds exactly one level at a time; drain it into a row
+-- while collecting the next level.
+levelOrder :: Tree -> [[Int]]
+levelOrder Leaf = []
+levelOrder root = go [root]
+  where
+    go [] = []
+    go queue = [v | Node _ v _ <- queue] : go (concatMap children queue)
+    children (Node left _ right) = [t | t <- [left, right], t /= Leaf]
+    children Leaf = []",
+      ),
+    ],
+    check: Check(
+      signature: "levelOrder :: Tree -> [[Int]]",
+      starter: "module Solution where
+
+import Drill
+
+levelOrder :: Tree -> [[Int]]
+levelOrder = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+x :: Maybe Int
+x = Nothing
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"levelOrder (tree [3,9,20,x,x,15,7])\" [[3], [9, 20], [15, 7]] (levelOrder (tree [Just 3, Just 9, Just 20, x, x, Just 15, Just 7]))
+       , tc \"levelOrder (tree [1])\" [[1]] (levelOrder (tree [Just 1]))
+       , tc \"levelOrder (tree [])\" [] (levelOrder (tree []))
+       , tc \"levelOrder (tree [1,2,x,3]) -- a chain\" [[1], [2], [3]] (levelOrder (tree [Just 1, Just 2, x, Just 3]))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc144_right_side_view() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "BFS",
+        "O(n) time · O(n) space",
+        "The last value on each level, which is what \"seen from the right\" means once the question is asked level by level. Walking down the right children alone is the tempting wrong answer: where the right side is short, a node further left is the one that shows.",
+        "module Solution where
+
+import Drill
+
+-- Level by level; the last node of each level is the one seen.
+rightSideView :: Tree -> [Int]
+rightSideView Leaf = []
+rightSideView root = go [root]
+  where
+    go [] = []
+    go queue = last [v | Node _ v _ <- queue] : go (concatMap children queue)
+    children (Node left _ right) = [t | t <- [left, right], t /= Leaf]
+    children Leaf = []",
+      ),
+    ],
+    check: Check(
+      signature: "rightSideView :: Tree -> [Int]",
+      starter: "module Solution where
+
+import Drill
+
+rightSideView :: Tree -> [Int]
+rightSideView = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+x :: Maybe Int
+x = Nothing
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"rightSideView (tree [1,2,3,x,5,x,4])\" [1, 3, 4] (rightSideView (tree [Just 1, Just 2, Just 3, x, Just 5, x, Just 4]))
+       , tc \"rightSideView (tree [1,x,3])\" [1, 3] (rightSideView (tree [Just 1, x, Just 3]))
+       , tc \"rightSideView (tree [])\" [] (rightSideView (tree []))
+       , tc \"rightSideView (tree [1,2,3,4]) -- a left node shows below\" [1, 3, 4] (rightSideView (tree (map Just [1, 2, 3, 4])))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc145_count_good_nodes() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Carry the largest value seen on the way down. A node is good when nothing above it is bigger, so the check needs no knowledge of the tree below — which is what makes one pass enough. The root is always good, and passing its own value down as the initial maximum is what says so.",
+        "module Solution where
+
+import Drill
+
+-- Carry the largest value on the path so far; a node is good when it
+-- is at least that, and it becomes the new maximum for its subtree.
+goodNodes :: Tree -> Int
+goodNodes Leaf = 0
+goodNodes root@(Node _ v _) = count root v
+  where
+    count Leaf _ = 0
+    count (Node left value right) largest =
+      let good = if value >= largest then 1 else 0
+          top = max largest value
+      in good + count left top + count right top",
+      ),
+    ],
+    check: Check(
+      signature: "goodNodes :: Tree -> Int",
+      starter: "module Solution where
+
+import Drill
+
+goodNodes :: Tree -> Int
+goodNodes = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+x :: Maybe Int
+x = Nothing
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"goodNodes (tree [3,1,4,3,x,1,5])\" 4 (goodNodes (tree [Just 3, Just 1, Just 4, Just 3, x, Just 1, Just 5]))
+       , tc \"goodNodes (tree [])\" 0 (goodNodes (tree []))
+       , tc \"goodNodes (tree [1])\" 1 (goodNodes (tree [Just 1]))
+       , tc \"goodNodes (tree [2,2]) -- equal counts as good\" 2 (goodNodes (tree (map Just [2, 2])))
+       , tc \"goodNodes (tree [3,3,x,4,2])\" 3 (goodNodes (tree [Just 3, Just 3, x, Just 4, Just 2]))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc146_validate_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Check against a range, not against the parent. A node can be larger than its own parent and still break the order, because the constraint comes from an ancestor further up — and that is the whole difficulty. Going left tightens the upper bound, going right the lower one.",
+        "module Solution where
+
+import Drill
+
+-- Every node must lie strictly inside the bounds its ancestors set:
+-- going left tightens the upper bound, going right the lower.
+isValidBST :: Tree -> Bool
+isValidBST root = valid root minBound maxBound
+  where
+    valid Leaf _ _ = True
+    valid (Node left v right) low high =
+      v > low && v < high && valid left low v && valid right v high",
+      ),
+    ],
+    check: Check(
+      signature: "isValidBST :: Tree -> Bool",
+      starter: "module Solution where
+
+import Drill
+
+isValidBST :: Tree -> Bool
+isValidBST = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+x :: Maybe Int
+x = Nothing
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"isValidBST (tree [2,1,3])\" True (isValidBST (tree (map Just [2, 1, 3])))
+       , tc \"isValidBST (tree [5,1,4,x,x,3,6])\" False (isValidBST (tree [Just 5, Just 1, Just 4, x, x, Just 3, Just 6]))
+       , tc \"isValidBST (tree [5,4,6,x,x,3,7]) -- the 3 breaks an ancestor's bound\" False (isValidBST (tree [Just 5, Just 4, Just 6, x, x, Just 3, Just 7]))
+       , tc \"isValidBST (tree [2,2,2]) -- equal values are not allowed\" False (isValidBST (tree (map Just [2, 2, 2])))
+       , tc \"isValidBST (tree [])\" True (isValidBST (tree []))
+       , tc \"isValidBST (tree [1])\" True (isValidBST (tree [Just 1]))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc147_kth_smallest_bst() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Iterative In-Order",
+        "O(h+k) time · O(h) space",
+        "An in-order walk of a search tree visits the values in order, so the answer is the kth thing it reaches. Stopping there is the point: the tree below the kth value is never touched, which is what separates this from sorting everything.",
+        "module Solution where
+
+import Drill
+
+-- The in-order walk of a BST is its values in ascending order; the
+-- walk is lazy, so indexing stops it at the kth value rather than
+-- collecting them all.
+kthSmallest :: Tree -> Int -> Int
+kthSmallest root k = inorder root !! (k - 1)
+
+inorder :: Tree -> [Int]
+inorder Leaf = []
+inorder (Node left v right) = inorder left ++ [v] ++ inorder right",
+      ),
+    ],
+    check: Check(
+      signature: "kthSmallest :: Tree -> Int -> Int
+inorder :: Tree -> [Int]",
+      starter: "module Solution where
+
+import Drill
+
+kthSmallest :: Tree -> Int -> Int
+kthSmallest = error \"todo\"
+
+inorder :: Tree -> [Int]
+inorder = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+x :: Maybe Int
+x = Nothing
+
+bst :: Tree
+bst = tree [Just 5, Just 3, Just 6, Just 2, Just 4, x, x, Just 1]
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"kthSmallest bst 1\" 1 (kthSmallest bst 1)
+       , tc \"kthSmallest bst 2\" 2 (kthSmallest bst 2)
+       , tc \"kthSmallest bst 3\" 3 (kthSmallest bst 3)
+       , tc \"kthSmallest bst 4\" 4 (kthSmallest bst 4)
+       , tc \"kthSmallest bst 6\" 6 (kthSmallest bst 6)
+       , tc \"kthSmallest (tree [7]) 1\" 7 (kthSmallest (tree [Just 7]) 1)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc148_build_tree_preorder_inorder() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Recursion",
+        "O(n²) time · O(n²) space",
+        "Pre-order names the root; in-order says how much of the rest belongs to each side. Neither traversal alone determines a tree, and this is precisely why together they do — the split point found in the in-order list is the size of the left subtree, which is what carves up the pre-order list too.",
+        "module Solution where
+
+import Drill
+
+-- The first pre-order value is the root; its position in the in-order
+-- list splits both lists into the left and right subtrees.
+buildTree :: [Int] -> [Int] -> Tree
+buildTree [] _ = Leaf
+buildTree (root : preorder) inorder =
+  Node (buildTree (take split preorder) front) root (buildTree (drop split preorder) (drop 1 back))
+  where
+    (front, back) = break (== root) inorder
+    split = length front",
+      ),
+    ],
+    check: Check(
+      signature: "buildTree :: [Int] -> [Int] -> Tree",
+      starter: "module Solution where
+
+import Drill
+
+buildTree :: [Int] -> [Int] -> Tree
+buildTree = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+x :: Maybe Int
+x = Nothing
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"buildTree [3,9,20,15,7] [9,3,15,20,7]\" (tree [Just 3, Just 9, Just 20, x, x, Just 15, Just 7]) (buildTree [3, 9, 20, 15, 7] [9, 3, 15, 20, 7])
+       , tc \"buildTree [] []\" (tree []) (buildTree [] [])
+       , tc \"buildTree [-1] [-1]\" (tree [Just (-1)]) (buildTree [-1] [-1])
+       , tc \"buildTree [1,2,3] [3,2,1] -- leaning left\" (tree [Just 1, Just 2, x, Just 3]) (buildTree [1, 2, 3] [3, 2, 1])
+       , tc \"buildTree [1,2,3] [1,2,3] -- leaning right\" (tree [Just 1, x, Just 2, x, x, x, Just 3]) (buildTree [1, 2, 3] [1, 2, 3])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc149_max_path_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS",
+        "O(n) time · O(h) space",
+        "Two different quantities, which is the whole trick. What a node *returns* is the best path that can continue upwards, so at most one of its children. What it *records* is the best path through it, which may use both. A negative branch is dropped rather than added, because a path is allowed to stop. Same shape as [[nc138_diameter_of_binary_tree]].",
+        "module Solution where
+
+import Drill
+
+-- Each node reports the best downward path starting at it (never
+-- negative: a bad branch is simply not taken) alongside the best path
+-- anywhere in its subtree, which joins both branches at the node.
+maxPathSum :: Tree -> Int
+maxPathSum root = snd (walk root)
+  where
+    walk Leaf = (0, minBound)
+    walk (Node left v right) =
+      let (ldown, lbest) = walk left
+          (rdown, rbest) = walk right
+          down = v + max ldown rdown
+          here = v + ldown + rdown
+      in (max 0 down, maximum [lbest, rbest, here])",
+      ),
+    ],
+    check: Check(
+      signature: "maxPathSum :: Tree -> Int",
+      starter: "module Solution where
+
+import Drill
+
+maxPathSum :: Tree -> Int
+maxPathSum = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+x :: Maybe Int
+x = Nothing
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"maxPathSum (tree [1,2,3])\" 6 (maxPathSum (tree (map Just [1, 2, 3])))
+       , tc \"maxPathSum (tree [-10,9,20,x,x,15,7])\" 42 (maxPathSum (tree [Just (-10), Just 9, Just 20, x, x, Just 15, Just 7]))
+       , tc \"maxPathSum (tree [-3]) -- a single negative node\" (-3) (maxPathSum (tree [Just (-3)]))
+       , tc \"maxPathSum (tree [-2,-1]) -- all negative\" (-1) (maxPathSum (tree (map Just [-2, -1])))
+       , tc \"maxPathSum (tree [0])\" 0 (maxPathSum (tree [Just 0]))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc14_character_replacement() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sliding Window",
+        "O(n) time · O(1) space",
+        "A window can be made uniform with k changes when its size minus its most-frequent-character count is at most k. Grow the right edge, shrink from the left when that breaks, and the biggest valid window is the answer.",
+        "module Solution where
+
+import Data.Array
+import qualified Data.Map.Strict as Map
+
+characterReplacement :: String -> Int -> Int
+characterReplacement s k = best
+  where
+    arr = listArray (0, length s - 1) s
+    (_, _, _, best) = foldl step (Map.empty, 0, 0, 0) (zip [0 ..] s)
+    step (counts, start, mostFrequent, longest) (end, c) =
+      -- The window is valid while its non-majority characters fit in k.
+      -- mostFrequent is never lowered: a stale high can only keep the
+      -- window at a length already achieved, never over-count.
+      let counts' = Map.insertWith (+) c 1 counts
+          most' = max mostFrequent (counts' Map.! c)
+          (counts'', start') =
+            if end - start + 1 - most' > k
+              then (Map.adjust (subtract 1) (arr ! start) counts', start + 1)
+              else (counts', start)
+      in (counts'', start', most', max longest (end - start' + 1))",
+      ),
+    ],
+    check: Check(
+      signature: "characterReplacement :: String -> Int -> Int",
+      starter: "module Solution where
+
+import Data.Array
+import qualified Data.Map.Strict as Map
+
+characterReplacement :: String -> Int -> Int
+characterReplacement = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"characterReplacement \\\"ABAB\\\" 2\" 4 (characterReplacement \"ABAB\" 2)
+       , tc \"characterReplacement \\\"AABABBA\\\" 1\" 4 (characterReplacement \"AABABBA\" 1)
+       , tc \"characterReplacement \\\"AAAA\\\" 0\" 4 (characterReplacement \"AAAA\" 0)
+       , tc \"characterReplacement \\\"ABCDE\\\" 1\" 2 (characterReplacement \"ABCDE\" 1)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc150_serialize_deserialize() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Pre-Order DFS",
+        "O(n) time · O(n) space",
+        "Pre-order with a marker for every empty child. Recording the empties is what makes the format unambiguous — a pre-order list of values alone matches many different trees — and it is also what lets the reader work with no length information at all: it stops as soon as it has consumed a whole subtree.",
+        "module Solution where
+
+import Data.List (intercalate)
+import Drill
+
+-- Pre-order with an explicit marker for a missing child: the reader
+-- consumes tokens in the same order the writer produced them, so no
+-- lengths are needed.
+serialize :: Tree -> String
+serialize root = intercalate \",\" (write root)
+  where
+    write Leaf = [\"#\"]
+    write (Node left v right) = show v : write left ++ write right
+
+deserialize :: String -> Tree
+deserialize input = fst (next (splitOn ',' input))
+  where
+    next (\"#\" : rest) = (Leaf, rest)
+    next (token : rest) =
+      let (left, afterLeft) = next rest
+          (right, afterRight) = next afterLeft
+      in (Node left (read token) right, afterRight)
+    next [] = (Leaf, [])
+
+splitOn :: Char -> String -> [String]
+splitOn sep s = case break (== sep) s of
+  (piece, []) -> [piece]
+  (piece, _ : rest) -> piece : splitOn sep rest",
+      ),
+    ],
+    check: Check(
+      signature: "serialize :: Tree -> String
+deserialize :: String -> Tree
+splitOn :: Char -> String -> [String]",
+      starter: "module Solution where
+
+import Data.List (intercalate)
+import Drill
+
+serialize :: Tree -> String
+serialize = error \"todo\"
+
+deserialize :: String -> Tree
+deserialize = error \"todo\"
+
+splitOn :: Char -> String -> [String]
+splitOn = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+x :: Maybe Int
+x = Nothing
+
+roundTrip :: [Maybe Int] -> Tree
+roundTrip values = deserialize (serialize (tree values))
+
+-- The Go harness's lopsided tree, padded to the level-order slots the
+-- Drill builder indexes: 1(2(3(_,4), _), _).
+lopsided :: [Maybe Int]
+lopsided = [Just 1, Just 2, x, Just 3, x, x, x, x, Just 4]
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"deserialize (serialize (tree [1,2,3,x,x,4,5]))\" (tree [Just 1, Just 2, Just 3, x, x, Just 4, Just 5]) (roundTrip [Just 1, Just 2, Just 3, x, x, Just 4, Just 5])
+       , tc \"deserialize (serialize (tree []))\" (tree []) (roundTrip [])
+       , tc \"deserialize (serialize (tree [0]))\" (tree [Just 0]) (roundTrip [Just 0])
+       , tc \"deserialize (serialize (a lopsided tree))\" (tree lopsided) (roundTrip lopsided)
+       , tc \"deserialize (serialize (tree [-1,-2,-3])) -- negatives survive\" (tree (map Just [-1, -2, -3])) (roundTrip (map Just [-1, -2, -3]))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc15_permutation_in_string() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sliding Window",
+        "O(26·n) time · O(1) space",
+        "A permutation of s1 is any window of length |s1| in s2 with identical character counts. Slide one character at a time, adding the entering character and removing the leaving one, so each step is O(1) rather than a recount.",
+        "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+checkInclusion :: String -> String -> Bool
+checkInclusion s1 s2
+  | n > length s2 = False
+  | otherwise = any (== need) (scanl slide first steps)
+  where
+    n = length s1
+    need = counts s1
+    first = counts (take n s2)
+    -- Slide a window of length s1: one character enters, one leaves.
+    steps = zip (drop n s2) s2
+    slide window (entering, leaving) = remove leaving (Map.insertWith (+) entering 1 window)
+    remove c = Map.update (\\count -> if count == 1 then Nothing else Just (count - 1)) c
+    counts str = Map.fromListWith (+) [(c, 1 :: Int) | c <- str]",
+      ),
+    ],
+    check: Check(
+      signature: "checkInclusion :: String -> String -> Bool",
+      starter: "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+checkInclusion :: String -> String -> Bool
+checkInclusion = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"checkInclusion \\\"ab\\\" \\\"eidbaooo\\\"\" True (checkInclusion \"ab\" \"eidbaooo\")
+       , tc \"checkInclusion \\\"ab\\\" \\\"eidboaoo\\\"\" False (checkInclusion \"ab\" \"eidboaoo\")
+       , tc \"checkInclusion \\\"abc\\\" \\\"ab\\\"\" False (checkInclusion \"abc\" \"ab\")
+       , tc \"checkInclusion \\\"a\\\" \\\"a\\\"\" True (checkInclusion \"a\" \"a\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc16_valid_parentheses() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Stack",
+        "O(n) time · O(n) space",
+        "On every opener, push the closer you expect; on every closer, it must match the top. Valid means never mismatching and finishing with an empty stack — both halves are needed.",
+        "module Solution where
+
+isValid :: String -> Bool
+isValid = go []
+  where
+    go stack [] = null stack
+    go stack (c : rest)
+      | c `elem` \"([{\" = go (c : stack) rest
+      | otherwise = case stack of
+          (open : deeper) | open == opener c -> go deeper rest
+          _ -> False
+    opener ')' = '('
+    opener ']' = '['
+    opener _ = '{'",
+      ),
+    ],
+    check: Check(
+      signature: "isValid :: String -> Bool",
+      starter: "module Solution where
+
+isValid :: String -> Bool
+isValid = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"isValid \\\"()\\\"\" True (isValid \"()\")
+       , tc \"isValid \\\"()[]{}\\\"\" True (isValid \"()[]{}\")
+       , tc \"isValid \\\"(]\\\"\" False (isValid \"(]\")
+       , tc \"isValid \\\"([)]\\\"\" False (isValid \"([)]\")
+       , tc \"isValid \\\"{[]}\\\"\" True (isValid \"{[]}\")
+       , tc \"isValid \\\"(\\\"\" False (isValid \"(\")
+       , tc \"isValid \\\")\\\"\" False (isValid \")\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc17_min_stack() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Two Stacks",
+        "O(1) per operation · O(n) space",
+        "The minimum has to be O(1), so it cannot be computed on demand — it has to be carried. Either each entry remembers the minimum at or below it, or a second stack tracks the running minimum alongside the first.",
+        "module Solution where
+
+-- A pure MinStack: every operation returns the next stack. The second
+-- list holds only the running minima: push to it when a new value ties
+-- or beats the current minimum, pop from it when that value leaves.
+data MinStack = MinStack [Int] [Int]
+
+emptyMinStack :: MinStack
+emptyMinStack = MinStack [] []
+
+push :: Int -> MinStack -> MinStack
+push val (MinStack values mins)
+  | null mins || val <= head mins = MinStack (val : values) (val : mins)
+  | otherwise = MinStack (val : values) mins
+
+pop :: MinStack -> MinStack
+pop (MinStack (v : values) mins)
+  | v == head mins = MinStack values (tail mins)
+  | otherwise = MinStack values mins
+pop (MinStack [] _) = error \"pop of an empty MinStack\"
+
+top :: MinStack -> Int
+top (MinStack (v : _) _) = v
+top _ = error \"top of an empty MinStack\"
+
+getMin :: MinStack -> Int
+getMin (MinStack _ (m : _)) = m
+getMin _ = error \"getMin of an empty MinStack\"",
+      ),
+    ],
+    check: Check(
+      signature: "data MinStack = MinStack [Int] [Int]
+emptyMinStack :: MinStack
+push :: Int -> MinStack -> MinStack
+pop :: MinStack -> MinStack
+top :: MinStack -> Int
+getMin :: MinStack -> Int",
+      starter: "module Solution where
+
+data MinStack = MinStack [Int] [Int]
+
+emptyMinStack :: MinStack
+emptyMinStack = error \"todo\"
+
+push :: Int -> MinStack -> MinStack
+push = error \"todo\"
+
+pop :: MinStack -> MinStack
+pop = error \"todo\"
+
+top :: MinStack -> Int
+top = error \"todo\"
+
+getMin :: MinStack -> Int
+getMin = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"push -2, 0, -3; getMin\" (-3) (getMin loaded)
+       , tc \"pop; top\" 0 (top popped)
+       , tc \"getMin after pop\" (-2) (getMin popped)
+       , tc \"push 2, 2; pop; getMin -- a duplicate minimum survives one pop\" 2 (getMin doubled)
+       ])
+  where
+    loaded = push (-3) (push 0 (push (-2) emptyMinStack))
+    popped = pop loaded
+    doubled = pop (push 2 (push 2 emptyMinStack))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc18_daily_temperatures() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Monotonic Stack",
+        "O(n) time · O(n) space",
+        "A stack of days still waiting for something warmer, kept in decreasing temperature order. Each new day resolves and pops every colder day below it, so every day is pushed once and popped once — O(n).",
+        "module Solution where
+
+import qualified Data.IntMap.Strict as IntMap
+
+dailyTemperatures :: [Int] -> [Int]
+dailyTemperatures temperatures =
+  [IntMap.findWithDefault 0 i answers | i <- [0 .. length temperatures - 1]]
+  where
+    -- The stack holds (index, temperature) pairs still waiting for a
+    -- warmer day, temperatures decreasing toward the top.
+    (_, answers) = foldl step ([], IntMap.empty) (zip [0 ..] temperatures)
+    step (stack, found) (i, t) =
+      let (resolved, waiting) = span (\\(_, cooler) -> cooler < t) stack
+          found' = foldl (\\m (j, _) -> IntMap.insert j (i - j) m) found resolved
+      in ((i, t) : waiting, found')",
+      ),
+    ],
+    check: Check(
+      signature: "dailyTemperatures :: [Int] -> [Int]",
+      starter: "module Solution where
+
+import qualified Data.IntMap.Strict as IntMap
+
+dailyTemperatures :: [Int] -> [Int]
+dailyTemperatures = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"dailyTemperatures [73, 74, 75, 71, 69, 72, 76, 73]\" [1, 1, 4, 2, 1, 1, 0, 0] (dailyTemperatures [73, 74, 75, 71, 69, 72, 76, 73])
+       , tc \"dailyTemperatures [30, 40, 50, 60]\" [1, 1, 1, 0] (dailyTemperatures [30, 40, 50, 60])
+       , tc \"dailyTemperatures [30, 60, 90]\" [1, 1, 0] (dailyTemperatures [30, 60, 90])
+       , tc \"dailyTemperatures [90]\" [0] (dailyTemperatures [90])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc19_binary_search() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Binary Search",
+        "O(log n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Worth writing until the bounds are automatic: this is the search every rotated-array problem is built on top of.",
+        "module Solution where
+
+import Data.Array
+
+search :: [Int] -> Int -> Int
+search nums target = go 0 (length nums - 1)
+  where
+    arr = listArray (0, length nums - 1) nums
+    go low high
+      | low > high = -1
+      | arr ! mid == target = mid
+      | arr ! mid < target = go (mid + 1) high
+      | otherwise = go low (mid - 1)
+      where
+        mid = low + (high - low) `div` 2",
+      ),
+    ],
+    check: Check(
+      signature: "search :: [Int] -> Int -> Int",
+      starter: "module Solution where
+
+import Data.Array
+
+search :: [Int] -> Int -> Int
+search = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"search [-1, 0, 3, 5, 9, 12] 9\" 4 (search [-1, 0, 3, 5, 9, 12] 9)
+       , tc \"search [-1, 0, 3, 5, 9, 12] 2\" (-1) (search [-1, 0, 3, 5, 9, 12] 2)
+       , tc \"search [5] 5\" 0 (search [5] 5)
+       , tc \"search [] 1\" (-1) (search [] 1)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc20_find_min_rotated() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Binary Search",
+        "O(log n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The minimum is the one place order breaks. Compare the midpoint against a boundary: a segment that still looks sorted cannot hold the break, so the answer is in the other half.",
+        "module Solution where
+
+import Data.Array
+
+findMin :: [Int] -> Int
+findMin nums = arr ! go 0 (length nums - 1)
+  where
+    arr = listArray (0, length nums - 1) nums
+    -- The minimum is where the rotation broke the order: if mid is above
+    -- the right end, the break is to the right; otherwise mid or left.
+    go low high
+      | low >= high = low
+      | arr ! mid > arr ! high = go (mid + 1) high
+      | otherwise = go low mid
+      where
+        mid = low + (high - low) `div` 2",
+      ),
+    ],
+    check: Check(
+      signature: "findMin :: [Int] -> Int",
+      starter: "module Solution where
+
+import Data.Array
+
+findMin :: [Int] -> Int
+findMin = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"findMin [3, 4, 5, 1, 2]\" 1 (findMin [3, 4, 5, 1, 2])
+       , tc \"findMin [4, 5, 6, 7, 0, 1, 2]\" 0 (findMin [4, 5, 6, 7, 0, 1, 2])
+       , tc \"findMin [11, 13, 15, 17]\" 11 (findMin [11, 13, 15, 17])
+       , tc \"findMin [2, 1]\" 1 (findMin [2, 1])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc21_search_rotated() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Binary Search",
+        "O(log n) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The twist: after a rotation, one half around the midpoint is always sorted. Work out which, then use its endpoints to decide whether the target lies inside it.",
+        "module Solution where
+
+import Data.Array
+
+search :: [Int] -> Int -> Int
+search nums target = go 0 (length nums - 1)
+  where
+    arr = listArray (0, length nums - 1) nums
+    -- One half is always sorted; check whether the target lies in it.
+    go low high
+      | low > high = -1
+      | arr ! mid == target = mid
+      | arr ! low <= arr ! mid =
+          if arr ! low <= target && target < arr ! mid
+            then go low (mid - 1)
+            else go (mid + 1) high
+      | otherwise =
+          if arr ! mid < target && target <= arr ! high
+            then go (mid + 1) high
+            else go low (mid - 1)
+      where
+        mid = low + (high - low) `div` 2",
+      ),
+    ],
+    check: Check(
+      signature: "search :: [Int] -> Int -> Int",
+      starter: "module Solution where
+
+import Data.Array
+
+search :: [Int] -> Int -> Int
+search = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"search [4, 5, 6, 7, 0, 1, 2] 0\" 4 (search [4, 5, 6, 7, 0, 1, 2] 0)
+       , tc \"search [4, 5, 6, 7, 0, 1, 2] 3\" (-1) (search [4, 5, 6, 7, 0, 1, 2] 3)
+       , tc \"search [1] 0\" (-1) (search [1] 0)
+       , tc \"search [1, 3] 3\" 1 (search [1, 3] 3)
+       , tc \"search [3, 1] 1\" 1 (search [3, 1] 1)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc22_encode_decode() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Length Prefix",
+        "O(n) time · O(n) space",
+        "Length-prefix each string: its length, a delimiter, then the string itself. Decoding reads a number and then takes exactly that many characters, so nothing inside a payload can ever be mistaken for structure — the delimiter appearing in the data is harmless, because the decoder was never scanning for it.",
+        "module Solution where
+
+-- Length-prefix each string: \"4#code3#abc\". The length tells the decoder
+-- exactly how far to read, so the strings can contain anything at all.
+encode :: [String] -> String
+encode = concatMap (\\s -> show (length s) ++ \"#\" ++ s)
+
+decode :: String -> [String]
+decode [] = []
+decode s = word : decode remaining
+  where
+    (digits, rest) = break (== '#') s
+    (word, remaining) = splitAt (read digits) (drop 1 rest)",
+      ),
+    ],
+    check: Check(
+      signature: "encode :: [String] -> String
+decode :: String -> [String]",
+      starter: "module Solution where
+
+encode :: [String] -> String
+encode = error \"todo\"
+
+decode :: String -> [String]
+decode = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"decode (encode [\\\"lint\\\", \\\"code\\\", \\\"love\\\", \\\"you\\\"])\" [\"lint\", \"code\", \"love\", \"you\"] (decode (encode [\"lint\", \"code\", \"love\", \"you\"]))
+       , tc \"decode (encode [\\\"we\\\", \\\"say\\\", \\\":\\\", \\\"yes\\\"])\" [\"we\", \"say\", \":\", \"yes\"] (decode (encode [\"we\", \"say\", \":\", \"yes\"]))
+       , tc \"decode (encode [\\\"\\\"])\" [\"\"] (decode (encode [\"\"]))
+       , tc \"decode (encode [])\" [] (decode (encode []))
+       , tc \"decode (encode [\\\"a#b,c\\\", \\\"3#\\\", \\\"\\\"])\" [\"a#b,c\", \"3#\", \"\"] (decode (encode [\"a#b,c\", \"3#\", \"\"]))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc23_valid_sudoku() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "One Pass + Seen Set",
+        "O(9²) time · O(9²) space",
+        "One pass, one set. Each filled cell contributes three signatures — this value in this row, in this column, in this box — and the first one already present is the duplicate. Nothing has to be gathered up first, and the scan stops the moment it fails.",
+        "module Solution where
+
+import qualified Data.Set as Set
+
+-- Every filled cell claims its digit in a row, a column, and a box; the
+-- board is valid exactly when no claim is made twice.
+isValidSudoku :: [String] -> Bool
+isValidSudoku board = length claims == Set.size (Set.fromList claims)
+  where
+    cells = [(r, c, digit) | (r, row) <- zip [0 ..] board, (c, digit) <- zip [0 ..] row, digit /= '.']
+    claims = concatMap claim cells
+    claim (r, c, digit) =
+      [ (\"row\" :: String, r, digit)
+      , (\"col\", c, digit)
+      , (\"box\", (r `div` 3) * 3 + c `div` 3, digit)
+      ]",
+      ),
+    ],
+    check: Check(
+      signature: "isValidSudoku :: [String] -> Bool",
+      starter: "module Solution where
+
+import qualified Data.Set as Set
+
+isValidSudoku :: [String] -> Bool
+isValidSudoku = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"a valid board\" True (isValidSudoku valid)
+       , tc \"a 5 twice in the first row\" False (isValidSudoku rowRepeat)
+       , tc \"an 8 twice in the top-left box\" False (isValidSudoku boxRepeat)
+       ])
+  where
+    valid =
+      [ \"53..7....\", \"6..195...\", \".98....6.\"
+      , \"8...6...3\", \"4..8.3..1\", \"7...2...6\"
+      , \".6....28.\", \"...419..5\", \"....8..79\"
+      ]
+    rowRepeat =
+      [ \"53..7...5\", \"6..195...\", \".98....6.\"
+      , \"8...6...3\", \"4..8.3..1\", \"7...2...6\"
+      , \".6....28.\", \"...419..5\", \"....8..79\"
+      ]
+    boxRepeat =
+      [ \"83..7....\", \"6..195...\", \".98....6.\"
+      , \"8...6...3\", \"4..8.3..1\", \"7...2...6\"
+      , \".6....28.\", \"...419..5\", \"....8..79\"
+      ]",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc24_trapping_rain_water() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Two pointers, moving whichever side is shorter. The trick is that the shorter side alone decides how much water sits above it: whatever is on the far side is at least as tall, so the running maximum behind the short pointer is the water level, and there is no need to know the far maximum exactly. One pass, no extra arrays.",
+        "module Solution where
+
+import Data.Array
+
+trap :: [Int] -> Int
+trap height = go 0 (length height - 1) 0 0 0
+  where
+    arr = listArray (0, length height - 1) height
+    -- The lower side is bounded by its own maximum: the other side is at
+    -- least as high, so that water level is certain.
+    go left right leftMax rightMax water
+      | left >= right = water
+      | arr ! left < arr ! right =
+          let leftMax' = max leftMax (arr ! left)
+          in go (left + 1) right leftMax' rightMax (water + leftMax' - arr ! left)
+      | otherwise =
+          let rightMax' = max rightMax (arr ! right)
+          in go left (right - 1) leftMax rightMax' (water + rightMax' - arr ! right)",
+      ),
+    ],
+    check: Check(
+      signature: "trap :: [Int] -> Int",
+      starter: "module Solution where
+
+import Data.Array
+
+trap :: [Int] -> Int
+trap = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"trap [0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]\" 6 (trap [0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1])
+       , tc \"trap [4, 2, 0, 3, 2, 5]\" 9 (trap [4, 2, 0, 3, 2, 5])
+       , tc \"trap []\" 0 (trap [])
+       , tc \"trap [3, 2, 1]\" 0 (trap [3, 2, 1])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc25_min_window_substring() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sliding Window",
+        "O(n+m) time · O(1) space",
+        "Count what is still missing, not what is present. Every character the window takes in decrements its requirement, and only a character that was actually still needed moves the counter — so \"missing == 0\" is a single integer test rather than a map comparison. Once the window is valid, shrink from the left until it stops being valid, recording the best as you go.",
+        "module Solution where
+
+import Data.Array
+import qualified Data.Map.Strict as Map
+
+minWindow :: String -> String -> String
+minWindow s t
+  | null t || length t > length s = \"\"
+  | otherwise = maybe \"\" cut best
+  where
+    arr = listArray (0, length s - 1) s
+    need0 = Map.fromListWith (+) [(c, 1 :: Int) | c <- t]
+    (_, _, _, best) = foldl step (need0, length t, 0, Nothing) (zip [0 ..] s)
+    step (need, missing, start, found) (end, c) =
+      let missing' = if Map.findWithDefault 0 c need > 0 then missing - 1 else missing
+          need' = Map.insertWith (+) c (-1) need
+      in shrink need' missing' start end found
+    -- Once every character is covered, shrink from the left as far as
+    -- the coverage allows, recording the window each time.
+    shrink need missing start end found
+      | missing > 0 = (need, missing, start, found)
+      | otherwise =
+          let found' = case found of
+                Just (_, size) | end - start + 1 >= size -> found
+                _ -> Just (start, end - start + 1)
+              leaving = arr ! start
+              need' = Map.insertWith (+) leaving 1 need
+              missing' = if Map.findWithDefault 0 leaving need' > 0 then 1 else 0
+          in shrink need' missing' (start + 1) end found'
+    cut (start, size) = take size (drop start s)",
+      ),
+    ],
+    check: Check(
+      signature: "minWindow :: String -> String -> String",
+      starter: "module Solution where
+
+import Data.Array
+import qualified Data.Map.Strict as Map
+
+minWindow :: String -> String -> String
+minWindow = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"minWindow \\\"ADOBECODEBANC\\\" \\\"ABC\\\"\" \"BANC\" (minWindow \"ADOBECODEBANC\" \"ABC\")
+       , tc \"minWindow \\\"a\\\" \\\"a\\\"\" \"a\" (minWindow \"a\" \"a\")
+       , tc \"minWindow \\\"a\\\" \\\"aa\\\"\" \"\" (minWindow \"a\" \"aa\")
+       , tc \"minWindow \\\"ab\\\" \\\"b\\\"\" \"b\" (minWindow \"ab\" \"b\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc26_sliding_window_maximum() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Prefix & Suffix Maxima",
+        "O(n) time · O(n) space",
+        "Cut the array into blocks of k and pre-compute, within each block, the running maximum forwards and backwards. Any window of width k straddles at most one block boundary, so it is exactly a suffix of one block and a prefix of the next — one max from each, and the whole thing is O(n) with no queue at all.",
+        "module Solution where
+
+import Data.Array
+import Data.Sequence (Seq, ViewL(..), ViewR(..), (|>))
+import qualified Data.Sequence as Seq
+
+maxSlidingWindow :: [Int] -> Int -> [Int]
+maxSlidingWindow nums k = reverse results
+  where
+    arr = listArray (0, length nums - 1) nums
+    -- The deque holds indices whose values are decreasing: the front is
+    -- the window's maximum.
+    (_, results) = foldl step (Seq.empty, []) (zip [0 ..] nums)
+    step (deque, acc) (i, n) =
+      let inWindow = case Seq.viewl deque of
+            front :< rest | front <= i - k -> rest
+            _ -> deque
+          -- A smaller value behind a larger newcomer can never be a maximum again.
+          trimmed = dropSmaller inWindow
+          dropSmaller d = case Seq.viewr d of
+            rest :> back | arr ! back < n -> dropSmaller rest
+            _ -> d
+          deque' = trimmed |> i
+          acc' = case Seq.viewl deque' of
+            front :< _ | i >= k - 1 -> arr ! front : acc
+            _ -> acc
+      in (deque', acc')",
+      ),
+    ],
+    check: Check(
+      signature: "maxSlidingWindow :: [Int] -> Int -> [Int]",
+      starter: "module Solution where
+
+import Data.Array
+import Data.Sequence (Seq, ViewL(..), ViewR(..), (|>))
+import qualified Data.Sequence as Seq
+
+maxSlidingWindow :: [Int] -> Int -> [Int]
+maxSlidingWindow = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"maxSlidingWindow [1, 3, -1, -3, 5, 3, 6, 7] 3\" [3, 3, 5, 5, 6, 7] (maxSlidingWindow [1, 3, -1, -3, 5, 3, 6, 7] 3)
+       , tc \"maxSlidingWindow [1] 1\" [1] (maxSlidingWindow [1] 1)
+       , tc \"maxSlidingWindow [9, 8, 7] 2\" [9, 8] (maxSlidingWindow [9, 8, 7] 2)
+       , tc \"maxSlidingWindow [1, 1, 1] 2\" [1, 1] (maxSlidingWindow [1, 1, 1] 2)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc27_eval_rpn() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Stack",
+        "O(n) time · O(n) space",
+        "A stack is the whole evaluator. Numbers go on; an operator takes the top two off and puts its result back. The one detail worth remembering is the order — the value popped first is the right operand — and that the division truncates towards zero, which is not what a flooring division does for negatives.",
+        "module Solution where
+
+-- Operands go on the stack; an operator pops its two arguments and
+-- pushes the result. `quot` truncates toward zero, as the problem asks.
+evalRPN :: [String] -> Int
+evalRPN tokens = head (foldl step [] tokens)
+  where
+    step (b : a : rest) \"+\" = a + b : rest
+    step (b : a : rest) \"-\" = a - b : rest
+    step (b : a : rest) \"*\" = a * b : rest
+    step (b : a : rest) \"/\" = a `quot` b : rest
+    step stack token = read token : stack",
+      ),
+    ],
+    check: Check(
+      signature: "evalRPN :: [String] -> Int",
+      starter: "module Solution where
+
+evalRPN :: [String] -> Int
+evalRPN = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"evalRPN [\\\"2\\\", \\\"1\\\", \\\"+\\\", \\\"3\\\", \\\"*\\\"]\" 9 (evalRPN [\"2\", \"1\", \"+\", \"3\", \"*\"])
+       , tc \"evalRPN [\\\"4\\\", \\\"13\\\", \\\"5\\\", \\\"/\\\", \\\"+\\\"]\" 6 (evalRPN [\"4\", \"13\", \"5\", \"/\", \"+\"])
+       , tc \"evalRPN [\\\"10\\\", \\\"6\\\", \\\"9\\\", \\\"3\\\", \\\"+\\\", \\\"-11\\\", \\\"*\\\", \\\"/\\\", \\\"*\\\", \\\"17\\\", \\\"+\\\", \\\"5\\\", \\\"+\\\"]\" 22 (evalRPN [\"10\", \"6\", \"9\", \"3\", \"+\", \"-11\", \"*\", \"/\", \"*\", \"17\", \"+\", \"5\", \"+\"])
+       , tc \"evalRPN [\\\"7\\\", \\\"-3\\\", \\\"/\\\"]\" (-2) (evalRPN [\"7\", \"-3\", \"/\"])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc28_generate_parentheses() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backtracking",
+        "O(4ⁿ/√n) time · O(n) space",
+        "Backtracking with two counters and one rule each: an opener is legal while any are left, a closer only while more are outstanding than openers. Nothing invalid is ever built, so there is no filtering step — every leaf reached with both counters at zero is an answer.",
+        "module Solution where
+
+generateParenthesis :: Int -> [String]
+generateParenthesis n = build 0 0
+  where
+    -- An opener is allowed while some remain; a closer only while it
+    -- would not outnumber the openers so far.
+    build open closed
+      | open == n && closed == n = [\"\"]
+      | otherwise =
+          ['(' : rest | open < n, rest <- build (open + 1) closed]
+            ++ [')' : rest | closed < open, rest <- build open (closed + 1)]",
+      ),
+    ],
+    check: Check(
+      signature: "generateParenthesis :: Int -> [String]",
+      starter: "module Solution where
+
+generateParenthesis :: Int -> [String]
+generateParenthesis = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"generateParenthesis 3\" [\"((()))\", \"(()())\", \"(())()\", \"()(())\", \"()()()\"] (sortStrings (generateParenthesis 3))
+       , tc \"generateParenthesis 1\" [\"()\"] (generateParenthesis 1)
+       , tc \"length (generateParenthesis 4)\" 14 (length (generateParenthesis 4))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc29_car_fleet() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sort + Greedy",
+        "O(n log n) time · O(n) space",
+        "Sort from the front backwards and carry the arrival time of the fleet ahead. A car that would arrive later than that fleet can never catch it, so it starts a new one and becomes the time to beat; anything else merges. Comparing times as distance × speed cross-multiplied keeps the whole thing in integers.",
+        "module Solution where
+
+import Data.List (sortOn)
+import Data.Ord (Down(..))
+
+carFleet :: Int -> [Int] -> [Int] -> Int
+carFleet target position speed = fst (foldl step (0, 0.0) arrivals)
+  where
+    -- Closest to the target first. A car that would arrive sooner than the
+    -- fleet ahead is stuck behind it and joins; one that arrives later
+    -- starts a new fleet.
+    cars = sortOn (Down . fst) (zip position speed)
+    arrivals = [fromIntegral (target - p) / fromIntegral v :: Double | (p, v) <- cars]
+    step (fleets, slowest) arrival
+      | arrival > slowest = (fleets + 1, arrival)
+      | otherwise = (fleets, slowest)",
+      ),
+    ],
+    check: Check(
+      signature: "carFleet :: Int -> [Int] -> [Int] -> Int",
+      starter: "module Solution where
+
+import Data.List (sortOn)
+import Data.Ord (Down(..))
+
+carFleet :: Int -> [Int] -> [Int] -> Int
+carFleet = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"carFleet 12 [10, 8, 0, 5, 3] [2, 4, 1, 1, 3]\" 3 (carFleet 12 [10, 8, 0, 5, 3] [2, 4, 1, 1, 3])
+       , tc \"carFleet 10 [3] [3]\" 1 (carFleet 10 [3] [3])
+       , tc \"carFleet 100 [0, 2, 4] [4, 2, 1]\" 1 (carFleet 100 [0, 2, 4] [4, 2, 1])
+       , tc \"carFleet 10 [6, 8] [3, 2]\" 2 (carFleet 10 [6, 8] [3, 2])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc30_largest_rectangle() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Monotonic Stack",
+        "O(n) time · O(n) space",
+        "A monotonic stack of (starting index, height), heights increasing. A shorter bar arriving means every taller entry can never extend further, so each is closed off and measured — and the earliest position they reached back to becomes the new bar's own start, because it can extend back over all of them. Whatever is left at the end was never cut off, so it runs to the far edge.",
+        "module Solution where
+
+import Data.Array
+
+largestRectangleArea :: [Int] -> Int
+largestRectangleArea heights = snd (foldl step ([], 0) (zip [0 ..] (heights ++ [0])))
+  where
+    arr = listArray (0, length heights - 1) heights
+    -- The stack holds indices with increasing heights; the appended 0 is
+    -- a sentinel that flushes it. When a lower bar arrives, every taller
+    -- bar on the stack has found its right edge; its left edge is the
+    -- bar beneath it on the stack.
+    step (stack, best) (i, current) =
+      let (waiting, best') = popTaller i current stack best
+      in (i : waiting, best')
+    popTaller i current (j : rest) best
+      | arr ! j >= current =
+          let width = if null rest then i else i - head rest - 1
+          in popTaller i current rest (max best (arr ! j * width))
+    popTaller _ _ stack best = (stack, best)",
+      ),
+    ],
+    check: Check(
+      signature: "largestRectangleArea :: [Int] -> Int",
+      starter: "module Solution where
+
+import Data.Array
+
+largestRectangleArea :: [Int] -> Int
+largestRectangleArea = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"largestRectangleArea [2, 1, 5, 6, 2, 3]\" 10 (largestRectangleArea [2, 1, 5, 6, 2, 3])
+       , tc \"largestRectangleArea [2, 4]\" 4 (largestRectangleArea [2, 4])
+       , tc \"largestRectangleArea [1]\" 1 (largestRectangleArea [1])
+       , tc \"largestRectangleArea [3, 3, 3]\" 9 (largestRectangleArea [3, 3, 3])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc31_search_2d_matrix() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Binary Search",
+        "O(log(m·n)) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Twice: the rows do not overlap, so which row a value could be in is itself a halving question — compare the target against a row's first and last entries — and then the row is an ordinary sorted array.",
+        "module Solution where
+
+import Data.Array (listArray, (!))
+
+searchMatrix :: [[Int]] -> Int -> Bool
+searchMatrix matrix target = go 0 (rows * cols - 1)
+  where
+    rows = length matrix
+    cols = length (head matrix)
+    -- Rows run on from each other, so the matrix is one sorted list of
+    -- rows*cols cells; flatten it once and binary search by flat index.
+    cells = listArray (0, rows * cols - 1) (concat matrix)
+    go low high
+      | low > high = False
+      | value == target = True
+      | value < target = go (mid + 1) high
+      | otherwise = go low (mid - 1)
+      where
+        mid = low + (high - low) `div` 2
+        value = cells ! mid",
+      ),
+    ],
+    check: Check(
+      signature: "searchMatrix :: [[Int]] -> Int -> Bool",
+      starter: "module Solution where
+
+import Data.Array (listArray, (!))
+
+searchMatrix :: [[Int]] -> Int -> Bool
+searchMatrix = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+matrix :: [[Int]]
+matrix = [[1, 3, 5, 7], [10, 11, 16, 20], [23, 30, 34, 60]]
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"searchMatrix matrix 3\" True (searchMatrix matrix 3)
+       , tc \"searchMatrix matrix 13\" False (searchMatrix matrix 13)
+       , tc \"searchMatrix matrix 60\" True (searchMatrix matrix 60)
+       , tc \"searchMatrix [[1]] 2\" False (searchMatrix [[1]] 2)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc32_koko_bananas() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Binary Search",
+        "O(n log m) time · O(1) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+The search space is the answer, not the input. What makes it work is that feasibility is monotone: if a speed finishes in time then so does every faster one, so \"the smallest speed that works\" is a boundary to halve towards.",
+        "module Solution where
+
+minEatingSpeed :: [Int] -> Int -> Int
+minEatingSpeed piles h = go 1 (maximum piles)
+  where
+    hoursAt speed = sum [(pile + speed - 1) `div` speed | pile <- piles]
+    -- Feasibility is monotone in the speed, so binary search the smallest
+    -- speed that finishes in time.
+    go low high
+      | low >= high = low
+      | hoursAt mid <= h = go low mid
+      | otherwise = go (mid + 1) high
+      where
+        mid = low + (high - low) `div` 2",
+      ),
+    ],
+    check: Check(
+      signature: "minEatingSpeed :: [Int] -> Int -> Int",
+      starter: "module Solution where
+
+minEatingSpeed :: [Int] -> Int -> Int
+minEatingSpeed = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"minEatingSpeed [3,6,7,11] 8\" 4 (minEatingSpeed [3, 6, 7, 11] 8)
+       , tc \"minEatingSpeed [30,11,23,4,20] 5\" 30 (minEatingSpeed [30, 11, 23, 4, 20] 5)
+       , tc \"minEatingSpeed [30,11,23,4,20] 6\" 23 (minEatingSpeed [30, 11, 23, 4, 20] 6)
+       , tc \"minEatingSpeed [1] 1\" 1 (minEatingSpeed [1] 1)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc33_time_map() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Binary Search",
+        "O(log n) per get · O(n) space",
+        "Compare against the midpoint and throw away the half that cannot hold the answer. O(log n); the only thing to get right is which side the midpoint itself falls on, which is what decides whether the loop terminates.
+
+Timestamps only ever increase, so each key's history is already sorted and needs no sorting on write. The lookup is \"newest entry at or before this time\", which is a halving question: keep the candidate, then keep looking on the newer side for a better one.",
+        "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+-- The Go version is a mutable store; here the store is a value that set
+-- returns anew and get reads. Timestamps arrive in increasing order, so
+-- each key's history is kept newest-first and get takes the first entry
+-- at or before the asked-for time.
+newtype TimeMap = TimeMap (Map.Map String [(Int, String)])
+
+emptyTimeMap :: TimeMap
+emptyTimeMap = TimeMap Map.empty
+
+set :: String -> String -> Int -> TimeMap -> TimeMap
+set key value timestamp (TimeMap history) = TimeMap (Map.insertWith (++) key [(timestamp, value)] history)
+
+get :: String -> Int -> TimeMap -> String
+get key timestamp (TimeMap history) =
+  case [value | (t, value) <- Map.findWithDefault [] key history, t <= timestamp] of
+    (value : _) -> value
+    [] -> \"\"",
+      ),
+    ],
+    check: Check(
+      signature: "newtype TimeMap = TimeMap (Map.Map String [(Int, String)])
+emptyTimeMap :: TimeMap
+set :: String -> String -> Int -> TimeMap -> TimeMap
+get :: String -> Int -> TimeMap -> String",
+      starter: "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+newtype TimeMap = TimeMap (Map.Map String [(Int, String)])
+
+emptyTimeMap :: TimeMap
+emptyTimeMap = error \"todo\"
+
+set :: String -> String -> Int -> TimeMap -> TimeMap
+set = error \"todo\"
+
+get :: String -> Int -> TimeMap -> String
+get = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       (let afterBar = set \"foo\" \"bar\" 1 emptyTimeMap
+            atOne = get \"foo\" 1 afterBar
+            atThree = get \"foo\" 3 afterBar
+            afterBar2 = set \"foo\" \"bar2\" 4 afterBar
+        in [ tc \"set foo=bar @1; get foo @1\" \"bar\" atOne
+           , tc \"get foo @3 -- the latest value at or before 3\" \"bar\" atThree
+           , tc \"set foo=bar2 @4; get foo @4\" \"bar2\" (get \"foo\" 4 afterBar2)
+           , tc \"get foo @5\" \"bar2\" (get \"foo\" 5 afterBar2)
+           , tc \"get foo @0 -- before any set\" \"\" (get \"foo\" 0 afterBar2)
+           , tc \"get missing @1\" \"\" (get \"missing\" 1 afterBar2)
+           ]))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc34_median_two_sorted() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Two Pointers",
+        "O(m+n) time · O(1) space",
+        "Merging, but stopping at the middle and keeping only the last two values seen. The merged array is never built, so it is O(m + n) time and O(1) space. The two values are what makes the even case work: the median is then the average of the middle pair.",
+        "module Solution where
+
+findMedianSortedArrays :: [Int] -> [Int] -> Double
+findMedianSortedArrays nums1 nums2
+  | odd total = fromIntegral current
+  | otherwise = fromIntegral (previous + current) / 2
+  where
+    -- Merge just far enough: the median sits at index (total-1)/2 and
+    -- total/2 of the merged order, so stop once those are read.
+    total = length nums1 + length nums2
+    (previous, current) = go nums1 nums2 (total `div` 2 + 1) (0, 0)
+    go _ _ 0 pair = pair
+    go xs ys k (_, current') = case (xs, ys) of
+      (x : rest, y : _) | x <= y -> go rest ys (k - 1) (current', x)
+      (x : rest, []) -> go rest ys (k - 1) (current', x)
+      (_, y : rest) -> go xs rest (k - 1) (current', y)
+      ([], []) -> (current', current')",
+      ),
+    ],
+    check: Check(
+      signature: "findMedianSortedArrays :: [Int] -> [Int] -> Double",
+      starter: "module Solution where
+
+findMedianSortedArrays :: [Int] -> [Int] -> Double
+findMedianSortedArrays = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"findMedianSortedArrays [1,3] [2]\" 2.0 (findMedianSortedArrays [1, 3] [2])
+       , tc \"findMedianSortedArrays [1,2] [3,4]\" 2.5 (findMedianSortedArrays [1, 2] [3, 4])
+       , tc \"findMedianSortedArrays [] [1]\" 1.0 (findMedianSortedArrays [] [1])
+       , tc \"findMedianSortedArrays [1,2,3,4,5] [6,7,8,9,10]\" 5.5 (findMedianSortedArrays [1, 2, 3, 4, 5] [6, 7, 8, 9, 10])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc35_insert_interval() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Intervals",
+        "O(n) time · O(n) space",
+        "The input is already sorted, which turns the problem into a three-way split: everything that finishes before the new interval starts passes through untouched, everything that touches it collapses into one, and everything after it passes through too. One pass, no sorting.",
+        "module Solution where
+
+insert :: [[Int]] -> [Int] -> [[Int]]
+insert intervals newInterval = before ++ absorb (head newInterval) (newInterval !! 1) rest
+  where
+    -- Everything that ends before the new one starts is untouched;
+    -- everything overlapping the new one is absorbed into it.
+    (before, rest) = span (\\interval -> interval !! 1 < head newInterval) intervals
+    absorb s e ((s2 : e2 : _) : more) | s2 <= e = absorb (min s s2) (max e e2) more
+    absorb s e more = [s, e] : more",
+      ),
+    ],
+    check: Check(
+      signature: "insert :: [[Int]] -> [Int] -> [[Int]]",
+      starter: "module Solution where
+
+insert :: [[Int]] -> [Int] -> [[Int]]
+insert = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"insert [[1,3],[6,9]] [2,5]\" [[1, 5], [6, 9]] (insert [[1, 3], [6, 9]] [2, 5])
+       , tc \"insert [[1,2],[3,5],[6,7],[8,10],[12,16]] [4,8]\" [[1, 2], [3, 10], [12, 16]] (insert [[1, 2], [3, 5], [6, 7], [8, 10], [12, 16]] [4, 8])
+       , tc \"insert [] [5,7]\" [[5, 7]] (insert [] [5, 7])
+       , tc \"insert [[1,5]] [6,8]\" [[1, 5], [6, 8]] (insert [[1, 5]] [6, 8])
+       , tc \"insert [[3,5]] [1,2]\" [[1, 2], [3, 5]] (insert [[3, 5]] [1, 2])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc36_merge_intervals() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Intervals",
+        "O(n log n) time · O(n) space",
+        "Sort by start and the problem collapses: an interval can only ever overlap the one currently being built, because anything it could have overlapped earlier was already absorbed into that. So a single pass either extends the interval in hand or begins a new one.",
+        "module Solution where
+
+import Data.List (sortOn)
+
+merge :: [[Int]] -> [[Int]]
+merge intervals = go (sortOn head intervals)
+  where
+    -- Sorted by start, an overlap can only be with the last merged
+    -- interval, which here is the head of the walk.
+    go ([s1, e1] : [s2, e2] : rest)
+      | s2 <= e1 = go ([s1, max e1 e2] : rest)
+      | otherwise = [s1, e1] : go ([s2, e2] : rest)
+    go other = other",
+      ),
+    ],
+    check: Check(
+      signature: "merge :: [[Int]] -> [[Int]]",
+      starter: "module Solution where
+
+import Data.List (sortOn)
+
+merge :: [[Int]] -> [[Int]]
+merge = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"merge [[1,3],[2,6],[8,10],[15,18]]\" [[1, 6], [8, 10], [15, 18]] (merge [[1, 3], [2, 6], [8, 10], [15, 18]])
+       , tc \"merge [[1,4],[4,5]]\" [[1, 5]] (merge [[1, 4], [4, 5]])
+       , tc \"merge [[1,4],[0,4]]\" [[0, 4]] (merge [[1, 4], [0, 4]])
+       , tc \"merge []\" [] (merge [])
+       , tc \"merge [[1,4],[2,3]]\" [[1, 4]] (merge [[1, 4], [2, 3]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc37_non_overlapping() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Greedy",
+        "O(n log n) time · O(n) space",
+        "Greedy on the end time. Among intervals competing for the same space, keeping the one that finishes earliest leaves the most room for whatever comes next and can never be worse — which is the exchange argument that makes the greedy correct, and the reason sorting by start is the classic wrong first answer.",
+        "module Solution where
+
+import Data.List (sortOn)
+
+eraseOverlapIntervals :: [[Int]] -> Int
+eraseOverlapIntervals intervals = case sortOn (!! 1) intervals of
+  [] -> 0
+  (first : rest) -> go rest (first !! 1) 0
+  where
+    -- Sort by end: keeping the interval that ends earliest leaves the most
+    -- room for the rest, so everything overlapping it is what goes.
+    go [] _ removed = removed
+    go (interval : more) lastEnd removed
+      | head interval < lastEnd = go more lastEnd (removed + 1)
+      | otherwise = go more (interval !! 1) removed",
+      ),
+    ],
+    check: Check(
+      signature: "eraseOverlapIntervals :: [[Int]] -> Int",
+      starter: "module Solution where
+
+import Data.List (sortOn)
+
+eraseOverlapIntervals :: [[Int]] -> Int
+eraseOverlapIntervals = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"eraseOverlapIntervals [[1,2],[2,3],[3,4],[1,3]]\" 1 (eraseOverlapIntervals [[1, 2], [2, 3], [3, 4], [1, 3]])
+       , tc \"eraseOverlapIntervals [[1,2],[1,2],[1,2]]\" 2 (eraseOverlapIntervals [[1, 2], [1, 2], [1, 2]])
+       , tc \"eraseOverlapIntervals [[1,2],[2,3]]\" 0 (eraseOverlapIntervals [[1, 2], [2, 3]])
+       , tc \"eraseOverlapIntervals [[1,100],[11,22],[1,11],[2,12]]\" 2 (eraseOverlapIntervals [[1, 100], [11, 22], [1, 11], [2, 12]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc38_meeting_rooms() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sorted by start, the only meeting a given one can clash with is the one immediately before it: anything earlier started earlier still, so it would have clashed with that one first. The whole check is then adjacent pairs.",
+        "module Solution where
+
+import Data.List (sortOn)
+
+canAttendMeetings :: [[Int]] -> Bool
+canAttendMeetings intervals = and (zipWith fits sorted (drop 1 sorted))
+  where
+    -- Sorted by start, only neighbours can collide.
+    sorted = sortOn head intervals
+    fits earlier later = head later >= earlier !! 1",
+      ),
+    ],
+    check: Check(
+      signature: "canAttendMeetings :: [[Int]] -> Bool",
+      starter: "module Solution where
+
+import Data.List (sortOn)
+
+canAttendMeetings :: [[Int]] -> Bool
+canAttendMeetings = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"canAttendMeetings [[0,30],[5,10],[15,20]]\" False (canAttendMeetings [[0, 30], [5, 10], [15, 20]])
+       , tc \"canAttendMeetings [[7,10],[2,4]]\" True (canAttendMeetings [[7, 10], [2, 4]])
+       , tc \"canAttendMeetings []\" True (canAttendMeetings [])
+       , tc \"canAttendMeetings [[1,5],[5,10]]\" True (canAttendMeetings [[1, 5], [5, 10]])
+       , tc \"canAttendMeetings [[5,10],[1,6]]\" False (canAttendMeetings [[5, 10], [1, 6]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc39_meeting_rooms_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sweep Line",
+        "O(n log n) time · O(n) space",
+        "Rooms needed is the most meetings ever running at once, so the meetings stop mattering and only their edges do: +1 at a start, −1 at an end, and the answer is how high the running count gets. Closes come before opens at the same time here — a room freed at that moment can be reused — which is the opposite of what merging intervals wants.",
+        "module Solution where
+
+import Data.List (sort)
+
+minMeetingRooms :: [[Int]] -> Int
+minMeetingRooms intervals = go starts ends 0 0
+  where
+    starts = sort (map head intervals)
+    ends = sort (map (!! 1) intervals)
+    -- Walk the starts in order; a meeting needs a new room unless the
+    -- earliest unfinished meeting has ended by then.
+    go [] _ _ best = best
+    go _ [] _ best = best
+    go (s : ss) allEnds@(e : es) rooms best
+      | s >= e = go ss es rooms best
+      | otherwise = go ss allEnds (rooms + 1) (max best (rooms + 1))",
+      ),
+    ],
+    check: Check(
+      signature: "minMeetingRooms :: [[Int]] -> Int",
+      starter: "module Solution where
+
+import Data.List (sort)
+
+minMeetingRooms :: [[Int]] -> Int
+minMeetingRooms = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"minMeetingRooms [[0,30],[5,10],[15,20]]\" 2 (minMeetingRooms [[0, 30], [5, 10], [15, 20]])
+       , tc \"minMeetingRooms [[7,10],[2,4]]\" 1 (minMeetingRooms [[7, 10], [2, 4]])
+       , tc \"minMeetingRooms []\" 0 (minMeetingRooms [])
+       , tc \"minMeetingRooms [[1,5],[5,10]]\" 1 (minMeetingRooms [[1, 5], [5, 10]])
+       , tc \"minMeetingRooms (six overlapping meetings)\" 4 (minMeetingRooms [[1, 10], [2, 7], [3, 19], [8, 12], [10, 20], [11, 30]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc40_min_interval() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Brute Force",
+        "O(n·q) time · O(n+q) space",
+        "The honest baseline the clever version has to beat. It is the problem statement written out, so it is the one you can always reach for when the optimisation will not come — and having it next to the fast version makes clear exactly what the fast version buys.
+
+For each query, the smallest interval containing it. O(q·n), and the definition — worth having before the clever version, because it is what you check the clever version against.",
+        "module Solution where
+
+import qualified Data.IntMap.Strict as IntMap
+import Data.List (sortOn)
+import qualified Data.Set as Set
+
+minInterval :: [[Int]] -> [Int] -> [Int]
+minInterval intervals queries = IntMap.elems (go eligible Set.empty order IntMap.empty)
+  where
+    -- Answer the queries in increasing order: intervals become eligible by
+    -- start, sit in an ordered set keyed by size, and are discarded from
+    -- the front once their end is behind the current query.
+    eligible = sortOn (\\(interval, _) -> head interval) (zip intervals [0 :: Int ..])
+    order = sortOn snd (zip [0 ..] queries)
+    go _ _ [] answers = answers
+    go pending heap ((qi, q) : rest) answers =
+      let (ready, pending') = span (\\(interval, _) -> head interval <= q) pending
+          grown = foldl (\\h ([s, e], i) -> Set.insert (e - s + 1, e, i) h) heap ready
+          live = dropDead q grown
+          answer = maybe (-1) (\\(size, _, _) -> size) (Set.lookupMin live)
+      in go pending' live rest (IntMap.insert qi answer answers)
+    dropDead q heap = case Set.lookupMin heap of
+      Just (_, e, _) | e < q -> dropDead q (Set.deleteMin heap)
+      _ -> heap",
+      ),
+    ],
+    check: Check(
+      signature: "minInterval :: [[Int]] -> [Int] -> [Int]",
+      starter: "module Solution where
+
+import qualified Data.IntMap.Strict as IntMap
+import Data.List (sortOn)
+import qualified Data.Set as Set
+
+minInterval :: [[Int]] -> [Int] -> [Int]
+minInterval = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"minInterval [[1,4],[2,4],[3,6],[4,4]] [2,3,4,5]\" [3, 3, 1, 4] (minInterval [[1, 4], [2, 4], [3, 6], [4, 4]] [2, 3, 4, 5])
+       , tc \"minInterval [[2,3],[2,5],[1,8],[20,25]] [2,19,5,22]\" [2, -1, 4, 6] (minInterval [[2, 3], [2, 5], [1, 8], [20, 25]] [2, 19, 5, 22])
+       , tc \"minInterval [] [1,2]\" [-1, -1] (minInterval [] [1, 2])
+       , tc \"minInterval [[1,10]] []\" [] (minInterval [[1, 10]] [])
+       , tc \"minInterval [[1,3]] [0,4]\" [-1, -1] (minInterval [[1, 3]] [0, 4])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc41_maximum_subarray() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Kadane",
+        "O(n) time · O(1) space",
+        "Kadane. At each position the best subarray ending here either extends the one ending just before it or starts fresh — and the choice is decided by a single question: has the running total gone negative? A negative prefix can only hurt whatever follows, so it is dropped. Note the answer is not clamped at zero: an all-negative array's answer is its least bad element.",
+        "module Solution where
+
+maxSubArray :: [Int] -> Int
+maxSubArray [] = 0
+maxSubArray (first : rest) = snd (foldl step (first, first) rest)
+  where
+    -- Extend the run, unless it has gone negative: then start over here.
+    step (current, best) n = let extended = max n (current + n) in (extended, max best extended)",
+      ),
+    ],
+    check: Check(
+      signature: "maxSubArray :: [Int] -> Int",
+      starter: "module Solution where
+
+maxSubArray :: [Int] -> Int
+maxSubArray = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"maxSubArray [-2,1,-3,4,-1,2,1,-5,4]\" 6 (maxSubArray [-2, 1, -3, 4, -1, 2, 1, -5, 4])
+       , tc \"maxSubArray [1]\" 1 (maxSubArray [1])
+       , tc \"maxSubArray [5,4,-1,7,8]\" 23 (maxSubArray [5, 4, -1, 7, 8])
+       , tc \"maxSubArray [-3,-1,-2]\" (-1) (maxSubArray [-3, -1, -2])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc42_jump_game() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Only one number matters: the furthest index reachable so far. Walk forward extending it, and the moment the walk gets past it nothing further is reachable. No search, no visited set — the reachable set from the left is always a prefix, which is what collapses the whole problem to one integer.",
+        "module Solution where
+
+canJump :: [Int] -> Bool
+canJump nums = go 0 (zip [0 ..] nums)
+  where
+    -- Carry the furthest reachable index; falling behind it is the end.
+    go _ [] = True
+    go furthest ((i, n) : rest)
+      | i > furthest = False
+      | otherwise = go (max furthest (i + n)) rest",
+      ),
+    ],
+    check: Check(
+      signature: "canJump :: [Int] -> Bool",
+      starter: "module Solution where
+
+canJump :: [Int] -> Bool
+canJump = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"canJump [2,3,1,1,4]\" True (canJump [2, 3, 1, 1, 4])
+       , tc \"canJump [3,2,1,0,4]\" False (canJump [3, 2, 1, 0, 4])
+       , tc \"canJump [0]\" True (canJump [0])
+       , tc \"canJump [0, 1]\" False (canJump [0, 1])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc43_jump_game_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Breadth-first search without a queue. Everything reachable in k jumps is a contiguous window, so the levels of the search are just ranges: when the walk reaches the current window's end, one more jump is spent and the next window runs to the furthest index seen so far. Recognising that the frontier stays contiguous is the whole trick.",
+        "module Solution where
+
+jump :: [Int] -> Int
+jump nums = go (zip [0 ..] (take (length nums - 1) nums)) 0 0 0
+  where
+    -- Treat the indices reachable in j jumps as a window; when the walk
+    -- reaches its end, one more jump opens the next window.
+    go [] jumps _ _ = jumps
+    go ((i, n) : rest) jumps end furthest
+      | i == end = go rest (jumps + 1) furthest' furthest'
+      | otherwise = go rest jumps end furthest'
+      where
+        furthest' = max furthest (i + n)",
+      ),
+    ],
+    check: Check(
+      signature: "jump :: [Int] -> Int",
+      starter: "module Solution where
+
+jump :: [Int] -> Int
+jump = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"jump [2,3,1,1,4]\" 2 (jump [2, 3, 1, 1, 4])
+       , tc \"jump [2,3,0,1,4]\" 2 (jump [2, 3, 0, 1, 4])
+       , tc \"jump [0]\" 0 (jump [0])
+       , tc \"jump [1,1,1,1]\" 3 (jump [1, 1, 1, 1])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc44_gas_station() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Two facts do all the work. If the total gas falls short of the total cost, no start works at all. And if the tank runs dry travelling from i to j, no station between them can start either — each would begin with even less — so the search jumps straight to j+1 rather than restarting at i+1. Together they turn an O(n²) search into one pass.",
+        "module Solution where
+
+canCompleteCircuit :: [Int] -> [Int] -> Int
+canCompleteCircuit gas cost
+  | sum diffs < 0 = -1
+  | otherwise = fst (foldl step (0, 0) (zip [0 ..] diffs))
+  where
+    diffs = zipWith (-) gas cost
+    -- Running dry here means no start between the last reset and here can
+    -- work either: they would all arrive with even less.
+    step (start, tank) (i, diff)
+      | tank + diff < 0 = (i + 1, 0)
+      | otherwise = (start, tank + diff)",
+      ),
+    ],
+    check: Check(
+      signature: "canCompleteCircuit :: [Int] -> [Int] -> Int",
+      starter: "module Solution where
+
+canCompleteCircuit :: [Int] -> [Int] -> Int
+canCompleteCircuit = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"canCompleteCircuit [1,2,3,4,5] [3,4,5,1,2]\" 3 (canCompleteCircuit [1, 2, 3, 4, 5] [3, 4, 5, 1, 2])
+       , tc \"canCompleteCircuit [2,3,4] [3,4,3]\" (-1) (canCompleteCircuit [2, 3, 4] [3, 4, 3])
+       , tc \"canCompleteCircuit [5] [4]\" 0 (canCompleteCircuit [5] [4])
+       , tc \"canCompleteCircuit [1,2] [2,1]\" 1 (canCompleteCircuit [1, 2] [2, 1])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc45_hand_of_straights() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Greedy",
+        "O(n log n) time · O(n) space",
+        "The smallest card left has no smaller neighbour to hide behind, so whatever group it belongs to must begin with it. That removes all choice, which is exactly what makes a greedy correct here. Every copy of that smallest card needs its own group and they are indistinguishable, so all of them are taken in one step.",
+        "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+isNStraightHand :: [Int] -> Int -> Bool
+isNStraightHand hand groupSize
+  | length hand `mod` groupSize /= 0 = False
+  | otherwise = deal (Map.fromListWith (+) [(card, 1 :: Int) | card <- hand])
+  where
+    -- The smallest remaining card must start a group; take the run above
+    -- it, one of each, or the hand cannot be dealt.
+    deal counts = case Map.lookupMin counts of
+      Nothing -> True
+      Just (card, _) -> maybe False deal (takeRun card groupSize counts)
+    takeRun _ 0 counts = Just counts
+    takeRun card k counts = case Map.lookup card counts of
+      Nothing -> Nothing
+      Just 1 -> takeRun (card + 1) (k - 1) (Map.delete card counts)
+      Just n -> takeRun (card + 1) (k - 1) (Map.insert card (n - 1) counts)",
+      ),
+    ],
+    check: Check(
+      signature: "isNStraightHand :: [Int] -> Int -> Bool",
+      starter: "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+isNStraightHand :: [Int] -> Int -> Bool
+isNStraightHand = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"isNStraightHand [1,2,3,6,2,3,4,7,8] 3\" True (isNStraightHand [1, 2, 3, 6, 2, 3, 4, 7, 8] 3)
+       , tc \"isNStraightHand [1,2,3,4,5] 4\" False (isNStraightHand [1, 2, 3, 4, 5] 4)
+       , tc \"isNStraightHand [1,2,3,4,5,6] 2\" True (isNStraightHand [1, 2, 3, 4, 5, 6] 2)
+       , tc \"isNStraightHand [] 1\" True (isNStraightHand [] 1)
+       , tc \"isNStraightHand [1,1,2,2,3,3] 3\" True (isNStraightHand [1, 1, 2, 2, 3, 3] 3)
+       , tc \"isNStraightHand [8,10,12] 3\" False (isNStraightHand [8, 10, 12] 3)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc46_merge_triplets() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Merging takes componentwise maxima, and a max never comes back down. So any triplet with a component above the target is permanently poisonous and must be discarded; and once discarded, every remaining triplet can be merged freely, because a max can only help. The answer is then just whether their maximum is the target.",
+        "module Solution where
+
+mergeTriplets :: [[Int]] -> [Int] -> Bool
+mergeTriplets triplets target = all hit [0, 1, 2]
+  where
+    -- A triplet is usable only if no coordinate exceeds the target. Among
+    -- usable ones, the max is the target exactly when each coordinate is
+    -- hit by at least one of them.
+    usable triplet = and (zipWith (<=) triplet target)
+    hit i = any (\\triplet -> usable triplet && triplet !! i == target !! i) triplets",
+      ),
+    ],
+    check: Check(
+      signature: "mergeTriplets :: [[Int]] -> [Int] -> Bool",
+      starter: "module Solution where
+
+mergeTriplets :: [[Int]] -> [Int] -> Bool
+mergeTriplets = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"mergeTriplets [[2,5,3],[1,8,4],[1,7,5]] [2,7,5]\" True (mergeTriplets [[2, 5, 3], [1, 8, 4], [1, 7, 5]] [2, 7, 5])
+       , tc \"mergeTriplets [[3,4,5],[4,5,6]] [3,2,5]\" False (mergeTriplets [[3, 4, 5], [4, 5, 6]] [3, 2, 5])
+       , tc \"mergeTriplets [[2,5,3],[2,3,4],[1,2,5],[5,2,3]] [5,5,5]\" True (mergeTriplets [[2, 5, 3], [2, 3, 4], [1, 2, 5], [5, 2, 3]] [5, 5, 5])
+       , tc \"mergeTriplets [] [1,1,1]\" False (mergeTriplets [] [1, 1, 1])
+       , tc \"mergeTriplets [[1,2,3]] [3,2,1]\" False (mergeTriplets [[1, 2, 3]] [3, 2, 1])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc47_partition_labels() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "A piece can only end where every character inside it has run out, so map each character to its last position first. Then sweep, pushing the piece's end out to the furthest last-position seen; when the walk catches up with that end, nothing inside can reappear and the piece is closed.",
+        "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+partitionLabels :: String -> [Int]
+partitionLabels s = go (zip [0 ..] s) 0 0
+  where
+    -- A part must run at least to the last occurrence of every letter in
+    -- it; when the walk reaches that furthest point, the part closes.
+    lastIndex = Map.fromList (zip s [0 ..])
+    go [] _ _ = []
+    go ((i, ch) : rest) start end
+      | i == furthest = (furthest - start + 1) : go rest (i + 1) (i + 1)
+      | otherwise = go rest start furthest
+      where
+        furthest = max end (lastIndex Map.! ch)",
+      ),
+    ],
+    check: Check(
+      signature: "partitionLabels :: String -> [Int]",
+      starter: "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+partitionLabels :: String -> [Int]
+partitionLabels = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"partitionLabels \\\"ababcbacadefegdehijhklij\\\"\" [9, 7, 8] (partitionLabels \"ababcbacadefegdehijhklij\")
+       , tc \"partitionLabels \\\"eccbbbbdec\\\"\" [10] (partitionLabels \"eccbbbbdec\")
+       , tc \"partitionLabels \\\"abc\\\"\" [1, 1, 1] (partitionLabels \"abc\")
+       , tc \"partitionLabels \\\"a\\\"\" [1] (partitionLabels \"a\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc48_valid_parenthesis_string() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Greedy",
+        "O(n) time · O(1) space",
+        "Do not guess what each star should be — carry the range of open counts still possible. Low is the count if every star so far were a closer, high if every one were an opener. High going negative means even the most generous reading has too many closers, so bail; low is clamped at zero because a star can always be nothing. Valid exactly when low reaches zero at the end.",
+        "module Solution where
+
+checkValidString :: String -> Bool
+checkValidString = go 0 0
+  where
+    -- Track the range of possible open counts: a star can widen it either
+    -- way. The low end never goes below zero (a star read as ')' when
+    -- nothing is open is better read as nothing).
+    go low _ [] = low == (0 :: Int)
+    go low high (c : rest)
+      | high' < 0 = False
+      | otherwise = go (max low' 0) high' rest
+      where
+        (low', high') = case c of
+          '(' -> (low + 1, high + 1)
+          ')' -> (low - 1, high - 1)
+          _ -> (low - 1, high + 1)",
+      ),
+    ],
+    check: Check(
+      signature: "checkValidString :: String -> Bool",
+      starter: "module Solution where
+
+checkValidString :: String -> Bool
+checkValidString = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"checkValidString \\\"()\\\"\" True (checkValidString \"()\")
+       , tc \"checkValidString \\\"(*)\\\"\" True (checkValidString \"(*)\")
+       , tc \"checkValidString \\\"(*))\\\"\" True (checkValidString \"(*))\")
+       , tc \"checkValidString \\\")(\\\"\" False (checkValidString \")(\")
+       , tc \"checkValidString \\\"(((**\\\"\" False (checkValidString \"(((**\")
+       , tc \"checkValidString \\\"**((\\\"\" False (checkValidString \"**((\")
+       , tc \"checkValidString \\\"\\\"\" True (checkValidString \"\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc49_single_number() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bit Manipulation",
+        "O(n) time · O(1) space",
+        "XOR is its own inverse and does not care about order, so every value appearing twice cancels itself out wherever the two copies happen to sit, and the lone one is what is left. Constant space, one pass, and no reliance on the values being small or positive.",
+        "module Solution where
+
+import Data.Bits (xor)
+
+-- x `xor` x == 0 and x `xor` 0 == x, so every pair cancels and the loner
+-- remains.
+singleNumber :: [Int] -> Int
+singleNumber = foldl xor 0",
+      ),
+    ],
+    check: Check(
+      signature: "singleNumber :: [Int] -> Int",
+      starter: "module Solution where
+
+import Data.Bits (xor)
+
+singleNumber :: [Int] -> Int
+singleNumber = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"singleNumber [2,2,1]\" 1 (singleNumber [2, 2, 1])
+       , tc \"singleNumber [4,1,2,1,2]\" 4 (singleNumber [4, 1, 2, 1, 2])
+       , tc \"singleNumber [1]\" 1 (singleNumber [1])
+       , tc \"singleNumber [-1,-1,-7]\" (-7) (singleNumber [-1, -1, -7])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc50_number_of_one_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bit Manipulation",
+        "O(k) time · O(1) space",
+        "n & (n − 1) clears the lowest set bit and touches nothing else, so the loop runs once per one bit rather than once per bit position. Worth having in the fingers: the same trick tests for powers of two, and shows up in half the bit problems there are.",
+        "module Solution where
+
+import Data.Bits ((.&.))
+import Data.Word (Word32)
+
+hammingWeight :: Word32 -> Int
+hammingWeight = go 0
+  where
+    -- n .&. (n - 1) clears the lowest set bit, so this loops once per one
+    -- bit.
+    go count 0 = count
+    go count n = go (count + 1) (n .&. (n - 1))",
+      ),
+    ],
+    check: Check(
+      signature: "hammingWeight :: Word32 -> Int",
+      starter: "module Solution where
+
+import Data.Bits ((.&.))
+import Data.Word (Word32)
+
+hammingWeight :: Word32 -> Int
+hammingWeight = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"hammingWeight 11\" 3 (hammingWeight 11)
+       , tc \"hammingWeight 128\" 1 (hammingWeight 128)
+       , tc \"hammingWeight 4294967293\" 31 (hammingWeight 4294967293)
+       , tc \"hammingWeight 0\" 0 (hammingWeight 0)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc51_counting_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bottom-Up DP",
+        "O(n) time · O(n) space",
+        "Every number is some smaller number with one more bit stuck on the end, so count(i) is count(i >> 1) plus that last bit. Each answer costs a single lookup into what has already been computed, which is what makes the whole array O(n) rather than O(n log n).",
+        "module Solution where
+
+import Data.Array (elems, listArray, (!))
+
+countBits :: Int -> [Int]
+countBits n = elems table
+  where
+    -- i >> 1 drops the lowest bit, whose count is already known; add it
+    -- back. The array is lazy, so each cell reads the earlier one.
+    table = listArray (0, n) (0 : [table ! (i `div` 2) + i `mod` 2 | i <- [1 .. n]])",
+      ),
+    ],
+    check: Check(
+      signature: "countBits :: Int -> [Int]",
+      starter: "module Solution where
+
+import Data.Array (elems, listArray, (!))
+
+countBits :: Int -> [Int]
+countBits = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"countBits 2\" [0, 1, 1] (countBits 2)
+       , tc \"countBits 5\" [0, 1, 1, 2, 1, 2] (countBits 5)
+       , tc \"countBits 0\" [0] (countBits 0)
+       , tc \"countBits 8\" [0, 1, 1, 2, 1, 2, 2, 3, 1] (countBits 8)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc52_reverse_bits() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bit Manipulation",
+        "O(1) time · O(1) space",
+        "Peel the bottom bit off the input and push it onto the bottom of the result: the first bit out is the last bit in. Fixed at 32 rounds, because the width is part of the problem rather than a property of the value — stopping when the input hits zero silently drops the leading zeros that should have become trailing ones.",
+        "module Solution where
+
+import Data.Bits (shiftL, shiftR, (.&.), (.|.))
+import Data.Word (Word32)
+
+reverseBits :: Word32 -> Word32
+reverseBits num = go num 0 (32 :: Int)
+  where
+    -- Peel the low bit off one side and push it onto the other, 32 times.
+    go _ result 0 = result
+    go remaining result i = go (remaining `shiftR` 1) (result `shiftL` 1 .|. remaining .&. 1) (i - 1)",
+      ),
+    ],
+    check: Check(
+      signature: "reverseBits :: Word32 -> Word32
+reverseBits num = go num 0 (32 :: Int)",
+      starter: "module Solution where
+
+import Data.Bits (shiftL, shiftR, (.&.), (.|.))
+import Data.Word (Word32)
+
+reverseBits :: Word32 -> Word32
+reverseBits = error \"todo\"
+
+reverseBits num = go num 0 (32 :: Int)
+reverseBits num = go num 0 (32 = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"reverseBits 43261596\" 964176192 (reverseBits 43261596)
+       , tc \"reverseBits 4294967293\" 3221225471 (reverseBits 4294967293)
+       , tc \"reverseBits 0\" 0 (reverseBits 0)
+       , tc \"reverseBits 1\" 2147483648 (reverseBits 1)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc53_missing_number() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bit Manipulation",
+        "O(n) time · O(1) space",
+        "XOR every value against every index it should have had. Each present number meets its own index and cancels, so the missing one leaves its index without a partner and that index survives. No sum, so nothing can overflow.",
+        "module Solution where
+
+import Data.Bits (xor)
+
+-- XOR every index and every value: the pairs cancel, the missing one
+-- (which appears only as an index) survives.
+missingNumber :: [Int] -> Int
+missingNumber nums = foldl xor (length nums) (zipWith xor [0 ..] nums)",
+      ),
+    ],
+    check: Check(
+      signature: "missingNumber :: [Int] -> Int",
+      starter: "module Solution where
+
+import Data.Bits (xor)
+
+missingNumber :: [Int] -> Int
+missingNumber = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"missingNumber [3,0,1]\" 2 (missingNumber [3, 0, 1])
+       , tc \"missingNumber [0,1]\" 2 (missingNumber [0, 1])
+       , tc \"missingNumber [9,6,4,2,3,5,7,0,1]\" 8 (missingNumber [9, 6, 4, 2, 3, 5, 7, 0, 1])
+       , tc \"missingNumber [0]\" 1 (missingNumber [0])
+       , tc \"missingNumber [1]\" 0 (missingNumber [1])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc54_sum_of_two_integers() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bit Manipulation",
+        "O(1) time · O(1) space",
+        "Addition without +. XOR is addition that forgets to carry; AND finds exactly the places a carry was owed, and shifting it left one puts it where it belongs. Repeat until nothing is owed. In an arbitrary-precision language the negatives are the difficulty: mask to 32 bits so the carry loop terminates, then read the sign bit back by hand.",
+        "module Solution where
+
+import Data.Bits (shiftL, xor, (.&.))
+
+-- XOR adds without carrying; AND finds where a carry is due, shifted left
+-- one place. Repeat until nothing is left to carry.
+getSum :: Int -> Int -> Int
+getSum a 0 = a
+getSum a b = getSum (a `xor` b) ((a .&. b) `shiftL` 1)",
+      ),
+    ],
+    check: Check(
+      signature: "getSum :: Int -> Int -> Int",
+      starter: "module Solution where
+
+import Data.Bits (shiftL, xor, (.&.))
+
+getSum :: Int -> Int -> Int
+getSum = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"getSum 1 2\" 3 (getSum 1 2)
+       , tc \"getSum 2 3\" 5 (getSum 2 3)
+       , tc \"getSum (-1) 1\" 0 (getSum (-1) 1)
+       , tc \"getSum (-2) (-3)\" (-5) (getSum (-2) (-3))
+       , tc \"getSum 0 0\" 0 (getSum 0 0)
+       , tc \"getSum 5 (-3)\" 2 (getSum 5 (-3))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc55_reverse_integer() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Math",
+        "O(log n) time · O(1) space",
+        "Peel a digit off the bottom of the input and push it onto the bottom of the result. The whole difficulty is that the test has to happen *before* the multiply: in a fixed-width language the multiply is the moment the value would be lost, so checking afterwards is checking a number that no longer exists.",
+        "module Solution where
+
+import Prelude hiding (reverse)
+
+reverse :: Int -> Int
+reverse x0 = go x0 0
+  where
+    -- quotRem truncates toward zero, as Go's % and / do, so the sign
+    -- rides along in the digits. The answer must fit a signed 32-bit
+    -- int, whatever Int is here.
+    go 0 result = result
+    go x result
+      | grown > 2147483647 || grown < -2147483648 = 0
+      | otherwise = go rest grown
+      where
+        (rest, digit) = x `quotRem` 10
+        grown = result * 10 + digit",
+      ),
+    ],
+    check: Check(
+      signature: "reverse :: Int -> Int",
+      starter: "module Solution where
+
+import Prelude hiding (reverse)
+
+reverse :: Int -> Int
+reverse = error \"todo\"",
+      harness: "module Main where
+
+import Prelude hiding (reverse)
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"reverse 123\" 321 (reverse 123)
+       , tc \"reverse (-123)\" (-321) (reverse (-123))
+       , tc \"reverse 120\" 21 (reverse 120)
+       , tc \"reverse 0\" 0 (reverse 0)
+       , tc \"reverse 1534236469 -- overflows\" 0 (reverse 1534236469)
+       , tc \"reverse (-2147483648) -- overflows\" 0 (reverse (-2147483648))
+       , tc \"reverse 1463847412\" 2147483641 (reverse 1463847412)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc56_rotate_image() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Python · Zip",
+        "O(n²) time · O(n²) space",
+        "A quarter turn is two reflections: through the main diagonal, then through the vertical centre line. Both are trivial to write and neither needs index arithmetic, which is why this beats memorising the four-way element cycle — and why it is easy to get the direction right by reasoning rather than recall.",
+        "module Solution where
+
+import Data.List (transpose)
+
+-- Transpose, then reverse each row: together they are a quarter turn
+-- clockwise.
+rotate :: [[Int]] -> [[Int]]
+rotate = map reverse . transpose",
+      ),
+    ],
+    check: Check(
+      signature: "rotate :: [[Int]] -> [[Int]]",
+      starter: "module Solution where
+
+import Data.List (transpose)
+
+rotate :: [[Int]] -> [[Int]]
+rotate = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"rotate [[1,2,3],[4,5,6],[7,8,9]]\" [[7, 4, 1], [8, 5, 2], [9, 6, 3]] (rotate [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+       , tc \"rotate [[5,1,9,11],[2,4,8,10],[13,3,6,7],[15,14,12,16]]\" [[15, 13, 2, 5], [14, 3, 4, 1], [12, 6, 8, 9], [16, 7, 10, 11]] (rotate [[5, 1, 9, 11], [2, 4, 8, 10], [13, 3, 6, 7], [15, 14, 12, 16]])
+       , tc \"rotate [[1]]\" [[1]] (rotate [[1]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc57_spiral_matrix() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Nifty Python · Rotate",
+        "O(m·n·min(m,n)) time · O(m·n) space",
+        "Take the top row, then turn the problem ninety degrees and do it again. Rotating what is left anticlockwise puts the column you would have walked down next along the top, so there is only ever one move to make and no boundary bookkeeping at all.",
+        "module Solution where
+
+import Data.List (transpose)
+
+-- Peel the top row; reversing the transpose of what remains turns it a
+-- quarter counterclockwise, so the old right column becomes the next top
+-- row. Same ring-by-ring peel as the bounds walk, without the bounds.
+spiralOrder :: [[Int]] -> [Int]
+spiralOrder [] = []
+spiralOrder (row : rest) = row ++ spiralOrder (reverse (transpose rest))",
+      ),
+    ],
+    check: Check(
+      signature: "spiralOrder :: [[Int]] -> [Int]",
+      starter: "module Solution where
+
+import Data.List (transpose)
+
+spiralOrder :: [[Int]] -> [Int]
+spiralOrder = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"spiralOrder [[1,2,3],[4,5,6],[7,8,9]]\" [1, 2, 3, 6, 9, 8, 7, 4, 5] (spiralOrder [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+       , tc \"spiralOrder [[1,2,3,4],[5,6,7,8],[9,10,11,12]]\" [1, 2, 3, 4, 8, 12, 11, 10, 9, 5, 6, 7] (spiralOrder [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+       , tc \"spiralOrder [[1],[2],[3]]\" [1, 2, 3] (spiralOrder [[1], [2], [3]])
+       , tc \"spiralOrder [[1,2,3]]\" [1, 2, 3] (spiralOrder [[1, 2, 3]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc58_set_matrix_zeroes() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Hash Set",
+        "O(m·n) time · O(m·n) space",
+        "Two passes, and they cannot be one: a zero written as you go is indistinguishable from a zero that was already there, so the grid would clear itself entirely. Record which rows and columns are doomed first, then apply. Recognising why one pass fails is the point of the problem.",
+        "module Solution where
+
+import qualified Data.Set as Set
+
+setZeroes :: [[Int]] -> [[Int]]
+setZeroes matrix = [[wipe r c v | (c, v) <- zip [0 ..] row] | (r, row) <- zip [0 ..] matrix]
+  where
+    -- The Go version marks in the matrix's own first row and column; a
+    -- pure matrix instead records which rows and columns held a zero,
+    -- then rebuilds every cell against those marks.
+    zeroRows = Set.fromList [r | (r, row) <- zip [0 :: Int ..] matrix, 0 `elem` row]
+    zeroCols = Set.fromList [c | row <- matrix, (c, v) <- zip [0 :: Int ..] row, v == 0]
+    wipe r c v = if r `Set.member` zeroRows || c `Set.member` zeroCols then 0 else v",
+      ),
+    ],
+    check: Check(
+      signature: "setZeroes :: [[Int]] -> [[Int]]",
+      starter: "module Solution where
+
+import qualified Data.Set as Set
+
+setZeroes :: [[Int]] -> [[Int]]
+setZeroes = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"setZeroes [[1,1,1],[1,0,1],[1,1,1]]\" [[1, 0, 1], [0, 0, 0], [1, 0, 1]] (setZeroes [[1, 1, 1], [1, 0, 1], [1, 1, 1]])
+       , tc \"setZeroes [[0,1,2,0],[3,4,5,2],[1,3,1,5]]\" [[0, 0, 0, 0], [0, 4, 5, 0], [0, 3, 1, 0]] (setZeroes [[0, 1, 2, 0], [3, 4, 5, 2], [1, 3, 1, 5]])
+       , tc \"setZeroes [[1,2],[3,4]]\" [[1, 2], [3, 4]] (setZeroes [[1, 2], [3, 4]])
+       , tc \"setZeroes [[1,0]]\" [[0, 0]] (setZeroes [[1, 0]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc59_happy_number() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Hash Set",
+        "O(log n) time · O(log n) space",
+        "The sequence must repeat: sums of squared digits are bounded, so only finitely many values are reachable and the walk has to revisit one. That turns \"does it loop?\" into a set lookup, and the answer is whether the value it settles on is 1.",
+        "module Solution where
+
+import qualified Data.Set as Set
+
+isHappy :: Int -> Bool
+isHappy = go Set.empty
+  where
+    -- The digit-square walk either reaches 1 or falls into a cycle; the
+    -- seen set catches the cycle.
+    go seen n
+      | n == 1 = True
+      | n `Set.member` seen = False
+      | otherwise = go (Set.insert n seen) (digitSquareSum n)
+
+digitSquareSum :: Int -> Int
+digitSquareSum 0 = 0
+digitSquareSum n = (n `mod` 10) * (n `mod` 10) + digitSquareSum (n `div` 10)",
+      ),
+    ],
+    check: Check(
+      signature: "isHappy :: Int -> Bool
+digitSquareSum :: Int -> Int",
+      starter: "module Solution where
+
+import qualified Data.Set as Set
+
+isHappy :: Int -> Bool
+isHappy = error \"todo\"
+
+digitSquareSum :: Int -> Int
+digitSquareSum = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"isHappy 19\" True (isHappy 19)
+       , tc \"isHappy 2\" False (isHappy 2)
+       , tc \"isHappy 1\" True (isHappy 1)
+       , tc \"isHappy 7\" True (isHappy 7)
+       , tc \"isHappy 4\" False (isHappy 4)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc60_plus_one() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Math",
+        "O(n) time · O(n) space",
+        "Adding one is a carry that starts at 1 and dies as soon as a digit below nine absorbs it. The only case worth care is when it never does — all nines — and the number grows a digit at the front.",
+        "module Solution where
+
+plusOne :: [Int] -> [Int]
+plusOne digits = if carry then 1 : grown else grown
+  where
+    -- Carry from the right; a 9 becomes 0 and the carry moves on. If the
+    -- carry survives every digit, the number grew a digit.
+    (carry, grown) = foldr step (True, []) digits
+    step 9 (True, rest) = (True, 0 : rest)
+    step d (True, rest) = (False, d + 1 : rest)
+    step d (False, rest) = (False, d : rest)",
+      ),
+    ],
+    check: Check(
+      signature: "plusOne :: [Int] -> [Int]",
+      starter: "module Solution where
+
+plusOne :: [Int] -> [Int]
+plusOne = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"plusOne [1,2,3]\" [1, 2, 4] (plusOne [1, 2, 3])
+       , tc \"plusOne [4,3,2,1]\" [4, 3, 2, 2] (plusOne [4, 3, 2, 1])
+       , tc \"plusOne [9]\" [1, 0] (plusOne [9])
+       , tc \"plusOne [9,9,9]\" [1, 0, 0, 0] (plusOne [9, 9, 9])
+       , tc \"plusOne [0]\" [1] (plusOne [0])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc61_pow() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Binary Exponentiation",
+        "O(log n) time · O(log n) space",
+        "Halving the exponent halves the work: x^n is (x^(n/2))², with one extra multiplication when n is odd. O(log n) multiplications rather than n. A negative exponent is one reciprocal at the end, and the recursion bottoms out at n = 0 returning 1.",
+        "module Solution where
+
+-- Square and multiply: each bit of n either contributes the current
+-- power or not, and the power squares as the bits move up.
+myPow :: Double -> Int -> Double
+myPow x n
+  | n < 0 = go 1 (1 / x) (negate n)
+  | otherwise = go 1 x n
+  where
+    go result _ 0 = result
+    go result base e
+      | odd e = go (result * base) (base * base) (e `div` 2)
+      | otherwise = go result (base * base) (e `div` 2)",
+      ),
+    ],
+    check: Check(
+      signature: "myPow :: Double -> Int -> Double",
+      starter: "module Solution where
+
+myPow :: Double -> Int -> Double
+myPow = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"myPow 2.0 10\" 1024.0 (myPow 2.0 10)
+       , tc \"myPow 2.0 (-2)\" 0.25 (myPow 2.0 (-2))
+       , tc \"myPow 2.0 0\" 1.0 (myPow 2.0 0)
+       , tc \"myPow 0.5 3\" 0.125 (myPow 0.5 3)
+       , tc \"myPow (-2.0) 3\" (-8.0) (myPow (-2.0) 3)
+       , tc \"myPow 0.0 5\" 0.0 (myPow 0.0 5)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc62_multiply_strings() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Math",
+        "O(m·n) time · O(m+n) space",
+        "Long multiplication with the carrying postponed. Digit i of one number times digit j of the other always lands at position i + j, so every product drops straight into its slot and the carries are settled in one sweep at the end. Deferring the carry is what keeps the inner loop free of bookkeeping.",
+        "module Solution where
+
+import Data.Array (accumArray, elems)
+import Data.Char (digitToInt, intToDigit)
+
+-- Digit i of num1 times digit j of num2 lands at position i+j of the
+-- product, counted from the least significant end; a carry pass follows.
+multiply :: String -> String -> String
+multiply num1 num2
+  | num1 == \"0\" || num2 == \"0\" = \"0\"
+  | otherwise = map intToDigit (reverse (carry 0 sums))
+  where
+    r1 = map digitToInt (reverse num1)
+    r2 = map digitToInt (reverse num2)
+    top = length r1 + length r2 - 2
+    sums = elems (accumArray (+) 0 (0, top) [ (i + j, a * b) | (i, a) <- zip [0 ..] r1, (j, b) <- zip [0 ..] r2 ])
+    carry c [] = spill c
+    carry c (d : rest) = let total = d + c in (total `mod` 10) : carry (total `div` 10) rest
+    spill 0 = []
+    spill c = (c `mod` 10) : spill (c `div` 10)",
+      ),
+    ],
+    check: Check(
+      signature: "multiply :: String -> String -> String",
+      starter: "module Solution where
+
+import Data.Array (accumArray, elems)
+import Data.Char (digitToInt, intToDigit)
+
+multiply :: String -> String -> String
+multiply = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"multiply \\\"2\\\" \\\"3\\\"\" \"6\" (multiply \"2\" \"3\")
+       , tc \"multiply \\\"123\\\" \\\"456\\\"\" \"56088\" (multiply \"123\" \"456\")
+       , tc \"multiply \\\"0\\\" \\\"52\\\"\" \"0\" (multiply \"0\" \"52\")
+       , tc \"multiply \\\"99\\\" \\\"99\\\"\" \"9801\" (multiply \"99\" \"99\")
+       , tc \"multiply \\\"123456789\\\" \\\"987654321\\\"\" \"121932631112635269\" (multiply \"123456789\" \"987654321\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc63_detect_squares() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Hash Map",
+        "O(n) per count · O(n) space",
+        "Choosing the corner diagonally opposite fixes the entire square: the other two corners can only be at (x, py) and (px, y). So the scan is over stored points that share neither coordinate and sit on a true diagonal, and the three corner counts multiply — a repeated point genuinely forms a separate square.",
+        "module Solution where
+
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+
+-- Count each point; for a query, every stored point on a diagonal from it
+-- (|dx| == |dy| /= 0) fixes a square whose other two corners are then
+-- looked up by count.
+type DetectSquares = Map (Int, Int) Int
+
+newDetectSquares :: DetectSquares
+newDetectSquares = Map.empty
+
+add :: (Int, Int) -> DetectSquares -> DetectSquares
+add point counts = Map.insertWith (+) point 1 counts
+
+count :: (Int, Int) -> DetectSquares -> Int
+count (x, y) counts = sum [ n * at (x + dx, y) * at (x, y + dy) | ((cx, cy), n) <- Map.toList counts, let dx = cx - x, let dy = cy - y, dx /= 0, abs dx == abs dy ]
+  where
+    at corner = Map.findWithDefault 0 corner counts",
+      ),
+    ],
+    check: Check(
+      signature: "type DetectSquares = Map (Int, Int) Int
+newDetectSquares :: DetectSquares
+add :: (Int, Int) -> DetectSquares -> DetectSquares
+count :: (Int, Int) -> DetectSquares -> Int",
+      starter: "module Solution where
+
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+
+type DetectSquares = Map (Int, Int) Int
+
+newDetectSquares :: DetectSquares
+newDetectSquares = error \"todo\"
+
+add :: (Int, Int) -> DetectSquares -> DetectSquares
+add = error \"todo\"
+
+count :: (Int, Int) -> DetectSquares -> Int
+count = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       (let store = add (3, 2) (add (11, 2) (add (3, 10) newDetectSquares))
+            oneEach = count (11, 10) store
+            noSquare = count (14, 8) store
+            withDuplicate = add (11, 2) store
+        in [ tc \"count (11, 10) with one of each corner\" 1 oneEach
+           , tc \"count (14, 8) -- no square\" 0 noSquare
+           , tc \"count (11, 10) after a duplicate corner\" 2 (count (11, 10) withDuplicate)
+           , tc \"count (3, 10) -- the query point is itself stored\" 0 (count (3, 10) withDuplicate)
+           ]))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc64_climbing_stairs() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "The last move was either one step or two, so the ways to reach step n are the ways to reach n−1 plus the ways to reach n−2 — Fibonacci with a staircase painted on it. Only the last two values ever matter, so two variables replace the whole table.",
+        "module Solution where
+
+-- Ways to reach step i = ways to reach i-1 + ways to reach i-2: the
+-- Fibonacci recurrence, kept in two accumulators.
+climbStairs :: Int -> Int
+climbStairs n = go 1 1 2
+  where
+    go previous current i
+      | i > n = current
+      | otherwise = go current (previous + current) (i + 1)",
+      ),
+    ],
+    check: Check(
+      signature: "climbStairs :: Int -> Int",
+      starter: "module Solution where
+
+climbStairs :: Int -> Int
+climbStairs = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"climbStairs 2\" 2 (climbStairs 2)
+       , tc \"climbStairs 3\" 3 (climbStairs 3)
+       , tc \"climbStairs 1\" 1 (climbStairs 1)
+       , tc \"climbStairs 10\" 89 (climbStairs 10)
+       , tc \"climbStairs 45\" 1836311903 (climbStairs 45)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc65_min_cost_climbing_stairs() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "Cost to stand on each step, carried forward: getting here means having paid for one of the two steps below, whichever was cheaper. Two variables again, because nothing older than two steps back can matter. Either of the first two steps is a legal start, which is what the final min covers.",
+        "module Solution where
+
+-- Cheapest way to stand on step i, having paid for it, comes from the
+-- cheaper of the two steps below. The top is one past the last step.
+minCostClimbingStairs :: [Int] -> Int
+minCostClimbingStairs (first : second : rest) = go first second rest
+  where
+    go twoBack oneBack [] = min twoBack oneBack
+    go twoBack oneBack (c : more) = go oneBack (c + min twoBack oneBack) more
+minCostClimbingStairs _ = 0",
+      ),
+    ],
+    check: Check(
+      signature: "minCostClimbingStairs :: [Int] -> Int",
+      starter: "module Solution where
+
+minCostClimbingStairs :: [Int] -> Int
+minCostClimbingStairs = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"minCostClimbingStairs [10,15,20]\" 15 (minCostClimbingStairs [10, 15, 20])
+       , tc \"minCostClimbingStairs [1,100,1,1,1,100,1,1,100,1]\" 6 (minCostClimbingStairs [1, 100, 1, 1, 1, 100, 1, 1, 100, 1])
+       , tc \"minCostClimbingStairs [0,0]\" 0 (minCostClimbingStairs [0, 0])
+       , tc \"minCostClimbingStairs [5,1]\" 1 (minCostClimbingStairs [5, 1])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc66_house_robber() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "At each house the choice is take it and add what was safe two houses back, or skip it and keep the best so far. Both of those are one number, so the whole table collapses to a pair of running values.",
+        "module Solution where
+
+-- Best haul up to each house: rob it (plus the best two back) or skip
+-- it (the best one back).
+rob :: [Int] -> Int
+rob nums = snd (foldl step (0, 0) nums)
+  where
+    step (twoBack, oneBack) n = (oneBack, max oneBack (twoBack + n))",
+      ),
+    ],
+    check: Check(
+      signature: "rob :: [Int] -> Int",
+      starter: "module Solution where
+
+rob :: [Int] -> Int
+rob = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"rob [1,2,3,1]\" 4 (rob [1, 2, 3, 1])
+       , tc \"rob [2,7,9,3,1]\" 12 (rob [2, 7, 9, 3, 1])
+       , tc \"rob [5]\" 5 (rob [5])
+       , tc \"rob []\" 0 (rob [])
+       , tc \"rob [2,1,1,2]\" 4 (rob [2, 1, 1, 2])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc67_house_robber_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(n) space",
+        "The circle matters through exactly one constraint: the first and last houses are neighbours, so at most one of them is robbed. Ruling each out in turn leaves two ordinary straight-line problems, and the answer is the better of the two — reusing a solved problem rather than inventing a circular recurrence.",
+        "module Solution where
+
+-- The circle means the first and last house cannot both be robbed, so
+-- the answer is the better of the two straight-line problems that
+-- leave one of them out.
+rob :: [Int] -> Int
+rob [] = 0
+rob [single] = single
+rob nums = max (robLine (drop 1 nums)) (robLine (init nums))
+
+robLine :: [Int] -> Int
+robLine nums = snd (foldl step (0, 0) nums)
+  where
+    step (twoBack, oneBack) n = (oneBack, max oneBack (twoBack + n))",
+      ),
+    ],
+    check: Check(
+      signature: "rob :: [Int] -> Int
+robLine :: [Int] -> Int",
+      starter: "module Solution where
+
+rob :: [Int] -> Int
+rob = error \"todo\"
+
+robLine :: [Int] -> Int
+robLine = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"rob [2,3,2]\" 3 (rob [2, 3, 2])
+       , tc \"rob [1,2,3,1]\" 4 (rob [1, 2, 3, 1])
+       , tc \"rob [1,2,3]\" 3 (rob [1, 2, 3])
+       , tc \"rob [1]\" 1 (rob [1])
+       , tc \"rob [1,2]\" 2 (rob [1, 2])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc68_longest_palindrome() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Centre Expansion",
+        "O(n²) time · O(1) space",
+        "Every palindrome has a centre, and there are only 2n of them — n characters and n gaps between them. Growing outwards from each is O(n²) with no table at all. The gaps are what people forget: without them, every even-length palindrome is invisible.",
+        "module Solution where
+
+-- Every palindrome has a centre: a character, or the gap between two.
+-- Expand from each of the 2n-1 centres while the ends match.
+longestPalindrome :: String -> String
+longestPalindrome s = foldl better \"\" [ candidate | centre <- [0 .. n - 1], candidate <- [expand centre centre, expand centre (centre + 1)] ]
+  where
+    n = length s
+    better best candidate = if length candidate > length best then candidate else best
+    expand left right
+      | left >= 0 && right < n && s !! left == s !! right = expand (left - 1) (right + 1)
+      | otherwise = take (right - left - 1) (drop (left + 1) s)",
+      ),
+    ],
+    check: Check(
+      signature: "longestPalindrome :: String -> String",
+      starter: "module Solution where
+
+longestPalindrome :: String -> String
+longestPalindrome = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"longestPalindrome \\\"babad\\\"\" \"bab\" (longestPalindrome \"babad\")
+       , tc \"longestPalindrome \\\"cbbd\\\"\" \"bb\" (longestPalindrome \"cbbd\")
+       , tc \"longestPalindrome \\\"a\\\"\" \"a\" (longestPalindrome \"a\")
+       , tc \"longestPalindrome \\\"forgeeksskeegfor\\\"\" \"geeksskeeg\" (longestPalindrome \"forgeeksskeegfor\")
+       , tc \"length (longestPalindrome \\\"abcd\\\")\" 1 (length (longestPalindrome \"abcd\"))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc69_palindromic_substrings() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Centre Expansion",
+        "O(n²) time · O(1) space",
+        "The same 2n centres as finding the longest one, except that here every successful widening is itself an answer. So the count is how many times the expansion succeeded rather than how far it got — one line different, same scan.",
+        "module Solution where
+
+-- Expand from each of the 2n-1 centres; every successful widening is
+-- one more palindrome.
+countSubstrings :: String -> Int
+countSubstrings s = sum [ expandCount centre centre + expandCount centre (centre + 1) | centre <- [0 .. n - 1] ]
+  where
+    n = length s
+    expandCount left right
+      | left >= 0 && right < n && s !! left == s !! right = 1 + expandCount (left - 1) (right + 1)
+      | otherwise = 0",
+      ),
+    ],
+    check: Check(
+      signature: "countSubstrings :: String -> Int",
+      starter: "module Solution where
+
+countSubstrings :: String -> Int
+countSubstrings = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"countSubstrings \\\"abc\\\"\" 3 (countSubstrings \"abc\")
+       , tc \"countSubstrings \\\"aaa\\\"\" 6 (countSubstrings \"aaa\")
+       , tc \"countSubstrings \\\"\\\"\" 0 (countSubstrings \"\")
+       , tc \"countSubstrings \\\"abba\\\"\" 6 (countSubstrings \"abba\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc70_decode_ways() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "Two rolling counts. The ways to decode up to here are the ways up to the previous character, if this one can stand alone, plus the ways up to the one before that, if this one and its predecessor read as 10 to 26. A leading zero kills the first branch; anything outside that range kills the second.",
+        "module Solution where
+
+import Data.Char (digitToInt)
+
+-- Ways to decode the prefix ending here: the last digit alone (if not
+-- zero) plus the last two digits together (if 10..26).
+numDecodings :: String -> Int
+numDecodings [] = 0
+numDecodings s@(first : _)
+  | first == '0' = 0
+  | otherwise = go 1 1 (zip s (drop 1 s))
+  where
+    go _ oneBack [] = oneBack
+    go twoBack oneBack ((previous, current) : rest) = go oneBack (singles + doubles) rest
+      where
+        singles = if current /= '0' then oneBack else 0
+        pair = digitToInt previous * 10 + digitToInt current
+        doubles = if pair >= 10 && pair <= 26 then twoBack else 0",
+      ),
+    ],
+    check: Check(
+      signature: "numDecodings :: String -> Int",
+      starter: "module Solution where
+
+import Data.Char (digitToInt)
+
+numDecodings :: String -> Int
+numDecodings = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"numDecodings \\\"12\\\"\" 2 (numDecodings \"12\")
+       , tc \"numDecodings \\\"226\\\"\" 3 (numDecodings \"226\")
+       , tc \"numDecodings \\\"06\\\"\" 0 (numDecodings \"06\")
+       , tc \"numDecodings \\\"10\\\"\" 1 (numDecodings \"10\")
+       , tc \"numDecodings \\\"27\\\"\" 1 (numDecodings \"27\")
+       , tc \"numDecodings \\\"100\\\"\" 0 (numDecodings \"100\")
+       , tc \"numDecodings \\\"1111\\\"\" 5 (numDecodings \"1111\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc71_coin_change() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bottom-Up DP",
+        "O(amount·coins) time · O(amount) space",
+        "Build up from zero: the cheapest way to make a target is one coin more than the cheapest way to make what is left after removing some coin. Leaving unreachable amounts simply absent from the table saves inventing a sentinel for infinity and the comparisons that go with it.",
+        "module Solution where
+
+import Data.Array (listArray, (!))
+
+-- fewest ! a is the fewest coins making a; a sentinel above any real
+-- answer stands for \"not yet reachable\". The array is lazy, so each
+-- entry pulls on the smaller amounts it needs.
+coinChange :: [Int] -> Int -> Int
+coinChange coins amount
+  | best == unreachable = -1
+  | otherwise = best
+  where
+    unreachable = amount + 1
+    fewest = listArray (0, amount) [ cheapest a | a <- [0 .. amount] ]
+    cheapest 0 = 0
+    cheapest a = minimum (unreachable : [ fewest ! (a - coin) + 1 | coin <- coins, coin <= a ])
+    best = fewest ! amount",
+      ),
+    ],
+    check: Check(
+      signature: "coinChange :: [Int] -> Int -> Int",
+      starter: "module Solution where
+
+import Data.Array (listArray, (!))
+
+coinChange :: [Int] -> Int -> Int
+coinChange = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"coinChange [1,2,5] 11\" 3 (coinChange [1, 2, 5] 11)
+       , tc \"coinChange [2] 3\" (-1) (coinChange [2] 3)
+       , tc \"coinChange [1] 0\" 0 (coinChange [1] 0)
+       , tc \"coinChange [186,419,83,408] 6249\" 20 (coinChange [186, 419, 83, 408] 6249)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc72_maximum_product_subarray() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Space-Saving DP",
+        "O(n) time · O(1) space",
+        "A negative number turns the best running product into the worst and the worst into the best, so both have to be carried. Zero resets them, which falls out for free from taking the element itself as one of the candidates rather than special-casing it.",
+        "module Solution where
+
+-- A negative flips the largest and smallest products ending here, so
+-- carry both: the smallest may become the largest at the next negative.
+maxProduct :: [Int] -> Int
+maxProduct [] = 0
+maxProduct nums@(first : _) = go first 1 1 nums
+  where
+    go best _ _ [] = best
+    go best largest smallest (n : rest) = go (max best largest') largest' smallest' rest
+      where
+        candidates = [n, largest * n, smallest * n]
+        largest' = maximum candidates
+        smallest' = minimum candidates",
+      ),
+    ],
+    check: Check(
+      signature: "maxProduct :: [Int] -> Int",
+      starter: "module Solution where
+
+maxProduct :: [Int] -> Int
+maxProduct = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"maxProduct [2,3,-2,4]\" 6 (maxProduct [2, 3, -2, 4])
+       , tc \"maxProduct [-2,0,-1]\" 0 (maxProduct [-2, 0, -1])
+       , tc \"maxProduct [-2]\" (-2) (maxProduct [-2])
+       , tc \"maxProduct [-2,3,-4]\" 24 (maxProduct [-2, 3, -4])
+       , tc \"maxProduct [0,2]\" 2 (maxProduct [0, 2])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc73_word_break() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bottom-Up DP",
+        "O(n³) time · O(n) space",
+        "Reachable positions rather than a table of booleans: position 0 is reachable, and a position becomes reachable when some dictionary word bridges the gap from one already reached. The answer is whether the end is reachable.",
+        "module Solution where
+
+import Data.Array (listArray, (!))
+import qualified Data.Set as Set
+
+-- breakable ! i: can the first i characters be segmented? True when
+-- some word ends at i and the prefix before it was breakable.
+wordBreak :: String -> [String] -> Bool
+wordBreak s wordDict = breakable ! n
+  where
+    n = length s
+    dictionary = Set.fromList wordDict
+    breakable = listArray (0, n) [ ok end | end <- [0 .. n] ]
+    ok 0 = True
+    ok end = or [ breakable ! start && Set.member (slice start end) dictionary | start <- [0 .. end - 1] ]
+    slice from to = take (to - from) (drop from s)",
+      ),
+    ],
+    check: Check(
+      signature: "wordBreak :: String -> [String] -> Bool",
+      starter: "module Solution where
+
+import Data.Array (listArray, (!))
+import qualified Data.Set as Set
+
+wordBreak :: String -> [String] -> Bool
+wordBreak = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"wordBreak \\\"leetcode\\\" [\\\"leet\\\",\\\"code\\\"]\" True (wordBreak \"leetcode\" [\"leet\", \"code\"])
+       , tc \"wordBreak \\\"applepenapple\\\" [\\\"apple\\\",\\\"pen\\\"]\" True (wordBreak \"applepenapple\" [\"apple\", \"pen\"])
+       , tc \"wordBreak \\\"catsandog\\\" [\\\"cats\\\",\\\"dog\\\",\\\"sand\\\",\\\"and\\\",\\\"cat\\\"]\" False (wordBreak \"catsandog\" [\"cats\", \"dog\", \"sand\", \"and\", \"cat\"])
+       , tc \"wordBreak \\\"\\\" [\\\"a\\\"]\" True (wordBreak \"\" [\"a\"])
+       , tc \"wordBreak \\\"a\\\" []\" False (wordBreak \"a\" [])
+       , tc \"wordBreak \\\"aaaaaaa\\\" [\\\"aaa\\\",\\\"aaaa\\\"]\" True (wordBreak \"aaaaaaa\" [\"aaa\", \"aaaa\"])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc74_longest_increasing_subsequence() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bottom-Up DP",
+        "O(n²) time · O(n) space",
+        "The longest subsequence ending at each position: one plus the best of every earlier position holding a smaller value. O(n²), and the version to reach for first because the recurrence is stated directly rather than encoded.",
+        "module Solution where
+
+-- Length of the longest increasing subsequence ending at each element:
+-- one more than the best among smaller earlier elements.
+lengthOfLIS :: [Int] -> Int
+lengthOfLIS [] = 0
+lengthOfLIS nums = maximum (foldl step [] nums)
+  where
+    step earlier n = earlier ++ [1 + maximum (0 : [ l | (m, l) <- zip nums earlier, m < n ])]",
+      ),
+    ],
+    check: Check(
+      signature: "lengthOfLIS :: [Int] -> Int",
+      starter: "module Solution where
+
+lengthOfLIS :: [Int] -> Int
+lengthOfLIS = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"lengthOfLIS [10,9,2,5,3,7,101,18]\" 4 (lengthOfLIS [10, 9, 2, 5, 3, 7, 101, 18])
+       , tc \"lengthOfLIS [0,1,0,3,2,3]\" 4 (lengthOfLIS [0, 1, 0, 3, 2, 3])
+       , tc \"lengthOfLIS [7,7,7,7]\" 1 (lengthOfLIS [7, 7, 7, 7])
+       , tc \"lengthOfLIS []\" 0 (lengthOfLIS [])
+       , tc \"lengthOfLIS [5,4,3,2,1]\" 1 (lengthOfLIS [5, 4, 3, 2, 1])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc75_partition_equal_subset() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bottom-Up DP",
+        "O(n·sum) time · O(sum) space",
+        "Subset sum in disguise: an equal split exists exactly when some subset adds to half the total, and an odd total rules it out before any work. Carrying the set of reachable sums needs no ordering and no table, and duplicates cost nothing because a set collapses them.",
+        "module Solution where
+
+import qualified Data.Set as Set
+
+-- The reachable subset sums: each number extends every sum reached so
+-- far, and extending the pre-extension set uses a number only once.
+canPartition :: [Int] -> Bool
+canPartition nums
+  | odd total = False
+  | otherwise = Set.member target reachable
+  where
+    total = sum nums
+    target = total `div` 2
+    reachable = foldl extend (Set.singleton 0) nums
+    extend sums n = Set.union sums (Set.filter (<= target) (Set.map (+ n) sums))",
+      ),
+    ],
+    check: Check(
+      signature: "canPartition :: [Int] -> Bool",
+      starter: "module Solution where
+
+import qualified Data.Set as Set
+
+canPartition :: [Int] -> Bool
+canPartition = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"canPartition [1,5,11,5]\" True (canPartition [1, 5, 11, 5])
+       , tc \"canPartition [1,2,3,5]\" False (canPartition [1, 2, 3, 5])
+       , tc \"canPartition [2,2]\" True (canPartition [2, 2])
+       , tc \"canPartition [1]\" False (canPartition [1])
+       , tc \"canPartition [1,2,5]\" False (canPartition [1, 2, 5])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc76_kth_largest_stream() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Heap",
+        "O(log k) per add · O(k) space",
+        "Only the k largest values can ever be the answer, so everything else is discarded on arrival and the store never grows past k. That is exactly the shape a bounded min-heap gives you: the smallest thing in it is the answer, and anything smaller than that never gets in. The other thing to get right is that there is no answer at all until k values have arrived.",
+        "module Solution where
+
+import Data.List (insert)
+
+-- An ascending list of the k largest seen so far -- the pure form of
+-- the Go min-heap; its head, the smallest kept, is the kth largest.
+data KthLargest = KthLargest Int [Int]
+
+newKthLargest :: Int -> [Int] -> KthLargest
+newKthLargest k nums = foldl (\\store n -> fst (add n store)) (KthLargest k []) nums
+
+add :: Int -> KthLargest -> (KthLargest, Int)
+add val (KthLargest k keep) = (KthLargest k trimmed, head trimmed)
+  where
+    grown = insert val keep
+    trimmed = if length grown > k then drop 1 grown else grown",
+      ),
+    ],
+    check: Check(
+      signature: "data KthLargest = KthLargest Int [Int]
+newKthLargest :: Int -> [Int] -> KthLargest
+add :: Int -> KthLargest -> (KthLargest, Int)",
+      starter: "module Solution where
+
+import Data.List (insert)
+
+data KthLargest = KthLargest Int [Int]
+
+newKthLargest :: Int -> [Int] -> KthLargest
+newKthLargest = error \"todo\"
+
+add :: Int -> KthLargest -> (KthLargest, Int)
+add = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+stream :: Int -> [Int] -> [Int] -> [Int]
+stream k initial added = reverse (snd (foldl step (newKthLargest k initial, []) added))
+  where
+    step (store, out) n = let (grown, top) = add n store in (grown, top : out)
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"k = 3 over [4, 5, 8, 2] then 3, 5, 10, 9, 4\" [4, 5, 5, 8, 8] (stream 3 [4, 5, 8, 2] [3, 5, 10, 9, 4])
+       , tc \"k = 1 over [] then 1, 2, 0\" [1, 2, 2] (stream 1 [] [1, 2, 0])
+       , tc \"k = 2 over [7] then 5, 5\" [5, 5] (stream 2 [7] [5, 5])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc77_last_stone_weight() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Heap",
+        "O(n log n) time · O(n) space",
+        "Always the two heaviest, so the collection has to give up its maximum over and over — which is exactly what a heap is for, and why this problem exists. Keeping the stones sorted is the same idea at a worse constant; the operation being asked for is what matters.",
+        "module Solution where
+
+import Data.List (insertBy, sortBy)
+
+-- A descending list as the max-heap: smash the two heaviest; the
+-- difference, if any, goes back in.
+lastStoneWeight :: [Int] -> Int
+lastStoneWeight stones = smash (sortBy (flip compare) stones)
+  where
+    smash (first : second : rest)
+      | first == second = smash rest
+      | otherwise = smash (insertBy (flip compare) (first - second) rest)
+    smash [single] = single
+    smash [] = 0",
+      ),
+    ],
+    check: Check(
+      signature: "lastStoneWeight :: [Int] -> Int",
+      starter: "module Solution where
+
+import Data.List (insertBy, sortBy)
+
+lastStoneWeight :: [Int] -> Int
+lastStoneWeight = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"lastStoneWeight [2,7,4,1,8,1]\" 1 (lastStoneWeight [2, 7, 4, 1, 8, 1])
+       , tc \"lastStoneWeight [1]\" 1 (lastStoneWeight [1])
+       , tc \"lastStoneWeight [2,2]\" 0 (lastStoneWeight [2, 2])
+       , tc \"lastStoneWeight []\" 0 (lastStoneWeight [])
+       , tc \"lastStoneWeight [10,4,2,10]\" 2 (lastStoneWeight [10, 4, 2, 10])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc78_k_closest_points() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sort by *squared* distance, not distance: the square root is monotonic so it cannot change the order, and skipping it keeps everything in integers with no rounding to argue about. Recognising that a monotonic transform can be dropped is worth more than the sort itself.",
+        "module Solution where
+
+import Data.List (insertBy)
+
+-- A farthest-first list of size k -- the Go max-heap by distance:
+-- pushing a point and dropping the farthest keeps exactly the k
+-- nearest.
+kClosest :: [[Int]] -> Int -> [[Int]]
+kClosest points k = foldl keep [] points
+  where
+    distance [x, y] = x * x + y * y
+    distance _ = 0
+    farther a b = compare (distance b) (distance a)
+    keep heap p =
+      let grown = insertBy farther p heap
+      in if length grown > k then drop 1 grown else grown",
+      ),
+    ],
+    check: Check(
+      signature: "kClosest :: [[Int]] -> Int -> [[Int]]",
+      starter: "module Solution where
+
+import Data.List (insertBy)
+
+kClosest :: [[Int]] -> Int -> [[Int]]
+kClosest = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"kClosest [[1,3],[-2,2]] 1\" [[-2, 2]] (sortRows (kClosest [[1, 3], [-2, 2]] 1))
+       , tc \"kClosest [[3,3],[5,-1],[-2,4]] 2\" [[-2, 4], [3, 3]] (sortRows (kClosest [[3, 3], [5, -1], [-2, 4]] 2))
+       , tc \"kClosest [] 0\" [] (sortRows (kClosest [] 0))
+       , tc \"kClosest [[1,1],[2,2],[3,3]] 2\" [[1, 1], [2, 2]] (sortRows (kClosest [[1, 1], [2, 2], [3, 3]] 2))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc79_kth_largest_array() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Sorting",
+        "O(n log n) time · O(n) space",
+        "Sorting answers every k at once, which is more than was asked but is the version nobody gets wrong. O(n log n), and usually the right thing to write first before offering anything cleverer.",
+        "module Solution where
+
+import Data.List (insert)
+
+-- An ascending list of size k holds the k largest; its head is the kth.
+findKthLargest :: [Int] -> Int -> Int
+findKthLargest nums k = head (foldl keep [] nums)
+  where
+    keep heap n =
+      let grown = insert n heap
+      in if length grown > k then drop 1 grown else grown",
+      ),
+    ],
+    check: Check(
+      signature: "findKthLargest :: [Int] -> Int -> Int",
+      starter: "module Solution where
+
+import Data.List (insert)
+
+findKthLargest :: [Int] -> Int -> Int
+findKthLargest = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"findKthLargest [3,2,1,5,6,4] 2\" 5 (findKthLargest [3, 2, 1, 5, 6, 4] 2)
+       , tc \"findKthLargest [3,2,3,1,2,4,5,5,6] 4\" 4 (findKthLargest [3, 2, 3, 1, 2, 4, 5, 5, 6] 4)
+       , tc \"findKthLargest [1] 1\" 1 (findKthLargest [1] 1)
+       , tc \"findKthLargest [2,1] 2\" 1 (findKthLargest [2, 1] 2)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc80_task_scheduler() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Greedy",
+        "O(n) time · O(k) space",
+        "Lay the most frequent task out first with gaps of n between its copies. That skeleton is (busiest − 1) frames of n+1 slots plus a final row of every task tied for busiest — and everything else either drops into an idle slot or has already pushed the total past the skeleton, in which case nothing idles and the answer is simply the number of tasks. Hence the max of the two.",
+        "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+-- The most frequent task fixes a frame of (most-1) gaps of n slots;
+-- every task tied for most frequent adds a slot to the last row. If
+-- the frame has room for everything else, that is the answer;
+-- otherwise there is no idling and the length is the task count.
+leastInterval :: String -> Int -> Int
+leastInterval tasks n = max (length tasks) ((most - 1) * (n + 1) + tiedForMost)
+  where
+    counts = Map.elems (Map.fromListWith (+) [ (t, 1) | t <- tasks ])
+    most = maximum (0 : counts)
+    tiedForMost = length (filter (== most) counts)",
+      ),
+    ],
+    check: Check(
+      signature: "leastInterval :: String -> Int -> Int",
+      starter: "module Solution where
+
+import qualified Data.Map.Strict as Map
+
+leastInterval :: String -> Int -> Int
+leastInterval = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"leastInterval \\\"AAABBB\\\" 2\" 8 (leastInterval \"AAABBB\" 2)
+       , tc \"leastInterval \\\"AAABBB\\\" 0\" 6 (leastInterval \"AAABBB\" 0)
+       , tc \"leastInterval \\\"AAABBB\\\" 3\" 10 (leastInterval \"AAABBB\" 3)
+       , tc \"leastInterval \\\"\\\" 2\" 0 (leastInterval \"\" 2)
+       , tc \"leastInterval \\\"A\\\" 5\" 1 (leastInterval \"A\" 5)
+       , tc \"leastInterval \\\"AAAABCDEFG\\\" 2 -- four As and six singles\" 10 (leastInterval \"AAAABCDEFG\" 2)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc81_design_twitter() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Design",
+        "O(all tweets) per feed · O(all tweets) space",
+        "A counter standing in for time is the whole design: it orders tweets across every user without any real timestamps. Then the feed is a filter over one global timeline — simple, correct, and the wrong shape at scale, since it walks every tweet ever posted to produce ten.",
+        "module Solution where
+
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+import Data.Set (Set)
+import qualified Data.Set as Set
+
+-- Each user's tweets newest-first; a feed merges the followed users'
+-- lists (plus the user's own) newest-first, k-way-merge style,
+-- stopping after ten. A global clock orders tweets across users.
+data Twitter = Twitter Int (Map Int [(Int, Int)]) (Map Int (Set Int))
+
+newTwitter :: Twitter
+newTwitter = Twitter 0 Map.empty Map.empty
+
+postTweet :: Int -> Int -> Twitter -> Twitter
+postTweet userId tweetId (Twitter clock tweets follows) = Twitter (clock + 1) (Map.insertWith (++) userId [(clock + 1, tweetId)] tweets) follows
+
+getNewsFeed :: Int -> Twitter -> [Int]
+getNewsFeed userId (Twitter _ tweets follows) = map snd (take 10 (mergeNewest lists))
+  where
+    followees = Set.toList (Map.findWithDefault Set.empty userId follows)
+    sources = userId : filter (/= userId) followees
+    lists = [ Map.findWithDefault [] source tweets | source <- sources ]
+
+mergeNewest :: [[(Int, Int)]] -> [(Int, Int)]
+mergeNewest lists = case filter (not . null) lists of
+  [] -> []
+  live -> let newest = maximum (map head live) in newest : mergeNewest (dropOne newest live)
+  where
+    dropOne _ [] = []
+    dropOne entry ((top : rest) : more)
+      | top == entry = rest : more
+    dropOne entry (list : more) = list : dropOne entry more
+
+follow :: Int -> Int -> Twitter -> Twitter
+follow followerId followeeId (Twitter clock tweets follows) = Twitter clock tweets (Map.insertWith Set.union followerId (Set.singleton followeeId) follows)
+
+unfollow :: Int -> Int -> Twitter -> Twitter
+unfollow followerId followeeId (Twitter clock tweets follows) = Twitter clock tweets (Map.adjust (Set.delete followeeId) followerId follows)",
+      ),
+    ],
+    check: Check(
+      signature: "data Twitter = Twitter Int (Map Int [(Int, Int)]) (Map Int (Set Int))
+newTwitter :: Twitter
+postTweet :: Int -> Int -> Twitter -> Twitter
+getNewsFeed :: Int -> Twitter -> [Int]
+mergeNewest :: [[(Int, Int)]] -> [(Int, Int)]
+follow :: Int -> Int -> Twitter -> Twitter
+unfollow :: Int -> Int -> Twitter -> Twitter",
+      starter: "module Solution where
+
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as Map
+import Data.Set (Set)
+import qualified Data.Set as Set
+
+data Twitter = Twitter Int (Map Int [(Int, Int)]) (Map Int (Set Int))
+
+newTwitter :: Twitter
+newTwitter = error \"todo\"
+
+postTweet :: Int -> Int -> Twitter -> Twitter
+postTweet = error \"todo\"
+
+getNewsFeed :: Int -> Twitter -> [Int]
+getNewsFeed = error \"todo\"
+
+mergeNewest :: [[(Int, Int)]] -> [(Int, Int)]
+mergeNewest = error \"todo\"
+
+follow :: Int -> Int -> Twitter -> Twitter
+follow = error \"todo\"
+
+unfollow :: Int -> Int -> Twitter -> Twitter
+unfollow = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       (let afterPost = postTweet 1 5 newTwitter
+            afterFollow = postTweet 2 6 (follow 1 2 afterPost)
+            afterUnfollow = unfollow 1 2 afterFollow
+            eleven = foldl (\\t i -> postTweet 1 i t) newTwitter [1 .. 11]
+        in [ tc \"getNewsFeed 1 after posting 5\" [5] (getNewsFeed 1 afterPost)
+           , tc \"getNewsFeed 1 after following 2 who posted 6\" [6, 5] (getNewsFeed 1 afterFollow)
+           , tc \"getNewsFeed 2 sees only its own\" [6] (getNewsFeed 2 afterFollow)
+           , tc \"getNewsFeed 3 for a user with nothing\" [] (getNewsFeed 3 afterFollow)
+           , tc \"getNewsFeed 1 after unfollowing 2\" [5] (getNewsFeed 1 afterUnfollow)
+           , tc \"getNewsFeed 1 caps at the ten most recent\" [11, 10, 9, 8, 7, 6, 5, 4, 3, 2] (getNewsFeed 1 eleven)
+           ]))",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc82_find_median_stream() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Two Heaps",
+        "O(log n) per operation · O(n) space",
+        "Split the values into a smaller half and a larger half, and the median is always sitting at one or both of the two inner ends. Each half only ever has to surrender its extreme value, which is exactly a heap — a max-heap below, a min-heap above. The whole difficulty is the rebalancing rule: sizes within one, and nothing below bigger than anything above.",
+        "module Solution where
+
+import Data.List (insert, insertBy)
+
+-- The lower half in a descending list (its head the max-heap's top),
+-- the upper half in an ascending list, the lower allowed one extra:
+-- the median is the lower's head, or the mean of both heads.
+data MedianFinder = MedianFinder [Int] [Int]
+
+newMedianFinder :: MedianFinder
+newMedianFinder = MedianFinder [] []
+
+addNum :: Int -> MedianFinder -> MedianFinder
+addNum num (MedianFinder lower upper)
+  | length pushedUpper > length lowerRest = MedianFinder (insertBy (flip compare) (head pushedUpper) lowerRest) (drop 1 pushedUpper)
+  | otherwise = MedianFinder lowerRest pushedUpper
+  where
+    pushedLower = insertBy (flip compare) num lower
+    lowerRest = drop 1 pushedLower
+    pushedUpper = insert (head pushedLower) upper
+
+findMedian :: MedianFinder -> Double
+findMedian (MedianFinder [] _) = 0
+findMedian (MedianFinder lower upper)
+  | length lower > length upper = fromIntegral (head lower)
+  | otherwise = fromIntegral (head lower + head upper) / 2",
+      ),
+    ],
+    check: Check(
+      signature: "data MedianFinder = MedianFinder [Int] [Int]
+newMedianFinder :: MedianFinder
+addNum :: Int -> MedianFinder -> MedianFinder
+findMedian :: MedianFinder -> Double",
+      starter: "module Solution where
+
+import Data.List (insert, insertBy)
+
+data MedianFinder = MedianFinder [Int] [Int]
+
+newMedianFinder :: MedianFinder
+newMedianFinder = error \"todo\"
+
+addNum :: Int -> MedianFinder -> MedianFinder
+addNum = error \"todo\"
+
+findMedian :: MedianFinder -> Double
+findMedian = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+medians :: [Int] -> [Double]
+medians values = reverse (snd (foldl step (newMedianFinder, []) values))
+  where
+    step (finder, out) v = let grown = addNum v finder in (grown, findMedian grown : out)
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"medians of 1, 2, 3\" [1, 1.5, 2] (medians [1, 2, 3])
+       , tc \"medians of 1, 2, 3, 4, 5\" [1, 1.5, 2, 2.5, 3] (medians [1, 2, 3, 4, 5])
+       , tc \"medians arriving out of order\" [5, 3, 2, 2.5] (medians [5, 1, 2, 3])
+       , tc \"medians of negatives\" [-1, -1.5] (medians [-1, -2])
+       , tc \"median before anything is added\" 0.0 (findMedian newMedianFinder)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc83_subsets() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Recursion",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "Every element is either in or out, independently, so the subsets of a list are the subsets of its tail twice over — once with the head added and once without. That recursion is the whole answer, and it is also why there are exactly 2ⁿ of them.",
+        "module Solution where
+
+import Data.List (tails)
+
+-- Every partial choice is itself a subset; record it, then try adding
+-- each later element.
+subsets :: [Int] -> [[Int]]
+subsets nums = build nums
+  where
+    build pool = [] : concat [ map (n :) (build later) | (n : later) <- tails pool ]",
+      ),
+    ],
+    check: Check(
+      signature: "subsets :: [Int] -> [[Int]]",
+      starter: "module Solution where
+
+import Data.List (tails)
+
+subsets :: [Int] -> [[Int]]
+subsets = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"subsets [1,2,3]\" [[], [1], [1, 2], [1, 2, 3], [1, 3], [2], [2, 3], [3]] (sortRows (subsets [1, 2, 3]))
+       , tc \"subsets [0]\" [[], [0]] (sortRows (subsets [0]))
+       , tc \"subsets []\" [[]] (sortRows (subsets []))
+       , tc \"length (subsets [1,2,3,4,5])\" 32 (length (subsets [1, 2, 3, 4, 5]))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc84_combination_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backtracking",
+        "O(2ᵗ) time · O(t) space",
+        "Each step either takes the current candidate again — reuse is allowed — or drops it for good. Never returning to a dropped candidate is what stops the same combination appearing in several orders, so there is no deduplication anywhere. That constraint doing the work is the pattern to carry to the harder variants.",
+        "module Solution where
+
+-- Candidates may repeat, so taking one recurses on the same pool; the
+-- pool only ever shrinks forward, keeping each combination unique.
+combinationSum :: [Int] -> Int -> [[Int]]
+combinationSum candidates target = build candidates target
+  where
+    build _ 0 = [[]]
+    build [] _ = []
+    build pool@(c : later) remaining
+      | c <= remaining = map (c :) (build pool (remaining - c)) ++ build later remaining
+      | otherwise = build later remaining",
+      ),
+    ],
+    check: Check(
+      signature: "combinationSum :: [Int] -> Int -> [[Int]]",
+      starter: "module Solution where
+
+combinationSum :: [Int] -> Int -> [[Int]]
+combinationSum = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"combinationSum [2,3,6,7] 7\" [[2, 2, 3], [7]] (sortRows (combinationSum [2, 3, 6, 7] 7))
+       , tc \"combinationSum [2,3,5] 8\" [[2, 2, 2, 2], [2, 3, 3], [3, 5]] (sortRows (combinationSum [2, 3, 5] 8))
+       , tc \"combinationSum [2] 1\" [] (sortRows (combinationSum [2] 1))
+       , tc \"combinationSum [1] 2\" [[1, 1]] (sortRows (combinationSum [1] 2))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc85_permutations() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backtracking",
+        "O(n·n!) time · O(n·n!) space",
+        "Pick each element in turn as the first, then permute what is left. Removing the chosen element from the remainder is exactly what a \"used\" set does in an in-place version; here the remainder is simply a shorter list, and nothing has to be undone afterwards.",
+        "module Solution where
+
+-- Pick each remaining element in turn as the next entry.
+permute :: [Int] -> [[Int]]
+permute [] = [[]]
+permute nums = [ n : rest | (n, others) <- picks nums, rest <- permute others ]
+
+picks :: [Int] -> [(Int, [Int])]
+picks [] = []
+picks (n : rest) = (n, rest) : [ (m, n : others) | (m, others) <- picks rest ]",
+      ),
+    ],
+    check: Check(
+      signature: "permute :: [Int] -> [[Int]]
+picks :: [Int] -> [(Int, [Int])]",
+      starter: "module Solution where
+
+permute :: [Int] -> [[Int]]
+permute = error \"todo\"
+
+picks :: [Int] -> [(Int, [Int])]
+picks = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"permute [1,2,3]\" [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]] (sortRows (permute [1, 2, 3]))
+       , tc \"permute [0,1]\" [[0, 1], [1, 0]] (sortRows (permute [0, 1]))
+       , tc \"permute [1]\" [[1]] (permute [1])
+       , tc \"length (permute [1,2,3,4])\" 24 (length (permute [1, 2, 3, 4]))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc86_subsets_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backtracking",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "Sorting puts equal values next to each other, which is what makes the duplicate rule expressible at all: when a value is skipped, skip *every* copy of it at once. Skipping one copy and keeping the next rebuilds the same subset from a different copy, which is exactly the repeat you are trying to avoid.",
+        "module Solution where
+
+import Data.List (sort)
+
+-- Sorted, so equal values are adjacent: offering each distinct value
+-- once per depth avoids building the same subset twice.
+subsetsWithDup :: [Int] -> [[Int]]
+subsetsWithDup nums = build (sort nums)
+  where
+    build pool = [] : concat [ map (n :) (build later) | (n : later) <- distinctStarts pool ]
+    distinctStarts [] = []
+    distinctStarts list@(n : _) = list : distinctStarts (dropWhile (== n) (drop 1 list))",
+      ),
+    ],
+    check: Check(
+      signature: "subsetsWithDup :: [Int] -> [[Int]]",
+      starter: "module Solution where
+
+import Data.List (sort)
+
+subsetsWithDup :: [Int] -> [[Int]]
+subsetsWithDup = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"subsetsWithDup [1,2,2]\" [[], [1], [1, 2], [1, 2, 2], [2], [2, 2]] (sortRows (subsetsWithDup [1, 2, 2]))
+       , tc \"subsetsWithDup [0]\" [[], [0]] (sortRows (subsetsWithDup [0]))
+       , tc \"subsetsWithDup [4,4,4,1,4]\" [[], [1], [1, 4], [1, 4, 4], [1, 4, 4, 4], [1, 4, 4, 4, 4], [4], [4, 4], [4, 4, 4], [4, 4, 4, 4]] (sortRows (subsetsWithDup [4, 4, 4, 1, 4]))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc87_combination_sum_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backtracking",
+        "O(2ⁿ) time · O(n²) space",
+        "Each candidate is used at most once, so taking one moves past it. The duplicate rule is the same as Subsets II — skipping a value means skipping every copy of it — and that shared rule is the reason to drill the two problems together.",
+        "module Solution where
+
+import Data.List (sort)
+
+-- Sorted; each candidate is used once, and no value repeats at the
+-- same depth. Candidates above the remainder cannot help.
+combinationSum2 :: [Int] -> Int -> [[Int]]
+combinationSum2 candidates target = build (sort candidates) target
+  where
+    build _ 0 = [[]]
+    build pool remaining = concat [ map (c :) (build later (remaining - c)) | (c : later) <- distinctStarts pool, c <= remaining ]
+    distinctStarts [] = []
+    distinctStarts list@(c : _) = list : distinctStarts (dropWhile (== c) (drop 1 list))",
+      ),
+    ],
+    check: Check(
+      signature: "combinationSum2 :: [Int] -> Int -> [[Int]]",
+      starter: "module Solution where
+
+import Data.List (sort)
+
+combinationSum2 :: [Int] -> Int -> [[Int]]
+combinationSum2 = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"combinationSum2 [10,1,2,7,6,1,5] 8\" [[1, 1, 6], [1, 2, 5], [1, 7], [2, 6]] (sortRows (combinationSum2 [10, 1, 2, 7, 6, 1, 5] 8))
+       , tc \"combinationSum2 [2,5,2,1,2] 5\" [[1, 2, 2], [5]] (sortRows (combinationSum2 [2, 5, 2, 1, 2] 5))
+       , tc \"combinationSum2 [3] 1\" [] (sortRows (combinationSum2 [3] 1))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc88_word_search() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backtracking",
+        "O(m·n·4ᴸ) time · O(L²) space",
+        "Depth-first from every square, with the path so far in a set so no letter is reused within one attempt. The set has to be per-path, not global: a square rejected on one route must still be available on another, and that distinction is the whole difference between backtracking and plain search.",
+        "module Solution where
+
+import qualified Data.Set as Set
+
+-- Depth-first from every cell; a visited set stands in for the Go
+-- version's in-place marking, and backtracking is free because each
+-- branch carries its own copy.
+exist :: [String] -> String -> Bool
+exist board word = or [ search (r, c) word Set.empty | r <- [0 .. rows - 1], c <- [0 .. cols - 1] ]
+  where
+    rows = length board
+    cols = length (head board)
+    search _ [] _ = True
+    search (r, c) (ch : rest) visited
+      | r < 0 || r >= rows || c < 0 || c >= cols = False
+      | Set.member (r, c) visited = False
+      | board !! r !! c /= ch = False
+      | otherwise = or [ search next rest (Set.insert (r, c) visited) | next <- [(r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)] ]",
+      ),
+    ],
+    check: Check(
+      signature: "exist :: [String] -> String -> Bool",
+      starter: "module Solution where
+
+import qualified Data.Set as Set
+
+exist :: [String] -> String -> Bool
+exist = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+board :: [String]
+board = [\"ABCE\", \"SFCS\", \"ADEE\"]
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"exist board \\\"ABCCED\\\"\" True (exist board \"ABCCED\")
+       , tc \"exist board \\\"SEE\\\"\" True (exist board \"SEE\")
+       , tc \"exist board \\\"ABCB\\\" -- a cell may not be reused\" False (exist board \"ABCB\")
+       , tc \"exist [\\\"a\\\"] \\\"a\\\"\" True (exist [\"a\"] \"a\")
+       , tc \"exist [\\\"a\\\"] \\\"b\\\"\" False (exist [\"a\"] \"b\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc89_palindrome_partitioning() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backtracking",
+        "O(n·2ⁿ) time · O(n·2ⁿ) space",
+        "Every partition begins with some palindromic prefix, so the only choice at each step is how long that prefix is. Cutting there and recursing on the rest reaches each partition exactly once, in order, with nothing to deduplicate.",
+        "module Solution where
+
+-- Cut off every palindromic prefix of what remains and recurse.
+partition :: String -> [[String]]
+partition s = build s
+  where
+    build [] = [[]]
+    build remaining = [ prefix : rest | n <- [1 .. length remaining], let (prefix, suffix) = splitAt n remaining, isPalindrome prefix, rest <- build suffix ]
+
+isPalindrome :: String -> Bool
+isPalindrome str = str == reverse str",
+      ),
+    ],
+    check: Check(
+      signature: "partition :: String -> [[String]]
+isPalindrome :: String -> Bool",
+      starter: "module Solution where
+
+partition :: String -> [[String]]
+partition = error \"todo\"
+
+isPalindrome :: String -> Bool
+isPalindrome = error \"todo\"",
+      harness: "module Main where
+
+import Data.List (intercalate)
+import Drill
+import Solution
+
+joined :: String -> [String]
+joined s = sortStrings [ intercalate \",\" pieces | pieces <- partition s ]
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"partition \\\"aab\\\"\" [\"a,a,b\", \"aa,b\"] (joined \"aab\")
+       , tc \"partition \\\"a\\\"\" [\"a\"] (joined \"a\")
+       , tc \"partition \\\"\\\"\" [\"\"] (joined \"\")
+       , tc \"partition \\\"aba\\\"\" [\"a,b,a\", \"aba\"] (joined \"aba\")
+       , tc \"partition \\\"abc\\\"\" [\"a,b,c\"] (joined \"abc\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc90_letter_combinations() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Recursion",
+        "O(n·4ⁿ) time · O(n·4ⁿ) space",
+        "One choice per digit, independently, so the answer is the cross product of the letter sets. There is no pruning and no constraint between choices — which makes this the cleanest place to see what backtracking degenerates to when nothing can fail.",
+        "module Solution where
+
+-- Each digit multiplies the combinations so far by its letters.
+letterCombinations :: String -> [String]
+letterCombinations [] = []
+letterCombinations digits = foldr prepend [\"\"] digits
+  where
+    prepend digit acc = [ letter : rest | letter <- letters digit, rest <- acc ]
+    letters '2' = \"abc\"
+    letters '3' = \"def\"
+    letters '4' = \"ghi\"
+    letters '5' = \"jkl\"
+    letters '6' = \"mno\"
+    letters '7' = \"pqrs\"
+    letters '8' = \"tuv\"
+    letters '9' = \"wxyz\"
+    letters _ = \"\"",
+      ),
+    ],
+    check: Check(
+      signature: "letterCombinations :: String -> [String]",
+      starter: "module Solution where
+
+letterCombinations :: String -> [String]
+letterCombinations = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"letterCombinations \\\"23\\\"\" [\"ad\", \"ae\", \"af\", \"bd\", \"be\", \"bf\", \"cd\", \"ce\", \"cf\"] (sortStrings (letterCombinations \"23\"))
+       , tc \"letterCombinations \\\"\\\"\" [] (letterCombinations \"\")
+       , tc \"letterCombinations \\\"2\\\"\" [\"a\", \"b\", \"c\"] (sortStrings (letterCombinations \"2\"))
+       , tc \"length (letterCombinations \\\"79\\\")\" 16 (length (letterCombinations \"79\"))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc91_n_queens() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Backtracking",
+        "O(n!) time · O(n²) space",
+        "One queen per row, so the only choice is the column. A diagonal is identified by row − column and an anti-diagonal by row + column, which turns \"is this square attacked?\" into three set lookups — and lets the search abandon an entire subtree the moment one of them fails.",
+        "module Solution where
+
+import qualified Data.Set as Set
+
+-- r - c is constant along one diagonal, r + c along the other; a row's
+-- queen goes into any column none of the three sets claims.
+solveNQueens :: Int -> [[String]]
+solveNQueens n = place 0 Set.empty Set.empty Set.empty []
+  where
+    place r cols diagonals antiDiagonals queens
+      | r == n = [render (reverse queens)]
+      | otherwise =
+          concat
+            [ place (r + 1) (Set.insert c cols) (Set.insert (r - c) diagonals) (Set.insert (r + c) antiDiagonals) (c : queens)
+            | c <- [0 .. n - 1]
+            , not (Set.member c cols)
+            , not (Set.member (r - c) diagonals)
+            , not (Set.member (r + c) antiDiagonals)
+            ]
+    render queens = [replicate c '.' ++ \"Q\" ++ replicate (n - c - 1) '.' | c <- queens]",
+      ),
+    ],
+    check: Check(
+      signature: "solveNQueens :: Int -> [[String]]",
+      starter: "module Solution where
+
+import qualified Data.Set as Set
+
+solveNQueens :: Int -> [[String]]
+solveNQueens = error \"todo\"",
+      harness: "module Main where
+
+import Data.List (intercalate)
+import Drill
+import Solution
+
+boards :: Int -> [String]
+boards n = sortStrings (map (intercalate \"|\") (solveNQueens n))
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"solveNQueens 4\" [\"..Q.|Q...|...Q|.Q..\", \".Q..|...Q|Q...|..Q.\"] (boards 4)
+       , tc \"solveNQueens 1\" [\"Q\"] (boards 1)
+       , tc \"solveNQueens 2\" [] (boards 2)
+       , tc \"solveNQueens 3\" [] (boards 3)
+       , tc \"length (solveNQueens 6)\" 4 (length (solveNQueens 6))
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc92_unique_paths() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Only right and down moves, so the ways to reach a square are the ways to reach the one above plus the one to its left. Rows fill top to bottom and only the previous row is ever needed, so one row of counters does for the whole grid.",
+        "module Solution where
+
+-- Paths into a cell = paths into the cell above + the cell to the left.
+-- One row suffices: the running sum folds the left neighbour into each
+-- entry of the row above.
+uniquePaths :: Int -> Int -> Int
+uniquePaths m n = last (iterate (scanl1 (+)) (replicate n 1) !! (m - 1))",
+      ),
+    ],
+    check: Check(
+      signature: "uniquePaths :: Int -> Int -> Int",
+      starter: "module Solution where
+
+uniquePaths :: Int -> Int -> Int
+uniquePaths = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"uniquePaths 3 7\" 28 (uniquePaths 3 7)
+       , tc \"uniquePaths 3 2\" 3 (uniquePaths 3 2)
+       , tc \"uniquePaths 1 1\" 1 (uniquePaths 1 1)
+       , tc \"uniquePaths 10 10\" 48620 (uniquePaths 10 10)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc93_longest_common_subsequence() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Compare the two current characters: equal means both are used and the answer is one more than the rest; different means the best of dropping one or the other. Filled row by row, only the previous row is ever needed. This recurrence is the backbone of edit distance and distinct subsequences too.",
+        "module Solution where
+
+import Data.Array
+
+-- table (i, j): LCS of the suffixes text1[i:] and text2[j:], memoised in
+-- a lazy array. Matching characters extend the diagonal; otherwise take
+-- the better of dropping one.
+longestCommonSubsequence :: String -> String -> Int
+longestCommonSubsequence text1 text2 = table ! (0, 0)
+  where
+    m = length text1
+    n = length text2
+    a = listArray (0, m - 1) text1
+    b = listArray (0, n - 1) text2
+    table = array ((0, 0), (m, n)) [((i, j), cell i j) | i <- [0 .. m], j <- [0 .. n]]
+    cell i j
+      | i == m || j == n = 0
+      | a ! i == b ! j = 1 + table ! (i + 1, j + 1)
+      | otherwise = max (table ! (i + 1, j)) (table ! (i, j + 1))",
+      ),
+    ],
+    check: Check(
+      signature: "longestCommonSubsequence :: String -> String -> Int",
+      starter: "module Solution where
+
+import Data.Array
+
+longestCommonSubsequence :: String -> String -> Int
+longestCommonSubsequence = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"longestCommonSubsequence \\\"abcde\\\" \\\"ace\\\"\" 3 (longestCommonSubsequence \"abcde\" \"ace\")
+       , tc \"longestCommonSubsequence \\\"abc\\\" \\\"abc\\\"\" 3 (longestCommonSubsequence \"abc\" \"abc\")
+       , tc \"longestCommonSubsequence \\\"abc\\\" \\\"def\\\"\" 0 (longestCommonSubsequence \"abc\" \"def\")
+       , tc \"longestCommonSubsequence \\\"\\\" \\\"a\\\"\" 0 (longestCommonSubsequence \"\" \"a\")
+       , tc \"longestCommonSubsequence \\\"bsbininm\\\" \\\"jmjkbkjkv\\\"\" 1 (longestCommonSubsequence \"bsbininm\" \"jmjkbkjkv\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc94_coin_change_ii() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bottom-Up DP",
+        "O(n·t) time · O(t) space",
+        "Combinations, not permutations, and that is decided entirely by the loop order. Coins on the outside means each coin is considered once and for all before the next is looked at, so 1+2 and 2+1 can never both be counted. Swapping the two loops silently counts orderings instead — the single most instructive bug in this problem.",
+        "module Solution where
+
+import Data.Array
+
+-- ways a: combinations making a. Taking the coins in the outer fold means
+-- each combination is counted in one coin order only; within a coin the
+-- array refers to itself at smaller amounts, the in-place update.
+change :: Int -> [Int] -> Int
+change amount coins = foldl addCoin start coins ! amount
+  where
+    start = listArray (0, amount) (1 : repeat 0)
+    addCoin ways coin = ways'
+      where
+        ways' = listArray (0, amount) [ways ! a + (if a >= coin then ways' ! (a - coin) else 0) | a <- [0 .. amount]]",
+      ),
+    ],
+    check: Check(
+      signature: "change :: Int -> [Int] -> Int",
+      starter: "module Solution where
+
+import Data.Array
+
+change :: Int -> [Int] -> Int
+change = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"change 5 [1,2,5]\" 4 (change 5 [1, 2, 5])
+       , tc \"change 3 [2]\" 0 (change 3 [2])
+       , tc \"change 10 [10]\" 1 (change 10 [10])
+       , tc \"change 0 [1,2]\" 1 (change 0 [1, 2])
+       , tc \"change 500 [3,5,7,8,9,10,11]\" 35502874 (change 500 [3, 5, 7, 8, 9, 10, 11])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc95_target_sum() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Bottom-Up DP",
+        "O(n·S) time · O(S) space",
+        "The only state that matters is the running total, not which signs produced it. Carrying a map from reachable total to how many ways reach it means different sign choices landing on the same total merge — which is exactly what turns an exponential search into a polynomial one.",
+        "module Solution where
+
+import Data.Array
+
+-- ways s counts the sign assignments of the prefix summing to s, offset
+-- by the total so negative sums index the array.
+findTargetSumWays :: [Int] -> Int -> Int
+findTargetSumWays nums target
+  | target > total || target < -total = 0
+  | otherwise = foldl step start nums ! (target + total)
+  where
+    total = sum nums
+    start = accumArray (+) 0 (0, 2 * total) [(total, 1)]
+    step ways n = accumArray (+) 0 (0, 2 * total) [(s + d, count) | (s, count) <- assocs ways, count /= 0, d <- [n, -n]]",
+      ),
+    ],
+    check: Check(
+      signature: "findTargetSumWays :: [Int] -> Int -> Int",
+      starter: "module Solution where
+
+import Data.Array
+
+findTargetSumWays :: [Int] -> Int -> Int
+findTargetSumWays = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"findTargetSumWays [1,1,1,1,1] 3\" 5 (findTargetSumWays [1, 1, 1, 1, 1] 3)
+       , tc \"findTargetSumWays [1] 1\" 1 (findTargetSumWays [1] 1)
+       , tc \"findTargetSumWays [1] 2\" 0 (findTargetSumWays [1] 2)
+       , tc \"findTargetSumWays [0,0,0,0,0] 0\" 32 (findTargetSumWays [0, 0, 0, 0, 0] 0)
+       , tc \"findTargetSumWays [] 0\" 1 (findTargetSumWays [] 0)
+       , tc \"findTargetSumWays [1,2,3,4,5] 3\" 3 (findTargetSumWays [1, 2, 3, 4, 5] 3)
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc96_stock_with_cooldown() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "State Machine DP",
+        "O(n) time · O(1) space",
+        "Three states rather than one number: holding, just sold (so today is the cooldown), and free to act. Each day depends only on yesterday, so it is three rolling values — and the cooldown is expressed simply by \"free\" never reading \"sold\" from the same day. Naming the states is most of the work.",
+        "module Solution where
+
+-- Three states carried day to day: holding a share, just sold (must cool
+-- down tomorrow), and free to buy.
+maxProfit :: [Int] -> Int
+maxProfit prices = finish (foldl step (-2147483648, 0, 0) prices)
+  where
+    step (holding, cooling, free) price = (max holding (free - price), holding + price, max free cooling)
+    finish (_, cooling, free) = max cooling free",
+      ),
+    ],
+    check: Check(
+      signature: "maxProfit :: [Int] -> Int",
+      starter: "module Solution where
+
+maxProfit :: [Int] -> Int
+maxProfit = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"maxProfit [1,2,3,0,2]\" 3 (maxProfit [1, 2, 3, 0, 2])
+       , tc \"maxProfit [1]\" 0 (maxProfit [1])
+       , tc \"maxProfit [2,1]\" 0 (maxProfit [2, 1])
+       , tc \"maxProfit [1,2,4]\" 3 (maxProfit [1, 2, 4])
+       , tc \"maxProfit [6,1,3,2,4,7]\" 6 (maxProfit [6, 1, 3, 2, 4, 7])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc97_interleaving_string() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Top-Down Memo",
+        "O(m·n) time · O(m·n) space",
+        "How much of each source has been used is the entire state — the position in the target is their sum, so it never has to be tracked. That collapse from three indices to two is what makes the table two-dimensional, and spotting it is the problem.",
+        "module Solution where
+
+import Data.Array
+
+-- table (i, j): can s1[:i] and s2[:j] interleave into s3[:i+j]? The last
+-- character of that prefix came from one of them.
+isInterleave :: String -> String -> String -> Bool
+isInterleave s1 s2 s3
+  | m + n /= length s3 = False
+  | otherwise = table ! (m, n)
+  where
+    m = length s1
+    n = length s2
+    a = listArray (1, m) s1
+    b = listArray (1, n) s2
+    c = listArray (1, m + n) s3
+    table = array ((0, 0), (m, n)) [((i, j), cell i j) | i <- [0 .. m], j <- [0 .. n]]
+    cell 0 0 = True
+    cell i j = fromFirst || fromSecond
+      where
+        fromFirst = i > 0 && table ! (i - 1, j) && a ! i == c ! (i + j)
+        fromSecond = j > 0 && table ! (i, j - 1) && b ! j == c ! (i + j)",
+      ),
+    ],
+    check: Check(
+      signature: "isInterleave :: String -> String -> String -> Bool",
+      starter: "module Solution where
+
+import Data.Array
+
+isInterleave :: String -> String -> String -> Bool
+isInterleave = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"isInterleave \\\"aabcc\\\" \\\"dbbca\\\" \\\"aadbbcbcac\\\"\" True (isInterleave \"aabcc\" \"dbbca\" \"aadbbcbcac\")
+       , tc \"isInterleave \\\"aabcc\\\" \\\"dbbca\\\" \\\"aadbbbaccc\\\"\" False (isInterleave \"aabcc\" \"dbbca\" \"aadbbbaccc\")
+       , tc \"isInterleave \\\"\\\" \\\"\\\" \\\"\\\"\" True (isInterleave \"\" \"\" \"\")
+       , tc \"isInterleave \\\"a\\\" \\\"\\\" \\\"a\\\"\" True (isInterleave \"a\" \"\" \"a\")
+       , tc \"isInterleave \\\"\\\" \\\"b\\\" \\\"b\\\"\" True (isInterleave \"\" \"b\" \"b\")
+       , tc \"isInterleave \\\"abc\\\" \\\"def\\\" \\\"adbecf\\\"\" True (isInterleave \"abc\" \"def\" \"adbecf\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc98_longest_increasing_path() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "DFS + Memo",
+        "O(m·n) time · O(m·n) space",
+        "Strictly increasing means the moves can never form a cycle, so the grid is a directed acyclic graph and the longest path from each square is well-defined. That is what makes caching sound — with cycles, a memo on an in-progress square would be reading an answer that does not exist yet.",
+        "module Solution where
+
+import Data.Array
+
+-- longest (r, c): the longest increasing path starting here, memoised in
+-- a lazy array. Increasing paths cannot cycle, so no visited set is
+-- needed.
+longestIncreasingPath :: [[Int]] -> Int
+longestIncreasingPath matrix = maximum (elems longest)
+  where
+    rows = length matrix
+    cols = length (head matrix)
+    bnds = ((0, 0), (rows - 1, cols - 1))
+    grid = listArray bnds (concat matrix)
+    longest = array bnds [(pos, from pos) | pos <- range bnds]
+    from (r, c) = 1 + maximum (0 : [longest ! next | next <- [(r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)], inRange bnds next, grid ! next > grid ! (r, c)])",
+      ),
+    ],
+    check: Check(
+      signature: "longestIncreasingPath :: [[Int]] -> Int",
+      starter: "module Solution where
+
+import Data.Array
+
+longestIncreasingPath :: [[Int]] -> Int
+longestIncreasingPath = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"longestIncreasingPath [[9,9,4],[6,6,8],[2,1,1]]\" 4 (longestIncreasingPath [[9, 9, 4], [6, 6, 8], [2, 1, 1]])
+       , tc \"longestIncreasingPath [[3,4,5],[3,2,6],[2,2,1]]\" 4 (longestIncreasingPath [[3, 4, 5], [3, 2, 6], [2, 2, 1]])
+       , tc \"longestIncreasingPath [[1]]\" 1 (longestIncreasingPath [[1]])
+       , tc \"longestIncreasingPath [[7,7],[7,7]]\" 1 (longestIncreasingPath [[7, 7], [7, 7]])
+       ])",
+      graded: True,
+    ),
+  )
+}
+
+pub fn nc99_distinct_subsequences() -> Embedded {
+  Embedded(
+    solutions: [
+      #(
+        "Space-Saving DP",
+        "O(m·n) time · O(n) space",
+        "Row j counts the ways to build the first j characters of the target from the source seen so far, and a new source character extends a count at j−1 into one at j when it matches. In a mutable array the row must be swept right to left, or one source character gets used twice; building a fresh row removes the hazard entirely.",
+        "module Solution where
+
+import Data.Array
+
+-- table (i, j): ways s[i:] can produce t[j:]. Skip s[i] always; use it
+-- too when it matches t[j].
+numDistinct :: String -> String -> Int
+numDistinct s t = table ! (0, 0)
+  where
+    m = length s
+    n = length t
+    a = listArray (0, m - 1) s
+    b = listArray (0, n - 1) t
+    table = array ((0, 0), (m, n)) [((i, j), cell i j) | i <- [0 .. m], j <- [0 .. n]]
+    cell i j
+      | j == n = 1
+      | i == m = 0
+      | otherwise = table ! (i + 1, j) + (if a ! i == b ! j then table ! (i + 1, j + 1) else 0)",
+      ),
+    ],
+    check: Check(
+      signature: "numDistinct :: String -> String -> Int",
+      starter: "module Solution where
+
+import Data.Array
+
+numDistinct :: String -> String -> Int
+numDistinct = error \"todo\"",
+      harness: "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"numDistinct \\\"rabbbit\\\" \\\"rabbit\\\"\" 3 (numDistinct \"rabbbit\" \"rabbit\")
+       , tc \"numDistinct \\\"babgbag\\\" \\\"bag\\\"\" 5 (numDistinct \"babgbag\" \"bag\")
+       , tc \"numDistinct \\\"\\\" \\\"a\\\"\" 0 (numDistinct \"\" \"a\")
+       , tc \"numDistinct \\\"a\\\" \\\"\\\"\" 1 (numDistinct \"a\" \"\")
+       , tc \"numDistinct \\\"abc\\\" \\\"abc\\\"\" 1 (numDistinct \"abc\" \"abc\")
+       , tc \"numDistinct \\\"aaa\\\" \\\"aa\\\"\" 3 (numDistinct \"aaa\" \"aa\")
+       ])",
+      graded: True,
+    ),
+  )
+}
+
 pub fn by_stem(stem: String) -> Result(Embedded, Nil) {
   case stem {
     "nc01_contains_duplicate" -> Ok(nc01_contains_duplicate())
+    "nc02_valid_anagram" -> Ok(nc02_valid_anagram())
+    "nc03_two_sum" -> Ok(nc03_two_sum())
+    "nc04_group_anagrams" -> Ok(nc04_group_anagrams())
+    "nc05_top_k_frequent" -> Ok(nc05_top_k_frequent())
+    "nc06_product_except_self" -> Ok(nc06_product_except_self())
+    "nc07_longest_consecutive" -> Ok(nc07_longest_consecutive())
+    "nc08_valid_palindrome" -> Ok(nc08_valid_palindrome())
+    "nc09_two_sum_sorted" -> Ok(nc09_two_sum_sorted())
+    "nc100_edit_distance" -> Ok(nc100_edit_distance())
+    "nc101_burst_balloons" -> Ok(nc101_burst_balloons())
+    "nc102_regular_expression_matching" ->
+      Ok(nc102_regular_expression_matching())
+    "nc103_implement_trie" -> Ok(nc103_implement_trie())
+    "nc104_word_dictionary" -> Ok(nc104_word_dictionary())
+    "nc105_word_search_ii" -> Ok(nc105_word_search_ii())
+    "nc106_number_of_islands" -> Ok(nc106_number_of_islands())
+    "nc107_clone_graph" -> Ok(nc107_clone_graph())
+    "nc108_max_area_of_island" -> Ok(nc108_max_area_of_island())
+    "nc109_pacific_atlantic" -> Ok(nc109_pacific_atlantic())
+    "nc10_three_sum" -> Ok(nc10_three_sum())
+    "nc110_surrounded_regions" -> Ok(nc110_surrounded_regions())
+    "nc111_rotting_oranges" -> Ok(nc111_rotting_oranges())
+    "nc112_walls_and_gates" -> Ok(nc112_walls_and_gates())
+    "nc113_course_schedule" -> Ok(nc113_course_schedule())
+    "nc114_course_schedule_ii" -> Ok(nc114_course_schedule_ii())
+    "nc115_redundant_connection" -> Ok(nc115_redundant_connection())
+    "nc116_connected_components" -> Ok(nc116_connected_components())
+    "nc117_graph_valid_tree" -> Ok(nc117_graph_valid_tree())
+    "nc118_word_ladder" -> Ok(nc118_word_ladder())
+    "nc119_reconstruct_itinerary" -> Ok(nc119_reconstruct_itinerary())
+    "nc11_container_water" -> Ok(nc11_container_water())
+    "nc120_min_cost_connect_points" -> Ok(nc120_min_cost_connect_points())
+    "nc121_network_delay_time" -> Ok(nc121_network_delay_time())
+    "nc122_swim_in_water" -> Ok(nc122_swim_in_water())
+    "nc123_alien_dictionary" -> Ok(nc123_alien_dictionary())
+    "nc124_cheapest_flights" -> Ok(nc124_cheapest_flights())
+    "nc125_reverse_linked_list" -> Ok(nc125_reverse_linked_list())
+    "nc126_merge_two_sorted_lists" -> Ok(nc126_merge_two_sorted_lists())
+    "nc127_reorder_list" -> Ok(nc127_reorder_list())
+    "nc128_remove_nth_from_end" -> Ok(nc128_remove_nth_from_end())
+    "nc129_copy_random_list" -> Ok(nc129_copy_random_list())
+    "nc12_best_time_stock" -> Ok(nc12_best_time_stock())
+    "nc130_add_two_numbers" -> Ok(nc130_add_two_numbers())
+    "nc131_linked_list_cycle" -> Ok(nc131_linked_list_cycle())
+    "nc132_find_the_duplicate" -> Ok(nc132_find_the_duplicate())
+    "nc133_lru_cache" -> Ok(nc133_lru_cache())
+    "nc134_merge_k_sorted_lists" -> Ok(nc134_merge_k_sorted_lists())
+    "nc135_reverse_k_group" -> Ok(nc135_reverse_k_group())
+    "nc136_invert_binary_tree" -> Ok(nc136_invert_binary_tree())
+    "nc137_maximum_depth" -> Ok(nc137_maximum_depth())
+    "nc138_diameter_of_binary_tree" -> Ok(nc138_diameter_of_binary_tree())
+    "nc139_balanced_binary_tree" -> Ok(nc139_balanced_binary_tree())
+    "nc13_longest_substring" -> Ok(nc13_longest_substring())
+    "nc140_same_tree" -> Ok(nc140_same_tree())
+    "nc141_subtree_of_another_tree" -> Ok(nc141_subtree_of_another_tree())
+    "nc142_lowest_common_ancestor_bst" -> Ok(nc142_lowest_common_ancestor_bst())
+    "nc143_level_order_traversal" -> Ok(nc143_level_order_traversal())
+    "nc144_right_side_view" -> Ok(nc144_right_side_view())
+    "nc145_count_good_nodes" -> Ok(nc145_count_good_nodes())
+    "nc146_validate_bst" -> Ok(nc146_validate_bst())
+    "nc147_kth_smallest_bst" -> Ok(nc147_kth_smallest_bst())
+    "nc148_build_tree_preorder_inorder" ->
+      Ok(nc148_build_tree_preorder_inorder())
+    "nc149_max_path_sum" -> Ok(nc149_max_path_sum())
+    "nc14_character_replacement" -> Ok(nc14_character_replacement())
+    "nc150_serialize_deserialize" -> Ok(nc150_serialize_deserialize())
+    "nc15_permutation_in_string" -> Ok(nc15_permutation_in_string())
+    "nc16_valid_parentheses" -> Ok(nc16_valid_parentheses())
+    "nc17_min_stack" -> Ok(nc17_min_stack())
+    "nc18_daily_temperatures" -> Ok(nc18_daily_temperatures())
+    "nc19_binary_search" -> Ok(nc19_binary_search())
+    "nc20_find_min_rotated" -> Ok(nc20_find_min_rotated())
+    "nc21_search_rotated" -> Ok(nc21_search_rotated())
+    "nc22_encode_decode" -> Ok(nc22_encode_decode())
+    "nc23_valid_sudoku" -> Ok(nc23_valid_sudoku())
+    "nc24_trapping_rain_water" -> Ok(nc24_trapping_rain_water())
+    "nc25_min_window_substring" -> Ok(nc25_min_window_substring())
+    "nc26_sliding_window_maximum" -> Ok(nc26_sliding_window_maximum())
+    "nc27_eval_rpn" -> Ok(nc27_eval_rpn())
+    "nc28_generate_parentheses" -> Ok(nc28_generate_parentheses())
+    "nc29_car_fleet" -> Ok(nc29_car_fleet())
+    "nc30_largest_rectangle" -> Ok(nc30_largest_rectangle())
+    "nc31_search_2d_matrix" -> Ok(nc31_search_2d_matrix())
+    "nc32_koko_bananas" -> Ok(nc32_koko_bananas())
+    "nc33_time_map" -> Ok(nc33_time_map())
+    "nc34_median_two_sorted" -> Ok(nc34_median_two_sorted())
+    "nc35_insert_interval" -> Ok(nc35_insert_interval())
+    "nc36_merge_intervals" -> Ok(nc36_merge_intervals())
+    "nc37_non_overlapping" -> Ok(nc37_non_overlapping())
+    "nc38_meeting_rooms" -> Ok(nc38_meeting_rooms())
+    "nc39_meeting_rooms_ii" -> Ok(nc39_meeting_rooms_ii())
+    "nc40_min_interval" -> Ok(nc40_min_interval())
+    "nc41_maximum_subarray" -> Ok(nc41_maximum_subarray())
+    "nc42_jump_game" -> Ok(nc42_jump_game())
+    "nc43_jump_game_ii" -> Ok(nc43_jump_game_ii())
+    "nc44_gas_station" -> Ok(nc44_gas_station())
+    "nc45_hand_of_straights" -> Ok(nc45_hand_of_straights())
+    "nc46_merge_triplets" -> Ok(nc46_merge_triplets())
+    "nc47_partition_labels" -> Ok(nc47_partition_labels())
+    "nc48_valid_parenthesis_string" -> Ok(nc48_valid_parenthesis_string())
+    "nc49_single_number" -> Ok(nc49_single_number())
+    "nc50_number_of_one_bits" -> Ok(nc50_number_of_one_bits())
+    "nc51_counting_bits" -> Ok(nc51_counting_bits())
+    "nc52_reverse_bits" -> Ok(nc52_reverse_bits())
+    "nc53_missing_number" -> Ok(nc53_missing_number())
+    "nc54_sum_of_two_integers" -> Ok(nc54_sum_of_two_integers())
+    "nc55_reverse_integer" -> Ok(nc55_reverse_integer())
+    "nc56_rotate_image" -> Ok(nc56_rotate_image())
+    "nc57_spiral_matrix" -> Ok(nc57_spiral_matrix())
+    "nc58_set_matrix_zeroes" -> Ok(nc58_set_matrix_zeroes())
+    "nc59_happy_number" -> Ok(nc59_happy_number())
+    "nc60_plus_one" -> Ok(nc60_plus_one())
+    "nc61_pow" -> Ok(nc61_pow())
+    "nc62_multiply_strings" -> Ok(nc62_multiply_strings())
+    "nc63_detect_squares" -> Ok(nc63_detect_squares())
+    "nc64_climbing_stairs" -> Ok(nc64_climbing_stairs())
+    "nc65_min_cost_climbing_stairs" -> Ok(nc65_min_cost_climbing_stairs())
+    "nc66_house_robber" -> Ok(nc66_house_robber())
+    "nc67_house_robber_ii" -> Ok(nc67_house_robber_ii())
+    "nc68_longest_palindrome" -> Ok(nc68_longest_palindrome())
+    "nc69_palindromic_substrings" -> Ok(nc69_palindromic_substrings())
+    "nc70_decode_ways" -> Ok(nc70_decode_ways())
+    "nc71_coin_change" -> Ok(nc71_coin_change())
+    "nc72_maximum_product_subarray" -> Ok(nc72_maximum_product_subarray())
+    "nc73_word_break" -> Ok(nc73_word_break())
+    "nc74_longest_increasing_subsequence" ->
+      Ok(nc74_longest_increasing_subsequence())
+    "nc75_partition_equal_subset" -> Ok(nc75_partition_equal_subset())
+    "nc76_kth_largest_stream" -> Ok(nc76_kth_largest_stream())
+    "nc77_last_stone_weight" -> Ok(nc77_last_stone_weight())
+    "nc78_k_closest_points" -> Ok(nc78_k_closest_points())
+    "nc79_kth_largest_array" -> Ok(nc79_kth_largest_array())
+    "nc80_task_scheduler" -> Ok(nc80_task_scheduler())
+    "nc81_design_twitter" -> Ok(nc81_design_twitter())
+    "nc82_find_median_stream" -> Ok(nc82_find_median_stream())
+    "nc83_subsets" -> Ok(nc83_subsets())
+    "nc84_combination_sum" -> Ok(nc84_combination_sum())
+    "nc85_permutations" -> Ok(nc85_permutations())
+    "nc86_subsets_ii" -> Ok(nc86_subsets_ii())
+    "nc87_combination_sum_ii" -> Ok(nc87_combination_sum_ii())
+    "nc88_word_search" -> Ok(nc88_word_search())
+    "nc89_palindrome_partitioning" -> Ok(nc89_palindrome_partitioning())
+    "nc90_letter_combinations" -> Ok(nc90_letter_combinations())
+    "nc91_n_queens" -> Ok(nc91_n_queens())
+    "nc92_unique_paths" -> Ok(nc92_unique_paths())
+    "nc93_longest_common_subsequence" -> Ok(nc93_longest_common_subsequence())
+    "nc94_coin_change_ii" -> Ok(nc94_coin_change_ii())
+    "nc95_target_sum" -> Ok(nc95_target_sum())
+    "nc96_stock_with_cooldown" -> Ok(nc96_stock_with_cooldown())
+    "nc97_interleaving_string" -> Ok(nc97_interleaving_string())
+    "nc98_longest_increasing_path" -> Ok(nc98_longest_increasing_path())
+    "nc99_distinct_subsequences" -> Ok(nc99_distinct_subsequences())
     _ -> Error(Nil)
   }
 }

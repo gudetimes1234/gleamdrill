@@ -224,7 +224,7 @@ crashing is when you most want to read it.
 
 Each solution carries its own note explaining that particular approach. The
 notes live in `drills/notes/<variant>.txt`, one file per variant rather than one
-comment per language, so the Gleam, Python, TypeScript, Elixir and Go mirrors
+comment per language, so the Gleam, Python, TypeScript, Elixir, Go and Haskell mirrors
 of a solution share a single write-up. A note starting with `@shared/<name>`
 pulls in `drills/notes/shared/<name>.txt` first — the two-pointer convergence,
 the case for keeping a brute force around — and then adds its own line, so the

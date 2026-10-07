@@ -24,7 +24,7 @@
 The NeetCode 150 as an Anki deck, in five languages. Solve each problem in a
 real editor against a real test harness, grade yourself Again/Hard/Good/Easy,
 and FSRS-6 schedules the next review. Gleam, Python and TypeScript run in the
-browser; Elixir and Go run sandboxed on the server. Works as a guest, offline,
+browser; Elixir, Go and Haskell run sandboxed on the server. Works as a guest, offline,
 on a phone; an account syncs progress. Built end to end in Gleam (Lustre +
 Wisp, scheduler shared between them).
 
@@ -47,6 +47,7 @@ open http://localhost:8080
 |---|---|---|
 | NeetCode 150 — Python, Gleam, TypeScript | 150 each, 2+ solutions per problem | browser |
 | NeetCode 150 — Elixir, Go | 150 each, 2+ solutions per problem | server sandbox |
+| NeetCode 150 — Haskell | 150, one solution per problem | server sandbox |
 | Gleam Language Tour | 63 lessons | browser, not scheduled |
 | System Design | 20 multiple-choice + exam mode | self-graded |
 | System Design Board | 6 component-selection boards, 36-piece palette | auto-graded |
