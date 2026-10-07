@@ -2,7 +2,6 @@
 //// now -- every handler it delegates to. The feature split carves this
 //// file next; the entrypoint already only wires init, update and view.
 
-import gleam/dict
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
@@ -11,12 +10,11 @@ import gleam/string
 import gleamdrill/api
 import gleamdrill/browser
 import gleamdrill/keys
-import gleamdrill/local
 import gleamdrill/model.{
   type Model, Account, AwaitingGrade, CaseResult, Cases, DrillRoute, Errored,
-  Guest, MenuRoute, Model, NoPane, NotGrading, NotePane, Ran, RunError, RunIdle,
-  Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady,
-  SettingsRoute, SolutionPane, StudyRoute, SubmittingGrade, TimedOut, TourRoute,
+  Guest, MenuRoute, Model, NoPane, NotePane, Ran, RunError, RunIdle, Running,
+  RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady, SettingsRoute,
+  SolutionPane, StudyRoute, TimedOut, TourRoute,
 }
 import gleamdrill/msg.{
   type Msg, ArchiveReady, ArchiveRestored, AuthCompleted, BlitzExpired,
@@ -61,8 +59,6 @@ import gleamdrill/msg.{
   UserToggledResults, UserToggledSolution, UserToggledSuspend, WalkAdvanced,
   WalkBacked, WalkCodeShown, WalkFocused, WalkHintShown, WalkWhyShown,
 }
-import gleamdrill/problem
-import gleamdrill/queue
 import gleamdrill/remote
 import gleamdrill/runner
 import gleamdrill/store
@@ -72,6 +68,7 @@ import gleamdrill/update/common
 import gleamdrill/update/compare as compare_update
 import gleamdrill/update/menu as menu_update
 import gleamdrill/update/queues as queues_update
+import gleamdrill/update/review as review_update
 import gleamdrill/update/session as session_update
 import gleamdrill/update/stats
 import gleamdrill/update/tour as tour_update
@@ -177,67 +174,9 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     UserClickedSignIn(mode) -> session_update.sign_in(m, mode)
 
     // --- the scheduler ---
-    UserClickedStudy ->
-      case queue.build(m) {
-        [] -> #(
-          Model(
-            ..m,
-            notice: Some(case m.active_queue, queue.scope(m) {
-              Some(name), [] ->
-                "\"" <> name <> "\" is empty. Add problems on the queue screen."
-              _, _ ->
-                "Nothing to study right now. Come back when cards are due, or pick problems by hand."
-            }),
-          ),
-          effect.none(),
-        )
-        queue ->
-          common.with_prefetch(#(
-            Model(
-              ..common.open_first(Model(..m, studying: True), queue),
-              // A scheduled sitting is one pass: FSRS decides when a card comes
-              // back, so repeating it three times now would just be three
-              // same-day reviews.
-              iteration_count: 1,
-            ),
-            effect.none(),
-          ))
-      }
-
-    // The same queue as Study, opened without an editor: each card is read,
-    // revealed and graded from memory. Nothing to run, so no runtime is
-    // fetched.
-    UserClickedRecall ->
-      case queue.build(m) {
-        [] -> #(
-          Model(
-            ..m,
-            notice: Some(
-              "Nothing to recall right now. Come back when cards are due.",
-            ),
-          ),
-          effect.none(),
-        )
-        queue -> #(
-          Model(
-            ..common.open_first(Model(..m, studying: True, recall: True), queue),
-            iteration_count: 1,
-          ),
-          effect.none(),
-        )
-      }
-
-    UserRevealedRecall -> #(
-      Model(
-        ..m,
-        revealed_solution: Some(0),
-        // A recall card is read, not written: the whole ladder is the card.
-        nudge_shown: True,
-        whole_thing_shown: True,
-        grading: AwaitingGrade,
-      ),
-      effect.none(),
-    )
+    UserClickedStudy -> review_update.start_study(m)
+    UserClickedRecall -> review_update.start_recall(m)
+    UserRevealedRecall -> review_update.reveal_recall(m)
 
     UserClickedBrowse -> #(Model(..m, route: MenuRoute), effect.none())
 
@@ -252,227 +191,15 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     UserClosedDetail -> stats.close_detail(m)
     HistoryLoaded(problem, result) -> stats.history_loaded(m, problem, result)
 
-    UserGraded(rating) ->
-      case m.grading, model.current_ref(m) {
-        // Guard against a second press while the first is in flight: a review
-        // must not be recorded twice.
-        SubmittingGrade, _ -> #(m, effect.none())
-        _, Error(Nil) -> #(m, effect.none())
-        _, Ok(ref) -> {
-          // The review deletes this problem's draft; a save still queued
-          // from the last keystroke must not put it back.
-          browser.cancel_debounce("draft-save")
-          #(
-            Model(
-              ..m,
-              grading: SubmittingGrade,
-              sitting: [
-                model.SittingEntry(
-                  problem: ref,
-                  pressed: rating,
-                  duration_ms: browser.now_ms() - m.opened_at_ms,
-                  passed: model.test_passed(m),
-                  clean: model.test_passed(m) && !common.answer_given_away(m),
-                ),
-                ..m.sitting
-              ],
-              // Everything needed to stand here again if the grade was a slip.
-              undo: Some(model.UndoPoint(
-                problem: ref,
-                selected: m.selected,
-                problem_index: m.problem_index,
-                current_iteration: m.current_iteration,
-                iteration_count: m.iteration_count,
-                studying: m.studying,
-                recall: m.recall,
-                draft: m.draft,
-                run: m.run,
-                revealed_solution: m.revealed_solution,
-                nudge_shown: m.nudge_shown,
-                whole_thing_shown: m.whole_thing_shown,
-                walk: m.walk,
-                walk_code_seen: m.walk_code_seen,
-                duration_ms: browser.now_ms() - m.opened_at_ms,
-                card_before: model.card_for(m, ref),
-              )),
-            ),
-            store.record_review(m, case m.recall {
-              // Revealing is the mechanism here, not a peek, and there was no
-              // code to time: the row says "recall" and nothing else.
-              True ->
-                wire.Review(
-                  problem: ref,
-                  rating:,
-                  duration_ms: None,
-                  auto_failed: False,
-                  revealed: False,
-                  practice: !m.studying,
-                  recall: True,
-                )
-              False ->
-                wire.Review(
-                  problem: ref,
-                  rating:,
-                  duration_ms: Some(browser.now_ms() - m.opened_at_ms),
-                  // An ungraded card's run is a demonstration, not a test, so
-                  // it is never logged as a failure.
-                  auto_failed: case common.current_problem(m) {
-                    Ok(current) ->
-                      problem.graded(current) && model.run_failed(m.run)
-                    Error(Nil) -> model.run_failed(m.run)
-                  },
-                  revealed: case common.current_problem(m) {
-                    Ok(current) -> model.answer_revealed(m, current.approach)
-                    Error(Nil) -> m.revealed_solution != None
-                  },
-                  // A hand-picked sitting is practice, not a scheduled review.
-                  practice: !m.studying,
-                  recall: False,
-                )
-            }),
-          )
-        }
-      }
-
-    ReviewRecorded(Ok(outcome)) -> {
-      let cards = common.fold_card(m, m.cards, outcome.card)
-      let recorded =
-        Model(
-          ..m,
-          now: outcome.now,
-          today: outcome.today,
-          cards:,
-          // The store dropped the draft with the review; so does the copy
-          // in memory, or a reopen this session would still restore it.
-          drafts: local.drop_draft(m.drafts, outcome.card.problem),
-          upgrade_prompt: common.escalate(m),
-        )
-      case m.grading {
-        // A graded drill moves on by itself; a quiz waits for Next, because
-        // the explanation is worth reading first.
-        SubmittingGrade -> {
-          // A Blitz card that was graded was solved in time: its result is
-          // the sitting entry just recorded, and the next card's clock
-          // starts from now.
-          let recorded = case m.blitz, m.sitting {
-            Some(blitz), [entry, ..] ->
-              Model(
-                ..recorded,
-                blitz: Some(
-                  model.Blitz(
-                    ..blitz,
-                    results: [
-                      model.BlitzResult(
-                        problem: entry.problem,
-                        passed: entry.passed,
-                        duration_ms: entry.duration_ms,
-                        expired: False,
-                      ),
-                      ..blitz.results
-                    ],
-                    deadline_ms: browser.now_ms() + blitz.per_card_ms,
-                    expired_flash: False,
-                  ),
-                ),
-              )
-            _, _ -> recorded
-          }
-          common.advance(Model(..recorded, grading: NotGrading))
-        }
-        _ -> #(recorded, effect.none())
-      }
-    }
-
-    ReviewRecorded(Error(failure)) -> #(
-      Model(
-        ..m,
-        undo: None,
-        grading: case m.grading {
-          SubmittingGrade -> AwaitingGrade
-          other -> other
-        },
-        storage_full: m.mode == Guest || m.storage_full,
-        notice: Some(remote.error_message(failure)),
-      ),
-      effect.none(),
-    )
+    UserGraded(rating) -> review_update.graded(m, rating)
+    ReviewRecorded(result) -> review_update.recorded(m, result)
 
     UserToggledDiff -> #(Model(..m, diff_mode: !m.diff_mode), effect.none())
 
     UserDismissedDiff -> #(Model(..m, slot: NoPane), effect.none())
 
-    UserClickedUndo ->
-      case m.undo, m.grading {
-        // Not while a grade is still being saved: the point would be stale.
-        Some(point), NotGrading | Some(point), AwaitingGrade -> #(
-          Model(..m, undo: None),
-          store.undo_review(m, point),
-        )
-        _, _ -> #(m, effect.none())
-      }
-
-    UndoRecorded(point, Ok(outcome)) -> {
-      let cards = case outcome.card {
-        Some(card) -> common.fold_card(m, m.cards, card)
-        None -> dict.delete(m.cards, point.problem)
-      }
-      // Undoing the review that created the card un-creates it, and a
-      // queue never names a problem without one.
-      let queues = case outcome.card {
-        Some(_) -> m.queues
-        None -> model.drop_from_queues(m.queues, [point.problem])
-      }
-      let queues_effect = case queues == m.queues {
-        True -> effect.none()
-        False -> store.save_queues(Model(..m, queues:))
-      }
-      // Back on the problem as it was when the grade was pressed, with the
-      // clock where it stood, waiting for the grade you meant.
-      #(
-        Model(
-          ..m,
-          now: outcome.now,
-          today: outcome.today,
-          cards:,
-          queues:,
-          route: DrillRoute,
-          selected: point.selected,
-          problem_index: point.problem_index,
-          current_iteration: point.current_iteration,
-          iteration_count: point.iteration_count,
-          studying: point.studying,
-          recall: point.recall,
-          draft: point.draft,
-          run: point.run,
-          revealed_solution: point.revealed_solution,
-          nudge_shown: point.nudge_shown,
-          whole_thing_shown: point.whole_thing_shown,
-          walk: point.walk,
-          walk_code_seen: point.walk_code_seen,
-          slot: case point.revealed_solution {
-            Some(_) -> SolutionPane
-            None -> NoPane
-          },
-          grading: AwaitingGrade,
-          opened_at_ms: browser.now_ms() - point.duration_ms,
-          sitting: case m.sitting {
-            [_, ..rest] -> rest
-            [] -> []
-          },
-          exam_answers: [],
-          choice: None,
-          graded: False,
-          notice: None,
-        ),
-        queues_effect,
-      )
-    }
-
-    // The point is handed back so the undo can be tried again.
-    UndoRecorded(point, Error(failure)) -> #(
-      Model(..m, undo: Some(point), notice: Some(remote.error_message(failure))),
-      effect.none(),
-    )
+    UserClickedUndo -> review_update.undo(m)
+    UndoRecorded(point, result) -> review_update.undo_recorded(m, point, result)
 
     DraftSynced(Ok(Nil)) -> #(m, effect.none())
     // A failed sync is silent data loss: the typing looked saved and was not.
@@ -761,25 +488,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     // already open, no screen in between.
     UserAddedStarterSet -> queues_update.add_starter_set(m)
 
-    UserToggledSuspend(ref) ->
-      case model.card_for(m, ref) {
-        None -> #(m, effect.none())
-        Some(state) -> #(m, store.set_suspended(m, ref, !state.suspended))
-      }
-
-    CardSuspended(Ok(outcome)) -> #(
-      Model(
-        ..m,
-        now: outcome.now,
-        today: outcome.today,
-        cards: common.fold_card(m, m.cards, outcome.card),
-      ),
-      effect.none(),
-    )
-    CardSuspended(Error(failure)) -> #(
-      Model(..m, notice: Some(remote.error_message(failure))),
-      effect.none(),
-    )
+    UserToggledSuspend(ref) -> review_update.toggle_suspend(m, ref)
+    CardSuspended(result) -> review_update.card_suspended(m, result)
 
     // --- managing the queue ---
     UserClickedQueue -> queues_update.open(m)
