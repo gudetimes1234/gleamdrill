@@ -6,15 +6,11 @@ import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
-import gleam/string
-import gleamdrill/api
 import gleamdrill/browser
 import gleamdrill/keys
 import gleamdrill/model.{
-  type Model, Account, AwaitingGrade, CaseResult, Cases, DrillRoute, Errored,
-  Guest, MenuRoute, Model, NoPane, NotePane, Ran, RunError, RunIdle, Running,
-  RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady, SettingsRoute,
-  SolutionPane, StudyRoute, TimedOut, TourRoute,
+  type Model, DrillRoute, Guest, MenuRoute, Model, NoPane, NotePane, RunIdle,
+  Running, SettingsRoute, SolutionPane, StudyRoute,
 }
 import gleamdrill/msg.{
   type Msg, ArchiveReady, ArchiveRestored, AuthCompleted, BlitzExpired,
@@ -60,7 +56,6 @@ import gleamdrill/msg.{
   WalkBacked, WalkCodeShown, WalkFocused, WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/remote
-import gleamdrill/runner
 import gleamdrill/store
 import gleamdrill/update/blitz as blitz_update
 import gleamdrill/update/board as board_update
@@ -69,13 +64,13 @@ import gleamdrill/update/compare as compare_update
 import gleamdrill/update/menu as menu_update
 import gleamdrill/update/queues as queues_update
 import gleamdrill/update/review as review_update
+import gleamdrill/update/run as run_update
 import gleamdrill/update/session as session_update
 import gleamdrill/update/stats
 import gleamdrill/update/tour as tour_update
 import gleamdrill/update/transfer
 import gleamdrill/walk
 import lustre/effect.{type Effect}
-import wire
 
 fn focus_walk(m: Model, index: Int) -> Model {
   let total = case common.current_problem(m) {
@@ -420,38 +415,9 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
 
     // --- the offline cache ---
-    UserClickedWarmCache ->
-      case m.warming {
-        Some(_) -> #(m, effect.none())
-        None -> #(
-          Model(..m, warming: Some(#(0, 0))),
-          effect.from(fn(dispatch) {
-            browser.warm_runtime_cache(fn(ok, done, total, finished) {
-              dispatch(CacheWarmed(ok, done, total, finished))
-            })
-          }),
-        )
-      }
-
+    UserClickedWarmCache -> run_update.warm_cache(m)
     CacheWarmed(ok, done, total, finished) ->
-      case ok, finished {
-        False, _ -> #(
-          Model(
-            ..m,
-            warming: None,
-            notice: Some(
-              "The download stopped partway. Whatever arrived is kept; try again when you are back online.",
-            ),
-          ),
-          common.measure_cache(),
-        )
-        True, True -> #(Model(..m, warming: None), common.measure_cache())
-        True, False -> #(
-          Model(..m, warming: Some(#(done, total))),
-          effect.none(),
-        )
-      }
-
+      run_update.cache_warmed(m, ok, done, total, finished)
     CacheMeasured(bytes) -> #(Model(..m, cache_bytes: bytes), effect.none())
 
     // --- the Gleam Language Tour ---
@@ -582,188 +548,28 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         Error(Nil), _ -> #(m, effect.none())
       }
 
-    UserClickedRun -> request_run(m, model.TestRun)
-
-    UserClickedScratchRun -> request_run(m, model.ScratchRun)
-
+    UserClickedRun -> run_update.request(m, model.TestRun)
+    UserClickedScratchRun -> run_update.request(m, model.ScratchRun)
     UserClickedStopRun -> common.abandon_run(m)
-
-    UserClickedRetryRuntime(language) -> #(
-      Model(
-        ..m,
-        runtimes: model.assoc_put(m.runtimes, language, RuntimeLoading),
-      ),
-      runner.restart(language),
-    )
-
-    RunnerReady(language) -> {
-      let m =
-        Model(
-          ..m,
-          runtimes: model.assoc_put(m.runtimes, language, RuntimeReady),
-        )
-      // A Blitz card whose runtime was still downloading has not had a
-      // fair clock: it restarts now that a run is actually possible.
-      let m = case m.blitz, m.route, common.current_language(m) {
-        Some(blitz), DrillRoute, Ok(current) if current == language ->
-          Model(
-            ..m,
-            blitz: Some(
-              model.Blitz(
-                ..blitz,
-                deadline_ms: browser.now_ms() + blitz.per_card_ms,
-              ),
-            ),
-          )
-        _, _, _ -> m
-      }
-      case language, m.run {
-        // A tour lesson opened before the compiler was ready runs now.
-        "gleam", RunIdle -> common.run_tour_lesson(m)
-        _, _ -> #(m, effect.none())
-      }
-    }
-    RunnerFailed(language, message) -> #(
-      Model(
-        ..m,
-        runtimes: model.assoc_put(m.runtimes, language, RuntimeFailed(message)),
-        // A dead runtime cannot finish the in-flight run; clearing it here
-        // stops the still-armed timeout from reporting a bogus infinite loop.
-        run: case m.run {
-          Running(_, _) -> RunIdle
-          other -> other
-        },
-      ),
-      effect.none(),
-    )
-
+    UserClickedRetryRuntime(language) -> run_update.retry_runtime(m, language)
+    RunnerReady(language) -> run_update.runner_ready(m, language)
+    RunnerFailed(language, message) ->
+      run_update.runner_failed(m, language, message)
     RunFinished(id, outcome, stdout) ->
-      case m.run {
-        Running(current, _) if current == id -> {
-          let run = Ran(outcome, stdout)
-          // A pass opens the reference beside your code, as a diff. Only a
-          // real answer counts: something typed, on a problem with a
-          // reference, from the test run and not a scratch one.
-          let passed =
-            m.run_kind == model.TestRun
-            && model.run_passed(run)
-            && string.trim(m.draft) != ""
-            && case common.current_problem(m) {
-              Ok(current) -> current.solutions != []
-              Error(Nil) -> False
-            }
-          #(
-            // Whatever the harness said, the drill is now answerable: the
-            // grading bar decides what the buttons offer. A scratch run is
-            // not an answer, though; it leaves the gate where it was.
-            Model(
-              ..m,
-              run:,
-              grading: case m.run_kind {
-                model.TestRun -> AwaitingGrade
-                model.ScratchRun -> m.grading
-              },
-              slot: model.pane_after_run(m.slot, m.revealed_solution, passed),
-            ),
-            // Blur the editor so 1-4 grade immediately: the whole rep is
-            // type, Ctrl+Enter, digit. Not on the tour, where a run follows
-            // every pause in typing and must not take the cursor away.
-            case m.route {
-              DrillRoute -> common.run_effect(browser.blur_active)
-              _ -> effect.none()
-            },
-          )
-        }
-        _ -> #(m, effect.none())
-      }
-
-    // The server answered, or the request failed. A failed request is not
-    // a failed run: the attempt never executed, so the run goes back to idle
-    // and the reason is shown as a notice, where a lost connection belongs.
+      run_update.finished(m, id, outcome, stdout)
     RemoteRunFinished(id, result) ->
       case m.run, result {
-        Running(current, _), Ok(wire.RunResult(cases, stdout, error))
-          if current == id
-        -> {
-          let outcome = case error {
-            None ->
-              Cases(
-                list.map(cases, fn(c) {
-                  CaseResult(c.label, c.expected, c.actual, c.passed)
-                }),
-              )
-            Some(wire.RunError(phase, line, message)) ->
-              Errored(RunError(phase, None, line, None, message))
-          }
-          handle(m, RunFinished(id, outcome, stdout))
-        }
+        // An expired session surfaces as a state reload, not a run verdict.
         Running(current, _), Error(remote.Unauthorised) if current == id ->
-          handle(
+          session_update.state_loaded(
             Model(..m, run: RunIdle),
-            StateLoaded(Error(remote.Unauthorised)),
+            Error(remote.Unauthorised),
           )
-        Running(current, _), Error(failure) if current == id -> #(
-          Model(..m, run: RunIdle, notice: Some(remote.error_message(failure))),
-          effect.none(),
-        )
-        _, _ -> #(m, effect.none())
+        _, _ -> run_update.remote_finished(m, id, result)
       }
-
-    RunTimedOut(id) ->
-      case m.run {
-        Running(current, _) if current == id -> {
-          let timed_out =
-            Model(..m, run: Ran(TimedOut, ""), grading: case m.run_kind {
-              model.TestRun -> AwaitingGrade
-              model.ScratchRun -> m.grading
-            })
-          // The worker cannot be interrupted, only replaced. A server-side
-          // run has no worker: the server has already killed it.
-          case m.route, common.current_language(m) {
-            TourRoute, _ -> Ok("gleam")
-            _, other -> other
-          }
-          |> fn(language) {
-            case language {
-              Ok(language) ->
-                case runner.is_remote(language) {
-                  True -> #(timed_out, effect.none())
-                  False -> #(
-                    Model(
-                      ..timed_out,
-                      runtimes: model.assoc_put(
-                        m.runtimes,
-                        language,
-                        RuntimeLoading,
-                      ),
-                    ),
-                    runner.restart(language),
-                  )
-                }
-              Error(Nil) -> #(timed_out, effect.none())
-            }
-          }
-        }
-        _ -> #(m, effect.none())
-      }
-
-    // Armed alongside every spawn; a stale timer for a runtime that made it
-    // to ready (or already failed loudly) is a no-op.
+    RunTimedOut(id) -> run_update.timed_out(m, id)
     RuntimeLoadTimedOut(language) ->
-      case model.runtime_for(m, language) {
-        RuntimeLoading -> #(
-          Model(
-            ..m,
-            runtimes: model.assoc_put(
-              m.runtimes,
-              language,
-              RuntimeFailed("The runtime took too long to load."),
-            ),
-          ),
-          effect.none(),
-        )
-        _ -> #(m, effect.none())
-      }
+      run_update.runtime_load_timed_out(m, language)
   }
 }
 
@@ -799,99 +605,6 @@ fn handle_key(m: Model, key: msg.Key) -> #(Model, Effect(Msg)) {
         Ok(resolved) -> handle(m, resolved)
         Error(Nil) -> #(m, effect.none())
       }
-  }
-}
-
-/// A run the button or keyboard asked for, once the runtime is ready: posted
-/// to the server for a remote language, spawned in a worker otherwise.
-/// A run of either kind, with every reason it cannot start said out loud:
-/// the button is disabled in those states, but `r`, `t` and Ctrl+Enter
-/// land here too and silence reads as a broken key.
-fn request_run(m: Model, kind: model.RunKind) -> #(Model, Effect(Msg)) {
-  case m.run {
-    // One run at a time: a queued second run just doubles the wait.
-    Running(_, _) -> #(m, effect.none())
-    _ ->
-      case common.current_language(m), common.current_check(m) {
-        Ok(language), Ok(check) -> {
-          let harness = case kind {
-            model.TestRun -> check.harness
-            model.ScratchRun -> runner.scratch_harness(language)
-          }
-          case model.runtime_for(m, language) {
-            // Elixir and Go run on the server, and the server wants a
-            // session.
-            RuntimeReady if m.mode == Guest ->
-              case runner.is_remote(language) {
-                True -> #(
-                  Model(
-                    ..m,
-                    notice: Some(
-                      "This drill runs on the server \u{2014} sign in to run it.",
-                    ),
-                  ),
-                  effect.none(),
-                )
-                False -> start_run(m, language, harness, kind)
-              }
-            RuntimeReady -> start_run(m, language, harness, kind)
-            RuntimeLoading | RuntimeNotLoaded -> #(
-              Model(
-                ..m,
-                notice: Some(
-                  "The runtime is still loading \u{2014} the Run button enables when it's ready.",
-                ),
-              ),
-              effect.none(),
-            )
-            RuntimeFailed(_) -> #(
-              Model(
-                ..m,
-                notice: Some(
-                  "The runtime failed to load \u{2014} use Retry next to the Run button.",
-                ),
-              ),
-              effect.none(),
-            )
-          }
-        }
-        _, _ -> #(m, effect.none())
-      }
-  }
-}
-
-fn start_run(
-  m: Model,
-  language: String,
-  harness: String,
-  kind: model.RunKind,
-) -> #(Model, Effect(Msg)) {
-  let id = m.next_run_id
-  let previous = case m.run {
-    Ran(_, stdout) -> stdout
-    _ -> ""
-  }
-  let started =
-    Model(..m, run: Running(id, previous), run_kind: kind, next_run_id: id + 1)
-  case runner.is_remote(language), m.mode {
-    True, Account(token) -> #(
-      started,
-      effect.batch([
-        api.post_run(
-          common.api_base(),
-          token,
-          wire.RunRequest(language, m.draft, harness),
-          RemoteRunFinished(id, _),
-        ),
-        runner.arm_remote_timeout(id),
-      ]),
-    )
-    // Unreachable: request_run catches a guest first.
-    True, Guest -> #(m, effect.none())
-    False, _ -> {
-      let #(next, fx) = common.start_local_run(m, language, m.draft, harness)
-      #(Model(..next, run_kind: kind), fx)
-    }
   }
 }
 /// Move the board cursor, clamped, and scroll the chip into view -- the
