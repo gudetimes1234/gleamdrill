@@ -6,14 +6,11 @@ import fsrs
 import gleam/dict
 import gleam/float
 import gleam/int
-import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/set
 import gleam/string
-import gleam/time/calendar
-import gleam/time/timestamp
 import gleamdrill/api
 import gleamdrill/board
 import gleamdrill/browser
@@ -84,6 +81,7 @@ import gleamdrill/track
 import gleamdrill/update/common
 import gleamdrill/update/stats
 import gleamdrill/update/tour as tour_update
+import gleamdrill/update/transfer
 import gleamdrill/view/id
 import gleamdrill/walk
 import lustre/effect.{type Effect}
@@ -1636,79 +1634,12 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
 
     // --- export and import ---
-    UserClickedExport -> #(m, store.export_archive(m))
-
-    ArchiveReady(Ok(archive)) -> #(
-      m,
-      common.run_effect(fn() {
-        browser.download_text(
-          "gleamdrill-"
-            <> string.slice(
-            timestamp.to_rfc3339(archive.exported_at, calendar.utc_offset),
-            0,
-            10,
-          )
-            <> ".json",
-          json.to_string(wire.archive_to_json(archive)),
-        )
-      }),
-    )
-
-    ArchiveReady(Error(error)) -> #(
-      Model(..m, notice: Some(remote.error_message(error))),
-      effect.none(),
-    )
-
-    UserClickedImport -> #(
-      m,
-      effect.from(fn(dispatch) {
-        browser.pick_file(fn(text) { dispatch(ImportPicked(text)) })
-      }),
-    )
-
-    // Parsed here, before the question is asked, so a file that is not an
-    // export is refused without ever offering to replace anything with it.
-    ImportPicked(text) ->
-      case json.parse(text, wire.archive_decoder()) {
-        Ok(archive) if archive.version <= wire.archive_version -> #(
-          Model(..m, import_pending: Some(archive)),
-          effect.none(),
-        )
-        Ok(_) -> #(
-          Model(
-            ..m,
-            notice: Some("This export was made by a newer GleamDrill."),
-          ),
-          effect.none(),
-        )
-        Error(_) -> #(
-          Model(..m, notice: Some("That file is not a GleamDrill export.")),
-          effect.none(),
-        )
-      }
-
-    ImportConfirmed(False) -> #(Model(..m, import_pending: None), effect.none())
-
-    ImportConfirmed(True) ->
-      case m.import_pending {
-        Some(archive) -> #(
-          Model(..m, import_pending: None, refreshing: True),
-          store.restore_archive(m, archive),
-        )
-        None -> #(m, effect.none())
-      }
-
-    // Everything on screen came from the old data, so the boot state is
-    // fetched again rather than patched.
-    ArchiveRestored(Ok(Nil)) -> #(
-      Model(..m, notice: Some("Restored. Everything is as the file had it.")),
-      store.load_state(m),
-    )
-
-    ArchiveRestored(Error(error)) -> #(
-      Model(..m, refreshing: False, notice: Some(remote.error_message(error))),
-      effect.none(),
-    )
+    UserClickedExport -> transfer.export(m)
+    ArchiveReady(result) -> transfer.archive_ready(m, result)
+    UserClickedImport -> transfer.pick_import(m)
+    ImportPicked(text) -> transfer.import_picked(m, text)
+    ImportConfirmed(replace) -> transfer.import_confirmed(m, replace)
+    ArchiveRestored(result) -> transfer.restored(m, result)
 
     UserClickedTracks -> #(Model(..m, route: TracksRoute), effect.none())
     UserPickedTrack(name) -> enter_track(m, name, starter: False)
