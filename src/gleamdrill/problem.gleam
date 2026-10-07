@@ -27,6 +27,7 @@ pub type Language {
   TypeScript
   Elixir
   Go
+  Haskell
   /// Not a programming language: a prose concept drill with nothing to compile.
   /// Used by the system design quiz, whose problems carry a Quiz instead of a
   /// Check.
@@ -226,6 +227,7 @@ pub fn language_label(language: Language) -> String {
     TypeScript -> "TypeScript"
     Elixir -> "Elixir"
     Go -> "Go"
+    Haskell -> "Haskell"
     Concept -> "Concept"
     Board -> "System Design Board"
   }
@@ -239,6 +241,7 @@ pub fn language_slug(language: Language) -> String {
     TypeScript -> "typescript"
     Elixir -> "elixir"
     Go -> "go"
+    Haskell -> "haskell"
     Concept -> "concept"
     Board -> "board"
   }

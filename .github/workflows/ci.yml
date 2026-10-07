@@ -139,6 +139,13 @@ jobs:
       - name: Warm the Go build cache
         run: CGO_ENABLED=0 go build std
 
+      # Haskell drills run on the server too (server/priv/run-haskell). The
+      # distro ghc is installed explicitly rather than trusting whatever the
+      # runner image's ghcup happens to carry; the global package db is the
+      # only cache ghc needs.
+      - name: Install GHC
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ghc
+
       # The app half of the tree is not built here, but `server` path-depends
       # on ../fsrs, which is why the whole repo is checked out.
       - name: Build

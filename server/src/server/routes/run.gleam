@@ -1,5 +1,5 @@
-//// POST /api/run: runs an Elixir attempt on the server and reports the
-//// cases, output and error the browser workers would have.
+//// POST /api/run: runs an Elixir, Go or Haskell attempt on the server and
+//// reports the cases, output and error the browser workers would have.
 
 import gleam/dynamic/decode
 import gleam/http
@@ -51,7 +51,7 @@ pub fn run(request: wisp.Request, context: Context) -> wisp.Response {
           web.error(
             422,
             "unsupported_language",
-            "Only Elixir and Go run on the server; "
+            "Only Elixir, Go and Haskell run on the server; "
               <> input.language
               <> " runs in the browser.",
           )

@@ -475,6 +475,122 @@ func containsDuplicate(nums []int) bool {
   string.contains(error.message, "Timed out") |> should.be_true
 }
 
+// --- exec: Haskell ----------------------------------------------------------
+//
+// The same shapes for Haskell, which needs `ghc` on the PATH. The harness is
+// the one drills/haskell/harnesses/nc01_contains_duplicate.hs carries; the
+// Drill prelude it imports is staged from server/priv/haskell by exec itself.
+
+const haskell_harness = "module Main where
+
+import Drill
+import Solution
+
+main :: IO ()
+main =
+  runCases
+    (pure
+       [ tc \"containsDuplicate [1, 2, 3, 1]\" True (containsDuplicate [1, 2, 3, 1])
+       , tc \"containsDuplicate [1, 2, 3, 4]\" False (containsDuplicate [1, 2, 3, 4])
+       ])
+"
+
+pub fn a_passing_haskell_attempt_reports_its_cases_test() {
+  let result =
+    exec.run_haskell(
+      exec_config(),
+      "module Solution where
+
+import Data.List (nub)
+
+containsDuplicate :: [Int] -> Bool
+containsDuplicate nums = length (nub nums) /= length nums
+",
+      haskell_harness,
+    )
+  result.error |> should.equal(None)
+  result.stdout |> should.equal("")
+  result.cases
+  |> should.equal([
+    wire.CaseResult("containsDuplicate [1, 2, 3, 1]", "True", "True", True),
+    wire.CaseResult("containsDuplicate [1, 2, 3, 4]", "False", "False", True),
+  ])
+}
+
+pub fn a_failing_haskell_attempt_keeps_its_output_test() {
+  let result =
+    exec.run_haskell(
+      exec_config(),
+      "module Solution where
+
+import Debug.Trace (trace)
+
+containsDuplicate :: [Int] -> Bool
+containsDuplicate nums = trace \"checking\" (length nums > 3)
+",
+      haskell_harness,
+    )
+  result.error |> should.equal(None)
+  // Debug.Trace writes to stderr, so stdout stays empty; the point is the
+  // verdicts, which the trace must not corrupt.
+  result.cases
+  |> list.map(fn(c) { c.passed })
+  |> should.equal([True, False])
+}
+
+pub fn a_haskell_build_error_is_a_compile_error_with_a_line_test() {
+  let result =
+    exec.run_haskell(
+      exec_config(),
+      "module Solution where
+
+containsDuplicate :: [Int] -> Bool
+containsDuplicate nums = undefinedThing
+",
+      haskell_harness,
+    )
+  result.cases |> should.equal([])
+  let assert Some(error) = result.error
+  error.phase |> should.equal("compile")
+  error.line |> should.equal(Some(4))
+  string.contains(error.message, "undefinedThing") |> should.be_true
+}
+
+pub fn a_haskell_error_call_is_a_run_error_with_a_line_test() {
+  let result =
+    exec.run_haskell(
+      exec_config(),
+      "module Solution where
+
+containsDuplicate :: [Int] -> Bool
+containsDuplicate _ = error \"boom\"
+",
+      haskell_harness,
+    )
+  result.cases |> should.equal([])
+  let assert Some(error) = result.error
+  error.phase |> should.equal("run")
+  error.line |> should.equal(Some(4))
+  string.contains(error.message, "boom") |> should.be_true
+}
+
+pub fn a_haskell_infinite_loop_is_killed_and_reported_test() {
+  let result =
+    exec.run_haskell(
+      exec_config(),
+      "module Solution where
+
+containsDuplicate :: [Int] -> Bool
+containsDuplicate nums = containsDuplicate nums
+",
+      haskell_harness,
+    )
+  result.cases |> should.equal([])
+  let assert Some(error) = result.error
+  error.phase |> should.equal("run")
+  string.contains(error.message, "Timed out") |> should.be_true
+}
+
 pub fn an_infinite_loop_is_killed_and_reported_test() {
   let result =
     exec.run_elixir(

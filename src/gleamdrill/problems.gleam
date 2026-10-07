@@ -5,6 +5,7 @@ import gleamdrill/problem.{type Category, type Problem, type ProblemRef}
 import gleamdrill/problems/neetcode_elixir
 import gleamdrill/problems/neetcode_gleam
 import gleamdrill/problems/neetcode_go
+import gleamdrill/problems/neetcode_haskell
 import gleamdrill/problems/neetcode_python
 import gleamdrill/problems/neetcode_ts
 import gleamdrill/problems/system_design
@@ -30,6 +31,7 @@ fn build() -> List(Category) {
     neetcode_ts.category(),
     neetcode_elixir.category(),
     neetcode_go.category(),
+    neetcode_haskell.category(),
     system_design.category(),
     system_design_board.category(),
   ]

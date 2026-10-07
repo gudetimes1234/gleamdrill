@@ -1,8 +1,8 @@
-//// Server-side execution of one Elixir or Go attempt.
+//// Server-side execution of one Elixir, Go or Haskell attempt.
 ////
-//// No browser can compile Elixir or Go source, so those drills run here:
-//// the attempt and its harness are written to a scratch directory and
-//// server/priv/run-elixir or run-go is run on them in a fresh, short-lived,
+//// No browser can compile Elixir, Go or Haskell source, so those drills run
+//// here: the attempt and its harness are written to a scratch directory and
+//// server/priv/run-elixir, run-go or run-haskell is run on them in a fresh,
 //// resource-limited process -- under `timeout -s KILL`, and in the
 //// container as a user with no access to this process's environment (see
 //// config.run_as_user and server/Dockerfile). The runner prints a JSON
@@ -33,16 +33,20 @@ pub type Language {
   /// A Go attempt is compiled before it runs, and `go build` is not charged
   /// to the attempt's clock: see `timeout_seconds`.
   Go
+  /// A Haskell attempt compiles too (ghc -O0, under a second against the
+  /// installed package db), on the same widened clock as Go.
+  Haskell
 }
 
 /// Wall clock for one attempt, after which it is killed. The browser
-/// workers get the same eight seconds as Elixir; Go gets a few more because
-/// the compiler and linker run inside the same clock (about a second with
-/// the cache server/Dockerfile warms, several without).
+/// workers get the same eight seconds as Elixir; Go and Haskell get a few
+/// more because the compiler and linker run inside the same clock (about a
+/// second with a warm cache, several without).
 pub fn timeout_seconds(language: Language) -> Int {
   case language {
     Elixir -> 8
     Go -> 14
+    Haskell -> 14
   }
 }
 
@@ -52,6 +56,7 @@ pub fn language(name: String) -> Result(Language, Nil) {
   case name {
     "elixir" -> Ok(Elixir)
     "go" -> Ok(Go)
+    "haskell" -> Ok(Haskell)
     _ -> Error(Nil)
   }
 }
@@ -94,6 +99,14 @@ pub fn run_elixir(
 
 pub fn run_go(config: Config, solution: String, harness: String) -> RunResult {
   run(config, Go, solution, harness)
+}
+
+pub fn run_haskell(
+  config: Config,
+  solution: String,
+  harness: String,
+) -> RunResult {
+  run(config, Haskell, solution, harness)
 }
 
 /// An Elixir attempt is two scripts. A Go attempt is a package: the two
@@ -140,6 +153,19 @@ fn stage(
       use _ <- result.try(write_readable(dir <> "/go.mod", go_mod))
       Ok(dir)
     }
+    // Capitalised file names: ghc finds a module by its file, and the
+    // harness is `module Main`, so `ghc Harness.hs` chases the other two.
+    Haskell -> {
+      use priv <- result.try(priv_directory())
+      use prelude <- result.try(
+        simplifile.read(priv <> "/haskell/Drill.hs")
+        |> result.map_error(simplifile.describe_error),
+      )
+      use _ <- result.try(write_readable(dir <> "/Solution.hs", solution))
+      use _ <- result.try(write_readable(dir <> "/Harness.hs", harness))
+      use _ <- result.try(write_readable(dir <> "/Drill.hs", prelude))
+      Ok(dir)
+    }
   }
 }
 
@@ -176,6 +202,7 @@ fn command(
   let wrapper = case language {
     Elixir -> priv <> "/run-elixir"
     Go -> priv <> "/run-go"
+    Haskell -> priv <> "/run-haskell"
   }
   let run = case config.run_as_user {
     Some(user) -> [
@@ -227,6 +254,7 @@ fn interpret(language: Language, outcome: #(Int, String)) -> RunResult {
       )
     // run-go's own code for "go build failed": the output is the compiler's.
     3, _ if language == Go -> go_compile_error(output)
+    3, _ if language == Haskell -> haskell_compile_error(output)
     _, Some(last) ->
       case json.parse(last, wire.run_result_decoder()) {
         Ok(result) -> with_noise(result, noise)
@@ -273,6 +301,33 @@ fn go_compile_error(output: String) -> RunResult {
     cases: [],
     stdout: "",
     error: Some(RunError("compile", line, cap(message))),
+  )
+}
+
+/// ghc reports `Solution.hs:3:10: error: [GHC-83865]` and then an indented
+/// block with the expression and a caret line. The first error in the
+/// attempt names the line; an error in the harness would be a bug in the
+/// drill and is shown whole with no line. The block is kept as ghc wrote
+/// it -- the indentation is the readability.
+fn haskell_compile_error(output: String) -> RunResult {
+  let line =
+    output
+    |> string.split("\n")
+    |> list.find_map(fn(line) {
+      case string.split_once(line, "Solution.hs:") {
+        Ok(#(_, rest)) ->
+          rest
+          |> string.split(":")
+          |> list.first
+          |> result.try(int.parse)
+        Error(Nil) -> Error(Nil)
+      }
+    })
+    |> option.from_result
+  RunResult(
+    cases: [],
+    stdout: "",
+    error: Some(RunError("compile", line, cap(string.trim(output)))),
   )
 }
 

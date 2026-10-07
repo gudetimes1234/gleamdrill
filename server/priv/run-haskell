@@ -1,0 +1,50 @@
+#!/bin/sh
+# Builds and runs one Haskell attempt directory with the process limits a
+# hostile solution has to live inside. The API invokes this through
+# `timeout -s KILL` (and, in the container, through `su runner`), so the
+# wall clock and the uid are decided outside; this script owns memory,
+# process count, file size and CPU. See server/src/server/exec.gleam, and
+# run-go for the same shape.
+#
+#   run-haskell <dir>
+#
+# The directory holds Solution.hs, Harness.hs (module Main) and Drill.hs;
+# ghc chases the imports from Harness.hs. A build failure exits 3 with the
+# compiler's output, which exec.gleam turns into a compile error at the
+# line in Solution.hs; a build that succeeds is exec'd, and the report is
+# its last line.
+
+set -eu
+dir="$1"
+
+export HOME=/tmp TMPDIR=/tmp
+
+# CPU seconds and file size. No address-space cap: GHC's runtime reserves a
+# terabyte of virtual address space at startup, so any workable `ulimit -v`
+# kills every binary before main — the real memory cap is the RTS's -M flag
+# passed at run time below.
+ulimit -t 10
+ulimit -f 262144
+
+# Per uid and host-wide, so only for the dedicated container user, known by
+# its uid (see run-elixir for the reasoning).
+if [ "$(id -u)" = 31337 ]; then
+  ulimit -u 256
+fi
+
+cd "$dir"
+binary="$(mktemp /tmp/gleamdrill-hs.XXXXXX)"
+trap 'rm -f "$binary" ./*.o ./*.hi' EXIT
+
+# -O0: an attempt compiles in well under a second against the installed
+# package db; optimising would spend the clock on nothing a drill needs.
+# -rtsopts so the run below may pass +RTS; the attempt itself cannot inject
+# flags, since argv is ours.
+if ! output="$(ghc -v0 -O0 -rtsopts -o "$binary" Harness.hs 2>&1)"; then
+  printf '%s\n' "$output"
+  exit 3
+fi
+
+# 256 MiB real heap cap. The default (non-threaded) RTS is one core; -N
+# would need -threaded and buy a drill nothing.
+"$binary" +RTS -M256m -RTS

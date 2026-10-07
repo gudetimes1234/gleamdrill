@@ -16,6 +16,7 @@ node_modules/
 # the sibling ./solution module its harness imports.
 drills/ts/.verify/
 drills/go/.verify/
+drills/haskell/.verify/
 
 # Local backend secrets. See server/.env.example.
 server/.env

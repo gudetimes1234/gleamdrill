@@ -71,6 +71,7 @@ import {
 import { python } from "@codemirror/legacy-modes/mode/python";
 import { typescript } from "@codemirror/legacy-modes/mode/javascript";
 import { go } from "@codemirror/legacy-modes/mode/go";
+import { haskell } from "@codemirror/legacy-modes/mode/haskell";
 
 // Both @replit/codemirror-emacs and @replit/codemirror-vim are broken against
 // current @codemirror/view: their keydown handlers never engage. Each installs
@@ -869,6 +870,8 @@ function languageExtension(language) {
       return [elixir, unit];
     case "go":
       return [StreamLanguage.define(go), indentUnit.of("\t")];
+    case "haskell":
+      return [StreamLanguage.define(haskell), unit];
     default:
       return [gleam, unit];
   }

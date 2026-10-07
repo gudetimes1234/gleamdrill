@@ -65,6 +65,7 @@ content:
 	  src/gleamdrill/problems/embedded_ts.gleam \
 	  src/gleamdrill/problems/embedded_elixir.gleam \
 	  src/gleamdrill/problems/embedded_go.gleam \
+	  src/gleamdrill/problems/embedded_haskell.gleam \
 	  src/gleamdrill/problems/embedded_tour.gleam \
 	  src/gleamdrill/problems/approaches.gleam
 
@@ -77,6 +78,7 @@ verify: content fsrs-test app-test tour-check
 	cd drills/ts && bun verify_all.ts
 	cd drills/elixir && elixir verify_all.exs
 	cd drills/go && gofmt -l solutions harnesses prelude.go && ./verify_all.sh
+	cd drills/haskell && ./verify_all.sh
 
 # The language tour's 63 lessons are not graded, so the only thing that can
 # go wrong with one is that it no longer compiles against the stdlib the

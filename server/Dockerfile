@@ -47,7 +47,10 @@ FROM ghcr.io/gleam-lang/gleam:v1.18.1-elixir-alpine
 # process of that uid on the *host*, and on a shared platform uid 1000 is
 # everyone's first user -- the cap tripped on other tenants' processes before
 # a single attempt had forked.
-RUN apk add --no-cache libstdc++ openssl ncurses go \
+# ghc is the heavy one (~1.5 GB installed): Haskell drills compile here with
+# the image's global package db, which doubles as the warm cache -- unlike
+# Go there is no per-user build cache to prime.
+RUN apk add --no-cache libstdc++ openssl ncurses go ghc \
  && adduser -D -H -s /sbin/nologin -u 31337 runner
 
 # Go drills run here too (server/priv/run-go). Compiling an attempt means
