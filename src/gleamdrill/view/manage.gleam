@@ -29,6 +29,7 @@ import gleamdrill/problems
 import gleamdrill/queue
 import gleamdrill/view/banner
 import gleamdrill/view/format
+import gleamdrill/view/id
 import gleamdrill/view/nav
 import lustre/attribute
 import lustre/element.{type Element}
@@ -443,7 +444,7 @@ fn row(
 
   html.div(
     [
-      attribute.id(model.queue_row_id(index)),
+      attribute.id(id.queue_row_id(index)),
       attribute.classes([
         #("queue-row", True),
         #("queued", queued),

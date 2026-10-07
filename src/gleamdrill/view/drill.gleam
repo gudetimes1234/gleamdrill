@@ -30,6 +30,7 @@ import gleamdrill/problems
 import gleamdrill/runner
 import gleamdrill/view/banner
 import gleamdrill/view/format
+import gleamdrill/view/id
 import gleamdrill/view/links
 import gleamdrill/view/nav
 import gleamdrill/walk
@@ -722,7 +723,7 @@ fn board_chip(
   let verdict = board.verdict(answer, piece, m.board_picks)
   html.button(
     [
-      attribute.id(model.board_chip_id(index)),
+      attribute.id(id.board_chip_id(index)),
       attribute.type_("button"),
       attribute.classes([
         #("board-chip", True),

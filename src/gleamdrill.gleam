@@ -86,6 +86,7 @@ import gleamdrill/view/auth
 import gleamdrill/view/compare as compare_view
 import gleamdrill/view/drill
 import gleamdrill/view/help
+import gleamdrill/view/id
 import gleamdrill/view/manage
 import gleamdrill/view/menu
 import gleamdrill/view/report
@@ -363,7 +364,7 @@ fn move_queue_cursor(
   let index = next(int.clamp(m.nav.queue, 0, last), last)
   #(
     Model(..m, nav: model.MenuNav(..m.nav, queue: index)),
-    scroll_to(model.queue_row_id(index)),
+    scroll_to(id.queue_row_id(index)),
   )
 }
 
@@ -434,7 +435,7 @@ fn activate_cursor(m: Model) -> #(Model, Effect(Msg)) {
 }
 
 fn row_id(pane: model.MenuPane, index: Int) -> String {
-  model.menu_row_id(pane, index)
+  id.menu_row_id(pane, index)
 }
 
 fn scroll_to(id: String) -> Effect(Msg) {
@@ -3535,7 +3536,7 @@ fn shuffle_loop(remaining: List(a), count: Int, acc: List(a)) -> List(a) {
 /// without scrolling would leave the keyboard driving something off screen.
 fn move_board_cursor(m: Model, to: Int) -> #(Model, Effect(Msg)) {
   let next = int.clamp(to, 0, list.length(board.palette()) - 1)
-  #(Model(..m, board_cursor: next), scroll_to(model.board_chip_id(next)))
+  #(Model(..m, board_cursor: next), scroll_to(id.board_chip_id(next)))
 }
 
 fn index_of_family(

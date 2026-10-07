@@ -15,6 +15,7 @@ import gleamdrill/problems
 import gleamdrill/track
 import gleamdrill/view/brand
 import gleamdrill/view/format
+import gleamdrill/view/id
 import gleamdrill/view/nav
 import lustre/attribute
 import lustre/element.{type Element}
@@ -439,7 +440,7 @@ fn cursor_attributes(
 ) -> List(attribute.Attribute(Msg)) {
   let here = m.nav.focus == pane && cursor_row(m, pane, length) == index
   [
-    attribute.id(model.menu_row_id(pane, index)),
+    attribute.id(id.menu_row_id(pane, index)),
     attribute.classes([#("cursor", here)]),
   ]
 }
