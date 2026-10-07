@@ -1,5 +1,4 @@
 import fsrs
-import gleam/bool
 import gleam/dict
 import gleam/float
 import gleam/int
@@ -82,6 +81,7 @@ import gleamdrill/session
 import gleamdrill/store
 import gleamdrill/tour
 import gleamdrill/track
+import gleamdrill/update/common
 import gleamdrill/view/auth
 import gleamdrill/view/compare as compare_view
 import gleamdrill/view/drill
@@ -144,7 +144,7 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
     // restore from disk and we block on fetching it.
     Some(token) -> {
       let m = Model(..m, mode: Account(token), boot: Syncing)
-      #(m, effect.batch([keyboard_effect(), store.load_state(m)]))
+      #(m, effect.batch([common.keyboard_effect(), store.load_state(m)]))
     }
     // No account. The app is fully usable anyway -- guest progress lives in
     // this browser. A pre-account `algoDrillState` blob is folded in here, so
@@ -153,7 +153,11 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
       let m = Model(..m, mode: Guest, boot: Syncing)
       #(
         m,
-        effect.batch([keyboard_effect(), adopt_legacy(), store.load_state(m)]),
+        effect.batch([
+          common.keyboard_effect(),
+          adopt_legacy(),
+          store.load_state(m),
+        ]),
       )
     }
   }
@@ -268,14 +272,14 @@ fn move_cursor(m: Model, next: fn(Int, Int) -> Int) -> #(Model, Effect(Msg)) {
       let index = next(int.clamp(m.nav.search, 0, last), last)
       #(
         Model(..m, nav: model.MenuNav(..m.nav, search: index)),
-        scroll_to("hit-" <> int.to_string(index)),
+        common.scroll_to("hit-" <> int.to_string(index)),
       )
     }
     False -> {
       let pane = m.nav.focus
       let last = int.max(0, rows_length(pane_rows(m, pane)) - 1)
       let index = next(cursor_in(m, pane), last)
-      #(set_cursor(m, pane, index), scroll_to(row_id(pane, index)))
+      #(set_cursor(m, pane, index), common.scroll_to(row_id(pane, index)))
     }
   }
 }
@@ -364,7 +368,7 @@ fn move_queue_cursor(
   let index = next(int.clamp(m.nav.queue, 0, last), last)
   #(
     Model(..m, nav: model.MenuNav(..m.nav, queue: index)),
-    scroll_to(id.queue_row_id(index)),
+    common.scroll_to(id.queue_row_id(index)),
   )
 }
 
@@ -376,18 +380,6 @@ fn queue_cursor_ref(m: Model) -> Result(ProblemRef, Nil) {
   }
 }
 
-/// Marks rows whose queue change is in flight, so a second click cannot race
-/// the first. Cleared wholesale when the response lands: the requests are
-/// bulk and sequential from one user, so there is never a second one to keep.
-fn pending(m: Model, refs: List(ProblemRef)) -> Model {
-  Model(..m, queue_pending: list.append(refs, m.queue_pending))
-}
-
-/// Enter a track. With `starter`, twenty easy problems are queued in it so
-/// the first sitting is one click away rather than a trip to the queue screen.
-///
-/// Choosing a track is a device preference, so it is saved here: a reload
-/// should land where you were, not back on the switcher.
 fn enter_track(
   m: Model,
   track: String,
@@ -396,10 +388,10 @@ fn enter_track(
   let m = Model(..m, active_track: track, route: StudyRoute)
   // The track's own cards, queues and settings come from a fresh load: the
   // model holds one track's at a time, and this is the moment it changes.
-  let reload = effect.batch([save_preferences(m), store.load_state(m)])
-  case starter, starter_refs(m, track) {
+  let reload = effect.batch([common.save_preferences(m), store.load_state(m)])
+  case starter, common.starter_refs(m, track) {
     True, [_, ..] as refs -> #(
-      pending(m, refs),
+      common.pending(m, refs),
       effect.batch([reload, store.add_to_queue(m, refs)]),
     )
     _, _ -> #(m, reload)
@@ -438,94 +430,6 @@ fn row_id(pane: model.MenuPane, index: Int) -> String {
   id.menu_row_id(pane, index)
 }
 
-fn scroll_to(id: String) -> Effect(Msg) {
-  run_effect(fn() { browser.scroll_into_view(id) })
-}
-
-fn run_effect(action: fn() -> Nil) -> Effect(Msg) {
-  use _dispatch <- effect.from
-  action()
-}
-
-/// Focus something the same message puts on screen. `effect.from` runs
-/// before the render, when the element is not there yet to focus.
-fn focus_after_render(selector: String) -> Effect(Msg) {
-  use _dispatch, _root <- effect.before_paint
-  browser.focus_element(selector)
-}
-
-fn keyboard_effect() -> Effect(Msg) {
-  use dispatch <- effect.from
-  browser.on_keys(fn(key, ctrl, shift, editing) {
-    dispatch(KeyPressed(msg.Key(key:, ctrl:, shift:, editing:)))
-  })
-}
-
-fn guest_has_progress() -> Bool {
-  local.has_data()
-}
-
-fn api_base() -> String {
-  browser.api_base()
-}
-
-/// The token for the current session, or "" when signed out. Callers that need
-/// one are only reachable from behind the auth gate, so the empty case is a
-/// belt-and-braces default rather than a real path.
-fn token(m: Model) -> String {
-  case m.mode {
-    Account(token) -> token
-    Guest -> ""
-  }
-}
-
-/// Opening a checkable drill starts that language's (lazy) runtime download so
-/// it is usually ready before the first Run click. Drills without checks never
-/// load anything.
-/// The language whose runtime the screen on the way in will need, if any: a
-/// checkable drill's, or Gleam's for a tour lesson.
-fn runtime_wanted(m: Model) -> Result(String, Nil) {
-  case m.route, m.tour_page {
-    DrillRoute, _ ->
-      case current_check(m) {
-        Ok(_) -> current_language(m)
-        Error(Nil) -> Error(Nil)
-      }
-    TourRoute, TourLesson(_) -> Ok("gleam")
-    _, _ -> Error(Nil)
-  }
-}
-
-fn with_prefetch(pair: #(Model, Effect(Msg))) -> #(Model, Effect(Msg)) {
-  let #(m, fx) = pair
-  case runtime_wanted(m) {
-    Ok(language) ->
-      case model.runtime_for(m, language) {
-        RuntimeNotLoaded -> #(
-          Model(
-            ..m,
-            runtimes: model.assoc_put(m.runtimes, language, RuntimeLoading),
-          ),
-          effect.batch([fx, runner.ensure(language)]),
-        )
-        // A failed load gets one fresh chance per drill open; without this
-        // the only recovery was a page reload.
-        RuntimeFailed(_) -> #(
-          Model(
-            ..m,
-            runtimes: model.assoc_put(m.runtimes, language, RuntimeLoading),
-          ),
-          effect.batch([fx, runner.restart(language)]),
-        )
-        _ -> pair
-      }
-    Error(Nil) -> pair
-  }
-}
-
-/// Post one run to a local runtime that is known to be ready. The previous
-/// run's output is carried into the Running state so the pane can keep
-/// showing it, dimmed, until the new result lands.
 fn start_local_run(
   m: Model,
   language: String,
@@ -574,72 +478,17 @@ fn open_lesson(m: Model, index: Int) -> #(Model, Effect(Msg)) {
           run: RunIdle,
         )
       let #(m, run) = run_tour_lesson(m)
-      with_prefetch(#(m, effect.batch([save_preferences(m), run])))
+      common.with_prefetch(#(m, effect.batch([common.save_preferences(m), run])))
     }
   }
 }
 
-fn current_problem(m: Model) -> Result(problem.Problem, Nil) {
-  case model.current_ref(m) {
-    Ok(ref) -> problems.find(ref.category, ref.subcategory, ref.title)
-    Error(Nil) -> Error(Nil)
-  }
-}
-
-/// Folds one card into the store, unless it belongs to another track.
-///
-/// `m.cards` is the *active track's* cards, so a response that arrives after
-/// the user has switched must not be folded in: a review recorded in Python
-/// answering while the Go track is open would otherwise leave a Python card
-/// sitting in the Go screens. Free and total, so every fold site can use it.
-fn fold_card(
-  m: Model,
-  cards: dict.Dict(ProblemRef, wire.CardState),
-  card: wire.CardState,
-) -> dict.Dict(ProblemRef, wire.CardState) {
-  // The empty string means *no track chosen yet* -- a browser with nothing in
-  // it -- not "a track that matches nothing". Filtering on it would drop the
-  // very first card anyone queued and leave the study screen empty forever.
-  case m.active_track == "" || track.of_ref(card.problem) == m.active_track {
-    True -> dict.insert(cards, card.problem, card)
-    False -> cards
-  }
-}
-
-/// Move the rail's focus, clamped to the steps this problem actually has. A
-/// problem with no walkthrough has none, and the focus stays at zero.
 fn focus_walk(m: Model, index: Int) -> Model {
-  let total = case current_problem(m) {
+  let total = case common.current_problem(m) {
     Ok(current) -> list.length(walk.walk_steps(current.approach))
     Error(Nil) -> 0
   }
   Model(..m, walk: walk.focus_step(m.walk, index, total))
-}
-
-fn current_language(m: Model) -> Result(String, Nil) {
-  case model.current_ref(m) {
-    Ok(ref) ->
-      case problems.find(ref.category, ref.subcategory, ref.title) {
-        Ok(p) -> Ok(problem.language_slug(p.language))
-        Error(Nil) -> Error(Nil)
-      }
-    Error(Nil) -> Error(Nil)
-  }
-}
-
-fn current_check(m: Model) -> Result(problem.Check, Nil) {
-  case model.current_ref(m) {
-    Ok(ref) ->
-      case problems.find(ref.category, ref.subcategory, ref.title) {
-        Ok(p) ->
-          case p.check {
-            Some(check) -> Ok(check)
-            None -> Error(Nil)
-          }
-        Error(Nil) -> Error(Nil)
-      }
-    Error(Nil) -> Error(Nil)
-  }
 }
 
 fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
@@ -649,41 +498,11 @@ fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case m.route != DrillRoute && next.route == DrillRoute {
     True -> #(
       Model(..next, now_ms: browser.now_ms()),
-      effect.batch([effect, tick()]),
+      effect.batch([effect, common.tick()]),
     )
     False -> #(next, effect)
   }
 }
-
-/// One clock tick, a second out. Keyed through the same debounce as the
-/// draft save so a drill reopened within the second does not start a second
-/// chain of ticks.
-fn tick() -> Effect(Msg) {
-  effect.from(fn(dispatch) {
-    browser.debounce("drill-clock", 1000, fn() { dispatch(ClockTicked) })
-  })
-}
-
-/// The first twenty Easy problems of one track, in catalogue order, skipping
-/// any already queued. Catalogue order is the topic curriculum, not a
-/// difficulty ramp -- its first twenty include Trapping Rain Water -- so the
-/// starter set filters by rating first and only falls back to plain catalogue
-/// order for a track with no ratings (System Design).
-fn starter_refs(m: Model, in_track: String) -> List(ProblemRef) {
-  let unqueued =
-    problems.refs_in(in_track)
-    |> list.filter(fn(ref) { !model.is_queued(m, ref) })
-  let easy =
-    list.filter(unqueued, fn(ref) {
-      problems.difficulty_of(ref) == Some(problem.Easy)
-    })
-  case easy {
-    [] -> list.take(unqueued, starter_size)
-    _ -> list.take(easy, starter_size)
-  }
-}
-
-const starter_size = 20
 
 fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
@@ -714,12 +533,12 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     EditorFocusRequested -> #(
       m,
-      run_effect(fn() { browser.focus_element("gleam-editor") }),
+      common.run_effect(fn() { browser.focus_element("gleam-editor") }),
     )
 
     SearchFocusRequested -> #(
       m,
-      run_effect(fn() { browser.focus_element(".search") }),
+      common.run_effect(fn() { browser.focus_element(".search") }),
     )
 
     MenuCursorMoved(delta) ->
@@ -855,10 +674,11 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         False, email, password -> #(
           Model(..m, auth: AuthForm(..m.auth, busy: True, error: None)),
           case m.auth.mode {
-            SigningIn -> api.login(api_base(), email, password, AuthCompleted)
+            SigningIn ->
+              api.login(common.api_base(), email, password, AuthCompleted)
             Registering ->
               api.signup(
-                api_base(),
+                common.api_base(),
                 email,
                 password,
                 browser.time_zone(),
@@ -891,10 +711,13 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       // an existing one is handled by `UserClickedMergeGuest`, because
       // folding scratch progress into an established account unasked would
       // be surprising.
-      let upgrading = m.auth.mode == Registering && guest_has_progress()
+      let upgrading = m.auth.mode == Registering && common.guest_has_progress()
 
       #(
-        Model(..signed_in, merge_offer: !upgrading && guest_has_progress()),
+        Model(
+          ..signed_in,
+          merge_offer: !upgrading && common.guest_has_progress(),
+        ),
         effect.batch([
           session.save_token(session.token),
           case upgrading {
@@ -923,13 +746,13 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       // cards, so an account that has been used on another device lands where
       // it left off rather than on the switcher. Remember that here.
       let remembered = case loaded.active_track != m.active_track {
-        True -> save_preferences(loaded)
+        True -> common.save_preferences(loaded)
         False -> effect.none()
       }
       // Guest progress left in this browser is offered on every account
       // load, not only the sign-in that stranded it.
       let loaded = case loaded.mode {
-        Account(_) -> Model(..loaded, merge_offer: guest_has_progress())
+        Account(_) -> Model(..loaded, merge_offer: common.guest_has_progress())
         Guest -> loaded
       }
       // The dashboard reports a streak and an estimate of how long today's
@@ -954,7 +777,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                 dashboard,
                 remembered,
                 api.import_legacy(
-                  api_base(),
+                  common.api_base(),
                   token,
                   old.solved,
                   [],
@@ -1041,7 +864,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UserClickedMergeGuest -> #(
       Model(..m, merge_offer: False, refreshing: True),
-      store.upgrade(token(m), [], StateImported),
+      store.upgrade(common.token(m), [], StateImported),
     )
 
     UserDismissedMergeOffer -> #(Model(..m, merge_offer: False), effect.none())
@@ -1064,7 +887,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(
         signed_out,
         effect.batch([
-          api.logout(api_base(), token(m), SignOutCompleted),
+          api.logout(common.api_base(), common.token(m), SignOutCompleted),
           session.clear_token(),
           // Back to guest rather than to a sign-in wall. The guest store was
           // cleared on upgrade, so this loads empty.
@@ -1109,9 +932,9 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           effect.none(),
         )
         queue ->
-          with_prefetch(#(
+          common.with_prefetch(#(
             Model(
-              ..open_first(Model(..m, studying: True), queue),
+              ..common.open_first(Model(..m, studying: True), queue),
               // A scheduled sitting is one pass: FSRS decides when a card comes
               // back, so repeating it three times now would just be three
               // same-day reviews.
@@ -1137,7 +960,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
         queue -> #(
           Model(
-            ..open_first(Model(..m, studying: True, recall: True), queue),
+            ..common.open_first(Model(..m, studying: True, recall: True), queue),
             iteration_count: 1,
           ),
           effect.none(),
@@ -1258,7 +1081,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                   pressed: rating,
                   duration_ms: browser.now_ms() - m.opened_at_ms,
                   passed: model.test_passed(m),
-                  clean: model.test_passed(m) && !answer_given_away(m),
+                  clean: model.test_passed(m) && !common.answer_given_away(m),
                 ),
                 ..m.sitting
               ],
@@ -1302,12 +1125,12 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                   duration_ms: Some(browser.now_ms() - m.opened_at_ms),
                   // An ungraded card's run is a demonstration, not a test, so
                   // it is never logged as a failure.
-                  auto_failed: case current_problem(m) {
+                  auto_failed: case common.current_problem(m) {
                     Ok(current) ->
                       problem.graded(current) && model.run_failed(m.run)
                     Error(Nil) -> model.run_failed(m.run)
                   },
-                  revealed: case current_problem(m) {
+                  revealed: case common.current_problem(m) {
                     Ok(current) -> model.answer_revealed(m, current.approach)
                     Error(Nil) -> m.revealed_solution != None
                   },
@@ -1321,7 +1144,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
 
     ReviewRecorded(Ok(outcome)) -> {
-      let cards = fold_card(m, m.cards, outcome.card)
+      let cards = common.fold_card(m, m.cards, outcome.card)
       let recorded =
         Model(
           ..m,
@@ -1363,7 +1186,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               )
             _, _ -> recorded
           }
-          advance(Model(..recorded, grading: NotGrading))
+          common.advance(Model(..recorded, grading: NotGrading))
         }
         _ -> #(recorded, effect.none())
       }
@@ -1399,7 +1222,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UndoRecorded(point, Ok(outcome)) -> {
       let cards = case outcome.card {
-        Some(card) -> fold_card(m, m.cards, card)
+        Some(card) -> common.fold_card(m, m.cards, card)
         None -> dict.delete(m.cards, point.problem)
       }
       // Undoing the review that created the card un-creates it, and a
@@ -1516,7 +1339,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       case m.selected {
         [] -> #(m, effect.none())
         [first, ..] ->
-          with_prefetch(#(
+          common.with_prefetch(#(
             Model(
               ..model.open_problem_view(m, first),
               route: DrillRoute,
@@ -1524,12 +1347,12 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               current_iteration: 1,
               // A hand-picked sitting still ends where it started.
               studying: False,
-              draft: draft_for(m, first),
+              draft: common.draft_for(m, first),
               run: RunIdle,
               // Without this a reveal-only drill -- Elixir has no harness at
               // all -- would sit forever on "run the tests to grade this" with
               // no tests to run, and could never be scheduled.
-              grading: initial_grading(m, first),
+              grading: common.initial_grading(m, first),
               opened_at_ms: browser.now_ms(),
               // Clearing the log is what distinguishes a drill from an exam at
               // the end of the run: a non-empty log means a report is owed.
@@ -1666,7 +1489,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             Model(
               ..m,
               graded: True,
-              // A SittingEntry, not an exam answer: `advance_inner` routes a
+              // A SittingEntry, not an exam answer: `common.advance_inner` routes a
               // sitting with any exam answers to the exam report, and a board
               // belongs in the summary with every other graded card.
               sitting: [
@@ -1715,15 +1538,15 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       // Whatever button was clicked last (a grade, a reveal) still has focus,
       // and a focused button swallows Enter. Drop it so Enter and Escape
       // reach the prompt's bindings.
-      run_effect(browser.blur_active),
+      common.run_effect(browser.blur_active),
     )
 
-    // `reset_home`, not `reset_to_menu`: a sitting started from the study
+    // `common.reset_home`, not `common.reset_to_menu`: a sitting started from the study
     // queue must end back on the study screen. Landing in the manual browser
     // is disorienting when that is not where you came from.
     ExitConfirmed(True) -> {
-      let #(m, abandoned) = abandon_run(Model(..m, exit_prompt: None))
-      #(reset_home(m), abandoned)
+      let #(m, abandoned) = common.abandon_run(Model(..m, exit_prompt: None))
+      #(common.reset_home(m), abandoned)
     }
     ExitConfirmed(False) -> #(Model(..m, exit_prompt: None), effect.none())
 
@@ -1734,7 +1557,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         // the next one opens. Grading is skipped -- nothing was solved.
         DrillRoute, Some(blitz) if now_ms >= blitz.deadline_ms ->
           handle(Model(..m, now_ms:), BlitzExpired)
-        DrillRoute, _ -> #(Model(..m, now_ms:), tick())
+        DrillRoute, _ -> #(Model(..m, now_ms:), common.tick())
         _, _ -> #(m, effect.none())
       }
     }
@@ -1758,9 +1581,9 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
         pool -> {
           let picked = sample(pool, count)
-          with_prefetch(#(
+          common.with_prefetch(#(
             Model(
-              ..open_first(
+              ..common.open_first(
                 Model(
                   ..m,
                   studying: False,
@@ -1796,7 +1619,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           // expired card is a miss, not work in progress.
           browser.cancel_debounce("draft-save")
           let #(next, fx) =
-            advance(
+            common.advance(
               Model(
                 ..m,
                 drafts: local.drop_draft(m.drafts, ref),
@@ -1810,7 +1633,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               ),
             )
           let fx = effect.batch([store.delete_draft(m, ref), fx])
-          // The flash clears on the next tick; the deadline restarts with
+          // The flash clears on the next common.tick; the deadline restarts with
           // the card. An ended Blitz keeps its results for the summary.
           #(
             case next.route, next.blitz {
@@ -1826,10 +1649,10 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                 )
               _, _ -> next
             },
-            effect.batch([fx, tick()]),
+            effect.batch([fx, common.tick()]),
           )
         }
-        _, _ -> #(m, tick())
+        _, _ -> #(m, common.tick())
       }
 
     UserToggledNudge -> #(
@@ -1886,7 +1709,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UserToggledPrompt -> {
       let m = Model(..m, prompt_open: !m.prompt_open)
-      #(m, save_preferences(m))
+      #(m, common.save_preferences(m))
     }
 
     UserToggledPane(pane) ->
@@ -1905,13 +1728,13 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         NoPane, _ -> #(m, effect.none())
       }
 
-    UserClickedNext -> advance(m)
+    UserClickedNext -> common.advance(m)
 
     UserSearched(query) -> #(Model(..m, search: query), effect.none())
 
     UserChangedKeymap(mode) -> {
       let m = Model(..m, editor_keymap: mode)
-      #(m, save_preferences(m))
+      #(m, common.save_preferences(m))
     }
 
     UserToggledResults -> #(
@@ -1925,10 +1748,13 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           True -> Some(height)
           False -> None
         })
-      #(m, save_preferences(m))
+      #(m, common.save_preferences(m))
     }
 
-    UserClickedSettings -> #(Model(..m, route: SettingsRoute), measure_cache())
+    UserClickedSettings -> #(
+      Model(..m, route: SettingsRoute),
+      common.measure_cache(),
+    )
 
     // --- the offline cache ---
     UserClickedWarmCache ->
@@ -1954,9 +1780,9 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               "The download stopped partway. Whatever arrived is kept; try again when you are back online.",
             ),
           ),
-          measure_cache(),
+          common.measure_cache(),
         )
-        True, True -> #(Model(..m, warming: None), measure_cache())
+        True, True -> #(Model(..m, warming: None), common.measure_cache())
         True, False -> #(
           Model(..m, warming: Some(#(done, total))),
           effect.none(),
@@ -1974,7 +1800,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         tour_cursor: m.tour_lesson,
         run: RunIdle,
       ),
-      scroll_to("tour-" <> int.to_string(m.tour_lesson)),
+      common.scroll_to("tour-" <> int.to_string(m.tour_lesson)),
     )
 
     UserOpenedLesson(index) -> open_lesson(m, index)
@@ -2002,7 +1828,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       case m.tour_page {
         TourLesson(index) -> #(
           Model(..m, tour_page: TourContents, tour_cursor: index, run: RunIdle),
-          scroll_to("tour-" <> int.to_string(index)),
+          common.scroll_to("tour-" <> int.to_string(index)),
         )
         TourContents -> #(m, effect.none())
       }
@@ -2058,7 +1884,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       let cursor = int.clamp(m.tour_cursor + delta, 0, tour.last())
       #(
         Model(..m, tour_cursor: cursor),
-        scroll_to("tour-" <> int.to_string(cursor)),
+        common.scroll_to("tour-" <> int.to_string(cursor)),
       )
     }
 
@@ -2101,7 +1927,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     ArchiveReady(Ok(archive)) -> #(
       m,
-      run_effect(fn() {
+      common.run_effect(fn() {
         browser.download_text(
           "gleamdrill-"
             <> string.slice(
@@ -2178,9 +2004,9 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     // From the study screen's empty state: twenty easy problems in the track
     // already open, no screen in between.
     UserAddedStarterSet ->
-      case starter_refs(m, m.active_track) {
+      case common.starter_refs(m, m.active_track) {
         [] -> #(Model(..m, route: TracksRoute), effect.none())
-        refs -> #(pending(m, refs), store.add_to_queue(m, refs))
+        refs -> #(common.pending(m, refs), store.add_to_queue(m, refs))
       }
 
     UserToggledSuspend(ref) ->
@@ -2194,7 +2020,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         ..m,
         now: outcome.now,
         today: outcome.today,
-        cards: fold_card(m, m.cards, outcome.card),
+        cards: common.fold_card(m, m.cards, outcome.card),
       ),
       effect.none(),
     )
@@ -2219,7 +2045,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     // --- named queues ---
     UserPickedActiveQueue(name) -> {
       let m = Model(..m, active_queue: name, blitz_chooser: False)
-      #(m, save_preferences(m))
+      #(m, common.save_preferences(m))
     }
 
     UserSelectedQueue(name) -> #(
@@ -2234,14 +2060,14 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UserStartedNewQueue -> #(
       Model(..m, queue_naming: Some(model.NewQueue(""))),
-      focus_after_render(".queue-name-input"),
+      common.focus_after_render(".queue-name-input"),
     )
 
     UserStartedRenameQueue ->
       case m.queue_editing {
         Some(name) -> #(
           Model(..m, queue_naming: Some(model.RenameQueue(name, name))),
-          focus_after_render(".queue-name-input"),
+          common.focus_after_render(".queue-name-input"),
         )
         None -> #(m, effect.none())
       }
@@ -2319,7 +2145,10 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                   active_queue: rename(m.active_queue),
                   queue_naming: None,
                 )
-              #(m, effect.batch([store.save_queues(m), save_preferences(m)]))
+              #(
+                m,
+                effect.batch([store.save_queues(m), common.save_preferences(m)]),
+              )
             }
           }
         }
@@ -2341,7 +2170,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                 False -> m.active_queue
               },
             )
-          #(m, effect.batch([store.save_queues(m), save_preferences(m)]))
+          #(m, effect.batch([store.save_queues(m), common.save_preferences(m)]))
         }
       }
 
@@ -2423,9 +2252,12 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     UserChangedGroup(change) ->
       case queue.group_rows(m, change), change.add, m.queue_editing {
         [], _, _ -> #(m, effect.none())
-        refs, True, None -> #(pending(m, refs), store.add_to_queue(m, refs))
+        refs, True, None -> #(
+          common.pending(m, refs),
+          store.add_to_queue(m, refs),
+        )
         refs, False, None -> #(
-          pending(m, refs),
+          common.pending(m, refs),
           store.remove_from_queue(m, refs),
         )
         refs, True, Some(name) -> named_queue_add(m, name, refs)
@@ -2447,10 +2279,13 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           }
         None ->
           case model.card_for(m, ref) {
-            None -> #(pending(m, [ref]), store.add_to_queue(m, [ref]))
+            None -> #(common.pending(m, [ref]), store.add_to_queue(m, [ref]))
             Some(state) ->
               case state.reps == 0 {
-                True -> #(pending(m, [ref]), store.remove_from_queue(m, [ref]))
+                True -> #(
+                  common.pending(m, [ref]),
+                  store.remove_from_queue(m, [ref]),
+                )
                 False -> #(m, store.set_suspended(m, ref, !state.suspended))
               }
           }
@@ -2463,7 +2298,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         m.queue_editing
       {
         [], _ -> #(m, effect.none())
-        refs, None -> #(pending(m, refs), store.add_to_queue(m, refs))
+        refs, None -> #(common.pending(m, refs), store.add_to_queue(m, refs))
         refs, Some(name) -> named_queue_add(m, name, refs)
       }
     }
@@ -2477,7 +2312,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         None ->
           case list.filter(queue.listed(m), fn(ref) { model.is_new(m, ref) }) {
             [] -> #(m, effect.none())
-            refs -> #(pending(m, refs), store.remove_from_queue(m, refs))
+            refs -> #(common.pending(m, refs), store.remove_from_queue(m, refs))
           }
         Some(name) -> {
           let here = queue.members(m, m.queue_editing)
@@ -2510,7 +2345,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     QueueChanged(Ok(change)) -> {
       let cards =
         list.fold(change.cards, m.cards, fn(cards, card: wire.CardState) {
-          fold_card(m, cards, card)
+          common.fold_card(m, cards, card)
         })
       // A browser with no track yet takes the one it just put something in:
       // choosing problems is choosing a track, and asking twice would be a
@@ -2564,7 +2399,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         Ok(ref), False -> model.assoc_put(m.drafts, ref, text)
         _, _ -> m.drafts
       }
-      #(Model(..m, draft: text, drafts: drafts), schedule_draft_save())
+      #(Model(..m, draft: text, drafts: drafts), common.schedule_draft_save())
     }
 
     NoteChanged(text) ->
@@ -2603,7 +2438,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     NoteFocusRequested -> #(
       Model(..m, slot: NotePane),
-      focus_after_render(".note-input"),
+      common.focus_after_render(".note-input"),
     )
 
     DraftSaveTicked ->
@@ -2619,7 +2454,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UserClickedScratchRun -> request_run(m, model.ScratchRun)
 
-    UserClickedStopRun -> abandon_run(m)
+    UserClickedStopRun -> common.abandon_run(m)
 
     UserClickedRetryRuntime(language) -> #(
       Model(
@@ -2637,7 +2472,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         )
       // A Blitz card whose runtime was still downloading has not had a
       // fair clock: it restarts now that a run is actually possible.
-      let m = case m.blitz, m.route, current_language(m) {
+      let m = case m.blitz, m.route, common.current_language(m) {
         Some(blitz), DrillRoute, Ok(current) if current == language ->
           Model(
             ..m,
@@ -2681,7 +2516,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             m.run_kind == model.TestRun
             && model.run_passed(run)
             && string.trim(m.draft) != ""
-            && case current_problem(m) {
+            && case common.current_problem(m) {
               Ok(current) -> current.solutions != []
               Error(Nil) -> False
             }
@@ -2702,7 +2537,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             // type, Ctrl+Enter, digit. Not on the tour, where a run follows
             // every pause in typing and must not take the cursor away.
             case m.route {
-              DrillRoute -> run_effect(browser.blur_active)
+              DrillRoute -> common.run_effect(browser.blur_active)
               _ -> effect.none()
             },
           )
@@ -2752,7 +2587,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             })
           // The worker cannot be interrupted, only replaced. A server-side
           // run has no worker: the server has already killed it.
-          case m.route, current_language(m) {
+          case m.route, common.current_language(m) {
             TourRoute, _ -> Ok("gleam")
             _, other -> other
           }
@@ -2941,125 +2776,6 @@ fn apply_setting(
   }
 }
 
-/// Starts a sitting on the given list of problems.
-fn open_first(m: Model, queue: List(ProblemRef)) -> Model {
-  case queue {
-    [] -> m
-    [first, ..] ->
-      Model(
-        ..model.open_problem_view(m, first),
-        route: DrillRoute,
-        selected: queue,
-        problem_index: 0,
-        current_iteration: 1,
-        // A study rep starts from the stub: retyping from memory is the whole
-        // product. A manual sitting restores a draft only if one survived --
-        // grading deletes it, so what comes back is work left unfinished.
-        draft: case m.studying {
-          True -> starter_for(first)
-          False -> draft_for(m, first)
-        },
-        run: RunIdle,
-        grading: initial_grading(m, first),
-        opened_at_ms: browser.now_ms(),
-        exam_answers: [],
-        sitting: [],
-        choice: None,
-        graded: False,
-      )
-  }
-}
-
-/// A drill with no harness has nothing to run, so it is gradeable the moment
-/// it opens. One with a harness waits for a result.
-/// What the grade bar starts as when a problem opens.
-///
-/// Gradeable from the first moment when either there is nothing to run (a
-/// reveal-only drill is a flashcard proper) or this is the problem's first
-/// encounter — the learning step, where you reveal, study, and self-grade like
-/// flipping a card. Otherwise a run is required before grading.
-fn initial_grading(m: Model, ref: ProblemRef) -> model.Grading {
-  use <- bool.guard(m.recall, NotGrading)
-  // A Blitz is scored on the run, so the grade waits for one: pressing
-  // Good on a card never attempted is not a solve.
-  use <- bool.guard(m.blitz != None, NotGrading)
-  case problem_kind(m, ref) {
-    // Quizzes and boards grade themselves on submit.
-    QuizProblem | BoardProblem -> NotGrading
-    CheckableProblem ->
-      case model.first_encounter(m, ref) {
-        True -> AwaitingGrade
-        False -> NotGrading
-      }
-    RevealOnlyProblem -> AwaitingGrade
-  }
-}
-
-type ProblemKind {
-  CheckableProblem
-  QuizProblem
-  BoardProblem
-  RevealOnlyProblem
-}
-
-/// `problem.kind` refined by what this browser and this sitting can actually
-/// do: a check it cannot run grades like a reveal-only card.
-fn problem_kind(m: Model, ref: ProblemRef) -> ProblemKind {
-  case problems.find(ref.category, ref.subcategory, ref.title) {
-    Ok(found) ->
-      case problem.kind(found) {
-        problem.QuizDrill -> QuizProblem
-        // Without this arm a board would fall through to RevealOnlyProblem
-        // and open with the four self-grade buttons on top of a drill that
-        // grades itself.
-        problem.BoardDrill -> BoardProblem
-        problem.CodeDrill ->
-          case found.check {
-            // A read-and-run card (Check present, graded: False) is gradeable
-            // from the moment it opens, like a reveal-only one -- and so is a
-            // check this browser cannot run (Elixir, signed out).
-            Some(check) ->
-              case check.graded && model.run_available(m, found.language) {
-                True -> CheckableProblem
-                False -> RevealOnlyProblem
-              }
-            None -> RevealOnlyProblem
-          }
-      }
-    Error(Nil) -> RevealOnlyProblem
-  }
-}
-
-/// Persist the settings that belong to this browser rather than the account.
-///
-/// Written whole every time, so every caller must pass a model that already
-/// holds the change it wants saved.
-fn save_preferences(m: Model) -> Effect(Msg) {
-  session.save_preferences(session.Preferences(
-    editor_keymap: m.editor_keymap,
-    editor_height: m.editor_height,
-    prompt_open: m.prompt_open,
-    tour_lesson: m.tour_lesson,
-    active_track: case m.active_track {
-      "" -> None
-      name -> Some(name)
-    },
-    // The model holds the active track's queue; the rest of the map is left
-    // exactly as it was, so switching away does not forget where you were in
-    // the track you came from.
-    active_queue: remembered_queues(m),
-  ))
-}
-
-fn remembered_queues(m: Model) -> List(#(String, String)) {
-  let others =
-    list.filter(m.remembered_queues, fn(entry) { entry.0 != m.active_track })
-  case m.active_queue {
-    Some(name) -> [#(m.active_track, name), ..others]
-    None -> others
-  }
-}
-
 fn handle_key(m: Model, key: msg.Key) -> #(Model, Effect(Msg)) {
   case key.editing {
     // The editor's own keymaps own the keyboard; the one thing the app
@@ -3072,7 +2788,7 @@ fn handle_key(m: Model, key: msg.Key) -> #(Model, Effect(Msg)) {
     // Inputs keep their keys; Escape hands focus back to the app.
     "input" ->
       case key.key {
-        "Escape" -> #(m, run_effect(browser.blur_active))
+        "Escape" -> #(m, common.run_effect(browser.blur_active))
         _ -> #(m, effect.none())
       }
     // A focused button activates natively; stay out of its way — except
@@ -3105,7 +2821,7 @@ fn request_run(m: Model, kind: model.RunKind) -> #(Model, Effect(Msg)) {
     // One run at a time: a queued second run just doubles the wait.
     Running(_, _) -> #(m, effect.none())
     _ ->
-      case current_language(m), current_check(m) {
+      case common.current_language(m), common.current_check(m) {
         Ok(language), Ok(check) -> {
           let harness = case kind {
             model.TestRun -> check.harness
@@ -3171,7 +2887,7 @@ fn start_run(
       started,
       effect.batch([
         api.post_run(
-          api_base(),
+          common.api_base(),
           token,
           wire.RunRequest(language, m.draft, harness),
           RemoteRunFinished(id, _),
@@ -3188,138 +2904,6 @@ fn start_run(
   }
 }
 
-fn abandon_run(m: Model) -> #(Model, Effect(Msg)) {
-  case m.run, current_language(m) {
-    // Nothing to restart for a server-side run; its late answer is ignored
-    // by the id guard.
-    Running(_, _), Ok(language) ->
-      case runner.is_remote(language) {
-        True -> #(Model(..m, run: RunIdle), effect.none())
-        False -> #(
-          Model(
-            ..m,
-            run: RunIdle,
-            runtimes: model.assoc_put(m.runtimes, language, RuntimeLoading),
-          ),
-          runner.restart(language),
-        )
-      }
-    Running(_, _), Error(Nil) -> #(Model(..m, run: RunIdle), effect.none())
-    _, _ -> #(m, effect.none())
-  }
-}
-
-fn advance(m: Model) -> #(Model, Effect(Msg)) {
-  // Before anything else: `m` still points at the problem whose run may be
-  // in flight, which is the only moment its language can be resolved.
-  let #(m, abandoned) = abandon_run(m)
-  let #(next, fx) = advance_inner(m)
-  // The grade button just pressed is still under the next problem's prompt
-  // page; focused, it would take the Enter meant to start coding.
-  #(next, effect.batch([abandoned, fx, run_effect(browser.blur_active)]))
-}
-
-fn advance_inner(m: Model) -> #(Model, Effect(Msg)) {
-  // Round-robin: walk the whole selection, then come back around for the
-  // next pass. Drilling one problem N times in a row before moving on is
-  // the thing this deliberately avoids.
-  let #(index, iteration) = case m.problem_index + 1 < list.length(m.selected) {
-    True -> #(m.problem_index + 1, m.current_iteration)
-    False -> #(0, m.current_iteration + 1)
-  }
-
-  case iteration > m.iteration_count, m.exam_answers {
-    // An exam ends in the report rather than an alert — the score is the
-    // entire reason the sitting happened.
-    True, [_, ..] -> #(
-      // `reset_home` clears `studying`, but the report still needs to know
-      // where the sitting began so its back button returns there.
-      Model(..reset_home(m), route: ReportRoute, studying: m.studying),
-      effect.none(),
-    )
-    // A drill sitting earns a report too. `reset_home` clears `studying`, so
-    // like the exam arm this puts it back for the sake of the back button.
-    True, [] -> #(
-      Model(
-        ..reset_home(m),
-        route: SummaryRoute,
-        studying: m.studying,
-        recall: m.recall,
-        blitz: m.blitz,
-        sitting: m.sitting,
-        undo: m.undo,
-      ),
-      effect.none(),
-    )
-    False, _ -> {
-      let advanced =
-        Model(
-          ..m,
-          current_iteration: iteration,
-          problem_index: index,
-          revealed_solution: None,
-          slot: NoPane,
-          run: RunIdle,
-          grading: NotGrading,
-          opened_at_ms: browser.now_ms(),
-          choice: None,
-          graded: False,
-        )
-      // Retyping is the drill, so a repeat pass starts from the stub. The
-      // first time a problem comes up in a manual sitting, a draft is
-      // restored if one survived: grading deletes it, so only work you left
-      // without grading ever comes back.
-      let advanced = case model.current_ref(advanced) {
-        Ok(ref) ->
-          Model(
-            ..model.open_problem_view(advanced, ref),
-            draft: case iteration == 1 && !m.studying {
-              True -> draft_for(advanced, ref)
-              False -> starter_for(ref)
-            },
-            grading: initial_grading(m, ref),
-          )
-        Error(Nil) -> Model(..advanced, draft: "")
-      }
-      case m.recall {
-        True -> #(advanced, effect.none())
-        False -> with_prefetch(#(advanced, effect.none()))
-      }
-    }
-  }
-}
-
-/// Ends a sitting, returning to wherever it started from.
-///
-/// A scheduled sitting also clears the selection: the study queue was never
-/// something the user picked, and leaving it behind would make the next manual
-/// drill drag along ten problems they never chose. A manual selection is
-/// theirs and survives.
-fn reset_home(m: Model) -> Model {
-  Model(
-    ..reset_to_menu(m),
-    route: case m.studying {
-      True -> StudyRoute
-      False -> MenuRoute
-    },
-    selected: case m.studying {
-      True -> []
-      False -> m.selected
-    },
-    studying: False,
-    recall: False,
-    blitz: None,
-    grading: NotGrading,
-    undo: None,
-  )
-}
-
-/// Which of the queued cards a Blitz may draw from: anything this browser
-/// can actually run against the clock. Concept cards have no code, and a
-/// guest cannot run the server-side languages, so neither can pass.
-/// Problems into a named queue, and cards for the ones without. The list
-/// is saved whole; the cards go up as one batch, as the queue screen's
-/// bulk add does.
 fn named_queue_add(
   m: Model,
   name: String,
@@ -3380,7 +2964,7 @@ fn add_to_named_queue(m: Model, name: String, refs: List(ProblemRef)) -> Model {
 fn enqueue_missing(m: Model, refs: List(ProblemRef)) -> #(Model, Effect(Msg)) {
   case list.filter(refs, fn(ref) { !model.is_queued(m, ref) }) {
     [] -> #(m, effect.none())
-    missing -> #(pending(m, missing), store.add_to_queue(m, missing))
+    missing -> #(common.pending(m, missing), store.add_to_queue(m, missing))
   }
 }
 
@@ -3428,74 +3012,6 @@ fn do_sample(
   }
 }
 
-/// A solve is clean when nothing was given away: no solution shown, no code
-/// slice, no whole pseudocode, and no step opened for its hint or its why.
-///
-/// The step *titles* do not count, because the rail lists them from the moment
-/// the problem opens and nobody chose to see them. That is the difference
-/// between this and the review log's `revealed` flag, which only the code
-/// counts toward: `clean` is "solved it from nothing", and turning over a
-/// step's why is not nothing.
-fn answer_given_away(m: Model) -> Bool {
-  case current_problem(m) {
-    Ok(current) ->
-      model.answer_revealed(m, current.approach) || walk.any_layer_shown(m.walk)
-    Error(Nil) -> False
-  }
-}
-
-fn draft_for(m: Model, ref: ProblemRef) -> String {
-  case model.assoc_get(m.drafts, ref) {
-    Ok(text) -> text
-    Error(Nil) -> starter_for(ref)
-  }
-}
-
-fn starter_for(ref: ProblemRef) -> String {
-  case problems.find(ref.category, ref.subcategory, ref.title) {
-    Ok(p) ->
-      case p.check {
-        Some(check) -> check.starter
-        None -> ""
-      }
-    Error(Nil) -> ""
-  }
-}
-
-fn measure_cache() -> Effect(Msg) {
-  effect.from(fn(dispatch) {
-    browser.runtime_cache_size(fn(bytes) { dispatch(CacheMeasured(bytes)) })
-  })
-}
-
-fn schedule_draft_save() -> Effect(Msg) {
-  effect.from(fn(dispatch) {
-    browser.debounce("draft-save", 400, fn() { dispatch(DraftSaveTicked) })
-  })
-}
-
-fn reset_to_menu(m: Model) -> Model {
-  Model(
-    ..m,
-    route: MenuRoute,
-    problem_index: 0,
-    current_iteration: 1,
-    draft: "",
-    revealed_solution: None,
-    nudge_shown: False,
-    whole_thing_shown: False,
-    walk: walk.fresh_walk(),
-    walk_code_seen: False,
-    run: RunIdle,
-    choice: None,
-    graded: False,
-  )
-}
-
-/// Questions per sitting, spread flat across the sections rather than in
-/// proportion to how many questions each one has. Equal resolution per section
-/// is the point: a section sampled twice cannot tell you anything about
-/// whether you know it.
 const exam_size = 40
 
 /// Take an equal slice of each section, shuffled, then shuffle the result so
@@ -3536,7 +3052,7 @@ fn shuffle_loop(remaining: List(a), count: Int, acc: List(a)) -> List(a) {
 /// without scrolling would leave the keyboard driving something off screen.
 fn move_board_cursor(m: Model, to: Int) -> #(Model, Effect(Msg)) {
   let next = int.clamp(to, 0, list.length(board.palette()) - 1)
-  #(Model(..m, board_cursor: next), scroll_to(id.board_chip_id(next)))
+  #(Model(..m, board_cursor: next), common.scroll_to(id.board_chip_id(next)))
 }
 
 fn index_of_family(
@@ -3555,12 +3071,12 @@ fn index_of_family(
 }
 
 fn current_board(m: Model) -> Result(board.Board, Nil) {
-  current_problem(m)
+  common.current_problem(m)
   |> result.try(fn(found) { option.to_result(found.board, Nil) })
 }
 
 fn current_quiz(m: Model) -> Result(problem.Quiz, Nil) {
-  current_problem(m)
+  common.current_problem(m)
   |> result.try(fn(found) { option.to_result(found.quiz, Nil) })
 }
 
