@@ -233,11 +233,11 @@ fn code_main(
     // .work-row: appending a pane after it cannot remount CodeMirror,
     // which would drop undo history and cursor.
     html.div([attribute.class("work-row")], [
-      // The editor and, laid over it, the prompt sheet. Its own column so the
-      // sheet covers the editor and *only* the editor: a revealed solution
-      // sits beside it and has to stay readable and clickable. The keyed
-      // frame is still the first child of a parent that never changes, so
-      // CodeMirror keeps its history and cursor.
+      // The editor and, above it, the prompt (order: -1 in the stylesheet
+      // floats it up while the keyed frame stays the DOM's first child, so
+      // CodeMirror keeps its history and cursor). Its own column so the
+      // prompt pushes the editor down and nothing else: a revealed solution
+      // sits beside it and has to stay readable and clickable.
       html.div([attribute.class("editor-column")], [
         keyed.div(
           [
@@ -290,7 +290,7 @@ fn code_main(
   ]
 }
 
-/// The prompt beside the editor: everything there is to read, in a column
+/// The prompt above the editor: everything there is to read, in a column
 /// the editor keeps the rest of the width from.
 fn prompt_side(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
   html.aside([attribute.class("prompt-side read-sheet")], [

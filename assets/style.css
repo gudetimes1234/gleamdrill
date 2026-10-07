@@ -868,8 +868,8 @@ gleam-editor .cm-scroller {
 /* The editor column and, beside it, the step rail. The rail is the later
    child in the DOM -- the keyed editor column stays child 0 so CodeMirror
    keeps its history whatever toggles -- and `order` puts it on the left.
-   The prompt is no longer a column: it is a sheet over the editor, so this
-   is three columns at most (rail, editor, slot) and never four. */
+   The prompt is a block above the editor inside its column (order: -1),
+   so this is three columns at most (rail, editor, slot) and never four. */
 .drill-body {
     display: flex;
     min-height: 0;
@@ -1701,9 +1701,9 @@ button.results-summary:focus-visible {
     min-width: 0;
 }
 
-/* The editor and the prompt sheet share a column, so the sheet covers the
-   editor and only the editor: a revealed solution sits beside it and has to
-   stay readable -- and clickable. */
+/* The editor and the prompt share a column: the prompt sits above the
+   editor and pushes it down, and a revealed solution beside the column
+   stays readable -- and clickable. */
 .editor-column {
     position: relative;
     display: flex;
@@ -2534,7 +2534,7 @@ gleam-compare .cm-mergeSpacer {
 
     /* One column: the rail sits above the editor, capped so the editor is
        still on the first screen, and scrolls inside itself. The prompt is
-       already an overlay on the editor at every width. */
+       already a capped block above the editor at every width. */
     .drill-body {
         flex-direction: column;
     }
@@ -2547,7 +2547,7 @@ gleam-compare .cm-mergeSpacer {
     }
 
     .prompt-side {
-        max-height: 60svh;
+        max-height: 38svh;
     }
 
     /* The revealed solution is a temporary overlay on top of the
@@ -3764,30 +3764,26 @@ gleam-compare .cm-mergeSpacer {
     width: 100%;
 }
 
-/* The prompt: a sheet laid over the editor rather than a column of its own.
-   The rail has the left now, and between the two the prompt is the one that
-   should move -- it is read once at the start and glanced at afterwards, and
-   `p` is one key. Same mechanism the revealed solution already uses on a
-   tablet, and the editor keeps its draft underneath because it is still the
-   first child of .work-row and is never unmounted.
-
-   After the sheet rules on purpose, so its tighter measures win. */
+/* The prompt: a block above the editor, never over it. Reading the problem
+   and typing the attempt are the same activity, so covering the code to
+   read was the wrong trade. `order: -1` floats it above while the keyed
+   editor frame stays the DOM's first child and CodeMirror keeps its
+   history; its height is capped so the editor is still on the first
+   screen, and the prompt scrolls inside itself. */
 .prompt-side {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 4;
-    max-height: 100%;
+    order: -1;
+    max-height: 42svh;
     max-width: none;
-    margin: 0;
-    padding: 16px 18px 28px;
+    margin: 0 0 10px;
+    padding: 16px 18px 20px;
     gap: 14px;
     min-height: 0;
+    flex-shrink: 0;
     overflow-y: auto;
     background: var(--bg-raised);
-    border-bottom: 1px solid var(--border);
-    box-shadow: 0 12px 24px -12px rgb(0 0 0 / 55%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    position: relative;
 }
 
 /* `.answer-close` is display:none until a context turns it on -- the slot

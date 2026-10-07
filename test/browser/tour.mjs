@@ -618,15 +618,15 @@ check("Esc leaves it",
 await page.keyboard.press("d");
 await page.waitForSelector(".run-bar", { timeout: 30000 });
 check("d starts the drill", true);
-// The prompt is a sheet laid over the editor, not a column beside it: the
-// step rail has the left now, and between the two the prompt is the one that
-// should move -- it is read once at the start and glanced at after.
+// The prompt is a block above the editor, never over it: reading the
+// problem and typing the attempt are the same activity, so the prompt
+// pushes the editor down and both stay fully visible.
 const promptBox = await page.locator(".prompt-side").boundingBox();
 const openEditorBox = await page.locator(".editor-frame").boundingBox();
-check("the prompt is a sheet over the editor, not a column beside it",
+check("the prompt sits above the editor and covers none of it",
   promptBox && openEditorBox
     && Math.abs(promptBox.x - openEditorBox.x) < 2
-    && promptBox.height < openEditorBox.height,
+    && promptBox.y + promptBox.height <= openEditorBox.y + 1,
   JSON.stringify({ promptBox, openEditorBox }));
 check("and the rail has the left, always",
   (await page.locator(".plan-rail").boundingBox()).x < openEditorBox.x);
@@ -639,7 +639,7 @@ check("the status bar shows the drill's keys, not the study screen's",
   drillHints.includes("edit") && drillHints.includes("solution")
     && !drillHints.includes("study"),
   drillHints);
-await capture("prompt-side", "A drill opens with the prompt over the editor and the steps down the left",
+await capture("prompt-side", "A drill opens with the prompt above the editor and the steps down the left",
   "The plan stays on the left for the whole drill");
 
 const titleBefore = await page.textContent(".drill-title").catch(() => "");
