@@ -28,7 +28,9 @@ module Drill
 
 import Control.Concurrent (forkIO)
 import Control.Concurrent.MVar (newEmptyMVar, putMVar, takeMVar)
-import Control.Exception (SomeException, evaluate, try)
+import Control.Exception
+  ( ErrorCall(ErrorCallWithLocation), SomeException, displayException
+  , evaluate, fromException, try )
 import Data.List (isPrefixOf, sort, sortBy)
 import System.IO
 import System.Posix.IO
@@ -117,7 +119,13 @@ report result output = case result of
       , ("error", "null")
       ]
   Left failure ->
-    let message = show failure
+    -- `show` on an exception stopped carrying the call site in newer GHCs
+    -- (the backtrace moved out of Show); ErrorCallWithLocation has stored
+    -- it as a field since base 4.9, on every version.
+    let message = case fromException failure of
+          Just (ErrorCallWithLocation text location) ->
+            text ++ "\n" ++ location
+          Nothing -> displayException failure
     in object
          [ ("cases", array [])
          , ("stdout", jstr output)
