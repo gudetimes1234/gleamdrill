@@ -11,8 +11,8 @@ import gleam/result
 import gleamdrill/browser
 import gleamdrill/local
 import gleamdrill/model.{
-  type Model, Account, Guest, Model, Ran, Running, RuntimeReady, TourLesson,
-  TourRoute,
+  type Model, Account, Guest, Model, PromptDismissed, Ran, Running, RuntimeReady,
+  TourLesson, TourRoute,
 }
 import gleamdrill/msg.{type Msg}
 import gleamdrill/problem.{type ProblemRef}
@@ -615,4 +615,18 @@ pub fn run_tour_lesson(m: Model) -> #(Model, Effect(Msg)) {
 pub fn current_quiz(m: Model) -> Result(problem.Quiz, Nil) {
   current_problem(m)
   |> result.try(fn(found) { option.to_result(found.quiz, Nil) })
+}
+
+/// Raises the stronger upgrade prompt once a guest has enough at stake for
+/// the warning to mean something. Escalating with stake is honest; nagging
+/// from review one is noise.
+///
+/// A prompt already dismissed stays dismissed -- `local.prompt_state` reads the
+/// persisted flag, so it does not reappear on the next reload.
+pub fn escalate(m: Model) -> model.UpgradePrompt {
+  case m.mode, m.upgrade_prompt {
+    Guest, PromptDismissed -> PromptDismissed
+    Guest, _ -> local.prompt_state(local.current_day(m.account))
+    _, current -> current
+  }
 }

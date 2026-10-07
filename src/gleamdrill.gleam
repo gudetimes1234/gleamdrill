@@ -13,6 +13,7 @@ import gleamdrill/session
 import gleamdrill/store
 import gleamdrill/update
 import gleamdrill/update/common
+import gleamdrill/update/session as session_boot
 import gleamdrill/view/auth
 import gleamdrill/view/compare as compare_view
 import gleamdrill/view/drill
@@ -83,7 +84,7 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
         m,
         effect.batch([
           common.keyboard_effect(),
-          update.adopt_legacy(),
+          session_boot.adopt_legacy(),
           store.load_state(m),
         ]),
       )
