@@ -18,7 +18,6 @@ import gleamdrill/api
 import gleamdrill/board
 import gleamdrill/browser
 import gleamdrill/compare
-import gleamdrill/insights
 import gleamdrill/keys
 import gleamdrill/legacy
 import gleamdrill/local
@@ -28,7 +27,7 @@ import gleamdrill/model.{
   MenuRoute, Model, NewPerDay, NoPane, NotGrading, NotePane, PromptDismissed,
   QueueRoute, Ran, Registering, ReminderHour, ReviewsPerDay, RunError, RunIdle,
   Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded, RuntimeReady,
-  SettingsRoute, SigningIn, SolutionPane, StatsRoute, StudyRoute,
+  SettingsRoute, SigningIn, SolutionPane, StudyRoute,
   SubmittingGrade, SyncFailed, Synced, Syncing, TimedOut, TourContents,
   TourLesson, TourRoute, TracksRoute,
 }
@@ -85,6 +84,7 @@ import gleamdrill/store
 import gleamdrill/tour
 import gleamdrill/track
 import gleamdrill/update/common
+import gleamdrill/update/stats
 import gleamdrill/view/id
 import gleamdrill/walk
 import lustre/effect.{type Effect}
@@ -910,83 +910,14 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UserClickedBackToStudy -> #(Model(..m, route: StudyRoute), effect.none())
 
-    UserClickedStats -> #(
-      Model(..m, route: StatsRoute, detail: None),
-      effect.batch([store.load_stats(m), store.load_insights(m)]),
-    )
-
-    StatsLoaded(Ok(loaded)) -> #(Model(..m, stats: Some(loaded)), effect.none())
-
-    StatsLoaded(Error(failure)) -> #(
-      Model(..m, notice: Some(remote.error_message(failure))),
-      effect.none(),
-    )
-
-    InsightsLoaded(Ok(loaded)) -> #(
-      Model(..m, insights: Some(loaded)),
-      effect.none(),
-    )
-
-    InsightsLoaded(Error(failure)) -> #(
-      Model(..m, notice: Some(remote.error_message(failure))),
-      effect.none(),
-    )
-
-    StatsCursorMoved(delta) ->
-      case m.insights {
-        Some(data) -> {
-          let rows = insights.listed(insights.analyse(data, m.cards, m.now))
-          let last = int.max(0, list.length(rows) - 1)
-          #(
-            Model(
-              ..m,
-              nav: model.MenuNav(
-                ..m.nav,
-                stats: int.clamp(m.nav.stats + delta, 0, last),
-              ),
-            ),
-            effect.none(),
-          )
-        }
-        None -> #(m, effect.none())
-      }
-
-    StatsActivated ->
-      case m.insights {
-        Some(data) -> {
-          let rows = insights.listed(insights.analyse(data, m.cards, m.now))
-          case
-            list.drop(rows, int.clamp(m.nav.stats, 0, list.length(rows) - 1))
-          {
-            [row, ..] -> handle(m, UserOpenedDetail(row.problem))
-            [] -> #(m, effect.none())
-          }
-        }
-        None -> #(m, effect.none())
-      }
-
-    UserOpenedDetail(problem) -> #(
-      Model(..m, detail: Some(#(problem, None))),
-      store.load_history(m, problem),
-    )
-
-    UserClosedDetail -> #(Model(..m, detail: None), effect.none())
-
-    HistoryLoaded(problem, Ok(rows)) ->
-      case m.detail {
-        // Only fill the panel still being looked at; a slow response for a
-        // closed panel is dropped.
-        Some(#(open, None)) if open == problem -> #(
-          Model(..m, detail: Some(#(problem, Some(rows)))),
-          effect.none(),
-        )
-        _ -> #(m, effect.none())
-      }
-
-    HistoryLoaded(_, Error(failure)) -> #(
-      Model(..m, detail: None, notice: Some(remote.error_message(failure))),
-      effect.none(),
-    )
+    UserClickedStats -> stats.open(m)
+    StatsLoaded(result) -> stats.loaded(m, result)
+    InsightsLoaded(result) -> stats.insights_loaded(m, result)
+    StatsCursorMoved(delta) -> stats.cursor_moved(m, delta)
+    StatsActivated -> stats.activated(m)
+    UserOpenedDetail(problem) -> stats.open_detail(m, problem)
+    UserClosedDetail -> stats.close_detail(m)
+    HistoryLoaded(problem, result) -> stats.history_loaded(m, problem, result)
 
     UserGraded(rating) ->
       case m.grading, model.current_ref(m) {
