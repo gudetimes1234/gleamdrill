@@ -141,10 +141,18 @@ jobs:
 
       # Haskell drills run on the server too (server/priv/run-haskell). The
       # distro ghc is installed explicitly rather than trusting whatever the
-      # runner image's ghcup happens to carry; the global package db is the
-      # only cache ghc needs.
+      # runner image's ghcup happens to carry.
       - name: Install GHC
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ghc
+
+      # Like Go's cache warm above: the first ghc invocation pays for paging
+      # in the package db and the linker, which on a cold runner costs more
+      # than an attempt's clock — the first exec test then reports a timeout.
+      # One throwaway compile makes every later one take under a second.
+      - name: Warm ghc
+        run: |
+          printf 'import qualified Data.Map.Strict as M\nimport qualified Data.Set as S\nmain :: IO ()\nmain = print (M.size (M.empty :: M.Map Int Int) + S.size (S.empty :: S.Set Int))\n' > /tmp/warm.hs
+          ghc -v0 -O0 -o /tmp/warm /tmp/warm.hs && /tmp/warm
 
       # The app half of the tree is not built here, but `server` path-depends
       # on ../fsrs, which is why the whole repo is checked out.
