@@ -1,39 +1,36 @@
 import fsrs
 import gleam/int
 import gleam/list
-import gleam/option.{type Option, None, Some}
+import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
-import gleamdrill/board
 import gleamdrill/editor
 import gleamdrill/insights
 import gleamdrill/model.{
-  type CaseResult, type Model, type RunError, AwaitingGrade, Cases, Errored,
-  NoPane, NotGrading, NotePane, Ran, RunIdle, Running, RuntimeFailed,
-  RuntimeLoading, RuntimeNotLoaded, RuntimeReady, SolutionPane, SubmittingGrade,
-  TimedOut,
+  type CaseResult, type Model, AwaitingGrade, Cases, Errored, NoPane, NotGrading,
+  NotePane, Ran, Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded,
+  RuntimeReady, SolutionPane, SubmittingGrade,
 }
 import gleamdrill/msg.{
   type Msg, EditorChanged, EditorResized, ExitConfirmed, NoteChanged,
   UserChangedKeymap, UserClickedExitDrill, UserClickedNext,
   UserClickedRetryRuntime, UserClickedRun, UserClickedScratchRun,
   UserClickedStopRun, UserClickedUndo, UserDismissedDiff, UserGraded,
-  UserPickedChoice, UserRevealedRecall, UserRevealedWholeThing,
-  UserSubmittedAnswer, UserSubmittedBoard, UserToggledDiff, UserToggledNudge,
-  UserToggledPane, UserToggledPiece, UserToggledPrompt, UserToggledResults,
-  UserToggledSolution, WalkCodeShown, WalkFocused, WalkHintShown, WalkWhyShown,
+  UserRevealedRecall, UserToggledDiff, UserToggledPane, UserToggledPrompt,
+  UserToggledSolution,
 }
-import gleamdrill/problem.{
-  type Problem, type ProblemRef, type Quiz, type Solution,
-}
+import gleamdrill/problem.{type Problem, type ProblemRef, type Solution}
 import gleamdrill/problems
 import gleamdrill/runner
 import gleamdrill/view/banner
+import gleamdrill/view/blitz
+import gleamdrill/view/board as board_view
 import gleamdrill/view/format
-import gleamdrill/view/id
 import gleamdrill/view/links
 import gleamdrill/view/nav
-import gleamdrill/walk
+import gleamdrill/view/quiz
+import gleamdrill/view/rail
+import gleamdrill/view/results
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -174,21 +171,21 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
             // from a Good -- so it keeps the clock the quiz does without.
             problem.BoardDrill, _ -> clock(m)
             // A Blitz counts down; every other sitting counts up.
-            problem.CodeDrill, Some(blitz) -> countdown(m, blitz)
+            problem.CodeDrill, Some(blitz) -> blitz.countdown(m, blitz)
             problem.CodeDrill, None -> clock(m)
           },
         ],
       ),
     ]),
     exit_prompt(m),
-    blitz_flash(m),
+    blitz.blitz_flash(m),
     case problem.kind(current), m.recall {
       problem.QuizDrill, _ ->
         case current.quiz {
           Some(quiz) ->
             html.div(
               [attribute.class("drill-main")],
-              quiz_main(m, ref, current, quiz),
+              quiz.quiz_main(m, ref, current, quiz),
             )
           None -> element.none()
         }
@@ -197,7 +194,7 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
           Some(answer) ->
             html.div(
               [attribute.class("drill-main")],
-              board_main(m, ref, current, answer),
+              board_view.board_main(m, ref, current, answer),
             )
           None -> element.none()
         }
@@ -219,7 +216,7 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
           // sidebar used to be: the keyed editor frame has to stay child 0 of
           // its own parent or CodeMirror remounts and drops its undo history
           // and cursor. The stylesheet puts this on the left (order: -1).
-          #("rail", plan_rail(m, current)),
+          #("rail", rail.plan_rail(m, current)),
         ])
     },
   ])
@@ -284,13 +281,13 @@ fn code_main(
             html.h3([attribute.class("panel-title")], [
               html.text("Output"),
             ]),
-            output_panel(m),
+            results.output_panel(m),
           ]),
         ]
         None -> []
       },
       [run_bar(m, current)],
-      results_only(m, current),
+      results.results_only(m, current),
     ])
   ]
 }
@@ -335,7 +332,7 @@ fn read_blocks(
       html.div([attribute.class("problem-category")], [
         html.text(ref.category <> " \u{203a} " <> ref.subcategory),
       ]),
-      prompt_block(current),
+      results.prompt_block(current),
     ],
     case current.check {
       // A read-and-run card has no function to sign: the whole program
@@ -372,22 +369,6 @@ fn read_blocks(
       False -> []
     },
   ])
-}
-
-fn prompt_block(current: Problem) -> Element(Msg) {
-  case current.prompt_html {
-    // Repository-vendored lesson HTML, never user input; see
-    // problem.Problem.prompt_html.
-    True ->
-      element.unsafe_raw_html(
-        "",
-        "div",
-        [attribute.class("problem-prompt prose")],
-        current.prompt,
-      )
-    False ->
-      html.div([attribute.class("problem-prompt")], [html.text(current.prompt)])
-  }
 }
 
 /// The cases as examples: call and expected answer, once a run has produced
@@ -555,325 +536,7 @@ fn recall_solution(solution: Solution) -> Element(Msg) {
   )
 }
 
-fn quiz_main(
-  m: Model,
-  ref: ProblemRef,
-  current: Problem,
-  quiz: Quiz,
-) -> List(Element(Msg)) {
-  let question =
-    html.section([attribute.class("read-sheet quiz-question")], [
-      html.div([attribute.class("problem-category")], [
-        html.text(ref.category <> " \u{203a} " <> ref.subcategory),
-      ]),
-      prompt_block(current),
-    ])
-  let options =
-    html.div(
-      [attribute.class("quiz-choices")],
-      list.index_map(quiz.choices, fn(text, index) {
-        let picked = m.choice == Some(index)
-        let is_answer = index == quiz.correct
-        html.button(
-          [
-            attribute.classes([
-              #("quiz-choice", True),
-              #("picked", picked),
-              // Only after grading does the styling say anything true about
-              // correctness, otherwise it would give the answer away.
-              #("correct", m.graded && is_answer),
-              #("wrong", m.graded && picked && !is_answer),
-            ]),
-            attribute.disabled(m.graded),
-            event.on_click(UserPickedChoice(index)),
-          ],
-          [
-            html.span([attribute.class("quiz-marker")], [
-              html.text(marker(index)),
-            ]),
-            html.span([attribute.class("quiz-choice-text")], [html.text(text)]),
-          ],
-        )
-      }),
-    )
-
-  let bar =
-    html.div([attribute.class("run-bar")], case m.graded {
-      False -> [
-        html.button(
-          [
-            attribute.class("btn-primary"),
-            attribute.disabled(m.choice == None),
-            event.on_click(UserSubmittedAnswer),
-          ],
-          [html.text("Submit answer")],
-        ),
-        html.button(
-          [
-            attribute.class("btn-secondary skip-button"),
-            event.on_click(UserClickedNext),
-          ],
-          [html.text("Skip")],
-        ),
-      ]
-      True -> [
-        html.button(
-          [
-            attribute.class("btn-primary next-button"),
-            event.on_click(UserClickedNext),
-          ],
-          [html.text("Next")],
-        ),
-      ]
-    })
-
-  [question, options, bar, ..quiz_verdict(m, quiz)]
-}
-
-fn quiz_verdict(m: Model, quiz: Quiz) -> List(Element(Msg)) {
-  case m.graded {
-    False -> []
-    True -> {
-      let right = m.choice == Some(quiz.correct)
-      [
-        results_box(
-          m,
-          case right {
-            True -> "\u{2713} Correct"
-            False -> "\u{2717} Not quite"
-          },
-          right,
-          None,
-          [
-            html.div([attribute.class("quiz-explanation")], [
-              html.text(quiz.explanation),
-            ]),
-            html.div([attribute.class("quiz-page")], [
-              html.text("Book reference: " <> quiz.page),
-            ]),
-          ],
-        ),
-      ]
-    }
-  }
-}
-
 // --- The system design board ------------------------------------------------
-
-/// The board replaces the editor and the run bar entirely, like the quiz. The
-/// whole palette is on screen from the moment it opens -- that is the point:
-/// a shortlist would turn recall into recognition -- and every piece stays
-/// clickable until Submit, after which all thirty-six are annotated and only
-/// Next remains.
-fn board_main(
-  m: Model,
-  ref: ProblemRef,
-  current: Problem,
-  answer: board.Board,
-) -> List(Element(Msg)) {
-  let question =
-    html.section([attribute.class("read-sheet board-question")], [
-      html.div([attribute.class("problem-category")], [
-        html.text(ref.category <> " \u{203a} " <> ref.subcategory),
-      ]),
-      prompt_block(current),
-    ])
-
-  [question, board_palette(m, answer), board_bar(m), ..board_verdict(m, answer)]
-}
-
-/// The palette, six labelled shelves in family order. One flat cursor index
-/// walks it: the columns are responsive, so true two-dimensional movement
-/// would be a lie about a layout that reflows.
-fn board_palette(m: Model, answer: board.Board) -> Element(Msg) {
-  html.div(
-    [attribute.class("board-palette")],
-    list.map(board.families(), fn(family) { board_shelf(m, answer, family) }),
-  )
-}
-
-fn board_shelf(
-  m: Model,
-  answer: board.Board,
-  family: board.Family,
-) -> Element(Msg) {
-  html.section(
-    [attribute.class("board-shelf board-shelf-" <> board.family_slug(family))],
-    [
-      html.h3([attribute.class("board-shelf-label")], [
-        html.text(board.family_label(family)),
-      ]),
-      html.div(
-        [attribute.class("board-shelf-pieces")],
-        list.map(board.pieces_in(family), fn(piece) {
-          board_chip(m, answer, piece)
-        }),
-      ),
-    ],
-  )
-}
-
-fn board_chip(
-  m: Model,
-  answer: board.Board,
-  piece: board.Piece,
-) -> Element(Msg) {
-  let index = board.index_of(piece)
-  let picked = list.contains(m.board_picks, piece.id)
-  let verdict = board.verdict(answer, piece, m.board_picks)
-  html.button(
-    [
-      attribute.id(id.board_chip_id(index)),
-      attribute.type_("button"),
-      attribute.classes([
-        #("board-chip", True),
-        #("picked", picked),
-        #("cursor", m.board_cursor == index),
-        // Only after grading does the styling say anything true about the
-        // answer, otherwise the board would give itself away.
-        #("hit", m.graded && verdict == board.Hit),
-        #("missed", m.graded && verdict == board.Missed),
-        #("wrong", m.graded && verdict == board.WrongPick),
-        #("neutral", m.graded && verdict == board.NeutralPick),
-      ]),
-      attribute.disabled(m.graded),
-      event.on_click(UserToggledPiece(piece.id)),
-    ],
-    [
-      html.span([attribute.class("board-chip-label")], [html.text(piece.label)]),
-      html.span([attribute.class("board-chip-why")], [html.text(piece.why)]),
-    ],
-  )
-}
-
-fn board_bar(m: Model) -> Element(Msg) {
-  html.div([attribute.class("run-bar")], case m.graded {
-    False -> [
-      html.button(
-        [
-          attribute.class("btn-primary"),
-          // Submitting nothing is not an answer; it is a way to mark a card
-          // Again without reading it.
-          attribute.disabled(m.board_picks == []),
-          event.on_click(UserSubmittedBoard),
-        ],
-        [html.text("Submit board")],
-      ),
-      html.button(
-        [
-          attribute.class("btn-secondary skip-button"),
-          event.on_click(UserClickedNext),
-        ],
-        [html.text("Skip")],
-      ),
-      html.span([attribute.class("board-count")], [
-        html.text(case list.length(m.board_picks) {
-          1 -> "1 piece on the board"
-          n -> int.to_string(n) <> " pieces on the board"
-        }),
-      ]),
-    ]
-    True -> [
-      html.button(
-        [
-          attribute.class("btn-primary next-button"),
-          event.on_click(UserClickedNext),
-        ],
-        [html.text("Next")],
-      ),
-    ]
-  })
-}
-
-/// After submitting: the score, then what was missed and what was spurious,
-/// each with the line that says why. Pieces answered correctly are not listed
-/// -- they are already green on the board, and the list is for reading what
-/// you got wrong.
-fn board_verdict(m: Model, answer: board.Board) -> List(Element(Msg)) {
-  case m.graded {
-    False -> []
-    True -> {
-      let graded = board.grade(m.board_picks, answer, 0)
-      let headline =
-        int.to_string(list.length(graded.hit))
-        <> "/"
-        <> int.to_string(list.length(answer.required))
-        <> case list.length(graded.wrong) {
-          0 -> ""
-          1 -> " \u{b7} 1 you do not need"
-          n -> " \u{b7} " <> int.to_string(n) <> " you do not need"
-        }
-      [
-        results_box(
-          m,
-          headline,
-          graded.rating != fsrs.Again,
-          None,
-          list.flatten([
-            board_list("Missing", "board-missed", graded.missed, fn(piece) {
-              board.why(answer, piece)
-            }),
-            board_list(
-              "Not needed here",
-              "board-wrong",
-              graded.wrong,
-              fn(piece) { piece.why },
-            ),
-            case graded.neutral {
-              [] -> []
-              picked ->
-                board_list(
-                  "Defensible, not required",
-                  "board-neutral",
-                  picked,
-                  fn(piece) { board.why(answer, piece) },
-                )
-            },
-          ]),
-        ),
-      ]
-    }
-  }
-}
-
-fn board_list(
-  title: String,
-  class: String,
-  pieces: List(board.Piece),
-  line: fn(board.Piece) -> String,
-) -> List(Element(Msg)) {
-  case pieces {
-    [] -> []
-    _ -> [
-      html.div([attribute.class("board-verdict-group " <> class)], [
-        html.h4([attribute.class("board-verdict-title")], [html.text(title)]),
-        html.ul(
-          [attribute.class("board-verdict-list")],
-          list.map(pieces, fn(piece) {
-            html.li([], [
-              html.span([attribute.class("board-verdict-piece")], [
-                html.text(piece.label),
-              ]),
-              html.span([attribute.class("board-verdict-why")], [
-                html.text(line(piece)),
-              ]),
-            ])
-          }),
-        ),
-      ]),
-    ]
-  }
-}
-
-fn marker(index: Int) -> String {
-  case index {
-    0 -> "A"
-    1 -> "B"
-    2 -> "C"
-    3 -> "D"
-    _ -> int.to_string(index + 1)
-  }
-}
 
 fn keymap_picker(m: Model) -> Element(Msg) {
   html.div(
@@ -942,42 +605,6 @@ fn note_pane(m: Model, ref: ProblemRef) -> Element(Msg) {
   )
 }
 
-fn output_panel(m: Model) -> Element(Msg) {
-  case m.run {
-    Ran(_, stdout) ->
-      case string.trim(stdout) {
-        "" ->
-          html.div([attribute.class("output-empty")], [
-            html.text("The last run printed nothing."),
-          ])
-        text ->
-          html.pre([attribute.class("results-stdout output-pane")], [
-            html.text(text),
-          ])
-      }
-    // The previous run's output, dimmed rather than blanked: it is still the
-    // latest thing the program said.
-    Running(_, stdout) ->
-      case string.trim(stdout) {
-        "" ->
-          html.div([attribute.class("output-empty")], [
-            html.text("Nothing printed yet."),
-          ])
-        text ->
-          html.pre(
-            [attribute.class("results-stdout output-pane output-stale")],
-            [
-              html.text(text),
-            ],
-          )
-      }
-    RunIdle ->
-      html.div([attribute.class("output-empty")], [
-        html.text("Nothing printed yet."),
-      ])
-  }
-}
-
 fn run_bar(m: Model, current: Problem) -> Element(Msg) {
   let run_control = case
     current.check,
@@ -1038,7 +665,7 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
             [html.text("Retry")],
           ),
           html.span([attribute.class("run-error")], [
-            html.text(first_lines(message)),
+            html.text(results.first_lines(message)),
           ]),
         ]
       }
@@ -1117,49 +744,6 @@ fn undo_button(m: Model) -> List(Element(Msg)) {
       ),
     ]
     None -> []
-  }
-}
-
-/// The Blitz clock: what is left on this card, red inside the last thirty
-/// seconds. At zero the card is over and the next one opens.
-fn countdown(m: Model, blitz: model.Blitz) -> Element(Msg) {
-  let left = int.max(0, { blitz.deadline_ms - m.now_ms } / 1000)
-  let text =
-    int.to_string(left / 60)
-    <> ":"
-    <> string.pad_start(int.to_string(left % 60), 2, "0")
-  let done = list.length(blitz.results)
-  let total = list.length(m.selected)
-  html.span(
-    [
-      attribute.classes([
-        #("drill-clock", True),
-        #("drill-countdown", True),
-        #("drill-clock-urgent", left <= 30),
-      ]),
-      attribute.attribute("aria-label", "Time left on this card"),
-    ],
-    [
-      html.text(
-        " \u{b7} \u{23f1} "
-        <> text
-        <> " \u{b7} "
-        <> int.to_string(done)
-        <> "/"
-        <> int.to_string(total),
-      ),
-    ],
-  )
-}
-
-/// One beat of "Time!" as an expired Blitz card gives way to the next.
-fn blitz_flash(m: Model) -> Element(Msg) {
-  case m.blitz {
-    Some(model.Blitz(expired_flash: True, ..)) ->
-      html.div([attribute.class("blitz-flash"), attribute.role("status")], [
-        html.text("Time!"),
-      ])
-    _ -> element.none()
   }
 }
 
@@ -1367,280 +951,6 @@ fn run_button(label: String, disabled: Bool) -> Element(Msg) {
   )
 }
 
-fn results_only(m: Model, current: Problem) -> List(Element(Msg)) {
-  case m.run {
-    RunIdle -> []
-    Running(_, _) -> [
-      html.div([attribute.class("results")], [
-        html.div([attribute.class("results-summary running")], [
-          html.text(case problem.language_slug(current.language) {
-            // Brython interprets; nothing compiles.
-            "python" -> "Running\u{2026}"
-            _ -> "Compiling and running\u{2026}"
-          }),
-        ]),
-      ]),
-    ]
-    Ran(Cases(cases), stdout) ->
-      case m.run_kind {
-        model.ScratchRun -> [scratch_results(stdout)]
-        model.TestRun -> [case_results(m, cases)]
-      }
-    Ran(Errored(error), _) -> [error_results(m, error, current)]
-    Ran(TimedOut, _) -> [
-      results_box(
-        m,
-        "Your solution didn't finish \u{2014} likely an infinite loop. The runtime was restarted.",
-        False,
-        None,
-        [],
-      ),
-    ]
-  }
-}
-
-/// The step rail: the plan, on the left, for the whole drill.
-///
-/// Every step's *title* is listed from the moment the problem opens. That is
-/// the whole point of it, and it is why moving the focus reveals nothing --
-/// nobody chose to see a list that was already there. Only what sits *under* a
-/// step is gated: its hint, its why, and its slice of the code. Nothing the
-/// solution pane does can take this away, which is the difference from the
-/// pane it replaced.
-fn plan_rail(m: Model, current: Problem) -> Element(Msg) {
-  let steps = walk.walk_steps(current.approach)
-  let total = list.length(steps)
-  html.aside(
-    [attribute.class("plan-rail")],
-    list.flatten([
-      [
-        html.div([attribute.class("rail-header")], [
-          html.h3([attribute.class("panel-title")], [html.text("Approach")]),
-          ..case total {
-            0 -> []
-            _ -> [
-              html.span([attribute.class("rail-count")], [
-                html.text(
-                  int.to_string(int.min(m.walk.focus + 1, total))
-                  <> "/"
-                  <> int.to_string(total),
-                ),
-              ]),
-            ]
-          }
-        ]),
-      ],
-      rail_nudge(m, current),
-      case steps {
-        [] -> [
-          html.p([attribute.class("rail-empty")], [
-            html.text("No plan written for this one yet."),
-          ]),
-        ]
-        _ -> [
-          html.ol(
-            [attribute.class("rail-steps")],
-            list.index_map(steps, fn(step, index) {
-              rail_step(m, current, step, index)
-            }),
-          ),
-        ]
-      },
-      rail_whole_thing(m, current),
-    ]),
-  )
-}
-
-/// The nudge, folded away until asked for. Not a reveal: it is a question
-/// about the problem, not a piece of the answer, so it carries no warning.
-fn rail_nudge(m: Model, current: Problem) -> List(Element(Msg)) {
-  case walk.nudge_text(current.approach) {
-    None -> []
-    Some(text) -> [
-      html.div([attribute.class("rail-nudge")], [
-        html.button(
-          [
-            attribute.classes([
-              #("link-button", True),
-              #("rail-nudge-toggle", True),
-              #("open", m.nudge_shown),
-            ]),
-            attribute.type_("button"),
-            event.on_click(UserToggledNudge),
-          ],
-          [
-            html.text(case m.nudge_shown {
-              True -> "Nudge"
-              False -> "Nudge \u{2026}"
-            }),
-            html.kbd([], [html.text("a")]),
-          ],
-        ),
-        ..case m.nudge_shown {
-          False -> []
-          True -> [
-            html.p([attribute.class("approach-nudge")], [html.text(text)]),
-          ]
-        }
-      ]),
-    ]
-  }
-}
-
-/// One step: its number and its title always, whatever is turned over
-/// underneath it, and -- only while it has the focus -- the buttons to turn
-/// over the rest.
-fn rail_step(
-  m: Model,
-  current: Problem,
-  step: problem.WalkStep,
-  index: Int,
-) -> Element(Msg) {
-  let open = walk.layers_at(m.walk, index)
-  let focused = index == m.walk.focus
-  // This drill's language, or the shared slice where it has none of its own
-  // written yet. A Go drill showing Python is showing the wrong thing.
-  let slice = problem.slice_for(step.code, current.language)
-  html.li(
-    [
-      attribute.classes([
-        #("rail-step", True),
-        #("current", focused),
-        #("opened", open != walk.no_layers),
-      ]),
-    ],
-    list.flatten([
-      [
-        html.button(
-          [
-            attribute.class("link-button rail-step-title"),
-            attribute.type_("button"),
-            event.on_click(WalkFocused(index)),
-          ],
-          [
-            html.span([attribute.class("rail-step-number")], [
-              html.text(int.to_string(index + 1)),
-            ]),
-            html.span([attribute.class("rail-step-text")], [
-              html.text(step.step),
-            ]),
-          ],
-        ),
-      ],
-      layer(open.hint, "walk-hint", "Hint", step.hint),
-      layer(open.why, "walk-why", "Why", step.why),
-      case slice, open.code {
-        "", _ | _, False -> []
-        code, True -> [
-          html.pre([attribute.class("approach-pseudocode walk-code")], [
-            html.code([], [html.text(code)]),
-          ]),
-        ]
-      },
-      case focused {
-        False -> []
-        True -> {
-          let buttons =
-            list.flatten([
-              case open.hint {
-                True -> []
-                False -> [
-                  reveal_button("walk-reveal-hint", "Hint", "h", WalkHintShown),
-                ]
-              },
-              case open.why {
-                True -> []
-                False -> [
-                  reveal_button("walk-reveal-why", "Why", "y", WalkWhyShown),
-                ]
-              },
-              case slice, open.code {
-                "", _ | _, True -> []
-                _, False -> [
-                  reveal_button("walk-reveal-code", "Code", "c", WalkCodeShown),
-                  html.span([attribute.class("hint-warning")], [
-                    html.text("logged as a reveal"),
-                  ]),
-                ]
-              },
-            ])
-          case buttons {
-            [] -> []
-            _ -> [html.div([attribute.class("rail-step-layers")], buttons)]
-          }
-        }
-      },
-    ]),
-  )
-}
-
-/// The whole plan at once, at the foot of the rail. This one is the answer,
-/// and it says so before it is pressed.
-fn rail_whole_thing(m: Model, current: Problem) -> List(Element(Msg)) {
-  case walk.whole_thing(current.approach, current.language) {
-    None -> []
-    Some(code) ->
-      case m.whole_thing_shown {
-        True -> [
-          html.pre([attribute.class("approach-pseudocode rail-whole")], [
-            html.code([], [html.text(code)]),
-          ]),
-        ]
-        False -> [
-          html.div([attribute.class("rail-foot")], [
-            html.button(
-              [
-                attribute.class("btn-secondary rail-whole-open"),
-                attribute.type_("button"),
-                event.on_click(UserRevealedWholeThing),
-              ],
-              [
-                html.text("Show the whole thing"),
-                html.kbd([], [html.text("w")]),
-              ],
-            ),
-            html.span([attribute.class("hint-warning")], [
-              html.text("logged as a reveal"),
-            ]),
-          ]),
-        ]
-      }
-  }
-}
-
-fn layer(
-  shown: Bool,
-  class: String,
-  label: String,
-  text: String,
-) -> List(Element(Msg)) {
-  case shown {
-    False -> []
-    True -> [
-      html.div([attribute.class("walk-layer " <> class)], [
-        html.span([attribute.class("walk-layer-label")], [html.text(label)]),
-        html.p([], [html.text(text)]),
-      ]),
-    ]
-  }
-}
-
-fn reveal_button(
-  class: String,
-  label: String,
-  key: String,
-  msg: Msg,
-) -> Element(Msg) {
-  html.button(
-    [
-      attribute.class("btn-secondary walk-reveal " <> class),
-      attribute.type_("button"),
-      event.on_click(msg),
-    ],
-    [html.text(label), html.kbd([], [html.text(key)])],
-  )
-}
-
 /// The revealed solution, rendered beside the editor so code and answer can be
 /// compared line by line rather than by scrolling.
 fn solution_pane(m: Model, current: Problem) -> List(Element(Msg)) {
@@ -1816,240 +1126,24 @@ fn revealed(m: Model, current: Problem) -> Result(#(Int, Solution), Nil) {
   }
 }
 
-/// A scratch run's result is what it printed, in the Output pane; this is
-/// the one line that says it ran.
-fn scratch_results(stdout: String) -> Element(Msg) {
-  let lines =
-    stdout
-    |> string.split("\n")
-    |> list.filter(fn(line) { line != "" })
-    |> list.length
-  html.div([attribute.class("results")], [
-    html.div([attribute.class("results-summary scratch")], [
-      html.text(case lines {
-        0 -> "Ran \u{b7} nothing printed"
-        1 -> "Ran \u{b7} 1 line printed"
-        n -> "Ran \u{b7} " <> int.to_string(n) <> " lines printed"
-      }),
-    ]),
-  ])
-}
-
-fn case_results(m: Model, cases: List(CaseResult)) -> Element(Msg) {
-  let total = list.length(cases)
-  let passed = list.count(cases, fn(c) { c.passed })
-  let all_passed = passed == total && total > 0
-  let failed = list.filter(cases, fn(c: CaseResult) { !c.passed })
-
-  let verdict =
-    case all_passed {
-      True -> "\u{2713} "
-      False -> "\u{2717} "
-    }
-    <> int.to_string(passed)
-    <> "/"
-    <> int.to_string(total)
-    <> " passed"
-
-  // Folded, the first failing case's name is the one thing worth a glance.
-  let preview = case failed {
-    [first, ..] -> Some(first.label)
-    [] -> None
-  }
-
-  let failures =
-    failed
-    |> list.map(fn(c: CaseResult) {
-      html.div([attribute.class("case fail")], [
-        html.div([attribute.class("case-label")], [
-          html.text("\u{2717} " <> c.label),
-        ]),
-        html.div([attribute.class("case-diff")], [
-          html.div([], [
-            html.span([attribute.class("case-diff-tag")], [
-              html.text("expected "),
-            ]),
-            html.code([], [html.text(c.expected)]),
-          ]),
-          html.div([], [
-            html.span([attribute.class("case-diff-tag")], [html.text("got ")]),
-            html.code([], [html.text(c.actual)]),
-          ]),
-        ]),
-      ])
-    })
-
-  results_box(m, verdict, all_passed, preview, failures)
-}
-
-/// Every run verdict: a one-line summary that is also the fold button, over a
-/// body that scrolls on its own. Folded, the body is hidden but stays in the
-/// DOM, so the failing cases are still there to count.
-fn results_box(
-  m: Model,
-  verdict: String,
-  passed: Bool,
-  preview: Option(String),
-  body: List(Element(Msg)),
-) -> Element(Msg) {
-  let foldable = body != []
-  let collapsed = foldable && m.results_collapsed
-  let summary_children =
-    list.flatten([
-      [html.span([attribute.class("results-verdict")], [html.text(verdict)])],
-      case collapsed, preview {
-        True, Some(line) -> [
-          html.span([attribute.class("results-preview")], [
-            html.text(first_line(line)),
-          ]),
-        ]
-        _, _ -> []
-      },
-      case foldable {
-        True -> [
-          html.span([attribute.class("results-chevron")], [
-            html.text(case collapsed {
-              True -> "\u{25B8}"
-              False -> "\u{25BE}"
-            }),
-          ]),
-        ]
-        False -> []
-      },
-    ])
-  let summary_classes =
-    attribute.classes([
-      #("results-summary", True),
-      #("pass", passed),
-      #("fail", !passed),
-    ])
-  let summary = case foldable {
-    True ->
-      html.button(
-        [
-          summary_classes,
-          attribute.type_("button"),
-          attribute.attribute("aria-expanded", case collapsed {
-            True -> "false"
-            False -> "true"
-          }),
-          event.on_click(UserToggledResults),
-        ],
-        summary_children,
-      )
-    False -> html.div([summary_classes], summary_children)
-  }
-  html.div(
-    [
-      attribute.classes([
-        #("results", True),
-        #("collapsed", collapsed),
-      ]),
-    ],
-    case foldable {
-      True -> [summary, html.div([attribute.class("results-body")], body)]
-      False -> [summary]
-    },
-  )
-}
-
-/// The first non-empty line, cut to fit beside the verdict.
-fn first_line(text: String) -> String {
-  let line =
-    text
-    |> string.split("\n")
-    |> list.map(string.trim)
-    |> list.find(fn(l) { l != "" })
-    |> result.unwrap("")
-  case string.length(line) > 90 {
-    True -> string.slice(line, 0, 90) <> "\u{2026}"
-    False -> line
-  }
-}
-
-fn error_results(m: Model, error: RunError, current: Problem) -> Element(Msg) {
-  // An "internal" failure is the drill runner's own bug; even when it names a
-  // check file it must not read as "your signature is wrong".
-  let is_check_file = case error.file, error.phase {
-    _, "internal" -> False
-    Some(file), _ -> string.starts_with(file, "check")
-    None, _ -> False
-  }
-  case is_check_file, m.run_kind, current.check {
-    // A scratch run's harness is `run() { solution.main() }`: an error
-    // located there means the attempt has no main(), not a wrong signature.
-    True, model.ScratchRun, _ ->
-      results_box(
-        m,
-        "Scratch runs call your main() \u{2014} add pub fn main() first.",
-        False,
-        None,
-        [
-          html.pre([attribute.class("results-message")], [
-            html.text(error.message),
-          ]),
-        ],
-      )
-    True, _, Some(check) ->
-      results_box(
-        m,
-        "Your solution doesn't match the required signature.",
-        False,
-        Some(check.signature),
-        [
-          html.pre([attribute.class("signature")], [
-            html.code([], [html.text(check.signature)]),
-          ]),
-          html.pre([attribute.class("results-message")], [
-            html.text(error.message),
-          ]),
-        ],
-      )
-    _, _, _ ->
-      results_box(
-        m,
-        case error.phase {
-          "compile" -> "Your code doesn't compile."
-          "internal" ->
-            "The drill runner itself failed on this input \u{2014} a bug in GleamDrill, not your code."
-          _ -> "Your code crashed while running."
-        },
-        False,
-        Some(error.message),
-        [
-          html.pre([attribute.class("results-message")], [
-            html.text(error.message),
-          ]),
-        ],
-      )
-  }
-}
-
 /// Compile errors inside the user's own module become inline underlines.
 fn editor_diagnostics(m: Model) -> List(editor.Diagnostic) {
   case m.run {
     Ran(Errored(error), _) ->
       case error.file, error.line, error.column {
         Some("solution.gleam"), Some(line), Some(column) -> [
-          editor.Diagnostic(line, column, first_lines(error.message)),
+          editor.Diagnostic(line, column, results.first_lines(error.message)),
         ]
         Some("solution.py"), Some(line), Some(column) -> [
-          editor.Diagnostic(line, column, first_lines(error.message)),
+          editor.Diagnostic(line, column, results.first_lines(error.message)),
         ]
         Some("solution.ts"), Some(line), Some(column) -> [
-          editor.Diagnostic(line, column, first_lines(error.message)),
+          editor.Diagnostic(line, column, results.first_lines(error.message)),
         ]
         _, _, _ -> []
       }
     _ -> []
   }
-}
-
-fn first_lines(message: String) -> String {
-  message
-  |> string.split("\n")
-  |> list.take(3)
-  |> string.join("\n")
 }
 
 fn approach_stage(
