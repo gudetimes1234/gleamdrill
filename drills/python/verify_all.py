@@ -94,6 +94,7 @@ VARIANTS = [
     ("nc129_copy_random_list", "Hash Map", "nc129_copy_random_list"),
     ("nc12_best_time_stock", "Brute Force", "nc12_best_time_stock__brute_force"),
     ("nc12_best_time_stock", "Greedy", "nc12_best_time_stock"),
+    ("nc12_best_time_stock", "Two Pointers", "nc12_best_time_stock__two_pointers"),
     ("nc130_add_two_numbers", "Nifty Python · Big Ints", "nc130_add_two_numbers__via_integers"),
     ("nc130_add_two_numbers", "Simulation", "nc130_add_two_numbers"),
     ("nc131_linked_list_cycle", "Hash Set", "nc131_linked_list_cycle__seen_set"),

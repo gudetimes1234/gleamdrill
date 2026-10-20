@@ -3667,6 +3667,22 @@ Every buy day against every later sell day. O(n^2), and the problem statement wr
 
     return profit",
       ),
+      #(
+        "Two Pointers",
+        "O(n) time · O(1) space",
+        "Left pointer marks the buy day, right pointer scans the sell days. A sell price below the buy price becomes the new buy — nothing before it can beat buying cheaper — otherwise the spread is a candidate profit. Same one pass as the running minimum, phrased as a window.",
+        "def maxProfit(prices):
+    profit = 0
+    buy = 0
+
+    for sell in range(1, len(prices)):
+        if prices[sell] < prices[buy]:
+            buy = sell
+        else:
+            profit = max(profit, prices[sell] - prices[buy])
+
+    return profit",
+      ),
     ],
     check: Check(
       signature: "def maxProfit(prices):",

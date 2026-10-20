@@ -1,0 +1,4 @@
+@kind Two Pointers
+@big-o O(n) time · O(1) space
+@order 3
+Left pointer marks the buy day, right pointer scans the sell days. A sell price below the buy price becomes the new buy — nothing before it can beat buying cheaper — otherwise the spread is a candidate profit. Same one pass as the running minimum, phrased as a window.
