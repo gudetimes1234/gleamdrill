@@ -660,6 +660,28 @@ gleam-editor .cm-scroller {
     color: var(--accent);
 }
 
+/* Paused: the number dims and stops being a judgement until it runs again. */
+.drill-clock.clock-paused {
+    color: var(--text-secondary);
+}
+
+/* The pause toggle rides inside the clock, sized like the text it sits by. */
+.clock-pause {
+    background: none;
+    border: none;
+    padding: 0 2px;
+    margin-left: 4px;
+    font-size: inherit;
+    line-height: 1;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.clock-pause:hover {
+    opacity: 1;
+}
+
 /* The Blitz clock counts down, and the last thirty seconds are red. */
 .drill-countdown {
     font-weight: 600;

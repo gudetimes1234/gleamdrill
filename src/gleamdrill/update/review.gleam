@@ -101,7 +101,7 @@ pub fn graded(m: Model, rating: fsrs.Rating) -> #(Model, Effect(Msg)) {
             model.SittingEntry(
               problem: ref,
               pressed: rating,
-              duration_ms: browser.now_ms() - m.opened_at_ms,
+              duration_ms: model.elapsed_ms(m, browser.now_ms()),
               passed: model.test_passed(m),
               clean: model.test_passed(m) && !common.answer_given_away(m),
             ),
@@ -123,7 +123,7 @@ pub fn graded(m: Model, rating: fsrs.Rating) -> #(Model, Effect(Msg)) {
             whole_thing_shown: m.whole_thing_shown,
             walk: m.walk,
             walk_code_seen: m.walk_code_seen,
-            duration_ms: browser.now_ms() - m.opened_at_ms,
+            duration_ms: model.elapsed_ms(m, browser.now_ms()),
             card_before: model.card_for(m, ref),
           )),
         ),
@@ -144,7 +144,7 @@ pub fn graded(m: Model, rating: fsrs.Rating) -> #(Model, Effect(Msg)) {
             wire.Review(
               problem: ref,
               rating:,
-              duration_ms: Some(browser.now_ms() - m.opened_at_ms),
+              duration_ms: Some(model.elapsed_ms(m, browser.now_ms())),
               // An ungraded card's run is a demonstration, not a test, so
               // it is never logged as a failure.
               auto_failed: case common.current_problem(m) {

@@ -17,7 +17,7 @@ import gleamdrill/msg.{
   UserClickedRetryRuntime, UserClickedRun, UserClickedScratchRun,
   UserClickedStopRun, UserClickedUndo, UserDismissedDiff, UserGraded,
   UserRevealedRecall, UserToggledDiff, UserToggledPane, UserToggledPrompt,
-  UserToggledSolution,
+  UserToggledSolution, UserToggledTimer,
 }
 import gleamdrill/problem.{type Problem, type ProblemRef, type Solution}
 import gleamdrill/problems
@@ -751,7 +751,8 @@ fn undo_button(m: Model) -> List(Element(Msg)) {
 /// three minutes the stats screen counts a fluent solve against. Shown live so
 /// the number in the summary is never a surprise.
 fn clock(m: Model) -> Element(Msg) {
-  let seconds = int.max(0, { m.now_ms - m.opened_at_ms } / 1000)
+  let paused = m.clock_paused_at != None
+  let seconds = model.elapsed_ms(m, m.now_ms) / 1000
   let text =
     int.to_string(seconds / 60)
     <> ":"
@@ -767,6 +768,7 @@ fn clock(m: Model) -> Element(Msg) {
     [
       attribute.classes([
         #("drill-clock", True),
+        #("clock-paused", paused),
         #("over-promise", seconds >= promise_seconds),
         #("over-median", case median {
           Some(ms) -> seconds * 1000 > ms
@@ -777,6 +779,23 @@ fn clock(m: Model) -> Element(Msg) {
     ],
     [
       html.text(" \u{b7} " <> text),
+      html.button(
+        [
+          attribute.class("clock-pause"),
+          attribute.type_("button"),
+          attribute.attribute("title", case paused {
+            True -> "Resume the timer"
+            False -> "Pause the timer"
+          }),
+          event.on_click(UserToggledTimer),
+        ],
+        [
+          html.text(case paused {
+            True -> "\u{25b6}"
+            False -> "\u{23f8}"
+          }),
+        ],
+      ),
       ..case median {
         Some(ms) -> [
           html.span(

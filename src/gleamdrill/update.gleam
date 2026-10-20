@@ -49,8 +49,9 @@ import gleamdrill/msg.{
   UserSubmittedBoard, UserSubmittedQueueName, UserToggledAuthMode,
   UserToggledBlitz, UserToggledDiff, UserToggledNudge, UserToggledPane,
   UserToggledPiece, UserToggledProblem, UserToggledPrompt, UserToggledQueued,
-  UserToggledResults, UserToggledSolution, UserToggledSuspend, WalkAdvanced,
-  WalkBacked, WalkCodeShown, WalkFocused, WalkHintShown, WalkWhyShown,
+  UserToggledResults, UserToggledSolution, UserToggledSuspend, UserToggledTimer,
+  WalkAdvanced, WalkBacked, WalkCodeShown, WalkFocused, WalkHintShown,
+  WalkWhyShown,
 }
 import gleamdrill/remote
 import gleamdrill/update/blitz as blitz_update
@@ -222,6 +223,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     BlitzExpired -> blitz_update.expired(m)
 
     UserToggledNudge -> drill_update.toggle_nudge(m)
+    UserToggledTimer -> drill_update.toggle_timer(m)
     WalkFocused(index) -> drill_update.walk_focused(m, index)
     WalkAdvanced -> drill_update.walk_focused(m, m.walk.focus + 1)
     WalkBacked -> drill_update.walk_focused(m, m.walk.focus - 1)

@@ -113,7 +113,7 @@ pub fn submitted_answer(m: Model) -> #(Model, Effect(Msg)) {
               True -> fsrs.Good
               False -> fsrs.Again
             },
-            duration_ms: Some(browser.now_ms() - m.opened_at_ms),
+            duration_ms: Some(model.elapsed_ms(m, browser.now_ms())),
             auto_failed: !right,
             revealed: False,
             // The exam is an assessment, not practice.
@@ -150,7 +150,7 @@ pub fn toggle_piece(m: Model, id: String) -> #(Model, Effect(Msg)) {
 pub fn submitted_board(m: Model) -> #(Model, Effect(Msg)) {
   case m.graded, current_board(m), model.current_ref(m) {
     False, Ok(answer), Ok(ref) -> {
-      let duration_ms = browser.now_ms() - m.opened_at_ms
+      let duration_ms = model.elapsed_ms(m, browser.now_ms())
       let graded = board.grade(m.board_picks, answer, duration_ms)
       #(
         Model(

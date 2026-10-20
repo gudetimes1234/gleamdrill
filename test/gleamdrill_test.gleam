@@ -34,6 +34,7 @@ import gleamdrill/session
 import gleamdrill/store
 import gleamdrill/tour
 import gleamdrill/track
+import gleamdrill/update/drill as drill_update
 import gleamdrill/view/format
 import gleamdrill/walk
 import gleeunit
@@ -2483,4 +2484,48 @@ pub fn harness_warnings_stay_out_of_the_output_test() -> Nil {
   assert string.contains(mixed, "\u{26a0} Compiler warnings:")
   assert string.contains(mixed, "solution.gleam")
   assert !string.contains(mixed, "check.gleam")
+}
+
+/// The drill clock's pause is arithmetic: elapsed time excludes banked pause
+/// spans and the one still open, the paused clock reads frozen, and resuming
+/// banks exactly the span that was paused. A Blitz refuses the toggle -- the
+/// countdown is the game.
+pub fn pausing_the_timer_stops_the_clock_test() -> Nil {
+  let m =
+    model.Model(
+      ..model.default(),
+      route: model.DrillRoute,
+      opened_at_ms: 1000,
+      clock_paused_ms: 2000,
+    )
+
+  // Running: 10s open, 2s banked -> 8s elapsed.
+  assert model.elapsed_ms(m, 11_000) == 8000
+  // Paused at 11s: reading later subtracts the open span too.
+  let paused = model.Model(..m, clock_paused_at: option.Some(11_000))
+  assert model.elapsed_ms(paused, 15_000) == 8000
+  // Never negative, even if a tick lands before the open stamp.
+  assert model.elapsed_ms(m, 0) == 0
+
+  // The toggle itself: pause stamps, resume banks and clears the stamp.
+  let #(stamped, _) = drill_update.toggle_timer(m)
+  assert stamped.clock_paused_at != option.None
+  let #(resumed, _) =
+    drill_update.toggle_timer(model.Model(..m, clock_paused_at: option.Some(0)))
+  assert resumed.clock_paused_at == option.None
+  assert resumed.clock_paused_ms > m.clock_paused_ms
+
+  // Blitz: the toggle is a no-op.
+  let blitz =
+    model.Model(
+      ..m,
+      blitz: option.Some(model.Blitz(
+        per_card_ms: 60_000,
+        deadline_ms: 99_999,
+        results: [],
+        expired_flash: False,
+      )),
+    )
+  let #(unchanged, _) = drill_update.toggle_timer(blitz)
+  assert unchanged.clock_paused_at == option.None
 }

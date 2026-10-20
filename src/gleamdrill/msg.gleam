@@ -95,6 +95,9 @@ pub type Msg {
   ExitConfirmed(Bool)
   /// One second of drill time has passed; only scheduled while a drill is up.
   ClockTicked
+  /// Pause or resume the drill clock. The paused span is subtracted from the
+  /// recorded duration, so stepping away does not inflate the review log.
+  UserToggledTimer
   // --- the Gleam Language Tour ---
   /// Open the tour on its table of contents.
   UserClickedTour

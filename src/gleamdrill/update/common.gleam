@@ -347,6 +347,8 @@ pub fn open_first(m: Model, queue: List(ProblemRef)) -> Model {
         run: model.RunIdle,
         grading: initial_grading(m, first),
         opened_at_ms: browser.now_ms(),
+        clock_paused_at: None,
+        clock_paused_ms: 0,
         exam_answers: [],
         sitting: [],
         choice: None,
@@ -469,6 +471,8 @@ pub fn advance_inner(m: Model) -> #(Model, Effect(Msg)) {
           run: model.RunIdle,
           grading: model.NotGrading,
           opened_at_ms: browser.now_ms(),
+          clock_paused_at: None,
+          clock_paused_ms: 0,
           choice: None,
           graded: False,
         )

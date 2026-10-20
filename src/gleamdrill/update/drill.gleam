@@ -47,6 +47,8 @@ pub fn start_drill(m: Model) -> #(Model, Effect(Msg)) {
           // no tests to run, and could never be scheduled.
           grading: common.initial_grading(m, first),
           opened_at_ms: browser.now_ms(),
+          clock_paused_at: None,
+          clock_paused_ms: 0,
           // Clearing the log is what distinguishes a drill from an exam at
           // the end of the run: a non-empty log means a report is owed.
           exam_answers: [],
@@ -99,6 +101,27 @@ pub fn clock_ticked(m: Model) -> #(Model, Effect(Msg)) {
       DrillRoute, _ -> #(Model(..m, now_ms:), common.tick())
       _, _ -> #(m, effect.none())
     }
+  }
+}
+
+/// Pause or resume the drill clock. Pausing banks nothing yet -- it only
+/// stamps when; resuming banks the span. A Blitz runs against a deadline the
+/// pause must not stop, so there the toggle does nothing.
+pub fn toggle_timer(m: Model) -> #(Model, Effect(Msg)) {
+  case m.blitz, m.clock_paused_at {
+    Some(_), _ -> #(m, effect.none())
+    None, Some(at) -> #(
+      Model(
+        ..m,
+        clock_paused_at: None,
+        clock_paused_ms: m.clock_paused_ms + browser.now_ms() - at,
+      ),
+      effect.none(),
+    )
+    None, None -> #(
+      Model(..m, clock_paused_at: Some(browser.now_ms())),
+      effect.none(),
+    )
   }
 }
 

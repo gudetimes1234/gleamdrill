@@ -2,7 +2,7 @@ import fsrs
 import gleam/dict.{type Dict}
 import gleam/int
 import gleam/list
-import gleam/option.{type Option, None}
+import gleam/option.{type Option, None, Some}
 import gleam/order
 import gleam/result
 import gleam/string
@@ -403,6 +403,12 @@ pub type Model {
     /// can show how long this problem has been open. Only advances while a
     /// drill is on screen.
     now_ms: Int,
+    /// When the user paused the drill clock, or `None` while it runs. The
+    /// tick chain keeps going either way; pausing is arithmetic, not a
+    /// stopped timer, so there is no chain to restart on resume.
+    clock_paused_at: Option(Int),
+    /// Paused time already banked for this problem, from earlier pauses.
+    clock_paused_ms: Int,
     draft: String,
     /// Whether the prompt sidebar is beside the editor, on this device.
     prompt_open: Bool,
@@ -543,6 +549,8 @@ pub fn default() -> Model {
     grading: NotGrading,
     opened_at_ms: 0,
     now_ms: 0,
+    clock_paused_at: None,
+    clock_paused_ms: 0,
     draft: "",
     prompt_open: True,
     slot: NoPane,
@@ -762,6 +770,21 @@ pub fn run_failed(run: RunState) -> Bool {
     Ran(Errored(_), _) | Ran(TimedOut, _) -> True
     RunIdle | Running(_, _) -> False
   }
+}
+
+/// Milliseconds the current problem has been open, with paused time taken
+/// out. `now_ms` is passed in rather than read from a clock so the view can
+/// hand it `model.now_ms` and the update loop `browser.now_ms()`, and both
+/// stay in one definition -- the clock shown and the `duration_ms` recorded
+/// cannot drift apart.
+pub fn elapsed_ms(model: Model, now_ms: Int) -> Int {
+  let paused =
+    model.clock_paused_ms
+    + case model.clock_paused_at {
+      Some(at) -> now_ms - at
+      None -> 0
+    }
+  int.max(0, now_ms - model.opened_at_ms - paused)
 }
 
 /// Whether a card is due as of the server's clock. A card that has never been

@@ -688,6 +688,19 @@ await page.waitForTimeout(1200);
 check("the header shows time on the problem",
   /\d+:\d\d/.test(await page.textContent(".drill-clock").catch(() => "")),
   await page.textContent(".drill-clock").catch(() => "(none)"));
+// The timer pauses: the clock dims, the reading freezes across more than a
+// tick, and resuming picks the count back up without the paused span.
+await page.click(".clock-pause");
+exercises("UserToggledTimer");
+check("pausing dims the clock", await page.isVisible(".drill-clock.clock-paused"));
+const frozenAt = (await page.textContent(".drill-clock")).match(/\d+:\d\d/)[0];
+await page.waitForTimeout(2300);
+check("a paused clock does not advance",
+  (await page.textContent(".drill-clock")).includes(frozenAt),
+  await page.textContent(".drill-clock"));
+await page.click(".clock-pause");
+check("resuming lifts the dim", !(await page.isVisible(".drill-clock.clock-paused")));
+await capture("timer-paused-resumed", "The drill clock after a pause and resume");
 // A first encounter is the learning step: every grade is available before a
 // single run, exactly like flipping a new Anki card.
 check("a first encounter grades freely from the start",
@@ -2795,7 +2808,8 @@ const declared = [
   "UserToggledBlitz", "UserStartedBlitz", "UserClickedScratchRun",
   "UserClickedUndo", "UserToggledDiff", "UserDismissedDiff",
   "UserClickedExport", "UserClickedImport", "ImportConfirmed",
-  "UserClickedWarmCache", "UserToggledNudge", "UserRevealedWholeThing",
+  "UserClickedWarmCache", "UserToggledNudge", "UserToggledTimer",
+  "UserRevealedWholeThing",
   "MenuSuspendedAtCursor", "UserClickedQueue", "UserSearchedQueue",
   "UserFilteredQueue", "UserPickedQueueLanguage",
   "UserToggledQueued", "UserAddedAllShown", "UserRemovedAllShown",
