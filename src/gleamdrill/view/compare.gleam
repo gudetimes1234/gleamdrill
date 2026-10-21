@@ -5,6 +5,8 @@
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleamdrill/content/problem.{type ProblemRef, type Solution}
+import gleamdrill/content/problems
 import gleamdrill/domain/compare
 import gleamdrill/model.{
   type Compare, type CompareSide, type Model, LeftSide, RightSide,
@@ -13,8 +15,6 @@ import gleamdrill/msg.{
   type Msg, CompareMoved, ComparePickedVariant, UserClosedCompare,
 }
 import gleamdrill/platform/editor
-import gleamdrill/problem.{type ProblemRef, type Solution}
-import gleamdrill/problems
 import gleamdrill/view/format
 import lustre/attribute
 import lustre/element.{type Element}

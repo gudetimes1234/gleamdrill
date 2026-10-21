@@ -3,9 +3,9 @@
 
 import gleam/option.{Some}
 import gleam/result
-import gleamdrill/problem.{type Category, TypeScript}
-import gleamdrill/problems/catalog
-import gleamdrill/problems/embedded_ts
+import gleamdrill/content/problem.{type Category, TypeScript}
+import gleamdrill/content/problems/catalog
+import gleamdrill/content/problems/generated/embedded_ts
 
 pub fn category() -> Category {
   catalog.category(catalog.name <> " (TypeScript)", TypeScript, fn(stem) {

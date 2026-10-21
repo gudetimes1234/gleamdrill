@@ -4,8 +4,8 @@ import fsrs
 import gleam/int
 import gleam/option.{type Option, None, Some}
 import gleam/time/timestamp.{type Timestamp}
+import gleamdrill/content/problem.{type Difficulty, type Language}
 import gleamdrill/domain/track
-import gleamdrill/problem.{type Difficulty, type Language}
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html

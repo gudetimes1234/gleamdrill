@@ -10,11 +10,11 @@
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
-import gleamdrill/problem.{
+import gleamdrill/content/problem.{
   type Category, type Check, type Difficulty, type Language, type Problem,
   Category, Easy, Hard, Medium, Problem, Solution, Subcategory,
 }
-import gleamdrill/problems/approaches
+import gleamdrill/content/problems/generated/approaches
 
 /// `difficulty` is LeetCode's rating, written once here for all four
 /// language mirrors.

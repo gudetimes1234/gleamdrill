@@ -4,10 +4,10 @@
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
+import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/domain/insights
 import gleamdrill/model.{type Model, Model, StatsRoute}
 import gleamdrill/msg.{type Msg}
-import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/store
 import gleamdrill/store/remote.{type ApiError}
 import lustre/effect.{type Effect}

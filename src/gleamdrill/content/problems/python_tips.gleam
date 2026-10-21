@@ -1,11 +1,11 @@
 import gleam/list
 import gleam/option.{None, Some}
-import gleamdrill/problem.{
+import gleamdrill/content/problem.{
   type Category, type Problem, Category, Problem, Python, Solution, Subcategory,
 }
-import gleamdrill/problems/approaches
-import gleamdrill/problems/embedded.{type Embedded}
-import gleamdrill/problems/embedded_python
+import gleamdrill/content/problems/generated/approaches
+import gleamdrill/content/problems/generated/embedded.{type Embedded}
+import gleamdrill/content/problems/generated/embedded_python
 
 pub fn category() -> Category {
   Category("Python Tips", [

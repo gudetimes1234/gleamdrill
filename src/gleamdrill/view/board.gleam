@@ -5,12 +5,12 @@ import fsrs
 import gleam/int
 import gleam/list
 import gleam/option.{None}
+import gleamdrill/content/problem.{type Problem, type ProblemRef}
 import gleamdrill/domain/board
 import gleamdrill/model.{type Model}
 import gleamdrill/msg.{
   type Msg, UserClickedNext, UserSubmittedBoard, UserToggledPiece,
 }
-import gleamdrill/problem.{type Problem, type ProblemRef}
 import gleamdrill/view/id
 import gleamdrill/view/results
 import lustre/attribute

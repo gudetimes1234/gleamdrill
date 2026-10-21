@@ -57,9 +57,9 @@ jobs:
       # generator would not produce.
       - name: Generated drill content is current
         run: |
-          if ! git diff --quiet -- src/gleamdrill/problems/; then
+          if ! git diff --quiet -- src/gleamdrill/content/problems/generated/; then
             echo "::error::generated content is stale. Run 'make content' and commit the result."
-            git diff --stat -- src/gleamdrill/problems/
+            git diff --stat -- src/gleamdrill/content/problems/generated/
             exit 1
           fi
 

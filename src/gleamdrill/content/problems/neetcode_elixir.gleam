@@ -6,9 +6,9 @@
 
 import gleam/option.{Some}
 import gleam/result
-import gleamdrill/problem.{type Category, Elixir}
-import gleamdrill/problems/catalog
-import gleamdrill/problems/embedded_elixir
+import gleamdrill/content/problem.{type Category, Elixir}
+import gleamdrill/content/problems/catalog
+import gleamdrill/content/problems/generated/embedded_elixir
 
 pub fn category() -> Category {
   catalog.category(catalog.name <> " (Elixir)", Elixir, fn(stem) {

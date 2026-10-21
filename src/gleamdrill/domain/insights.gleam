@@ -27,7 +27,7 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/string
 import gleam/time/timestamp.{type Timestamp}
-import gleamdrill/problem.{type ProblemRef}
+import gleamdrill/content/problem.{type ProblemRef}
 import wire.{type CardState, type CleanSolve, type Insights}
 
 /// Under three minutes, from memory, three times running: the goal state.

@@ -5,11 +5,11 @@ import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
+import gleamdrill/content/problem.{type ProblemRef}
+import gleamdrill/content/problems
 import gleamdrill/model.{type Model, Model, StudyRoute, TracksRoute}
 import gleamdrill/msg.{type Msg}
 import gleamdrill/platform/browser
-import gleamdrill/problem.{type ProblemRef}
-import gleamdrill/problems
 import gleamdrill/store
 import gleamdrill/update/common
 import gleamdrill/view/id

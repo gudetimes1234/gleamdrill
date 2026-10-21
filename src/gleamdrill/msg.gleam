@@ -7,11 +7,11 @@
 
 import fsrs
 import gleam/option.{type Option}
+import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/model.{
   type AuthMode, type CompareSide, type GroupChange, type Pane, type QueueFilter,
   type RunOutcome, type SettingField, type UndoPoint,
 }
-import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/store/remote.{type ApiError}
 import wire
 

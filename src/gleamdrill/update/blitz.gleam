@@ -4,6 +4,8 @@
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
+import gleamdrill/content/problem.{type ProblemRef}
+import gleamdrill/content/problems
 import gleamdrill/domain/guest
 import gleamdrill/domain/queue
 import gleamdrill/domain/walk
@@ -12,8 +14,6 @@ import gleamdrill/model.{
 }
 import gleamdrill/msg.{type Msg, ExamSampled}
 import gleamdrill/platform/browser
-import gleamdrill/problem.{type ProblemRef}
-import gleamdrill/problems
 import gleamdrill/store
 import gleamdrill/update/common
 import lustre/effect.{type Effect}

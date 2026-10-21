@@ -5,6 +5,7 @@
 import fsrs
 import gleam/dict
 import gleam/option.{None, Some}
+import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/domain/guest
 import gleamdrill/domain/queue
 import gleamdrill/model.{
@@ -13,7 +14,6 @@ import gleamdrill/model.{
 }
 import gleamdrill/msg.{type Msg}
 import gleamdrill/platform/browser
-import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/store
 import gleamdrill/store/remote.{type ApiError}
 import gleamdrill/update/common

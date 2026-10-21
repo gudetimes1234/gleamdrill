@@ -3,7 +3,9 @@
 
 import gleam/list
 import gleam/string
-import gleamdrill/problem.{type ApproachStage, Nudge, Pseudocode, Walk, WalkStep}
+import gleamdrill/content/problem.{
+  type ApproachStage, Nudge, Pseudocode, Walk, WalkStep,
+}
 
 /// The hint ladder for a problem title, vaguest stage first. Titles
 /// are slugged so every language mirror of a problem shares one ladder.

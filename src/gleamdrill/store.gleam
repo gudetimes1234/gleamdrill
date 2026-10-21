@@ -22,6 +22,7 @@ import gleam/order
 import gleam/result
 import gleam/string
 import gleam/time/timestamp
+import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/domain/guest
 import gleamdrill/model.{type Model, type UndoPoint, Account, Guest}
 import gleamdrill/msg.{
@@ -30,7 +31,6 @@ import gleamdrill/msg.{
   ReviewRecorded, SettingsSaved, StateLoaded, StatsLoaded, UndoRecorded,
 }
 import gleamdrill/platform/browser
-import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/store/api
 import gleamdrill/store/legacy
 import gleamdrill/store/local

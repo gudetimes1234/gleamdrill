@@ -61,12 +61,12 @@ INCLUDE = (
     "drills/src/bundle_stdlib.gleam",
 )
 # Drill content and generated output rather than program logic.  Everything under
-# src/gleamdrill/problems/ is either emitted by `gleam run -m generate` with a
+# src/gleamdrill/content/problems/ is either emitted by `gleam run -m generate` with a
 # "do not edit" banner or is a hand-maintained catalogue of problems; the code
-# that *uses* it lives in src/gleamdrill/problem.gleam and problems.gleam, which
+# that *uses* it lives in src/gleamdrill/content/problem.gleam and problems.gleam, which
 # are not in that directory and so are kept.
 EXCLUDE = (
-    "/src/gleamdrill/problems/",
+    "/src/gleamdrill/content/problems/",
     "/fsrs/test/vectors.gleam",
 )
 

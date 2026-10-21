@@ -7,11 +7,11 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
+import gleamdrill/content/problem.{type Problem, type ProblemRef}
+import gleamdrill/content/problems
 import gleamdrill/model.{
   type Compare, type CompareSide, Compare, LeftSide, RightSide,
 }
-import gleamdrill/problem.{type Problem, type ProblemRef}
-import gleamdrill/problems
 import wire
 
 /// What Browse's selection compares. Two or more in one language: the first

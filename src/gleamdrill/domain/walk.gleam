@@ -8,7 +8,7 @@ import gleam/int
 import gleam/list
 import gleam/option.{type Option}
 import gleam/result
-import gleamdrill/problem
+import gleamdrill/content/problem
 
 /// Which scheduler knob a settings input is editing. One message with a field
 /// tag rather than four near-identical variants, because every one of them is

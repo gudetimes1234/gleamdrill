@@ -3,9 +3,9 @@
 
 import gleam/option.{Some}
 import gleam/result
-import gleamdrill/problem.{type Category, Gleam}
-import gleamdrill/problems/catalog
-import gleamdrill/problems/embedded
+import gleamdrill/content/problem.{type Category, Gleam}
+import gleamdrill/content/problems/catalog
+import gleamdrill/content/problems/generated/embedded
 
 pub fn category() -> Category {
   catalog.category(catalog.name <> " (Gleam)", Gleam, fn(stem) {

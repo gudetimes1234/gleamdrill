@@ -22,9 +22,9 @@ import gleam/order
 import gleam/result
 import gleam/string
 import gleam/time/timestamp.{type Timestamp}
+import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/model
 import gleamdrill/platform/browser
-import gleamdrill/problem.{type ProblemRef}
 import wire.{type CardState, type Settings}
 
 /// The review log is a ring buffer: the insight screens read backwards from

@@ -7,9 +7,9 @@ import gleam/order
 import gleam/result
 import gleam/string
 import gleam/time/timestamp.{type Timestamp}
+import gleamdrill/content/problem.{type ProblemRef}
+import gleamdrill/content/problems
 import gleamdrill/domain/walk
-import gleamdrill/problem.{type ProblemRef}
-import gleamdrill/problems
 
 import wire.{type CardState, type Settings, type User}
 

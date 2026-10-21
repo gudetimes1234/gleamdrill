@@ -10,6 +10,8 @@ import gleam/float
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleamdrill/content/problem
+import gleamdrill/content/problems
 import gleamdrill/domain/insights
 import gleamdrill/domain/queue
 import gleamdrill/model.{
@@ -21,8 +23,6 @@ import gleamdrill/msg.{
   UserClickedTour, UserDismissedUpgradePrompt, UserPickedActiveQueue,
   UserStartedBlitz, UserToggledBlitz,
 }
-import gleamdrill/problem
-import gleamdrill/problems
 import gleamdrill/view/banner
 import gleamdrill/view/brand
 import gleamdrill/view/format

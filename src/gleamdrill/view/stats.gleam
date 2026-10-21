@@ -11,14 +11,14 @@ import fsrs
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
+import gleamdrill/content/problem.{type ProblemRef}
+import gleamdrill/content/problems
 import gleamdrill/domain/insights.{type Analysis, type CardInsight}
 import gleamdrill/domain/track
 import gleamdrill/model.{type Model}
 import gleamdrill/msg.{
   type Msg, UserClosedDetail, UserOpenedDetail, UserToggledSuspend,
 }
-import gleamdrill/problem.{type ProblemRef}
-import gleamdrill/problems
 import gleamdrill/view/format
 import gleamdrill/view/nav
 import lustre/attribute

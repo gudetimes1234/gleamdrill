@@ -6,9 +6,9 @@
 
 import gleam/option.{Some}
 import gleam/result
-import gleamdrill/problem.{type Category, Go}
-import gleamdrill/problems/catalog
-import gleamdrill/problems/embedded_go
+import gleamdrill/content/problem.{type Category, Go}
+import gleamdrill/content/problems/catalog
+import gleamdrill/content/problems/generated/embedded_go
 
 pub fn category() -> Category {
   catalog.category(catalog.name <> " (Go)", Go, fn(stem) {

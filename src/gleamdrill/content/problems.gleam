@@ -1,15 +1,15 @@
 import gleam/list
 import gleam/option.{type Option, None}
 import gleam/string
-import gleamdrill/problem.{type Category, type Problem, type ProblemRef}
-import gleamdrill/problems/neetcode_elixir
-import gleamdrill/problems/neetcode_gleam
-import gleamdrill/problems/neetcode_go
-import gleamdrill/problems/neetcode_haskell
-import gleamdrill/problems/neetcode_python
-import gleamdrill/problems/neetcode_ts
-import gleamdrill/problems/system_design
-import gleamdrill/problems/system_design_board
+import gleamdrill/content/problem.{type Category, type Problem, type ProblemRef}
+import gleamdrill/content/problems/neetcode_elixir
+import gleamdrill/content/problems/neetcode_gleam
+import gleamdrill/content/problems/neetcode_go
+import gleamdrill/content/problems/neetcode_haskell
+import gleamdrill/content/problems/neetcode_python
+import gleamdrill/content/problems/neetcode_ts
+import gleamdrill/content/problems/system_design
+import gleamdrill/content/problems/system_design_board
 import wire.{ProblemRef}
 
 /// Memoised: see problems_ffi.mjs. Deterministic, so the first call builds and

@@ -20,8 +20,8 @@
 
 import gleam/list
 import gleam/result
-import gleamdrill/problem.{type Category, type ProblemRef}
-import gleamdrill/problems
+import gleamdrill/content/problem.{type Category, type ProblemRef}
+import gleamdrill/content/problems
 import wire
 
 pub type Track =

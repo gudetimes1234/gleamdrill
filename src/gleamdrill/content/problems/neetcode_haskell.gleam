@@ -6,9 +6,9 @@
 
 import gleam/option.{Some}
 import gleam/result
-import gleamdrill/problem.{type Category, Haskell}
-import gleamdrill/problems/catalog
-import gleamdrill/problems/embedded_haskell
+import gleamdrill/content/problem.{type Category, Haskell}
+import gleamdrill/content/problems/catalog
+import gleamdrill/content/problems/generated/embedded_haskell
 
 pub fn category() -> Category {
   catalog.category(catalog.name <> " (Haskell)", Haskell, fn(stem) {

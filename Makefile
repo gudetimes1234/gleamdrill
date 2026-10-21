@@ -48,7 +48,7 @@ bundle: worker
 deploy:
 	railway up
 
-# Regenerates src/gleamdrill/problems/embedded*.gleam from the drill sources,
+# Regenerates src/gleamdrill/content/problems/generated/*.gleam from the drill sources,
 # plus the two generated verifiers `verify` runs.
 #
 # The generator emits unformatted source, so it is formatted here rather than
@@ -60,14 +60,14 @@ content:
 	cd drills/elixir && elixir surface.exs
 	cd drills && gleam run -m generate
 	gleam format \
-	  src/gleamdrill/problems/embedded.gleam \
-	  src/gleamdrill/problems/embedded_python.gleam \
-	  src/gleamdrill/problems/embedded_ts.gleam \
-	  src/gleamdrill/problems/embedded_elixir.gleam \
-	  src/gleamdrill/problems/embedded_go.gleam \
-	  src/gleamdrill/problems/embedded_haskell.gleam \
-	  src/gleamdrill/problems/embedded_tour.gleam \
-	  src/gleamdrill/problems/approaches.gleam
+	  src/gleamdrill/content/problems/generated/embedded.gleam \
+	  src/gleamdrill/content/problems/generated/embedded_python.gleam \
+	  src/gleamdrill/content/problems/generated/embedded_ts.gleam \
+	  src/gleamdrill/content/problems/generated/embedded_elixir.gleam \
+	  src/gleamdrill/content/problems/generated/embedded_go.gleam \
+	  src/gleamdrill/content/problems/generated/embedded_haskell.gleam \
+	  src/gleamdrill/content/problems/generated/embedded_tour.gleam \
+	  src/gleamdrill/content/problems/generated/approaches.gleam
 
 # Runs every solution variant — primaries and alternates, all five languages —
 # against its harness, then the scheduler's conformance suite, the wire format,

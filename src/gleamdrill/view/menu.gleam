@@ -3,6 +3,8 @@ import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
+import gleamdrill/content/problem.{type Problem, type ProblemRef}
+import gleamdrill/content/problems
 import gleamdrill/domain/track
 import gleamdrill/model.{type Model}
 import gleamdrill/msg.{
@@ -11,8 +13,6 @@ import gleamdrill/msg.{
   UserClickedSelectAll, UserClickedStartDrill, UserClickedStartExam,
   UserClickedSubcategory, UserSearched, UserToggledProblem, UserToggledSuspend,
 }
-import gleamdrill/problem.{type Problem, type ProblemRef}
-import gleamdrill/problems
 import gleamdrill/view/brand
 import gleamdrill/view/format
 import gleamdrill/view/id

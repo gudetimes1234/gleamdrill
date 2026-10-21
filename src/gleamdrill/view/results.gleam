@@ -6,12 +6,12 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
+import gleamdrill/content/problem.{type Problem}
 import gleamdrill/model.{
   type CaseResult, type Model, type RunError, Cases, Errored, Ran, RunIdle,
   Running, TimedOut,
 }
 import gleamdrill/msg.{type Msg, UserToggledResults}
-import gleamdrill/problem.{type Problem}
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html

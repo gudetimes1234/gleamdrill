@@ -7,11 +7,11 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/set
 import gleam/string
+import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/domain/queue
 import gleamdrill/domain/track
 import gleamdrill/model.{type Model, Guest, Model, QueueRoute, TracksRoute}
 import gleamdrill/msg.{type Msg}
-import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/store
 import gleamdrill/store/remote.{type ApiError}
 import gleamdrill/update/common

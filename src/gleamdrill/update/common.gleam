@@ -8,6 +8,9 @@ import gleam/dict
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
+import gleamdrill/content/problem.{type ProblemRef}
+import gleamdrill/content/problems
+import gleamdrill/content/tour
 import gleamdrill/domain/track
 import gleamdrill/domain/walk
 import gleamdrill/model.{
@@ -16,11 +19,8 @@ import gleamdrill/model.{
 }
 import gleamdrill/msg.{type Msg}
 import gleamdrill/platform/browser
-import gleamdrill/problem.{type ProblemRef}
-import gleamdrill/problems
 import gleamdrill/runner
 import gleamdrill/store
-import gleamdrill/tour
 import lustre/effect.{type Effect}
 import wire
 

@@ -13,6 +13,7 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
+import gleamdrill/content/problem
 import gleamdrill/domain/walk
 import gleamdrill/model.{
   type CompareSide, type Model, AuthRoute, AwaitingGrade, CompareRoute,
@@ -41,7 +42,6 @@ import gleamdrill/msg.{
   UserToggledNudge, UserToggledPane, UserToggledPrompt, UserToggledResults,
   WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown, WalkWhyShown,
 }
-import gleamdrill/problem
 
 /// One row of the keymap. `keys` are `KeyboardEvent.key` values; `hint` is the
 /// short form the status bar shows; `help` the sentence the overlay shows.

@@ -4,6 +4,8 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
+import gleamdrill/content/problem.{type Problem, type ProblemRef, type Solution}
+import gleamdrill/content/problems
 import gleamdrill/domain/insights
 import gleamdrill/model.{
   type CaseResult, type Model, AwaitingGrade, Cases, Errored, NoPane, NotGrading,
@@ -19,8 +21,6 @@ import gleamdrill/msg.{
   UserToggledSolution, UserToggledTimer,
 }
 import gleamdrill/platform/editor
-import gleamdrill/problem.{type Problem, type ProblemRef, type Solution}
-import gleamdrill/problems
 import gleamdrill/runner
 import gleamdrill/view/banner
 import gleamdrill/view/blitz

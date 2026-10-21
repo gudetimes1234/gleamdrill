@@ -14,7 +14,7 @@
 
 import gleam/list
 import gleam/option.{None, Some}
-import gleamdrill/problem.{
+import gleamdrill/content/problem.{
   type Category, type Problem, type Subcategory, Category, Concept, Problem,
   Quiz, Subcategory,
 }

@@ -3,10 +3,10 @@
 
 import gleam/int
 import gleam/list
+import gleamdrill/content/problems
+import gleamdrill/content/problems/system_design
 import gleamdrill/model.{type Model, type SectionScore}
 import gleamdrill/msg.{type Msg, UserClickedExitReport}
-import gleamdrill/problems
-import gleamdrill/problems/system_design
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html

@@ -18,8 +18,10 @@
 
 import gleam/list
 import gleam/option.{None, Some}
+import gleamdrill/content/problem.{
+  type Category, type Problem, Category, Subcategory,
+}
 import gleamdrill/domain/board.{type Piece, Design, Primitive}
-import gleamdrill/problem.{type Category, type Problem, Category, Subcategory}
 
 pub fn category() -> Category {
   Category(

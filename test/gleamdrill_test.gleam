@@ -22,6 +22,9 @@ import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
 import gleam/time/timestamp
+import gleamdrill/content/problem
+import gleamdrill/content/problems
+import gleamdrill/content/tour
 import gleamdrill/domain/board
 import gleamdrill/domain/compare
 import gleamdrill/domain/guest
@@ -32,12 +35,9 @@ import gleamdrill/domain/walk
 import gleamdrill/keys
 import gleamdrill/model
 import gleamdrill/msg
-import gleamdrill/problem
-import gleamdrill/problems
 import gleamdrill/runner
 import gleamdrill/store
 import gleamdrill/store/session
-import gleamdrill/tour
 import gleamdrill/update/drill as drill_update
 import gleamdrill/view/format
 import gleeunit

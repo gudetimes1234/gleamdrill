@@ -15,7 +15,7 @@ import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
-import gleamdrill/problem.{type ProblemRef}
+import gleamdrill/content/problem.{type ProblemRef}
 import lustre/effect.{type Effect}
 import plinth/javascript/storage
 import wire.{ProblemRef}

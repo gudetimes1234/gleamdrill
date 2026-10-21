@@ -2,8 +2,8 @@
 //// Source of truth: drills/elixir/solutions/*.exs, drills/elixir/harnesses/*.exs
 //// and drills/elixir/surface.json (from `elixir surface.exs`).
 
-import gleamdrill/problem.{Check}
-import gleamdrill/problems/embedded.{type Embedded, Embedded}
+import gleamdrill/content/problem.{Check}
+import gleamdrill/content/problems/generated/embedded.{type Embedded, Embedded}
 
 pub fn nc01_contains_duplicate() -> Embedded {
   Embedded(

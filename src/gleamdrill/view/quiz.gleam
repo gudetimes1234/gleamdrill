@@ -3,11 +3,11 @@
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
+import gleamdrill/content/problem.{type Problem, type ProblemRef, type Quiz}
 import gleamdrill/model.{type Model}
 import gleamdrill/msg.{
   type Msg, UserClickedNext, UserPickedChoice, UserSubmittedAnswer,
 }
-import gleamdrill/problem.{type Problem, type ProblemRef, type Quiz}
 import gleamdrill/view/results
 import lustre/attribute
 import lustre/element.{type Element}

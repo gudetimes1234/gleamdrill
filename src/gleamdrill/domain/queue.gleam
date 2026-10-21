@@ -24,9 +24,9 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/set.{type Set}
 import gleam/string
+import gleamdrill/content/problem.{type ProblemRef}
+import gleamdrill/content/problems
 import gleamdrill/model.{type Model}
-import gleamdrill/problem.{type ProblemRef}
-import gleamdrill/problems
 
 /// Everything due, most overdue first, then new problems -- each capped by the
 /// daily budget the server reports.

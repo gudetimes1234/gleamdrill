@@ -7,7 +7,7 @@
 //// study catalogue -- a lesson is read and tried in order, not scheduled.
 
 import gleam/list
-import gleamdrill/problems/embedded_tour
+import gleamdrill/content/problems/generated/embedded_tour
 
 /// One lesson: its chapter, title, prose (trusted HTML) and program.
 pub type Lesson =
