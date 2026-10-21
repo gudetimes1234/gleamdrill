@@ -18,6 +18,7 @@ import gleam/option.{type Option, None, Some}
 import gleamdrill/domain/track
 import gleamdrill/model.{type Model}
 import gleamdrill/msg.{type Msg, UserPickedTrack, UserPickedTrackWithStarter}
+import gleamdrill/store/remote
 import gleamdrill/view/banner
 import gleamdrill/view/brand
 import gleamdrill/view/nav
@@ -158,7 +159,7 @@ fn body(m: Model, row: Row, unknown: Bool) -> List(Element(Msg)) {
             ]),
           ]
         },
-        case m.stats {
+        case remote.value(m.stats) {
           Some(_) if row.track == m.active_track -> [
             html.button(
               [

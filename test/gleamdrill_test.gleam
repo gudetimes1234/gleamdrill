@@ -37,6 +37,7 @@ import gleamdrill/model
 import gleamdrill/msg
 import gleamdrill/runner
 import gleamdrill/store
+import gleamdrill/store/remote
 import gleamdrill/store/session
 import gleamdrill/update/drill as drill_update
 import gleamdrill/view/format
@@ -201,6 +202,23 @@ pub fn preview_offers_four_distinct_intervals_test() -> Nil {
   let intervals =
     list.map(previews, fn(pair) { fsrs.interval_seconds(pair.1, state.now) })
   assert list.all(intervals, fn(seconds) { seconds > 0 })
+}
+
+// --- remote.Data -------------------------------------------------------------
+
+/// A reload keeps what is on screen; only an empty screen shows loading. A
+/// failure after a success keeps the old value (the notice says it is stale).
+pub fn remote_data_keeps_a_shown_value_through_reloads_and_failures_test() -> Nil {
+  assert remote.reload(remote.NotAsked) == remote.Loading
+  assert remote.reload(remote.Loaded(1)) == remote.Loaded(1)
+  assert remote.reload(remote.Failed(remote.Offline)) == remote.Loading
+  assert remote.arrived(remote.Loading, Ok(2)) == remote.Loaded(2)
+  assert remote.arrived(remote.Loaded(1), Error(remote.Offline))
+    == remote.Loaded(1)
+  assert remote.arrived(remote.Loading, Error(remote.Offline))
+    == remote.Failed(remote.Offline)
+  assert remote.value(remote.Loaded(3)) == Some(3)
+  assert remote.value(remote.Loading) == None
 }
 
 // --- interval labels -------------------------------------------------------

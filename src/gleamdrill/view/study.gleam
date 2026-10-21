@@ -23,6 +23,7 @@ import gleamdrill/msg.{
   UserClickedTour, UserDismissedUpgradePrompt, UserPickedActiveQueue,
   UserStartedBlitz, UserToggledBlitz,
 }
+import gleamdrill/store/remote
 import gleamdrill/view/banner
 import gleamdrill/view/brand
 import gleamdrill/view/format
@@ -371,7 +372,7 @@ fn hero(m: Model, ready: Int) -> Element(Msg) {
   let done = m.today.reviews_done
   let goal = int.max(done + ready, 1)
   let complete = ready == 0 && done > 0
-  let streak = case m.stats {
+  let streak = case remote.value(m.stats) {
     Some(stats) -> stats.streak_days
     None -> 0
   }
@@ -484,7 +485,7 @@ fn float_text(value: Float) -> String {
 /// until it can be answered rather than shown as a zero.
 fn estimate(m: Model) -> Element(Msg) {
   let ready = queue.due_count(m) + queue.new_count(m)
-  let minutes = case ready, m.insights {
+  let minutes = case ready, remote.value(m.insights) {
     0, _ -> None
     _, Some(data) ->
       Some(insights.queue_estimate_ms(

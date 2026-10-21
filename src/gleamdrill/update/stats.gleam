@@ -15,7 +15,13 @@ import wire
 
 pub fn open(m: Model) -> #(Model, Effect(Msg)) {
   #(
-    Model(..m, route: StatsRoute, detail: None),
+    Model(
+      ..m,
+      route: StatsRoute,
+      detail: None,
+      stats: remote.reload(m.stats),
+      insights: remote.reload(m.insights),
+    ),
     effect.batch([store.load_stats(m), store.load_insights(m)]),
   )
 }
@@ -24,30 +30,20 @@ pub fn loaded(
   m: Model,
   result: Result(wire.Stats, ApiError),
 ) -> #(Model, Effect(Msg)) {
-  case result {
-    Ok(loaded) -> #(Model(..m, stats: Some(loaded)), effect.none())
-    Error(failure) -> #(
-      Model(..m, notice: Some(remote.error_message(failure))),
-      effect.none(),
-    )
-  }
+  let m = Model(..m, stats: remote.arrived(m.stats, result))
+  #(with_failure(m, result), effect.none())
 }
 
 pub fn insights_loaded(
   m: Model,
   result: Result(wire.Insights, ApiError),
 ) -> #(Model, Effect(Msg)) {
-  case result {
-    Ok(loaded) -> #(Model(..m, insights: Some(loaded)), effect.none())
-    Error(failure) -> #(
-      Model(..m, notice: Some(remote.error_message(failure))),
-      effect.none(),
-    )
-  }
+  let m = Model(..m, insights: remote.arrived(m.insights, result))
+  #(with_failure(m, result), effect.none())
 }
 
 pub fn cursor_moved(m: Model, delta: Int) -> #(Model, Effect(Msg)) {
-  case m.insights {
+  case remote.value(m.insights) {
     Some(data) -> {
       let rows = insights.listed(insights.analyse(data, m.cards, m.now))
       let last = int.max(0, list.length(rows) - 1)
@@ -67,7 +63,7 @@ pub fn cursor_moved(m: Model, delta: Int) -> #(Model, Effect(Msg)) {
 }
 
 pub fn activated(m: Model) -> #(Model, Effect(Msg)) {
-  case m.insights {
+  case remote.value(m.insights) {
     Some(data) -> {
       let rows = insights.listed(insights.analyse(data, m.cards, m.now))
       case list.drop(rows, int.clamp(m.nav.stats, 0, list.length(rows) - 1)) {
@@ -80,7 +76,10 @@ pub fn activated(m: Model) -> #(Model, Effect(Msg)) {
 }
 
 pub fn open_detail(m: Model, problem: ProblemRef) -> #(Model, Effect(Msg)) {
-  #(Model(..m, detail: Some(#(problem, None))), store.load_history(m, problem))
+  #(
+    Model(..m, detail: Some(#(problem, remote.Loading))),
+    store.load_history(m, problem),
+  )
 }
 
 pub fn close_detail(m: Model) -> #(Model, Effect(Msg)) {
@@ -92,20 +91,25 @@ pub fn history_loaded(
   problem: ProblemRef,
   result: Result(List(wire.ReviewRow), ApiError),
 ) -> #(Model, Effect(Msg)) {
-  case result {
-    Ok(rows) ->
-      case m.detail {
-        // Only fill the panel still being looked at; a slow response for a
-        // closed panel is dropped.
-        Some(#(open, None)) if open == problem -> #(
-          Model(..m, detail: Some(#(problem, Some(rows)))),
-          effect.none(),
-        )
-        _ -> #(m, effect.none())
-      }
-    Error(failure) -> #(
-      Model(..m, detail: None, notice: Some(remote.error_message(failure))),
+  case m.detail {
+    // Only fill the panel still being looked at; a slow response for a
+    // closed panel is dropped. A failure shows in the panel itself.
+    Some(#(open, remote.Loading)) if open == problem -> #(
+      Model(
+        ..m,
+        detail: Some(#(problem, remote.arrived(remote.Loading, result))),
+      ),
       effect.none(),
     )
+    _ -> #(m, effect.none())
+  }
+}
+
+/// A failed load is also said out loud: `remote.arrived` keeps an earlier
+/// value on screen, so the notice is the only sign it went stale.
+fn with_failure(m: Model, result: Result(a, ApiError)) -> Model {
+  case result {
+    Ok(_) -> m
+    Error(failure) -> Model(..m, notice: Some(remote.error_message(failure)))
   }
 }

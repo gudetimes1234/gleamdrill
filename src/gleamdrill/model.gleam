@@ -10,6 +10,7 @@ import gleam/time/timestamp.{type Timestamp}
 import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/content/problems
 import gleamdrill/domain/walk
+import gleamdrill/store/remote
 
 import wire.{type CardState, type Settings, type User}
 
@@ -321,13 +322,13 @@ pub type Model {
     /// entries.
     cards: Dict(ProblemRef, CardState),
     today: wire.Today,
-    stats: Option(wire.Stats),
+    stats: remote.Data(wire.Stats),
     /// The raw insight payload; `insights.analyse` turns it into tiers and
     /// calibration at render time.
-    insights: Option(wire.Insights),
+    insights: remote.Data(wire.Insights),
     /// The problem whose review timeline is open on the stats screen, and its
     /// rows once they arrive.
-    detail: Option(#(ProblemRef, Option(List(wire.ReviewRow)))),
+    detail: Option(#(ProblemRef, remote.Data(List(wire.ReviewRow)))),
     auth: AuthForm,
     /// A transient banner for whatever last went wrong with the server.
     notice: Option(String),
@@ -518,8 +519,8 @@ pub fn default() -> Model {
     tracks: [],
     cards: dict.new(),
     today: wire.empty_today(),
-    stats: None,
-    insights: None,
+    stats: remote.NotAsked,
+    insights: remote.NotAsked,
     detail: None,
     auth: AuthForm(
       mode: SigningIn,

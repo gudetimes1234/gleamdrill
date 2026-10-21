@@ -22,6 +22,7 @@ import gleamdrill/msg.{
 }
 import gleamdrill/platform/editor
 import gleamdrill/runner
+import gleamdrill/store/remote
 import gleamdrill/view/banner
 import gleamdrill/view/blitz
 import gleamdrill/view/board as board_view
@@ -760,7 +761,7 @@ fn clock(m: Model) -> Element(Msg) {
   // Your own median on this problem, from the insights loaded at boot: the
   // sittings before this one, which is exactly the pace to beat. Not
   // refreshed per review on purpose; this sitting's solves join it next time.
-  let median = case m.insights, model.current_ref(m), m.recall {
+  let median = case remote.value(m.insights), model.current_ref(m), m.recall {
     Some(data), Ok(ref), False -> insights.fluency_for(data, ref)
     _, _, _ -> None
   }

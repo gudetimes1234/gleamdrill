@@ -17,6 +17,7 @@ import gleam/string
 import gleamdrill/domain/insights
 import gleamdrill/model.{type Model, type SittingEntry}
 import gleamdrill/msg.{type Msg, UserClickedExitReport, UserClickedUndo}
+import gleamdrill/store/remote
 import gleamdrill/view/format
 import lustre/attribute
 import lustre/element.{type Element}
@@ -142,7 +143,7 @@ fn sitting_scorecard(
   let bests = list.count(entries, fn(entry) { beat_median(m, entry) })
   let graduated = list.count(entries, fn(entry) { graduated(m, entry) })
   // What the study screen said these cards would cost, now settled.
-  let estimate_ms = case m.insights {
+  let estimate_ms = case remote.value(m.insights) {
     option.Some(data) ->
       option.Some(insights.queue_estimate_ms(
         insights.analyse(data, m.cards, m.now),
@@ -329,7 +330,7 @@ fn badges(m: Model, entry: SittingEntry) -> List(Element(Msg)) {
 
 /// Faster than your median on this problem going into the sitting.
 fn beat_median(m: Model, entry: SittingEntry) -> Bool {
-  case m.insights, entry.passed {
+  case remote.value(m.insights), entry.passed {
     option.Some(data), True ->
       case insights.fluency_for(data, entry.problem) {
         option.Some(median) -> entry.duration_ms < median

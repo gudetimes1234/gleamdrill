@@ -157,6 +157,12 @@ pub fn state_loaded(
       // slow round trip delays a tile and not the first paint.
       let dashboard =
         effect.batch([store.load_stats(loaded), store.load_insights(loaded)])
+      let loaded =
+        Model(
+          ..loaded,
+          stats: remote.reload(loaded.stats),
+          insights: remote.reload(loaded.insights),
+        )
       case m.mode, store.legacy_pending() {
         // A guest adopts the pre-account blob locally at boot instead; there
         // is nothing to send anywhere.

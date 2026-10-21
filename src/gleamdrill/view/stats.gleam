@@ -19,6 +19,7 @@ import gleamdrill/model.{type Model}
 import gleamdrill/msg.{
   type Msg, UserClosedDetail, UserOpenedDetail, UserToggledSuspend,
 }
+import gleamdrill/store/remote
 import gleamdrill/view/format
 import gleamdrill/view/nav
 import lustre/attribute
@@ -35,7 +36,11 @@ pub fn view(m: Model) -> Element(Msg) {
       nav.bar(m, model.StatsRoute),
     ]),
     case m.stats, m.insights {
-      Some(stats), Some(data) ->
+      remote.Failed(failure), _ | _, remote.Failed(failure) ->
+        html.p([attribute.class("study-summary")], [
+          html.text(remote.error_message(failure)),
+        ])
+      remote.Loaded(stats), remote.Loaded(data) ->
         // Answered cards, not queued ones: an upgraded account has card state
         // without review history and deserves the panels, while a queue of
         // problems nobody has opened has nothing to show yet.
@@ -147,7 +152,7 @@ fn tier_bar(analysis: Analysis) -> Element(Msg) {
 // --- calibration -----------------------------------------------------------
 
 fn calibration_panel(m: Model) -> Element(Msg) {
-  case m.insights {
+  case remote.value(m.insights) {
     None -> element.none()
     Some(data) -> {
       let view = insights.calibration_view(data.calibration)
@@ -310,15 +315,19 @@ fn detail_overlay(m: Model) -> Element(Msg) {
             ]),
             suspend_control(m, problem),
             case rows {
-              None ->
+              remote.NotAsked | remote.Loading ->
                 html.p([attribute.class("study-summary")], [
                   html.text("Loading\u{2026}"),
                 ])
-              Some([]) ->
+              remote.Failed(failure) ->
+                html.p([attribute.class("study-summary")], [
+                  html.text(remote.error_message(failure)),
+                ])
+              remote.Loaded([]) ->
                 html.p([attribute.class("study-summary")], [
                   html.text("No reviews recorded yet."),
                 ])
-              Some(reviews) -> timeline(m, problem, reviews)
+              remote.Loaded(reviews) -> timeline(m, problem, reviews)
             },
           ]),
         ],
