@@ -1,7 +1,8 @@
 //// The one-time import of progress from before accounts existed.
 ////
 //// Part of the study data layer; see `server/study/model` for the shared
-//// types.
+//// types. The SQL lives in `legacy_import/sql/*.sql`; `gleam run -m
+//// squirrel` generates `legacy_import/sql.gleam` from it.
 
 import fsrs
 import gleam/list
@@ -9,10 +10,10 @@ import gleam/option.{type Option}
 import gleam/result
 import gleam/time/timestamp.{type Timestamp}
 import pog
-import server/db
 import server/study/drafts
+import server/study/legacy_import/sql
 import server/study/model.{
-  type StudyError, database_error, flatten_transaction_error,
+  type StudyError, done, flatten_transaction_error, nullable,
 }
 import server/study/notes
 import server/study/queues
@@ -104,52 +105,28 @@ pub fn insert_card(
   user_id: Uuid,
   card: ImportCard,
 ) -> Result(Nil, StudyError) {
-  pog.query(
-    "insert into cards (
-       user_id, category, subcategory, title,
-       state, step, stability, difficulty, due, last_review,
-       reps, lapses, introduced_at)
-     values ($1::uuid, $2, $3, $4, $5, $6, $7, $8,
-             to_timestamp($9::float8),
-             case when $10::float8 is null then null
-                  else to_timestamp($10::float8) end,
-             $11, $12,
-             case when $13::float8 is null then null
-                  else to_timestamp($13::float8) end)
-     on conflict (user_id, category, subcategory, title) do nothing",
+  let wire.ProblemRef(category:, subcategory:, title:) = card.problem
+  sql.insert_card(
+    db,
+    user_id,
+    category,
+    subcategory,
+    title,
+    card.state,
+    nullable(card.step),
+    nullable(option.map(card.memory, fn(m) { m.stability })),
+    nullable(option.map(card.memory, fn(m) { m.difficulty })),
+    fsrs.to_epoch(card.due),
+    nullable(option.map(card.last_review, fsrs.to_epoch)),
+    card.reps,
+    card.lapses,
+    // Null stays null. `introduced_at` means "first answered", and a guest can
+    // now upgrade with a queue of cards they have never opened -- stamping those
+    // with today would spend the whole daily new budget the moment they signed
+    // up, and the account would report nothing new to study on day one.
+    nullable(option.map(card.introduced_at, fsrs.to_epoch)),
   )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.text(card.problem.category))
-  |> pog.parameter(pog.text(card.problem.subcategory))
-  |> pog.parameter(pog.text(card.problem.title))
-  |> pog.parameter(pog.int(card.state))
-  |> pog.parameter(pog.nullable(pog.int, card.step))
-  |> pog.parameter(pog.nullable(
-    pog.float,
-    option.map(card.memory, fn(m) { m.stability }),
-  ))
-  |> pog.parameter(pog.nullable(
-    pog.float,
-    option.map(card.memory, fn(m) { m.difficulty }),
-  ))
-  |> pog.parameter(pog.float(fsrs.to_epoch(card.due)))
-  |> pog.parameter(pog.nullable(
-    pog.float,
-    option.map(card.last_review, fsrs.to_epoch),
-  ))
-  |> pog.parameter(pog.int(card.reps))
-  |> pog.parameter(pog.int(card.lapses))
-  // Null stays null. `introduced_at` means "first answered", and a guest can
-  // now upgrade with a queue of cards they have never opened -- stamping those
-  // with today would spend the whole daily new budget the moment they signed
-  // up, and the account would report nothing new to study on day one.
-  |> pog.parameter(pog.nullable(
-    pog.float,
-    option.map(card.introduced_at, fsrs.to_epoch),
-  ))
-  |> pog.execute(db)
-  |> result.replace(Nil)
-  |> result.map_error(database_error)
+  |> done
 }
 
 fn seed_card(
@@ -159,26 +136,20 @@ fn seed_card(
   seed: fsrs.Memory,
   now: Timestamp,
 ) -> Result(Nil, StudyError) {
-  pog.query(
-    // `reps` is 1, not 0. A zero-rep card is a queued one that has never been
-    // opened, and this card is the opposite: the old app recorded it as solved,
-    // which is what the seeded memory represents. Left at zero it would be
-    // re-introduced as new and counted out of every statistic.
-    "insert into cards (
-       user_id, category, subcategory, title,
-       state, step, stability, difficulty, due, reps, introduced_at)
-     values ($1::uuid, $2, $3, $4, 2, null, $5, $6,
-             to_timestamp($7::float8), 1, to_timestamp($7::float8))
-     on conflict (user_id, category, subcategory, title) do nothing",
+  let wire.ProblemRef(category:, subcategory:, title:) = problem
+  // `reps` is 1, not 0. A zero-rep card is a queued one that has never been
+  // opened, and this card is the opposite: the old app recorded it as solved,
+  // which is what the seeded memory represents. Left at zero it would be
+  // re-introduced as new and counted out of every statistic.
+  sql.seed_card(
+    db,
+    user_id,
+    category,
+    subcategory,
+    title,
+    seed.stability,
+    seed.difficulty,
+    fsrs.to_epoch(now),
   )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.text(problem.category))
-  |> pog.parameter(pog.text(problem.subcategory))
-  |> pog.parameter(pog.text(problem.title))
-  |> pog.parameter(pog.float(seed.stability))
-  |> pog.parameter(pog.float(seed.difficulty))
-  |> pog.parameter(pog.float(fsrs.to_epoch(now)))
-  |> pog.execute(db)
-  |> result.replace(Nil)
-  |> result.map_error(database_error)
+  |> done
 }
