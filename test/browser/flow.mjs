@@ -129,9 +129,10 @@ check("Again shows a short interval", /^\d+m$/.test(againInterval), againInterva
 
 console.log("== grade it");
 await page.click(".grade-again");
-// The next card opens once the review has round-tripped; the grade bar of
-// the old one goes first.
-await page.waitForFunction(() => !document.querySelector(".grade-bar"), { timeout: 25000 });
+// The next card opens once the review has round-tripped. Its grade bar is
+// up from the start (a first encounter grades freely), so wait on the
+// sitting's position rather than on the bar going away.
+await page.waitForFunction(() => /Problem 2\//.test(document.body.innerText), { timeout: 25000 });
 await startCoding();
 check("advances to the next problem after grading",
   await page.isVisible(".run-bar"));
