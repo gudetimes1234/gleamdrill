@@ -1,14 +1,12 @@
 //// In-progress solutions, saved per problem.
 ////
 //// Part of the study data layer; see `server/study/model` for the shared
-//// types.
+//// types. The SQL lives in `drafts/sql/*.sql`; `gleam run -m squirrel`
+//// generates `drafts/sql.gleam` from it, typed against the live schema.
 
-import gleam/dynamic/decode
-import gleam/option.{type Option, None, Some}
-import gleam/result
 import pog
-import server/db
-import server/study/model.{type StudyError, database_error}
+import server/study/drafts/sql
+import server/study/model.{type StudyError, done, rows}
 import wire
 import youid/uuid.{type Uuid}
 
@@ -17,7 +15,10 @@ pub fn load_drafts(
   db: pog.Connection,
   user_id: Uuid,
 ) -> Result(List(#(wire.ProblemRef, String)), StudyError) {
-  load_drafts_rows(db, user_id, None)
+  sql.all_drafts(db, user_id)
+  |> rows(fn(row: sql.AllDraftsRow) {
+    #(wire.ProblemRef(row.category, row.subcategory, row.title), row.body)
+  })
 }
 
 /// One track's. Two functions rather than an `Option` argument at the call
@@ -27,31 +28,10 @@ pub fn load_drafts_in(
   user_id: Uuid,
   track: String,
 ) -> Result(List(#(wire.ProblemRef, String)), StudyError) {
-  load_drafts_rows(db, user_id, Some(track))
-}
-
-fn load_drafts_rows(
-  db: pog.Connection,
-  user_id: Uuid,
-  track: Option(String),
-) -> Result(List(#(wire.ProblemRef, String)), StudyError) {
-  pog.query(
-    "select category, subcategory, title, body
-       from drafts
-      where user_id = $1::uuid and ($2::text is null or category = $2)",
-  )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.nullable(pog.text, track))
-  |> pog.returning({
-    use category <- decode.field(0, decode.string)
-    use subcategory <- decode.field(1, decode.string)
-    use title <- decode.field(2, decode.string)
-    use body <- decode.field(3, decode.string)
-    decode.success(#(wire.ProblemRef(category:, subcategory:, title:), body))
+  sql.drafts_in(db, user_id, track)
+  |> rows(fn(row: sql.DraftsInRow) {
+    #(wire.ProblemRef(row.category, row.subcategory, row.title), row.body)
   })
-  |> pog.execute(db)
-  |> result.map(fn(returned) { returned.rows })
-  |> result.map_error(database_error)
 }
 
 pub fn save_draft(
@@ -60,20 +40,9 @@ pub fn save_draft(
   problem: wire.ProblemRef,
   body: String,
 ) -> Result(Nil, StudyError) {
-  pog.query(
-    "insert into drafts (user_id, category, subcategory, title, body)
-     values ($1::uuid, $2, $3, $4, $5)
-     on conflict (user_id, category, subcategory, title)
-       do update set body = excluded.body, updated_at = now()",
-  )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.text(problem.category))
-  |> pog.parameter(pog.text(problem.subcategory))
-  |> pog.parameter(pog.text(problem.title))
-  |> pog.parameter(pog.text(body))
-  |> pog.execute(db)
-  |> result.replace(Nil)
-  |> result.map_error(database_error)
+  let wire.ProblemRef(category:, subcategory:, title:) = problem
+  sql.save_draft(db, user_id, category, subcategory, title, body)
+  |> done
 }
 
 /// Drops a draft, if there is one. Called from the review transaction and
@@ -83,16 +52,7 @@ pub fn delete_draft(
   user_id: Uuid,
   problem: wire.ProblemRef,
 ) -> Result(Nil, StudyError) {
-  pog.query(
-    "delete from drafts
-      where user_id = $1::uuid and category = $2
-        and subcategory = $3 and title = $4",
-  )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.text(problem.category))
-  |> pog.parameter(pog.text(problem.subcategory))
-  |> pog.parameter(pog.text(problem.title))
-  |> pog.execute(db)
-  |> result.replace(Nil)
-  |> result.map_error(database_error)
+  let wire.ProblemRef(category:, subcategory:, title:) = problem
+  sql.delete_draft(db, user_id, category, subcategory, title)
+  |> done
 }
