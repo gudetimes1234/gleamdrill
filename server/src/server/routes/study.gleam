@@ -50,7 +50,7 @@ pub fn state(request: wisp.Request, context: Context) -> wisp.Response {
     // the track holding the most cards -- and for a brand new account, the
     // empty string, which matches nothing and lands on the switcher.
     let track = track.pick(query_track(request), standings)
-    // Same rule as `resolve_track`, off the standings this already has.
+    // Same rule as `track.resolve`, off the standings this already has.
     use settings <- result.try(profile.load_settings(context.db, user.id, track))
     let profile = wire.Profile(account:, settings:)
     use cards <- result.try(cards.load_cards_in(context.db, user.id, track))
@@ -99,6 +99,21 @@ fn query_track(request: wisp.Request) -> option.Option(String) {
   list.key_find(wisp.get_query(request), "track") |> option.from_result
 }
 
+/// The track a request is about, resolved from `?track=` or the account's
+/// default. Resolving can need the database, so a failure answers as a 500
+/// rather than crashing the request.
+fn require_track(
+  request: wisp.Request,
+  context: Context,
+  user_id: String,
+  next: fn(String) -> wisp.Response,
+) -> wisp.Response {
+  case track.resolve(context.db, user_id, query_track(request)) {
+    Error(failure) -> study_error(failure)
+    Ok(track) -> next(track)
+  }
+}
+
 /// GET and PUT /api/queues -- the user's named queues, as one set. The
 /// client owns the list and sends it whole; the server checks its shape and
 /// replaces what it had.
@@ -127,17 +142,18 @@ pub fn queues(request: wisp.Request, context: Context) -> wisp.Response {
           let named = case queues {
             [] ->
               track.resolve(context.db, user.id, query_track(request))
-              |> result.replace_error(Nil)
-            _ -> track.one_track(queues)
-          }
-          case queues.validate_queues(queues), named {
-            Error(message), _ -> web.error(422, "invalid_queues", message)
-            _, Error(Nil) ->
-              web.error(
+              |> result.map_error(study_error)
+            _ ->
+              track.one_track(queues)
+              |> result.replace_error(web.error(
                 422,
                 "mixed_tracks",
                 "Every queue in one request must be in the same track.",
-              )
+              ))
+          }
+          case queues.validate_queues(queues), named {
+            Error(message), _ -> web.error(422, "invalid_queues", message)
+            _, Error(response) -> response
             Ok(Nil), Ok(track) ->
               case queues.replace_queues(context.db, user.id, track, queues) {
                 Error(failure) -> study_error(failure)
@@ -157,8 +173,7 @@ pub fn queues(request: wisp.Request, context: Context) -> wisp.Response {
 pub fn undo(request: wisp.Request, context: Context) -> wisp.Response {
   use user <- web.require_user(request, context)
   let now = timestamp.system_time()
-  let assert Ok(track) =
-    track.resolve(context.db, user.id, query_track(request))
+  use track <- require_track(request, context, user.id)
   case reviews.undo_review(context.db, user.id, track) {
     Error(reviews.NothingToUndo) ->
       web.error(409, "nothing_to_undo", "There is no review to undo.")
@@ -778,8 +793,7 @@ fn update_settings(
               )
             Ok(True) -> {
               let profile = wire.Profile(account:, settings:)
-              let assert Ok(track) =
-                track.resolve(context.db, user.id, query_track(request))
+              use track <- require_track(request, context, user.id)
               // Both halves still arrive in one object, so both are written:
               // the account's row, and this track's. Splitting the endpoint
               // is a later release's business.
