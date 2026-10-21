@@ -8,11 +8,10 @@
 import fsrs
 import gleam/option.{type Option}
 import gleamdrill/content/problem.{type ProblemRef}
-import gleamdrill/model.{
-  type CompareSide, type Pane, type RunOutcome, type UndoPoint,
-}
+import gleamdrill/model.{type Pane, type RunOutcome, type UndoPoint}
 import gleamdrill/page/auth/model as auth_model
 import gleamdrill/page/auth/msg as auth_msg
+import gleamdrill/page/browse/msg as browse_msg
 import gleamdrill/page/queue/msg as queue_msg
 import gleamdrill/page/settings/msg as settings_msg
 import gleamdrill/page/stats/msg as stats_msg
@@ -35,19 +34,10 @@ pub type Msg {
   TracksMsg(tracks_msg.Msg)
   StatsMsg(stats_msg.Msg)
   QueueMsg(queue_msg.Msg)
+  BrowseMsg(browse_msg.Msg)
   // --- keyboard ---
   KeyPressed(Key)
   HelpToggled
-  /// Move the pane focus left (-1) or right (+1).
-  MenuPaneFocused(Int)
-  /// Move the cursor within the focused pane by a delta.
-  MenuCursorMoved(Int)
-  /// Jump the cursor to the first (True) or last row.
-  MenuCursorJumped(Bool)
-  /// Enter on the cursor row: descend into a pane, or toggle a problem.
-  MenuActivated
-  /// Space/x on the cursor row: toggle membership, or remove from Selected.
-  MenuToggledAtCursor
   /// Move the quiz choice cursor by a delta.
   QuizMoved(Int)
   /// Move the board cursor by a delta, within the flattened palette.
@@ -59,7 +49,6 @@ pub type Msg {
   /// Space on the cursor: put the piece on the board, or take it off.
   BoardToggledAtCursor
   EditorFocusRequested
-  SearchFocusRequested
   // --- session ---
   StateLoaded(Result(wire.BootState, ApiError))
   StateImported(Result(Nil, ApiError))
@@ -84,11 +73,6 @@ pub type Msg {
   StatsLoaded(Result(wire.Stats, ApiError))
   InsightsLoaded(Result(wire.Insights, ApiError))
   // --- browsing and drilling ---
-  UserClickedSubcategory(String)
-  UserClickedBreadcrumb(Int)
-  UserToggledProblem(ProblemRef)
-  UserClickedSelectAll
-  UserClickedClearSelection
   UserChangedIterations(String)
   UserClickedStartDrill
   /// Ask before leaving a drill; opens the in-app exit prompt.
@@ -128,7 +112,6 @@ pub type Msg {
   /// The whole pseudocode, from the foot of the rail. A reveal.
   UserRevealedWholeThing
   UserClickedNext
-  UserSearched(String)
   UserChangedKeymap(String)
   EditorChanged(String)
   DraftSaveTicked
@@ -173,7 +156,6 @@ pub type Msg {
   /// Queue a starter set from the study screen's empty state.
   UserAddedStarterSet
   UserToggledSuspend(ProblemRef)
-  MenuSuspendedAtCursor
   CardSuspended(Result(wire.ReviewOutcome, ApiError))
   // --- managing the queue ---
   UserClickedQueue
@@ -184,10 +166,6 @@ pub type Msg {
   UserAddedSelectionToQueue(Option(String))
   QueuesSaved(Result(Nil, ApiError))
   // --- compare ---
-  UserClickedCompare
-  CompareMoved(Int)
-  ComparePickedVariant(CompareSide, Int)
-  UserClosedCompare
   QueueChanged(Result(wire.QueueChange, ApiError))
   RunnerReady(language: String)
   RunnerFailed(language: String, message: String)

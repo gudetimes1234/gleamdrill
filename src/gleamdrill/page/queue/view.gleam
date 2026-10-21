@@ -56,6 +56,8 @@ pub fn view(shared: Shared, page: Model) -> Document(Msg) {
   Document(
     class: "queue-screen",
     header: document.Header(
+      tag: document.HeaderTag,
+      nav: True,
       class: "queue-header",
       title_class: "queue-title",
       title: [html.text("Study queue")],

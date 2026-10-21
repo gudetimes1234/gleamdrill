@@ -9,43 +9,36 @@
 import gleamdrill/model.{type Model, DrillRoute, Model}
 import gleamdrill/msg.{
   type Msg, AuthMsg, BlitzExpired, BoardJumped, BoardMoved, BoardShelfMoved,
-  BoardToggledAtCursor, CardSuspended, ClockTicked, CompareMoved,
-  ComparePickedVariant, DraftSaveTicked, DraftSynced, EditorChanged,
-  EditorFocusRequested, EditorResized, ExamSampled, ExitConfirmed, HelpToggled,
-  InsightsLoaded, KeyPressed, MenuActivated, MenuCursorJumped, MenuCursorMoved,
-  MenuPaneFocused, MenuSuspendedAtCursor, MenuToggledAtCursor, NoteChanged,
+  BoardToggledAtCursor, BrowseMsg, CardSuspended, ClockTicked, DraftSaveTicked,
+  DraftSynced, EditorChanged, EditorFocusRequested, EditorResized, ExamSampled,
+  ExitConfirmed, HelpToggled, InsightsLoaded, KeyPressed, NoteChanged,
   NoteFocusRequested, NoteSaveTicked, NoteSynced, QueueChanged, QueueMsg,
   QueuesSaved, QuizMoved, RemoteRunFinished, ReviewRecorded, RunFinished,
-  RunTimedOut, RunnerFailed, RunnerReady, RuntimeLoadTimedOut,
-  SearchFocusRequested, SettingsMsg, SignOutCompleted, StateImported,
-  StateLoaded, StatsLoaded, StatsMsg, TourActivated, TourCursorMoved,
-  TourEditorChanged, TourRunTicked, TracksMsg, UndoRecorded,
-  UserAddedSelectionToQueue, UserAddedStarterSet, UserChangedIterations,
-  UserChangedKeymap, UserClickedBackToStudy, UserClickedBreadcrumb,
-  UserClickedBrowse, UserClickedClearSelection, UserClickedCompare,
-  UserClickedExitDrill, UserClickedExitReport, UserClickedMergeGuest,
-  UserClickedNext, UserClickedQueue, UserClickedRecall, UserClickedRetryRuntime,
-  UserClickedRetrySync, UserClickedRun, UserClickedScratchRun,
-  UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
+  RunTimedOut, RunnerFailed, RunnerReady, RuntimeLoadTimedOut, SettingsMsg,
+  SignOutCompleted, StateImported, StateLoaded, StatsLoaded, StatsMsg,
+  TourActivated, TourCursorMoved, TourEditorChanged, TourRunTicked, TracksMsg,
+  UndoRecorded, UserAddedSelectionToQueue, UserAddedStarterSet,
+  UserChangedIterations, UserChangedKeymap, UserClickedBackToStudy,
+  UserClickedBrowse, UserClickedExitDrill, UserClickedExitReport,
+  UserClickedMergeGuest, UserClickedNext, UserClickedQueue, UserClickedRecall,
+  UserClickedRetryRuntime, UserClickedRetrySync, UserClickedRun,
+  UserClickedScratchRun, UserClickedSettings, UserClickedSignIn,
   UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
-  UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
-  UserClickedTour, UserClickedTourContents, UserClickedTourNext,
-  UserClickedTourPrev, UserClickedTracks, UserClickedUndo, UserClosedCompare,
-  UserDismissedDiff, UserDismissedMergeOffer, UserDismissedNotice,
-  UserDismissedUpgradePrompt, UserGraded, UserOpenedLesson,
+  UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedTour,
+  UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
+  UserClickedTracks, UserClickedUndo, UserDismissedDiff, UserDismissedMergeOffer,
+  UserDismissedNotice, UserDismissedUpgradePrompt, UserGraded, UserOpenedLesson,
   UserPickedActiveQueue, UserPickedChoice, UserResetLesson, UserRevealedRecall,
-  UserRevealedWholeThing, UserSearched, UserStartedBlitz, UserSubmittedAnswer,
+  UserRevealedWholeThing, UserStartedBlitz, UserSubmittedAnswer,
   UserSubmittedBoard, UserToggledBlitz, UserToggledDiff, UserToggledNudge,
-  UserToggledPane, UserToggledPiece, UserToggledProblem, UserToggledPrompt,
-  UserToggledResults, UserToggledSolution, UserToggledSuspend, UserToggledTimer,
-  WalkAdvanced, WalkBacked, WalkCodeShown, WalkFocused, WalkHintShown,
-  WalkWhyShown,
+  UserToggledPane, UserToggledPiece, UserToggledPrompt, UserToggledResults,
+  UserToggledSolution, UserToggledSuspend, UserToggledTimer, WalkAdvanced,
+  WalkBacked, WalkCodeShown, WalkFocused, WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/platform/browser
 import gleamdrill/update/blitz as blitz_update
 import gleamdrill/update/board as board_update
 import gleamdrill/update/common
-import gleamdrill/update/compare as compare_update
 import gleamdrill/update/drill as drill_update
 import gleamdrill/update/keyboard
 import gleamdrill/update/menu as menu_update
@@ -79,6 +72,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     | TracksMsg(_)
     | StatsMsg(_)
     | QueueMsg(_)
+    | BrowseMsg(_)
+    | UserClickedBrowse
     | UserClickedQueue
     | UserClickedStats
     | UserClickedSignIn(_)
@@ -89,20 +84,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     HelpToggled -> keyboard.toggle_help(m)
 
     EditorFocusRequested -> drill_update.focus_editor(m)
-
-    SearchFocusRequested -> menu_update.focus_search(m)
-
-    MenuCursorMoved(delta) -> menu_update.cursor_moved(m, delta)
-
-    MenuCursorJumped(first) -> menu_update.cursor_jumped(m, first)
-
-    MenuPaneFocused(direction) -> menu_update.focus_pane(m, direction)
-
-    MenuActivated -> menu_update.activate_cursor(m)
-
-    MenuToggledAtCursor -> menu_update.activate_cursor(m)
-
-    MenuSuspendedAtCursor -> menu_update.suspend_at_cursor(m, handle)
 
     QuizMoved(delta) -> board_update.quiz_moved(m, delta)
     BoardMoved(delta) -> board_update.moved(m, delta)
@@ -126,8 +107,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     UserClickedRecall -> review_update.start_recall(m)
     UserRevealedRecall -> review_update.reveal_recall(m)
 
-    UserClickedBrowse -> menu_update.browse(m)
-
     UserClickedBackToStudy -> review_update.back_to_study(m)
 
     StatsLoaded(result) -> stats.loaded(m, result)
@@ -143,16 +122,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     UndoRecorded(point, result) -> review_update.undo_recorded(m, point, result)
 
     DraftSynced(result) -> drill_update.draft_synced(m, result)
-
-    UserClickedSubcategory(name) -> menu_update.clicked_subcategory(m, name)
-
-    UserClickedBreadcrumb(_) -> menu_update.clicked_breadcrumb(m)
-
-    UserToggledProblem(ref) -> menu_update.toggle_problem(m, ref)
-
-    UserClickedSelectAll -> menu_update.select_all(m)
-
-    UserClickedClearSelection -> menu_update.clear_selection(m)
 
     UserChangedIterations(raw) -> drill_update.changed_iterations(m, raw)
     UserClickedStartDrill -> drill_update.start_drill(m)
@@ -189,8 +158,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     UserToggledPane(pane) -> drill_update.toggle_pane(m, pane)
     UserClickedNext -> common.advance(m)
 
-    UserSearched(query) -> menu_update.searched(m, query)
-
     UserChangedKeymap(mode) -> drill_update.changed_keymap(m, mode)
     UserToggledResults -> drill_update.toggle_results(m)
     EditorResized(height) -> drill_update.editor_resized(m, height)
@@ -223,12 +190,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     QueuesSaved(result) -> queues_update.saved(m, result)
 
     // --- compare ---
-    UserClickedCompare -> compare_update.open(m)
-    CompareMoved(delta) -> compare_update.moved(m, delta)
-    ComparePickedVariant(side, index) ->
-      compare_update.picked_variant(m, side, index)
-    UserClosedCompare -> compare_update.close(m)
-
     QueueChanged(result) -> queues_update.changed(m, result)
 
     EditorChanged(text) -> drill_update.editor_changed(m, text)

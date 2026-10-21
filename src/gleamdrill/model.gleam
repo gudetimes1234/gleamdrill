@@ -45,23 +45,6 @@ pub type Route {
   CompareRoute
 }
 
-/// The compare screen: an anchor on the left and, on the right, one of the
-/// others at a time. Each side shows one of its problem's solutions.
-pub type Compare {
-  Compare(
-    anchor: ProblemRef,
-    others: List(ProblemRef),
-    index: Int,
-    variant_a: Int,
-    variant_b: Int,
-  )
-}
-
-pub type CompareSide {
-  LeftSide
-  RightSide
-}
-
 /// Which face of the tour screen is up: the table of contents, or one lesson.
 pub type TourPage {
   TourContents
@@ -101,39 +84,6 @@ pub type Sync {
   Syncing
   Synced
   SyncFailed(String)
-}
-
-/// One keystroke, as the document-level listener reports it.
-///
-/// Which pane of the browser holds the keyboard cursor.
-/// Three panes, not four: the first used to choose a language, and the track
-/// switcher is where that happens now.
-pub type MenuPane {
-  SubcategoriesPane
-  ProblemsPane
-  SelectedPane
-}
-
-/// The TUI cursor: a focused pane plus a remembered row per pane, and a row
-/// for the search-results list, which replaces the panes while searching.
-pub type MenuNav {
-  MenuNav(
-    focus: MenuPane,
-    subcategory: Int,
-    problem: Int,
-    selected: Int,
-    search: Int,
-  )
-}
-
-pub fn default_nav() -> MenuNav {
-  MenuNav(
-    focus: SubcategoriesPane,
-    subcategory: 0,
-    problem: 0,
-    selected: 0,
-    search: 0,
-  )
 }
 
 /// Where the guest is in the one-time upgrade nudge.
@@ -245,8 +195,6 @@ pub type Model {
     insights: remote.Data(wire.Insights),
     /// A transient banner for whatever last went wrong with the server.
     notice: Option(String),
-    /// The keyboard cursor in the problem browser.
-    nav: MenuNav,
     /// Whether the `?` cheatsheet overlay is up.
     help_open: Bool,
     // --- the Gleam Language Tour ---
@@ -278,7 +226,6 @@ pub type Model {
     merge_offer: Bool,
     // --- the current sitting ---
     route: Route,
-    selected_subcategory: Option(String),
     selected: List(ProblemRef),
     problem_index: Int,
     iteration_count: Int,
@@ -349,7 +296,6 @@ pub type Model {
     /// visit after the first. Written from the drill screen, saved like a
     /// draft.
     notes: List(#(ProblemRef, String)),
-    search: String,
     next_run_id: Int,
     editor_keymap: String,
     /// Whether the run results are folded to their one-line verdict. Lives for
@@ -372,7 +318,6 @@ pub type Model {
     /// The queue the study screen serves today, in the active track: None is
     /// everything with a card. A device preference.
     active_queue: Option(String),
-    compare: Option(Compare),
     /// Quiz option currently picked, before Submit is pressed.
     choice: Option(Int),
     /// Whether the current quiz question or board has been submitted and
@@ -413,7 +358,6 @@ pub fn default() -> Model {
     stats: remote.NotAsked,
     insights: remote.NotAsked,
     notice: None,
-    nav: default_nav(),
     help_open: False,
     tour_page: TourContents,
     tour_draft: "",
@@ -425,7 +369,6 @@ pub fn default() -> Model {
     upgrade_prompt: PromptUnseen,
     merge_offer: False,
     route: StudyRoute,
-    selected_subcategory: None,
     selected: [],
     problem_index: 0,
     iteration_count: 3,
@@ -448,7 +391,6 @@ pub fn default() -> Model {
     run: RunIdle,
     drafts: [],
     notes: [],
-    search: "",
     next_run_id: 1,
     editor_keymap: "default",
     results_collapsed: False,
@@ -463,7 +405,6 @@ pub fn default() -> Model {
     queues: [],
     remembered_queues: [],
     active_queue: None,
-    compare: None,
     choice: None,
     graded: False,
     board_picks: [],

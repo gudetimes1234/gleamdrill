@@ -19,10 +19,20 @@ pub fn view(shared: Shared, route: Route, page: Document(Msg)) -> Element(Msg) {
       False -> element.none()
     },
     nav.notices(shared),
-    html.header([attribute.class(page.header.class)], [
-      html.h1([attribute.class(page.header.title_class)], page.header.title),
-      ..list.append(page.header.extra, [nav.bar(shared, route)])
-    ]),
+    {
+      let header = page.header
+      let row = case header.tag {
+        document.HeaderTag -> html.header
+        document.Div -> html.div
+      }
+      row([attribute.class(header.class)], [
+        html.h1([attribute.class(header.title_class)], header.title),
+        ..list.append(header.extra, case header.nav {
+          True -> [nav.bar(shared, route)]
+          False -> []
+        })
+      ])
+    },
     ..page.body
   ])
 }

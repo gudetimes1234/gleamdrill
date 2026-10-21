@@ -9,10 +9,24 @@ import gleam/result
 import gleam/string
 import gleamdrill/content/problem.{type Problem, type ProblemRef}
 import gleamdrill/content/problems
-import gleamdrill/model.{
-  type Compare, type CompareSide, Compare, LeftSide, RightSide,
-}
 import wire
+
+/// The compare screen: an anchor on the left and, on the right, one of the
+/// others at a time. Each side shows one of its problem's solutions.
+pub type Compare {
+  Compare(
+    anchor: ProblemRef,
+    others: List(ProblemRef),
+    index: Int,
+    variant_a: Int,
+    variant_b: Int,
+  )
+}
+
+pub type CompareSide {
+  LeftSide
+  RightSide
+}
 
 /// What Browse's selection compares. Two or more in one language: the first
 /// against the rest. One alone: against the rest of its topic, which is

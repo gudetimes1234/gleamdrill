@@ -7,6 +7,7 @@
 //// at the end is exactly the shared state, renamed into a record of its own.
 
 import gleam/option.{type Option}
+import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/model
 import gleamdrill/msg
 import gleamdrill/store/remote.{type ApiError}
@@ -39,6 +40,9 @@ pub type Change {
   EnterTrack(track: String, starter: Bool)
   /// Fetch the stats and insights again.
   LoadStats
+  /// The manual selection: what a hand-picked drill, compare, an exam start
+  /// and "add to queue" act on.
+  SelectionChanged(List(ProblemRef))
   /// The named queues, edited: shown at once and saved whole.
   QueuesEdited(List(wire.Queue))
   /// The queue the study screen draws from (`None` is everything).

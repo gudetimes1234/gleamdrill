@@ -6,17 +6,21 @@ import gleam/string
 import gleamdrill/content/problem.{type Problem, type ProblemRef}
 import gleamdrill/content/problems
 import gleamdrill/domain/track
-import gleamdrill/model.{type Model}
-import gleamdrill/msg.{
+import gleamdrill/model as shared_model
+import gleamdrill/page/browse/model.{
+  type Model, type Pane, ProblemsPane, SelectedPane, SubcategoriesPane,
+}
+import gleamdrill/page/browse/msg.{
   type Msg, UserAddedSelectionToQueue, UserChangedIterations,
   UserClickedBreadcrumb, UserClickedClearSelection, UserClickedCompare,
   UserClickedSelectAll, UserClickedStartDrill, UserClickedStartExam,
   UserClickedSubcategory, UserSearched, UserToggledProblem, UserToggledSuspend,
 }
+import gleamdrill/shared.{type Shared}
+import gleamdrill/ui/document.{type Document, Document}
 import gleamdrill/view/brand
 import gleamdrill/view/format
 import gleamdrill/view/id
-import gleamdrill/view/nav
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -24,108 +28,115 @@ import lustre/element/keyed
 import lustre/event
 import wire.{ProblemRef}
 
-pub fn view(m: Model) -> Element(Msg) {
-  let listed_problems = case m.selected_subcategory {
-    Some(sub) -> problems.problems_in(m.active_track, sub)
+pub fn view(shared: Shared, page: Model) -> Document(Msg) {
+  let listed_problems = case page.subcategory {
+    Some(sub) -> problems.problems_in(shared.active_track, sub)
     None -> []
   }
 
-  html.div([attribute.class("menu-container")], [
-    // Every other top-level screen shows these; Browse never did, so the
-    // "added to <queue>" confirmation was set and silently never seen.
-    nav.notices(m),
-    html.div([attribute.class("menu-top")], [
-      html.h1([attribute.class("menu-title")], brand.wordmark()),
-      html.input([
-        attribute.type_("search"),
-        attribute.class("search"),
-        attribute.placeholder("Search problems\u{2026}"),
-        attribute.value(m.search),
-        event.on_input(UserSearched),
-      ]),
-    ]),
-    ..case string.trim(m.search) {
+  Document(
+    class: "menu-container",
+    header: document.Header(
+      tag: document.Div,
+      class: "menu-top",
+      title_class: "menu-title",
+      title: brand.wordmark(),
+      extra: [
+        html.input([
+          attribute.type_("search"),
+          attribute.class("search"),
+          attribute.placeholder("Search problems\u{2026}"),
+          attribute.value(page.search),
+          event.on_input(UserSearched),
+        ]),
+      ],
+      nav: False,
+    ),
+    storage_warning: False,
+    body: case string.trim(page.search) {
       "" -> [
-        breadcrumbs(m),
+        breadcrumbs(shared, page),
         html.div([attribute.class("panes-container")], [
-          subcategory_pane(m),
-          problem_pane(m, listed_problems),
-          selected_pane(m),
+          subcategory_pane(shared, page),
+          problem_pane(shared, page, listed_problems),
+          selected_pane(shared, page),
         ]),
       ]
-      query -> [search_results(m, query)]
+      query -> [search_results(shared, page, query)]
     }
-    |> list.append([
-      html.div([attribute.class("iteration-control")], [
-        html.label([attribute.for("iterations")], [
-          html.text("Repetitions per problem"),
+      |> list.append([
+        html.div([attribute.class("iteration-control")], [
+          html.label([attribute.for("iterations")], [
+            html.text("Repetitions per problem"),
+          ]),
+          html.input([
+            attribute.type_("number"),
+            attribute.id("iterations"),
+            attribute.min("1"),
+            attribute.max("20"),
+            attribute.value(int.to_string(shared.iteration_count)),
+            event.on_change(UserChangedIterations),
+          ]),
+          html.span([attribute.class("progress-text")], [
+            html.text(
+              int.to_string(list.length(shared.selected)) <> " selected",
+            ),
+          ]),
         ]),
-        html.input([
-          attribute.type_("number"),
-          attribute.id("iterations"),
-          attribute.min("1"),
-          attribute.max("20"),
-          attribute.value(int.to_string(m.iteration_count)),
-          event.on_change(UserChangedIterations),
-        ]),
-        html.span([attribute.class("progress-text")], [
-          html.text(int.to_string(list.length(m.selected)) <> " selected"),
+        html.div([attribute.class("menu-actions")], [
+          html.button(
+            [
+              attribute.id("startDrill"),
+              attribute.class("btn-primary"),
+              attribute.disabled(shared.selected == []),
+              event.on_click(UserClickedStartDrill),
+            ],
+            [html.text("Start drill")],
+          ),
+          // The selected solutions side by side; one alone is compared with
+          // the rest of its topic.
+          html.button(
+            [
+              attribute.id("compareSelected"),
+              attribute.class("btn-secondary"),
+              attribute.disabled(shared.selected == []),
+              event.on_click(UserClickedCompare),
+            ],
+            [html.text("Compare")],
+          ),
+          add_to_queue(shared),
+          html.button(
+            [
+              attribute.id("selectAll"),
+              attribute.class("btn-secondary"),
+              attribute.disabled(listed_problems == []),
+              event.on_click(UserClickedSelectAll),
+            ],
+            [html.text("Select all in subcategory")],
+          ),
+          html.button(
+            [
+              attribute.id("clearSelection"),
+              attribute.class("btn-secondary"),
+              event.on_click(UserClickedClearSelection),
+            ],
+            [html.text("Clear selection")],
+          ),
+          // Ignores the selection on purpose: an exam samples its own questions
+          // evenly across the sections, which is what makes the per-section
+          // score comparable.
+          html.button(
+            [
+              attribute.id("startExam"),
+              attribute.class("btn-secondary"),
+              attribute.disabled(exam_pool_size() == 0),
+              event.on_click(UserClickedStartExam),
+            ],
+            [html.text("System design exam")],
+          ),
         ]),
       ]),
-      html.div([attribute.class("menu-actions")], [
-        html.button(
-          [
-            attribute.id("startDrill"),
-            attribute.class("btn-primary"),
-            attribute.disabled(m.selected == []),
-            event.on_click(UserClickedStartDrill),
-          ],
-          [html.text("Start drill")],
-        ),
-        // The selected solutions side by side; one alone is compared with
-        // the rest of its topic.
-        html.button(
-          [
-            attribute.id("compareSelected"),
-            attribute.class("btn-secondary"),
-            attribute.disabled(m.selected == []),
-            event.on_click(UserClickedCompare),
-          ],
-          [html.text("Compare")],
-        ),
-        add_to_queue(m),
-        html.button(
-          [
-            attribute.id("selectAll"),
-            attribute.class("btn-secondary"),
-            attribute.disabled(listed_problems == []),
-            event.on_click(UserClickedSelectAll),
-          ],
-          [html.text("Select all in subcategory")],
-        ),
-        html.button(
-          [
-            attribute.id("clearSelection"),
-            attribute.class("btn-secondary"),
-            event.on_click(UserClickedClearSelection),
-          ],
-          [html.text("Clear selection")],
-        ),
-        // Ignores the selection on purpose: an exam samples its own questions
-        // evenly across the sections, which is what makes the per-section
-        // score comparable.
-        html.button(
-          [
-            attribute.id("startExam"),
-            attribute.class("btn-secondary"),
-            attribute.disabled(exam_pool_size() == 0),
-            event.on_click(UserClickedStartExam),
-          ],
-          [html.text("System design exam")],
-        ),
-      ]),
-    ])
-  ])
+  )
 }
 
 fn exam_pool_size() -> Int {
@@ -134,7 +145,7 @@ fn exam_pool_size() -> Int {
 }
 
 /// Flat list of every problem whose title matches, across all categories.
-fn search_results(m: Model, query: String) -> Element(Msg) {
+fn search_results(shared: Shared, page: Model, query: String) -> Element(Msg) {
   let hits = problems.search_refs(query)
 
   case hits {
@@ -149,9 +160,9 @@ fn search_results(m: Model, query: String) -> Element(Msg) {
         [attribute.class("search-results")],
         list.index_map(hits, fn(ref, index) {
           #(ref.category <> "|" <> ref.subcategory <> "|" <> ref.title, {
-            let selected = list.contains(m.selected, ref)
+            let selected = list.contains(shared.selected, ref)
             let here =
-              int.clamp(m.nav.search, 0, list.length(hits) - 1) == index
+              int.clamp(page.cursor.search, 0, list.length(hits) - 1) == index
             html.div(
               [
                 attribute.classes([
@@ -169,7 +180,7 @@ fn search_results(m: Model, query: String) -> Element(Msg) {
                   html.text(ref.title),
                 ]),
                 format.difficulty_badge(problems.difficulty_of(ref)),
-                status_badge(m, ref),
+                status_badge(shared, ref),
                 html.span([attribute.class("search-hit-context")], [
                   html.text(ref.category <> " \u{203a} " <> ref.subcategory),
                 ]),
@@ -185,9 +196,9 @@ fn search_results(m: Model, query: String) -> Element(Msg) {
 /// you are about to drill deserves the same standing as what you are picking
 /// from. Cross-language selections are normal here, so each row carries a
 /// short language tag.
-fn selected_pane(m: Model) -> Element(Msg) {
-  let length = list.length(m.selected)
-  pane("Selected", m.nav.focus == model.SelectedPane, case m.selected {
+fn selected_pane(shared: Shared, page: Model) -> Element(Msg) {
+  let length = list.length(shared.selected)
+  pane("Selected", page.cursor.focus == SelectedPane, case shared.selected {
     [] ->
       html.div([attribute.class("pane-list")], [
         html.div([attribute.class("pane-empty")], [
@@ -205,7 +216,7 @@ fn selected_pane(m: Model) -> Element(Msg) {
                 attribute.tabindex(0),
                 event.on_click(UserToggledProblem(ref)),
                 on_activate_key(UserToggledProblem(ref)),
-                ..cursor_attributes(m, model.SelectedPane, index, length)
+                ..cursor_attributes(page, SelectedPane, index, length)
               ],
               [
                 html.span([attribute.class("selected-title")], [
@@ -229,10 +240,10 @@ fn selected_pane(m: Model) -> Element(Msg) {
   })
 }
 
-fn breadcrumbs(m: Model) -> Element(Msg) {
+fn breadcrumbs(shared: Shared, page: Model) -> Element(Msg) {
   let crumbs =
-    [track.label(m.active_track)]
-    |> list.append(option.values([m.selected_subcategory]))
+    [track.label(shared.active_track)]
+    |> list.append(option.values([page.subcategory]))
   let last = list.length(crumbs) - 1
 
   html.div(
@@ -247,7 +258,7 @@ fn breadcrumbs(m: Model) -> Element(Msg) {
             html.span(
               [
                 attribute.class("breadcrumb clickable"),
-                event.on_click(UserClickedBreadcrumb(i)),
+                event.on_click(UserClickedBreadcrumb),
               ],
               [html.text(crumb)],
             ),
@@ -263,12 +274,12 @@ fn breadcrumbs(m: Model) -> Element(Msg) {
 
 /// Topics, the first pane now. The track decides which catalogue these come
 /// from, so there is no language to choose first.
-fn subcategory_pane(m: Model) -> Element(Msg) {
-  let subcategories = problems.subcategory_names(m.active_track)
+fn subcategory_pane(shared: Shared, page: Model) -> Element(Msg) {
+  let subcategories = problems.subcategory_names(shared.active_track)
   let length = list.length(subcategories)
   pane(
     "Subcategory",
-    m.nav.focus == model.SubcategoriesPane,
+    page.cursor.focus == SubcategoriesPane,
     case subcategories {
       [] ->
         html.div([attribute.class("pane-list")], [
@@ -284,8 +295,8 @@ fn subcategory_pane(m: Model) -> Element(Msg) {
               name,
               nav_item(
                 name,
-                m.selected_subcategory == Some(name),
-                cursor_attributes(m, model.SubcategoriesPane, index, length),
+                page.subcategory == Some(name),
+                cursor_attributes(page, SubcategoriesPane, index, length),
                 UserClickedSubcategory(name),
               ),
             )
@@ -295,9 +306,13 @@ fn subcategory_pane(m: Model) -> Element(Msg) {
   )
 }
 
-fn problem_pane(m: Model, listed_problems: List(Problem)) -> Element(Msg) {
+fn problem_pane(
+  shared: Shared,
+  page: Model,
+  listed_problems: List(Problem),
+) -> Element(Msg) {
   let length = list.length(listed_problems)
-  pane("Problems", m.nav.focus == model.ProblemsPane, case listed_problems {
+  pane("Problems", page.cursor.focus == ProblemsPane, case listed_problems {
     [] ->
       html.div([attribute.class("pane-list")], [
         html.div([attribute.class("pane-empty")], [
@@ -305,8 +320,8 @@ fn problem_pane(m: Model, listed_problems: List(Problem)) -> Element(Msg) {
         ]),
       ])
     _ -> {
-      let cat = m.active_track
-      let assert Some(sub) = m.selected_subcategory
+      let cat = shared.active_track
+      let assert Some(sub) = page.subcategory
       keyed.div(
         [attribute.class("pane-list")],
         list.index_map(listed_problems, fn(p: Problem, index) {
@@ -314,9 +329,9 @@ fn problem_pane(m: Model, listed_problems: List(Problem)) -> Element(Msg) {
           #(
             p.title,
             problem_item(
-              m,
+              shared,
               ref,
-              cursor_attributes(m, model.ProblemsPane, index, length),
+              cursor_attributes(page, ProblemsPane, index, length),
             ),
           )
         }),
@@ -347,7 +362,7 @@ fn nav_item(
 /// Problem rows: "selected" marks membership in the drill selection, plus a
 /// pass/fail badge from previous runs.
 fn problem_item(
-  m: Model,
+  shared: Shared,
   ref: ProblemRef,
   extra: List(attribute.Attribute(Msg)),
 ) -> Element(Msg) {
@@ -355,7 +370,7 @@ fn problem_item(
     [
       attribute.classes([
         #("pane-item", True),
-        #("selected", list.contains(m.selected, ref)),
+        #("selected", list.contains(shared.selected, ref)),
       ]),
       attribute.tabindex(0),
       event.on_click(UserToggledProblem(ref)),
@@ -365,16 +380,16 @@ fn problem_item(
     [
       html.text(ref.title),
       format.difficulty_badge(problems.difficulty_of(ref)),
-      status_badge(m, ref),
-      suspend_toggle(m, ref),
+      status_badge(shared, ref),
+      suspend_toggle(shared, ref),
     ],
   )
 }
 
 /// Park/resume for rows that have a card. stop_propagation: the row's own
 /// click is selection, and suspending must not also toggle that.
-fn suspend_toggle(m: Model, ref: ProblemRef) -> Element(Msg) {
-  case model.card_for(m, ref) {
+fn suspend_toggle(shared: Shared, ref: ProblemRef) -> Element(Msg) {
+  case shared_model.card_for(shared, ref) {
     None -> element.none()
     Some(state) ->
       html.button(
@@ -404,11 +419,11 @@ fn suspend_toggle(m: Model, ref: ProblemRef) -> Element(Msg) {
 /// this pane is for picking problems to drill by hand, which works whether or
 /// not the scheduler knows about them. The queue screen is where that
 /// distinction is the point, and it renders the label from the same function.
-fn status_badge(m: Model, ref: ProblemRef) -> Element(Msg) {
-  case model.card_for(m, ref) {
+fn status_badge(shared: Shared, ref: ProblemRef) -> Element(Msg) {
+  case shared_model.card_for(shared, ref) {
     None -> element.none()
     Some(state) -> {
-      let #(class, label) = format.card_badge(Some(state), m.now)
+      let #(class, label) = format.card_badge(Some(state), shared.now)
       html.span([attribute.class(class)], [html.text(label)])
     }
   }
@@ -423,22 +438,23 @@ fn pane(title: String, focused: Bool, contents: Element(Msg)) -> Element(Msg) {
 
 /// The keyboard cursor's row in one pane, clamped against the rendered list —
 /// the same clamp the update side applies, so highlight and action agree.
-fn cursor_row(m: Model, pane: model.MenuPane, length: Int) -> Int {
+fn cursor_row(page: Model, pane: Pane, length: Int) -> Int {
   let raw = case pane {
-    model.SubcategoriesPane -> m.nav.subcategory
-    model.ProblemsPane -> m.nav.problem
-    model.SelectedPane -> m.nav.selected
+    SubcategoriesPane -> page.cursor.subcategory
+    ProblemsPane -> page.cursor.problem
+    SelectedPane -> page.cursor.selected
   }
   int.clamp(raw, 0, int.max(0, length - 1))
 }
 
 fn cursor_attributes(
-  m: Model,
-  pane: model.MenuPane,
+  page: Model,
+  pane: Pane,
   index: Int,
   length: Int,
 ) -> List(attribute.Attribute(Msg)) {
-  let here = m.nav.focus == pane && cursor_row(m, pane, length) == index
+  let here =
+    page.cursor.focus == pane && cursor_row(page, pane, length) == index
   [
     attribute.id(id.menu_row_id(pane, index)),
     attribute.classes([#("cursor", here)]),
@@ -470,8 +486,8 @@ fn on_activate_key(msg: Msg) -> attribute.Attribute(Msg) {
 
 /// The selection into a queue. A `<details>` menu rather than a select:
 /// after the pick nothing needs resetting, the menu just closes.
-fn add_to_queue(m: Model) -> Element(Msg) {
-  case m.selected {
+fn add_to_queue(shared: Shared) -> Element(Msg) {
+  case shared.selected {
     [] -> element.none()
     _ ->
       html.details([attribute.class("add-to-queue")], [
@@ -487,7 +503,7 @@ fn add_to_queue(m: Model) -> Element(Msg) {
             ],
             [html.text("Everything")],
           ),
-          ..list.map(m.queues, fn(queue: wire.Queue) {
+          ..list.map(shared.queues, fn(queue: wire.Queue) {
             html.button(
               [
                 attribute.class("add-to-queue-option"),

@@ -7,11 +7,10 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleamdrill/content/problem.{type ProblemRef, type Solution}
 import gleamdrill/content/problems
-import gleamdrill/domain/compare
-import gleamdrill/model.{
-  type Compare, type CompareSide, type Model, LeftSide, RightSide,
+import gleamdrill/domain/compare.{
+  type Compare, type CompareSide, LeftSide, RightSide,
 }
-import gleamdrill/msg.{
+import gleamdrill/page/browse/msg.{
   type Msg, CompareMoved, ComparePickedVariant, UserClosedCompare,
 }
 import gleamdrill/platform/editor
@@ -21,7 +20,7 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 
-pub fn view(_m: Model, c: Compare) -> Element(Msg) {
+pub fn view(c: Compare) -> Element(Msg) {
   let right = compare.right(c)
   let language = case
     problems.find(c.anchor.category, c.anchor.subcategory, c.anchor.title)

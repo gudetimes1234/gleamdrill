@@ -16,30 +16,27 @@ import gleam/string
 import gleamdrill/content/problem
 import gleamdrill/domain/walk
 import gleamdrill/model.{
-  type CompareSide, type Model, AuthRoute, AwaitingGrade, CompareRoute,
-  DrillRoute, LeftSide, MenuRoute, NoPane, NotePane, QueueRoute, Ran,
-  ReportRoute, RightSide, SettingsRoute, SolutionPane, StatsRoute, StudyRoute,
-  SummaryRoute, TourContents, TourLesson, TourRoute, TracksRoute,
+  type Model, AuthRoute, AwaitingGrade, CompareRoute, DrillRoute, MenuRoute,
+  NoPane, NotePane, QueueRoute, Ran, ReportRoute, SettingsRoute, SolutionPane,
+  StatsRoute, StudyRoute, SummaryRoute, TourContents, TourLesson, TourRoute,
+  TracksRoute,
 }
 import gleamdrill/msg.{
   type Key, type Msg, BoardJumped, BoardMoved, BoardShelfMoved,
-  BoardToggledAtCursor, CompareMoved, ComparePickedVariant, EditorFocusRequested,
-  ExitConfirmed, HelpToggled, MenuActivated, MenuCursorJumped, MenuCursorMoved,
-  MenuPaneFocused, MenuSuspendedAtCursor, MenuToggledAtCursor,
-  NoteFocusRequested, QuizMoved, SearchFocusRequested, TourActivated,
-  TourCursorMoved, TourRunTicked, UserClickedBackToStudy, UserClickedBrowse,
-  UserClickedClearSelection, UserClickedCompare, UserClickedExitDrill,
+  BoardToggledAtCursor, EditorFocusRequested, ExitConfirmed, HelpToggled,
+  NoteFocusRequested, QuizMoved, TourActivated, TourCursorMoved, TourRunTicked,
+  UserClickedBackToStudy, UserClickedBrowse, UserClickedExitDrill,
   UserClickedExitReport, UserClickedNext, UserClickedQueue, UserClickedRecall,
-  UserClickedRun, UserClickedScratchRun, UserClickedSelectAll,
-  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
+  UserClickedRun, UserClickedScratchRun, UserClickedStartExam, UserClickedStats,
   UserClickedStudy, UserClickedTour, UserClickedTourContents,
   UserClickedTourNext, UserClickedTourPrev, UserClickedTracks, UserClickedUndo,
-  UserClosedCompare, UserGraded, UserPickedActiveQueue, UserPickedChoice,
-  UserRevealedRecall, UserRevealedWholeThing, UserSearched, UserSubmittedAnswer,
-  UserSubmittedBoard, UserToggledBlitz, UserToggledDiff, UserToggledNudge,
-  UserToggledPane, UserToggledPrompt, UserToggledResults, WalkAdvanced,
-  WalkBacked, WalkCodeShown, WalkHintShown, WalkWhyShown,
+  UserGraded, UserPickedActiveQueue, UserPickedChoice, UserRevealedRecall,
+  UserRevealedWholeThing, UserSubmittedAnswer, UserSubmittedBoard,
+  UserToggledBlitz, UserToggledDiff, UserToggledNudge, UserToggledPane,
+  UserToggledPrompt, UserToggledResults, WalkAdvanced, WalkBacked, WalkCodeShown,
+  WalkHintShown, WalkWhyShown,
 }
+
 import gleamdrill/ui/binding.{type Binding, Binding}
 
 /// The bindings live in this context, in the order the status bar shows them:
@@ -74,9 +71,10 @@ pub fn screen(m: Model) -> List(Binding(Msg)) {
   {
     case m.route {
       StudyRoute -> study_bindings(m)
-      MenuRoute -> menu_bindings(m)
+      // Drawn by page/browse, which brings its own rows.
+      MenuRoute -> []
       DrillRoute -> drill_bindings(m)
-      CompareRoute -> compare_bindings()
+      CompareRoute -> []
       // Drawn by page/stats, which brings its own rows.
       StatsRoute -> []
       ReportRoute -> [
@@ -167,33 +165,6 @@ fn study_bindings(m: Model) -> List(Binding(Msg)) {
   ])
 }
 
-/// Two solutions side by side: the right one steps through the others,
-/// each side flips through its problem's solutions.
-fn compare_bindings() -> List(Binding(Msg)) {
-  [
-    Binding(
-      ["j", "k"],
-      "next / prev",
-      "The next or previous problem on the right",
-      CompareMoved(1),
-    ),
-    Binding(
-      ["]", "["],
-      "variant",
-      "The right side's next or previous solution",
-      ComparePickedVariant(RightSide, 0),
-    ),
-    Binding(
-      ["}", "{"],
-      "left variant",
-      "The left side's next or previous solution",
-      ComparePickedVariant(LeftSide, 0),
-    ),
-    Binding(["Escape", "b"], "browse", "Back to Browse", UserClosedCompare),
-    help_binding(),
-  ]
-}
-
 /// The tour: one set of keys for the contents page, another for a lesson.
 /// Inside the editor nothing is claimed; `Escape` then `Tab` leaves it.
 fn tour_bindings(m: Model) -> List(Binding(Msg)) {
@@ -226,90 +197,6 @@ fn tour_bindings(m: Model) -> List(Binding(Msg)) {
         "Back to the study screen",
         UserClickedBackToStudy,
       ),
-      help_binding(),
-    ]
-  }
-}
-
-fn menu_bindings(m: Model) -> List(Binding(Msg)) {
-  case string.trim(m.search) {
-    "" -> [
-      Binding(
-        ["j", "k"],
-        "move",
-        "Move the cursor down / up",
-        MenuCursorMoved(1),
-      ),
-      Binding(
-        ["h", "l"],
-        "pane",
-        "Focus the pane left / right",
-        MenuPaneFocused(1),
-      ),
-      Binding(
-        [" ", "x"],
-        "select",
-        "Select or deselect the cursor row",
-        MenuToggledAtCursor,
-      ),
-      Binding(["Enter"], "open", "Descend into the cursor row", MenuActivated),
-      Binding(
-        ["a"],
-        "all",
-        "Select every problem in the subcategory",
-        UserClickedSelectAll,
-      ),
-      Binding(["c"], "clear", "Clear the selection", UserClickedClearSelection),
-      Binding(
-        ["z"],
-        "pause",
-        "Pause or resume the cursor row's card",
-        MenuSuspendedAtCursor,
-      ),
-      Binding(
-        ["d"],
-        "drill",
-        "Start drilling the selection",
-        UserClickedStartDrill,
-      ),
-      Binding(
-        ["v"],
-        "compare",
-        "Compare the selected solutions side by side",
-        UserClickedCompare,
-      ),
-      Binding(["/"], "search", "Search problems", SearchFocusRequested),
-      Binding(["g"], "top", "Jump to the first row", MenuCursorJumped(True)),
-      Binding(["G"], "bottom", "Jump to the last row", MenuCursorJumped(False)),
-      Binding(
-        ["Escape"],
-        "study",
-        "Back to the study screen",
-        UserClickedBackToStudy,
-      ),
-      help_binding(),
-    ]
-    _ -> [
-      Binding(
-        ["j", "k"],
-        "move",
-        "Move through the results",
-        MenuCursorMoved(1),
-      ),
-      Binding(
-        ["Enter", " "],
-        "select",
-        "Select or deselect the result",
-        MenuActivated,
-      ),
-      Binding(
-        ["d"],
-        "drill",
-        "Start drilling the selection",
-        UserClickedStartDrill,
-      ),
-      Binding(["/"], "search", "Back to the search box", SearchFocusRequested),
-      Binding(["Escape"], "clear", "Clear the search", UserSearched("")),
       help_binding(),
     ]
   }
@@ -672,25 +559,14 @@ pub fn help_binding() -> Binding(Msg) {
 /// message depends on which of the pair was pressed, so those are special-
 /// cased here rather than duplicated as near-identical rows.
 pub fn dispatch(m: Model, key: Key) -> Result(Msg, Nil) {
-  case key.key, m.route, m.help_open, string.trim(m.search) != "" {
+  case key.key, m.route, m.help_open {
     // Paired directions.
-    "k", MenuRoute, False, _ -> Ok(MenuCursorMoved(-1))
-    "j", MenuRoute, False, _ -> Ok(MenuCursorMoved(1))
-    "h", MenuRoute, False, False -> Ok(MenuPaneFocused(-1))
-    "l", MenuRoute, False, False -> Ok(MenuPaneFocused(1))
-    "k", CompareRoute, False, _ -> Ok(CompareMoved(-1))
-    "j", CompareRoute, False, _ -> Ok(CompareMoved(1))
-    // Shifted brackets arrive as braces, so the left side needs no leader.
-    "]", CompareRoute, False, _ -> compare_variant(m, RightSide, 1)
-    "[", CompareRoute, False, _ -> compare_variant(m, RightSide, -1)
-    "}", CompareRoute, False, _ -> compare_variant(m, LeftSide, 1)
-    "{", CompareRoute, False, _ -> compare_variant(m, LeftSide, -1)
-    "k", TourRoute, False, _ ->
+    "k", TourRoute, False ->
       case m.tour_page {
         TourContents -> Ok(TourCursorMoved(-1))
         TourLesson(_) -> lookup(m, key)
       }
-    "j", TourRoute, False, _ ->
+    "j", TourRoute, False ->
       case m.tour_page {
         TourContents -> Ok(TourCursorMoved(1))
         TourLesson(_) -> lookup(m, key)
@@ -698,53 +574,34 @@ pub fn dispatch(m: Model, key: Key) -> Result(Msg, Nil) {
     // j/k and h/l share one Binding row each, so without these the second
     // key of a pair would resolve to the first one's message and k would move
     // down the list.
-    "k", DrillRoute, False, _ ->
+    "k", DrillRoute, False ->
       case current_kind(m) {
         Ok(problem.QuizDrill) -> Ok(QuizMoved(-1))
         Ok(problem.BoardDrill) -> Ok(BoardMoved(-1))
         _ -> lookup(m, key)
       }
-    "j", DrillRoute, False, _ ->
+    "j", DrillRoute, False ->
       case current_kind(m) {
         Ok(problem.QuizDrill) -> Ok(QuizMoved(1))
         Ok(problem.BoardDrill) -> Ok(BoardMoved(1))
         _ -> lookup(m, key)
       }
-    "h", DrillRoute, False, _ ->
+    "h", DrillRoute, False ->
       case current_kind(m) {
         Ok(problem.BoardDrill) -> Ok(BoardShelfMoved(-1))
         _ -> lookup(m, key)
       }
-    "l", DrillRoute, False, _ ->
+    "l", DrillRoute, False ->
       case current_kind(m) {
         Ok(problem.BoardDrill) -> Ok(BoardShelfMoved(1))
         _ -> lookup(m, key)
       }
-    "G", DrillRoute, False, _ ->
+    "G", DrillRoute, False ->
       case current_kind(m) {
         Ok(problem.BoardDrill) -> Ok(BoardJumped(False))
         _ -> lookup(m, key)
       }
-    _, _, _, _ -> lookup(m, key)
-  }
-}
-
-fn compare_variant(
-  m: Model,
-  side: CompareSide,
-  delta: Int,
-) -> Result(Msg, Nil) {
-  case m.compare {
-    Some(c) ->
-      Ok(ComparePickedVariant(
-        side,
-        delta
-          + case side {
-          LeftSide -> c.variant_a
-          RightSide -> c.variant_b
-        },
-      ))
-    None -> Error(Nil)
+    _, _, _ -> lookup(m, key)
   }
 }
 

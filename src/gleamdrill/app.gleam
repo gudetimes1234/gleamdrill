@@ -13,13 +13,19 @@ import gleam/option.{None, Some}
 import gleam/result
 import gleamdrill/keys
 import gleamdrill/model.{
-  type Route, AuthRoute, QueueRoute, SettingsRoute, StatsRoute, TracksRoute,
+  type Route, AuthRoute, CompareRoute, MenuRoute, QueueRoute, SettingsRoute,
+  StatsRoute, TracksRoute,
 }
 import gleamdrill/msg.{type Msg}
 import gleamdrill/page/auth/keys as auth_keys
 import gleamdrill/page/auth/model as auth_model
 import gleamdrill/page/auth/update as auth_update
 import gleamdrill/page/auth/view as auth_view
+import gleamdrill/page/browse/compare_view
+import gleamdrill/page/browse/keys as browse_keys
+import gleamdrill/page/browse/model as browse_model
+import gleamdrill/page/browse/update as browse_update
+import gleamdrill/page/browse/view as browse_view
 import gleamdrill/page/queue/keys as queue_keys
 import gleamdrill/page/queue/model as queue_model
 import gleamdrill/page/queue/update as queue_update
@@ -65,6 +71,7 @@ pub type Page {
   Tracks(tracks_model.Model)
   Stats(stats_model.Model)
   Queue(queue_model.Model)
+  Browse(browse_model.Model)
 }
 
 pub fn init(boot: #(Shared, Effect(Msg))) -> #(State, Effect(Msg)) {
@@ -90,6 +97,9 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
     msg.QueueMsg(inner), Queue(page) ->
       queue_update.update(state.shared, page, inner)
       |> settle(state, Queue, msg.QueueMsg)
+    msg.BrowseMsg(inner), Browse(page) ->
+      browse_update.update(state.shared, page, inner)
+      |> settle(state, Browse, msg.BrowseMsg)
     // A page's message that lands after its page closed (a slow response):
     // there is nothing left for it to update.
     msg.AuthMsg(_), _
@@ -97,6 +107,7 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
     | msg.TracksMsg(_), _
     | msg.StatsMsg(_), _
     | msg.QueueMsg(_), _
+    | msg.BrowseMsg(_), _
     -> #(state, effect.none())
 
     msg.KeyPressed(key), page if page != Legacy -> key_pressed(state, key)
@@ -112,6 +123,7 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
     msg.UserClickedSettings, _ -> navigate(state, SettingsRoute)
     msg.UserClickedStats, _ -> navigate(state, StatsRoute)
     msg.UserClickedQueue, _ -> navigate(state, QueueRoute)
+    msg.UserClickedBrowse, _ -> navigate(state, MenuRoute)
 
     _, _ -> {
       let #(shared, fx) = legacy_update.update(state.shared, message)
@@ -163,6 +175,19 @@ pub fn view(state: State) -> Element(Msg) {
         page_keys(state),
         queue_keys.label,
       ))
+    Browse(page) ->
+      Some(legacy_view.Screen(
+        case page.compare {
+          Some(opened) ->
+            compare_view.view(opened) |> element.map(msg.BrowseMsg)
+          None ->
+            browse_view.view(shared, page)
+            |> document.map(msg.BrowseMsg)
+            |> layout.view(shared, MenuRoute, _)
+        },
+        page_keys(state),
+        browse_keys.label(page),
+      ))
   })
 }
 
@@ -177,6 +202,8 @@ fn page_keys(state: State) -> List(Binding(Msg)) {
       tracks_keys.bindings(state.shared, page) |> lift(msg.TracksMsg)
     Stats(page) -> stats_keys.bindings(state.shared, page) |> lift(msg.StatsMsg)
     Queue(page) -> queue_keys.bindings(state.shared, page) |> lift(msg.QueueMsg)
+    Browse(page) ->
+      browse_keys.bindings(state.shared, page) |> lift(msg.BrowseMsg)
   }
 }
 
@@ -190,6 +217,9 @@ fn page_dispatch(state: State, key: String) -> Result(Msg, Nil) {
     Queue(page) ->
       queue_keys.dispatch(state.shared, page, key)
       |> result.map(msg.QueueMsg)
+    Browse(page) ->
+      browse_keys.dispatch(state.shared, page, key)
+      |> result.map(msg.BrowseMsg)
     _ -> binding.find(page_keys(state), key)
   }
 }
@@ -296,6 +326,10 @@ fn apply_change(shared: Shared, change: Change) -> #(Shared, Effect(Msg)) {
       #(shared, common.save_preferences(shared))
     }
     shared.QueueChangeLanded(result) -> queues_update.changed(shared, result)
+    shared.SelectionChanged(selected) -> #(
+      model.Model(..shared, selected:),
+      effect.none(),
+    )
     shared.EnterTrack(track, starter) ->
       menu_update.enter_track(shared, track, starter:)
     // Run by `settle` once the rest have landed.
@@ -314,6 +348,8 @@ fn sync_page(state: State) -> #(State, Effect(Msg)) {
     | TracksRoute, Tracks(_)
     | StatsRoute, Stats(_)
     | QueueRoute, Queue(_)
+    | MenuRoute, Browse(_)
+    | CompareRoute, Browse(_)
     -> #(state, effect.none())
     AuthRoute, _ -> #(
       State(..state, page: Auth(auth_model.init(auth_model.SigningIn))),
@@ -329,6 +365,8 @@ fn sync_page(state: State) -> #(State, Effect(Msg)) {
       stats_update_page.init(shared) |> settle(state, Stats, msg.StatsMsg)
     QueueRoute, _ ->
       queue_update.init(shared) |> settle(state, Queue, msg.QueueMsg)
+    MenuRoute, _ | CompareRoute, _ ->
+      browse_update.init(shared) |> settle(state, Browse, msg.BrowseMsg)
     _, _ -> #(State(..state, page: Legacy), effect.none())
   }
 }

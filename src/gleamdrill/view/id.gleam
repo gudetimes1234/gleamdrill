@@ -4,13 +4,13 @@
 //// under view/ so the model does not name the DOM.
 
 import gleam/int
-import gleamdrill/model.{
-  type MenuPane, ProblemsPane, SelectedPane, SubcategoriesPane,
+import gleamdrill/page/browse/model.{
+  type Pane, ProblemsPane, SelectedPane, SubcategoriesPane,
 }
 
 /// Stable row ids, shared by the menu's renderer and the scroll effect so the
 /// cursor always scrolls to the row it highlights.
-pub fn menu_row_id(pane: MenuPane, index: Int) -> String {
+pub fn menu_row_id(pane: Pane, index: Int) -> String {
   let prefix = case pane {
     SubcategoriesPane -> "sub"
     ProblemsPane -> "prob"

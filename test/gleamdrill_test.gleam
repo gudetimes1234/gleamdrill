@@ -35,6 +35,9 @@ import gleamdrill/domain/walk
 import gleamdrill/keys
 import gleamdrill/model
 import gleamdrill/msg
+import gleamdrill/page/browse/keys as browse_keys
+import gleamdrill/page/browse/model as browse_model
+import gleamdrill/page/browse/msg as browse_msg
 import gleamdrill/page/queue/keys as queue_keys
 import gleamdrill/page/queue/model as queue_model
 import gleamdrill/page/queue/msg as queue_msg
@@ -1306,7 +1309,6 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
   let drill = on_a_drill()
   let contexts = [
     model.Model(..base, route: model.StudyRoute),
-    model.Model(..base, route: model.MenuRoute),
     model.Model(..base, route: model.ReportRoute),
     model.Model(..base, route: model.SummaryRoute),
     drill,
@@ -1319,11 +1321,6 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
       walk: walk.reveal_layer(drill.walk, walk.HintLayer),
     ),
     model.Model(..drill, recall: True),
-    model.Model(
-      ..base,
-      route: model.CompareRoute,
-      compare: Some(model.Compare(a_catalogue_ref(), [], 0, 0, 0)),
-    ),
     on_a_board(),
     model.Model(..on_a_board(), graded: True),
   ]
@@ -1466,31 +1463,38 @@ pub fn every_ladder_opens_with_a_nudge_test() -> Nil {
 /// The compare screen: j/k walk the right side, brackets flip solutions,
 /// Escape goes back; Browse offers `v`; Study offers `n` once a queue exists.
 pub fn the_compare_screen_binds_its_own_verbs_test() -> Nil {
-  let c = model.Compare(a_catalogue_ref(), [a_catalogue_ref()], 0, 1, 2)
-  let m =
-    model.Model(..model.default(), route: model.CompareRoute, compare: Some(c))
-  let press = fn(m, key) {
+  let c = compare.Compare(a_catalogue_ref(), [a_catalogue_ref()], 0, 1, 2)
+  let shared = model.default()
+  let page = browse_model.Model(..browse_model.init(), compare: Some(c))
+  let press = fn(page, key) { browse_keys.dispatch(shared, page, key) }
+  assert press(page, "j") == Ok(browse_msg.CompareMoved(1))
+  assert press(page, "k") == Ok(browse_msg.CompareMoved(-1))
+  assert press(page, "]")
+    == Ok(browse_msg.ComparePickedVariant(compare.RightSide, 3))
+  assert press(page, "[")
+    == Ok(browse_msg.ComparePickedVariant(compare.RightSide, 1))
+  assert press(page, "}")
+    == Ok(browse_msg.ComparePickedVariant(compare.LeftSide, 2))
+  assert press(page, "{")
+    == Ok(browse_msg.ComparePickedVariant(compare.LeftSide, 0))
+  assert press(page, "Escape") == Ok(browse_msg.UserClosedCompare)
+  assert browse_keys.label(page) == "COMPARE"
+  assert list.any(browse_keys.bindings(shared, page), fn(b) {
+    list.contains(b.keys, "?")
+  })
+
+  assert press(browse_model.init(), "v") == Ok(browse_msg.UserClickedCompare)
+
+  let press_legacy = fn(m, key) {
     keys.dispatch(
       m,
       msg.Key(key: key, ctrl: False, shift: False, editing: "none"),
     )
   }
-  assert press(m, "j") == Ok(msg.CompareMoved(1))
-  assert press(m, "k") == Ok(msg.CompareMoved(-1))
-  assert press(m, "]") == Ok(msg.ComparePickedVariant(model.RightSide, 3))
-  assert press(m, "[") == Ok(msg.ComparePickedVariant(model.RightSide, 1))
-  assert press(m, "}") == Ok(msg.ComparePickedVariant(model.LeftSide, 2))
-  assert press(m, "{") == Ok(msg.ComparePickedVariant(model.LeftSide, 0))
-  assert press(m, "Escape") == Ok(msg.UserClosedCompare)
-  assert keys.context_label(m) == "COMPARE"
-
-  let browse = model.Model(..model.default(), route: model.MenuRoute)
-  assert press(browse, "v") == Ok(msg.UserClickedCompare)
-
   let study = model.Model(..model.default(), route: model.StudyRoute)
-  assert press(study, "n") == Error(Nil)
+  assert press_legacy(study, "n") == Error(Nil)
   let with_queue = model.Model(..study, queues: [a_queue("Pointers", [])])
-  assert press(with_queue, "n")
+  assert press_legacy(with_queue, "n")
     == Ok(msg.UserPickedActiveQueue(Some("Pointers")))
 }
 
@@ -1579,17 +1583,13 @@ pub fn the_queue_screen_lists_what_its_filters_say_test() -> Nil {
 }
 
 pub fn paired_directions_resolve_to_opposite_deltas_test() -> Nil {
-  let m = model.Model(..model.default(), route: model.MenuRoute)
   let press = fn(key) {
-    keys.dispatch(
-      m,
-      msg.Key(key: key, ctrl: False, shift: False, editing: "none"),
-    )
+    browse_keys.dispatch(model.default(), browse_model.init(), key)
   }
-  assert press("j") == Ok(msg.MenuCursorMoved(1))
-  assert press("k") == Ok(msg.MenuCursorMoved(-1))
-  assert press("h") == Ok(msg.MenuPaneFocused(-1))
-  assert press("l") == Ok(msg.MenuPaneFocused(1))
+  assert press("j") == Ok(browse_msg.CursorMoved(1))
+  assert press("k") == Ok(browse_msg.CursorMoved(-1))
+  assert press("h") == Ok(browse_msg.PaneFocused(-1))
+  assert press("l") == Ok(browse_msg.PaneFocused(1))
 }
 
 pub fn insights_fixture_decodes_test() -> Nil {
@@ -2046,10 +2046,11 @@ pub fn compare_opens_on_one_language_test() -> Nil {
   // The variants ring round too: the sides open on the technique's own
   // solution, often the last, so a "next" that clamped there would be dead.
   let count = list.length(compare.solutions_of(palindrome))
-  assert compare.picked(alone, model.LeftSide, count).variant_a == 0
+  assert compare.picked(alone, compare.LeftSide, count).variant_a == 0
   let assert Some(right_ref) = compare.right(alone)
   let right_count = list.length(compare.solutions_of(right_ref))
-  assert compare.picked(alone, model.RightSide, -1).variant_b == right_count - 1
+  assert compare.picked(alone, compare.RightSide, -1).variant_b
+    == right_count - 1
   // A Two Pointers solution opens on its Two Pointers variant.
   let labels =
     compare.solutions_of(palindrome)

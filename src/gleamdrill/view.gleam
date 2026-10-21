@@ -12,10 +12,8 @@ import gleamdrill/model.{
 import gleamdrill/msg.{type Msg}
 import gleamdrill/ui/binding.{type Binding}
 import gleamdrill/view/auth
-import gleamdrill/view/compare as compare_view
 import gleamdrill/view/drill
 import gleamdrill/view/help
-import gleamdrill/view/menu
 import gleamdrill/view/report
 import gleamdrill/view/statusbar
 import gleamdrill/view/study
@@ -89,18 +87,16 @@ fn legacy_screen(m: Model) -> Element(Msg) {
     SummaryRoute -> summary.view(m)
     StudyRoute -> study.view(m)
     StatsRoute -> element.none()
+    // A drill with no current problem is between screens; nothing to draw.
     DrillRoute ->
       case drill.view(m) {
         Ok(el) -> el
-        Error(Nil) -> menu.view(m)
+        Error(Nil) -> element.none()
       }
-    CompareRoute ->
-      case m.compare {
-        Some(c) -> compare_view.view(m, c)
-        None -> menu.view(m)
-      }
+    // Drawn by page/browse.
+    CompareRoute -> element.none()
     ReportRoute -> report.view(m)
-    MenuRoute -> menu.view(m)
+    MenuRoute -> element.none()
     QueueRoute -> element.none()
     TourRoute -> tour_view.view(m)
   }
