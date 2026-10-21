@@ -6,6 +6,7 @@
 
 import gleam/list
 import gleam/option.{None, Some}
+import gleamdrill/domain/track
 import gleamdrill/model.{
   type Model, type Route, Account, Guest, QueueRoute, SettingsRoute, SigningIn,
   StatsRoute, StudyRoute, TourRoute,
@@ -15,7 +16,6 @@ import gleamdrill/msg.{
   UserClickedSignIn, UserClickedSignOut, UserClickedStats, UserClickedTour,
   UserDismissedMergeOffer, UserDismissedNotice,
 }
-import gleamdrill/track
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html

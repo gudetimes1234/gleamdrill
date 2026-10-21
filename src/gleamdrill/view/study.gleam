@@ -10,7 +10,8 @@ import gleam/float
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
-import gleamdrill/insights
+import gleamdrill/domain/insights
+import gleamdrill/domain/queue
 import gleamdrill/model.{
   type Model, Guest, PromptShowing, Registering, StudyRoute,
 }
@@ -22,7 +23,6 @@ import gleamdrill/msg.{
 }
 import gleamdrill/problem
 import gleamdrill/problems
-import gleamdrill/queue
 import gleamdrill/view/banner
 import gleamdrill/view/brand
 import gleamdrill/view/format

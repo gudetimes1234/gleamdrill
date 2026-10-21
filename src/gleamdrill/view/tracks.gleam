@@ -15,9 +15,9 @@
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleamdrill/domain/track
 import gleamdrill/model.{type Model}
 import gleamdrill/msg.{type Msg, UserPickedTrack, UserPickedTrackWithStarter}
-import gleamdrill/track
 import gleamdrill/view/banner
 import gleamdrill/view/brand
 import gleamdrill/view/nav

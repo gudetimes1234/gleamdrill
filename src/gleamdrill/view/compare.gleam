@@ -5,7 +5,7 @@
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
-import gleamdrill/compare
+import gleamdrill/domain/compare
 import gleamdrill/model.{
   type Compare, type CompareSide, type Model, LeftSide, RightSide,
 }

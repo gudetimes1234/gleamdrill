@@ -7,13 +7,13 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/set
 import gleam/string
+import gleamdrill/domain/queue
+import gleamdrill/domain/track
 import gleamdrill/model.{type Model, Guest, Model, QueueRoute, TracksRoute}
 import gleamdrill/msg.{type Msg}
 import gleamdrill/problem.{type ProblemRef}
-import gleamdrill/queue
-import gleamdrill/remote.{type ApiError}
 import gleamdrill/store
-import gleamdrill/track
+import gleamdrill/store/remote.{type ApiError}
 import gleamdrill/update/common
 import gleamdrill/view/id
 import lustre/effect.{type Effect}

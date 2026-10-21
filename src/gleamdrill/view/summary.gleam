@@ -14,7 +14,7 @@ import gleam/int
 import gleam/list
 import gleam/option
 import gleam/string
-import gleamdrill/insights
+import gleamdrill/domain/insights
 import gleamdrill/model.{type Model, type SittingEntry}
 import gleamdrill/msg.{type Msg, UserClickedExitReport, UserClickedUndo}
 import gleamdrill/view/format

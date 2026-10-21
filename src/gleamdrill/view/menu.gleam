@@ -3,6 +3,7 @@ import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
+import gleamdrill/domain/track
 import gleamdrill/model.{type Model}
 import gleamdrill/msg.{
   type Msg, UserAddedSelectionToQueue, UserChangedIterations,
@@ -12,7 +13,6 @@ import gleamdrill/msg.{
 }
 import gleamdrill/problem.{type Problem, type ProblemRef}
 import gleamdrill/problems
-import gleamdrill/track
 import gleamdrill/view/brand
 import gleamdrill/view/format
 import gleamdrill/view/id

@@ -4,7 +4,7 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
-import gleamdrill/insights
+import gleamdrill/domain/insights
 import gleamdrill/model.{
   type CaseResult, type Model, AwaitingGrade, Cases, Errored, NoPane, NotGrading,
   NotePane, Ran, Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded,

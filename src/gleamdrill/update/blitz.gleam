@@ -4,7 +4,9 @@
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
-import gleamdrill/guest
+import gleamdrill/domain/guest
+import gleamdrill/domain/queue
+import gleamdrill/domain/walk
 import gleamdrill/model.{
   type Model, DrillRoute, MenuRoute, Model, NoPane, RunIdle, StudyRoute,
 }
@@ -12,10 +14,8 @@ import gleamdrill/msg.{type Msg, ExamSampled}
 import gleamdrill/platform/browser
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
-import gleamdrill/queue
 import gleamdrill/store
 import gleamdrill/update/common
-import gleamdrill/walk
 import lustre/effect.{type Effect}
 
 pub fn start_exam(m: Model) -> #(Model, Effect(Msg)) {

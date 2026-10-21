@@ -1,7 +1,7 @@
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
-import gleamdrill/board.{type Board}
+import gleamdrill/domain/board.{type Board}
 import wire
 
 /// Identifies one drill in the catalogue.

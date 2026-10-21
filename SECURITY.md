@@ -35,7 +35,7 @@ Out of scope, by design:
   eight seconds and their memory cap however they like; that is what the cap
   is for.
 - **The session token lives in `localStorage`.** A deliberate trade, documented
-  at `src/gleamdrill/session.gleam`.
+  at `src/gleamdrill/store/session.gleam`.
 - **Guest progress is unencrypted in `localStorage`.** Guest mode is explicitly
   browser-local; the app says so on every screen.
 - Missing rate limits anywhere other than authentication and `/api/run`.

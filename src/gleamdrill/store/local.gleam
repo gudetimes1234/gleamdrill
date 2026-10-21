@@ -16,7 +16,9 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/time/timestamp
-import gleamdrill/guest.{type History, type Local, DayTally, History, Local}
+import gleamdrill/domain/guest.{
+  type History, type Local, DayTally, History, Local,
+}
 import gleamdrill/model
 import gleamdrill/platform/browser
 import gleamdrill/problem.{type ProblemRef}

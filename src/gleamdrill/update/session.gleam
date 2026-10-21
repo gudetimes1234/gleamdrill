@@ -14,8 +14,8 @@ import gleamdrill/model.{
 }
 import gleamdrill/msg.{type Msg, AuthCompleted, SignOutCompleted, StateImported}
 import gleamdrill/platform/browser
-import gleamdrill/remote.{type ApiError}
 import gleamdrill/store
+import gleamdrill/store/remote.{type ApiError}
 import gleamdrill/update/common
 import lustre/effect.{type Effect}
 import wire

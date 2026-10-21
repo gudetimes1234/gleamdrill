@@ -5,7 +5,7 @@ import fsrs
 import gleam/int
 import gleam/list
 import gleam/option.{None}
-import gleamdrill/board
+import gleamdrill/domain/board
 import gleamdrill/model.{type Model}
 import gleamdrill/msg.{
   type Msg, UserClickedNext, UserSubmittedBoard, UserToggledPiece,

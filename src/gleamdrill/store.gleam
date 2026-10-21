@@ -22,10 +22,7 @@ import gleam/order
 import gleam/result
 import gleam/string
 import gleam/time/timestamp
-import gleamdrill/api
-import gleamdrill/guest
-import gleamdrill/legacy
-import gleamdrill/local
+import gleamdrill/domain/guest
 import gleamdrill/model.{type Model, type UndoPoint, Account, Guest}
 import gleamdrill/msg.{
   type Msg, ArchiveReady, ArchiveRestored, CardSuspended, DraftSynced,
@@ -34,8 +31,11 @@ import gleamdrill/msg.{
 }
 import gleamdrill/platform/browser
 import gleamdrill/problem.{type ProblemRef}
-import gleamdrill/remote
-import gleamdrill/session
+import gleamdrill/store/api
+import gleamdrill/store/legacy
+import gleamdrill/store/local
+import gleamdrill/store/remote
+import gleamdrill/store/session
 import lustre/effect.{type Effect}
 import wire
 

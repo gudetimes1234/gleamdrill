@@ -41,7 +41,7 @@ stylesheets = [{ href = "/style.css" }]
 # There is deliberately no `gleamdrill-api` meta tag: the app defaults to its own
 # origin and reaches the backend through the reverse proxy in deploy/Caddyfile,
 # so nothing about where it is deployed is baked into the artifact. Add the tag
-# back only for a split-origin deployment. See src/gleamdrill/ffi.mjs apiBase().
+# back only for a split-origin deployment. See src/gleamdrill/platform/ffi.mjs apiBase().
 
 [[tools.lustre.html.meta]]
 name = "description"

@@ -38,7 +38,7 @@ expect .github/workflows/ci.yml      "gleam-version: \"$gleam_version\""        
 expect server/Dockerfile             "gleam:v$gleam_version-elixir-alpine"      "server/Dockerfile images"
 expect deploy/web.Dockerfile         "gleam:v$gleam_version-erlang-alpine"      "web.Dockerfile builder"
 expect src/gleamdrill/runner.gleam    "pub const gleam_version = \"$gleam_version\"" "runner.gleam gleam_version"
-expect src/gleamdrill/worker.gleam    "const default_version = \"$gleam_version\""   "worker.gleam default_version"
+expect src/gleamdrill/runner/worker.gleam "const default_version = \"$gleam_version\""   "worker.gleam default_version"
 expect drills/src/bundle_stdlib.gleam "const runtime_version = \"$gleam_version\""  "bundle_stdlib.gleam"
 expect assets/sw.js                   "const GLEAM_RUNTIME = \"/gleam-runtime/$gleam_version/\"" "sw.js GLEAM_RUNTIME"
 

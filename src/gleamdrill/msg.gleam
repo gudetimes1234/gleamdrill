@@ -12,7 +12,7 @@ import gleamdrill/model.{
   type RunOutcome, type SettingField, type UndoPoint,
 }
 import gleamdrill/problem.{type ProblemRef}
-import gleamdrill/remote.{type ApiError}
+import gleamdrill/store/remote.{type ApiError}
 import wire
 
 /// `editing` is where the key landed: `"editor"` (inside the code editor,

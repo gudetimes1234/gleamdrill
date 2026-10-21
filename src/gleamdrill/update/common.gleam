@@ -8,6 +8,8 @@ import gleam/dict
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
+import gleamdrill/domain/track
+import gleamdrill/domain/walk
 import gleamdrill/model.{
   type Model, Account, Guest, Model, PromptDismissed, Ran, Running, RuntimeReady,
   TourLesson, TourRoute,
@@ -19,8 +21,6 @@ import gleamdrill/problems
 import gleamdrill/runner
 import gleamdrill/store
 import gleamdrill/tour
-import gleamdrill/track
-import gleamdrill/walk
 import lustre/effect.{type Effect}
 import wire
 

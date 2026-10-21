@@ -17,6 +17,7 @@ import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/set.{type Set}
+import gleamdrill/domain/queue
 import gleamdrill/model.{type Model, GroupChange}
 import gleamdrill/msg.{
   type Msg, UserAddedAllShown, UserCancelledQueueName, UserChangedGroup,
@@ -26,7 +27,6 @@ import gleamdrill/msg.{
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
-import gleamdrill/queue
 import gleamdrill/view/banner
 import gleamdrill/view/format
 import gleamdrill/view/id

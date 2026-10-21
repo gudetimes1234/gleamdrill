@@ -6,7 +6,7 @@ import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
-import gleamdrill/board
+import gleamdrill/domain/board
 import gleamdrill/model.{type Model, Model}
 import gleamdrill/msg.{type Msg}
 import gleamdrill/platform/browser

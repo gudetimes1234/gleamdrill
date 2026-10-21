@@ -6,15 +6,15 @@ import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
+import gleamdrill/domain/walk
 import gleamdrill/model.{
   type Model, DrillRoute, Guest, Model, NoPane, NotePane, RunIdle, SolutionPane,
 }
 import gleamdrill/msg.{type Msg, NoteSaveTicked}
 import gleamdrill/platform/browser
-import gleamdrill/remote.{type ApiError}
 import gleamdrill/store
+import gleamdrill/store/remote.{type ApiError}
 import gleamdrill/update/common
-import gleamdrill/walk
 import lustre/effect.{type Effect}
 
 pub fn changed_iterations(m: Model, raw: String) -> #(Model, Effect(Msg)) {

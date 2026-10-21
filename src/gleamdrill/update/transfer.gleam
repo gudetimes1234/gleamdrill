@@ -8,8 +8,8 @@ import gleam/time/timestamp
 import gleamdrill/model.{type Model, Model}
 import gleamdrill/msg.{type Msg, ImportPicked}
 import gleamdrill/platform/browser
-import gleamdrill/remote.{type ApiError}
 import gleamdrill/store
+import gleamdrill/store/remote.{type ApiError}
 import gleamdrill/update/common
 import lustre/effect.{type Effect}
 import wire

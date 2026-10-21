@@ -464,7 +464,7 @@ source tree. They apply once each, in order, inside a transaction.
 **One origin, no CORS.** Caddy serves `dist/` and reverse-proxies `/api/*` to
 the backend (`deploy/Caddyfile`), so the browser only ever talks to a single
 host. Nothing about where the app is deployed is baked into the artifact:
-`apiBase()` in `src/gleamdrill/ffi.mjs` defaults to the page's own origin. A
+`apiBase()` in `src/gleamdrill/platform/ffi.mjs` defaults to the page's own origin. A
 `<meta name="gleamdrill-api">` tag still overrides that for a split-origin
 deployment, but none is set. The two development ports are the exception, and
 are named explicitly: `:1234` and `:4173` always talk to `127.0.0.1:1637`, so a

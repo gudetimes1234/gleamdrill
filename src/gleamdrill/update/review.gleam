@@ -5,7 +5,8 @@
 import fsrs
 import gleam/dict
 import gleam/option.{None, Some}
-import gleamdrill/guest
+import gleamdrill/domain/guest
+import gleamdrill/domain/queue
 import gleamdrill/model.{
   type Model, AwaitingGrade, DrillRoute, Guest, Model, NoPane, NotGrading,
   SolutionPane, SubmittingGrade,
@@ -13,9 +14,8 @@ import gleamdrill/model.{
 import gleamdrill/msg.{type Msg}
 import gleamdrill/platform/browser
 import gleamdrill/problem.{type ProblemRef}
-import gleamdrill/queue
-import gleamdrill/remote.{type ApiError}
 import gleamdrill/store
+import gleamdrill/store/remote.{type ApiError}
 import gleamdrill/update/common
 import lustre/effect.{type Effect}
 import wire

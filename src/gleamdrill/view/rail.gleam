@@ -4,13 +4,13 @@
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
+import gleamdrill/domain/walk
 import gleamdrill/model.{type Model}
 import gleamdrill/msg.{
   type Msg, UserRevealedWholeThing, UserToggledNudge, WalkCodeShown, WalkFocused,
   WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/problem.{type Problem}
-import gleamdrill/walk
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html

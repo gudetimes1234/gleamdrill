@@ -21,7 +21,7 @@ import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleamdrill/platform/browser
 import gleamdrill/problem.{type ProblemRef}
-import gleamdrill/remote.{Offline, Rejected, ServerFault, Unauthorised}
+import gleamdrill/store/remote.{Offline, Rejected, ServerFault, Unauthorised}
 import lustre/effect.{type Effect}
 import rsvp
 import wire

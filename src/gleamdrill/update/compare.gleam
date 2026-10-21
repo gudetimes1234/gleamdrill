@@ -2,7 +2,7 @@
 //// through pairs, and flipping each side's variant.
 
 import gleam/option.{None, Some}
-import gleamdrill/compare
+import gleamdrill/domain/compare
 import gleamdrill/model.{
   type CompareSide, type Model, CompareRoute, MenuRoute, Model,
 }
