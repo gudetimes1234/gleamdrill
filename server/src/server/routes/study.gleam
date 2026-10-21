@@ -10,7 +10,6 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
 import gleam/time/timestamp
-import server/auth.{type User}
 import server/study/archive
 import server/study/cards
 import server/study/drafts
@@ -74,7 +73,7 @@ pub fn state(request: wisp.Request, context: Context) -> wisp.Response {
       web.json_ok(
         json.object([
           #("now", json.float(fsrs.to_epoch(now))),
-          #("user", accounts_user_json(user)),
+          #("user", wire.user_to_json(user)),
           #("account", wire.account_to_json(profile.account)),
           #("track", json.string(track)),
           #("tracks", json.array(standings, wire.track_standing_to_json)),
@@ -86,10 +85,10 @@ pub fn state(request: wisp.Request, context: Context) -> wisp.Response {
             wire.legacy_settings_to_json(profile.account, profile.settings),
           ),
           #("cards", json.array(cards, card_json)),
-          #("drafts", json.array(drafts, draft_json)),
-          #("notes", json.array(notes, draft_json)),
+          #("drafts", json.array(drafts, wire.draft_to_json)),
+          #("notes", json.array(notes, wire.draft_to_json)),
           #("queues", json.array(queues, wire.queue_to_json)),
-          #("today", today_json(today)),
+          #("today", wire.today_to_json(today)),
         ]),
       )
   }
@@ -152,7 +151,6 @@ pub fn queues(request: wisp.Request, context: Context) -> wisp.Response {
   }
 }
 
-/// Records one review. The scheduling decision is made here and only here.
 /// DELETE /api/reviews -- undo the most recent review. Same {now, card,
 /// today} fold as recording one, except `card` is null when the review had
 /// created the card and undoing it took the card out of the queue.
@@ -184,7 +182,7 @@ pub fn undo(request: wisp.Request, context: Context) -> wisp.Response {
                 Some(record) -> card_json(record)
                 None -> json.null()
               }),
-              #("today", today_json(today)),
+              #("today", wire.today_to_json(today)),
             ]),
           )
       }
@@ -192,12 +190,14 @@ pub fn undo(request: wisp.Request, context: Context) -> wisp.Response {
   }
 }
 
+/// POST /api/reviews -- records one review. The scheduling decision is made
+/// in `reviews.record_review` and nowhere else.
 pub fn review(request: wisp.Request, context: Context) -> wisp.Response {
   use <- wisp.require_method(request, http.Post)
   use user <- web.require_user(request, context)
   use body <- wisp.require_json(request)
 
-  case decode.run(body, review_decoder()) {
+  case decode.run(body, wire.review_decoder()) {
     Error(_) ->
       web.error(
         422,
@@ -240,7 +240,7 @@ pub fn review(request: wisp.Request, context: Context) -> wisp.Response {
             json.object([
               #("now", json.float(fsrs.to_epoch(now))),
               #("card", card_json(card)),
-              #("today", today_json(today)),
+              #("today", wire.today_to_json(today)),
             ]),
           )
       }
@@ -301,7 +301,7 @@ pub fn suspend(request: wisp.Request, context: Context) -> wisp.Response {
             json.object([
               #("now", json.float(fsrs.to_epoch(now))),
               #("card", card_json(card)),
-              #("today", today_json(today)),
+              #("today", wire.today_to_json(today)),
             ]),
           )
       }
@@ -309,8 +309,8 @@ pub fn suspend(request: wisp.Request, context: Context) -> wisp.Response {
   }
 }
 
-fn suspend_decoder() -> decode.Decoder(#(model.ProblemRef, Bool)) {
-  use problem <- decode.then(problem_decoder())
+fn suspend_decoder() -> decode.Decoder(#(wire.ProblemRef, Bool)) {
+  use problem <- decode.then(wire.ref_decoder())
   use suspended <- decode.field("suspended", decode.bool)
   decode.success(#(problem, suspended))
 }
@@ -415,11 +415,11 @@ pub fn dequeue(request: wisp.Request, context: Context) -> wisp.Response {
 /// counts move with the queue in one fold.
 fn queue_response(
   context: Context,
-  user: User,
+  user: wire.User,
   track: String,
   change: fn() ->
     Result(
-      #(List(CardRecord), List(model.ProblemRef), List(model.ProblemRef)),
+      #(List(CardRecord), List(wire.ProblemRef), List(wire.ProblemRef)),
       model.StudyError,
     ),
 ) -> wisp.Response {
@@ -444,9 +444,9 @@ fn queue_response(
         json.object([
           #("now", json.float(fsrs.to_epoch(now))),
           #("cards", json.array(cards, card_json)),
-          #("removed", json.array(removed, problem_json)),
-          #("refused", json.array(refused, problem_json)),
-          #("today", today_json(today)),
+          #("removed", json.array(removed, wire.ref_to_json)),
+          #("refused", json.array(refused, wire.ref_to_json)),
+          #("today", wire.today_to_json(today)),
         ]),
       )
   }
@@ -460,8 +460,8 @@ fn invalid_queue_body() -> wisp.Response {
   )
 }
 
-fn queue_decoder() -> decode.Decoder(List(model.ProblemRef)) {
-  use problems <- decode.field("problems", decode.list(problem_decoder()))
+fn queue_decoder() -> decode.Decoder(List(wire.ProblemRef)) {
+  use problems <- decode.field("problems", decode.list(wire.ref_decoder()))
   decode.success(problems)
 }
 
@@ -481,7 +481,7 @@ pub fn stats(request: wisp.Request, context: Context) -> wisp.Response {
 
   case outcome {
     Error(failure) -> study_error(failure)
-    Ok(stats) -> web.json_ok(stats_json(stats))
+    Ok(stats) -> web.json_ok(wire.stats_to_json(stats))
   }
 }
 
@@ -552,7 +552,7 @@ pub fn insights(request: wisp.Request, context: Context) -> wisp.Response {
     |> result.try(insights.insights(context.db, user.id, _))
   {
     Error(failure) -> study_error(failure)
-    Ok(insights) -> web.json_ok(insights_json(insights))
+    Ok(insights) -> web.json_ok(wire.insights_to_json(insights))
   }
 }
 
@@ -581,7 +581,7 @@ pub fn history(request: wisp.Request, context: Context) -> wisp.Response {
         Ok(reviews) ->
           web.json_ok(
             json.object([
-              #("reviews", json.array(reviews, review_row_json)),
+              #("reviews", json.array(reviews, wire.review_row_to_json)),
             ]),
           )
       }
@@ -685,7 +685,7 @@ pub fn note(request: wisp.Request, context: Context) -> wisp.Response {
   use user <- web.require_user(request, context)
   use body <- wisp.require_json(request)
 
-  case decode.run(body, draft_decoder()) {
+  case decode.run(body, wire.draft_decoder()) {
     Error(_) ->
       web.error(422, "invalid_body", "Expected a problem reference and a body.")
     Ok(#(problem, note_body)) ->
@@ -701,7 +701,7 @@ pub fn draft(request: wisp.Request, context: Context) -> wisp.Response {
   case request.method {
     http.Put -> {
       use body <- wisp.require_json(request)
-      case decode.run(body, draft_decoder()) {
+      case decode.run(body, wire.draft_decoder()) {
         Error(_) ->
           web.error(
             422,
@@ -752,14 +752,14 @@ pub fn settings(request: wisp.Request, context: Context) -> wisp.Response {
 fn update_settings(
   request: wisp.Request,
   context: Context,
-  user: User,
+  user: wire.User,
 ) -> wisp.Response {
   use body <- wisp.require_json(request)
   // One flat object still, holding both halves. It splits into two decodes
   // rather than one because the two halves are two records now.
   case
-    decode.run(body, settings_decoder()),
-    decode.run(body, account_decoder())
+    decode.run(body, wire.settings_decoder()),
+    decode.run(body, wire.account_decoder())
   {
     Error(_), _ | _, Error(_) ->
       web.error(422, "invalid_body", "Expected a settings object.")
@@ -801,7 +801,7 @@ fn update_settings(
   }
 }
 
-fn profile_json(profile: profile.Profile) -> Json {
+fn profile_json(profile: wire.Profile) -> Json {
   json.object([
     #("account", wire.account_to_json(profile.account)),
     #(
@@ -826,40 +826,14 @@ fn card_json(record: CardRecord) -> Json {
   wire.card_to_json(model.to_state(record))
 }
 
-const accounts_user_json = wire.user_to_json
-
-const draft_json = wire.draft_to_json
-
-const today_json = wire.today_to_json
-
-const problem_json = wire.ref_to_json
-
-const stats_json = wire.stats_to_json
-
-const account_decoder = wire.account_decoder
-
-const insights_json = wire.insights_to_json
-
-const review_row_json = wire.review_row_to_json
-
 // --- decoding --------------------------------------------------------------
-
-const problem_decoder = wire.ref_decoder
-
-const review_decoder = wire.review_decoder
-
-const lenient_float = wire.lenient_float
-
-const draft_decoder = wire.draft_decoder
-
-const settings_decoder = wire.settings_decoder
 
 fn import_decoder() -> decode.Decoder(
   #(
-    List(model.ProblemRef),
+    List(wire.ProblemRef),
     List(legacy_import.ImportCard),
-    List(#(model.ProblemRef, String)),
-    List(#(model.ProblemRef, String)),
+    List(#(wire.ProblemRef, String)),
+    List(#(wire.ProblemRef, String)),
     List(wire.Queue),
   ),
 ) {
@@ -869,7 +843,7 @@ fn import_decoder() -> decode.Decoder(
   use solved <- decode.optional_field(
     "solved",
     [],
-    decode.list(problem_decoder()),
+    decode.list(wire.ref_decoder()),
   )
   use cards <- decode.optional_field(
     "cards",
@@ -879,9 +853,13 @@ fn import_decoder() -> decode.Decoder(
   use drafts <- decode.optional_field(
     "drafts",
     [],
-    decode.list(draft_decoder()),
+    decode.list(wire.draft_decoder()),
   )
-  use notes <- decode.optional_field("notes", [], decode.list(draft_decoder()))
+  use notes <- decode.optional_field(
+    "notes",
+    [],
+    decode.list(wire.draft_decoder()),
+  )
   use queues <- decode.optional_field(
     "queues",
     [],
@@ -891,22 +869,28 @@ fn import_decoder() -> decode.Decoder(
 }
 
 fn import_card_decoder() -> decode.Decoder(legacy_import.ImportCard) {
-  use problem <- decode.then(problem_decoder())
+  use problem <- decode.then(wire.ref_decoder())
   use state <- decode.field("state", decode.int)
   use step <- decode.field("step", decode.optional(decode.int))
-  use stability <- decode.field("stability", decode.optional(lenient_float()))
-  use difficulty <- decode.field("difficulty", decode.optional(lenient_float()))
-  use due <- decode.field("due", lenient_float())
+  use stability <- decode.field(
+    "stability",
+    decode.optional(wire.lenient_float()),
+  )
+  use difficulty <- decode.field(
+    "difficulty",
+    decode.optional(wire.lenient_float()),
+  )
+  use due <- decode.field("due", wire.lenient_float())
   use last_review <- decode.field(
     "lastReview",
-    decode.optional(lenient_float()),
+    decode.optional(wire.lenient_float()),
   )
   use reps <- decode.field("reps", decode.int)
   use lapses <- decode.field("lapses", decode.int)
   use introduced_at <- decode.optional_field(
     "introducedAt",
     None,
-    decode.optional(lenient_float()),
+    decode.optional(wire.lenient_float()),
   )
   decode.success(legacy_import.ImportCard(
     problem:,

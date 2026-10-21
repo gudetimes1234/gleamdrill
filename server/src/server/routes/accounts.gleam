@@ -4,9 +4,10 @@ import gleam/dynamic/decode
 import gleam/http
 import gleam/json
 import gleam/option.{type Option, None, Some}
-import server/auth.{type User}
+import server/auth
 import server/study/today
 import server/web.{type Context}
+import wire
 import wisp
 
 pub fn signup(request: wisp.Request, context: Context) -> wisp.Response {
@@ -105,7 +106,7 @@ fn credentials_decoder() -> decode.Decoder(#(String, String, Option(String))) {
 /// The token is returned in the body rather than set as a cookie: the API is a
 /// third-party origin relative to the app, and third-party cookies are being
 /// phased out by browsers. See the plan for the same-domain upgrade path.
-fn session_response(user: User, token: String) -> wisp.Response {
+fn session_response(user: wire.User, token: String) -> wisp.Response {
   web.json_ok(
     json.object([
       #("token", json.string(token)),
@@ -114,7 +115,7 @@ fn session_response(user: User, token: String) -> wisp.Response {
   )
 }
 
-pub fn user_json(user: User) -> json.Json {
+pub fn user_json(user: wire.User) -> json.Json {
   json.object([
     #("id", json.string(user.id)),
     #("email", json.string(user.email)),

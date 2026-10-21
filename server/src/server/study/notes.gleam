@@ -8,14 +8,14 @@ import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 import pog
-import server/study/model.{type ProblemRef, type StudyError, database_error}
+import server/study/model.{type StudyError, database_error}
 import wire
 
 /// Every one, in every track, for the export.
 pub fn load_notes(
   db: pog.Connection,
   user_id: String,
-) -> Result(List(#(ProblemRef, String)), StudyError) {
+) -> Result(List(#(wire.ProblemRef, String)), StudyError) {
   load_notes_rows(db, user_id, None)
 }
 
@@ -25,7 +25,7 @@ pub fn load_notes_in(
   db: pog.Connection,
   user_id: String,
   track: String,
-) -> Result(List(#(ProblemRef, String)), StudyError) {
+) -> Result(List(#(wire.ProblemRef, String)), StudyError) {
   load_notes_rows(db, user_id, Some(track))
 }
 
@@ -33,7 +33,7 @@ fn load_notes_rows(
   db: pog.Connection,
   user_id: String,
   track: Option(String),
-) -> Result(List(#(ProblemRef, String)), StudyError) {
+) -> Result(List(#(wire.ProblemRef, String)), StudyError) {
   pog.query(
     "select category, subcategory, title, body
        from notes
@@ -57,7 +57,7 @@ fn load_notes_rows(
 pub fn save_note(
   db: pog.Connection,
   user_id: String,
-  problem: ProblemRef,
+  problem: wire.ProblemRef,
   body: String,
 ) -> Result(Nil, StudyError) {
   let keyed = fn(sql) {

@@ -14,7 +14,6 @@ import server/auth
 import server/config
 import server/exec
 import server/reminders
-import server/study/cards
 import server/study/profile
 import server/study/queues
 import server/study/stats
@@ -74,15 +73,15 @@ fn list_range(from: Int, to: Int) -> List(Int) {
 }
 
 pub fn state_code_covers_every_state_test() {
-  cards.state_code(fsrs.Learning(0)) |> should.equal(1)
-  cards.state_code(fsrs.Review) |> should.equal(2)
-  cards.state_code(fsrs.Relearning(0)) |> should.equal(3)
+  wire.state_code(fsrs.Learning(0)) |> should.equal(1)
+  wire.state_code(fsrs.Review) |> should.equal(2)
+  wire.state_code(fsrs.Relearning(0)) |> should.equal(3)
 }
 
 pub fn state_step_is_present_only_while_stepping_test() {
-  cards.state_step(fsrs.Learning(2)) |> should.equal(Some(2))
-  cards.state_step(fsrs.Relearning(1)) |> should.equal(Some(1))
-  cards.state_step(fsrs.Review) |> should.equal(None)
+  wire.state_step(fsrs.Learning(2)) |> should.equal(Some(2))
+  wire.state_step(fsrs.Relearning(1)) |> should.equal(Some(1))
+  wire.state_step(fsrs.Review) |> should.equal(None)
 }
 
 // --- study.streak ----------------------------------------------------------
@@ -220,7 +219,7 @@ pub fn default_account_settings_are_the_documented_values_test() {
 
 // --- helpers ---------------------------------------------------------------
 
-fn tally(days_ago: Int) -> stats.DayTally {
+fn tally(days_ago: Int) -> wire.DayTally {
   wire.DayTally(days_ago:, total: 1, correct: 1)
 }
 

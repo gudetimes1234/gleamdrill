@@ -14,9 +14,8 @@ import pog
 import server/study/cards
 import server/study/drafts
 import server/study/model.{
-  type CardRecord, type ProblemRef, type ReviewInput, type Settings,
-  type StudyError, CardRecord, StudyDatabaseError, database_error,
-  flatten_transaction_error,
+  type CardRecord, type StudyError, CardRecord, StudyDatabaseError,
+  database_error, flatten_transaction_error,
 }
 import wire
 
@@ -29,8 +28,8 @@ import wire
 pub fn record_review(
   db: pog.Connection,
   user_id: String,
-  settings: Settings,
-  input: ReviewInput,
+  settings: wire.Settings,
+  input: wire.Review,
   now: Timestamp,
   fuzz: Float,
 ) -> Result(CardRecord, StudyError) {
@@ -92,7 +91,7 @@ pub fn record_review(
 fn card_exists(
   db: pog.Connection,
   user_id: String,
-  problem: ProblemRef,
+  problem: wire.ProblemRef,
 ) -> Result(Bool, StudyError) {
   pog.query(
     "select 1 from cards
@@ -257,7 +256,7 @@ fn insert_review(
   now: Timestamp,
   elapsed_days: Int,
   scheduled_days: Int,
-  input: ReviewInput,
+  input: wire.Review,
   card_before: String,
 ) -> Result(Nil, StudyError) {
   pog.query(
@@ -271,7 +270,7 @@ fn insert_review(
   |> pog.parameter(pog.text(user_id))
   |> pog.parameter(pog.text(record.id))
   |> pog.parameter(pog.int(fsrs.rating_to_int(rating)))
-  |> pog.parameter(pog.int(cards.state_code(before.state)))
+  |> pog.parameter(pog.int(wire.state_code(before.state)))
   |> pog.parameter(pog.float(fsrs.to_epoch(now)))
   |> pog.parameter(pog.int(elapsed_days))
   |> pog.parameter(pog.int(scheduled_days))

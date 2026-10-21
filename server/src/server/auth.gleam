@@ -23,9 +23,6 @@ import wire
 
 /// The authenticated account. Aliased into `wire` because it is also what
 /// `/api/me` and every session response send back.
-pub type User =
-  wire.User
-
 pub type AuthError {
   /// Deliberately covers "no such account" and "wrong password" both.
   InvalidCredentials
@@ -101,7 +98,7 @@ pub fn signup(
   password: String,
   timezone: String,
   session_days: Int,
-) -> Result(#(User, String), AuthError) {
+) -> Result(#(wire.User, String), AuthError) {
   use email <- result.try(validate_email(email))
   use password <- result.try(validate_password(password))
   let password_hash = antigone.hash(antigone.hasher(), <<password:utf8>>)
@@ -129,7 +126,7 @@ fn insert_user(
   db: pog.Connection,
   email: String,
   password_hash: String,
-) -> Result(User, AuthError) {
+) -> Result(wire.User, AuthError) {
   pog.query(
     "insert into users (email, password_hash)
      values ($1, $2)
@@ -187,7 +184,7 @@ pub fn login(
   password: String,
   client_ip: String,
   session_days: Int,
-) -> Result(#(User, String), AuthError) {
+) -> Result(#(wire.User, String), AuthError) {
   let email = normalise_email(email)
 
   // Count against both keys before doing any work, so a lockout cannot be
@@ -221,7 +218,7 @@ pub fn login(
 fn find_credentials(
   db: pog.Connection,
   email: String,
-) -> Result(Result(#(User, String), Nil), AuthError) {
+) -> Result(Result(#(wire.User, String), Nil), AuthError) {
   pog.query("select id::text, email, password_hash from users where email = $1")
   |> pog.parameter(pog.text(email))
   |> pog.returning({
@@ -319,7 +316,7 @@ pub fn authenticate(
   db: pog.Connection,
   token: String,
   session_days: Int,
-) -> Result(User, AuthError) {
+) -> Result(wire.User, AuthError) {
   pog.query(
     "with touched as (
        update sessions
@@ -361,7 +358,7 @@ pub fn prune_sessions(db: pog.Connection) -> Result(Nil, AuthError) {
 
 // --- shared plumbing -------------------------------------------------------
 
-fn user_decoder() -> decode.Decoder(User) {
+fn user_decoder() -> decode.Decoder(wire.User) {
   use id <- decode.field(0, decode.string)
   use email <- decode.field(1, decode.string)
   decode.success(wire.User(id:, email:))

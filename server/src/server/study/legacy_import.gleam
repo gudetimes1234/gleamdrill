@@ -11,8 +11,7 @@ import gleam/time/timestamp.{type Timestamp}
 import pog
 import server/study/drafts
 import server/study/model.{
-  type ProblemRef, type Settings, type StudyError, database_error,
-  flatten_transaction_error,
+  type StudyError, database_error, flatten_transaction_error,
 }
 import server/study/notes
 import server/study/queues
@@ -22,7 +21,7 @@ import wire
 /// earned. Distinct from the legacy `solved` list, which has no dates at all.
 pub type ImportCard {
   ImportCard(
-    problem: ProblemRef,
+    problem: wire.ProblemRef,
     state: Int,
     step: Option(Int),
     memory: Option(fsrs.Memory),
@@ -51,11 +50,11 @@ pub fn import_legacy(
   db: pog.Connection,
   user_id: String,
   track: String,
-  settings: Settings,
-  solved: List(ProblemRef),
+  settings: wire.Settings,
+  solved: List(wire.ProblemRef),
   cards: List(ImportCard),
-  drafts: List(#(ProblemRef, String)),
-  notes: List(#(ProblemRef, String)),
+  drafts: List(#(wire.ProblemRef, String)),
+  notes: List(#(wire.ProblemRef, String)),
   queues: List(wire.Queue),
   now: Timestamp,
 ) -> Result(Nil, StudyError) {
@@ -154,7 +153,7 @@ pub fn insert_card(
 fn seed_card(
   db: pog.Connection,
   user_id: String,
-  problem: ProblemRef,
+  problem: wire.ProblemRef,
   seed: fsrs.Memory,
   now: Timestamp,
 ) -> Result(Nil, StudyError) {

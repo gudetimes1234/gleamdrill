@@ -61,7 +61,7 @@ pub fn run(request: wisp.Request, context: Context) -> wisp.Response {
 
 fn throttled(
   context: Context,
-  user: auth.User,
+  user: wire.User,
   language: exec.Language,
   input: wire.RunRequest,
 ) -> wisp.Response {

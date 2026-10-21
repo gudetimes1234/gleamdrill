@@ -11,7 +11,6 @@ import gleam/result
 import gleam/time/timestamp.{type Timestamp}
 import pog
 import server/study/model.{type StudyError, StudyDatabaseError, database_error}
-import server/study/profile.{type Profile}
 import wire
 
 /// Where the user stands against today's limits.
@@ -21,9 +20,6 @@ import wire
 /// database (cards are created on first review). So the server owns the
 /// scheduling of known cards and the daily allowance, and the client picks
 /// which unseen problems to spend that allowance on.
-pub type Today =
-  wire.Today
-
 /// The study day runs from `day_start_hour` local time to the same hour the
 /// next day -- Anki's 4am rollover, so a late-night session counts toward the
 /// day it feels like rather than the one the clock says.
@@ -35,9 +31,9 @@ pub fn today(
   db: pog.Connection,
   user_id: String,
   track: String,
-  profile: Profile,
+  profile: wire.Profile,
   now: Timestamp,
-) -> Result(Today, StudyError) {
+) -> Result(wire.Today, StudyError) {
   // The study day is a fact about the person, the budgets are about what is
   // being studied. There is one `bounds` for the account and one set of
   // counts per track.

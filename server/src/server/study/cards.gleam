@@ -10,8 +10,8 @@ import gleam/option.{type Option, None, Some}
 import gleam/result
 import pog
 import server/study/model.{
-  type CardRecord, type ProblemRef, type StudyError, CardRecord,
-  StudyDatabaseError, database_error,
+  type CardRecord, type StudyError, CardRecord, StudyDatabaseError,
+  database_error,
 }
 import wire
 
@@ -63,7 +63,7 @@ fn load_card_rows(
 pub fn set_suspended(
   db: pog.Connection,
   user_id: String,
-  problem: ProblemRef,
+  problem: wire.ProblemRef,
   suspended: Bool,
 ) -> Result(Option(CardRecord), StudyError) {
   pog.query("update cards set suspended = $5
@@ -101,7 +101,7 @@ pub fn set_suspended(
 pub fn enqueue_cards(
   db: pog.Connection,
   user_id: String,
-  problems: List(ProblemRef),
+  problems: List(wire.ProblemRef),
 ) -> Result(List(CardRecord), StudyError) {
   case problems {
     [] -> Ok([])
@@ -152,8 +152,8 @@ pub fn enqueue_cards(
 pub fn delete_cards(
   db: pog.Connection,
   user_id: String,
-  problems: List(ProblemRef),
-) -> Result(#(List(ProblemRef), List(ProblemRef)), StudyError) {
+  problems: List(wire.ProblemRef),
+) -> Result(#(List(wire.ProblemRef), List(wire.ProblemRef)), StudyError) {
   case problems {
     [] -> Ok(#([], []))
     _ -> {
@@ -209,7 +209,7 @@ pub fn delete_cards(
 pub fn upsert_card(
   db: pog.Connection,
   user_id: String,
-  problem: ProblemRef,
+  problem: wire.ProblemRef,
 ) -> Result(CardRecord, StudyError) {
   pog.query(
     "insert into cards (user_id, category, subcategory, title, introduced_at)
@@ -244,8 +244,8 @@ pub fn update_card(
      where id = $1::uuid",
   )
   |> pog.parameter(pog.text(record.id))
-  |> pog.parameter(pog.int(state_code(record.card.state)))
-  |> pog.parameter(pog.nullable(pog.int, state_step(record.card.state)))
+  |> pog.parameter(pog.int(wire.state_code(record.card.state)))
+  |> pog.parameter(pog.nullable(pog.int, wire.state_step(record.card.state)))
   |> pog.parameter(pog.nullable(
     pog.float,
     option.map(record.card.memory, fn(m) { m.stability }),
@@ -297,10 +297,6 @@ fn card_decoder() -> decode.Decoder(CardRecord) {
     introduced_at: option.map(introduced_at, fsrs.from_epoch),
   ))
 }
-
-pub const state_code = wire.state_code
-
-pub const state_step = wire.state_step
 
 const state_from = wire.state_from
 

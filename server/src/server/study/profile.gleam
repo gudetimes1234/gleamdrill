@@ -8,10 +8,10 @@ import gleam/dynamic/decode
 import gleam/list
 import gleam/result
 import pog
-import server/study/model.{type Settings, type StudyError, database_error}
+import server/study/model.{type StudyError, database_error}
 import wire
 
-pub fn default_settings() -> Settings {
+pub fn default_settings() -> wire.Settings {
   wire.default_settings()
 }
 
@@ -22,10 +22,7 @@ pub fn default_settings() -> Settings {
 /// wire one -- but the shapes are now separate, so the callers that want a
 /// timezone and the callers that want a daily budget stop sharing a record
 /// that was only ever one because the table was.
-pub type Profile =
-  wire.Profile
-
-pub fn default_profile() -> Profile {
+pub fn default_profile() -> wire.Profile {
   wire.default_profile()
 }
 
@@ -69,7 +66,7 @@ pub fn load_settings(
   db: pog.Connection,
   user_id: String,
   track: String,
-) -> Result(Settings, StudyError) {
+) -> Result(wire.Settings, StudyError) {
   pog.query(
     "select parameters, desired_retention, learning_steps, relearning_steps,
             maximum_interval, enable_fuzz, new_per_day, reviews_per_day
@@ -114,7 +111,7 @@ pub fn default_track(
 pub fn all_track_settings(
   db: pog.Connection,
   user_id: String,
-) -> Result(List(#(String, Settings)), StudyError) {
+) -> Result(List(#(String, wire.Settings)), StudyError) {
   pog.query(
     "select track, parameters, desired_retention, learning_steps,
             relearning_steps, maximum_interval, enable_fuzz, new_per_day,
@@ -136,7 +133,7 @@ pub fn all_track_settings(
 
 /// `settings_decoder` with every column one to the right, because `track`
 /// leads the row here and nowhere else.
-fn shifted_settings_decoder() -> decode.Decoder(Settings) {
+fn shifted_settings_decoder() -> decode.Decoder(wire.Settings) {
   use parameters <- decode.field(1, decode.list(decode.float))
   use desired_retention <- decode.field(2, decode.float)
   use learning_steps <- decode.field(3, decode.list(decode.int))
@@ -164,7 +161,7 @@ pub fn load_profile(
   db: pog.Connection,
   user_id: String,
   track: String,
-) -> Result(Profile, StudyError) {
+) -> Result(wire.Profile, StudyError) {
   use account <- result.try(load_account(db, user_id))
   use settings <- result.try(load_settings(db, user_id, track))
   Ok(wire.Profile(account:, settings:))
@@ -198,7 +195,7 @@ pub fn save_settings(
   db: pog.Connection,
   user_id: String,
   track: String,
-  settings: Settings,
+  settings: wire.Settings,
 ) -> Result(Nil, StudyError) {
   pog.query(
     "insert into track_settings
@@ -231,7 +228,7 @@ pub fn save_settings(
   |> result.map_error(database_error)
 }
 
-fn settings_decoder() -> decode.Decoder(Settings) {
+fn settings_decoder() -> decode.Decoder(wire.Settings) {
   use parameters <- decode.field(0, decode.list(decode.float))
   use desired_retention <- decode.field(1, decode.float)
   use learning_steps <- decode.field(2, decode.list(decode.int))

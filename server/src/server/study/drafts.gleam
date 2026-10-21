@@ -7,14 +7,14 @@ import gleam/dynamic/decode
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import pog
-import server/study/model.{type ProblemRef, type StudyError, database_error}
+import server/study/model.{type StudyError, database_error}
 import wire
 
 /// Every one, in every track, for the export.
 pub fn load_drafts(
   db: pog.Connection,
   user_id: String,
-) -> Result(List(#(ProblemRef, String)), StudyError) {
+) -> Result(List(#(wire.ProblemRef, String)), StudyError) {
   load_drafts_rows(db, user_id, None)
 }
 
@@ -24,7 +24,7 @@ pub fn load_drafts_in(
   db: pog.Connection,
   user_id: String,
   track: String,
-) -> Result(List(#(ProblemRef, String)), StudyError) {
+) -> Result(List(#(wire.ProblemRef, String)), StudyError) {
   load_drafts_rows(db, user_id, Some(track))
 }
 
@@ -32,7 +32,7 @@ fn load_drafts_rows(
   db: pog.Connection,
   user_id: String,
   track: Option(String),
-) -> Result(List(#(ProblemRef, String)), StudyError) {
+) -> Result(List(#(wire.ProblemRef, String)), StudyError) {
   pog.query(
     "select category, subcategory, title, body
        from drafts
@@ -55,7 +55,7 @@ fn load_drafts_rows(
 pub fn save_draft(
   db: pog.Connection,
   user_id: String,
-  problem: ProblemRef,
+  problem: wire.ProblemRef,
   body: String,
 ) -> Result(Nil, StudyError) {
   pog.query(
@@ -79,7 +79,7 @@ pub fn save_draft(
 pub fn delete_draft(
   db: pog.Connection,
   user_id: String,
-  problem: ProblemRef,
+  problem: wire.ProblemRef,
 ) -> Result(Nil, StudyError) {
   pog.query(
     "delete from drafts

@@ -16,18 +16,12 @@ import wire
 /// The rollover and timezone maths has already been applied when producing
 /// them, so the client can render a heatmap and count a streak with plain
 /// integer arithmetic instead of reimplementing a calendar.
-pub type DayTally =
-  wire.DayTally
-
-pub type Stats =
-  wire.Stats
-
 pub fn stats(
   db: pog.Connection,
   user_id: String,
   track: String,
   account: wire.AccountSettings,
-) -> Result(Stats, StudyError) {
+) -> Result(wire.Stats, StudyError) {
   use totals <- result.try(review_totals(db, user_id, track))
   use state_counts <- result.try(state_counts(db, user_id, track))
   use history <- result.try(review_history(db, user_id, track, account))
@@ -52,7 +46,7 @@ pub fn stats(
 /// Public only so `server_test` can reach it: the off-by-one between "today"
 /// and "yesterday" is the kind of thing that breaks twice a year and never in
 /// a way anyone notices.
-pub fn streak(history: List(DayTally)) -> Int {
+pub fn streak(history: List(wire.DayTally)) -> Int {
   let days =
     history |> list.map(fn(day) { day.days_ago }) |> list.sort(int.compare)
   case days {
@@ -132,7 +126,7 @@ fn review_history(
   user_id: String,
   track: String,
   account: wire.AccountSettings,
-) -> Result(List(DayTally), StudyError) {
+) -> Result(List(wire.DayTally), StudyError) {
   pog.query(
     "with study_day as (
        select date_trunc('day', (now() at time zone $2) - make_interval(hours => $3))::date as today

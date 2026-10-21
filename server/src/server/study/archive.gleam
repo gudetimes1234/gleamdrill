@@ -8,16 +8,13 @@ import gleam/dynamic/decode
 import gleam/list
 import gleam/result
 import pog
-import server/study/cards
 import server/study/drafts
-import server/study/insights.{type ReviewRow}
 import server/study/legacy_import.{ImportCard}
 import server/study/model.{
-  type ProblemRef, type Settings, type StudyError, database_error,
-  flatten_transaction_error,
+  type StudyError, database_error, flatten_transaction_error,
 }
 import server/study/notes
-import server/study/profile.{type Profile}
+import server/study/profile
 import server/study/queues
 import wire
 
@@ -26,7 +23,7 @@ import wire
 pub fn all_reviews(
   db: pog.Connection,
   user_id: String,
-) -> Result(List(#(ProblemRef, ReviewRow)), StudyError) {
+) -> Result(List(#(wire.ProblemRef, wire.ReviewRow)), StudyError) {
   pog.query(
     "select c.category, c.subcategory, c.title,
             extract(epoch from r.reviewed_at)::float8, r.rating,
@@ -102,8 +99,8 @@ pub fn restore(
           user_id,
           ImportCard(
             problem: card.problem,
-            state: cards.state_code(card.card.state),
-            step: cards.state_step(card.card.state),
+            state: wire.state_code(card.card.state),
+            step: wire.state_step(card.card.state),
             memory: card.card.memory,
             due: card.card.due,
             last_review: card.card.last_review,
@@ -172,7 +169,7 @@ pub fn restore(
 /// data says which tracks it has. A newer file already has a row per track
 /// and is taken as it stands. Mirrored in `local.archive_tracks`, because a
 /// file made by a guest has to restore into an account and back.
-pub fn archive_tracks(archive: wire.Archive) -> List(#(String, Settings)) {
+pub fn archive_tracks(archive: wire.Archive) -> List(#(String, wire.Settings)) {
   case list.key_find(archive.tracks, "") {
     Error(Nil) -> list.filter(archive.tracks, fn(entry) { entry.0 != "" })
     Ok(shared) ->
@@ -185,7 +182,7 @@ pub fn archive_tracks(archive: wire.Archive) -> List(#(String, Settings)) {
 
 /// The account-wide half, plus whichever settings best describe the file as a
 /// whole -- for the callers that want to validate one profile rather than N.
-pub fn archive_profile(archive: wire.Archive) -> Profile {
+pub fn archive_profile(archive: wire.Archive) -> wire.Profile {
   let settings =
     list.key_find(archive.tracks, "")
     |> result.lazy_or(fn() {

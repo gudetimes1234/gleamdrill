@@ -1,4 +1,4 @@
-//// Insights from the review log: clean solves, reveals and calibration.
+//// wire.Insights from the review log: clean solves, reveals and calibration.
 ////
 //// Part of the study data layer; see `server/study/model` for the shared
 //// types.
@@ -7,33 +7,21 @@ import fsrs
 import gleam/dynamic/decode
 import gleam/result
 import pog
-import server/study/model.{type ProblemRef, type StudyError, database_error}
+import server/study/model.{type StudyError, database_error}
 import wire
 
 /// One solution-from-memory: a review that passed with no reveal and no
 /// harness failure, with how long it took. The client folds these into
 /// fluency tiers; the cap of five per card bounds the payload.
-pub type CleanSolve =
-  wire.CleanSolve
-
 /// For each grade pressed, what happened at that card's NEXT review. Easy
 /// scoring below Good is the signature of optimistic Easy-pressing, which is
 /// exactly what this exists to surface.
-pub type Calibration =
-  wire.Calibration
-
-pub type Insights =
-  wire.Insights
-
 /// One row of a card's review log, for the per-problem timeline.
-pub type ReviewRow =
-  wire.ReviewRow
-
 pub fn insights(
   db: pog.Connection,
   user_id: String,
   track: String,
-) -> Result(Insights, StudyError) {
+) -> Result(wire.Insights, StudyError) {
   use clean_solves <- result.try(clean_solves(db, user_id, track))
   use reveals <- result.try(reveal_counts(db, user_id, track))
   use calibration <- result.try(calibration(db, user_id, track))
@@ -46,7 +34,7 @@ fn clean_solves(
   db: pog.Connection,
   user_id: String,
   track: String,
-) -> Result(List(CleanSolve), StudyError) {
+) -> Result(List(wire.CleanSolve), StudyError) {
   pog.query(
     "select category, subcategory, title, at, duration_ms from (
        select c.category, c.subcategory, c.title,
@@ -159,8 +147,8 @@ fn calibration(
 pub fn history(
   db: pog.Connection,
   user_id: String,
-  problem: ProblemRef,
-) -> Result(List(ReviewRow), StudyError) {
+  problem: wire.ProblemRef,
+) -> Result(List(wire.ReviewRow), StudyError) {
   pog.query(
     "select extract(epoch from r.reviewed_at)::float8, r.rating,
             r.duration_ms, r.revealed, r.auto_failed, r.state_before,
