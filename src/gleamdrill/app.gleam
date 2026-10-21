@@ -14,7 +14,7 @@ import gleam/result
 import gleamdrill/keys
 import gleamdrill/model.{
   type Route, AuthRoute, CompareRoute, MenuRoute, QueueRoute, SettingsRoute,
-  StatsRoute, TracksRoute,
+  StatsRoute, StudyRoute, TracksRoute,
 }
 import gleamdrill/msg.{type Msg}
 import gleamdrill/page/auth/keys as auth_keys
@@ -38,6 +38,10 @@ import gleamdrill/page/stats/keys as stats_keys
 import gleamdrill/page/stats/model as stats_model
 import gleamdrill/page/stats/update as stats_update_page
 import gleamdrill/page/stats/view as stats_view
+import gleamdrill/page/study/keys as study_keys
+import gleamdrill/page/study/model as study_model
+import gleamdrill/page/study/update as study_update
+import gleamdrill/page/study/view as study_view
 import gleamdrill/page/tracks/keys as tracks_keys
 import gleamdrill/page/tracks/model as tracks_model
 import gleamdrill/page/tracks/update as tracks_update
@@ -72,6 +76,7 @@ pub type Page {
   Stats(stats_model.Model)
   Queue(queue_model.Model)
   Browse(browse_model.Model)
+  Study(study_model.Model)
 }
 
 pub fn init(boot: #(Shared, Effect(Msg))) -> #(State, Effect(Msg)) {
@@ -100,6 +105,9 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
     msg.BrowseMsg(inner), Browse(page) ->
       browse_update.update(state.shared, page, inner)
       |> settle(state, Browse, msg.BrowseMsg)
+    msg.StudyMsg(inner), Study(page) ->
+      study_update.update(state.shared, page, inner)
+      |> settle(state, Study, msg.StudyMsg)
     // A page's message that lands after its page closed (a slow response):
     // there is nothing left for it to update.
     msg.AuthMsg(_), _
@@ -108,6 +116,7 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
     | msg.StatsMsg(_), _
     | msg.QueueMsg(_), _
     | msg.BrowseMsg(_), _
+    | msg.StudyMsg(_), _
     -> #(state, effect.none())
 
     msg.KeyPressed(key), page if page != Legacy -> key_pressed(state, key)
@@ -188,6 +197,14 @@ pub fn view(state: State) -> Element(Msg) {
         page_keys(state),
         browse_keys.label(page),
       ))
+    Study(page) ->
+      Some(legacy_view.Screen(
+        study_view.view(shared, page)
+          |> document.map(msg.StudyMsg)
+          |> layout.view(shared, StudyRoute, _),
+        page_keys(state),
+        study_keys.label,
+      ))
   })
 }
 
@@ -204,6 +221,7 @@ fn page_keys(state: State) -> List(Binding(Msg)) {
     Queue(page) -> queue_keys.bindings(state.shared, page) |> lift(msg.QueueMsg)
     Browse(page) ->
       browse_keys.bindings(state.shared, page) |> lift(msg.BrowseMsg)
+    Study(page) -> study_keys.bindings(state.shared, page) |> lift(msg.StudyMsg)
   }
 }
 
@@ -350,6 +368,7 @@ fn sync_page(state: State) -> #(State, Effect(Msg)) {
     | QueueRoute, Queue(_)
     | MenuRoute, Browse(_)
     | CompareRoute, Browse(_)
+    | StudyRoute, Study(_)
     -> #(state, effect.none())
     AuthRoute, _ -> #(
       State(..state, page: Auth(auth_model.init(auth_model.SigningIn))),
@@ -367,6 +386,8 @@ fn sync_page(state: State) -> #(State, Effect(Msg)) {
       queue_update.init(shared) |> settle(state, Queue, msg.QueueMsg)
     MenuRoute, _ | CompareRoute, _ ->
       browse_update.init(shared) |> settle(state, Browse, msg.BrowseMsg)
+    StudyRoute, _ ->
+      study_update.init(shared) |> settle(state, Study, msg.StudyMsg)
     _, _ -> #(State(..state, page: Legacy), effect.none())
   }
 }

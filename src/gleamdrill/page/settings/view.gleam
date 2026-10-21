@@ -38,6 +38,7 @@ pub fn view(shared: Shared, page: Model) -> Document(Msg) {
     class: "settings-screen",
     header: document.header([html.text("Settings")]),
     storage_warning: False,
+    lead: [],
     body: [
       section("Daily limits", "Kept with your account.", [
         number_row(

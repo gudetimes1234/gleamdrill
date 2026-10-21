@@ -35,6 +35,7 @@ pub fn view(shared: Shared, page: Model) -> Document(Msg) {
     class: "stats-screen",
     header: document.header([html.text("Progress")]),
     storage_warning: False,
+    lead: [],
     body: [
       case shared.stats, shared.insights {
         remote.Failed(failure), _ | _, remote.Failed(failure) ->

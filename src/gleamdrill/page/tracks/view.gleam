@@ -36,6 +36,7 @@ pub fn view(shared: Shared, _page: Model) -> Document(Msg) {
     class: "tracks-screen",
     header: document.header(brand.wordmark()),
     storage_warning: True,
+    lead: [],
     body: [
       html.p([attribute.class("tracks-lead")], [
         html.text(case shared.active_track {

@@ -16,7 +16,6 @@ import gleamdrill/view/drill
 import gleamdrill/view/help
 import gleamdrill/view/report
 import gleamdrill/view/statusbar
-import gleamdrill/view/study
 import gleamdrill/view/summary
 import gleamdrill/view/tour as tour_view
 import lustre/attribute
@@ -85,7 +84,7 @@ fn legacy_screen(m: Model) -> Element(Msg) {
     TracksRoute -> element.none()
     SettingsRoute -> element.none()
     SummaryRoute -> summary.view(m)
-    StudyRoute -> study.view(m)
+    StudyRoute -> element.none()
     StatsRoute -> element.none()
     // A drill with no current problem is between screens; nothing to draw.
     DrillRoute ->

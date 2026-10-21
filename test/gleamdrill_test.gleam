@@ -46,6 +46,9 @@ import gleamdrill/page/settings/model as settings_model
 import gleamdrill/page/stats/keys as stats_keys
 import gleamdrill/page/stats/model as stats_model
 import gleamdrill/page/stats/msg as stats_msg
+import gleamdrill/page/study/keys as study_keys
+import gleamdrill/page/study/model as study_model
+import gleamdrill/page/study/msg as study_msg
 import gleamdrill/page/tracks/keys as tracks_keys
 import gleamdrill/page/tracks/model as tracks_model
 import gleamdrill/runner
@@ -1308,7 +1311,6 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
   let base = model.default()
   let drill = on_a_drill()
   let contexts = [
-    model.Model(..base, route: model.StudyRoute),
     model.Model(..base, route: model.ReportRoute),
     model.Model(..base, route: model.SummaryRoute),
     drill,
@@ -1353,20 +1355,15 @@ pub fn the_stats_cursor_moves_both_ways_test() -> Nil {
 }
 
 pub fn dispatch_resolves_from_the_same_table_it_documents_test() -> Nil {
-  let m = model.Model(..model.default(), route: model.StudyRoute)
-  let press = fn(key) {
-    keys.dispatch(
-      m,
-      msg.Key(key: key, ctrl: False, shift: False, editing: "none"),
-    )
-  }
-  assert press("b") == Ok(msg.UserClickedBrowse)
-  assert press("q") == Ok(msg.UserClickedQueue)
-  assert press("t") == Ok(msg.UserClickedStats)
+  let rows = study_keys.bindings(model.default(), study_model.init())
+  let press = fn(key) { binding.find(rows, key) }
+  assert press("b") == Ok(study_msg.UserClickedBrowse)
+  assert press("q") == Ok(study_msg.UserClickedQueue)
+  assert press("t") == Ok(study_msg.UserClickedStats)
   // Shift, so lowercase `t` keeps meaning Stats.
-  assert press("T") == Ok(msg.UserClickedTracks)
-  assert press("Enter") == Ok(msg.UserClickedStudy)
-  assert press("z") == Ok(msg.UserToggledBlitz)
+  assert press("T") == Ok(study_msg.UserClickedTracks)
+  assert press("Enter") == Ok(study_msg.UserClickedStudy)
+  assert press("z") == Ok(study_msg.UserToggledBlitz)
   assert press("v") == Error(Nil)
 }
 
@@ -1485,17 +1482,14 @@ pub fn the_compare_screen_binds_its_own_verbs_test() -> Nil {
 
   assert press(browse_model.init(), "v") == Ok(browse_msg.UserClickedCompare)
 
-  let press_legacy = fn(m, key) {
-    keys.dispatch(
-      m,
-      msg.Key(key: key, ctrl: False, shift: False, editing: "none"),
-    )
+  let study_press = fn(shared, key) {
+    binding.find(study_keys.bindings(shared, study_model.init()), key)
   }
-  let study = model.Model(..model.default(), route: model.StudyRoute)
-  assert press_legacy(study, "n") == Error(Nil)
-  let with_queue = model.Model(..study, queues: [a_queue("Pointers", [])])
-  assert press_legacy(with_queue, "n")
-    == Ok(msg.UserPickedActiveQueue(Some("Pointers")))
+  assert study_press(model.default(), "n") == Error(Nil)
+  let with_queue =
+    model.Model(..model.default(), queues: [a_queue("Pointers", [])])
+  assert study_press(with_queue, "n")
+    == Ok(study_msg.UserPickedActiveQueue(Some("Pointers")))
 }
 
 /// The queue screen's row cursor is its own list, and `space` there means

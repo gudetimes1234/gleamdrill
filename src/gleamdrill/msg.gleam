@@ -15,6 +15,7 @@ import gleamdrill/page/browse/msg as browse_msg
 import gleamdrill/page/queue/msg as queue_msg
 import gleamdrill/page/settings/msg as settings_msg
 import gleamdrill/page/stats/msg as stats_msg
+import gleamdrill/page/study/msg as study_msg
 import gleamdrill/page/tracks/msg as tracks_msg
 import gleamdrill/store/remote.{type ApiError}
 import wire
@@ -35,6 +36,7 @@ pub type Msg {
   StatsMsg(stats_msg.Msg)
   QueueMsg(queue_msg.Msg)
   BrowseMsg(browse_msg.Msg)
+  StudyMsg(study_msg.Msg)
   // --- keyboard ---
   KeyPressed(Key)
   HelpToggled
@@ -140,8 +142,6 @@ pub type Msg {
   UserClickedRecall
   /// Run the code alone, no harness: for reading what it prints.
   UserClickedScratchRun
-  /// Open the Blitz chooser on the study screen, or close it.
-  UserToggledBlitz
   /// Start a Blitz: this many problems, this many milliseconds each.
   UserStartedBlitz(Int, Int)
   /// The Blitz clock passed the current card's deadline.
@@ -160,8 +160,6 @@ pub type Msg {
   // --- managing the queue ---
   UserClickedQueue
   // --- named queues ---
-  /// The study screen's pick: which queue today serves from.
-  UserPickedActiveQueue(Option(String))
   /// Browse: the selection into a queue (None: just give them cards).
   UserAddedSelectionToQueue(Option(String))
   QueuesSaved(Result(Nil, ApiError))

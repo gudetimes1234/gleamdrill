@@ -24,13 +24,6 @@ pub fn add_starter_set(m: Model) -> #(Model, Effect(Msg)) {
   }
 }
 
-pub fn pick_active(m: Model, name: Option(String)) -> #(Model, Effect(Msg)) {
-  {
-    let m = Model(..m, active_queue: name, blitz_chooser: False)
-    #(m, common.save_preferences(m))
-  }
-}
-
 pub fn add_selection(
   m: Model,
   target: Option(String),

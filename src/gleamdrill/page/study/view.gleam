@@ -14,20 +14,21 @@ import gleamdrill/content/problem
 import gleamdrill/content/problems
 import gleamdrill/domain/insights
 import gleamdrill/domain/queue
-import gleamdrill/model.{type Model, Guest, PromptShowing, StudyRoute}
-import gleamdrill/msg.{
+import gleamdrill/model.{Guest, PromptShowing} as shared_model
+import gleamdrill/page/auth/model as auth
+import gleamdrill/page/study/model.{type Model}
+import gleamdrill/page/study/msg.{
   type Msg, UserAddedStarterSet, UserClickedBrowse, UserClickedQueue,
   UserClickedRecall, UserClickedSignIn, UserClickedStartExam, UserClickedStudy,
   UserClickedTour, UserDismissedUpgradePrompt, UserPickedActiveQueue,
   UserStartedBlitz, UserToggledBlitz,
 }
-import gleamdrill/page/auth/model as auth
+import gleamdrill/shared.{type Shared}
 import gleamdrill/store/remote
-import gleamdrill/view/banner
+import gleamdrill/ui/document.{type Document, Document}
 import gleamdrill/view/brand
 import gleamdrill/view/format
 import gleamdrill/view/links
-import gleamdrill/view/nav
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -35,132 +36,133 @@ import lustre/element/svg
 import lustre/event
 import wire
 
-pub fn view(m: Model) -> Element(Msg) {
+pub fn view(shared: Shared, page: Model) -> Document(Msg) {
   // Counted client-side: the client holds every card, and the budget the
   // server reports is applied here.
-  let due = queue.due_count(m)
-  let fresh = queue.new_count(m)
+  let due = queue.due_count(shared)
+  let fresh = queue.new_count(shared)
   let ready = due + fresh
   // Told apart from "done for today" deliberately: the queue being empty is
   // something only the user can fix, and the fix is one screen away.
-  let nothing_queued = dict.size(m.cards) == 0
+  let nothing_queued = dict.size(shared.cards) == 0
   // A named queue with nothing in it is the same dead end, one screen away.
-  let queue_empty = m.active_queue != None && queue.scope(m) == []
+  let queue_empty = shared.active_queue != None && queue.scope(shared) == []
 
-  html.div([attribute.class("study-screen")], [
-    banner.storage_warning(m),
-    nav.notices(m),
-    upgrade_prompt(m),
-    guest_strip(m),
-    html.header([attribute.class("study-header")], [
-      html.h1([attribute.class("study-title")], brand.wordmark()),
-      nav.bar(m, StudyRoute),
-    ]),
-    hero(m, ready),
-    queue_picker(m),
-    html.div([attribute.class("study-counts")], [
-      count("Due", due, "due"),
-      count("New", fresh, "new"),
-      count("Done today", m.today.reviews_done, "done"),
-    ]),
-    estimate(m),
-    html.p([attribute.class("study-summary")], [
-      html.text(case ready, m.today.reviews_done {
-        // An empty queue is not an empty day: nothing is scheduled because
-        // nothing has been queued, and no amount of waiting changes that.
-        0, _ if nothing_queued ->
-          "Nothing is in your study queue yet. Add problems to start scheduling them."
-        0, _ if queue_empty ->
-          "This queue is empty. Add problems to it on the queue screen."
-        0, 0 ->
-          "Nothing due today, and today's new cards are spent. Queue more problems, or come back tomorrow."
-        0, _ ->
-          "You're done for today. Anything you drill now counts as extra practice."
-        1, _ -> "1 card ready."
-        _, _ -> int.to_string(ready) <> " cards ready."
-      }),
-    ]),
-    case nothing_queued {
-      False -> element.none()
-      True ->
-        html.div([attribute.class("study-empty-actions")], [
-          html.button(
-            [
-              attribute.class("primary study-start study-starter"),
-              event.on_click(UserAddedStarterSet),
-            ],
-            [html.text("Add a starter set")],
-          ),
-          html.button(
-            [
-              attribute.class("study-secondary"),
-              event.on_click(UserClickedQueue),
-            ],
-            [html.text("Choose problems to study")],
-          ),
-        ])
-    },
-    html.div([attribute.class("study-actions")], [
-      html.button(
-        [
-          attribute.class("primary study-start"),
-          attribute.disabled(False),
-          event.on_click(UserClickedStudy),
-        ],
-        [html.text("Study now")],
-      ),
-      // The same queue without an editor: read, reveal, grade from memory.
-      // Short enough for a phone or a commute, so it earns its own button.
-      html.button(
-        [
-          attribute.class("study-secondary study-recall"),
-          event.on_click(UserClickedRecall),
-        ],
-        [html.text("Recall only")],
-      ),
-      // The game: random problems against a clock, scored at the end.
-      html.button(
-        [
-          attribute.class("study-secondary study-blitz"),
-          event.on_click(UserToggledBlitz),
-        ],
-        [html.text("\u{26a1} Blitz")],
-      ),
-      html.button(
-        [attribute.class("study-secondary"), event.on_click(UserClickedQueue)],
-        [html.text("Manage queue")],
-      ),
-      html.button(
-        [attribute.class("study-secondary"), event.on_click(UserClickedBrowse)],
-        [
-          html.text("Browse problems"),
-        ],
-      ),
-      html.button(
-        [
-          attribute.class("study-secondary"),
-          event.on_click(UserClickedStartExam),
-        ],
-        [html.text("System design exam")],
-      ),
-      html.button(
-        [
-          attribute.class("study-secondary study-tour"),
-          event.on_click(UserClickedTour),
-        ],
-        [
-          html.text(case m.tour_lesson > 0 {
-            True -> "Continue the Gleam tour"
-            False -> "Gleam tour"
-          }),
-        ],
-      ),
-    ]),
-    blitz_chooser(m),
-    queue_preview(m),
-    forecast(m),
-    footer(),
-  ])
+  Document(
+    class: "study-screen",
+    header: document.header(brand.wordmark()),
+    storage_warning: True,
+    lead: [upgrade_prompt(shared), guest_strip(shared)],
+    body: [
+      hero(shared, ready),
+      queue_picker(shared),
+      html.div([attribute.class("study-counts")], [
+        count("Due", due, "due"),
+        count("New", fresh, "new"),
+        count("Done today", shared.today.reviews_done, "done"),
+      ]),
+      estimate(shared),
+      html.p([attribute.class("study-summary")], [
+        html.text(case ready, shared.today.reviews_done {
+          // An empty queue is not an empty day: nothing is scheduled because
+          // nothing has been queued, and no amount of waiting changes that.
+          0, _ if nothing_queued ->
+            "Nothing is in your study queue yet. Add problems to start scheduling them."
+          0, _ if queue_empty ->
+            "This queue is empty. Add problems to it on the queue screen."
+          0, 0 ->
+            "Nothing due today, and today's new cards are spent. Queue more problems, or come back tomorrow."
+          0, _ ->
+            "You're done for today. Anything you drill now counts as extra practice."
+          1, _ -> "1 card ready."
+          _, _ -> int.to_string(ready) <> " cards ready."
+        }),
+      ]),
+      case nothing_queued {
+        False -> element.none()
+        True ->
+          html.div([attribute.class("study-empty-actions")], [
+            html.button(
+              [
+                attribute.class("primary study-start study-starter"),
+                event.on_click(UserAddedStarterSet),
+              ],
+              [html.text("Add a starter set")],
+            ),
+            html.button(
+              [
+                attribute.class("study-secondary"),
+                event.on_click(UserClickedQueue),
+              ],
+              [html.text("Choose problems to study")],
+            ),
+          ])
+      },
+      html.div([attribute.class("study-actions")], [
+        html.button(
+          [
+            attribute.class("primary study-start"),
+            attribute.disabled(False),
+            event.on_click(UserClickedStudy),
+          ],
+          [html.text("Study now")],
+        ),
+        // The same queue without an editor: read, reveal, grade from memory.
+        // Short enough for a phone or a commute, so it earns its own button.
+        html.button(
+          [
+            attribute.class("study-secondary study-recall"),
+            event.on_click(UserClickedRecall),
+          ],
+          [html.text("Recall only")],
+        ),
+        // The game: random problems against a clock, scored at the end.
+        html.button(
+          [
+            attribute.class("study-secondary study-blitz"),
+            event.on_click(UserToggledBlitz),
+          ],
+          [html.text("\u{26a1} Blitz")],
+        ),
+        html.button(
+          [attribute.class("study-secondary"), event.on_click(UserClickedQueue)],
+          [html.text("Manage queue")],
+        ),
+        html.button(
+          [
+            attribute.class("study-secondary"),
+            event.on_click(UserClickedBrowse),
+          ],
+          [
+            html.text("Browse problems"),
+          ],
+        ),
+        html.button(
+          [
+            attribute.class("study-secondary"),
+            event.on_click(UserClickedStartExam),
+          ],
+          [html.text("System design exam")],
+        ),
+        html.button(
+          [
+            attribute.class("study-secondary study-tour"),
+            event.on_click(UserClickedTour),
+          ],
+          [
+            html.text(case shared.tour_lesson > 0 {
+              True -> "Continue the Gleam tour"
+              False -> "Gleam tour"
+            }),
+          ],
+        ),
+      ]),
+      blitz_chooser(page),
+      queue_preview(shared),
+      forecast(shared),
+      footer(),
+    ],
+  )
 }
 
 /// The next week at a glance, so a heavy day is visible before it arrives.
@@ -168,8 +170,9 @@ pub fn view(m: Model) -> Element(Msg) {
 /// Computed here rather than fetched: the client already holds every card's
 /// due date, so asking the server for a forecast would be a round trip for
 /// arithmetic it can do locally.
-fn forecast(m: Model) -> Element(Msg) {
-  let counts = list.map(week(), fn(offset) { #(offset, due_on(m, offset)) })
+fn forecast(shared: Shared) -> Element(Msg) {
+  let counts =
+    list.map(week(), fn(offset) { #(offset, due_on(shared, offset)) })
   let busiest = list.fold(counts, 1, fn(peak, entry) { int.max(peak, entry.1) })
 
   html.section([attribute.class("study-forecast")], [
@@ -228,13 +231,14 @@ fn week() -> List(Int) {
 
 /// Cards falling due `offset` days from now. Anything already overdue counts
 /// against today, which is where it will actually be studied.
-fn due_on(m: Model, offset: Int) -> Int {
+fn due_on(shared: Shared, offset: Int) -> Int {
   // The active queue's cards, so the week matches the picker above it.
-  use total, ref <- list.fold(queue.scope(m), 0)
-  case model.card_for(m, ref) {
+  use total, ref <- list.fold(queue.scope(shared), 0)
+  case shared_model.card_for(shared, ref) {
     None -> total
     Some(state) -> {
-      let days = int.max(0, fsrs.interval_seconds(state.card, m.now) / 86_400)
+      let days =
+        int.max(0, fsrs.interval_seconds(state.card, shared.now) / 86_400)
       // A queued card that has never been answered is due immediately by
       // date, but it is not a review -- counting it here would pile the
       // whole New pile onto today's bar and make the week look like a wall.
@@ -248,8 +252,8 @@ fn due_on(m: Model, offset: Int) -> Int {
 
 /// Which queue today serves from: everything, or one of the named lists.
 /// Absent until a list exists, so a fresh screen is as it always was.
-fn queue_picker(m: Model) -> Element(Msg) {
-  case m.queues {
+fn queue_picker(shared: Shared) -> Element(Msg) {
+  case shared.queues {
     [] -> element.none()
     queues ->
       html.div(
@@ -261,9 +265,9 @@ fn queue_picker(m: Model) -> Element(Msg) {
           ),
         ],
         [
-          queue_pick("Everything", None, m.active_queue),
+          queue_pick("Everything", None, shared.active_queue),
           ..list.map(queues, fn(queue: wire.Queue) {
-            queue_pick(queue.name, Some(queue.name), m.active_queue)
+            queue_pick(queue.name, Some(queue.name), shared.active_queue)
           })
         ],
       )
@@ -291,8 +295,8 @@ fn queue_pick(
 /// minutes, so "12 cards" is only actionable once it also says "about an
 /// How many, how long: the two dials of a Blitz, as buttons so a game is
 /// two clicks from the study screen. The chosen pair starts it.
-fn blitz_chooser(m: Model) -> Element(Msg) {
-  case m.blitz_chooser {
+fn blitz_chooser(page: Model) -> Element(Msg) {
+  case page.blitz_chooser {
     False -> element.none()
     True ->
       html.div([attribute.class("exit-overlay")], [
@@ -367,11 +371,11 @@ fn blitz_option(
 /// streak beside it. The goal is what "Study now" would serve today -- what
 /// is ready plus what has been done -- so the ring closes exactly when the
 /// queue empties, and never asks for more than the daily caps allow.
-fn hero(m: Model, ready: Int) -> Element(Msg) {
-  let done = m.today.reviews_done
+fn hero(shared: Shared, ready: Int) -> Element(Msg) {
+  let done = shared.today.reviews_done
   let goal = int.max(done + ready, 1)
   let complete = ready == 0 && done > 0
-  let streak = case remote.value(m.stats) {
+  let streak = case remote.value(shared.stats) {
     Some(stats) -> stats.streak_days
     None -> 0
   }
@@ -482,14 +486,14 @@ fn float_text(value: Float) -> String {
 
 /// hour". Both halves need payloads that arrive after boot, so each is omitted
 /// until it can be answered rather than shown as a zero.
-fn estimate(m: Model) -> Element(Msg) {
-  let ready = queue.due_count(m) + queue.new_count(m)
-  let minutes = case ready, remote.value(m.insights) {
+fn estimate(shared: Shared) -> Element(Msg) {
+  let ready = queue.due_count(shared) + queue.new_count(shared)
+  let minutes = case ready, remote.value(shared.insights) {
     0, _ -> None
     _, Some(data) ->
       Some(insights.queue_estimate_ms(
-        insights.analyse(data, m.cards, m.now),
-        queue.build(m),
+        insights.analyse(data, shared.cards, shared.now),
+        queue.build(shared),
       ))
     _, None -> None
   }
@@ -509,8 +513,8 @@ fn estimate(m: Model) -> Element(Msg) {
 ///
 /// Pressing it used to be a leap of faith. Collapsed by default because the
 /// answer is usually "fine" and the list can be long.
-fn queue_preview(m: Model) -> Element(Msg) {
-  case queue.build(m) {
+fn queue_preview(shared: Shared) -> Element(Msg) {
+  case queue.build(shared) {
     [] -> element.none()
     upcoming ->
       html.details([attribute.class("study-preview")], [
@@ -531,7 +535,7 @@ fn queue_preview(m: Model) -> Element(Msg) {
               ]),
               format.difficulty_badge(problems.difficulty_of(ref)),
               html.span([attribute.class("study-preview-state")], [
-                html.text(case model.card_for(m, ref) {
+                html.text(case shared_model.card_for(shared, ref) {
                   Some(_) -> "due"
                   None -> "new"
                 }),
@@ -563,8 +567,8 @@ fn count(label: String, value: Int, kind: String) -> Element(Msg) {
 
 /// The standing reminder. Quiet, always present as a guest, and never
 /// dismissible -- it is a statement of where the data lives, not an alert.
-fn guest_strip(m: Model) -> Element(Msg) {
-  case m.mode, m.storage_full, m.upgrade_prompt {
+fn guest_strip(shared: Shared) -> Element(Msg) {
+  case shared.mode, shared.storage_full, shared.upgrade_prompt {
     // The storage warning above already says something strictly worse, and
     // so does the upgrade prompt while it is showing.
     Guest, False, PromptShowing -> element.none()
@@ -587,8 +591,8 @@ fn guest_strip(m: Model) -> Element(Msg) {
 
 /// Shown once, when the guest has enough scheduled for the warning to name a
 /// real number rather than a hypothetical.
-fn upgrade_prompt(m: Model) -> Element(Msg) {
-  case m.mode, m.upgrade_prompt {
+fn upgrade_prompt(shared: Shared) -> Element(Msg) {
+  case shared.mode, shared.upgrade_prompt {
     Guest, PromptShowing ->
       html.div([attribute.class("upgrade-prompt"), attribute.role("dialog")], [
         html.p([attribute.class("upgrade-prompt-title")], [
@@ -596,7 +600,7 @@ fn upgrade_prompt(m: Model) -> Element(Msg) {
             "You have "
             // Answered cards only. A queued card is a click; the ones worth
             // warning about are the ones with review history behind them.
-            <> int.to_string(model.answered_count(m))
+            <> int.to_string(shared_model.answered_count(shared))
             <> " cards scheduled.",
           ),
         ]),

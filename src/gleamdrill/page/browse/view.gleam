@@ -53,6 +53,7 @@ pub fn view(shared: Shared, page: Model) -> Document(Msg) {
       nav: False,
     ),
     storage_warning: False,
+    lead: [],
     body: case string.trim(page.search) {
       "" -> [
         breadcrumbs(shared, page),

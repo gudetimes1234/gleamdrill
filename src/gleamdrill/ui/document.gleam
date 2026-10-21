@@ -13,6 +13,8 @@ pub type Document(msg) {
     header: Header(msg),
     /// Whether the full-storage warning shows above everything.
     storage_warning: Bool,
+    /// The page's own banners, between the notices and the header.
+    lead: List(Element(msg)),
     body: List(Element(msg)),
   )
 }
@@ -49,7 +51,7 @@ pub fn header(title: List(Element(msg))) -> Header(msg) {
 }
 
 pub fn map(document: Document(a), with: fn(a) -> b) -> Document(b) {
-  let Document(class:, header:, storage_warning:, body:) = document
+  let Document(class:, header:, storage_warning:, lead:, body:) = document
   let Header(tag:, class: header_class, title_class:, title:, extra:, nav:) =
     header
   let lift = fn(elements) { list.map(elements, element.map(_, with)) }
@@ -64,6 +66,7 @@ pub fn map(document: Document(a), with: fn(a) -> b) -> Document(b) {
       nav:,
     ),
     storage_warning:,
+    lead: lift(lead),
     body: lift(body),
   )
 }

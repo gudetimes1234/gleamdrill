@@ -85,6 +85,7 @@ pub fn view(shared: Shared, page: Model) -> Document(Msg) {
       ],
     ),
     storage_warning: True,
+    lead: [],
     body: [
       queue_selector(shared, page),
       html.p([attribute.class("queue-lede")], [

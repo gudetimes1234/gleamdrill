@@ -25,16 +25,14 @@ import gleamdrill/msg.{
   type Key, type Msg, BoardJumped, BoardMoved, BoardShelfMoved,
   BoardToggledAtCursor, EditorFocusRequested, ExitConfirmed, HelpToggled,
   NoteFocusRequested, QuizMoved, TourActivated, TourCursorMoved, TourRunTicked,
-  UserClickedBackToStudy, UserClickedBrowse, UserClickedExitDrill,
-  UserClickedExitReport, UserClickedNext, UserClickedQueue, UserClickedRecall,
-  UserClickedRun, UserClickedScratchRun, UserClickedStartExam, UserClickedStats,
-  UserClickedStudy, UserClickedTour, UserClickedTourContents,
-  UserClickedTourNext, UserClickedTourPrev, UserClickedTracks, UserClickedUndo,
-  UserGraded, UserPickedActiveQueue, UserPickedChoice, UserRevealedRecall,
+  UserClickedBackToStudy, UserClickedExitDrill, UserClickedExitReport,
+  UserClickedNext, UserClickedRun, UserClickedScratchRun,
+  UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
+  UserClickedUndo, UserGraded, UserPickedChoice, UserRevealedRecall,
   UserRevealedWholeThing, UserSubmittedAnswer, UserSubmittedBoard,
-  UserToggledBlitz, UserToggledDiff, UserToggledNudge, UserToggledPane,
-  UserToggledPrompt, UserToggledResults, WalkAdvanced, WalkBacked, WalkCodeShown,
-  WalkHintShown, WalkWhyShown,
+  UserToggledDiff, UserToggledNudge, UserToggledPane, UserToggledPrompt,
+  UserToggledResults, WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown,
+  WalkWhyShown,
 }
 
 import gleamdrill/ui/binding.{type Binding, Binding}
@@ -70,7 +68,8 @@ pub fn overlay(m: Model) -> Result(List(Binding(Msg)), Nil) {
 pub fn screen(m: Model) -> List(Binding(Msg)) {
   {
     case m.route {
-      StudyRoute -> study_bindings(m)
+      // Drawn by page/study, which brings its own rows.
+      StudyRoute -> []
       // Drawn by page/browse, which brings its own rows.
       MenuRoute -> []
       DrillRoute -> drill_bindings(m)
@@ -115,54 +114,6 @@ pub fn screen(m: Model) -> List(Binding(Msg)) {
       AuthRoute -> []
     }
   }
-}
-
-fn study_bindings(m: Model) -> List(Binding(Msg)) {
-  list.flatten([
-    [
-      Binding(
-        ["Enter", "s"],
-        "study",
-        "Start studying what is due",
-        UserClickedStudy,
-      ),
-      // Shift, like `G`: lowercase `t` has meant Stats since before tracks
-      // existed, and moving it would cost more than it bought.
-      Binding(["T"], "tracks", "Switch track", UserClickedTracks),
-      Binding(
-        ["c"],
-        "recall",
-        "Recall what is due, no editor",
-        UserClickedRecall,
-      ),
-      Binding(
-        ["z"],
-        "blitz",
-        "A timed run of random problems",
-        UserToggledBlitz,
-      ),
-    ],
-    // Only once there is a second queue to step to.
-    case m.queues {
-      [] -> []
-      _ -> [
-        Binding(
-          ["n"],
-          "next queue",
-          "Study from the next queue",
-          UserPickedActiveQueue(model.next_queue(m)),
-        ),
-      ]
-    },
-    [
-      Binding(["q"], "queue", "Manage the study queue", UserClickedQueue),
-      Binding(["b"], "browse", "Browse problems by hand", UserClickedBrowse),
-      Binding(["t"], "stats", "Statistics", UserClickedStats),
-      Binding(["x"], "exam", "System design exam", UserClickedStartExam),
-      Binding(["g"], "tour", "Play the Gleam Language Tour", UserClickedTour),
-      help_binding(),
-    ],
-  ])
 }
 
 /// The tour: one set of keys for the contents page, another for a lesson.

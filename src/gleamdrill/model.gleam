@@ -248,8 +248,6 @@ pub type Model {
     /// A Blitz: N random problems against a clock, scored pass or fail.
     /// Practice as far as the schedule is concerned; the game is the clock.
     blitz: Option(Blitz),
-    /// The chooser is open on the study screen.
-    blitz_chooser: Bool,
     grading: Grading,
     /// Wall-clock milliseconds when the current problem was opened, for the
     /// review log's `duration_ms`.
@@ -400,7 +398,6 @@ pub fn default() -> Model {
     recall: False,
     run_kind: TestRun,
     blitz: None,
-    blitz_chooser: False,
     prefix_armed: False,
     queues: [],
     remembered_queues: [],

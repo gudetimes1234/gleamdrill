@@ -73,16 +73,11 @@ pub fn exit_report(m: Model) -> #(Model, Effect(Msg)) {
   )
 }
 
-pub fn toggle_chooser(m: Model) -> #(Model, Effect(Msg)) {
-  #(Model(..m, blitz_chooser: !m.blitz_chooser), effect.none())
-}
-
 pub fn start(m: Model, count: Int, per_card_ms: Int) -> #(Model, Effect(Msg)) {
   case blitz_pool(m) {
     [] -> #(
       Model(
         ..m,
-        blitz_chooser: False,
         notice: Some(
           "Nothing to blitz: queue some problems this browser can run.",
         ),
@@ -98,7 +93,6 @@ pub fn start(m: Model, count: Int, per_card_ms: Int) -> #(Model, Effect(Msg)) {
               ..m,
               studying: False,
               recall: False,
-              blitz_chooser: False,
               blitz: Some(model.Blitz(
                 per_card_ms:,
                 deadline_ms: browser.now_ms() + per_card_ms,

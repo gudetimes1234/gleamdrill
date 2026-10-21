@@ -15,7 +15,7 @@ import gleamdrill/msg.{
   NoteFocusRequested, NoteSaveTicked, NoteSynced, QueueChanged, QueueMsg,
   QueuesSaved, QuizMoved, RemoteRunFinished, ReviewRecorded, RunFinished,
   RunTimedOut, RunnerFailed, RunnerReady, RuntimeLoadTimedOut, SettingsMsg,
-  SignOutCompleted, StateImported, StateLoaded, StatsLoaded, StatsMsg,
+  SignOutCompleted, StateImported, StateLoaded, StatsLoaded, StatsMsg, StudyMsg,
   TourActivated, TourCursorMoved, TourEditorChanged, TourRunTicked, TracksMsg,
   UndoRecorded, UserAddedSelectionToQueue, UserAddedStarterSet,
   UserChangedIterations, UserChangedKeymap, UserClickedBackToStudy,
@@ -28,12 +28,12 @@ import gleamdrill/msg.{
   UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
   UserClickedTracks, UserClickedUndo, UserDismissedDiff, UserDismissedMergeOffer,
   UserDismissedNotice, UserDismissedUpgradePrompt, UserGraded, UserOpenedLesson,
-  UserPickedActiveQueue, UserPickedChoice, UserResetLesson, UserRevealedRecall,
-  UserRevealedWholeThing, UserStartedBlitz, UserSubmittedAnswer,
-  UserSubmittedBoard, UserToggledBlitz, UserToggledDiff, UserToggledNudge,
-  UserToggledPane, UserToggledPiece, UserToggledPrompt, UserToggledResults,
-  UserToggledSolution, UserToggledSuspend, UserToggledTimer, WalkAdvanced,
-  WalkBacked, WalkCodeShown, WalkFocused, WalkHintShown, WalkWhyShown,
+  UserPickedChoice, UserResetLesson, UserRevealedRecall, UserRevealedWholeThing,
+  UserStartedBlitz, UserSubmittedAnswer, UserSubmittedBoard, UserToggledDiff,
+  UserToggledNudge, UserToggledPane, UserToggledPiece, UserToggledPrompt,
+  UserToggledResults, UserToggledSolution, UserToggledSuspend, UserToggledTimer,
+  WalkAdvanced, WalkBacked, WalkCodeShown, WalkFocused, WalkHintShown,
+  WalkWhyShown,
 }
 import gleamdrill/platform/browser
 import gleamdrill/update/blitz as blitz_update
@@ -73,6 +73,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     | StatsMsg(_)
     | QueueMsg(_)
     | BrowseMsg(_)
+    | StudyMsg(_)
     | UserClickedBrowse
     | UserClickedQueue
     | UserClickedStats
@@ -139,7 +140,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     ExitConfirmed(leave) -> drill_update.exit_confirmed(m, leave)
     ClockTicked -> drill_update.clock_ticked(m, handle)
 
-    UserToggledBlitz -> blitz_update.toggle_chooser(m)
     UserStartedBlitz(count, per_card_ms) ->
       blitz_update.start(m, count, per_card_ms)
     BlitzExpired -> blitz_update.expired(m)
@@ -185,7 +185,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     CardSuspended(result) -> review_update.card_suspended(m, result)
 
     // --- managing the queue ---
-    UserPickedActiveQueue(name) -> queues_update.pick_active(m, name)
     UserAddedSelectionToQueue(target) -> queues_update.add_selection(m, target)
     QueuesSaved(result) -> queues_update.saved(m, result)
 
