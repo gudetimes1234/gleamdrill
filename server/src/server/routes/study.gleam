@@ -16,13 +16,14 @@ import server/study/cards
 import server/study/drafts
 import server/study/insights
 import server/study/legacy_import
-import server/study/model.{type CardRecord, type Settings}
+import server/study/model.{type CardRecord}
 import server/study/notes
 import server/study/profile
 import server/study/queues
 import server/study/reviews
 import server/study/stats
 import server/study/today
+import server/study/validate
 import server/web.{type Context}
 import wire
 import wisp
@@ -382,13 +383,13 @@ pub fn enqueue(request: wisp.Request, context: Context) -> wisp.Response {
     Error(_) -> invalid_queue_body()
     Ok([]) -> invalid_queue_body()
     Ok(problems) ->
-      case list.length(problems) > queue_batch_limit {
+      case list.length(problems) > validate.queue_batch_limit {
         True ->
           web.error(
             422,
             "too_many_problems",
             "Add at most "
-              <> int.to_string(queue_batch_limit)
+              <> int.to_string(validate.queue_batch_limit)
               <> " problems at a time.",
           )
         False ->
@@ -431,13 +432,13 @@ pub fn dequeue(request: wisp.Request, context: Context) -> wisp.Response {
     Error(_) -> invalid_queue_body()
     Ok([]) -> invalid_queue_body()
     Ok(problems) ->
-      case list.length(problems) > queue_batch_limit {
+      case list.length(problems) > validate.queue_batch_limit {
         True ->
           web.error(
             422,
             "too_many_problems",
             "Remove at most "
-              <> int.to_string(queue_batch_limit)
+              <> int.to_string(validate.queue_batch_limit)
               <> " problems at a time.",
           )
         False ->
@@ -515,11 +516,6 @@ fn invalid_queue_body() -> wisp.Response {
     "Expected problems: a non-empty list of problem references.",
   )
 }
-
-/// One topic is at most a few dozen problems and the whole catalogue is about
-/// twelve hundred, so this admits "add everything" while still bounding a
-/// single statement.
-const queue_batch_limit = 1500
 
 fn queue_decoder() -> decode.Decoder(List(model.ProblemRef)) {
   use problems <- decode.field("problems", decode.list(problem_decoder()))
@@ -709,8 +705,8 @@ pub fn restore(request: wisp.Request, context: Context) -> wisp.Response {
           // because a file is just as able to hold an hour of 47.
           let restored = archive.archive_profile(archive)
           case
-            validate_settings(restored.settings),
-            validate_account(restored.account),
+            validate.settings(restored.settings),
+            validate.account(restored.account),
             queues.validate_queues(archive.queues)
           {
             Error(message), _, _ | _, Error(message), _ ->
@@ -821,7 +817,7 @@ fn update_settings(
     Error(_), _ | _, Error(_) ->
       web.error(422, "invalid_body", "Expected a settings object.")
     Ok(settings), Ok(account) ->
-      case validate_settings(settings), validate_account(account) {
+      case validate.settings(settings), validate.account(account) {
         Error(message), _ | _, Error(message) ->
           web.error(422, "invalid_settings", message)
         Ok(settings), Ok(account) ->
@@ -867,33 +863,6 @@ fn profile_json(profile: profile.Profile) -> Json {
   ])
 }
 
-/// Guard rails on the knobs a user can turn. These bounds are not arbitrary:
-/// outside them FSRS produces intervals that are useless rather than merely
-/// aggressive.
-fn validate_settings(settings: Settings) -> Result(Settings, String) {
-  let scheduler = settings.scheduler
-  let steps_valid =
-    list.all(scheduler.learning_steps, fn(step) { step >= 1 })
-    && list.all(scheduler.relearning_steps, fn(step) { step >= 1 })
-
-  case
-    list.length(scheduler.parameters) == 21,
-    scheduler.desired_retention >=. 0.7 && scheduler.desired_retention <=. 0.99,
-    scheduler.maximum_interval >= 1,
-    steps_valid,
-    settings.new_per_day >= 0 && settings.reviews_per_day >= 0
-  {
-    False, _, _, _, _ -> Error("Expected exactly 21 FSRS parameters.")
-    _, False, _, _, _ ->
-      Error("Desired retention must be between 0.7 and 0.99.")
-    _, _, False, _, _ -> Error("Maximum interval must be at least 1 day.")
-    _, _, _, False, _ ->
-      Error("Learning and relearning steps must be at least 1 minute.")
-    _, _, _, _, False -> Error("Daily limits cannot be negative.")
-    _, _, _, _, _ -> Ok(settings)
-  }
-}
-
 // --- fuzz ------------------------------------------------------------------
 
 /// The scheduler takes its fuzz sample as an argument so it can stay pure;
@@ -918,23 +887,6 @@ const today_json = wire.today_to_json
 const problem_json = wire.ref_to_json
 
 const stats_json = wire.stats_to_json
-
-/// The account-wide knobs have their own bounds, because they are about the
-/// person rather than the scheduler: an hour outside the day is a typo, not
-/// an aggressive setting.
-fn validate_account(
-  account: wire.AccountSettings,
-) -> Result(wire.AccountSettings, String) {
-  case account.day_start_hour >= 0 && account.day_start_hour <= 23 {
-    False -> Error("Day start hour must be between 0 and 23.")
-    True ->
-      case account.reminder_hour {
-        Some(hour) if hour < 0 || hour > 23 ->
-          Error("Reminder hour must be between 0 and 23.")
-        _ -> Ok(account)
-      }
-  }
-}
 
 const account_decoder = wire.account_decoder
 
