@@ -9,17 +9,19 @@
 ////     and an unknown email still pays the cost of a hash verification, so
 ////     response time does not reveal whether an account exists.
 ////   * Login attempts are throttled per IP *and* per email.
+////
+//// The SQL lives in `auth/sql/*.sql`; `gleam run -m squirrel` generates
+//// `auth/sql.gleam` from it, typed against the live schema.
 
 import antigone
 import gleam/bit_array
 import gleam/bool
 import gleam/crypto
-import gleam/dynamic/decode
 import gleam/list
 import gleam/result
 import gleam/string
 import pog
-import server/db
+import server/auth/sql
 import wire
 import youid/uuid.{type Uuid}
 
@@ -137,15 +139,7 @@ fn insert_user(
   email: String,
   password_hash: String,
 ) -> Result(User, AuthError) {
-  pog.query(
-    "insert into users (email, password_hash)
-     values ($1, $2)
-     returning id::text, email",
-  )
-  |> pog.parameter(pog.text(email))
-  |> pog.parameter(pog.text(password_hash))
-  |> pog.returning(user_decoder())
-  |> pog.execute(db)
+  sql.insert_user(db, email, password_hash)
   |> result.map_error(fn(error) {
     case error {
       // The unique index on `email` is the single source of truth for
@@ -155,6 +149,9 @@ fn insert_user(
     }
   })
   |> result.try(first_row(_, DatabaseError("insert returned no user")))
+  |> result.map(fn(row: sql.InsertUserRow) {
+    User(id: row.id, email: row.email)
+  })
 }
 
 /// Seed a new account's settings row: the account-wide knobs only.
@@ -173,15 +170,13 @@ fn insert_default_settings(
   user_id: Uuid,
   timezone: String,
 ) -> Result(Nil, AuthError) {
-  pog.query(
-    "insert into settings (user_id, timezone, day_start_hour)
-     values ($1::uuid, $2, $3)",
+  sql.insert_settings(
+    db,
+    user_id,
+    // The browser's zone, captured at signup -- not a default.
+    timezone,
+    wire.default_account().day_start_hour,
   )
-  |> pog.parameter(db.uuid(user_id))
-  // The browser's zone, captured at signup -- not a default.
-  |> pog.parameter(pog.text(timezone))
-  |> pog.parameter(pog.int(wire.default_account().day_start_hour))
-  |> pog.execute(db)
   |> result.replace(Nil)
   |> result.map_error(database_error)
 }
@@ -229,17 +224,14 @@ fn find_credentials(
   db: pog.Connection,
   email: String,
 ) -> Result(Result(#(User, String), Nil), AuthError) {
-  pog.query("select id::text, email, password_hash from users where email = $1")
-  |> pog.parameter(pog.text(email))
-  |> pog.returning({
-    use id <- decode.field(0, db.uuid_decoder())
-    use email <- decode.field(1, decode.string)
-    use hash <- decode.field(2, decode.string)
-    decode.success(#(User(id:, email:), hash))
-  })
-  |> pog.execute(db)
+  sql.find_credentials(db, email)
   |> result.map_error(database_error)
-  |> result.map(fn(returned) { list.first(returned.rows) })
+  |> result.map(fn(returned) {
+    list.first(returned.rows)
+    |> result.map(fn(row: sql.FindCredentialsRow) {
+      #(User(id: row.id, email: row.email), row.password_hash)
+    })
+  })
 }
 
 // --- throttling ------------------------------------------------------------
@@ -259,41 +251,21 @@ pub fn throttle(
   window_minutes: Int,
   max_attempts: Int,
 ) -> Result(Nil, AuthError) {
-  pog.query(
-    "insert into login_attempts (key, attempts, window_start)
-     values ($1, 1, now())
-     on conflict (key) do update set
-       attempts = case
-         when login_attempts.window_start < now() - make_interval(mins => $2)
-         then 1 else login_attempts.attempts + 1 end,
-       window_start = case
-         when login_attempts.window_start < now() - make_interval(mins => $2)
-         then now() else login_attempts.window_start end
-     returning attempts",
-  )
-  |> pog.parameter(pog.text(key))
-  |> pog.parameter(pog.int(window_minutes))
-  |> pog.returning({
-    use attempts <- decode.field(0, decode.int)
-    decode.success(attempts)
-  })
-  |> pog.execute(db)
+  sql.record_attempt(db, key, window_minutes)
   |> result.map_error(database_error)
   |> result.try(fn(returned) {
-    case list.first(returned.rows) {
-      Ok(attempts) ->
+    case returned.rows {
+      [sql.RecordAttemptRow(attempts:), ..] ->
         bool.guard(attempts > max_attempts, Error(TooManyAttempts), fn() {
           Ok(Nil)
         })
-      Error(Nil) -> Ok(Nil)
+      [] -> Ok(Nil)
     }
   })
 }
 
 fn clear_attempts(db: pog.Connection, key: String) -> Result(Nil, AuthError) {
-  pog.query("delete from login_attempts where key = $1")
-  |> pog.parameter(pog.text(key))
-  |> pog.execute(db)
+  sql.clear_attempts(db, key)
   |> result.replace(Nil)
   |> result.map_error(database_error)
 }
@@ -306,14 +278,7 @@ fn create_session(
   session_days: Int,
 ) -> Result(String, AuthError) {
   let token = generate_token()
-  pog.query(
-    "insert into sessions (token_hash, user_id, expires_at)
-     values ($1, $2::uuid, now() + make_interval(days => $3))",
-  )
-  |> pog.parameter(pog.bytea(token_digest(token)))
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.int(session_days))
-  |> pog.execute(db)
+  sql.create_session(db, token_digest(token), user_id, session_days)
   |> result.replace(token)
   |> result.map_error(database_error)
 }
@@ -327,31 +292,16 @@ pub fn authenticate(
   token: String,
   session_days: Int,
 ) -> Result(User, AuthError) {
-  pog.query(
-    "with touched as (
-       update sessions
-          set last_seen = now(),
-              expires_at = now() + make_interval(days => $2)
-        where token_hash = $1
-          and expires_at > now()
-        returning user_id
-     )
-     select u.id::text, u.email
-       from users u
-       join touched t on t.user_id = u.id",
-  )
-  |> pog.parameter(pog.bytea(token_digest(token)))
-  |> pog.parameter(pog.int(session_days))
-  |> pog.returning(user_decoder())
-  |> pog.execute(db)
+  sql.authenticate(db, token_digest(token), session_days)
   |> result.map_error(database_error)
   |> result.try(first_row(_, SessionExpired))
+  |> result.map(fn(row: sql.AuthenticateRow) {
+    User(id: row.id, email: row.email)
+  })
 }
 
 pub fn logout(db: pog.Connection, token: String) -> Result(Nil, AuthError) {
-  pog.query("delete from sessions where token_hash = $1")
-  |> pog.parameter(pog.bytea(token_digest(token)))
-  |> pog.execute(db)
+  sql.delete_session(db, token_digest(token))
   |> result.replace(Nil)
   |> result.map_error(database_error)
 }
@@ -360,19 +310,12 @@ pub fn logout(db: pog.Connection, token: String) -> Result(Nil, AuthError) {
 /// correctness -- `authenticate` filters on expiry -- it just stops the table
 /// growing without bound.
 pub fn prune_sessions(db: pog.Connection) -> Result(Nil, AuthError) {
-  pog.query("delete from sessions where expires_at < now()")
-  |> pog.execute(db)
+  sql.prune_sessions(db)
   |> result.replace(Nil)
   |> result.map_error(database_error)
 }
 
 // --- shared plumbing -------------------------------------------------------
-
-fn user_decoder() -> decode.Decoder(User) {
-  use id <- decode.field(0, db.uuid_decoder())
-  use email <- decode.field(1, decode.string)
-  decode.success(User(id:, email:))
-}
 
 fn first_row(
   returned: pog.Returned(row),
