@@ -2748,8 +2748,6 @@ check("the tour does not scroll sideways on a phone",
 await capture("tour-phone", "A tour lesson stacked for a phone");
 await page.keyboard.press("Escape");
 await page.waitForSelector(".study-screen", { timeout: 10000 });
-await page.click(".study-start");
-await startCoding();
 check("a help button is on screen where the status bar is not",
   await page.isVisible(".help-fab"));
 await page.click(".help-fab");
@@ -2758,6 +2756,10 @@ check("and it opens the cheatsheet", await page.isVisible(".help-card"));
 await capture("help-phone", "Help reached by touch, no keyboard needed");
 await page.click(".help-overlay", { position: { x: 5, y: 5 } });
 await page.waitForTimeout(300);
+await page.click(".study-start");
+await startCoding();
+check("but not in a drill, where it would cover the Easy grade",
+  !(await page.isVisible(".help-fab")));
 check("the drill does not scroll sideways",
   (await page.evaluate(() => document.documentElement.scrollWidth)) <= 390 + 1,
   `scrollWidth ${await page.evaluate(() => document.documentElement.scrollWidth)}`);
