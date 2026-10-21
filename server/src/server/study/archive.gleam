@@ -1,18 +1,18 @@
 //// Export and restore: the whole account as one file, and back.
 ////
 //// Part of the study data layer; see `server/study/model` for the shared
-//// types.
+//// types. The SQL lives in `archive/sql/*.sql`; `gleam run -m squirrel`
+//// generates `archive/sql.gleam` from it.
 
 import fsrs
-import gleam/dynamic/decode
 import gleam/list
 import gleam/result
 import pog
-import server/db
+import server/study/archive/sql
 import server/study/drafts
 import server/study/legacy_import.{ImportCard}
 import server/study/model.{
-  type StudyError, database_error, flatten_transaction_error,
+  type StudyError, done, flatten_transaction_error, nullable, rows,
 }
 import server/study/notes
 import server/study/profile
@@ -26,49 +26,23 @@ pub fn all_reviews(
   db: pog.Connection,
   user_id: Uuid,
 ) -> Result(List(#(wire.ProblemRef, wire.ReviewRow)), StudyError) {
-  pog.query(
-    "select c.category, c.subcategory, c.title,
-            extract(epoch from r.reviewed_at)::float8, r.rating,
-            r.duration_ms, r.revealed, r.auto_failed, r.state_before,
-            r.scheduled_days, r.stability_after, r.recall
-       from reviews r
-       join cards c on c.id = r.card_id
-      where r.user_id = $1::uuid
-      order by r.reviewed_at, r.id",
-  )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.returning({
-    use category <- decode.field(0, decode.string)
-    use subcategory <- decode.field(1, decode.string)
-    use title <- decode.field(2, decode.string)
-    use at <- decode.field(3, decode.float)
-    use rating <- decode.field(4, decode.int)
-    use duration_ms <- decode.field(5, decode.optional(decode.int))
-    use revealed <- decode.field(6, decode.bool)
-    use auto_failed <- decode.field(7, decode.bool)
-    use state_before <- decode.field(8, decode.int)
-    use scheduled_days <- decode.field(9, decode.int)
-    use stability_after <- decode.field(10, decode.optional(decode.float))
-    use recall <- decode.field(11, decode.bool)
-    let rating = result.unwrap(fsrs.rating_from_int(rating), fsrs.Good)
-    decode.success(#(
-      wire.ProblemRef(category:, subcategory:, title:),
-      wire.ReviewRow(
-        at: fsrs.from_epoch(at),
-        rating:,
-        duration_ms:,
-        revealed:,
-        auto_failed:,
-        state_before:,
-        scheduled_days:,
-        stability_after:,
-        recall:,
+  sql.all_reviews(db, user_id)
+  |> rows(fn(row: sql.AllReviewsRow) {
+    #(
+      wire.ProblemRef(row.category, row.subcategory, row.title),
+      model.review_row(
+        at: row.at,
+        rating: row.rating,
+        duration_ms: row.duration_ms,
+        revealed: row.revealed,
+        auto_failed: row.auto_failed,
+        state_before: row.state_before,
+        scheduled_days: row.scheduled_days,
+        stability_after: row.stability_after,
+        recall: row.recall,
       ),
-    ))
+    )
   })
-  |> pog.execute(db)
-  |> result.map(fn(returned) { returned.rows })
-  |> result.map_error(database_error)
 }
 
 /// Replaces everything the user has with the archive's contents, in one
@@ -82,18 +56,7 @@ pub fn restore(
   archive: wire.Archive,
 ) -> Result(Nil, StudyError) {
   pog.transaction(db, fn(tx) {
-    use _ <- result.try(
-      list.try_each(
-        ["reviews", "cards", "drafts", "notes", "queues"],
-        fn(table) {
-          pog.query("delete from " <> table <> " where user_id = $1::uuid")
-          |> pog.parameter(db.uuid(user_id))
-          |> pog.execute(tx)
-          |> result.replace(Nil)
-          |> result.map_error(database_error)
-        },
-      ),
-    )
+    use _ <- result.try(sql.clear_study_data(tx, user_id) |> done)
     use _ <- result.try(
       list.try_each(archive.cards, fn(card) {
         legacy_import.insert_card(
@@ -116,33 +79,23 @@ pub fn restore(
     use _ <- result.try(
       list.try_each(archive.reviews, fn(entry) {
         let #(problem, row) = entry
-        pog.query(
-          "insert into reviews (
-             user_id, card_id, rating, state_before, reviewed_at,
-             elapsed_days, scheduled_days, stability_after, difficulty_after,
-             duration_ms, auto_failed, revealed, recall)
-           select $1::uuid, id, $5, $6, to_timestamp($7::float8),
-                  0, $8, $9, null, $10, $11, $12, $13
-             from cards
-            where user_id = $1::uuid and category = $2
-              and subcategory = $3 and title = $4",
+        sql.restore_review(
+          tx,
+          user_id,
+          problem.category,
+          problem.subcategory,
+          problem.title,
+          fsrs.rating_to_int(row.rating),
+          row.state_before,
+          fsrs.to_epoch(row.at),
+          row.scheduled_days,
+          nullable(row.stability_after),
+          nullable(row.duration_ms),
+          row.auto_failed,
+          row.revealed,
+          row.recall,
         )
-        |> pog.parameter(db.uuid(user_id))
-        |> pog.parameter(pog.text(problem.category))
-        |> pog.parameter(pog.text(problem.subcategory))
-        |> pog.parameter(pog.text(problem.title))
-        |> pog.parameter(pog.int(fsrs.rating_to_int(row.rating)))
-        |> pog.parameter(pog.int(row.state_before))
-        |> pog.parameter(pog.float(fsrs.to_epoch(row.at)))
-        |> pog.parameter(pog.int(row.scheduled_days))
-        |> pog.parameter(pog.nullable(pog.float, row.stability_after))
-        |> pog.parameter(pog.nullable(pog.int, row.duration_ms))
-        |> pog.parameter(pog.bool(row.auto_failed))
-        |> pog.parameter(pog.bool(row.revealed))
-        |> pog.parameter(pog.bool(row.recall))
-        |> pog.execute(tx)
-        |> result.replace(Nil)
-        |> result.map_error(database_error)
+        |> done
       }),
     )
     use _ <- result.try(
