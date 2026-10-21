@@ -13,7 +13,7 @@ PY_RUNTIME_DIR  := assets/python-runtime/$(BRYTHON_VERSION)
         run logs clean-vendor fsrs-test fsrs-vectors server-dev server-test \
         server-smoke app-test api-fixtures e2e tour serve-dist up down \
         down-clean check-versions check-format wire-test tour-check \
-        tour-vendor tour-report audit
+        tour-vendor tour-report audit sql
 
 # The whole dev stack in one terminal: frontend on :1234, backend on :1637.
 # The app on :1234 points at 127.0.0.1:1637 (ffi.mjs apiBase), so the frontend
@@ -216,6 +216,14 @@ server-test:
 # boundary. Things a unit test cannot reach.
 server-smoke:
 	cd server && ./test/smoke.sh
+
+# Regenerates each server/src/**/sql.gleam from the .sql files beside it
+# (Squirrel), typed against the database server/.env points at. That database
+# must be up and migrated: after adding a migration, boot the server once
+# first. Commit the result; CI runs `squirrel check` and fails on drift.
+sql:
+	@[ -f server/.env ] || { echo "server/.env missing — copy server/.env.example and fill it in"; exit 1; }
+	cd server && set -a && . ./.env; set +a; gleam run -m squirrel
 
 # The Gleam and Brython versions are pinned in eight places that must agree.
 # The Makefile's own variables are the source of truth; this asserts the rest.
