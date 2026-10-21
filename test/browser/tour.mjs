@@ -207,6 +207,7 @@ const freshGuest = async (name = "Python") => {
 const waitForRunnable = async (timeout = 180000) => {
   await page.waitForFunction(
     () => { const b = document.querySelector(".run-button"); return b && !b.disabled; },
+    null,
     { timeout },
   );
 };
@@ -217,7 +218,7 @@ const verdict = async () => {
   await page.waitForFunction(() => {
     const s = document.querySelector(".results-summary");
     return s && !s.classList.contains("running");
-  }, { timeout: 90000 });
+  }, null, { timeout: 90000 });
   await page.waitForTimeout(400);
 };
 
@@ -265,6 +266,7 @@ const openByHand = async (language, subcategory, title) => {
   await page.waitForTimeout(300);
   await page.waitForFunction(
     () => { const b = document.querySelector("#startDrill"); return b && !b.disabled; },
+    null,
     { timeout: 5000 },
   );
   await page.click("#startDrill");
@@ -314,12 +316,12 @@ check("a browser with no preferences lands on the track switcher",
 check("and not on a study screen it has no track for",
   (await page.$(".study-screen")) === null);
 check("every track in the catalogue is offered",
-  (await page.$$(".track-card")).length === 7,
+  (await page.$$(".track-card")).length === 8,
   String((await page.$$(".track-card")).length));
 check("none is pre-selected", (await page.$$(".track-card.current")).length === 0);
 check("each says it has nothing yet, and offers a way to start",
-  (await page.$$(".track-card-empty")).length === 7
-    && (await page.$$(".track-card-starter")).length === 7);
+  (await page.$$(".track-card-empty")).length === 8
+    && (await page.$$(".track-card-starter")).length === 8);
 await capture("tracks-empty", "First run: which track, nothing assumed",
   "Tracks: one at a time, nothing mixed");
 
@@ -725,6 +727,8 @@ await waitForRunnable();
 check("Run and Run tests are both offered",
   (await page.$$(".scratch-button")).length === 1 && (await page.$$(".run-button")).length === 1);
 await setCode("print('scratch', 1 + 1)\n\ndef containsDuplicate(nums):\n    pass\n");
+// The pause button above kept focus, and a focused button keeps its keys.
+await page.evaluate(() => document.activeElement?.blur());
 await page.keyboard.press("r");
 await verdict();
 check("r runs the code alone and reports it ran",
@@ -1805,6 +1809,7 @@ await page.click('.pane-item:text-is("Design a URL shortener")');
 await page.waitForTimeout(300);
 await page.waitForFunction(
   () => { const b = document.querySelector("#startDrill"); return b && !b.disabled; },
+  null,
   { timeout: 5000 },
 );
 await page.click("#startDrill");
@@ -1931,9 +1936,8 @@ await page.evaluate(() => {
   }]));
 });
 await onTrack();
+// The address is /settings, so the reload lands back here.
 await page.reload({ waitUntil: "networkidle" });
-await page.waitForSelector(".study-screen", { timeout: 10000 });
-await page.click('.nav-link:text-is("Settings")');
 await page.waitForSelector(".settings-screen", { timeout: 10000 });
 const [download] = await Promise.all([
   page.waitForEvent("download", { timeout: 10000 }),
@@ -2446,7 +2450,7 @@ check("signing in keeps the study screen up while the account loads",
 await capture("syncing", "Just signed in: study screen stays, sync bar at the top",
   "Signing in no longer blanks the app");
 await page.waitForFunction(() =>
-  document.querySelector(".study-email")?.textContent.includes("@") && !document.querySelector(".sync-bar"),
+  document.querySelector(".study-email")?.textContent.includes("@") && !document.querySelector(".sync-bar"), null,
   { timeout: 25000 });
 await page.unroute("**/api/state*", slow);
 check("signing up signs you in",
@@ -2528,7 +2532,7 @@ await page.fill('input[type="email"]', upgraded);
 await page.fill('input[type="password"]', PASSWORD);
 await page.click(".auth-submit");
 await page.waitForFunction(() =>
-  document.querySelector(".study-email")?.textContent.includes("@") && !document.querySelector(".sync-bar"),
+  document.querySelector(".study-email")?.textContent.includes("@") && !document.querySelector(".sync-bar"), null,
   { timeout: 25000 });
 const offered = await page.isVisible('button:text-is("Merge it")').catch(() => false);
 check("signing in to an existing account offers the merge rather than doing it",
@@ -2581,7 +2585,7 @@ await page.click(".run-button");
 await page.waitForFunction(() => {
   const s = document.querySelector(".results-summary");
   return s && !s.classList.contains("running");
-}, { timeout: 60000 });
+}, null, { timeout: 60000 });
 // A passing run renders the verdict line, not a row per case -- only
 // failures get rows (.case.fail, with expected/got).
 check("the server ran it and every case passed",
@@ -2613,7 +2617,7 @@ await page.click(".run-button");
 await page.waitForFunction(() => {
   const s = document.querySelector(".results-summary");
   return s && !s.classList.contains("running");
-}, { timeout: 60000 });
+}, null, { timeout: 60000 });
 check("the server built and ran it and every case passed",
   (await page.textContent(".results-summary")).includes("4/4 passed")
     && (await page.$$(".case.fail")).length === 0,
@@ -2644,7 +2648,7 @@ await page.click(".run-button");
 await page.waitForFunction(() => {
   const s = document.querySelector(".results-summary");
   return s && !s.classList.contains("running");
-}, { timeout: 60000 });
+}, null, { timeout: 60000 });
 check("ghc built and ran it and every case passed",
   (await page.textContent(".results-summary")).includes("4/4 passed")
     && (await page.$$(".case.fail")).length === 0,
