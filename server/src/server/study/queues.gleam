@@ -1,20 +1,21 @@
 //// Named study queues: validating, loading, replacing and merging them.
 ////
 //// Part of the study data layer; see `server/study/model` for the shared
-//// types.
+//// types. The SQL lives in `queues/sql/*.sql`; `gleam run -m squirrel`
+//// generates `queues/sql.gleam` from it.
 
 import gleam/bool
-import gleam/dynamic/decode
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 import pog
-import server/db
 import server/study/model.{
-  type StudyError, StudyDatabaseError, database_error, flatten_transaction_error,
+  type StudyError, StudyDatabaseError, done, first, flatten_transaction_error,
+  rows,
 }
+import server/study/queues/sql
 import wire
 import youid/uuid.{type Uuid}
 
@@ -69,7 +70,11 @@ pub fn load_queues(
   db: pog.Connection,
   user_id: Uuid,
 ) -> Result(List(wire.Queue), StudyError) {
-  queue_rows(db, user_id, None)
+  sql.all_queues(db, user_id)
+  |> rows(fn(row: sql.AllQueuesRow) {
+    queue_row(row.track, row.name, row.category, row.subcategory, row.title)
+  })
+  |> result.map(group_queues)
 }
 
 /// One track's queues. Names are only unique within a track, so this is what
@@ -79,59 +84,52 @@ pub fn load_queues_in(
   user_id: Uuid,
   track: String,
 ) -> Result(List(wire.Queue), StudyError) {
-  queue_rows(db, user_id, Some(track))
+  sql.queues_in(db, user_id, track)
+  |> rows(fn(row: sql.QueuesInRow) {
+    queue_row(row.track, row.name, row.category, row.subcategory, row.title)
+  })
+  |> result.map(group_queues)
+}
+
+/// One row of the queue listing: its queue, and the problem the left join
+/// found, if the queue has any.
+fn queue_row(
+  track: String,
+  name: String,
+  category: Option(String),
+  subcategory: Option(String),
+  title: Option(String),
+) -> #(String, String, Option(wire.ProblemRef)) {
+  let problem = case category, subcategory, title {
+    Some(category), Some(subcategory), Some(title) ->
+      Some(wire.ProblemRef(category:, subcategory:, title:))
+    _, _, _ -> None
+  }
+  #(track, name, problem)
 }
 
 /// Every queue with its problems in order. One query: a left join so an
-/// empty queue still comes back, chunked afterwards.
-fn queue_rows(
-  db: pog.Connection,
-  user_id: Uuid,
-  track: Option(String),
-) -> Result(List(wire.Queue), StudyError) {
-  pog.query(
-    "select q.name, q.track, i.category, i.subcategory, i.title
-       from queues q
-       left join queue_items i on i.queue_id = q.id
-      where q.user_id = $1::uuid and ($2::text is null or q.track = $2)
-      order by q.position, q.name, i.position",
-  )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.nullable(pog.text, track))
-  |> pog.returning({
-    use name <- decode.field(0, decode.string)
-    use queue_track <- decode.field(1, decode.string)
-    use category <- decode.field(2, decode.optional(decode.string))
-    use subcategory <- decode.field(3, decode.optional(decode.string))
-    use title <- decode.field(4, decode.optional(decode.string))
-    let problem = case category, subcategory, title {
-      Some(category), Some(subcategory), Some(title) ->
-        Some(wire.ProblemRef(category:, subcategory:, title:))
-      _, _, _ -> None
+/// empty queue still comes back, chunked here afterwards.
+fn group_queues(
+  rows: List(#(String, String, Option(wire.ProblemRef))),
+) -> List(wire.Queue) {
+  rows
+  // By (track, name), not name: the same name in two tracks is two lists,
+  // and chunking on the name alone would fuse them.
+  |> list.chunk(fn(row) { #(row.0, row.1) })
+  |> list.filter_map(fn(rows) {
+    case rows {
+      [#(track, name, _), ..] ->
+        Ok(wire.Queue(
+          track:,
+          name:,
+          problems: list.filter_map(rows, fn(row) {
+            option.to_result(row.2, Nil)
+          }),
+        ))
+      [] -> Error(Nil)
     }
-    decode.success(#(queue_track, name, problem))
   })
-  |> pog.execute(db)
-  |> result.map(fn(returned) {
-    returned.rows
-    // By (track, name), not name: the same name in two tracks is two lists,
-    // and chunking on the name alone would fuse them.
-    |> list.chunk(fn(row) { #(row.0, row.1) })
-    |> list.filter_map(fn(rows) {
-      case rows {
-        [#(track, name, _), ..] ->
-          Ok(wire.Queue(
-            track:,
-            name:,
-            problems: list.filter_map(rows, fn(row) {
-              option.to_result(row.2, Nil)
-            }),
-          ))
-        [] -> Error(Nil)
-      }
-    })
-  })
-  |> result.map_error(database_error)
 }
 
 /// The client owns one track's set and sends it whole: that track's queues
@@ -159,14 +157,7 @@ fn write_queues_in(
   track: String,
   queues: List(wire.Queue),
 ) -> Result(Nil, StudyError) {
-  use _ <- result.try(
-    pog.query("delete from queues where user_id = $1::uuid and track = $2")
-    |> pog.parameter(db.uuid(user_id))
-    |> pog.parameter(pog.text(track))
-    |> pog.execute(tx)
-    |> result.replace(Nil)
-    |> result.map_error(database_error),
-  )
+  use _ <- result.try(sql.delete_queues_in(tx, user_id, track) |> done)
   insert_queues(tx, user_id, queues)
 }
 
@@ -177,13 +168,7 @@ pub fn write_all_queues(
   user_id: Uuid,
   queues: List(wire.Queue),
 ) -> Result(Nil, StudyError) {
-  use _ <- result.try(
-    pog.query("delete from queues where user_id = $1::uuid")
-    |> pog.parameter(db.uuid(user_id))
-    |> pog.execute(tx)
-    |> result.replace(Nil)
-    |> result.map_error(database_error),
-  )
+  use _ <- result.try(sql.delete_all_queues(tx, user_id) |> done)
   insert_queues(tx, user_id, queues)
 }
 
@@ -196,46 +181,28 @@ fn insert_queues(
   |> list.index_map(fn(queue, position) { #(queue, position) })
   |> list.try_each(fn(entry) {
     let #(queue, position) = entry
-    use returned <- result.try(
-      pog.query(
-        "insert into queues (user_id, name, position, track)
-         values ($1::uuid, $2, $3, $4) returning id::text",
+    use id <- result.try(
+      sql.insert_queue(
+        tx,
+        user_id,
+        string.trim(queue.name),
+        position,
+        queue.track,
       )
-      |> pog.parameter(db.uuid(user_id))
-      |> pog.parameter(pog.text(string.trim(queue.name)))
-      |> pog.parameter(pog.int(position))
-      |> pog.parameter(pog.text(queue.track))
-      |> pog.returning(decode.at([0], decode.string))
-      |> pog.execute(tx)
-      |> result.map_error(database_error),
+      |> first(fn(row: sql.InsertQueueRow) { row.id }),
     )
-    case returned.rows, queue.problems {
+    case id, queue.problems {
       _, [] -> Ok(Nil)
-      [id], problems ->
-        pog.query(
-          "insert into queue_items (queue_id, category, subcategory, title, position)
-           select $1::uuid, category, subcategory, title, ordinality
-             from unnest($2::text[], $3::text[], $4::text[])
-             with ordinality as t(category, subcategory, title, ordinality)
-           on conflict do nothing",
-        )
-        |> pog.parameter(pog.text(id))
-        |> pog.parameter(pog.array(
-          pog.text,
+      Some(id), problems ->
+        sql.insert_queue_items(
+          tx,
+          id,
           list.map(problems, fn(ref) { ref.category }),
-        ))
-        |> pog.parameter(pog.array(
-          pog.text,
           list.map(problems, fn(ref) { ref.subcategory }),
-        ))
-        |> pog.parameter(pog.array(
-          pog.text,
           list.map(problems, fn(ref) { ref.title }),
-        ))
-        |> pog.execute(tx)
-        |> result.replace(Nil)
-        |> result.map_error(database_error)
-      _, _ -> Error(StudyDatabaseError("queue insert returned no id"))
+        )
+        |> done
+      None, _ -> Error(StudyDatabaseError("queue insert returned no id"))
     }
   })
 }
