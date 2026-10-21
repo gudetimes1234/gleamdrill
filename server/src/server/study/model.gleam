@@ -11,6 +11,7 @@
 import fsrs
 import gleam/list
 import gleam/option.{type Option}
+import gleam/result
 import gleam/string
 import gleam/time/timestamp.{type Timestamp}
 import pog
@@ -41,6 +42,35 @@ pub fn to_state(record: CardRecord) -> wire.CardState {
     lapses: record.lapses,
     suspended: record.suspended,
     introduced_at: record.introduced_at,
+  )
+}
+
+/// One review-log row in the wire format, from its columns. Both readers of
+/// the log -- a problem's timeline and the archive -- select the same nine,
+/// and their generated rows are distinct types, so they meet here.
+pub fn review_row(
+  at at: Float,
+  rating rating: Int,
+  duration_ms duration_ms: Option(Int),
+  revealed revealed: Bool,
+  auto_failed auto_failed: Bool,
+  state_before state_before: Int,
+  scheduled_days scheduled_days: Int,
+  stability_after stability_after: Option(Float),
+  recall recall: Bool,
+) -> wire.ReviewRow {
+  wire.ReviewRow(
+    at: fsrs.from_epoch(at),
+    // The column is constrained to 1-4 by the insert; `Good` is unreachable
+    // rather than a guess.
+    rating: result.unwrap(fsrs.rating_from_int(rating), fsrs.Good),
+    duration_ms:,
+    revealed:,
+    auto_failed:,
+    state_before:,
+    scheduled_days:,
+    stability_after:,
+    recall:,
   )
 }
 
