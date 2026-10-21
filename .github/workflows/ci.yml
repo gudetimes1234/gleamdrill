@@ -45,34 +45,10 @@ jobs:
       - name: Version pins agree
         run: make check-versions
 
-      # Hex allows an address so many unauthenticated API calls a minute, and
-      # a cold resolve of all four projects on a shared runner address can go
-      # over it. The cache means a usual run resolves nothing; on a miss, each
-      # project retries after the window resets.
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/gleam
-            build/packages
-            drills/build/packages
-            fsrs/build/packages
-            wire/build/packages
-          key: gleam-${{ hashFiles('manifest.toml', 'drills/manifest.toml', 'fsrs/manifest.toml', 'wire/manifest.toml') }}
-
-      - name: Gleam packages
-        run: |
-          for dir in . drills fsrs wire; do
-            for attempt in 1 2 3; do
-              (cd "$dir" && gleam deps download) && break
-              if [ "$attempt" = 3 ]; then exit 1; fi
-              echo "waiting out the Hex rate limit"; sleep 65
-            done
-          done
-
       # The real integration check: regenerates the embedded drill content,
       # bundles the three workers, then builds the app.
       - name: Build
-        run: make build
+        run: tools/hex_retry.sh make build
 
       # `dist/` is not committed -- the web image builds it -- so there is
       # nothing to check for staleness there. The embedded drill modules ARE
@@ -94,17 +70,17 @@ jobs:
       # The scheduler is shared by the server and the app, so it is tested on
       # both targets. Identical results are what licenses sharing one module.
       - name: Scheduler tests
-        run: make fsrs-test
+        run: tools/hex_retry.sh make fsrs-test
 
       # The wire format is shared the same way. Every payload round-trips
       # through its own encoder and decoder, on both targets.
       - name: Wire format tests
-        run: make wire-test
+        run: tools/hex_retry.sh make wire-test
 
       # The app's unit tests: decoders against captured server responses,
       # plus the pure modules.
       - name: App tests
-        run: make app-test
+        run: tools/hex_retry.sh make app-test
 
   # Nothing here ran in CI before: the backend was never so much as
   # type-checked. It holds every account and enforces the grading rule, so it
@@ -183,10 +159,10 @@ jobs:
       # The app half of the tree is not built here, but `server` path-depends
       # on ../fsrs and ../wire, which is why the whole repo is checked out.
       - name: Build
-        run: cd server && gleam build
+        run: cd server && ../tools/hex_retry.sh gleam build
 
       - name: Unit tests
-        run: make server-test
+        run: tools/hex_retry.sh make server-test
 
       # Migrations run on boot, so starting the server is itself the migration
       # test. Backgrounded, then waited on rather than slept.
@@ -213,7 +189,7 @@ jobs:
       # just migrated. A diff means a .sql file changed without `make sql`, or
       # a migration moved the schema out from under a generated module.
       - name: Generated SQL is current
-        run: cd server && gleam run -m squirrel check
+        run: cd server && ../tools/hex_retry.sh gleam run -m squirrel check
 
       - name: Server log
         if: failure()
