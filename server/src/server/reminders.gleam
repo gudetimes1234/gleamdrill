@@ -7,8 +7,10 @@
 //// mail goes out and dropped if sending fails, so a restart mid-tick, or a
 //// second instance, cannot send the same day's mail twice, and a failed
 //// send is retried on the next tick.
+////
+//// The SQL lives in `reminders/sql/*.sql`; `gleam run -m squirrel`
+//// generates `reminders/sql.gleam` from it.
 
-import gleam/dynamic/decode
 import gleam/erlang/process
 import gleam/http
 import gleam/http/request
@@ -23,7 +25,7 @@ import gleam/result
 import gleam/string
 import pog
 import server/config.{type Config}
-import server/db
+import server/reminders/sql
 import wisp
 import youid/uuid.{type Uuid}
 
@@ -117,62 +119,24 @@ pub fn tick(db: pog.Connection, config: Config, key: String) -> Nil {
 /// Users whose reminder hour is the current hour of their own day, who
 /// have not had today's mail, and who have something due.
 pub fn due_now(db: pog.Connection) -> Result(List(Reminder), String) {
-  pog.query(
-    "select id, email, day, due from (
-       select u.id::text as id, u.email,
-              (now() at time zone s.timezone)::date::text as day,
-              (select count(*) from cards c
-                where c.user_id = u.id and not c.suspended
-                  and c.reps > 0 and c.due <= now())::int as due
-         from users u
-         join settings s on s.user_id = u.id
-        where s.reminder_hour is not null
-          and extract(hour from now() at time zone s.timezone)::int
-              = s.reminder_hour
-          and not exists (
-            select 1 from reminders_sent r
-             where r.user_id = u.id
-               and r.day = (now() at time zone s.timezone)::date)
-     ) owed
-     where due > 0",
-  )
-  |> pog.returning({
-    use user_id <- decode.field(0, db.uuid_decoder())
-    use email <- decode.field(1, decode.string)
-    use day <- decode.field(2, decode.string)
-    use due <- decode.field(3, decode.int)
-    decode.success(Reminder(user_id:, email:, day:, due:))
+  sql.owed_reminders(db)
+  |> result.map(fn(returned) {
+    list.map(returned.rows, fn(row: sql.OwedRemindersRow) {
+      Reminder(user_id: row.id, email: row.email, day: row.day, due: row.due)
+    })
   })
-  |> pog.execute(db)
-  |> result.map(fn(returned) { returned.rows })
   |> result.map_error(describe)
 }
 
 /// True when this call took the day's slot; False when it was taken.
 fn claim(db: pog.Connection, reminder: Reminder) -> Result(Bool, String) {
-  pog.query(
-    // The day travels as text: pog types a `$n::date` parameter as a date
-    // and refuses a string for it, so the cast happens on the SQL side.
-    "insert into reminders_sent (user_id, day)
-     values ($1::uuid, to_date($2::text, 'YYYY-MM-DD'))
-     on conflict (user_id, day) do nothing",
-  )
-  |> pog.parameter(db.uuid(reminder.user_id))
-  |> pog.parameter(pog.text(reminder.day))
-  |> pog.execute(db)
+  sql.claim_reminder(db, reminder.user_id, reminder.day)
   |> result.map(fn(returned) { returned.count == 1 })
   |> result.map_error(describe)
 }
 
 fn release(db: pog.Connection, reminder: Reminder) -> Nil {
-  let _ =
-    pog.query(
-      "delete from reminders_sent
-        where user_id = $1::uuid and day = to_date($2::text, 'YYYY-MM-DD')",
-    )
-    |> pog.parameter(db.uuid(reminder.user_id))
-    |> pog.parameter(pog.text(reminder.day))
-    |> pog.execute(db)
+  let _ = sql.release_reminder(db, reminder.user_id, reminder.day)
   Nil
 }
 
