@@ -1,15 +1,16 @@
 //// Statistics: totals, history, streaks and the due forecast.
 ////
 //// Part of the study data layer; see `server/study/model` for the shared
-//// types.
+//// types. The SQL lives in `stats/sql/*.sql`; `gleam run -m squirrel`
+//// generates `stats/sql.gleam` from it.
 
-import gleam/dynamic/decode
 import gleam/int
 import gleam/list
+import gleam/option
 import gleam/result
 import pog
-import server/db
-import server/study/model.{type StudyError, database_error}
+import server/study/model.{type StudyError, first, rows}
+import server/study/stats/sql
 import wire
 import youid/uuid.{type Uuid}
 
@@ -77,30 +78,11 @@ fn review_totals(
   user_id: Uuid,
   track: String,
 ) -> Result(#(Int, Int, Int), StudyError) {
-  pog.query(
-    "select
-       (select count(*) from reviews r join cards c on c.id = r.card_id
-         where r.user_id = $1::uuid and c.category = $2)::int,
-       (select count(*) from reviews r join cards c on c.id = r.card_id
-         where r.user_id = $1::uuid and c.category = $2
-           and r.state_before = 2)::int,
-       (select count(*) from reviews r join cards c on c.id = r.card_id
-         where r.user_id = $1::uuid and c.category = $2
-           and r.state_before = 2 and r.rating > 1)::int",
-  )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.text(track))
-  |> pog.returning({
-    use total <- decode.field(0, decode.int)
-    use mature <- decode.field(1, decode.int)
-    use correct <- decode.field(2, decode.int)
-    decode.success(#(total, mature, correct))
+  sql.review_totals(db, user_id, track)
+  |> first(fn(row: sql.ReviewTotalsRow) {
+    #(row.total, row.mature, row.correct)
   })
-  |> pog.execute(db)
-  |> result.map_error(database_error)
-  |> result.map(fn(returned) {
-    list.first(returned.rows) |> result.unwrap(#(0, 0, 0))
-  })
+  |> result.map(option.unwrap(_, #(0, 0, 0)))
 }
 
 fn state_counts(
@@ -108,21 +90,8 @@ fn state_counts(
   user_id: Uuid,
   track: String,
 ) -> Result(List(#(Int, Int)), StudyError) {
-  pog.query(
-    "select state, count(*)::int from cards
-      where user_id = $1::uuid and category = $2
-      group by state order by state",
-  )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.text(track))
-  |> pog.returning({
-    use state <- decode.field(0, decode.int)
-    use count <- decode.field(1, decode.int)
-    decode.success(#(state, count))
-  })
-  |> pog.execute(db)
-  |> result.map(fn(returned) { returned.rows })
-  |> result.map_error(database_error)
+  sql.state_counts(db, user_id, track)
+  |> rows(fn(row: sql.StateCountsRow) { #(row.state, row.count) })
 }
 
 fn review_history(
@@ -131,35 +100,20 @@ fn review_history(
   track: String,
   account: wire.AccountSettings,
 ) -> Result(List(wire.DayTally), StudyError) {
-  pog.query(
-    "with study_day as (
-       select date_trunc('day', (now() at time zone $2) - make_interval(hours => $3))::date as today
-     )
-     select (select today from study_day)
-            - date_trunc('day', (reviewed_at at time zone $2)
-                                - make_interval(hours => $3))::date,
-            count(*)::int,
-            count(*) filter (where r.rating > 1)::int
-       from reviews r
-       join cards c on c.id = r.card_id
-      where r.user_id = $1::uuid and c.category = $4
-        and r.reviewed_at >= now() - interval '365 days'
-      group by 1
-      order by 1",
+  sql.review_history(
+    db,
+    user_id,
+    account.timezone,
+    account.day_start_hour,
+    track,
   )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.text(account.timezone))
-  |> pog.parameter(pog.int(account.day_start_hour))
-  |> pog.parameter(pog.text(track))
-  |> pog.returning({
-    use days_ago <- decode.field(0, decode.int)
-    use total <- decode.field(1, decode.int)
-    use correct <- decode.field(2, decode.int)
-    decode.success(wire.DayTally(days_ago:, total:, correct:))
+  |> rows(fn(row: sql.ReviewHistoryRow) {
+    wire.DayTally(
+      days_ago: row.days_ago,
+      total: row.total,
+      correct: row.correct,
+    )
   })
-  |> pog.execute(db)
-  |> result.map(fn(returned) { returned.rows })
-  |> result.map_error(database_error)
 }
 
 fn due_forecast(
@@ -168,34 +122,6 @@ fn due_forecast(
   track: String,
   account: wire.AccountSettings,
 ) -> Result(List(#(Int, Int)), StudyError) {
-  pog.query(
-    "with study_day as (
-       select date_trunc('day', (now() at time zone $2) - make_interval(hours => $3))::date as today
-     )
-     select greatest(
-              0,
-              date_trunc('day', (due at time zone $2)
-                                - make_interval(hours => $3))::date
-              - (select today from study_day)
-            ),
-            count(*)::int
-       from cards
-      where user_id = $1::uuid and category = $4
-        and not suspended
-        and due < now() + interval '30 days'
-      group by 1
-      order by 1",
-  )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.text(account.timezone))
-  |> pog.parameter(pog.int(account.day_start_hour))
-  |> pog.parameter(pog.text(track))
-  |> pog.returning({
-    use offset <- decode.field(0, decode.int)
-    use count <- decode.field(1, decode.int)
-    decode.success(#(offset, count))
-  })
-  |> pog.execute(db)
-  |> result.map(fn(returned) { returned.rows })
-  |> result.map_error(database_error)
+  sql.due_forecast(db, user_id, account.timezone, account.day_start_hour, track)
+  |> rows(fn(row: sql.DueForecastRow) { #(row.days_ahead, row.count) })
 }
