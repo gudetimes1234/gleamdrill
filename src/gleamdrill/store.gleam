@@ -14,6 +14,7 @@
 import gleam/dict
 import gleam/int
 import gleam/list
+import gleam/option.{type Option, None, Some}
 import gleam/order
 import gleam/result
 import gleam/string
@@ -21,6 +22,7 @@ import gleam/time/timestamp
 import gleamdrill/api
 import gleamdrill/browser
 import gleamdrill/guest
+import gleamdrill/legacy
 import gleamdrill/local
 import gleamdrill/model.{type Model, type UndoPoint, Account, Guest}
 import gleamdrill/msg.{
@@ -30,6 +32,7 @@ import gleamdrill/msg.{
 }
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/remote
+import gleamdrill/session
 import lustre/effect.{type Effect}
 import wire
 
@@ -504,6 +507,136 @@ pub fn upgrade(
 pub fn clear_guest() -> Effect(Msg) {
   use _dispatch <- effect.from
   local.clear()
+}
+
+// --- the session, the device and the legacy blob -----------------------------
+//
+// Thin doors, not modes: nothing below branches on `Model.mode`. They exist
+// so update modules and the entrypoint reach api, session, legacy and local
+// through this one module -- the import gate the reorg promised.
+
+pub fn login(
+  email: String,
+  password: String,
+  to: fn(Result(wire.Session, remote.ApiError)) -> Msg,
+) -> Effect(Msg) {
+  api.login(base(), email, password, to)
+}
+
+/// Sign-up carries the device timezone, so the server's study day starts
+/// where the user is, not at UTC midnight.
+pub fn signup(
+  email: String,
+  password: String,
+  to: fn(Result(wire.Session, remote.ApiError)) -> Msg,
+) -> Effect(Msg) {
+  api.signup(base(), email, password, browser.time_zone(), to)
+}
+
+pub fn log_out(
+  token: String,
+  to: fn(Result(Nil, remote.ApiError)) -> Msg,
+) -> Effect(Msg) {
+  api.logout(base(), token, to)
+}
+
+pub fn save_token(token: String) -> Effect(Msg) {
+  session.save_token(token)
+}
+
+pub fn clear_token() -> Effect(Msg) {
+  session.clear_token()
+}
+
+pub fn load_token() -> Option(String) {
+  session.load_token()
+}
+
+pub fn load_preferences() -> session.Preferences {
+  session.load_preferences()
+}
+
+pub fn migrate_storage_keys() -> Nil {
+  session.migrate_storage_keys()
+}
+
+/// Persist the settings that belong to this browser rather than the account.
+/// Written whole every time, so every caller must pass a model that already
+/// holds the change it wants saved.
+pub fn save_device_preferences(m: Model) -> Effect(Msg) {
+  session.save_preferences(session.Preferences(
+    editor_keymap: m.editor_keymap,
+    editor_height: m.editor_height,
+    prompt_open: m.prompt_open,
+    tour_lesson: m.tour_lesson,
+    active_track: case m.active_track {
+      "" -> None
+      name -> Some(name)
+    },
+    // The model holds the active track's queue; the rest of the map is left
+    // exactly as it was, so switching away does not forget where you were in
+    // the track you came from.
+    active_queue: model.remembered_queues(m),
+  ))
+}
+
+pub fn legacy_pending() -> Option(legacy.Legacy) {
+  legacy.pending()
+}
+
+pub fn legacy_is_empty(old: legacy.Legacy) -> Bool {
+  legacy.is_empty(old)
+}
+
+pub fn mark_legacy_imported() -> Effect(Msg) {
+  legacy.mark_imported()
+}
+
+/// The account-side legacy import: solved refs and drafts straight up, with
+/// none of the guest store's cards, notes or queues.
+pub fn import_legacy(
+  token: String,
+  old: legacy.Legacy,
+  to: fn(Result(Nil, remote.ApiError)) -> Msg,
+) -> Effect(Msg) {
+  api.import_legacy(base(), token, old.solved, [], old.drafts, [], [], to)
+}
+
+/// The guest-side adoption: the pre-account blob seeds the guest store in
+/// this browser, nothing goes to any server.
+pub fn adopt_legacy_locally(old: legacy.Legacy) -> Effect(Msg) {
+  use _dispatch <- effect.from
+  local.seed_from_legacy(old.solved, old.drafts)
+  Nil
+}
+
+/// True when this browser holds guest progress worth migrating.
+pub fn guest_has_data() -> Bool {
+  local.has_data()
+}
+
+/// Whether the stronger upgrade prompt is owed, from the stored thresholds
+/// and the shown-once flag.
+pub fn upgrade_prompt_state(
+  account: wire.AccountSettings,
+) -> model.UpgradePrompt {
+  local.prompt_state(local.current_day(account))
+}
+
+pub fn dismiss_upgrade_prompt() -> Effect(Msg) {
+  use _dispatch <- effect.from
+  let _ = local.dismiss_prompt()
+  Nil
+}
+
+/// One remote run posted to the server. Not mode-dispatched -- the caller
+/// already knows only an account can run server-side languages.
+pub fn post_run(
+  token: String,
+  request: wire.RunRequest,
+  to: fn(Result(wire.RunResult, remote.ApiError)) -> Msg,
+) -> Effect(Msg) {
+  api.post_run(base(), token, request, to)
 }
 
 /// The scheduler takes its fuzz sample as an argument so it can stay pure.

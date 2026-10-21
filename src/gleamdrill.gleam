@@ -5,7 +5,6 @@ import gleamdrill/browser
 import gleamdrill/editor
 import gleamdrill/model.{type Model, Account, Guest, Model, Syncing}
 import gleamdrill/msg.{type Msg}
-import gleamdrill/session
 import gleamdrill/store
 import gleamdrill/update
 import gleamdrill/update/common
@@ -23,8 +22,8 @@ pub fn main() {
 }
 
 fn init(_flags) -> #(Model, Effect(Msg)) {
-  session.migrate_storage_keys()
-  let preferences = session.load_preferences()
+  store.migrate_storage_keys()
+  let preferences = store.load_preferences()
   let base = model.default()
   let m =
     Model(
@@ -48,7 +47,7 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
       },
     )
 
-  case session.load_token() {
+  case store.load_token() {
     // Signed in: study state lives on the server, so there is nothing to
     // restore from disk and we block on fetching it.
     Some(token) -> {

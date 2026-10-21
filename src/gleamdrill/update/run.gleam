@@ -4,7 +4,6 @@
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
-import gleamdrill/api
 import gleamdrill/browser
 import gleamdrill/model.{
   type Model, Account, AwaitingGrade, CaseResult, Cases, DrillRoute, Errored,
@@ -14,6 +13,7 @@ import gleamdrill/model.{
 import gleamdrill/msg.{type Msg, CacheWarmed, RemoteRunFinished}
 import gleamdrill/remote.{type ApiError}
 import gleamdrill/runner
+import gleamdrill/store
 import gleamdrill/update/common
 import lustre/effect.{type Effect}
 import wire
@@ -318,8 +318,7 @@ fn start_run(
     True, Account(token) -> #(
       started,
       effect.batch([
-        api.post_run(
-          common.api_base(),
+        store.post_run(
           token,
           wire.RunRequest(language, m.draft, harness),
           RemoteRunFinished(id, _),

@@ -7,10 +7,7 @@ import gleam/float
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
-import gleamdrill/api
 import gleamdrill/browser
-import gleamdrill/legacy
-import gleamdrill/local
 import gleamdrill/model.{
   type Model, Account, AuthForm, AuthRoute, DayStartHour, DesiredRetention,
   Guest, Model, NewPerDay, PromptDismissed, Registering, ReminderHour,
@@ -18,7 +15,6 @@ import gleamdrill/model.{
 }
 import gleamdrill/msg.{type Msg, AuthCompleted, SignOutCompleted, StateImported}
 import gleamdrill/remote.{type ApiError}
-import gleamdrill/session
 import gleamdrill/store
 import gleamdrill/update/common
 import lustre/effect.{type Effect}
@@ -70,16 +66,8 @@ pub fn submit_auth(m: Model) -> #(Model, Effect(Msg)) {
     False, email, password -> #(
       Model(..m, auth: AuthForm(..m.auth, busy: True, error: None)),
       case m.auth.mode {
-        SigningIn ->
-          api.login(common.api_base(), email, password, AuthCompleted)
-        Registering ->
-          api.signup(
-            common.api_base(),
-            email,
-            password,
-            browser.time_zone(),
-            AuthCompleted,
-          )
+        SigningIn -> store.login(email, password, AuthCompleted)
+        Registering -> store.signup(email, password, AuthCompleted)
       },
     )
   }
@@ -121,7 +109,7 @@ pub fn auth_completed(
           merge_offer: !upgrading && common.guest_has_progress(),
         ),
         effect.batch([
-          session.save_token(session.token),
+          store.save_token(session.token),
           case upgrading {
             True -> store.upgrade(session.token, [], StateImported)
             False -> store.load_state(signed_in)
@@ -169,32 +157,23 @@ pub fn state_loaded(
       // slow round trip delays a tile and not the first paint.
       let dashboard =
         effect.batch([store.load_stats(loaded), store.load_insights(loaded)])
-      case m.mode, legacy.pending() {
+      case m.mode, store.legacy_pending() {
         // A guest adopts the pre-account blob locally at boot instead; there
         // is nothing to send anywhere.
         Guest, _ | _, None -> #(loaded, effect.batch([dashboard, remembered]))
         Account(token), Some(old) ->
-          case legacy.is_empty(old) {
+          case store.legacy_is_empty(old) {
             True -> #(
               loaded,
-              effect.batch([dashboard, remembered, legacy.mark_imported()]),
+              effect.batch([dashboard, remembered, store.mark_legacy_imported()]),
             )
             False -> #(
               loaded,
               effect.batch([
                 dashboard,
                 remembered,
-                api.import_legacy(
-                  common.api_base(),
-                  token,
-                  old.solved,
-                  [],
-                  old.drafts,
-                  [],
-                  [],
-                  StateImported,
-                ),
-                legacy.mark_imported(),
+                store.import_legacy(token, old, StateImported),
+                store.mark_legacy_imported(),
               ]),
             )
           }
@@ -216,7 +195,7 @@ pub fn state_loaded(
           boot: m.boot,
           refreshing: True,
         )
-      #(guest, effect.batch([session.clear_token(), store.load_state(guest)]))
+      #(guest, effect.batch([store.clear_token(), store.load_state(guest)]))
     }
     Error(failure) ->
       case m.boot {
@@ -298,8 +277,8 @@ pub fn sign_out(m: Model) -> #(Model, Effect(Msg)) {
     #(
       signed_out,
       effect.batch([
-        api.logout(common.api_base(), common.token(m), SignOutCompleted),
-        session.clear_token(),
+        store.log_out(common.token(m), SignOutCompleted),
+        store.clear_token(),
         // Back to guest rather than to a sign-in wall. The guest store was
         // cleared on upgrade, so this loads empty.
         store.load_state(signed_out),
@@ -309,7 +288,7 @@ pub fn sign_out(m: Model) -> #(Model, Effect(Msg)) {
 }
 
 pub fn dismiss_upgrade_prompt(m: Model) -> #(Model, Effect(Msg)) {
-  #(Model(..m, upgrade_prompt: PromptDismissed), local_dismiss_prompt())
+  #(Model(..m, upgrade_prompt: PromptDismissed), store.dismiss_upgrade_prompt())
 }
 
 pub fn sign_in(m: Model, mode: model.AuthMode) -> #(Model, Effect(Msg)) {
@@ -366,24 +345,14 @@ pub fn settings_saved(
 /// answer earns -- the same seed the server uses for this migration, because
 /// the old format recorded a sticky boolean and no dates at all.
 pub fn adopt_legacy() -> Effect(Msg) {
-  case legacy.pending() {
+  case store.legacy_pending() {
     None -> effect.none()
     Some(old) ->
-      case legacy.is_empty(old) {
-        True -> legacy.mark_imported()
-        False -> {
-          use _dispatch <- effect.from
-          local.seed_from_legacy(old.solved, old.drafts)
-          Nil
-        }
+      case store.legacy_is_empty(old) {
+        True -> store.mark_legacy_imported()
+        False -> store.adopt_legacy_locally(old)
       }
   }
-}
-
-fn local_dismiss_prompt() -> Effect(Msg) {
-  use _dispatch <- effect.from
-  let _ = local.dismiss_prompt()
-  Nil
 }
 
 /// Folds a fresh `/api/state` into the model.

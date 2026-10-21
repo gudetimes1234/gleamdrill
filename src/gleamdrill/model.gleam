@@ -772,6 +772,20 @@ pub fn run_failed(run: RunState) -> Bool {
   }
 }
 
+/// The per-track queue map as it should be persisted: every other track's
+/// remembered queue untouched, the active track's entry replaced by what is
+/// active now (or dropped when nothing is).
+pub fn remembered_queues(model: Model) -> List(#(String, String)) {
+  let others =
+    list.filter(model.remembered_queues, fn(entry) {
+      entry.0 != model.active_track
+    })
+  case model.active_queue {
+    Some(name) -> [#(model.active_track, name), ..others]
+    None -> others
+  }
+}
+
 /// Milliseconds the current problem has been open, with paused time taken
 /// out. `now_ms` is passed in rather than read from a clock so the view can
 /// hand it `model.now_ms` and the update loop `browser.now_ms()`, and both

@@ -9,7 +9,6 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
 import gleamdrill/browser
-import gleamdrill/local
 import gleamdrill/model.{
   type Model, Account, Guest, Model, PromptDismissed, Ran, Running, RuntimeReady,
   TourLesson, TourRoute,
@@ -18,7 +17,7 @@ import gleamdrill/msg.{type Msg}
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
 import gleamdrill/runner
-import gleamdrill/session
+import gleamdrill/store
 import gleamdrill/tour
 import gleamdrill/track
 import gleamdrill/walk
@@ -99,33 +98,8 @@ pub fn token(m: Model) -> String {
 /// The language whose runtime the screen on the way in will need, if any: a
 /// checkable drill's, or Gleam's for a tour lesson.
 /// Persist the settings that belong to this browser rather than the account.
-///
-/// Written whole every time, so every caller must pass a model.model that already
-/// holds the change it wants saved.
 pub fn save_preferences(m: Model) -> Effect(Msg) {
-  session.save_preferences(session.Preferences(
-    editor_keymap: m.editor_keymap,
-    editor_height: m.editor_height,
-    prompt_open: m.prompt_open,
-    tour_lesson: m.tour_lesson,
-    active_track: case m.active_track {
-      "" -> None
-      name -> Some(name)
-    },
-    // The model.model holds the active model.track's queue; the rest of the map is left
-    // exactly as it was, so switching away does not forget where you were in
-    // the model.track you came from.
-    active_queue: remembered_queues(m),
-  ))
-}
-
-pub fn remembered_queues(m: Model) -> List(#(String, String)) {
-  let others =
-    list.filter(m.remembered_queues, fn(entry) { entry.0 != m.active_track })
-  case m.active_queue {
-    Some(name) -> [#(m.active_track, name), ..others]
-    None -> others
-  }
+  store.save_device_preferences(m)
 }
 
 pub fn current_problem(m: Model) -> Result(problem.Problem, Nil) {
@@ -223,7 +197,7 @@ pub fn with_prefetch(pair: #(Model, Effect(Msg))) -> #(Model, Effect(Msg)) {
 /// run's output is carried into the model.Running state so the pane can keep
 /// showing it, dimmed, until the new result lands.
 pub fn guest_has_progress() -> Bool {
-  local.has_data()
+  store.guest_has_data()
 }
 
 pub fn draft_for(m: Model, ref: ProblemRef) -> String {
@@ -630,7 +604,7 @@ pub fn current_quiz(m: Model) -> Result(problem.Quiz, Nil) {
 pub fn escalate(m: Model) -> model.UpgradePrompt {
   case m.mode, m.upgrade_prompt {
     Guest, PromptDismissed -> PromptDismissed
-    Guest, _ -> local.prompt_state(local.current_day(m.account))
+    Guest, _ -> store.upgrade_prompt_state(m.account)
     _, current -> current
   }
 }
