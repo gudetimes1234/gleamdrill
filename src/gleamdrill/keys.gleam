@@ -44,128 +44,141 @@ import gleamdrill/msg.{
 }
 import gleamdrill/ui/binding.{type Binding, Binding}
 
-/// The bindings live in this context, in the order the status bar shows them.
+/// The bindings live in this context, in the order the status bar shows them:
+/// an overlay's, when one is up, else the screen's.
 pub fn bindings(m: Model) -> List(Binding(Msg)) {
+  case overlay(m) {
+    Ok(rows) -> rows
+    Error(Nil) -> screen(m)
+  }
+}
+
+/// The rows of whatever overlay owns the keyboard right now, if any.
+pub fn overlay(m: Model) -> Result(List(Binding(Msg)), Nil) {
   case m.help_open, m.exit_prompt, m.import_pending {
     // While the cheatsheet is up it owns the keyboard.
-    True, _, _ -> [
-      Binding(["Escape", "?"], "close", "Close this cheatsheet", HelpToggled),
-    ]
+    True, _, _ ->
+      Ok([
+        Binding(["Escape", "?"], "close", "Close this cheatsheet", HelpToggled),
+      ])
     // So does the exit prompt: Enter leaves, Escape stays.
-    False, Some(_), _ -> [
-      Binding(["Enter"], "leave", "Leave the drill", ExitConfirmed(True)),
-      Binding(["Escape"], "stay", "Stay in the drill", ExitConfirmed(False)),
-    ]
+    False, Some(_), _ ->
+      Ok([
+        Binding(["Enter"], "leave", "Leave the drill", ExitConfirmed(True)),
+        Binding(["Escape"], "stay", "Stay in the drill", ExitConfirmed(False)),
+      ])
     // And the import question, the same way round: Escape keeps yours.
-    False, None, Some(_) -> [
-      Binding(["Enter"], "replace", "Replace everything", ImportConfirmed(True)),
-      Binding(["Escape"], "keep", "Keep what is here", ImportConfirmed(False)),
-    ]
-    False, None, None ->
-      case m.route {
-        StudyRoute -> study_bindings(m)
-        MenuRoute -> menu_bindings(m)
-        DrillRoute -> drill_bindings(m)
-        CompareRoute -> compare_bindings()
-        StatsRoute ->
-          case m.detail {
-            Some(_) -> [
-              Binding(
-                ["Escape"],
-                "close",
-                "Close the problem detail",
-                UserClosedDetail,
-              ),
-              help_binding(),
-            ]
-            None -> [
-              Binding(
-                ["j", "k"],
-                "move",
-                "Move through the problem lists",
-                StatsCursorMoved(1),
-              ),
-              Binding(
-                ["Enter"],
-                "detail",
-                "Open the problem's review history",
-                StatsActivated,
-              ),
+    False, None, Some(_) ->
+      Ok([
+        Binding(
+          ["Enter"],
+          "replace",
+          "Replace everything",
+          ImportConfirmed(True),
+        ),
+        Binding(["Escape"], "keep", "Keep what is here", ImportConfirmed(False)),
+      ])
+    False, None, None -> Error(Nil)
+  }
+}
+
+/// The screen's own rows, overlays aside -- what the help overlay lists.
+pub fn screen(m: Model) -> List(Binding(Msg)) {
+  {
+    case m.route {
+      StudyRoute -> study_bindings(m)
+      MenuRoute -> menu_bindings(m)
+      DrillRoute -> drill_bindings(m)
+      CompareRoute -> compare_bindings()
+      StatsRoute ->
+        case m.detail {
+          Some(_) -> [
+            Binding(
+              ["Escape"],
+              "close",
+              "Close the problem detail",
+              UserClosedDetail,
+            ),
+            help_binding(),
+          ]
+          None -> [
+            Binding(
+              ["j", "k"],
+              "move",
+              "Move through the problem lists",
+              StatsCursorMoved(1),
+            ),
+            Binding(
+              ["Enter"],
+              "detail",
+              "Open the problem's review history",
+              StatsActivated,
+            ),
+            Binding(
+              ["Escape", "b"],
+              "back",
+              "Back to the study screen",
+              UserClickedBackToStudy,
+            ),
+            help_binding(),
+          ]
+        }
+      ReportRoute -> [
+        Binding(
+          ["Enter", "Escape", "b"],
+          "back",
+          "Leave the report",
+          UserClickedExitReport,
+        ),
+        help_binding(),
+      ]
+      // The switcher is a list of choices made with the mouse or with
+      // Enter on a focused card; there is no cursor to drive. Escape goes
+      // back to the track you were on, unless there is not one yet.
+      TracksRoute ->
+        list.flatten([
+          case m.active_track {
+            "" -> []
+            _ -> [
               Binding(
                 ["Escape", "b"],
                 "back",
-                "Back to the study screen",
-                UserClickedBackToStudy,
-              ),
-              help_binding(),
-            ]
-          }
-        ReportRoute -> [
-          Binding(
-            ["Enter", "Escape", "b"],
-            "back",
-            "Leave the report",
-            UserClickedExitReport,
-          ),
-          help_binding(),
-        ]
-        // The switcher is a list of choices made with the mouse or with
-        // Enter on a focused card; there is no cursor to drive. Escape goes
-        // back to the track you were on, unless there is not one yet.
-        TracksRoute ->
-          list.flatten([
-            case m.active_track {
-              "" -> []
-              _ -> [
-                Binding(
-                  ["Escape", "b"],
-                  "back",
-                  "Back to study",
-                  UserClickedBackToStudy,
-                ),
-              ]
-            },
-            [help_binding()],
-          ])
-        SettingsRoute -> [
-          Binding(
-            ["Escape", "b"],
-            "back",
-            "Back to study",
-            UserClickedBackToStudy,
-          ),
-          help_binding(),
-        ]
-        SummaryRoute ->
-          list.flatten([
-            undo_binding(m),
-            [
-              Binding(
-                ["Enter", "Escape", "b"],
-                "done",
-                "Leave the summary",
-                UserClickedExitReport,
-              ),
-              help_binding(),
-            ],
-          ])
-        QueueRoute -> queue_bindings(m)
-        TourRoute -> tour_bindings(m)
-        // A guest can always walk away from the form; the link at its foot
-        // says so, and Escape should mean the same thing.
-        AuthRoute ->
-          case m.mode {
-            model.Guest -> [
-              Binding(
-                ["Escape"],
-                "back",
-                "Keep studying without an account",
+                "Back to study",
                 UserClickedBackToStudy,
               ),
             ]
-            _ -> []
-          }
-      }
+          },
+          [help_binding()],
+        ])
+      SettingsRoute -> [
+        Binding(
+          ["Escape", "b"],
+          "back",
+          "Back to study",
+          UserClickedBackToStudy,
+        ),
+        help_binding(),
+      ]
+      SummaryRoute ->
+        list.flatten([
+          undo_binding(m),
+          [
+            Binding(
+              ["Enter", "Escape", "b"],
+              "done",
+              "Leave the summary",
+              UserClickedExitReport,
+            ),
+            help_binding(),
+          ],
+        ])
+      QueueRoute -> queue_bindings(m)
+      TourRoute -> tour_bindings(m)
+      // A guest can always walk away from the form; the link at its foot
+      // says so, and Escape should mean the same thing.
+      // Drawn by page/auth, which brings its own rows.
+      AuthRoute -> []
+    }
   }
 }
 
@@ -764,7 +777,7 @@ fn results_binding(m: Model) -> List(Binding(Msg)) {
   }
 }
 
-fn help_binding() -> Binding(Msg) {
+pub fn help_binding() -> Binding(Msg) {
   Binding(["?"], "keys", "This cheatsheet", HelpToggled)
 }
 

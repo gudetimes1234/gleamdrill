@@ -9,13 +9,19 @@
 
 import gleam/list
 import gleam/option.{None, Some}
+import gleamdrill/keys
 import gleamdrill/model.{AuthRoute}
 import gleamdrill/msg.{type Msg}
+import gleamdrill/page/auth/keys as auth_keys
 import gleamdrill/page/auth/model as auth_model
 import gleamdrill/page/auth/update as auth_update
 import gleamdrill/page/auth/view as auth_view
+import gleamdrill/platform/browser
 import gleamdrill/shared.{type Change, type Shared}
+import gleamdrill/ui/binding.{type Binding}
 import gleamdrill/update as legacy_update
+import gleamdrill/update/common
+import gleamdrill/update/keyboard
 import gleamdrill/update/session as session_update
 import gleamdrill/view as legacy_view
 import lustre/effect.{type Effect}
@@ -46,6 +52,7 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
     // A page's message that lands after its page closed (a slow response):
     // there is nothing left for it to update.
     msg.AuthMsg(_), _ -> #(state, effect.none())
+    msg.KeyPressed(key), page if page != Legacy -> key_pressed(state, key)
     msg.UserClickedSignIn(mode), _ -> #(
       State(
         shared: model.Model(..state.shared, route: AuthRoute),
@@ -64,8 +71,41 @@ pub fn view(state: State) -> Element(Msg) {
   legacy_view.view(state.shared, case state.page {
     Legacy -> None
     Auth(page) ->
-      Some(auth_view.view(state.shared, page) |> element.map(msg.AuthMsg))
+      Some(legacy_view.Screen(
+        auth_view.view(state.shared, page) |> element.map(msg.AuthMsg),
+        page_keys(state),
+        auth_keys.label,
+      ))
   })
+}
+
+/// The page's own rows, lifted into the app's message.
+fn page_keys(state: State) -> List(Binding(Msg)) {
+  case state.page {
+    Legacy -> []
+    Auth(page) ->
+      auth_keys.bindings(state.shared, page)
+      |> list.map(binding.map(_, msg.AuthMsg))
+  }
+}
+
+/// A key on a page screen: the same leader and focus rules as everywhere,
+/// resolved against an open overlay first, then the page's rows.
+fn key_pressed(state: State, key: msg.Key) -> #(State, Effect(Msg)) {
+  let rows = page_keys(state)
+  let lookup = fn(shared, key: msg.Key) {
+    case keys.overlay(shared) {
+      Ok(overlay) -> binding.find(overlay, key.key)
+      Error(Nil) -> binding.find(rows, key.key)
+    }
+  }
+  let #(shared, step) = keyboard.step(state.shared, key, lookup)
+  let state = State(..state, shared:)
+  case step {
+    keyboard.Ignore -> #(state, effect.none())
+    keyboard.Blur -> #(state, common.run_effect(browser.blur_active))
+    keyboard.Send(resolved) -> update(state, resolved)
+  }
 }
 
 /// Applies a page's changes in order, then makes the page match the route.

@@ -3,12 +3,14 @@
 //// shares.
 
 import gleam/option.{type Option, None, Some}
+import gleamdrill/keys
 import gleamdrill/model.{
   type Model, AuthRoute, CompareRoute, DrillRoute, MenuRoute, NotStarted,
   QueueRoute, ReportRoute, SettingsRoute, StatsRoute, StudyRoute, SummaryRoute,
   SyncFailed, Synced, Syncing, TourRoute, TracksRoute,
 }
 import gleamdrill/msg.{type Msg}
+import gleamdrill/ui/binding.{type Binding}
 import gleamdrill/view/auth
 import gleamdrill/view/compare as compare_view
 import gleamdrill/view/drill
@@ -27,9 +29,15 @@ import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 
+/// A screen as the chrome sees it: what to draw, the keys it answers to (the
+/// status bar and the help overlay list these), and the status bar's label.
+pub type Screen {
+  Screen(element: Element(Msg), keys: List(Binding(Msg)), label: String)
+}
+
 /// `page` is the screen when a page module drew it (see `app`); otherwise
 /// the route picks one of the screens still drawn from the flat model.
-pub fn view(m: Model, page: Option(Element(Msg))) -> Element(Msg) {
+pub fn view(m: Model, page: Option(Screen)) -> Element(Msg) {
   case m.boot {
     // The one blocking load. A guest resolves it locally and instantly; an
     // account waits on the network, and a failure there is a dead end worth
@@ -38,7 +46,12 @@ pub fn view(m: Model, page: Option(Element(Msg))) -> Element(Msg) {
     Synced -> {
       let screen = case page {
         Some(screen) -> screen
-        None -> legacy_screen(m)
+        None -> Screen(legacy_screen(m), keys.screen(m), keys.context_label(m))
+      }
+      // An overlay (help, the exit prompt) owns the keys while it is up.
+      let active = case keys.overlay(m) {
+        Ok(rows) -> rows
+        Error(Nil) -> screen.keys
       }
       // A state load after the first is a thin bar at the top, over
       // whatever is on screen; only the first load gets the loading card.
@@ -57,13 +70,13 @@ pub fn view(m: Model, page: Option(Element(Msg))) -> Element(Msg) {
       }
       case m.route {
         // The sign-in form keeps its focused, chrome-free layout.
-        AuthRoute -> element.fragment([screen, ..syncing])
+        AuthRoute -> element.fragment([screen.element, ..syncing])
         _ ->
           element.fragment([
-            screen,
-            statusbar.view(m),
+            screen.element,
+            statusbar.view(m, active, screen.label),
             help.button(m),
-            help.view(m),
+            help.view(m, screen.keys, screen.label),
             ..syncing
           ])
       }

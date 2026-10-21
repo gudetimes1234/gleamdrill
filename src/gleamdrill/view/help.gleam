@@ -2,7 +2,6 @@
 
 import gleam/list
 import gleam/string
-import gleamdrill/keys
 import gleamdrill/model.{type Model}
 import gleamdrill/msg.{type Msg, HelpToggled}
 import gleamdrill/ui/binding.{type Binding}
@@ -30,7 +29,8 @@ pub fn button(m: Model) -> Element(Msg) {
   }
 }
 
-pub fn view(m: Model) -> Element(Msg) {
+/// `rows` are the screen's own keys, listed under the overlay; `label` names it.
+pub fn view(m: Model, rows: List(Binding(Msg)), label: String) -> Element(Msg) {
   case m.help_open {
     False -> element.none()
     True ->
@@ -47,14 +47,12 @@ pub fn view(m: Model) -> Element(Msg) {
           html.div([attribute.class("help-card")], [
             html.h2(
               [attribute.class("help-title"), attribute.id("help-title")],
-              [html.text("Help \u{b7} " <> keys.context_label(m))],
+              [html.text("Help \u{b7} " <> label)],
             ),
             html.div(
               [attribute.class("help-rows")],
-              // The overlay shows the table for the screen underneath it, so
-              // the model is read with help_open off.
-              keys.bindings(model.Model(..m, help_open: False))
-                |> list.map(row),
+              // The table for the screen underneath the overlay.
+              list.map(rows, row),
             ),
             html.p([attribute.class("help-footnote")], [
               html.text(

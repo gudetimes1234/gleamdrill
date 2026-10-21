@@ -6,7 +6,6 @@
 
 import gleam/list
 import gleam/string
-import gleamdrill/keys
 import gleamdrill/model.{type Model}
 import gleamdrill/msg.{type Msg}
 import gleamdrill/ui/binding.{type Binding}
@@ -18,10 +17,11 @@ import lustre/event
 /// How many hints fit comfortably; the rest live in the `?` overlay.
 const visible_hints = 8
 
-pub fn view(m: Model) -> Element(Msg) {
+/// `rows` are the keys live right now; `label` names the screen, tmux style.
+pub fn view(m: Model, rows: List(Binding(Msg)), label: String) -> Element(Msg) {
   html.div([attribute.class("statusbar")], [
     html.span([attribute.class("statusbar-context")], [
-      html.text(keys.context_label(m)),
+      html.text(label),
     ]),
     // The `,` leader: pressed once, the next key works no matter which
     // button stole focus. The chip lights while armed.
@@ -44,7 +44,7 @@ pub fn view(m: Model) -> Element(Msg) {
     ),
     html.div(
       [attribute.class("statusbar-hints")],
-      keys.bindings(m)
+      rows
         |> list.take(visible_hints)
         |> list.map(hint),
     ),
