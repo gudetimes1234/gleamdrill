@@ -23,6 +23,7 @@ import server/study/queues
 import server/study/reviews
 import server/study/stats
 import server/study/today
+import server/study/track
 import server/study/validate
 import server/web.{type Context}
 import wire
@@ -49,7 +50,7 @@ pub fn state(request: wisp.Request, context: Context) -> wisp.Response {
     // No `?track=` means "wherever I left off", which the server answers as
     // the track holding the most cards -- and for a brand new account, the
     // empty string, which matches nothing and lands on the switcher.
-    let track = requested_track(request, standings)
+    let track = track.pick(query_track(request), standings)
     // Same rule as `resolve_track`, off the standings this already has.
     use settings <- result.try(profile.load_settings(context.db, user.id, track))
     let profile = wire.Profile(account:, settings:)
@@ -94,68 +95,9 @@ pub fn state(request: wisp.Request, context: Context) -> wisp.Response {
   }
 }
 
-/// The track a request names, or the one the user has most cards in.
-///
-/// Defaulting rather than refusing is what keeps a client from before tracks
-/// working: it sends no `?track=` and gets a coherent single-track view
-/// instead of a 422.
-fn requested_track(
-  request: wisp.Request,
-  standings: List(wire.TrackStanding),
-) -> String {
-  case list.key_find(wisp.get_query(request), "track") {
-    Ok(track) -> track
-    Error(Nil) ->
-      standings
-      |> list.sort(fn(a: wire.TrackStanding, b: wire.TrackStanding) {
-        int.compare(b.cards, a.cards)
-      })
-      |> list.first
-      |> result.map(fn(standing: wire.TrackStanding) { standing.track })
-      |> result.unwrap("")
-  }
-}
-
-/// The one track a batch of problems is in, or `Error` when it spans more
-/// than one. Same rule as `one_track`, on the other key.
-fn batch_track(problems: List(model.ProblemRef)) -> Result(String, Nil) {
-  case
-    list.unique(list.map(problems, fn(ref: model.ProblemRef) { ref.category }))
-  {
-    [track] -> Ok(track)
-    _ -> Error(Nil)
-  }
-}
-
-/// The one track a batch is in, or `Error` when it spans more than one.
-///
-/// A request that touches two tracks cannot be answered honestly: the reply
-/// carries one `Today`, and there is no such thing as a daily budget across
-/// two tracks. Refusing is cheaper than picking one and being wrong.
-fn one_track(queues: List(wire.Queue)) -> Result(String, Nil) {
-  case list.unique(list.map(queues, fn(queue: wire.Queue) { queue.track })) {
-    [track] -> Ok(track)
-    // Empty: the caller has to say which track it is clearing.
-    [] -> Error(Nil)
-    _ -> Error(Nil)
-  }
-}
-
-/// The track a request names, or the user's default when it names none.
-///
-/// Every track-scoped endpoint goes through this rather than reading the
-/// query parameter raw. A bare "" would match no category at all, so an
-/// un-upgraded client asking for its stats would get zeros rather than its
-/// stats -- silently, which is the worst way to be wrong.
-fn resolve_track(
-  request: wisp.Request,
-  context: Context,
-  user: User,
-) -> Result(String, model.StudyError) {
-  case list.key_find(wisp.get_query(request), "track") {
-    Ok(track) -> Ok(track)
-    Error(Nil) -> profile.default_track(context.db, user.id)
-  }
+/// The `?track=` parameter, when the request carries one.
+fn query_track(request: wisp.Request) -> option.Option(String) {
+  list.key_find(wisp.get_query(request), "track") |> option.from_result
 }
 
 /// GET and PUT /api/queues -- the user's named queues, as one set. The
@@ -166,7 +108,7 @@ pub fn queues(request: wisp.Request, context: Context) -> wisp.Response {
   case request.method {
     http.Get ->
       case
-        resolve_track(request, context, user)
+        track.resolve(context.db, user.id, query_track(request))
         |> result.try(queues.load_queues_in(context.db, user.id, _))
       {
         Error(failure) -> study_error(failure)
@@ -185,9 +127,9 @@ pub fn queues(request: wisp.Request, context: Context) -> wisp.Response {
           // queue would silently delete nothing.
           let named = case queues {
             [] ->
-              resolve_track(request, context, user)
+              track.resolve(context.db, user.id, query_track(request))
               |> result.replace_error(Nil)
-            _ -> one_track(queues)
+            _ -> track.one_track(queues)
           }
           case queues.validate_queues(queues), named {
             Error(message), _ -> web.error(422, "invalid_queues", message)
@@ -217,7 +159,8 @@ pub fn queues(request: wisp.Request, context: Context) -> wisp.Response {
 pub fn undo(request: wisp.Request, context: Context) -> wisp.Response {
   use user <- web.require_user(request, context)
   let now = timestamp.system_time()
-  let assert Ok(track) = resolve_track(request, context, user)
+  let assert Ok(track) =
+    track.resolve(context.db, user.id, query_track(request))
   case reviews.undo_review(context.db, user.id, track) {
     Error(reviews.NothingToUndo) ->
       web.error(409, "nothing_to_undo", "There is no review to undo.")
@@ -396,7 +339,7 @@ pub fn enqueue(request: wisp.Request, context: Context) -> wisp.Response {
           // One reply carries one `Today`, and there is no such thing as a
           // daily budget across two tracks, so a batch that spans them cannot
           // be answered honestly. Refusing beats picking one and being wrong.
-          case batch_track(problems) {
+          case track.batch_track(problems) {
             Error(Nil) ->
               web.error(
                 422,
@@ -445,7 +388,7 @@ pub fn dequeue(request: wisp.Request, context: Context) -> wisp.Response {
           // One reply carries one `Today`, and there is no such thing as a
           // daily budget across two tracks, so a batch that spans them cannot
           // be answered honestly. Refusing beats picking one and being wrong.
-          case batch_track(problems) {
+          case track.batch_track(problems) {
             Error(Nil) ->
               web.error(
                 422,
@@ -528,7 +471,11 @@ pub fn stats(request: wisp.Request, context: Context) -> wisp.Response {
 
   let outcome = {
     use account <- result.try(profile.load_account(context.db, user.id))
-    use track <- result.try(resolve_track(request, context, user))
+    use track <- result.try(track.resolve(
+      context.db,
+      user.id,
+      query_track(request),
+    ))
     stats.stats(context.db, user.id, track, account)
   }
 
@@ -562,7 +509,7 @@ pub fn import_legacy(request: wisp.Request, context: Context) -> wisp.Response {
         // pre-account store only ever held Python. Anything in the payload
         // that names no track is attributed to this one.
         use track <- result.try(
-          batch_track(solved)
+          track.batch_track(solved)
           |> result.try_recover(fn(_) {
             profile.default_track(context.db, user.id)
             |> result.map_error(fn(_) { Nil })
@@ -601,7 +548,7 @@ pub fn insights(request: wisp.Request, context: Context) -> wisp.Response {
   use user <- web.require_user(request, context)
 
   case
-    resolve_track(request, context, user)
+    track.resolve(context.db, user.id, query_track(request))
     |> result.try(insights.insights(context.db, user.id, _))
   {
     Error(failure) -> study_error(failure)
@@ -791,7 +738,7 @@ pub fn settings(request: wisp.Request, context: Context) -> wisp.Response {
   case request.method {
     http.Get ->
       case
-        resolve_track(request, context, user)
+        track.resolve(context.db, user.id, query_track(request))
         |> result.try(profile.load_profile(context.db, user.id, _))
       {
         Error(failure) -> study_error(failure)
@@ -831,7 +778,8 @@ fn update_settings(
               )
             Ok(True) -> {
               let profile = wire.Profile(account:, settings:)
-              let assert Ok(track) = resolve_track(request, context, user)
+              let assert Ok(track) =
+                track.resolve(context.db, user.id, query_track(request))
               // Both halves still arrive in one object, so both are written:
               // the account's row, and this track's. Splitting the endpoint
               // is a later release's business.
