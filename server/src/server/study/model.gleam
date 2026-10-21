@@ -73,6 +73,20 @@ pub fn rows(
   }
 }
 
+/// A generated query's first row, mapped, or `None` when it returned none:
+/// the shape of every lookup by key and every `returning` that may match
+/// nothing.
+pub fn first(
+  returned: Result(pog.Returned(row), pog.QueryError),
+  with: fn(row) -> a,
+) -> Result(Option(a), StudyError) {
+  case returned {
+    Ok(pog.Returned(rows: [row, ..], ..)) -> Ok(option.Some(with(row)))
+    Ok(pog.Returned(rows: [], ..)) -> Ok(option.None)
+    Error(error) -> Error(database_error(error))
+  }
+}
+
 /// A generated statement run for its effect alone.
 pub fn done(
   returned: Result(pog.Returned(row), pog.QueryError),

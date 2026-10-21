@@ -4,15 +4,17 @@
 //// reading the query parameter raw. A bare "" would match no category at
 //// all, so an un-upgraded client asking for its stats would get zeros rather
 //// than its stats -- silently, which is the worst way to be wrong.
+////
+//// The SQL lives in `track/sql/*.sql`; `gleam run -m squirrel` generates
+//// `track/sql.gleam` from it.
 
-import gleam/dynamic/decode
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import pog
-import server/db
-import server/study/model.{type StudyError, database_error}
+import server/study/model.{type StudyError, first}
+import server/study/track/sql
 import wire
 import youid/uuid.{type Uuid}
 
@@ -85,16 +87,7 @@ pub fn default(
   db: pog.Connection,
   user_id: Uuid,
 ) -> Result(String, StudyError) {
-  pog.query(
-    "select category from cards
-      where user_id = $1::uuid
-      group by category
-      order by count(*) desc, category
-      limit 1",
-  )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.returning(decode.at([0], decode.string))
-  |> pog.execute(db)
-  |> result.map_error(database_error)
-  |> result.map(fn(returned) { list.first(returned.rows) |> result.unwrap("") })
+  sql.busiest_track(db, user_id)
+  |> first(fn(row: sql.BusiestTrackRow) { row.category })
+  |> result.map(option.unwrap(_, ""))
 }
