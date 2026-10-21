@@ -70,9 +70,10 @@ content:
 	  src/gleamdrill/problems/approaches.gleam
 
 # Runs every solution variant — primaries and alternates, all five languages —
-# against its harness, then the scheduler's conformance suite. A new alternate
+# against its harness, then the scheduler's conformance suite, the wire format,
+# and the app's and server's unit tests (none need Postgres). A new alternate
 # is not done until this passes.
-verify: content fsrs-test app-test tour-check
+verify: content fsrs-test wire-test app-test server-test tour-check
 	cd drills && gleam run -m solutions
 	cd drills/python && python3 verify_all.py
 	cd drills/ts && bun verify_all.ts
