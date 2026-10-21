@@ -53,7 +53,7 @@ const check = (name, ok, detail = "") => {
   else { fail++; console.log(`    FAIL ${name}${detail ? ": " + detail : ""}`); }
 };
 
-/// Records which `model.Msg` variants an act exercises. The tour fails if any
+/// Records which `msg.Msg` variants an act exercises. The tour fails if any
 /// user-initiated message is never reached -- that is what stops "every flow"
 /// from quietly meaning "every flow I remembered".
 const exercises = (...msgs) => msgs.forEach((m) => covered.add(m));

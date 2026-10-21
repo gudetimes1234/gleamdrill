@@ -288,7 +288,7 @@ def units(path):
     """A file, or the parts of one too long for a single request.
 
     Jev allows 32k tokens for `state` plus the longest question, and
-    src/gleamdrill.gleam alone is over three times that.  Split on column-zero
+    the largest modules (view/drill.gleam, the test suite) exceed it.  Split on column-zero
     boundaries so every part is a whole run of top-level definitions rather than
     a function cut in half, and pack greedily up to the budget.  Each part is
     still judged against the identical rubric, so parts rank beside whole files.

@@ -77,7 +77,8 @@ jobs:
       - name: Wire format tests
         run: make wire-test
 
-      # The app's decoders against captured server responses.
+      # The app's unit tests: decoders against captured server responses,
+      # plus the pure modules.
       - name: App tests
         run: make app-test
 
@@ -156,7 +157,7 @@ jobs:
           ghc -v0 -O0 -o /tmp/warm /tmp/warm.hs && /tmp/warm
 
       # The app half of the tree is not built here, but `server` path-depends
-      # on ../fsrs, which is why the whole repo is checked out.
+      # on ../fsrs and ../wire, which is why the whole repo is checked out.
       - name: Build
         run: cd server && gleam build
 

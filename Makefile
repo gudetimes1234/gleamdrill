@@ -131,8 +131,9 @@ fsrs-vectors:
 	cd fsrs && uv run --with fsrs python tools/gen_vectors.py
 	cd fsrs && gleam format test/vectors.gleam
 
-# Decodes captured server responses with the app's own decoders, so a change
-# to the API's shape fails here rather than as a blank screen in the browser.
+# The app's unit tests: its decoders against captured server responses (so a
+# change to the API's shape fails here rather than as a blank screen), plus the
+# pure modules -- guest store, queue, keys, walk and the update handlers.
 app-test:
 	gleam test --target javascript
 

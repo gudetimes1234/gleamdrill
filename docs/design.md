@@ -320,6 +320,32 @@ a typo is a compile error.
 
 ## Architecture
 
+### Layout
+
+The app is Lustre (the Elm architecture), laid out MVC-in-spirit. Modules only
+import downward in this list, so there are no cycles to find:
+
+1. `wire`, `fsrs`, `problem`, `problems`, `remote` -- shared types and content.
+2. `model.gleam` -- the state, plus read-only helpers over it.
+3. Domain modules, all pure: `queue`, `walk`, `guest`, `compare`, `board`,
+   `insights`, `track`.
+4. `msg.gleam` (every message) and `view/id.gleam` (DOM ids).
+5. `view.gleam` + `view/*` (one module per screen), `keys.gleam` (the one
+   binding table behind dispatch, the status bar and help), and `store.gleam`
+   -- the **only** module that imports `api`, `local`, `session` or `legacy`.
+6. `update/*` -- one handler module per feature; they reach persistence
+   through `store` alone. `update/common` holds what several features share.
+7. `update.gleam` -- one exhaustive `case` over `Msg` with no catch-all; every
+   arm delegates to a named handler, so a new message cannot compile unrouted.
+8. `gleamdrill.gleam` -- `main` and `init`.
+
+The server follows the same rule. `routes/*` are controllers: decode the
+request, call `study/*`, encode the reply with `wire`. Each `study/*` module
+owns one concern's SQL and row decoders; pure decisions (scheduling, the
+queue merge, the day budget, validation, track picking) are plain functions
+there, unit-tested without Postgres. A module that opens a `pog.transaction`
+owns it, and its siblings take the transaction as a `pog.Connection`.
+
 ### The shared scheduler and wire format
 
 `fsrs/` being shared is the load-bearing decision. The server schedules with it
@@ -362,10 +388,11 @@ queue set that spans two tracks is a 422, because one reply carries one daily
 budget and there is no such thing as a budget across two tracks.
 
 **The guest store stays whole.** Every `local.save_*` serialises the entire
-`Local` record, so a track-scoped *load* would mean one debounced draft write
+`guest.Local` record, so a track-scoped *load* would mean one debounced draft write
 deleting every other track's cards. The rule is therefore: `load` reads
-everything, every save writes everything, and only the derived functions --
-`today`, `stats`, `insights`, the `*_in` lenses -- take a track. Recording,
+everything, every save writes everything, and only the derived functions in
+`guest.gleam` -- `today`, `stats`, `insights`, the `*_in` lenses -- take a
+track. Recording,
 undoing, queueing, drafting and noting take none at all, because the
 `ProblemRef` already carries it.
 
@@ -442,31 +469,6 @@ host. Nothing about where the app is deployed is baked into the artifact:
 deployment, but none is set. The two development ports are the exception, and
 are named explicitly: `:1234` and `:4173` always talk to `127.0.0.1:1637`, so a
 dev session can never post reviews to production.
-
-Deploying to Railway: three components in one project — Postgres, an **api**
-service built from `server/Dockerfile` with no public domain, and a **web**
-service built from `deploy/web.Dockerfile` with the public domain. The web
-service needs `API_UPSTREAM=api.railway.internal:8080`; the api service needs
-`DATABASE_URL`, `SECRET_KEY_BASE`, `ALLOWED_ORIGIN` set to the public domain,
-and **`BIND=::`** rather than `0.0.0.0`, because Railway's private network is
-IPv6-only. Both services deploy from the GitHub `main` branch on push;
-`make deploy` (`railway up`) is the manual alternative. Nothing has to be built
-first: `deploy/web.Dockerfile` is multi-stage and compiles `dist/` itself, from
-exactly the sources in the commit. A broken build fails the deploy and leaves
-the last good image serving, which is why `dist/` is no longer committed — it
-used to be, and a commit could ship a bundle built from source it did not
-contain.
-
-Only ever run **one** api instance. It migrates the schema at boot assuming it
-is the sole writer; more than one needs a migration story first.
-
-The daily reminder mail is optional and off until `RESEND_API_KEY` is set
-on the api (with `REMINDER_FROM` as a sender on a domain Resend has
-verified, and `APP_URL` if the link should not be the first allowed
-origin). With the key set, a loop wakes every fifteen minutes and mails
-anyone whose chosen hour it is, in their own timezone, if they have
-something due -- once per day, claimed in `reminders_sent` before sending
-so a restart cannot send it twice. See `server/src/server/reminders.gleam`.
 
 ### Deployment
 

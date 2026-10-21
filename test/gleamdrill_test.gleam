@@ -1,6 +1,8 @@
-//// Contract tests for the backend API.
+//// The app's unit tests, one section per module or concern. Everything
+//// here is pure: `gleam test` runs under node, with no DOM and no
+//// `localStorage`.
 ////
-//// The fixtures in `test/fixtures/` are real responses, captured from a
+//// The first section is contract tests for the backend API. The fixtures in `test/fixtures/` are real responses, captured from a
 //// running server rather than hand-written. That is the point: a hand-written
 //// fixture only proves the decoder agrees with itself, while these fail the
 //// moment the server's field names, shapes or types drift from what the
@@ -223,7 +225,7 @@ pub fn interval_labels_test() -> Nil {
 
 // --- guest mode ------------------------------------------------------------
 //
-// The derivations in `local` are pure functions taking loaded state, which is
+// The derivations in `guest` are pure functions taking loaded state, which is
 // what makes them reachable here: `gleam test` runs under node, where there is
 // no `localStorage` at all.
 
@@ -2458,6 +2460,8 @@ pub fn a_board_drill_is_classified_as_one_test() -> Nil {
   assert track.tag("System Design") == "sd"
 }
 
+// --- runner output -----------------------------------------------------------
+
 /// A warning located in the generated harness never reaches the Output
 /// panel -- the user cannot act on `check.gleam`'s "unused import" of their
 /// own module -- while a warning in their own code still does.
@@ -2485,6 +2489,8 @@ pub fn harness_warnings_stay_out_of_the_output_test() -> Nil {
   assert string.contains(mixed, "solution.gleam")
   assert !string.contains(mixed, "check.gleam")
 }
+
+// --- the drill clock ---------------------------------------------------------
 
 /// The drill clock's pause is arithmetic: elapsed time excludes banked pause
 /// spans and the one still open, the paused clock reads frozen, and resuming
@@ -2529,6 +2535,8 @@ pub fn pausing_the_timer_stops_the_clock_test() -> Nil {
   let #(unchanged, _) = drill_update.toggle_timer(blitz)
   assert unchanged.clock_paused_at == option.None
 }
+
+// --- guest seeding from the legacy store --------------------------------------
 
 /// The legacy seed: a solved problem becomes a one-rep Review card with the
 /// memory a Good first answer earns, a card the guest already drilled is
