@@ -10,10 +10,11 @@ import gleam/option.{type Option}
 import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/model.{
   type CompareSide, type GroupChange, type Pane, type QueueFilter,
-  type RunOutcome, type SettingField, type UndoPoint,
+  type RunOutcome, type UndoPoint,
 }
 import gleamdrill/page/auth/model as auth_model
 import gleamdrill/page/auth/msg as auth_msg
+import gleamdrill/page/settings/msg as settings_msg
 import gleamdrill/store/remote.{type ApiError}
 import wire
 
@@ -28,6 +29,7 @@ pub type Key {
 pub type Msg {
   // --- pages: each migrated page's own messages, routed by `app` ---
   AuthMsg(auth_msg.Msg)
+  SettingsMsg(settings_msg.Msg)
   // --- keyboard ---
   KeyPressed(Key)
   HelpToggled
@@ -144,21 +146,6 @@ pub type Msg {
   /// A pane's key: open it in the slot, or close it if it is the one shown.
   UserToggledPane(Pane)
   UserToggledResults
-  /// Fetch every runtime file into the offline cache.
-  UserClickedWarmCache
-  /// Progress from the worker: ok, done, total, finished.
-  CacheWarmed(Bool, Int, Int, Bool)
-  CacheMeasured(Int)
-  /// Download everything as one file.
-  UserClickedExport
-  ArchiveReady(Result(wire.Archive, ApiError))
-  /// Pick an export file to restore from.
-  UserClickedImport
-  /// The chosen file's text.
-  ImportPicked(String)
-  /// The "replace everything?" answer.
-  ImportConfirmed(Bool)
-  ArchiveRestored(Result(Nil, ApiError))
   /// Flip the solution panel between the diff and the plain reference.
   UserToggledDiff
   /// Close the panel a passing run opened.
@@ -181,12 +168,6 @@ pub type Msg {
   /// The editor's resize handle was released at this many px; 0 resets.
   EditorResized(Int)
   UserClickedSettings
-  /// A settings input committed (on blur or Enter), carrying its raw text.
-  UserChangedSetting(SettingField, String)
-  /// Adopt the timezone this browser reports, which is the only way to change
-  /// it after signup.
-  UserClickedDeviceTimezone
-  SettingsSaved(Result(wire.Profile, ApiError))
   /// Open the track switcher.
   UserClickedTracks
   /// Enter a track: everything the app shows becomes that track's.

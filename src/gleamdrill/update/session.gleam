@@ -1,19 +1,14 @@
 //// Accounts and the boot state: the sign-in form, sessions, the guest
 //// merge, sign-out, device preferences and the scheduler settings.
 
-import fsrs
 import gleam/dict
-import gleam/float
-import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleamdrill/model.{
-  type Model, Account, DayStartHour, DesiredRetention, Guest, Model, NewPerDay,
-  PromptDismissed, ReminderHour, ReviewsPerDay, StudyRoute, SyncFailed, Synced,
-  Syncing, TracksRoute,
+  type Model, Account, Guest, Model, PromptDismissed, StudyRoute, SyncFailed,
+  Synced, Syncing, TracksRoute,
 }
 import gleamdrill/msg.{type Msg, SignOutCompleted, StateImported}
-import gleamdrill/platform/browser
 import gleamdrill/store
 import gleamdrill/store/remote.{type ApiError}
 import gleamdrill/update/common
@@ -230,50 +225,6 @@ pub fn dismiss_upgrade_prompt(m: Model) -> #(Model, Effect(Msg)) {
   #(Model(..m, upgrade_prompt: PromptDismissed), store.dismiss_upgrade_prompt())
 }
 
-pub fn changed_setting(
-  m: Model,
-  field: model.SettingField,
-  raw: String,
-) -> #(Model, Effect(Msg)) {
-  {
-    let profile = apply_setting(wire.Profile(m.account, m.settings), field, raw)
-    let m = Model(..m, settings: profile.settings, account: profile.account)
-    #(m, store.save_settings(m, profile, msg.SettingsSaved))
-  }
-}
-
-pub fn device_timezone(m: Model) -> #(Model, Effect(Msg)) {
-  {
-    let account =
-      wire.AccountSettings(..m.account, timezone: browser.time_zone())
-    let m = Model(..m, account:)
-    #(
-      m,
-      store.save_settings(
-        m,
-        wire.Profile(account, m.settings),
-        msg.SettingsSaved,
-      ),
-    )
-  }
-}
-
-pub fn settings_saved(
-  m: Model,
-  result: Result(wire.Profile, ApiError),
-) -> #(Model, Effect(Msg)) {
-  case result {
-    Ok(profile) -> #(
-      Model(..m, settings: profile.settings, account: profile.account),
-      effect.none(),
-    )
-    Error(error) -> #(
-      Model(..m, notice: Some(remote.error_message(error))),
-      effect.none(),
-    )
-  }
-}
-
 /// Seeds the guest store from the pre-account localStorage format, once.
 ///
 /// Solved problems become review cards with the memory state a `Good` first
@@ -347,98 +298,10 @@ fn known_queue(
   }
 }
 
-/// Parse one settings input and clamp it into range.
-///
-/// The bounds mirror `validate.settings` in the server's study/validate.gleam.
-/// Clamping rather than rejecting is deliberate: these come from a number
-/// input whose own min/max the browser already shows, so a value outside them
-/// is a typo, and snapping it is friendlier than an error. Unparseable text
-/// leaves the setting alone.
-fn apply_setting(
-  profile: wire.Profile,
-  field: model.SettingField,
-  raw: String,
-) -> wire.Profile {
-  let wire.Profile(account:, settings:) = profile
-  // Which half of the profile the field belongs to. Splitting them is the
-  // whole point of the record split: a daily budget is about what you are
-  // studying, a rollover hour is about you.
-  let tuned = fn(settings) { wire.Profile(account:, settings:) }
-  let personal = fn(account) { wire.Profile(account:, settings:) }
-  case field {
-    NewPerDay ->
-      case int.parse(raw) {
-        Ok(value) ->
-          tuned(
-            wire.Settings(..settings, new_per_day: int.clamp(value, 0, 100)),
-          )
-        Error(Nil) -> profile
-      }
-    ReviewsPerDay ->
-      case int.parse(raw) {
-        Ok(value) ->
-          tuned(
-            wire.Settings(..settings, reviews_per_day: int.clamp(value, 0, 500)),
-          )
-        Error(Nil) -> profile
-      }
-    DayStartHour ->
-      case int.parse(raw) {
-        Ok(value) ->
-          personal(
-            wire.AccountSettings(
-              ..account,
-              day_start_hour: int.clamp(value, 0, 23),
-            ),
-          )
-        Error(Nil) -> profile
-      }
-    ReminderHour ->
-      case int.parse(raw) {
-        Ok(hour) ->
-          personal(
-            wire.AccountSettings(
-              ..account,
-              reminder_hour: Some(int.clamp(hour, 0, 23)),
-            ),
-          )
-        // The select's "off" option, or anything else: no mail.
-        Error(Nil) ->
-          personal(wire.AccountSettings(..account, reminder_hour: None))
-      }
-    DesiredRetention -> {
-      let retained = fn(value) {
-        tuned(
-          wire.Settings(
-            ..settings,
-            scheduler: fsrs.Config(
-              ..settings.scheduler,
-              desired_retention: float.clamp(value, 0.7, 0.99),
-            ),
-          ),
-        )
-      }
-      case float.parse(raw) {
-        Ok(value) -> retained(value)
-        // An integer in a step-0.01 field: "1" should mean 1.0, not nothing.
-        Error(Nil) ->
-          case int.parse(raw) {
-            Ok(whole) -> retained(int.to_float(whole))
-            Error(Nil) -> profile
-          }
-      }
-    }
-  }
-}
-
 pub fn sign_out_completed(m: Model) -> #(Model, Effect(Msg)) {
   #(m, effect.none())
 }
 
 pub fn dismiss_notice(m: Model) -> #(Model, Effect(Msg)) {
   #(Model(..m, notice: None), effect.none())
-}
-
-pub fn open_settings(m: Model) -> #(Model, Effect(Msg)) {
-  #(Model(..m, route: model.SettingsRoute), common.measure_cache())
 }

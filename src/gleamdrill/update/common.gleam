@@ -56,12 +56,6 @@ pub fn tick() -> Effect(Msg) {
   })
 }
 
-pub fn measure_cache() -> Effect(Msg) {
-  effect.from(fn(dispatch) {
-    browser.runtime_cache_size(fn(bytes) { dispatch(msg.CacheMeasured(bytes)) })
-  })
-}
-
 pub fn schedule_draft_save() -> Effect(Msg) {
   effect.from(fn(dispatch) {
     browser.debounce("draft-save", 400, fn() { dispatch(msg.DraftSaveTicked) })

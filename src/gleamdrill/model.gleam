@@ -360,13 +360,6 @@ pub type Model {
     studying: Bool,
     /// The latest grade, while it can still be taken back.
     undo: Option(UndoPoint),
-    /// An export file read from disk, waiting for the user to confirm that
-    /// it replaces everything.
-    import_pending: Option(wire.Archive),
-    /// Bytes the offline runtime cache holds, measured when settings opens.
-    cache_bytes: Int,
-    /// A runtime download in progress: (done, total). None when idle.
-    warming: Option(#(Int, Int)),
     /// Whether the solution pane shows your code diffed against the
     /// reference or the plain reference, flipped with `d`.
     diff_mode: Bool,
@@ -548,9 +541,6 @@ pub fn default() -> Model {
     results_collapsed: False,
     editor_height: None,
     undo: None,
-    import_pending: None,
-    cache_bytes: 0,
-    warming: None,
     diff_mode: True,
     recall: False,
     run_kind: TestRun,
@@ -964,15 +954,6 @@ pub type UndoPoint {
     /// None when the grade is what put the card in the queue.
     card_before: Option(CardState),
   )
-}
-
-pub type SettingField {
-  NewPerDay
-  ReviewsPerDay
-  DayStartHour
-  DesiredRetention
-  /// "off" or an hour 0-23, from the reminder select.
-  ReminderHour
 }
 
 /// One bucket of the exam report: how many of this section's questions were

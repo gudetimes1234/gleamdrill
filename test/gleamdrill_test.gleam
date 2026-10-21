@@ -35,6 +35,8 @@ import gleamdrill/domain/walk
 import gleamdrill/keys
 import gleamdrill/model
 import gleamdrill/msg
+import gleamdrill/page/settings/keys as settings_keys
+import gleamdrill/page/settings/model as settings_model
 import gleamdrill/runner
 import gleamdrill/store
 import gleamdrill/store/remote
@@ -1301,7 +1303,6 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
     model.Model(..base, route: model.StatsRoute),
     model.Model(..base, route: model.ReportRoute),
     model.Model(..base, route: model.TracksRoute),
-    model.Model(..base, route: model.SettingsRoute),
     model.Model(..base, route: model.SummaryRoute),
     drill,
     model.Model(..drill, slot: model.SolutionPane),
@@ -1324,6 +1325,13 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
   use m <- list.each(contexts)
   let table = keys.bindings(m)
   assert list.any(table, fn(b: Binding(msg.Msg)) { list.contains(b.keys, "?") })
+}
+
+/// The pages that brought their own tables keep the same promise.
+pub fn every_page_documents_escape_and_help_test() -> Nil {
+  let rows = settings_keys.bindings(model.default(), settings_model.init())
+  assert list.any(rows, fn(b) { list.contains(b.keys, "?") })
+  assert list.any(rows, fn(b) { list.contains(b.keys, "Escape") })
 }
 
 pub fn dispatch_resolves_from_the_same_table_it_documents_test() -> Nil {

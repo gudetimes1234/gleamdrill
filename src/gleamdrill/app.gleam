@@ -1,24 +1,32 @@
 //// The application: the shared state, the page on screen, and the dispatch
 //// between them.
 ////
-//// Each page under `page/` owns its model, its messages, its update and its
-//// view. The app holds one page at a time, routes each page's messages to
-//// it, and applies the `Change`s a page asks for to the shared state.
-//// Screens not yet moved into `page/` run as the `Legacy` page, on the flat
-//// model and the old dispatcher; `msg.Msg` carries both kinds of message.
+//// Each page under `page/` owns its model, its messages, its update, its
+//// view and its keys. The app holds one page at a time, routes each page's
+//// messages to it, and applies the `Change`s a page asks for to the shared
+//// state. Screens not yet moved into `page/` run as the `Legacy` page, on
+//// the flat model and the old dispatcher; `msg.Msg` carries both kinds of
+//// message.
 
 import gleam/list
 import gleam/option.{None, Some}
 import gleamdrill/keys
-import gleamdrill/model.{AuthRoute}
+import gleamdrill/model.{type Route, AuthRoute, SettingsRoute}
 import gleamdrill/msg.{type Msg}
 import gleamdrill/page/auth/keys as auth_keys
 import gleamdrill/page/auth/model as auth_model
 import gleamdrill/page/auth/update as auth_update
 import gleamdrill/page/auth/view as auth_view
+import gleamdrill/page/settings/keys as settings_keys
+import gleamdrill/page/settings/model as settings_model
+import gleamdrill/page/settings/update as settings_update
+import gleamdrill/page/settings/view as settings_view
 import gleamdrill/platform/browser
 import gleamdrill/shared.{type Change, type Shared}
+import gleamdrill/store
 import gleamdrill/ui/binding.{type Binding}
+import gleamdrill/ui/document
+import gleamdrill/ui/layout
 import gleamdrill/update as legacy_update
 import gleamdrill/update/common
 import gleamdrill/update/keyboard
@@ -35,24 +43,30 @@ pub type State {
 pub type Page {
   Legacy
   Auth(auth_model.Model)
+  Settings(settings_model.Model)
 }
 
 pub fn init(boot: #(Shared, Effect(Msg))) -> #(State, Effect(Msg)) {
   let #(shared, fx) = boot
-  #(sync_page(State(shared:, page: Legacy)), fx)
+  let #(state, opened) = sync_page(State(shared:, page: Legacy))
+  #(state, effect.batch([fx, opened]))
 }
 
 pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
   case message, state.page {
-    msg.AuthMsg(inner), Auth(page) -> {
-      let #(page, fx, changes) = auth_update.update(state.shared, page, inner)
-      State(..state, page: Auth(page))
-      |> apply(changes, effect.map(fx, msg.AuthMsg))
-    }
+    msg.AuthMsg(inner), Auth(page) ->
+      auth_update.update(state.shared, page, inner)
+      |> settle(state, Auth, msg.AuthMsg)
+    msg.SettingsMsg(inner), Settings(page) ->
+      settings_update.update(state.shared, page, inner)
+      |> settle(state, Settings, msg.SettingsMsg)
     // A page's message that lands after its page closed (a slow response):
     // there is nothing left for it to update.
-    msg.AuthMsg(_), _ -> #(state, effect.none())
+    msg.AuthMsg(_), _ | msg.SettingsMsg(_), _ -> #(state, effect.none())
+
     msg.KeyPressed(key), page if page != Legacy -> key_pressed(state, key)
+
+    // Navigation into pages.
     msg.UserClickedSignIn(mode), _ -> #(
       State(
         shared: model.Model(..state.shared, route: AuthRoute),
@@ -60,21 +74,33 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
       ),
       effect.none(),
     )
+    msg.UserClickedSettings, _ -> navigate(state, SettingsRoute)
+
     _, _ -> {
       let #(shared, fx) = legacy_update.update(state.shared, message)
-      #(sync_page(State(..state, shared:)), fx)
+      let #(state, opened) = sync_page(State(..state, shared:))
+      #(state, effect.batch([fx, opened]))
     }
   }
 }
 
 pub fn view(state: State) -> Element(Msg) {
-  legacy_view.view(state.shared, case state.page {
+  let shared = state.shared
+  legacy_view.view(shared, case state.page {
     Legacy -> None
     Auth(page) ->
       Some(legacy_view.Screen(
-        auth_view.view(state.shared, page) |> element.map(msg.AuthMsg),
+        auth_view.view(shared, page) |> element.map(msg.AuthMsg),
         page_keys(state),
         auth_keys.label,
+      ))
+    Settings(page) ->
+      Some(legacy_view.Screen(
+        settings_view.view(shared, page)
+          |> document.map(msg.SettingsMsg)
+          |> layout.view(shared, SettingsRoute, _),
+        page_keys(state),
+        settings_keys.label,
       ))
   })
 }
@@ -83,10 +109,28 @@ pub fn view(state: State) -> Element(Msg) {
 fn page_keys(state: State) -> List(Binding(Msg)) {
   case state.page {
     Legacy -> []
-    Auth(page) ->
-      auth_keys.bindings(state.shared, page)
-      |> list.map(binding.map(_, msg.AuthMsg))
+    Auth(page) -> auth_keys.bindings(state.shared, page) |> lift(msg.AuthMsg)
+    Settings(page) ->
+      settings_keys.bindings(state.shared, page) |> lift(msg.SettingsMsg)
   }
+}
+
+fn lift(rows: List(Binding(a)), to: fn(a) -> Msg) -> List(Binding(Msg)) {
+  list.map(rows, binding.map(_, to))
+}
+
+/// A page's update result folded back in: its model stored, its effect
+/// lifted, its changes applied, and the page re-matched to the route.
+fn settle(
+  result: #(page, Effect(page_msg), List(Change)),
+  state: State,
+  page: fn(page) -> Page,
+  to: fn(page_msg) -> Msg,
+) -> #(State, Effect(Msg)) {
+  let #(model, fx, changes) = result
+  let #(shared, applied) = apply(state.shared, changes)
+  let #(state, opened) = sync_page(State(shared:, page: page(model)))
+  #(state, effect.batch([effect.map(fx, to), applied, opened]))
 }
 
 /// A key on a page screen: the same leader and focus rules as everywhere,
@@ -108,40 +152,68 @@ fn key_pressed(state: State, key: msg.Key) -> #(State, Effect(Msg)) {
   }
 }
 
-/// Applies a page's changes in order, then makes the page match the route.
-fn apply(
-  state: State,
-  changes: List(Change),
-  fx: Effect(Msg),
-) -> #(State, Effect(Msg)) {
-  let #(state, effects) =
-    list.fold(changes, #(state, [fx]), fn(acc, change) {
-      let #(state, effects) = acc
-      let #(shared, more) = apply_change(state.shared, change)
-      #(State(..state, shared:), [more, ..effects])
+fn navigate(state: State, route: Route) -> #(State, Effect(Msg)) {
+  sync_page(State(..state, shared: model.Model(..state.shared, route:)))
+}
+
+/// Applies a page's changes to the shared state, in order.
+fn apply(shared: Shared, changes: List(Change)) -> #(Shared, Effect(Msg)) {
+  let #(shared, effects) =
+    list.fold(changes, #(shared, []), fn(acc, change) {
+      let #(shared, effects) = acc
+      let #(shared, more) = apply_change(shared, change)
+      #(shared, [more, ..effects])
     })
-  #(sync_page(state), effect.batch(list.reverse(effects)))
+  #(shared, effect.batch(list.reverse(effects)))
 }
 
 fn apply_change(shared: Shared, change: Change) -> #(Shared, Effect(Msg)) {
   case change {
-    shared.Navigate(route) -> #(
-      model.Model(..shared, route: route),
-      effect.none(),
-    )
+    shared.Navigate(route) -> #(model.Model(..shared, route:), effect.none())
     shared.SignedIn(session, registered) ->
       session_update.signed_in(shared, session, registered)
+    shared.Notice(text) -> #(
+      model.Model(..shared, notice: Some(text)),
+      effect.none(),
+    )
+    shared.ProfileChanged(profile) -> #(
+      model.Model(
+        ..shared,
+        settings: profile.settings,
+        account: profile.account,
+      ),
+      effect.none(),
+    )
+    shared.KeymapChanged(mode) -> {
+      let shared = model.Model(..shared, editor_keymap: mode)
+      #(shared, common.save_preferences(shared))
+    }
+    shared.Refreshing(on) -> #(
+      model.Model(..shared, refreshing: on),
+      effect.none(),
+    )
+    shared.Reload -> #(
+      model.Model(..shared, refreshing: True),
+      store.load_state(shared, msg.StateLoaded),
+    )
+    shared.ToggleHelp -> keyboard.toggle_help(shared)
   }
 }
 
 /// The route is still where navigation is decided while screens move into
-/// pages: when it lands on a page's route, that page opens fresh; when it
-/// leaves, the page closes.
-fn sync_page(state: State) -> State {
+/// pages: when it lands on a page's route, that page opens fresh (with
+/// whatever its init fetches); when it leaves, the page closes.
+fn sync_page(state: State) -> #(State, Effect(Msg)) {
   case state.shared.route, state.page {
-    AuthRoute, Auth(_) -> state
-    AuthRoute, _ ->
-      State(..state, page: Auth(auth_model.init(auth_model.SigningIn)))
-    _, _ -> State(..state, page: Legacy)
+    AuthRoute, Auth(_) | SettingsRoute, Settings(_) -> #(state, effect.none())
+    AuthRoute, _ -> #(
+      State(..state, page: Auth(auth_model.init(auth_model.SigningIn))),
+      effect.none(),
+    )
+    SettingsRoute, _ -> {
+      let #(page, fx) = settings_update.init(state.shared)
+      #(State(..state, page: Settings(page)), effect.map(fx, msg.SettingsMsg))
+    }
+    _, _ -> #(State(..state, page: Legacy), effect.none())
   }
 }

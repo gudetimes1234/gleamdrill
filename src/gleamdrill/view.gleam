@@ -18,7 +18,6 @@ import gleamdrill/view/help
 import gleamdrill/view/manage
 import gleamdrill/view/menu
 import gleamdrill/view/report
-import gleamdrill/view/settings
 import gleamdrill/view/stats
 import gleamdrill/view/statusbar
 import gleamdrill/view/study
@@ -89,7 +88,7 @@ fn legacy_screen(m: Model) -> Element(Msg) {
     // Drawn by its page module; never reached.
     AuthRoute -> element.none()
     TracksRoute -> tracks.view(m)
-    SettingsRoute -> settings.view(m)
+    SettingsRoute -> element.none()
     SummaryRoute -> summary.view(m)
     StudyRoute -> study.view(m)
     StatsRoute -> stats.view(m)

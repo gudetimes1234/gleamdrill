@@ -9,7 +9,7 @@ import gleamdrill/model.{
   Guest, Model, Ran, RunError, RunIdle, Running, RuntimeFailed, RuntimeLoading,
   RuntimeNotLoaded, RuntimeReady, TimedOut, TourRoute,
 }
-import gleamdrill/msg.{type Msg, CacheWarmed, RemoteRunFinished}
+import gleamdrill/msg.{type Msg, RemoteRunFinished}
 import gleamdrill/platform/browser
 import gleamdrill/runner
 import gleamdrill/store
@@ -17,43 +17,6 @@ import gleamdrill/store/remote.{type ApiError}
 import gleamdrill/update/common
 import lustre/effect.{type Effect}
 import wire
-
-pub fn warm_cache(m: Model) -> #(Model, Effect(Msg)) {
-  case m.warming {
-    Some(_) -> #(m, effect.none())
-    None -> #(
-      Model(..m, warming: Some(#(0, 0))),
-      effect.from(fn(dispatch) {
-        browser.warm_runtime_cache(fn(ok, done, total, finished) {
-          dispatch(CacheWarmed(ok, done, total, finished))
-        })
-      }),
-    )
-  }
-}
-
-pub fn cache_warmed(
-  m: Model,
-  ok: Bool,
-  done: Int,
-  total: Int,
-  finished: Bool,
-) -> #(Model, Effect(Msg)) {
-  case ok, finished {
-    False, _ -> #(
-      Model(
-        ..m,
-        warming: None,
-        notice: Some(
-          "The download stopped partway. Whatever arrived is kept; try again when you are back online.",
-        ),
-      ),
-      common.measure_cache(),
-    )
-    True, True -> #(Model(..m, warming: None), common.measure_cache())
-    True, False -> #(Model(..m, warming: Some(#(done, total))), effect.none())
-  }
-}
 
 pub fn retry_runtime(m: Model, language: String) -> #(Model, Effect(Msg)) {
   #(
@@ -342,8 +305,4 @@ fn start_run(
       #(Model(..next, run_kind: kind), fx)
     }
   }
-}
-
-pub fn cache_measured(m: Model, bytes: Int) -> #(Model, Effect(Msg)) {
-  #(Model(..m, cache_bytes: bytes), effect.none())
 }

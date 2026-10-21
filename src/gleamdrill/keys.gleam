@@ -24,8 +24,8 @@ import gleamdrill/model.{
 import gleamdrill/msg.{
   type Key, type Msg, BoardJumped, BoardMoved, BoardShelfMoved,
   BoardToggledAtCursor, CompareMoved, ComparePickedVariant, EditorFocusRequested,
-  ExitConfirmed, HelpToggled, ImportConfirmed, MenuActivated, MenuCursorJumped,
-  MenuCursorMoved, MenuPaneFocused, MenuSuspendedAtCursor, MenuToggledAtCursor,
+  ExitConfirmed, HelpToggled, MenuActivated, MenuCursorJumped, MenuCursorMoved,
+  MenuPaneFocused, MenuSuspendedAtCursor, MenuToggledAtCursor,
   NoteFocusRequested, QueueCursorJumped, QueueCursorMoved, QueueToggledAtCursor,
   QuizMoved, SearchFocusRequested, StatsActivated, StatsCursorMoved,
   TourActivated, TourCursorMoved, TourRunTicked, UserAddedAllShown,
@@ -55,30 +55,19 @@ pub fn bindings(m: Model) -> List(Binding(Msg)) {
 
 /// The rows of whatever overlay owns the keyboard right now, if any.
 pub fn overlay(m: Model) -> Result(List(Binding(Msg)), Nil) {
-  case m.help_open, m.exit_prompt, m.import_pending {
+  case m.help_open, m.exit_prompt {
     // While the cheatsheet is up it owns the keyboard.
-    True, _, _ ->
+    True, _ ->
       Ok([
         Binding(["Escape", "?"], "close", "Close this cheatsheet", HelpToggled),
       ])
     // So does the exit prompt: Enter leaves, Escape stays.
-    False, Some(_), _ ->
+    False, Some(_) ->
       Ok([
         Binding(["Enter"], "leave", "Leave the drill", ExitConfirmed(True)),
         Binding(["Escape"], "stay", "Stay in the drill", ExitConfirmed(False)),
       ])
-    // And the import question, the same way round: Escape keeps yours.
-    False, None, Some(_) ->
-      Ok([
-        Binding(
-          ["Enter"],
-          "replace",
-          "Replace everything",
-          ImportConfirmed(True),
-        ),
-        Binding(["Escape"], "keep", "Keep what is here", ImportConfirmed(False)),
-      ])
-    False, None, None -> Error(Nil)
+    False, None -> Error(Nil)
   }
 }
 
@@ -150,15 +139,8 @@ pub fn screen(m: Model) -> List(Binding(Msg)) {
           },
           [help_binding()],
         ])
-      SettingsRoute -> [
-        Binding(
-          ["Escape", "b"],
-          "back",
-          "Back to study",
-          UserClickedBackToStudy,
-        ),
-        help_binding(),
-      ]
+      // Drawn by page/settings, which brings its own rows.
+      SettingsRoute -> []
       SummaryRoute ->
         list.flatten([
           undo_binding(m),

@@ -20,4 +20,16 @@ pub type Change {
   /// A session was created. `registered` is a brand-new account, whose guest
   /// progress moves into it automatically.
   SignedIn(session: wire.Session, registered: Bool)
+  /// A banner for whatever just went wrong (or right).
+  Notice(String)
+  /// The scheduler settings and the account knobs, as now shown.
+  ProfileChanged(wire.Profile)
+  /// The editor keymap, a device preference.
+  KeymapChanged(String)
+  /// The sync bar, on or off, while something reloads.
+  Refreshing(Bool)
+  /// Fetch the boot state again: the data on screen is out of date.
+  Reload
+  /// Open or close the `?` cheatsheet.
+  ToggleHelp
 }

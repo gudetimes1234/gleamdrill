@@ -8,34 +8,31 @@
 
 import gleamdrill/model.{type Model, DrillRoute, Model}
 import gleamdrill/msg.{
-  type Msg, ArchiveReady, ArchiveRestored, AuthMsg, BlitzExpired, BoardJumped,
-  BoardMoved, BoardShelfMoved, BoardToggledAtCursor, CacheMeasured, CacheWarmed,
-  CardSuspended, ClockTicked, CompareMoved, ComparePickedVariant,
-  DraftSaveTicked, DraftSynced, EditorChanged, EditorFocusRequested,
-  EditorResized, ExamSampled, ExitConfirmed, HelpToggled, HistoryLoaded,
-  ImportConfirmed, ImportPicked, InsightsLoaded, KeyPressed, MenuActivated,
-  MenuCursorJumped, MenuCursorMoved, MenuPaneFocused, MenuSuspendedAtCursor,
-  MenuToggledAtCursor, NoteChanged, NoteFocusRequested, NoteSaveTicked,
-  NoteSynced, QueueChanged, QueueCursorJumped, QueueCursorMoved,
-  QueueToggledAtCursor, QueuesSaved, QuizMoved, RemoteRunFinished,
-  ReviewRecorded, RunFinished, RunTimedOut, RunnerFailed, RunnerReady,
-  RuntimeLoadTimedOut, SearchFocusRequested, SettingsSaved, SignOutCompleted,
-  StateImported, StateLoaded, StatsActivated, StatsCursorMoved, StatsLoaded,
-  TourActivated, TourCursorMoved, TourEditorChanged, TourRunTicked, UndoRecorded,
-  UserAddedAllShown, UserAddedSelectionToQueue, UserAddedStarterSet,
-  UserCancelledQueueName, UserChangedGroup, UserChangedIterations,
-  UserChangedKeymap, UserChangedQueueName, UserChangedSetting,
-  UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
-  UserClickedClearSelection, UserClickedCompare, UserClickedDeviceTimezone,
-  UserClickedExitDrill, UserClickedExitReport, UserClickedExport,
-  UserClickedImport, UserClickedMergeGuest, UserClickedNext, UserClickedQueue,
-  UserClickedRecall, UserClickedRetryRuntime, UserClickedRetrySync,
-  UserClickedRun, UserClickedScratchRun, UserClickedSelectAll,
-  UserClickedSettings, UserClickedSignIn, UserClickedSignOut,
-  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
-  UserClickedStopRun, UserClickedStudy, UserClickedSubcategory, UserClickedTour,
-  UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
-  UserClickedTracks, UserClickedUndo, UserClickedWarmCache, UserClosedCompare,
+  type Msg, AuthMsg, BlitzExpired, BoardJumped, BoardMoved, BoardShelfMoved,
+  BoardToggledAtCursor, CardSuspended, ClockTicked, CompareMoved,
+  ComparePickedVariant, DraftSaveTicked, DraftSynced, EditorChanged,
+  EditorFocusRequested, EditorResized, ExamSampled, ExitConfirmed, HelpToggled,
+  HistoryLoaded, InsightsLoaded, KeyPressed, MenuActivated, MenuCursorJumped,
+  MenuCursorMoved, MenuPaneFocused, MenuSuspendedAtCursor, MenuToggledAtCursor,
+  NoteChanged, NoteFocusRequested, NoteSaveTicked, NoteSynced, QueueChanged,
+  QueueCursorJumped, QueueCursorMoved, QueueToggledAtCursor, QueuesSaved,
+  QuizMoved, RemoteRunFinished, ReviewRecorded, RunFinished, RunTimedOut,
+  RunnerFailed, RunnerReady, RuntimeLoadTimedOut, SearchFocusRequested,
+  SettingsMsg, SignOutCompleted, StateImported, StateLoaded, StatsActivated,
+  StatsCursorMoved, StatsLoaded, TourActivated, TourCursorMoved,
+  TourEditorChanged, TourRunTicked, UndoRecorded, UserAddedAllShown,
+  UserAddedSelectionToQueue, UserAddedStarterSet, UserCancelledQueueName,
+  UserChangedGroup, UserChangedIterations, UserChangedKeymap,
+  UserChangedQueueName, UserClickedBackToStudy, UserClickedBreadcrumb,
+  UserClickedBrowse, UserClickedClearSelection, UserClickedCompare,
+  UserClickedExitDrill, UserClickedExitReport, UserClickedMergeGuest,
+  UserClickedNext, UserClickedQueue, UserClickedRecall, UserClickedRetryRuntime,
+  UserClickedRetrySync, UserClickedRun, UserClickedScratchRun,
+  UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
+  UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
+  UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
+  UserClickedTour, UserClickedTourContents, UserClickedTourNext,
+  UserClickedTourPrev, UserClickedTracks, UserClickedUndo, UserClosedCompare,
   UserClosedDetail, UserDeletedQueue, UserDismissedDiff, UserDismissedMergeOffer,
   UserDismissedNotice, UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded,
   UserOpenedDetail, UserOpenedLesson, UserPickedActiveQueue, UserPickedChoice,
@@ -63,7 +60,6 @@ import gleamdrill/update/run as run_update
 import gleamdrill/update/session as session_update
 import gleamdrill/update/stats
 import gleamdrill/update/tour as tour_update
-import gleamdrill/update/transfer
 import lustre/effect.{type Effect}
 
 pub fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
@@ -83,7 +79,10 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     // Pages and the navigation into them belong to `app`, which routes
     // these before the flat model ever sees them.
-    AuthMsg(_) | UserClickedSignIn(_) -> #(m, effect.none())
+    AuthMsg(_) | SettingsMsg(_) | UserClickedSignIn(_) | UserClickedSettings -> #(
+      m,
+      effect.none(),
+    )
 
     // --- keyboard ---
     KeyPressed(key) -> keyboard.pressed(m, key, handle)
@@ -201,12 +200,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     UserChangedKeymap(mode) -> drill_update.changed_keymap(m, mode)
     UserToggledResults -> drill_update.toggle_results(m)
     EditorResized(height) -> drill_update.editor_resized(m, height)
-    UserClickedSettings -> session_update.open_settings(m)
-
-    UserClickedWarmCache -> run_update.warm_cache(m)
-    CacheWarmed(ok, done, total, finished) ->
-      run_update.cache_warmed(m, ok, done, total, finished)
-    CacheMeasured(bytes) -> run_update.cache_measured(m, bytes)
 
     // --- the Gleam Language Tour ---
     UserClickedTour -> tour_update.open_contents(m)
@@ -220,19 +213,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     TourCursorMoved(delta) -> tour_update.cursor_moved(m, delta)
     TourActivated -> tour_update.activated(m)
 
-    UserChangedSetting(field, raw) ->
-      session_update.changed_setting(m, field, raw)
-    UserClickedDeviceTimezone -> session_update.device_timezone(m)
-    SettingsSaved(result) -> session_update.settings_saved(m, result)
-
     // --- export and import ---
-    UserClickedExport -> transfer.export(m)
-    ArchiveReady(result) -> transfer.archive_ready(m, result)
-    UserClickedImport -> transfer.pick_import(m)
-    ImportPicked(text) -> transfer.import_picked(m, text)
-    ImportConfirmed(replace) -> transfer.import_confirmed(m, replace)
-    ArchiveRestored(result) -> transfer.restored(m, result)
-
     UserClickedTracks -> menu_update.open_tracks(m)
     UserPickedTrack(name) -> menu_update.enter_track(m, name, starter: False)
     UserPickedTrackWithStarter(name) ->
