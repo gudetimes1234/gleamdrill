@@ -322,45 +322,93 @@ a typo is a compile error.
 
 ### Layout
 
-The app is Lustre (the Elm architecture), laid out MVC-in-spirit, and the
-folders under `src/gleamdrill/` are the layers:
+The app is Lustre (the Elm architecture), built the way large Elm apps are:
+one module per page, each a small program of its own, and a thin app that
+owns the URL, the shared state and the switch between pages. The folders
+under `src/gleamdrill/` are the layers:
 
 ```
-src/gleamdrill.gleam      main and init
+src/gleamdrill.gleam      main: reads what the browser remembers and the URL, starts the app
 src/gleamdrill/
-  model.gleam             the state, plus read-only helpers over it
-  msg.gleam               every message
-  keys.gleam              the one binding table behind dispatch, the status bar and help
-  update.gleam  update/   the controller: one exhaustive case over Msg, one handler module per feature
-  view.gleam    view/     the shell, and one module per screen
-  store.gleam   store/    persistence: api, local, session, legacy, remote
+  app.gleam               State(shared, page, address), the Page switch, update/view, Change application
+  route.gleam             the URL of each screen, and reading one back (modem)
+  shared.gleam            Shared (= model.Model) and Change, what a page asks of it
+  model.gleam             the shared state, plus read-only helpers over it
+  msg.gleam               the app's messages: one wrapper per page, plus the shared state's own
+  shared/                 the shared state's transitions: session, cards, queues, run, stats, tracks
+  page/<name>/            one folder per page: auth browse queue settings sitting stats study tour tracks
+    model.gleam  msg.gleam  update.gleam  view.gleam  keys.gleam
+  ui/                     what every page draws with: shell, layout, document, nav, statusbar, help,
+                          binding (a key row), keyboard (the leader and focus rules), format, id
+  store.gleam   store/    persistence: api, local, session, legacy, remote (Data and ApiError)
   runner.gleam  runner/   code execution: the Gleam, Python and TypeScript workers
   domain/                 pure logic: queue, walk, guest, compare, board, insights, track
   content/                problem, problems, tour; problems/ hand-written, problems/generated/ from make content
   platform/               browser and editor: the JavaScript boundary
 ```
 
+**A page** is four functions over its own model. `update(shared, model, msg)`
+returns `#(Model, Effect(Msg), List(Change))`: its next state, its effects,
+and the changes it wants made to the shared state, which it reads but never
+writes. `init(shared)` has the same shape. `view(shared, model)` returns a
+`ui/document.Document` that `ui/layout` frames with the nav bar and notices,
+and `keys.bindings(shared, model)` lists its key rows, which drive dispatch,
+the status bar and the help overlay alike. The app wraps each page's `Msg`
+in one variant of its own (`TourMsg(tour.Msg)`), and the route decides which
+page is up: landing on a route opens its page fresh, leaving it drops it.
+
+**The URL** follows the screen. `route.path` names each screen that has an
+address (`/t/neetcode-150/stats`; a sitting and the compare view have none)
+and the app pushes it after any message that moves to another one. Back and
+Forward arrive as `UrlChanged`, which enters the named track if it differs.
+A reload, or a link, lands on the screen it names.
+
 The rules the tree encodes:
 
 - `content/` and `domain/` are pure and import nothing above `model`.
+- A page imports `shared`, `ui/`, `store`, `domain/` and its own folder,
+  never another page's update or view (a type may cross: the sign-in mode
+  `UserClickedSignIn` carries is `page/auth/model.Mode`). What it needs
+  from elsewhere it asks for with a
+  `Change`; `Dispatch(msg)` hands a message back to the app for the rare
+  case that is another page's action (starting a sitting from Browse).
 - `store.gleam` is the **only** module that imports `store/api`, `local`,
-  `session` or `legacy`; the update handlers reach persistence through it
-  alone. (`store/remote`, the API error type, is read by `msg` and handlers.)
-- `update.gleam` has no catch-all, and every arm delegates to a named
-  handler, so a new message cannot compile unrouted. A handler that needs
-  another feature re-enters with a message through `dispatch` instead of
-  importing it; `update/common` holds what several features share.
+  `session` or `legacy`. Its effects take a result constructor (`to:`), so
+  they know nothing of any page's messages.
+- `app.gleam` and `shared/update.gleam` match exhaustively, with no
+  catch-all, so a new message cannot compile unrouted.
 - FFI `.mjs` files sit beside the one module that declares them, in
   `platform/`, `runner/` and `content/` only.
 - Never hand-edit `content/problems/generated/`; CI fails when it differs
   from what `make content` writes.
 
+#### Adding a page
+
+1. `page/<name>/msg.gleam`: its `Msg`. `model.gleam`: its `Model` and `init`.
+2. `update.gleam`: `init(shared)` and `update(shared, model, msg)`, both
+   returning `#(Model, Effect(Msg), List(Change))`. Anything shared (a
+   notice, a navigation, a reload) is a `Change`; add a variant to
+   `shared.Change` and its arm in `app.apply_change` only when none fits.
+3. `view.gleam`: `view(shared, model) -> Document(Msg)`. `keys.gleam`:
+   `bindings`, and `label` for the status bar.
+4. A `Route` for it in `model.gleam`, its address in `route.path` and
+   `route.parse` (with a test), and a nav entry in `ui/nav` if it has one.
+5. In `app.gleam`: a `Page` variant, its `XMsg` wrapper in `msg.gleam` (and
+   in the no-op arm of `shared/update`), and an arm each in `update`,
+   `sync_page`, `view` and `page_keys`. The compiler lists every place left.
+6. A snapshot in `test/gleamdrill/snapshot_test.gleam`, accepted with
+   `gleam run -m birdie`.
+
 The server follows the same rule. `routes/*` are controllers: decode the
 request, call `study/*`, encode the reply with `wire`. Each `study/*` module
-owns one concern's SQL and row decoders; pure decisions (scheduling, the
-queue merge, the day budget, validation, track picking) are plain functions
-there, unit-tested without Postgres. A module that opens a `pog.transaction`
-owns it, and its siblings take the transaction as a `pog.Connection`.
+owns one concern; its SQL lives in `study/<concern>/sql/*.sql`, from which
+Squirrel generates the typed `sql.gleam` (`make sql`; CI checks it against
+the migrated schema). Pure decisions (scheduling, the queue merge, the day
+budget, validation, track picking) are plain functions there, unit- and
+property-tested without Postgres. A module that opens a `pog.transaction`
+owns it, and its siblings take the transaction as a `pog.Connection`. The
+server boots as an OTP supervision tree: the database pool, migrations as a
+one-shot child, the reminder actor, and the HTTP listener.
 
 ### The shared scheduler and wire format
 

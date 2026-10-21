@@ -66,6 +66,7 @@ make build         # regenerate content, bundle workers, build dist/
 make bundle        # dist/ only, no content regeneration — what the web image runs
 make verify        # every solution + scheduler + app tests
 make e2e           # real browser against built app + backend
+gleam run -m birdie  # review screen/payload snapshot changes from make app-test
 make check-format  # gleam format --check, all four projects
 ```
 
