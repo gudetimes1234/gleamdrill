@@ -12,39 +12,38 @@ import gleamdrill/msg.{
   BoardToggledAtCursor, CardSuspended, ClockTicked, CompareMoved,
   ComparePickedVariant, DraftSaveTicked, DraftSynced, EditorChanged,
   EditorFocusRequested, EditorResized, ExamSampled, ExitConfirmed, HelpToggled,
-  HistoryLoaded, InsightsLoaded, KeyPressed, MenuActivated, MenuCursorJumped,
-  MenuCursorMoved, MenuPaneFocused, MenuSuspendedAtCursor, MenuToggledAtCursor,
-  NoteChanged, NoteFocusRequested, NoteSaveTicked, NoteSynced, QueueChanged,
+  InsightsLoaded, KeyPressed, MenuActivated, MenuCursorJumped, MenuCursorMoved,
+  MenuPaneFocused, MenuSuspendedAtCursor, MenuToggledAtCursor, NoteChanged,
+  NoteFocusRequested, NoteSaveTicked, NoteSynced, QueueChanged,
   QueueCursorJumped, QueueCursorMoved, QueueToggledAtCursor, QueuesSaved,
   QuizMoved, RemoteRunFinished, ReviewRecorded, RunFinished, RunTimedOut,
   RunnerFailed, RunnerReady, RuntimeLoadTimedOut, SearchFocusRequested,
-  SettingsMsg, SignOutCompleted, StateImported, StateLoaded, StatsActivated,
-  StatsCursorMoved, StatsLoaded, TourActivated, TourCursorMoved,
-  TourEditorChanged, TourRunTicked, TracksMsg, UndoRecorded, UserAddedAllShown,
-  UserAddedSelectionToQueue, UserAddedStarterSet, UserCancelledQueueName,
-  UserChangedGroup, UserChangedIterations, UserChangedKeymap,
-  UserChangedQueueName, UserClickedBackToStudy, UserClickedBreadcrumb,
-  UserClickedBrowse, UserClickedClearSelection, UserClickedCompare,
-  UserClickedExitDrill, UserClickedExitReport, UserClickedMergeGuest,
-  UserClickedNext, UserClickedQueue, UserClickedRecall, UserClickedRetryRuntime,
+  SettingsMsg, SignOutCompleted, StateImported, StateLoaded, StatsLoaded,
+  StatsMsg, TourActivated, TourCursorMoved, TourEditorChanged, TourRunTicked,
+  TracksMsg, UndoRecorded, UserAddedAllShown, UserAddedSelectionToQueue,
+  UserAddedStarterSet, UserCancelledQueueName, UserChangedGroup,
+  UserChangedIterations, UserChangedKeymap, UserChangedQueueName,
+  UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
+  UserClickedClearSelection, UserClickedCompare, UserClickedExitDrill,
+  UserClickedExitReport, UserClickedMergeGuest, UserClickedNext,
+  UserClickedQueue, UserClickedRecall, UserClickedRetryRuntime,
   UserClickedRetrySync, UserClickedRun, UserClickedScratchRun,
   UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
   UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
   UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
   UserClickedTour, UserClickedTourContents, UserClickedTourNext,
   UserClickedTourPrev, UserClickedTracks, UserClickedUndo, UserClosedCompare,
-  UserClosedDetail, UserDeletedQueue, UserDismissedDiff, UserDismissedMergeOffer,
+  UserDeletedQueue, UserDismissedDiff, UserDismissedMergeOffer,
   UserDismissedNotice, UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded,
-  UserOpenedDetail, UserOpenedLesson, UserPickedActiveQueue, UserPickedChoice,
-  UserRemovedAllShown, UserResetLesson, UserRevealedRecall,
-  UserRevealedWholeThing, UserSearched, UserSearchedQueue, UserSelectedQueue,
-  UserStartedBlitz, UserStartedNewQueue, UserStartedRenameQueue,
-  UserSubmittedAnswer, UserSubmittedBoard, UserSubmittedQueueName,
-  UserToggledBlitz, UserToggledDiff, UserToggledNudge, UserToggledPane,
-  UserToggledPiece, UserToggledProblem, UserToggledPrompt, UserToggledQueued,
-  UserToggledResults, UserToggledSolution, UserToggledSuspend, UserToggledTimer,
-  WalkAdvanced, WalkBacked, WalkCodeShown, WalkFocused, WalkHintShown,
-  WalkWhyShown,
+  UserOpenedLesson, UserPickedActiveQueue, UserPickedChoice, UserRemovedAllShown,
+  UserResetLesson, UserRevealedRecall, UserRevealedWholeThing, UserSearched,
+  UserSearchedQueue, UserSelectedQueue, UserStartedBlitz, UserStartedNewQueue,
+  UserStartedRenameQueue, UserSubmittedAnswer, UserSubmittedBoard,
+  UserSubmittedQueueName, UserToggledBlitz, UserToggledDiff, UserToggledNudge,
+  UserToggledPane, UserToggledPiece, UserToggledProblem, UserToggledPrompt,
+  UserToggledQueued, UserToggledResults, UserToggledSolution, UserToggledSuspend,
+  UserToggledTimer, WalkAdvanced, WalkBacked, WalkCodeShown, WalkFocused,
+  WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/platform/browser
 import gleamdrill/update/blitz as blitz_update
@@ -82,6 +81,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     AuthMsg(_)
     | SettingsMsg(_)
     | TracksMsg(_)
+    | StatsMsg(_)
+    | UserClickedStats
     | UserClickedSignIn(_)
     | UserClickedSettings -> #(m, effect.none())
 
@@ -131,14 +132,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UserClickedBackToStudy -> review_update.back_to_study(m)
 
-    UserClickedStats -> stats.open(m)
     StatsLoaded(result) -> stats.loaded(m, result)
     InsightsLoaded(result) -> stats.insights_loaded(m, result)
-    StatsCursorMoved(delta) -> stats.cursor_moved(m, delta)
-    StatsActivated -> stats.activated(m)
-    UserOpenedDetail(problem) -> stats.open_detail(m, problem)
-    UserClosedDetail -> stats.close_detail(m)
-    HistoryLoaded(problem, result) -> stats.history_loaded(m, problem, result)
 
     UserGraded(rating) -> review_update.graded(m, rating)
     ReviewRecorded(result) -> review_update.recorded(m, result)

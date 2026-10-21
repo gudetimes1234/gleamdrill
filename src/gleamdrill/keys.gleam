@@ -27,20 +27,20 @@ import gleamdrill/msg.{
   ExitConfirmed, HelpToggled, MenuActivated, MenuCursorJumped, MenuCursorMoved,
   MenuPaneFocused, MenuSuspendedAtCursor, MenuToggledAtCursor,
   NoteFocusRequested, QueueCursorJumped, QueueCursorMoved, QueueToggledAtCursor,
-  QuizMoved, SearchFocusRequested, StatsActivated, StatsCursorMoved,
-  TourActivated, TourCursorMoved, TourRunTicked, UserAddedAllShown,
-  UserClickedBackToStudy, UserClickedBrowse, UserClickedClearSelection,
-  UserClickedCompare, UserClickedExitDrill, UserClickedExitReport,
-  UserClickedNext, UserClickedQueue, UserClickedRecall, UserClickedRun,
-  UserClickedScratchRun, UserClickedSelectAll, UserClickedStartDrill,
-  UserClickedStartExam, UserClickedStats, UserClickedStudy, UserClickedTour,
-  UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
-  UserClickedTracks, UserClickedUndo, UserClosedCompare, UserClosedDetail,
-  UserFilteredQueue, UserGraded, UserPickedActiveQueue, UserPickedChoice,
-  UserRemovedAllShown, UserRevealedRecall, UserRevealedWholeThing, UserSearched,
-  UserSubmittedAnswer, UserSubmittedBoard, UserToggledBlitz, UserToggledDiff,
-  UserToggledNudge, UserToggledPane, UserToggledPrompt, UserToggledResults,
-  WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown, WalkWhyShown,
+  QuizMoved, SearchFocusRequested, TourActivated, TourCursorMoved, TourRunTicked,
+  UserAddedAllShown, UserClickedBackToStudy, UserClickedBrowse,
+  UserClickedClearSelection, UserClickedCompare, UserClickedExitDrill,
+  UserClickedExitReport, UserClickedNext, UserClickedQueue, UserClickedRecall,
+  UserClickedRun, UserClickedScratchRun, UserClickedSelectAll,
+  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
+  UserClickedStudy, UserClickedTour, UserClickedTourContents,
+  UserClickedTourNext, UserClickedTourPrev, UserClickedTracks, UserClickedUndo,
+  UserClosedCompare, UserFilteredQueue, UserGraded, UserPickedActiveQueue,
+  UserPickedChoice, UserRemovedAllShown, UserRevealedRecall,
+  UserRevealedWholeThing, UserSearched, UserSubmittedAnswer, UserSubmittedBoard,
+  UserToggledBlitz, UserToggledDiff, UserToggledNudge, UserToggledPane,
+  UserToggledPrompt, UserToggledResults, WalkAdvanced, WalkBacked, WalkCodeShown,
+  WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/ui/binding.{type Binding, Binding}
 
@@ -79,39 +79,8 @@ pub fn screen(m: Model) -> List(Binding(Msg)) {
       MenuRoute -> menu_bindings(m)
       DrillRoute -> drill_bindings(m)
       CompareRoute -> compare_bindings()
-      StatsRoute ->
-        case m.detail {
-          Some(_) -> [
-            Binding(
-              ["Escape"],
-              "close",
-              "Close the problem detail",
-              UserClosedDetail,
-            ),
-            help_binding(),
-          ]
-          None -> [
-            Binding(
-              ["j", "k"],
-              "move",
-              "Move through the problem lists",
-              StatsCursorMoved(1),
-            ),
-            Binding(
-              ["Enter"],
-              "detail",
-              "Open the problem's review history",
-              StatsActivated,
-            ),
-            Binding(
-              ["Escape", "b"],
-              "back",
-              "Back to the study screen",
-              UserClickedBackToStudy,
-            ),
-            help_binding(),
-          ]
-        }
+      // Drawn by page/stats, which brings its own rows.
+      StatsRoute -> []
       ReportRoute -> [
         Binding(
           ["Enter", "Escape", "b"],
@@ -780,16 +749,6 @@ pub fn dispatch(m: Model, key: Key) -> Result(Msg, Nil) {
       case m.tour_page {
         TourContents -> Ok(TourCursorMoved(1))
         TourLesson(_) -> lookup(m, key)
-      }
-    "k", StatsRoute, False, _ ->
-      case m.detail {
-        None -> Ok(StatsCursorMoved(-1))
-        Some(_) -> Error(Nil)
-      }
-    "j", StatsRoute, False, _ ->
-      case m.detail {
-        None -> Ok(StatsCursorMoved(1))
-        Some(_) -> Error(Nil)
       }
     // j/k and h/l share one Binding row each, so without these the second
     // key of a pair would resolve to the first one's message and k would move

@@ -15,55 +15,72 @@ import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/content/problems
 import gleamdrill/domain/insights.{type Analysis, type CardInsight}
 import gleamdrill/domain/track
-import gleamdrill/model.{type Model}
-import gleamdrill/msg.{
+import gleamdrill/model as shared_model
+import gleamdrill/page/stats/model.{type Model}
+import gleamdrill/page/stats/msg.{
   type Msg, UserClosedDetail, UserOpenedDetail, UserToggledSuspend,
 }
+import gleamdrill/shared.{type Shared}
 import gleamdrill/store/remote
+import gleamdrill/ui/document.{type Document, Document}
 import gleamdrill/view/format
-import gleamdrill/view/nav
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 import wire.{type ReviewRow, type Stats}
 
-pub fn view(m: Model) -> Element(Msg) {
-  html.div([attribute.class("stats-screen")], [
-    nav.notices(m),
-    html.header([attribute.class("study-header")], [
-      html.h1([attribute.class("study-title")], [html.text("Progress")]),
-      nav.bar(m, model.StatsRoute),
-    ]),
-    case m.stats, m.insights {
-      remote.Failed(failure), _ | _, remote.Failed(failure) ->
-        html.p([attribute.class("study-summary")], [
-          html.text(remote.error_message(failure)),
-        ])
-      remote.Loaded(stats), remote.Loaded(data) ->
-        // Answered cards, not queued ones: an upgraded account has card state
-        // without review history and deserves the panels, while a queue of
-        // problems nobody has opened has nothing to show yet.
-        case stats.total_reviews == 0 && model.answered_count(m) == 0 {
-          True ->
-            html.p([attribute.class("study-summary")], [
-              html.text("No reviews yet. Study a few cards and this fills in."),
-            ])
-          False -> body(m, stats, insights.analyse(data, m.cards, m.now))
-        }
-      _, _ ->
-        html.p([attribute.class("study-summary")], [html.text("Loading…")])
-    },
-    detail_overlay(m),
-  ])
+pub fn view(shared: Shared, page: Model) -> Document(Msg) {
+  Document(
+    class: "stats-screen",
+    title: [html.text("Progress")],
+    storage_warning: False,
+    body: [
+      case shared.stats, shared.insights {
+        remote.Failed(failure), _ | _, remote.Failed(failure) ->
+          html.p([attribute.class("study-summary")], [
+            html.text(remote.error_message(failure)),
+          ])
+        remote.Loaded(stats), remote.Loaded(data) ->
+          // Answered cards, not queued ones: an upgraded account has card state
+          // without review history and deserves the panels, while a queue of
+          // problems nobody has opened has nothing to show yet.
+          case
+            stats.total_reviews == 0 && shared_model.answered_count(shared) == 0
+          {
+            True ->
+              html.p([attribute.class("study-summary")], [
+                html.text(
+                  "No reviews yet. Study a few cards and this fills in.",
+                ),
+              ])
+            False ->
+              body(
+                shared,
+                page,
+                stats,
+                insights.analyse(data, shared.cards, shared.now),
+              )
+          }
+        _, _ ->
+          html.p([attribute.class("study-summary")], [html.text("Loading…")])
+      },
+      detail_overlay(shared, page),
+    ],
+  )
 }
 
-fn body(m: Model, stats: Stats, analysis: Analysis) -> Element(Msg) {
+fn body(
+  shared: Shared,
+  page: Model,
+  stats: Stats,
+  analysis: Analysis,
+) -> Element(Msg) {
   element.fragment([
     headline(stats, analysis),
     tier_bar(analysis),
-    calibration_panel(m),
-    problem_lists(m, analysis),
+    calibration_panel(shared),
+    problem_lists(shared, page, analysis),
     section("Where your cards are", state_bars(stats)),
     section("Reviews per day", heatmap(stats)),
     section("Due in the next 30 days", forecast(stats)),
@@ -151,8 +168,8 @@ fn tier_bar(analysis: Analysis) -> Element(Msg) {
 
 // --- calibration -----------------------------------------------------------
 
-fn calibration_panel(m: Model) -> Element(Msg) {
-  case remote.value(m.insights) {
+fn calibration_panel(shared: Shared) -> Element(Msg) {
+  case remote.value(shared.insights) {
     None -> element.none()
     Some(data) -> {
       let view = insights.calibration_view(data.calibration)
@@ -217,7 +234,11 @@ fn calibration_row(row: wire.Calibration) -> Element(Msg) {
 
 // --- the problem lists -----------------------------------------------------
 
-fn problem_lists(m: Model, analysis: Analysis) -> Element(Msg) {
+fn problem_lists(
+  shared: Shared,
+  page: Model,
+  analysis: Analysis,
+) -> Element(Msg) {
   let #(needs, mastered) = insights.attention_lists(analysis)
   let offset = list.length(needs)
   element.fragment([
@@ -229,7 +250,7 @@ fn problem_lists(m: Model, analysis: Analysis) -> Element(Msg) {
           html.div(
             [attribute.class("problem-rows")],
             list.index_map(needs, fn(card, index) {
-              problem_row(m, card, index)
+              problem_row(shared, page, card, index)
             }),
           ),
         )
@@ -242,7 +263,7 @@ fn problem_lists(m: Model, analysis: Analysis) -> Element(Msg) {
           html.div(
             [attribute.class("problem-rows")],
             list.index_map(mastered, fn(card, index) {
-              problem_row(m, card, offset + index)
+              problem_row(shared, page, card, offset + index)
             }),
           ),
         )
@@ -250,8 +271,13 @@ fn problem_lists(m: Model, analysis: Analysis) -> Element(Msg) {
   ])
 }
 
-fn problem_row(m: Model, card: CardInsight, index: Int) -> Element(Msg) {
-  let here = m.nav.stats == index
+fn problem_row(
+  shared: Shared,
+  page: Model,
+  card: CardInsight,
+  index: Int,
+) -> Element(Msg) {
+  let here = page.cursor == index
   html.button(
     [
       attribute.classes([#("problem-row", True), #("cursor", here)]),
@@ -276,7 +302,7 @@ fn problem_row(m: Model, card: CardInsight, index: Int) -> Element(Msg) {
       html.span([attribute.class("problem-row-due")], [
         html.text(
           "due "
-          <> format.interval(fsrs.interval_seconds(card.card.card, m.now)),
+          <> format.interval(fsrs.interval_seconds(card.card.card, shared.now)),
         ),
       ]),
     ],
@@ -295,8 +321,8 @@ fn trend_arrow(card: CardInsight) -> Element(Msg) {
 
 // --- the review timeline ---------------------------------------------------
 
-fn detail_overlay(m: Model) -> Element(Msg) {
-  case m.detail {
+fn detail_overlay(shared: Shared, page: Model) -> Element(Msg) {
+  case page.detail {
     None -> element.none()
     Some(#(problem, rows)) ->
       html.div(
@@ -313,7 +339,7 @@ fn detail_overlay(m: Model) -> Element(Msg) {
                 <> problem.subcategory,
               ),
             ]),
-            suspend_control(m, problem),
+            suspend_control(shared, problem),
             case rows {
               remote.NotAsked | remote.Loading ->
                 html.p([attribute.class("study-summary")], [
@@ -327,7 +353,7 @@ fn detail_overlay(m: Model) -> Element(Msg) {
                 html.p([attribute.class("study-summary")], [
                   html.text("No reviews recorded yet."),
                 ])
-              remote.Loaded(reviews) -> timeline(m, problem, reviews)
+              remote.Loaded(reviews) -> timeline(shared, problem, reviews)
             },
           ]),
         ],
@@ -337,8 +363,8 @@ fn detail_overlay(m: Model) -> Element(Msg) {
 
 /// Park/resume from the card's own history view. stop_propagation: the
 /// overlay's backdrop click closes it, and this button must not.
-fn suspend_control(m: Model, problem: ProblemRef) -> Element(Msg) {
-  case model.card_for(m, problem) {
+fn suspend_control(shared: Shared, problem: ProblemRef) -> Element(Msg) {
+  case shared_model.card_for(shared, problem) {
     None -> element.none()
     Some(state) ->
       html.button(
@@ -360,7 +386,7 @@ fn suspend_control(m: Model, problem: ProblemRef) -> Element(Msg) {
 /// ring marks a reveal. The story to see at a glance is bars shrinking and
 /// turning green — eleven minutes becoming 2m41s.
 fn timeline(
-  m: Model,
+  shared: Shared,
   problem: ProblemRef,
   reviews: List(ReviewRow),
 ) -> Element(Msg) {
@@ -398,7 +424,7 @@ fn timeline(
           |> join_with(" \u{b7} ")
         }
         <> " \u{2192} next "
-        <> next_due(m, problem),
+        <> next_due(shared, problem),
       ),
     ]),
   ])
@@ -472,9 +498,10 @@ fn clean(row: ReviewRow) -> Bool {
   fsrs.rating_to_int(row.rating) > 1 && !row.revealed && !row.auto_failed
 }
 
-fn next_due(m: Model, problem: ProblemRef) -> String {
-  case model.card_for(m, problem) {
-    Some(state) -> format.interval(fsrs.interval_seconds(state.card, m.now))
+fn next_due(shared: Shared, problem: ProblemRef) -> String {
+  case shared_model.card_for(shared, problem) {
+    Some(state) ->
+      format.interval(fsrs.interval_seconds(state.card, shared.now))
     None -> "\u{2014}"
   }
 }

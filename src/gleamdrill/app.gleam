@@ -10,8 +10,11 @@
 
 import gleam/list
 import gleam/option.{None, Some}
+import gleam/result
 import gleamdrill/keys
-import gleamdrill/model.{type Route, AuthRoute, SettingsRoute, TracksRoute}
+import gleamdrill/model.{
+  type Route, AuthRoute, SettingsRoute, StatsRoute, TracksRoute,
+}
 import gleamdrill/msg.{type Msg}
 import gleamdrill/page/auth/keys as auth_keys
 import gleamdrill/page/auth/model as auth_model
@@ -21,6 +24,10 @@ import gleamdrill/page/settings/keys as settings_keys
 import gleamdrill/page/settings/model as settings_model
 import gleamdrill/page/settings/update as settings_update
 import gleamdrill/page/settings/view as settings_view
+import gleamdrill/page/stats/keys as stats_keys
+import gleamdrill/page/stats/model as stats_model
+import gleamdrill/page/stats/update as stats_update_page
+import gleamdrill/page/stats/view as stats_view
 import gleamdrill/page/tracks/keys as tracks_keys
 import gleamdrill/page/tracks/model as tracks_model
 import gleamdrill/page/tracks/update as tracks_update
@@ -36,6 +43,7 @@ import gleamdrill/update/common
 import gleamdrill/update/keyboard
 import gleamdrill/update/menu as menu_update
 import gleamdrill/update/session as session_update
+import gleamdrill/update/stats as stats_update
 import gleamdrill/view as legacy_view
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
@@ -50,6 +58,7 @@ pub type Page {
   Auth(auth_model.Model)
   Settings(settings_model.Model)
   Tracks(tracks_model.Model)
+  Stats(stats_model.Model)
 }
 
 pub fn init(boot: #(Shared, Effect(Msg))) -> #(State, Effect(Msg)) {
@@ -69,12 +78,16 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
     msg.TracksMsg(inner), Tracks(page) ->
       tracks_update.update(state.shared, page, inner)
       |> settle(state, Tracks, msg.TracksMsg)
+    msg.StatsMsg(inner), Stats(page) ->
+      stats_update_page.update(state.shared, page, inner)
+      |> settle(state, Stats, msg.StatsMsg)
     // A page's message that lands after its page closed (a slow response):
     // there is nothing left for it to update.
-    msg.AuthMsg(_), _ | msg.SettingsMsg(_), _ | msg.TracksMsg(_), _ -> #(
-      state,
-      effect.none(),
-    )
+    msg.AuthMsg(_), _
+    | msg.SettingsMsg(_), _
+    | msg.TracksMsg(_), _
+    | msg.StatsMsg(_), _
+    -> #(state, effect.none())
 
     msg.KeyPressed(key), page if page != Legacy -> key_pressed(state, key)
 
@@ -87,6 +100,7 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
       effect.none(),
     )
     msg.UserClickedSettings, _ -> navigate(state, SettingsRoute)
+    msg.UserClickedStats, _ -> navigate(state, StatsRoute)
 
     _, _ -> {
       let #(shared, fx) = legacy_update.update(state.shared, message)
@@ -122,6 +136,14 @@ pub fn view(state: State) -> Element(Msg) {
         page_keys(state),
         tracks_keys.label,
       ))
+    Stats(page) ->
+      Some(legacy_view.Screen(
+        stats_view.view(shared, page)
+          |> document.map(msg.StatsMsg)
+          |> layout.view(shared, StatsRoute, _),
+        page_keys(state),
+        stats_keys.label,
+      ))
   })
 }
 
@@ -134,6 +156,18 @@ fn page_keys(state: State) -> List(Binding(Msg)) {
       settings_keys.bindings(state.shared, page) |> lift(msg.SettingsMsg)
     Tracks(page) ->
       tracks_keys.bindings(state.shared, page) |> lift(msg.TracksMsg)
+    Stats(page) -> stats_keys.bindings(state.shared, page) |> lift(msg.StatsMsg)
+  }
+}
+
+/// What a key means on the page: its own dispatcher where it has one (for
+/// keys that share a row, like j and k), else the first row claiming it.
+fn page_dispatch(state: State, key: String) -> Result(Msg, Nil) {
+  case state.page {
+    Stats(page) ->
+      stats_keys.dispatch(state.shared, page, key)
+      |> result.map(msg.StatsMsg)
+    _ -> binding.find(page_keys(state), key)
   }
 }
 
@@ -169,11 +203,10 @@ fn settle(
 /// A key on a page screen: the same leader and focus rules as everywhere,
 /// resolved against an open overlay first, then the page's rows.
 fn key_pressed(state: State, key: msg.Key) -> #(State, Effect(Msg)) {
-  let rows = page_keys(state)
   let lookup = fn(shared, key: msg.Key) {
     case keys.overlay(shared) {
       Ok(overlay) -> binding.find(overlay, key.key)
-      Error(Nil) -> binding.find(rows, key.key)
+      Error(Nil) -> page_dispatch(State(..state, shared:), key.key)
     }
   }
   let #(shared, step) = keyboard.step(state.shared, key, lookup)
@@ -230,6 +263,7 @@ fn apply_change(shared: Shared, change: Change) -> #(Shared, Effect(Msg)) {
       store.load_state(shared, msg.StateLoaded),
     )
     shared.ToggleHelp -> keyboard.toggle_help(shared)
+    shared.LoadStats -> stats_update.reload(shared)
     shared.EnterTrack(track, starter) ->
       menu_update.enter_track(shared, track, starter:)
     // Run by `settle` once the rest have landed.
@@ -241,23 +275,25 @@ fn apply_change(shared: Shared, change: Change) -> #(Shared, Effect(Msg)) {
 /// pages: when it lands on a page's route, that page opens fresh (with
 /// whatever its init fetches); when it leaves, the page closes.
 fn sync_page(state: State) -> #(State, Effect(Msg)) {
-  case state.shared.route, state.page {
-    AuthRoute, Auth(_) | SettingsRoute, Settings(_) | TracksRoute, Tracks(_) -> #(
-      state,
-      effect.none(),
-    )
-    TracksRoute, _ -> #(
-      State(..state, page: Tracks(tracks_model.Model)),
-      effect.none(),
-    )
+  let shared = state.shared
+  case shared.route, state.page {
+    AuthRoute, Auth(_)
+    | SettingsRoute, Settings(_)
+    | TracksRoute, Tracks(_)
+    | StatsRoute, Stats(_)
+    -> #(state, effect.none())
     AuthRoute, _ -> #(
       State(..state, page: Auth(auth_model.init(auth_model.SigningIn))),
       effect.none(),
     )
-    SettingsRoute, _ -> {
-      let #(page, fx) = settings_update.init(state.shared)
-      #(State(..state, page: Settings(page)), effect.map(fx, msg.SettingsMsg))
-    }
+    SettingsRoute, _ ->
+      settings_update.init(shared) |> settle(state, Settings, msg.SettingsMsg)
+    TracksRoute, _ -> #(
+      State(..state, page: Tracks(tracks_model.Model)),
+      effect.none(),
+    )
+    StatsRoute, _ ->
+      stats_update_page.init(shared) |> settle(state, Stats, msg.StatsMsg)
     _, _ -> #(State(..state, page: Legacy), effect.none())
   }
 }

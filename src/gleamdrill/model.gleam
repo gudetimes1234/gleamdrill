@@ -129,8 +129,6 @@ pub type MenuNav {
     problem: Int,
     selected: Int,
     search: Int,
-    /// Cursor in the stats screen's problem list.
-    stats: Int,
     /// Cursor in the queue screen's problem list.
     queue: Int,
   )
@@ -143,7 +141,6 @@ pub fn default_nav() -> MenuNav {
     problem: 0,
     selected: 0,
     search: 0,
-    stats: 0,
     queue: 0,
   )
 }
@@ -311,9 +308,6 @@ pub type Model {
     /// The raw insight payload; `insights.analyse` turns it into tiers and
     /// calibration at render time.
     insights: remote.Data(wire.Insights),
-    /// The problem whose review timeline is open on the stats screen, and its
-    /// rows once they arrive.
-    detail: Option(#(ProblemRef, remote.Data(List(wire.ReviewRow)))),
     /// A transient banner for whatever last went wrong with the server.
     notice: Option(String),
     /// The keyboard cursor in the problem browser.
@@ -498,7 +492,6 @@ pub fn default() -> Model {
     today: wire.empty_today(),
     stats: remote.NotAsked,
     insights: remote.NotAsked,
-    detail: None,
     notice: None,
     nav: default_nav(),
     help_open: False,

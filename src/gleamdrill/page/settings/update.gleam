@@ -27,8 +27,8 @@ import lustre/effect.{type Effect}
 import wire
 
 /// Opening the page measures the offline cache.
-pub fn init(_shared: Shared) -> #(Model, Effect(Msg)) {
-  #(model.init(), measure_cache())
+pub fn init(_shared: Shared) -> #(Model, Effect(Msg), List(Change)) {
+  #(model.init(), measure_cache(), [])
 }
 
 pub fn update(

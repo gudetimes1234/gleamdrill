@@ -37,6 +37,9 @@ import gleamdrill/model
 import gleamdrill/msg
 import gleamdrill/page/settings/keys as settings_keys
 import gleamdrill/page/settings/model as settings_model
+import gleamdrill/page/stats/keys as stats_keys
+import gleamdrill/page/stats/model as stats_model
+import gleamdrill/page/stats/msg as stats_msg
 import gleamdrill/page/tracks/keys as tracks_keys
 import gleamdrill/page/tracks/model as tracks_model
 import gleamdrill/runner
@@ -1302,7 +1305,6 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
     model.Model(..base, route: model.StudyRoute),
     model.Model(..base, route: model.MenuRoute),
     model.Model(..base, route: model.QueueRoute),
-    model.Model(..base, route: model.StatsRoute),
     model.Model(..base, route: model.ReportRoute),
     model.Model(..base, route: model.SummaryRoute),
     drill,
@@ -1337,6 +1339,18 @@ pub fn every_page_documents_escape_and_help_test() -> Nil {
   let rows = tracks_keys.bindings(in_a_track, tracks_model.Model)
   assert list.any(rows, fn(b) { list.contains(b.keys, "?") })
   assert list.any(rows, fn(b) { list.contains(b.keys, "Escape") })
+  let rows = stats_keys.bindings(model.default(), stats_model.init())
+  assert list.any(rows, fn(b) { list.contains(b.keys, "?") })
+  assert list.any(rows, fn(b) { list.contains(b.keys, "Escape") })
+}
+
+/// j and k share one row on the progress page; k moves the other way.
+pub fn the_stats_cursor_moves_both_ways_test() -> Nil {
+  let page = stats_model.init()
+  assert stats_keys.dispatch(model.default(), page, "j")
+    == Ok(stats_msg.CursorMoved(1))
+  assert stats_keys.dispatch(model.default(), page, "k")
+    == Ok(stats_msg.CursorMoved(-1))
 }
 
 pub fn dispatch_resolves_from_the_same_table_it_documents_test() -> Nil {

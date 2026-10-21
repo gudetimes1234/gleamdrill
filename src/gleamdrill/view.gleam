@@ -18,7 +18,6 @@ import gleamdrill/view/help
 import gleamdrill/view/manage
 import gleamdrill/view/menu
 import gleamdrill/view/report
-import gleamdrill/view/stats
 import gleamdrill/view/statusbar
 import gleamdrill/view/study
 import gleamdrill/view/summary
@@ -90,7 +89,7 @@ fn legacy_screen(m: Model) -> Element(Msg) {
     SettingsRoute -> element.none()
     SummaryRoute -> summary.view(m)
     StudyRoute -> study.view(m)
-    StatsRoute -> stats.view(m)
+    StatsRoute -> element.none()
     DrillRoute ->
       case drill.view(m) {
         Ok(el) -> el

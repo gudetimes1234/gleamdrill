@@ -15,6 +15,7 @@ import gleamdrill/model.{
 import gleamdrill/page/auth/model as auth_model
 import gleamdrill/page/auth/msg as auth_msg
 import gleamdrill/page/settings/msg as settings_msg
+import gleamdrill/page/stats/msg as stats_msg
 import gleamdrill/page/tracks/msg as tracks_msg
 import gleamdrill/store/remote.{type ApiError}
 import wire
@@ -32,6 +33,7 @@ pub type Msg {
   AuthMsg(auth_msg.Msg)
   SettingsMsg(settings_msg.Msg)
   TracksMsg(tracks_msg.Msg)
+  StatsMsg(stats_msg.Msg)
   // --- keyboard ---
   KeyPressed(Key)
   HelpToggled
@@ -80,11 +82,6 @@ pub type Msg {
   UserClickedStats
   StatsLoaded(Result(wire.Stats, ApiError))
   InsightsLoaded(Result(wire.Insights, ApiError))
-  StatsCursorMoved(Int)
-  StatsActivated
-  UserOpenedDetail(ProblemRef)
-  UserClosedDetail
-  HistoryLoaded(ProblemRef, Result(List(wire.ReviewRow), ApiError))
   // --- browsing and drilling ---
   UserClickedSubcategory(String)
   UserClickedBreadcrumb(Int)
