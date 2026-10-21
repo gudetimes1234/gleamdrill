@@ -5,6 +5,7 @@ import gleam/string
 import gleamdrill/keys
 import gleamdrill/model.{type Model}
 import gleamdrill/msg.{type Msg, HelpToggled}
+import gleamdrill/ui/binding.{type Binding}
 import gleamdrill/view/links
 import lustre/attribute
 import lustre/element.{type Element}
@@ -82,7 +83,7 @@ pub fn view(m: Model) -> Element(Msg) {
   }
 }
 
-fn row(binding: keys.Binding) -> Element(Msg) {
+fn row(binding: Binding(Msg)) -> Element(Msg) {
   html.div([attribute.class("help-row")], [
     html.span([attribute.class("help-keys")], [
       html.text(binding.keys |> list.map(show_key) |> string.join(" or ")),

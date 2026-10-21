@@ -42,15 +42,10 @@ import gleamdrill/msg.{
   UserToggledNudge, UserToggledPane, UserToggledPrompt, UserToggledResults,
   WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown, WalkWhyShown,
 }
-
-/// One row of the keymap. `keys` are `KeyboardEvent.key` values; `hint` is the
-/// short form the status bar shows; `help` the sentence the overlay shows.
-pub type Binding {
-  Binding(keys: List(String), hint: String, help: String, msg: Msg)
-}
+import gleamdrill/ui/binding.{type Binding, Binding}
 
 /// The bindings live in this context, in the order the status bar shows them.
-pub fn bindings(m: Model) -> List(Binding) {
+pub fn bindings(m: Model) -> List(Binding(Msg)) {
   case m.help_open, m.exit_prompt, m.import_pending {
     // While the cheatsheet is up it owns the keyboard.
     True, _, _ -> [
@@ -174,7 +169,7 @@ pub fn bindings(m: Model) -> List(Binding) {
   }
 }
 
-fn study_bindings(m: Model) -> List(Binding) {
+fn study_bindings(m: Model) -> List(Binding(Msg)) {
   list.flatten([
     [
       Binding(
@@ -224,7 +219,7 @@ fn study_bindings(m: Model) -> List(Binding) {
 
 /// Two solutions side by side: the right one steps through the others,
 /// each side flips through its problem's solutions.
-fn compare_bindings() -> List(Binding) {
+fn compare_bindings() -> List(Binding(Msg)) {
   [
     Binding(
       ["j", "k"],
@@ -251,7 +246,7 @@ fn compare_bindings() -> List(Binding) {
 
 /// The tour: one set of keys for the contents page, another for a lesson.
 /// Inside the editor nothing is claimed; `Escape` then `Tab` leaves it.
-fn tour_bindings(m: Model) -> List(Binding) {
+fn tour_bindings(m: Model) -> List(Binding(Msg)) {
   case m.tour_page {
     TourContents -> [
       Binding(
@@ -288,7 +283,7 @@ fn tour_bindings(m: Model) -> List(Binding) {
 
 /// The queue screen. `space`/`x` is the same "toggle the cursor row" verb the
 /// browser uses, so the two lists feel like one keyboard.
-fn queue_bindings(m: Model) -> List(Binding) {
+fn queue_bindings(m: Model) -> List(Binding(Msg)) {
   [
     Binding(
       ["j", "k"],
@@ -338,7 +333,7 @@ fn queue_bindings(m: Model) -> List(Binding) {
   ]
 }
 
-fn menu_bindings(m: Model) -> List(Binding) {
+fn menu_bindings(m: Model) -> List(Binding(Msg)) {
   case string.trim(m.search) {
     "" -> [
       Binding(
@@ -422,7 +417,7 @@ fn menu_bindings(m: Model) -> List(Binding) {
   }
 }
 
-fn drill_bindings(m: Model) -> List(Binding) {
+fn drill_bindings(m: Model) -> List(Binding(Msg)) {
   case current_kind(m), m.recall {
     Ok(problem.QuizDrill), _ -> quiz_bindings(m)
     Ok(problem.BoardDrill), _ -> board_bindings(m)
@@ -435,7 +430,7 @@ fn drill_bindings(m: Model) -> List(Binding) {
 }
 
 /// The prompt sidebar's key: the same one shows it and hides it.
-fn prompt_binding(m: Model) -> Binding {
+fn prompt_binding(m: Model) -> Binding(Msg) {
   Binding(
     ["p"],
     "prompt",
@@ -448,7 +443,7 @@ fn prompt_binding(m: Model) -> Binding {
 }
 
 /// A recall card has two moments: before the reveal, and grading after it.
-fn recall_bindings(m: Model) -> List(Binding) {
+fn recall_bindings(m: Model) -> List(Binding(Msg)) {
   let step = case m.revealed_solution {
     None -> [
       Binding(
@@ -481,7 +476,7 @@ fn recall_bindings(m: Model) -> List(Binding) {
   ])
 }
 
-fn code_bindings(m: Model) -> List(Binding) {
+fn code_bindings(m: Model) -> List(Binding(Msg)) {
   let grades = case m.grading {
     AwaitingGrade -> [
       Binding(["1"], "again", "Grade: Again", UserGraded(fsrs.Again)),
@@ -546,7 +541,7 @@ fn code_bindings(m: Model) -> List(Binding) {
 /// nothing here that opens or closes a walkthrough: `j` and `k` move the focus,
 /// and `h`/`y`/`c` turn over what is under whichever step has it. Only `c` and
 /// `w` are reveals, and both say so.
-fn rail_bindings(m: Model) -> List(Binding) {
+fn rail_bindings(m: Model) -> List(Binding(Msg)) {
   case model.current_problem(m) {
     Error(Nil) -> []
     Ok(current) -> {
@@ -631,7 +626,7 @@ fn focused_step(
 }
 
 /// Only for problems with a reference solution. Same key to close.
-fn solution_binding(m: Model) -> List(Binding) {
+fn solution_binding(m: Model) -> List(Binding(Msg)) {
   case model.current_problem(m) {
     Ok(current) if current.solutions != [] -> [
       case m.slot {
@@ -655,7 +650,7 @@ fn solution_binding(m: Model) -> List(Binding) {
   }
 }
 
-fn quiz_bindings(m: Model) -> List(Binding) {
+fn quiz_bindings(m: Model) -> List(Binding(Msg)) {
   case m.graded {
     False -> [
       Binding(["j", "k"], "move", "Move between choices", QuizMoved(1)),
@@ -683,7 +678,7 @@ fn quiz_bindings(m: Model) -> List(Binding) {
 /// Thirty-six pieces is far too many for number keys, and 1-4 are the grade
 /// keys in every other context. The board borrows the queue screen's cursor
 /// shape instead, so the muscle memory transfers.
-fn board_bindings(m: Model) -> List(Binding) {
+fn board_bindings(m: Model) -> List(Binding(Msg)) {
   case m.graded {
     False ->
       list.flatten([
@@ -730,7 +725,7 @@ fn board_bindings(m: Model) -> List(Binding) {
 }
 
 /// Only after a passing run, when there is a diff to flip to.
-fn diff_binding(m: Model) -> List(Binding) {
+fn diff_binding(m: Model) -> List(Binding(Msg)) {
   case model.run_passed(m.run) {
     True -> [
       Binding(
@@ -745,7 +740,7 @@ fn diff_binding(m: Model) -> List(Binding) {
 }
 
 /// Only while the latest grade can still be taken back.
-fn undo_binding(m: Model) -> List(Binding) {
+fn undo_binding(m: Model) -> List(Binding(Msg)) {
   case m.undo {
     Some(_) -> [
       Binding(["u"], "undo", "Take back the last grade", UserClickedUndo),
@@ -755,7 +750,7 @@ fn undo_binding(m: Model) -> List(Binding) {
 }
 
 /// Only once there is a verdict on screen to fold.
-fn results_binding(m: Model) -> List(Binding) {
+fn results_binding(m: Model) -> List(Binding(Msg)) {
   case m.run, m.graded {
     Ran(_, _), _ | _, True -> [
       Binding(
@@ -769,7 +764,7 @@ fn results_binding(m: Model) -> List(Binding) {
   }
 }
 
-fn help_binding() -> Binding {
+fn help_binding() -> Binding(Msg) {
   Binding(["?"], "keys", "This cheatsheet", HelpToggled)
 }
 
@@ -868,16 +863,7 @@ fn compare_variant(
 }
 
 fn lookup(m: Model, key: Key) -> Result(Msg, Nil) {
-  bindings(m)
-  |> list.find(fn(binding) { list.contains(binding.keys, key.key) })
-  |> result_map_msg
-}
-
-fn result_map_msg(found: Result(Binding, Nil)) -> Result(Msg, Nil) {
-  case found {
-    Ok(binding) -> Ok(binding.msg)
-    Error(Nil) -> Error(Nil)
-  }
+  binding.find(bindings(m), key.key)
 }
 
 /// The context label the status bar leads with, tmux style.

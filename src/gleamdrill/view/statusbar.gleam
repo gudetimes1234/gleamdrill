@@ -9,6 +9,7 @@ import gleam/string
 import gleamdrill/keys
 import gleamdrill/model.{type Model}
 import gleamdrill/msg.{type Msg}
+import gleamdrill/ui/binding.{type Binding}
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -50,7 +51,7 @@ pub fn view(m: Model) -> Element(Msg) {
   ])
 }
 
-fn hint(binding: keys.Binding) -> Element(Msg) {
+fn hint(binding: Binding(Msg)) -> Element(Msg) {
   html.button(
     [
       attribute.class("keyhint"),

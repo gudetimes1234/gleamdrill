@@ -39,6 +39,7 @@ import gleamdrill/runner
 import gleamdrill/store
 import gleamdrill/store/remote
 import gleamdrill/store/session
+import gleamdrill/ui/binding.{type Binding}
 import gleamdrill/update/drill as drill_update
 import gleamdrill/view/format
 import gleeunit
@@ -1322,7 +1323,7 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
   ]
   use m <- list.each(contexts)
   let table = keys.bindings(m)
-  assert list.any(table, fn(b: keys.Binding) { list.contains(b.keys, "?") })
+  assert list.any(table, fn(b: Binding(msg.Msg)) { list.contains(b.keys, "?") })
 }
 
 pub fn dispatch_resolves_from_the_same_table_it_documents_test() -> Nil {
