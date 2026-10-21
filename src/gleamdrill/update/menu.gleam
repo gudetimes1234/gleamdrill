@@ -282,3 +282,26 @@ pub fn activate_cursor(m: Model) -> #(Model, Effect(Msg)) {
 fn row_id(pane: model.MenuPane, index: Int) -> String {
   id.menu_row_id(pane, index)
 }
+
+pub fn browse(m: Model) -> #(Model, Effect(Msg)) {
+  #(Model(..m, route: model.MenuRoute), effect.none())
+}
+
+/// One crumb deep now: the track is the root, and it is changed on the
+/// switcher rather than here.
+pub fn clicked_breadcrumb(m: Model) -> #(Model, Effect(Msg)) {
+  #(Model(..m, selected_subcategory: None), effect.none())
+}
+
+/// `z` in the browser: park the cursor row's card. Only rows with a card
+/// react — an unseen problem has nothing to suspend. Suspending is the
+/// review feature's, so it goes back through `dispatch`.
+pub fn suspend_at_cursor(
+  m: Model,
+  dispatch: fn(Model, Msg) -> #(Model, Effect(Msg)),
+) -> #(Model, Effect(Msg)) {
+  case cursor_ref(m) {
+    Ok(ref) -> dispatch(m, msg.UserToggledSuspend(ref))
+    Error(Nil) -> #(m, effect.none())
+  }
+}

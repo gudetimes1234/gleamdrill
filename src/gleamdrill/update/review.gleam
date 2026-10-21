@@ -342,3 +342,7 @@ pub fn card_suspended(
     )
   }
 }
+
+pub fn back_to_study(m: Model) -> #(Model, Effect(Msg)) {
+  #(Model(..m, route: model.StudyRoute), effect.none())
+}

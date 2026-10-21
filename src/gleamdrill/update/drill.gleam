@@ -13,7 +13,6 @@ import gleamdrill/model.{
 import gleamdrill/msg.{type Msg, NoteSaveTicked}
 import gleamdrill/remote.{type ApiError}
 import gleamdrill/store
-import gleamdrill/update/blitz as blitz_update
 import gleamdrill/update/common
 import gleamdrill/walk
 import lustre/effect.{type Effect}
@@ -90,14 +89,19 @@ pub fn exit_confirmed(m: Model, leave: Bool) -> #(Model, Effect(Msg)) {
   }
 }
 
-pub fn clock_ticked(m: Model) -> #(Model, Effect(Msg)) {
+/// `dispatch` is the controller's `handle`: an expired Blitz card is the
+/// Blitz feature's business, so the tick hands it over as `BlitzExpired`.
+pub fn clock_ticked(
+  m: Model,
+  dispatch: fn(Model, Msg) -> #(Model, Effect(Msg)),
+) -> #(Model, Effect(Msg)) {
   {
     let now_ms = browser.now_ms()
     case m.route, m.blitz {
       // A Blitz card past its deadline is over: recorded as a miss and
       // the next one opens. Grading is skipped -- nothing was solved.
       DrillRoute, Some(blitz) if now_ms >= blitz.deadline_ms ->
-        blitz_update.expired(Model(..m, now_ms:))
+        dispatch(Model(..m, now_ms:), msg.BlitzExpired)
       DrillRoute, _ -> #(Model(..m, now_ms:), common.tick())
       _, _ -> #(m, effect.none())
     }
@@ -131,6 +135,14 @@ pub fn toggle_nudge(m: Model) -> #(Model, Effect(Msg)) {
 
 pub fn walk_focused(m: Model, index: Int) -> #(Model, Effect(Msg)) {
   #(focus_walk(m, index), effect.none())
+}
+
+pub fn walk_advanced(m: Model) -> #(Model, Effect(Msg)) {
+  walk_focused(m, m.walk.focus + 1)
+}
+
+pub fn walk_backed(m: Model) -> #(Model, Effect(Msg)) {
+  walk_focused(m, m.walk.focus - 1)
 }
 
 pub fn walk_hint(m: Model) -> #(Model, Effect(Msg)) {
@@ -256,6 +268,10 @@ pub fn note_synced(
       effect.none(),
     )
   }
+}
+
+pub fn focus_editor(m: Model) -> #(Model, Effect(Msg)) {
+  #(m, common.run_effect(fn() { browser.focus_element("gleam-editor") }))
 }
 
 pub fn focus_note(m: Model) -> #(Model, Effect(Msg)) {

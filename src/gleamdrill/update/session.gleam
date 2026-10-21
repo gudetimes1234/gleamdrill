@@ -495,3 +495,15 @@ fn apply_setting(
     }
   }
 }
+
+pub fn sign_out_completed(m: Model) -> #(Model, Effect(Msg)) {
+  #(m, effect.none())
+}
+
+pub fn dismiss_notice(m: Model) -> #(Model, Effect(Msg)) {
+  #(Model(..m, notice: None), effect.none())
+}
+
+pub fn open_settings(m: Model) -> #(Model, Effect(Msg)) {
+  #(Model(..m, route: model.SettingsRoute), common.measure_cache())
+}

@@ -155,12 +155,21 @@ pub fn finished(
   }
 }
 
+/// An expired session surfaces as a state reload, not a run verdict: the
+/// reply goes back through `dispatch` as the `StateLoaded` failure every
+/// other request produces.
 pub fn remote_finished(
   m: Model,
   id: Int,
   result: Result(wire.RunResult, ApiError),
+  dispatch: fn(Model, Msg) -> #(Model, Effect(Msg)),
 ) -> #(Model, Effect(Msg)) {
   case m.run, result {
+    Running(current, _), Error(remote.Unauthorised) if current == id ->
+      dispatch(
+        Model(..m, run: RunIdle),
+        msg.StateLoaded(Error(remote.Unauthorised)),
+      )
     Running(current, _), Ok(wire.RunResult(cases, stdout, error))
       if current == id
     -> {
@@ -333,4 +342,8 @@ fn start_run(
       #(Model(..next, run_kind: kind), fx)
     }
   }
+}
+
+pub fn cache_measured(m: Model, bytes: Int) -> #(Model, Effect(Msg)) {
+  #(Model(..m, cache_bytes: bytes), effect.none())
 }

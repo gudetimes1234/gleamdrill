@@ -1,14 +1,13 @@
 //// The controller: update() and the exhaustive message dispatch. Every arm
 //// delegates to a named handler in an `update/` feature module; there is no
 //// catch-all, so a new Msg variant does not compile until it is routed.
+////
+//// A handler that hands off to another feature takes `handle` back as
+//// `dispatch` and re-enters with a message, so no `update/` module imports
+//// another (`update/common` aside).
 
-import gleam/option.{None}
 import gleamdrill/browser
-import gleamdrill/keys
-import gleamdrill/model.{
-  type Model, DrillRoute, MenuRoute, Model, RunIdle, Running, SettingsRoute,
-  StudyRoute,
-}
+import gleamdrill/model.{type Model, DrillRoute, Model}
 import gleamdrill/msg.{
   type Msg, ArchiveReady, ArchiveRestored, AuthCompleted, BlitzExpired,
   BoardJumped, BoardMoved, BoardShelfMoved, BoardToggledAtCursor, CacheMeasured,
@@ -53,12 +52,12 @@ import gleamdrill/msg.{
   WalkAdvanced, WalkBacked, WalkCodeShown, WalkFocused, WalkHintShown,
   WalkWhyShown,
 }
-import gleamdrill/remote
 import gleamdrill/update/blitz as blitz_update
 import gleamdrill/update/board as board_update
 import gleamdrill/update/common
 import gleamdrill/update/compare as compare_update
 import gleamdrill/update/drill as drill_update
+import gleamdrill/update/keyboard
 import gleamdrill/update/menu as menu_update
 import gleamdrill/update/queues as queues_update
 import gleamdrill/update/review as review_update
@@ -85,34 +84,10 @@ pub fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     // --- keyboard ---
-    KeyPressed(key) -> {
-      // The `,` leader: one-shot rescue for keys a focused button would
-      // otherwise swallow. Arms from anywhere but the editor and inputs;
-      // the next key routes through the app's table regardless of focus.
-      let leader_capable = key.editing != "editor" && key.editing != "input"
-      case m.prefix_armed, key.key == "," && leader_capable {
-        False, True -> #(Model(..m, prefix_armed: True), effect.none())
-        True, _ -> {
-          let m = Model(..m, prefix_armed: False)
-          case leader_capable && key.key != "," && key.key != "Escape" {
-            True ->
-              case keys.dispatch(m, msg.Key(..key, editing: "none")) {
-                Ok(resolved) -> handle(m, resolved)
-                Error(Nil) -> #(m, effect.none())
-              }
-            False -> #(m, effect.none())
-          }
-        }
-        False, False -> handle_key(m, key)
-      }
-    }
+    KeyPressed(key) -> keyboard.pressed(m, key, handle)
+    HelpToggled -> keyboard.toggle_help(m)
 
-    HelpToggled -> #(Model(..m, help_open: !m.help_open), effect.none())
-
-    EditorFocusRequested -> #(
-      m,
-      common.run_effect(fn() { browser.focus_element("gleam-editor") }),
-    )
+    EditorFocusRequested -> drill_update.focus_editor(m)
 
     SearchFocusRequested -> menu_update.focus_search(m)
 
@@ -126,13 +101,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     MenuToggledAtCursor -> menu_update.activate_cursor(m)
 
-    // `z` in the browser: park the cursor row's card. Only rows with a card
-    // react — an unseen problem has nothing to suspend.
-    MenuSuspendedAtCursor ->
-      case menu_update.cursor_ref(m) {
-        Ok(ref) -> handle(m, UserToggledSuspend(ref))
-        Error(Nil) -> #(m, effect.none())
-      }
+    MenuSuspendedAtCursor -> menu_update.suspend_at_cursor(m, handle)
 
     QuizMoved(delta) -> board_update.quiz_moved(m, delta)
     BoardMoved(delta) -> board_update.moved(m, delta)
@@ -152,8 +121,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     UserClickedMergeGuest -> session_update.merge_guest(m)
     UserDismissedMergeOffer -> session_update.dismiss_merge_offer(m)
     UserClickedSignOut -> session_update.sign_out(m)
-    SignOutCompleted(_) -> #(m, effect.none())
-    UserDismissedNotice -> #(Model(..m, notice: None), effect.none())
+    SignOutCompleted(_) -> session_update.sign_out_completed(m)
+    UserDismissedNotice -> session_update.dismiss_notice(m)
     UserDismissedUpgradePrompt -> session_update.dismiss_upgrade_prompt(m)
     UserClickedSignIn(mode) -> session_update.sign_in(m, mode)
 
@@ -162,9 +131,9 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     UserClickedRecall -> review_update.start_recall(m)
     UserRevealedRecall -> review_update.reveal_recall(m)
 
-    UserClickedBrowse -> #(Model(..m, route: MenuRoute), effect.none())
+    UserClickedBrowse -> menu_update.browse(m)
 
-    UserClickedBackToStudy -> #(Model(..m, route: StudyRoute), effect.none())
+    UserClickedBackToStudy -> review_update.back_to_study(m)
 
     UserClickedStats -> stats.open(m)
     StatsLoaded(result) -> stats.loaded(m, result)
@@ -188,12 +157,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UserClickedSubcategory(name) -> menu_update.clicked_subcategory(m, name)
 
-    UserClickedBreadcrumb(level) ->
-      // One crumb deep now: the track is the root, and it is changed on the
-      // switcher rather than here.
-      case level {
-        _ -> #(Model(..m, selected_subcategory: None), effect.none())
-      }
+    UserClickedBreadcrumb(_) -> menu_update.clicked_breadcrumb(m)
 
     UserToggledProblem(ref) -> menu_update.toggle_problem(m, ref)
 
@@ -215,7 +179,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     UserClickedExitDrill -> drill_update.exit_requested(m)
     ExitConfirmed(leave) -> drill_update.exit_confirmed(m, leave)
-    ClockTicked -> drill_update.clock_ticked(m)
+    ClockTicked -> drill_update.clock_ticked(m, handle)
 
     UserToggledBlitz -> blitz_update.toggle_chooser(m)
     UserStartedBlitz(count, per_card_ms) ->
@@ -225,8 +189,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     UserToggledNudge -> drill_update.toggle_nudge(m)
     UserToggledTimer -> drill_update.toggle_timer(m)
     WalkFocused(index) -> drill_update.walk_focused(m, index)
-    WalkAdvanced -> drill_update.walk_focused(m, m.walk.focus + 1)
-    WalkBacked -> drill_update.walk_focused(m, m.walk.focus - 1)
+    WalkAdvanced -> drill_update.walk_advanced(m)
+    WalkBacked -> drill_update.walk_backed(m)
     WalkHintShown -> drill_update.walk_hint(m)
     WalkWhyShown -> drill_update.walk_why(m)
     WalkCodeShown -> drill_update.walk_code(m)
@@ -241,15 +205,12 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     UserChangedKeymap(mode) -> drill_update.changed_keymap(m, mode)
     UserToggledResults -> drill_update.toggle_results(m)
     EditorResized(height) -> drill_update.editor_resized(m, height)
-    UserClickedSettings -> #(
-      Model(..m, route: SettingsRoute),
-      common.measure_cache(),
-    )
+    UserClickedSettings -> session_update.open_settings(m)
 
     UserClickedWarmCache -> run_update.warm_cache(m)
     CacheWarmed(ok, done, total, finished) ->
       run_update.cache_warmed(m, ok, done, total, finished)
-    CacheMeasured(bytes) -> #(Model(..m, cache_bytes: bytes), effect.none())
+    CacheMeasured(bytes) -> run_update.cache_measured(m, bytes)
 
     // --- the Gleam Language Tour ---
     UserClickedTour -> tour_update.open_contents(m)
@@ -336,52 +297,9 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     RunFinished(id, outcome, stdout) ->
       run_update.finished(m, id, outcome, stdout)
     RemoteRunFinished(id, result) ->
-      case m.run, result {
-        // An expired session surfaces as a state reload, not a run verdict.
-        Running(current, _), Error(remote.Unauthorised) if current == id ->
-          session_update.state_loaded(
-            Model(..m, run: RunIdle),
-            Error(remote.Unauthorised),
-          )
-        _, _ -> run_update.remote_finished(m, id, result)
-      }
+      run_update.remote_finished(m, id, result, handle)
     RunTimedOut(id) -> run_update.timed_out(m, id)
     RuntimeLoadTimedOut(language) ->
       run_update.runtime_load_timed_out(m, language)
-  }
-}
-
-fn handle_key(m: Model, key: msg.Key) -> #(Model, Effect(Msg)) {
-  case key.editing {
-    // The editor's own keymaps own the keyboard; the one thing the app
-    // claims there is Ctrl+Enter, so write -> run -> grade needs no mouse.
-    "editor" ->
-      case key.ctrl && key.key == "Enter" && m.route == DrillRoute {
-        True -> handle(m, UserClickedRun)
-        False -> #(m, effect.none())
-      }
-    // Inputs keep their keys; Escape hands focus back to the app.
-    "input" ->
-      case key.key {
-        "Escape" -> #(m, common.run_effect(browser.blur_active))
-        _ -> #(m, effect.none())
-      }
-    // A focused button activates natively; stay out of its way — except
-    // for Escape, which activates nothing and would otherwise die on
-    // whichever button was clicked last (grade, reveal, run).
-    "control" ->
-      case key.key {
-        "Escape" ->
-          case keys.dispatch(m, key) {
-            Ok(resolved) -> handle(m, resolved)
-            Error(Nil) -> #(m, effect.none())
-          }
-        _ -> #(m, effect.none())
-      }
-    _ ->
-      case keys.dispatch(m, key) {
-        Ok(resolved) -> handle(m, resolved)
-        Error(Nil) -> #(m, effect.none())
-      }
   }
 }
