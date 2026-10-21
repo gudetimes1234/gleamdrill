@@ -5,7 +5,8 @@
 //// only previews one. That is what stops a clock skew or a tampered request
 //// from corrupting a review history.
 ////
-//// This module holds the shapes the rest share. The shapes every study module shares, and the one error type they return.
+//// This module holds the shapes every study module shares, and the one error
+//// type they return.
 
 import fsrs
 import gleam/option.{type Option}

@@ -21,8 +21,6 @@ import gleam/string
 import pog
 import wire
 
-/// The authenticated account. Aliased into `wire` because it is also what
-/// `/api/me` and every session response send back.
 pub type AuthError {
   /// Deliberately covers "no such account" and "wrong password" both.
   InvalidCredentials

@@ -31,11 +31,7 @@ pub fn main() {
   gleeunit.main()
 }
 
-// --- study.state_code / state_step -----------------------------------------
-//
-// These are duplicated verbatim in the browser (src/gleamdrill/api.gleam) and
-// are what a card's persisted `state`/`step` columns mean. Pinning them here
-// means the planned shared `wire` package has a spec to move against.
+// --- queues.validate_queues --------------------------------------------------
 
 /// The same checks guard a PUT and an archive: names present, short and
 /// distinct, and nothing unbounded.
@@ -77,6 +73,11 @@ fn list_range(from: Int, to: Int) -> List(Int) {
   }
 }
 
+// --- wire.state_code / state_step -------------------------------------------
+//
+// What a card's persisted `state`/`step` columns mean. The browser reads the
+// same functions out of the shared `wire` package.
+
 pub fn state_code_covers_every_state_test() {
   wire.state_code(fsrs.Learning(0)) |> should.equal(1)
   wire.state_code(fsrs.Review) |> should.equal(2)
@@ -89,7 +90,7 @@ pub fn state_step_is_present_only_while_stepping_test() {
   wire.state_step(fsrs.Review) |> should.equal(None)
 }
 
-// --- study.streak ----------------------------------------------------------
+// --- stats.streak ----------------------------------------------------------
 
 pub fn streak_counts_consecutive_days_ending_today_test() {
   [tally(0), tally(1), tally(2)]
@@ -201,11 +202,10 @@ pub fn normalise_email_is_idempotent_test() {
   auth.normalise_email(once) |> should.equal(once)
 }
 
-// --- study.default_settings ------------------------------------------------
+// --- default settings --------------------------------------------------------
 
-/// The client ships its own copy of these (src/gleamdrill/api.gleam). They are
-/// meant to be identical, and are checked here so the two cannot part company
-/// unnoticed before the shared `wire` package lands.
+/// The defaults live in `wire`, which the client compiles too. Pinned here so
+/// a change to them is a decision rather than an accident.
 pub fn default_settings_are_the_documented_values_test() {
   let settings = profile.default_settings()
   settings.new_per_day |> should.equal(5)
@@ -233,12 +233,6 @@ fn authorized(value: String) -> wisp.Request {
   |> simulate.header("authorization", value)
 }
 
-// --- exec: server-side Elixir runs ------------------------------------------
-//
-// These need `elixir` on the PATH (CI installs it for the Argon2 NIF anyway)
-// and run attempts as the test's own user: config.run_as_user is None, the
-// way a developer machine runs them. The uid boundary is the container's and
-// is checked by hand there; what is checked here is that the report the
 // --- reminders --------------------------------------------------------------
 //
 // The mail itself is two pure functions; the loop around them is I/O.
@@ -256,8 +250,12 @@ pub fn reminder_body_links_the_app_and_the_way_out_test() {
   assert string.contains(reminders.body(1, "x"), "one problem due today")
 }
 
-// --- exec -----------------------------------------------------------------
+// --- exec: server-side Elixir runs ------------------------------------------
 //
+// These need `elixir` on the PATH (CI installs it for the Argon2 NIF anyway)
+// and run attempts as the test's own user: config.run_as_user is None, the
+// way a developer machine runs them. The uid boundary is the container's and
+// is checked by hand there; what is checked here is that the report the
 // script prints comes back as the RunResult the app expects, in every shape.
 
 fn exec_config() -> config.Config {

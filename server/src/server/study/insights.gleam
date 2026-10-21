@@ -10,13 +10,7 @@ import pog
 import server/study/model.{type StudyError, database_error}
 import wire
 
-/// One solution-from-memory: a review that passed with no reveal and no
-/// harness failure, with how long it took. The client folds these into
-/// fluency tiers; the cap of five per card bounds the payload.
-/// For each grade pressed, what happened at that card's NEXT review. Easy
-/// scoring below Good is the signature of optimistic Easy-pressing, which is
-/// exactly what this exists to surface.
-/// One row of a card's review log, for the per-problem timeline.
+/// Everything the insights screen reads for one track, in one reply.
 pub fn insights(
   db: pog.Connection,
   user_id: String,
@@ -30,6 +24,10 @@ pub fn insights(
 
 /// The last five clean solves per card, oldest first. Five is enough for a
 /// median-of-three fluency figure plus a visible trend.
+///
+/// A clean solve is a review that passed with no reveal and no harness
+/// failure, with how long it took. The client folds these into fluency
+/// tiers; the cap of five per card bounds the payload.
 fn clean_solves(
   db: pog.Connection,
   user_id: String,
@@ -100,6 +98,10 @@ fn reveal_counts(
   |> result.map_error(database_error)
 }
 
+/// For each grade pressed, what happened at that card's NEXT review. Easy
+/// scoring below Good is the signature of optimistic Easy-pressing, which is
+/// exactly what this exists to surface.
+///
 /// Unlike its two neighbours this did not join `cards` at all, so it needed
 /// the join as well as the predicate. The window stays partitioned by
 /// `card_id`, and every review of a card is in the same track, so no
@@ -144,6 +146,7 @@ fn calibration(
   |> result.map_error(database_error)
 }
 
+/// One card's review log, for the per-problem timeline.
 pub fn history(
   db: pog.Connection,
   user_id: String,

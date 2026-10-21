@@ -146,10 +146,9 @@ pub type UndoError {
   UndoFailed(StudyError)
 }
 
-/// Deletes the user's most recent review and puts its card back exactly as
-/// it was. Refuses when there is no review, or the newest one predates the
-/// snapshot column.
-/// Undoes the newest review **in one track**.
+/// Undoes the newest review **in one track**: deletes it and puts its card
+/// back exactly as it was. Refuses when there is no review, or the newest one
+/// predates the snapshot column.
 ///
 /// The join is the point. Unscoped, this took the account's globally newest
 /// review, so an undo button in one track would delete a real review in

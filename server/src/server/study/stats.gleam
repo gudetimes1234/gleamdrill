@@ -11,6 +11,8 @@ import pog
 import server/study/model.{type StudyError, database_error}
 import wire
 
+/// Totals, state counts, history and the due forecast for one track.
+///
 /// Days are reported as "days ago" integers rather than dates.
 ///
 /// The rollover and timezone maths has already been applied when producing

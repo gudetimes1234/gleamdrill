@@ -20,6 +20,7 @@ import wire
 /// database (cards are created on first review). So the server owns the
 /// scheduling of known cards and the daily allowance, and the client picks
 /// which unseen problems to spend that allowance on.
+///
 /// The study day runs from `day_start_hour` local time to the same hour the
 /// next day -- Anki's 4am rollover, so a late-night session counts toward the
 /// day it feels like rather than the one the clock says.
@@ -115,8 +116,6 @@ pub fn budget(
   )
 }
 
-/// Postgres rejects an unknown zone name at query time, which would then break
-/// every subsequent `today` call. Checking on write keeps a bad value out.
 /// Where every track stands, for the switcher.
 ///
 /// Derived from the **cards**, not from a list of tracks the server keeps,
@@ -245,6 +244,8 @@ pub fn standings(
   |> result.map_error(database_error)
 }
 
+/// Postgres rejects an unknown zone name at query time, which would then break
+/// every subsequent `today` call. Checking on write keeps a bad value out.
 pub fn timezone_is_valid(
   db: pog.Connection,
   timezone: String,

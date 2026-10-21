@@ -167,7 +167,7 @@ pub fn restore(
 /// A file from before tracks has one blob under the "" key, meaning "every
 /// track", so it is fanned out across the tracks its own cards name -- the
 /// data says which tracks it has. A newer file already has a row per track
-/// and is taken as it stands. Mirrored in `local.archive_tracks`, because a
+/// and is taken as it stands. Mirrored in `guest.archive_tracks`, because a
 /// file made by a guest has to restore into an account and back.
 pub fn archive_tracks(archive: wire.Archive) -> List(#(String, wire.Settings)) {
   case list.key_find(archive.tracks, "") {
