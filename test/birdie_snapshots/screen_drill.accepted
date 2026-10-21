@@ -1,0 +1,340 @@
+---
+version: 2.0.2
+title: screen: drill
+file: ./test/gleamdrill/snapshot_test.gleam
+test_name: drill_screen_test
+---
+<div class="drill-container">
+
+
+
+
+  <div class="drill-header">
+    <button class="btn-secondary">
+      ← Exit
+    </button>
+    <h2 class="drill-title">
+      Valid Anagram
+      <span class="language-chip language-python">
+        Python
+      </span>
+    </h2>
+    <div class="drill-tools">
+      <button class="btn-secondary prompt-toggle active " type="button">
+        Problem
+      </button>
+      <div class="keymap-picker">
+        <button class="keymap-option active " title="Std keybindings">
+          Std
+        </button>
+        <button class="keymap-option " title="Vim keybindings">
+          Vim
+        </button>
+        <button class="keymap-option " title="Emacs keybindings">
+          Emacs
+        </button>
+      </div>
+    </div>
+    <div class="progress-text" style="--progress:0%;">
+      Pass 1/1 · Problem 1/1
+      <span aria-label="Time on this problem" class="drill-clock ">
+         · 0:00
+        <button class="clock-pause" title="Pause the timer" type="button">
+          ⏸
+        </button>
+      </span>
+    </div>
+  </div>
+
+
+  <div class="drill-body">
+    <div data-lustre-key="main" class="drill-main">
+      <div class="work-row">
+        <div class="editor-column">
+          <div class="editor-frame" data-language="python">
+            <gleam-editor data-lustre-key="NeetCode 150|Arrays &amp; Hashing|Valid Anagram|1" keymap="default" language="python"></gleam-editor>
+          </div>
+          <aside class="prompt-side read-sheet">
+            <button aria-label="Hide the problem" class="answer-close prompt-close" type="button">
+              ×
+            </button>
+            <h1 class="read-title">
+              Valid Anagram
+              <span class="language-chip language-python">
+                Python
+              </span>
+              <span class="difficulty difficulty-easy">
+                Easy
+              </span>
+            </h1>
+            <div class="problem-category">
+              NeetCode 150 › Arrays &amp; Hashing
+            </div>
+            <div class="problem-prompt">
+              Given two strings s and t, return true if t is an anagram of s, and false otherwise.
+            </div>
+            <pre class="signature">
+              <code>
+                def isAnagram(s, t):
+              </code>
+            </pre>
+          </aside>
+        </div>
+      </div>
+      <section class="panel output-below">
+        <h3 class="panel-title">
+          Output
+        </h3>
+        <div class="output-empty">
+          Nothing printed yet.
+        </div>
+      </section>
+      <div class="run-bar">
+        <button class="btn-primary run-button" disabled>
+          Loading runtime…
+        </button>
+        <div class="pane-buttons">
+          <button class="btn-secondary pane-button solution-button " type="button">
+            Sorting
+          </button>
+          <button class="btn-secondary pane-button solution-button " type="button">
+            Count Map
+          </button>
+          <button class="btn-secondary pane-button solution-button " type="button">
+            Nifty Python
+          </button>
+          <button class="btn-secondary pane-button " type="button">
+            Note
+          </button>
+        </div>
+        <div class="grade-bar">
+          <button class="grade-button grade-again">
+            <span class="grade-label">
+              Again
+            </span>
+            <span class="grade-interval">
+              1m
+            </span>
+          </button>
+          <button class="grade-button grade-hard">
+            <span class="grade-label">
+              Hard
+            </span>
+            <span class="grade-interval">
+              6m
+            </span>
+          </button>
+          <button class="grade-button grade-good">
+            <span class="grade-label">
+              Good
+            </span>
+            <span class="grade-interval">
+              10m
+            </span>
+          </button>
+          <button class="grade-button grade-easy">
+            <span class="grade-label">
+              Easy
+            </span>
+            <span class="grade-interval">
+              6d
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <aside data-lustre-key="rail" class="plan-rail">
+      <div class="rail-header">
+        <h3 class="panel-title">
+          Approach
+        </h3>
+        <span class="rail-count">
+          1/6
+        </span>
+      </div>
+      <div class="rail-nudge">
+        <button class="link-button rail-nudge-toggle " type="button">
+          Nudge …
+          <kbd>
+            a
+          </kbd>
+        </button>
+      </div>
+      <ol class="rail-steps">
+        <li class="rail-step current ">
+          <button class="link-button rail-step-title" type="button">
+            <span class="rail-step-number">
+              1
+            </span>
+            <span class="rail-step-text">
+              If the lengths differ, return false before counting anything.
+            </span>
+          </button>
+          <div class="rail-step-layers">
+            <button class="btn-secondary walk-reveal walk-reveal-hint" type="button">
+              Hint
+              <kbd>
+                h
+              </kbd>
+            </button>
+            <button class="btn-secondary walk-reveal walk-reveal-why" type="button">
+              Why
+              <kbd>
+                y
+              </kbd>
+            </button>
+            <button class="btn-secondary walk-reveal walk-reveal-code" type="button">
+              Code
+              <kbd>
+                c
+              </kbd>
+            </button>
+            <span class="hint-warning">
+              logged as a reveal
+            </span>
+          </div>
+        </li>
+        <li class="rail-step ">
+          <button class="link-button rail-step-title" type="button">
+            <span class="rail-step-number">
+              2
+            </span>
+            <span class="rail-step-text">
+              Build a character-to-count map from the first string.
+            </span>
+          </button>
+        </li>
+        <li class="rail-step ">
+          <button class="link-button rail-step-title" type="button">
+            <span class="rail-step-number">
+              3
+            </span>
+            <span class="rail-step-text">
+              Walk the second string, decrementing each character&#39;s count.
+            </span>
+          </button>
+        </li>
+        <li class="rail-step ">
+          <button class="link-button rail-step-title" type="button">
+            <span class="rail-step-number">
+              4
+            </span>
+            <span class="rail-step-text">
+              Fail the moment a character is missing from the map or its count drops below zero.
+            </span>
+          </button>
+        </li>
+        <li class="rail-step ">
+          <button class="link-button rail-step-title" type="button">
+            <span class="rail-step-number">
+              5
+            </span>
+            <span class="rail-step-text">
+              Reaching the end means every count balanced out — return true.
+            </span>
+          </button>
+        </li>
+        <li class="rail-step ">
+          <button class="link-button rail-step-title" type="button">
+            <span class="rail-step-number">
+              6
+            </span>
+            <span class="rail-step-text">
+              If the interviewer prefers it simple: sort both strings and compare, at O(n log n) against the map&#39;s O(n).
+            </span>
+          </button>
+        </li>
+      </ol>
+      <div class="rail-foot">
+        <button class="btn-secondary rail-whole-open" type="button">
+          Show the whole thing
+          <kbd>
+            w
+          </kbd>
+        </button>
+        <span class="hint-warning">
+          logged as a reveal
+        </span>
+      </div>
+    </aside>
+  </div>
+</div>
+<div class="statusbar">
+  <span class="statusbar-context">
+    DRILL · PYTHON
+  </span>
+  <span class="leader-chip " title="Press , then a key to use a shortcut even while a button has focus">
+    ,
+  </span>
+  <div class="statusbar-hints">
+    <button class="keyhint" title="Grade: Again">
+      <span class="keyhint-keys">
+        1
+      </span>
+      <span class="keyhint-label">
+        again
+      </span>
+    </button>
+    <button class="keyhint" title="Grade: Hard">
+      <span class="keyhint-keys">
+        2
+      </span>
+      <span class="keyhint-label">
+        hard
+      </span>
+    </button>
+    <button class="keyhint" title="Grade: Good">
+      <span class="keyhint-keys">
+        3
+      </span>
+      <span class="keyhint-label">
+        good
+      </span>
+    </button>
+    <button class="keyhint" title="Grade: Easy">
+      <span class="keyhint-keys">
+        4
+      </span>
+      <span class="keyhint-label">
+        easy
+      </span>
+    </button>
+    <button class="keyhint" title="Run your code alone and read its output">
+      <span class="keyhint-keys">
+        r
+      </span>
+      <span class="keyhint-label">
+        run
+      </span>
+    </button>
+    <button class="keyhint" title="Run the tests">
+      <span class="keyhint-keys">
+        t
+      </span>
+      <span class="keyhint-label">
+        test
+      </span>
+    </button>
+    <button class="keyhint" title="Focus the editor">
+      <span class="keyhint-keys">
+        i/e
+      </span>
+      <span class="keyhint-label">
+        edit
+      </span>
+    </button>
+    <button class="keyhint" title="Show the reference solution">
+      <span class="keyhint-keys">
+        s
+      </span>
+      <span class="keyhint-label">
+        solution
+      </span>
+    </button>
+  </div>
+</div>
+<button aria-label="Help and keyboard shortcuts" class="help-fab">
+  ?
+</button>
+
+

@@ -1,0 +1,328 @@
+---
+version: 2.0.2
+title: screen: study
+file: ./test/gleamdrill/snapshot_test.gleam
+test_name: study_screen_test
+---
+<div class="study-screen">
+
+
+
+
+
+  <header class="study-header">
+    <h1 class="study-title">
+      <img alt aria-hidden="true" class="brand-mark" height="32" src="/favicon.svg" width="32">
+      GleamDrill
+    </h1>
+    <nav aria-label="Screens" class="study-account">
+      <span class="nav-track">
+        Python
+      </span>
+      <a class="link-button nav-link" href="/tracks">
+        Tracks
+      </a>
+      <span aria-current="page" class="nav-link nav-current">
+        Study
+      </span>
+      <a class="link-button nav-link" href="/t/neetcode-150/queue">
+        Queue
+      </a>
+      <a class="link-button nav-link" href="/t/neetcode-150/stats">
+        Stats
+      </a>
+      <a class="link-button nav-link" href="/tour">
+        Tour
+      </a>
+      <a class="link-button nav-link" href="/settings">
+        Settings
+      </a>
+      <span class="nav-gap"></span>
+      <span class="study-email">
+        drills@example.com
+      </span>
+      <button class="link-button nav-link">
+        Sign out
+      </button>
+    </nav>
+  </header>
+  <div class="study-hero">
+    <div class="goal-ring">
+      <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" height="72" viewBox="0 0 72 72" width="72">
+        <circle class="goal-ring-track" cx="36" cy="36" r="28"></circle>
+        <circle class="goal-ring-fill" cx="36" cy="36" r="28" stroke-dasharray="88.0 176.0"></circle>
+      </svg>
+      <div class="goal-ring-count">
+        <span class="goal-ring-done">
+          1
+        </span>
+        <span class="goal-ring-goal">
+          /2
+        </span>
+      </div>
+      <span class="goal-ring-label">
+        Today&#39;s goal
+      </span>
+    </div>
+    <div class="streak-tile streak-none">
+      <span class="streak-flame">
+        🔥
+      </span>
+      <span class="streak-days">
+        0
+      </span>
+      <span class="streak-label">
+        Start a streak
+      </span>
+    </div>
+  </div>
+
+  <div class="study-counts">
+    <div class="study-count study-count-due">
+      <span class="study-count-value">
+        0
+      </span>
+      <span class="study-count-label">
+        Due
+      </span>
+    </div>
+    <div class="study-count study-count-new">
+      <span class="study-count-value">
+        1
+      </span>
+      <span class="study-count-label">
+        New
+      </span>
+    </div>
+    <div class="study-count study-count-done">
+      <span class="study-count-value">
+        1
+      </span>
+      <span class="study-count-label">
+        Done today
+      </span>
+    </div>
+  </div>
+
+  <p class="study-summary">
+    1 card ready.
+  </p>
+
+  <div class="study-actions">
+    <button class="primary study-start">
+      Study now
+    </button>
+    <button class="study-secondary study-recall">
+      Recall only
+    </button>
+    <button class="study-secondary study-blitz">
+      ⚡ Blitz
+    </button>
+    <button class="study-secondary">
+      Manage queue
+    </button>
+    <button class="study-secondary">
+      Browse problems
+    </button>
+    <button class="study-secondary">
+      System design exam
+    </button>
+    <button class="study-secondary study-tour">
+      Gleam tour
+    </button>
+  </div>
+
+  <details class="study-preview">
+    <summary class="study-preview-summary">
+      What&#39;s in the queue (1)
+    </summary>
+    <ul class="study-preview-list">
+      <li class="study-preview-item">
+        <span class="language-chip language-tag study-preview-tag language-python">
+          py
+        </span>
+        <span class="study-preview-title">
+          Valid Anagram
+        </span>
+        <span class="difficulty difficulty-easy">
+          Easy
+        </span>
+        <span class="study-preview-state">
+          due
+        </span>
+      </li>
+    </ul>
+  </details>
+  <section class="study-forecast">
+    <h2 class="study-section-title">
+      Next 7 days
+    </h2>
+    <div class="forecast-bars">
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:100%;"></div>
+        <span class="forecast-count">
+          1
+        </span>
+        <span class="forecast-label">
+          today
+        </span>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;"></div>
+        <span class="forecast-count">
+          0
+        </span>
+        <span class="forecast-label">
+          tom
+        </span>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;"></div>
+        <span class="forecast-count">
+          0
+        </span>
+        <span class="forecast-label">
+          +2
+        </span>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;"></div>
+        <span class="forecast-count">
+          0
+        </span>
+        <span class="forecast-label">
+          +3
+        </span>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;"></div>
+        <span class="forecast-count">
+          0
+        </span>
+        <span class="forecast-label">
+          +4
+        </span>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;"></div>
+        <span class="forecast-count">
+          0
+        </span>
+        <span class="forecast-label">
+          +5
+        </span>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;"></div>
+        <span class="forecast-count">
+          0
+        </span>
+        <span class="forecast-label">
+          +6
+        </span>
+      </div>
+    </div>
+  </section>
+  <footer class="study-footer">
+    <span>
+      Free and open source
+    </span>
+    <span class="footer-sep">
+      ·
+    </span>
+    <a class="footer-link" href="https://github.com/gudetimes1234/gleamdrill" rel="noopener noreferrer" target="_blank">
+      GitHub
+    </a>
+    <span class="footer-sep">
+      ·
+    </span>
+    <a class="footer-link" href="https://github.com/sponsors/gudetimes1234" rel="noopener noreferrer" target="_blank">
+      Sponsor
+    </a>
+    <span class="footer-sep">
+      ·
+    </span>
+    <a class="footer-link" href="https://liberapay.com/gudetimes1234" rel="noopener noreferrer" target="_blank">
+      Liberapay
+    </a>
+  </footer>
+</div>
+<div class="statusbar">
+  <span class="statusbar-context">
+    STUDY
+  </span>
+  <span class="leader-chip " title="Press , then a key to use a shortcut even while a button has focus">
+    ,
+  </span>
+  <div class="statusbar-hints">
+    <button class="keyhint" title="Start studying what is due">
+      <span class="keyhint-keys">
+        ↵/s
+      </span>
+      <span class="keyhint-label">
+        study
+      </span>
+    </button>
+    <button class="keyhint" title="Switch track">
+      <span class="keyhint-keys">
+        T
+      </span>
+      <span class="keyhint-label">
+        tracks
+      </span>
+    </button>
+    <button class="keyhint" title="Recall what is due, no editor">
+      <span class="keyhint-keys">
+        c
+      </span>
+      <span class="keyhint-label">
+        recall
+      </span>
+    </button>
+    <button class="keyhint" title="A timed run of random problems">
+      <span class="keyhint-keys">
+        z
+      </span>
+      <span class="keyhint-label">
+        blitz
+      </span>
+    </button>
+    <button class="keyhint" title="Manage the study queue">
+      <span class="keyhint-keys">
+        q
+      </span>
+      <span class="keyhint-label">
+        queue
+      </span>
+    </button>
+    <button class="keyhint" title="Browse problems by hand">
+      <span class="keyhint-keys">
+        b
+      </span>
+      <span class="keyhint-label">
+        browse
+      </span>
+    </button>
+    <button class="keyhint" title="Statistics">
+      <span class="keyhint-keys">
+        t
+      </span>
+      <span class="keyhint-label">
+        stats
+      </span>
+    </button>
+    <button class="keyhint" title="System design exam">
+      <span class="keyhint-keys">
+        x
+      </span>
+      <span class="keyhint-label">
+        exam
+      </span>
+    </button>
+  </div>
+</div>
+<button aria-label="Help and keyboard shortcuts" class="help-fab">
+  ?
+</button>
+
+

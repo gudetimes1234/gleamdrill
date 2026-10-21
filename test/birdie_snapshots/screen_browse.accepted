@@ -1,0 +1,212 @@
+---
+version: 2.0.2
+title: screen: browse
+file: ./test/gleamdrill/snapshot_test.gleam
+test_name: browse_screen_test
+---
+<div class="menu-container">
+
+
+
+  <div class="menu-top">
+    <h1 class="menu-title">
+      <img alt aria-hidden="true" class="brand-mark" height="32" src="/favicon.svg" width="32">
+      GleamDrill
+    </h1>
+    <input class="search" placeholder="Search problems…" type="search" value>
+  </div>
+  <div class="breadcrumbs">
+    <span class="breadcrumb">
+      Python
+    </span>
+  </div>
+  <div class="panes-container">
+    <div class="pane focused ">
+      <h3>
+        Subcategory
+      </h3>
+      <div class="pane-list">
+        <div data-lustre-key="Arrays &amp; Hashing" class="pane-item  cursor " id="sub-0" tabindex="0">
+          Arrays &amp; Hashing
+        </div>
+        <div data-lustre-key="Two Pointers" class="pane-item  " id="sub-1" tabindex="0">
+          Two Pointers
+        </div>
+        <div data-lustre-key="Sliding Window" class="pane-item  " id="sub-2" tabindex="0">
+          Sliding Window
+        </div>
+        <div data-lustre-key="Stack" class="pane-item  " id="sub-3" tabindex="0">
+          Stack
+        </div>
+        <div data-lustre-key="Binary Search" class="pane-item  " id="sub-4" tabindex="0">
+          Binary Search
+        </div>
+        <div data-lustre-key="Linked List" class="pane-item  " id="sub-5" tabindex="0">
+          Linked List
+        </div>
+        <div data-lustre-key="Trees" class="pane-item  " id="sub-6" tabindex="0">
+          Trees
+        </div>
+        <div data-lustre-key="Tries" class="pane-item  " id="sub-7" tabindex="0">
+          Tries
+        </div>
+        <div data-lustre-key="Heap / Priority Queue" class="pane-item  " id="sub-8" tabindex="0">
+          Heap / Priority Queue
+        </div>
+        <div data-lustre-key="Backtracking" class="pane-item  " id="sub-9" tabindex="0">
+          Backtracking
+        </div>
+        <div data-lustre-key="Graphs" class="pane-item  " id="sub-10" tabindex="0">
+          Graphs
+        </div>
+        <div data-lustre-key="Advanced Graphs" class="pane-item  " id="sub-11" tabindex="0">
+          Advanced Graphs
+        </div>
+        <div data-lustre-key="1-D Dynamic Programming" class="pane-item  " id="sub-12" tabindex="0">
+          1-D Dynamic Programming
+        </div>
+        <div data-lustre-key="2-D Dynamic Programming" class="pane-item  " id="sub-13" tabindex="0">
+          2-D Dynamic Programming
+        </div>
+        <div data-lustre-key="Greedy" class="pane-item  " id="sub-14" tabindex="0">
+          Greedy
+        </div>
+        <div data-lustre-key="Intervals" class="pane-item  " id="sub-15" tabindex="0">
+          Intervals
+        </div>
+        <div data-lustre-key="Math &amp; Geometry" class="pane-item  " id="sub-16" tabindex="0">
+          Math &amp; Geometry
+        </div>
+        <div data-lustre-key="Bit Manipulation" class="pane-item  " id="sub-17" tabindex="0">
+          Bit Manipulation
+        </div>
+      </div>
+    </div>
+    <div class="pane ">
+      <h3>
+        Problems
+      </h3>
+      <div class="pane-list">
+        <div class="pane-empty">
+          Pick a subcategory first
+        </div>
+      </div>
+    </div>
+    <div class="pane ">
+      <h3>
+        Selected
+      </h3>
+      <div class="pane-list">
+        <div class="pane-empty">
+          Nothing selected yet
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="iteration-control">
+    <label for="iterations">
+      Repetitions per problem
+    </label>
+    <input id="iterations" max="20" min="1" type="number" value="3">
+    <span class="progress-text">
+      0 selected
+    </span>
+  </div>
+  <div class="menu-actions">
+    <button class="btn-primary" disabled id="startDrill">
+      Start drill
+    </button>
+    <button class="btn-secondary" disabled id="compareSelected">
+      Compare
+    </button>
+
+    <button class="btn-secondary" disabled id="selectAll">
+      Select all in subcategory
+    </button>
+    <button class="btn-secondary" id="clearSelection">
+      Clear selection
+    </button>
+    <button class="btn-secondary" id="startExam">
+      System design exam
+    </button>
+  </div>
+</div>
+<div class="statusbar">
+  <span class="statusbar-context">
+    BROWSE
+  </span>
+  <span class="leader-chip " title="Press , then a key to use a shortcut even while a button has focus">
+    ,
+  </span>
+  <div class="statusbar-hints">
+    <button class="keyhint" title="Move the cursor down / up">
+      <span class="keyhint-keys">
+        j/k
+      </span>
+      <span class="keyhint-label">
+        move
+      </span>
+    </button>
+    <button class="keyhint" title="Focus the pane left / right">
+      <span class="keyhint-keys">
+        h/l
+      </span>
+      <span class="keyhint-label">
+        pane
+      </span>
+    </button>
+    <button class="keyhint" title="Select or deselect the cursor row">
+      <span class="keyhint-keys">
+        space/x
+      </span>
+      <span class="keyhint-label">
+        select
+      </span>
+    </button>
+    <button class="keyhint" title="Descend into the cursor row">
+      <span class="keyhint-keys">
+        ↵
+      </span>
+      <span class="keyhint-label">
+        open
+      </span>
+    </button>
+    <button class="keyhint" title="Select every problem in the subcategory">
+      <span class="keyhint-keys">
+        a
+      </span>
+      <span class="keyhint-label">
+        all
+      </span>
+    </button>
+    <button class="keyhint" title="Clear the selection">
+      <span class="keyhint-keys">
+        c
+      </span>
+      <span class="keyhint-label">
+        clear
+      </span>
+    </button>
+    <button class="keyhint" title="Pause or resume the cursor row&#39;s card">
+      <span class="keyhint-keys">
+        z
+      </span>
+      <span class="keyhint-label">
+        pause
+      </span>
+    </button>
+    <button class="keyhint" title="Start drilling the selection">
+      <span class="keyhint-keys">
+        d
+      </span>
+      <span class="keyhint-label">
+        drill
+      </span>
+    </button>
+  </div>
+</div>
+<button aria-label="Help and keyboard shortcuts" class="help-fab">
+  ?
+</button>
+
+

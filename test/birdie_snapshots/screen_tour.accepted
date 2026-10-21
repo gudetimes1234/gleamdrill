@@ -1,0 +1,647 @@
+---
+version: 2.0.2
+title: screen: tour
+file: ./test/gleamdrill/snapshot_test.gleam
+test_name: tour_screen_test
+---
+<div class="tour-screen tour-contents">
+
+
+
+  <header class="study-header">
+    <h1 class="study-title">
+      The Gleam Language Tour
+    </h1>
+    <nav aria-label="Screens" class="study-account">
+      <span class="nav-track">
+        Python
+      </span>
+      <a class="link-button nav-link" href="/tracks">
+        Tracks
+      </a>
+      <a class="link-button nav-link" href="/t/neetcode-150/study">
+        Study
+      </a>
+      <a class="link-button nav-link" href="/t/neetcode-150/queue">
+        Queue
+      </a>
+      <a class="link-button nav-link" href="/t/neetcode-150/stats">
+        Stats
+      </a>
+      <span aria-current="page" class="nav-link nav-current">
+        Tour
+      </span>
+      <a class="link-button nav-link" href="/settings">
+        Settings
+      </a>
+      <span class="nav-gap"></span>
+      <span class="study-email">
+        drills@example.com
+      </span>
+      <button class="link-button nav-link">
+        Sign out
+      </button>
+    </nav>
+  </header>
+  <p class="tour-lede">
+    tour.gleam.run, playable here. Every lesson is a short read beside a program you can edit; it compiles and runs as you type. Nothing here is scheduled — just read it in order.
+  </p>
+  <button class="study-start tour-continue">
+    Start the tour
+  </button>
+  <div class="tour-chapters">
+    <section class="tour-chapter">
+      <h2 class="tour-chapter-title">
+        Basics
+      </h2>
+      <ol class="tour-toc">
+        <li>
+          <button class="tour-toc-item current cursor " id="tour-0">
+            <span class="tour-toc-number">
+              1
+            </span>
+            Hello world
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-1">
+            <span class="tour-toc-number">
+              2
+            </span>
+            Modules
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-2">
+            <span class="tour-toc-number">
+              3
+            </span>
+            Unqualified imports
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-3">
+            <span class="tour-toc-number">
+              4
+            </span>
+            Type checking
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-4">
+            <span class="tour-toc-number">
+              5
+            </span>
+            Ints
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-5">
+            <span class="tour-toc-number">
+              6
+            </span>
+            Floats
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-6">
+            <span class="tour-toc-number">
+              7
+            </span>
+            Number formats
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-7">
+            <span class="tour-toc-number">
+              8
+            </span>
+            Equality
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-8">
+            <span class="tour-toc-number">
+              9
+            </span>
+            Strings
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-9">
+            <span class="tour-toc-number">
+              10
+            </span>
+            Bools
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-10">
+            <span class="tour-toc-number">
+              11
+            </span>
+            Assignments
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-11">
+            <span class="tour-toc-number">
+              12
+            </span>
+            Discard patterns
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-12">
+            <span class="tour-toc-number">
+              13
+            </span>
+            Type annotations
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-13">
+            <span class="tour-toc-number">
+              14
+            </span>
+            Type imports
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-14">
+            <span class="tour-toc-number">
+              15
+            </span>
+            Type aliases
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-15">
+            <span class="tour-toc-number">
+              16
+            </span>
+            Blocks
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-16">
+            <span class="tour-toc-number">
+              17
+            </span>
+            Lists
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-17">
+            <span class="tour-toc-number">
+              18
+            </span>
+            Constants
+          </button>
+        </li>
+      </ol>
+    </section>
+    <section class="tour-chapter">
+      <h2 class="tour-chapter-title">
+        Functions
+      </h2>
+      <ol class="tour-toc">
+        <li>
+          <button class="tour-toc-item " id="tour-18">
+            <span class="tour-toc-number">
+              19
+            </span>
+            Functions
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-19">
+            <span class="tour-toc-number">
+              20
+            </span>
+            Higher order functions
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-20">
+            <span class="tour-toc-number">
+              21
+            </span>
+            Anonymous functions
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-21">
+            <span class="tour-toc-number">
+              22
+            </span>
+            Function captures
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-22">
+            <span class="tour-toc-number">
+              23
+            </span>
+            Generic functions
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-23">
+            <span class="tour-toc-number">
+              24
+            </span>
+            Pipelines
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-24">
+            <span class="tour-toc-number">
+              25
+            </span>
+            Labelled arguments
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-25">
+            <span class="tour-toc-number">
+              26
+            </span>
+            Label shorthand syntax
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-26">
+            <span class="tour-toc-number">
+              27
+            </span>
+            Documentation comments
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-27">
+            <span class="tour-toc-number">
+              28
+            </span>
+            Deprecations
+          </button>
+        </li>
+      </ol>
+    </section>
+    <section class="tour-chapter">
+      <h2 class="tour-chapter-title">
+        Flow control
+      </h2>
+      <ol class="tour-toc">
+        <li>
+          <button class="tour-toc-item " id="tour-28">
+            <span class="tour-toc-number">
+              29
+            </span>
+            Case expressions
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-29">
+            <span class="tour-toc-number">
+              30
+            </span>
+            Variable patterns
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-30">
+            <span class="tour-toc-number">
+              31
+            </span>
+            String patterns
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-31">
+            <span class="tour-toc-number">
+              32
+            </span>
+            List patterns
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-32">
+            <span class="tour-toc-number">
+              33
+            </span>
+            Recursion
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-33">
+            <span class="tour-toc-number">
+              34
+            </span>
+            Tail calls
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-34">
+            <span class="tour-toc-number">
+              35
+            </span>
+            List recursion
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-35">
+            <span class="tour-toc-number">
+              36
+            </span>
+            Multiple subjects
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-36">
+            <span class="tour-toc-number">
+              37
+            </span>
+            Alternative patterns
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-37">
+            <span class="tour-toc-number">
+              38
+            </span>
+            Pattern aliases
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-38">
+            <span class="tour-toc-number">
+              39
+            </span>
+            Guards
+          </button>
+        </li>
+      </ol>
+    </section>
+    <section class="tour-chapter">
+      <h2 class="tour-chapter-title">
+        Data types
+      </h2>
+      <ol class="tour-toc">
+        <li>
+          <button class="tour-toc-item " id="tour-39">
+            <span class="tour-toc-number">
+              40
+            </span>
+            Tuples
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-40">
+            <span class="tour-toc-number">
+              41
+            </span>
+            Custom types
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-41">
+            <span class="tour-toc-number">
+              42
+            </span>
+            Records
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-42">
+            <span class="tour-toc-number">
+              43
+            </span>
+            Record accessors
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-43">
+            <span class="tour-toc-number">
+              44
+            </span>
+            Record pattern matching
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-44">
+            <span class="tour-toc-number">
+              45
+            </span>
+            Record updates
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-45">
+            <span class="tour-toc-number">
+              46
+            </span>
+            Generic custom types
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-46">
+            <span class="tour-toc-number">
+              47
+            </span>
+            Nil
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-47">
+            <span class="tour-toc-number">
+              48
+            </span>
+            Results
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-48">
+            <span class="tour-toc-number">
+              49
+            </span>
+            Bit arrays
+          </button>
+        </li>
+      </ol>
+    </section>
+    <section class="tour-chapter">
+      <h2 class="tour-chapter-title">
+        Standard library
+      </h2>
+      <ol class="tour-toc">
+        <li>
+          <button class="tour-toc-item " id="tour-49">
+            <span class="tour-toc-number">
+              50
+            </span>
+            Standard library package
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-50">
+            <span class="tour-toc-number">
+              51
+            </span>
+            List module
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-51">
+            <span class="tour-toc-number">
+              52
+            </span>
+            Result module
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-52">
+            <span class="tour-toc-number">
+              53
+            </span>
+            Dict module
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-53">
+            <span class="tour-toc-number">
+              54
+            </span>
+            Option module
+          </button>
+        </li>
+      </ol>
+    </section>
+    <section class="tour-chapter">
+      <h2 class="tour-chapter-title">
+        Advanced features
+      </h2>
+      <ol class="tour-toc">
+        <li>
+          <button class="tour-toc-item " id="tour-54">
+            <span class="tour-toc-number">
+              55
+            </span>
+            Opaque types
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-55">
+            <span class="tour-toc-number">
+              56
+            </span>
+            Use
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-56">
+            <span class="tour-toc-number">
+              57
+            </span>
+            Todo
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-57">
+            <span class="tour-toc-number">
+              58
+            </span>
+            Panic
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-58">
+            <span class="tour-toc-number">
+              59
+            </span>
+            Let assert
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-59">
+            <span class="tour-toc-number">
+              60
+            </span>
+            Bool assert
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-60">
+            <span class="tour-toc-number">
+              61
+            </span>
+            Externals
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-61">
+            <span class="tour-toc-number">
+              62
+            </span>
+            Multi target externals
+          </button>
+        </li>
+        <li>
+          <button class="tour-toc-item " id="tour-62">
+            <span class="tour-toc-number">
+              63
+            </span>
+            External gleam fallbacks
+          </button>
+        </li>
+      </ol>
+    </section>
+  </div>
+</div>
+<div class="statusbar">
+  <span class="statusbar-context">
+    TOUR
+  </span>
+  <span class="leader-chip " title="Press , then a key to use a shortcut even while a button has focus">
+    ,
+  </span>
+  <div class="statusbar-hints">
+    <button class="keyhint" title="Move through the lessons">
+      <span class="keyhint-keys">
+        j/k
+      </span>
+      <span class="keyhint-label">
+        move
+      </span>
+    </button>
+    <button class="keyhint" title="Open the lesson">
+      <span class="keyhint-keys">
+        ↵
+      </span>
+      <span class="keyhint-label">
+        open
+      </span>
+    </button>
+    <button class="keyhint" title="Back to the study screen">
+      <span class="keyhint-keys">
+        esc/b
+      </span>
+      <span class="keyhint-label">
+        back
+      </span>
+    </button>
+    <button class="keyhint" title="This cheatsheet">
+      <span class="keyhint-keys">
+        ?
+      </span>
+      <span class="keyhint-label">
+        keys
+      </span>
+    </button>
+  </div>
+</div>
+<button aria-label="Help and keyboard shortcuts" class="help-fab">
+  ?
+</button>
+
+

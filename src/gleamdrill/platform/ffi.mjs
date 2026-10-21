@@ -37,6 +37,8 @@ export function randomInt(bound) {
 // reverse proxy at /api/* — see deploy/Caddyfile. That default is what lets the
 // app be self-hosted on any domain with nothing baked into the artifact.
 export function apiBase() {
+  // No page at all: the unit tests, which build effects but never run them.
+  if (!globalThis.location) return "";
   const { hostname, port, origin } = globalThis.location;
   const local = hostname === "localhost" || hostname === "127.0.0.1";
   if (local && (port === "1234" || port === "4173")) {

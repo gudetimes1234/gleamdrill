@@ -1,0 +1,7 @@
+---
+version: 2.0.2
+title: payload: insights
+file: ./test/gleamdrill/snapshot_test.gleam
+test_name: insights_payload_test
+---
+{"cleanSolves":[{"category":"NeetCode 150","subcategory":"Arrays & Hashing","title":"Contains Duplicate","at":1790381088.77594,"durationMs":150000},{"category":"NeetCode 150","subcategory":"Arrays & Hashing","title":"Contains Duplicate","at":1790381088.861441,"durationMs":90000}],"reveals":[{"category":"NeetCode 150","subcategory":"Arrays & Hashing","title":"Contains Duplicate","count":1}],"calibration":[{"rating":3,"total":2,"passed":1}]}

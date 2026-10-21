@@ -1,0 +1,7 @@
+---
+version: 2.0.2
+title: payload: review outcome
+file: ./test/gleamdrill/snapshot_test.gleam
+test_name: review_payload_test
+---
+{"now":1790381088.342624,"card":{"category":"NeetCode 150","subcategory":"Arrays & Hashing","title":"Contains Duplicate","state":1,"step":1,"stability":2.3065,"difficulty":2.118103970459015,"due":1790381688.342624,"lastReview":1790381088.342624,"reps":1,"lapses":0,"suspended":false,"introducedAt":1790381088.34547},"today":{"dayStart":1790308800,"dayEnd":1790395200,"reviewsDone":1,"newIntroduced":1,"reviewsRemaining":99,"newRemaining":4,"dueNow":0}}

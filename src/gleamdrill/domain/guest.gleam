@@ -298,13 +298,19 @@ pub fn history_for(local: Local, track: String) -> History {
   list.key_find(local.history, track) |> result.unwrap(empty_history())
 }
 
-/// Replaces one track's rollups, leaving every other track's alone.
+/// Replaces one track's rollups, leaving every other track's alone. Rollups
+/// back to nothing (the track's only review undone) leave no entry, so an
+/// undo restores the store exactly.
 fn put_history(
   local: Local,
   track: String,
   history: History,
 ) -> List(#(String, History)) {
-  [#(track, history), ..list.filter(local.history, fn(e) { e.0 != track })]
+  let others = list.filter(local.history, fn(e) { e.0 != track })
+  case history == empty_history() {
+    True -> others
+    False -> [#(track, history), ..others]
+  }
 }
 
 pub fn tally(

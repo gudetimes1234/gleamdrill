@@ -1,0 +1,7 @@
+---
+version: 2.0.2
+title: payload: stats
+file: ./test/gleamdrill/snapshot_test.gleam
+test_name: stats_payload_test
+---
+{"totalReviews":1,"matureReviews":0,"matureCorrect":0,"streakDays":1,"stateCounts":[{"state":1,"count":2}],"history":[{"daysAgo":0,"total":1,"correct":1}],"forecast":[{"daysAhead":0,"count":2}]}

@@ -1,0 +1,337 @@
+---
+version: 2.0.2
+title: screen: settings
+file: ./test/gleamdrill/snapshot_test.gleam
+test_name: settings_screen_test
+---
+<div class="settings-screen">
+
+
+
+  <header class="study-header">
+    <h1 class="study-title">
+      Settings
+    </h1>
+    <nav aria-label="Screens" class="study-account">
+      <span class="nav-track">
+        Python
+      </span>
+      <a class="link-button nav-link" href="/tracks">
+        Tracks
+      </a>
+      <a class="link-button nav-link" href="/t/neetcode-150/study">
+        Study
+      </a>
+      <a class="link-button nav-link" href="/t/neetcode-150/queue">
+        Queue
+      </a>
+      <a class="link-button nav-link" href="/t/neetcode-150/stats">
+        Stats
+      </a>
+      <a class="link-button nav-link" href="/tour">
+        Tour
+      </a>
+      <span aria-current="page" class="nav-link nav-current">
+        Settings
+      </span>
+      <span class="nav-gap"></span>
+      <span class="study-email">
+        drills@example.com
+      </span>
+      <button class="link-button nav-link">
+        Sign out
+      </button>
+    </nav>
+  </header>
+  <section class="settings-section">
+    <h2 class="study-section-title">
+      Daily limits
+    </h2>
+    <p class="settings-section-note">
+      Kept with your account.
+    </p>
+    <div class="settings-rows">
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">
+            New problems per day
+          </span>
+          <span class="settings-help">
+            How many unseen problems the queue introduces. These are the expensive ones: a first encounter is read, thought about and typed from nothing.
+          </span>
+        </div>
+        <input class="settings-input" max="100" min="0" step="1" type="number" value="5">
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">
+            Reviews per day
+          </span>
+          <span class="settings-help">
+            The cap on problems already seen. A review here is minutes, not seconds, so this is a time budget wearing a card count.
+          </span>
+        </div>
+        <input class="settings-input" max="500" min="0" step="1" type="number" value="100">
+      </div>
+    </div>
+  </section>
+  <section class="settings-section">
+    <h2 class="study-section-title">
+      Scheduling
+    </h2>
+    <p class="settings-section-note">
+      FSRS decides when a problem comes back. These change how it decides.
+    </p>
+    <div class="settings-rows">
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">
+            Target retention
+          </span>
+          <span class="settings-help">
+            The share of reviews you want to pass. Higher means shorter intervals and more work for the same material; 0.9 is the default and is a good place to stay.
+          </span>
+        </div>
+        <input class="settings-input" max="0.99" min="0.7" step="0.01" type="number" value="0.9">
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">
+            Day starts at
+          </span>
+          <span class="settings-help">
+            The hour your study day rolls over, in local time. 4am by default, so a late-night session counts toward the day it feels like rather than the one the clock says.
+          </span>
+        </div>
+        <input class="settings-input" max="23" min="0" step="1" type="number" value="4">
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">
+            Timezone
+          </span>
+          <span class="settings-help">
+            Set when you signed up. Change it if you have moved, or the day will roll over at the wrong hour.
+          </span>
+        </div>
+        <div class="settings-timezone">
+          <span class="settings-timezone-value">
+            UTC
+          </span>
+          <button class="btn-secondary">
+            Use this device&#39;s
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="settings-section">
+    <h2 class="study-section-title">
+      Reminders
+    </h2>
+    <p class="settings-section-note">
+      One plain mail on the days something is due, at the hour you pick in your timezone. Nothing on days with nothing due.
+    </p>
+    <div class="settings-rows">
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">
+            Daily reminder
+          </span>
+          <span class="settings-help">
+            Sent to drills@example.com.
+          </span>
+        </div>
+        <select class="settings-input settings-select settings-reminder">
+          <option selected value="off">
+            Off
+          </option>
+          <option value="0">
+            12 am
+          </option>
+          <option value="1">
+            1 am
+          </option>
+          <option value="2">
+            2 am
+          </option>
+          <option value="3">
+            3 am
+          </option>
+          <option value="4">
+            4 am
+          </option>
+          <option value="5">
+            5 am
+          </option>
+          <option value="6">
+            6 am
+          </option>
+          <option value="7">
+            7 am
+          </option>
+          <option value="8">
+            8 am
+          </option>
+          <option value="9">
+            9 am
+          </option>
+          <option value="10">
+            10 am
+          </option>
+          <option value="11">
+            11 am
+          </option>
+          <option value="12">
+            12 pm
+          </option>
+          <option value="13">
+            1 pm
+          </option>
+          <option value="14">
+            2 pm
+          </option>
+          <option value="15">
+            3 pm
+          </option>
+          <option value="16">
+            4 pm
+          </option>
+          <option value="17">
+            5 pm
+          </option>
+          <option value="18">
+            6 pm
+          </option>
+          <option value="19">
+            7 pm
+          </option>
+          <option value="20">
+            8 pm
+          </option>
+          <option value="21">
+            9 pm
+          </option>
+          <option value="22">
+            10 pm
+          </option>
+          <option value="23">
+            11 pm
+          </option>
+        </select>
+      </div>
+    </div>
+  </section>
+  <section class="settings-section">
+    <h2 class="study-section-title">
+      This device
+    </h2>
+    <p class="settings-section-note">
+      Kept in this browser, signed in or not.
+    </p>
+    <div class="settings-rows">
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">
+            Editor keys
+          </span>
+          <span class="settings-help">
+            Also switchable from the drill screen&#39;s header.
+          </span>
+        </div>
+        <div class="keymap-picker">
+          <button class="keymap-option active ">
+            Std
+          </button>
+          <button class="keymap-option ">
+            Vim
+          </button>
+          <button class="keymap-option ">
+            Emacs
+          </button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">
+            Offline runtimes
+          </span>
+          <span class="settings-help">
+            The Gleam compiler and the Python runtime, about 11 MB, so a guest sitting runs with no network. They also fill in as you use them. Nothing cached yet.
+          </span>
+        </div>
+        <button class="btn-secondary settings-warm" type="button">
+          Download all
+        </button>
+      </div>
+    </div>
+  </section>
+  <section class="settings-section">
+    <h2 class="study-section-title">
+      Your data
+    </h2>
+    <p class="settings-section-note">
+      Everything your account holds, as one file. The same file restores into a guest browser, and a guest&#39;s file into an account.
+    </p>
+    <div class="settings-rows">
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">
+            Export study data
+          </span>
+          <span class="settings-help">
+            Cards, every review, settings, drafts and notes, as JSON.
+          </span>
+        </div>
+        <button class="btn-secondary settings-export" type="button">
+          Download
+        </button>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">
+            Import study data
+          </span>
+          <span class="settings-help">
+            Replaces everything here with the file&#39;s contents. You are asked first.
+          </span>
+        </div>
+        <button class="btn-secondary settings-import" type="button">
+          Choose file…
+        </button>
+      </div>
+    </div>
+  </section>
+
+</div>
+<div class="statusbar">
+  <span class="statusbar-context">
+    SETTINGS
+  </span>
+  <span class="leader-chip " title="Press , then a key to use a shortcut even while a button has focus">
+    ,
+  </span>
+  <div class="statusbar-hints">
+    <button class="keyhint" title="Back to study">
+      <span class="keyhint-keys">
+        esc/b
+      </span>
+      <span class="keyhint-label">
+        back
+      </span>
+    </button>
+    <button class="keyhint" title="This cheatsheet">
+      <span class="keyhint-keys">
+        ?
+      </span>
+      <span class="keyhint-label">
+        keys
+      </span>
+    </button>
+  </div>
+</div>
+<button aria-label="Help and keyboard shortcuts" class="help-fab">
+  ?
+</button>
+
+

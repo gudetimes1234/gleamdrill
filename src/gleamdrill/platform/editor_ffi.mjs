@@ -877,7 +877,11 @@ function languageExtension(language) {
   }
 }
 
-class GleamEditor extends HTMLElement {
+// Outside a browser (the unit tests render views under Node) there is no
+// HTMLElement to extend; the classes are only ever registered in one.
+const ElementBase = globalThis.HTMLElement ?? class {};
+
+class GleamEditor extends ElementBase {
   // keymap and language ride on ATTRIBUTES, not properties: Lustre reliably
   // diffs attributes on every (re)mount, while a property set on a remounted
   // custom element has been observed not to arrive.
@@ -1137,7 +1141,7 @@ class GleamEditor extends HTMLElement {
 //   property "doc"       — the user's code (what is shown)
 //   property "original"  — the reference solution (what it is compared to)
 //   attribute "language" — highlighting mode, as for <gleam-editor>
-class GleamDiff extends HTMLElement {
+class GleamDiff extends ElementBase {
   static observedAttributes = ["language"];
 
   #view = null;
@@ -1267,7 +1271,7 @@ class GleamDiff extends HTMLElement {
 //   property "a"         — the left text
 //   property "b"         — the right text
 //   attribute "language" — highlighting mode, as for <gleam-editor>
-class GleamCompare extends HTMLElement {
+class GleamCompare extends ElementBase {
   static observedAttributes = ["language"];
 
   #view = null;

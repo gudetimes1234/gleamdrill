@@ -1,0 +1,561 @@
+---
+version: 2.0.2
+title: screen: stats
+file: ./test/gleamdrill/snapshot_test.gleam
+test_name: stats_screen_test
+---
+<div class="stats-screen">
+
+
+
+  <header class="study-header">
+    <h1 class="study-title">
+      Progress
+    </h1>
+    <nav aria-label="Screens" class="study-account">
+      <span class="nav-track">
+        Python
+      </span>
+      <a class="link-button nav-link" href="/tracks">
+        Tracks
+      </a>
+      <a class="link-button nav-link" href="/t/neetcode-150/study">
+        Study
+      </a>
+      <a class="link-button nav-link" href="/t/neetcode-150/queue">
+        Queue
+      </a>
+      <span aria-current="page" class="nav-link nav-current">
+        Stats
+      </span>
+      <a class="link-button nav-link" href="/tour">
+        Tour
+      </a>
+      <a class="link-button nav-link" href="/settings">
+        Settings
+      </a>
+      <span class="nav-gap"></span>
+      <span class="study-email">
+        drills@example.com
+      </span>
+      <button class="link-button nav-link">
+        Sign out
+      </button>
+    </nav>
+  </header>
+  <div class="stats-tiles">
+    <div class="stats-tile stats-tile-hero">
+      <span class="stats-tile-value">
+        1
+      </span>
+      <span class="stats-tile-label">
+        under 3 minutes
+      </span>
+      <span class="stats-tile-delta">
+        ▴1 this week
+      </span>
+    </div>
+    <div class="stats-tile">
+      <span class="stats-tile-value">
+        1
+      </span>
+      <span class="stats-tile-label">
+        problems started
+      </span>
+    </div>
+    <div class="stats-tile">
+      <span class="stats-tile-value">
+        1
+      </span>
+      <span class="stats-tile-label">
+        day streak
+      </span>
+    </div>
+    <div class="stats-tile">
+      <span class="stats-tile-value">
+        —
+      </span>
+      <span class="stats-tile-label">
+        true retention
+      </span>
+    </div>
+  </div>
+  <section class="stats-section">
+    <h2 class="study-section-title">
+      Where your problems stand
+    </h2>
+    <div class="state-bars">
+      <div class="state-row">
+        <span class="state-label">
+          Fluent · under 3m
+        </span>
+        <div class="state-track">
+          <div class="state-fill tier-fluent" style="width:100%;"></div>
+        </div>
+        <span class="state-count">
+          1
+        </span>
+      </div>
+      <div class="state-row">
+        <span class="state-label">
+          Solid · under 8m
+        </span>
+        <div class="state-track">
+          <div class="state-fill tier-solid" style="width:2%;"></div>
+        </div>
+        <span class="state-count">
+          0
+        </span>
+      </div>
+      <div class="state-row">
+        <span class="state-label">
+          Grinding
+        </span>
+        <div class="state-track">
+          <div class="state-fill tier-grinding" style="width:2%;"></div>
+        </div>
+        <span class="state-count">
+          0
+        </span>
+      </div>
+      <div class="state-row">
+        <span class="state-label">
+          Still learning
+        </span>
+        <div class="state-track">
+          <div class="state-fill tier-learning" style="width:2%;"></div>
+        </div>
+        <span class="state-count">
+          0
+        </span>
+      </div>
+    </div>
+  </section>
+  <section class="stats-section">
+    <h2 class="study-section-title">
+      When you press… does it stick?
+    </h2>
+    <div class="state-bars">
+      <div class="state-row">
+        <span class="state-label grade-name-good">
+          Good
+        </span>
+        <div class="state-track">
+          <div class="state-fill tier-fluent" style="width:50%;"></div>
+        </div>
+        <span class="state-count">
+          50% of 2
+        </span>
+      </div>
+    </div>
+    <p class="calibration-verdict quiet">
+      Too few repeat reviews to judge your grading yet.
+    </p>
+
+  </section>
+
+  <section class="stats-section">
+    <h2 class="study-section-title">
+      Recently mastered
+    </h2>
+    <div class="problem-rows">
+      <button class="problem-row cursor " id="stat-0">
+        <span class="problem-row-title">
+          Contains Duplicate
+        </span>
+        <span class="lang-tag">
+          py
+        </span>
+        <span class="difficulty difficulty-easy">
+          Easy
+        </span>
+        <span class="problem-row-time">
+          2m30s
+        </span>
+        <span class="trend trend-down">
+          ↘
+        </span>
+        <span class="problem-row-due">
+          due 10m
+        </span>
+      </button>
+    </div>
+  </section>
+
+  <section class="stats-section">
+    <h2 class="study-section-title">
+      Where your cards are
+    </h2>
+    <div class="state-bars">
+      <div class="state-row">
+        <span class="state-label">
+          Learning
+        </span>
+        <div class="state-track">
+          <div class="state-fill state-fill-1" style="width:100%;"></div>
+        </div>
+        <span class="state-count">
+          2
+        </span>
+      </div>
+      <div class="state-row">
+        <span class="state-label">
+          Review
+        </span>
+        <div class="state-track">
+          <div class="state-fill state-fill-2" style="width:0%;"></div>
+        </div>
+        <span class="state-count">
+          0
+        </span>
+      </div>
+      <div class="state-row">
+        <span class="state-label">
+          Relearning
+        </span>
+        <div class="state-track">
+          <div class="state-fill state-fill-3" style="width:0%;"></div>
+        </div>
+        <span class="state-count">
+          0
+        </span>
+      </div>
+    </div>
+  </section>
+  <section class="stats-section">
+    <h2 class="study-section-title">
+      Reviews per day
+    </h2>
+    <div class="heatmap">
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 182 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 181 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 180 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 179 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 178 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 177 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 176 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 175 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 174 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 173 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 172 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 171 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 170 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 169 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 168 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 167 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 166 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 165 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 164 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 163 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 162 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 161 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 160 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 159 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 158 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 157 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 156 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 155 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 154 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 153 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 152 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 151 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 150 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 149 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 148 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 147 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 146 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 145 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 144 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 143 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 142 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 141 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 140 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 139 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 138 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 137 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 136 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 135 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 134 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 133 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 132 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 131 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 130 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 129 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 128 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 127 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 126 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 125 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 124 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 123 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 122 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 121 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 120 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 119 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 118 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 117 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 116 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 115 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 114 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 113 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 112 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 111 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 110 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 109 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 108 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 107 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 106 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 105 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 104 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 103 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 102 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 101 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 100 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 99 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 98 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 97 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 96 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 95 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 94 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 93 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 92 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 91 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 90 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 89 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 88 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 87 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 86 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 85 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 84 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 83 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 82 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 81 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 80 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 79 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 78 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 77 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 76 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 75 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 74 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 73 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 72 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 71 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 70 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 69 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 68 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 67 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 66 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 65 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 64 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 63 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 62 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 61 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 60 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 59 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 58 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 57 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 56 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 55 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 54 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 53 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 52 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 51 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 50 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 49 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 48 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 47 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 46 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 45 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 44 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 43 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 42 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 41 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 40 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 39 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 38 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 37 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 36 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 35 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 34 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 33 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 32 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 31 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 30 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 29 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 28 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 27 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 26 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 25 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 24 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 23 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 22 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 21 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 20 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 19 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 18 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 17 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 16 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 15 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 14 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 13 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 12 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 11 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 10 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 9 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 8 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 7 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 6 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 5 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 4 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 3 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, 2 days ago"></div>
+      <div class="heatmap-cell heatmap-0" title="0 reviews, yesterday"></div>
+      <div class="heatmap-cell heatmap-4" title="1 reviews, today"></div>
+    </div>
+  </section>
+  <section class="stats-section">
+    <h2 class="study-section-title">
+      Due in the next 30 days
+    </h2>
+    <div class="forecast-bars forecast-month">
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:100%;" title="2 due in 0d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 1d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 2d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 3d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 4d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 5d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 6d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 7d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 8d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 9d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 10d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 11d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 12d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 13d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 14d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 15d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 16d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 17d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 18d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 19d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 20d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 21d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 22d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 23d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 24d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 25d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 26d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 27d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 28d"></div>
+      </div>
+      <div class="forecast-day">
+        <div class="forecast-bar" style="height:2%;" title="0 due in 29d"></div>
+      </div>
+    </div>
+  </section>
+
+
+</div>
+<div class="statusbar">
+  <span class="statusbar-context">
+    STATS
+  </span>
+  <span class="leader-chip " title="Press , then a key to use a shortcut even while a button has focus">
+    ,
+  </span>
+  <div class="statusbar-hints">
+    <button class="keyhint" title="Move through the problem lists">
+      <span class="keyhint-keys">
+        j/k
+      </span>
+      <span class="keyhint-label">
+        move
+      </span>
+    </button>
+    <button class="keyhint" title="Open the problem&#39;s review history">
+      <span class="keyhint-keys">
+        ↵
+      </span>
+      <span class="keyhint-label">
+        detail
+      </span>
+    </button>
+    <button class="keyhint" title="Back to the study screen">
+      <span class="keyhint-keys">
+        esc/b
+      </span>
+      <span class="keyhint-label">
+        back
+      </span>
+    </button>
+    <button class="keyhint" title="This cheatsheet">
+      <span class="keyhint-keys">
+        ?
+      </span>
+      <span class="keyhint-label">
+        keys
+      </span>
+    </button>
+  </div>
+</div>
+<button aria-label="Help and keyboard shortcuts" class="help-fab">
+  ?
+</button>
+
+

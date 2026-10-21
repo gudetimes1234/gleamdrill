@@ -1,0 +1,2647 @@
+---
+version: 2.0.2
+title: screen: queue
+file: ./test/gleamdrill/snapshot_test.gleam
+test_name: queue_screen_test
+---
+<div class="queue-screen">
+
+
+
+  <header class="queue-header">
+    <h1 class="queue-title">
+      Study queue
+    </h1>
+    <span class="queue-total">
+      2 in queue
+    </span>
+    <button class="btn-primary queue-study-now">
+      Study now · 1
+    </button>
+    <nav aria-label="Screens" class="study-account">
+      <span class="nav-track">
+        Python
+      </span>
+      <a class="link-button nav-link" href="/tracks">
+        Tracks
+      </a>
+      <a class="link-button nav-link" href="/t/neetcode-150/study">
+        Study
+      </a>
+      <span aria-current="page" class="nav-link nav-current">
+        Queue
+      </span>
+      <a class="link-button nav-link" href="/t/neetcode-150/stats">
+        Stats
+      </a>
+      <a class="link-button nav-link" href="/tour">
+        Tour
+      </a>
+      <a class="link-button nav-link" href="/settings">
+        Settings
+      </a>
+      <span class="nav-gap"></span>
+      <span class="study-email">
+        drills@example.com
+      </span>
+      <button class="link-button nav-link">
+        Sign out
+      </button>
+    </nav>
+  </header>
+  <div class="queue-selector">
+    <div class="queue-picker">
+      <button class="queue-pick current " type="button">
+        Everything
+      </button>
+      <button class="queue-pick queue-new" type="button">
+        + New queue
+      </button>
+    </div>
+  </div>
+  <p class="queue-lede">
+    Only queued problems are scheduled. Adding one puts it in line to be introduced against your daily new limit; removing one takes it out entirely.
+  </p>
+  <div class="queue-controls">
+    <input class="search" placeholder="Search problems…" type="search" value>
+    <label class="queue-control">
+      <span class="queue-control-label">
+        Show
+      </span>
+      <select class="queue-select queue-status">
+        <option selected value="all">
+          All
+        </option>
+        <option value="queued">
+          In queue
+        </option>
+        <option value="new">
+          New
+        </option>
+        <option value="due">
+          Due
+        </option>
+        <option value="paused">
+          Paused
+        </option>
+        <option value="unqueued">
+          Not queued
+        </option>
+      </select>
+    </label>
+  </div>
+  <div class="queue-bulk">
+    <span class="queue-shown">
+      150 shown
+    </span>
+    <button class="queue-bulk-add">
+      Add 148 to queue
+    </button>
+    <button class="queue-bulk-remove">
+      Remove 1
+    </button>
+  </div>
+  <div class="queue-list">
+    <section data-lustre-key="NeetCode 150|Arrays &amp; Hashing" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          Arrays &amp; Hashing
+        </span>
+        <span class="queue-group-count">
+          2/9 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 7
+          </button>
+          <button class="queue-action queue-group-add-easy">
+            Add 1 easy
+          </button>
+          <button class="queue-action queue-group-remove">
+            Remove 1
+          </button>
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|Arrays &amp; Hashing|Contains Duplicate" class="queue-row queued cursor " id="queue-0">
+          <span class="queue-row-title">
+            Contains Duplicate
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-learning">
+            learning
+          </span>
+          <button class="queue-action queue-pause " title="Park this card. It keeps its review history, so it cannot be removed outright.">
+            Pause
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Arrays &amp; Hashing|Valid Anagram" class="queue-row queued " id="queue-1">
+          <span class="queue-row-title">
+            Valid Anagram
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-new">
+            new
+          </span>
+          <button class="queue-action queue-remove " title="Take this problem out of the study queue">
+            Remove
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Arrays &amp; Hashing|Two Sum" class="queue-row " id="queue-2">
+          <span class="queue-row-title">
+            Two Sum
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Arrays &amp; Hashing|Group Anagrams" class="queue-row " id="queue-3">
+          <span class="queue-row-title">
+            Group Anagrams
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Arrays &amp; Hashing|Top K Frequent Elements" class="queue-row " id="queue-4">
+          <span class="queue-row-title">
+            Top K Frequent Elements
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Arrays &amp; Hashing|Encode and Decode Strings" class="queue-row " id="queue-5">
+          <span class="queue-row-title">
+            Encode and Decode Strings
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Arrays &amp; Hashing|Product of Array Except Self" class="queue-row " id="queue-6">
+          <span class="queue-row-title">
+            Product of Array Except Self
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Arrays &amp; Hashing|Valid Sudoku" class="queue-row " id="queue-7">
+          <span class="queue-row-title">
+            Valid Sudoku
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Arrays &amp; Hashing|Longest Consecutive Sequence" class="queue-row " id="queue-8">
+          <span class="queue-row-title">
+            Longest Consecutive Sequence
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+    <section data-lustre-key="NeetCode 150|Two Pointers" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          Two Pointers
+        </span>
+        <span class="queue-group-count">
+          0/5 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 5
+          </button>
+          <button class="queue-action queue-group-add-easy">
+            Add 1 easy
+          </button>
+
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|Two Pointers|Valid Palindrome" class="queue-row " id="queue-9">
+          <span class="queue-row-title">
+            Valid Palindrome
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Two Pointers|Two Sum II - Input Array Is Sorted" class="queue-row " id="queue-10">
+          <span class="queue-row-title">
+            Two Sum II - Input Array Is Sorted
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Two Pointers|3Sum" class="queue-row " id="queue-11">
+          <span class="queue-row-title">
+            3Sum
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Two Pointers|Container With Most Water" class="queue-row " id="queue-12">
+          <span class="queue-row-title">
+            Container With Most Water
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Two Pointers|Trapping Rain Water" class="queue-row " id="queue-13">
+          <span class="queue-row-title">
+            Trapping Rain Water
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+    <section data-lustre-key="NeetCode 150|Sliding Window" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          Sliding Window
+        </span>
+        <span class="queue-group-count">
+          0/6 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 6
+          </button>
+          <button class="queue-action queue-group-add-easy">
+            Add 1 easy
+          </button>
+
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|Sliding Window|Best Time to Buy and Sell Stock" class="queue-row " id="queue-14">
+          <span class="queue-row-title">
+            Best Time to Buy and Sell Stock
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Sliding Window|Longest Substring Without Repeating Characters" class="queue-row " id="queue-15">
+          <span class="queue-row-title">
+            Longest Substring Without Repeating Characters
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Sliding Window|Longest Repeating Character Replacement" class="queue-row " id="queue-16">
+          <span class="queue-row-title">
+            Longest Repeating Character Replacement
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Sliding Window|Permutation in String" class="queue-row " id="queue-17">
+          <span class="queue-row-title">
+            Permutation in String
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Sliding Window|Minimum Window Substring" class="queue-row " id="queue-18">
+          <span class="queue-row-title">
+            Minimum Window Substring
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Sliding Window|Sliding Window Maximum" class="queue-row " id="queue-19">
+          <span class="queue-row-title">
+            Sliding Window Maximum
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+    <section data-lustre-key="NeetCode 150|Stack" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          Stack
+        </span>
+        <span class="queue-group-count">
+          0/7 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 7
+          </button>
+          <button class="queue-action queue-group-add-easy">
+            Add 1 easy
+          </button>
+
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|Stack|Valid Parentheses" class="queue-row " id="queue-20">
+          <span class="queue-row-title">
+            Valid Parentheses
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Stack|Min Stack" class="queue-row " id="queue-21">
+          <span class="queue-row-title">
+            Min Stack
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Stack|Evaluate Reverse Polish Notation" class="queue-row " id="queue-22">
+          <span class="queue-row-title">
+            Evaluate Reverse Polish Notation
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Stack|Generate Parentheses" class="queue-row " id="queue-23">
+          <span class="queue-row-title">
+            Generate Parentheses
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Stack|Daily Temperatures" class="queue-row " id="queue-24">
+          <span class="queue-row-title">
+            Daily Temperatures
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Stack|Car Fleet" class="queue-row " id="queue-25">
+          <span class="queue-row-title">
+            Car Fleet
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Stack|Largest Rectangle in Histogram" class="queue-row " id="queue-26">
+          <span class="queue-row-title">
+            Largest Rectangle in Histogram
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+    <section data-lustre-key="NeetCode 150|Binary Search" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          Binary Search
+        </span>
+        <span class="queue-group-count">
+          0/7 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 7
+          </button>
+          <button class="queue-action queue-group-add-easy">
+            Add 1 easy
+          </button>
+
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|Binary Search|Binary Search" class="queue-row " id="queue-27">
+          <span class="queue-row-title">
+            Binary Search
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Binary Search|Search a 2D Matrix" class="queue-row " id="queue-28">
+          <span class="queue-row-title">
+            Search a 2D Matrix
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Binary Search|Koko Eating Bananas" class="queue-row " id="queue-29">
+          <span class="queue-row-title">
+            Koko Eating Bananas
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Binary Search|Find Minimum in Rotated Sorted Array" class="queue-row " id="queue-30">
+          <span class="queue-row-title">
+            Find Minimum in Rotated Sorted Array
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Binary Search|Search in Rotated Sorted Array" class="queue-row " id="queue-31">
+          <span class="queue-row-title">
+            Search in Rotated Sorted Array
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Binary Search|Time Based Key-Value Store" class="queue-row " id="queue-32">
+          <span class="queue-row-title">
+            Time Based Key-Value Store
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Binary Search|Median of Two Sorted Arrays" class="queue-row " id="queue-33">
+          <span class="queue-row-title">
+            Median of Two Sorted Arrays
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+    <section data-lustre-key="NeetCode 150|Linked List" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          Linked List
+        </span>
+        <span class="queue-group-count">
+          0/11 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 11
+          </button>
+          <button class="queue-action queue-group-add-easy">
+            Add 3 easy
+          </button>
+
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|Linked List|Reverse Linked List" class="queue-row " id="queue-34">
+          <span class="queue-row-title">
+            Reverse Linked List
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Linked List|Merge Two Sorted Lists" class="queue-row " id="queue-35">
+          <span class="queue-row-title">
+            Merge Two Sorted Lists
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Linked List|Reorder List" class="queue-row " id="queue-36">
+          <span class="queue-row-title">
+            Reorder List
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Linked List|Remove Nth Node From End of List" class="queue-row " id="queue-37">
+          <span class="queue-row-title">
+            Remove Nth Node From End of List
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Linked List|Copy List with Random Pointer" class="queue-row " id="queue-38">
+          <span class="queue-row-title">
+            Copy List with Random Pointer
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Linked List|Add Two Numbers" class="queue-row " id="queue-39">
+          <span class="queue-row-title">
+            Add Two Numbers
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Linked List|Linked List Cycle" class="queue-row " id="queue-40">
+          <span class="queue-row-title">
+            Linked List Cycle
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Linked List|Find the Duplicate Number" class="queue-row " id="queue-41">
+          <span class="queue-row-title">
+            Find the Duplicate Number
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Linked List|LRU Cache" class="queue-row " id="queue-42">
+          <span class="queue-row-title">
+            LRU Cache
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Linked List|Merge k Sorted Lists" class="queue-row " id="queue-43">
+          <span class="queue-row-title">
+            Merge k Sorted Lists
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Linked List|Reverse Nodes in k-Group" class="queue-row " id="queue-44">
+          <span class="queue-row-title">
+            Reverse Nodes in k-Group
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+    <section data-lustre-key="NeetCode 150|Trees" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          Trees
+        </span>
+        <span class="queue-group-count">
+          0/15 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 15
+          </button>
+          <button class="queue-action queue-group-add-easy">
+            Add 6 easy
+          </button>
+
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|Trees|Invert Binary Tree" class="queue-row " id="queue-45">
+          <span class="queue-row-title">
+            Invert Binary Tree
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Trees|Maximum Depth of Binary Tree" class="queue-row " id="queue-46">
+          <span class="queue-row-title">
+            Maximum Depth of Binary Tree
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Trees|Diameter of Binary Tree" class="queue-row " id="queue-47">
+          <span class="queue-row-title">
+            Diameter of Binary Tree
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Trees|Balanced Binary Tree" class="queue-row " id="queue-48">
+          <span class="queue-row-title">
+            Balanced Binary Tree
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Trees|Same Tree" class="queue-row " id="queue-49">
+          <span class="queue-row-title">
+            Same Tree
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Trees|Subtree of Another Tree" class="queue-row " id="queue-50">
+          <span class="queue-row-title">
+            Subtree of Another Tree
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Trees|Lowest Common Ancestor of a Binary Search Tree" class="queue-row " id="queue-51">
+          <span class="queue-row-title">
+            Lowest Common Ancestor of a Binary Search Tree
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Trees|Binary Tree Level Order Traversal" class="queue-row " id="queue-52">
+          <span class="queue-row-title">
+            Binary Tree Level Order Traversal
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Trees|Binary Tree Right Side View" class="queue-row " id="queue-53">
+          <span class="queue-row-title">
+            Binary Tree Right Side View
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Trees|Count Good Nodes in Binary Tree" class="queue-row " id="queue-54">
+          <span class="queue-row-title">
+            Count Good Nodes in Binary Tree
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Trees|Validate Binary Search Tree" class="queue-row " id="queue-55">
+          <span class="queue-row-title">
+            Validate Binary Search Tree
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Trees|Kth Smallest Element in a BST" class="queue-row " id="queue-56">
+          <span class="queue-row-title">
+            Kth Smallest Element in a BST
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Trees|Construct Binary Tree from Preorder and Inorder Traversal" class="queue-row " id="queue-57">
+          <span class="queue-row-title">
+            Construct Binary Tree from Preorder and Inorder Traversal
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Trees|Binary Tree Maximum Path Sum" class="queue-row " id="queue-58">
+          <span class="queue-row-title">
+            Binary Tree Maximum Path Sum
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Trees|Serialize and Deserialize Binary Tree" class="queue-row " id="queue-59">
+          <span class="queue-row-title">
+            Serialize and Deserialize Binary Tree
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+    <section data-lustre-key="NeetCode 150|Tries" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          Tries
+        </span>
+        <span class="queue-group-count">
+          0/3 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 3
+          </button>
+
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|Tries|Implement Trie (Prefix Tree)" class="queue-row " id="queue-60">
+          <span class="queue-row-title">
+            Implement Trie (Prefix Tree)
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Tries|Design Add and Search Words Data Structure" class="queue-row " id="queue-61">
+          <span class="queue-row-title">
+            Design Add and Search Words Data Structure
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Tries|Word Search II" class="queue-row " id="queue-62">
+          <span class="queue-row-title">
+            Word Search II
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+    <section data-lustre-key="NeetCode 150|Heap / Priority Queue" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          Heap / Priority Queue
+        </span>
+        <span class="queue-group-count">
+          0/7 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 7
+          </button>
+          <button class="queue-action queue-group-add-easy">
+            Add 2 easy
+          </button>
+
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|Heap / Priority Queue|Kth Largest Element in a Stream" class="queue-row " id="queue-63">
+          <span class="queue-row-title">
+            Kth Largest Element in a Stream
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Heap / Priority Queue|Last Stone Weight" class="queue-row " id="queue-64">
+          <span class="queue-row-title">
+            Last Stone Weight
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Heap / Priority Queue|K Closest Points to Origin" class="queue-row " id="queue-65">
+          <span class="queue-row-title">
+            K Closest Points to Origin
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Heap / Priority Queue|Kth Largest Element in an Array" class="queue-row " id="queue-66">
+          <span class="queue-row-title">
+            Kth Largest Element in an Array
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Heap / Priority Queue|Task Scheduler" class="queue-row " id="queue-67">
+          <span class="queue-row-title">
+            Task Scheduler
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Heap / Priority Queue|Design Twitter" class="queue-row " id="queue-68">
+          <span class="queue-row-title">
+            Design Twitter
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Heap / Priority Queue|Find Median from Data Stream" class="queue-row " id="queue-69">
+          <span class="queue-row-title">
+            Find Median from Data Stream
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+    <section data-lustre-key="NeetCode 150|Backtracking" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          Backtracking
+        </span>
+        <span class="queue-group-count">
+          0/9 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 9
+          </button>
+
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|Backtracking|Subsets" class="queue-row " id="queue-70">
+          <span class="queue-row-title">
+            Subsets
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Backtracking|Combination Sum" class="queue-row " id="queue-71">
+          <span class="queue-row-title">
+            Combination Sum
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Backtracking|Permutations" class="queue-row " id="queue-72">
+          <span class="queue-row-title">
+            Permutations
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Backtracking|Subsets II" class="queue-row " id="queue-73">
+          <span class="queue-row-title">
+            Subsets II
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Backtracking|Combination Sum II" class="queue-row " id="queue-74">
+          <span class="queue-row-title">
+            Combination Sum II
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Backtracking|Word Search" class="queue-row " id="queue-75">
+          <span class="queue-row-title">
+            Word Search
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Backtracking|Palindrome Partitioning" class="queue-row " id="queue-76">
+          <span class="queue-row-title">
+            Palindrome Partitioning
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Backtracking|Letter Combinations of a Phone Number" class="queue-row " id="queue-77">
+          <span class="queue-row-title">
+            Letter Combinations of a Phone Number
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Backtracking|N-Queens" class="queue-row " id="queue-78">
+          <span class="queue-row-title">
+            N-Queens
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+    <section data-lustre-key="NeetCode 150|Graphs" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          Graphs
+        </span>
+        <span class="queue-group-count">
+          0/13 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 13
+          </button>
+
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|Graphs|Number of Islands" class="queue-row " id="queue-79">
+          <span class="queue-row-title">
+            Number of Islands
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Graphs|Clone Graph" class="queue-row " id="queue-80">
+          <span class="queue-row-title">
+            Clone Graph
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Graphs|Max Area of Island" class="queue-row " id="queue-81">
+          <span class="queue-row-title">
+            Max Area of Island
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Graphs|Pacific Atlantic Water Flow" class="queue-row " id="queue-82">
+          <span class="queue-row-title">
+            Pacific Atlantic Water Flow
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Graphs|Surrounded Regions" class="queue-row " id="queue-83">
+          <span class="queue-row-title">
+            Surrounded Regions
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Graphs|Rotting Oranges" class="queue-row " id="queue-84">
+          <span class="queue-row-title">
+            Rotting Oranges
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Graphs|Walls and Gates" class="queue-row " id="queue-85">
+          <span class="queue-row-title">
+            Walls and Gates
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Graphs|Course Schedule" class="queue-row " id="queue-86">
+          <span class="queue-row-title">
+            Course Schedule
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Graphs|Course Schedule II" class="queue-row " id="queue-87">
+          <span class="queue-row-title">
+            Course Schedule II
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Graphs|Redundant Connection" class="queue-row " id="queue-88">
+          <span class="queue-row-title">
+            Redundant Connection
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Graphs|Number of Connected Components in an Undirected Graph" class="queue-row " id="queue-89">
+          <span class="queue-row-title">
+            Number of Connected Components in an Undirected Graph
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Graphs|Graph Valid Tree" class="queue-row " id="queue-90">
+          <span class="queue-row-title">
+            Graph Valid Tree
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Graphs|Word Ladder" class="queue-row " id="queue-91">
+          <span class="queue-row-title">
+            Word Ladder
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+    <section data-lustre-key="NeetCode 150|Advanced Graphs" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          Advanced Graphs
+        </span>
+        <span class="queue-group-count">
+          0/6 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 6
+          </button>
+
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|Advanced Graphs|Reconstruct Itinerary" class="queue-row " id="queue-92">
+          <span class="queue-row-title">
+            Reconstruct Itinerary
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Advanced Graphs|Min Cost to Connect All Points" class="queue-row " id="queue-93">
+          <span class="queue-row-title">
+            Min Cost to Connect All Points
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Advanced Graphs|Network Delay Time" class="queue-row " id="queue-94">
+          <span class="queue-row-title">
+            Network Delay Time
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Advanced Graphs|Swim in Rising Water" class="queue-row " id="queue-95">
+          <span class="queue-row-title">
+            Swim in Rising Water
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Advanced Graphs|Alien Dictionary" class="queue-row " id="queue-96">
+          <span class="queue-row-title">
+            Alien Dictionary
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Advanced Graphs|Cheapest Flights Within K Stops" class="queue-row " id="queue-97">
+          <span class="queue-row-title">
+            Cheapest Flights Within K Stops
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+    <section data-lustre-key="NeetCode 150|1-D Dynamic Programming" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          1-D Dynamic Programming
+        </span>
+        <span class="queue-group-count">
+          0/12 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 12
+          </button>
+          <button class="queue-action queue-group-add-easy">
+            Add 2 easy
+          </button>
+
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|1-D Dynamic Programming|Climbing Stairs" class="queue-row " id="queue-98">
+          <span class="queue-row-title">
+            Climbing Stairs
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|1-D Dynamic Programming|Min Cost Climbing Stairs" class="queue-row " id="queue-99">
+          <span class="queue-row-title">
+            Min Cost Climbing Stairs
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|1-D Dynamic Programming|House Robber" class="queue-row " id="queue-100">
+          <span class="queue-row-title">
+            House Robber
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|1-D Dynamic Programming|House Robber II" class="queue-row " id="queue-101">
+          <span class="queue-row-title">
+            House Robber II
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|1-D Dynamic Programming|Longest Palindromic Substring" class="queue-row " id="queue-102">
+          <span class="queue-row-title">
+            Longest Palindromic Substring
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|1-D Dynamic Programming|Palindromic Substrings" class="queue-row " id="queue-103">
+          <span class="queue-row-title">
+            Palindromic Substrings
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|1-D Dynamic Programming|Decode Ways" class="queue-row " id="queue-104">
+          <span class="queue-row-title">
+            Decode Ways
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|1-D Dynamic Programming|Coin Change" class="queue-row " id="queue-105">
+          <span class="queue-row-title">
+            Coin Change
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|1-D Dynamic Programming|Maximum Product Subarray" class="queue-row " id="queue-106">
+          <span class="queue-row-title">
+            Maximum Product Subarray
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|1-D Dynamic Programming|Word Break" class="queue-row " id="queue-107">
+          <span class="queue-row-title">
+            Word Break
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|1-D Dynamic Programming|Longest Increasing Subsequence" class="queue-row " id="queue-108">
+          <span class="queue-row-title">
+            Longest Increasing Subsequence
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|1-D Dynamic Programming|Partition Equal Subset Sum" class="queue-row " id="queue-109">
+          <span class="queue-row-title">
+            Partition Equal Subset Sum
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+    <section data-lustre-key="NeetCode 150|2-D Dynamic Programming" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          2-D Dynamic Programming
+        </span>
+        <span class="queue-group-count">
+          0/11 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 11
+          </button>
+
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|2-D Dynamic Programming|Unique Paths" class="queue-row " id="queue-110">
+          <span class="queue-row-title">
+            Unique Paths
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|2-D Dynamic Programming|Longest Common Subsequence" class="queue-row " id="queue-111">
+          <span class="queue-row-title">
+            Longest Common Subsequence
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|2-D Dynamic Programming|Best Time to Buy and Sell Stock with Cooldown" class="queue-row " id="queue-112">
+          <span class="queue-row-title">
+            Best Time to Buy and Sell Stock with Cooldown
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|2-D Dynamic Programming|Coin Change II" class="queue-row " id="queue-113">
+          <span class="queue-row-title">
+            Coin Change II
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|2-D Dynamic Programming|Target Sum" class="queue-row " id="queue-114">
+          <span class="queue-row-title">
+            Target Sum
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|2-D Dynamic Programming|Interleaving String" class="queue-row " id="queue-115">
+          <span class="queue-row-title">
+            Interleaving String
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|2-D Dynamic Programming|Longest Increasing Path in a Matrix" class="queue-row " id="queue-116">
+          <span class="queue-row-title">
+            Longest Increasing Path in a Matrix
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|2-D Dynamic Programming|Distinct Subsequences" class="queue-row " id="queue-117">
+          <span class="queue-row-title">
+            Distinct Subsequences
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|2-D Dynamic Programming|Edit Distance" class="queue-row " id="queue-118">
+          <span class="queue-row-title">
+            Edit Distance
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|2-D Dynamic Programming|Burst Balloons" class="queue-row " id="queue-119">
+          <span class="queue-row-title">
+            Burst Balloons
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|2-D Dynamic Programming|Regular Expression Matching" class="queue-row " id="queue-120">
+          <span class="queue-row-title">
+            Regular Expression Matching
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+    <section data-lustre-key="NeetCode 150|Greedy" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          Greedy
+        </span>
+        <span class="queue-group-count">
+          0/8 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 8
+          </button>
+
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|Greedy|Maximum Subarray" class="queue-row " id="queue-121">
+          <span class="queue-row-title">
+            Maximum Subarray
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Greedy|Jump Game" class="queue-row " id="queue-122">
+          <span class="queue-row-title">
+            Jump Game
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Greedy|Jump Game II" class="queue-row " id="queue-123">
+          <span class="queue-row-title">
+            Jump Game II
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Greedy|Gas Station" class="queue-row " id="queue-124">
+          <span class="queue-row-title">
+            Gas Station
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Greedy|Hand of Straights" class="queue-row " id="queue-125">
+          <span class="queue-row-title">
+            Hand of Straights
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Greedy|Merge Triplets to Form Target Triplet" class="queue-row " id="queue-126">
+          <span class="queue-row-title">
+            Merge Triplets to Form Target Triplet
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Greedy|Partition Labels" class="queue-row " id="queue-127">
+          <span class="queue-row-title">
+            Partition Labels
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Greedy|Valid Parenthesis String" class="queue-row " id="queue-128">
+          <span class="queue-row-title">
+            Valid Parenthesis String
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+    <section data-lustre-key="NeetCode 150|Intervals" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          Intervals
+        </span>
+        <span class="queue-group-count">
+          0/6 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 6
+          </button>
+          <button class="queue-action queue-group-add-easy">
+            Add 1 easy
+          </button>
+
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|Intervals|Insert Interval" class="queue-row " id="queue-129">
+          <span class="queue-row-title">
+            Insert Interval
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Intervals|Merge Intervals" class="queue-row " id="queue-130">
+          <span class="queue-row-title">
+            Merge Intervals
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Intervals|Non-overlapping Intervals" class="queue-row " id="queue-131">
+          <span class="queue-row-title">
+            Non-overlapping Intervals
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Intervals|Meeting Rooms" class="queue-row " id="queue-132">
+          <span class="queue-row-title">
+            Meeting Rooms
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Intervals|Meeting Rooms II" class="queue-row " id="queue-133">
+          <span class="queue-row-title">
+            Meeting Rooms II
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Intervals|Minimum Interval to Include Each Query" class="queue-row " id="queue-134">
+          <span class="queue-row-title">
+            Minimum Interval to Include Each Query
+          </span>
+          <span class="difficulty difficulty-hard">
+            Hard
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+    <section data-lustre-key="NeetCode 150|Math &amp; Geometry" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          Math &amp; Geometry
+        </span>
+        <span class="queue-group-count">
+          0/8 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 8
+          </button>
+          <button class="queue-action queue-group-add-easy">
+            Add 2 easy
+          </button>
+
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|Math &amp; Geometry|Rotate Image" class="queue-row " id="queue-135">
+          <span class="queue-row-title">
+            Rotate Image
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Math &amp; Geometry|Spiral Matrix" class="queue-row " id="queue-136">
+          <span class="queue-row-title">
+            Spiral Matrix
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Math &amp; Geometry|Set Matrix Zeroes" class="queue-row " id="queue-137">
+          <span class="queue-row-title">
+            Set Matrix Zeroes
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Math &amp; Geometry|Happy Number" class="queue-row " id="queue-138">
+          <span class="queue-row-title">
+            Happy Number
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Math &amp; Geometry|Plus One" class="queue-row " id="queue-139">
+          <span class="queue-row-title">
+            Plus One
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Math &amp; Geometry|Pow(x, n)" class="queue-row " id="queue-140">
+          <span class="queue-row-title">
+            Pow(x, n)
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Math &amp; Geometry|Multiply Strings" class="queue-row " id="queue-141">
+          <span class="queue-row-title">
+            Multiply Strings
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Math &amp; Geometry|Detect Squares" class="queue-row " id="queue-142">
+          <span class="queue-row-title">
+            Detect Squares
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+    <section data-lustre-key="NeetCode 150|Bit Manipulation" class="queue-group">
+      <div class="queue-group-head">
+        <span class="queue-group-title">
+          Bit Manipulation
+        </span>
+        <span class="queue-group-count">
+          0/7 queued
+        </span>
+        <span class="queue-group-actions">
+          <button class="queue-action queue-group-add">
+            Add 7
+          </button>
+          <button class="queue-action queue-group-add-easy">
+            Add 5 easy
+          </button>
+
+        </span>
+      </div>
+      <div class="queue-group-rows">
+        <div data-lustre-key="NeetCode 150|Bit Manipulation|Single Number" class="queue-row " id="queue-143">
+          <span class="queue-row-title">
+            Single Number
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Bit Manipulation|Number of 1 Bits" class="queue-row " id="queue-144">
+          <span class="queue-row-title">
+            Number of 1 Bits
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Bit Manipulation|Counting Bits" class="queue-row " id="queue-145">
+          <span class="queue-row-title">
+            Counting Bits
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Bit Manipulation|Reverse Bits" class="queue-row " id="queue-146">
+          <span class="queue-row-title">
+            Reverse Bits
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Bit Manipulation|Missing Number" class="queue-row " id="queue-147">
+          <span class="queue-row-title">
+            Missing Number
+          </span>
+          <span class="difficulty difficulty-easy">
+            Easy
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Bit Manipulation|Sum of Two Integers" class="queue-row " id="queue-148">
+          <span class="queue-row-title">
+            Sum of Two Integers
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+        <div data-lustre-key="NeetCode 150|Bit Manipulation|Reverse Integer" class="queue-row " id="queue-149">
+          <span class="queue-row-title">
+            Reverse Integer
+          </span>
+          <span class="difficulty difficulty-medium">
+            Medium
+          </span>
+          <span class="badge badge-unqueued">
+            not queued
+          </span>
+          <button class="queue-action queue-add " title="Put this problem in the study queue">
+            Add
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+<div class="statusbar">
+  <span class="statusbar-context">
+    QUEUE
+  </span>
+  <span class="leader-chip " title="Press , then a key to use a shortcut even while a button has focus">
+    ,
+  </span>
+  <div class="statusbar-hints">
+    <button class="keyhint" title="Move the cursor down / up">
+      <span class="keyhint-keys">
+        j/k
+      </span>
+      <span class="keyhint-label">
+        move
+      </span>
+    </button>
+    <button class="keyhint" title="Add the cursor row to the queue, or take it out">
+      <span class="keyhint-keys">
+        space/x
+      </span>
+      <span class="keyhint-label">
+        toggle
+      </span>
+    </button>
+    <button class="keyhint" title="Add every problem currently listed">
+      <span class="keyhint-keys">
+        a
+      </span>
+      <span class="keyhint-label">
+        add all
+      </span>
+    </button>
+    <button class="keyhint" title="Remove every problem currently listed">
+      <span class="keyhint-keys">
+        r
+      </span>
+      <span class="keyhint-label">
+        remove all
+      </span>
+    </button>
+    <button class="keyhint" title="Search problems">
+      <span class="keyhint-keys">
+        /
+      </span>
+      <span class="keyhint-label">
+        search
+      </span>
+    </button>
+    <button class="keyhint" title="Jump to the first row">
+      <span class="keyhint-keys">
+        g
+      </span>
+      <span class="keyhint-label">
+        top
+      </span>
+    </button>
+    <button class="keyhint" title="Jump to the last row">
+      <span class="keyhint-keys">
+        G
+      </span>
+      <span class="keyhint-label">
+        bottom
+      </span>
+    </button>
+    <button class="keyhint" title="Back to the study screen">
+      <span class="keyhint-keys">
+        esc
+      </span>
+      <span class="keyhint-label">
+        study
+      </span>
+    </button>
+  </div>
+</div>
+<button aria-label="Help and keyboard shortcuts" class="help-fab">
+  ?
+</button>
+
+

@@ -1,0 +1,38 @@
+---
+version: 2.0.2
+title: screen: sign in
+file: ./test/gleamdrill/snapshot_test.gleam
+test_name: sign_in_screen_test
+---
+<div class="auth-screen">
+  <form class="auth-card">
+    <h1 class="auth-title">
+      <img alt aria-hidden="true" class="brand-mark" height="32" src="/favicon.svg" width="32">
+      GleamDrill
+    </h1>
+    <p class="auth-subtitle">
+      Sign in to pick up where you left off.
+    </p>
+    <label class="auth-field">
+      <span class="auth-label">
+        Email
+      </span>
+      <input autocomplete="email" class="auth-input" placeholder="you@example.com" type="email" value>
+    </label>
+    <label class="auth-field">
+      <span class="auth-label">
+        Password
+      </span>
+      <input autocomplete="current-password" class="auth-input" placeholder type="password" value>
+    </label>
+
+    <button class="auth-submit" type="submit">
+      Sign in
+    </button>
+    <button class="auth-switch" type="button">
+      No account yet? Create one
+    </button>
+
+  </form>
+</div>
+

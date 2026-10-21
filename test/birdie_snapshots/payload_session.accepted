@@ -1,0 +1,7 @@
+---
+version: 2.0.2
+title: payload: session
+file: ./test/gleamdrill/snapshot_test.gleam
+test_name: session_payload_test
+---
+{"token":"fixture-token","user":{"id":"00000000-0000-0000-0000-000000000000","email":"drills@example.com"}}
