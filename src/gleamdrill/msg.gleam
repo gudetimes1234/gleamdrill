@@ -5,15 +5,15 @@
 //// never cycle; everything a variant carries is either a wire payload, a
 //// scheduler rating, or one of the model's own small state types.
 
-import fsrs
 import gleam/option.{type Option}
 import gleamdrill/content/problem.{type ProblemRef}
-import gleamdrill/model.{type Pane, type RunOutcome, type UndoPoint}
+import gleamdrill/model.{type RunOutcome}
 import gleamdrill/page/auth/model as auth_model
 import gleamdrill/page/auth/msg as auth_msg
 import gleamdrill/page/browse/msg as browse_msg
 import gleamdrill/page/queue/msg as queue_msg
 import gleamdrill/page/settings/msg as settings_msg
+import gleamdrill/page/sitting/msg as sitting_msg
 import gleamdrill/page/stats/msg as stats_msg
 import gleamdrill/page/study/msg as study_msg
 import gleamdrill/page/tour/msg as tour_msg
@@ -39,20 +39,10 @@ pub type Msg {
   BrowseMsg(browse_msg.Msg)
   StudyMsg(study_msg.Msg)
   TourMsg(tour_msg.Msg)
+  SittingMsg(sitting_msg.Msg)
   // --- keyboard ---
   KeyPressed(Key)
   HelpToggled
-  /// Move the quiz choice cursor by a delta.
-  QuizMoved(Int)
-  /// Move the board cursor by a delta, within the flattened palette.
-  BoardMoved(Int)
-  /// Jump the board cursor to the first piece of the previous/next shelf.
-  BoardShelfMoved(Int)
-  /// Jump the board cursor to the first (True) or last piece.
-  BoardJumped(Bool)
-  /// Space on the cursor: put the piece on the board, or take it off.
-  BoardToggledAtCursor
-  EditorFocusRequested
   // --- session ---
   StateLoaded(Result(wire.BootState, ApiError))
   StateImported(Result(Nil, ApiError))
@@ -70,77 +60,19 @@ pub type Msg {
   UserClickedStudy
   UserClickedBrowse
   UserClickedBackToStudy
-  UserGraded(fsrs.Rating)
-  ReviewRecorded(Result(wire.ReviewOutcome, ApiError))
-  DraftSynced(Result(Nil, ApiError))
   UserClickedStats
   StatsLoaded(Result(wire.Stats, ApiError))
   InsightsLoaded(Result(wire.Insights, ApiError))
   // --- browsing and drilling ---
   UserChangedIterations(String)
   UserClickedStartDrill
-  /// Ask before leaving a drill; opens the in-app exit prompt.
-  UserClickedExitDrill
-  /// The answer to that prompt.
-  ExitConfirmed(Bool)
-  /// One second of drill time has passed; only scheduled while a drill is up.
-  ClockTicked
-  /// Pause or resume the drill clock. The paused span is subtracted from the
-  /// recorded duration, so stepping away does not inflate the review log.
-  UserToggledTimer
   // --- the Gleam Language Tour ---
   /// Open the tour on its table of contents.
   UserClickedTour
-  UserToggledSolution(Int)
-  /// Unfold or fold the rail's nudge. Not a reveal.
-  UserToggledNudge
-  /// The step rail. Focus moves freely -- the titles were always on screen --
-  /// and the three layer messages act on whichever step has the focus.
-  WalkFocused(Int)
-  WalkAdvanced
-  WalkBacked
-  WalkHintShown
-  WalkWhyShown
-  WalkCodeShown
-  /// The whole pseudocode, from the foot of the rail. A reveal.
-  UserRevealedWholeThing
-  UserClickedNext
-  UserChangedKeymap(String)
-  EditorChanged(String)
-  DraftSaveTicked
-  /// The note on the current problem changed; saved after a pause.
-  NoteChanged(String)
-  NoteSaveTicked
-  NoteSynced(Result(Nil, ApiError))
-  /// `m` on the drill screen: put the cursor in the note.
-  NoteFocusRequested
-  UserClickedRun
-  UserClickedStopRun
-  UserClickedRetryRuntime(String)
-  /// `p` or the header button: the prompt sidebar, shown or hidden.
-  UserToggledPrompt
-  /// A pane's key: open it in the slot, or close it if it is the one shown.
-  UserToggledPane(Pane)
-  UserToggledResults
-  /// Flip the solution panel between the diff and the plain reference.
-  UserToggledDiff
-  /// Close the panel a passing run opened.
-  UserDismissedDiff
-  /// Take back the latest grade and reopen that problem.
-  UserClickedUndo
-  UndoRecorded(UndoPoint, Result(wire.UndoOutcome, ApiError))
   /// Start a recall-only sitting over the study queue.
   UserClickedRecall
-  /// Run the code alone, no harness: for reading what it prints.
-  UserClickedScratchRun
   /// Start a Blitz: this many problems, this many milliseconds each.
   UserStartedBlitz(Int, Int)
-  /// The Blitz clock passed the current card's deadline.
-  BlitzExpired
-  /// Show the approach and solutions for the current recall card.
-  UserRevealedRecall
-  /// The editor's resize handle was released at this many px; 0 resets.
-  EditorResized(Int)
   UserClickedSettings
   /// Open the track switcher.
   UserClickedTracks
@@ -163,13 +95,6 @@ pub type Msg {
   RemoteRunFinished(id: Int, result: Result(wire.RunResult, ApiError))
   RunTimedOut(id: Int)
   RuntimeLoadTimedOut(language: String)
-  UserPickedChoice(Int)
-  UserSubmittedAnswer
-  /// A board chip was clicked. Carries the piece id rather than its index, so
-  /// the click path does not depend on how the palette is ordered.
-  UserToggledPiece(String)
-  UserSubmittedBoard
   UserClickedStartExam
   ExamSampled(List(ProblemRef))
-  UserClickedExitReport
 }

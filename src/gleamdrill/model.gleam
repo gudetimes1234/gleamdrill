@@ -1,15 +1,10 @@
 import fsrs
 import gleam/dict.{type Dict}
-import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
-import gleam/order
 import gleam/result
-import gleam/string
 import gleam/time/timestamp.{type Timestamp}
 import gleamdrill/content/problem.{type ProblemRef}
-import gleamdrill/content/problems
-import gleamdrill/domain/walk
 import gleamdrill/store/remote
 
 import wire.{type CardState, type Settings, type User}
@@ -88,17 +83,6 @@ pub type UpgradePrompt {
   PromptDismissed
 }
 
-/// Where the current drill sits in the grade-and-move-on cycle.
-pub type Grading {
-  /// The drill has not reached a gradeable state yet.
-  NotGrading
-  /// Waiting for the user to press one of the grade buttons.
-  AwaitingGrade
-  /// The review is in flight; the buttons are disabled so one answer cannot be
-  /// recorded twice.
-  SubmittingGrade
-}
-
 /// The compile-and-run backend (worker + 4.7MB wasm), loaded lazily when a
 /// Gleam drill is opened.
 pub type RuntimeState {
@@ -126,14 +110,6 @@ pub type RunOutcome {
   Cases(List(CaseResult))
   Errored(RunError)
   TimedOut
-}
-
-/// What the last run was for. A test run is the harness, and is what
-/// gates grading; a scratch run is the code alone, for reading what it
-/// prints, and counts for nothing.
-pub type RunKind {
-  TestRun
-  ScratchRun
 }
 
 pub type RunState {
@@ -195,10 +171,6 @@ pub type Model {
     tour_edits: Dict(Int, String),
     /// The last lesson opened, persisted as a device preference.
     tour_lesson: Int,
-    /// The in-app "leave this drill?" question, with its message, while it is
-    /// up. An in-app dialog rather than `window.confirm`, which freezes the
-    /// page and cannot be styled or reached by the leader key.
-    exit_prompt: Option(String),
     /// Set when a local write has failed, which as a guest means progress is
     /// silently not being saved. Unlike `notice` this is not dismissible --
     /// it is the one situation where an account genuinely matters.
@@ -211,69 +183,15 @@ pub type Model {
     /// folding scratch progress into an established account unasked would be
     /// surprising.
     merge_offer: Bool,
-    // --- the current sitting ---
+    // --- the manual selection and the run engine ---
     route: Route,
     selected: List(ProblemRef),
-    problem_index: Int,
     iteration_count: Int,
-    current_iteration: Int,
-    /// True when this sitting was started from the study queue, as opposed to
-    /// hand-picked from the menu. Reviews are recorded either way; this only
-    /// decides where exiting returns to.
-    studying: Bool,
-    /// The latest grade, while it can still be taken back.
-    undo: Option(UndoPoint),
     /// Whether the solution pane shows your code diffed against the
     /// reference or the plain reference, flipped with `d`.
     diff_mode: Bool,
-    /// A recall-only sitting: no editor. The prompt is read, the approach
-    /// and solutions are revealed, and the grade is given from memory. Set
-    /// alongside `studying`, cleared with it.
-    recall: Bool,
-    /// Which kind of run `run` describes. Set as a run starts.
-    run_kind: RunKind,
-    /// A Blitz: N random problems against a clock, scored pass or fail.
-    /// Practice as far as the schedule is concerned; the game is the clock.
-    blitz: Option(Blitz),
-    grading: Grading,
-    /// Wall-clock milliseconds when the current problem was opened, for the
-    /// review log's `duration_ms`.
-    opened_at_ms: Int,
-    /// Wall-clock milliseconds as of the last clock tick, so the drill header
-    /// can show how long this problem has been open. Only advances while a
-    /// drill is on screen.
-    now_ms: Int,
-    /// When the user paused the drill clock, or `None` while it runs. The
-    /// tick chain keeps going either way; pausing is arithmetic, not a
-    /// stopped timer, so there is no chain to restart on resume.
-    clock_paused_at: Option(Int),
-    /// Paused time already banked for this problem, from earlier pauses.
-    clock_paused_ms: Int,
-    draft: String,
     /// Whether the prompt sidebar is beside the editor, on this device.
     prompt_open: Bool,
-    /// What the slot beside the editor shows, if anything. One thing at a
-    /// time: opening a pane replaces whatever was there.
-    slot: Pane,
-    /// The solution chosen by hand on this problem, sticky until the next
-    /// problem. It is the review log's reveal, not the pane's visibility:
-    /// the diff a passing run opens by itself leaves it `None`.
-    revealed_solution: Option(Int),
-    /// Whether the rail's nudge is unfolded. Never a reveal: it is the
-    /// vaguest rung, and the only thing on the rail that is prose about the
-    /// problem rather than a piece of the plan.
-    nudge_shown: Bool,
-    /// Whether the whole pseudocode has been shown at once, from the foot of
-    /// the rail. A reveal.
-    whole_thing_shown: Bool,
-    /// The step rail: which step has the keyboard, and which of each step's
-    /// three layers have been turned over. Every step's *title* is on screen
-    /// from the moment the problem opens, so this is only ever about the
-    /// layers underneath them.
-    walk: walk.WalkState,
-    /// Whether any step's code slice has been shown on this problem. A
-    /// slice is a piece of the pseudocode, so it counts as a reveal.
-    walk_code_seen: Bool,
     runtimes: List(#(String, RuntimeState)),
     run: RunState,
     drafts: List(#(ProblemRef, String)),
@@ -282,6 +200,9 @@ pub type Model {
     /// draft.
     notes: List(#(ProblemRef, String)),
     next_run_id: Int,
+    /// The language of the run in flight, so a timeout knows which worker
+    /// to replace.
+    run_language: String,
     editor_keymap: String,
     /// Whether the run results are folded to their one-line verdict. Lives for
     /// the session only: a new run keeps whatever you chose.
@@ -303,27 +224,6 @@ pub type Model {
     /// The queue the study screen serves today, in the active track: None is
     /// everything with a card. A device preference.
     active_queue: Option(String),
-    /// Quiz option currently picked, before Submit is pressed.
-    choice: Option(Int),
-    /// Whether the current quiz question or board has been submitted and
-    /// graded.
-    graded: Bool,
-    /// Pieces currently on the board, by id, before Submit is pressed. A list
-    /// rather than a set: there are thirty-six of them, and a list is what the
-    /// view maps over and what a test can write out literally.
-    board_picks: List(String),
-    /// Where the keyboard cursor sits in the flattened palette. The columns
-    /// reflow with the viewport, so the cursor walks the list rather than
-    /// pretending to be two-dimensional.
-    board_cursor: Int,
-    /// This sitting's answers, in the order given. The report is computed from
-    /// this rather than from card history, because a score must reflect one
-    /// sitting and card state deliberately does not.
-    exam_answers: List(#(ProblemRef, Bool)),
-    /// This sitting's answered problems, newest first. Kept for the summary,
-    /// which is owed one the moment a sitting ends -- and unlike the card
-    /// store, this deliberately resets between sittings.
-    sitting: List(SittingEntry),
   )
 }
 
@@ -346,52 +246,27 @@ pub fn default() -> Model {
     help_open: False,
     tour_edits: dict.new(),
     tour_lesson: 0,
-    exit_prompt: None,
     storage_full: False,
     upgrade_prompt: PromptUnseen,
     merge_offer: False,
     route: StudyRoute,
     selected: [],
-    problem_index: 0,
     iteration_count: 3,
-    current_iteration: 1,
-    studying: False,
-    grading: NotGrading,
-    opened_at_ms: 0,
-    now_ms: 0,
-    clock_paused_at: None,
-    clock_paused_ms: 0,
-    draft: "",
     prompt_open: True,
-    slot: NoPane,
-    revealed_solution: None,
-    nudge_shown: False,
-    whole_thing_shown: False,
-    walk: walk.fresh_walk(),
-    walk_code_seen: False,
     runtimes: [],
     run: RunIdle,
     drafts: [],
     notes: [],
     next_run_id: 1,
+    run_language: "",
     editor_keymap: "default",
     results_collapsed: False,
     editor_height: None,
-    undo: None,
     diff_mode: True,
-    recall: False,
-    run_kind: TestRun,
-    blitz: None,
     prefix_armed: False,
     queues: [],
     remembered_queues: [],
     active_queue: None,
-    choice: None,
-    graded: False,
-    board_picks: [],
-    board_cursor: 0,
-    exam_answers: [],
-    sitting: [],
   )
 }
 
@@ -416,27 +291,6 @@ pub fn assoc_put(assoc: List(#(k, a)), key: k, value: a) -> List(#(k, a)) {
   [#(key, value), ..list.filter(assoc, fn(pair) { pair.0 != key })]
 }
 
-/// The problem the drill is currently showing.
-pub fn current_ref(model: Model) -> Result(ProblemRef, Nil) {
-  model.selected
-  |> list.drop(model.problem_index)
-  |> list.first
-}
-
-/// The problem the drill is showing, out of the catalogue.
-pub fn current_problem(m: Model) -> Result(problem.Problem, Nil) {
-  case current_ref(m) {
-    Ok(ref) -> problems.find(ref.category, ref.subcategory, ref.title)
-    Error(Nil) -> Error(Nil)
-  }
-}
-
-/// The open problem's check, whether or not this browser can run it.
-pub fn current_check(m: Model) -> Result(problem.Check, Nil) {
-  current_problem(m)
-  |> result.try(fn(found) { option.to_result(found.check, Nil) })
-}
-
 pub fn card_for(model: Model, problem: ProblemRef) -> Option(CardState) {
   dict.get(model.cards, problem) |> option.from_result
 }
@@ -453,14 +307,6 @@ pub fn first_encounter(model: Model, problem: ProblemRef) -> Bool {
     None -> True
     option.Some(state) -> state.card.memory == None
   }
-}
-
-/// Whether the most recent run passed every case. Only a harness verdict
-/// counts: a reveal-only drill never "passes".
-/// A pass that counts: a test run whose every case passed. A scratch run
-/// has no cases and never passes anything.
-pub fn test_passed(model: Model) -> Bool {
-  model.run_kind == TestRun && run_passed(model.run)
 }
 
 pub fn run_passed(run: RunState) -> Bool {
@@ -497,86 +343,6 @@ pub fn opens_with_nudge(m: Model, problem: ProblemRef) -> Bool {
   is_leech(m, problem)
 }
 
-/// Whether the whole pseudocode has been shown. Guarded on the ladder
-/// actually having that rung, so a problem without one can never be recorded
-/// as having given it away.
-pub fn pseudocode_revealed(
-  m: Model,
-  stages: List(problem.ApproachStage),
-) -> Bool {
-  m.whole_thing_shown
-  && list.any(stages, fn(stage) {
-    case stage {
-      problem.Pseudocode(_) -> True
-      _ -> False
-    }
-  })
-}
-
-/// What the slot beside the editor can show.
-///
-/// The hint ladder and the walkthrough used to be in here too, and taking
-/// them out is the point of the rail: the plan is no longer something the
-/// solution can evict.
-pub type Pane {
-  NoPane
-  SolutionPane
-  NotePane
-}
-
-/// The view state a problem opens with, whichever way it was reached: every
-/// step's title listed on the rail, and nothing revealed. A leech opens with
-/// its nudge unfolded as well, so there is something to read before the first
-/// keystroke; neither costs a reveal.
-pub fn open_problem_view(m: Model, problem: ProblemRef) -> Model {
-  Model(
-    ..m,
-    slot: NoPane,
-    revealed_solution: None,
-    nudge_shown: opens_with_nudge(m, problem),
-    whole_thing_shown: False,
-    walk: walk.fresh_walk(),
-    walk_code_seen: False,
-    // Reset here rather than at each call site: this is the one function both
-    // `open_first` and `advance_inner` go through with a ref, so a board
-    // cannot open carrying the last one's picks.
-    board_picks: [],
-    board_cursor: 0,
-  )
-}
-
-/// The pane's key pressed again closes it; any other pane replaces it.
-pub fn toggle_pane(m: Model, pane: Pane) -> Model {
-  Model(..m, slot: case m.slot == pane {
-    True -> NoPane
-    False -> pane
-  })
-}
-
-/// What the slot shows once a test run is in: a pass opens the reference
-/// beside your code, as a diff; a fail takes away a diff that was only there
-/// because of the last pass, and leaves anything chosen by hand alone.
-pub fn pane_after_run(
-  slot: Pane,
-  revealed_solution: Option(Int),
-  passed: Bool,
-) -> Pane {
-  case passed, slot, revealed_solution {
-    True, _, _ -> SolutionPane
-    False, SolutionPane, None -> NoPane
-    False, _, _ -> slot
-  }
-}
-
-/// The one definition of "the answer was seen": a flipped solution or the
-/// pseudocode hint. Feeds the review's `revealed` flag, which the log records
-/// for insights; it never changes which grades are offered.
-pub fn answer_revealed(m: Model, stages: List(problem.ApproachStage)) -> Bool {
-  m.revealed_solution != option.None
-  || m.walk_code_seen
-  || pseudocode_revealed(m, stages)
-}
-
 pub fn run_failed(run: RunState) -> Bool {
   case run {
     Ran(Cases(cases), _) -> cases == [] || !list.all(cases, fn(c) { c.passed })
@@ -597,21 +363,6 @@ pub fn remembered_queues(model: Model) -> List(#(String, String)) {
     Some(name) -> [#(model.active_track, name), ..others]
     None -> others
   }
-}
-
-/// Milliseconds the current problem has been open, with paused time taken
-/// out. `now_ms` is passed in rather than read from a clock so the view can
-/// hand it `model.now_ms` and the update loop `browser.now_ms()`, and both
-/// stay in one definition -- the clock shown and the `duration_ms` recorded
-/// cannot drift apart.
-pub fn elapsed_ms(model: Model, now_ms: Int) -> Int {
-  let paused =
-    model.clock_paused_ms
-    + case model.clock_paused_at {
-      Some(at) -> now_ms - at
-      None -> 0
-    }
-  int.max(0, now_ms - model.opened_at_ms - paused)
 }
 
 /// Whether a card is due as of the server's clock. A card that has never been
@@ -699,132 +450,6 @@ pub fn answered_count(model: Model) -> Int {
     }
   })
 }
-
 // The queue these counts used to describe -- and their three separate copies
 // of its filter -- now live in `gleamdrill/queue`, so what the dashboard shows
 // and what "Study now" serves cannot drift apart.
-
-/// `clean` is a solve with nothing given away: no rung past the nudge, no
-/// solution, no walk code, and the harness passed. `passed` is the harness
-/// alone. Both are read off the model at grade time, since after that the
-/// next card has reset them.
-pub type SittingEntry {
-  SittingEntry(
-    problem: ProblemRef,
-    pressed: fsrs.Rating,
-    duration_ms: Int,
-    passed: Bool,
-    clean: Bool,
-  )
-}
-
-/// A timed sitting. `deadline_ms` is the wall clock at which the current
-/// card expires; `results` accumulate newest first, one per card, whether
-/// it was solved or ran out of time.
-pub type Blitz {
-  Blitz(
-    per_card_ms: Int,
-    deadline_ms: Int,
-    results: List(BlitzResult),
-    /// True for the beat after a card expires, so the drill can flash
-    /// "Time!" before the next card is on screen.
-    expired_flash: Bool,
-  )
-}
-
-pub type BlitzResult {
-  BlitzResult(
-    problem: ProblemRef,
-    passed: Bool,
-    duration_ms: Int,
-    /// The clock ran out: no grade was asked, nothing was scheduled.
-    expired: Bool,
-  )
-}
-
-/// The five tiers a Blitz score lands in, by share of cards passed.
-pub fn blitz_rank(passed: Int, total: Int) -> String {
-  case total {
-    0 -> "Warmup"
-    _ -> {
-      let share = passed * 100 / total
-      case share {
-        100 -> "Perfect"
-        s if s >= 80 -> "Blazing"
-        s if s >= 60 -> "Sharp"
-        s if s >= 40 -> "Steady"
-        _ -> "Warmup"
-      }
-    }
-  }
-}
-
-/// Enough of the moment before the latest grade to go back to it: which
-/// problem in which sitting, what was on screen, and what the card was.
-/// Only the most recent grade can be undone, so there is at most one.
-pub type UndoPoint {
-  UndoPoint(
-    problem: ProblemRef,
-    selected: List(ProblemRef),
-    problem_index: Int,
-    current_iteration: Int,
-    iteration_count: Int,
-    studying: Bool,
-    recall: Bool,
-    draft: String,
-    run: RunState,
-    revealed_solution: Option(Int),
-    nudge_shown: Bool,
-    whole_thing_shown: Bool,
-    /// The rail as it stood. Restored with the rest, so undoing a grade puts
-    /// back the steps that were open rather than folding them all away.
-    walk: walk.WalkState,
-    walk_code_seen: Bool,
-    duration_ms: Int,
-    /// None when the grade is what put the card in the queue.
-    card_before: Option(CardState),
-  )
-}
-
-/// One bucket of the exam report: how many of this section's questions were
-/// answered correctly.
-pub type SectionScore {
-  SectionScore(section: String, correct: Int, total: Int)
-}
-
-/// Group this sitting's answers by the subcategory each question belongs to,
-/// weakest section first. Ties break on the section name so the order is stable
-/// between renders.
-pub fn section_scores(
-  answers: List(#(ProblemRef, Bool)),
-  sections: List(String),
-) -> List(SectionScore) {
-  sections
-  |> list.map(fn(section) {
-    let in_section =
-      list.filter(answers, fn(pair) { { pair.0 }.subcategory == section })
-    SectionScore(
-      section: section,
-      correct: list.count(in_section, fn(pair) { pair.1 }),
-      total: list.length(in_section),
-    )
-  })
-  |> list.filter(fn(score) { score.total > 0 })
-  |> list.sort(fn(a, b) {
-    case int.compare(percent(a.correct, a.total), percent(b.correct, b.total)) {
-      order.Eq -> string.compare(a.section, b.section)
-      other -> other
-    }
-  })
-}
-
-/// Rounded down, so 27/40 reads 67% and never flatters the result.
-pub fn percent(correct: Int, total: Int) -> Int {
-  case total {
-    0 -> 0
-    _ -> correct * 100 / total
-  }
-}
-
-/// Sections at or below this are called out as worth studying.
-pub const weak_threshold = 70

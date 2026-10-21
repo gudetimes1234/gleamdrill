@@ -4,18 +4,19 @@
 //// Each page under `page/` owns its model, its messages, its update, its
 //// view and its keys. The app holds one page at a time, routes each page's
 //// messages to it, and applies the `Change`s a page asks for to the shared
-//// state. Screens not yet moved into `page/` run as the `Legacy` page, on
-//// the flat model and the old dispatcher; `msg.Msg` carries both kinds of
-//// message.
+//// state. The shared state's own messages (the session, loads, the run
+//// engine) go to `update`; `msg.Msg` carries both kinds.
 
 import gleam/dict
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
+import gleamdrill/domain/guest
 import gleamdrill/keys
 import gleamdrill/model.{
-  type Route, AuthRoute, CompareRoute, MenuRoute, QueueRoute, SettingsRoute,
-  StatsRoute, StudyRoute, TourRoute, TracksRoute,
+  type Route, AuthRoute, CompareRoute, DrillRoute, MenuRoute, QueueRoute,
+  ReportRoute, SettingsRoute, StatsRoute, StudyRoute, SummaryRoute, TourRoute,
+  TracksRoute,
 }
 import gleamdrill/msg.{type Msg}
 import gleamdrill/page/auth/keys as auth_keys
@@ -35,6 +36,13 @@ import gleamdrill/page/settings/keys as settings_keys
 import gleamdrill/page/settings/model as settings_model
 import gleamdrill/page/settings/update as settings_update
 import gleamdrill/page/settings/view as settings_view
+import gleamdrill/page/sitting/keys as sitting_keys
+import gleamdrill/page/sitting/model as sitting_model
+import gleamdrill/page/sitting/msg as sitting_msg
+import gleamdrill/page/sitting/update as sitting_update
+import gleamdrill/page/sitting/view/drill as drill_view
+import gleamdrill/page/sitting/view/report as report_view
+import gleamdrill/page/sitting/view/summary as summary_view
 import gleamdrill/page/stats/keys as stats_keys
 import gleamdrill/page/stats/model as stats_model
 import gleamdrill/page/stats/update as stats_update_page
@@ -58,15 +66,16 @@ import gleamdrill/store
 import gleamdrill/ui/binding.{type Binding}
 import gleamdrill/ui/document
 import gleamdrill/ui/layout
-import gleamdrill/update as legacy_update
+import gleamdrill/update as shared_update
 import gleamdrill/update/common
-import gleamdrill/update/drill as drill_update
 import gleamdrill/update/keyboard
 import gleamdrill/update/menu as menu_update
 import gleamdrill/update/queues as queues_update
+import gleamdrill/update/review as review_update
+import gleamdrill/update/run as run_update
 import gleamdrill/update/session as session_update
 import gleamdrill/update/stats as stats_update
-import gleamdrill/view as legacy_view
+import gleamdrill/view
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 
@@ -76,7 +85,6 @@ pub type State {
 
 /// The screen on display, holding that screen's own state.
 pub type Page {
-  Legacy
   Auth(auth_model.Model)
   Settings(settings_model.Model)
   Tracks(tracks_model.Model)
@@ -85,11 +93,13 @@ pub type Page {
   Browse(browse_model.Model)
   Study(study_model.Model)
   Tour(tour_model.Model)
+  Sitting(sitting_model.Model)
 }
 
 pub fn init(boot: #(Shared, Effect(Msg))) -> #(State, Effect(Msg)) {
   let #(shared, fx) = boot
-  let #(state, opened) = sync_page(State(shared:, page: Legacy))
+  let #(state, opened) =
+    sync_page(State(shared:, page: Study(study_model.init())))
   #(state, effect.batch([fx, opened]))
 }
 
@@ -119,6 +129,9 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
     msg.TourMsg(inner), Tour(page) ->
       tour_update.update(state.shared, page, inner)
       |> settle(state, Tour, msg.TourMsg)
+    msg.SittingMsg(inner), Sitting(page) ->
+      sitting_update.update(state.shared, page, inner)
+      |> settle(state, Sitting, msg.SittingMsg)
     // A page's message that lands after its page closed (a slow response):
     // there is nothing left for it to update.
     msg.AuthMsg(_), _
@@ -129,9 +142,10 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
     | msg.BrowseMsg(_), _
     | msg.StudyMsg(_), _
     | msg.TourMsg(_), _
+    | msg.SittingMsg(_), _
     -> #(state, effect.none())
 
-    msg.KeyPressed(key), page if page != Legacy -> key_pressed(state, key)
+    msg.KeyPressed(key), _ -> key_pressed(state, key)
 
     // Navigation into pages.
     msg.UserClickedSignIn(mode), _ -> #(
@@ -147,69 +161,132 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
     msg.UserClickedBrowse, _ -> navigate(state, MenuRoute)
     msg.UserClickedTour, _ -> navigate(state, TourRoute)
 
+    // Starting a sitting.
+    msg.UserClickedStudy, _ ->
+      sitting_update.start_study(state.shared, False) |> open_sitting(state)
+    msg.UserClickedRecall, _ ->
+      sitting_update.start_study(state.shared, True) |> open_sitting(state)
+    msg.UserStartedBlitz(count, per_card_ms), _ ->
+      sitting_update.start_blitz(state.shared, count, per_card_ms)
+      |> open_sitting(state)
+    msg.UserClickedStartDrill, _ ->
+      sitting_update.start_manual(state.shared) |> open_sitting(state)
+    // An exam draws its questions at random, so the draw is an effect.
+    msg.UserClickedStartExam, _ -> #(state, {
+      use dispatch <- effect.from
+      dispatch(msg.ExamSampled(sitting_update.sample_exam()))
+    })
+    msg.ExamSampled(refs), _ ->
+      sitting_update.start_exam(
+        state.shared,
+        refs,
+        from_study: state.shared.route == StudyRoute,
+      )
+      |> open_sitting(state)
+
     _, _ -> {
-      let #(shared, fx) = legacy_update.update(state.shared, message)
+      let before = state.shared.run
+      let #(shared, fx) = shared_update.update(state.shared, message)
       let #(state, opened) = sync_page(State(..state, shared:))
-      let #(state, forwarded) = forward(state, message)
+      let #(state, forwarded) = forward(state, message, before)
       #(state, effect.batch([fx, opened, forwarded]))
     }
   }
 }
 
+/// A sitting's start: opened on the drill screen, or a notice saying why
+/// there is nothing to start.
+fn open_sitting(
+  started: Result(
+    #(sitting_model.Model, Effect(sitting_msg.Msg), List(Change)),
+    String,
+  ),
+  state: State,
+) -> #(State, Effect(Msg)) {
+  case started {
+    Ok(#(page, fx, changes)) -> {
+      let state =
+        State(
+          shared: model.Model(..state.shared, route: DrillRoute),
+          page: Sitting(page),
+        )
+      settle(#(page, fx, changes), state, Sitting, msg.SittingMsg)
+    }
+    Error(reason) -> #(
+      State(..state, shared: model.Model(..state.shared, notice: Some(reason))),
+      effect.none(),
+    )
+  }
+}
+
 /// Shared events a page also wants to hear about, after the shared state
-/// has taken them in.
-fn forward(state: State, message: Msg) -> #(State, Effect(Msg)) {
+/// has taken them in: a runtime coming up, and a run the engine settled.
+fn forward(
+  state: State,
+  message: Msg,
+  before: model.RunState,
+) -> #(State, Effect(Msg)) {
+  let settled = case before, state.shared.run {
+    model.Running(_, _), model.Ran(_, _) -> True
+    _, _ -> False
+  }
   case message, state.page {
     msg.RunnerReady(language), Tour(_) ->
       update(state, msg.TourMsg(tour_msg.RuntimeReady(language)))
+    msg.RunnerReady(language), Sitting(_) ->
+      update(state, msg.SittingMsg(sitting_msg.RuntimeReady(language)))
+    msg.RunFinished(_, _, _), Sitting(_)
+    | msg.RunTimedOut(_), Sitting(_)
+    | msg.RemoteRunFinished(_, _), Sitting(_)
+      if settled
+    -> update(state, msg.SittingMsg(sitting_msg.RunLanded))
     _, _ -> #(state, effect.none())
   }
 }
 
 pub fn view(state: State) -> Element(Msg) {
   let shared = state.shared
-  legacy_view.view(shared, case state.page {
-    Legacy -> None
+  view.view(shared, case state.page {
     Auth(page) ->
-      Some(legacy_view.Screen(
+      view.Screen(
         auth_view.view(shared, page) |> element.map(msg.AuthMsg),
         page_keys(state),
         auth_keys.label,
-      ))
+      )
     Settings(page) ->
-      Some(legacy_view.Screen(
+      view.Screen(
         settings_view.view(shared, page)
           |> document.map(msg.SettingsMsg)
           |> layout.view(shared, SettingsRoute, _),
         page_keys(state),
         settings_keys.label,
-      ))
+      )
     Tracks(page) ->
-      Some(legacy_view.Screen(
+      view.Screen(
         tracks_view.view(shared, page)
           |> document.map(msg.TracksMsg)
           |> layout.view(shared, TracksRoute, _),
         page_keys(state),
         tracks_keys.label,
-      ))
+      )
     Stats(page) ->
-      Some(legacy_view.Screen(
+      view.Screen(
         stats_view.view(shared, page)
           |> document.map(msg.StatsMsg)
           |> layout.view(shared, StatsRoute, _),
         page_keys(state),
         stats_keys.label,
-      ))
+      )
     Queue(page) ->
-      Some(legacy_view.Screen(
+      view.Screen(
         queue_view.view(shared, page)
           |> document.map(msg.QueueMsg)
           |> layout.view(shared, QueueRoute, _),
         page_keys(state),
         queue_keys.label,
-      ))
+      )
     Browse(page) ->
-      Some(legacy_view.Screen(
+      view.Screen(
         case page.compare {
           Some(opened) ->
             compare_view.view(opened) |> element.map(msg.BrowseMsg)
@@ -220,30 +297,43 @@ pub fn view(state: State) -> Element(Msg) {
         },
         page_keys(state),
         browse_keys.label(page),
-      ))
+      )
     Study(page) ->
-      Some(legacy_view.Screen(
+      view.Screen(
         study_view.view(shared, page)
           |> document.map(msg.StudyMsg)
           |> layout.view(shared, StudyRoute, _),
         page_keys(state),
         study_keys.label,
-      ))
+      )
     Tour(page) ->
-      Some(legacy_view.Screen(
+      view.Screen(
         tour_view.view(shared, page)
           |> document.map(msg.TourMsg)
           |> layout.view(shared, TourRoute, _),
         page_keys(state),
         tour_keys.label,
-      ))
+      )
+    Sitting(page) ->
+      view.Screen(
+        case shared.route {
+          SummaryRoute ->
+            summary_view.view(shared, page) |> element.map(msg.SittingMsg)
+          ReportRoute -> report_view.view(page) |> element.map(msg.SittingMsg)
+          _ ->
+            drill_view.view(shared, page)
+            |> document.map(msg.SittingMsg)
+            |> layout.view(shared, DrillRoute, _)
+        },
+        page_keys(state),
+        sitting_keys.label(shared, page),
+      )
   })
 }
 
 /// The page's own rows, lifted into the app's message.
 fn page_keys(state: State) -> List(Binding(Msg)) {
   case state.page {
-    Legacy -> []
     Auth(page) -> auth_keys.bindings(state.shared, page) |> lift(msg.AuthMsg)
     Settings(page) ->
       settings_keys.bindings(state.shared, page) |> lift(msg.SettingsMsg)
@@ -255,6 +345,8 @@ fn page_keys(state: State) -> List(Binding(Msg)) {
       browse_keys.bindings(state.shared, page) |> lift(msg.BrowseMsg)
     Study(page) -> study_keys.bindings(state.shared, page) |> lift(msg.StudyMsg)
     Tour(page) -> tour_keys.bindings(state.shared, page) |> lift(msg.TourMsg)
+    Sitting(page) ->
+      sitting_keys.bindings(state.shared, page) |> lift(msg.SittingMsg)
   }
 }
 
@@ -274,6 +366,9 @@ fn page_dispatch(state: State, key: String) -> Result(Msg, Nil) {
     Tour(page) ->
       tour_keys.dispatch(state.shared, page, key)
       |> result.map(msg.TourMsg)
+    Sitting(page) ->
+      sitting_keys.dispatch(state.shared, page, key)
+      |> result.map(msg.SittingMsg)
     _ -> binding.find(page_keys(state), key)
   }
 }
@@ -387,8 +482,14 @@ fn apply_change(shared: Shared, change: Change) -> #(Shared, Effect(Msg)) {
     shared.RunLocal(language, code, harness) ->
       common.start_local_run(shared, language, code, harness)
     shared.Prefetch(language) -> common.prefetch(shared, language)
-    shared.EditorHeightChanged(height) ->
-      drill_update.editor_resized(shared, height)
+    shared.EditorHeightChanged(height) -> {
+      let shared =
+        model.Model(..shared, editor_height: case height > 0 {
+          True -> Some(height)
+          False -> None
+        })
+      #(shared, common.save_preferences(shared))
+    }
     shared.TourLessonOpened(lesson) -> {
       let shared = model.Model(..shared, tour_lesson: lesson)
       #(shared, common.save_preferences(shared))
@@ -406,14 +507,57 @@ fn apply_change(shared: Shared, change: Change) -> #(Shared, Effect(Msg)) {
     )
     shared.EnterTrack(track, starter) ->
       menu_update.enter_track(shared, track, starter:)
+    shared.ReviewLanded(outcome) -> review_update.landed(shared, outcome)
+    shared.UndoLanded(problem, outcome) ->
+      review_update.undo_landed(shared, problem, outcome)
+    shared.WriteFailed(failure) -> #(
+      common.write_failed(shared, failure),
+      effect.none(),
+    )
+    shared.DraftChanged(problem, text) -> #(
+      model.Model(
+        ..shared,
+        drafts: model.assoc_put(shared.drafts, problem, text),
+      ),
+      effect.none(),
+    )
+    shared.DraftDropped(problem) -> #(
+      model.Model(..shared, drafts: guest.drop_draft(shared.drafts, problem)),
+      effect.none(),
+    )
+    shared.NoteChanged(problem, text) -> #(
+      model.Model(..shared, notes: model.assoc_put(shared.notes, problem, text)),
+      effect.none(),
+    )
+    shared.PromptToggled -> {
+      let shared = model.Model(..shared, prompt_open: !shared.prompt_open)
+      #(shared, common.save_preferences(shared))
+    }
+    shared.ResultsToggled -> #(
+      model.Model(..shared, results_collapsed: !shared.results_collapsed),
+      effect.none(),
+    )
+    shared.DiffToggled -> #(
+      model.Model(..shared, diff_mode: !shared.diff_mode),
+      effect.none(),
+    )
+    shared.RunRemote(language, code, harness) ->
+      run_update.start_remote(shared, language, code, harness)
+    shared.AbandonRun(language) -> run_update.abandon(shared, language)
+    shared.RestartRuntime(language) ->
+      run_update.retry_runtime(shared, language)
+    shared.RunRestored(run) -> #(model.Model(..shared, run:), effect.none())
+    shared.NoticeCleared -> #(
+      model.Model(..shared, notice: None),
+      effect.none(),
+    )
     // Run by `settle` once the rest have landed.
     shared.Dispatch(_) -> #(shared, effect.none())
   }
 }
 
-/// The route is still where navigation is decided while screens move into
-/// pages: when it lands on a page's route, that page opens fresh (with
-/// whatever its init fetches); when it leaves, the page closes.
+/// The route decides which page is up: landing on a page's route opens it
+/// fresh (with whatever its init fetches); leaving it closes it.
 fn sync_page(state: State) -> #(State, Effect(Msg)) {
   let shared = state.shared
   case shared.route, state.page {
@@ -426,6 +570,9 @@ fn sync_page(state: State) -> #(State, Effect(Msg)) {
     | CompareRoute, Browse(_)
     | StudyRoute, Study(_)
     | TourRoute, Tour(_)
+    | DrillRoute, Sitting(_)
+    | SummaryRoute, Sitting(_)
+    | ReportRoute, Sitting(_)
     -> #(state, effect.none())
     AuthRoute, _ -> #(
       State(..state, page: Auth(auth_model.init(auth_model.SigningIn))),
@@ -446,6 +593,9 @@ fn sync_page(state: State) -> #(State, Effect(Msg)) {
     StudyRoute, _ ->
       study_update.init(shared) |> settle(state, Study, msg.StudyMsg)
     TourRoute, _ -> tour_update.init(shared) |> settle(state, Tour, msg.TourMsg)
-    _, _ -> #(State(..state, page: Legacy), effect.none())
+    // A sitting only opens by being started; anything else landing on its
+    // routes (a stale undo after the sitting closed) goes home.
+    DrillRoute, _ | SummaryRoute, _ | ReportRoute, _ ->
+      navigate(state, StudyRoute)
   }
 }

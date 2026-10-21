@@ -8,17 +8,19 @@ import gleam/result
 import gleam/string
 import gleamdrill/content/problem.{type Problem}
 import gleamdrill/model.{
-  type CaseResult, type Model, type RunError, Cases, Errored, Ran, RunIdle,
-  Running, TimedOut,
-}
-import gleamdrill/msg.{type Msg, UserToggledResults}
+  type CaseResult, type RunError, Cases, Errored, Ran, RunIdle, Running,
+  TimedOut,
+} as _
+import gleamdrill/page/sitting/model.{type Model}
+import gleamdrill/page/sitting/msg.{type Msg, UserToggledResults}
+import gleamdrill/shared.{type Shared}
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 
-pub fn output_panel(m: Model) -> Element(Msg) {
-  case m.run {
+pub fn output_panel(shared: Shared) -> Element(Msg) {
+  case shared.run {
     Ran(_, stdout) ->
       case string.trim(stdout) {
         "" ->
@@ -53,8 +55,12 @@ pub fn output_panel(m: Model) -> Element(Msg) {
   }
 }
 
-pub fn results_only(m: Model, current: Problem) -> List(Element(Msg)) {
-  case m.run {
+pub fn results_only(
+  shared: Shared,
+  page: Model,
+  current: Problem,
+) -> List(Element(Msg)) {
+  case shared.run {
     RunIdle -> []
     Running(_, _) -> [
       html.div([attribute.class("results")], [
@@ -68,14 +74,14 @@ pub fn results_only(m: Model, current: Problem) -> List(Element(Msg)) {
       ]),
     ]
     Ran(Cases(cases), stdout) ->
-      case m.run_kind {
+      case page.run_kind {
         model.ScratchRun -> [scratch_results(stdout)]
-        model.TestRun -> [case_results(m, cases)]
+        model.TestRun -> [case_results(shared, cases)]
       }
-    Ran(Errored(error), _) -> [error_results(m, error, current)]
+    Ran(Errored(error), _) -> [error_results(shared, page, error, current)]
     Ran(TimedOut, _) -> [
       results_box(
-        m,
+        shared,
         "Your solution didn't finish \u{2014} likely an infinite loop. The runtime was restarted.",
         False,
         None,
@@ -104,7 +110,7 @@ fn scratch_results(stdout: String) -> Element(Msg) {
   ])
 }
 
-fn case_results(m: Model, cases: List(CaseResult)) -> Element(Msg) {
+fn case_results(shared: Shared, cases: List(CaseResult)) -> Element(Msg) {
   let total = list.length(cases)
   let passed = list.count(cases, fn(c) { c.passed })
   let all_passed = passed == total && total > 0
@@ -148,21 +154,21 @@ fn case_results(m: Model, cases: List(CaseResult)) -> Element(Msg) {
       ])
     })
 
-  results_box(m, verdict, all_passed, preview, failures)
+  results_box(shared, verdict, all_passed, preview, failures)
 }
 
 /// Every run verdict: a one-line summary that is also the fold button, over a
 /// body that scrolls on its own. Folded, the body is hidden but stays in the
 /// DOM, so the failing cases are still there to count.
 pub fn results_box(
-  m: Model,
+  shared: Shared,
   verdict: String,
   passed: Bool,
   preview: Option(String),
   body: List(Element(Msg)),
 ) -> Element(Msg) {
   let foldable = body != []
-  let collapsed = foldable && m.results_collapsed
+  let collapsed = foldable && shared.results_collapsed
   let summary_children =
     list.flatten([
       [html.span([attribute.class("results-verdict")], [html.text(verdict)])],
@@ -244,7 +250,8 @@ pub fn first_lines(message: String) -> String {
 }
 
 pub fn error_results(
-  m: Model,
+  shared: Shared,
+  page: Model,
   error: RunError,
   current: Problem,
 ) -> Element(Msg) {
@@ -255,12 +262,12 @@ pub fn error_results(
     Some(file), _ -> string.starts_with(file, "check")
     None, _ -> False
   }
-  case is_check_file, m.run_kind, current.check {
+  case is_check_file, page.run_kind, current.check {
     // A scratch run's harness is `run() { solution.main() }`: an error
     // located there means the attempt has no main(), not a wrong signature.
     True, model.ScratchRun, _ ->
       results_box(
-        m,
+        shared,
         "Scratch runs call your main() \u{2014} add pub fn main() first.",
         False,
         None,
@@ -272,7 +279,7 @@ pub fn error_results(
       )
     True, _, Some(check) ->
       results_box(
-        m,
+        shared,
         "Your solution doesn't match the required signature.",
         False,
         Some(check.signature),
@@ -287,7 +294,7 @@ pub fn error_results(
       )
     _, _, _ ->
       results_box(
-        m,
+        shared,
         case error.phase {
           "compile" -> "Your code doesn't compile."
           "internal" ->

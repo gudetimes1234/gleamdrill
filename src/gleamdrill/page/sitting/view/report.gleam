@@ -5,21 +5,21 @@ import gleam/int
 import gleam/list
 import gleamdrill/content/problems
 import gleamdrill/content/problems/system_design
-import gleamdrill/model.{type Model, type SectionScore}
-import gleamdrill/msg.{type Msg, UserClickedExitReport}
+import gleamdrill/page/sitting/model.{type Model, type SectionScore}
+import gleamdrill/page/sitting/msg.{type Msg, UserClickedExitReport}
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 
-pub fn view(m: Model) -> Element(Msg) {
+pub fn view(page: Model) -> Element(Msg) {
   let scores =
     model.section_scores(
-      m.exam_answers,
+      page.exam_answers,
       problems.subcategory_names(system_design.name),
     )
-  let total = list.length(m.exam_answers)
-  let correct = list.count(m.exam_answers, fn(pair) { pair.1 })
+  let total = list.length(page.exam_answers)
+  let correct = list.count(page.exam_answers, fn(pair) { pair.1 })
   let weak =
     list.filter(scores, fn(s: SectionScore) {
       model.percent(s.correct, s.total) < model.weak_threshold
@@ -33,7 +33,7 @@ pub fn view(m: Model) -> Element(Msg) {
           event.on_click(UserClickedExitReport),
         ],
         [
-          html.text(case m.studying {
+          html.text(case page.studying {
             True -> "\u{2190} Study"
             False -> "\u{2190} Menu"
           }),

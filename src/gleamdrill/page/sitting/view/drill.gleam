@@ -5,14 +5,16 @@ import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
 import gleamdrill/content/problem.{type Problem, type ProblemRef, type Solution}
-import gleamdrill/content/problems
 import gleamdrill/domain/insights
 import gleamdrill/model.{
-  type CaseResult, type Model, AwaitingGrade, Cases, Errored, NoPane, NotGrading,
-  NotePane, Ran, Running, RuntimeFailed, RuntimeLoading, RuntimeNotLoaded,
-  RuntimeReady, SolutionPane, SubmittingGrade,
+  type CaseResult, Cases, Errored, Ran, Running, RuntimeFailed, RuntimeLoading,
+  RuntimeNotLoaded, RuntimeReady,
+} as shared_model
+import gleamdrill/page/sitting/model.{
+  type Model, AwaitingGrade, NoPane, NotGrading, NotePane, SolutionPane,
+  SubmittingGrade,
 }
-import gleamdrill/msg.{
+import gleamdrill/page/sitting/msg.{
   type Msg, EditorChanged, EditorResized, ExitConfirmed, NoteChanged,
   UserChangedKeymap, UserClickedExitDrill, UserClickedNext,
   UserClickedRetryRuntime, UserClickedRun, UserClickedScratchRun,
@@ -20,55 +22,64 @@ import gleamdrill/msg.{
   UserRevealedRecall, UserToggledDiff, UserToggledPane, UserToggledPrompt,
   UserToggledSolution, UserToggledTimer,
 }
+import gleamdrill/page/sitting/view/blitz
+import gleamdrill/page/sitting/view/board as board_view
+import gleamdrill/page/sitting/view/quiz
+import gleamdrill/page/sitting/view/rail
+import gleamdrill/page/sitting/view/results
 import gleamdrill/platform/editor
 import gleamdrill/runner
+import gleamdrill/shared.{type Shared}
 import gleamdrill/store/remote
-import gleamdrill/view/banner
-import gleamdrill/view/blitz
-import gleamdrill/view/board as board_view
+import gleamdrill/ui/document.{type Document, Document}
 import gleamdrill/view/format
 import gleamdrill/view/links
-import gleamdrill/view/nav
-import gleamdrill/view/quiz
-import gleamdrill/view/rail
-import gleamdrill/view/results
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/element/keyed
 import lustre/event
 
-/// Errors when the drill position points at no problem; the caller falls back
-/// to the menu.
-pub fn view(m: Model) -> Result(Element(Msg), Nil) {
-  use ref <- result.try(model.current_ref(m))
-  use current <- result.try(problems.find(
-    ref.category,
-    ref.subcategory,
-    ref.title,
-  ))
-  Ok(view_drill(m, ref, current))
+/// The drill screen. A position that points at no problem draws nothing:
+/// the sitting is between problems.
+pub fn view(shared: Shared, page: Model) -> Document(Msg) {
+  let body = case model.current_problem(page), model.current_ref(page) {
+    Ok(current), Ok(ref) -> view_drill(shared, page, ref, current)
+    _, _ -> []
+  }
+  Document(
+    class: "drill-container",
+    header: document.NoHeader,
+    storage_warning: True,
+    lead: [],
+    body:,
+  )
 }
 
-fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
+fn view_drill(
+  shared: Shared,
+  page: Model,
+  ref: ProblemRef,
+  current: Problem,
+) -> List(Element(Msg)) {
   // An iteration is a pass over the whole selection, not a repeat of one
   // problem, so it reads first.
-  let count = list.length(m.selected)
+  let count = list.length(page.problems)
   let progress = case problem.kind(current) {
     // An exam is a single pass, so the repetition counter would only ever read
     // "Pass 1/1".
     problem.QuizDrill ->
       "Question "
-      <> int.to_string(m.problem_index + 1)
+      <> int.to_string(page.problem_index + 1)
       <> "/"
       <> int.to_string(count)
     problem.BoardDrill | problem.CodeDrill ->
       "Pass "
-      <> int.to_string(m.current_iteration)
+      <> int.to_string(page.current_iteration)
       <> "/"
-      <> int.to_string(m.iteration_count)
+      <> int.to_string(page.iteration_count)
       <> " \u{b7} Problem "
-      <> int.to_string(m.problem_index + 1)
+      <> int.to_string(page.problem_index + 1)
       <> "/"
       <> int.to_string(count)
   }
@@ -76,8 +87,8 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
   // Position through the whole session, not just this pass, as a percentage
   // for the bar under the progress text. Guarded because an empty selection
   // would divide by zero.
-  let total = count * m.iteration_count
-  let done = { m.current_iteration - 1 } * count + m.problem_index
+  let total = count * page.iteration_count
+  let done = { page.current_iteration - 1 } * count + page.problem_index
   let percent = case total {
     0 -> 0
     _ -> done * 100 / total
@@ -90,14 +101,12 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
     <> "|"
     <> ref.title
     <> "|"
-    <> int.to_string(m.current_iteration)
+    <> int.to_string(page.current_iteration)
 
-  html.div([attribute.class("drill-container")], [
-    banner.storage_warning(m),
-    // Rendered here too, or a review that failed to save, a runtime that
-    // never loaded, or an Elixir drill that needs sign-in would only be
-    // reported after exiting the drill.
-    nav.notices(m),
+  // The frame adds the storage warning and the notices above this: a review
+  // that failed to save, a runtime that never loaded, or an Elixir drill
+  // that needs sign-in must not wait until the drill is over to be said.
+  [
     html.div([attribute.class("drill-header")], [
       html.button(
         [
@@ -110,7 +119,7 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
         [attribute.class("drill-title")],
         list.flatten([
           [html.text(current.title), format.language_chip(current.language)],
-          case model.is_leech(m, ref) {
+          case shared_model.is_leech(shared, ref) {
             True -> [
               html.span(
                 [
@@ -118,7 +127,7 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
                   attribute.attribute(
                     "title",
                     "Forgotten "
-                      <> int.to_string(model.leech_lapses)
+                      <> int.to_string(shared_model.leech_lapses)
                       <> "+ times: the approach is open. Read it first.",
                   ),
                 ],
@@ -133,7 +142,7 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
       // picker is noise; a recall card says what it is instead. The prompt
       // sidebar's toggle is here too, for a thumb: `p` is no use on a
       // phone.
-      case problem.kind(current), m.recall {
+      case problem.kind(current), page.recall {
         problem.QuizDrill, _ -> element.none()
         // A board has nothing to type either, and its prompt is already the
         // first thing on the page rather than a sidebar.
@@ -147,14 +156,14 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
                 attribute.classes([
                   #("btn-secondary", True),
                   #("prompt-toggle", True),
-                  #("active", m.prompt_open),
+                  #("active", shared.prompt_open),
                 ]),
                 attribute.type_("button"),
                 event.on_click(UserToggledPrompt),
               ],
               [html.text("Problem")],
             ),
-            keymap_picker(m),
+            keymap_picker(shared),
           ])
       },
       html.div(
@@ -166,27 +175,27 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
           html.text(progress),
           // A quiz is not timed against anything; a drill is timed against
           // the three-minute promise the stats screen measures.
-          case problem.kind(current), m.blitz {
+          case problem.kind(current), page.blitz {
             problem.QuizDrill, _ -> element.none()
             // A board is timed -- the fluent line is what separates an Easy
             // from a Good -- so it keeps the clock the quiz does without.
-            problem.BoardDrill, _ -> clock(m)
+            problem.BoardDrill, _ -> clock(shared, page)
             // A Blitz counts down; every other sitting counts up.
-            problem.CodeDrill, Some(blitz) -> blitz.countdown(m, blitz)
-            problem.CodeDrill, None -> clock(m)
+            problem.CodeDrill, Some(blitz) -> blitz.countdown(page, blitz)
+            problem.CodeDrill, None -> clock(shared, page)
           },
         ],
       ),
     ]),
-    exit_prompt(m),
-    blitz.blitz_flash(m),
-    case problem.kind(current), m.recall {
+    exit_prompt(page),
+    blitz.blitz_flash(page),
+    case problem.kind(current), page.recall {
       problem.QuizDrill, _ ->
         case current.quiz {
           Some(quiz) ->
             html.div(
               [attribute.class("drill-main")],
-              quiz.quiz_main(m, ref, current, quiz),
+              quiz.quiz_main(shared, page, ref, current, quiz),
             )
           None -> element.none()
         }
@@ -195,12 +204,15 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
           Some(answer) ->
             html.div(
               [attribute.class("drill-main")],
-              board_view.board_main(m, ref, current, answer),
+              board_view.board_main(shared, page, ref, current, answer),
             )
           None -> element.none()
         }
       problem.CodeDrill, True ->
-        html.div([attribute.class("drill-main")], recall_main(m, ref, current))
+        html.div(
+          [attribute.class("drill-main")],
+          recall_main(shared, page, ref, current),
+        )
       // The prompt sidebar comes and goes; the editor column stays child 0
       // of the same parent either way, so CodeMirror keeps its undo history
       // and cursor. The stylesheet puts the sidebar on the left (order: -1).
@@ -210,23 +222,24 @@ fn view_drill(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
             "main",
             html.div(
               [attribute.class("drill-main")],
-              code_main(m, ref, current, body_key),
+              code_main(shared, page, ref, current, body_key),
             ),
           ),
           // The rail is the *later* DOM child for the same reason the prompt
           // sidebar used to be: the keyed editor frame has to stay child 0 of
           // its own parent or CodeMirror remounts and drops its undo history
           // and cursor. The stylesheet puts this on the left (order: -1).
-          #("rail", rail.plan_rail(m, current)),
+          #("rail", rail.plan_rail(page, current)),
         ])
     },
-  ])
+  ]
 }
 
 /// The editor page: the editor with the slot beside it, output, the run
 /// bar, the results.
 fn code_main(
-  m: Model,
+  shared: Shared,
+  page: Model,
   ref: ProblemRef,
   current: Problem,
   body_key: String,
@@ -255,23 +268,23 @@ fn code_main(
             #(
               body_key,
               editor.view([
-                editor.doc(m.draft),
+                editor.doc(page.draft),
                 editor.language(problem.language_slug(current.language)),
-                editor.keymap(m.editor_keymap),
-                editor.height(m.editor_height),
+                editor.keymap(shared.editor_keymap),
+                editor.height(shared.editor_height),
                 editor.on_change(EditorChanged),
                 editor.on_resize(EditorResized),
-                editor.diagnostics(editor_diagnostics(m)),
+                editor.diagnostics(editor_diagnostics(shared)),
               ]),
             ),
           ],
         ),
-        ..case m.prompt_open {
-          True -> [prompt_side(m, ref, current)]
+        ..case shared.prompt_open {
+          True -> [prompt_side(shared, page, ref, current)]
           False -> []
         }
       ]),
-      ..slot_pane(m, ref, current)
+      ..slot_pane(shared, page, ref, current)
     ]),
     ..list.flatten([
       // Its own pane, right under the code it narrates: watching
@@ -282,20 +295,25 @@ fn code_main(
             html.h3([attribute.class("panel-title")], [
               html.text("Output"),
             ]),
-            results.output_panel(m),
+            results.output_panel(shared),
           ]),
         ]
         None -> []
       },
-      [run_bar(m, current)],
-      results.results_only(m, current),
+      [run_bar(shared, page, current)],
+      results.results_only(shared, page, current),
     ])
   ]
 }
 
 /// The prompt above the editor: everything there is to read, in a column
 /// the editor keeps the rest of the width from.
-fn prompt_side(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
+fn prompt_side(
+  shared: Shared,
+  page: Model,
+  ref: ProblemRef,
+  current: Problem,
+) -> Element(Msg) {
   html.aside([attribute.class("prompt-side read-sheet")], [
     // A sheet over the editor needs its own way out, the same as every
     // pane: the header's Problem button is across the screen, and `p` is
@@ -309,7 +327,7 @@ fn prompt_side(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
       ],
       [html.text("\u{00d7}")],
     ),
-    ..read_blocks(m, ref, current)
+    ..read_blocks(shared, page, ref, current)
   ])
 }
 
@@ -318,11 +336,12 @@ fn prompt_side(m: Model, ref: ProblemRef, current: Problem) -> Element(Msg) {
 /// turned, and the note left last time. Shared with the recall card, which
 /// keeps it on screen rather than behind a sheet.
 fn read_blocks(
-  m: Model,
+  shared: Shared,
+  page: Model,
   ref: ProblemRef,
   current: Problem,
 ) -> List(Element(Msg)) {
-  let note = model.assoc_get(m.notes, ref) |> result.unwrap("")
+  let note = shared_model.assoc_get(shared.notes, ref) |> result.unwrap("")
   list.flatten([
     [
       html.h1([attribute.class("read-title")], [
@@ -345,11 +364,11 @@ fn read_blocks(
       ]
       _ -> []
     },
-    read_examples(m),
+    read_examples(shared),
     // Only a recall card reads the approach here. A code drill has the rail,
     // which shows the same plan and cannot be evicted by the solution -- and
     // two copies of it on one screen is how they came to disagree.
-    case current.approach, m.recall {
+    case current.approach, page.recall {
       [], _ | _, False -> []
       stages, True -> [
         html.section([attribute.class("read-approach approach")], [
@@ -358,7 +377,7 @@ fn read_blocks(
         ]),
       ]
     },
-    case note != "" && !model.first_encounter(m, ref) {
+    case note != "" && !shared_model.first_encounter(shared, ref) {
       True -> [
         html.section([attribute.class("panel note-panel has-note")], [
           html.h3([attribute.class("panel-title")], [
@@ -374,8 +393,8 @@ fn read_blocks(
 
 /// The cases as examples: call and expected answer, once a run has produced
 /// them. The harness is source, so before a run there is nothing to list.
-fn read_examples(m: Model) -> List(Element(Msg)) {
-  case m.run {
+fn read_examples(shared: Shared) -> List(Element(Msg)) {
+  case shared.run {
     Ran(Cases(cases), _) if cases != [] -> [
       html.section([attribute.class("read-examples")], [
         html.h3([attribute.class("panel-title")], [html.text("Examples")]),
@@ -397,14 +416,15 @@ fn read_examples(m: Model) -> List(Element(Msg)) {
 
 /// What the slot beside the editor shows: one pane, or nothing.
 fn slot_pane(
-  m: Model,
+  shared: Shared,
+  page: Model,
   ref: ProblemRef,
   current: Problem,
 ) -> List(Element(Msg)) {
-  case m.slot {
+  case page.slot {
     NoPane -> []
-    SolutionPane -> solution_pane(m, current)
-    NotePane -> [note_pane(m, ref)]
+    SolutionPane -> solution_pane(shared, page, current)
+    NotePane -> [note_pane(shared, page, ref)]
   }
 }
 
@@ -437,7 +457,8 @@ fn pane_header(
 /// Every solution is shown on reveal, label and complexity first, because
 /// naming the technique is the thing being tested.
 fn recall_main(
-  m: Model,
+  shared: Shared,
+  page: Model,
   ref: ProblemRef,
   current: Problem,
 ) -> List(Element(Msg)) {
@@ -446,9 +467,11 @@ fn recall_main(
   let reading =
     html.section(
       [attribute.class("read-sheet recall-read")],
-      list.append(read_blocks(m, ref, current), [note_pane(m, ref)]),
+      list.append(read_blocks(shared, page, ref, current), [
+        note_pane(shared, page, ref),
+      ]),
     )
-  case m.revealed_solution {
+  case page.revealed_solution {
     None -> [
       reading,
       html.div([attribute.class("recall-card")], [
@@ -469,7 +492,7 @@ fn recall_main(
                 [html.text("Reveal")],
               ),
             ],
-            undo_button(m),
+            undo_button(page),
           ]),
         ),
       ]),
@@ -491,12 +514,12 @@ fn recall_main(
       html.div(
         [attribute.class("run-bar recall-bar")],
         list.flatten([
-          undo_button(m),
+          undo_button(page),
           [
             html.span([attribute.class("grade-hint recall-hint")], [
               html.text("How well did you have it?"),
             ]),
-            grade_controls(m, current),
+            grade_controls(shared, page, current),
           ],
         ]),
       ),
@@ -539,7 +562,7 @@ fn recall_solution(solution: Solution) -> Element(Msg) {
 
 // --- The system design board ------------------------------------------------
 
-fn keymap_picker(m: Model) -> Element(Msg) {
+fn keymap_picker(shared: Shared) -> Element(Msg) {
   html.div(
     [attribute.class("keymap-picker")],
     list.map(
@@ -549,7 +572,7 @@ fn keymap_picker(m: Model) -> Element(Msg) {
           [
             attribute.classes([
               #("keymap-option", True),
-              #("active", m.editor_keymap == mode.0),
+              #("active", shared.editor_keymap == mode.0),
             ]),
             attribute.attribute("title", mode.1 <> " keybindings"),
             event.on_click(UserChangedKeymap(mode.0)),
@@ -564,9 +587,9 @@ fn keymap_picker(m: Model) -> Element(Msg) {
 /// The note you left yourself last time, and the box to leave the next one.
 /// A note from an earlier visit is lit so it cannot be missed. In the slot
 /// it has a close button; on the recall card it just sits there.
-fn note_pane(m: Model, ref: ProblemRef) -> Element(Msg) {
-  let body = model.assoc_get(m.notes, ref) |> result.unwrap("")
-  let returning = body != "" && !model.first_encounter(m, ref)
+fn note_pane(shared: Shared, page: Model, ref: ProblemRef) -> Element(Msg) {
+  let body = shared_model.assoc_get(shared.notes, ref) |> result.unwrap("")
+  let returning = body != "" && !shared_model.first_encounter(shared, ref)
   let title =
     html.div([attribute.class("answer-label")], [
       html.text(case returning {
@@ -577,7 +600,7 @@ fn note_pane(m: Model, ref: ProblemRef) -> Element(Msg) {
   html.section(
     [
       attribute.classes([
-        #("slot-pane", m.slot == NotePane && !m.recall),
+        #("slot-pane", page.slot == NotePane && !page.recall),
         #("panel", True),
         #("note-pane", True),
         #("note-panel", True),
@@ -585,7 +608,7 @@ fn note_pane(m: Model, ref: ProblemRef) -> Element(Msg) {
       ]),
     ],
     [
-      case m.recall {
+      case page.recall {
         True -> html.div([attribute.class("answer-header")], [title])
         False ->
           pane_header([title], UserToggledPane(NotePane), "Close the note")
@@ -606,10 +629,10 @@ fn note_pane(m: Model, ref: ProblemRef) -> Element(Msg) {
   )
 }
 
-fn run_bar(m: Model, current: Problem) -> Element(Msg) {
+fn run_bar(shared: Shared, page: Model, current: Problem) -> Element(Msg) {
   let run_control = case
     current.check,
-    model.run_available(m, current.language)
+    shared_model.run_available(shared, current.language)
   {
     None, _ -> [
       html.span([attribute.class("run-unavailable")], [
@@ -629,12 +652,15 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
     ]
     Some(_), True ->
       case
-        model.runtime_for(m, problem.language_slug(current.language)),
-        m.run
+        shared_model.runtime_for(
+          shared,
+          problem.language_slug(current.language),
+        ),
+        shared.run
       {
         _, Running(_, _) -> [
           run_button(
-            case m.run_kind {
+            case page.run_kind {
               model.ScratchRun -> "Running\u{2026}"
               model.TestRun -> "Testing\u{2026}"
             },
@@ -676,9 +702,9 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
     [attribute.class("run-bar")],
     list.flatten([
       run_control,
-      [pane_buttons(m, current)],
-      undo_button(m),
-      [grade_controls(m, current)],
+      [pane_buttons(page, current)],
+      undo_button(page),
+      [grade_controls(shared, page, current)],
     ]),
   )
 }
@@ -689,18 +715,18 @@ fn run_bar(m: Model, current: Problem) -> Element(Msg) {
 ///
 /// The approach is not among them any more: it is on the rail, always, so
 /// there is nothing to open.
-fn pane_buttons(m: Model, current: Problem) -> Element(Msg) {
+fn pane_buttons(page: Model, current: Problem) -> Element(Msg) {
   let solutions =
     list.index_map(current.solutions, fn(solution: Solution, index) {
       pane_button(
         solution.label,
-        m.slot == SolutionPane && m.revealed_solution == Some(index),
+        page.slot == SolutionPane && page.revealed_solution == Some(index),
         UserToggledSolution(index),
         True,
       )
     })
   let note = [
-    pane_button("Note", m.slot == NotePane, UserToggledPane(NotePane), False),
+    pane_button("Note", page.slot == NotePane, UserToggledPane(NotePane), False),
   ]
   html.div([attribute.class("pane-buttons")], list.flatten([solutions, note]))
 }
@@ -728,8 +754,8 @@ fn pane_button(
 
 /// Takes back the grade just given on the previous card. Only while there
 /// is one, and only on the card right after it; a new grade replaces it.
-fn undo_button(m: Model) -> List(Element(Msg)) {
-  case m.undo {
+fn undo_button(page: Model) -> List(Element(Msg)) {
+  case page.undo {
     Some(point) -> [
       html.button(
         [
@@ -751,9 +777,9 @@ fn undo_button(m: Model) -> List(Element(Msg)) {
 /// How long this problem has been open, as m:ss, turning accent past the
 /// three minutes the stats screen counts a fluent solve against. Shown live so
 /// the number in the summary is never a surprise.
-fn clock(m: Model) -> Element(Msg) {
-  let paused = m.clock_paused_at != None
-  let seconds = model.elapsed_ms(m, m.now_ms) / 1000
+fn clock(shared: Shared, page: Model) -> Element(Msg) {
+  let paused = page.clock_paused_at != None
+  let seconds = model.elapsed_ms(page, page.now_ms) / 1000
   let text =
     int.to_string(seconds / 60)
     <> ":"
@@ -761,7 +787,11 @@ fn clock(m: Model) -> Element(Msg) {
   // Your own median on this problem, from the insights loaded at boot: the
   // sittings before this one, which is exactly the pace to beat. Not
   // refreshed per review on purpose; this sitting's solves join it next time.
-  let median = case remote.value(m.insights), model.current_ref(m), m.recall {
+  let median = case
+    remote.value(shared.insights),
+    model.current_ref(page),
+    page.recall
+  {
     Some(data), Ok(ref), False -> insights.fluency_for(data, ref)
     _, _, _ -> None
   }
@@ -818,8 +848,8 @@ const promise_seconds = 180
 
 /// The in-app "leave this drill?" question. Replaces `window.confirm`, which
 /// froze the page, could not be styled and swallowed the leader key.
-fn exit_prompt(m: Model) -> Element(Msg) {
-  case m.exit_prompt {
+fn exit_prompt(page: Model) -> Element(Msg) {
+  case page.exit_prompt {
     None -> element.none()
     Some(message) ->
       html.div([attribute.class("exit-overlay")], [
@@ -875,7 +905,11 @@ fn exit_prompt(m: Model) -> Element(Msg) {
 ///     verdict the app hands down. The review log still records the failed
 ///     run and the reveal, so the stats stay honest without the buttons
 ///     policing you.
-fn grade_controls(m: Model, current: Problem) -> Element(Msg) {
+fn grade_controls(
+  shared: Shared,
+  page: Model,
+  current: Problem,
+) -> Element(Msg) {
   case problem.kind(current) {
     problem.QuizDrill | problem.BoardDrill ->
       html.button(
@@ -886,7 +920,7 @@ fn grade_controls(m: Model, current: Problem) -> Element(Msg) {
         [html.text("Next")],
       )
     problem.CodeDrill ->
-      case m.grading {
+      case page.grading {
         NotGrading ->
           html.span([attribute.class("grade-hint")], [
             html.text("Run the tests to grade this."),
@@ -895,17 +929,21 @@ fn grade_controls(m: Model, current: Problem) -> Element(Msg) {
           html.span([attribute.class("grade-hint")], [
             html.text("Saving\u{2026}"),
           ])
-        AwaitingGrade -> grade_buttons(m, current)
+        AwaitingGrade -> grade_buttons(shared, page, current)
       }
   }
 }
 
-fn grade_buttons(m: Model, _current: Problem) -> Element(Msg) {
+fn grade_buttons(
+  shared: Shared,
+  page: Model,
+  _current: Problem,
+) -> Element(Msg) {
   html.div([attribute.class("grade-bar")], [
-    grade_button(m, fsrs.Again, "Again", "again"),
-    grade_button(m, fsrs.Hard, "Hard", "hard"),
-    grade_button(m, fsrs.Good, "Good", "good"),
-    grade_button(m, fsrs.Easy, "Easy", "easy"),
+    grade_button(shared, page, fsrs.Again, "Again", "again"),
+    grade_button(shared, page, fsrs.Hard, "Hard", "hard"),
+    grade_button(shared, page, fsrs.Good, "Good", "good"),
+    grade_button(shared, page, fsrs.Easy, "Easy", "easy"),
   ])
 }
 
@@ -913,7 +951,8 @@ fn grade_buttons(m: Model, _current: Problem) -> Element(Msg) {
 /// the same scheduler module the server schedules with — so the number on the
 /// button is a promise the server will keep, not an estimate.
 fn grade_button(
-  m: Model,
+  shared: Shared,
+  page: Model,
   rating: fsrs.Rating,
   label: String,
   kind: String,
@@ -926,23 +965,28 @@ fn grade_button(
     [
       html.span([attribute.class("grade-label")], [html.text(label)]),
       html.span([attribute.class("grade-interval")], [
-        html.text(preview_interval(m, rating)),
+        html.text(preview_interval(shared, page, rating)),
       ]),
     ],
   )
 }
 
-fn preview_interval(m: Model, rating: fsrs.Rating) -> String {
-  let card = case model.current_ref(m) {
+fn preview_interval(
+  shared: Shared,
+  page: Model,
+  rating: fsrs.Rating,
+) -> String {
+  let card = case model.current_ref(page) {
     Ok(ref) ->
-      case model.card_for(m, ref) {
+      case shared_model.card_for(shared, ref) {
         Some(state) -> state.card
-        None -> fsrs.new_card(m.now)
+        None -> fsrs.new_card(shared.now)
       }
-    Error(Nil) -> fsrs.new_card(m.now)
+    Error(Nil) -> fsrs.new_card(shared.now)
   }
-  let scheduled = fsrs.review(card, rating, m.now, m.settings.scheduler, 0.0)
-  format.interval(fsrs.interval_seconds(scheduled, m.now))
+  let scheduled =
+    fsrs.review(card, rating, shared.now, shared.settings.scheduler, 0.0)
+  format.interval(fsrs.interval_seconds(scheduled, shared.now))
 }
 
 /// The code alone, no harness: for reading what it prints while you work.
@@ -973,20 +1017,24 @@ fn run_button(label: String, disabled: Bool) -> Element(Msg) {
 
 /// The revealed solution, rendered beside the editor so code and answer can be
 /// compared line by line rather than by scrolling.
-fn solution_pane(m: Model, current: Problem) -> List(Element(Msg)) {
+fn solution_pane(
+  shared: Shared,
+  page: Model,
+  current: Problem,
+) -> List(Element(Msg)) {
   // A passing run opens the pane by itself, as a diff of your code against
   // the closest solution. That is not a reveal -- the answer was already
   // given -- so `revealed_solution` is left alone and the review's
   // `revealed` stays honest.
   let passed =
-    model.test_passed(m)
-    && string.trim(m.draft) != ""
+    model.test_passed(shared, page)
+    && string.trim(page.draft) != ""
     && current.solutions != []
-  let diffing = passed && m.diff_mode
-  let shown = case revealed(m, current), passed {
+  let diffing = passed && shared.diff_mode
+  let shown = case revealed(page, current), passed {
     Ok(pair), _ -> Ok(#(True, pair))
     Error(Nil), True ->
-      closest_solution(m.draft, current.solutions)
+      closest_solution(page.draft, current.solutions)
       |> result.map(fn(pair) { #(False, pair) })
     Error(Nil), False -> Error(Nil)
   }
@@ -1076,7 +1124,7 @@ fn solution_pane(m: Model, current: Problem) -> List(Element(Msg)) {
                 ),
               ]),
               editor.diff_view(
-                m.draft,
+                page.draft,
                 solution.code,
                 problem.language_slug(current.language),
               ),
@@ -1135,8 +1183,8 @@ fn closest_solution(
   |> result.map(fn(found) { #(found.1, found.2) })
 }
 
-fn revealed(m: Model, current: Problem) -> Result(#(Int, Solution), Nil) {
-  case m.revealed_solution {
+fn revealed(page: Model, current: Problem) -> Result(#(Int, Solution), Nil) {
+  case page.revealed_solution {
     Some(index) ->
       current.solutions
       |> list.drop(index)
@@ -1147,8 +1195,8 @@ fn revealed(m: Model, current: Problem) -> Result(#(Int, Solution), Nil) {
 }
 
 /// Compile errors inside the user's own module become inline underlines.
-fn editor_diagnostics(m: Model) -> List(editor.Diagnostic) {
-  case m.run {
+fn editor_diagnostics(shared: Shared) -> List(editor.Diagnostic) {
+  case shared.run {
     Ran(Errored(error), _) ->
       case error.file, error.line, error.column {
         Some("solution.gleam"), Some(line), Some(column) -> [

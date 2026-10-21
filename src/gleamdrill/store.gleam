@@ -25,7 +25,7 @@ import gleam/string
 import gleam/time/timestamp
 import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/domain/guest
-import gleamdrill/model.{type Model, type UndoPoint, Account, Guest}
+import gleamdrill/model.{type Model, Account, Guest}
 import gleamdrill/platform/browser
 import gleamdrill/store/api
 import gleamdrill/store/legacy
@@ -207,7 +207,8 @@ pub fn restore_archive(
 /// the model kept, and the log loses its newest row.
 pub fn undo_review(
   m: Model,
-  point: UndoPoint,
+  problem: ProblemRef,
+  card_before: Option(wire.CardState),
   to: fn(Result(wire.UndoOutcome, remote.ApiError)) -> msg,
 ) -> Effect(msg) {
   case m.mode {
@@ -219,7 +220,7 @@ pub fn undo_review(
       let store = local.load()
       let result = {
         use updated <- result.try(
-          guest.unrecord(store, point.problem, point.card_before, day.index)
+          guest.unrecord(store, problem, card_before, day.index)
           |> result.replace_error(remote.Rejected(
             "The latest review is not the one to undo.",
           )),
@@ -228,7 +229,7 @@ pub fn undo_review(
           Ok(Nil), Ok(Nil) ->
             Ok(wire.UndoOutcome(
               now:,
-              card: point.card_before,
+              card: card_before,
               today: guest.today(updated, m.active_track, m.settings, now, day),
             ))
           _, _ -> Error(storage_full())

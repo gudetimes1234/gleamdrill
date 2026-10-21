@@ -6,8 +6,8 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleamdrill/content/problem.{type Problem}
 import gleamdrill/domain/walk
-import gleamdrill/model.{type Model}
-import gleamdrill/msg.{
+import gleamdrill/page/sitting/model.{type Model}
+import gleamdrill/page/sitting/msg.{
   type Msg, UserRevealedWholeThing, UserToggledNudge, WalkCodeShown, WalkFocused,
   WalkHintShown, WalkWhyShown,
 }
@@ -24,7 +24,7 @@ import lustre/event
 /// step is gated: its hint, its why, and its slice of the code. Nothing the
 /// solution pane does can take this away, which is the difference from the
 /// pane it replaced.
-pub fn plan_rail(m: Model, current: Problem) -> Element(Msg) {
+pub fn plan_rail(page: Model, current: Problem) -> Element(Msg) {
   let steps = walk.walk_steps(current.approach)
   let total = list.length(steps)
   html.aside(
@@ -38,7 +38,7 @@ pub fn plan_rail(m: Model, current: Problem) -> Element(Msg) {
             _ -> [
               html.span([attribute.class("rail-count")], [
                 html.text(
-                  int.to_string(int.min(m.walk.focus + 1, total))
+                  int.to_string(int.min(page.walk.focus + 1, total))
                   <> "/"
                   <> int.to_string(total),
                 ),
@@ -47,7 +47,7 @@ pub fn plan_rail(m: Model, current: Problem) -> Element(Msg) {
           }
         ]),
       ],
-      rail_nudge(m, current),
+      rail_nudge(page, current),
       case steps {
         [] -> [
           html.p([attribute.class("rail-empty")], [
@@ -58,19 +58,19 @@ pub fn plan_rail(m: Model, current: Problem) -> Element(Msg) {
           html.ol(
             [attribute.class("rail-steps")],
             list.index_map(steps, fn(step, index) {
-              rail_step(m, current, step, index)
+              rail_step(page, current, step, index)
             }),
           ),
         ]
       },
-      rail_whole_thing(m, current),
+      rail_whole_thing(page, current),
     ]),
   )
 }
 
 /// The nudge, folded away until asked for. Not a reveal: it is a question
 /// about the problem, not a piece of the answer, so it carries no warning.
-fn rail_nudge(m: Model, current: Problem) -> List(Element(Msg)) {
+fn rail_nudge(page: Model, current: Problem) -> List(Element(Msg)) {
   case walk.nudge_text(current.approach) {
     None -> []
     Some(text) -> [
@@ -80,20 +80,20 @@ fn rail_nudge(m: Model, current: Problem) -> List(Element(Msg)) {
             attribute.classes([
               #("link-button", True),
               #("rail-nudge-toggle", True),
-              #("open", m.nudge_shown),
+              #("open", page.nudge_shown),
             ]),
             attribute.type_("button"),
             event.on_click(UserToggledNudge),
           ],
           [
-            html.text(case m.nudge_shown {
+            html.text(case page.nudge_shown {
               True -> "Nudge"
               False -> "Nudge \u{2026}"
             }),
             html.kbd([], [html.text("a")]),
           ],
         ),
-        ..case m.nudge_shown {
+        ..case page.nudge_shown {
           False -> []
           True -> [
             html.p([attribute.class("approach-nudge")], [html.text(text)]),
@@ -108,13 +108,13 @@ fn rail_nudge(m: Model, current: Problem) -> List(Element(Msg)) {
 /// underneath it, and -- only while it has the focus -- the buttons to turn
 /// over the rest.
 fn rail_step(
-  m: Model,
+  page: Model,
   current: Problem,
   step: problem.WalkStep,
   index: Int,
 ) -> Element(Msg) {
-  let open = walk.layers_at(m.walk, index)
-  let focused = index == m.walk.focus
+  let open = walk.layers_at(page.walk, index)
+  let focused = index == page.walk.focus
   // This drill's language, or the shared slice where it has none of its own
   // written yet. A Go drill showing Python is showing the wrong thing.
   let slice = problem.slice_for(step.code, current.language)
@@ -193,11 +193,11 @@ fn rail_step(
 
 /// The whole plan at once, at the foot of the rail. This one is the answer,
 /// and it says so before it is pressed.
-fn rail_whole_thing(m: Model, current: Problem) -> List(Element(Msg)) {
+fn rail_whole_thing(page: Model, current: Problem) -> List(Element(Msg)) {
   case walk.whole_thing(current.approach, current.language) {
     None -> []
     Some(code) ->
-      case m.whole_thing_shown {
+      case page.whole_thing_shown {
         True -> [
           html.pre([attribute.class("approach-pseudocode rail-whole")], [
             html.code([], [html.text(code)]),

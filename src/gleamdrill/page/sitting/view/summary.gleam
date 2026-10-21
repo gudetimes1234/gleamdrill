@@ -15,8 +15,12 @@ import gleam/list
 import gleam/option
 import gleam/string
 import gleamdrill/domain/insights
-import gleamdrill/model.{type Model, type SittingEntry}
-import gleamdrill/msg.{type Msg, UserClickedExitReport, UserClickedUndo}
+import gleamdrill/model as shared_model
+import gleamdrill/page/sitting/model.{type Model, type SittingEntry}
+import gleamdrill/page/sitting/msg.{
+  type Msg, UserClickedExitReport, UserClickedUndo,
+}
+import gleamdrill/shared.{type Shared}
 import gleamdrill/store/remote
 import gleamdrill/view/format
 import lustre/attribute
@@ -24,9 +28,9 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 
-pub fn view(m: Model) -> Element(Msg) {
+pub fn view(shared: Shared, page: Model) -> Element(Msg) {
   // Recorded newest first, but a summary reads in the order you worked.
-  let entries = list.reverse(m.sitting)
+  let entries = list.reverse(page.sitting)
   let total_ms =
     list.fold(entries, 0, fn(sum, entry: SittingEntry) {
       sum + entry.duration_ms
@@ -40,19 +44,19 @@ pub fn view(m: Model) -> Element(Msg) {
           event.on_click(UserClickedExitReport),
         ],
         [
-          html.text(case m.studying {
+          html.text(case page.studying {
             True -> "\u{2190} Study"
             False -> "\u{2190} Menu"
           }),
         ],
       ),
       html.h2([attribute.class("drill-title")], [
-        html.text(case m.blitz {
+        html.text(case page.blitz {
           option.Some(_) -> "Blitz over"
           option.None -> "Session complete"
         }),
       ]),
-      case m.recall, m.blitz {
+      case page.recall, page.blitz {
         True, _ ->
           html.span([attribute.class("recall-chip")], [html.text("Recall")])
         _, option.Some(_) ->
@@ -63,7 +67,7 @@ pub fn view(m: Model) -> Element(Msg) {
       },
     ]),
     html.div([attribute.class("summary-body")], [
-      scorecard(m, entries, total_ms),
+      scorecard(shared, page, entries, total_ms),
       panel("What you answered", case entries {
         [] ->
           html.div([attribute.class("pane-empty")], [
@@ -72,12 +76,12 @@ pub fn view(m: Model) -> Element(Msg) {
         _ ->
           html.ul(
             [attribute.class("summary-rows")],
-            list.map(entries, fn(entry) { row(m, entry) }),
+            list.map(entries, fn(entry) { row(shared, entry) }),
           )
       }),
       // The last grade can still be taken back from here: a slip on the
       // final card is the one you only notice once the sitting is over.
-      case m.undo {
+      case page.undo {
         option.Some(point) ->
           html.div([attribute.class("summary-undo")], [
             html.button(
@@ -91,13 +95,13 @@ pub fn view(m: Model) -> Element(Msg) {
           ])
         option.None -> element.none()
       },
-      panel("Still today", remaining(m)),
+      panel("Still today", remaining(shared)),
     ]),
   ])
 }
 
 /// One answered problem: what it was, how long it took, and when it returns.
-fn row(m: Model, entry: SittingEntry) -> Element(Msg) {
+fn row(shared: Shared, entry: SittingEntry) -> Element(Msg) {
   html.li([attribute.class("summary-row")], [
     html.span([attribute.class("summary-row-title")], [
       format.language_tag(entry.problem.category),
@@ -105,7 +109,7 @@ fn row(m: Model, entry: SittingEntry) -> Element(Msg) {
     ]),
     html.span([attribute.class("summary-row-time")], [
       html.text(insights.duration_label(entry.duration_ms)),
-      ..badges(m, entry)
+      ..badges(shared, entry)
     ]),
     html.span(
       [
@@ -114,7 +118,7 @@ fn row(m: Model, entry: SittingEntry) -> Element(Msg) {
       [html.text(grade_label(entry.pressed))],
     ),
     html.span([attribute.class("summary-row-next")], [
-      html.text(next_label(m, entry)),
+      html.text(next_label(shared, entry)),
     ]),
   ])
 }
@@ -123,30 +127,32 @@ fn row(m: Model, entry: SittingEntry) -> Element(Msg) {
 /// done, the tiles say how it went against the estimate the study screen
 /// promised. A Blitz reads as a score instead.
 fn scorecard(
-  m: Model,
+  shared: Shared,
+  page: Model,
   entries: List(SittingEntry),
   total_ms: Int,
 ) -> Element(Msg) {
-  case m.blitz {
-    option.Some(blitz) -> blitz_scorecard(m, blitz, total_ms)
-    option.None -> sitting_scorecard(m, entries, total_ms)
+  case page.blitz {
+    option.Some(blitz) -> blitz_scorecard(shared, blitz, total_ms)
+    option.None -> sitting_scorecard(shared, page, entries, total_ms)
   }
 }
 
 fn sitting_scorecard(
-  m: Model,
+  shared: Shared,
+  page: Model,
   entries: List(SittingEntry),
   total_ms: Int,
 ) -> Element(Msg) {
   let count = list.length(entries)
   let clean = list.count(entries, fn(entry: SittingEntry) { entry.clean })
-  let bests = list.count(entries, fn(entry) { beat_median(m, entry) })
-  let graduated = list.count(entries, fn(entry) { graduated(m, entry) })
+  let bests = list.count(entries, fn(entry) { beat_median(shared, entry) })
+  let graduated = list.count(entries, fn(entry) { graduated(shared, entry) })
   // What the study screen said these cards would cost, now settled.
-  let estimate_ms = case remote.value(m.insights) {
+  let estimate_ms = case remote.value(shared.insights) {
     option.Some(data) ->
       option.Some(insights.queue_estimate_ms(
-        insights.analyse(data, m.cards, m.now),
+        insights.analyse(data, shared.cards, shared.now),
         list.map(entries, fn(entry: SittingEntry) { entry.problem }),
       ))
     option.None -> option.None
@@ -161,7 +167,7 @@ fn sitting_scorecard(
         }
         <> " \u{b7} "
         <> insights.duration_label(total_ms)
-        <> case m.recall, clean {
+        <> case page.recall, clean {
           True, _ -> ""
           _, 0 -> ""
           _, 1 -> " \u{b7} 1 clean solve"
@@ -185,12 +191,12 @@ fn sitting_scorecard(
         1 -> "card"
         _ -> "cards"
       }),
-      tile(insights.duration_label(total_ms), case m.recall {
+      tile(insights.duration_label(total_ms), case page.recall {
         True -> "thinking"
         False -> "at the keyboard"
       }),
-      case m.recall {
-        True -> tile(int.to_string(m.today.reviews_done), "done today")
+      case page.recall {
+        True -> tile(int.to_string(shared.today.reviews_done), "done today")
         False -> tile(int.to_string(clean), "clean")
       },
       case estimate_ms {
@@ -207,7 +213,7 @@ fn sitting_scorecard(
                 "estimate",
               )
           }
-        _ -> tile(int.to_string(m.today.reviews_done), "done today")
+        _ -> tile(int.to_string(shared.today.reviews_done), "done today")
       },
     ]),
     case graduated {
@@ -229,7 +235,7 @@ fn sitting_scorecard(
 }
 
 fn blitz_scorecard(
-  m: Model,
+  shared: Shared,
   blitz: model.Blitz,
   total_ms: Int,
 ) -> Element(Msg) {
@@ -264,7 +270,7 @@ fn blitz_scorecard(
         },
         "fastest solve",
       ),
-      tile(int.to_string(m.today.reviews_done), "done today"),
+      tile(int.to_string(shared.today.reviews_done), "done today"),
     ]),
     case expired {
       0 -> element.none()
@@ -296,7 +302,7 @@ fn blitz_scorecard(
 }
 
 /// The small marks a row can earn: a clean solve, a personal best.
-fn badges(m: Model, entry: SittingEntry) -> List(Element(Msg)) {
+fn badges(shared: Shared, entry: SittingEntry) -> List(Element(Msg)) {
   list.flatten([
     case entry.clean {
       True -> [
@@ -310,7 +316,7 @@ fn badges(m: Model, entry: SittingEntry) -> List(Element(Msg)) {
       ]
       False -> []
     },
-    case beat_median(m, entry) {
+    case beat_median(shared, entry) {
       True -> [
         html.span(
           [
@@ -329,8 +335,8 @@ fn badges(m: Model, entry: SittingEntry) -> List(Element(Msg)) {
 }
 
 /// Faster than your median on this problem going into the sitting.
-fn beat_median(m: Model, entry: SittingEntry) -> Bool {
-  case remote.value(m.insights), entry.passed {
+fn beat_median(shared: Shared, entry: SittingEntry) -> Bool {
+  case remote.value(shared.insights), entry.passed {
     option.Some(data), True ->
       case insights.fluency_for(data, entry.problem) {
         option.Some(median) -> entry.duration_ms < median
@@ -342,10 +348,10 @@ fn beat_median(m: Model, entry: SittingEntry) -> Bool {
 
 /// The card's next interval is a month or more: it has graduated from the
 /// short loop into the long one.
-fn graduated(m: Model, entry: SittingEntry) -> Bool {
-  case model.card_for(m, entry.problem) {
+fn graduated(shared: Shared, entry: SittingEntry) -> Bool {
+  case shared_model.card_for(shared, entry.problem) {
     option.Some(state) ->
-      fsrs.interval_seconds(state.card, m.now) >= 30 * 86_400
+      fsrs.interval_seconds(state.card, shared.now) >= 30 * 86_400
     option.None -> False
   }
 }
@@ -353,17 +359,17 @@ fn graduated(m: Model, entry: SittingEntry) -> Bool {
 /// When the scheduler will bring this back, straight from the stored card.
 /// `None` only if the review never landed, in which case saying nothing is
 /// better than guessing.
-fn next_label(m: Model, entry: SittingEntry) -> String {
-  case model.card_for(m, entry.problem) {
+fn next_label(shared: Shared, entry: SittingEntry) -> String {
+  case shared_model.card_for(shared, entry.problem) {
     option.Some(state) ->
-      "in " <> format.interval(fsrs.interval_seconds(state.card, m.now))
+      "in " <> format.interval(fsrs.interval_seconds(state.card, shared.now))
     option.None -> "\u{2014}"
   }
 }
 
-fn remaining(m: Model) -> Element(Msg) {
-  let due = m.today.reviews_remaining
-  let fresh = m.today.new_remaining
+fn remaining(shared: Shared) -> Element(Msg) {
+  let due = shared.today.reviews_remaining
+  let fresh = shared.today.new_remaining
   html.p([attribute.class("summary-remaining")], [
     html.text(case due + fresh {
       0 -> "That is everything the scheduler had for today."

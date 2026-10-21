@@ -32,9 +32,7 @@ import gleamdrill/domain/insights
 import gleamdrill/domain/queue
 import gleamdrill/domain/track
 import gleamdrill/domain/walk
-import gleamdrill/keys
 import gleamdrill/model
-import gleamdrill/msg
 import gleamdrill/page/browse/keys as browse_keys
 import gleamdrill/page/browse/model as browse_model
 import gleamdrill/page/browse/msg as browse_msg
@@ -43,6 +41,10 @@ import gleamdrill/page/queue/model as queue_model
 import gleamdrill/page/queue/msg as queue_msg
 import gleamdrill/page/settings/keys as settings_keys
 import gleamdrill/page/settings/model as settings_model
+import gleamdrill/page/sitting/keys as sitting_keys
+import gleamdrill/page/sitting/model as sitting_model
+import gleamdrill/page/sitting/msg as sitting_msg
+import gleamdrill/page/sitting/update as sitting_update
 import gleamdrill/page/stats/keys as stats_keys
 import gleamdrill/page/stats/model as stats_model
 import gleamdrill/page/stats/msg as stats_msg
@@ -57,8 +59,7 @@ import gleamdrill/runner
 import gleamdrill/store
 import gleamdrill/store/remote
 import gleamdrill/store/session
-import gleamdrill/ui/binding.{type Binding}
-import gleamdrill/update/drill as drill_update
+import gleamdrill/ui/binding
 import gleamdrill/view/format
 import gleeunit
 import simplifile
@@ -744,15 +745,24 @@ pub fn a_leech_opens_with_the_approach_shown_test() -> Nil {
   // Opened, a leech has its nudge unfolded and nothing else: the steps were
   // always listed, no layer is turned over, and no solution is chosen. So the
   // one thing a leech is given costs it nothing.
-  let view = model.open_problem_view(lapsed(4), problem)
+  let view =
+    sitting_model.open_problem_view(
+      lapsed(4),
+      sitting_model.new([problem]),
+      problem,
+    )
   assert view.nudge_shown
   assert !view.whole_thing_shown
   assert !walk.any_layer_shown(view.walk)
-  assert !model.pseudocode_revealed(view, found.approach)
-  assert !model.answer_revealed(view, found.approach)
-  assert view.slot == model.NoPane
+  assert !sitting_model.pseudocode_revealed(view, found.approach)
+  assert !sitting_model.answer_revealed(view, found.approach)
+  assert view.slot == sitting_model.NoPane
   assert view.revealed_solution == None
-  assert !model.open_problem_view(lapsed(3), problem).nudge_shown
+  assert !sitting_model.open_problem_view(
+    lapsed(3),
+    sitting_model.new([problem]),
+    problem,
+  ).nudge_shown
 }
 
 /// A walk step's code slice is a piece of the pseudocode; its hint and why
@@ -765,35 +775,38 @@ pub fn only_the_walk_code_counts_as_a_reveal_test() -> Nil {
     ]),
     problem.Pseudocode([#("", "p")]),
   ]
-  let base = model.default()
+  let base = sitting_model.new([])
   // Every step's title is on the rail from the start, and turning over a
   // hint or a why is free.
-  assert !model.answer_revealed(base, stages)
+  assert !sitting_model.answer_revealed(base, stages)
   let hinted =
-    model.Model(
+    sitting_model.Model(
       ..base,
       walk: walk.reveal_layer(
         walk.reveal_layer(base.walk, walk.HintLayer),
         walk.WhyLayer,
       ),
     )
-  assert !model.answer_revealed(hinted, stages)
+  assert !sitting_model.answer_revealed(hinted, stages)
   // A hint is not an answer, but a solve that needed one was not from
   // nothing, so `clean` is stricter than the log's `revealed`.
   assert walk.any_layer_shown(hinted.walk)
 
-  assert model.answer_revealed(
-    model.Model(..base, walk_code_seen: True),
+  assert sitting_model.answer_revealed(
+    sitting_model.Model(..base, walk_code_seen: True),
     stages,
   )
-  assert model.answer_revealed(
-    model.Model(..base, whole_thing_shown: True),
+  assert sitting_model.answer_revealed(
+    sitting_model.Model(..base, whole_thing_shown: True),
     stages,
   )
   // No pseudocode rung, so nothing can record it as having been given away.
-  assert !model.answer_revealed(model.Model(..base, whole_thing_shown: True), [
-    problem.Nudge("n"),
-  ])
+  assert !sitting_model.answer_revealed(
+    sitting_model.Model(..base, whole_thing_shown: True),
+    [
+      problem.Nudge("n"),
+    ],
+  )
 
   // The prose of a plan is shared; its code is per language. A slice written
   // for Go is what a Go drill shows, and a language with none of its own
@@ -1310,27 +1323,36 @@ pub fn the_review_log_is_a_ring_buffer_test() -> Nil {
 // --- the keymap ------------------------------------------------------------
 
 pub fn every_context_documents_escape_and_help_test() -> Nil {
-  let base = model.default()
   let drill = on_a_drill()
+  let on = fn(route) { model.Model(..model.default(), route:) }
   let contexts = [
-    model.Model(..base, route: model.ReportRoute),
-    model.Model(..base, route: model.SummaryRoute),
-    drill,
-    model.Model(..drill, slot: model.SolutionPane),
-    model.Model(..drill, slot: model.NotePane),
-    // The rail is always up, so a drill with a step opened is its own context.
-    model.Model(
-      ..drill,
-      nudge_shown: True,
-      walk: walk.reveal_layer(drill.walk, walk.HintLayer),
+    #(on(model.ReportRoute), sitting_model.new([])),
+    #(on(model.SummaryRoute), sitting_model.new([])),
+    #(drill_shared(), drill),
+    #(
+      drill_shared(),
+      sitting_model.Model(..drill, slot: sitting_model.SolutionPane),
     ),
-    model.Model(..drill, recall: True),
-    on_a_board(),
-    model.Model(..on_a_board(), graded: True),
+    #(
+      drill_shared(),
+      sitting_model.Model(..drill, slot: sitting_model.NotePane),
+    ),
+    // The rail is always up, so a drill with a step opened is its own context.
+    #(
+      drill_shared(),
+      sitting_model.Model(
+        ..drill,
+        nudge_shown: True,
+        walk: walk.reveal_layer(drill.walk, walk.HintLayer),
+      ),
+    ),
+    #(drill_shared(), sitting_model.Model(..drill, recall: True)),
+    #(drill_shared(), on_a_board()),
+    #(drill_shared(), sitting_model.Model(..on_a_board(), graded: True)),
   ]
-  use m <- list.each(contexts)
-  let table = keys.bindings(m)
-  assert list.any(table, fn(b: Binding(msg.Msg)) { list.contains(b.keys, "?") })
+  use #(shared, page) <- list.each(contexts)
+  let table = sitting_keys.bindings(shared, page)
+  assert list.any(table, fn(b) { list.contains(b.keys, "?") })
 }
 
 /// The pages that brought their own tables keep the same promise.
@@ -1377,73 +1399,71 @@ pub fn dispatch_resolves_from_the_same_table_it_documents_test() -> Nil {
 /// out; no grade is offered before a run.
 pub fn p_toggles_the_prompt_and_the_panes_have_keys_test() -> Nil {
   let m = on_a_drill()
-  let press = fn(m, key) {
-    keys.dispatch(
+  let press = fn(m, key) { sitting_keys.dispatch(drill_shared(), m, key) }
+  assert drill_shared().prompt_open
+  assert press(m, "p") == Ok(sitting_msg.UserToggledPrompt)
+  assert sitting_keys.dispatch(
+      model.Model(..drill_shared(), prompt_open: False),
       m,
-      msg.Key(key: key, ctrl: False, shift: False, editing: "none"),
+      "p",
     )
-  }
-  assert m.prompt_open
-  assert press(m, "p") == Ok(msg.UserToggledPrompt)
-  assert press(model.Model(..m, prompt_open: False), "p")
-    == Ok(msg.UserToggledPrompt)
-  assert press(m, "i") == Ok(msg.EditorFocusRequested)
+    == Ok(sitting_msg.UserToggledPrompt)
+  assert press(m, "i") == Ok(sitting_msg.EditorFocusRequested)
   // The rail's keys: the nudge, the focus, and the layers under the step that
   // has it. None of them opens a pane, because the rail is never closed.
-  assert press(m, "a") == Ok(msg.UserToggledNudge)
-  assert press(m, "j") == Ok(msg.WalkAdvanced)
-  assert press(m, "k") == Ok(msg.WalkBacked)
-  assert press(m, "h") == Ok(msg.WalkHintShown)
-  assert press(m, "y") == Ok(msg.WalkWhyShown)
-  assert press(m, "c") == Ok(msg.WalkCodeShown)
-  assert press(m, "w") == Ok(msg.UserRevealedWholeThing)
-  assert press(m, "s") == Ok(msg.UserToggledPane(model.SolutionPane))
-  assert press(m, "Escape") == Ok(msg.UserClickedExitDrill)
+  assert press(m, "a") == Ok(sitting_msg.UserToggledNudge)
+  assert press(m, "j") == Ok(sitting_msg.WalkAdvanced)
+  assert press(m, "k") == Ok(sitting_msg.WalkBacked)
+  assert press(m, "h") == Ok(sitting_msg.WalkHintShown)
+  assert press(m, "y") == Ok(sitting_msg.WalkWhyShown)
+  assert press(m, "c") == Ok(sitting_msg.WalkCodeShown)
+  assert press(m, "w") == Ok(sitting_msg.UserRevealedWholeThing)
+  assert press(m, "s")
+    == Ok(sitting_msg.UserToggledPane(sitting_model.SolutionPane))
+  assert press(m, "Escape") == Ok(sitting_msg.UserClickedExitDrill)
   assert press(m, "1") == Error(Nil)
-  assert keys.context_label(m) == "DRILL \u{b7} PYTHON"
+  assert sitting_keys.label(drill_shared(), m) == "DRILL \u{b7} PYTHON"
 }
 
 /// A pane's key opens it and, pressed again, closes it; Escape puts away
 /// whatever is open before it means exit.
 pub fn escape_closes_the_open_pane_before_it_exits_test() -> Nil {
   let coding = on_a_drill()
-  let press = fn(m, key) {
-    keys.dispatch(
-      m,
-      msg.Key(key: key, ctrl: False, shift: False, editing: "none"),
-    )
-  }
-  assert press(coding, "Escape") == Ok(msg.UserClickedExitDrill)
+  let press = fn(m, key) { sitting_keys.dispatch(drill_shared(), m, key) }
+  assert press(coding, "Escape") == Ok(sitting_msg.UserClickedExitDrill)
 
-  let noting = model.toggle_pane(coding, model.NotePane)
-  assert noting.slot == model.NotePane
-  assert press(noting, "Escape") == Ok(msg.UserToggledPane(model.NotePane))
-  assert model.toggle_pane(noting, model.NotePane).slot == model.NoPane
-  assert model.toggle_pane(noting, model.SolutionPane).slot
-    == model.SolutionPane
+  let noting = sitting_model.toggle_pane(coding, sitting_model.NotePane)
+  assert noting.slot == sitting_model.NotePane
+  assert press(noting, "Escape")
+    == Ok(sitting_msg.UserToggledPane(sitting_model.NotePane))
+  assert sitting_model.toggle_pane(noting, sitting_model.NotePane).slot
+    == sitting_model.NoPane
+  assert sitting_model.toggle_pane(noting, sitting_model.SolutionPane).slot
+    == sitting_model.SolutionPane
 
   // The rail is not a pane and has no close: with a step opened, Escape still
   // means exit. That is the whole point of moving the plan out of the slot.
   let railed =
-    model.Model(
+    sitting_model.Model(
       ..coding,
       nudge_shown: True,
       walk: walk.reveal_layer(coding.walk, walk.HintLayer),
     )
-  assert press(railed, "Escape") == Ok(msg.UserClickedExitDrill)
+  assert press(railed, "Escape") == Ok(sitting_msg.UserClickedExitDrill)
 }
 
 /// A passing run puts the reference beside your code without that being a
 /// reveal; a failing run takes back only a diff the last pass had opened.
 pub fn a_pass_opens_the_solution_pane_without_a_reveal_test() -> Nil {
-  assert model.pane_after_run(model.NoPane, None, True) == model.SolutionPane
-  assert model.pane_after_run(model.NotePane, None, True) == model.SolutionPane
-  assert model.pane_after_run(model.SolutionPane, None, False) == model.NoPane
-  assert model.pane_after_run(model.SolutionPane, Some(0), False)
-    == model.SolutionPane
-  assert model.pane_after_run(model.NotePane, None, False) == model.NotePane
-  let m = model.Model(..on_a_drill(), slot: model.SolutionPane)
-  assert !model.answer_revealed(m, [])
+  let after = sitting_model.pane_after_run
+  assert after(sitting_model.NoPane, None, True) == sitting_model.SolutionPane
+  assert after(sitting_model.NotePane, None, True) == sitting_model.SolutionPane
+  assert after(sitting_model.SolutionPane, None, False) == sitting_model.NoPane
+  assert after(sitting_model.SolutionPane, Some(0), False)
+    == sitting_model.SolutionPane
+  assert after(sitting_model.NotePane, None, False) == sitting_model.NotePane
+  let m = sitting_model.Model(..on_a_drill(), slot: sitting_model.SolutionPane)
+  assert !sitting_model.answer_revealed(m, [])
 }
 
 /// Every ladder starts with a nudge, so opening the hint pane always has a
@@ -1721,42 +1741,42 @@ fn a_catalogue_ref() -> problem.ProblemRef {
 }
 
 /// A drill just opened on a Python problem, as `open_problem_view` leaves it.
-fn on_a_board() -> model.Model {
+fn on_a_board() -> sitting_model.Model {
   let ref =
     wire.ProblemRef("System Design Board", "Designs", "Design a URL shortener")
-  model.Model(
-    ..model.open_problem_view(model.default(), ref),
-    route: model.DrillRoute,
-    selected: [ref],
+  sitting_model.open_problem_view(
+    model.default(),
+    sitting_model.new([ref]),
+    ref,
   )
+}
+
+/// The shared state a drill runs over: the defaults, on the drill screen.
+fn drill_shared() -> model.Model {
+  model.Model(..model.default(), route: model.DrillRoute)
 }
 
 /// The board's keys, and the one that must NOT be there: 1-4 are the grade
 /// keys everywhere else, and a board grades itself.
 pub fn the_board_has_cursor_keys_and_no_grade_keys_test() -> Nil {
   let m = on_a_board()
-  let press = fn(m, key) {
-    keys.dispatch(
-      m,
-      msg.Key(key: key, ctrl: False, shift: False, editing: "none"),
-    )
-  }
+  let press = fn(m, key) { sitting_keys.dispatch(drill_shared(), m, key) }
 
-  assert keys.context_label(m) == "BOARD"
-  assert press(m, "j") == Ok(msg.BoardMoved(1))
-  assert press(m, "k") == Ok(msg.BoardMoved(-1))
-  assert press(m, "l") == Ok(msg.BoardShelfMoved(1))
-  assert press(m, "h") == Ok(msg.BoardShelfMoved(-1))
-  assert press(m, "g") == Ok(msg.BoardJumped(True))
-  assert press(m, "G") == Ok(msg.BoardJumped(False))
-  assert press(m, " ") == Ok(msg.BoardToggledAtCursor)
-  assert press(m, "Escape") == Ok(msg.UserClickedExitDrill)
+  assert sitting_keys.label(drill_shared(), m) == "BOARD"
+  assert press(m, "j") == Ok(sitting_msg.BoardMoved(1))
+  assert press(m, "k") == Ok(sitting_msg.BoardMoved(-1))
+  assert press(m, "l") == Ok(sitting_msg.BoardShelfMoved(1))
+  assert press(m, "h") == Ok(sitting_msg.BoardShelfMoved(-1))
+  assert press(m, "g") == Ok(sitting_msg.BoardJumped(True))
+  assert press(m, "G") == Ok(sitting_msg.BoardJumped(False))
+  assert press(m, " ") == Ok(sitting_msg.BoardToggledAtCursor)
+  assert press(m, "Escape") == Ok(sitting_msg.UserClickedExitDrill)
 
   // Nothing on the board is not an answer, so Enter is absent rather than
   // present and inert.
   assert press(m, "Enter") == Error(Nil)
-  let placed = model.Model(..m, board_picks: ["memory_cache"])
-  assert press(placed, "Enter") == Ok(msg.UserSubmittedBoard)
+  let placed = sitting_model.Model(..m, board_picks: ["memory_cache"])
+  assert press(placed, "Enter") == Ok(sitting_msg.UserSubmittedBoard)
 
   // The grade keys, and the editor, belong to a code drill.
   assert press(m, "1") == Error(Nil)
@@ -1764,20 +1784,20 @@ pub fn the_board_has_cursor_keys_and_no_grade_keys_test() -> Nil {
   assert press(m, "i") == Error(Nil)
 
   // Graded, the board is a verdict: Next, fold the results, leave.
-  let graded = model.Model(..m, graded: True)
-  assert press(graded, "Enter") == Ok(msg.UserClickedNext)
-  assert press(graded, "n") == Ok(msg.UserClickedNext)
-  assert press(graded, "x") == Ok(msg.UserToggledResults)
+  let graded = sitting_model.Model(..m, graded: True)
+  assert press(graded, "Enter") == Ok(sitting_msg.UserClickedNext)
+  assert press(graded, "n") == Ok(sitting_msg.UserClickedNext)
+  assert press(graded, "x") == Ok(sitting_msg.UserToggledResults)
   assert press(graded, " ") == Error(Nil)
 }
 
-fn on_a_drill() -> model.Model {
+fn on_a_drill() -> sitting_model.Model {
   let ref =
     wire.ProblemRef("NeetCode 150", "Arrays & Hashing", "Contains Duplicate")
-  model.Model(
-    ..model.open_problem_view(model.default(), ref),
-    route: model.DrillRoute,
-    selected: [ref],
+  sitting_model.open_problem_view(
+    model.default(),
+    sitting_model.new([ref]),
+    ref,
   )
 }
 
@@ -1785,16 +1805,16 @@ fn on_a_drill() -> model.Model {
 /// and the key table. A board has no check; nothing open has neither.
 pub fn the_current_problem_and_check_follow_the_selection_test() -> Nil {
   let drill = on_a_drill()
-  let assert Ok(found) = model.current_problem(drill)
+  let assert Ok(found) = sitting_model.current_problem(drill)
   assert found.title == "Contains Duplicate"
-  assert result.is_ok(model.current_check(drill))
+  assert result.is_ok(sitting_model.current_check(drill))
 
   let board = on_a_board()
-  assert result.is_ok(model.current_problem(board))
-  assert model.current_check(board) == Error(Nil)
+  assert result.is_ok(sitting_model.current_problem(board))
+  assert sitting_model.current_check(board) == Error(Nil)
 
-  assert model.current_problem(model.default()) == Error(Nil)
-  assert model.current_check(model.default()) == Error(Nil)
+  assert sitting_model.current_problem(sitting_model.new([])) == Error(Nil)
+  assert sitting_model.current_check(sitting_model.new([])) == Error(Nil)
 }
 
 /// The opt-in rule, stated on its own: a problem with no card is not a
@@ -2197,16 +2217,16 @@ pub fn every_problem_is_rated_test() -> Nil {
 // --- Blitz ------------------------------------------------------------------
 
 pub fn blitz_rank_tiers_by_share_passed_test() -> Nil {
-  assert model.blitz_rank(5, 5) == "Perfect"
-  assert model.blitz_rank(4, 5) == "Blazing"
-  assert model.blitz_rank(3, 5) == "Sharp"
-  assert model.blitz_rank(2, 5) == "Steady"
-  assert model.blitz_rank(1, 5) == "Warmup"
-  assert model.blitz_rank(0, 5) == "Warmup"
+  assert sitting_model.blitz_rank(5, 5) == "Perfect"
+  assert sitting_model.blitz_rank(4, 5) == "Blazing"
+  assert sitting_model.blitz_rank(3, 5) == "Sharp"
+  assert sitting_model.blitz_rank(2, 5) == "Steady"
+  assert sitting_model.blitz_rank(1, 5) == "Warmup"
+  assert sitting_model.blitz_rank(0, 5) == "Warmup"
   // Nothing attempted is not a perfect score.
-  assert model.blitz_rank(0, 0) == "Warmup"
-  assert model.blitz_rank(8, 10) == "Blazing"
-  assert model.blitz_rank(6, 10) == "Sharp"
+  assert sitting_model.blitz_rank(0, 0) == "Warmup"
+  assert sitting_model.blitz_rank(8, 10) == "Blazing"
+  assert sitting_model.blitz_rank(6, 10) == "Sharp"
 }
 
 // --- The system design board ------------------------------------------------
@@ -2555,42 +2575,44 @@ pub fn harness_warnings_stay_out_of_the_output_test() -> Nil {
 /// countdown is the game.
 pub fn pausing_the_timer_stops_the_clock_test() -> Nil {
   let m =
-    model.Model(
-      ..model.default(),
-      route: model.DrillRoute,
+    sitting_model.Model(
+      ..sitting_model.new([]),
       opened_at_ms: 1000,
       clock_paused_ms: 2000,
     )
 
   // Running: 10s open, 2s banked -> 8s elapsed.
-  assert model.elapsed_ms(m, 11_000) == 8000
+  assert sitting_model.elapsed_ms(m, 11_000) == 8000
   // Paused at 11s: reading later subtracts the open span too.
-  let paused = model.Model(..m, clock_paused_at: option.Some(11_000))
-  assert model.elapsed_ms(paused, 15_000) == 8000
+  let paused = sitting_model.Model(..m, clock_paused_at: option.Some(11_000))
+  assert sitting_model.elapsed_ms(paused, 15_000) == 8000
   // Never negative, even if a tick lands before the open stamp.
-  assert model.elapsed_ms(m, 0) == 0
+  assert sitting_model.elapsed_ms(m, 0) == 0
 
   // The toggle itself: pause stamps, resume banks and clears the stamp.
-  let #(stamped, _) = drill_update.toggle_timer(m)
-  assert stamped.clock_paused_at != option.None
-  let #(resumed, _) =
-    drill_update.toggle_timer(model.Model(..m, clock_paused_at: option.Some(0)))
+  let toggle = fn(page) {
+    let #(page, _, _) =
+      sitting_update.update(drill_shared(), page, sitting_msg.UserToggledTimer)
+    page
+  }
+  assert toggle(m).clock_paused_at != option.None
+  let resumed =
+    toggle(sitting_model.Model(..m, clock_paused_at: option.Some(0)))
   assert resumed.clock_paused_at == option.None
   assert resumed.clock_paused_ms > m.clock_paused_ms
 
   // Blitz: the toggle is a no-op.
   let blitz =
-    model.Model(
+    sitting_model.Model(
       ..m,
-      blitz: option.Some(model.Blitz(
+      blitz: option.Some(sitting_model.Blitz(
         per_card_ms: 60_000,
         deadline_ms: 99_999,
         results: [],
         expired_flash: False,
       )),
     )
-  let #(unchanged, _) = drill_update.toggle_timer(blitz)
-  assert unchanged.clock_paused_at == option.None
+  assert toggle(blitz).clock_paused_at == option.None
 }
 
 // --- guest seeding from the legacy store --------------------------------------

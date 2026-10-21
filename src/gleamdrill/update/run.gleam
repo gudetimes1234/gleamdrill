@@ -1,16 +1,17 @@
-//// Running an attempt: local workers, server-side runs, the runtime
-//// lifecycle, timeouts and the offline cache.
+//// The run engine: one run in flight app-wide, the runtime each language
+//// needs, server-side runs, timeouts and restarts.
+////
+//// A page asks for a run (`RunLocal`, `RunRemote`) and reads `run` for the
+//// result; what a result means for grading is the sitting's business, told
+//// to it by the app once the engine has taken the answer in.
 
 import gleam/list
 import gleam/option.{None, Some}
-import gleam/string
 import gleamdrill/model.{
-  type Model, Account, AwaitingGrade, CaseResult, Cases, DrillRoute, Errored,
-  Guest, Model, Ran, RunError, RunIdle, Running, RuntimeFailed, RuntimeLoading,
-  RuntimeNotLoaded, RuntimeReady, TimedOut, TourRoute,
+  type Model, Account, CaseResult, Cases, Errored, Guest, Model, Ran, RunError,
+  RunIdle, Running, RuntimeFailed, RuntimeLoading, RuntimeReady, TimedOut,
 }
 import gleamdrill/msg.{type Msg, RemoteRunFinished}
-import gleamdrill/platform/browser
 import gleamdrill/runner
 import gleamdrill/store
 import gleamdrill/store/remote.{type ApiError}
@@ -26,27 +27,10 @@ pub fn retry_runtime(m: Model, language: String) -> #(Model, Effect(Msg)) {
 }
 
 pub fn runner_ready(m: Model, language: String) -> #(Model, Effect(Msg)) {
-  {
-    let m =
-      Model(..m, runtimes: model.assoc_put(m.runtimes, language, RuntimeReady))
-    // A Blitz card whose runtime was still downloading has not had a
-    // fair clock: it restarts now that a run is actually possible.
-    let m = case m.blitz, m.route, common.current_language(m) {
-      Some(blitz), DrillRoute, Ok(current) if current == language ->
-        Model(
-          ..m,
-          blitz: Some(
-            model.Blitz(
-              ..blitz,
-              deadline_ms: browser.now_ms() + blitz.per_card_ms,
-            ),
-          ),
-        )
-      _, _, _ -> m
-    }
-    // A tour lesson waiting on the compiler hears of it from the app.
-    #(m, effect.none())
-  }
+  #(
+    Model(..m, runtimes: model.assoc_put(m.runtimes, language, RuntimeReady)),
+    effect.none(),
+  )
 }
 
 pub fn runner_failed(
@@ -69,6 +53,8 @@ pub fn runner_failed(
   )
 }
 
+/// A worker's verdict. Stale ids are ignored: the run they belong to was
+/// abandoned or replaced.
 pub fn finished(
   m: Model,
   id: Int,
@@ -76,41 +62,10 @@ pub fn finished(
   stdout: String,
 ) -> #(Model, Effect(Msg)) {
   case m.run {
-    Running(current, _) if current == id -> {
-      let run = Ran(outcome, stdout)
-      // A pass opens the reference beside your code, as a diff. Only a
-      // real answer counts: something typed, on a problem with a
-      // reference, from the test run and not a scratch one.
-      let passed =
-        m.run_kind == model.TestRun
-        && model.run_passed(run)
-        && string.trim(m.draft) != ""
-        && case model.current_problem(m) {
-          Ok(current) -> current.solutions != []
-          Error(Nil) -> False
-        }
-      #(
-        // Whatever the harness said, the drill is now answerable: the
-        // grading bar decides what the buttons offer. A scratch run is
-        // not an answer, though; it leaves the gate where it was.
-        Model(
-          ..m,
-          run:,
-          grading: case m.run_kind {
-            model.TestRun -> AwaitingGrade
-            model.ScratchRun -> m.grading
-          },
-          slot: model.pane_after_run(m.slot, m.revealed_solution, passed),
-        ),
-        // Blur the editor so 1-4 grade immediately: the whole rep is
-        // type, Ctrl+Enter, digit. Not on the tour, where a run follows
-        // every pause in typing and must not take the cursor away.
-        case m.route {
-          DrillRoute -> common.run_effect(browser.blur_active)
-          _ -> effect.none()
-        },
-      )
-    }
+    Running(current, _) if current == id -> #(
+      Model(..m, run: Ran(outcome, stdout)),
+      effect.none(),
+    )
     _ -> #(m, effect.none())
   }
 }
@@ -153,39 +108,16 @@ pub fn remote_finished(
   }
 }
 
+/// A run that never answered. The worker cannot be interrupted, only
+/// replaced; a server-side run has no worker, and the server has already
+/// killed it.
 pub fn timed_out(m: Model, id: Int) -> #(Model, Effect(Msg)) {
   case m.run {
     Running(current, _) if current == id -> {
-      let timed_out =
-        Model(..m, run: Ran(TimedOut, ""), grading: case m.run_kind {
-          model.TestRun -> AwaitingGrade
-          model.ScratchRun -> m.grading
-        })
-      // The worker cannot be interrupted, only replaced. A server-side
-      // run has no worker: the server has already killed it.
-      case m.route, common.current_language(m) {
-        TourRoute, _ -> Ok("gleam")
-        _, other -> other
-      }
-      |> fn(language) {
-        case language {
-          Ok(language) ->
-            case runner.is_remote(language) {
-              True -> #(timed_out, effect.none())
-              False -> #(
-                Model(
-                  ..timed_out,
-                  runtimes: model.assoc_put(
-                    m.runtimes,
-                    language,
-                    RuntimeLoading,
-                  ),
-                ),
-                runner.restart(language, common.runner_msg),
-              )
-            }
-          Error(Nil) -> #(timed_out, effect.none())
-        }
+      let timed_out = Model(..m, run: Ran(TimedOut, ""))
+      case runner.is_remote(m.run_language) {
+        True -> #(timed_out, effect.none())
+        False -> replace_worker(timed_out, m.run_language)
       }
     }
     _ -> #(m, effect.none())
@@ -212,94 +144,59 @@ pub fn runtime_load_timed_out(
   }
 }
 
-/// A run the button or keyboard asked for, once the runtime is ready: posted
-/// to the server for a remote language, spawned in a worker otherwise.
-/// A run of either kind, with every reason it cannot start said out loud:
-/// the button is disabled in those states, but `r`, `t` and Ctrl+Enter
-/// land here too and silence reads as a broken key.
-pub fn request(m: Model, kind: model.RunKind) -> #(Model, Effect(Msg)) {
-  case m.run {
-    // One run at a time: a queued second run just doubles the wait.
-    Running(_, _) -> #(m, effect.none())
-    _ ->
-      case common.current_language(m), model.current_check(m) {
-        Ok(language), Ok(check) -> {
-          let harness = case kind {
-            model.TestRun -> check.harness
-            model.ScratchRun -> runner.scratch_harness(language)
-          }
-          case model.runtime_for(m, language) {
-            // Elixir and Go run on the server, and the server wants a
-            // session.
-            RuntimeReady if m.mode == Guest ->
-              case runner.is_remote(language) {
-                True -> #(
-                  Model(
-                    ..m,
-                    notice: Some(
-                      "This drill runs on the server \u{2014} sign in to run it.",
-                    ),
-                  ),
-                  effect.none(),
-                )
-                False -> start_run(m, language, harness, kind)
-              }
-            RuntimeReady -> start_run(m, language, harness, kind)
-            RuntimeLoading | RuntimeNotLoaded -> #(
-              Model(
-                ..m,
-                notice: Some(
-                  "The runtime is still loading \u{2014} the Run button enables when it's ready.",
-                ),
-              ),
-              effect.none(),
-            )
-            RuntimeFailed(_) -> #(
-              Model(
-                ..m,
-                notice: Some(
-                  "The runtime failed to load \u{2014} use Retry next to the Run button.",
-                ),
-              ),
-              effect.none(),
-            )
-          }
-        }
-        _, _ -> #(m, effect.none())
+/// A run posted to the server, with its own timeout armed. Only an account
+/// can run server-side languages; a guest is turned away before this.
+pub fn start_remote(
+  m: Model,
+  language: String,
+  code: String,
+  harness: String,
+) -> #(Model, Effect(Msg)) {
+  case m.mode {
+    Guest -> #(m, effect.none())
+    Account(token) -> {
+      let id = m.next_run_id
+      let previous = case m.run {
+        Ran(_, stdout) -> stdout
+        _ -> ""
       }
+      #(
+        Model(
+          ..m,
+          run: Running(id, previous),
+          next_run_id: id + 1,
+          run_language: language,
+        ),
+        effect.batch([
+          store.post_run(
+            token,
+            wire.RunRequest(language, code, harness),
+            RemoteRunFinished(id, _),
+          ),
+          runner.arm_remote_timeout(id, common.runner_msg),
+        ]),
+      )
+    }
   }
 }
 
-fn start_run(
-  m: Model,
-  language: String,
-  harness: String,
-  kind: model.RunKind,
-) -> #(Model, Effect(Msg)) {
-  let id = m.next_run_id
-  let previous = case m.run {
-    Ran(_, stdout) -> stdout
-    _ -> ""
+/// Stops the run in flight. A local worker is replaced so the next run does
+/// not queue behind it; a server-side run's late answer is ignored by the id
+/// guard.
+pub fn abandon(m: Model, language: String) -> #(Model, Effect(Msg)) {
+  case m.run {
+    Running(_, _) ->
+      case runner.is_remote(language) {
+        True -> #(Model(..m, run: RunIdle), effect.none())
+        False -> replace_worker(Model(..m, run: RunIdle), language)
+      }
+    _ -> #(m, effect.none())
   }
-  let started =
-    Model(..m, run: Running(id, previous), run_kind: kind, next_run_id: id + 1)
-  case runner.is_remote(language), m.mode {
-    True, Account(token) -> #(
-      started,
-      effect.batch([
-        store.post_run(
-          token,
-          wire.RunRequest(language, m.draft, harness),
-          RemoteRunFinished(id, _),
-        ),
-        runner.arm_remote_timeout(id, common.runner_msg),
-      ]),
-    )
-    // Unreachable: request_run catches a guest first.
-    True, Guest -> #(m, effect.none())
-    False, _ -> {
-      let #(next, fx) = common.start_local_run(m, language, m.draft, harness)
-      #(Model(..next, run_kind: kind), fx)
-    }
-  }
+}
+
+fn replace_worker(m: Model, language: String) -> #(Model, Effect(Msg)) {
+  #(
+    Model(..m, runtimes: model.assoc_put(m.runtimes, language, RuntimeLoading)),
+    runner.restart(language, common.runner_msg),
+  )
 }

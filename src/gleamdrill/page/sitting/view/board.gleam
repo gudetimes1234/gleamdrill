@@ -7,12 +7,13 @@ import gleam/list
 import gleam/option.{None}
 import gleamdrill/content/problem.{type Problem, type ProblemRef}
 import gleamdrill/domain/board
-import gleamdrill/model.{type Model}
-import gleamdrill/msg.{
+import gleamdrill/page/sitting/model.{type Model}
+import gleamdrill/page/sitting/msg.{
   type Msg, UserClickedNext, UserSubmittedBoard, UserToggledPiece,
 }
+import gleamdrill/page/sitting/view/results
+import gleamdrill/shared.{type Shared}
 import gleamdrill/view/id
-import gleamdrill/view/results
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -24,7 +25,8 @@ import lustre/event
 /// clickable until Submit, after which all thirty-six are annotated and only
 /// Next remains.
 pub fn board_main(
-  m: Model,
+  shared: Shared,
+  page: Model,
   ref: ProblemRef,
   current: Problem,
   answer: board.Board,
@@ -37,21 +39,26 @@ pub fn board_main(
       results.prompt_block(current),
     ])
 
-  [question, board_palette(m, answer), board_bar(m), ..board_verdict(m, answer)]
+  [
+    question,
+    board_palette(page, answer),
+    board_bar(page),
+    ..board_verdict(shared, page, answer)
+  ]
 }
 
 /// The palette, six labelled shelves in family order. One flat cursor index
 /// walks it: the columns are responsive, so true two-dimensional movement
 /// would be a lie about a layout that reflows.
-fn board_palette(m: Model, answer: board.Board) -> Element(Msg) {
+fn board_palette(page: Model, answer: board.Board) -> Element(Msg) {
   html.div(
     [attribute.class("board-palette")],
-    list.map(board.families(), fn(family) { board_shelf(m, answer, family) }),
+    list.map(board.families(), fn(family) { board_shelf(page, answer, family) }),
   )
 }
 
 fn board_shelf(
-  m: Model,
+  page: Model,
   answer: board.Board,
   family: board.Family,
 ) -> Element(Msg) {
@@ -64,7 +71,7 @@ fn board_shelf(
       html.div(
         [attribute.class("board-shelf-pieces")],
         list.map(board.pieces_in(family), fn(piece) {
-          board_chip(m, answer, piece)
+          board_chip(page, answer, piece)
         }),
       ),
     ],
@@ -72,13 +79,13 @@ fn board_shelf(
 }
 
 fn board_chip(
-  m: Model,
+  page: Model,
   answer: board.Board,
   piece: board.Piece,
 ) -> Element(Msg) {
   let index = board.index_of(piece)
-  let picked = list.contains(m.board_picks, piece.id)
-  let verdict = board.verdict(answer, piece, m.board_picks)
+  let picked = list.contains(page.board_picks, piece.id)
+  let verdict = board.verdict(answer, piece, page.board_picks)
   html.button(
     [
       attribute.id(id.board_chip_id(index)),
@@ -86,15 +93,15 @@ fn board_chip(
       attribute.classes([
         #("board-chip", True),
         #("picked", picked),
-        #("cursor", m.board_cursor == index),
+        #("cursor", page.board_cursor == index),
         // Only after grading does the styling say anything true about the
         // answer, otherwise the board would give itself away.
-        #("hit", m.graded && verdict == board.Hit),
-        #("missed", m.graded && verdict == board.Missed),
-        #("wrong", m.graded && verdict == board.WrongPick),
-        #("neutral", m.graded && verdict == board.NeutralPick),
+        #("hit", page.graded && verdict == board.Hit),
+        #("missed", page.graded && verdict == board.Missed),
+        #("wrong", page.graded && verdict == board.WrongPick),
+        #("neutral", page.graded && verdict == board.NeutralPick),
       ]),
-      attribute.disabled(m.graded),
+      attribute.disabled(page.graded),
       event.on_click(UserToggledPiece(piece.id)),
     ],
     [
@@ -104,15 +111,15 @@ fn board_chip(
   )
 }
 
-fn board_bar(m: Model) -> Element(Msg) {
-  html.div([attribute.class("run-bar")], case m.graded {
+fn board_bar(page: Model) -> Element(Msg) {
+  html.div([attribute.class("run-bar")], case page.graded {
     False -> [
       html.button(
         [
           attribute.class("btn-primary"),
           // Submitting nothing is not an answer; it is a way to mark a card
           // Again without reading it.
-          attribute.disabled(m.board_picks == []),
+          attribute.disabled(page.board_picks == []),
           event.on_click(UserSubmittedBoard),
         ],
         [html.text("Submit board")],
@@ -125,7 +132,7 @@ fn board_bar(m: Model) -> Element(Msg) {
         [html.text("Skip")],
       ),
       html.span([attribute.class("board-count")], [
-        html.text(case list.length(m.board_picks) {
+        html.text(case list.length(page.board_picks) {
           1 -> "1 piece on the board"
           n -> int.to_string(n) <> " pieces on the board"
         }),
@@ -147,11 +154,15 @@ fn board_bar(m: Model) -> Element(Msg) {
 /// each with the line that says why. Pieces answered correctly are not listed
 /// -- they are already green on the board, and the list is for reading what
 /// you got wrong.
-fn board_verdict(m: Model, answer: board.Board) -> List(Element(Msg)) {
-  case m.graded {
+fn board_verdict(
+  shared: Shared,
+  page: Model,
+  answer: board.Board,
+) -> List(Element(Msg)) {
+  case page.graded {
     False -> []
     True -> {
-      let graded = board.grade(m.board_picks, answer, 0)
+      let graded = board.grade(page.board_picks, answer, 0)
       let headline =
         int.to_string(list.length(graded.hit))
         <> "/"
@@ -163,7 +174,7 @@ fn board_verdict(m: Model, answer: board.Board) -> List(Element(Msg)) {
         }
       [
         results.results_box(
-          m,
+          shared,
           headline,
           graded.rating != fsrs.Again,
           None,

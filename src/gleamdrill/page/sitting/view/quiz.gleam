@@ -4,18 +4,20 @@ import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleamdrill/content/problem.{type Problem, type ProblemRef, type Quiz}
-import gleamdrill/model.{type Model}
-import gleamdrill/msg.{
+import gleamdrill/page/sitting/model.{type Model}
+import gleamdrill/page/sitting/msg.{
   type Msg, UserClickedNext, UserPickedChoice, UserSubmittedAnswer,
 }
-import gleamdrill/view/results
+import gleamdrill/page/sitting/view/results
+import gleamdrill/shared.{type Shared}
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 
 pub fn quiz_main(
-  m: Model,
+  shared: Shared,
+  page: Model,
   ref: ProblemRef,
   current: Problem,
   quiz: Quiz,
@@ -31,7 +33,7 @@ pub fn quiz_main(
     html.div(
       [attribute.class("quiz-choices")],
       list.index_map(quiz.choices, fn(text, index) {
-        let picked = m.choice == Some(index)
+        let picked = page.choice == Some(index)
         let is_answer = index == quiz.correct
         html.button(
           [
@@ -40,10 +42,10 @@ pub fn quiz_main(
               #("picked", picked),
               // Only after grading does the styling say anything true about
               // correctness, otherwise it would give the answer away.
-              #("correct", m.graded && is_answer),
-              #("wrong", m.graded && picked && !is_answer),
+              #("correct", page.graded && is_answer),
+              #("wrong", page.graded && picked && !is_answer),
             ]),
-            attribute.disabled(m.graded),
+            attribute.disabled(page.graded),
             event.on_click(UserPickedChoice(index)),
           ],
           [
@@ -57,12 +59,12 @@ pub fn quiz_main(
     )
 
   let bar =
-    html.div([attribute.class("run-bar")], case m.graded {
+    html.div([attribute.class("run-bar")], case page.graded {
       False -> [
         html.button(
           [
             attribute.class("btn-primary"),
-            attribute.disabled(m.choice == None),
+            attribute.disabled(page.choice == None),
             event.on_click(UserSubmittedAnswer),
           ],
           [html.text("Submit answer")],
@@ -86,17 +88,17 @@ pub fn quiz_main(
       ]
     })
 
-  [question, options, bar, ..quiz_verdict(m, quiz)]
+  [question, options, bar, ..quiz_verdict(shared, page, quiz)]
 }
 
-fn quiz_verdict(m: Model, quiz: Quiz) -> List(Element(Msg)) {
-  case m.graded {
+fn quiz_verdict(shared: Shared, page: Model, quiz: Quiz) -> List(Element(Msg)) {
+  case page.graded {
     False -> []
     True -> {
-      let right = m.choice == Some(quiz.correct)
+      let right = page.choice == Some(quiz.correct)
       [
         results.results_box(
-          m,
+          shared,
           case right {
             True -> "\u{2713} Correct"
             False -> "\u{2717} Not quite"

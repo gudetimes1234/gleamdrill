@@ -1,13 +1,10 @@
 //// The keyboard: the `,` leader, and where a key goes depending on what has
-//// focus. `step` is the whole decision, pure; `pressed` carries it out for
-//// the legacy dispatcher, sending a resolved key back through `dispatch` --
-//// the controller's own `handle` -- since this module sits below it.
+//// focus. `step` is the whole decision, pure; the app carries it out against
+//// the page on screen.
 
-import gleamdrill/keys
 import gleamdrill/model.{type Model, DrillRoute, Model}
-import gleamdrill/msg.{type Msg, UserClickedRun}
-import gleamdrill/platform/browser
-import gleamdrill/update/common
+import gleamdrill/msg.{type Msg}
+import gleamdrill/page/sitting/msg as sitting_msg
 import lustre/effect.{type Effect}
 
 /// What one keystroke comes to, before anything is dispatched.
@@ -21,8 +18,7 @@ pub type Step {
 }
 
 /// The keyboard as a pure function: the leader state it leaves behind, and
-/// what the key means. `lookup` is the active screen's table; the legacy
-/// dispatcher passes `keys.dispatch`, a page passes its own rows.
+/// what the key means. `lookup` is the page's table, overlays first.
 pub fn step(
   m: Model,
   key: msg.Key,
@@ -45,19 +41,6 @@ pub fn step(
   }
 }
 
-/// `step`, carried out: a resolved message goes back through `dispatch`.
-pub fn pressed(
-  m: Model,
-  key: msg.Key,
-  dispatch: fn(Model, Msg) -> #(Model, Effect(Msg)),
-) -> #(Model, Effect(Msg)) {
-  case step(m, key, keys.dispatch) {
-    #(m, Ignore) -> #(m, effect.none())
-    #(m, Blur) -> #(m, common.run_effect(browser.blur_active))
-    #(m, Send(resolved)) -> dispatch(m, resolved)
-  }
-}
-
 pub fn toggle_help(m: Model) -> #(Model, Effect(Msg)) {
   #(Model(..m, help_open: !m.help_open), effect.none())
 }
@@ -72,7 +55,7 @@ fn route(
     // claims there is Ctrl+Enter, so write -> run -> grade needs no mouse.
     "editor" ->
       case key.ctrl && key.key == "Enter" && m.route == DrillRoute {
-        True -> Send(UserClickedRun)
+        True -> Send(msg.SittingMsg(sitting_msg.UserClickedRun))
         False -> Ignore
       }
     // Inputs keep their keys; Escape hands focus back to the app.
