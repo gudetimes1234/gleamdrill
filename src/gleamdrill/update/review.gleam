@@ -6,7 +6,7 @@ import fsrs
 import gleam/dict
 import gleam/option.{None, Some}
 import gleamdrill/browser
-import gleamdrill/local
+import gleamdrill/guest
 import gleamdrill/model.{
   type Model, AwaitingGrade, DrillRoute, Guest, Model, NoPane, NotGrading,
   SolutionPane, SubmittingGrade,
@@ -181,7 +181,7 @@ pub fn recorded(
           cards:,
           // The store dropped the draft with the review; so does the copy
           // in memory, or a reopen this session would still restore it.
-          drafts: local.drop_draft(m.drafts, outcome.card.problem),
+          drafts: guest.drop_draft(m.drafts, outcome.card.problem),
           upgrade_prompt: common.escalate(m),
         )
       case m.grading {

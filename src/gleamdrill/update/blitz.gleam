@@ -5,7 +5,7 @@ import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleamdrill/browser
-import gleamdrill/local
+import gleamdrill/guest
 import gleamdrill/model.{
   type Model, DrillRoute, MenuRoute, Model, NoPane, RunIdle, StudyRoute,
 }
@@ -133,7 +133,7 @@ pub fn expired(m: Model) -> #(Model, Effect(Msg)) {
         common.advance(
           Model(
             ..m,
-            drafts: local.drop_draft(m.drafts, ref),
+            drafts: guest.drop_draft(m.drafts, ref),
             blitz: Some(
               model.Blitz(
                 ..blitz,

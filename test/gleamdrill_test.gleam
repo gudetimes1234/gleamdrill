@@ -21,9 +21,9 @@ import gleam/string
 import gleam/time/timestamp
 import gleamdrill/board
 import gleamdrill/compare
+import gleamdrill/guest
 import gleamdrill/insights
 import gleamdrill/keys
-import gleamdrill/local
 import gleamdrill/model
 import gleamdrill/msg
 import gleamdrill/problem
@@ -278,8 +278,8 @@ pub fn guest_scheduling_matches_the_server_test() -> Nil {
   // of a second later.
   let assert Some(reviewed_at) = server_card.card.last_review
   let #(_store, guest_card) =
-    local.record(
-      local.empty(),
+    guest.record(
+      guest.empty(),
       state.settings,
       answer(server_card.problem, fsrs.Good),
       reviewed_at,
@@ -303,8 +303,8 @@ pub fn guest_scheduling_matches_the_server_test() -> Nil {
 pub fn first_encounter_grades_freely_test() -> Nil {
   let now = at_epoch(1_800_000_000)
   let #(_store, card) =
-    local.record(
-      local.empty(),
+    guest.record(
+      guest.empty(),
       guest_settings(),
       wire.Review(
         problem: a_problem("Contains Duplicate"),
@@ -333,8 +333,8 @@ pub fn later_reviews_keep_their_grade_test() -> Nil {
   let settings = guest_settings()
 
   let #(store, first) =
-    local.record(
-      local.empty(),
+    guest.record(
+      guest.empty(),
       settings,
       answer(problem, fsrs.Good),
       now,
@@ -344,7 +344,7 @@ pub fn later_reviews_keep_their_grade_test() -> Nil {
   let assert Some(before) = first.card.memory
 
   let #(after, card) =
-    local.record(
+    guest.record(
       store,
       settings,
       wire.Review(
@@ -369,7 +369,7 @@ pub fn later_reviews_keep_their_grade_test() -> Nil {
       fsrs.Easy,
     )
   // The reveal is still on the record.
-  let assert [_, second] = local.history_of(after, problem)
+  let assert [_, second] = guest.history_of(after, problem)
   assert second.revealed == True
 }
 
@@ -382,8 +382,8 @@ pub fn only_a_graduated_card_lapses_test() -> Nil {
 
   // Two Goods graduate it, then an Again.
   let #(store, _) =
-    local.record(
-      local.empty(),
+    guest.record(
+      guest.empty(),
       settings,
       answer(problem, fsrs.Good),
       now,
@@ -391,13 +391,13 @@ pub fn only_a_graduated_card_lapses_test() -> Nil {
       0.0,
     )
   let #(store, learning) =
-    local.record(store, settings, answer(problem, fsrs.Again), now, 0, 0.0)
+    guest.record(store, settings, answer(problem, fsrs.Again), now, 0, 0.0)
   assert learning.lapses == 0
 
   let #(store, _) =
-    local.record(store, settings, answer(problem, fsrs.Good), now, 0, 0.0)
+    guest.record(store, settings, answer(problem, fsrs.Good), now, 0, 0.0)
   let #(store, graduated) =
-    local.record(
+    guest.record(
       store,
       settings,
       answer(problem, fsrs.Good),
@@ -408,7 +408,7 @@ pub fn only_a_graduated_card_lapses_test() -> Nil {
   assert graduated.card.state == fsrs.Review
 
   let #(_store, lapsed) =
-    local.record(
+    guest.record(
       store,
       settings,
       answer(problem, fsrs.Again),
@@ -426,8 +426,8 @@ pub fn today_counts_against_the_daily_limits_test() -> Nil {
   let problem = a_problem("Contains Duplicate")
 
   let #(store, _) =
-    local.record(
-      local.empty(),
+    guest.record(
+      guest.empty(),
       settings,
       answer(problem, fsrs.Good),
       now,
@@ -436,12 +436,12 @@ pub fn today_counts_against_the_daily_limits_test() -> Nil {
     )
 
   let today =
-    local.today(
+    guest.today(
       store,
       a_track,
       settings,
       now,
-      local.StudyDay(day_start, day_start / day),
+      guest.StudyDay(day_start, day_start / day),
     )
   assert today.reviews_done == 1
   assert today.new_introduced == 1
@@ -460,8 +460,8 @@ pub fn the_rollover_boundary_splits_the_budget_test() -> Nil {
   let now = at_epoch(day_start + 3600)
 
   let #(yesterday, _) =
-    local.record(
-      local.empty(),
+    guest.record(
+      guest.empty(),
       settings,
       answer(a_problem("Yesterday"), fsrs.Good),
       at_epoch(day_start - 60),
@@ -469,7 +469,7 @@ pub fn the_rollover_boundary_splits_the_budget_test() -> Nil {
       0.0,
     )
   let #(both, _) =
-    local.record(
+    guest.record(
       yesterday,
       settings,
       answer(a_problem("Today"), fsrs.Good),
@@ -479,12 +479,12 @@ pub fn the_rollover_boundary_splits_the_budget_test() -> Nil {
     )
 
   let today =
-    local.today(
+    guest.today(
       both,
       a_track,
       settings,
       now,
-      local.StudyDay(day_start, day_start / day),
+      guest.StudyDay(day_start, day_start / day),
     )
   assert today.new_introduced == 1
   assert today.reviews_done == 1
@@ -496,8 +496,8 @@ pub fn an_overdue_card_counts_as_due_test() -> Nil {
   let problem = a_problem("Contains Duplicate")
 
   let #(store, _) =
-    local.record(
-      local.empty(),
+    guest.record(
+      guest.empty(),
       settings,
       answer(problem, fsrs.Good),
       at_epoch(day_start),
@@ -507,12 +507,12 @@ pub fn an_overdue_card_counts_as_due_test() -> Nil {
 
   // Ten minutes and one second later the learning step has elapsed.
   let later = at_epoch(day_start + 601)
-  assert local.today(
+  assert guest.today(
       store,
       a_track,
       settings,
       later,
-      local.StudyDay(day_start, day_start / day),
+      guest.StudyDay(day_start, day_start / day),
     ).due_now
     == 1
 }
@@ -520,15 +520,15 @@ pub fn an_overdue_card_counts_as_due_test() -> Nil {
 pub fn streaks_count_consecutive_days_test() -> Nil {
   let tally = fn(days_ago) { wire.DayTally(days_ago:, total: 1, correct: 1) }
 
-  assert local.streak([]) == 0
-  assert local.streak([tally(0)]) == 1
-  assert local.streak([tally(0), tally(1), tally(2)]) == 3
+  assert guest.streak([]) == 0
+  assert guest.streak([tally(0)]) == 1
+  assert guest.streak([tally(0), tally(1), tally(2)]) == 3
   // Not sat down today yet: a streak ending yesterday is still alive.
-  assert local.streak([tally(1), tally(2)]) == 2
+  assert guest.streak([tally(1), tally(2)]) == 2
   // A gap ends it.
-  assert local.streak([tally(0), tally(1), tally(3)]) == 2
+  assert guest.streak([tally(0), tally(1), tally(3)]) == 2
   // Nothing recent at all.
-  assert local.streak([tally(4), tally(5)]) == 0
+  assert guest.streak([tally(4), tally(5)]) == 0
 }
 
 pub fn statistics_derive_from_local_state_test() -> Nil {
@@ -537,8 +537,8 @@ pub fn statistics_derive_from_local_state_test() -> Nil {
   let problem = a_problem("Contains Duplicate")
 
   let #(store, _) =
-    local.record(
-      local.empty(),
+    guest.record(
+      guest.empty(),
       settings,
       answer(problem, fsrs.Good),
       at_epoch(day_start),
@@ -547,11 +547,11 @@ pub fn statistics_derive_from_local_state_test() -> Nil {
     )
 
   let stats =
-    local.stats(
+    guest.stats(
       store,
       a_track,
       at_epoch(day_start + 60),
-      local.StudyDay(day_start, day_start / day),
+      guest.StudyDay(day_start, day_start / day),
     )
   assert stats.total_reviews == 1
   assert stats.streak_days == 1
@@ -566,11 +566,11 @@ pub fn a_review_drops_the_problems_draft_test() -> Nil {
   let problem = a_problem("Two Sum")
   let other = a_problem("Valid Anagram")
   let store =
-    local.empty()
-    |> local.put_draft(problem, "def twoSum(nums, target): ...")
-    |> local.put_draft(other, "def isAnagram(s, t): ...")
+    guest.empty()
+    |> guest.put_draft(problem, "def twoSum(nums, target): ...")
+    |> guest.put_draft(other, "def isAnagram(s, t): ...")
   let #(after, _card) =
-    local.record(
+    guest.record(
       store,
       wire.default_settings(),
       answer(problem, fsrs.Good),
@@ -585,9 +585,9 @@ pub fn a_review_drops_the_problems_draft_test() -> Nil {
 }
 
 pub fn drafts_evict_oldest_first_test() -> Nil {
-  let store: local.Local =
-    int.range(from: 0, to: 320, with: local.empty(), run: fn(store, index) {
-      local.put_draft(
+  let store: guest.Local =
+    int.range(from: 0, to: 320, with: guest.empty(), run: fn(store, index) {
+      guest.put_draft(
         store,
         a_problem("Problem " <> int.to_string(index)),
         "code " <> int.to_string(index),
@@ -606,18 +606,18 @@ pub fn drafts_evict_oldest_first_test() -> Nil {
 pub fn notes_replace_and_blank_clears_test() -> Nil {
   let problem = a_problem("Two Sum")
   let store =
-    local.empty()
-    |> local.put_note(problem, "first thought")
-    |> local.put_note(a_problem("Valid Anagram"), "sort both")
-    |> local.put_note(problem, "use a map")
+    guest.empty()
+    |> guest.put_note(problem, "first thought")
+    |> guest.put_note(a_problem("Valid Anagram"), "sort both")
+    |> guest.put_note(problem, "use a map")
 
   assert list.length(store.notes) == 2
   assert model.assoc_get(store.notes, problem) == Ok("use a map")
 
-  let cleared = local.put_note(store, problem, "   ")
+  let cleared = guest.put_note(store, problem, "   ")
   assert model.assoc_get(cleared.notes, problem) == Error(Nil)
   assert list.length(cleared.notes) == 1
-  assert !local.is_empty(cleared)
+  assert !guest.is_empty(cleared)
 }
 
 /// A boot state from a server that predates notes still decodes.
@@ -784,8 +784,8 @@ pub fn a_track_scoped_read_never_narrows_the_store_test() -> Nil {
   let day_start = boundary
 
   let #(store, _) =
-    local.record(
-      local.empty(),
+    guest.record(
+      guest.empty(),
       settings,
       answer(here, fsrs.Good),
       at_epoch(day_start),
@@ -793,7 +793,7 @@ pub fn a_track_scoped_read_never_narrows_the_store_test() -> Nil {
       0.0,
     )
   let #(store, _) =
-    local.record(
+    guest.record(
       store,
       settings,
       answer(there, fsrs.Good),
@@ -804,28 +804,28 @@ pub fn a_track_scoped_read_never_narrows_the_store_test() -> Nil {
 
   // The store holds both; the lenses show one each.
   assert dict.size(store.cards) == 2
-  assert list.length(local.cards_in(store, a_track)) == 1
-  assert list.length(local.cards_in(store, other)) == 1
+  assert list.length(guest.cards_in(store, a_track)) == 1
+  assert list.length(guest.cards_in(store, other)) == 1
 
   // A review is tallied against its own problem's track, not the other's.
-  assert local.history_for(store, a_track).total_reviews == 1
-  assert local.history_for(store, other).total_reviews == 1
-  assert local.stats(
+  assert guest.history_for(store, a_track).total_reviews == 1
+  assert guest.history_for(store, other).total_reviews == 1
+  assert guest.stats(
       store,
       a_track,
       at_epoch(day_start + 120),
-      local.StudyDay(day_start, day_start / day),
+      guest.StudyDay(day_start, day_start / day),
     ).total_reviews
     == 1
 
   // And a budget spent in one track is not spent in the other.
   let counts = fn(track) {
-    local.today(
+    guest.today(
       store,
       track,
       settings,
       at_epoch(day_start + 120),
-      local.StudyDay(day_start, day_start / day),
+      guest.StudyDay(day_start, day_start / day),
     )
   }
   assert counts(a_track).reviews_done == 1
@@ -834,8 +834,8 @@ pub fn a_track_scoped_read_never_narrows_the_store_test() -> Nil {
   assert counts(other).new_introduced == 1
 
   // A track nobody has touched reads as nothing, not as somebody else's.
-  assert local.cards_in(store, "System Design") == []
-  assert local.history_for(store, "System Design").total_reviews == 0
+  assert guest.cards_in(store, "System Design") == []
+  assert guest.history_for(store, "System Design").total_reviews == 0
   assert counts("System Design").reviews_done == 0
 }
 
@@ -872,8 +872,8 @@ pub fn undo_steps_back_only_its_own_tracks_tally_test() -> Nil {
   let index = day_start / day
 
   let #(store, _) =
-    local.record(
-      local.empty(),
+    guest.record(
+      guest.empty(),
       settings,
       answer(a_problem("Contains Duplicate"), fsrs.Good),
       at_epoch(day_start),
@@ -881,7 +881,7 @@ pub fn undo_steps_back_only_its_own_tracks_tally_test() -> Nil {
       0.0,
     )
   let #(store, _) =
-    local.record(
+    guest.record(
       store,
       settings,
       answer(there, fsrs.Good),
@@ -890,9 +890,9 @@ pub fn undo_steps_back_only_its_own_tracks_tally_test() -> Nil {
       0.0,
     )
 
-  let assert Ok(undone) = local.unrecord(store, there, None, index)
-  assert local.history_for(undone, other).total_reviews == 0
-  assert local.history_for(undone, a_track).total_reviews == 1
+  let assert Ok(undone) = guest.unrecord(store, there, None, index)
+  assert guest.history_for(undone, other).total_reviews == 0
+  assert guest.history_for(undone, a_track).total_reviews == 1
   assert dict.size(undone.cards) == 1
 }
 
@@ -1033,8 +1033,8 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
 
   // Clean first solve, revealed second review, clean third.
   let #(store, _) =
-    local.record(
-      local.empty(),
+    guest.record(
+      guest.empty(),
       settings,
       wire.Review(
         problem:,
@@ -1050,7 +1050,7 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
       0.0,
     )
   let #(store, _) =
-    local.record(
+    guest.record(
       store,
       settings,
       wire.Review(
@@ -1067,7 +1067,7 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
       0.0,
     )
   let #(store, _) =
-    local.record(
+    guest.record(
       store,
       settings,
       wire.Review(
@@ -1084,7 +1084,7 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
       0.0,
     )
 
-  let data = local.insights(store, a_track)
+  let data = guest.insights(store, a_track)
   // The revealed review is not a clean solve, but it is a reveal.
   assert list.length(data.clean_solves) == 2
   assert data.reveals == [#(problem, 1)]
@@ -1100,7 +1100,7 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
   })
 
   // And the per-problem history keeps every row, oldest first.
-  let history = local.history_of(store, problem)
+  let history = guest.history_of(store, problem)
   assert list.length(history) == 3
   let assert [first, second, ..] = history
   assert first.revealed == False && second.revealed == True
@@ -1108,7 +1108,7 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
   // A recall-only review schedules the card and is logged, but it is not a
   // solve: nothing was typed, so it says nothing about speed.
   let #(store, _) =
-    local.record(
+    guest.record(
       store,
       settings,
       wire.Review(
@@ -1124,12 +1124,12 @@ pub fn the_guest_log_feeds_the_same_analysis_test() -> Nil {
       0,
       0.0,
     )
-  let data = local.insights(store, a_track)
+  let data = guest.insights(store, a_track)
   assert list.length(data.clean_solves) == 2
   assert data.reveals == [#(problem, 1)]
   let assert Ok(card) = dict.get(store.cards, problem)
   assert card.reps == 4
-  let assert [_, _, _, recalled] = local.history_of(store, problem)
+  let assert [_, _, _, recalled] = guest.history_of(store, problem)
   assert recalled.recall && recalled.duration_ms == None
 }
 
@@ -1141,8 +1141,8 @@ pub fn unrecord_is_the_inverse_of_record_test() -> Nil {
   let problem = a_problem("Two Sum")
   let other = a_problem("Valid Anagram")
   let #(seeded, _) =
-    local.record(
-      local.empty(),
+    guest.record(
+      guest.empty(),
       settings,
       answer(other, fsrs.Good),
       at_epoch(1_800_000_000),
@@ -1150,7 +1150,7 @@ pub fn unrecord_is_the_inverse_of_record_test() -> Nil {
       0.0,
     )
   let #(seeded, _) =
-    local.record(
+    guest.record(
       seeded,
       settings,
       answer(problem, fsrs.Good),
@@ -1162,7 +1162,7 @@ pub fn unrecord_is_the_inverse_of_record_test() -> Nil {
 
   // A second review on the same card, then taken back.
   let #(graded, _) =
-    local.record(
+    guest.record(
       seeded,
       settings,
       answer(problem, fsrs.Again),
@@ -1170,19 +1170,19 @@ pub fn unrecord_is_the_inverse_of_record_test() -> Nil {
       7,
       0.0,
     )
-  assert local.history_for(graded, a_track).total_reviews == 3
-  let assert Ok(undone) = local.unrecord(graded, problem, Some(before), 7)
+  assert guest.history_for(graded, a_track).total_reviews == 3
+  let assert Ok(undone) = guest.unrecord(graded, problem, Some(before), 7)
   assert undone.cards == seeded.cards
   assert undone.history == seeded.history
   assert undone.log == seeded.log
 
   // The newest row belongs to `problem`, so `other` cannot be undone.
-  assert local.unrecord(graded, other, None, 7) == Error(Nil)
+  assert guest.unrecord(graded, other, None, 7) == Error(Nil)
 
   // Undoing the review that created a card removes the card.
-  let assert Ok(fresh) = local.unrecord(seeded, problem, None, 7)
+  let assert Ok(fresh) = guest.unrecord(seeded, problem, None, 7)
   assert dict.get(fresh.cards, problem) == Error(Nil)
-  assert local.history_for(fresh, a_track).total_reviews == 1
+  assert guest.history_for(fresh, a_track).total_reviews == 1
   assert list.length(fresh.log) == 1
 }
 
@@ -1196,9 +1196,9 @@ pub fn a_guest_archive_restores_to_the_same_store_test() -> Nil {
       #("Valid Anagram", fsrs.Again),
       #("Two Sum", fsrs.Easy),
     ]
-    |> list.index_fold(local.empty(), fn(store, pair, index) {
+    |> list.index_fold(guest.empty(), fn(store, pair, index) {
       let #(next, _) =
-        local.record(
+        guest.record(
           store,
           settings,
           answer(a_problem(pair.0), pair.1),
@@ -1208,15 +1208,15 @@ pub fn a_guest_archive_restores_to_the_same_store_test() -> Nil {
         )
       next
     })
-    |> local.put_draft(a_problem("Two Sum"), "def twoSum(nums, target): pass")
-    |> local.put_note(a_problem("Valid Anagram"), "sort both")
+    |> guest.put_draft(a_problem("Two Sum"), "def twoSum(nums, target): pass")
+    |> guest.put_note(a_problem("Valid Anagram"), "sort both")
   let store =
-    local.Local(..store, queues: [
+    guest.Local(..store, queues: [
       a_queue("Pointers", [a_problem("Two Sum")]),
     ])
 
   let archive =
-    local.archive(
+    guest.archive(
       store,
       wire.default_account(),
       [#(a_track, settings)],
@@ -1225,7 +1225,7 @@ pub fn a_guest_archive_restores_to_the_same_store_test() -> Nil {
   assert archive.version == wire.archive_version
   // A guest exports every track it has, each with its own settings.
   assert archive.tracks == [#(a_track, settings)]
-  assert local.archive_tracks(archive) == [#(a_track, settings)]
+  assert guest.archive_tracks(archive) == [#(a_track, settings)]
   assert list.length(archive.reviews) == 3
   // Oldest first in the file, newest first in the store.
   let assert [#(first, _), ..] = archive.reviews
@@ -1233,25 +1233,25 @@ pub fn a_guest_archive_restores_to_the_same_store_test() -> Nil {
 
   let json = json.to_string(wire.archive_to_json(archive))
   let assert Ok(parsed) = json.parse(json, wire.archive_decoder())
-  let restored = local.restore(parsed)
+  let restored = guest.restore(parsed)
   assert restored.cards == store.cards
   assert restored.log == store.log
   assert restored.drafts == store.drafts
   assert restored.notes == store.notes
   assert restored.queues == store.queues
-  assert local.history_for(restored, a_track).total_reviews == 3
-  assert local.history_for(restored, a_track).mature_reviews
-    == local.history_for(store, a_track).mature_reviews
-  assert local.history_for(restored, a_track).mature_correct
-    == local.history_for(store, a_track).mature_correct
+  assert guest.history_for(restored, a_track).total_reviews == 3
+  assert guest.history_for(restored, a_track).mature_reviews
+    == guest.history_for(store, a_track).mature_reviews
+  assert guest.history_for(restored, a_track).mature_correct
+    == guest.history_for(store, a_track).mature_correct
 }
 
 pub fn the_review_log_is_a_ring_buffer_test() -> Nil {
   let settings = guest_settings()
   let store =
-    int.range(from: 0, to: 2100, with: local.empty(), run: fn(store, index) {
+    int.range(from: 0, to: 2100, with: guest.empty(), run: fn(store, index) {
       let #(next, _) =
-        local.record(
+        guest.record(
           store,
           settings,
           answer(a_problem("P" <> int.to_string(index % 50)), fsrs.Good),
@@ -1466,7 +1466,7 @@ pub fn the_queue_screen_binds_its_own_verbs_test() -> Nil {
 pub fn the_queue_screen_lists_what_its_filters_say_test() -> Nil {
   let now = fsrs.from_epoch(1_787_788_818.0)
   let ref = a_catalogue_ref()
-  let #(store, _) = local.enqueue(local.empty(), [ref], now)
+  let #(store, _) = guest.enqueue(guest.empty(), [ref], now)
   // The screen is one track's, so the model has to be on one.
   let m =
     model.Model(
@@ -1576,8 +1576,8 @@ pub fn guest_and_server_calibration_agree_test() -> Nil {
   let problem = a_problem("Contains Duplicate")
 
   let #(store, _) =
-    local.record(
-      local.empty(),
+    guest.record(
+      guest.empty(),
       settings,
       wire.Review(
         problem:,
@@ -1593,7 +1593,7 @@ pub fn guest_and_server_calibration_agree_test() -> Nil {
       0.0,
     )
   let #(store, _) =
-    local.record(
+    guest.record(
       store,
       settings,
       wire.Review(
@@ -1610,7 +1610,7 @@ pub fn guest_and_server_calibration_agree_test() -> Nil {
       0.0,
     )
   let #(store, _) =
-    local.record(
+    guest.record(
       store,
       settings,
       wire.Review(
@@ -1626,7 +1626,7 @@ pub fn guest_and_server_calibration_agree_test() -> Nil {
       0,
       0.0,
     )
-  let guest = local.insights(store, a_track)
+  let guest = guest.insights(store, a_track)
 
   assert list.length(guest.clean_solves) == list.length(server.clean_solves)
   assert guest.reveals == server.reveals
@@ -1655,7 +1655,7 @@ fn fresh_model_of(
 ) -> model.Model {
   let base = model.default()
   let now = fsrs.from_epoch(1_787_788_818.0)
-  let #(store, _) = local.enqueue(local.empty(), refs, now)
+  let #(store, _) = guest.enqueue(guest.empty(), refs, now)
   model.Model(
     ..base,
     now:,
@@ -1757,7 +1757,7 @@ pub fn an_unqueued_problem_never_enters_the_queue_test() -> Nil {
 pub fn a_queued_card_is_new_until_it_is_answered_test() -> Nil {
   let now = fsrs.from_epoch(1_787_788_818.0)
   let ref = a_catalogue_ref()
-  let #(store, cards) = local.enqueue(local.empty(), [ref], now)
+  let #(store, cards) = guest.enqueue(guest.empty(), [ref], now)
   let base = model.default()
   let m =
     model.Model(
@@ -1773,7 +1773,7 @@ pub fn a_queued_card_is_new_until_it_is_answered_test() -> Nil {
   assert list.contains(queue.fresh(m), ref)
   assert !list.contains(queue.due(m), ref)
   // And it must not be counted against the reviews half of the daily budget.
-  assert local.today(store, a_track, base.settings, now, local.StudyDay(0, 0)).due_now
+  assert guest.today(store, a_track, base.settings, now, guest.StudyDay(0, 0)).due_now
     == 0
 }
 
@@ -1782,9 +1782,9 @@ pub fn a_queued_card_is_new_until_it_is_answered_test() -> Nil {
 pub fn queueing_an_answered_problem_leaves_its_card_alone_test() -> Nil {
   let now = fsrs.from_epoch(1_787_788_818.0)
   let ref = a_catalogue_ref()
-  let #(queued, _) = local.enqueue(local.empty(), [ref], now)
+  let #(queued, _) = guest.enqueue(guest.empty(), [ref], now)
   let #(studied, _) =
-    local.record(
+    guest.record(
       queued,
       model.default().settings,
       answer(ref, fsrs.Good),
@@ -1792,7 +1792,7 @@ pub fn queueing_an_answered_problem_leaves_its_card_alone_test() -> Nil {
       0,
       0.5,
     )
-  let #(again, _) = local.enqueue(studied, [ref], now)
+  let #(again, _) = guest.enqueue(studied, [ref], now)
 
   assert dict.get(again.cards, ref) == dict.get(studied.cards, ref)
 }
@@ -1801,9 +1801,9 @@ pub fn queueing_an_answered_problem_leaves_its_card_alone_test() -> Nil {
 pub fn removing_an_answered_problem_is_refused_test() -> Nil {
   let now = fsrs.from_epoch(1_787_788_818.0)
   let ref = a_catalogue_ref()
-  let #(queued, _) = local.enqueue(local.empty(), [ref], now)
+  let #(queued, _) = guest.enqueue(guest.empty(), [ref], now)
   let #(studied, _) =
-    local.record(
+    guest.record(
       queued,
       model.default().settings,
       answer(ref, fsrs.Good),
@@ -1812,13 +1812,13 @@ pub fn removing_an_answered_problem_is_refused_test() -> Nil {
       0.5,
     )
 
-  let #(after, removed, refused) = local.dequeue(studied, [ref])
+  let #(after, removed, refused) = guest.dequeue(studied, [ref])
   assert removed == []
   assert refused == [ref]
   assert dict.has_key(after.cards, ref)
 
   // An untouched card leaves without argument.
-  let #(gone, removed, refused) = local.dequeue(queued, [ref])
+  let #(gone, removed, refused) = guest.dequeue(queued, [ref])
   assert removed == [ref]
   assert refused == []
   assert !dict.has_key(gone.cards, ref)

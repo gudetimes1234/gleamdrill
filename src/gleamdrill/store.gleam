@@ -20,6 +20,7 @@ import gleam/string
 import gleam/time/timestamp
 import gleamdrill/api
 import gleamdrill/browser
+import gleamdrill/guest
 import gleamdrill/local
 import gleamdrill/model.{type Model, type UndoPoint, Account, Guest}
 import gleamdrill/msg.{
@@ -52,7 +53,7 @@ pub fn load_state(m: Model) -> Effect(Msg) {
         list.key_find(stored.tracks, track)
         |> result.unwrap(wire.default_settings())
       }
-      let standings = local.standings(store, settings_for, now, day)
+      let standings = guest.standings(store, settings_for, now, day)
       // No track asked for means the busiest one, the same rule the server
       // answers a bare request with.
       let track = case m.active_track {
@@ -70,11 +71,11 @@ pub fn load_state(m: Model) -> Effect(Msg) {
             track:,
             tracks: standings,
             settings: settings_for(track),
-            cards: local.cards_in(store, track),
-            drafts: local.drafts_in(store, track),
-            notes: local.notes_in(store, track),
-            queues: local.queues_in(store, track),
-            today: local.today(store, track, settings_for(track), now, day),
+            cards: guest.cards_in(store, track),
+            drafts: guest.drafts_in(store, track),
+            notes: guest.notes_in(store, track),
+            queues: guest.queues_in(store, track),
+            today: guest.today(store, track, settings_for(track), now, day),
           )),
         ),
       )
@@ -110,7 +111,7 @@ pub fn record_review(m: Model, review: wire.Review) -> Effect(Msg) {
       let store = local.load()
 
       let #(updated, card) =
-        local.record(store, m.settings, review, now, day.index, fuzz_sample())
+        guest.record(store, m.settings, review, now, day.index, fuzz_sample())
 
       // Cards and history change together on a review, so both are written;
       // a failure in either means progress is not being kept. The drafts
@@ -130,7 +131,7 @@ pub fn record_review(m: Model, review: wire.Review) -> Effect(Msg) {
             Ok(wire.ReviewOutcome(
               now:,
               card:,
-              today: local.today(updated, m.active_track, m.settings, now, day),
+              today: guest.today(updated, m.active_track, m.settings, now, day),
             )),
           )
       })
@@ -149,7 +150,7 @@ pub fn export_archive(m: Model) -> Effect(Msg) {
         // The whole account, every track: an archive is the backup.
         Ok({
           let stored = local.load_stored()
-          local.archive(
+          guest.archive(
             local.load(),
             stored.account,
             stored.tracks,
@@ -172,9 +173,9 @@ pub fn restore_archive(m: Model, archive: wire.Archive) -> Effect(Msg) {
         ArchiveRestored(
           case
             local.save_all(
-              local.restore(archive),
+              guest.restore(archive),
               archive.account,
-              local.archive_tracks(archive),
+              guest.archive_tracks(archive),
             )
           {
             Ok(Nil) -> Ok(Nil)
@@ -200,7 +201,7 @@ pub fn undo_review(m: Model, point: UndoPoint) -> Effect(Msg) {
       let store = local.load()
       let result = {
         use updated <- result.try(
-          local.unrecord(store, point.problem, point.card_before, day.index)
+          guest.unrecord(store, point.problem, point.card_before, day.index)
           |> result.replace_error(remote.Rejected(
             "The latest review is not the one to undo.",
           )),
@@ -210,7 +211,7 @@ pub fn undo_review(m: Model, point: UndoPoint) -> Effect(Msg) {
             Ok(wire.UndoOutcome(
               now:,
               card: point.card_before,
-              today: local.today(updated, m.active_track, m.settings, now, day),
+              today: guest.today(updated, m.active_track, m.settings, now, day),
             ))
           _, _ -> Error(storage_full())
         }
@@ -235,7 +236,7 @@ pub fn set_suspended(
       let now = timestamp.system_time()
       let day = local.current_day(m.account)
       let store = local.load()
-      dispatch(case local.set_suspended(store, problem, suspended) {
+      dispatch(case guest.set_suspended(store, problem, suspended) {
         Error(Nil) ->
           CardSuspended(
             Error(remote.Rejected(
@@ -250,7 +251,7 @@ pub fn set_suspended(
                 Ok(wire.ReviewOutcome(
                   now:,
                   card:,
-                  today: local.today(
+                  today: guest.today(
                     updated,
                     m.active_track,
                     m.settings,
@@ -277,7 +278,7 @@ pub fn add_to_queue(m: Model, problems: List(ProblemRef)) -> Effect(Msg) {
       use dispatch <- effect.from
       let now = timestamp.system_time()
       let day = local.current_day(m.account)
-      let #(updated, cards) = local.enqueue(local.load(), problems, now)
+      let #(updated, cards) = guest.enqueue(local.load(), problems, now)
       dispatch(case local.save_cards(updated) {
         Error(Nil) -> QueueChanged(Error(storage_full()))
         Ok(Nil) ->
@@ -287,7 +288,7 @@ pub fn add_to_queue(m: Model, problems: List(ProblemRef)) -> Effect(Msg) {
               cards:,
               removed: [],
               refused: [],
-              today: local.today(updated, m.active_track, m.settings, now, day),
+              today: guest.today(updated, m.active_track, m.settings, now, day),
             )),
           )
       })
@@ -302,7 +303,7 @@ pub fn remove_from_queue(m: Model, problems: List(ProblemRef)) -> Effect(Msg) {
       use dispatch <- effect.from
       let now = timestamp.system_time()
       let day = local.current_day(m.account)
-      let #(updated, removed, refused) = local.dequeue(local.load(), problems)
+      let #(updated, removed, refused) = guest.dequeue(local.load(), problems)
       dispatch(case local.save_cards(updated) {
         Error(Nil) -> QueueChanged(Error(storage_full()))
         Ok(Nil) ->
@@ -312,7 +313,7 @@ pub fn remove_from_queue(m: Model, problems: List(ProblemRef)) -> Effect(Msg) {
               cards: [],
               removed:,
               refused:,
-              today: local.today(updated, m.active_track, m.settings, now, day),
+              today: guest.today(updated, m.active_track, m.settings, now, day),
             )),
           )
       })
@@ -329,7 +330,7 @@ pub fn delete_draft(m: Model, problem: ProblemRef) -> Effect(Msg) {
       use dispatch <- effect.from
       let store = local.load()
       let updated =
-        local.Local(..store, drafts: local.drop_draft(store.drafts, problem))
+        guest.Local(..store, drafts: guest.drop_draft(store.drafts, problem))
       dispatch(
         DraftSynced(case local.save_drafts(updated) {
           Ok(Nil) -> Ok(Nil)
@@ -345,7 +346,7 @@ pub fn save_draft(m: Model, problem: ProblemRef, body: String) -> Effect(Msg) {
     Account(token) -> api.put_draft(base(), token, problem, body, DraftSynced)
     Guest -> {
       use dispatch <- effect.from
-      let updated = local.put_draft(local.load(), problem, body)
+      let updated = guest.put_draft(local.load(), problem, body)
       dispatch(
         DraftSynced(case local.save_drafts(updated) {
           Ok(Nil) -> Ok(Nil)
@@ -361,7 +362,7 @@ pub fn save_note(m: Model, problem: ProblemRef, body: String) -> Effect(Msg) {
     Account(token) -> api.put_note(base(), token, problem, body, NoteSynced)
     Guest -> {
       use dispatch <- effect.from
-      let updated = local.put_note(local.load(), problem, body)
+      let updated = guest.put_note(local.load(), problem, body)
       dispatch(
         NoteSynced(case local.save_notes(updated) {
           Ok(Nil) -> Ok(Nil)
@@ -384,7 +385,7 @@ pub fn save_queues(m: Model) -> Effect(Msg) {
       use dispatch <- effect.from
       let stored = local.load()
       let updated =
-        local.Local(
+        guest.Local(
           ..stored,
           queues: spliced_queues(stored.queues, m.active_track, m.queues),
         )
@@ -436,7 +437,7 @@ pub fn load_insights(m: Model) -> Effect(Msg) {
       api.fetch_insights(base(), token, m.active_track, InsightsLoaded)
     Guest -> {
       use dispatch <- effect.from
-      dispatch(InsightsLoaded(Ok(local.insights(local.load(), m.active_track))))
+      dispatch(InsightsLoaded(Ok(guest.insights(local.load(), m.active_track))))
     }
   }
 }
@@ -449,7 +450,7 @@ pub fn load_history(m: Model, problem: ProblemRef) -> Effect(Msg) {
       use dispatch <- effect.from
       dispatch(HistoryLoaded(
         problem,
-        Ok(local.history_of(local.load(), problem)),
+        Ok(guest.history_of(local.load(), problem)),
       ))
     }
   }
@@ -464,7 +465,7 @@ pub fn load_stats(m: Model) -> Effect(Msg) {
       let now = timestamp.system_time()
       dispatch(
         StatsLoaded(
-          Ok(local.stats(
+          Ok(guest.stats(
             local.load(),
             m.active_track,
             now,
