@@ -1,23 +1,24 @@
 //// Recording a review, atomically, and undoing the last one.
 ////
 //// Part of the study data layer; see `server/study/model` for the shared
-//// types.
+//// types. The SQL lives in `reviews/sql/*.sql`; `gleam run -m squirrel`
+//// generates `reviews/sql.gleam` from it.
 
 import fsrs
 import gleam/bool
 import gleam/dynamic/decode
-import gleam/json
+import gleam/json.{type Json}
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/time/timestamp.{type Timestamp}
 import pog
-import server/db
 import server/study/cards
 import server/study/drafts
 import server/study/model.{
   type CardRecord, type StudyError, CardRecord, StudyDatabaseError,
-  database_error, flatten_transaction_error,
+  database_error, done, first, flatten_transaction_error, nullable,
 }
+import server/study/reviews/sql
 import wire
 import youid/uuid.{type Uuid}
 
@@ -111,29 +112,19 @@ fn card_exists(
   user_id: Uuid,
   problem: wire.ProblemRef,
 ) -> Result(Bool, StudyError) {
-  pog.query(
-    "select 1 from cards
-      where user_id = $1::uuid and category = $2
-        and subcategory = $3 and title = $4",
-  )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.text(problem.category))
-  |> pog.parameter(pog.text(problem.subcategory))
-  |> pog.parameter(pog.text(problem.title))
-  |> pog.returning(decode.at([0], decode.int))
-  |> pog.execute(db)
-  |> result.map(fn(returned) { returned.rows != [] })
-  |> result.map_error(database_error)
+  let wire.ProblemRef(category:, subcategory:, title:) = problem
+  sql.card_exists(db, user_id, category, subcategory, title)
+  |> first(fn(row: sql.CardExistsRow) { row.found })
+  |> result.map(option.unwrap(_, False))
 }
 
 /// The card as it stood when the review began, in the wire format, plus
 /// whether the review created it. Written into `reviews.card_before`.
-fn snapshot(existing: CardRecord, created: Bool) -> String {
+fn snapshot(existing: CardRecord, created: Bool) -> Json {
   json.object([
     #("card", wire.card_to_json(model.to_state(existing))),
     #("created", json.bool(created)),
   ])
-  |> json.to_string
 }
 
 /// What undoing the latest review leaves behind. `card` is None when the
@@ -163,30 +154,16 @@ pub fn undo_review(
 ) -> Result(Undone, UndoError) {
   pog.transaction(db, fn(tx) {
     use latest <- result.try(
-      pog.query(
-        "delete from reviews
-          where id = (
-            select r.id from reviews r
-              join cards c on c.id = r.card_id
-             where r.user_id = $1::uuid and c.category = $2
-             order by r.reviewed_at desc, r.id desc limit 1
-          )
-          returning card_id::text, card_before::text",
-      )
-      |> pog.parameter(db.uuid(user_id))
-      |> pog.parameter(pog.text(track))
-      |> pog.returning({
-        use card_id <- decode.field(0, db.uuid_decoder())
-        use before <- decode.field(1, decode.optional(decode.string))
-        decode.success(#(card_id, before))
+      sql.delete_latest_review(tx, user_id, track)
+      |> first(fn(row: sql.DeleteLatestReviewRow) {
+        #(row.card_id, row.card_before)
       })
-      |> pog.execute(tx)
-      |> result.map_error(fn(error) { UndoFailed(database_error(error)) }),
+      |> result.map_error(UndoFailed),
     )
-    case latest.rows {
-      [] -> Error(NothingToUndo)
-      [#(_, None), ..] -> Error(NothingToUndo)
-      [#(card_id, Some(raw)), ..] ->
+    case latest {
+      None -> Error(NothingToUndo)
+      Some(#(_, None)) -> Error(NothingToUndo)
+      Some(#(card_id, Some(raw))) ->
         case json.parse(raw, snapshot_decoder()) {
           Error(_) ->
             Error(UndoFailed(StudyDatabaseError("unreadable review snapshot")))
@@ -233,11 +210,7 @@ fn snapshot_decoder() -> decode.Decoder(#(wire.CardState, Bool)) {
 }
 
 fn delete_card(db: pog.Connection, card_id: Uuid) -> Result(Nil, StudyError) {
-  pog.query("delete from cards where id = $1::uuid")
-  |> pog.parameter(db.uuid(card_id))
-  |> pog.execute(db)
-  |> result.replace(Nil)
-  |> result.map_error(database_error)
+  sql.delete_card(db, card_id) |> done
 }
 
 /// `update_card` plus the two columns a review never touches but an undo
@@ -248,20 +221,17 @@ fn restore_card(
   record: CardRecord,
 ) -> Result(Nil, StudyError) {
   use _ <- result.try(cards.update_card(db, record))
-  pog.query(
-    "update cards set
-       introduced_at = to_timestamp($2::float8), suspended = $3
-     where id = $1::uuid",
-  )
-  |> pog.parameter(db.uuid(record.id))
-  |> pog.parameter(pog.nullable(
-    pog.float,
-    option.map(record.introduced_at, fsrs.to_epoch),
-  ))
-  |> pog.parameter(pog.bool(record.suspended))
-  |> pog.execute(db)
-  |> result.replace(Nil)
-  |> result.map_error(database_error)
+  case record.introduced_at {
+    Some(introduced_at) ->
+      sql.restore_introduced_card(
+        db,
+        record.id,
+        fsrs.to_epoch(introduced_at),
+        record.suspended,
+      )
+    None -> sql.restore_unintroduced_card(db, record.id, record.suspended)
+  }
+  |> done
 }
 
 fn insert_review(
@@ -274,37 +244,24 @@ fn insert_review(
   elapsed_days: Int,
   scheduled_days: Int,
   input: wire.Review,
-  card_before: String,
+  card_before: Json,
 ) -> Result(Nil, StudyError) {
-  pog.query(
-    "insert into reviews (
-       user_id, card_id, rating, state_before, reviewed_at,
-       elapsed_days, scheduled_days, stability_after, difficulty_after,
-       duration_ms, auto_failed, revealed, recall, card_before)
-     values ($1::uuid, $2::uuid, $3, $4, to_timestamp($5::float8),
-             $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb)",
+  sql.insert_review(
+    db,
+    user_id,
+    record.id,
+    fsrs.rating_to_int(rating),
+    wire.state_code(before.state),
+    fsrs.to_epoch(now),
+    elapsed_days,
+    scheduled_days,
+    nullable(option.map(record.card.memory, fn(m) { m.stability })),
+    nullable(option.map(record.card.memory, fn(m) { m.difficulty })),
+    nullable(input.duration_ms),
+    input.auto_failed,
+    input.revealed,
+    input.recall,
+    card_before,
   )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(db.uuid(record.id))
-  |> pog.parameter(pog.int(fsrs.rating_to_int(rating)))
-  |> pog.parameter(pog.int(wire.state_code(before.state)))
-  |> pog.parameter(pog.float(fsrs.to_epoch(now)))
-  |> pog.parameter(pog.int(elapsed_days))
-  |> pog.parameter(pog.int(scheduled_days))
-  |> pog.parameter(pog.nullable(
-    pog.float,
-    option.map(record.card.memory, fn(m) { m.stability }),
-  ))
-  |> pog.parameter(pog.nullable(
-    pog.float,
-    option.map(record.card.memory, fn(m) { m.difficulty }),
-  ))
-  |> pog.parameter(pog.nullable(pog.int, input.duration_ms))
-  |> pog.parameter(pog.bool(input.auto_failed))
-  |> pog.parameter(pog.bool(input.revealed))
-  |> pog.parameter(pog.bool(input.recall))
-  |> pog.parameter(pog.text(card_before))
-  |> pog.execute(db)
-  |> result.replace(Nil)
-  |> result.map_error(database_error)
+  |> done
 }
