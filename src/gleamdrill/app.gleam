@@ -152,7 +152,18 @@ fn settle(
   let #(model, fx, changes) = result
   let #(shared, applied) = apply(state.shared, changes)
   let #(state, opened) = sync_page(State(shared:, page: page(model)))
-  #(state, effect.batch([effect.map(fx, to), applied, opened]))
+  let settled = #(state, effect.batch([effect.map(fx, to), applied, opened]))
+  // Messages a page handed up run last, against the settled state.
+  list.fold(changes, settled, fn(acc, change) {
+    case change {
+      shared.Dispatch(message) -> {
+        let #(state, fx) = acc
+        let #(state, more) = update(state, message)
+        #(state, effect.batch([fx, more]))
+      }
+      _ -> acc
+    }
+  })
 }
 
 /// A key on a page screen: the same leader and focus rules as everywhere,
@@ -221,7 +232,7 @@ fn apply_change(shared: Shared, change: Change) -> #(Shared, Effect(Msg)) {
     shared.ToggleHelp -> keyboard.toggle_help(shared)
     shared.EnterTrack(track, starter) ->
       menu_update.enter_track(shared, track, starter:)
-    // Handled by `update` itself; see there.
+    // Run by `settle` once the rest have landed.
     shared.Dispatch(_) -> #(shared, effect.none())
   }
 }
