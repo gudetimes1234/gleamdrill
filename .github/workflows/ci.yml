@@ -53,13 +53,13 @@ jobs:
       # `dist/` is not committed -- the web image builds it -- so there is
       # nothing to check for staleness there. The embedded drill modules ARE
       # committed, and `make build` above ran `make content`, which regenerates
-      # them. A diff here means the commit carries generated content its own
-      # generator would not produce.
+      # them and copies the Go prelude into server/priv. A diff here means the
+      # commit carries generated content its own generator would not produce.
       - name: Generated drill content is current
         run: |
-          if ! git diff --quiet -- src/gleamdrill/content/problems/generated/; then
+          if ! git diff --quiet -- src/gleamdrill/content/problems/generated/ server/priv/go/prelude.go; then
             echo "::error::generated content is stale. Run 'make content' and commit the result."
-            git diff --stat -- src/gleamdrill/content/problems/generated/
+            git diff --stat -- src/gleamdrill/content/problems/generated/ server/priv/go/prelude.go
             exit 1
           fi
 

@@ -49,7 +49,9 @@ deploy:
 	railway up
 
 # Regenerates src/gleamdrill/content/problems/generated/*.gleam from the drill sources,
-# plus the two generated verifiers `verify` runs.
+# plus the two generated verifiers `verify` runs, and copies the Go prelude
+# into the server's priv/ -- drills/go/prelude.go is the one written by hand;
+# the server's build context only sees server/, so it carries a copy.
 #
 # The generator emits unformatted source, so it is formatted here rather than
 # exempted from `gleam format --check` -- same as `fsrs-vectors` does for
@@ -59,6 +61,7 @@ deploy:
 content:
 	cd drills/elixir && elixir surface.exs
 	cd drills && gleam run -m generate
+	cp drills/go/prelude.go server/priv/go/prelude.go
 	gleam format \
 	  src/gleamdrill/content/problems/generated/embedded.gleam \
 	  src/gleamdrill/content/problems/generated/embedded_python.gleam \
