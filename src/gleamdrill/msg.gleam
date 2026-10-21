@@ -9,11 +9,11 @@ import fsrs
 import gleam/option.{type Option}
 import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/model.{
-  type CompareSide, type GroupChange, type Pane, type QueueFilter,
-  type RunOutcome, type UndoPoint,
+  type CompareSide, type Pane, type RunOutcome, type UndoPoint,
 }
 import gleamdrill/page/auth/model as auth_model
 import gleamdrill/page/auth/msg as auth_msg
+import gleamdrill/page/queue/msg as queue_msg
 import gleamdrill/page/settings/msg as settings_msg
 import gleamdrill/page/stats/msg as stats_msg
 import gleamdrill/page/tracks/msg as tracks_msg
@@ -34,6 +34,7 @@ pub type Msg {
   SettingsMsg(settings_msg.Msg)
   TracksMsg(tracks_msg.Msg)
   StatsMsg(stats_msg.Msg)
+  QueueMsg(queue_msg.Msg)
   // --- keyboard ---
   KeyPressed(Key)
   HelpToggled
@@ -176,25 +177,9 @@ pub type Msg {
   CardSuspended(Result(wire.ReviewOutcome, ApiError))
   // --- managing the queue ---
   UserClickedQueue
-  UserSearchedQueue(String)
-  UserFilteredQueue(QueueFilter)
-  /// Add or remove one topic's listed rows, optionally just its Easy ones.
-  UserChangedGroup(GroupChange)
-  /// Put one problem in the queue, or take it out -- whichever it is not.
-  UserToggledQueued(ProblemRef)
-  UserAddedAllShown
-  UserRemovedAllShown
   // --- named queues ---
   /// The study screen's pick: which queue today serves from.
   UserPickedActiveQueue(Option(String))
-  /// The queue screen's pick: which queue the rows edit.
-  UserSelectedQueue(Option(String))
-  UserStartedNewQueue
-  UserStartedRenameQueue
-  UserChangedQueueName(String)
-  UserSubmittedQueueName
-  UserCancelledQueueName
-  UserDeletedQueue
   /// Browse: the selection into a queue (None: just give them cards).
   UserAddedSelectionToQueue(Option(String))
   QueuesSaved(Result(Nil, ApiError))
@@ -203,9 +188,6 @@ pub type Msg {
   CompareMoved(Int)
   ComparePickedVariant(CompareSide, Int)
   UserClosedCompare
-  QueueCursorMoved(Int)
-  QueueCursorJumped(Bool)
-  QueueToggledAtCursor
   QueueChanged(Result(wire.QueueChange, ApiError))
   RunnerReady(language: String)
   RunnerFailed(language: String, message: String)

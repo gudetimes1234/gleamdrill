@@ -34,7 +34,7 @@ pub fn view(shared: Shared, _page: Model) -> Document(Msg) {
   let rows = rows(shared)
   Document(
     class: "tracks-screen",
-    title: brand.wordmark(),
+    header: document.header(brand.wordmark()),
     storage_warning: True,
     body: [
       html.p([attribute.class("tracks-lead")], [

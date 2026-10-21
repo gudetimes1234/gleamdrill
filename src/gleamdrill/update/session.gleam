@@ -267,7 +267,6 @@ fn apply_state(m: Model, state: wire.BootState) -> Model {
     // A device remembers which queue it studies; the list may have gone
     // on another device, in which case today is everything again.
     active_queue: known_queue(state.queues, m.active_queue),
-    queue_editing: known_queue(state.queues, m.queue_editing),
     // The one place that decides where boot lands. A browser with no track
     // lands on the switcher, because Study, Queue and Stats are all inside a
     // track and there is nothing honest to show without one. The server names

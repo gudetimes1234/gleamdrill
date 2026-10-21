@@ -10,20 +10,42 @@ pub type Document(msg) {
   Document(
     /// The screen's root class.
     class: String,
-    /// The header's title: text, or the wordmark on the landing page.
-    title: List(Element(msg)),
+    header: Header(msg),
     /// Whether the full-storage warning shows above everything.
     storage_warning: Bool,
     body: List(Element(msg)),
   )
 }
 
+/// The header row: a title, anything the page shows beside it, then the
+/// nav bar the shell adds.
+pub type Header(msg) {
+  Header(
+    class: String,
+    title_class: String,
+    title: List(Element(msg)),
+    extra: List(Element(msg)),
+  )
+}
+
+/// The header most screens use: their title, then the nav.
+pub fn header(title: List(Element(msg))) -> Header(msg) {
+  Header(class: "study-header", title_class: "study-title", title:, extra: [])
+}
+
 pub fn map(document: Document(a), with: fn(a) -> b) -> Document(b) {
-  let Document(class:, title:, storage_warning:, body:) = document
+  let Document(class:, header:, storage_warning:, body:) = document
+  let Header(class: header_class, title_class:, title:, extra:) = header
+  let lift = fn(elements) { list.map(elements, element.map(_, with)) }
   Document(
     class:,
-    title: list.map(title, element.map(_, with)),
+    header: Header(
+      class: header_class,
+      title_class:,
+      title: lift(title),
+      extra: lift(extra),
+    ),
     storage_warning:,
-    body: list.map(body, element.map(_, with)),
+    body: lift(body),
   )
 }

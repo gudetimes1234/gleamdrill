@@ -6,8 +6,10 @@
 //// model: each migrated page takes its own fields with it, and what is left
 //// at the end is exactly the shared state, renamed into a record of its own.
 
+import gleam/option.{type Option}
 import gleamdrill/model
 import gleamdrill/msg
+import gleamdrill/store/remote.{type ApiError}
 import wire
 
 pub type Shared =
@@ -37,6 +39,12 @@ pub type Change {
   EnterTrack(track: String, starter: Bool)
   /// Fetch the stats and insights again.
   LoadStats
+  /// The named queues, edited: shown at once and saved whole.
+  QueuesEdited(List(wire.Queue))
+  /// The queue the study screen draws from (`None` is everything).
+  ActiveQueueChanged(Option(String))
+  /// The store's answer to putting problems in the queue or taking them out.
+  QueueChangeLanded(Result(wire.QueueChange, ApiError))
   /// Hand a message to the app, for a screen that is not a page yet. Goes
   /// once the last of them has moved.
   Dispatch(msg.Msg)

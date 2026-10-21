@@ -1,6 +1,7 @@
 //// The frame every page with a nav bar shares: notices, then a header with
 //// the page's title and the nav, then the page's own body.
 
+import gleam/list
 import gleamdrill/model.{type Route}
 import gleamdrill/msg.{type Msg}
 import gleamdrill/shared.{type Shared}
@@ -18,9 +19,9 @@ pub fn view(shared: Shared, route: Route, page: Document(Msg)) -> Element(Msg) {
       False -> element.none()
     },
     nav.notices(shared),
-    html.header([attribute.class("study-header")], [
-      html.h1([attribute.class("study-title")], page.title),
-      nav.bar(shared, route),
+    html.header([attribute.class(page.header.class)], [
+      html.h1([attribute.class(page.header.title_class)], page.header.title),
+      ..list.append(page.header.extra, [nav.bar(shared, route)])
     ]),
     ..page.body
   ])

@@ -13,13 +13,17 @@ import gleam/option.{None, Some}
 import gleam/result
 import gleamdrill/keys
 import gleamdrill/model.{
-  type Route, AuthRoute, SettingsRoute, StatsRoute, TracksRoute,
+  type Route, AuthRoute, QueueRoute, SettingsRoute, StatsRoute, TracksRoute,
 }
 import gleamdrill/msg.{type Msg}
 import gleamdrill/page/auth/keys as auth_keys
 import gleamdrill/page/auth/model as auth_model
 import gleamdrill/page/auth/update as auth_update
 import gleamdrill/page/auth/view as auth_view
+import gleamdrill/page/queue/keys as queue_keys
+import gleamdrill/page/queue/model as queue_model
+import gleamdrill/page/queue/update as queue_update
+import gleamdrill/page/queue/view as queue_view
 import gleamdrill/page/settings/keys as settings_keys
 import gleamdrill/page/settings/model as settings_model
 import gleamdrill/page/settings/update as settings_update
@@ -42,6 +46,7 @@ import gleamdrill/update as legacy_update
 import gleamdrill/update/common
 import gleamdrill/update/keyboard
 import gleamdrill/update/menu as menu_update
+import gleamdrill/update/queues as queues_update
 import gleamdrill/update/session as session_update
 import gleamdrill/update/stats as stats_update
 import gleamdrill/view as legacy_view
@@ -59,6 +64,7 @@ pub type Page {
   Settings(settings_model.Model)
   Tracks(tracks_model.Model)
   Stats(stats_model.Model)
+  Queue(queue_model.Model)
 }
 
 pub fn init(boot: #(Shared, Effect(Msg))) -> #(State, Effect(Msg)) {
@@ -81,12 +87,16 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
     msg.StatsMsg(inner), Stats(page) ->
       stats_update_page.update(state.shared, page, inner)
       |> settle(state, Stats, msg.StatsMsg)
+    msg.QueueMsg(inner), Queue(page) ->
+      queue_update.update(state.shared, page, inner)
+      |> settle(state, Queue, msg.QueueMsg)
     // A page's message that lands after its page closed (a slow response):
     // there is nothing left for it to update.
     msg.AuthMsg(_), _
     | msg.SettingsMsg(_), _
     | msg.TracksMsg(_), _
     | msg.StatsMsg(_), _
+    | msg.QueueMsg(_), _
     -> #(state, effect.none())
 
     msg.KeyPressed(key), page if page != Legacy -> key_pressed(state, key)
@@ -101,6 +111,7 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
     )
     msg.UserClickedSettings, _ -> navigate(state, SettingsRoute)
     msg.UserClickedStats, _ -> navigate(state, StatsRoute)
+    msg.UserClickedQueue, _ -> navigate(state, QueueRoute)
 
     _, _ -> {
       let #(shared, fx) = legacy_update.update(state.shared, message)
@@ -144,6 +155,14 @@ pub fn view(state: State) -> Element(Msg) {
         page_keys(state),
         stats_keys.label,
       ))
+    Queue(page) ->
+      Some(legacy_view.Screen(
+        queue_view.view(shared, page)
+          |> document.map(msg.QueueMsg)
+          |> layout.view(shared, QueueRoute, _),
+        page_keys(state),
+        queue_keys.label,
+      ))
   })
 }
 
@@ -157,6 +176,7 @@ fn page_keys(state: State) -> List(Binding(Msg)) {
     Tracks(page) ->
       tracks_keys.bindings(state.shared, page) |> lift(msg.TracksMsg)
     Stats(page) -> stats_keys.bindings(state.shared, page) |> lift(msg.StatsMsg)
+    Queue(page) -> queue_keys.bindings(state.shared, page) |> lift(msg.QueueMsg)
   }
 }
 
@@ -167,6 +187,9 @@ fn page_dispatch(state: State, key: String) -> Result(Msg, Nil) {
     Stats(page) ->
       stats_keys.dispatch(state.shared, page, key)
       |> result.map(msg.StatsMsg)
+    Queue(page) ->
+      queue_keys.dispatch(state.shared, page, key)
+      |> result.map(msg.QueueMsg)
     _ -> binding.find(page_keys(state), key)
   }
 }
@@ -264,6 +287,15 @@ fn apply_change(shared: Shared, change: Change) -> #(Shared, Effect(Msg)) {
     )
     shared.ToggleHelp -> keyboard.toggle_help(shared)
     shared.LoadStats -> stats_update.reload(shared)
+    shared.QueuesEdited(queues) -> {
+      let shared = model.Model(..shared, queues:)
+      #(shared, store.save_queues(shared, msg.QueuesSaved))
+    }
+    shared.ActiveQueueChanged(name) -> {
+      let shared = model.Model(..shared, active_queue: name)
+      #(shared, common.save_preferences(shared))
+    }
+    shared.QueueChangeLanded(result) -> queues_update.changed(shared, result)
     shared.EnterTrack(track, starter) ->
       menu_update.enter_track(shared, track, starter:)
     // Run by `settle` once the rest have landed.
@@ -281,6 +313,7 @@ fn sync_page(state: State) -> #(State, Effect(Msg)) {
     | SettingsRoute, Settings(_)
     | TracksRoute, Tracks(_)
     | StatsRoute, Stats(_)
+    | QueueRoute, Queue(_)
     -> #(state, effect.none())
     AuthRoute, _ -> #(
       State(..state, page: Auth(auth_model.init(auth_model.SigningIn))),
@@ -294,6 +327,8 @@ fn sync_page(state: State) -> #(State, Effect(Msg)) {
     )
     StatsRoute, _ ->
       stats_update_page.init(shared) |> settle(state, Stats, msg.StatsMsg)
+    QueueRoute, _ ->
+      queue_update.init(shared) |> settle(state, Queue, msg.QueueMsg)
     _, _ -> #(State(..state, page: Legacy), effect.none())
   }
 }

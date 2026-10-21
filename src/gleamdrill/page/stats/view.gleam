@@ -33,7 +33,7 @@ import wire.{type ReviewRow, type Stats}
 pub fn view(shared: Shared, page: Model) -> Document(Msg) {
   Document(
     class: "stats-screen",
-    title: [html.text("Progress")],
+    header: document.header([html.text("Progress")]),
     storage_warning: False,
     body: [
       case shared.stats, shared.insights {

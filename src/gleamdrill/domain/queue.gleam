@@ -28,6 +28,66 @@ import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/content/problems
 import gleamdrill/model.{type Model}
 
+/// The queue screen's status lens. A view filter, not stored state: it says
+/// which rows to render, never what the scheduler will do.
+pub type Status {
+  AnyStatus
+  /// In the queue, whatever its schedule says.
+  Queued
+  /// Queued and never answered -- the New pile.
+  QueuedNew
+  QueuedDue
+  QueuedPaused
+  /// Not in the queue at all: the catalogue's remainder.
+  Unqueued
+}
+
+/// What the queue screen is looking at: its search, its status lens, and
+/// the named queue being edited (`None` is the everything queue).
+pub fn status_slug(filter: Status) -> String {
+  case filter {
+    AnyStatus -> "all"
+    Queued -> "queued"
+    QueuedNew -> "new"
+    QueuedDue -> "due"
+    QueuedPaused -> "paused"
+    Unqueued -> "unqueued"
+  }
+}
+
+pub fn status_label(filter: Status) -> String {
+  case filter {
+    AnyStatus -> "All"
+    Queued -> "In queue"
+    QueuedNew -> "New"
+    QueuedDue -> "Due"
+    QueuedPaused -> "Paused"
+    Unqueued -> "Not queued"
+  }
+}
+
+/// The order the filter chips are shown in, widest lens first.
+pub fn statuses() -> List(Status) {
+  [AnyStatus, Queued, QueuedNew, QueuedDue, QueuedPaused, Unqueued]
+}
+
+pub fn status_from_slug(slug: String) -> Status {
+  case list.find(statuses(), fn(f) { status_slug(f) == slug }) {
+    Ok(filter) -> filter
+    Error(Nil) -> AnyStatus
+  }
+}
+
+pub type Filter {
+  Filter(search: String, status: Status, editing: Option(String))
+}
+
+/// One topic's bulk button: add or remove its listed rows, optionally only
+/// the Easy ones.
+pub type Group {
+  Group(category: String, subcategory: String, easy_only: Bool, add: Bool)
+}
+
 /// Everything due, most overdue first, then new problems -- each capped by the
 /// daily budget the server reports.
 pub fn build(m: Model) -> List(ProblemRef) {
@@ -106,16 +166,16 @@ pub fn new_count(m: Model) -> Int {
 /// exactly this list: if the button and the table disagreed about what "shown"
 /// means, a bulk add would queue problems the user never saw. One definition,
 /// two callers.
-pub fn listed(m: Model) -> List(ProblemRef) {
-  let refs = case string.trim(m.queue_search) {
+pub fn listed(m: Model, filter: Filter) -> List(ProblemRef) {
+  let refs = case string.trim(filter.search) {
     "" -> problems.refs_in(m.active_track)
     query -> problems.search_refs_in(m.active_track, query)
   }
 
   // Membership in the queue being edited: the card itself for everything,
   // the list for a named queue. Built once for the whole walk.
-  let here = members(m, m.queue_editing)
-  refs |> list.filter(fn(ref) { matches_status(m, here, ref) })
+  let here = members(m, filter.editing)
+  refs |> list.filter(fn(ref) { matches_status(m, filter.status, here, ref) })
 }
 
 /// `listed`, cut into topics: (category, subcategory, its rows), in order.
@@ -124,8 +184,11 @@ pub fn listed(m: Model) -> List(ProblemRef) {
 /// problem, so the rows of one topic are always consecutive and chunking on
 /// the pair loses nothing. The screen renders these; the cursor still walks
 /// the flat `listed`, and the two agree because this is the same list.
-pub fn grouped(m: Model) -> List(#(String, String, List(ProblemRef))) {
-  listed(m)
+pub fn grouped(
+  m: Model,
+  filter: Filter,
+) -> List(#(String, String, List(ProblemRef))) {
+  listed(m, filter)
   |> list.chunk(fn(ref) { #(ref.category, ref.subcategory) })
   |> list.filter_map(fn(rows) {
     case rows {
@@ -137,9 +200,9 @@ pub fn grouped(m: Model) -> List(#(String, String, List(ProblemRef))) {
 
 /// The rows a topic's bulk button would touch: its listed rows, narrowed to
 /// the ones the action can apply to, and to Easy when asked.
-pub fn group_rows(m: Model, change: model.GroupChange) -> List(ProblemRef) {
-  let here = members(m, m.queue_editing)
-  listed(m)
+pub fn group_rows(m: Model, filter: Filter, change: Group) -> List(ProblemRef) {
+  let here = members(m, filter.editing)
+  listed(m, filter)
   |> list.filter(fn(ref) {
     ref.category == change.category && ref.subcategory == change.subcategory
   })
@@ -147,7 +210,7 @@ pub fn group_rows(m: Model, change: model.GroupChange) -> List(ProblemRef) {
     // Under everything only an unanswered card can be removed (its log
     // is the one thing that cannot be rebuilt); a named queue is a list,
     // and any member can leave it.
-    case change.add, m.queue_editing {
+    case change.add, filter.editing {
       True, _ -> !set.contains(here, ref)
       False, None -> model.is_new(m, ref)
       False, Some(_) -> set.contains(here, ref)
@@ -161,20 +224,25 @@ pub fn group_rows(m: Model, change: model.GroupChange) -> List(ProblemRef) {
   })
 }
 
-fn matches_status(m: Model, here: Set(ProblemRef), ref: ProblemRef) -> Bool {
+fn matches_status(
+  m: Model,
+  status: Status,
+  here: Set(ProblemRef),
+  ref: ProblemRef,
+) -> Bool {
   let member = set.contains(here, ref)
-  case m.queue_status {
-    model.AnyStatus -> True
-    model.Queued -> member
-    model.QueuedNew -> member && model.is_new(m, ref)
-    model.QueuedDue -> member && model.is_due(m, ref)
-    model.QueuedPaused ->
+  case status {
+    AnyStatus -> True
+    Queued -> member
+    QueuedNew -> member && model.is_new(m, ref)
+    QueuedDue -> member && model.is_due(m, ref)
+    QueuedPaused ->
       member
       && case model.card_for(m, ref) {
         Some(state) -> state.suspended
         None -> False
       }
-    model.Unqueued -> !member
+    Unqueued -> !member
   }
 }
 

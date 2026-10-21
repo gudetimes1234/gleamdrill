@@ -14,36 +14,32 @@ import gleamdrill/msg.{
   EditorFocusRequested, EditorResized, ExamSampled, ExitConfirmed, HelpToggled,
   InsightsLoaded, KeyPressed, MenuActivated, MenuCursorJumped, MenuCursorMoved,
   MenuPaneFocused, MenuSuspendedAtCursor, MenuToggledAtCursor, NoteChanged,
-  NoteFocusRequested, NoteSaveTicked, NoteSynced, QueueChanged,
-  QueueCursorJumped, QueueCursorMoved, QueueToggledAtCursor, QueuesSaved,
-  QuizMoved, RemoteRunFinished, ReviewRecorded, RunFinished, RunTimedOut,
-  RunnerFailed, RunnerReady, RuntimeLoadTimedOut, SearchFocusRequested,
-  SettingsMsg, SignOutCompleted, StateImported, StateLoaded, StatsLoaded,
-  StatsMsg, TourActivated, TourCursorMoved, TourEditorChanged, TourRunTicked,
-  TracksMsg, UndoRecorded, UserAddedAllShown, UserAddedSelectionToQueue,
-  UserAddedStarterSet, UserCancelledQueueName, UserChangedGroup,
-  UserChangedIterations, UserChangedKeymap, UserChangedQueueName,
-  UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
-  UserClickedClearSelection, UserClickedCompare, UserClickedExitDrill,
-  UserClickedExitReport, UserClickedMergeGuest, UserClickedNext,
-  UserClickedQueue, UserClickedRecall, UserClickedRetryRuntime,
+  NoteFocusRequested, NoteSaveTicked, NoteSynced, QueueChanged, QueueMsg,
+  QueuesSaved, QuizMoved, RemoteRunFinished, ReviewRecorded, RunFinished,
+  RunTimedOut, RunnerFailed, RunnerReady, RuntimeLoadTimedOut,
+  SearchFocusRequested, SettingsMsg, SignOutCompleted, StateImported,
+  StateLoaded, StatsLoaded, StatsMsg, TourActivated, TourCursorMoved,
+  TourEditorChanged, TourRunTicked, TracksMsg, UndoRecorded,
+  UserAddedSelectionToQueue, UserAddedStarterSet, UserChangedIterations,
+  UserChangedKeymap, UserClickedBackToStudy, UserClickedBreadcrumb,
+  UserClickedBrowse, UserClickedClearSelection, UserClickedCompare,
+  UserClickedExitDrill, UserClickedExitReport, UserClickedMergeGuest,
+  UserClickedNext, UserClickedQueue, UserClickedRecall, UserClickedRetryRuntime,
   UserClickedRetrySync, UserClickedRun, UserClickedScratchRun,
   UserClickedSelectAll, UserClickedSettings, UserClickedSignIn,
   UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
   UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedSubcategory,
   UserClickedTour, UserClickedTourContents, UserClickedTourNext,
   UserClickedTourPrev, UserClickedTracks, UserClickedUndo, UserClosedCompare,
-  UserDeletedQueue, UserDismissedDiff, UserDismissedMergeOffer,
-  UserDismissedNotice, UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded,
-  UserOpenedLesson, UserPickedActiveQueue, UserPickedChoice, UserRemovedAllShown,
-  UserResetLesson, UserRevealedRecall, UserRevealedWholeThing, UserSearched,
-  UserSearchedQueue, UserSelectedQueue, UserStartedBlitz, UserStartedNewQueue,
-  UserStartedRenameQueue, UserSubmittedAnswer, UserSubmittedBoard,
-  UserSubmittedQueueName, UserToggledBlitz, UserToggledDiff, UserToggledNudge,
+  UserDismissedDiff, UserDismissedMergeOffer, UserDismissedNotice,
+  UserDismissedUpgradePrompt, UserGraded, UserOpenedLesson,
+  UserPickedActiveQueue, UserPickedChoice, UserResetLesson, UserRevealedRecall,
+  UserRevealedWholeThing, UserSearched, UserStartedBlitz, UserSubmittedAnswer,
+  UserSubmittedBoard, UserToggledBlitz, UserToggledDiff, UserToggledNudge,
   UserToggledPane, UserToggledPiece, UserToggledProblem, UserToggledPrompt,
-  UserToggledQueued, UserToggledResults, UserToggledSolution, UserToggledSuspend,
-  UserToggledTimer, WalkAdvanced, WalkBacked, WalkCodeShown, WalkFocused,
-  WalkHintShown, WalkWhyShown,
+  UserToggledResults, UserToggledSolution, UserToggledSuspend, UserToggledTimer,
+  WalkAdvanced, WalkBacked, WalkCodeShown, WalkFocused, WalkHintShown,
+  WalkWhyShown,
 }
 import gleamdrill/platform/browser
 import gleamdrill/update/blitz as blitz_update
@@ -82,6 +78,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     | SettingsMsg(_)
     | TracksMsg(_)
     | StatsMsg(_)
+    | QueueMsg(_)
+    | UserClickedQueue
     | UserClickedStats
     | UserClickedSignIn(_)
     | UserClickedSettings -> #(m, effect.none())
@@ -220,15 +218,7 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     CardSuspended(result) -> review_update.card_suspended(m, result)
 
     // --- managing the queue ---
-    UserClickedQueue -> queues_update.open(m)
     UserPickedActiveQueue(name) -> queues_update.pick_active(m, name)
-    UserSelectedQueue(name) -> queues_update.select(m, name)
-    UserStartedNewQueue -> queues_update.start_new(m)
-    UserStartedRenameQueue -> queues_update.start_rename(m)
-    UserChangedQueueName(text) -> queues_update.name_changed(m, text)
-    UserCancelledQueueName -> queues_update.cancel_naming(m)
-    UserSubmittedQueueName -> queues_update.submit_name(m)
-    UserDeletedQueue -> queues_update.delete(m)
     UserAddedSelectionToQueue(target) -> queues_update.add_selection(m, target)
     QueuesSaved(result) -> queues_update.saved(m, result)
 
@@ -239,15 +229,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       compare_update.picked_variant(m, side, index)
     UserClosedCompare -> compare_update.close(m)
 
-    UserSearchedQueue(text) -> queues_update.searched(m, text)
-    UserFilteredQueue(filter) -> queues_update.filtered(m, filter)
-    UserChangedGroup(change) -> queues_update.group_changed(m, change)
-    UserToggledQueued(ref) -> queues_update.toggle_queued(m, ref)
-    UserAddedAllShown -> queues_update.add_all_shown(m)
-    UserRemovedAllShown -> queues_update.remove_all_shown(m)
-    QueueCursorMoved(delta) -> queues_update.cursor_moved(m, delta)
-    QueueCursorJumped(first) -> queues_update.cursor_jumped(m, first)
-    QueueToggledAtCursor -> queues_update.toggled_at_cursor(m)
     QueueChanged(result) -> queues_update.changed(m, result)
 
     EditorChanged(text) -> drill_update.editor_changed(m, text)

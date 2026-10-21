@@ -35,6 +35,9 @@ import gleamdrill/domain/walk
 import gleamdrill/keys
 import gleamdrill/model
 import gleamdrill/msg
+import gleamdrill/page/queue/keys as queue_keys
+import gleamdrill/page/queue/model as queue_model
+import gleamdrill/page/queue/msg as queue_msg
 import gleamdrill/page/settings/keys as settings_keys
 import gleamdrill/page/settings/model as settings_model
 import gleamdrill/page/stats/keys as stats_keys
@@ -1304,7 +1307,6 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
   let contexts = [
     model.Model(..base, route: model.StudyRoute),
     model.Model(..base, route: model.MenuRoute),
-    model.Model(..base, route: model.QueueRoute),
     model.Model(..base, route: model.ReportRoute),
     model.Model(..base, route: model.SummaryRoute),
     drill,
@@ -1496,18 +1498,13 @@ pub fn the_compare_screen_binds_its_own_verbs_test() -> Nil {
 /// "queue this", not "select this for a manual drill" -- the two screens share
 /// the keys and must not share the message.
 pub fn the_queue_screen_binds_its_own_verbs_test() -> Nil {
-  let m = model.Model(..model.default(), route: model.QueueRoute)
-  let press = fn(key) {
-    keys.dispatch(
-      m,
-      msg.Key(key: key, ctrl: False, shift: False, editing: "none"),
-    )
-  }
-  assert press("j") == Ok(msg.QueueCursorMoved(1))
-  assert press("k") == Ok(msg.QueueCursorMoved(-1))
-  assert press(" ") == Ok(msg.QueueToggledAtCursor)
-  assert press("a") == Ok(msg.UserAddedAllShown)
-  assert press("r") == Ok(msg.UserRemovedAllShown)
+  let page = queue_model.init(None)
+  let press = fn(key) { queue_keys.dispatch(model.default(), page, key) }
+  assert press("j") == Ok(queue_msg.CursorMoved(1))
+  assert press("k") == Ok(queue_msg.CursorMoved(-1))
+  assert press(" ") == Ok(queue_msg.ToggledAtCursor)
+  assert press("a") == Ok(queue_msg.UserAddedAllShown)
+  assert press("r") == Ok(queue_msg.UserRemovedAllShown)
 }
 
 /// `listed` is what "add all shown" acts on, so the filters have to mean
@@ -1525,25 +1522,27 @@ pub fn the_queue_screen_lists_what_its_filters_say_test() -> Nil {
       active_track: a_track,
     )
 
-  let all = queue.listed(m)
+  let every = queue.Filter(search: "", status: queue.AnyStatus, editing: None)
+  let all = queue.listed(m, every)
   assert list.length(all) > 1
   assert list.contains(all, ref)
 
   // Status narrows to the one queued card, and its complement excludes it.
-  let queued = queue.listed(model.Model(..m, queue_status: model.Queued))
+  let queued = queue.listed(m, queue.Filter(..every, status: queue.Queued))
   assert queued == [ref]
-  let unqueued = queue.listed(model.Model(..m, queue_status: model.Unqueued))
+  let unqueued = queue.listed(m, queue.Filter(..every, status: queue.Unqueued))
   assert !list.contains(unqueued, ref)
   assert list.length(queued) + list.length(unqueued) == list.length(all)
 
   // There is no language lens any more: the screen is one track's, and a
   // problem from another track is simply not among the rows.
-  let elsewhere = queue.listed(model.Model(..m, active_track: "System Design"))
+  let elsewhere =
+    queue.listed(model.Model(..m, active_track: "System Design"), every)
   assert !list.contains(elsewhere, ref)
 
   // The grouped view is the same list cut into topics: nothing added,
   // nothing dropped, order kept, and every row in a group belongs to it.
-  let groups = queue.grouped(m)
+  let groups = queue.grouped(m, every)
   assert list.flat_map(groups, fn(g) { g.2 }) == all
   assert list.all(groups, fn(g) {
     list.all(g.2, fn(r: problem.ProblemRef) {
@@ -1556,26 +1555,26 @@ pub fn the_queue_screen_lists_what_its_filters_say_test() -> Nil {
   // A topic's buttons act on its listed rows: "add" is its unqueued rows,
   // "add easy" the Easy ones among them, "remove" its never-answered cards.
   let change = fn(easy_only, add) {
-    model.GroupChange(
+    queue.Group(
       category: ref.category,
       subcategory: ref.subcategory,
       easy_only:,
       add:,
     )
   }
-  let addable = queue.group_rows(m, change(False, True))
+  let addable = queue.group_rows(m, every, change(False, True))
   assert !list.contains(addable, ref)
   assert list.length(addable) == list.length(first.2) - 1
-  let easy = queue.group_rows(m, change(True, True))
+  let easy = queue.group_rows(m, every, change(True, True))
   assert easy != []
   assert list.all(easy, fn(r: problem.ProblemRef) {
     problems.difficulty_of(r) == Some(problem.Easy)
   })
   assert list.length(easy) < list.length(addable)
-  assert queue.group_rows(m, change(False, False)) == [ref]
+  assert queue.group_rows(m, every, change(False, False)) == [ref]
 
   // And the search box, which the same list has to honour.
-  let searched = queue.listed(model.Model(..m, queue_search: ref.title))
+  let searched = queue.listed(m, queue.Filter(..every, search: ref.title))
   assert list.contains(searched, ref)
 }
 
@@ -1972,34 +1971,29 @@ pub fn a_named_queue_lists_its_own_members_test() -> Nil {
     })
   let assert [first, second, ..] = python
   let m =
-    model.Model(
-      ..fresh_model_of(8, python),
-      active_track: a_track,
-      queues: [a_queue("Pointers", [first])],
-      queue_editing: Some("Pointers"),
-      queue_status: model.Queued,
-    )
-  assert queue.listed(m) == [first]
-  assert queue.listed(model.Model(..m, queue_status: model.Unqueued))
-    |> list.contains(second)
-  assert !list.contains(
-    queue.listed(model.Model(..m, queue_status: model.Unqueued)),
-    first,
-  )
+    model.Model(..fresh_model_of(8, python), active_track: a_track, queues: [
+      a_queue("Pointers", [first]),
+    ])
+  let pointers =
+    queue.Filter(search: "", status: queue.Queued, editing: Some("Pointers"))
+  let rest = queue.Filter(..pointers, status: queue.Unqueued)
+  assert queue.listed(m, pointers) == [first]
+  assert queue.listed(m, rest) |> list.contains(second)
+  assert !list.contains(queue.listed(m, rest), first)
   // Everything: the card is what counts, so every queued Python row shows.
-  let everything =
-    model.Model(..m, queue_editing: None, queue_status: model.Queued)
-  assert list.length(queue.listed(everything)) == 150
+  let everything = queue.Filter(..pointers, editing: None)
+  assert list.length(queue.listed(m, everything)) == 150
 
   let remove =
-    model.GroupChange(
+    queue.Group(
       category: first.category,
       subcategory: first.subcategory,
       easy_only: False,
       add: False,
     )
   assert queue.group_rows(
-      model.Model(..m, queue_status: model.AnyStatus),
+      m,
+      queue.Filter(..pointers, status: queue.AnyStatus),
       remove,
     )
     == [first]

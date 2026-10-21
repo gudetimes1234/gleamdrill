@@ -15,7 +15,6 @@ import gleamdrill/view/auth
 import gleamdrill/view/compare as compare_view
 import gleamdrill/view/drill
 import gleamdrill/view/help
-import gleamdrill/view/manage
 import gleamdrill/view/menu
 import gleamdrill/view/report
 import gleamdrill/view/statusbar
@@ -102,7 +101,7 @@ fn legacy_screen(m: Model) -> Element(Msg) {
       }
     ReportRoute -> report.view(m)
     MenuRoute -> menu.view(m)
-    QueueRoute -> manage.view(m)
+    QueueRoute -> element.none()
     TourRoute -> tour_view.view(m)
   }
 }

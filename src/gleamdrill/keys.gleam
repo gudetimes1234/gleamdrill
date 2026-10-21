@@ -26,21 +26,19 @@ import gleamdrill/msg.{
   BoardToggledAtCursor, CompareMoved, ComparePickedVariant, EditorFocusRequested,
   ExitConfirmed, HelpToggled, MenuActivated, MenuCursorJumped, MenuCursorMoved,
   MenuPaneFocused, MenuSuspendedAtCursor, MenuToggledAtCursor,
-  NoteFocusRequested, QueueCursorJumped, QueueCursorMoved, QueueToggledAtCursor,
-  QuizMoved, SearchFocusRequested, TourActivated, TourCursorMoved, TourRunTicked,
-  UserAddedAllShown, UserClickedBackToStudy, UserClickedBrowse,
+  NoteFocusRequested, QuizMoved, SearchFocusRequested, TourActivated,
+  TourCursorMoved, TourRunTicked, UserClickedBackToStudy, UserClickedBrowse,
   UserClickedClearSelection, UserClickedCompare, UserClickedExitDrill,
   UserClickedExitReport, UserClickedNext, UserClickedQueue, UserClickedRecall,
   UserClickedRun, UserClickedScratchRun, UserClickedSelectAll,
   UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
   UserClickedStudy, UserClickedTour, UserClickedTourContents,
   UserClickedTourNext, UserClickedTourPrev, UserClickedTracks, UserClickedUndo,
-  UserClosedCompare, UserFilteredQueue, UserGraded, UserPickedActiveQueue,
-  UserPickedChoice, UserRemovedAllShown, UserRevealedRecall,
-  UserRevealedWholeThing, UserSearched, UserSubmittedAnswer, UserSubmittedBoard,
-  UserToggledBlitz, UserToggledDiff, UserToggledNudge, UserToggledPane,
-  UserToggledPrompt, UserToggledResults, WalkAdvanced, WalkBacked, WalkCodeShown,
-  WalkHintShown, WalkWhyShown,
+  UserClosedCompare, UserGraded, UserPickedActiveQueue, UserPickedChoice,
+  UserRevealedRecall, UserRevealedWholeThing, UserSearched, UserSubmittedAnswer,
+  UserSubmittedBoard, UserToggledBlitz, UserToggledDiff, UserToggledNudge,
+  UserToggledPane, UserToggledPrompt, UserToggledResults, WalkAdvanced,
+  WalkBacked, WalkCodeShown, WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/ui/binding.{type Binding, Binding}
 
@@ -110,7 +108,8 @@ pub fn screen(m: Model) -> List(Binding(Msg)) {
             help_binding(),
           ],
         ])
-      QueueRoute -> queue_bindings(m)
+      // Drawn by page/queue, which brings its own rows.
+      QueueRoute -> []
       TourRoute -> tour_bindings(m)
       // A guest can always walk away from the form; the link at its foot
       // says so, and Escape should mean the same thing.
@@ -230,58 +229,6 @@ fn tour_bindings(m: Model) -> List(Binding(Msg)) {
       help_binding(),
     ]
   }
-}
-
-/// The queue screen. `space`/`x` is the same "toggle the cursor row" verb the
-/// browser uses, so the two lists feel like one keyboard.
-fn queue_bindings(m: Model) -> List(Binding(Msg)) {
-  [
-    Binding(
-      ["j", "k"],
-      "move",
-      "Move the cursor down / up",
-      QueueCursorMoved(1),
-    ),
-    Binding(
-      [" ", "x"],
-      "toggle",
-      "Add the cursor row to the queue, or take it out",
-      QueueToggledAtCursor,
-    ),
-    Binding(
-      ["a"],
-      "add all",
-      "Add every problem currently listed",
-      UserAddedAllShown,
-    ),
-    Binding(
-      ["r"],
-      "remove all",
-      "Remove every problem currently listed",
-      UserRemovedAllShown,
-    ),
-    Binding(["/"], "search", "Search problems", SearchFocusRequested),
-    Binding(["g"], "top", "Jump to the first row", QueueCursorJumped(True)),
-    Binding(["G"], "bottom", "Jump to the last row", QueueCursorJumped(False)),
-    Binding(
-      ["Escape"],
-      "study",
-      "Back to the study screen",
-      UserClickedBackToStudy,
-    ),
-    help_binding(),
-    ..case m.queue_status == model.AnyStatus {
-      True -> []
-      False -> [
-        Binding(
-          ["c"],
-          "clear",
-          "Clear the status filter",
-          UserFilteredQueue(model.AnyStatus),
-        ),
-      ]
-    }
-  ]
 }
 
 fn menu_bindings(m: Model) -> List(Binding(Msg)) {
@@ -731,8 +678,6 @@ pub fn dispatch(m: Model, key: Key) -> Result(Msg, Nil) {
     "j", MenuRoute, False, _ -> Ok(MenuCursorMoved(1))
     "h", MenuRoute, False, False -> Ok(MenuPaneFocused(-1))
     "l", MenuRoute, False, False -> Ok(MenuPaneFocused(1))
-    "k", QueueRoute, False, _ -> Ok(QueueCursorMoved(-1))
-    "j", QueueRoute, False, _ -> Ok(QueueCursorMoved(1))
     "k", CompareRoute, False, _ -> Ok(CompareMoved(-1))
     "j", CompareRoute, False, _ -> Ok(CompareMoved(1))
     // Shifted brackets arrive as braces, so the left side needs no leader.

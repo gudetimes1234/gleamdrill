@@ -248,7 +248,7 @@ pub fn enter_track(
     ])
   case starter, common.starter_refs(m, track) {
     True, [_, ..] as refs -> #(
-      common.pending(m, refs),
+      m,
       effect.batch([reload, store.add_to_queue(m, refs, msg.QueueChanged)]),
     )
     _, _ -> #(m, reload)

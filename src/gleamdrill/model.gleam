@@ -45,12 +45,6 @@ pub type Route {
   CompareRoute
 }
 
-/// The queue screen's name box: a queue being made, or one being renamed.
-pub type QueueNaming {
-  NewQueue(text: String)
-  RenameQueue(from: String, text: String)
-}
-
 /// The compare screen: an anchor on the left and, on the right, one of the
 /// others at a time. Each side shows one of its problem's solutions.
 pub type Compare {
@@ -129,8 +123,6 @@ pub type MenuNav {
     problem: Int,
     selected: Int,
     search: Int,
-    /// Cursor in the queue screen's problem list.
-    queue: Int,
   )
 }
 
@@ -141,64 +133,7 @@ pub fn default_nav() -> MenuNav {
     problem: 0,
     selected: 0,
     search: 0,
-    queue: 0,
   )
-}
-
-/// One topic's bulk action on the queue screen: the rows of that
-/// (category, subcategory) currently listed, added or removed, and for adding
-/// optionally only the Easy ones. The rows are resolved in the update loop
-/// from the same listing the screen renders.
-pub type GroupChange {
-  GroupChange(category: String, subcategory: String, easy_only: Bool, add: Bool)
-}
-
-/// The queue screen's status lens. A view filter, not stored state: it says
-/// which rows to render, never what the scheduler will do.
-pub type QueueFilter {
-  AnyStatus
-  /// In the queue, whatever its schedule says.
-  Queued
-  /// Queued and never answered -- the New pile.
-  QueuedNew
-  QueuedDue
-  QueuedPaused
-  /// Not in the queue at all: the catalogue's remainder.
-  Unqueued
-}
-
-pub fn queue_filter_slug(filter: QueueFilter) -> String {
-  case filter {
-    AnyStatus -> "all"
-    Queued -> "queued"
-    QueuedNew -> "new"
-    QueuedDue -> "due"
-    QueuedPaused -> "paused"
-    Unqueued -> "unqueued"
-  }
-}
-
-pub fn queue_filter_label(filter: QueueFilter) -> String {
-  case filter {
-    AnyStatus -> "All"
-    Queued -> "In queue"
-    QueuedNew -> "New"
-    QueuedDue -> "Due"
-    QueuedPaused -> "Paused"
-    Unqueued -> "Not queued"
-  }
-}
-
-/// The order the filter chips are shown in, widest lens first.
-pub fn queue_filters() -> List(QueueFilter) {
-  [AnyStatus, Queued, QueuedNew, QueuedDue, QueuedPaused, Unqueued]
-}
-
-pub fn queue_filter_from_slug(slug: String) -> QueueFilter {
-  case list.find(queue_filters(), fn(f) { queue_filter_slug(f) == slug }) {
-    Ok(filter) -> filter
-    Error(Nil) -> AnyStatus
-  }
 }
 
 /// Where the guest is in the one-time upgrade nudge.
@@ -427,14 +362,6 @@ pub type Model {
     /// key resolves against the prefix table -- and, when the table does not
     /// hold it, through the app's key table even if a button holds focus.
     prefix_armed: Bool,
-    /// The queue screen's lens: a search box and a status, neither persisted.
-    /// They decide which rows are listed, and "add all shown" acts on exactly
-    /// that list, which is what makes bulk queueing precise.
-    ///
-    /// There is no language lens any more: the screen is one track's, and the
-    /// track switcher is that lens now.
-    queue_search: String,
-    queue_status: QueueFilter,
     /// Named lists to study from. A card is the memory of one problem,
     /// whichever queues list it; every listed problem has a card.
     queues: List(wire.Queue),
@@ -445,14 +372,7 @@ pub type Model {
     /// The queue the study screen serves today, in the active track: None is
     /// everything with a card. A device preference.
     active_queue: Option(String),
-    /// The queue the queue screen is editing: None is everything, where a
-    /// row toggle adds or removes the card itself.
-    queue_editing: Option(String),
-    queue_naming: Option(QueueNaming),
     compare: Option(Compare),
-    /// Problems whose queue change is in flight, so their row can be disabled
-    /// rather than accepting a second click that would race the first.
-    queue_pending: List(ProblemRef),
     /// Quiz option currently picked, before Submit is pressed.
     choice: Option(Int),
     /// Whether the current quiz question or board has been submitted and
@@ -540,15 +460,10 @@ pub fn default() -> Model {
     blitz: None,
     blitz_chooser: False,
     prefix_armed: False,
-    queue_search: "",
-    queue_status: AnyStatus,
     queues: [],
     remembered_queues: [],
     active_queue: None,
-    queue_editing: None,
-    queue_naming: None,
     compare: None,
-    queue_pending: [],
     choice: None,
     graded: False,
     board_picks: [],

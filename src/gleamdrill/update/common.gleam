@@ -425,13 +425,6 @@ pub fn abandon_run(m: Model) -> #(Model, Effect(Msg)) {
   }
 }
 
-/// Marks rows whose queue change is in flight, so a second click cannot race
-/// the first. Cleared wholesale when the response lands: the requests are
-/// bulk and sequential from one user, so there is never a second one to keep.
-pub fn pending(m: Model, refs: List(ProblemRef)) -> Model {
-  Model(..m, queue_pending: list.append(refs, m.queue_pending))
-}
-
 /// The first twenty Easy problems of one track, in catalogue order, skipping
 /// any already queued. Catalogue order is the topic curriculum, not a
 /// difficulty ramp -- its first twenty include Trapping Rain Water -- so the
