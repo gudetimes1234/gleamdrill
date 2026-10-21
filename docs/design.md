@@ -322,22 +322,38 @@ a typo is a compile error.
 
 ### Layout
 
-The app is Lustre (the Elm architecture), laid out MVC-in-spirit. Modules only
-import downward in this list, so there are no cycles to find:
+The app is Lustre (the Elm architecture), laid out MVC-in-spirit, and the
+folders under `src/gleamdrill/` are the layers:
 
-1. `wire`, `fsrs`, `problem`, `problems`, `remote` -- shared types and content.
-2. `model.gleam` -- the state, plus read-only helpers over it.
-3. Domain modules, all pure: `queue`, `walk`, `guest`, `compare`, `board`,
-   `insights`, `track`.
-4. `msg.gleam` (every message) and `view/id.gleam` (DOM ids).
-5. `view.gleam` + `view/*` (one module per screen), `keys.gleam` (the one
-   binding table behind dispatch, the status bar and help), and `store.gleam`
-   -- the **only** module that imports `api`, `local`, `session` or `legacy`.
-6. `update/*` -- one handler module per feature; they reach persistence
-   through `store` alone. `update/common` holds what several features share.
-7. `update.gleam` -- one exhaustive `case` over `Msg` with no catch-all; every
-   arm delegates to a named handler, so a new message cannot compile unrouted.
-8. `gleamdrill.gleam` -- `main` and `init`.
+```
+src/gleamdrill.gleam      main and init
+src/gleamdrill/
+  model.gleam             the state, plus read-only helpers over it
+  msg.gleam               every message
+  keys.gleam              the one binding table behind dispatch, the status bar and help
+  update.gleam  update/   the controller: one exhaustive case over Msg, one handler module per feature
+  view.gleam    view/     the shell, and one module per screen
+  store.gleam   store/    persistence: api, local, session, legacy, remote
+  runner.gleam  runner/   code execution: the Gleam, Python and TypeScript workers
+  domain/                 pure logic: queue, walk, guest, compare, board, insights, track
+  content/                problem, problems, tour; problems/ hand-written, problems/generated/ from make content
+  platform/               browser and editor: the JavaScript boundary
+```
+
+The rules the tree encodes:
+
+- `content/` and `domain/` are pure and import nothing above `model`.
+- `store.gleam` is the **only** module that imports `store/api`, `local`,
+  `session` or `legacy`; the update handlers reach persistence through it
+  alone. (`store/remote`, the API error type, is read by `msg` and handlers.)
+- `update.gleam` has no catch-all, and every arm delegates to a named
+  handler, so a new message cannot compile unrouted. A handler that needs
+  another feature re-enters with a message through `dispatch` instead of
+  importing it; `update/common` holds what several features share.
+- FFI `.mjs` files sit beside the one module that declares them, in
+  `platform/`, `runner/` and `content/` only.
+- Never hand-edit `content/problems/generated/`; CI fails when it differs
+  from what `make content` writes.
 
 The server follows the same rule. `routes/*` are controllers: decode the
 request, call `study/*`, encode the reply with `wire`. Each `study/*` module
