@@ -88,7 +88,7 @@ pub fn logout(request: wisp.Request, context: Context) -> wisp.Response {
 pub fn me(request: wisp.Request, context: Context) -> wisp.Response {
   use <- wisp.require_method(request, http.Get)
   use user <- web.require_user(request, context)
-  web.json_ok(json.object([#("user", user_json(user))]))
+  web.json_ok(json.object([#("user", wire.user_to_json(auth.to_wire(user)))]))
 }
 
 fn credentials_decoder() -> decode.Decoder(#(String, String, Option(String))) {
@@ -106,18 +106,11 @@ fn credentials_decoder() -> decode.Decoder(#(String, String, Option(String))) {
 /// The token is returned in the body rather than set as a cookie: the API is a
 /// third-party origin relative to the app, and third-party cookies are being
 /// phased out by browsers. See the plan for the same-domain upgrade path.
-fn session_response(user: wire.User, token: String) -> wisp.Response {
+fn session_response(user: auth.User, token: String) -> wisp.Response {
   web.json_ok(
     json.object([
       #("token", json.string(token)),
-      #("user", user_json(user)),
+      #("user", wire.user_to_json(auth.to_wire(user))),
     ]),
   )
-}
-
-pub fn user_json(user: wire.User) -> json.Json {
-  json.object([
-    #("id", json.string(user.id)),
-    #("email", json.string(user.email)),
-  ])
 }

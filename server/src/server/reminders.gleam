@@ -23,7 +23,9 @@ import gleam/result
 import gleam/string
 import pog
 import server/config.{type Config}
+import server/db
 import wisp
+import youid/uuid.{type Uuid}
 
 /// Fifteen minutes: often enough that "8 o'clock" means the first quarter
 /// hour of eight, rarely enough to be nothing to the database.
@@ -31,7 +33,7 @@ const tick_ms = 900_000
 
 /// Someone owed a reminder right now.
 pub type Reminder {
-  Reminder(user_id: String, email: String, day: String, due: Int)
+  Reminder(user_id: Uuid, email: String, day: String, due: Int)
 }
 
 /// The reminder loop as a supervised actor, or nothing when mail is off.
@@ -135,7 +137,7 @@ pub fn due_now(db: pog.Connection) -> Result(List(Reminder), String) {
      where due > 0",
   )
   |> pog.returning({
-    use user_id <- decode.field(0, decode.string)
+    use user_id <- decode.field(0, db.uuid_decoder())
     use email <- decode.field(1, decode.string)
     use day <- decode.field(2, decode.string)
     use due <- decode.field(3, decode.int)
@@ -155,7 +157,7 @@ fn claim(db: pog.Connection, reminder: Reminder) -> Result(Bool, String) {
      values ($1::uuid, to_date($2::text, 'YYYY-MM-DD'))
      on conflict (user_id, day) do nothing",
   )
-  |> pog.parameter(pog.text(reminder.user_id))
+  |> pog.parameter(db.uuid(reminder.user_id))
   |> pog.parameter(pog.text(reminder.day))
   |> pog.execute(db)
   |> result.map(fn(returned) { returned.count == 1 })
@@ -168,7 +170,7 @@ fn release(db: pog.Connection, reminder: Reminder) -> Nil {
       "delete from reminders_sent
         where user_id = $1::uuid and day = to_date($2::text, 'YYYY-MM-DD')",
     )
-    |> pog.parameter(pog.text(reminder.user_id))
+    |> pog.parameter(db.uuid(reminder.user_id))
     |> pog.parameter(pog.text(reminder.day))
     |> pog.execute(db)
   Nil

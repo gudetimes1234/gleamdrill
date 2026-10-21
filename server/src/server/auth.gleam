@@ -19,7 +19,19 @@ import gleam/list
 import gleam/result
 import gleam/string
 import pog
+import server/db
 import wire
+import youid/uuid.{type Uuid}
+
+/// The authenticated account, with its id typed. `to_wire` is the shape
+/// `/api/me` and every session response send back.
+pub type User {
+  User(id: Uuid, email: String)
+}
+
+pub fn to_wire(user: User) -> wire.User {
+  wire.User(id: uuid.to_string(user.id), email: user.email)
+}
 
 pub type AuthError {
   /// Deliberately covers "no such account" and "wrong password" both.
@@ -96,7 +108,7 @@ pub fn signup(
   password: String,
   timezone: String,
   session_days: Int,
-) -> Result(#(wire.User, String), AuthError) {
+) -> Result(#(User, String), AuthError) {
   use email <- result.try(validate_email(email))
   use password <- result.try(validate_password(password))
   let password_hash = antigone.hash(antigone.hasher(), <<password:utf8>>)
@@ -124,7 +136,7 @@ fn insert_user(
   db: pog.Connection,
   email: String,
   password_hash: String,
-) -> Result(wire.User, AuthError) {
+) -> Result(User, AuthError) {
   pog.query(
     "insert into users (email, password_hash)
      values ($1, $2)
@@ -158,14 +170,14 @@ fn insert_user(
 /// of the app's, and the two have disagreed before.
 fn insert_default_settings(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   timezone: String,
 ) -> Result(Nil, AuthError) {
   pog.query(
     "insert into settings (user_id, timezone, day_start_hour)
      values ($1::uuid, $2, $3)",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   // The browser's zone, captured at signup -- not a default.
   |> pog.parameter(pog.text(timezone))
   |> pog.parameter(pog.int(wire.default_account().day_start_hour))
@@ -182,7 +194,7 @@ pub fn login(
   password: String,
   client_ip: String,
   session_days: Int,
-) -> Result(#(wire.User, String), AuthError) {
+) -> Result(#(User, String), AuthError) {
   let email = normalise_email(email)
 
   // Count against both keys before doing any work, so a lockout cannot be
@@ -216,14 +228,14 @@ pub fn login(
 fn find_credentials(
   db: pog.Connection,
   email: String,
-) -> Result(Result(#(wire.User, String), Nil), AuthError) {
+) -> Result(Result(#(User, String), Nil), AuthError) {
   pog.query("select id::text, email, password_hash from users where email = $1")
   |> pog.parameter(pog.text(email))
   |> pog.returning({
-    use id <- decode.field(0, decode.string)
+    use id <- decode.field(0, db.uuid_decoder())
     use email <- decode.field(1, decode.string)
     use hash <- decode.field(2, decode.string)
-    decode.success(#(wire.User(id:, email:), hash))
+    decode.success(#(User(id:, email:), hash))
   })
   |> pog.execute(db)
   |> result.map_error(database_error)
@@ -290,7 +302,7 @@ fn clear_attempts(db: pog.Connection, key: String) -> Result(Nil, AuthError) {
 
 fn create_session(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   session_days: Int,
 ) -> Result(String, AuthError) {
   let token = generate_token()
@@ -299,7 +311,7 @@ fn create_session(
      values ($1, $2::uuid, now() + make_interval(days => $3))",
   )
   |> pog.parameter(pog.bytea(token_digest(token)))
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.int(session_days))
   |> pog.execute(db)
   |> result.replace(token)
@@ -314,7 +326,7 @@ pub fn authenticate(
   db: pog.Connection,
   token: String,
   session_days: Int,
-) -> Result(wire.User, AuthError) {
+) -> Result(User, AuthError) {
   pog.query(
     "with touched as (
        update sessions
@@ -356,10 +368,10 @@ pub fn prune_sessions(db: pog.Connection) -> Result(Nil, AuthError) {
 
 // --- shared plumbing -------------------------------------------------------
 
-fn user_decoder() -> decode.Decoder(wire.User) {
-  use id <- decode.field(0, decode.string)
+fn user_decoder() -> decode.Decoder(User) {
+  use id <- decode.field(0, db.uuid_decoder())
   use email <- decode.field(1, decode.string)
-  decode.success(wire.User(id:, email:))
+  decode.success(User(id:, email:))
 }
 
 fn first_row(

@@ -10,6 +10,7 @@ import server/run_gate
 import server/web.{type Context}
 import wire
 import wisp
+import youid/uuid
 
 /// Runs a user may start per window. A rep is a minute or more of typing
 /// between runs; sixty in fifteen minutes is a loop, not a person.
@@ -61,14 +62,14 @@ pub fn run(request: wisp.Request, context: Context) -> wisp.Response {
 
 fn throttled(
   context: Context,
-  user: wire.User,
+  user: auth.User,
   language: exec.Language,
   input: wire.RunRequest,
 ) -> wisp.Response {
   case
     auth.throttle(
       context.db,
-      "run:" <> user.id,
+      "run:" <> uuid.to_string(user.id),
       window_minutes,
       max_runs_per_window,
     )

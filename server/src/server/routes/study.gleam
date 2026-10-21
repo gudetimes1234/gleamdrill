@@ -10,6 +10,7 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
 import gleam/time/timestamp
+import server/auth
 import server/study/archive
 import server/study/cards
 import server/study/drafts
@@ -27,6 +28,7 @@ import server/study/validate
 import server/web.{type Context}
 import wire
 import wisp
+import youid/uuid.{type Uuid}
 
 /// Everything the app needs to start, in one request.
 ///
@@ -73,7 +75,7 @@ pub fn state(request: wisp.Request, context: Context) -> wisp.Response {
       web.json_ok(
         json.object([
           #("now", json.float(fsrs.to_epoch(now))),
-          #("user", wire.user_to_json(user)),
+          #("user", wire.user_to_json(auth.to_wire(user))),
           #("account", wire.account_to_json(profile.account)),
           #("track", json.string(track)),
           #("tracks", json.array(standings, wire.track_standing_to_json)),
@@ -105,7 +107,7 @@ fn query_track(request: wisp.Request) -> option.Option(String) {
 fn require_track(
   request: wisp.Request,
   context: Context,
-  user_id: String,
+  user_id: Uuid,
   next: fn(String) -> wisp.Response,
 ) -> wisp.Response {
   case track.resolve(context.db, user_id, query_track(request)) {
@@ -430,7 +432,7 @@ pub fn dequeue(request: wisp.Request, context: Context) -> wisp.Response {
 /// counts move with the queue in one fold.
 fn queue_response(
   context: Context,
-  user: wire.User,
+  user: auth.User,
   track: String,
   change: fn() ->
     Result(
@@ -766,7 +768,7 @@ pub fn settings(request: wisp.Request, context: Context) -> wisp.Response {
 fn update_settings(
   request: wisp.Request,
   context: Context,
-  user: wire.User,
+  user: auth.User,
 ) -> wisp.Response {
   use body <- wisp.require_json(request)
   // One flat object still, holding both halves. It splits into two decodes

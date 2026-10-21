@@ -7,13 +7,15 @@ import fsrs
 import gleam/dynamic/decode
 import gleam/result
 import pog
+import server/db
 import server/study/model.{type StudyError, database_error}
 import wire
+import youid/uuid.{type Uuid}
 
 /// Everything the insights screen reads for one track, in one reply.
 pub fn insights(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
 ) -> Result(wire.Insights, StudyError) {
   use clean_solves <- result.try(clean_solves(db, user_id, track))
@@ -30,7 +32,7 @@ pub fn insights(
 /// tiers; the cap of five per card bounds the payload.
 fn clean_solves(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
 ) -> Result(List(wire.CleanSolve), StudyError) {
   pog.query(
@@ -53,7 +55,7 @@ fn clean_solves(
      where recency <= 5
      order by category, subcategory, title, at",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(track))
   |> pog.returning({
     use category <- decode.field(0, decode.string)
@@ -74,7 +76,7 @@ fn clean_solves(
 
 fn reveal_counts(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
 ) -> Result(List(#(wire.ProblemRef, Int)), StudyError) {
   pog.query(
@@ -84,7 +86,7 @@ fn reveal_counts(
       where r.user_id = $1::uuid and c.category = $2 and r.revealed
       group by 1, 2, 3",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(track))
   |> pog.returning({
     use category <- decode.field(0, decode.string)
@@ -109,7 +111,7 @@ fn reveal_counts(
 /// unchanged.
 fn calibration(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
 ) -> Result(List(wire.Calibration), StudyError) {
   pog.query(
@@ -129,7 +131,7 @@ fn calibration(
       group by rating
       order by rating",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(track))
   |> pog.returning({
     use rating <- decode.field(0, decode.int)
@@ -149,7 +151,7 @@ fn calibration(
 /// One card's review log, for the per-problem timeline.
 pub fn history(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   problem: wire.ProblemRef,
 ) -> Result(List(wire.ReviewRow), StudyError) {
   pog.query(
@@ -162,7 +164,7 @@ pub fn history(
         and c.category = $2 and c.subcategory = $3 and c.title = $4
       order by r.reviewed_at",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(problem.category))
   |> pog.parameter(pog.text(problem.subcategory))
   |> pog.parameter(pog.text(problem.title))

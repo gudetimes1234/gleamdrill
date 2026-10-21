@@ -9,6 +9,7 @@ import gleam/option.{type Option}
 import gleam/result
 import gleam/time/timestamp.{type Timestamp}
 import pog
+import server/db
 import server/study/drafts
 import server/study/model.{
   type StudyError, database_error, flatten_transaction_error,
@@ -16,6 +17,7 @@ import server/study/model.{
 import server/study/notes
 import server/study/queues
 import wire
+import youid/uuid.{type Uuid}
 
 /// A card carried over from guest mode, with the scheduling it actually
 /// earned. Distinct from the legacy `solved` list, which has no dates at all.
@@ -48,7 +50,7 @@ pub type ImportCard {
 /// scheduling with a seed.
 pub fn import_legacy(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
   settings: wire.Settings,
   solved: List(wire.ProblemRef),
@@ -99,7 +101,7 @@ pub fn import_legacy(
 /// is preserved exactly.
 pub fn insert_card(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   card: ImportCard,
 ) -> Result(Nil, StudyError) {
   pog.query(
@@ -116,7 +118,7 @@ pub fn insert_card(
                   else to_timestamp($13::float8) end)
      on conflict (user_id, category, subcategory, title) do nothing",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(card.problem.category))
   |> pog.parameter(pog.text(card.problem.subcategory))
   |> pog.parameter(pog.text(card.problem.title))
@@ -152,7 +154,7 @@ pub fn insert_card(
 
 fn seed_card(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   problem: wire.ProblemRef,
   seed: fsrs.Memory,
   now: Timestamp,
@@ -169,7 +171,7 @@ fn seed_card(
              to_timestamp($7::float8), 1, to_timestamp($7::float8))
      on conflict (user_id, category, subcategory, title) do nothing",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(problem.category))
   |> pog.parameter(pog.text(problem.subcategory))
   |> pog.parameter(pog.text(problem.title))

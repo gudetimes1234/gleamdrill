@@ -11,8 +11,10 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import pog
+import server/db
 import server/study/model.{type StudyError, database_error}
 import wire
+import youid/uuid.{type Uuid}
 
 /// The track a request names, or the one the user has most cards in.
 ///
@@ -64,7 +66,7 @@ pub fn one_track(queues: List(wire.Queue)) -> Result(String, Nil) {
 /// The track a request names, or the user's default when it names none.
 pub fn resolve(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   requested: Option(String),
 ) -> Result(String, StudyError) {
   case requested {
@@ -81,7 +83,7 @@ pub fn resolve(
 /// and gets a coherent single-track view instead of an empty one.
 pub fn default(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
 ) -> Result(String, StudyError) {
   pog.query(
     "select category from cards
@@ -90,7 +92,7 @@ pub fn default(
       order by count(*) desc, category
       limit 1",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.returning(decode.at([0], decode.string))
   |> pog.execute(db)
   |> result.map_error(database_error)

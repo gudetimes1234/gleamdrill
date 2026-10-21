@@ -10,7 +10,6 @@ import gleam/string
 import pog
 import server/auth.{type AuthError}
 import server/config.{type Config}
-import wire
 import wisp
 
 /// Everything a handler needs that is not in the request itself.
@@ -102,7 +101,7 @@ pub fn auth_error(failure: AuthError) -> wisp.Response {
 pub fn require_user(
   request: wisp.Request,
   context: Context,
-  next: fn(wire.User) -> wisp.Response,
+  next: fn(auth.User) -> wisp.Response,
 ) -> wisp.Response {
   case bearer_token(request) {
     Error(Nil) ->

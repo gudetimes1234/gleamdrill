@@ -11,6 +11,7 @@ import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/time/timestamp.{type Timestamp}
 import pog
+import server/db
 import server/study/cards
 import server/study/drafts
 import server/study/model.{
@@ -18,6 +19,7 @@ import server/study/model.{
   database_error, flatten_transaction_error,
 }
 import wire
+import youid/uuid.{type Uuid}
 
 /// Schedules a review and records it, atomically.
 ///
@@ -27,7 +29,7 @@ import wire
 /// scheduler itself does not second-guess the grade.
 pub fn record_review(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   settings: wire.Settings,
   input: wire.Review,
   now: Timestamp,
@@ -106,7 +108,7 @@ pub fn schedule(
 
 fn card_exists(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   problem: wire.ProblemRef,
 ) -> Result(Bool, StudyError) {
   pog.query(
@@ -114,7 +116,7 @@ fn card_exists(
       where user_id = $1::uuid and category = $2
         and subcategory = $3 and title = $4",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(problem.category))
   |> pog.parameter(pog.text(problem.subcategory))
   |> pog.parameter(pog.text(problem.title))
@@ -156,7 +158,7 @@ pub type UndoError {
 /// there is nothing left to undo the undo with.
 pub fn undo_review(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
 ) -> Result(Undone, UndoError) {
   pog.transaction(db, fn(tx) {
@@ -171,7 +173,7 @@ pub fn undo_review(
           )
           returning card_id::text, card_before::text",
       )
-      |> pog.parameter(pog.text(user_id))
+      |> pog.parameter(db.uuid(user_id))
       |> pog.parameter(pog.text(track))
       |> pog.returning({
         use card_id <- decode.field(0, decode.string)
@@ -264,7 +266,7 @@ fn restore_card(
 
 fn insert_review(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   record: CardRecord,
   rating: fsrs.Rating,
   before: fsrs.Card,
@@ -282,7 +284,7 @@ fn insert_review(
      values ($1::uuid, $2::uuid, $3, $4, to_timestamp($5::float8),
              $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb)",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(record.id))
   |> pog.parameter(pog.int(fsrs.rating_to_int(rating)))
   |> pog.parameter(pog.int(wire.state_code(before.state)))

@@ -8,8 +8,10 @@ import gleam/int
 import gleam/list
 import gleam/result
 import pog
+import server/db
 import server/study/model.{type StudyError, database_error}
 import wire
+import youid/uuid.{type Uuid}
 
 /// Totals, state counts, history and the due forecast for one track.
 ///
@@ -20,7 +22,7 @@ import wire
 /// integer arithmetic instead of reimplementing a calendar.
 pub fn stats(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
   account: wire.AccountSettings,
 ) -> Result(wire.Stats, StudyError) {
@@ -72,7 +74,7 @@ fn count_run(days: List(Int), expected: Int) -> Int {
 /// cannot be rebuilt.
 fn review_totals(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
 ) -> Result(#(Int, Int, Int), StudyError) {
   pog.query(
@@ -86,7 +88,7 @@ fn review_totals(
          where r.user_id = $1::uuid and c.category = $2
            and r.state_before = 2 and r.rating > 1)::int",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(track))
   |> pog.returning({
     use total <- decode.field(0, decode.int)
@@ -103,7 +105,7 @@ fn review_totals(
 
 fn state_counts(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
 ) -> Result(List(#(Int, Int)), StudyError) {
   pog.query(
@@ -111,7 +113,7 @@ fn state_counts(
       where user_id = $1::uuid and category = $2
       group by state order by state",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(track))
   |> pog.returning({
     use state <- decode.field(0, decode.int)
@@ -125,7 +127,7 @@ fn state_counts(
 
 fn review_history(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
   account: wire.AccountSettings,
 ) -> Result(List(wire.DayTally), StudyError) {
@@ -145,7 +147,7 @@ fn review_history(
       group by 1
       order by 1",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(account.timezone))
   |> pog.parameter(pog.int(account.day_start_hour))
   |> pog.parameter(pog.text(track))
@@ -162,7 +164,7 @@ fn review_history(
 
 fn due_forecast(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
   account: wire.AccountSettings,
 ) -> Result(List(#(Int, Int)), StudyError) {
@@ -184,7 +186,7 @@ fn due_forecast(
       group by 1
       order by 1",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(account.timezone))
   |> pog.parameter(pog.int(account.day_start_hour))
   |> pog.parameter(pog.text(track))

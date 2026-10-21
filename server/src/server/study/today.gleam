@@ -10,8 +10,10 @@ import gleam/option.{None, Some}
 import gleam/result
 import gleam/time/timestamp.{type Timestamp}
 import pog
+import server/db
 import server/study/model.{type StudyError, StudyDatabaseError, database_error}
 import wire
+import youid/uuid.{type Uuid}
 
 /// Where the user stands against today's limits.
 ///
@@ -30,7 +32,7 @@ import wire
 /// target.
 pub fn today(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
   profile: wire.Profile,
   now: Timestamp,
@@ -62,7 +64,7 @@ pub fn today(
            and c.due <= to_timestamp($4::float8))::int
      from bounds",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(account.timezone))
   |> pog.parameter(pog.int(account.day_start_hour))
   |> pog.parameter(pog.float(fsrs.to_epoch(now)))
@@ -130,7 +132,7 @@ pub fn budget(
 /// second place for it to be wrong.
 pub fn standings(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   account: wire.AccountSettings,
   now: Timestamp,
 ) -> Result(List(wire.TrackStanding), StudyError) {
@@ -165,7 +167,7 @@ pub fn standings(
                t.enable_fuzz, t.new_per_day, t.reviews_per_day
       order by c.category",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(account.timezone))
   |> pog.parameter(pog.int(account.day_start_hour))
   |> pog.parameter(pog.float(fsrs.to_epoch(now)))

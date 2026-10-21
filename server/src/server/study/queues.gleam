@@ -11,10 +11,12 @@ import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 import pog
+import server/db
 import server/study/model.{
   type StudyError, StudyDatabaseError, database_error, flatten_transaction_error,
 }
 import wire
+import youid/uuid.{type Uuid}
 
 /// Names are trimmed, short and distinct; a queue is at most a whole
 /// catalogue. The same checks run whether the set arrives by PUT or in
@@ -65,7 +67,7 @@ const max_queue_items = 1500
 /// Every queue in every track, for the export.
 pub fn load_queues(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
 ) -> Result(List(wire.Queue), StudyError) {
   queue_rows(db, user_id, None)
 }
@@ -74,7 +76,7 @@ pub fn load_queues(
 /// every screen reads; the unscoped one above is for the archive alone.
 pub fn load_queues_in(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
 ) -> Result(List(wire.Queue), StudyError) {
   queue_rows(db, user_id, Some(track))
@@ -84,7 +86,7 @@ pub fn load_queues_in(
 /// empty queue still comes back, chunked afterwards.
 fn queue_rows(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: Option(String),
 ) -> Result(List(wire.Queue), StudyError) {
   pog.query(
@@ -94,7 +96,7 @@ fn queue_rows(
       where q.user_id = $1::uuid and ($2::text is null or q.track = $2)
       order by q.position, q.name, i.position",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.nullable(pog.text, track))
   |> pog.returning({
     use name <- decode.field(0, decode.string)
@@ -136,7 +138,7 @@ fn queue_rows(
 /// are replaced, in one transaction, and no other track's are touched.
 pub fn replace_queues(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
   queues: List(wire.Queue),
 ) -> Result(Nil, StudyError) {
@@ -153,13 +155,13 @@ pub fn replace_queues(
 /// an Option, so the compiler enumerates every caller.
 fn write_queues_in(
   tx: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
   queues: List(wire.Queue),
 ) -> Result(Nil, StudyError) {
   use _ <- result.try(
     pog.query("delete from queues where user_id = $1::uuid and track = $2")
-    |> pog.parameter(pog.text(user_id))
+    |> pog.parameter(db.uuid(user_id))
     |> pog.parameter(pog.text(track))
     |> pog.execute(tx)
     |> result.replace(Nil)
@@ -172,12 +174,12 @@ fn write_queues_in(
 /// account, so the unscoped delete is right there and wrong anywhere else.
 pub fn write_all_queues(
   tx: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   queues: List(wire.Queue),
 ) -> Result(Nil, StudyError) {
   use _ <- result.try(
     pog.query("delete from queues where user_id = $1::uuid")
-    |> pog.parameter(pog.text(user_id))
+    |> pog.parameter(db.uuid(user_id))
     |> pog.execute(tx)
     |> result.replace(Nil)
     |> result.map_error(database_error),
@@ -187,7 +189,7 @@ pub fn write_all_queues(
 
 fn insert_queues(
   tx: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   queues: List(wire.Queue),
 ) -> Result(Nil, StudyError) {
   queues
@@ -199,7 +201,7 @@ fn insert_queues(
         "insert into queues (user_id, name, position, track)
          values ($1::uuid, $2, $3, $4) returning id::text",
       )
-      |> pog.parameter(pog.text(user_id))
+      |> pog.parameter(db.uuid(user_id))
       |> pog.parameter(pog.text(string.trim(queue.name)))
       |> pog.parameter(pog.int(position))
       |> pog.parameter(pog.text(queue.track))
@@ -243,7 +245,7 @@ fn insert_queues(
 /// either side, so an upgrade or an import retried is harmless.
 pub fn merge_queues(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   default_track: String,
   incoming: List(wire.Queue),
 ) -> Result(Nil, StudyError) {

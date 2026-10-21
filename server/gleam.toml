@@ -26,6 +26,8 @@ fsrs = { path = "../fsrs" }
 
 # The wire format, shared verbatim with the browser app. See ../wire.
 wire = { path = "../wire" }
+youid = ">= 1.6.0 and < 2.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
+squirrel = ">= 4.7.0 and < 5.0.0"

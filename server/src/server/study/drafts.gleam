@@ -7,13 +7,15 @@ import gleam/dynamic/decode
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import pog
+import server/db
 import server/study/model.{type StudyError, database_error}
 import wire
+import youid/uuid.{type Uuid}
 
 /// Every one, in every track, for the export.
 pub fn load_drafts(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
 ) -> Result(List(#(wire.ProblemRef, String)), StudyError) {
   load_drafts_rows(db, user_id, None)
 }
@@ -22,7 +24,7 @@ pub fn load_drafts(
 /// sites, so "every track" is always something a caller asked for by name.
 pub fn load_drafts_in(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
 ) -> Result(List(#(wire.ProblemRef, String)), StudyError) {
   load_drafts_rows(db, user_id, Some(track))
@@ -30,7 +32,7 @@ pub fn load_drafts_in(
 
 fn load_drafts_rows(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: Option(String),
 ) -> Result(List(#(wire.ProblemRef, String)), StudyError) {
   pog.query(
@@ -38,7 +40,7 @@ fn load_drafts_rows(
        from drafts
       where user_id = $1::uuid and ($2::text is null or category = $2)",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.nullable(pog.text, track))
   |> pog.returning({
     use category <- decode.field(0, decode.string)
@@ -54,7 +56,7 @@ fn load_drafts_rows(
 
 pub fn save_draft(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   problem: wire.ProblemRef,
   body: String,
 ) -> Result(Nil, StudyError) {
@@ -64,7 +66,7 @@ pub fn save_draft(
      on conflict (user_id, category, subcategory, title)
        do update set body = excluded.body, updated_at = now()",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(problem.category))
   |> pog.parameter(pog.text(problem.subcategory))
   |> pog.parameter(pog.text(problem.title))
@@ -78,7 +80,7 @@ pub fn save_draft(
 /// from `DELETE /api/drafts` (a Blitz card that ran out of time).
 pub fn delete_draft(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   problem: wire.ProblemRef,
 ) -> Result(Nil, StudyError) {
   pog.query(
@@ -86,7 +88,7 @@ pub fn delete_draft(
       where user_id = $1::uuid and category = $2
         and subcategory = $3 and title = $4",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(problem.category))
   |> pog.parameter(pog.text(problem.subcategory))
   |> pog.parameter(pog.text(problem.title))

@@ -8,13 +8,15 @@ import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 import pog
+import server/db
 import server/study/model.{type StudyError, database_error}
 import wire
+import youid/uuid.{type Uuid}
 
 /// Every one, in every track, for the export.
 pub fn load_notes(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
 ) -> Result(List(#(wire.ProblemRef, String)), StudyError) {
   load_notes_rows(db, user_id, None)
 }
@@ -23,7 +25,7 @@ pub fn load_notes(
 /// sites, so "every track" is always something a caller asked for by name.
 pub fn load_notes_in(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
 ) -> Result(List(#(wire.ProblemRef, String)), StudyError) {
   load_notes_rows(db, user_id, Some(track))
@@ -31,7 +33,7 @@ pub fn load_notes_in(
 
 fn load_notes_rows(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: Option(String),
 ) -> Result(List(#(wire.ProblemRef, String)), StudyError) {
   pog.query(
@@ -39,7 +41,7 @@ fn load_notes_rows(
        from notes
       where user_id = $1::uuid and ($2::text is null or category = $2)",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.nullable(pog.text, track))
   |> pog.returning({
     use category <- decode.field(0, decode.string)
@@ -56,13 +58,13 @@ fn load_notes_rows(
 /// An empty body deletes the row: there is no such thing as a blank note.
 pub fn save_note(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   problem: wire.ProblemRef,
   body: String,
 ) -> Result(Nil, StudyError) {
   let keyed = fn(sql) {
     pog.query(sql)
-    |> pog.parameter(pog.text(user_id))
+    |> pog.parameter(db.uuid(user_id))
     |> pog.parameter(pog.text(problem.category))
     |> pog.parameter(pog.text(problem.subcategory))
     |> pog.parameter(pog.text(problem.title))

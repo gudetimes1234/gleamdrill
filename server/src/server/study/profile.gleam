@@ -8,8 +8,10 @@ import gleam/dynamic/decode
 import gleam/list
 import gleam/result
 import pog
+import server/db
 import server/study/model.{type StudyError, database_error}
 import wire
+import youid/uuid.{type Uuid}
 
 pub fn default_settings() -> wire.Settings {
   wire.default_settings()
@@ -29,14 +31,14 @@ pub fn default_profile() -> wire.Profile {
 /// The knobs about the person. One row per user, and it stays that way.
 pub fn load_account(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
 ) -> Result(wire.AccountSettings, StudyError) {
   pog.query(
     "select day_start_hour, timezone, reminder_hour
        from settings
       where user_id = $1::uuid",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.returning({
     use day_start_hour <- decode.field(0, decode.int)
     use timezone <- decode.field(1, decode.string)
@@ -64,7 +66,7 @@ pub fn load_account(
 /// is seeded only for the tracks a user already had something in.
 pub fn load_settings(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
 ) -> Result(wire.Settings, StudyError) {
   pog.query(
@@ -73,7 +75,7 @@ pub fn load_settings(
        from track_settings
       where user_id = $1::uuid and track = $2",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(track))
   |> pog.returning(settings_decoder())
   |> pog.execute(db)
@@ -86,7 +88,7 @@ pub fn load_settings(
 /// Every track's settings, for the export.
 pub fn all_track_settings(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
 ) -> Result(List(#(String, wire.Settings)), StudyError) {
   pog.query(
     "select track, parameters, desired_retention, learning_steps,
@@ -96,7 +98,7 @@ pub fn all_track_settings(
       where user_id = $1::uuid
       order by track",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.returning({
     use track <- decode.field(0, decode.string)
     use settings <- decode.then(shifted_settings_decoder())
@@ -135,7 +137,7 @@ fn shifted_settings_decoder() -> decode.Decoder(wire.Settings) {
 /// Both halves at once, for the callers that want a whole profile.
 pub fn load_profile(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
 ) -> Result(wire.Profile, StudyError) {
   use account <- result.try(load_account(db, user_id))
@@ -145,7 +147,7 @@ pub fn load_profile(
 
 pub fn save_account(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   account: wire.AccountSettings,
 ) -> Result(Nil, StudyError) {
   pog.query(
@@ -153,7 +155,7 @@ pub fn save_account(
        day_start_hour = $2, timezone = $3, reminder_hour = $4
      where user_id = $1::uuid",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.int(account.day_start_hour))
   |> pog.parameter(pog.text(account.timezone))
   |> pog.parameter(pog.nullable(pog.int, account.reminder_hour))
@@ -169,7 +171,7 @@ pub fn save_account(
 /// is the exact bug the guest store had before its settings were persisted.
 pub fn save_settings(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
   settings: wire.Settings,
 ) -> Result(Nil, StudyError) {
@@ -189,7 +191,7 @@ pub fn save_settings(
        new_per_day = excluded.new_per_day,
        reviews_per_day = excluded.reviews_per_day",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(track))
   |> pog.parameter(pog.array(pog.float, settings.scheduler.parameters))
   |> pog.parameter(pog.float(settings.scheduler.desired_retention))

@@ -8,6 +8,7 @@ import gleam/dynamic/decode
 import gleam/list
 import gleam/result
 import pog
+import server/db
 import server/study/drafts
 import server/study/legacy_import.{ImportCard}
 import server/study/model.{
@@ -17,12 +18,13 @@ import server/study/notes
 import server/study/profile
 import server/study/queues
 import wire
+import youid/uuid.{type Uuid}
 
 /// Every review the user has, oldest first, each with its problem: the
 /// archive's review list.
 pub fn all_reviews(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
 ) -> Result(List(#(wire.ProblemRef, wire.ReviewRow)), StudyError) {
   pog.query(
     "select c.category, c.subcategory, c.title,
@@ -34,7 +36,7 @@ pub fn all_reviews(
       where r.user_id = $1::uuid
       order by r.reviewed_at, r.id",
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.returning({
     use category <- decode.field(0, decode.string)
     use subcategory <- decode.field(1, decode.string)
@@ -76,7 +78,7 @@ pub fn all_reviews(
 /// they cannot be undone.
 pub fn restore(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   archive: wire.Archive,
 ) -> Result(Nil, StudyError) {
   pog.transaction(db, fn(tx) {
@@ -85,7 +87,7 @@ pub fn restore(
         ["reviews", "cards", "drafts", "notes", "queues"],
         fn(table) {
           pog.query("delete from " <> table <> " where user_id = $1::uuid")
-          |> pog.parameter(pog.text(user_id))
+          |> pog.parameter(db.uuid(user_id))
           |> pog.execute(tx)
           |> result.replace(Nil)
           |> result.map_error(database_error)
@@ -125,7 +127,7 @@ pub fn restore(
             where user_id = $1::uuid and category = $2
               and subcategory = $3 and title = $4",
         )
-        |> pog.parameter(pog.text(user_id))
+        |> pog.parameter(db.uuid(user_id))
         |> pog.parameter(pog.text(problem.category))
         |> pog.parameter(pog.text(problem.subcategory))
         |> pog.parameter(pog.text(problem.title))

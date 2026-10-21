@@ -9,11 +9,13 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import pog
+import server/db
 import server/study/model.{
   type CardRecord, type StudyError, CardRecord, StudyDatabaseError,
   database_error,
 }
 import wire
+import youid/uuid.{type Uuid}
 
 const card_columns = "id::text, category, subcategory, title, state, step,
    stability, difficulty,
@@ -25,7 +27,7 @@ const card_columns = "id::text, category, subcategory, title, state, step,
 /// Every card in every track, for the export.
 pub fn load_cards(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
 ) -> Result(List(CardRecord), StudyError) {
   load_card_rows(db, user_id, None)
 }
@@ -34,7 +36,7 @@ pub fn load_cards(
 /// work from now.
 pub fn load_cards_in(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: String,
 ) -> Result(List(CardRecord), StudyError) {
   load_card_rows(db, user_id, Some(track))
@@ -42,12 +44,12 @@ pub fn load_cards_in(
 
 fn load_card_rows(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   track: Option(String),
 ) -> Result(List(CardRecord), StudyError) {
   pog.query("select " <> card_columns <> " from cards
         where user_id = $1::uuid and ($2::text is null or category = $2)")
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.nullable(pog.text, track))
   |> pog.returning(card_decoder())
   |> pog.execute(db)
@@ -62,7 +64,7 @@ fn load_card_rows(
 /// with it.
 pub fn set_suspended(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   problem: wire.ProblemRef,
   suspended: Bool,
 ) -> Result(Option(CardRecord), StudyError) {
@@ -70,7 +72,7 @@ pub fn set_suspended(
      where user_id = $1::uuid
        and category = $2 and subcategory = $3 and title = $4
      returning " <> card_columns)
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(problem.category))
   |> pog.parameter(pog.text(problem.subcategory))
   |> pog.parameter(pog.text(problem.title))
@@ -100,7 +102,7 @@ pub fn set_suspended(
 /// would be 25 chances to half-apply it.
 pub fn enqueue_cards(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   problems: List(wire.ProblemRef),
 ) -> Result(List(CardRecord), StudyError) {
   case problems {
@@ -131,7 +133,7 @@ pub fn enqueue_cards(
            from cards c
            join asked using (category, subcategory, title)
           where c.user_id = $1::uuid")
-      |> pog.parameter(pog.text(user_id))
+      |> pog.parameter(db.uuid(user_id))
       |> pog.parameter(pog.array(pog.text, categories))
       |> pog.parameter(pog.array(pog.text, subcategories))
       |> pog.parameter(pog.array(pog.text, titles))
@@ -151,7 +153,7 @@ pub fn enqueue_cards(
 /// studied card is parked with `set_suspended` instead.
 pub fn delete_cards(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   problems: List(wire.ProblemRef),
 ) -> Result(#(List(wire.ProblemRef), List(wire.ProblemRef)), StudyError) {
   case problems {
@@ -172,7 +174,7 @@ pub fn delete_cards(
             and c.reps = 0
         returning c.category, c.subcategory, c.title",
       )
-      |> pog.parameter(pog.text(user_id))
+      |> pog.parameter(db.uuid(user_id))
       |> pog.parameter(pog.array(pog.text, categories))
       |> pog.parameter(pog.array(pog.text, subcategories))
       |> pog.parameter(pog.array(pog.text, titles))
@@ -208,7 +210,7 @@ pub fn delete_cards(
 /// this needs the row either way.
 pub fn upsert_card(
   db: pog.Connection,
-  user_id: String,
+  user_id: Uuid,
   problem: wire.ProblemRef,
 ) -> Result(CardRecord, StudyError) {
   pog.query(
@@ -218,7 +220,7 @@ pub fn upsert_card(
        do update set introduced_at = coalesce(cards.introduced_at, now())
      returning " <> card_columns,
   )
-  |> pog.parameter(pog.text(user_id))
+  |> pog.parameter(db.uuid(user_id))
   |> pog.parameter(pog.text(problem.category))
   |> pog.parameter(pog.text(problem.subcategory))
   |> pog.parameter(pog.text(problem.title))
