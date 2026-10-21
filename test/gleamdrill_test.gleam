@@ -2529,3 +2529,37 @@ pub fn pausing_the_timer_stops_the_clock_test() -> Nil {
   let #(unchanged, _) = drill_update.toggle_timer(blitz)
   assert unchanged.clock_paused_at == option.None
 }
+
+/// The legacy seed: a solved problem becomes a one-rep Review card with the
+/// memory a Good first answer earns, a card the guest already drilled is
+/// never overwritten, and a legacy draft never clobbers a newer one.
+pub fn seeding_from_legacy_never_overwrites_test() -> Nil {
+  let now = timestamp.system_time()
+  let solved = a_problem("Two Sum")
+  let drilled = a_problem("Valid Anagram")
+
+  // A store that already holds one real card and one real draft.
+  let #(store, real_card) =
+    guest.record(
+      guest.empty(),
+      model.default().settings,
+      answer(drilled, fsrs.Again),
+      now,
+      0,
+      0.5,
+    )
+  let store = guest.put_draft(store, drilled, "the newer draft")
+
+  let seeded =
+    guest.seed(store, [solved, drilled], [#(drilled, "the stale draft")], now)
+
+  // The solved problem arrives as a review card, not a new one.
+  let assert Ok(card) = dict.get(seeded.cards, solved)
+  assert card.reps == 1
+  assert card.card.state == fsrs.Review
+  assert card.suspended == False
+
+  // The drilled card and its draft are exactly as they were.
+  assert dict.get(seeded.cards, drilled) == Ok(real_card)
+  assert model.assoc_get(seeded.drafts, drilled) == Ok("the newer draft")
+}
