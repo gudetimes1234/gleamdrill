@@ -81,17 +81,38 @@ pub fn today(
       Error(Nil) ->
         Error(StudyDatabaseError("day bounds query returned no row"))
       Ok(#(day_start, day_end, reviews_done, new_introduced, due_now)) ->
-        Ok(wire.Today(
-          day_start: fsrs.from_epoch(day_start),
-          day_end: fsrs.from_epoch(day_end),
-          reviews_done:,
-          new_introduced:,
-          reviews_remaining: int_max(settings.reviews_per_day - reviews_done, 0),
-          new_remaining: int_max(settings.new_per_day - new_introduced, 0),
-          due_now:,
+        Ok(budget(
+          settings,
+          day_start,
+          day_end,
+          reviews_done,
+          new_introduced,
+          due_now,
         ))
     }
   })
+}
+
+/// The reply's `Today` from the day's counted row: the bounds as they came,
+/// the remaining budgets clamped at zero. Pure -- the counting is SQL's job,
+/// the arithmetic is this one's.
+pub fn budget(
+  settings: wire.Settings,
+  day_start: Float,
+  day_end: Float,
+  reviews_done: Int,
+  new_introduced: Int,
+  due_now: Int,
+) -> wire.Today {
+  wire.Today(
+    day_start: fsrs.from_epoch(day_start),
+    day_end: fsrs.from_epoch(day_end),
+    reviews_done:,
+    new_introduced:,
+    reviews_remaining: int_max(settings.reviews_per_day - reviews_done, 0),
+    new_remaining: int_max(settings.new_per_day - new_introduced, 0),
+    due_now:,
+  )
 }
 
 /// Postgres rejects an unknown zone name at query time, which would then break

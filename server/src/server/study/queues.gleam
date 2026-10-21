@@ -248,6 +248,21 @@ pub fn merge_queues(
   incoming: List(wire.Queue),
 ) -> Result(Nil, StudyError) {
   use existing <- result.try(load_queues(db, user_id))
+  let merged = merge(existing, default_track, incoming)
+  // An upgrade hands over every track at once, so this writes the lot.
+  case merged == existing {
+    True -> Ok(Nil)
+    False -> write_all_queues(db, user_id, merged)
+  }
+}
+
+/// The fold itself, pure: what the account's queues become once the
+/// incoming set lands on them.
+pub fn merge(
+  existing: List(wire.Queue),
+  default_track: String,
+  incoming: List(wire.Queue),
+) -> List(wire.Queue) {
   // A queue coming from before tracks names none, and an *empty* one has no
   // first problem to infer it from either. Attributing it to the account's
   // busiest track beats leaving it in "", which no track matches -- an
@@ -262,31 +277,25 @@ pub fn merge_queues(
   let same = fn(a: wire.Queue, b: wire.Queue) {
     a.track == b.track && a.name == b.name
   }
-  let merged =
-    list.fold(incoming, existing, fn(queues, queue) {
-      case list.any(queues, same(_, queue)) {
-        True ->
-          list.map(queues, fn(q) {
-            case same(q, queue) {
-              True ->
-                wire.Queue(
-                  ..q,
-                  problems: list.append(
-                    q.problems,
-                    list.filter(queue.problems, fn(ref) {
-                      !list.contains(q.problems, ref)
-                    }),
-                  ),
-                )
-              False -> q
-            }
-          })
-        False -> list.append(queues, [queue])
-      }
-    })
-  // An upgrade hands over every track at once, so this writes the lot.
-  case merged == existing {
-    True -> Ok(Nil)
-    False -> write_all_queues(db, user_id, merged)
-  }
+  list.fold(incoming, existing, fn(queues, queue) {
+    case list.any(queues, same(_, queue)) {
+      True ->
+        list.map(queues, fn(q) {
+          case same(q, queue) {
+            True ->
+              wire.Queue(
+                ..q,
+                problems: list.append(
+                  q.problems,
+                  list.filter(queue.problems, fn(ref) {
+                    !list.contains(q.problems, ref)
+                  }),
+                ),
+              )
+            False -> q
+          }
+        })
+      False -> list.append(queues, [queue])
+    }
+  })
 }
