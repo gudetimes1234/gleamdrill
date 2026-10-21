@@ -80,8 +80,11 @@ pub fn update(
     msg.ImportConfirmed(replace) -> import_confirmed(shared, page, replace)
     // Everything on screen came from the old data, so the boot state is
     // fetched again rather than patched.
+    // Onto the study screen, where the restored queue is the first thing
+    // in view.
     msg.ArchiveRestored(Ok(Nil)) -> #(page, effect.none(), [
       shared.Notice("Restored. Everything is as the file had it."),
+      shared.Navigate(shared_model.StudyRoute),
       shared.Reload,
     ])
     msg.ArchiveRestored(Error(error)) -> #(page, effect.none(), [
