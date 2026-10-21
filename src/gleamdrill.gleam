@@ -1,10 +1,10 @@
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
-import gleamdrill/browser
-import gleamdrill/editor
 import gleamdrill/model.{type Model, Account, Guest, Model, Syncing}
 import gleamdrill/msg.{type Msg}
+import gleamdrill/platform/browser
+import gleamdrill/platform/editor
 import gleamdrill/store
 import gleamdrill/update
 import gleamdrill/update/common

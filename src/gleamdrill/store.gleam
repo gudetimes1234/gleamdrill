@@ -23,7 +23,6 @@ import gleam/result
 import gleam/string
 import gleam/time/timestamp
 import gleamdrill/api
-import gleamdrill/browser
 import gleamdrill/guest
 import gleamdrill/legacy
 import gleamdrill/local
@@ -33,6 +32,7 @@ import gleamdrill/msg.{
   HistoryLoaded, InsightsLoaded, NoteSynced, QueueChanged, QueuesSaved,
   ReviewRecorded, SettingsSaved, StateLoaded, StatsLoaded, UndoRecorded,
 }
+import gleamdrill/platform/browser
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/remote
 import gleamdrill/session

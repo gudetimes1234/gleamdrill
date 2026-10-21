@@ -2,10 +2,10 @@
 //// focus. A key that resolves to a message goes back through `dispatch` --
 //// the controller's own `handle` -- since this module sits below it.
 
-import gleamdrill/browser
 import gleamdrill/keys
 import gleamdrill/model.{type Model, DrillRoute, Model}
 import gleamdrill/msg.{type Msg, UserClickedRun}
+import gleamdrill/platform/browser
 import gleamdrill/update/common
 import lustre/effect.{type Effect}
 

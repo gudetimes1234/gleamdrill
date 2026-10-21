@@ -7,9 +7,9 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
 import gleamdrill/board
-import gleamdrill/browser
 import gleamdrill/model.{type Model, Model}
 import gleamdrill/msg.{type Msg}
+import gleamdrill/platform/browser
 import gleamdrill/store
 import gleamdrill/update/common
 import gleamdrill/view/id

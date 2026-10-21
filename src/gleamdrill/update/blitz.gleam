@@ -4,12 +4,12 @@
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
-import gleamdrill/browser
 import gleamdrill/guest
 import gleamdrill/model.{
   type Model, DrillRoute, MenuRoute, Model, NoPane, RunIdle, StudyRoute,
 }
 import gleamdrill/msg.{type Msg, ExamSampled}
+import gleamdrill/platform/browser
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
 import gleamdrill/queue

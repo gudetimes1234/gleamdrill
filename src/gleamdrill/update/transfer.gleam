@@ -5,9 +5,9 @@ import gleam/option.{None, Some}
 import gleam/string
 import gleam/time/calendar
 import gleam/time/timestamp
-import gleamdrill/browser
 import gleamdrill/model.{type Model, Model}
 import gleamdrill/msg.{type Msg, ImportPicked}
+import gleamdrill/platform/browser
 import gleamdrill/remote.{type ApiError}
 import gleamdrill/store
 import gleamdrill/update/common

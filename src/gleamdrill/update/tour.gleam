@@ -4,12 +4,12 @@
 import gleam/dict
 import gleam/int
 import gleam/result
-import gleamdrill/browser
 import gleamdrill/model.{
   type Model, Model, RunIdle, Running, StudyRoute, TourContents, TourLesson,
   TourRoute,
 }
 import gleamdrill/msg.{type Msg, TourRunTicked}
+import gleamdrill/platform/browser
 import gleamdrill/tour
 import gleamdrill/update/common
 import lustre/effect.{type Effect}

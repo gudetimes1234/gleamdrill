@@ -4,7 +4,6 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
-import gleamdrill/editor
 import gleamdrill/insights
 import gleamdrill/model.{
   type CaseResult, type Model, AwaitingGrade, Cases, Errored, NoPane, NotGrading,
@@ -19,6 +18,7 @@ import gleamdrill/msg.{
   UserRevealedRecall, UserToggledDiff, UserToggledPane, UserToggledPrompt,
   UserToggledSolution, UserToggledTimer,
 }
+import gleamdrill/platform/editor
 import gleamdrill/problem.{type Problem, type ProblemRef, type Solution}
 import gleamdrill/problems
 import gleamdrill/runner

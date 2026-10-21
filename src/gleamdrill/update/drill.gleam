@@ -6,11 +6,11 @@ import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
-import gleamdrill/browser
 import gleamdrill/model.{
   type Model, DrillRoute, Guest, Model, NoPane, NotePane, RunIdle, SolutionPane,
 }
 import gleamdrill/msg.{type Msg, NoteSaveTicked}
+import gleamdrill/platform/browser
 import gleamdrill/remote.{type ApiError}
 import gleamdrill/store
 import gleamdrill/update/common

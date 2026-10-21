@@ -8,12 +8,12 @@ import gleam/dict
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
-import gleamdrill/browser
 import gleamdrill/model.{
   type Model, Account, Guest, Model, PromptDismissed, Ran, Running, RuntimeReady,
   TourLesson, TourRoute,
 }
 import gleamdrill/msg.{type Msg}
+import gleamdrill/platform/browser
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
 import gleamdrill/runner

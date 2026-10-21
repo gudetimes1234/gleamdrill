@@ -5,9 +5,9 @@ import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
-import gleamdrill/browser
 import gleamdrill/model.{type Model, Model, StudyRoute, TracksRoute}
 import gleamdrill/msg.{type Msg}
+import gleamdrill/platform/browser
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/problems
 import gleamdrill/store

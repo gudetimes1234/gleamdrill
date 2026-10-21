@@ -4,13 +4,13 @@
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
-import gleamdrill/browser
 import gleamdrill/model.{
   type Model, Account, AwaitingGrade, CaseResult, Cases, DrillRoute, Errored,
   Guest, Model, Ran, RunError, RunIdle, Running, RuntimeFailed, RuntimeLoading,
   RuntimeNotLoaded, RuntimeReady, TimedOut, TourRoute,
 }
 import gleamdrill/msg.{type Msg, CacheWarmed, RemoteRunFinished}
+import gleamdrill/platform/browser
 import gleamdrill/remote.{type ApiError}
 import gleamdrill/runner
 import gleamdrill/store

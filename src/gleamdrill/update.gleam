@@ -6,7 +6,6 @@
 //// `dispatch` and re-enters with a message, so no `update/` module imports
 //// another (`update/common` aside).
 
-import gleamdrill/browser
 import gleamdrill/model.{type Model, DrillRoute, Model}
 import gleamdrill/msg.{
   type Msg, ArchiveReady, ArchiveRestored, AuthCompleted, BlitzExpired,
@@ -52,6 +51,7 @@ import gleamdrill/msg.{
   WalkAdvanced, WalkBacked, WalkCodeShown, WalkFocused, WalkHintShown,
   WalkWhyShown,
 }
+import gleamdrill/platform/browser
 import gleamdrill/update/blitz as blitz_update
 import gleamdrill/update/board as board_update
 import gleamdrill/update/common

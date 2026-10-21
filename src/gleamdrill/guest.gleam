@@ -22,8 +22,8 @@ import gleam/order
 import gleam/result
 import gleam/string
 import gleam/time/timestamp.{type Timestamp}
-import gleamdrill/browser
 import gleamdrill/model
+import gleamdrill/platform/browser
 import gleamdrill/problem.{type ProblemRef}
 import wire.{type CardState, type Settings}
 

@@ -247,13 +247,13 @@ check-format:
 # it runs in a classic worker (Brython requires importScripts).
 worker:
 	gleam build --target javascript
-	bun build build/dev/javascript/gleamdrill/gleamdrill/worker.mjs \
+	bun build build/dev/javascript/gleamdrill/gleamdrill/runner/worker.mjs \
 		--format=esm --minify --outfile=assets/worker-main.js
-	printf 'import { main } from "./gleamdrill/py_worker.mjs";\nmain();\n' \
+	printf 'import { main } from "./gleamdrill/runner/py_worker.mjs";\nmain();\n' \
 		> build/dev/javascript/gleamdrill/py-worker-entry.mjs
 	bun build build/dev/javascript/gleamdrill/py-worker-entry.mjs \
 		--format=iife --minify --outfile=assets/python-worker-main.js
-	bun build build/dev/javascript/gleamdrill/gleamdrill/ts_worker.mjs \
+	bun build build/dev/javascript/gleamdrill/gleamdrill/runner/ts_worker.mjs \
 		--format=esm --minify --outfile=assets/ts-worker-main.js
 
 # Downloads the browser build of the Gleam compiler and assembles everything the

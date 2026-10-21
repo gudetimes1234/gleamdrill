@@ -74,3 +74,7 @@ pub fn blur_active() -> Nil
 
 @external(javascript, "./ffi.mjs", "scrollIntoViewById")
 pub fn scroll_into_view(id: String) -> Nil
+
+/// Query-string escaping (`encodeURIComponent`).
+@external(javascript, "./ffi.mjs", "uriEncode")
+pub fn uri_encode(value: String) -> String

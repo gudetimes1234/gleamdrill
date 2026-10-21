@@ -7,13 +7,13 @@ import gleam/float
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
-import gleamdrill/browser
 import gleamdrill/model.{
   type Model, Account, AuthForm, AuthRoute, DayStartHour, DesiredRetention,
   Guest, Model, NewPerDay, PromptDismissed, Registering, ReminderHour,
   ReviewsPerDay, SigningIn, StudyRoute, SyncFailed, Synced, Syncing, TracksRoute,
 }
 import gleamdrill/msg.{type Msg, AuthCompleted, SignOutCompleted, StateImported}
+import gleamdrill/platform/browser
 import gleamdrill/remote.{type ApiError}
 import gleamdrill/store
 import gleamdrill/update/common

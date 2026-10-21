@@ -7,7 +7,6 @@ import gleam/int
 import gleam/list
 import gleam/option.{Some}
 import gleam/string
-import gleamdrill/editor
 import gleamdrill/model.{
   type Model, Errored, Ran, RunIdle, Running, RuntimeFailed, RuntimeLoading,
   RuntimeNotLoaded, RuntimeReady, TimedOut, TourContents, TourLesson, TourRoute,
@@ -17,6 +16,7 @@ import gleamdrill/msg.{
   UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
   UserOpenedLesson, UserResetLesson,
 }
+import gleamdrill/platform/editor
 import gleamdrill/tour
 import gleamdrill/view/nav
 import lustre/attribute

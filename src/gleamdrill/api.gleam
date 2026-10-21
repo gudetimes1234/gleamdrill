@@ -19,6 +19,7 @@ import gleam/json.{type Json}
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
+import gleamdrill/platform/browser
 import gleamdrill/problem.{type ProblemRef}
 import gleamdrill/remote.{Offline, Rejected, ServerFault, Unauthorised}
 import lustre/effect.{type Effect}
@@ -427,11 +428,11 @@ pub fn fetch_history(
     base,
     http.Get,
     "/api/history?category="
-      <> uri_encode(problem.category)
+      <> browser.uri_encode(problem.category)
       <> "&subcategory="
-      <> uri_encode(problem.subcategory)
+      <> browser.uri_encode(problem.subcategory)
       <> "&title="
-      <> uri_encode(problem.title),
+      <> browser.uri_encode(problem.title),
     Some(token),
     None,
     decode.at(["reviews"], decode.list(wire.review_row_decoder())),
@@ -439,14 +440,11 @@ pub fn fetch_history(
   )
 }
 
-@external(javascript, "./ffi.mjs", "uriEncode")
-fn uri_encode(value: String) -> String
-
 /// A track-scoped path. Spelled once: track names hold spaces and brackets
 /// ("NeetCode 150 (Go)"), and an unescaped one is a broken request rather
 /// than a wrong answer, which is at least loud.
 fn scoped(path: String, track: String) -> String {
-  path <> "?track=" <> uri_encode(track)
+  path <> "?track=" <> browser.uri_encode(track)
 }
 
 pub fn fetch_stats(

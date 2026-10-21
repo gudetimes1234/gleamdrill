@@ -264,7 +264,7 @@ fn nullable_field(
   decode.optional_field(name, None, decode.optional(inner), next)
 }
 
-@external(javascript, "./runner_ffi.mjs", "spawn")
+@external(javascript, "./runner/runner_ffi.mjs", "spawn")
 fn ffi_spawn(
   language: String,
   url: String,
@@ -273,7 +273,7 @@ fn ffi_spawn(
   on_error: fn(String) -> Nil,
 ) -> Nil
 
-@external(javascript, "./runner_ffi.mjs", "restart")
+@external(javascript, "./runner/runner_ffi.mjs", "restart")
 fn ffi_restart(
   language: String,
   url: String,
@@ -282,7 +282,7 @@ fn ffi_restart(
   on_error: fn(String) -> Nil,
 ) -> Nil
 
-@external(javascript, "./runner_ffi.mjs", "post_run")
+@external(javascript, "./runner/runner_ffi.mjs", "post_run")
 fn ffi_post_run(
   language: String,
   id: Int,
@@ -290,5 +290,5 @@ fn ffi_post_run(
   harness: String,
 ) -> Bool
 
-@external(javascript, "./runner_ffi.mjs", "after")
+@external(javascript, "./runner/runner_ffi.mjs", "after")
 fn ffi_after(delay_ms: Int, callback: fn() -> Nil) -> Nil
