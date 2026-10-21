@@ -14,9 +14,14 @@ import server/auth
 import server/config
 import server/exec
 import server/reminders
+import server/study/model
 import server/study/profile
 import server/study/queues
+import server/study/reviews
 import server/study/stats
+import server/study/today
+import server/study/track
+import server/study/validate
 import server/web
 import wire
 import wisp
@@ -604,4 +609,203 @@ end
   let assert Some(error) = result.error
   error.phase |> should.equal("run")
   string.contains(error.message, "Timed out") |> should.be_true
+}
+
+// --- reviews.schedule --------------------------------------------------------
+
+fn ref(title: String) -> wire.ProblemRef {
+  wire.ProblemRef(category: "Python", subcategory: "Arrays", title:)
+}
+
+fn record_for(card: fsrs.Card) -> model.CardRecord {
+  model.CardRecord(
+    id: "00000000-0000-0000-0000-000000000000",
+    problem: ref("Two Sum"),
+    card:,
+    reps: 0,
+    lapses: 0,
+    suspended: False,
+    introduced_at: None,
+  )
+}
+
+pub fn a_first_review_schedules_like_fsrs_and_counts_no_days_test() {
+  let now = fsrs.from_epoch(1_700_000_000.0)
+  let config = fsrs.default_config()
+  let existing = record_for(fsrs.new_card(now))
+  let #(record, elapsed, scheduled) =
+    reviews.schedule(existing, fsrs.Good, now, config, 0.5)
+  record.card
+  |> should.equal(fsrs.review(existing.card, fsrs.Good, now, config, 0.5))
+  record.reps |> should.equal(1)
+  record.lapses |> should.equal(0)
+  elapsed |> should.equal(0)
+  scheduled |> should.equal(0)
+}
+
+pub fn a_failed_graduated_card_counts_a_lapse_and_its_days_test() {
+  let day = 86_400.0
+  let last = fsrs.from_epoch(1_700_000_000.0 -. 10.0 *. day)
+  let now = fsrs.from_epoch(1_700_000_000.0)
+  let graduated =
+    fsrs.Card(
+      state: fsrs.Review,
+      memory: Some(fsrs.Memory(stability: 5.0, difficulty: 5.0)),
+      due: fsrs.from_epoch(1_700_000_000.0 -. 3.0 *. day),
+      last_review: Some(last),
+    )
+  let existing = model.CardRecord(..record_for(graduated), reps: 3, lapses: 1)
+  let #(record, elapsed, scheduled) =
+    reviews.schedule(existing, fsrs.Again, now, fsrs.default_config(), 0.5)
+  record.lapses |> should.equal(2)
+  record.reps |> should.equal(4)
+  elapsed |> should.equal(10)
+  scheduled |> should.equal(7)
+}
+
+pub fn a_failure_while_still_learning_is_not_a_lapse_test() {
+  let now = fsrs.from_epoch(1_700_000_000.0)
+  let existing = record_for(fsrs.new_card(now))
+  let #(record, _, _) =
+    reviews.schedule(existing, fsrs.Again, now, fsrs.default_config(), 0.5)
+  record.lapses |> should.equal(0)
+  record.reps |> should.equal(1)
+}
+
+// --- model.to_state ----------------------------------------------------------
+
+pub fn a_card_record_crosses_the_wire_without_its_id_test() {
+  let now = fsrs.from_epoch(1_700_000_000.0)
+  let record =
+    model.CardRecord(
+      ..record_for(fsrs.new_card(now)),
+      reps: 2,
+      lapses: 1,
+      suspended: True,
+      introduced_at: Some(now),
+    )
+  let state = model.to_state(record)
+  state.problem |> should.equal(record.problem)
+  state.card |> should.equal(record.card)
+  state.reps |> should.equal(2)
+  state.lapses |> should.equal(1)
+  state.suspended |> should.equal(True)
+  state.introduced_at |> should.equal(Some(now))
+}
+
+// --- study/track -------------------------------------------------------------
+
+fn standing(track: String, cards: Int) -> wire.TrackStanding {
+  wire.TrackStanding(
+    track:,
+    settings: wire.default_settings(),
+    cards:,
+    due_now: 0,
+    introduced_today: 0,
+    reviews_today: 0,
+  )
+}
+
+pub fn the_named_track_wins_and_most_cards_breaks_the_tie_test() {
+  track.pick(Some("Elixir"), [standing("Python", 9)]) |> should.equal("Elixir")
+  track.pick(None, [standing("Python", 3), standing("Go", 9)])
+  |> should.equal("Go")
+  track.pick(None, []) |> should.equal("")
+}
+
+pub fn a_batch_must_sit_in_one_track_test() {
+  track.batch_track([ref("A"), ref("B")]) |> should.equal(Ok("Python"))
+  track.batch_track([
+    ref("A"),
+    wire.ProblemRef(category: "Go", subcategory: "Arrays", title: "B"),
+  ])
+  |> should.equal(Error(Nil))
+  track.batch_track([]) |> should.equal(Error(Nil))
+}
+
+pub fn a_queue_set_must_sit_in_one_track_test() {
+  let queue = fn(track) { wire.Queue(track:, name: "q", problems: []) }
+  track.one_track([queue("Python"), queue("Python")])
+  |> should.equal(Ok("Python"))
+  track.one_track([queue("Python"), queue("Go")]) |> should.equal(Error(Nil))
+  track.one_track([]) |> should.equal(Error(Nil))
+}
+
+// --- study/validate ----------------------------------------------------------
+
+pub fn settings_bounds_guard_the_scheduler_knobs_test() {
+  let good = wire.default_settings()
+  validate.settings(good) |> should.equal(Ok(good))
+  let config = good.scheduler
+  validate.settings(
+    wire.Settings(
+      ..good,
+      scheduler: fsrs.Config(..config, desired_retention: 0.69),
+    ),
+  )
+  |> should.be_error
+  validate.settings(
+    wire.Settings(
+      ..good,
+      scheduler: fsrs.Config(..config, desired_retention: 0.99),
+    ),
+  )
+  |> should.be_ok
+  validate.settings(wire.Settings(..good, new_per_day: -1)) |> should.be_error
+  validate.settings(
+    wire.Settings(..good, scheduler: fsrs.Config(..config, learning_steps: [0])),
+  )
+  |> should.be_error
+}
+
+pub fn account_bounds_guard_the_day_and_reminder_hours_test() {
+  let good = wire.default_account()
+  validate.account(good) |> should.equal(Ok(good))
+  validate.account(wire.AccountSettings(..good, day_start_hour: 24))
+  |> should.be_error
+  validate.account(wire.AccountSettings(..good, reminder_hour: Some(-1)))
+  |> should.be_error
+  validate.account(wire.AccountSettings(..good, reminder_hour: Some(23)))
+  |> should.be_ok
+}
+
+// --- queues.merge ------------------------------------------------------------
+
+pub fn merging_queues_loses_nothing_and_duplicates_nothing_test() {
+  let existing = [
+    wire.Queue(track: "Python", name: "warmup", problems: [ref("A"), ref("B")]),
+  ]
+  let incoming = [
+    wire.Queue(track: "Python", name: "warmup", problems: [ref("B"), ref("C")]),
+    wire.Queue(track: "", name: "untracked", problems: []),
+  ]
+  let merged = queues.merge(existing, "Python", incoming)
+  merged
+  |> should.equal([
+    wire.Queue(track: "Python", name: "warmup", problems: [
+      ref("A"),
+      ref("B"),
+      ref("C"),
+    ]),
+    wire.Queue(track: "Python", name: "untracked", problems: []),
+  ])
+  // Retrying the upgrade changes nothing: the merge is idempotent.
+  queues.merge(merged, "Python", incoming) |> should.equal(merged)
+}
+
+// --- today.budget ------------------------------------------------------------
+
+pub fn the_day_budgets_subtract_and_clamp_at_zero_test() {
+  let settings =
+    wire.Settings(
+      ..wire.default_settings(),
+      new_per_day: 5,
+      reviews_per_day: 10,
+    )
+  let counted = today.budget(settings, 0.0, 86_400.0, 3, 7, 4)
+  counted.reviews_remaining |> should.equal(7)
+  counted.new_remaining |> should.equal(0)
+  counted.due_now |> should.equal(4)
+  counted.reviews_done |> should.equal(3)
+  counted.day_end |> should.equal(fsrs.from_epoch(86_400.0))
 }
