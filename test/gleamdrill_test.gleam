@@ -22,6 +22,7 @@ import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
 import gleam/time/timestamp
+import gleam/uri
 import gleamdrill/content/problem
 import gleamdrill/content/problems
 import gleamdrill/content/tour
@@ -55,6 +56,7 @@ import gleamdrill/page/tour/keys as tour_keys
 import gleamdrill/page/tour/model as tour_model
 import gleamdrill/page/tracks/keys as tracks_keys
 import gleamdrill/page/tracks/model as tracks_model
+import gleamdrill/route
 import gleamdrill/runner
 import gleamdrill/store
 import gleamdrill/store/remote
@@ -2649,4 +2651,57 @@ pub fn seeding_from_legacy_never_overwrites_test() -> Nil {
   // The drilled card and its draft are exactly as they were.
   assert dict.get(seeded.cards, drilled) == Ok(real_card)
   assert model.assoc_get(seeded.drafts, drilled) == Ok("the newer draft")
+}
+
+// --- route ------------------------------------------------------------------
+
+fn at(path: String) -> option.Option(route.Location) {
+  let assert Ok(address) = uri.parse(path)
+  route.parse(address)
+}
+
+pub fn route_round_trips_every_addressable_screen_test() {
+  let screens = [
+    model.TracksRoute,
+    model.SettingsRoute,
+    model.TourRoute,
+    model.AuthRoute,
+    model.StudyRoute,
+    model.MenuRoute,
+    model.QueueRoute,
+    model.StatsRoute,
+  ]
+  let assert [_, _, ..] = track.all()
+  let assert Ok(track) = list.last(track.all())
+  list.each(screens, fn(screen) {
+    let assert Some(path) = route.path(screen, track)
+    let assert Some(route.Location(back, _)) = at(path)
+    assert back == screen
+  })
+  let assert Some(path) = route.path(model.StatsRoute, track)
+  assert at(path) == Some(route.Location(model.StatsRoute, Some(track)))
+}
+
+pub fn route_a_screen_inside_a_track_needs_one_test() {
+  assert route.path(model.StudyRoute, "") == Some("/tracks")
+  assert route.path(model.DrillRoute, "python") == None
+  assert route.path(model.CompareRoute, "python") == None
+}
+
+pub fn route_unknown_addresses_name_nothing_test() {
+  assert at("/") == None
+  assert at("/t/python") == None
+  assert at("/t/python/nowhere") == None
+  assert at("/t//study") == None
+  // A real track's name, not its slug.
+  assert at("/t/NeetCode%20150/study") == None
+  assert at("/nowhere") == None
+}
+
+pub fn track_slugs_are_url_safe_and_name_one_track_each_test() {
+  assert track.slug("NeetCode 150 (Go)") == "neetcode-150-go"
+  assert track.slug("  System Design!  ") == "system-design"
+  list.each(track.all(), fn(name) {
+    assert track.from_slug(track.slug(name)) == Ok(name)
+  })
 }

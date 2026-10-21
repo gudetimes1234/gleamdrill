@@ -43,7 +43,7 @@ await page.evaluate(() => {
 await page.reload({ waitUntil: "networkidle" });
 check("the service worker installs",
   await page.evaluate(() => navigator.serviceWorker.ready.then((r) => !!r.active)));
-await page.click('button:text-is("Settings")');
+await page.click('.nav-link:text-is("Settings")');
 await page.waitForSelector(".settings-warm", { timeout: 10000 });
 const offlineHelp = () => page.textContent(".settings-row:has(.settings-warm) .settings-help");
 check("settings says nothing is cached yet", (await offlineHelp()).includes("Nothing cached yet"));
@@ -63,8 +63,13 @@ check("with the compiler, its stdlib and Brython", cached >= 26, String(cached))
 console.log("== with the network off");
 await context.setOffline(true);
 await page.reload({ waitUntil: "domcontentloaded" });
-await page.waitForSelector(".study-screen", { timeout: 20000 }).catch(() => {});
-check("the app opens from the cache", await page.isVisible(".study-screen"));
+// The reload is of /settings, an app URL no file answers: the service worker
+// has to hand back the cached shell for it, and the app land where it was.
+await page.waitForSelector(".settings-warm", { timeout: 20000 }).catch(() => {});
+check("the app opens from the cache, on the screen it was on",
+  await page.isVisible(".settings-warm"), page.url());
+await page.click('.nav-link:text-is("Study")');
+await page.waitForSelector(".study-screen", { timeout: 10000 });
 await page.click(".study-start");
 await startCoding();
 await page.waitForFunction(

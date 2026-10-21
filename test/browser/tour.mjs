@@ -249,7 +249,7 @@ const setCode = async (code) => {
 /// the track switcher is where that happens now.
 const openByHand = async (language, subcategory, title) => {
   exercises("UserClickedStartDrill");
-  await page.click('button:text-is("Tracks")');
+  await page.click('.nav-link:text-is("Tracks")');
   await page.waitForSelector(".tracks-screen", { timeout: 10000 });
   await page.locator(".track-card", { hasText: language }).first()
     .locator(".track-card-open").click();
@@ -346,7 +346,7 @@ await page.waitForSelector(".study-screen", { timeout: 20000 });
 check("the switcher does not ask twice", await page.isVisible(".study-screen"));
 
 // Switching is the whole point: the other track is untouched, and empty.
-await page.click('button:text-is("Tracks")');
+await page.click('.nav-link:text-is("Tracks")');
 await page.waitForSelector(".tracks-screen", { timeout: 20000 });
 check("the track just used reports where it stands",
   (await page.locator(".track-card", { hasText: "Python" }).first()
@@ -1779,7 +1779,7 @@ exercises("UserClickedStartDrill", "UserToggledPiece", "UserSubmittedBoard",
 
 await goHome();
 // The board is its own track, so getting to it is a switch.
-await page.click('button:text-is("Tracks")');
+await page.click('.nav-link:text-is("Tracks")');
 await page.waitForSelector(".tracks-screen", { timeout: 10000 });
 await page.locator(".track-card", { hasText: "System Design Board" }).first()
   .locator(".track-card-open").click();
@@ -1850,7 +1850,7 @@ exercises("UserClickedSettings", "UserChangedSetting",
   "UserClickedDeviceTimezone");
 
 await freshGuest();
-await page.click('button:text-is("Settings")');
+await page.click('.nav-link:text-is("Settings")');
 await page.waitForSelector(".settings-screen", { timeout: 10000 });
 check("settings opens", await page.isVisible(".settings-screen"));
 check("account, reminders, device and data sections",
@@ -1921,7 +1921,7 @@ await page.evaluate(() => {
 await onTrack();
 await page.reload({ waitUntil: "networkidle" });
 await page.waitForSelector(".study-screen", { timeout: 10000 });
-await page.click('button:text-is("Settings")');
+await page.click('.nav-link:text-is("Settings")');
 await page.waitForSelector(".settings-screen", { timeout: 10000 });
 const [download] = await Promise.all([
   page.waitForEvent("download", { timeout: 10000 }),
@@ -1972,7 +1972,7 @@ check("and says so", (await page.textContent(".notice").catch(() => "")).include
 // restored queue in view.
 await page.waitForSelector(".study-screen", { timeout: 10000 });
 check("and lands on the restored study screen", await page.isVisible(".study-screen"));
-await page.click('button:text-is("Settings")');
+await page.click('.nav-link:text-is("Settings")');
 await page.waitForSelector(".settings-screen", { timeout: 10000 });
 writeFileSync(exportPath, "{\"hello\": 1}");
 await chooseFile(exportPath);
@@ -2470,7 +2470,7 @@ await capture("account-study", "Study screen signed in: email, no guest strip");
 
 // Signed in, the reminder hour is a real setting: picked here, kept by the
 // server, and read back as the hour it will mail at.
-await page.click('button:text-is("Settings")');
+await page.click('.nav-link:text-is("Settings")');
 await page.waitForSelector(".settings-reminder", { timeout: 10000 });
 check("an account can pick a reminder hour", !(await page.isDisabled(".settings-reminder")));
 await page.selectOption(".settings-reminder", "8");

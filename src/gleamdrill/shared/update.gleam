@@ -14,7 +14,7 @@ import gleamdrill/msg.{
   InsightsLoaded, KeyPressed, QueueChanged, QueueMsg, QueuesSaved,
   RemoteRunFinished, RunFinished, RunTimedOut, RunnerFailed, RunnerReady,
   RuntimeLoadTimedOut, SettingsMsg, SignOutCompleted, SittingMsg, StateImported,
-  StateLoaded, StatsLoaded, StatsMsg, StudyMsg, TourMsg, TracksMsg,
+  StateLoaded, StatsLoaded, StatsMsg, StudyMsg, TourMsg, TracksMsg, UrlChanged,
   UserAddedSelectionToQueue, UserAddedStarterSet, UserChangedIterations,
   UserClickedBackToStudy, UserClickedBrowse, UserClickedMergeGuest,
   UserClickedQueue, UserClickedRecall, UserClickedRetrySync, UserClickedSettings,
@@ -44,6 +44,7 @@ pub fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     | TourMsg(_)
     | SittingMsg(_)
     | KeyPressed(_)
+    | UrlChanged(_)
     | UserClickedTour
     | UserClickedBrowse
     | UserClickedQueue

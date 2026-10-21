@@ -767,7 +767,7 @@ fn advance_inner(shared: Shared, page: Model) -> Step {
 
 /// Stops the run in flight, if any: the worker is replaced, a server-side
 /// run's late answer is ignored by the engine's id guard.
-fn abandon_run(shared: Shared, page: Model) -> Change {
+pub fn abandon_run(shared: Shared, page: Model) -> Change {
   case shared.run, language_of(page) {
     shared_model.Running(_, _), Ok(language) -> shared.AbandonRun(language)
     _, _ -> shared.ResetRun

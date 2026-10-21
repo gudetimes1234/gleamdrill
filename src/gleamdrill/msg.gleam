@@ -6,6 +6,7 @@
 //// scheduler rating, or one of the model's own small state types.
 
 import gleam/option.{type Option}
+import gleam/uri.{type Uri}
 import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/model.{type RunOutcome}
 import gleamdrill/page/auth/model as auth_model
@@ -40,6 +41,9 @@ pub type Msg {
   StudyMsg(study_msg.Msg)
   TourMsg(tour_msg.Msg)
   SittingMsg(sitting_msg.Msg)
+  /// The address bar moved: Back, Forward, or the echo of the app's own
+  /// push. Handled by the app, which owns the URL.
+  UrlChanged(Uri)
   // --- keyboard ---
   KeyPressed(Key)
   HelpToggled

@@ -5,8 +5,9 @@ import gleam/dict
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleamdrill/model.{
-  type Model, Account, Guest, Model, PromptDismissed, StudyRoute, SyncFailed,
-  Synced, Syncing, TracksRoute,
+  type Model, type Route, Account, Guest, MenuRoute, Model, PromptDismissed,
+  QueueRoute, SettingsRoute, StatsRoute, StudyRoute, SyncFailed, Synced, Syncing,
+  TourRoute, TracksRoute,
 }
 import gleamdrill/msg.{type Msg, SignOutCompleted, StateImported}
 import gleamdrill/shared/common
@@ -242,10 +243,6 @@ pub fn adopt_legacy() -> Effect(Msg) {
 }
 
 /// Folds a fresh `/api/state` into the model.
-///
-/// Note the route: a signed-in user lands on the study screen, not the manual
-/// browser. The browser is still there, but what to study today is the
-/// question the app now answers first.
 fn apply_state(m: Model, state: wire.BootState) -> Model {
   Model(
     ..m,
@@ -267,20 +264,37 @@ fn apply_state(m: Model, state: wire.BootState) -> Model {
     // A device remembers which queue it studies; the list may have gone
     // on another device, in which case today is everything again.
     active_queue: known_queue(state.queues, m.active_queue),
-    // The one place that decides where boot lands. A browser with no track
-    // lands on the switcher, because Study, Queue and Stats are all inside a
-    // track and there is nothing honest to show without one. The server names
-    // the track holding the most cards when the request does not, so an
-    // account used on another device lands where it left off rather than
-    // being asked again.
-    route: case state.track {
-      "" -> TracksRoute
-      _ -> StudyRoute
-    },
+    route: landing(m.route, state.track),
     // Evaluated on every load, not only after a review: a guest who crossed
     // the threshold in a previous session should still be told.
     upgrade_prompt: common.escalate(m),
   )
+}
+
+/// The one place that decides where a load lands. A browser with no track
+/// lands on the switcher, because Study, Queue and Stats are all inside a
+/// track and there is nothing honest to show without one. The server names
+/// the track holding the most cards when the request does not, so an account
+/// used on another device lands where it left off rather than being asked
+/// again.
+///
+/// Otherwise the screen stays put when it is one a URL can name, so a deep
+/// link or a reload survives the load. Signing in, and a sitting caught by a
+/// reload of its track, land on the study screen: what to study today is the
+/// question the app answers first.
+fn landing(route: Route, track: String) -> Route {
+  case track, route {
+    "", _ -> TracksRoute
+    _, TracksRoute
+    | _, SettingsRoute
+    | _, TourRoute
+    | _, StudyRoute
+    | _, MenuRoute
+    | _, QueueRoute
+    | _, StatsRoute
+    -> route
+    _, _ -> StudyRoute
+  }
 }
 
 fn known_queue(

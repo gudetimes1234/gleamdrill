@@ -190,7 +190,7 @@ console.log("== Elixir runs on the server for a signed-in user");
 //
 // Another language is another track, so getting there is a switch rather than
 // a click in the browser's first pane -- that pane is gone.
-await page.click('button:text-is("Tracks")');
+await page.click('.nav-link:text-is("Tracks")');
 await page.waitForSelector(".tracks-screen", { timeout: 10000 });
 await page.locator(".track-card", { hasText: "Elixir" }).first()
   .locator(".track-card-open").click();

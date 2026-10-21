@@ -20,6 +20,7 @@
 
 import gleam/list
 import gleam/result
+import gleam/string
 import gleamdrill/content/problem.{type Category, type ProblemRef}
 import gleamdrill/content/problems
 import wire
@@ -43,6 +44,33 @@ pub fn of_ref(ref: ProblemRef) -> Track {
 /// every screen.
 pub fn exists(track: Track) -> Bool {
   list.contains(all(), track)
+}
+
+/// A track's name in a URL: lowercase letters and digits, with every run of
+/// anything else one hyphen. "NeetCode 150 (Go)" is `neetcode-150-go`.
+pub fn slug(track: Track) -> String {
+  track
+  |> string.lowercase
+  |> string.to_graphemes
+  |> list.fold(#([], False), fn(acc, char) {
+    let #(kept, gap) = acc
+    case string.contains("abcdefghijklmnopqrstuvwxyz0123456789", char) {
+      True ->
+        case gap, kept {
+          True, [_, ..] -> #([char, "-", ..kept], False)
+          _, _ -> #([char, ..kept], False)
+        }
+      False -> #(kept, True)
+    }
+  })
+  |> fn(acc: #(List(String), Bool)) { acc.0 }
+  |> list.reverse
+  |> string.concat
+}
+
+/// The catalogue track a URL slug names.
+pub fn from_slug(name: String) -> Result(Track, Nil) {
+  list.find(all(), fn(track) { slug(track) == name })
 }
 
 /// What to call a track on screen: the language it drills, or the category's

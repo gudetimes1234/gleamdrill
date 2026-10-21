@@ -17,6 +17,7 @@ import gleamdrill/msg.{
   UserDismissedMergeOffer, UserDismissedNotice,
 }
 import gleamdrill/page/auth/model as auth
+import gleamdrill/route
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -35,8 +36,8 @@ pub fn bar(m: Model, current: Route) -> Element(Msg) {
   ]
   let links =
     list.map(places, fn(place) {
-      let #(label, route, msg) = place
-      case route == current {
+      let #(label, place_route, msg) = place
+      case place_route == current {
         True ->
           html.span(
             [
@@ -45,11 +46,21 @@ pub fn bar(m: Model, current: Route) -> Element(Msg) {
             ],
             [html.text(label)],
           )
+        // A real link where the screen has an address, so it can be opened
+        // in a new tab; the app's router catches the plain click.
         False ->
-          html.button(
-            [attribute.class("link-button nav-link"), event.on_click(msg)],
-            [html.text(label)],
-          )
+          case route.path(place_route, m.active_track) {
+            Some(href) ->
+              html.a(
+                [attribute.class("link-button nav-link"), attribute.href(href)],
+                [html.text(label)],
+              )
+            None ->
+              html.button(
+                [attribute.class("link-button nav-link"), event.on_click(msg)],
+                [html.text(label)],
+              )
+          }
       }
     })
   let account = case m.mode {

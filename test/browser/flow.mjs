@@ -155,6 +155,21 @@ check("streak is 1 day", tiles[2] === "1", `got ${tiles[2]}`);
 check("the problem is counted as started", tiles[1] === "1", `got ${tiles[1]}`);
 check("heatmap renders", (await page.$$(".heatmap-cell")).length > 100);
 
+console.log("== screens have URLs");
+check("the stats screen has its own address", /\/t\/[^/]+\/stats$/.test(page.url()), page.url());
+await page.reload({ waitUntil: "networkidle" });
+await page.waitForSelector(".stats-tiles", { timeout: 10000 }).catch(() => {});
+check("a reload stays on the screen it was on", await page.isVisible(".stats-tiles"), page.url());
+await page.click('.nav-link:text-is("Study")');
+await page.waitForSelector(".study-screen");
+check("moving screens moves the address", /\/t\/[^/]+\/study$/.test(page.url()), page.url());
+await page.goBack();
+await page.waitForSelector(".stats-tiles", { timeout: 10000 }).catch(() => {});
+check("Back returns to the previous screen", await page.isVisible(".stats-tiles"), page.url());
+await page.goForward();
+await page.waitForSelector(".study-screen", { timeout: 10000 }).catch(() => {});
+check("and Forward comes back again", await page.isVisible(".study-screen"), page.url());
+
 console.log("== the menu badge reflects schedule state");
 await page.click('.nav-link:text-is("Study")');
 await page.waitForSelector(".study-screen");

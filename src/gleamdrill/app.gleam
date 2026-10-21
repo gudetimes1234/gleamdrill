@@ -11,6 +11,7 @@ import gleam/dict
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
+import gleam/uri.{type Uri}
 import gleamdrill/domain/guest
 import gleamdrill/model.{
   type Route, AuthRoute, CompareRoute, DrillRoute, MenuRoute, QueueRoute,
@@ -60,6 +61,7 @@ import gleamdrill/page/tracks/model as tracks_model
 import gleamdrill/page/tracks/update as tracks_update
 import gleamdrill/page/tracks/view as tracks_view
 import gleamdrill/platform/browser
+import gleamdrill/route
 import gleamdrill/shared.{type Change, type Shared}
 import gleamdrill/shared/cards as shared_cards
 import gleamdrill/shared/common
@@ -78,9 +80,12 @@ import gleamdrill/ui/layout
 import gleamdrill/ui/shell
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
+import modem
 
 pub type State {
-  State(shared: Shared, page: Page)
+  /// `address` is the path the address bar shows, so a screen change knows
+  /// whether the URL has to follow it.
+  State(shared: Shared, page: Page, address: String)
 }
 
 /// The screen on display, holding that screen's own state.
@@ -98,12 +103,80 @@ pub type Page {
 
 pub fn init(boot: #(Shared, Effect(Msg))) -> #(State, Effect(Msg)) {
   let #(shared, fx) = boot
+  let address = case modem.initial_uri() {
+    Ok(address) -> address.path
+    Error(Nil) -> "/"
+  }
   let #(state, opened) =
-    sync_page(State(shared:, page: Study(study_model.init())))
-  #(state, effect.batch([fx, opened]))
+    sync_page(State(shared:, page: Study(study_model.init()), address:))
+  #(state, effect.batch([fx, opened, modem.init(msg.UrlChanged)]))
 }
 
+/// Every message, then the address bar brought in line with the screen it
+/// left behind. Messages handled inside `step` recurse through `step`, so the
+/// URL moves once per message from outside, never midway.
 pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
+  let #(after, fx) = step(state, message)
+  let #(after, moved) = follow(state, after, message)
+  #(after, effect.batch([fx, moved]))
+}
+
+/// The URL for the screen now up, when it differs from the one showing.
+///
+/// Nothing moves before the first load lands: the route then is a guess the
+/// load may overturn (no track yet, a track the account lacks). The landing
+/// itself replaces rather than pushes, so Back never returns to a guess. A
+/// screen with no address (a sitting) leaves the URL where it was, and a
+/// `UrlChanged` already matches by definition.
+fn follow(before: State, after: State, message: Msg) -> #(State, Effect(Msg)) {
+  let wanted = route.path(after.shared.route, after.shared.active_track)
+  case message, after.shared.boot, wanted {
+    msg.UrlChanged(_), _, _ -> #(after, effect.none())
+    _, model.Synced, Some(path) if path != after.address -> #(
+      State(..after, address: path),
+      case before.shared.boot {
+        model.Synced -> modem.push(path, None, None)
+        _ -> modem.replace(path, None, None)
+      },
+    )
+    _, _, _ -> #(after, effect.none())
+  }
+}
+
+/// Back or Forward: the screen the address names, entering its track first
+/// when it names another. Leaving a sitting this way drops its run, as the
+/// exit button does. An address naming nothing (`/`, a typo) or the screen
+/// already up changes nothing.
+fn url_changed(state: State, address: Uri) -> #(State, Effect(Msg)) {
+  let state = State(..state, address: address.path)
+  let shared = state.shared
+  case route.parse(address) {
+    None -> #(state, effect.none())
+    Some(route.Location(to, track)) -> {
+      let track = option.unwrap(track, shared.active_track)
+      case
+        route.path(to, track) == route.path(shared.route, shared.active_track)
+      {
+        True -> #(state, effect.none())
+        False -> {
+          let #(shared, dropped) = case state.page {
+            Sitting(page) ->
+              apply(shared, [sitting_update.abandon_run(shared, page)])
+            _ -> #(shared, effect.none())
+          }
+          let #(shared, entered) = case track == shared.active_track {
+            True -> #(shared, effect.none())
+            False -> shared_tracks.enter_track(shared, track, starter: False)
+          }
+          let #(state, opened) = navigate(State(..state, shared:), to)
+          #(state, effect.batch([dropped, entered, opened]))
+        }
+      }
+    }
+  }
+}
+
+fn step(state: State, message: Msg) -> #(State, Effect(Msg)) {
   case message, state.page {
     msg.AuthMsg(inner), Auth(page) ->
       auth_update.update(state.shared, page, inner)
@@ -146,10 +219,12 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
     -> #(state, effect.none())
 
     msg.KeyPressed(key), _ -> key_pressed(state, key)
+    msg.UrlChanged(address), _ -> url_changed(state, address)
 
     // Navigation into pages.
     msg.UserClickedSignIn(mode), _ -> #(
       State(
+        ..state,
         shared: model.Model(..state.shared, route: AuthRoute),
         page: Auth(auth_model.init(mode)),
       ),
@@ -207,6 +282,7 @@ fn open_sitting(
     Ok(#(page, fx, changes)) -> {
       let state =
         State(
+          ..state,
           shared: model.Model(..state.shared, route: DrillRoute),
           page: Sitting(page),
         )
@@ -232,14 +308,14 @@ fn forward(
   }
   case message, state.page {
     msg.RunnerReady(language), Tour(_) ->
-      update(state, msg.TourMsg(tour_msg.RuntimeReady(language)))
+      step(state, msg.TourMsg(tour_msg.RuntimeReady(language)))
     msg.RunnerReady(language), Sitting(_) ->
-      update(state, msg.SittingMsg(sitting_msg.RuntimeReady(language)))
+      step(state, msg.SittingMsg(sitting_msg.RuntimeReady(language)))
     msg.RunFinished(_, _, _), Sitting(_)
     | msg.RunTimedOut(_), Sitting(_)
     | msg.RemoteRunFinished(_, _), Sitting(_)
       if settled
-    -> update(state, msg.SittingMsg(sitting_msg.RunLanded))
+    -> step(state, msg.SittingMsg(sitting_msg.RunLanded))
     _, _ -> #(state, effect.none())
   }
 }
@@ -387,14 +463,14 @@ fn settle(
 ) -> #(State, Effect(Msg)) {
   let #(model, fx, changes) = result
   let #(shared, applied) = apply(state.shared, changes)
-  let #(state, opened) = sync_page(State(shared:, page: page(model)))
+  let #(state, opened) = sync_page(State(..state, shared:, page: page(model)))
   let settled = #(state, effect.batch([effect.map(fx, to), applied, opened]))
   // Messages a page handed up run last, against the settled state.
   list.fold(changes, settled, fn(acc, change) {
     case change {
       shared.Dispatch(message) -> {
         let #(state, fx) = acc
-        let #(state, more) = update(state, message)
+        let #(state, more) = step(state, message)
         #(state, effect.batch([fx, more]))
       }
       _ -> acc
@@ -411,12 +487,12 @@ fn key_pressed(state: State, key: msg.Key) -> #(State, Effect(Msg)) {
       Error(Nil) -> page_dispatch(State(..state, shared:), key.key)
     }
   }
-  let #(shared, step) = keyboard.step(state.shared, key, lookup)
+  let #(shared, outcome) = keyboard.step(state.shared, key, lookup)
   let state = State(..state, shared:)
-  case step {
+  case outcome {
     keyboard.Ignore -> #(state, effect.none())
     keyboard.Blur -> #(state, common.run_effect(browser.blur_active))
-    keyboard.Send(resolved) -> update(state, resolved)
+    keyboard.Send(resolved) -> step(state, resolved)
   }
 }
 

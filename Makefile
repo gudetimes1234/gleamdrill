@@ -147,7 +147,7 @@ api-fixtures:
 # :1234 belongs to `make dev`, and the two running at once is how e2e testing
 # once broke `make dev` with Eaddrinuse.
 serve-dist:
-	cd dist && python3 -m http.server 4173 --bind 127.0.0.1
+	python3 tools/serve_dist.py dist
 
 # The whole stack -- Caddy, the backend (Go and Elixir inside), Postgres --
 # on http://localhost:8080, behind one origin: the same three images Railway
