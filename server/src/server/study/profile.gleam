@@ -1,15 +1,15 @@
 //// Scheduler settings per track, and the account-wide profile.
 ////
 //// Part of the study data layer; see `server/study/model` for the shared
-//// types.
+//// types. The SQL lives in `profile/sql/*.sql`; `gleam run -m squirrel`
+//// generates `profile/sql.gleam` from it.
 
 import fsrs
-import gleam/dynamic/decode
-import gleam/list
+import gleam/option.{None, Some}
 import gleam/result
 import pog
-import server/db
-import server/study/model.{type StudyError, database_error}
+import server/study/model.{type StudyError, done, first, rows}
+import server/study/profile/sql
 import wire
 import youid/uuid.{type Uuid}
 
@@ -33,30 +33,18 @@ pub fn load_account(
   db: pog.Connection,
   user_id: Uuid,
 ) -> Result(wire.AccountSettings, StudyError) {
-  pog.query(
-    "select day_start_hour, timezone, reminder_hour
-       from settings
-      where user_id = $1::uuid",
-  )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.returning({
-    use day_start_hour <- decode.field(0, decode.int)
-    use timezone <- decode.field(1, decode.string)
-    use reminder_hour <- decode.field(2, decode.optional(decode.int))
-    decode.success(wire.AccountSettings(
-      day_start_hour:,
-      timezone:,
-      reminder_hour:,
-    ))
+  sql.account(db, user_id)
+  |> first(fn(row: sql.AccountRow) {
+    wire.AccountSettings(
+      day_start_hour: row.day_start_hour,
+      timezone: row.timezone,
+      reminder_hour: row.reminder_hour,
+    )
   })
-  |> pog.execute(db)
-  |> result.map_error(database_error)
   // A user with no settings row should be impossible -- signup creates one in
   // the same transaction as the account -- but defaulting beats failing every
   // review if it ever happens.
-  |> result.map(fn(returned) {
-    list.first(returned.rows) |> result.unwrap(wire.default_account())
-  })
+  |> result.map(option.unwrap(_, wire.default_account()))
 }
 
 /// One track's scheduler settings.
@@ -69,20 +57,20 @@ pub fn load_settings(
   user_id: Uuid,
   track: String,
 ) -> Result(wire.Settings, StudyError) {
-  pog.query(
-    "select parameters, desired_retention, learning_steps, relearning_steps,
-            maximum_interval, enable_fuzz, new_per_day, reviews_per_day
-       from track_settings
-      where user_id = $1::uuid and track = $2",
-  )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.text(track))
-  |> pog.returning(settings_decoder())
-  |> pog.execute(db)
-  |> result.map_error(database_error)
-  |> result.map(fn(returned) {
-    list.first(returned.rows) |> result.unwrap(wire.default_settings())
+  sql.track_settings(db, user_id, track)
+  |> first(fn(row: sql.TrackSettingsRow) {
+    settings_from(
+      parameters: row.parameters,
+      desired_retention: row.desired_retention,
+      learning_steps: row.learning_steps,
+      relearning_steps: row.relearning_steps,
+      maximum_interval: row.maximum_interval,
+      enable_fuzz: row.enable_fuzz,
+      new_per_day: row.new_per_day,
+      reviews_per_day: row.reviews_per_day,
+    )
   })
+  |> result.map(option.unwrap(_, wire.default_settings()))
 }
 
 /// Every track's settings, for the export.
@@ -90,48 +78,22 @@ pub fn all_track_settings(
   db: pog.Connection,
   user_id: Uuid,
 ) -> Result(List(#(String, wire.Settings)), StudyError) {
-  pog.query(
-    "select track, parameters, desired_retention, learning_steps,
-            relearning_steps, maximum_interval, enable_fuzz, new_per_day,
-            reviews_per_day
-       from track_settings
-      where user_id = $1::uuid
-      order by track",
-  )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.returning({
-    use track <- decode.field(0, decode.string)
-    use settings <- decode.then(shifted_settings_decoder())
-    decode.success(#(track, settings))
+  sql.all_track_settings(db, user_id)
+  |> rows(fn(row: sql.AllTrackSettingsRow) {
+    #(
+      row.track,
+      settings_from(
+        parameters: row.parameters,
+        desired_retention: row.desired_retention,
+        learning_steps: row.learning_steps,
+        relearning_steps: row.relearning_steps,
+        maximum_interval: row.maximum_interval,
+        enable_fuzz: row.enable_fuzz,
+        new_per_day: row.new_per_day,
+        reviews_per_day: row.reviews_per_day,
+      ),
+    )
   })
-  |> pog.execute(db)
-  |> result.map(fn(returned) { returned.rows })
-  |> result.map_error(database_error)
-}
-
-/// `settings_decoder` with every column one to the right, because `track`
-/// leads the row here and nowhere else.
-fn shifted_settings_decoder() -> decode.Decoder(wire.Settings) {
-  use parameters <- decode.field(1, decode.list(decode.float))
-  use desired_retention <- decode.field(2, decode.float)
-  use learning_steps <- decode.field(3, decode.list(decode.int))
-  use relearning_steps <- decode.field(4, decode.list(decode.int))
-  use maximum_interval <- decode.field(5, decode.int)
-  use enable_fuzz <- decode.field(6, decode.bool)
-  use new_per_day <- decode.field(7, decode.int)
-  use reviews_per_day <- decode.field(8, decode.int)
-  decode.success(wire.Settings(
-    scheduler: fsrs.Config(
-      parameters:,
-      desired_retention:,
-      learning_steps:,
-      relearning_steps:,
-      maximum_interval:,
-      enable_fuzz:,
-    ),
-    new_per_day:,
-    reviews_per_day:,
-  ))
 }
 
 /// Both halves at once, for the callers that want a whole profile.
@@ -150,18 +112,13 @@ pub fn save_account(
   user_id: Uuid,
   account: wire.AccountSettings,
 ) -> Result(Nil, StudyError) {
-  pog.query(
-    "update settings set
-       day_start_hour = $2, timezone = $3, reminder_hour = $4
-     where user_id = $1::uuid",
-  )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.int(account.day_start_hour))
-  |> pog.parameter(pog.text(account.timezone))
-  |> pog.parameter(pog.nullable(pog.int, account.reminder_hour))
-  |> pog.execute(db)
-  |> result.replace(Nil)
-  |> result.map_error(database_error)
+  let wire.AccountSettings(day_start_hour:, timezone:, reminder_hour:) = account
+  case reminder_hour {
+    Some(hour) -> sql.save_account(db, user_id, day_start_hour, timezone, hour)
+    None ->
+      sql.save_account_without_reminder(db, user_id, day_start_hour, timezone)
+  }
+  |> done
 }
 
 /// An upsert, not an update.
@@ -175,47 +132,38 @@ pub fn save_settings(
   track: String,
   settings: wire.Settings,
 ) -> Result(Nil, StudyError) {
-  pog.query(
-    "insert into track_settings
-       (user_id, track, parameters, desired_retention, learning_steps,
-        relearning_steps, maximum_interval, enable_fuzz, new_per_day,
-        reviews_per_day)
-     values ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-     on conflict (user_id, track) do update set
-       parameters = excluded.parameters,
-       desired_retention = excluded.desired_retention,
-       learning_steps = excluded.learning_steps,
-       relearning_steps = excluded.relearning_steps,
-       maximum_interval = excluded.maximum_interval,
-       enable_fuzz = excluded.enable_fuzz,
-       new_per_day = excluded.new_per_day,
-       reviews_per_day = excluded.reviews_per_day",
+  let wire.Settings(scheduler:, new_per_day:, reviews_per_day:) = settings
+  sql.save_track_settings(
+    db,
+    user_id,
+    track,
+    scheduler.parameters,
+    scheduler.desired_retention,
+    scheduler.learning_steps,
+    scheduler.relearning_steps,
+    scheduler.maximum_interval,
+    scheduler.enable_fuzz,
+    new_per_day,
+    reviews_per_day,
   )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.text(track))
-  |> pog.parameter(pog.array(pog.float, settings.scheduler.parameters))
-  |> pog.parameter(pog.float(settings.scheduler.desired_retention))
-  |> pog.parameter(pog.array(pog.int, settings.scheduler.learning_steps))
-  |> pog.parameter(pog.array(pog.int, settings.scheduler.relearning_steps))
-  |> pog.parameter(pog.int(settings.scheduler.maximum_interval))
-  |> pog.parameter(pog.bool(settings.scheduler.enable_fuzz))
-  |> pog.parameter(pog.int(settings.new_per_day))
-  |> pog.parameter(pog.int(settings.reviews_per_day))
-  |> pog.execute(db)
-  |> result.replace(Nil)
-  |> result.map_error(database_error)
+  |> done
 }
 
-fn settings_decoder() -> decode.Decoder(wire.Settings) {
-  use parameters <- decode.field(0, decode.list(decode.float))
-  use desired_retention <- decode.field(1, decode.float)
-  use learning_steps <- decode.field(2, decode.list(decode.int))
-  use relearning_steps <- decode.field(3, decode.list(decode.int))
-  use maximum_interval <- decode.field(4, decode.int)
-  use enable_fuzz <- decode.field(5, decode.bool)
-  use new_per_day <- decode.field(6, decode.int)
-  use reviews_per_day <- decode.field(7, decode.int)
-  decode.success(wire.Settings(
+/// One track's settings from the columns of its `track_settings` row. Every
+/// query that reads the table -- one track, every track, the switcher's
+/// standings -- selects these eight, and each generated row is its own type,
+/// so this is the one place they become a `wire.Settings`.
+pub fn settings_from(
+  parameters parameters: List(Float),
+  desired_retention desired_retention: Float,
+  learning_steps learning_steps: List(Int),
+  relearning_steps relearning_steps: List(Int),
+  maximum_interval maximum_interval: Int,
+  enable_fuzz enable_fuzz: Bool,
+  new_per_day new_per_day: Int,
+  reviews_per_day reviews_per_day: Int,
+) -> wire.Settings {
+  wire.Settings(
     scheduler: fsrs.Config(
       parameters:,
       desired_retention:,
@@ -226,5 +174,5 @@ fn settings_decoder() -> decode.Decoder(wire.Settings) {
     ),
     new_per_day:,
     reviews_per_day:,
-  ))
+  )
 }
