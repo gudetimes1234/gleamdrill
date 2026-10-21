@@ -516,45 +516,44 @@ pub fn import_legacy(request: wisp.Request, context: Context) -> wisp.Response {
         "invalid_body",
         "Expected cards, solved problems and drafts.",
       )
-    Ok(#(solved, cards, drafts, notes, queues)) -> {
-      let outcome = {
-        // A legacy import is one track's worth by construction: the
-        // pre-account store only ever held Python.
-        // An upgrade hands over one track's worth by construction: the
-        // pre-account store only ever held Python. Anything in the payload
-        // that names no track is attributed to this one.
-        use track <- result.try(
-          track.batch_track(solved)
-          |> result.try_recover(fn(_) {
-            profile.default_track(context.db, user.id)
-            |> result.map_error(fn(_) { Nil })
-          })
-          |> result.unwrap("")
-          |> Ok,
-        )
-        use profile <- result.try(profile.load_profile(
-          context.db,
-          user.id,
-          track,
-        ))
-        legacy_import.import_legacy(
-          context.db,
-          user.id,
-          track,
-          profile.settings,
-          solved,
-          cards,
-          drafts,
-          notes,
-          queues,
-          timestamp.system_time(),
-        )
+    Ok(#(solved, cards, drafts, notes, queues)) ->
+      // The same shape checks as a PUT: an import is the other way a set
+      // of queues reaches the table.
+      case queues.validate_queues(queues) {
+        Error(message) -> web.error(422, "invalid_queues", message)
+        Ok(Nil) -> {
+          let outcome = {
+            // An upgrade hands over one track's worth by construction: the
+            // pre-account store only ever held Python. Anything in the payload
+            // that names no track is attributed to this one.
+            use track <- result.try(case track.batch_track(solved) {
+              Ok(track) -> Ok(track)
+              Error(Nil) -> track.default(context.db, user.id)
+            })
+            use profile <- result.try(profile.load_profile(
+              context.db,
+              user.id,
+              track,
+            ))
+            legacy_import.import_legacy(
+              context.db,
+              user.id,
+              track,
+              profile.settings,
+              solved,
+              cards,
+              drafts,
+              notes,
+              queues,
+              timestamp.system_time(),
+            )
+          }
+          case outcome {
+            Error(failure) -> study_error(failure)
+            Ok(Nil) -> wisp.no_content()
+          }
+        }
       }
-      case outcome {
-        Error(failure) -> study_error(failure)
-        Ok(Nil) -> wisp.no_content()
-      }
-    }
   }
 }
 

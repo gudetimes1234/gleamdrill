@@ -267,8 +267,13 @@ pub fn merge(
   // first problem to infer it from either. Attributing it to the account's
   // busiest track beats leaving it in "", which no track matches -- an
   // upgrade that quietly drops an empty list is still dropping a list.
+  //
+  // Names are trimmed here as well as on insert: compared raw, "Arrays " and
+  // an existing "Arrays" would stay two queues and then collide on the
+  // unique index once both were written trimmed.
   let incoming =
     list.map(incoming, fn(queue: wire.Queue) {
+      let queue = wire.Queue(..queue, name: string.trim(queue.name))
       case queue.track {
         "" -> wire.Queue(..queue, track: default_track)
         _ -> queue

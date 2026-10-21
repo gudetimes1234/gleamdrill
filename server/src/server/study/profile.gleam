@@ -83,30 +83,6 @@ pub fn load_settings(
   })
 }
 
-/// The track a user has most cards in, ties broken by name; the empty string
-/// when they have none.
-///
-/// What a request that names no track means. Defaulting rather than refusing
-/// is what keeps a client from before tracks working: it sends no `?track=`
-/// and gets a coherent single-track view instead of an empty one.
-pub fn default_track(
-  db: pog.Connection,
-  user_id: String,
-) -> Result(String, StudyError) {
-  pog.query(
-    "select category from cards
-      where user_id = $1::uuid
-      group by category
-      order by count(*) desc, category
-      limit 1",
-  )
-  |> pog.parameter(pog.text(user_id))
-  |> pog.returning(decode.at([0], decode.string))
-  |> pog.execute(db)
-  |> result.map_error(database_error)
-  |> result.map(fn(returned) { list.first(returned.rows) |> result.unwrap("") })
-}
-
 /// Every track's settings, for the export.
 pub fn all_track_settings(
   db: pog.Connection,

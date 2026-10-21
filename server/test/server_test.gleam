@@ -793,6 +793,21 @@ pub fn merging_queues_loses_nothing_and_duplicates_nothing_test() {
   queues.merge(merged, "Python", incoming) |> should.equal(merged)
 }
 
+pub fn merging_queues_matches_names_the_way_the_insert_stores_them_test() {
+  let existing = [
+    wire.Queue(track: "Python", name: "warmup", problems: [ref("A")]),
+  ]
+  let incoming = [
+    wire.Queue(track: "Python", name: " warmup ", problems: [ref("B")]),
+  ]
+  // Compared raw, these were two queues that the trimming insert then wrote
+  // under one name -- a unique-index violation, so a 500 on upgrade.
+  queues.merge(existing, "Python", incoming)
+  |> should.equal([
+    wire.Queue(track: "Python", name: "warmup", problems: [ref("A"), ref("B")]),
+  ])
+}
+
 // --- today.budget ------------------------------------------------------------
 
 pub fn the_day_budgets_subtract_and_clamp_at_zero_test() {

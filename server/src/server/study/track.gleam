@@ -5,13 +5,13 @@
 //// all, so an un-upgraded client asking for its stats would get zeros rather
 //// than its stats -- silently, which is the worst way to be wrong.
 
+import gleam/dynamic/decode
 import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import pog
-import server/study/model.{type StudyError}
-import server/study/profile
+import server/study/model.{type StudyError, database_error}
 import wire
 
 /// The track a request names, or the one the user has most cards in.
@@ -69,6 +69,30 @@ pub fn resolve(
 ) -> Result(String, StudyError) {
   case requested {
     Some(track) -> Ok(track)
-    None -> profile.default_track(db, user_id)
+    None -> default(db, user_id)
   }
+}
+
+/// The track a user has most cards in, ties broken by name; the empty string
+/// when they have none.
+///
+/// What a request that names no track means. Defaulting rather than refusing
+/// is what keeps a client from before tracks working: it sends no `?track=`
+/// and gets a coherent single-track view instead of an empty one.
+pub fn default(
+  db: pog.Connection,
+  user_id: String,
+) -> Result(String, StudyError) {
+  pog.query(
+    "select category from cards
+      where user_id = $1::uuid
+      group by category
+      order by count(*) desc, category
+      limit 1",
+  )
+  |> pog.parameter(pog.text(user_id))
+  |> pog.returning(decode.at([0], decode.string))
+  |> pog.execute(db)
+  |> result.map_error(database_error)
+  |> result.map(fn(returned) { list.first(returned.rows) |> result.unwrap("") })
 }
