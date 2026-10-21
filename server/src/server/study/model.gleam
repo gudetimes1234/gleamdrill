@@ -9,6 +9,7 @@
 //// type they return.
 
 import fsrs
+import gleam/list
 import gleam/option.{type Option}
 import gleam/string
 import gleam/time/timestamp.{type Timestamp}
@@ -57,5 +58,27 @@ pub fn flatten_transaction_error(
   case error {
     pog.TransactionRolledBack(reason) -> reason
     pog.TransactionQueryError(query_error) -> database_error(query_error)
+  }
+}
+
+/// A generated query's rows, each mapped into the domain type, with the
+/// error folded into `StudyError`. Every read in `study/*` ends in this.
+pub fn rows(
+  returned: Result(pog.Returned(row), pog.QueryError),
+  with: fn(row) -> a,
+) -> Result(List(a), StudyError) {
+  case returned {
+    Ok(pog.Returned(rows:, ..)) -> Ok(list.map(rows, with))
+    Error(error) -> Error(database_error(error))
+  }
+}
+
+/// A generated statement run for its effect alone.
+pub fn done(
+  returned: Result(pog.Returned(row), pog.QueryError),
+) -> Result(Nil, StudyError) {
+  case returned {
+    Ok(_) -> Ok(Nil)
+    Error(error) -> Error(database_error(error))
   }
 }
