@@ -30,6 +30,8 @@ pub type Header(msg) {
     extra: List(Element(msg)),
     nav: Bool,
   )
+  /// No header row: the page's body follows the notices directly.
+  NoHeader
 }
 
 /// The element the header row is drawn as.
@@ -52,19 +54,21 @@ pub fn header(title: List(Element(msg))) -> Header(msg) {
 
 pub fn map(document: Document(a), with: fn(a) -> b) -> Document(b) {
   let Document(class:, header:, storage_warning:, lead:, body:) = document
-  let Header(tag:, class: header_class, title_class:, title:, extra:, nav:) =
-    header
   let lift = fn(elements) { list.map(elements, element.map(_, with)) }
   Document(
     class:,
-    header: Header(
-      tag:,
-      class: header_class,
-      title_class:,
-      title: lift(title),
-      extra: lift(extra),
-      nav:,
-    ),
+    header: case header {
+      Header(tag:, class: header_class, title_class:, title:, extra:, nav:) ->
+        Header(
+          tag:,
+          class: header_class,
+          title_class:,
+          title: lift(title),
+          extra: lift(extra),
+          nav:,
+        )
+      NoHeader -> NoHeader
+    },
     storage_warning:,
     lead: lift(lead),
     body: lift(body),

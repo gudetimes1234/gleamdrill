@@ -44,11 +44,8 @@ pub fn runner_ready(m: Model, language: String) -> #(Model, Effect(Msg)) {
         )
       _, _, _ -> m
     }
-    case language, m.run {
-      // A tour lesson opened before the compiler was ready runs now.
-      "gleam", RunIdle -> common.run_tour_lesson(m)
-      _, _ -> #(m, effect.none())
-    }
+    // A tour lesson waiting on the compiler hears of it from the app.
+    #(m, effect.none())
   }
 }
 

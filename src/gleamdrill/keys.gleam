@@ -18,21 +18,17 @@ import gleamdrill/domain/walk
 import gleamdrill/model.{
   type Model, AuthRoute, AwaitingGrade, CompareRoute, DrillRoute, MenuRoute,
   NoPane, NotePane, QueueRoute, Ran, ReportRoute, SettingsRoute, SolutionPane,
-  StatsRoute, StudyRoute, SummaryRoute, TourContents, TourLesson, TourRoute,
-  TracksRoute,
+  StatsRoute, StudyRoute, SummaryRoute, TourRoute, TracksRoute,
 }
 import gleamdrill/msg.{
   type Key, type Msg, BoardJumped, BoardMoved, BoardShelfMoved,
   BoardToggledAtCursor, EditorFocusRequested, ExitConfirmed, HelpToggled,
-  NoteFocusRequested, QuizMoved, TourActivated, TourCursorMoved, TourRunTicked,
-  UserClickedBackToStudy, UserClickedExitDrill, UserClickedExitReport,
-  UserClickedNext, UserClickedRun, UserClickedScratchRun,
-  UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
-  UserClickedUndo, UserGraded, UserPickedChoice, UserRevealedRecall,
-  UserRevealedWholeThing, UserSubmittedAnswer, UserSubmittedBoard,
-  UserToggledDiff, UserToggledNudge, UserToggledPane, UserToggledPrompt,
-  UserToggledResults, WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown,
-  WalkWhyShown,
+  NoteFocusRequested, QuizMoved, UserClickedExitDrill, UserClickedExitReport,
+  UserClickedNext, UserClickedRun, UserClickedScratchRun, UserClickedUndo,
+  UserGraded, UserPickedChoice, UserRevealedRecall, UserRevealedWholeThing,
+  UserSubmittedAnswer, UserSubmittedBoard, UserToggledDiff, UserToggledNudge,
+  UserToggledPane, UserToggledPrompt, UserToggledResults, WalkAdvanced,
+  WalkBacked, WalkCodeShown, WalkHintShown, WalkWhyShown,
 }
 
 import gleamdrill/ui/binding.{type Binding, Binding}
@@ -107,49 +103,13 @@ pub fn screen(m: Model) -> List(Binding(Msg)) {
         ])
       // Drawn by page/queue, which brings its own rows.
       QueueRoute -> []
-      TourRoute -> tour_bindings(m)
+      // Drawn by page/tour, which brings its own rows.
+      TourRoute -> []
       // A guest can always walk away from the form; the link at its foot
       // says so, and Escape should mean the same thing.
       // Drawn by page/auth, which brings its own rows.
       AuthRoute -> []
     }
-  }
-}
-
-/// The tour: one set of keys for the contents page, another for a lesson.
-/// Inside the editor nothing is claimed; `Escape` then `Tab` leaves it.
-fn tour_bindings(m: Model) -> List(Binding(Msg)) {
-  case m.tour_page {
-    TourContents -> [
-      Binding(
-        ["j", "k"],
-        "move",
-        "Move through the lessons",
-        TourCursorMoved(1),
-      ),
-      Binding(["Enter"], "open", "Open the lesson", TourActivated),
-      Binding(
-        ["Escape", "b"],
-        "back",
-        "Back to the study screen",
-        UserClickedBackToStudy,
-      ),
-      help_binding(),
-    ]
-    TourLesson(_) -> [
-      Binding(["n", "l"], "next", "Next lesson", UserClickedTourNext),
-      Binding(["p", "h"], "prev", "Previous lesson", UserClickedTourPrev),
-      Binding(["c"], "contents", "Table of contents", UserClickedTourContents),
-      Binding(["i", "e"], "edit", "Focus the editor", EditorFocusRequested),
-      Binding(["r"], "run", "Run the program now", TourRunTicked),
-      Binding(
-        ["Escape", "b"],
-        "back",
-        "Back to the study screen",
-        UserClickedBackToStudy,
-      ),
-      help_binding(),
-    ]
   }
 }
 
@@ -512,16 +472,6 @@ pub fn help_binding() -> Binding(Msg) {
 pub fn dispatch(m: Model, key: Key) -> Result(Msg, Nil) {
   case key.key, m.route, m.help_open {
     // Paired directions.
-    "k", TourRoute, False ->
-      case m.tour_page {
-        TourContents -> Ok(TourCursorMoved(-1))
-        TourLesson(_) -> lookup(m, key)
-      }
-    "j", TourRoute, False ->
-      case m.tour_page {
-        TourContents -> Ok(TourCursorMoved(1))
-        TourLesson(_) -> lookup(m, key)
-      }
     // j/k and h/l share one Binding row each, so without these the second
     // key of a pair would resolve to the first one's message and k would move
     // down the list.

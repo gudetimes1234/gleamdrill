@@ -45,12 +45,6 @@ pub type Route {
   CompareRoute
 }
 
-/// Which face of the tour screen is up: the table of contents, or one lesson.
-pub type TourPage {
-  TourContents
-  TourLesson(Int)
-}
-
 /// Whether this browser is signed in, and therefore where study data lives.
 ///
 /// The two are separate stores with a one-way migration between them, not two
@@ -198,14 +192,7 @@ pub type Model {
     /// Whether the `?` cheatsheet overlay is up.
     help_open: Bool,
     // --- the Gleam Language Tour ---
-    tour_page: TourPage,
-    /// The lesson's editor text. Edits are kept per lesson for the session
-    /// (`tour_edits`) so Back and Next do not lose work; they are not
-    /// persisted, the same as on tour.gleam.run.
-    tour_draft: String,
     tour_edits: Dict(Int, String),
-    /// The keyboard cursor on the contents page.
-    tour_cursor: Int,
     /// The last lesson opened, persisted as a device preference.
     tour_lesson: Int,
     /// The in-app "leave this drill?" question, with its message, while it is
@@ -357,10 +344,7 @@ pub fn default() -> Model {
     insights: remote.NotAsked,
     notice: None,
     help_open: False,
-    tour_page: TourContents,
-    tour_draft: "",
     tour_edits: dict.new(),
-    tour_cursor: 0,
     tour_lesson: 0,
     exit_prompt: None,
     storage_full: False,

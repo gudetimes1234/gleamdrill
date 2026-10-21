@@ -16,6 +16,7 @@ import gleamdrill/page/queue/msg as queue_msg
 import gleamdrill/page/settings/msg as settings_msg
 import gleamdrill/page/stats/msg as stats_msg
 import gleamdrill/page/study/msg as study_msg
+import gleamdrill/page/tour/msg as tour_msg
 import gleamdrill/page/tracks/msg as tracks_msg
 import gleamdrill/store/remote.{type ApiError}
 import wire
@@ -37,6 +38,7 @@ pub type Msg {
   QueueMsg(queue_msg.Msg)
   BrowseMsg(browse_msg.Msg)
   StudyMsg(study_msg.Msg)
+  TourMsg(tour_msg.Msg)
   // --- keyboard ---
   KeyPressed(Key)
   HelpToggled
@@ -89,17 +91,6 @@ pub type Msg {
   // --- the Gleam Language Tour ---
   /// Open the tour on its table of contents.
   UserClickedTour
-  UserOpenedLesson(Int)
-  UserClickedTourNext
-  UserClickedTourPrev
-  UserClickedTourContents
-  /// Put the lesson's original program back in the editor.
-  UserResetLesson
-  TourEditorChanged(String)
-  /// The typing pause is over: compile and run what is in the editor.
-  TourRunTicked
-  TourCursorMoved(Int)
-  TourActivated
   UserToggledSolution(Int)
   /// Unfold or fold the rail's nudge. Not a reveal.
   UserToggledNudge

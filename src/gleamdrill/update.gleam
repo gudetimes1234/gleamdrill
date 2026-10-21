@@ -16,24 +16,22 @@ import gleamdrill/msg.{
   QueuesSaved, QuizMoved, RemoteRunFinished, ReviewRecorded, RunFinished,
   RunTimedOut, RunnerFailed, RunnerReady, RuntimeLoadTimedOut, SettingsMsg,
   SignOutCompleted, StateImported, StateLoaded, StatsLoaded, StatsMsg, StudyMsg,
-  TourActivated, TourCursorMoved, TourEditorChanged, TourRunTicked, TracksMsg,
-  UndoRecorded, UserAddedSelectionToQueue, UserAddedStarterSet,
-  UserChangedIterations, UserChangedKeymap, UserClickedBackToStudy,
-  UserClickedBrowse, UserClickedExitDrill, UserClickedExitReport,
-  UserClickedMergeGuest, UserClickedNext, UserClickedQueue, UserClickedRecall,
-  UserClickedRetryRuntime, UserClickedRetrySync, UserClickedRun,
-  UserClickedScratchRun, UserClickedSettings, UserClickedSignIn,
-  UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
-  UserClickedStats, UserClickedStopRun, UserClickedStudy, UserClickedTour,
-  UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
-  UserClickedTracks, UserClickedUndo, UserDismissedDiff, UserDismissedMergeOffer,
-  UserDismissedNotice, UserDismissedUpgradePrompt, UserGraded, UserOpenedLesson,
-  UserPickedChoice, UserResetLesson, UserRevealedRecall, UserRevealedWholeThing,
-  UserStartedBlitz, UserSubmittedAnswer, UserSubmittedBoard, UserToggledDiff,
-  UserToggledNudge, UserToggledPane, UserToggledPiece, UserToggledPrompt,
-  UserToggledResults, UserToggledSolution, UserToggledSuspend, UserToggledTimer,
-  WalkAdvanced, WalkBacked, WalkCodeShown, WalkFocused, WalkHintShown,
-  WalkWhyShown,
+  TourMsg, TracksMsg, UndoRecorded, UserAddedSelectionToQueue,
+  UserAddedStarterSet, UserChangedIterations, UserChangedKeymap,
+  UserClickedBackToStudy, UserClickedBrowse, UserClickedExitDrill,
+  UserClickedExitReport, UserClickedMergeGuest, UserClickedNext,
+  UserClickedQueue, UserClickedRecall, UserClickedRetryRuntime,
+  UserClickedRetrySync, UserClickedRun, UserClickedScratchRun,
+  UserClickedSettings, UserClickedSignIn, UserClickedSignOut,
+  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
+  UserClickedStopRun, UserClickedStudy, UserClickedTour, UserClickedTracks,
+  UserClickedUndo, UserDismissedDiff, UserDismissedMergeOffer,
+  UserDismissedNotice, UserDismissedUpgradePrompt, UserGraded, UserPickedChoice,
+  UserRevealedRecall, UserRevealedWholeThing, UserStartedBlitz,
+  UserSubmittedAnswer, UserSubmittedBoard, UserToggledDiff, UserToggledNudge,
+  UserToggledPane, UserToggledPiece, UserToggledPrompt, UserToggledResults,
+  UserToggledSolution, UserToggledSuspend, UserToggledTimer, WalkAdvanced,
+  WalkBacked, WalkCodeShown, WalkFocused, WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/platform/browser
 import gleamdrill/update/blitz as blitz_update
@@ -47,7 +45,6 @@ import gleamdrill/update/review as review_update
 import gleamdrill/update/run as run_update
 import gleamdrill/update/session as session_update
 import gleamdrill/update/stats
-import gleamdrill/update/tour as tour_update
 import lustre/effect.{type Effect}
 
 pub fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
@@ -74,6 +71,8 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     | QueueMsg(_)
     | BrowseMsg(_)
     | StudyMsg(_)
+    | TourMsg(_)
+    | UserClickedTour
     | UserClickedBrowse
     | UserClickedQueue
     | UserClickedStats
@@ -163,17 +162,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     EditorResized(height) -> drill_update.editor_resized(m, height)
 
     // --- the Gleam Language Tour ---
-    UserClickedTour -> tour_update.open_contents(m)
-    UserOpenedLesson(index) -> tour_update.open_lesson(m, index)
-    UserClickedTourNext -> tour_update.next(m)
-    UserClickedTourPrev -> tour_update.prev(m)
-    UserClickedTourContents -> tour_update.to_contents(m)
-    UserResetLesson -> tour_update.reset_lesson(m)
-    TourEditorChanged(text) -> tour_update.editor_changed(m, text)
-    TourRunTicked -> tour_update.run_ticked(m)
-    TourCursorMoved(delta) -> tour_update.cursor_moved(m, delta)
-    TourActivated -> tour_update.activated(m)
-
     // --- export and import ---
     UserClickedTracks -> menu_update.open_tracks(m)
 

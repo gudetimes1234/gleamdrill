@@ -17,7 +17,6 @@ import gleamdrill/view/help
 import gleamdrill/view/report
 import gleamdrill/view/statusbar
 import gleamdrill/view/summary
-import gleamdrill/view/tour as tour_view
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -97,6 +96,6 @@ fn legacy_screen(m: Model) -> Element(Msg) {
     ReportRoute -> report.view(m)
     MenuRoute -> element.none()
     QueueRoute -> element.none()
-    TourRoute -> tour_view.view(m)
+    TourRoute -> element.none()
   }
 }

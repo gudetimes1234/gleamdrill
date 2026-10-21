@@ -10,13 +10,12 @@ import gleam/option.{None, Some}
 import gleam/result
 import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/content/problems
-import gleamdrill/content/tour
 import gleamdrill/domain/track
 import gleamdrill/domain/walk
 import gleamdrill/model.{
-  type Model, Account, Guest, Model, PromptDismissed, Ran, Running, RuntimeReady,
-  TourLesson, TourRoute,
+  type Model, Account, Guest, Model, PromptDismissed, Ran, Running,
 }
+
 import gleamdrill/msg.{type Msg}
 import gleamdrill/platform/browser
 import gleamdrill/runner
@@ -94,14 +93,14 @@ pub fn current_language(m: Model) -> Result(String, Nil) {
 /// The language whose runtime the screen on the way in will need, if any: a
 /// checkable drill's, or Gleam's for a tour lesson.
 pub fn runtime_wanted(m: Model) -> Result(String, Nil) {
-  case m.route, m.tour_page {
-    model.DrillRoute, _ ->
+  case m.route {
+    model.DrillRoute ->
       case model.current_check(m) {
         Ok(_) -> current_language(m)
         Error(Nil) -> Error(Nil)
       }
-    model.TourRoute, model.TourLesson(_) -> Ok("gleam")
-    _, _ -> Error(Nil)
+    model.TourRoute -> Ok("gleam")
+    _ -> Error(Nil)
   }
 }
 
@@ -111,35 +110,27 @@ pub fn runtime_wanted(m: Model) -> Result(String, Nil) {
 pub fn with_prefetch(pair: #(Model, Effect(Msg))) -> #(Model, Effect(Msg)) {
   let #(m, fx) = pair
   case runtime_wanted(m) {
-    Ok(language) ->
-      case model.runtime_for(m, language) {
-        model.RuntimeNotLoaded -> #(
-          Model(
-            ..m,
-            runtimes: model.assoc_put(
-              m.runtimes,
-              language,
-              model.RuntimeLoading,
-            ),
-          ),
-          effect.batch([fx, runner.ensure(language, runner_msg)]),
-        )
-        // A failed load gets one fresh chance per drill open; without this
-        // the only recovery was a page reload.
-        model.RuntimeFailed(_) -> #(
-          Model(
-            ..m,
-            runtimes: model.assoc_put(
-              m.runtimes,
-              language,
-              model.RuntimeLoading,
-            ),
-          ),
-          effect.batch([fx, runner.restart(language, runner_msg)]),
-        )
-        _ -> pair
-      }
+    Ok(language) -> {
+      let #(m, loading) = prefetch(m, language)
+      #(m, effect.batch([fx, loading]))
+    }
     Error(Nil) -> pair
+  }
+}
+
+/// Starts loading one language's runtime unless it is loaded or loading. A
+/// failed load gets one fresh chance per open; without this the only
+/// recovery was a page reload.
+pub fn prefetch(m: Model, language: String) -> #(Model, Effect(Msg)) {
+  let loading =
+    Model(
+      ..m,
+      runtimes: model.assoc_put(m.runtimes, language, model.RuntimeLoading),
+    )
+  case model.runtime_for(m, language) {
+    model.RuntimeNotLoaded -> #(loading, runner.ensure(language, runner_msg))
+    model.RuntimeFailed(_) -> #(loading, runner.restart(language, runner_msg))
+    _ -> #(m, effect.none())
   }
 }
 
@@ -484,16 +475,6 @@ pub fn start_local_run(
     Model(..m, run: Running(id, previous), next_run_id: id + 1),
     runner.run(language, id, solution, harness, runner_msg),
   )
-}
-
-/// Run the tour lesson in the editor if the compiler is ready; otherwise do
-/// nothing, and `RunnerReady` will call back here when it is.
-pub fn run_tour_lesson(m: Model) -> #(Model, Effect(Msg)) {
-  case m.route, m.tour_page, model.runtime_for(m, "gleam") {
-    TourRoute, TourLesson(_), RuntimeReady ->
-      start_local_run(m, "gleam", m.tour_draft, tour.harness)
-    _, _, _ -> #(m, effect.none())
-  }
 }
 
 pub fn current_quiz(m: Model) -> Result(problem.Quiz, Nil) {

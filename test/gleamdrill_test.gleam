@@ -49,6 +49,8 @@ import gleamdrill/page/stats/msg as stats_msg
 import gleamdrill/page/study/keys as study_keys
 import gleamdrill/page/study/model as study_model
 import gleamdrill/page/study/msg as study_msg
+import gleamdrill/page/tour/keys as tour_keys
+import gleamdrill/page/tour/model as tour_model
 import gleamdrill/page/tracks/keys as tracks_keys
 import gleamdrill/page/tracks/model as tracks_model
 import gleamdrill/runner
@@ -1341,6 +1343,9 @@ pub fn every_page_documents_escape_and_help_test() -> Nil {
   assert list.any(rows, fn(b) { list.contains(b.keys, "?") })
   assert list.any(rows, fn(b) { list.contains(b.keys, "Escape") })
   let rows = stats_keys.bindings(model.default(), stats_model.init())
+  assert list.any(rows, fn(b) { list.contains(b.keys, "?") })
+  assert list.any(rows, fn(b) { list.contains(b.keys, "Escape") })
+  let rows = tour_keys.bindings(model.default(), tour_model.init(0))
   assert list.any(rows, fn(b) { list.contains(b.keys, "?") })
   assert list.any(rows, fn(b) { list.contains(b.keys, "Escape") })
 }

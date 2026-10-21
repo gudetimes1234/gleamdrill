@@ -8,13 +8,14 @@
 //// the flat model and the old dispatcher; `msg.Msg` carries both kinds of
 //// message.
 
+import gleam/dict
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
 import gleamdrill/keys
 import gleamdrill/model.{
   type Route, AuthRoute, CompareRoute, MenuRoute, QueueRoute, SettingsRoute,
-  StatsRoute, StudyRoute, TracksRoute,
+  StatsRoute, StudyRoute, TourRoute, TracksRoute,
 }
 import gleamdrill/msg.{type Msg}
 import gleamdrill/page/auth/keys as auth_keys
@@ -42,6 +43,11 @@ import gleamdrill/page/study/keys as study_keys
 import gleamdrill/page/study/model as study_model
 import gleamdrill/page/study/update as study_update
 import gleamdrill/page/study/view as study_view
+import gleamdrill/page/tour/keys as tour_keys
+import gleamdrill/page/tour/model as tour_model
+import gleamdrill/page/tour/msg as tour_msg
+import gleamdrill/page/tour/update as tour_update
+import gleamdrill/page/tour/view as tour_view
 import gleamdrill/page/tracks/keys as tracks_keys
 import gleamdrill/page/tracks/model as tracks_model
 import gleamdrill/page/tracks/update as tracks_update
@@ -54,6 +60,7 @@ import gleamdrill/ui/document
 import gleamdrill/ui/layout
 import gleamdrill/update as legacy_update
 import gleamdrill/update/common
+import gleamdrill/update/drill as drill_update
 import gleamdrill/update/keyboard
 import gleamdrill/update/menu as menu_update
 import gleamdrill/update/queues as queues_update
@@ -77,6 +84,7 @@ pub type Page {
   Queue(queue_model.Model)
   Browse(browse_model.Model)
   Study(study_model.Model)
+  Tour(tour_model.Model)
 }
 
 pub fn init(boot: #(Shared, Effect(Msg))) -> #(State, Effect(Msg)) {
@@ -108,6 +116,9 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
     msg.StudyMsg(inner), Study(page) ->
       study_update.update(state.shared, page, inner)
       |> settle(state, Study, msg.StudyMsg)
+    msg.TourMsg(inner), Tour(page) ->
+      tour_update.update(state.shared, page, inner)
+      |> settle(state, Tour, msg.TourMsg)
     // A page's message that lands after its page closed (a slow response):
     // there is nothing left for it to update.
     msg.AuthMsg(_), _
@@ -117,6 +128,7 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
     | msg.QueueMsg(_), _
     | msg.BrowseMsg(_), _
     | msg.StudyMsg(_), _
+    | msg.TourMsg(_), _
     -> #(state, effect.none())
 
     msg.KeyPressed(key), page if page != Legacy -> key_pressed(state, key)
@@ -133,12 +145,24 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
     msg.UserClickedStats, _ -> navigate(state, StatsRoute)
     msg.UserClickedQueue, _ -> navigate(state, QueueRoute)
     msg.UserClickedBrowse, _ -> navigate(state, MenuRoute)
+    msg.UserClickedTour, _ -> navigate(state, TourRoute)
 
     _, _ -> {
       let #(shared, fx) = legacy_update.update(state.shared, message)
       let #(state, opened) = sync_page(State(..state, shared:))
-      #(state, effect.batch([fx, opened]))
+      let #(state, forwarded) = forward(state, message)
+      #(state, effect.batch([fx, opened, forwarded]))
     }
+  }
+}
+
+/// Shared events a page also wants to hear about, after the shared state
+/// has taken them in.
+fn forward(state: State, message: Msg) -> #(State, Effect(Msg)) {
+  case message, state.page {
+    msg.RunnerReady(language), Tour(_) ->
+      update(state, msg.TourMsg(tour_msg.RuntimeReady(language)))
+    _, _ -> #(state, effect.none())
   }
 }
 
@@ -205,6 +229,14 @@ pub fn view(state: State) -> Element(Msg) {
         page_keys(state),
         study_keys.label,
       ))
+    Tour(page) ->
+      Some(legacy_view.Screen(
+        tour_view.view(shared, page)
+          |> document.map(msg.TourMsg)
+          |> layout.view(shared, TourRoute, _),
+        page_keys(state),
+        tour_keys.label,
+      ))
   })
 }
 
@@ -222,6 +254,7 @@ fn page_keys(state: State) -> List(Binding(Msg)) {
     Browse(page) ->
       browse_keys.bindings(state.shared, page) |> lift(msg.BrowseMsg)
     Study(page) -> study_keys.bindings(state.shared, page) |> lift(msg.StudyMsg)
+    Tour(page) -> tour_keys.bindings(state.shared, page) |> lift(msg.TourMsg)
   }
 }
 
@@ -238,6 +271,9 @@ fn page_dispatch(state: State, key: String) -> Result(Msg, Nil) {
     Browse(page) ->
       browse_keys.dispatch(state.shared, page, key)
       |> result.map(msg.BrowseMsg)
+    Tour(page) ->
+      tour_keys.dispatch(state.shared, page, key)
+      |> result.map(msg.TourMsg)
     _ -> binding.find(page_keys(state), key)
   }
 }
@@ -344,6 +380,26 @@ fn apply_change(shared: Shared, change: Change) -> #(Shared, Effect(Msg)) {
       #(shared, common.save_preferences(shared))
     }
     shared.QueueChangeLanded(result) -> queues_update.changed(shared, result)
+    shared.ResetRun -> #(
+      model.Model(..shared, run: model.RunIdle),
+      effect.none(),
+    )
+    shared.RunLocal(language, code, harness) ->
+      common.start_local_run(shared, language, code, harness)
+    shared.Prefetch(language) -> common.prefetch(shared, language)
+    shared.EditorHeightChanged(height) ->
+      drill_update.editor_resized(shared, height)
+    shared.TourLessonOpened(lesson) -> {
+      let shared = model.Model(..shared, tour_lesson: lesson)
+      #(shared, common.save_preferences(shared))
+    }
+    shared.TourEdited(lesson, code) -> #(
+      model.Model(..shared, tour_edits: case code {
+        Some(code) -> dict.insert(shared.tour_edits, lesson, code)
+        None -> dict.delete(shared.tour_edits, lesson)
+      }),
+      effect.none(),
+    )
     shared.SelectionChanged(selected) -> #(
       model.Model(..shared, selected:),
       effect.none(),
@@ -369,6 +425,7 @@ fn sync_page(state: State) -> #(State, Effect(Msg)) {
     | MenuRoute, Browse(_)
     | CompareRoute, Browse(_)
     | StudyRoute, Study(_)
+    | TourRoute, Tour(_)
     -> #(state, effect.none())
     AuthRoute, _ -> #(
       State(..state, page: Auth(auth_model.init(auth_model.SigningIn))),
@@ -388,6 +445,7 @@ fn sync_page(state: State) -> #(State, Effect(Msg)) {
       browse_update.init(shared) |> settle(state, Browse, msg.BrowseMsg)
     StudyRoute, _ ->
       study_update.init(shared) |> settle(state, Study, msg.StudyMsg)
+    TourRoute, _ -> tour_update.init(shared) |> settle(state, Tour, msg.TourMsg)
     _, _ -> #(State(..state, page: Legacy), effect.none())
   }
 }

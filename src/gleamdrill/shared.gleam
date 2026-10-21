@@ -49,6 +49,19 @@ pub type Change {
   ActiveQueueChanged(Option(String))
   /// The store's answer to putting problems in the queue or taking them out.
   QueueChangeLanded(Result(wire.QueueChange, ApiError))
+  /// Clear the run engine's last result: a new screen starts clean.
+  ResetRun
+  /// Run code in a local runtime (the run engine is shared: one run at a
+  /// time, one worker per language).
+  RunLocal(language: String, code: String, harness: String)
+  /// Start loading a runtime before it is needed.
+  Prefetch(language: String)
+  /// The editor height, a device preference.
+  EditorHeightChanged(Int)
+  /// The last tour lesson opened, a device preference.
+  TourLessonOpened(Int)
+  /// A tour lesson's edited program, or `None` to drop the edit.
+  TourEdited(lesson: Int, code: Option(String))
   /// Hand a message to the app, for a screen that is not a page yet. Goes
   /// once the last of them has moved.
   Dispatch(msg.Msg)
