@@ -8,6 +8,7 @@ import gleam/result
 import gleam/string
 import gleam/time/timestamp.{type Timestamp}
 import gleamdrill/problem.{type ProblemRef}
+import gleamdrill/problems
 import gleamdrill/walk
 
 import wire.{type CardState, type Settings, type User}
@@ -622,6 +623,20 @@ pub fn current_ref(model: Model) -> Result(ProblemRef, Nil) {
   model.selected
   |> list.drop(model.problem_index)
   |> list.first
+}
+
+/// The problem the drill is showing, out of the catalogue.
+pub fn current_problem(m: Model) -> Result(problem.Problem, Nil) {
+  case current_ref(m) {
+    Ok(ref) -> problems.find(ref.category, ref.subcategory, ref.title)
+    Error(Nil) -> Error(Nil)
+  }
+}
+
+/// The open problem's check, whether or not this browser can run it.
+pub fn current_check(m: Model) -> Result(problem.Check, Nil) {
+  current_problem(m)
+  |> result.try(fn(found) { option.to_result(found.check, Nil) })
 }
 
 pub fn card_for(model: Model, problem: ProblemRef) -> Option(CardState) {

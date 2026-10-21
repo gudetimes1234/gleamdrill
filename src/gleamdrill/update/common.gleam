@@ -68,10 +68,6 @@ pub fn schedule_draft_save() -> Effect(Msg) {
   })
 }
 
-pub fn api_base() -> String {
-  browser.api_base()
-}
-
 /// The token for the current session, or "" when signed out. Callers that need
 /// one are only reachable from behind the auth gate, so the empty case is a
 /// belt-and-braces default rather than a real path.
@@ -90,13 +86,6 @@ pub fn save_preferences(m: Model) -> Effect(Msg) {
   store.save_device_preferences(m)
 }
 
-pub fn current_problem(m: Model) -> Result(problem.Problem, Nil) {
-  case model.current_ref(m) {
-    Ok(ref) -> problems.find(ref.category, ref.subcategory, ref.title)
-    Error(Nil) -> Error(Nil)
-  }
-}
-
 pub fn current_language(m: Model) -> Result(String, Nil) {
   case model.current_ref(m) {
     Ok(ref) ->
@@ -108,27 +97,12 @@ pub fn current_language(m: Model) -> Result(String, Nil) {
   }
 }
 
-pub fn current_check(m: Model) -> Result(problem.Check, Nil) {
-  case model.current_ref(m) {
-    Ok(ref) ->
-      case problems.find(ref.category, ref.subcategory, ref.title) {
-        Ok(p) ->
-          case p.check {
-            Some(check) -> Ok(check)
-            None -> Error(Nil)
-          }
-        Error(Nil) -> Error(Nil)
-      }
-    Error(Nil) -> Error(Nil)
-  }
-}
-
 /// The language whose runtime the screen on the way in will need, if any: a
 /// checkable drill's, or Gleam's for a tour lesson.
 pub fn runtime_wanted(m: Model) -> Result(String, Nil) {
   case m.route, m.tour_page {
     model.DrillRoute, _ ->
-      case current_check(m) {
+      case model.current_check(m) {
         Ok(_) -> current_language(m)
         Error(Nil) -> Error(Nil)
       }
@@ -266,7 +240,7 @@ pub fn problem_kind(m: Model, ref: ProblemRef) -> ProblemKind {
 /// counts toward: `clean` is "solved it from nothing", and turning over a
 /// step's why is not nothing.
 pub fn answer_given_away(m: Model) -> Bool {
-  case current_problem(m) {
+  case model.current_problem(m) {
     Ok(current) ->
       model.answer_revealed(m, current.approach) || walk.any_layer_shown(m.walk)
     Error(Nil) -> False
@@ -536,7 +510,7 @@ pub fn run_tour_lesson(m: Model) -> #(Model, Effect(Msg)) {
 }
 
 pub fn current_quiz(m: Model) -> Result(problem.Quiz, Nil) {
-  current_problem(m)
+  model.current_problem(m)
   |> result.try(fn(found) { option.to_result(found.quiz, Nil) })
 }
 

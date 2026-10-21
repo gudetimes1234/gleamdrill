@@ -216,6 +216,6 @@ fn index_of_family(
 }
 
 fn current_board(m: Model) -> Result(board.Board, Nil) {
-  common.current_problem(m)
+  model.current_problem(m)
   |> result.try(fn(found) { option.to_result(found.board, Nil) })
 }

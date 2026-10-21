@@ -125,7 +125,7 @@ pub fn finished(
         m.run_kind == model.TestRun
         && model.run_passed(run)
         && string.trim(m.draft) != ""
-        && case common.current_problem(m) {
+        && case model.current_problem(m) {
           Ok(current) -> current.solutions != []
           Error(Nil) -> False
         }
@@ -262,7 +262,7 @@ pub fn request(m: Model, kind: model.RunKind) -> #(Model, Effect(Msg)) {
     // One run at a time: a queued second run just doubles the wait.
     Running(_, _) -> #(m, effect.none())
     _ ->
-      case common.current_language(m), common.current_check(m) {
+      case common.current_language(m), model.current_check(m) {
         Ok(language), Ok(check) -> {
           let harness = case kind {
             model.TestRun -> check.harness

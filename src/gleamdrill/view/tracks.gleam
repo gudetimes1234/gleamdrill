@@ -189,11 +189,3 @@ fn count(label: String, value: Int) -> Element(Msg) {
     html.span([attribute.class("track-count-label")], [html.text(label)]),
   ])
 }
-
-/// The label the status bar and the nav use for wherever you are.
-pub fn active_label(m: Model) -> String {
-  case m.active_track {
-    "" -> "No track"
-    name -> track.label(name)
-  }
-}

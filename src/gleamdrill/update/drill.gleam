@@ -332,7 +332,7 @@ pub fn draft_synced(
 /// Move the rail's focus, clamped to the steps this problem actually has. A
 /// problem with no walkthrough has none, and the focus stays at zero.
 fn focus_walk(m: Model, index: Int) -> Model {
-  let total = case common.current_problem(m) {
+  let total = case model.current_problem(m) {
     Ok(current) -> list.length(walk.walk_steps(current.approach))
     Error(Nil) -> 0
   }

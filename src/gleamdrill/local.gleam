@@ -154,17 +154,6 @@ fn persist_stored(stored: Stored) -> Stored {
   stored
 }
 
-/// One track's profile: the account's half, and that track's scheduler
-/// settings or the defaults where it has none of its own.
-pub fn load_settings(track: String) -> wire.Profile {
-  let stored = load_stored()
-  wire.Profile(
-    account: stored.account,
-    settings: list.key_find(stored.tracks, track)
-      |> result.unwrap(wire.default_settings()),
-  )
-}
-
 /// Writes one track's settings and the account's, leaving every other
 /// track's alone.
 pub fn save_settings(track: String, profile: wire.Profile) -> Result(Nil, Nil) {

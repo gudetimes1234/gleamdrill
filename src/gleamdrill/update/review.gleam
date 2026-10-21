@@ -147,12 +147,12 @@ pub fn graded(m: Model, rating: fsrs.Rating) -> #(Model, Effect(Msg)) {
               duration_ms: Some(model.elapsed_ms(m, browser.now_ms())),
               // An ungraded card's run is a demonstration, not a test, so
               // it is never logged as a failure.
-              auto_failed: case common.current_problem(m) {
+              auto_failed: case model.current_problem(m) {
                 Ok(current) ->
                   problem.graded(current) && model.run_failed(m.run)
                 Error(Nil) -> model.run_failed(m.run)
               },
-              revealed: case common.current_problem(m) {
+              revealed: case model.current_problem(m) {
                 Ok(current) -> model.answer_revealed(m, current.approach)
                 Error(Nil) -> m.revealed_solution != None
               },

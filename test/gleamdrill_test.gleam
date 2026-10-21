@@ -19,6 +19,7 @@ import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option.{None, Some}
+import gleam/result
 import gleam/string
 import gleam/time/timestamp
 import gleamdrill/board
@@ -1734,6 +1735,22 @@ fn on_a_drill() -> model.Model {
     route: model.DrillRoute,
     selected: [ref],
   )
+}
+
+/// The open problem and its check, read once in `model` for every handler
+/// and the key table. A board has no check; nothing open has neither.
+pub fn the_current_problem_and_check_follow_the_selection_test() -> Nil {
+  let drill = on_a_drill()
+  let assert Ok(found) = model.current_problem(drill)
+  assert found.title == "Contains Duplicate"
+  assert result.is_ok(model.current_check(drill))
+
+  let board = on_a_board()
+  assert result.is_ok(model.current_problem(board))
+  assert model.current_check(board) == Error(Nil)
+
+  assert model.current_problem(model.default()) == Error(Nil)
+  assert model.current_check(model.default()) == Error(Nil)
 }
 
 /// The opt-in rule, stated on its own: a problem with no card is not a

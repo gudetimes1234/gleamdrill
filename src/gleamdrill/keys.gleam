@@ -41,7 +41,6 @@ import gleamdrill/msg.{
   WalkAdvanced, WalkBacked, WalkCodeShown, WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/problem
-import gleamdrill/problems
 import gleamdrill/walk
 
 /// One row of the keymap. `keys` are `KeyboardEvent.key` values; `hint` is the
@@ -492,7 +491,7 @@ fn code_bindings(m: Model) -> List(Binding) {
     ]
     _ -> []
   }
-  let runnable = case current_check(m) {
+  let runnable = case runnable_check(m) {
     Ok(_) -> [
       Binding(
         ["r"],
@@ -548,7 +547,7 @@ fn code_bindings(m: Model) -> List(Binding) {
 /// and `h`/`y`/`c` turn over what is under whichever step has it. Only `c` and
 /// `w` are reveals, and both say so.
 fn rail_bindings(m: Model) -> List(Binding) {
-  case current_problem(m) {
+  case model.current_problem(m) {
     Error(Nil) -> []
     Ok(current) -> {
       let steps = walk.walk_steps(current.approach)
@@ -633,7 +632,7 @@ fn focused_step(
 
 /// Only for problems with a reference solution. Same key to close.
 fn solution_binding(m: Model) -> List(Binding) {
-  case current_problem(m) {
+  case model.current_problem(m) {
     Ok(current) if current.solutions != [] -> [
       case m.slot {
         SolutionPane ->
@@ -896,7 +895,7 @@ pub fn context_label(m: Model) -> String {
         // The language rides in the context, since Elixir and Python are
         // different sittings and the title alone does not say which.
         _, False ->
-          case current_problem(m) {
+          case model.current_problem(m) {
             Ok(current) ->
               case m.blitz {
                 Some(_) -> "BLITZ"
@@ -917,33 +916,20 @@ pub fn context_label(m: Model) -> String {
   }
 }
 
-fn current_problem(m: Model) -> Result(problem.Problem, Nil) {
-  case model.current_ref(m) {
-    Ok(ref) -> problems.find(ref.category, ref.subcategory, ref.title)
-    Error(Nil) -> Error(Nil)
-  }
-}
-
 /// What the open drill is, or `Error` when nothing is open. Every branch that
 /// used to ask "is there a quiz?" asks this instead, so a kind the table has
 /// no arm for is a compile error rather than a drill that silently gets the
 /// code editor's keys.
 fn current_kind(m: Model) -> Result(problem.Kind, Nil) {
-  current_problem(m) |> result.map(problem.kind)
+  model.current_problem(m) |> result.map(problem.kind)
 }
 
-/// The current problem's check, if it has one this browser can run.
-fn current_check(m: Model) -> Result(problem.Check, Nil) {
-  case model.current_ref(m) {
-    Ok(ref) ->
-      case problems.find(ref.category, ref.subcategory, ref.title) {
-        Ok(found) ->
-          case model.run_available(m, found.language) {
-            True -> option.to_result(found.check, Nil)
-            False -> Error(Nil)
-          }
-        Error(Nil) -> Error(Nil)
-      }
-    Error(Nil) -> Error(Nil)
+/// The current problem's check, if it has one this browser can run. Stricter
+/// than `model.current_check`: a check the browser cannot run binds no keys.
+fn runnable_check(m: Model) -> Result(problem.Check, Nil) {
+  use found <- result.try(model.current_problem(m))
+  case model.run_available(m, found.language) {
+    True -> option.to_result(found.check, Nil)
+    False -> Error(Nil)
   }
 }
