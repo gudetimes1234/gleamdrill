@@ -2577,13 +2577,35 @@ gleam-compare .cm-mergeSpacer {
        same button (or `s`) flips between reading and typing. The editor keeps
        its draft underneath: it is still the first child of .work-row and is
        never unmounted. A long solution may extend over the Output pane; that
-       is what the close button is for. */
+       is what the close button is for.
+
+       It covers the editor and nothing above it: the prompt sheet shares
+       the editor's column, and a pane laid over the whole row hid the
+       problem and swallowed the sheet's close button. So the row is a grid
+       here, the column dissolves into it, and the pane takes the editor's
+       area -- an absolutely positioned grid child is placed in its own
+       area, not the whole row. */
     .work-row {
         position: relative;
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: "prompt" "editor";
+    }
+
+    .work-row > .editor-column {
+        display: contents;
+    }
+
+    .work-row .prompt-side {
+        grid-area: prompt;
+    }
+
+    .work-row .editor-frame {
+        grid-area: editor;
     }
 
     .slot-pane {
+        grid-area: editor;
         position: absolute;
         top: 0;
         left: 0;
