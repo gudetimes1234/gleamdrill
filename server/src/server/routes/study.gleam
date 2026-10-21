@@ -671,7 +671,7 @@ pub fn export(request: wisp.Request, context: Context) -> wisp.Response {
       exported_at: timestamp.system_time(),
       account:,
       tracks:,
-      cards: list.map(cards, card_state),
+      cards: list.map(cards, model.to_state),
       reviews:,
       drafts:,
       notes:,
@@ -905,22 +905,8 @@ fn fuzz_sample() -> Float {
 
 // --- encoding --------------------------------------------------------------
 
-/// A stored card minus the database id, which never crosses the wire. This is
-/// the only shape difference between what the server keeps and what it sends,
-/// and it is why `CardRecord` is not itself a wire type.
 fn card_json(record: CardRecord) -> Json {
-  wire.card_to_json(card_state(record))
-}
-
-fn card_state(record: CardRecord) -> wire.CardState {
-  wire.CardState(
-    problem: record.problem,
-    card: record.card,
-    reps: record.reps,
-    lapses: record.lapses,
-    suspended: record.suspended,
-    introduced_at: record.introduced_at,
-  )
+  wire.card_to_json(model.to_state(record))
 }
 
 const accounts_user_json = wire.user_to_json

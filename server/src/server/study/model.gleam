@@ -39,6 +39,20 @@ pub type CardRecord {
   )
 }
 
+/// A stored card minus the database id, which never crosses the wire. This is
+/// the only shape difference between what the server keeps and what it sends,
+/// and it is why `CardRecord` is not itself a wire type.
+pub fn to_state(record: CardRecord) -> wire.CardState {
+  wire.CardState(
+    problem: record.problem,
+    card: record.card,
+    reps: record.reps,
+    lapses: record.lapses,
+    suspended: record.suspended,
+    introduced_at: record.introduced_at,
+  )
+}
+
 pub type Settings =
   wire.Settings
 

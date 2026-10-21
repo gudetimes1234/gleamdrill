@@ -113,21 +113,10 @@ fn card_exists(
 /// whether the review created it. Written into `reviews.card_before`.
 fn snapshot(existing: CardRecord, created: Bool) -> String {
   json.object([
-    #("card", wire.card_to_json(to_state(existing))),
+    #("card", wire.card_to_json(model.to_state(existing))),
     #("created", json.bool(created)),
   ])
   |> json.to_string
-}
-
-fn to_state(record: CardRecord) -> wire.CardState {
-  wire.CardState(
-    problem: record.problem,
-    card: record.card,
-    reps: record.reps,
-    lapses: record.lapses,
-    suspended: record.suspended,
-    introduced_at: record.introduced_at,
-  )
 }
 
 /// What undoing the latest review leaves behind. `card` is None when the
