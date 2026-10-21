@@ -7,6 +7,7 @@
 //// at the end is exactly the shared state, renamed into a record of its own.
 
 import gleamdrill/model
+import gleamdrill/msg
 import wire
 
 pub type Shared =
@@ -32,4 +33,9 @@ pub type Change {
   Reload
   /// Open or close the `?` cheatsheet.
   ToggleHelp
+  /// Enter a track, optionally with twenty easy problems queued in it.
+  EnterTrack(track: String, starter: Bool)
+  /// Hand a message to the app, for a screen that is not a page yet. Goes
+  /// once the last of them has moved.
+  Dispatch(msg.Msg)
 }

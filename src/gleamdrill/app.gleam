@@ -11,7 +11,7 @@
 import gleam/list
 import gleam/option.{None, Some}
 import gleamdrill/keys
-import gleamdrill/model.{type Route, AuthRoute, SettingsRoute}
+import gleamdrill/model.{type Route, AuthRoute, SettingsRoute, TracksRoute}
 import gleamdrill/msg.{type Msg}
 import gleamdrill/page/auth/keys as auth_keys
 import gleamdrill/page/auth/model as auth_model
@@ -21,6 +21,10 @@ import gleamdrill/page/settings/keys as settings_keys
 import gleamdrill/page/settings/model as settings_model
 import gleamdrill/page/settings/update as settings_update
 import gleamdrill/page/settings/view as settings_view
+import gleamdrill/page/tracks/keys as tracks_keys
+import gleamdrill/page/tracks/model as tracks_model
+import gleamdrill/page/tracks/update as tracks_update
+import gleamdrill/page/tracks/view as tracks_view
 import gleamdrill/platform/browser
 import gleamdrill/shared.{type Change, type Shared}
 import gleamdrill/store
@@ -30,6 +34,7 @@ import gleamdrill/ui/layout
 import gleamdrill/update as legacy_update
 import gleamdrill/update/common
 import gleamdrill/update/keyboard
+import gleamdrill/update/menu as menu_update
 import gleamdrill/update/session as session_update
 import gleamdrill/view as legacy_view
 import lustre/effect.{type Effect}
@@ -44,6 +49,7 @@ pub type Page {
   Legacy
   Auth(auth_model.Model)
   Settings(settings_model.Model)
+  Tracks(tracks_model.Model)
 }
 
 pub fn init(boot: #(Shared, Effect(Msg))) -> #(State, Effect(Msg)) {
@@ -60,9 +66,15 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
     msg.SettingsMsg(inner), Settings(page) ->
       settings_update.update(state.shared, page, inner)
       |> settle(state, Settings, msg.SettingsMsg)
+    msg.TracksMsg(inner), Tracks(page) ->
+      tracks_update.update(state.shared, page, inner)
+      |> settle(state, Tracks, msg.TracksMsg)
     // A page's message that lands after its page closed (a slow response):
     // there is nothing left for it to update.
-    msg.AuthMsg(_), _ | msg.SettingsMsg(_), _ -> #(state, effect.none())
+    msg.AuthMsg(_), _ | msg.SettingsMsg(_), _ | msg.TracksMsg(_), _ -> #(
+      state,
+      effect.none(),
+    )
 
     msg.KeyPressed(key), page if page != Legacy -> key_pressed(state, key)
 
@@ -102,6 +114,14 @@ pub fn view(state: State) -> Element(Msg) {
         page_keys(state),
         settings_keys.label,
       ))
+    Tracks(page) ->
+      Some(legacy_view.Screen(
+        tracks_view.view(shared, page)
+          |> document.map(msg.TracksMsg)
+          |> layout.view(shared, TracksRoute, _),
+        page_keys(state),
+        tracks_keys.label,
+      ))
   })
 }
 
@@ -112,6 +132,8 @@ fn page_keys(state: State) -> List(Binding(Msg)) {
     Auth(page) -> auth_keys.bindings(state.shared, page) |> lift(msg.AuthMsg)
     Settings(page) ->
       settings_keys.bindings(state.shared, page) |> lift(msg.SettingsMsg)
+    Tracks(page) ->
+      tracks_keys.bindings(state.shared, page) |> lift(msg.TracksMsg)
   }
 }
 
@@ -197,6 +219,10 @@ fn apply_change(shared: Shared, change: Change) -> #(Shared, Effect(Msg)) {
       store.load_state(shared, msg.StateLoaded),
     )
     shared.ToggleHelp -> keyboard.toggle_help(shared)
+    shared.EnterTrack(track, starter) ->
+      menu_update.enter_track(shared, track, starter:)
+    // Handled by `update` itself; see there.
+    shared.Dispatch(_) -> #(shared, effect.none())
   }
 }
 
@@ -205,7 +231,14 @@ fn apply_change(shared: Shared, change: Change) -> #(Shared, Effect(Msg)) {
 /// whatever its init fetches); when it leaves, the page closes.
 fn sync_page(state: State) -> #(State, Effect(Msg)) {
   case state.shared.route, state.page {
-    AuthRoute, Auth(_) | SettingsRoute, Settings(_) -> #(state, effect.none())
+    AuthRoute, Auth(_) | SettingsRoute, Settings(_) | TracksRoute, Tracks(_) -> #(
+      state,
+      effect.none(),
+    )
+    TracksRoute, _ -> #(
+      State(..state, page: Tracks(tracks_model.Model)),
+      effect.none(),
+    )
     AuthRoute, _ -> #(
       State(..state, page: Auth(auth_model.init(auth_model.SigningIn))),
       effect.none(),

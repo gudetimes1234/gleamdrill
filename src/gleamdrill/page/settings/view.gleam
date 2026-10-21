@@ -34,103 +34,108 @@ import lustre/event
 pub fn view(shared: Shared, page: Model) -> Document(Msg) {
   let settings = shared.settings
 
-  Document(class: "settings-screen", title: "Settings", body: [
-    section("Daily limits", "Kept with your account.", [
-      number_row(
-        "New problems per day",
-        "How many unseen problems the queue introduces. These are the "
-          <> "expensive ones: a first encounter is read, thought about and "
-          <> "typed from nothing.",
-        NewPerDay,
-        int.to_string(settings.new_per_day),
-        "0",
-        "100",
-        "1",
-      ),
-      number_row(
-        "Reviews per day",
-        "The cap on problems already seen. A review here is minutes, not "
-          <> "seconds, so this is a time budget wearing a card count.",
-        ReviewsPerDay,
-        int.to_string(settings.reviews_per_day),
-        "0",
-        "500",
-        "1",
-      ),
-    ]),
-
-    section(
-      "Scheduling",
-      "FSRS decides when a problem comes back. These change how it decides.",
-      [
+  Document(
+    class: "settings-screen",
+    title: [html.text("Settings")],
+    storage_warning: False,
+    body: [
+      section("Daily limits", "Kept with your account.", [
         number_row(
-          "Target retention",
-          "The share of reviews you want to pass. Higher means shorter "
-            <> "intervals and more work for the same material; 0.9 is the "
-            <> "default and is a good place to stay.",
-          DesiredRetention,
-          float.to_string(settings.scheduler.desired_retention),
-          "0.7",
-          "0.99",
-          "0.01",
-        ),
-        number_row(
-          "Day starts at",
-          "The hour your study day rolls over, in local time. 4am by "
-            <> "default, so a late-night session counts toward the day it "
-            <> "feels like rather than the one the clock says.",
-          DayStartHour,
-          int.to_string(shared.account.day_start_hour),
+          "New problems per day",
+          "How many unseen problems the queue introduces. These are the "
+            <> "expensive ones: a first encounter is read, thought about and "
+            <> "typed from nothing.",
+          NewPerDay,
+          int.to_string(settings.new_per_day),
           "0",
-          "23",
+          "100",
           "1",
         ),
-        timezone_row(shared.account.timezone),
-      ],
-    ),
-
-    section(
-      "Reminders",
-      "One plain mail on the days something is due, at the hour you pick "
-        <> "in your timezone. Nothing on days with nothing due.",
-      [reminder_row(shared)],
-    ),
-
-    section("This device", "Kept in this browser, signed in or not.", [
-      keymap_row(shared),
-      offline_row(page),
-    ]),
-
-    section(
-      "Your data",
-      case shared.mode {
-        shared_model.Guest ->
-          "Everything this browser holds, as one file. Import it on "
-          <> "another device, or keep it as a backup."
-        shared_model.Account(_) ->
-          "Everything your account holds, as one file. The same file "
-          <> "restores into a guest browser, and a guest's file into an account."
-      },
-      [
-        action_row(
-          "Export study data",
-          "Cards, every review, settings, drafts and notes, as JSON.",
-          "Download",
-          "settings-export",
-          UserClickedExport,
+        number_row(
+          "Reviews per day",
+          "The cap on problems already seen. A review here is minutes, not "
+            <> "seconds, so this is a time budget wearing a card count.",
+          ReviewsPerDay,
+          int.to_string(settings.reviews_per_day),
+          "0",
+          "500",
+          "1",
         ),
-        action_row(
-          "Import study data",
-          "Replaces everything here with the file's contents. You are asked "
-            <> "first.",
-          "Choose file\u{2026}",
-          "settings-import",
-          UserClickedImport,
-        ),
-      ],
-    ),
-    import_prompt(page),
-  ])
+      ]),
+
+      section(
+        "Scheduling",
+        "FSRS decides when a problem comes back. These change how it decides.",
+        [
+          number_row(
+            "Target retention",
+            "The share of reviews you want to pass. Higher means shorter "
+              <> "intervals and more work for the same material; 0.9 is the "
+              <> "default and is a good place to stay.",
+            DesiredRetention,
+            float.to_string(settings.scheduler.desired_retention),
+            "0.7",
+            "0.99",
+            "0.01",
+          ),
+          number_row(
+            "Day starts at",
+            "The hour your study day rolls over, in local time. 4am by "
+              <> "default, so a late-night session counts toward the day it "
+              <> "feels like rather than the one the clock says.",
+            DayStartHour,
+            int.to_string(shared.account.day_start_hour),
+            "0",
+            "23",
+            "1",
+          ),
+          timezone_row(shared.account.timezone),
+        ],
+      ),
+
+      section(
+        "Reminders",
+        "One plain mail on the days something is due, at the hour you pick "
+          <> "in your timezone. Nothing on days with nothing due.",
+        [reminder_row(shared)],
+      ),
+
+      section("This device", "Kept in this browser, signed in or not.", [
+        keymap_row(shared),
+        offline_row(page),
+      ]),
+
+      section(
+        "Your data",
+        case shared.mode {
+          shared_model.Guest ->
+            "Everything this browser holds, as one file. Import it on "
+            <> "another device, or keep it as a backup."
+          shared_model.Account(_) ->
+            "Everything your account holds, as one file. The same file "
+            <> "restores into a guest browser, and a guest's file into an account."
+        },
+        [
+          action_row(
+            "Export study data",
+            "Cards, every review, settings, drafts and notes, as JSON.",
+            "Download",
+            "settings-export",
+            UserClickedExport,
+          ),
+          action_row(
+            "Import study data",
+            "Replaces everything here with the file's contents. You are asked "
+              <> "first.",
+            "Choose file\u{2026}",
+            "settings-import",
+            UserClickedImport,
+          ),
+        ],
+      ),
+      import_prompt(page),
+    ],
+  )
 }
 
 /// The offline cache: how much of the runtimes this browser already holds,

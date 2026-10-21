@@ -124,21 +124,8 @@ pub fn screen(m: Model) -> List(Binding(Msg)) {
       // The switcher is a list of choices made with the mouse or with
       // Enter on a focused card; there is no cursor to drive. Escape goes
       // back to the track you were on, unless there is not one yet.
-      TracksRoute ->
-        list.flatten([
-          case m.active_track {
-            "" -> []
-            _ -> [
-              Binding(
-                ["Escape", "b"],
-                "back",
-                "Back to study",
-                UserClickedBackToStudy,
-              ),
-            ]
-          },
-          [help_binding()],
-        ])
+      // Drawn by page/tracks, which brings its own rows.
+      TracksRoute -> []
       // Drawn by page/settings, which brings its own rows.
       SettingsRoute -> []
       SummaryRoute ->

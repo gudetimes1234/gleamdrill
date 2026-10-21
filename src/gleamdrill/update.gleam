@@ -20,7 +20,7 @@ import gleamdrill/msg.{
   RunnerFailed, RunnerReady, RuntimeLoadTimedOut, SearchFocusRequested,
   SettingsMsg, SignOutCompleted, StateImported, StateLoaded, StatsActivated,
   StatsCursorMoved, StatsLoaded, TourActivated, TourCursorMoved,
-  TourEditorChanged, TourRunTicked, UndoRecorded, UserAddedAllShown,
+  TourEditorChanged, TourRunTicked, TracksMsg, UndoRecorded, UserAddedAllShown,
   UserAddedSelectionToQueue, UserAddedStarterSet, UserCancelledQueueName,
   UserChangedGroup, UserChangedIterations, UserChangedKeymap,
   UserChangedQueueName, UserClickedBackToStudy, UserClickedBreadcrumb,
@@ -36,15 +36,15 @@ import gleamdrill/msg.{
   UserClosedDetail, UserDeletedQueue, UserDismissedDiff, UserDismissedMergeOffer,
   UserDismissedNotice, UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded,
   UserOpenedDetail, UserOpenedLesson, UserPickedActiveQueue, UserPickedChoice,
-  UserPickedTrack, UserPickedTrackWithStarter, UserRemovedAllShown,
-  UserResetLesson, UserRevealedRecall, UserRevealedWholeThing, UserSearched,
-  UserSearchedQueue, UserSelectedQueue, UserStartedBlitz, UserStartedNewQueue,
-  UserStartedRenameQueue, UserSubmittedAnswer, UserSubmittedBoard,
-  UserSubmittedQueueName, UserToggledBlitz, UserToggledDiff, UserToggledNudge,
-  UserToggledPane, UserToggledPiece, UserToggledProblem, UserToggledPrompt,
-  UserToggledQueued, UserToggledResults, UserToggledSolution, UserToggledSuspend,
-  UserToggledTimer, WalkAdvanced, WalkBacked, WalkCodeShown, WalkFocused,
-  WalkHintShown, WalkWhyShown,
+  UserRemovedAllShown, UserResetLesson, UserRevealedRecall,
+  UserRevealedWholeThing, UserSearched, UserSearchedQueue, UserSelectedQueue,
+  UserStartedBlitz, UserStartedNewQueue, UserStartedRenameQueue,
+  UserSubmittedAnswer, UserSubmittedBoard, UserSubmittedQueueName,
+  UserToggledBlitz, UserToggledDiff, UserToggledNudge, UserToggledPane,
+  UserToggledPiece, UserToggledProblem, UserToggledPrompt, UserToggledQueued,
+  UserToggledResults, UserToggledSolution, UserToggledSuspend, UserToggledTimer,
+  WalkAdvanced, WalkBacked, WalkCodeShown, WalkFocused, WalkHintShown,
+  WalkWhyShown,
 }
 import gleamdrill/platform/browser
 import gleamdrill/update/blitz as blitz_update
@@ -79,10 +79,11 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     // Pages and the navigation into them belong to `app`, which routes
     // these before the flat model ever sees them.
-    AuthMsg(_) | SettingsMsg(_) | UserClickedSignIn(_) | UserClickedSettings -> #(
-      m,
-      effect.none(),
-    )
+    AuthMsg(_)
+    | SettingsMsg(_)
+    | TracksMsg(_)
+    | UserClickedSignIn(_)
+    | UserClickedSettings -> #(m, effect.none())
 
     // --- keyboard ---
     KeyPressed(key) -> keyboard.pressed(m, key, handle)
@@ -215,9 +216,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
     // --- export and import ---
     UserClickedTracks -> menu_update.open_tracks(m)
-    UserPickedTrack(name) -> menu_update.enter_track(m, name, starter: False)
-    UserPickedTrackWithStarter(name) ->
-      menu_update.enter_track(m, name, starter: True)
 
     // From the study screen's empty state: twenty easy problems in the track
     // already open, no screen in between.

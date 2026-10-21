@@ -15,6 +15,7 @@ import gleamdrill/model.{
 import gleamdrill/page/auth/model as auth_model
 import gleamdrill/page/auth/msg as auth_msg
 import gleamdrill/page/settings/msg as settings_msg
+import gleamdrill/page/tracks/msg as tracks_msg
 import gleamdrill/store/remote.{type ApiError}
 import wire
 
@@ -30,6 +31,7 @@ pub type Msg {
   // --- pages: each migrated page's own messages, routed by `app` ---
   AuthMsg(auth_msg.Msg)
   SettingsMsg(settings_msg.Msg)
+  TracksMsg(tracks_msg.Msg)
   // --- keyboard ---
   KeyPressed(Key)
   HelpToggled
@@ -170,11 +172,6 @@ pub type Msg {
   UserClickedSettings
   /// Open the track switcher.
   UserClickedTracks
-  /// Enter a track: everything the app shows becomes that track's.
-  UserPickedTrack(String)
-  /// Enter a track and queue a starter set in it, so the first sitting is one
-  /// click away rather than a trip to the queue screen.
-  UserPickedTrackWithStarter(String)
   /// Queue a starter set from the study screen's empty state.
   UserAddedStarterSet
   UserToggledSuspend(ProblemRef)

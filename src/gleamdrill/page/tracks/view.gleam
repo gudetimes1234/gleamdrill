@@ -16,42 +16,43 @@ import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleamdrill/domain/track
-import gleamdrill/model.{type Model}
-import gleamdrill/msg.{type Msg, UserPickedTrack, UserPickedTrackWithStarter}
+import gleamdrill/page/tracks/model.{type Model}
+import gleamdrill/page/tracks/msg.{
+  type Msg, UserClickedStats, UserPickedTrack, UserPickedTrackWithStarter,
+}
+import gleamdrill/shared.{type Shared}
 import gleamdrill/store/remote
-import gleamdrill/view/banner
+import gleamdrill/ui/document.{type Document, Document}
 import gleamdrill/view/brand
-import gleamdrill/view/nav
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 import wire
 
-pub fn view(m: Model) -> Element(Msg) {
-  let rows = rows(m)
-  html.div([attribute.class("tracks-screen")], [
-    banner.storage_warning(m),
-    nav.notices(m),
-    html.header([attribute.class("study-header")], [
-      html.h1([attribute.class("study-title")], brand.wordmark()),
-      nav.bar(m, model.TracksRoute),
-    ]),
-    html.p([attribute.class("tracks-lead")], [
-      html.text(case m.active_track {
-        "" ->
-          "Pick a track. Everything after this — what is due, what you queue, "
-          <> "what the stats say — is that track's alone."
-        _ ->
-          "One track at a time. Switching loses nothing: each keeps its own "
-          <> "queue, its own limits and its own history."
-      }),
-    ]),
-    html.div(
-      [attribute.class("track-cards")],
-      list.map(rows, fn(row) { card(m, row) }),
-    ),
-  ])
+pub fn view(shared: Shared, _page: Model) -> Document(Msg) {
+  let rows = rows(shared)
+  Document(
+    class: "tracks-screen",
+    title: brand.wordmark(),
+    storage_warning: True,
+    body: [
+      html.p([attribute.class("tracks-lead")], [
+        html.text(case shared.active_track {
+          "" ->
+            "Pick a track. Everything after this — what is due, what you queue, "
+            <> "what the stats say — is that track's alone."
+          _ ->
+            "One track at a time. Switching loses nothing: each keeps its own "
+            <> "queue, its own limits and its own history."
+        }),
+      ]),
+      html.div(
+        [attribute.class("track-cards")],
+        list.map(rows, fn(row) { card(shared, row) }),
+      ),
+    ],
+  )
 }
 
 /// One track and what is known about it. `standing` is absent for a track the
@@ -61,8 +62,8 @@ type Row {
   Row(track: String, standing: Option(wire.TrackStanding))
 }
 
-fn rows(m: Model) -> List(Row) {
-  let known = list.map(m.tracks, fn(s: wire.TrackStanding) { s.track })
+fn rows(shared: Shared) -> List(Row) {
+  let known = list.map(shared.tracks, fn(s: wire.TrackStanding) { s.track })
   // The catalogue's order first, because it is the curriculum's; then
   // anything the user has that the catalogue does not.
   let extra = list.filter(known, fn(name) { !track.exists(name) })
@@ -70,7 +71,7 @@ fn rows(m: Model) -> List(Row) {
   |> list.map(fn(name) {
     Row(
       track: name,
-      standing: list.find(m.tracks, fn(s: wire.TrackStanding) {
+      standing: list.find(shared.tracks, fn(s: wire.TrackStanding) {
         s.track == name
       })
         |> option.from_result,
@@ -78,8 +79,8 @@ fn rows(m: Model) -> List(Row) {
   })
 }
 
-fn card(m: Model, row: Row) -> Element(Msg) {
-  let here = row.track == m.active_track
+fn card(shared: Shared, row: Row) -> Element(Msg) {
+  let here = row.track == shared.active_track
   let unknown = !track.exists(row.track)
   html.div(
     [
@@ -105,12 +106,12 @@ fn card(m: Model, row: Row) -> Element(Msg) {
           ]),
         ],
       ),
-      ..body(m, row, unknown)
+      ..body(shared, row, unknown)
     ],
   )
 }
 
-fn body(m: Model, row: Row, unknown: Bool) -> List(Element(Msg)) {
+fn body(shared: Shared, row: Row, unknown: Bool) -> List(Element(Msg)) {
   case row.standing {
     // Nothing here yet. Offer the one thing that makes the track usable in a
     // click, rather than sending someone to the queue screen to find out what
@@ -159,13 +160,13 @@ fn body(m: Model, row: Row, unknown: Bool) -> List(Element(Msg)) {
             ]),
           ]
         },
-        case remote.value(m.stats) {
-          Some(_) if row.track == m.active_track -> [
+        case remote.value(shared.stats) {
+          Some(_) if row.track == shared.active_track -> [
             html.button(
               [
                 attribute.class("link-button track-card-stats"),
                 attribute.type_("button"),
-                event.on_click(msg.UserClickedStats),
+                event.on_click(UserClickedStats),
               ],
               [html.text("Stats \u{2192}")],
             ),

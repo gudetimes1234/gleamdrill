@@ -37,6 +37,8 @@ import gleamdrill/model
 import gleamdrill/msg
 import gleamdrill/page/settings/keys as settings_keys
 import gleamdrill/page/settings/model as settings_model
+import gleamdrill/page/tracks/keys as tracks_keys
+import gleamdrill/page/tracks/model as tracks_model
 import gleamdrill/runner
 import gleamdrill/store
 import gleamdrill/store/remote
@@ -1302,7 +1304,6 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
     model.Model(..base, route: model.QueueRoute),
     model.Model(..base, route: model.StatsRoute),
     model.Model(..base, route: model.ReportRoute),
-    model.Model(..base, route: model.TracksRoute),
     model.Model(..base, route: model.SummaryRoute),
     drill,
     model.Model(..drill, slot: model.SolutionPane),
@@ -1330,6 +1331,10 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
 /// The pages that brought their own tables keep the same promise.
 pub fn every_page_documents_escape_and_help_test() -> Nil {
   let rows = settings_keys.bindings(model.default(), settings_model.init())
+  assert list.any(rows, fn(b) { list.contains(b.keys, "?") })
+  assert list.any(rows, fn(b) { list.contains(b.keys, "Escape") })
+  let in_a_track = model.Model(..model.default(), active_track: "NeetCode 150")
+  let rows = tracks_keys.bindings(in_a_track, tracks_model.Model)
   assert list.any(rows, fn(b) { list.contains(b.keys, "?") })
   assert list.any(rows, fn(b) { list.contains(b.keys, "Escape") })
 }

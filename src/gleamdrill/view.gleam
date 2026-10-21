@@ -23,7 +23,6 @@ import gleamdrill/view/statusbar
 import gleamdrill/view/study
 import gleamdrill/view/summary
 import gleamdrill/view/tour as tour_view
-import gleamdrill/view/tracks
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -87,7 +86,7 @@ fn legacy_screen(m: Model) -> Element(Msg) {
   case m.route {
     // Drawn by its page module; never reached.
     AuthRoute -> element.none()
-    TracksRoute -> tracks.view(m)
+    TracksRoute -> element.none()
     SettingsRoute -> element.none()
     SummaryRoute -> summary.view(m)
     StudyRoute -> study.view(m)
