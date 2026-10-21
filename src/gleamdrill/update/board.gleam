@@ -120,6 +120,7 @@ pub fn submitted_answer(m: Model) -> #(Model, Effect(Msg)) {
             practice: False,
             recall: False,
           ),
+          msg.ReviewRecorded,
         ),
       )
     }
@@ -185,6 +186,7 @@ pub fn submitted_board(m: Model) -> #(Model, Effect(Msg)) {
             practice: !m.studying,
             recall: False,
           ),
+          msg.ReviewRecorded,
         ),
       )
     }

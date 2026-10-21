@@ -1,11 +1,12 @@
 //// Where study data goes: the server when signed in, this browser when not.
 ////
 //// Every function here dispatches on `Model.mode` and produces **the same
-//// message either way**. That is the whole design: the update loop already
-//// knows how to handle `StateLoaded(Result(BootState, _))` and
-//// `ReviewRecorded(Result(ReviewOutcome, _))`, so guest mode needed no new
-//// message, no new model field, and no change to any view's shape -- only a
-//// different effect behind the same calls.
+//// result either way**, handed to the caller's `to` constructor. That is the
+//// whole design: a handler that knows what to do with a
+//// `Result(ReviewOutcome, _)` needs no second path for guest mode -- only a
+//// different effect behind the same call. Taking the constructor rather
+//// than naming a message keeps this module below every page: any page's
+//// own message type can receive the result.
 ////
 //// It is also the only module that imports `api`, `local`, `session` and
 //// `legacy`: the `update/` handlers reach persistence through here alone.
@@ -25,11 +26,6 @@ import gleam/time/timestamp
 import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/domain/guest
 import gleamdrill/model.{type Model, type UndoPoint, Account, Guest}
-import gleamdrill/msg.{
-  type Msg, ArchiveReady, ArchiveRestored, CardSuspended, DraftSynced,
-  HistoryLoaded, InsightsLoaded, NoteSynced, QueueChanged, QueuesSaved,
-  ReviewRecorded, SettingsSaved, StateLoaded, StatsLoaded, UndoRecorded,
-}
 import gleamdrill/platform/browser
 import gleamdrill/store/api
 import gleamdrill/store/legacy
@@ -39,10 +35,12 @@ import gleamdrill/store/session
 import lustre/effect.{type Effect}
 import wire
 
-pub fn load_state(m: Model) -> Effect(Msg) {
+pub fn load_state(
+  m: Model,
+  to: fn(Result(wire.BootState, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   case m.mode {
-    Account(token) ->
-      api.fetch_state(base(), token, m.active_track, StateLoaded)
+    Account(token) -> api.fetch_state(base(), token, m.active_track, to)
     Guest -> {
       use dispatch <- effect.from
       // The *whole* store, always. Every `local.save_*` serialises all of
@@ -67,7 +65,7 @@ pub fn load_state(m: Model) -> Effect(Msg) {
         chosen -> chosen
       }
       dispatch(
-        StateLoaded(
+        to(
           Ok(wire.BootState(
             now:,
             // A guest has no account, so there is no email to show. The view
@@ -105,9 +103,13 @@ fn busiest(standings: List(wire.TrackStanding)) -> String {
   |> result.unwrap("")
 }
 
-pub fn record_review(m: Model, review: wire.Review) -> Effect(Msg) {
+pub fn record_review(
+  m: Model,
+  review: wire.Review,
+  to: fn(Result(wire.ReviewOutcome, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   case m.mode {
-    Account(token) -> api.post_review(base(), token, review, ReviewRecorded)
+    Account(token) -> api.post_review(base(), token, review, to)
     Guest -> {
       use dispatch <- effect.from
       // The device clock, not a server's. A guest who changes their system
@@ -131,9 +133,9 @@ pub fn record_review(m: Model, review: wire.Review) -> Effect(Msg) {
       }
 
       dispatch(case saved {
-        Error(Nil) -> ReviewRecorded(Error(storage_full()))
+        Error(Nil) -> to(Error(storage_full()))
         Ok(Nil) ->
-          ReviewRecorded(
+          to(
             Ok(wire.ReviewOutcome(
               now:,
               card:,
@@ -147,12 +149,15 @@ pub fn record_review(m: Model, review: wire.Review) -> Effect(Msg) {
 
 /// Everything the user has, as one archive: fetched from the server, or
 /// assembled from the guest store.
-pub fn export_archive(m: Model) -> Effect(Msg) {
+pub fn export_archive(
+  m: Model,
+  to: fn(Result(wire.Archive, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   case m.mode {
-    Account(token) -> api.fetch_export(base(), token, ArchiveReady)
+    Account(token) -> api.fetch_export(base(), token, to)
     Guest -> {
       use dispatch <- effect.from
-      dispatch(ArchiveReady(
+      dispatch(to(
         // The whole account, every track: an archive is the backup.
         Ok({
           let stored = local.load_stored()
@@ -170,13 +175,17 @@ pub fn export_archive(m: Model) -> Effect(Msg) {
 
 /// Replaces everything the user has with an archive. The caller reloads
 /// the boot state afterwards; nothing here touches the model.
-pub fn restore_archive(m: Model, archive: wire.Archive) -> Effect(Msg) {
+pub fn restore_archive(
+  m: Model,
+  archive: wire.Archive,
+  to: fn(Result(Nil, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   case m.mode {
-    Account(token) -> api.post_restore(base(), token, archive, ArchiveRestored)
+    Account(token) -> api.post_restore(base(), token, archive, to)
     Guest -> {
       use dispatch <- effect.from
       dispatch(
-        ArchiveRestored(
+        to(
           case
             local.save_all(
               guest.restore(archive),
@@ -196,10 +205,13 @@ pub fn restore_archive(m: Model, archive: wire.Archive) -> Effect(Msg) {
 /// Takes back the most recent review. Signed in, the server restores the
 /// card from the snapshot it kept; a guest is restored from the snapshot
 /// the model kept, and the log loses its newest row.
-pub fn undo_review(m: Model, point: UndoPoint) -> Effect(Msg) {
+pub fn undo_review(
+  m: Model,
+  point: UndoPoint,
+  to: fn(Result(wire.UndoOutcome, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   case m.mode {
-    Account(token) ->
-      api.delete_review(base(), token, m.active_track, UndoRecorded(point, _))
+    Account(token) -> api.delete_review(base(), token, m.active_track, to)
     Guest -> {
       use dispatch <- effect.from
       let now = timestamp.system_time()
@@ -222,7 +234,7 @@ pub fn undo_review(m: Model, point: UndoPoint) -> Effect(Msg) {
           _, _ -> Error(storage_full())
         }
       }
-      dispatch(UndoRecorded(point, result))
+      dispatch(to(result))
     }
   }
 }
@@ -233,10 +245,10 @@ pub fn set_suspended(
   m: Model,
   problem: ProblemRef,
   suspended: Bool,
-) -> Effect(Msg) {
+  to: fn(Result(wire.ReviewOutcome, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   case m.mode {
-    Account(token) ->
-      api.patch_card(base(), token, problem, suspended, CardSuspended)
+    Account(token) -> api.patch_card(base(), token, problem, suspended, to)
     Guest -> {
       use dispatch <- effect.from
       let now = timestamp.system_time()
@@ -244,16 +256,16 @@ pub fn set_suspended(
       let store = local.load()
       dispatch(case guest.set_suspended(store, problem, suspended) {
         Error(Nil) ->
-          CardSuspended(
+          to(
             Error(remote.Rejected(
               "That problem has no scheduled card to suspend.",
             )),
           )
         Ok(#(updated, card)) ->
           case local.save_cards(updated) {
-            Error(Nil) -> CardSuspended(Error(storage_full()))
+            Error(Nil) -> to(Error(storage_full()))
             Ok(Nil) ->
-              CardSuspended(
+              to(
                 Ok(wire.ReviewOutcome(
                   now:,
                   card:,
@@ -277,18 +289,22 @@ pub fn set_suspended(
 /// Both produce the same `QueueChanged` fold whichever store is behind them,
 /// and both are bulk: adding a topic is one call, so a half-applied selection
 /// is not a state the update loop has to think about.
-pub fn add_to_queue(m: Model, problems: List(ProblemRef)) -> Effect(Msg) {
+pub fn add_to_queue(
+  m: Model,
+  problems: List(ProblemRef),
+  to: fn(Result(wire.QueueChange, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   case m.mode {
-    Account(token) -> api.post_cards(base(), token, problems, QueueChanged)
+    Account(token) -> api.post_cards(base(), token, problems, to)
     Guest -> {
       use dispatch <- effect.from
       let now = timestamp.system_time()
       let day = local.current_day(m.account)
       let #(updated, cards) = guest.enqueue(local.load(), problems, now)
       dispatch(case local.save_cards(updated) {
-        Error(Nil) -> QueueChanged(Error(storage_full()))
+        Error(Nil) -> to(Error(storage_full()))
         Ok(Nil) ->
-          QueueChanged(
+          to(
             Ok(wire.QueueChange(
               now:,
               cards:,
@@ -302,18 +318,22 @@ pub fn add_to_queue(m: Model, problems: List(ProblemRef)) -> Effect(Msg) {
   }
 }
 
-pub fn remove_from_queue(m: Model, problems: List(ProblemRef)) -> Effect(Msg) {
+pub fn remove_from_queue(
+  m: Model,
+  problems: List(ProblemRef),
+  to: fn(Result(wire.QueueChange, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   case m.mode {
-    Account(token) -> api.delete_cards(base(), token, problems, QueueChanged)
+    Account(token) -> api.delete_cards(base(), token, problems, to)
     Guest -> {
       use dispatch <- effect.from
       let now = timestamp.system_time()
       let day = local.current_day(m.account)
       let #(updated, removed, refused) = guest.dequeue(local.load(), problems)
       dispatch(case local.save_cards(updated) {
-        Error(Nil) -> QueueChanged(Error(storage_full()))
+        Error(Nil) -> to(Error(storage_full()))
         Ok(Nil) ->
-          QueueChanged(
+          to(
             Ok(wire.QueueChange(
               now:,
               cards: [],
@@ -329,16 +349,20 @@ pub fn remove_from_queue(m: Model, problems: List(ProblemRef)) -> Effect(Msg) {
 
 /// Drops a draft with no review to hang it on: a Blitz card that ran out
 /// of time is a miss, not work in progress.
-pub fn delete_draft(m: Model, problem: ProblemRef) -> Effect(Msg) {
+pub fn delete_draft(
+  m: Model,
+  problem: ProblemRef,
+  to: fn(Result(Nil, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   case m.mode {
-    Account(token) -> api.delete_draft(base(), token, problem, DraftSynced)
+    Account(token) -> api.delete_draft(base(), token, problem, to)
     Guest -> {
       use dispatch <- effect.from
       let store = local.load()
       let updated =
         guest.Local(..store, drafts: guest.drop_draft(store.drafts, problem))
       dispatch(
-        DraftSynced(case local.save_drafts(updated) {
+        to(case local.save_drafts(updated) {
           Ok(Nil) -> Ok(Nil)
           Error(_) -> Error(storage_full())
         }),
@@ -347,14 +371,19 @@ pub fn delete_draft(m: Model, problem: ProblemRef) -> Effect(Msg) {
   }
 }
 
-pub fn save_draft(m: Model, problem: ProblemRef, body: String) -> Effect(Msg) {
+pub fn save_draft(
+  m: Model,
+  problem: ProblemRef,
+  body: String,
+  to: fn(Result(Nil, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   case m.mode {
-    Account(token) -> api.put_draft(base(), token, problem, body, DraftSynced)
+    Account(token) -> api.put_draft(base(), token, problem, body, to)
     Guest -> {
       use dispatch <- effect.from
       let updated = guest.put_draft(local.load(), problem, body)
       dispatch(
-        DraftSynced(case local.save_drafts(updated) {
+        to(case local.save_drafts(updated) {
           Ok(Nil) -> Ok(Nil)
           Error(Nil) -> Error(storage_full())
         }),
@@ -363,14 +392,19 @@ pub fn save_draft(m: Model, problem: ProblemRef, body: String) -> Effect(Msg) {
   }
 }
 
-pub fn save_note(m: Model, problem: ProblemRef, body: String) -> Effect(Msg) {
+pub fn save_note(
+  m: Model,
+  problem: ProblemRef,
+  body: String,
+  to: fn(Result(Nil, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   case m.mode {
-    Account(token) -> api.put_note(base(), token, problem, body, NoteSynced)
+    Account(token) -> api.put_note(base(), token, problem, body, to)
     Guest -> {
       use dispatch <- effect.from
       let updated = guest.put_note(local.load(), problem, body)
       dispatch(
-        NoteSynced(case local.save_notes(updated) {
+        to(case local.save_notes(updated) {
           Ok(Nil) -> Ok(Nil)
           Error(Nil) -> Error(storage_full())
         }),
@@ -383,10 +417,13 @@ pub fn save_note(m: Model, problem: ProblemRef, body: String) -> Effect(Msg) {
 /// the guest branch must splice it in beside the other tracks' queues --
 /// replacing the whole stored list with it would delete theirs, the exact
 /// mistake `write_queues`' unscoped delete made on the server.
-pub fn save_queues(m: Model) -> Effect(Msg) {
+pub fn save_queues(
+  m: Model,
+  to: fn(Result(Nil, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   case m.mode {
     Account(token) ->
-      api.put_queues(base(), token, m.active_track, m.queues, QueuesSaved)
+      api.put_queues(base(), token, m.active_track, m.queues, to)
     Guest -> {
       use dispatch <- effect.from
       let stored = local.load()
@@ -396,7 +433,7 @@ pub fn save_queues(m: Model) -> Effect(Msg) {
           queues: spliced_queues(stored.queues, m.active_track, m.queues),
         )
       dispatch(
-        QueuesSaved(case local.save_queues(updated) {
+        to(case local.save_queues(updated) {
           Ok(Nil) -> Ok(Nil)
           Error(Nil) -> Error(storage_full())
         }),
@@ -421,14 +458,18 @@ pub fn spliced_queues(
 /// Persist the scheduler settings. Same shape as `save_draft`, with one
 /// difference worth naming: the server answers with the settings it stored, so
 /// the guest branch has to dispatch what it just wrote rather than `Nil`.
-pub fn save_settings(m: Model, profile: wire.Profile) -> Effect(Msg) {
+pub fn save_settings(
+  m: Model,
+  profile: wire.Profile,
+  to: fn(Result(wire.Profile, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   case m.mode {
     Account(token) ->
-      api.put_settings(base(), token, m.active_track, profile, SettingsSaved)
+      api.put_settings(base(), token, m.active_track, profile, to)
     Guest -> {
       use dispatch <- effect.from
       dispatch(
-        SettingsSaved(case local.save_settings(m.active_track, profile) {
+        to(case local.save_settings(m.active_track, profile) {
           Ok(Nil) -> Ok(profile)
           Error(Nil) -> Error(storage_full())
         }),
@@ -437,40 +478,44 @@ pub fn save_settings(m: Model, profile: wire.Profile) -> Effect(Msg) {
   }
 }
 
-pub fn load_insights(m: Model) -> Effect(Msg) {
+pub fn load_insights(
+  m: Model,
+  to: fn(Result(wire.Insights, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   case m.mode {
-    Account(token) ->
-      api.fetch_insights(base(), token, m.active_track, InsightsLoaded)
+    Account(token) -> api.fetch_insights(base(), token, m.active_track, to)
     Guest -> {
       use dispatch <- effect.from
-      dispatch(InsightsLoaded(Ok(guest.insights(local.load(), m.active_track))))
+      dispatch(to(Ok(guest.insights(local.load(), m.active_track))))
     }
   }
 }
 
-pub fn load_history(m: Model, problem: ProblemRef) -> Effect(Msg) {
+pub fn load_history(
+  m: Model,
+  problem: ProblemRef,
+  to: fn(Result(List(wire.ReviewRow), remote.ApiError)) -> msg,
+) -> Effect(msg) {
   case m.mode {
-    Account(token) ->
-      api.fetch_history(base(), token, problem, HistoryLoaded(problem, _))
+    Account(token) -> api.fetch_history(base(), token, problem, to)
     Guest -> {
       use dispatch <- effect.from
-      dispatch(HistoryLoaded(
-        problem,
-        Ok(guest.history_of(local.load(), problem)),
-      ))
+      dispatch(to(Ok(guest.history_of(local.load(), problem))))
     }
   }
 }
 
-pub fn load_stats(m: Model) -> Effect(Msg) {
+pub fn load_stats(
+  m: Model,
+  to: fn(Result(wire.Stats, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   case m.mode {
-    Account(token) ->
-      api.fetch_stats(base(), token, m.active_track, StatsLoaded)
+    Account(token) -> api.fetch_stats(base(), token, m.active_track, to)
     Guest -> {
       use dispatch <- effect.from
       let now = timestamp.system_time()
       dispatch(
-        StatsLoaded(
+        to(
           Ok(guest.stats(
             local.load(),
             m.active_track,
@@ -492,8 +537,8 @@ pub fn load_stats(m: Model) -> Effect(Msg) {
 pub fn upgrade(
   token: String,
   solved: List(ProblemRef),
-  handler: fn(Result(Nil, remote.ApiError)) -> Msg,
-) -> Effect(Msg) {
+  handler: fn(Result(Nil, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   let store = local.load()
   api.import_legacy(
     base(),
@@ -507,7 +552,7 @@ pub fn upgrade(
   )
 }
 
-pub fn clear_guest() -> Effect(Msg) {
+pub fn clear_guest() -> Effect(msg) {
   use _dispatch <- effect.from
   local.clear()
 }
@@ -521,8 +566,8 @@ pub fn clear_guest() -> Effect(Msg) {
 pub fn login(
   email: String,
   password: String,
-  to: fn(Result(wire.Session, remote.ApiError)) -> Msg,
-) -> Effect(Msg) {
+  to: fn(Result(wire.Session, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   api.login(base(), email, password, to)
 }
 
@@ -531,23 +576,23 @@ pub fn login(
 pub fn signup(
   email: String,
   password: String,
-  to: fn(Result(wire.Session, remote.ApiError)) -> Msg,
-) -> Effect(Msg) {
+  to: fn(Result(wire.Session, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   api.signup(base(), email, password, browser.time_zone(), to)
 }
 
 pub fn log_out(
   token: String,
-  to: fn(Result(Nil, remote.ApiError)) -> Msg,
-) -> Effect(Msg) {
+  to: fn(Result(Nil, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   api.logout(base(), token, to)
 }
 
-pub fn save_token(token: String) -> Effect(Msg) {
+pub fn save_token(token: String) -> Effect(msg) {
   session.save_token(token)
 }
 
-pub fn clear_token() -> Effect(Msg) {
+pub fn clear_token() -> Effect(msg) {
   session.clear_token()
 }
 
@@ -566,7 +611,7 @@ pub fn migrate_storage_keys() -> Nil {
 /// Persist the settings that belong to this browser rather than the account.
 /// Written whole every time, so every caller must pass a model that already
 /// holds the change it wants saved.
-pub fn save_device_preferences(m: Model) -> Effect(Msg) {
+pub fn save_device_preferences(m: Model) -> Effect(msg) {
   session.save_preferences(session.Preferences(
     editor_keymap: m.editor_keymap,
     editor_height: m.editor_height,
@@ -591,7 +636,7 @@ pub fn legacy_is_empty(old: legacy.Legacy) -> Bool {
   legacy.is_empty(old)
 }
 
-pub fn mark_legacy_imported() -> Effect(Msg) {
+pub fn mark_legacy_imported() -> Effect(msg) {
   legacy.mark_imported()
 }
 
@@ -600,14 +645,14 @@ pub fn mark_legacy_imported() -> Effect(Msg) {
 pub fn import_legacy(
   token: String,
   old: legacy.Legacy,
-  to: fn(Result(Nil, remote.ApiError)) -> Msg,
-) -> Effect(Msg) {
+  to: fn(Result(Nil, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   api.import_legacy(base(), token, old.solved, [], old.drafts, [], [], to)
 }
 
 /// The guest-side adoption: the pre-account blob seeds the guest store in
 /// this browser, nothing goes to any server.
-pub fn adopt_legacy_locally(old: legacy.Legacy) -> Effect(Msg) {
+pub fn adopt_legacy_locally(old: legacy.Legacy) -> Effect(msg) {
   use _dispatch <- effect.from
   local.seed_from_legacy(old.solved, old.drafts)
   Nil
@@ -626,7 +671,7 @@ pub fn upgrade_prompt_state(
   local.prompt_state(local.current_day(account))
 }
 
-pub fn dismiss_upgrade_prompt() -> Effect(Msg) {
+pub fn dismiss_upgrade_prompt() -> Effect(msg) {
   use _dispatch <- effect.from
   let _ = local.dismiss_prompt()
   Nil
@@ -637,8 +682,8 @@ pub fn dismiss_upgrade_prompt() -> Effect(Msg) {
 pub fn post_run(
   token: String,
   request: wire.RunRequest,
-  to: fn(Result(wire.RunResult, remote.ApiError)) -> Msg,
-) -> Effect(Msg) {
+  to: fn(Result(wire.RunResult, remote.ApiError)) -> msg,
+) -> Effect(msg) {
   api.post_run(base(), token, request, to)
 }
 

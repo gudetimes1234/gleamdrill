@@ -1,5 +1,7 @@
 //// App-side driver for the per-language grading workers: lazy spawn, run
-//// requests, timeout + restart, and decoding worker messages into Msgs.
+//// requests, timeout + restart, and decoding worker messages into `Event`s.
+//// Every effect takes a `to` that turns an `Event` into the caller's own
+//// message, so the runner sits below every page that runs code.
 //// Every worker speaks the same protocol; the language tag routes messages
 //// back to the right runtime state.
 
@@ -9,11 +11,21 @@ import gleam/list
 import gleam/option.{type Option, None}
 import gleam/string
 import gleamdrill/model.{type RunOutcome, CaseResult, Cases, Errored, RunError}
-import gleamdrill/msg.{
-  type Msg, RunFinished, RunTimedOut, RunnerFailed, RunnerReady,
-  RuntimeLoadTimedOut,
-}
 import lustre/effect.{type Effect}
+
+/// What a runtime reports back.
+pub type Event {
+  /// The worker booted, or the language runs on the server and needs none.
+  Ready(language: String)
+  /// The worker could not start or serve.
+  Failed(language: String, message: String)
+  /// A run's verdict, with what it printed.
+  Finished(id: Int, outcome: RunOutcome, stdout: String)
+  /// A run that never answered.
+  TimedOut(id: Int)
+  /// A worker that never said it was ready.
+  LoadTimedOut(language: String)
+}
 
 /// The vendored Gleam compiler version — must match GLEAM_VERSION in the
 /// Makefile. Passed to the worker as ?v= so the runtime directory has a single
@@ -97,56 +109,52 @@ fn worker_config(language: String) -> Result(#(String, Bool), Nil) {
 
 /// Spawn the language's worker if it is not already running. Safe to dispatch
 /// repeatedly.
-pub fn ensure(language: String) -> Effect(Msg) {
+pub fn ensure(language: String, to: fn(Event) -> msg) -> Effect(msg) {
   effect.from(fn(dispatch) {
     case is_remote(language), worker_config(language) {
-      True, _ -> dispatch(RunnerReady(language))
+      True, _ -> dispatch(to(Ready(language)))
       False, Ok(#(url, is_module)) -> {
         ffi_spawn(
           language,
           url,
           is_module,
-          fn(raw) { dispatch(decode_message(language, raw)) },
-          fn(message) { dispatch(RunnerFailed(language, message)) },
+          fn(raw) { dispatch(to(decode_message(language, raw))) },
+          fn(message) { dispatch(to(Failed(language, message))) },
         )
-        ffi_after(load_timeout_ms, fn() {
-          dispatch(RuntimeLoadTimedOut(language))
-        })
+        ffi_after(load_timeout_ms, fn() { dispatch(to(LoadTimedOut(language))) })
       }
       False, Error(Nil) ->
-        dispatch(RunnerFailed(language, "No runtime exists for this language."))
+        dispatch(to(Failed(language, "No runtime exists for this language.")))
     }
   })
 }
 
 /// Terminate a hung worker and boot a fresh one.
-pub fn restart(language: String) -> Effect(Msg) {
+pub fn restart(language: String, to: fn(Event) -> msg) -> Effect(msg) {
   effect.from(fn(dispatch) {
     case is_remote(language), worker_config(language) {
-      True, _ -> dispatch(RunnerReady(language))
+      True, _ -> dispatch(to(Ready(language)))
       False, Ok(#(url, is_module)) -> {
         ffi_restart(
           language,
           url,
           is_module,
-          fn(raw) { dispatch(decode_message(language, raw)) },
-          fn(message) { dispatch(RunnerFailed(language, message)) },
+          fn(raw) { dispatch(to(decode_message(language, raw))) },
+          fn(message) { dispatch(to(Failed(language, message))) },
         )
-        ffi_after(load_timeout_ms, fn() {
-          dispatch(RuntimeLoadTimedOut(language))
-        })
+        ffi_after(load_timeout_ms, fn() { dispatch(to(LoadTimedOut(language))) })
       }
       False, Error(Nil) ->
-        dispatch(RunnerFailed(language, "No runtime exists for this language."))
+        dispatch(to(Failed(language, "No runtime exists for this language.")))
     }
   })
 }
 
 /// The timeout for a run that happens elsewhere (the server); the request
 /// itself is store.post_run. Stale ids are ignored exactly as for workers.
-pub fn arm_remote_timeout(id: Int) -> Effect(Msg) {
+pub fn arm_remote_timeout(id: Int, to: fn(Event) -> msg) -> Effect(msg) {
   effect.from(fn(dispatch) {
-    ffi_after(remote_timeout_ms, fn() { dispatch(RunTimedOut(id)) })
+    ffi_after(remote_timeout_ms, fn() { dispatch(to(TimedOut(id))) })
   })
 }
 
@@ -157,57 +165,58 @@ pub fn run(
   id: Int,
   solution: String,
   harness: String,
-) -> Effect(Msg) {
+  to: fn(Event) -> msg,
+) -> Effect(msg) {
   effect.from(fn(dispatch) {
     case ffi_post_run(language, id, solution, harness) {
-      True -> ffi_after(run_timeout_ms, fn() { dispatch(RunTimedOut(id)) })
+      True -> ffi_after(run_timeout_ms, fn() { dispatch(to(TimedOut(id))) })
       // No worker to post to: fail loudly now rather than letting the
       // timeout blame the user's code for an infinite loop in 8 seconds.
-      False -> dispatch(RunnerFailed(language, "The runtime was not running."))
+      False -> dispatch(to(Failed(language, "The runtime was not running.")))
     }
   })
 }
 
-fn decode_message(language: String, raw: String) -> Msg {
+fn decode_message(language: String, raw: String) -> Event {
   case json.parse(raw, message_decoder(language)) {
     Ok(msg) -> msg
     Error(details) ->
-      RunnerFailed(
+      Failed(
         language,
         "The runtime sent an unreadable message: " <> string.inspect(details),
       )
   }
 }
 
-fn message_decoder(language: String) -> Decoder(Msg) {
+fn message_decoder(language: String) -> Decoder(Event) {
   use kind <- decode.field("type", decode.string)
   case kind {
-    "ready" -> decode.success(RunnerReady(language))
+    "ready" -> decode.success(Ready(language))
     // The worker's own report that it cannot serve at all: a boot failure or
     // a request it could not even attribute to a run.
     "fatal" -> {
       use message <- decode.field("message", decode.string)
-      decode.success(RunnerFailed(language, message))
+      decode.success(Failed(language, message))
     }
     "result" -> {
       use id <- decode.field("id", decode.int)
       use stdout <- stdout_field()
       use warnings <- warnings_field()
       use outcome <- result_decoder()
-      decode.success(RunFinished(id, outcome, with_warnings(stdout, warnings)))
+      decode.success(Finished(id, outcome, with_warnings(stdout, warnings)))
     }
     "error" -> {
       use id <- decode.field("id", decode.int)
       use stdout <- stdout_field()
       use warnings <- warnings_field()
       use outcome <- error_decoder()
-      decode.success(RunFinished(id, outcome, with_warnings(stdout, warnings)))
+      decode.success(Finished(id, outcome, with_warnings(stdout, warnings)))
     }
-    _ -> decode.failure(RunnerReady(language), "Msg")
+    _ -> decode.failure(Ready(language), "Event")
   }
 }
 
-fn result_decoder(next: fn(RunOutcome) -> Decoder(Msg)) -> Decoder(Msg) {
+fn result_decoder(next: fn(RunOutcome) -> Decoder(Event)) -> Decoder(Event) {
   let case_decoder = {
     use label <- decode.field("label", decode.string)
     use expected <- decode.field("expected", decode.string)
@@ -219,7 +228,7 @@ fn result_decoder(next: fn(RunOutcome) -> Decoder(Msg)) -> Decoder(Msg) {
   next(Cases(cases))
 }
 
-fn error_decoder(next: fn(RunOutcome) -> Decoder(Msg)) -> Decoder(Msg) {
+fn error_decoder(next: fn(RunOutcome) -> Decoder(Event)) -> Decoder(Event) {
   use phase <- decode.field("phase", decode.string)
   use file <- nullable_field("file", decode.string)
   use line <- nullable_field("line", decode.int)

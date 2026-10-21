@@ -52,7 +52,13 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
     // restore from disk and we block on fetching it.
     Some(token) -> {
       let m = Model(..m, mode: Account(token), boot: Syncing)
-      #(m, effect.batch([common.keyboard_effect(), store.load_state(m)]))
+      #(
+        m,
+        effect.batch([
+          common.keyboard_effect(),
+          store.load_state(m, msg.StateLoaded),
+        ]),
+      )
     }
     // No account. The app is fully usable anyway -- guest progress lives in
     // this browser. A pre-account `algoDrillState` blob is folded in here, so
@@ -64,7 +70,7 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
         effect.batch([
           common.keyboard_effect(),
           session_boot.adopt_legacy(),
-          store.load_state(m),
+          store.load_state(m, msg.StateLoaded),
         ]),
       )
     }

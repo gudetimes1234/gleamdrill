@@ -112,7 +112,7 @@ pub fn auth_completed(
           store.save_token(session.token),
           case upgrading {
             True -> store.upgrade(session.token, [], StateImported)
-            False -> store.load_state(signed_in)
+            False -> store.load_state(signed_in, msg.StateLoaded)
           },
         ]),
       )
@@ -156,7 +156,10 @@ pub fn state_loaded(
       // Fetched after the screen is already up rather than before it, so a
       // slow round trip delays a tile and not the first paint.
       let dashboard =
-        effect.batch([store.load_stats(loaded), store.load_insights(loaded)])
+        effect.batch([
+          store.load_stats(loaded, msg.StatsLoaded),
+          store.load_insights(loaded, msg.InsightsLoaded),
+        ])
       let loaded =
         Model(
           ..loaded,
@@ -201,7 +204,13 @@ pub fn state_loaded(
           boot: m.boot,
           refreshing: True,
         )
-      #(guest, effect.batch([store.clear_token(), store.load_state(guest)]))
+      #(
+        guest,
+        effect.batch([
+          store.clear_token(),
+          store.load_state(guest, msg.StateLoaded),
+        ]),
+      )
     }
     Error(failure) ->
       case m.boot {
@@ -225,7 +234,7 @@ pub fn state_loaded(
 }
 
 pub fn retry_sync(m: Model) -> #(Model, Effect(Msg)) {
-  #(Model(..m, boot: Syncing), store.load_state(m))
+  #(Model(..m, boot: Syncing), store.load_state(m, msg.StateLoaded))
 }
 
 pub fn state_imported(
@@ -235,7 +244,7 @@ pub fn state_imported(
   case result {
     Ok(Nil) -> #(
       Model(..m, merge_offer: False, refreshing: True),
-      effect.batch([store.clear_guest(), store.load_state(m)]),
+      effect.batch([store.clear_guest(), store.load_state(m, msg.StateLoaded)]),
     )
     Error(failure) -> #(
       Model(
@@ -287,7 +296,7 @@ pub fn sign_out(m: Model) -> #(Model, Effect(Msg)) {
         store.clear_token(),
         // Back to guest rather than to a sign-in wall. The guest store was
         // cleared on upgrade, so this loads empty.
-        store.load_state(signed_out),
+        store.load_state(signed_out, msg.StateLoaded),
       ]),
     )
   }
@@ -316,7 +325,7 @@ pub fn changed_setting(
   {
     let profile = apply_setting(wire.Profile(m.account, m.settings), field, raw)
     let m = Model(..m, settings: profile.settings, account: profile.account)
-    #(m, store.save_settings(m, profile))
+    #(m, store.save_settings(m, profile, msg.SettingsSaved))
   }
 }
 
@@ -325,7 +334,14 @@ pub fn device_timezone(m: Model) -> #(Model, Effect(Msg)) {
     let account =
       wire.AccountSettings(..m.account, timezone: browser.time_zone())
     let m = Model(..m, account:)
-    #(m, store.save_settings(m, wire.Profile(account, m.settings)))
+    #(
+      m,
+      store.save_settings(
+        m,
+        wire.Profile(account, m.settings),
+        msg.SettingsSaved,
+      ),
+    )
   }
 }
 

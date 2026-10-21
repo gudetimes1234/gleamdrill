@@ -283,7 +283,7 @@ pub fn draft_save_ticked(m: Model) -> #(Model, Effect(Msg)) {
     // A study rep is throwaway typing; persisting it would clobber the
     // draft saved from a real working session on the same problem.
     _, True -> #(m, effect.none())
-    Ok(ref), False -> #(m, store.save_draft(m, ref, m.draft))
+    Ok(ref), False -> #(m, store.save_draft(m, ref, m.draft, msg.DraftSynced))
     Error(Nil), _ -> #(m, effect.none())
   }
 }
@@ -296,6 +296,7 @@ pub fn note_save_ticked(m: Model) -> #(Model, Effect(Msg)) {
         m,
         ref,
         model.assoc_get(m.notes, ref) |> result.unwrap(""),
+        msg.NoteSynced,
       ),
     )
     Error(Nil) -> #(m, effect.none())

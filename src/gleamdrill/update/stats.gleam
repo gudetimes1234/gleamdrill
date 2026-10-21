@@ -22,7 +22,10 @@ pub fn open(m: Model) -> #(Model, Effect(Msg)) {
       stats: remote.reload(m.stats),
       insights: remote.reload(m.insights),
     ),
-    effect.batch([store.load_stats(m), store.load_insights(m)]),
+    effect.batch([
+      store.load_stats(m, msg.StatsLoaded),
+      store.load_insights(m, msg.InsightsLoaded),
+    ]),
   )
 }
 
@@ -78,7 +81,7 @@ pub fn activated(m: Model) -> #(Model, Effect(Msg)) {
 pub fn open_detail(m: Model, problem: ProblemRef) -> #(Model, Effect(Msg)) {
   #(
     Model(..m, detail: Some(#(problem, remote.Loading))),
-    store.load_history(m, problem),
+    store.load_history(m, problem, msg.HistoryLoaded(problem, _)),
   )
 }
 

@@ -15,7 +15,7 @@ import lustre/effect.{type Effect}
 import wire
 
 pub fn export(m: Model) -> #(Model, Effect(Msg)) {
-  #(m, store.export_archive(m))
+  #(m, store.export_archive(m, msg.ArchiveReady))
 }
 
 pub fn archive_ready(
@@ -78,7 +78,7 @@ pub fn import_confirmed(m: Model, replace: Bool) -> #(Model, Effect(Msg)) {
     False, _ -> #(Model(..m, import_pending: None), effect.none())
     True, Some(archive) -> #(
       Model(..m, import_pending: None, refreshing: True),
-      store.restore_archive(m, archive),
+      store.restore_archive(m, archive, msg.ArchiveRestored),
     )
     True, None -> #(m, effect.none())
   }
@@ -93,7 +93,7 @@ pub fn restored(
   case result {
     Ok(Nil) -> #(
       Model(..m, notice: Some("Restored. Everything is as the file had it.")),
-      store.load_state(m),
+      store.load_state(m, msg.StateLoaded),
     )
     Error(error) -> #(
       Model(..m, refreshing: False, notice: Some(remote.error_message(error))),

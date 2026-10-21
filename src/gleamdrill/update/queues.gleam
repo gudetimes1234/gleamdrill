@@ -22,7 +22,10 @@ import wire
 pub fn add_starter_set(m: Model) -> #(Model, Effect(Msg)) {
   case common.starter_refs(m, m.active_track) {
     [] -> #(Model(..m, route: TracksRoute), effect.none())
-    refs -> #(common.pending(m, refs), store.add_to_queue(m, refs))
+    refs -> #(
+      common.pending(m, refs),
+      store.add_to_queue(m, refs, msg.QueueChanged),
+    )
   }
 }
 
@@ -131,7 +134,7 @@ pub fn submit_name(m: Model) -> #(Model, Effect(Msg)) {
               queue_editing: Some(name),
               queue_naming: None,
             )
-          #(m, store.save_queues(m))
+          #(m, store.save_queues(m, msg.QueuesSaved))
         }
         _, False, model.RenameQueue(from, _) -> {
           let rename = fn(current) {
@@ -153,7 +156,13 @@ pub fn submit_name(m: Model) -> #(Model, Effect(Msg)) {
               active_queue: rename(m.active_queue),
               queue_naming: None,
             )
-          #(m, effect.batch([store.save_queues(m), common.save_preferences(m)]))
+          #(
+            m,
+            effect.batch([
+              store.save_queues(m, msg.QueuesSaved),
+              common.save_preferences(m),
+            ]),
+          )
         }
       }
     }
@@ -175,7 +184,13 @@ pub fn delete(m: Model) -> #(Model, Effect(Msg)) {
             False -> m.active_queue
           },
         )
-      #(m, effect.batch([store.save_queues(m), common.save_preferences(m)]))
+      #(
+        m,
+        effect.batch([
+          store.save_queues(m, msg.QueuesSaved),
+          common.save_preferences(m),
+        ]),
+      )
     }
   }
 }
@@ -191,7 +206,7 @@ pub fn add_selection(
         None -> #(m, effect.none())
         Some(name) -> {
           let m = add_to_named_queue(m, name, refs)
-          #(m, store.save_queues(m))
+          #(m, store.save_queues(m, msg.QueuesSaved))
         }
       }
       let carded = enqueue_missing(m, refs)
@@ -245,10 +260,13 @@ pub fn group_changed(
 ) -> #(Model, Effect(Msg)) {
   case queue.group_rows(m, change), change.add, m.queue_editing {
     [], _, _ -> #(m, effect.none())
-    refs, True, None -> #(common.pending(m, refs), store.add_to_queue(m, refs))
+    refs, True, None -> #(
+      common.pending(m, refs),
+      store.add_to_queue(m, refs, msg.QueueChanged),
+    )
     refs, False, None -> #(
       common.pending(m, refs),
-      store.remove_from_queue(m, refs),
+      store.remove_from_queue(m, refs, msg.QueueChanged),
     )
     refs, True, Some(name) -> named_queue_add(m, name, refs)
     refs, False, Some(name) -> named_queue_remove(m, name, refs)
@@ -266,14 +284,20 @@ pub fn toggle_queued(m: Model, ref: ProblemRef) -> #(Model, Effect(Msg)) {
       }
     None ->
       case model.card_for(m, ref) {
-        None -> #(common.pending(m, [ref]), store.add_to_queue(m, [ref]))
+        None -> #(
+          common.pending(m, [ref]),
+          store.add_to_queue(m, [ref], msg.QueueChanged),
+        )
         Some(state) ->
           case state.reps == 0 {
             True -> #(
               common.pending(m, [ref]),
-              store.remove_from_queue(m, [ref]),
+              store.remove_from_queue(m, [ref], msg.QueueChanged),
             )
-            False -> #(m, store.set_suspended(m, ref, !state.suspended))
+            False -> #(
+              m,
+              store.set_suspended(m, ref, !state.suspended, msg.CardSuspended),
+            )
           }
       }
   }
@@ -287,7 +311,10 @@ pub fn add_all_shown(m: Model) -> #(Model, Effect(Msg)) {
       m.queue_editing
     {
       [], _ -> #(m, effect.none())
-      refs, None -> #(common.pending(m, refs), store.add_to_queue(m, refs))
+      refs, None -> #(
+        common.pending(m, refs),
+        store.add_to_queue(m, refs, msg.QueueChanged),
+      )
       refs, Some(name) -> named_queue_add(m, name, refs)
     }
   }
@@ -298,7 +325,10 @@ pub fn remove_all_shown(m: Model) -> #(Model, Effect(Msg)) {
     None ->
       case list.filter(queue.listed(m), fn(ref) { model.is_new(m, ref) }) {
         [] -> #(m, effect.none())
-        refs -> #(common.pending(m, refs), store.remove_from_queue(m, refs))
+        refs -> #(
+          common.pending(m, refs),
+          store.remove_from_queue(m, refs, msg.QueueChanged),
+        )
       }
     Some(name) -> {
       let here = queue.members(m, m.queue_editing)
@@ -373,7 +403,7 @@ pub fn changed(
           },
         ),
         case changed {
-          True -> store.save_queues(m)
+          True -> store.save_queues(m, msg.QueuesSaved)
           False -> effect.none()
         },
       )
@@ -418,7 +448,7 @@ fn named_queue_add(
 ) -> #(Model, Effect(Msg)) {
   let m = add_to_named_queue(m, name, refs)
   let #(m, carded) = enqueue_missing(m, refs)
-  #(m, effect.batch([store.save_queues(m), carded]))
+  #(m, effect.batch([store.save_queues(m, msg.QueuesSaved), carded]))
 }
 
 fn named_queue_remove(
@@ -442,7 +472,7 @@ fn named_queue_remove(
         }
       }),
     )
-  #(m, store.save_queues(m))
+  #(m, store.save_queues(m, msg.QueuesSaved))
 }
 
 /// Appends what the queue lacks, in the order given.
@@ -471,6 +501,9 @@ fn add_to_named_queue(m: Model, name: String, refs: List(ProblemRef)) -> Model {
 fn enqueue_missing(m: Model, refs: List(ProblemRef)) -> #(Model, Effect(Msg)) {
   case list.filter(refs, fn(ref) { !model.is_queued(m, ref) }) {
     [] -> #(m, effect.none())
-    missing -> #(common.pending(m, missing), store.add_to_queue(m, missing))
+    missing -> #(
+      common.pending(m, missing),
+      store.add_to_queue(m, missing, msg.QueueChanged),
+    )
   }
 }

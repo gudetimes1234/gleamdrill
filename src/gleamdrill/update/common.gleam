@@ -128,7 +128,7 @@ pub fn with_prefetch(pair: #(Model, Effect(Msg))) -> #(Model, Effect(Msg)) {
               model.RuntimeLoading,
             ),
           ),
-          effect.batch([fx, runner.ensure(language)]),
+          effect.batch([fx, runner.ensure(language, runner_msg)]),
         )
         // A failed load gets one fresh chance per drill open; without this
         // the only recovery was a page reload.
@@ -141,7 +141,7 @@ pub fn with_prefetch(pair: #(Model, Effect(Msg))) -> #(Model, Effect(Msg)) {
               model.RuntimeLoading,
             ),
           ),
-          effect.batch([fx, runner.restart(language)]),
+          effect.batch([fx, runner.restart(language, runner_msg)]),
         )
         _ -> pair
       }
@@ -420,7 +420,7 @@ pub fn abandon_run(m: Model) -> #(Model, Effect(Msg)) {
               model.RuntimeLoading,
             ),
           ),
-          runner.restart(language),
+          runner.restart(language, runner_msg),
         )
       }
     model.Running(_, _), Error(Nil) -> #(
@@ -495,7 +495,7 @@ pub fn start_local_run(
   }
   #(
     Model(..m, run: Running(id, previous), next_run_id: id + 1),
-    runner.run(language, id, solution, harness),
+    runner.run(language, id, solution, harness, runner_msg),
   )
 }
 
@@ -525,5 +525,16 @@ pub fn escalate(m: Model) -> model.UpgradePrompt {
     Guest, PromptDismissed -> PromptDismissed
     Guest, _ -> store.upgrade_prompt_state(m.account)
     _, current -> current
+  }
+}
+
+/// A runtime's report as the controller's message.
+pub fn runner_msg(event: runner.Event) -> Msg {
+  case event {
+    runner.Ready(language) -> msg.RunnerReady(language)
+    runner.Failed(language, message) -> msg.RunnerFailed(language, message)
+    runner.Finished(id, outcome, stdout) -> msg.RunFinished(id, outcome, stdout)
+    runner.TimedOut(id) -> msg.RunTimedOut(id)
+    runner.LoadTimedOut(language) -> msg.RuntimeLoadTimedOut(language)
   }
 }

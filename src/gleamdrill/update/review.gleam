@@ -127,40 +127,44 @@ pub fn graded(m: Model, rating: fsrs.Rating) -> #(Model, Effect(Msg)) {
             card_before: model.card_for(m, ref),
           )),
         ),
-        store.record_review(m, case m.recall {
-          // Revealing is the mechanism here, not a peek, and there was no
-          // code to time: the row says "recall" and nothing else.
-          True ->
-            wire.Review(
-              problem: ref,
-              rating:,
-              duration_ms: None,
-              auto_failed: False,
-              revealed: False,
-              practice: !m.studying,
-              recall: True,
-            )
-          False ->
-            wire.Review(
-              problem: ref,
-              rating:,
-              duration_ms: Some(model.elapsed_ms(m, browser.now_ms())),
-              // An ungraded card's run is a demonstration, not a test, so
-              // it is never logged as a failure.
-              auto_failed: case model.current_problem(m) {
-                Ok(current) ->
-                  problem.graded(current) && model.run_failed(m.run)
-                Error(Nil) -> model.run_failed(m.run)
-              },
-              revealed: case model.current_problem(m) {
-                Ok(current) -> model.answer_revealed(m, current.approach)
-                Error(Nil) -> m.revealed_solution != None
-              },
-              // A hand-picked sitting is practice, not a scheduled review.
-              practice: !m.studying,
-              recall: False,
-            )
-        }),
+        store.record_review(
+          m,
+          case m.recall {
+            // Revealing is the mechanism here, not a peek, and there was no
+            // code to time: the row says "recall" and nothing else.
+            True ->
+              wire.Review(
+                problem: ref,
+                rating:,
+                duration_ms: None,
+                auto_failed: False,
+                revealed: False,
+                practice: !m.studying,
+                recall: True,
+              )
+            False ->
+              wire.Review(
+                problem: ref,
+                rating:,
+                duration_ms: Some(model.elapsed_ms(m, browser.now_ms())),
+                // An ungraded card's run is a demonstration, not a test, so
+                // it is never logged as a failure.
+                auto_failed: case model.current_problem(m) {
+                  Ok(current) ->
+                    problem.graded(current) && model.run_failed(m.run)
+                  Error(Nil) -> model.run_failed(m.run)
+                },
+                revealed: case model.current_problem(m) {
+                  Ok(current) -> model.answer_revealed(m, current.approach)
+                  Error(Nil) -> m.revealed_solution != None
+                },
+                // A hand-picked sitting is practice, not a scheduled review.
+                practice: !m.studying,
+                recall: False,
+              )
+          },
+          msg.ReviewRecorded,
+        ),
       )
     }
   }
@@ -240,7 +244,7 @@ pub fn undo(m: Model) -> #(Model, Effect(Msg)) {
     // Not while a grade is still being saved: the point would be stale.
     Some(point), NotGrading | Some(point), AwaitingGrade -> #(
       Model(..m, undo: None),
-      store.undo_review(m, point),
+      store.undo_review(m, point, msg.UndoRecorded(point, _)),
     )
     _, _ -> #(m, effect.none())
   }
@@ -265,7 +269,7 @@ pub fn undo_recorded(
       }
       let queues_effect = case queues == m.queues {
         True -> effect.none()
-        False -> store.save_queues(Model(..m, queues:))
+        False -> store.save_queues(Model(..m, queues:), msg.QueuesSaved)
       }
       // Back on the problem as it was when the grade was pressed, with the
       // clock where it stood, waiting for the grade you meant.
@@ -318,7 +322,10 @@ pub fn undo_recorded(
 pub fn toggle_suspend(m: Model, ref: ProblemRef) -> #(Model, Effect(Msg)) {
   case model.card_for(m, ref) {
     None -> #(m, effect.none())
-    Some(state) -> #(m, store.set_suspended(m, ref, !state.suspended))
+    Some(state) -> #(
+      m,
+      store.set_suspended(m, ref, !state.suspended, msg.CardSuspended),
+    )
   }
 }
 

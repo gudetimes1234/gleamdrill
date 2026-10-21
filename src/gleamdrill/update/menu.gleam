@@ -241,11 +241,15 @@ pub fn enter_track(
   let m = Model(..m, active_track: track, route: StudyRoute)
   // The track's own cards, queues and settings come from a fresh load: the
   // model holds one track's at a time, and this is the moment it changes.
-  let reload = effect.batch([common.save_preferences(m), store.load_state(m)])
+  let reload =
+    effect.batch([
+      common.save_preferences(m),
+      store.load_state(m, msg.StateLoaded),
+    ])
   case starter, common.starter_refs(m, track) {
     True, [_, ..] as refs -> #(
       common.pending(m, refs),
-      effect.batch([reload, store.add_to_queue(m, refs)]),
+      effect.batch([reload, store.add_to_queue(m, refs, msg.QueueChanged)]),
     )
     _, _ -> #(m, reload)
   }

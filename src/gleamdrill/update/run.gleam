@@ -58,7 +58,7 @@ pub fn cache_warmed(
 pub fn retry_runtime(m: Model, language: String) -> #(Model, Effect(Msg)) {
   #(
     Model(..m, runtimes: model.assoc_put(m.runtimes, language, RuntimeLoading)),
-    runner.restart(language),
+    runner.restart(language, common.runner_msg),
   )
 }
 
@@ -221,7 +221,7 @@ pub fn timed_out(m: Model, id: Int) -> #(Model, Effect(Msg)) {
                     RuntimeLoading,
                   ),
                 ),
-                runner.restart(language),
+                runner.restart(language, common.runner_msg),
               )
             }
           Error(Nil) -> #(timed_out, effect.none())
@@ -332,7 +332,7 @@ fn start_run(
           wire.RunRequest(language, m.draft, harness),
           RemoteRunFinished(id, _),
         ),
-        runner.arm_remote_timeout(id),
+        runner.arm_remote_timeout(id, common.runner_msg),
       ]),
     )
     // Unreachable: request_run catches a guest first.

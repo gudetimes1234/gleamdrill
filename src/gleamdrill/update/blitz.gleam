@@ -143,7 +143,7 @@ pub fn expired(m: Model) -> #(Model, Effect(Msg)) {
             ),
           ),
         )
-      let fx = effect.batch([store.delete_draft(m, ref), fx])
+      let fx = effect.batch([store.delete_draft(m, ref, msg.DraftSynced), fx])
       // The flash clears on the next common.tick; the deadline restarts with
       // the card. An ended Blitz keeps its results for the summary.
       #(
