@@ -8,9 +8,9 @@
 
 import gleamdrill/model.{type Model, DrillRoute, Model}
 import gleamdrill/msg.{
-  type Msg, ArchiveReady, ArchiveRestored, AuthCompleted, BlitzExpired,
-  BoardJumped, BoardMoved, BoardShelfMoved, BoardToggledAtCursor, CacheMeasured,
-  CacheWarmed, CardSuspended, ClockTicked, CompareMoved, ComparePickedVariant,
+  type Msg, ArchiveReady, ArchiveRestored, AuthMsg, BlitzExpired, BoardJumped,
+  BoardMoved, BoardShelfMoved, BoardToggledAtCursor, CacheMeasured, CacheWarmed,
+  CardSuspended, ClockTicked, CompareMoved, ComparePickedVariant,
   DraftSaveTicked, DraftSynced, EditorChanged, EditorFocusRequested,
   EditorResized, ExamSampled, ExitConfirmed, HelpToggled, HistoryLoaded,
   ImportConfirmed, ImportPicked, InsightsLoaded, KeyPressed, MenuActivated,
@@ -23,33 +23,31 @@ import gleamdrill/msg.{
   StateImported, StateLoaded, StatsActivated, StatsCursorMoved, StatsLoaded,
   TourActivated, TourCursorMoved, TourEditorChanged, TourRunTicked, UndoRecorded,
   UserAddedAllShown, UserAddedSelectionToQueue, UserAddedStarterSet,
-  UserCancelledQueueName, UserChangedAuthEmail, UserChangedAuthPassword,
-  UserChangedGroup, UserChangedIterations, UserChangedKeymap,
-  UserChangedQueueName, UserChangedSetting, UserClickedBackToStudy,
-  UserClickedBreadcrumb, UserClickedBrowse, UserClickedClearSelection,
-  UserClickedCompare, UserClickedDeviceTimezone, UserClickedExitDrill,
-  UserClickedExitReport, UserClickedExport, UserClickedImport,
-  UserClickedMergeGuest, UserClickedNext, UserClickedQueue, UserClickedRecall,
-  UserClickedRetryRuntime, UserClickedRetrySync, UserClickedRun,
-  UserClickedScratchRun, UserClickedSelectAll, UserClickedSettings,
-  UserClickedSignIn, UserClickedSignOut, UserClickedStartDrill,
-  UserClickedStartExam, UserClickedStats, UserClickedStopRun, UserClickedStudy,
-  UserClickedSubcategory, UserClickedTour, UserClickedTourContents,
-  UserClickedTourNext, UserClickedTourPrev, UserClickedTracks, UserClickedUndo,
-  UserClickedWarmCache, UserClosedCompare, UserClosedDetail, UserDeletedQueue,
-  UserDismissedDiff, UserDismissedMergeOffer, UserDismissedNotice,
-  UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded, UserOpenedDetail,
-  UserOpenedLesson, UserPickedActiveQueue, UserPickedChoice, UserPickedTrack,
-  UserPickedTrackWithStarter, UserRemovedAllShown, UserResetLesson,
-  UserRevealedRecall, UserRevealedWholeThing, UserSearched, UserSearchedQueue,
-  UserSelectedQueue, UserStartedBlitz, UserStartedNewQueue,
-  UserStartedRenameQueue, UserSubmittedAnswer, UserSubmittedAuth,
-  UserSubmittedBoard, UserSubmittedQueueName, UserToggledAuthMode,
-  UserToggledBlitz, UserToggledDiff, UserToggledNudge, UserToggledPane,
-  UserToggledPiece, UserToggledProblem, UserToggledPrompt, UserToggledQueued,
-  UserToggledResults, UserToggledSolution, UserToggledSuspend, UserToggledTimer,
-  WalkAdvanced, WalkBacked, WalkCodeShown, WalkFocused, WalkHintShown,
-  WalkWhyShown,
+  UserCancelledQueueName, UserChangedGroup, UserChangedIterations,
+  UserChangedKeymap, UserChangedQueueName, UserChangedSetting,
+  UserClickedBackToStudy, UserClickedBreadcrumb, UserClickedBrowse,
+  UserClickedClearSelection, UserClickedCompare, UserClickedDeviceTimezone,
+  UserClickedExitDrill, UserClickedExitReport, UserClickedExport,
+  UserClickedImport, UserClickedMergeGuest, UserClickedNext, UserClickedQueue,
+  UserClickedRecall, UserClickedRetryRuntime, UserClickedRetrySync,
+  UserClickedRun, UserClickedScratchRun, UserClickedSelectAll,
+  UserClickedSettings, UserClickedSignIn, UserClickedSignOut,
+  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
+  UserClickedStopRun, UserClickedStudy, UserClickedSubcategory, UserClickedTour,
+  UserClickedTourContents, UserClickedTourNext, UserClickedTourPrev,
+  UserClickedTracks, UserClickedUndo, UserClickedWarmCache, UserClosedCompare,
+  UserClosedDetail, UserDeletedQueue, UserDismissedDiff, UserDismissedMergeOffer,
+  UserDismissedNotice, UserDismissedUpgradePrompt, UserFilteredQueue, UserGraded,
+  UserOpenedDetail, UserOpenedLesson, UserPickedActiveQueue, UserPickedChoice,
+  UserPickedTrack, UserPickedTrackWithStarter, UserRemovedAllShown,
+  UserResetLesson, UserRevealedRecall, UserRevealedWholeThing, UserSearched,
+  UserSearchedQueue, UserSelectedQueue, UserStartedBlitz, UserStartedNewQueue,
+  UserStartedRenameQueue, UserSubmittedAnswer, UserSubmittedBoard,
+  UserSubmittedQueueName, UserToggledBlitz, UserToggledDiff, UserToggledNudge,
+  UserToggledPane, UserToggledPiece, UserToggledProblem, UserToggledPrompt,
+  UserToggledQueued, UserToggledResults, UserToggledSolution, UserToggledSuspend,
+  UserToggledTimer, WalkAdvanced, WalkBacked, WalkCodeShown, WalkFocused,
+  WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/platform/browser
 import gleamdrill/update/blitz as blitz_update
@@ -83,6 +81,10 @@ pub fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
 fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
+    // Pages and the navigation into them belong to `app`, which routes
+    // these before the flat model ever sees them.
+    AuthMsg(_) | UserClickedSignIn(_) -> #(m, effect.none())
+
     // --- keyboard ---
     KeyPressed(key) -> keyboard.pressed(m, key, handle)
     HelpToggled -> keyboard.toggle_help(m)
@@ -110,11 +112,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     BoardToggledAtCursor -> board_update.toggled_at_cursor(m)
 
     // --- session ---
-    UserChangedAuthEmail(value) -> session_update.auth_email(m, value)
-    UserChangedAuthPassword(value) -> session_update.auth_password(m, value)
-    UserToggledAuthMode -> session_update.toggle_auth_mode(m)
-    UserSubmittedAuth -> session_update.submit_auth(m)
-    AuthCompleted(result) -> session_update.auth_completed(m, result)
     StateLoaded(result) -> session_update.state_loaded(m, result)
     UserClickedRetrySync -> session_update.retry_sync(m)
     StateImported(result) -> session_update.state_imported(m, result)
@@ -124,7 +121,6 @@ fn handle(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     SignOutCompleted(_) -> session_update.sign_out_completed(m)
     UserDismissedNotice -> session_update.dismiss_notice(m)
     UserDismissedUpgradePrompt -> session_update.dismiss_upgrade_prompt(m)
-    UserClickedSignIn(mode) -> session_update.sign_in(m, mode)
 
     // --- the scheduler ---
     UserClickedStudy -> review_update.start_study(m)

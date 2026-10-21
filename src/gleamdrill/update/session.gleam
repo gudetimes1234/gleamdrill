@@ -8,11 +8,11 @@ import gleam/int
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleamdrill/model.{
-  type Model, Account, AuthForm, AuthRoute, DayStartHour, DesiredRetention,
-  Guest, Model, NewPerDay, PromptDismissed, Registering, ReminderHour,
-  ReviewsPerDay, SigningIn, StudyRoute, SyncFailed, Synced, Syncing, TracksRoute,
+  type Model, Account, DayStartHour, DesiredRetention, Guest, Model, NewPerDay,
+  PromptDismissed, ReminderHour, ReviewsPerDay, StudyRoute, SyncFailed, Synced,
+  Syncing, TracksRoute,
 }
-import gleamdrill/msg.{type Msg, AuthCompleted, SignOutCompleted, StateImported}
+import gleamdrill/msg.{type Msg, SignOutCompleted, StateImported}
 import gleamdrill/platform/browser
 import gleamdrill/store
 import gleamdrill/store/remote.{type ApiError}
@@ -20,115 +20,39 @@ import gleamdrill/update/common
 import lustre/effect.{type Effect}
 import wire
 
-pub fn auth_email(m: Model, value: String) -> #(Model, Effect(Msg)) {
-  #(
-    Model(..m, auth: AuthForm(..m.auth, email: value, error: None)),
-    effect.none(),
-  )
-}
-
-pub fn auth_password(m: Model, value: String) -> #(Model, Effect(Msg)) {
-  #(
-    Model(..m, auth: AuthForm(..m.auth, password: value, error: None)),
-    effect.none(),
-  )
-}
-
-pub fn toggle_auth_mode(m: Model) -> #(Model, Effect(Msg)) {
-  #(
+/// What signing in does to the shared state. Straight back to the study
+/// screen, which stays up while the account's state loads behind the sync
+/// bar: signing in is not a reboot.
+///
+/// Whatever this browser held as a guest goes up first on a brand-new
+/// account, and the state is loaded once it has landed (StateImported), so
+/// the state that comes back already includes it. Signing in to an existing
+/// account offers the merge instead (`UserClickedMergeGuest`): folding
+/// scratch progress into an established account unasked would surprise.
+pub fn signed_in(
+  m: Model,
+  session: wire.Session,
+  registered: Bool,
+) -> #(Model, Effect(Msg)) {
+  let signed_in =
     Model(
       ..m,
-      auth: AuthForm(
-        ..m.auth,
-        mode: case m.auth.mode {
-          SigningIn -> Registering
-          Registering -> SigningIn
-        },
-        error: None,
-      ),
-    ),
-    effect.none(),
-  )
-}
-
-pub fn submit_auth(m: Model) -> #(Model, Effect(Msg)) {
-  case m.auth.busy, m.auth.email, m.auth.password {
-    // Ignore a second submit while one is already in flight, so a double
-    // click cannot create two accounts.
-    True, _, _ -> #(m, effect.none())
-    False, "", _ | False, _, "" -> #(
-      Model(
-        ..m,
-        auth: AuthForm(..m.auth, error: Some("Enter an email and a password.")),
-      ),
-      effect.none(),
+      mode: Account(session.token),
+      user: Some(session.user),
+      refreshing: True,
+      route: StudyRoute,
     )
-    False, email, password -> #(
-      Model(..m, auth: AuthForm(..m.auth, busy: True, error: None)),
-      case m.auth.mode {
-        SigningIn -> store.login(email, password, AuthCompleted)
-        Registering -> store.signup(email, password, AuthCompleted)
+  let upgrading = registered && common.guest_has_progress()
+  #(
+    Model(..signed_in, merge_offer: !upgrading && common.guest_has_progress()),
+    effect.batch([
+      store.save_token(session.token),
+      case upgrading {
+        True -> store.upgrade(session.token, [], StateImported)
+        False -> store.load_state(signed_in, msg.StateLoaded)
       },
-    )
-  }
-}
-
-pub fn auth_completed(
-  m: Model,
-  result: Result(wire.Session, ApiError),
-) -> #(Model, Effect(Msg)) {
-  case result {
-    Ok(session) -> {
-      // Straight back to the study screen, which stays on screen while the
-      // account's state loads behind the sync bar: signing in is not a
-      // reboot, and the loading card is for the one load before anything
-      // exists to show.
-      let signed_in =
-        Model(
-          ..m,
-          mode: Account(session.token),
-          user: Some(session.user),
-          refreshing: True,
-          route: StudyRoute,
-          // The password leaves the model the moment it is no longer needed.
-          auth: AuthForm(..m.auth, password: "", busy: False, error: None),
-        )
-
-      // Whatever this browser was holding as a guest goes up first, and the
-      // state is loaded once it has landed (StateImported), so the state that
-      // comes back already includes it -- in sequence, not in a race. On a
-      // brand new account there is nothing to lose by merging; signing in to
-      // an existing one is handled by `UserClickedMergeGuest`, because
-      // folding scratch progress into an established account unasked would
-      // be surprising.
-      let upgrading = m.auth.mode == Registering && common.guest_has_progress()
-
-      #(
-        Model(
-          ..signed_in,
-          merge_offer: !upgrading && common.guest_has_progress(),
-        ),
-        effect.batch([
-          store.save_token(session.token),
-          case upgrading {
-            True -> store.upgrade(session.token, [], StateImported)
-            False -> store.load_state(signed_in, msg.StateLoaded)
-          },
-        ]),
-      )
-    }
-    Error(failure) -> #(
-      Model(
-        ..m,
-        auth: AuthForm(
-          ..m.auth,
-          busy: False,
-          error: Some(remote.error_message(failure)),
-        ),
-      ),
-      effect.none(),
-    )
-  }
+    ]),
+  )
 }
 
 pub fn state_loaded(
@@ -304,17 +228,6 @@ pub fn sign_out(m: Model) -> #(Model, Effect(Msg)) {
 
 pub fn dismiss_upgrade_prompt(m: Model) -> #(Model, Effect(Msg)) {
   #(Model(..m, upgrade_prompt: PromptDismissed), store.dismiss_upgrade_prompt())
-}
-
-pub fn sign_in(m: Model, mode: model.AuthMode) -> #(Model, Effect(Msg)) {
-  #(
-    Model(
-      ..m,
-      route: AuthRoute,
-      auth: AuthForm(..m.auth, mode:, error: None, busy: False),
-    ),
-    effect.none(),
-  )
 }
 
 pub fn changed_setting(

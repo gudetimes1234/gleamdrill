@@ -1,7 +1,8 @@
 //// Banners that must be visible wherever the user happens to be.
 
-import gleamdrill/model.{type Model, Registering}
+import gleamdrill/model.{type Model}
 import gleamdrill/msg.{type Msg, UserClickedSignIn}
+import gleamdrill/page/auth/model as auth
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -26,7 +27,7 @@ pub fn storage_warning(m: Model) -> Element(Msg) {
         html.button(
           [
             attribute.class("guest-strip-action"),
-            event.on_click(UserClickedSignIn(Registering)),
+            event.on_click(UserClickedSignIn(auth.Registering)),
           ],
           [html.text("Create an account")],
         ),

@@ -9,9 +9,11 @@ import fsrs
 import gleam/option.{type Option}
 import gleamdrill/content/problem.{type ProblemRef}
 import gleamdrill/model.{
-  type AuthMode, type CompareSide, type GroupChange, type Pane, type QueueFilter,
+  type CompareSide, type GroupChange, type Pane, type QueueFilter,
   type RunOutcome, type SettingField, type UndoPoint,
 }
+import gleamdrill/page/auth/model as auth_model
+import gleamdrill/page/auth/msg as auth_msg
 import gleamdrill/store/remote.{type ApiError}
 import wire
 
@@ -24,6 +26,8 @@ pub type Key {
 }
 
 pub type Msg {
+  // --- pages: each migrated page's own messages, routed by `app` ---
+  AuthMsg(auth_msg.Msg)
   // --- keyboard ---
   KeyPressed(Key)
   HelpToggled
@@ -50,11 +54,6 @@ pub type Msg {
   EditorFocusRequested
   SearchFocusRequested
   // --- session ---
-  UserChangedAuthEmail(String)
-  UserChangedAuthPassword(String)
-  UserToggledAuthMode
-  UserSubmittedAuth
-  AuthCompleted(Result(wire.Session, ApiError))
   StateLoaded(Result(wire.BootState, ApiError))
   StateImported(Result(Nil, ApiError))
   UserClickedMergeGuest
@@ -65,7 +64,8 @@ pub type Msg {
   SignOutCompleted(Result(Nil, ApiError))
   UserDismissedNotice
   UserDismissedUpgradePrompt
-  UserClickedSignIn(AuthMode)
+  /// Open the sign-in page in a mode. Handled by `app`, which owns pages.
+  UserClickedSignIn(auth_model.Mode)
   // --- the scheduler ---
   UserClickedStudy
   UserClickedBrowse

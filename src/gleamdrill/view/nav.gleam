@@ -8,14 +8,15 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleamdrill/domain/track
 import gleamdrill/model.{
-  type Model, type Route, Account, Guest, QueueRoute, SettingsRoute, SigningIn,
-  StatsRoute, StudyRoute, TourRoute,
+  type Model, type Route, Account, Guest, QueueRoute, SettingsRoute, StatsRoute,
+  StudyRoute, TourRoute,
 }
 import gleamdrill/msg.{
   type Msg, UserClickedBackToStudy, UserClickedQueue, UserClickedSettings,
   UserClickedSignIn, UserClickedSignOut, UserClickedStats, UserClickedTour,
   UserDismissedMergeOffer, UserDismissedNotice,
 }
+import gleamdrill/page/auth/model as auth
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -57,7 +58,7 @@ pub fn bar(m: Model, current: Route) -> Element(Msg) {
       html.button(
         [
           attribute.class("link-button nav-link"),
-          event.on_click(UserClickedSignIn(SigningIn)),
+          event.on_click(UserClickedSignIn(auth.SigningIn)),
         ],
         [html.text("Sign in")],
       ),

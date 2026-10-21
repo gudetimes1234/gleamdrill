@@ -7,6 +7,17 @@
 //// at the end is exactly the shared state, renamed into a record of its own.
 
 import gleamdrill/model
+import wire
 
 pub type Shared =
   model.Model
+
+/// What a page asks of the shared state. The app applies these after the
+/// page's own update, so a page never writes shared state directly.
+pub type Change {
+  /// Go to another screen.
+  Navigate(model.Route)
+  /// A session was created. `registered` is a brand-new account, whose guest
+  /// progress moves into it automatically.
+  SignedIn(session: wire.Session, registered: Bool)
+}

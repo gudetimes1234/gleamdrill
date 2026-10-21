@@ -212,21 +212,6 @@ pub type UpgradePrompt {
   PromptDismissed
 }
 
-pub type AuthMode {
-  SigningIn
-  Registering
-}
-
-pub type AuthForm {
-  AuthForm(
-    mode: AuthMode,
-    email: String,
-    password: String,
-    busy: Bool,
-    error: Option(String),
-  )
-}
-
 /// Where the current drill sits in the grade-and-move-on cycle.
 pub type Grading {
   /// The drill has not reached a gradeable state yet.
@@ -329,7 +314,6 @@ pub type Model {
     /// The problem whose review timeline is open on the stats screen, and its
     /// rows once they arrive.
     detail: Option(#(ProblemRef, remote.Data(List(wire.ReviewRow)))),
-    auth: AuthForm,
     /// A transient banner for whatever last went wrong with the server.
     notice: Option(String),
     /// The keyboard cursor in the problem browser.
@@ -522,13 +506,6 @@ pub fn default() -> Model {
     stats: remote.NotAsked,
     insights: remote.NotAsked,
     detail: None,
-    auth: AuthForm(
-      mode: SigningIn,
-      email: "",
-      password: "",
-      busy: False,
-      error: None,
-    ),
     notice: None,
     nav: default_nav(),
     help_open: False,

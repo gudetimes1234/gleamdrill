@@ -14,15 +14,14 @@ import gleamdrill/content/problem
 import gleamdrill/content/problems
 import gleamdrill/domain/insights
 import gleamdrill/domain/queue
-import gleamdrill/model.{
-  type Model, Guest, PromptShowing, Registering, StudyRoute,
-}
+import gleamdrill/model.{type Model, Guest, PromptShowing, StudyRoute}
 import gleamdrill/msg.{
   type Msg, UserAddedStarterSet, UserClickedBrowse, UserClickedQueue,
   UserClickedRecall, UserClickedSignIn, UserClickedStartExam, UserClickedStudy,
   UserClickedTour, UserDismissedUpgradePrompt, UserPickedActiveQueue,
   UserStartedBlitz, UserToggledBlitz,
 }
+import gleamdrill/page/auth/model as auth
 import gleamdrill/store/remote
 import gleamdrill/view/banner
 import gleamdrill/view/brand
@@ -577,7 +576,7 @@ fn guest_strip(m: Model) -> Element(Msg) {
         html.button(
           [
             attribute.class("guest-strip-action"),
-            event.on_click(UserClickedSignIn(Registering)),
+            event.on_click(UserClickedSignIn(auth.Registering)),
           ],
           [html.text("Save it to an account")],
         ),
@@ -614,7 +613,7 @@ fn upgrade_prompt(m: Model) -> Element(Msg) {
               // sharing a class made "the primary action" ambiguous in the
               // DOM, and they are not the same action at all.
               attribute.class("upgrade-prompt-cta"),
-              event.on_click(UserClickedSignIn(Registering)),
+              event.on_click(UserClickedSignIn(auth.Registering)),
             ],
             [html.text("Create account")],
           ),
