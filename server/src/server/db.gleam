@@ -10,7 +10,6 @@ import gleam/result
 import gleam/string
 import pog
 import server/migrations.{type Migration}
-import youid/uuid.{type Uuid}
 
 /// The pool's configuration and the handle every query goes through. The
 /// pool itself is started by the supervision tree (`supervised`); the handle
@@ -126,20 +125,4 @@ fn first_line(sql: String) -> String {
   |> string.split("\n")
   |> list.first
   |> result.unwrap(sql)
-}
-
-/// A uuid as a query parameter. The ids are typed everywhere above this
-/// layer; the column casts (`$1::uuid`) take the text form.
-pub fn uuid(id: Uuid) -> pog.Value {
-  pog.text(uuid.to_string(id))
-}
-
-/// A uuid column read back as text (`id::text`).
-pub fn uuid_decoder() -> decode.Decoder(Uuid) {
-  use text <- decode.then(decode.string)
-  case uuid.from_string(text) {
-    Ok(id) -> decode.success(id)
-    // The placeholder is never seen: a failed decode is an error.
-    Error(Nil) -> decode.failure(uuid.dns_uuid(), "Uuid")
-  }
 }
