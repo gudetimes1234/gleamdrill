@@ -8,9 +8,9 @@ import gleamdrill/domain/guest
 import gleamdrill/model.{type Model, Model}
 
 import gleamdrill/msg.{type Msg}
+import gleamdrill/shared/common
 import gleamdrill/store
 import gleamdrill/store/remote.{type ApiError}
-import gleamdrill/update/common
 import lustre/effect.{type Effect}
 import wire
 

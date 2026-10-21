@@ -17,10 +17,10 @@ import gleamdrill/page/browse/msg.{
   UserClickedSubcategory, UserSearched, UserToggledProblem, UserToggledSuspend,
 }
 import gleamdrill/shared.{type Shared}
+import gleamdrill/ui/brand
 import gleamdrill/ui/document.{type Document, Document}
-import gleamdrill/view/brand
-import gleamdrill/view/format
-import gleamdrill/view/id
+import gleamdrill/ui/format
+import gleamdrill/ui/id
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html

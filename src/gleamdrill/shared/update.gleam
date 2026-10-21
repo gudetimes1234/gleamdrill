@@ -23,13 +23,13 @@ import gleamdrill/msg.{
   UserClickedTracks, UserDismissedMergeOffer, UserDismissedNotice,
   UserDismissedUpgradePrompt, UserStartedBlitz, UserToggledSuspend,
 }
-import gleamdrill/update/keyboard
-import gleamdrill/update/menu as menu_update
-import gleamdrill/update/queues as queues_update
-import gleamdrill/update/review as review_update
-import gleamdrill/update/run as run_update
-import gleamdrill/update/session as session_update
-import gleamdrill/update/stats
+import gleamdrill/shared/cards
+import gleamdrill/shared/queues
+import gleamdrill/shared/run
+import gleamdrill/shared/session
+import gleamdrill/shared/stats
+import gleamdrill/shared/tracks
+import gleamdrill/ui/keyboard
 import lustre/effect.{type Effect}
 
 pub fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
@@ -60,17 +60,17 @@ pub fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     HelpToggled -> keyboard.toggle_help(m)
 
     // --- session ---
-    StateLoaded(result) -> session_update.state_loaded(m, result)
-    UserClickedRetrySync -> session_update.retry_sync(m)
-    StateImported(result) -> session_update.state_imported(m, result)
-    UserClickedMergeGuest -> session_update.merge_guest(m)
-    UserDismissedMergeOffer -> session_update.dismiss_merge_offer(m)
-    UserClickedSignOut -> session_update.sign_out(m)
-    SignOutCompleted(_) -> session_update.sign_out_completed(m)
-    UserDismissedNotice -> session_update.dismiss_notice(m)
-    UserDismissedUpgradePrompt -> session_update.dismiss_upgrade_prompt(m)
-    UserClickedBackToStudy -> review_update.back_to_study(m)
-    UserClickedTracks -> menu_update.open_tracks(m)
+    StateLoaded(result) -> session.state_loaded(m, result)
+    UserClickedRetrySync -> session.retry_sync(m)
+    StateImported(result) -> session.state_imported(m, result)
+    UserClickedMergeGuest -> session.merge_guest(m)
+    UserDismissedMergeOffer -> session.dismiss_merge_offer(m)
+    UserClickedSignOut -> session.sign_out(m)
+    SignOutCompleted(_) -> session.sign_out_completed(m)
+    UserDismissedNotice -> session.dismiss_notice(m)
+    UserDismissedUpgradePrompt -> session.dismiss_upgrade_prompt(m)
+    UserClickedBackToStudy -> cards.back_to_study(m)
+    UserClickedTracks -> tracks.open_tracks(m)
 
     // --- loads several screens read ---
     StatsLoaded(result) -> stats.loaded(m, result)
@@ -88,23 +88,19 @@ pub fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
     // From the study screen's empty state: twenty easy problems in the track
     // already open, no screen in between.
-    UserAddedStarterSet -> queues_update.add_starter_set(m)
-    UserToggledSuspend(ref) -> review_update.toggle_suspend(m, ref)
-    CardSuspended(result) -> review_update.card_suspended(m, result)
-    UserAddedSelectionToQueue(target) -> queues_update.add_selection(m, target)
-    QueuesSaved(result) -> queues_update.saved(m, result)
-    QueueChanged(result) -> queues_update.changed(m, result)
+    UserAddedStarterSet -> queues.add_starter_set(m)
+    UserToggledSuspend(ref) -> cards.toggle_suspend(m, ref)
+    CardSuspended(result) -> cards.card_suspended(m, result)
+    UserAddedSelectionToQueue(target) -> queues.add_selection(m, target)
+    QueuesSaved(result) -> queues.saved(m, result)
+    QueueChanged(result) -> queues.changed(m, result)
 
     // --- the run engine ---
-    RunnerReady(language) -> run_update.runner_ready(m, language)
-    RunnerFailed(language, message) ->
-      run_update.runner_failed(m, language, message)
-    RunFinished(id, outcome, stdout) ->
-      run_update.finished(m, id, outcome, stdout)
-    RemoteRunFinished(id, result) ->
-      run_update.remote_finished(m, id, result, update)
-    RunTimedOut(id) -> run_update.timed_out(m, id)
-    RuntimeLoadTimedOut(language) ->
-      run_update.runtime_load_timed_out(m, language)
+    RunnerReady(language) -> run.runner_ready(m, language)
+    RunnerFailed(language, message) -> run.runner_failed(m, language, message)
+    RunFinished(id, outcome, stdout) -> run.finished(m, id, outcome, stdout)
+    RemoteRunFinished(id, result) -> run.remote_finished(m, id, result, update)
+    RunTimedOut(id) -> run.timed_out(m, id)
+    RuntimeLoadTimedOut(language) -> run.runtime_load_timed_out(m, language)
   }
 }

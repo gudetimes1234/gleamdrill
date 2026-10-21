@@ -2,9 +2,9 @@
 //// device preferences and the chrome. Pages get it read-only and ask for
 //// changes by returning `Change`s, which the app applies (Elm's "OutMsg").
 ////
-//// While pages move out of the flat model one by one, `Shared` is that
-//// model: each migrated page takes its own fields with it, and what is left
-//// at the end is exactly the shared state, renamed into a record of its own.
+//// The record itself is `model.Model`, with the helpers that read it (a
+//// card, a runtime, whether a problem is due); its own transitions live
+//// under `shared/`, and `shared/update` dispatches its messages.
 
 import gleam/option.{type Option}
 import gleamdrill/content/problem.{type ProblemRef}

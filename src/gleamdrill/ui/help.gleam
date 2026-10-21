@@ -5,7 +5,7 @@ import gleam/string
 import gleamdrill/model.{type Model}
 import gleamdrill/msg.{type Msg, HelpToggled}
 import gleamdrill/ui/binding.{type Binding}
-import gleamdrill/view/links
+import gleamdrill/ui/links
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html

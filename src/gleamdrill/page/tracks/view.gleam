@@ -22,8 +22,8 @@ import gleamdrill/page/tracks/msg.{
 }
 import gleamdrill/shared.{type Shared}
 import gleamdrill/store/remote
+import gleamdrill/ui/brand
 import gleamdrill/ui/document.{type Document, Document}
-import gleamdrill/view/brand
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html

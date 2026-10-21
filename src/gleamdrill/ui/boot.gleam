@@ -3,7 +3,7 @@
 
 import gleamdrill/model.{type Model}
 import gleamdrill/msg.{type Msg}
-import gleamdrill/view/brand
+import gleamdrill/ui/brand
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html

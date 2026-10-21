@@ -13,9 +13,9 @@ import gleamdrill/model.{
 }
 import gleamdrill/msg.{type Msg, RemoteRunFinished}
 import gleamdrill/runner
+import gleamdrill/shared/common
 import gleamdrill/store
 import gleamdrill/store/remote.{type ApiError}
-import gleamdrill/update/common
 import lustre/effect.{type Effect}
 import wire
 

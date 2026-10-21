@@ -14,7 +14,7 @@ import gleamdrill/page/browse/msg.{
   type Msg, CompareMoved, ComparePickedVariant, UserClosedCompare,
 }
 import gleamdrill/platform/editor
-import gleamdrill/view/format
+import gleamdrill/ui/format
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html

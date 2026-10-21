@@ -3,8 +3,8 @@
 
 import gleamdrill/model.{type Model, Model, StudyRoute, TracksRoute}
 import gleamdrill/msg.{type Msg}
+import gleamdrill/shared/common
 import gleamdrill/store
-import gleamdrill/update/common
 import lustre/effect.{type Effect}
 
 pub fn open_tracks(m: Model) -> #(Model, Effect(Msg)) {

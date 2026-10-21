@@ -30,7 +30,7 @@ import gleamdrill/runner
 import gleamdrill/shared.{type Change, type Shared}
 import gleamdrill/store
 import gleamdrill/store/remote
-import gleamdrill/view/id
+import gleamdrill/ui/id
 import lustre/effect.{type Effect}
 import wire
 

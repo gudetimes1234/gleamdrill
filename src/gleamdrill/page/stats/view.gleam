@@ -23,7 +23,7 @@ import gleamdrill/page/stats/msg.{
 import gleamdrill/shared.{type Shared}
 import gleamdrill/store/remote
 import gleamdrill/ui/document.{type Document, Document}
-import gleamdrill/view/format
+import gleamdrill/ui/format
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html

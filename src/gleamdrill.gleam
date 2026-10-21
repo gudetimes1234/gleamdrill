@@ -9,9 +9,9 @@ import gleamdrill/model.{type Model, Account, Guest, Model, Syncing}
 import gleamdrill/msg.{type Msg}
 import gleamdrill/platform/browser
 import gleamdrill/platform/editor
+import gleamdrill/shared/common
+import gleamdrill/shared/session as session_boot
 import gleamdrill/store
-import gleamdrill/update/common
-import gleamdrill/update/session as session_boot
 import lustre
 import lustre/effect.{type Effect}
 

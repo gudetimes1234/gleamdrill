@@ -5,9 +5,9 @@ import gleam/list
 import gleamdrill/model.{type Route}
 import gleamdrill/msg.{type Msg}
 import gleamdrill/shared.{type Shared}
+import gleamdrill/ui/banner
 import gleamdrill/ui/document.{type Document}
-import gleamdrill/view/banner
-import gleamdrill/view/nav
+import gleamdrill/ui/nav
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html

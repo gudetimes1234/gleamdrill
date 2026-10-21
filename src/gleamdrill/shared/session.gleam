@@ -9,9 +9,9 @@ import gleamdrill/model.{
   Synced, Syncing, TracksRoute,
 }
 import gleamdrill/msg.{type Msg, SignOutCompleted, StateImported}
+import gleamdrill/shared/common
 import gleamdrill/store
 import gleamdrill/store/remote.{type ApiError}
-import gleamdrill/update/common
 import lustre/effect.{type Effect}
 import wire
 

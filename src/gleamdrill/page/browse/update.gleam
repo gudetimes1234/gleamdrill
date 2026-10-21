@@ -21,7 +21,7 @@ import gleamdrill/page/browse/model.{
 import gleamdrill/page/browse/msg.{type Msg}
 import gleamdrill/platform/browser
 import gleamdrill/shared.{type Change, type Shared}
-import gleamdrill/view/id
+import gleamdrill/ui/id
 import lustre/effect.{type Effect}
 import wire.{ProblemRef}
 

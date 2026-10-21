@@ -1,15 +1,15 @@
 //// The view shell: the boot gate, the sync bar, and the status bar and
 //// help chrome around whichever page `app` drew.
 
-import gleamdrill/keys
 import gleamdrill/model.{
   type Model, AuthRoute, NotStarted, SyncFailed, Synced, Syncing,
 }
 import gleamdrill/msg.{type Msg}
 import gleamdrill/ui/binding.{type Binding}
-import gleamdrill/view/auth
-import gleamdrill/view/help
-import gleamdrill/view/statusbar
+import gleamdrill/ui/boot
+import gleamdrill/ui/help
+import gleamdrill/ui/keys
+import gleamdrill/ui/statusbar
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -25,7 +25,7 @@ pub fn view(m: Model, screen: Screen) -> Element(Msg) {
     // The one blocking load. A guest resolves it locally and instantly; an
     // account waits on the network, and a failure there is a dead end worth
     // saying out loud, because the app is online-only once signed in.
-    NotStarted | Syncing | SyncFailed(_) -> auth.loading(m)
+    NotStarted | Syncing | SyncFailed(_) -> boot.loading(m)
     Synced -> {
       // An overlay (the cheatsheet) owns the keys while it is up.
       let active = case keys.overlay(m) {

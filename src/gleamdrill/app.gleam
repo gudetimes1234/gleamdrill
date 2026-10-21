@@ -5,14 +5,13 @@
 //// view and its keys. The app holds one page at a time, routes each page's
 //// messages to it, and applies the `Change`s a page asks for to the shared
 //// state. The shared state's own messages (the session, loads, the run
-//// engine) go to `update`; `msg.Msg` carries both kinds.
+//// engine) go to `shared/update`; `msg.Msg` carries both kinds.
 
 import gleam/dict
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
 import gleamdrill/domain/guest
-import gleamdrill/keys
 import gleamdrill/model.{
   type Route, AuthRoute, CompareRoute, DrillRoute, MenuRoute, QueueRoute,
   ReportRoute, SettingsRoute, StatsRoute, StudyRoute, SummaryRoute, TourRoute,
@@ -45,7 +44,7 @@ import gleamdrill/page/sitting/view/report as report_view
 import gleamdrill/page/sitting/view/summary as summary_view
 import gleamdrill/page/stats/keys as stats_keys
 import gleamdrill/page/stats/model as stats_model
-import gleamdrill/page/stats/update as stats_update_page
+import gleamdrill/page/stats/update as stats_update
 import gleamdrill/page/stats/view as stats_view
 import gleamdrill/page/study/keys as study_keys
 import gleamdrill/page/study/model as study_model
@@ -62,20 +61,21 @@ import gleamdrill/page/tracks/update as tracks_update
 import gleamdrill/page/tracks/view as tracks_view
 import gleamdrill/platform/browser
 import gleamdrill/shared.{type Change, type Shared}
+import gleamdrill/shared/cards as shared_cards
+import gleamdrill/shared/common
+import gleamdrill/shared/queues as shared_queues
+import gleamdrill/shared/run as shared_run
+import gleamdrill/shared/session as shared_session
+import gleamdrill/shared/stats as shared_stats
+import gleamdrill/shared/tracks as shared_tracks
+import gleamdrill/shared/update as shared_update
 import gleamdrill/store
 import gleamdrill/ui/binding.{type Binding}
 import gleamdrill/ui/document
+import gleamdrill/ui/keyboard
+import gleamdrill/ui/keys
 import gleamdrill/ui/layout
-import gleamdrill/update as shared_update
-import gleamdrill/update/common
-import gleamdrill/update/keyboard
-import gleamdrill/update/menu as menu_update
-import gleamdrill/update/queues as queues_update
-import gleamdrill/update/review as review_update
-import gleamdrill/update/run as run_update
-import gleamdrill/update/session as session_update
-import gleamdrill/update/stats as stats_update
-import gleamdrill/view
+import gleamdrill/ui/shell
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 
@@ -115,7 +115,7 @@ pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
       tracks_update.update(state.shared, page, inner)
       |> settle(state, Tracks, msg.TracksMsg)
     msg.StatsMsg(inner), Stats(page) ->
-      stats_update_page.update(state.shared, page, inner)
+      stats_update.update(state.shared, page, inner)
       |> settle(state, Stats, msg.StatsMsg)
     msg.QueueMsg(inner), Queue(page) ->
       queue_update.update(state.shared, page, inner)
@@ -246,15 +246,15 @@ fn forward(
 
 pub fn view(state: State) -> Element(Msg) {
   let shared = state.shared
-  view.view(shared, case state.page {
+  shell.view(shared, case state.page {
     Auth(page) ->
-      view.Screen(
+      shell.Screen(
         auth_view.view(shared, page) |> element.map(msg.AuthMsg),
         page_keys(state),
         auth_keys.label,
       )
     Settings(page) ->
-      view.Screen(
+      shell.Screen(
         settings_view.view(shared, page)
           |> document.map(msg.SettingsMsg)
           |> layout.view(shared, SettingsRoute, _),
@@ -262,7 +262,7 @@ pub fn view(state: State) -> Element(Msg) {
         settings_keys.label,
       )
     Tracks(page) ->
-      view.Screen(
+      shell.Screen(
         tracks_view.view(shared, page)
           |> document.map(msg.TracksMsg)
           |> layout.view(shared, TracksRoute, _),
@@ -270,7 +270,7 @@ pub fn view(state: State) -> Element(Msg) {
         tracks_keys.label,
       )
     Stats(page) ->
-      view.Screen(
+      shell.Screen(
         stats_view.view(shared, page)
           |> document.map(msg.StatsMsg)
           |> layout.view(shared, StatsRoute, _),
@@ -278,7 +278,7 @@ pub fn view(state: State) -> Element(Msg) {
         stats_keys.label,
       )
     Queue(page) ->
-      view.Screen(
+      shell.Screen(
         queue_view.view(shared, page)
           |> document.map(msg.QueueMsg)
           |> layout.view(shared, QueueRoute, _),
@@ -286,7 +286,7 @@ pub fn view(state: State) -> Element(Msg) {
         queue_keys.label,
       )
     Browse(page) ->
-      view.Screen(
+      shell.Screen(
         case page.compare {
           Some(opened) ->
             compare_view.view(opened) |> element.map(msg.BrowseMsg)
@@ -299,7 +299,7 @@ pub fn view(state: State) -> Element(Msg) {
         browse_keys.label(page),
       )
     Study(page) ->
-      view.Screen(
+      shell.Screen(
         study_view.view(shared, page)
           |> document.map(msg.StudyMsg)
           |> layout.view(shared, StudyRoute, _),
@@ -307,7 +307,7 @@ pub fn view(state: State) -> Element(Msg) {
         study_keys.label,
       )
     Tour(page) ->
-      view.Screen(
+      shell.Screen(
         tour_view.view(shared, page)
           |> document.map(msg.TourMsg)
           |> layout.view(shared, TourRoute, _),
@@ -315,7 +315,7 @@ pub fn view(state: State) -> Element(Msg) {
         tour_keys.label,
       )
     Sitting(page) ->
-      view.Screen(
+      shell.Screen(
         case shared.route {
           SummaryRoute ->
             summary_view.view(shared, page) |> element.map(msg.SittingMsg)
@@ -439,7 +439,7 @@ fn apply_change(shared: Shared, change: Change) -> #(Shared, Effect(Msg)) {
   case change {
     shared.Navigate(route) -> #(model.Model(..shared, route:), effect.none())
     shared.SignedIn(session, registered) ->
-      session_update.signed_in(shared, session, registered)
+      shared_session.signed_in(shared, session, registered)
     shared.Notice(text) -> #(
       model.Model(..shared, notice: Some(text)),
       effect.none(),
@@ -465,7 +465,7 @@ fn apply_change(shared: Shared, change: Change) -> #(Shared, Effect(Msg)) {
       store.load_state(shared, msg.StateLoaded),
     )
     shared.ToggleHelp -> keyboard.toggle_help(shared)
-    shared.LoadStats -> stats_update.reload(shared)
+    shared.LoadStats -> shared_stats.reload(shared)
     shared.QueuesEdited(queues) -> {
       let shared = model.Model(..shared, queues:)
       #(shared, store.save_queues(shared, msg.QueuesSaved))
@@ -474,7 +474,7 @@ fn apply_change(shared: Shared, change: Change) -> #(Shared, Effect(Msg)) {
       let shared = model.Model(..shared, active_queue: name)
       #(shared, common.save_preferences(shared))
     }
-    shared.QueueChangeLanded(result) -> queues_update.changed(shared, result)
+    shared.QueueChangeLanded(result) -> shared_queues.changed(shared, result)
     shared.ResetRun -> #(
       model.Model(..shared, run: model.RunIdle),
       effect.none(),
@@ -506,10 +506,10 @@ fn apply_change(shared: Shared, change: Change) -> #(Shared, Effect(Msg)) {
       effect.none(),
     )
     shared.EnterTrack(track, starter) ->
-      menu_update.enter_track(shared, track, starter:)
-    shared.ReviewLanded(outcome) -> review_update.landed(shared, outcome)
+      shared_tracks.enter_track(shared, track, starter:)
+    shared.ReviewLanded(outcome) -> shared_cards.landed(shared, outcome)
     shared.UndoLanded(problem, outcome) ->
-      review_update.undo_landed(shared, problem, outcome)
+      shared_cards.undo_landed(shared, problem, outcome)
     shared.WriteFailed(failure) -> #(
       common.write_failed(shared, failure),
       effect.none(),
@@ -542,10 +542,10 @@ fn apply_change(shared: Shared, change: Change) -> #(Shared, Effect(Msg)) {
       effect.none(),
     )
     shared.RunRemote(language, code, harness) ->
-      run_update.start_remote(shared, language, code, harness)
-    shared.AbandonRun(language) -> run_update.abandon(shared, language)
+      shared_run.start_remote(shared, language, code, harness)
+    shared.AbandonRun(language) -> shared_run.abandon(shared, language)
     shared.RestartRuntime(language) ->
-      run_update.retry_runtime(shared, language)
+      shared_run.retry_runtime(shared, language)
     shared.RunRestored(run) -> #(model.Model(..shared, run:), effect.none())
     shared.NoticeCleared -> #(
       model.Model(..shared, notice: None),
@@ -585,7 +585,7 @@ fn sync_page(state: State) -> #(State, Effect(Msg)) {
       effect.none(),
     )
     StatsRoute, _ ->
-      stats_update_page.init(shared) |> settle(state, Stats, msg.StatsMsg)
+      stats_update.init(shared) |> settle(state, Stats, msg.StatsMsg)
     QueueRoute, _ ->
       queue_update.init(shared) |> settle(state, Queue, msg.QueueMsg)
     MenuRoute, _ | CompareRoute, _ ->

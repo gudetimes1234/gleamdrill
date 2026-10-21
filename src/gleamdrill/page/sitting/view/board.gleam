@@ -13,7 +13,7 @@ import gleamdrill/page/sitting/msg.{
 }
 import gleamdrill/page/sitting/view/results
 import gleamdrill/shared.{type Shared}
-import gleamdrill/view/id
+import gleamdrill/ui/id
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html

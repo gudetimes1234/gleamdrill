@@ -31,8 +31,8 @@ import gleamdrill/page/queue/msg.{
 import gleamdrill/page/queue/update
 import gleamdrill/shared.{type Shared}
 import gleamdrill/ui/document.{type Document, Document}
-import gleamdrill/view/format
-import gleamdrill/view/id
+import gleamdrill/ui/format
+import gleamdrill/ui/id
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html

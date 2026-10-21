@@ -3,7 +3,7 @@
 //// This is the pure side: which lesson is which, in the tour's own order,
 //// grouped into its chapters. The lessons are vendored under drills/tour
 //// (Apache-2.0; see UPSTREAM there) and generated into `embedded_tour`; the
-//// screen that plays them is view/tour.gleam. It is not a category of the
+//// screen that plays them is page/tour. It is not a category of the
 //// study catalogue -- a lesson is read and tried in order, not scheduled.
 
 import gleam/list

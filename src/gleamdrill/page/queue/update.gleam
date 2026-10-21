@@ -23,7 +23,7 @@ import gleamdrill/platform/browser
 import gleamdrill/shared.{type Change, type Shared}
 import gleamdrill/shared/queues
 import gleamdrill/store
-import gleamdrill/view/id
+import gleamdrill/ui/id
 import lustre/effect.{type Effect}
 
 pub fn init(shared: Shared) -> #(Model, Effect(Msg), List(Change)) {

@@ -12,7 +12,7 @@ import gleamdrill/page/auth/msg.{
   UserSubmitted, UserToggledMode,
 }
 import gleamdrill/shared.{type Shared}
-import gleamdrill/view/brand
+import gleamdrill/ui/brand
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html

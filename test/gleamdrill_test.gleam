@@ -60,7 +60,7 @@ import gleamdrill/store
 import gleamdrill/store/remote
 import gleamdrill/store/session
 import gleamdrill/ui/binding
-import gleamdrill/view/format
+import gleamdrill/ui/format
 import gleeunit
 import simplifile
 import wire

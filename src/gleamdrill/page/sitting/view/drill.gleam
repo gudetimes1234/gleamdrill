@@ -32,8 +32,8 @@ import gleamdrill/runner
 import gleamdrill/shared.{type Shared}
 import gleamdrill/store/remote
 import gleamdrill/ui/document.{type Document, Document}
-import gleamdrill/view/format
-import gleamdrill/view/links
+import gleamdrill/ui/format
+import gleamdrill/ui/links
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
