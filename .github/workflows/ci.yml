@@ -45,6 +45,30 @@ jobs:
       - name: Version pins agree
         run: make check-versions
 
+      # Hex allows an address so many unauthenticated API calls a minute, and
+      # a cold resolve of all four projects on a shared runner address can go
+      # over it. The cache means a usual run resolves nothing; on a miss, each
+      # project retries after the window resets.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/gleam
+            build/packages
+            drills/build/packages
+            fsrs/build/packages
+            wire/build/packages
+          key: gleam-${{ hashFiles('manifest.toml', 'drills/manifest.toml', 'fsrs/manifest.toml', 'wire/manifest.toml') }}
+
+      - name: Gleam packages
+        run: |
+          for dir in . drills fsrs wire; do
+            for attempt in 1 2 3; do
+              (cd "$dir" && gleam deps download) && break
+              if [ "$attempt" = 3 ]; then exit 1; fi
+              echo "waiting out the Hex rate limit"; sleep 65
+            done
+          done
+
       # The real integration check: regenerates the embedded drill content,
       # bundles the three workers, then builds the app.
       - name: Build
