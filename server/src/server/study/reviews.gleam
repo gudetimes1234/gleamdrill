@@ -39,39 +39,15 @@ pub fn record_review(
     )
     use existing <- result.try(cards.upsert_card(tx, user_id, input.problem))
     let before = existing.card
-
-    // Self-graded: the rating stands. The log's `revealed`/`auto_failed`
-    // columns record what happened in every case.
-    let rating = input.rating
-
-    let elapsed = case before.last_review {
-      Some(last) -> fsrs.days_between(last, now)
-      // A card's first ever review has no elapsed time to report.
-      None -> 0
-    }
-    let scheduled = case before.last_review {
-      Some(last) -> fsrs.days_between(last, before.due)
-      None -> 0
-    }
-
-    let after = fsrs.review(before, rating, now, settings.scheduler, fuzz)
-
-    // Anki counts a lapse only when a card that had graduated fails, not when
-    // one still in learning does.
-    let lapses = case rating, before.state {
-      fsrs.Again, fsrs.Review -> existing.lapses + 1
-      _, _ -> existing.lapses
-    }
-
-    let record =
-      CardRecord(..existing, card: after, reps: existing.reps + 1, lapses:)
+    let #(record, elapsed, scheduled) =
+      schedule(existing, input.rating, now, settings.scheduler, fuzz)
 
     use _ <- result.try(cards.update_card(tx, record))
     use _ <- result.try(insert_review(
       tx,
       user_id,
       record,
-      rating,
+      input.rating,
       before,
       now,
       elapsed,
@@ -86,6 +62,46 @@ pub fn record_review(
     Ok(record)
   })
   |> result.map_error(flatten_transaction_error)
+}
+
+/// What one review does to a card, before anything touches the database: the
+/// rescheduled card, plus the elapsed and scheduled day counts the log row
+/// records. The whole scheduling decision, pure.
+///
+/// Self-graded: the rating stands. The log's `revealed`/`auto_failed`
+/// columns record what happened in every case.
+pub fn schedule(
+  existing: CardRecord,
+  rating: fsrs.Rating,
+  now: Timestamp,
+  scheduler: fsrs.Config,
+  fuzz: Float,
+) -> #(CardRecord, Int, Int) {
+  let before = existing.card
+  let elapsed = case before.last_review {
+    Some(last) -> fsrs.days_between(last, now)
+    // A card's first ever review has no elapsed time to report.
+    None -> 0
+  }
+  let scheduled = case before.last_review {
+    Some(last) -> fsrs.days_between(last, before.due)
+    None -> 0
+  }
+
+  let after = fsrs.review(before, rating, now, scheduler, fuzz)
+
+  // Anki counts a lapse only when a card that had graduated fails, not when
+  // one still in learning does.
+  let lapses = case rating, before.state {
+    fsrs.Again, fsrs.Review -> existing.lapses + 1
+    _, _ -> existing.lapses
+  }
+
+  #(
+    CardRecord(..existing, card: after, reps: existing.reps + 1, lapses:),
+    elapsed,
+    scheduled,
+  )
 }
 
 fn card_exists(
