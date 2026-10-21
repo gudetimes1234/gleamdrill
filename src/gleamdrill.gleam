@@ -1,23 +1,30 @@
+//// Entry point: registers the editor element and the service worker, reads
+//// what this browser remembers, and starts the app.
+
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
+import gleamdrill/app
 import gleamdrill/model.{type Model, Account, Guest, Model, Syncing}
 import gleamdrill/msg.{type Msg}
 import gleamdrill/platform/browser
 import gleamdrill/platform/editor
 import gleamdrill/store
-import gleamdrill/update
 import gleamdrill/update/common
 import gleamdrill/update/session as session_boot
-import gleamdrill/view
 import lustre
 import lustre/effect.{type Effect}
 
 pub fn main() {
   editor.register()
   browser.register_service_worker()
-  let app = lustre.application(init, update.update, view.view)
-  let assert Ok(_) = lustre.start(app, "#app", Nil)
+  let program =
+    lustre.application(
+      fn(flags) { app.init(init(flags)) },
+      app.update,
+      app.view,
+    )
+  let assert Ok(_) = lustre.start(program, "#app", Nil)
   Nil
 }
 
