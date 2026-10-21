@@ -4,17 +4,20 @@ import gleam/dynamic/decode
 import gleam/erlang/process
 import gleam/int
 import gleam/list
+import gleam/otp/actor
+import gleam/otp/supervision.{type ChildSpecification}
 import gleam/result
 import gleam/string
 import pog
 import server/migrations.{type Migration}
 
-/// Starts the connection pool. The pool is supervised by pog itself; this
-/// returns the handle every query goes through.
-pub fn start(
+/// The pool's configuration and the handle every query goes through. The
+/// pool itself is started by the supervision tree (`supervised`); the handle
+/// is a name, so it is valid before the pool is up and across its restarts.
+pub fn config(
   database_url: String,
   pool_size: Int,
-) -> Result(pog.Connection, String) {
+) -> Result(#(pog.Config, pog.Connection), String) {
   let name = process.new_name("gleamdrill_pool")
   use config <- result.try(
     pog.url_config(name, database_url)
@@ -22,13 +25,25 @@ pub fn start(
       "DATABASE_URL is not a valid postgres:// connection URL",
     ),
   )
-  use started <- result.try(
-    pog.start(pog.pool_size(config, pool_size))
-    |> result.map_error(fn(error) {
-      "could not start the database pool: " <> string.inspect(error)
-    }),
-  )
-  Ok(started.data)
+  Ok(#(pog.pool_size(config, pool_size), pog.named_connection(name)))
+}
+
+/// The pool as a child of the supervision tree.
+pub fn supervised(config: pog.Config) -> ChildSpecification(pog.Connection) {
+  pog.supervised(config)
+}
+
+/// The migrations as a one-shot child: started after the pool and before
+/// anything that queries, so a schema the build does not expect stops the
+/// boot instead of failing requests. It runs once and is not restarted.
+pub fn migration(db: pog.Connection) -> ChildSpecification(Nil) {
+  supervision.worker(fn() {
+    case migrate(db) {
+      Ok(Nil) -> Ok(actor.Started(pid: process.spawn(fn() { Nil }), data: Nil))
+      Error(message) -> Error(actor.InitFailed(message))
+    }
+  })
+  |> supervision.restart(supervision.Temporary)
 }
 
 /// Applies every migration that has not run yet, in version order.

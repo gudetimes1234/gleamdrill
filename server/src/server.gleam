@@ -2,7 +2,10 @@
 
 import gleam/erlang/process
 import gleam/io
+import gleam/option.{None, Some}
+import gleam/otp/static_supervisor
 import gleam/result
+import gleam/string
 import mist
 import server/config
 import server/db
@@ -25,26 +28,39 @@ pub fn main() -> Nil {
   }
 }
 
+/// The whole server is one supervision tree, started in order: the pool,
+/// the migrations, the reminder loop when mail is on, then HTTP. A child
+/// that fails to start stops the boot; one that crashes later is restarted
+/// on its own.
 fn start() -> Result(Nil, String) {
   use config <- result.try(config.load())
-  use database <- result.try(db.start(config.database_url, 10))
-  // Migrating at boot keeps a single-instance deployment honest: the schema is
-  // always what this build expects. It would need rethinking before running
-  // more than one instance at a time.
-  use _ <- result.try(db.migrate(database))
+  use #(pool, database) <- result.try(db.config(config.database_url, 10))
   run_gate.init()
-  reminders.start(database, config)
 
   let context = web.Context(db: database, config: config)
   let handler = fn(request) { router.handle(request, context) }
-
-  use _ <- result.try(
+  let http =
     wisp_mist.handler(handler, config.secret_key_base)
     |> mist.new
     |> mist.port(config.port)
     |> mist.bind(config.bind)
-    |> mist.start
-    |> result.replace_error("could not bind port"),
+    |> mist.supervised
+
+  let tree =
+    static_supervisor.new(static_supervisor.OneForOne)
+    |> static_supervisor.add(db.supervised(pool))
+    |> static_supervisor.add(db.migration(database))
+  let tree = case reminders.supervised(database, config) {
+    Some(child) -> static_supervisor.add(tree, child)
+    None -> tree
+  }
+  use _ <- result.try(
+    tree
+    |> static_supervisor.add(http)
+    |> static_supervisor.start
+    |> result.map_error(fn(error) {
+      "the supervision tree did not start: " <> string.inspect(error)
+    }),
   )
 
   io.println(

@@ -16,7 +16,9 @@ import gleam/httpc
 import gleam/int
 import gleam/json
 import gleam/list
-import gleam/option.{None, Some}
+import gleam/option.{type Option, None, Some}
+import gleam/otp/actor
+import gleam/otp/supervision.{type ChildSpecification}
 import gleam/result
 import gleam/string
 import pog
@@ -32,26 +34,50 @@ pub type Reminder {
   Reminder(user_id: String, email: String, day: String, due: Int)
 }
 
-pub fn start(db: pog.Connection, config: Config) -> Nil {
+/// The reminder loop as a supervised actor, or nothing when mail is off.
+/// The actor ticks once on start and then every `tick_ms`; a crash in a tick
+/// restarts it, and the restart ticks again straight away -- `claim` is what
+/// keeps that from mailing anyone twice.
+pub fn supervised(
+  db: pog.Connection,
+  config: Config,
+) -> Option(ChildSpecification(process.Subject(Tick))) {
   case config.resend_api_key {
-    None ->
+    None -> {
       wisp.log_info(
         "reminders: RESEND_API_KEY is not set, no mail will be sent",
       )
+      None
+    }
     Some(key) -> {
       wisp.log_info(
         "reminders: on, from " <> config.reminder_from <> ", every 15 minutes",
       )
-      process.spawn_unlinked(fn() { loop(db, config, key) })
-      Nil
+      Some(supervision.worker(fn() { start(db, config, key) }))
     }
   }
 }
 
-fn loop(db: pog.Connection, config: Config, key: String) -> Nil {
-  tick(db, config, key)
-  process.sleep(tick_ms)
-  loop(db, config, key)
+/// The actor's only message: time to look for reminders.
+pub type Tick {
+  Tick
+}
+
+fn start(
+  db: pog.Connection,
+  config: Config,
+  key: String,
+) -> Result(actor.Started(process.Subject(Tick)), actor.StartError) {
+  actor.new_with_initialiser(1000, fn(self) {
+    process.send(self, Tick)
+    actor.initialised(self) |> actor.returning(self) |> Ok
+  })
+  |> actor.on_message(fn(self, _tick: Tick) {
+    tick(db, config, key)
+    process.send_after(self, tick_ms, Tick)
+    actor.continue(self)
+  })
+  |> actor.start
 }
 
 /// One pass: everyone due a reminder at this hour gets one.
