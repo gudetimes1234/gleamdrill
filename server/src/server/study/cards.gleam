@@ -1,35 +1,46 @@
 //// Cards: loading, queueing, suspending and deleting them.
 ////
 //// Part of the study data layer; see `server/study/model` for the shared
-//// types.
+//// types. The SQL lives in `cards/sql/*.sql`; `gleam run -m squirrel`
+//// generates `cards/sql.gleam` from it.
 
 import fsrs
-import gleam/dynamic/decode
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import pog
-import server/db
+import server/study/cards/sql
 import server/study/model.{
-  type CardRecord, type StudyError, CardRecord, StudyDatabaseError,
-  database_error,
+  type CardRecord, type StudyError, CardRecord, StudyDatabaseError, done, first,
+  nullable, rows,
 }
 import wire
 import youid/uuid.{type Uuid}
-
-const card_columns = "id::text, category, subcategory, title, state, step,
-   stability, difficulty,
-   extract(epoch from due)::float8,
-   extract(epoch from last_review)::float8,
-   reps, lapses, suspended,
-   extract(epoch from introduced_at)::float8"
 
 /// Every card in every track, for the export.
 pub fn load_cards(
   db: pog.Connection,
   user_id: Uuid,
 ) -> Result(List(CardRecord), StudyError) {
-  load_card_rows(db, user_id, None)
+  sql.all_cards(db, user_id)
+  |> rows(fn(row: sql.AllCardsRow) {
+    card_from(
+      id: row.id,
+      category: row.category,
+      subcategory: row.subcategory,
+      title: row.title,
+      state: row.state,
+      step: row.step,
+      stability: row.stability,
+      difficulty: row.difficulty,
+      due: row.due,
+      last_review: row.last_review,
+      reps: row.reps,
+      lapses: row.lapses,
+      suspended: row.suspended,
+      introduced_at: row.introduced_at,
+    )
+  })
 }
 
 /// One track's cards -- what a sitting, a queue screen and a stats screen all
@@ -39,22 +50,25 @@ pub fn load_cards_in(
   user_id: Uuid,
   track: String,
 ) -> Result(List(CardRecord), StudyError) {
-  load_card_rows(db, user_id, Some(track))
-}
-
-fn load_card_rows(
-  db: pog.Connection,
-  user_id: Uuid,
-  track: Option(String),
-) -> Result(List(CardRecord), StudyError) {
-  pog.query("select " <> card_columns <> " from cards
-        where user_id = $1::uuid and ($2::text is null or category = $2)")
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.nullable(pog.text, track))
-  |> pog.returning(card_decoder())
-  |> pog.execute(db)
-  |> result.map(fn(returned) { returned.rows })
-  |> result.map_error(database_error)
+  sql.cards_in(db, user_id, track)
+  |> rows(fn(row: sql.CardsInRow) {
+    card_from(
+      id: row.id,
+      category: row.category,
+      subcategory: row.subcategory,
+      title: row.title,
+      state: row.state,
+      step: row.step,
+      stability: row.stability,
+      difficulty: row.difficulty,
+      due: row.due,
+      last_review: row.last_review,
+      reps: row.reps,
+      lapses: row.lapses,
+      suspended: row.suspended,
+      introduced_at: row.introduced_at,
+    )
+  })
 }
 
 /// Parks or resumes one card. Only a card that exists can be suspended: a
@@ -68,24 +82,26 @@ pub fn set_suspended(
   problem: wire.ProblemRef,
   suspended: Bool,
 ) -> Result(Option(CardRecord), StudyError) {
-  pog.query("update cards set suspended = $5
-     where user_id = $1::uuid
-       and category = $2 and subcategory = $3 and title = $4
-     returning " <> card_columns)
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.text(problem.category))
-  |> pog.parameter(pog.text(problem.subcategory))
-  |> pog.parameter(pog.text(problem.title))
-  |> pog.parameter(pog.bool(suspended))
-  |> pog.returning(card_decoder())
-  |> pog.execute(db)
-  |> result.map(fn(returned) {
-    case returned.rows {
-      [card, ..] -> Some(card)
-      [] -> None
-    }
+  let wire.ProblemRef(category:, subcategory:, title:) = problem
+  sql.set_suspended(db, user_id, category, subcategory, title, suspended)
+  |> first(fn(row: sql.SetSuspendedRow) {
+    card_from(
+      id: row.id,
+      category: row.category,
+      subcategory: row.subcategory,
+      title: row.title,
+      state: row.state,
+      step: row.step,
+      stability: row.stability,
+      difficulty: row.difficulty,
+      due: row.due,
+      last_review: row.last_review,
+      reps: row.reps,
+      lapses: row.lapses,
+      suspended: row.suspended,
+      introduced_at: row.introduced_at,
+    )
   })
-  |> result.map_error(database_error)
 }
 
 /// Puts problems into the study queue by giving each one a card, and answers
@@ -118,29 +134,25 @@ pub fn enqueue_cards(
       // only the problems that were *already* queued, which is precisely the
       // set the caller does not need. The insert returns its own rows, and the
       // select picks up the ones that were there before it.
-      pog.query("with asked as (
-           select * from unnest($2::text[], $3::text[], $4::text[])
-             as t(category, subcategory, title)
-         ), inserted as (
-           insert into cards (user_id, category, subcategory, title)
-           select $1::uuid, category, subcategory, title from asked
-           on conflict (user_id, category, subcategory, title) do nothing
-           returning " <> card_columns <> "
-         )
-         select * from inserted
-         union all
-         select " <> card_columns <> "
-           from cards c
-           join asked using (category, subcategory, title)
-          where c.user_id = $1::uuid")
-      |> pog.parameter(db.uuid(user_id))
-      |> pog.parameter(pog.array(pog.text, categories))
-      |> pog.parameter(pog.array(pog.text, subcategories))
-      |> pog.parameter(pog.array(pog.text, titles))
-      |> pog.returning(card_decoder())
-      |> pog.execute(db)
-      |> result.map(fn(returned) { returned.rows })
-      |> result.map_error(database_error)
+      sql.enqueue_cards(db, user_id, categories, subcategories, titles)
+      |> rows(fn(row: sql.EnqueueCardsRow) {
+        card_from(
+          id: row.id,
+          category: row.category,
+          subcategory: row.subcategory,
+          title: row.title,
+          state: row.state,
+          step: row.step,
+          stability: row.stability,
+          difficulty: row.difficulty,
+          due: row.due,
+          last_review: row.last_review,
+          reps: row.reps,
+          lapses: row.lapses,
+          suspended: row.suspended,
+          introduced_at: row.introduced_at,
+        )
+      })
     }
   }
 }
@@ -163,30 +175,11 @@ pub fn delete_cards(
       let subcategories = list.map(problems, fn(ref) { ref.subcategory })
       let titles = list.map(problems, fn(ref) { ref.title })
 
-      pog.query(
-        "delete from cards c
-           using unnest($2::text[], $3::text[], $4::text[])
-             as t(category, subcategory, title)
-          where c.user_id = $1::uuid
-            and c.category = t.category
-            and c.subcategory = t.subcategory
-            and c.title = t.title
-            and c.reps = 0
-        returning c.category, c.subcategory, c.title",
-      )
-      |> pog.parameter(db.uuid(user_id))
-      |> pog.parameter(pog.array(pog.text, categories))
-      |> pog.parameter(pog.array(pog.text, subcategories))
-      |> pog.parameter(pog.array(pog.text, titles))
-      |> pog.returning({
-        use category <- decode.field(0, decode.string)
-        use subcategory <- decode.field(1, decode.string)
-        use title <- decode.field(2, decode.string)
-        decode.success(wire.ProblemRef(category:, subcategory:, title:))
+      sql.delete_unstudied_cards(db, user_id, categories, subcategories, titles)
+      |> rows(fn(row: sql.DeleteUnstudiedCardsRow) {
+        wire.ProblemRef(row.category, row.subcategory, row.title)
       })
-      |> pog.execute(db)
-      |> result.map(fn(returned) {
-        let removed = returned.rows
+      |> result.map(fn(removed) {
         // Anything asked for and not returned still exists: either it has
         // been studied, or it was never queued. Both are "not removed", and
         // the client tells them apart from the cards it already holds.
@@ -195,7 +188,6 @@ pub fn delete_cards(
           list.filter(problems, fn(ref) { !list.contains(removed, ref) }),
         )
       })
-      |> result.map_error(database_error)
     }
   }
 }
@@ -213,78 +205,71 @@ pub fn upsert_card(
   user_id: Uuid,
   problem: wire.ProblemRef,
 ) -> Result(CardRecord, StudyError) {
-  pog.query(
-    "insert into cards (user_id, category, subcategory, title, introduced_at)
-     values ($1::uuid, $2, $3, $4, now())
-     on conflict (user_id, category, subcategory, title)
-       do update set introduced_at = coalesce(cards.introduced_at, now())
-     returning " <> card_columns,
-  )
-  |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.text(problem.category))
-  |> pog.parameter(pog.text(problem.subcategory))
-  |> pog.parameter(pog.text(problem.title))
-  |> pog.returning(card_decoder())
-  |> pog.execute(db)
-  |> result.map_error(database_error)
-  |> result.try(fn(returned) {
-    list.first(returned.rows)
-    |> result.replace_error(StudyDatabaseError("card upsert returned no row"))
+  let wire.ProblemRef(category:, subcategory:, title:) = problem
+  sql.upsert_card(db, user_id, category, subcategory, title)
+  |> first(fn(row: sql.UpsertCardRow) {
+    card_from(
+      id: row.id,
+      category: row.category,
+      subcategory: row.subcategory,
+      title: row.title,
+      state: row.state,
+      step: row.step,
+      stability: row.stability,
+      difficulty: row.difficulty,
+      due: row.due,
+      last_review: row.last_review,
+      reps: row.reps,
+      lapses: row.lapses,
+      suspended: row.suspended,
+      introduced_at: row.introduced_at,
+    )
   })
+  |> result.try(option.to_result(
+    _,
+    StudyDatabaseError("card upsert returned no row"),
+  ))
 }
 
 pub fn update_card(
   db: pog.Connection,
   record: CardRecord,
 ) -> Result(Nil, StudyError) {
-  pog.query(
-    "update cards set
-       state = $2, step = $3, stability = $4, difficulty = $5,
-       due = to_timestamp($6::float8),
-       last_review = to_timestamp($7::float8),
-       reps = $8, lapses = $9
-     where id = $1::uuid",
+  let card = record.card
+  sql.update_card(
+    db,
+    record.id,
+    wire.state_code(card.state),
+    nullable(wire.state_step(card.state)),
+    nullable(option.map(card.memory, fn(m) { m.stability })),
+    nullable(option.map(card.memory, fn(m) { m.difficulty })),
+    fsrs.to_epoch(card.due),
+    nullable(option.map(card.last_review, fsrs.to_epoch)),
+    record.reps,
+    record.lapses,
   )
-  |> pog.parameter(pog.text(record.id))
-  |> pog.parameter(pog.int(wire.state_code(record.card.state)))
-  |> pog.parameter(pog.nullable(pog.int, wire.state_step(record.card.state)))
-  |> pog.parameter(pog.nullable(
-    pog.float,
-    option.map(record.card.memory, fn(m) { m.stability }),
-  ))
-  |> pog.parameter(pog.nullable(
-    pog.float,
-    option.map(record.card.memory, fn(m) { m.difficulty }),
-  ))
-  |> pog.parameter(pog.float(fsrs.to_epoch(record.card.due)))
-  |> pog.parameter(pog.nullable(
-    pog.float,
-    option.map(record.card.last_review, fsrs.to_epoch),
-  ))
-  |> pog.parameter(pog.int(record.reps))
-  |> pog.parameter(pog.int(record.lapses))
-  |> pog.execute(db)
-  |> result.replace(Nil)
-  |> result.map_error(database_error)
+  |> done
 }
 
-fn card_decoder() -> decode.Decoder(CardRecord) {
-  use id <- decode.field(0, decode.string)
-  use category <- decode.field(1, decode.string)
-  use subcategory <- decode.field(2, decode.string)
-  use title <- decode.field(3, decode.string)
-  use state <- decode.field(4, decode.int)
-  use step <- decode.field(5, decode.optional(decode.int))
-  use stability <- decode.field(6, decode.optional(decode.float))
-  use difficulty <- decode.field(7, decode.optional(decode.float))
-  use due <- decode.field(8, decode.float)
-  use last_review <- decode.field(9, decode.optional(decode.float))
-  use reps <- decode.field(10, decode.int)
-  use lapses <- decode.field(11, decode.int)
-  use suspended <- decode.field(12, decode.bool)
-  use introduced_at <- decode.field(13, decode.optional(decode.float))
-
-  decode.success(CardRecord(
+/// A card from the fourteen columns every card query selects. Each query's
+/// generated row is its own type, so they all meet here.
+fn card_from(
+  id id: Uuid,
+  category category: String,
+  subcategory subcategory: String,
+  title title: String,
+  state state: Int,
+  step step: Option(Int),
+  stability stability: Option(Float),
+  difficulty difficulty: Option(Float),
+  due due: Float,
+  last_review last_review: Option(Float),
+  reps reps: Int,
+  lapses lapses: Int,
+  suspended suspended: Bool,
+  introduced_at introduced_at: Option(Float),
+) -> CardRecord {
+  CardRecord(
     id:,
     problem: wire.ProblemRef(category:, subcategory:, title:),
     card: fsrs.Card(
@@ -297,7 +282,7 @@ fn card_decoder() -> decode.Decoder(CardRecord) {
     lapses:,
     suspended:,
     introduced_at: option.map(introduced_at, fsrs.from_epoch),
-  ))
+  )
 }
 
 const state_from = wire.state_from

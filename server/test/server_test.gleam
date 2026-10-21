@@ -26,6 +26,7 @@ import server/web
 import wire
 import wisp
 import wisp/simulate
+import youid/uuid
 
 pub fn main() {
   gleeunit.main()
@@ -616,8 +617,10 @@ fn ref(title: String) -> wire.ProblemRef {
 }
 
 fn record_for(card: fsrs.Card) -> model.CardRecord {
+  let assert Ok(nil_uuid) =
+    uuid.from_string("00000000-0000-0000-0000-000000000000")
   model.CardRecord(
-    id: "00000000-0000-0000-0000-000000000000",
+    id: nil_uuid,
     problem: ref("Two Sum"),
     card:,
     reps: 0,

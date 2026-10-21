@@ -27,8 +27,38 @@ pub fn all() -> List(Migration) {
     Migration(7, "queues", queues),
     Migration(8, "tracks", tracks),
     Migration(9, "settings_is_account_wide", settings_is_account_wide),
+    Migration(10, "nullable_parameters", nullable_parameters),
   ]
 }
+
+/// Helpers for the statements that write several nullable columns at once.
+///
+/// Squirrel types a query's parameters from what Postgres reports, and
+/// Postgres says nothing about whether a parameter may be null, so every
+/// generated parameter is a plain value. A statement with one nullable
+/// column is written twice instead (`save_account` and
+/// `save_account_without_reminder`); a card update has four, and sixteen
+/// variants of it would be worse than a convention.
+///
+/// The convention: an optional value travels as an array of zero or one
+/// elements -- `[]` for null, `[x]` for x -- and these unwrap it. `[1]` of an
+/// empty array is null in Postgres, so this is not a sentinel: no value of
+/// the column's own type is given up to mean "absent". The Gleam side is
+/// `model.nullable`.
+const nullable_parameters: List(String) = [
+  "create or replace function int_or_null(maybe int[]) returns int
+     language sql immutable
+     as $$ select maybe[1] $$",
+  "create or replace function float8_or_null(maybe float8[]) returns float8
+     language sql immutable
+     as $$ select maybe[1] $$",
+  // Epoch seconds in, as everywhere else the server writes a timestamp;
+  // `to_timestamp` of null is null.
+  "create or replace function to_timestamp_or_null(maybe float8[])
+     returns timestamptz
+     language sql immutable
+     as $$ select to_timestamp(maybe[1]) $$",
+]
 
 /// The other half of migration 8: drop what moved to `track_settings`.
 ///

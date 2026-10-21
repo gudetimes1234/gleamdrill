@@ -16,10 +16,11 @@ import gleam/string
 import gleam/time/timestamp.{type Timestamp}
 import pog
 import wire
+import youid/uuid.{type Uuid}
 
 pub type CardRecord {
   CardRecord(
-    id: String,
+    id: Uuid,
     problem: wire.ProblemRef,
     card: fsrs.Card,
     reps: Int,
@@ -114,6 +115,17 @@ pub fn first(
     Ok(pog.Returned(rows: [row, ..], ..)) -> Ok(option.Some(with(row)))
     Ok(pog.Returned(rows: [], ..)) -> Ok(option.None)
     Error(error) -> Error(database_error(error))
+  }
+}
+
+/// An optional parameter, as the zero-or-one-element array the SQL helpers
+/// `int_or_null`, `float8_or_null` and `to_timestamp_or_null` take
+/// (migration 10): Squirrel cannot type a nullable parameter, so a statement
+/// with several of them passes each through one of those.
+pub fn nullable(value: Option(a)) -> List(a) {
+  case value {
+    option.Some(value) -> [value]
+    option.None -> []
   }
 }
 

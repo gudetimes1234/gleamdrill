@@ -176,7 +176,7 @@ pub fn undo_review(
       |> pog.parameter(db.uuid(user_id))
       |> pog.parameter(pog.text(track))
       |> pog.returning({
-        use card_id <- decode.field(0, decode.string)
+        use card_id <- decode.field(0, db.uuid_decoder())
         use before <- decode.field(1, decode.optional(decode.string))
         decode.success(#(card_id, before))
       })
@@ -232,9 +232,9 @@ fn snapshot_decoder() -> decode.Decoder(#(wire.CardState, Bool)) {
   decode.success(#(card, created))
 }
 
-fn delete_card(db: pog.Connection, card_id: String) -> Result(Nil, StudyError) {
+fn delete_card(db: pog.Connection, card_id: Uuid) -> Result(Nil, StudyError) {
   pog.query("delete from cards where id = $1::uuid")
-  |> pog.parameter(pog.text(card_id))
+  |> pog.parameter(db.uuid(card_id))
   |> pog.execute(db)
   |> result.replace(Nil)
   |> result.map_error(database_error)
@@ -253,7 +253,7 @@ fn restore_card(
        introduced_at = to_timestamp($2::float8), suspended = $3
      where id = $1::uuid",
   )
-  |> pog.parameter(pog.text(record.id))
+  |> pog.parameter(db.uuid(record.id))
   |> pog.parameter(pog.nullable(
     pog.float,
     option.map(record.introduced_at, fsrs.to_epoch),
@@ -285,7 +285,7 @@ fn insert_review(
              $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb)",
   )
   |> pog.parameter(db.uuid(user_id))
-  |> pog.parameter(pog.text(record.id))
+  |> pog.parameter(db.uuid(record.id))
   |> pog.parameter(pog.int(fsrs.rating_to_int(rating)))
   |> pog.parameter(pog.int(wire.state_code(before.state)))
   |> pog.parameter(pog.float(fsrs.to_epoch(now)))
