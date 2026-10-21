@@ -29,8 +29,6 @@ pub fn run_effect(action: fn() -> Nil) -> Effect(Msg) {
   action()
 }
 
-/// Focus something the same message puts on screen. `effect.from` runs
-/// before the render, when the element is not there yet to focus.
 pub fn scroll_to(id: String) -> Effect(Msg) {
   run_effect(fn() { browser.scroll_into_view(id) })
 }
@@ -58,11 +56,6 @@ pub fn tick() -> Effect(Msg) {
   })
 }
 
-/// The first twenty Easy problems of one model.track, in catalogue order, skipping
-/// any already queued. Catalogue order is the topic curriculum, not a
-/// difficulty ramp -- its first twenty include Trapping Rain Water -- so the
-/// starter set filters by rating first and only falls back to plain catalogue
-/// order for a model.track with no ratings (System Design).
 pub fn measure_cache() -> Effect(Msg) {
   effect.from(fn(dispatch) {
     browser.runtime_cache_size(fn(bytes) { dispatch(msg.CacheMeasured(bytes)) })
@@ -82,9 +75,6 @@ pub fn api_base() -> String {
 /// The token for the current session, or "" when signed out. Callers that need
 /// one are only reachable from behind the auth gate, so the empty case is a
 /// belt-and-braces default rather than a real path.
-/// The token for the current session, or "" when signed out. Callers that need
-/// one are only reachable from behind the auth gate, so the empty case is a
-/// belt-and-braces default rather than a real path.
 pub fn token(m: Model) -> String {
   case m.mode {
     Account(token) -> token
@@ -92,12 +82,10 @@ pub fn token(m: Model) -> String {
   }
 }
 
-/// Opening a checkable drill starts that language's (lazy) runtime download so
-/// it is usually ready before the first Run click. Drills without checks never
-/// load anything.
-/// The language whose runtime the screen on the way in will need, if any: a
-/// checkable drill's, or Gleam's for a tour lesson.
 /// Persist the settings that belong to this browser rather than the account.
+///
+/// Written whole every time, so every caller must pass a model that already
+/// holds the change it wants saved.
 pub fn save_preferences(m: Model) -> Effect(Msg) {
   store.save_device_preferences(m)
 }
@@ -109,12 +97,6 @@ pub fn current_problem(m: Model) -> Result(problem.Problem, Nil) {
   }
 }
 
-/// Folds one card into the store, unless it belongs to another track.
-///
-/// `m.cards` is the *active model.track's* cards, so a response that arrives after
-/// the user has switched must not be folded in: a review recorded in Python
-/// answering while the Go model.track is open would otherwise leave a Python card
-/// sitting in the Go screens. Free and total, so every fold site can use it.
 pub fn current_language(m: Model) -> Result(String, Nil) {
   case model.current_ref(m) {
     Ok(ref) ->
@@ -141,9 +123,6 @@ pub fn current_check(m: Model) -> Result(problem.Check, Nil) {
   }
 }
 
-/// Opening a checkable drill starts that language's (lazy) runtime download so
-/// it is usually ready before the first Run click. Drills without checks never
-/// load anything.
 /// The language whose runtime the screen on the way in will need, if any: a
 /// checkable drill's, or Gleam's for a tour lesson.
 pub fn runtime_wanted(m: Model) -> Result(String, Nil) {
@@ -158,6 +137,9 @@ pub fn runtime_wanted(m: Model) -> Result(String, Nil) {
   }
 }
 
+/// Opening a checkable drill starts that language's (lazy) runtime download so
+/// it is usually ready before the first Run click. Drills without checks never
+/// load anything.
 pub fn with_prefetch(pair: #(Model, Effect(Msg))) -> #(Model, Effect(Msg)) {
   let #(m, fx) = pair
   case runtime_wanted(m) {
@@ -193,9 +175,6 @@ pub fn with_prefetch(pair: #(Model, Effect(Msg))) -> #(Model, Effect(Msg)) {
   }
 }
 
-/// Post one run to a local runtime that is known to be ready. The previous
-/// run's output is carried into the model.Running state so the pane can keep
-/// showing it, dimmed, until the new result lands.
 pub fn guest_has_progress() -> Bool {
   store.guest_has_data()
 }
@@ -252,8 +231,6 @@ pub type ProblemKind {
 
 /// `problem.kind` refined by what this browser and this sitting can actually
 /// do: a check it cannot run grades like a reveal-only card.
-/// `problem.kind` refined by what this browser and this sitting can actually
-/// do: a check it cannot run grades like a reveal-only card.
 pub fn problem_kind(m: Model, ref: ProblemRef) -> ProblemKind {
   case problems.find(ref.category, ref.subcategory, ref.title) {
     Ok(found) ->
@@ -280,10 +257,6 @@ pub fn problem_kind(m: Model, ref: ProblemRef) -> ProblemKind {
   }
 }
 
-/// Persist the settings that belong to this browser rather than the account.
-///
-/// Written whole every time, so every caller must pass a model.model that already
-/// holds the change it wants saved.
 /// A solve is clean when nothing was given away: no solution shown, no code
 /// slice, no whole pseudocode, and no step opened for its hint or its why.
 ///
@@ -331,14 +304,6 @@ pub fn open_first(m: Model, queue: List(ProblemRef)) -> Model {
   }
 }
 
-/// A drill with no harness has nothing to run, so it is gradeable the moment
-/// it opens. One with a harness waits for a result.
-/// What the grade bar starts as when a problem opens.
-///
-/// Gradeable from the first moment when either there is nothing to run (a
-/// reveal-only drill is a flashcard proper) or this is the problem's first
-/// encounter — the learning step, where you reveal, study, and self-grade like
-/// flipping a card. Otherwise a run is required before grading.
 pub fn reset_to_menu(m: Model) -> Model {
   Model(
     ..m,
@@ -357,10 +322,6 @@ pub fn reset_to_menu(m: Model) -> Model {
   )
 }
 
-/// Questions per sitting, spread flat across the sections rather than in
-/// proportion to how many questions each one has. Equal resolution per section
-/// is the point: a section sampled twice cannot tell you anything about
-/// whether you know it.
 /// Ends a sitting, returning to wherever it started from.
 ///
 /// A scheduled sitting also clears the selection: the study queue was never
@@ -386,12 +347,6 @@ pub fn reset_home(m: Model) -> Model {
   )
 }
 
-/// Which of the queued cards a Blitz may draw from: anything this browser
-/// can actually run against the clock. Concept cards have no code, and a
-/// guest cannot run the server-side languages, so neither can pass.
-/// Problems into a named queue, and cards for the ones without. The list
-/// is saved whole; the cards go up as one batch, as the queue screen's
-/// bulk add does.
 pub fn advance(m: Model) -> #(Model, Effect(Msg)) {
   // Before anything else: `m` still points at the problem whose run may be
   // in flight, which is the only moment its language can be resolved.
@@ -474,12 +429,6 @@ pub fn advance_inner(m: Model) -> #(Model, Effect(Msg)) {
   }
 }
 
-/// Ends a sitting, returning to wherever it started from.
-///
-/// A scheduled sitting also clears the selection: the study queue was never
-/// something the user picked, and leaving it behind would make the next manual
-/// drill drag along ten problems they never chose. A manual selection is
-/// theirs and survives.
 pub fn abandon_run(m: Model) -> #(Model, Effect(Msg)) {
   case m.run, current_language(m) {
     // Nothing to restart for a server-side run; its late answer is ignored
@@ -515,16 +464,11 @@ pub fn pending(m: Model, refs: List(ProblemRef)) -> Model {
   Model(..m, queue_pending: list.append(refs, m.queue_pending))
 }
 
-/// Enter a track. With `starter`, twenty easy problems are queued in it so
-/// the first sitting is one click away rather than a trip to the queue screen.
-///
-/// Choosing a model.track is a device preference, so it is saved here: a reload
-/// should land where you were, not back on the switcher.
-/// The first twenty Easy problems of one model.track, in catalogue order, skipping
+/// The first twenty Easy problems of one track, in catalogue order, skipping
 /// any already queued. Catalogue order is the topic curriculum, not a
 /// difficulty ramp -- its first twenty include Trapping Rain Water -- so the
 /// starter set filters by rating first and only falls back to plain catalogue
-/// order for a model.track with no ratings (System Design).
+/// order for a track with no ratings (System Design).
 pub fn starter_refs(m: Model, in_track: String) -> List(ProblemRef) {
   let unqueued =
     problems.refs_in(in_track)
@@ -541,17 +485,17 @@ pub fn starter_refs(m: Model, in_track: String) -> List(ProblemRef) {
 
 /// Folds one card into the store, unless it belongs to another track.
 ///
-/// `m.cards` is the *active model.track's* cards, so a response that arrives after
+/// `m.cards` is the *active track's* cards, so a response that arrives after
 /// the user has switched must not be folded in: a review recorded in Python
-/// answering while the Go model.track is open would otherwise leave a Python card
+/// answering while the Go track is open would otherwise leave a Python card
 /// sitting in the Go screens. Free and total, so every fold site can use it.
 pub fn fold_card(
   m: Model,
   cards: dict.Dict(ProblemRef, wire.CardState),
   card: wire.CardState,
 ) -> dict.Dict(ProblemRef, wire.CardState) {
-  // The empty string means *no model.track chosen yet* -- a browser with nothing in
-  // it -- not "a model.track that matches nothing". Filtering on it would drop the
+  // The empty string means *no track chosen yet* -- a browser with nothing in
+  // it -- not "a track that matches nothing". Filtering on it would drop the
   // very first card anyone queued and leave the study screen empty forever.
   case m.active_track == "" || track.of_ref(card.problem) == m.active_track {
     True -> dict.insert(cards, card.problem, card)
@@ -559,10 +503,11 @@ pub fn fold_card(
   }
 }
 
-/// Move the rail's focus, clamped to the steps this problem actually has. A
-/// problem with no walkthrough has none, and the focus stays at zero.
 pub const starter_size = 20
 
+/// Post one run to a local runtime that is known to be ready. The previous
+/// run's output is carried into the Running state so the pane can keep
+/// showing it, dimmed, until the new result lands.
 pub fn start_local_run(
   m: Model,
   language: String,
@@ -599,7 +544,7 @@ pub fn current_quiz(m: Model) -> Result(problem.Quiz, Nil) {
 /// the warning to mean something. Escalating with stake is honest; nagging
 /// from review one is noise.
 ///
-/// A prompt already dismissed stays dismissed -- `local.prompt_state` reads the
+/// A prompt already dismissed stays dismissed -- `store.upgrade_prompt_state` reads the
 /// persisted flag, so it does not reappear on the next reload.
 pub fn escalate(m: Model) -> model.UpgradePrompt {
   case m.mode, m.upgrade_prompt {

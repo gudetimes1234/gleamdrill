@@ -385,7 +385,6 @@ pub fn changed(
   }
 }
 
-/// The rows the keyboard cursor can sit on in a pane, as toggle targets.
 /// The queue screen's cursor. Its own mover rather than a fifth pane in
 /// `move_cursor`: that one walks the browser's panes and its search override,
 /// and this list has neither.
@@ -409,6 +408,9 @@ fn queue_cursor_ref(m: Model) -> Result(ProblemRef, Nil) {
   }
 }
 
+/// Problems into a named queue, and cards for the ones without. The list
+/// is saved whole; the cards go up as one batch, as the queue screen's
+/// bulk add does.
 fn named_queue_add(
   m: Model,
   name: String,

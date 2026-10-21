@@ -1,6 +1,6 @@
-//// The controller: update(), the exhaustive message dispatch, and -- for
-//// now -- every handler it delegates to. The feature split carves this
-//// file next; the entrypoint already only wires init, update and view.
+//// The controller: update() and the exhaustive message dispatch. Every arm
+//// delegates to a named handler in an `update/` feature module; there is no
+//// catch-all, so a new Msg variant does not compile until it is routed.
 
 import gleam/option.{None}
 import gleamdrill/browser
@@ -385,6 +385,3 @@ fn handle_key(m: Model, key: msg.Key) -> #(Model, Effect(Msg)) {
       }
   }
 }
-/// Move the board cursor, clamped, and scroll the chip into view -- the
-/// palette is taller than the viewport on a phone, so a cursor that moved
-/// without scrolling would leave the keyboard driving something off screen.

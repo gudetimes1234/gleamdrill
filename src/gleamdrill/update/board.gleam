@@ -192,6 +192,9 @@ pub fn submitted_board(m: Model) -> #(Model, Effect(Msg)) {
   }
 }
 
+/// Move the board cursor, clamped, and scroll the chip into view -- the
+/// palette is taller than the viewport on a phone, so a cursor that moved
+/// without scrolling would leave the keyboard driving something off screen.
 fn move_board_cursor(m: Model, to: Int) -> #(Model, Effect(Msg)) {
   let next = int.clamp(to, 0, list.length(board.palette()) - 1)
   #(Model(..m, board_cursor: next), common.scroll_to(id.board_chip_id(next)))

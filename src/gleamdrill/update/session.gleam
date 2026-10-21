@@ -414,7 +414,7 @@ fn known_queue(
 
 /// Parse one settings input and clamp it into range.
 ///
-/// The bounds mirror `validate_settings` in the server's routes/study.gleam.
+/// The bounds mirror `validate.settings` in the server's study/validate.gleam.
 /// Clamping rather than rejecting is deliberate: these come from a number
 /// input whose own min/max the browser already shows, so a value outside them
 /// is a typo, and snapping it is friendlier than an error. Unparseable text

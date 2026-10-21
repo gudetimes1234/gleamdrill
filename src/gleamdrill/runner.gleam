@@ -72,7 +72,7 @@ pub fn scratch_hint(language: String) -> String {
 }
 
 /// Languages with no browser runtime at all: the run is an HTTP request to
-/// the server instead (api.post_run), and "the runtime" is ready the moment
+/// the server instead (store.post_run), and "the runtime" is ready the moment
 /// it is asked for. Elixir, Go and Haskell; see problem.Check.
 pub fn is_remote(language: String) -> Bool {
   language == "elixir" || language == "go" || language == "haskell"
@@ -143,7 +143,7 @@ pub fn restart(language: String) -> Effect(Msg) {
 }
 
 /// The timeout for a run that happens elsewhere (the server); the request
-/// itself is api.post_run. Stale ids are ignored exactly as for workers.
+/// itself is store.post_run. Stale ids are ignored exactly as for workers.
 pub fn arm_remote_timeout(id: Int) -> Effect(Msg) {
   effect.from(fn(dispatch) {
     ffi_after(remote_timeout_ms, fn() { dispatch(RunTimedOut(id)) })

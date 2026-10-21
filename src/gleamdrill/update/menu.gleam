@@ -77,6 +77,7 @@ fn toggle_selection(
   }
 }
 
+/// The rows the keyboard cursor can sit on in a pane, as toggle targets.
 type PaneRows {
   /// Language and subcategory rows *choose*; the payload is what clicking
   /// them would dispatch.
@@ -227,6 +228,11 @@ pub fn cursor_ref(m: Model) -> Result(ProblemRef, Nil) {
   }
 }
 
+/// Enter a track. With `starter`, twenty easy problems are queued in it so
+/// the first sitting is one click away rather than a trip to the queue screen.
+///
+/// Choosing a track is a device preference, so it is saved here: a reload
+/// should land where you were, not back on the switcher.
 pub fn enter_track(
   m: Model,
   track: String,

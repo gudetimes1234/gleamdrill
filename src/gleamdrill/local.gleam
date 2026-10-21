@@ -1,20 +1,11 @@
-//// Guest mode: spaced repetition with no account, kept in this browser.
+//// Guest mode's storage: the localStorage reads and writes, and the JSON
+//// codecs for what is kept there. The arithmetic over the loaded state lives
+//// in `guest.gleam`; only `store.gleam` imports this.
 ////
 //// This is a second store, not a cache. A guest's cards live only here; a
 //// signed-in user's live only on the server. There is a one-way migration
 //// between them and no sync in either direction, which is exactly why nothing
 //// in this file has to resolve a conflict.
-////
-//// The scheduling itself is not reimplemented. `fsrs.review` is the same
-//// module the server calls, so a guest and an account given the same answers
-//// at the same times produce identical cards. What is reimplemented is the
-//// bookkeeping the server does in SQL: the study-day boundary, the daily
-//// budget, and the statistics rollups.
-////
-//// Everything that derives a value is a pure function taking the loaded
-//// state. Storage I/O lives at the bottom of the file. That split is what
-//// makes the arithmetic testable under `gleam test`, where there is no
-//// `localStorage` at all.
 
 import fsrs
 import gleam/dict

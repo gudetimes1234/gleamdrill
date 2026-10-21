@@ -241,4 +241,8 @@ fn shuffle_loop(remaining: List(a), count: Int, acc: List(a)) -> List(a) {
   }
 }
 
+/// Questions per sitting, spread flat across the sections rather than in
+/// proportion to how many questions each one has. Equal resolution per section
+/// is the point: a section sampled twice cannot tell you anything about
+/// whether you know it.
 const exam_size = 40

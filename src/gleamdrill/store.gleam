@@ -5,7 +5,10 @@
 //// knows how to handle `StateLoaded(Result(BootState, _))` and
 //// `ReviewRecorded(Result(ReviewOutcome, _))`, so guest mode needed no new
 //// message, no new model field, and no change to any view's shape -- only a
-//// different effect behind the same four calls.
+//// different effect behind the same calls.
+////
+//// It is also the only module that imports `api`, `local`, `session` and
+//// `legacy`: the `update/` handlers reach persistence through here alone.
 ////
 //// Guest effects are synchronous but still dispatch, because a caller that
 //// sometimes returns a value and sometimes a message would put the branch

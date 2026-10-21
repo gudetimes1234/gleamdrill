@@ -1,7 +1,8 @@
 //// The backend client.
 ////
 //// Every call returns a Lustre effect that dispatches one message. Nothing
-//// here touches the model; `gleamdrill.gleam` decides what a result means.
+//// here touches the model; the `update/` handlers decide what a result
+//// means, and only `store.gleam` calls in here.
 ////
 //// Card scheduling is deliberately one-directional: the server tells us where
 //// a card stands, and we never send it a due date. The one thing computed

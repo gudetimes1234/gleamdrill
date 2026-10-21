@@ -1,6 +1,6 @@
 //// What the scheduler says to drill next, and the counts derived from it.
 ////
-//// This lives outside `gleamdrill.gleam` so the study screen can show what
+//// This lives outside the update loop so the study screen can show what
 //// "Study now" is about to serve. While it was private to the update loop the
 //// dashboard could only report totals, and the three counts beside it each
 //// re-walked the whole catalogue with their own copy of the filter -- three
