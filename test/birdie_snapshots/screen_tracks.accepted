@@ -231,4 +231,5 @@ test_name: tracks_screen_test
   ?
 </button>
 
+<div aria-label="Loading from the server" class="sync-bar" role="progressbar"></div>
 

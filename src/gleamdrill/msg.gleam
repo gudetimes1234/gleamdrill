@@ -63,7 +63,6 @@ pub type Msg {
   // --- the scheduler ---
   UserClickedStudy
   UserClickedBrowse
-  UserClickedBackToStudy
   UserClickedStats
   StatsLoaded(Result(wire.Stats, ApiError))
   InsightsLoaded(Result(wire.Insights, ApiError))
@@ -77,7 +76,6 @@ pub type Msg {
   UserClickedRecall
   /// Start a Blitz: this many problems, this many milliseconds each.
   UserStartedBlitz(Int, Int)
-  UserClickedSettings
   /// Open the track switcher.
   UserClickedTracks
   /// Queue a starter set from the study screen's empty state.

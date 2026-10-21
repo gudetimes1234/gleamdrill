@@ -230,7 +230,6 @@ fn step(state: State, message: Msg) -> #(State, Effect(Msg)) {
       ),
       effect.none(),
     )
-    msg.UserClickedSettings, _ -> navigate(state, SettingsRoute)
     msg.UserClickedStats, _ -> navigate(state, StatsRoute)
     msg.UserClickedQueue, _ -> navigate(state, QueueRoute)
     msg.UserClickedBrowse, _ -> navigate(state, MenuRoute)
@@ -656,10 +655,8 @@ fn sync_page(state: State) -> #(State, Effect(Msg)) {
     )
     SettingsRoute, _ ->
       settings_update.init(shared) |> settle(state, Settings, msg.SettingsMsg)
-    TracksRoute, _ -> #(
-      State(..state, page: Tracks(tracks_model.Model)),
-      effect.none(),
-    )
+    TracksRoute, _ ->
+      tracks_update.init(shared) |> settle(state, Tracks, msg.TracksMsg)
     StatsRoute, _ ->
       stats_update.init(shared) |> settle(state, Stats, msg.StatsMsg)
     QueueRoute, _ ->

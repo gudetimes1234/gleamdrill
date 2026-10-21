@@ -12,9 +12,8 @@ import gleamdrill/model.{
   StudyRoute, TourRoute,
 }
 import gleamdrill/msg.{
-  type Msg, UserClickedBackToStudy, UserClickedQueue, UserClickedSettings,
-  UserClickedSignIn, UserClickedSignOut, UserClickedStats, UserClickedTour,
-  UserDismissedMergeOffer, UserDismissedNotice,
+  type Msg, UserClickedSignIn, UserClickedSignOut, UserDismissedMergeOffer,
+  UserDismissedNotice,
 }
 import gleamdrill/page/auth/model as auth
 import gleamdrill/route
@@ -27,18 +26,18 @@ pub fn bar(m: Model, current: Route) -> Element(Msg) {
   // Tracks first: Study, Queue and Stats are all inside one, so it is the
   // thing they hang off rather than a peer of them.
   let places = [
-    #("Tracks", model.TracksRoute, msg.UserClickedTracks),
-    #("Study", StudyRoute, UserClickedBackToStudy),
-    #("Queue", QueueRoute, UserClickedQueue),
-    #("Stats", StatsRoute, UserClickedStats),
-    #("Tour", TourRoute, UserClickedTour),
-    #("Settings", SettingsRoute, UserClickedSettings),
+    #("Tracks", model.TracksRoute),
+    #("Study", StudyRoute),
+    #("Queue", QueueRoute),
+    #("Stats", StatsRoute),
+    #("Tour", TourRoute),
+    #("Settings", SettingsRoute),
   ]
   let links =
     list.map(places, fn(place) {
-      let #(label, place_route, msg) = place
-      case place_route == current {
-        True ->
+      let #(label, place_route) = place
+      case place_route == current, route.path(place_route, m.active_track) {
+        True, _ | _, None ->
           html.span(
             [
               attribute.class("nav-link nav-current"),
@@ -46,21 +45,13 @@ pub fn bar(m: Model, current: Route) -> Element(Msg) {
             ],
             [html.text(label)],
           )
-        // A real link where the screen has an address, so it can be opened
-        // in a new tab; the app's router catches the plain click.
-        False ->
-          case route.path(place_route, m.active_track) {
-            Some(href) ->
-              html.a(
-                [attribute.class("link-button nav-link"), attribute.href(href)],
-                [html.text(label)],
-              )
-            None ->
-              html.button(
-                [attribute.class("link-button nav-link"), event.on_click(msg)],
-                [html.text(label)],
-              )
-          }
+        // A real link, so it can be opened in a new tab; the app's router
+        // catches the plain click.
+        False, Some(href) ->
+          html.a(
+            [attribute.class("link-button nav-link"), attribute.href(href)],
+            [html.text(label)],
+          )
       }
     })
   let account = case m.mode {

@@ -10,6 +10,7 @@ import gleam/dynamic/decode
 import gleam/json
 import gleam/list
 import gleam/string
+import gleam/uri
 import gleamdrill/app
 import gleamdrill/model
 import gleamdrill/msg
@@ -81,7 +82,8 @@ pub fn stats_screen_test() {
 }
 
 pub fn settings_screen_test() {
-  screen([msg.UserClickedSettings]) |> birdie.snap(title: "screen: settings")
+  let assert Ok(address) = uri.parse("/settings")
+  screen([msg.UrlChanged(address)]) |> birdie.snap(title: "screen: settings")
 }
 
 pub fn tour_screen_test() {

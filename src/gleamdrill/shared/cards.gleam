@@ -45,10 +45,6 @@ pub fn card_suspended(
   }
 }
 
-pub fn back_to_study(m: Model) -> #(Model, Effect(Msg)) {
-  #(Model(..m, route: model.StudyRoute), effect.none())
-}
-
 /// A review landed: the card it rescheduled, the day's counts and the
 /// server's clock, the draft the review deleted, and the upgrade prompt,
 /// which escalates with what a guest has at stake.

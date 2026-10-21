@@ -17,9 +17,10 @@
 // language runtimes are lazy multi-megabyte downloads.
 
 import { chromium } from "playwright-core";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const APP = process.env.APP ?? "http://localhost:4173";
 const API = process.env.API ?? "http://127.0.0.1:1637";
@@ -53,7 +54,9 @@ const check = (name, ok, detail = "") => {
   else { fail++; console.log(`    FAIL ${name}${detail ? ": " + detail : ""}`); }
 };
 
-/// Records which `msg.Msg` variants an act exercises. The tour fails if any
+/// Records which `Msg` variants an act exercises: bare for the app's own
+/// (`UserClickedStudy`), qualified by page for a page's (`tour.CursorMoved`),
+/// the way the census at the end names them. The tour fails if any
 /// user-initiated message is never reached -- that is what stops "every flow"
 /// from quietly meaning "every flow I remembered".
 const exercises = (...msgs) => msgs.forEach((m) => covered.add(m));
@@ -248,7 +251,7 @@ const setCode = async (code) => {
 /// rather than a click in Browse: the first pane used to choose a language and
 /// the track switcher is where that happens now.
 const openByHand = async (language, subcategory, title) => {
-  exercises("UserClickedStartDrill");
+  exercises("browse.UserClickedStartDrill", "UserClickedStartDrill");
   await page.click('.nav-link:text-is("Tracks")');
   await page.waitForSelector(".tracks-screen", { timeout: 10000 });
   await page.locator(".track-card", { hasText: language }).first()
@@ -299,8 +302,9 @@ console.log(`screenshots -> ${SHOTS}\n`);
 // ---------------------------------------------------------------- act 1
 act = "00-first-run-tracks";
 console.log(act);
-exercises("UserClickedTracks", "UserPickedTrack", "UserPickedTrackWithStarter",
-  "UserAddedStarterSet");
+exercises("tracks.UserPickedTrack", "tracks.UserPickedTrackWithStarter",
+  "study.UserAddedStarterSet", "UserAddedStarterSet", "study.UserClickedQueue",
+  "UserClickedQueue", "queue.UserChangedGroup");
 await page.goto(APP, { waitUntil: "domcontentloaded" });
 await page.evaluate(() => localStorage.clear());
 await page.goto(APP, { waitUntil: "networkidle" });
@@ -411,8 +415,8 @@ await capture("landing", "Guest landing: strip, counts, forecast, actions",
 // ---------------------------------------------------------------- act 2
 act = "02-auth";
 console.log(act);
-exercises("UserClickedSignIn", "UserToggledAuthMode", "UserChangedAuthEmail",
-  "UserChangedAuthPassword", "UserSubmittedAuth", "UserClickedBackToStudy");
+exercises("UserClickedSignIn", "auth.UserToggledMode", "auth.UserChangedEmail",
+  "auth.UserChangedPassword", "auth.UserSubmitted", "auth.UserClickedBack");
 
 await page.click("text=Sign in");
 await page.waitForSelector(".auth-card", { timeout: 10000 });
@@ -478,9 +482,11 @@ await page.evaluate(() => localStorage.removeItem("gleamDrill.token"));
 // ---------------------------------------------------------------- act 3
 act = "03-browsing";
 console.log(act);
-exercises("UserClickedBrowse", "UserClickedCategory", "UserClickedSubcategory",
-  "UserToggledProblem", "UserClickedSelectAll", "UserClickedClearSelection",
-  "UserChangedIterations", "UserSearched", "UserClickedBreadcrumb");
+exercises("study.UserClickedBrowse", "UserClickedBrowse",
+  "browse.UserClickedSubcategory", "browse.UserToggledProblem",
+  "browse.UserClickedSelectAll", "browse.UserClickedClearSelection",
+  "browse.UserChangedIterations", "UserChangedIterations", "browse.UserSearched",
+  "browse.UserClickedBreadcrumb");
 
 await page.click("text=Browse problems");
 await page.waitForSelector(".menu-container", { timeout: 10000 });
@@ -558,9 +564,10 @@ if (crumbs.length) {
 // ---------------------------------------------------------------- act 3k
 act = "03k-keyboard";
 console.log(act);
-exercises("KeyPressed", "HelpToggled", "MenuCursorMoved", "MenuPaneFocused",
-  "MenuCursorJumped", "MenuActivated", "MenuToggledAtCursor",
-  "EditorFocusRequested", "SearchFocusRequested", "QuizMoved");
+exercises("KeyPressed", "HelpToggled", "browse.CursorMoved", "browse.PaneFocused",
+  "browse.CursorJumped", "browse.Activated", "browse.UserToggledHelp",
+  "browse.UserFocusedSearch", "sitting.EditorFocusRequested",
+  "sitting.UserGraded");
 
 await freshGuest();
 check("the status bar names the context",
@@ -676,9 +683,10 @@ check("Enter leaves it", !(await page.isVisible(".exit-prompt")));
 // ---------------------------------------------------------------- act 4
 act = "04-python-drill";
 console.log(act);
-exercises("UserClickedStudy", "UserClickedRun", "UserGraded",
-  "UserToggledSolution", "UserRevealedHint", "UserChangedKeymap",
-  "UserClickedExitDrill", "ExitConfirmed");
+exercises("study.UserClickedStudy", "UserClickedStudy", "sitting.UserClickedRun",
+  "sitting.EditorChanged", "sitting.UserToggledSolution",
+  "sitting.UserChangedKeymap", "sitting.UserClickedExitDrill",
+  "sitting.ExitConfirmed");
 
 await freshGuest();
 await page.click(".study-start");
@@ -691,7 +699,7 @@ check("the header shows time on the problem",
 // The timer pauses: the clock dims, the reading freezes across more than a
 // tick, and resuming picks the count back up without the paused span.
 await page.click(".clock-pause");
-exercises("UserToggledTimer");
+exercises("sitting.UserToggledTimer");
 check("pausing dims the clock", await page.isVisible(".drill-clock.clock-paused"));
 const frozenAt = (await page.textContent(".drill-clock")).match(/\d+:\d\d/)[0];
 await page.waitForTimeout(2300);
@@ -712,7 +720,7 @@ check("the output pane starts empty",
 // Two runs: the code alone, for reading what it prints while you work, and
 // the tests. Only the tests answer the card; a scratch run leaves the grade
 // bar exactly where it was.
-exercises("UserClickedScratchRun");
+exercises("sitting.UserClickedScratchRun");
 await waitForRunnable();
 check("Run and Run tests are both offered",
   (await page.$$(".scratch-button")).length === 1 && (await page.$$(".run-button")).length === 1);
@@ -744,7 +752,7 @@ check("with nothing turned over and the nudge folded away",
 check("the first step has the focus", (await page.$(".rail-step.current")) !== null);
 
 await page.keyboard.press("a");
-exercises("UserToggledNudge");
+exercises("sitting.UserToggledNudge");
 await appears(".rail-nudge .approach-nudge");
 check("a unfolds the nudge, which is a question and not a reveal",
   await page.isVisible(".rail-nudge .approach-nudge"));
@@ -754,28 +762,28 @@ check("only the code slice warns that it is a reveal",
   (await page.$$(".rail-step.current .hint-warning")).length === 1
     && (await page.$(".rail-step.current .walk-reveal-code")) !== null);
 await page.keyboard.press("h");
-exercises("WalkHintShown");
+exercises("sitting.WalkHintShown");
 await appears(".walk-hint");
 await page.keyboard.press("y");
-exercises("WalkWhyShown");
+exercises("sitting.WalkWhyShown");
 await appears(".walk-why");
 check("h and y turn over this step's hint and why",
   await page.isVisible(".walk-hint") && await page.isVisible(".walk-why"));
 await capture("rail", "The step rail: every step listed, step 1 with its hint and why turned over");
 await page.keyboard.press("c");
-exercises("WalkCodeShown");
+exercises("sitting.WalkCodeShown");
 await appears(".walk-code");
 check("c shows this step's slice of the code", await page.isVisible(".walk-code"));
 
 // The focus moves freely -- the titles were always there -- and what was
 // turned over stays turned over.
 await page.keyboard.press("j");
-exercises("WalkAdvanced");
+exercises("sitting.WalkAdvanced");
 await page.waitForTimeout(300);
 check("j moves the focus on, and the step keeps what was opened on it",
   await page.isVisible(".walk-hint") && (await page.$$(".rail-step.opened")).length === 1);
 await page.keyboard.press("k");
-exercises("WalkBacked");
+exercises("sitting.WalkBacked");
 await page.waitForTimeout(300);
 check("k moves it back", (await page.$(".rail-step.current .walk-hint")) !== null);
 
@@ -786,7 +794,7 @@ check("the rail is not a pane: it has no button in the run bar",
 // The Note button is the slot occupant reached by click alone -- the other
 // pane buttons are solutions, which carry their own message.
 await page.click('.pane-button:text-is("Note")');
-exercises("UserToggledPane");
+exercises("sitting.UserToggledPane");
 check("the Note button opens the note pane", await appears(".note-pane"));
 await page.click('.pane-button:text-is("Note")');
 await page.waitForSelector(".note-pane", { state: "detached", timeout: 5000 });
@@ -800,7 +808,7 @@ await page.evaluate(() => document.activeElement?.blur());
 // rather than automatic.
 
 await page.keyboard.press("w");
-exercises("UserRevealedWholeThing");
+exercises("sitting.UserRevealedWholeThing");
 await appears(".rail-whole");
 check("w shows the whole plan at once", await page.isVisible(".rail-whole"));
 check("the whole-plan button warned before it spoiled", true);
@@ -837,7 +845,7 @@ check("an error does not squeeze the editor", editorBefore >= 280, String(editor
 check("the main column does not scroll",
   await page.$eval(".drill-main", (el) => el.scrollHeight <= el.clientHeight + 1));
 await page.click(".results-summary");
-exercises("UserToggledResults");
+exercises("sitting.UserToggledResults");
 await page.waitForTimeout(250);
 check("the results fold to their summary line", (await page.$(".results.collapsed")) !== null);
 check("folded, the summary previews the error",
@@ -857,7 +865,7 @@ await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox
 await page.mouse.down();
 await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2 + 150, { steps: 8 });
 await page.mouse.up();
-exercises("EditorResized");
+exercises("sitting.EditorResized");
 await page.waitForTimeout(300);
 const editorDragged = await editorHeight();
 check("dragging the handle grows the editor", editorDragged >= editorBefore + 40,
@@ -923,14 +931,14 @@ check("against the reference most like it",
 await capture("diff", "Passing run: your code with the reference's differences struck through",
   "A pass shows your code diffed against the closest reference");
 await page.keyboard.press("d");
-exercises("UserToggledDiff");
+exercises("sitting.UserToggledDiff");
 await page.waitForTimeout(300);
 check("d flips the panel to the plain reference",
   (await page.$("gleam-diff")) === null && (await page.$(".answer-content.auto pre")) !== null);
 await page.keyboard.press("d");
 await page.waitForTimeout(300);
 await page.click(".answer-content.auto .answer-close");
-exercises("UserDismissedDiff");
+exercises("sitting.UserDismissedDiff");
 await page.waitForTimeout(300);
 check("and its close button puts it away", (await page.$(".answer-content")) === null);
 
@@ -1017,12 +1025,12 @@ await capture("gated", "Second review: grading waits for a run");
 check("the note waits in its pane", (await page.$(".note-input")) === null);
 check("a fresh problem has no lit note", (await page.$(".note-panel.has-note")) === null);
 await page.keyboard.press("m");
-exercises("NoteFocusRequested");
+exercises("sitting.NoteFocusRequested");
 await page.waitForSelector(".slot-pane .note-input", { timeout: 5000 });
 check("m opens the note beside the editor and focuses it",
   await page.evaluate(() => document.activeElement?.classList.contains("note-input")));
 await page.keyboard.type("Set beats sort here: O(n) and one line.");
-exercises("NoteChanged");
+exercises("sitting.NoteChanged");
 await page.waitForTimeout(1200);
 check("the note is saved on its own",
   ((await page.evaluate(() => localStorage.getItem("gleamDrill.guest.notes.v1"))) ?? "").includes("Set beats sort"));
@@ -1146,7 +1154,7 @@ await page.evaluate(() => localStorage.clear());
 // ---------------------------------------------------------------- act 4c
 act = "04c-run-controls";
 console.log(act);
-exercises("UserClickedStopRun", "UserToggledPrompt");
+exercises("sitting.UserClickedStopRun", "sitting.UserToggledPrompt");
 
 // Stop: an infinite loop is interruptible, and stopping one must not poison
 // the next run with a stale timeout verdict.
@@ -1210,7 +1218,7 @@ await page.waitForTimeout(800);
 // ---------------------------------------------------------------- act 4d
 act = "04d-runtime-failure";
 console.log(act);
-exercises("UserClickedRetryRuntime");
+exercises("sitting.UserClickedRetryRuntime");
 
 // A runtime whose worker script never arrives must fail loudly and offer a
 // Retry that actually works. TypeScript is the one runtime no act has loaded
@@ -1293,7 +1301,7 @@ await page.evaluate(() => {
 await onTrack();
 await goHome();
 await page.click(".study-recall");
-exercises("UserClickedRecall");
+exercises("study.UserClickedRecall", "UserClickedRecall");
 await page.waitForSelector(".recall-card", { timeout: 15000 });
 check("a recall card opens with no editor",
   (await page.$("gleam-editor")) === null && await page.isVisible(".recall-reveal"));
@@ -1305,7 +1313,7 @@ await capture("recall-think", "Recall card before the reveal: prompt, note, and 
 // The reveal is a button as well as a key; clicking it is what a first-time
 // user does, and it does not depend on where focus happens to be.
 await page.click(".recall-reveal");
-exercises("UserRevealedRecall");
+exercises("sitting.UserRevealedRecall");
 // Attached, not visible: an empty panel has no box, and "why is it empty" is
 // a better failure than a timeout that says nothing.
 await page.waitForSelector(".recall-answers", { state: "attached", timeout: 10000 });
@@ -1355,7 +1363,7 @@ const repsBeforeUndo = await page.evaluate(() =>
 await capture("summary-undo", "A recall summary, with the last grade still undoable",
   "The last grade can be taken back");
 await page.click(".summary-undo .undo-button");
-exercises("UserClickedUndo");
+exercises("sitting.UserClickedUndo");
 await page.waitForSelector(".recall-answers", { state: "attached", timeout: 10000 });
 check("undo reopens the last card, revealed and waiting for a grade",
   (await page.textContent(".drill-title")).includes("Valid Anagram")
@@ -1403,7 +1411,8 @@ await page.waitForTimeout(800);
 // ---------------------------------------------------------------- act 4f
 act = "04f-compare";
 console.log(act);
-exercises("UserClickedCompare", "CompareMoved", "ComparePickedVariant", "UserClosedCompare");
+exercises("browse.UserClickedCompare", "browse.CompareMoved",
+  "browse.ComparePickedVariant", "browse.UserClosedCompare");
 
 // Two problems' reference solutions side by side, the lines they share lit:
 // the shape a technique keeps from problem to problem. From Browse, with a
@@ -1539,7 +1548,7 @@ console.log(act);
 // miss; a card that passes is graded as usual. Scored at the end. Runs
 // after act 5 on purpose: every browser runtime is warm by then, and a
 // Blitz draws from the whole queue.
-exercises("UserToggledBlitz", "UserStartedBlitz");
+exercises("study.UserToggledBlitz", "study.UserStartedBlitz", "UserStartedBlitz");
 // Act 5 walked every language, and each of those is a track: this browser is
 // wherever that finished. A Blitz draws from the track it is on, so say which.
 await onTrack();
@@ -1609,9 +1618,10 @@ await page.waitForTimeout(500);
 // ---------------------------------------------------------------- act 5b
 act = "05b-gleam-tour";
 console.log(act);
-exercises("UserClickedTour", "UserOpenedLesson", "UserClickedTourNext",
-  "UserClickedTourPrev", "UserClickedTourContents", "UserResetLesson",
-  "TourEditorChanged", "TourCursorMoved", "TourActivated");
+exercises("study.UserClickedQueue", "study.UserClickedTour", "UserClickedTour",
+  "tour.UserOpenedLesson", "tour.UserClickedNext", "tour.UserClickedPrev",
+  "tour.UserClickedContents", "tour.UserResetLesson", "tour.EditorChanged",
+  "tour.RunTicked", "tour.CursorMoved", "tour.Activated", "tour.UserClickedBack");
 
 // The language tour is its own thing: read in order, code runs as you type,
 // nothing scheduled. Reached from the study screen or the nav bar.
@@ -1702,8 +1712,9 @@ check("Escape leaves the tour", await page.isVisible(".study-screen"));
 // ---------------------------------------------------------------- act 6
 act = "06-quiz-and-report";
 console.log(act);
-exercises("UserClickedStartExam", "UserPickedChoice", "UserSubmittedAnswer",
-  "UserClickedNext", "UserClickedExitReport");
+exercises("study.UserClickedStartExam", "UserClickedStartExam", "sitting.QuizMoved",
+  "sitting.UserPickedChoice", "sitting.UserSubmittedAnswer",
+  "sitting.UserClickedNext", "sitting.UserClickedExitReport");
 
 await goHome();
 await page.click("text=System design exam");
@@ -1774,8 +1785,9 @@ check("the report returns to where the exam started",
 // ---------------------------------------------------------------- act 6a
 act = "06a-design-board";
 console.log(act);
-exercises("UserClickedStartDrill", "UserToggledPiece", "UserSubmittedBoard",
-  "BoardMoved", "BoardShelfMoved", "BoardJumped", "BoardToggledAtCursor");
+exercises("browse.UserClickedStartDrill", "UserClickedStartDrill",
+  "sitting.UserToggledPiece", "sitting.UserSubmittedBoard", "sitting.BoardMoved",
+  "sitting.BoardShelfMoved", "sitting.BoardJumped", "sitting.BoardToggledAtCursor");
 
 await goHome();
 // The board is its own track, so getting to it is a switch.
@@ -1846,8 +1858,8 @@ await goHome();
 // ---------------------------------------------------------------- act 7
 act = "06b-settings";
 console.log(act);
-exercises("UserClickedSettings", "UserChangedSetting",
-  "UserClickedDeviceTimezone");
+exercises("settings.UserChangedSetting", "settings.UserClickedDeviceTimezone",
+  "UserDismissedNotice", "settings.UserClickedBack");
 
 await freshGuest();
 await page.click('.nav-link:text-is("Settings")');
@@ -1860,7 +1872,7 @@ check("a guest sees the reminder control but cannot use it",
 check("the offline row is there", await page.isVisible(".settings-warm"));
 // Exercised for real, with the network off, by test/browser/offline.mjs;
 // this context blocks service workers.
-exercises("UserClickedWarmCache");
+exercises("settings.UserClickedWarmCache");
 const beforeSave = await page.evaluate(
   () => localStorage.getItem("gleamDrill.guest.settings.v1"));
 check("nothing is written before an edit", beforeSave === null);
@@ -1896,7 +1908,7 @@ check("the timezone button adopts this device's zone",
 
 check("no language toggles in settings either",
   (await page.$$(".settings-screen .language-chip")).length === 0);
-exercises("UserChangedKeymap");
+exercises("settings.UserChangedKeymap");
 await page.click('.settings-screen .keymap-option:text-is("Vim")');
 await page.waitForTimeout(200);
 check("device preferences save from here too",
@@ -1927,7 +1939,7 @@ const [download] = await Promise.all([
   page.waitForEvent("download", { timeout: 10000 }),
   page.click(".settings-export"),
 ]);
-exercises("UserClickedExport");
+exercises("settings.UserClickedExport");
 const exportPath = join(SHOTS, "export.json");
 await download.saveAs(exportPath);
 const exported = JSON.parse(readFileSync(exportPath, "utf8"));
@@ -1949,14 +1961,14 @@ const chooseFile = async (path) => {
   await page.setInputFiles("input[type=file]", path);
 };
 await chooseFile(exportPath);
-exercises("UserClickedImport");
+exercises("settings.UserClickedImport");
 await page.waitForSelector(".import-prompt", { timeout: 10000 });
 check("import asks before replacing anything",
   (await page.textContent(".import-prompt")).includes("1 cards"));
 await capture("import-prompt", "Import: the file's contents named, and a question before anything is replaced",
   "Export and import everything as one file");
 await page.keyboard.press("Escape");
-exercises("ImportConfirmed");
+exercises("settings.ImportConfirmed");
 await page.waitForTimeout(300);
 check("Escape keeps what is here", (await page.$(".import-prompt")) === null
   && (await page.evaluate(() => localStorage.getItem("gleamDrill.guest.cards.v1"))) === null);
@@ -1989,8 +2001,8 @@ check("Escape leaves settings", await page.isVisible(".study-screen"));
 // ---------------------------------------------------------------- act 7
 act = "07-stats";
 console.log(act);
-exercises("UserClickedStats", "UserClickedBackToStudy", "StatsCursorMoved",
-  "StatsActivated", "UserOpenedDetail", "UserClosedDetail");
+exercises("study.UserClickedStats", "UserClickedStats", "stats.CursorMoved",
+  "stats.Activated", "stats.UserClosedDetail", "stats.UserClickedBack");
 
 await freshGuest();
 await page.keyboard.press("t");
@@ -2050,7 +2062,8 @@ await page.waitForSelector(".study-screen", { timeout: 10000 });
 // ---------------------------------------------------------------- act 7b
 act = "07b-queue-management";
 console.log(act);
-exercises("UserToggledSuspend", "MenuSuspendedAtCursor");
+exercises("stats.UserToggledSuspend", "browse.UserToggledSuspend",
+  "browse.SuspendedAtCursor", "UserToggledSuspend");
 
 // Suspend from the stats detail: park a reviewed card without lying to FSRS.
 // A button may still hold focus from the last click and buttons swallow
@@ -2107,10 +2120,10 @@ await goHome();
 // ------------------------------------------------------------- act 7c
 act = "07c-queue-screen";
 console.log(act);
-exercises("UserClickedQueue", "UserSearchedQueue", "UserFilteredQueue",
-  "UserPickedQueueLanguage", "UserChangedGroup", "UserToggledQueued",
-  "UserAddedAllShown", "UserRemovedAllShown", "QueueCursorMoved",
-  "QueueCursorJumped", "QueueToggledAtCursor");
+exercises("queue.UserSearchedQueue", "queue.UserFilteredQueue",
+  "queue.UserChangedGroup", "queue.UserToggledQueued", "queue.CursorMoved",
+  "queue.CursorJumped", "queue.ToggledAtCursor", "queue.UserClickedStudy",
+  "UserClickedStudy");
 
 await page.click(".study-account .link-button:text-is(\"Queue\")");
 await page.waitForSelector(".queue-screen", { timeout: 10000 });
@@ -2261,9 +2274,11 @@ await goHome();
 // ---------------------------------------------------------------- act 7d
 act = "07d-named-queues";
 console.log(act);
-exercises("UserPickedActiveQueue", "UserSelectedQueue", "UserStartedNewQueue",
-  "UserStartedRenameQueue", "UserChangedQueueName", "UserSubmittedQueueName",
-  "UserCancelledQueueName", "UserDeletedQueue", "UserAddedSelectionToQueue");
+exercises("study.UserPickedActiveQueue", "queue.UserSelectedQueue",
+  "queue.UserStartedNewQueue", "queue.UserStartedRenameQueue",
+  "queue.UserChangedQueueName", "queue.UserSubmittedQueueName",
+  "queue.UserCancelledQueueName", "queue.UserDeletedQueue",
+  "browse.UserAddedSelectionToQueue", "UserAddedSelectionToQueue");
 
 // Many queues, one studied at a time. A queue is a list; the cards it names
 // keep their scheduling in Everything, and a problem added to a list gets a
@@ -2371,7 +2386,8 @@ check("with no queue left the picker goes away", (await page.$$(".study-screen .
 // ---------------------------------------------------------------- act 8
 act = "08-upgrade";
 console.log(act);
-exercises("UserDismissedUpgradePrompt", "UserClickedMergeGuest");
+exercises("study.UserDismissedUpgradePrompt", "UserDismissedUpgradePrompt",
+  "study.UserClickedSignIn");
 
 // Seed past-dated cards so the prompt threshold is crossed without drilling
 // ten problems. Dated into the past on purpose: ten cards introduced *today*
@@ -2452,7 +2468,7 @@ await capture("upgraded", "Signed in, guest progress merged, no strip");
 // ---------------------------------------------------------------- act 9
 act = "09-account";
 console.log(act);
-exercises("UserClickedSignOut", "UserDismissedNotice", "UserDismissedMergeOffer");
+exercises("UserClickedSignOut", "UserDismissedMergeOffer", "UserClickedMergeGuest");
 
 await page.click("text=Stats");
 await page.waitForSelector(".stats-tiles", { timeout: 10000 });
@@ -2786,56 +2802,218 @@ await capture("rail-phone", "The step rail as a strip above the editor at phone 
 await page.setViewportSize({ width: 1280, height: 900 });
 
 
+// ---------------------------------------------------------------- act 12
+act = "12-every-page-key";
+console.log(act);
+
+// The rows every page has -- its cheatsheet, its way back -- and the few
+// actions no act above happens to take. Each is one key or one click, but a
+// row that stopped working would otherwise wait for someone to press it.
+await page.setViewportSize({ width: 1280, height: 900 });
+const cheatsheet = async (where) => {
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press("?");
+  const shown = await appears(".help-card:not(.detail-card)");
+  await page.keyboard.press("?");
+  await page.waitForSelector(".help-card:not(.detail-card)",
+    { state: "detached", timeout: 5000 }).catch(() => {});
+  check(`? opens and closes the cheatsheet on ${where}`,
+    shown && (await page.$(".help-card:not(.detail-card)")) === null);
+};
+
+await goHome();
+await cheatsheet("study");
+exercises("study.UserToggledHelp");
+
+// A sitting: its cheatsheet, a rail step opened by its title, one grade so
+// the progress page below has a problem to open.
+await page.click(".study-start");
+await startCoding();
+await cheatsheet("sitting");
+exercises("sitting.UserToggledHelp");
+await page.locator(".rail-step-title").nth(1).click();
+check("a rail step takes focus from its title",
+  await appears(".rail-step:nth-child(2).current"));
+exercises("sitting.WalkFocused");
+await page.waitForSelector(".grade-bar", { timeout: 30000 });
+await page.click(".grade-good");
+await page.waitForTimeout(800);
+await exitDrill();
+await page.waitForSelector(".study-screen", { timeout: 10000 });
+
+await page.evaluate(() => document.activeElement?.blur());
+await page.keyboard.press("T");
+check("T opens the track switcher", await appears(".tracks-screen"));
+exercises("study.UserClickedTracks", "UserClickedTracks");
+await cheatsheet("tracks");
+exercises("tracks.UserToggledHelp");
+await page.keyboard.press("Escape");
+check("Escape on the switcher goes back to study", await appears(".study-screen"));
+exercises("tracks.UserClickedBack");
+
+await page.click('.nav-link:text-is("Stats")');
+await page.waitForSelector(".stats-screen", { timeout: 10000 });
+await cheatsheet("stats");
+exercises("stats.UserToggledHelp");
+await page.waitForSelector(".problem-row", { timeout: 10000 });
+await page.click(".problem-row");
+check("clicking a problem opens its detail", await appears(".detail-card"));
+exercises("stats.UserOpenedDetail");
+await page.keyboard.press("Escape");
+await page.waitForSelector(".detail-card", { state: "detached", timeout: 5000 }).catch(() => {});
+// With the numbers loaded, the active track's card links to them.
+await page.click('.nav-link:text-is("Tracks")');
+await page.waitForSelector(".tracks-screen", { timeout: 10000 });
+await page.locator(".track-card", { hasText: "Python" }).first()
+  .locator(".track-card-stats").click();
+check("a track card's stats link opens its progress", await appears(".stats-screen"));
+exercises("tracks.UserClickedStats", "UserClickedStats");
+
+await page.click('.nav-link:text-is("Queue")');
+await page.waitForSelector(".queue-screen", { timeout: 10000 });
+await cheatsheet("queue");
+exercises("queue.UserToggledHelp");
+await page.keyboard.press("/");
+check("/ focuses the queue's search",
+  await page.waitForFunction(() => document.activeElement?.matches(".search"), null,
+    { timeout: 3000 }).then(() => true, () => false));
+exercises("queue.UserFocusedSearch");
+await page.keyboard.type("Two Sum");
+await page.waitForTimeout(400);
+await page.evaluate(() => document.activeElement?.blur());
+const queuedRows = () => page.$$eval(".queue-row.queued", (n) => n.length);
+await page.keyboard.press("a");
+await page.waitForTimeout(600);
+const added = await queuedRows();
+await page.keyboard.press("r");
+await page.waitForTimeout(600);
+const removed = await queuedRows();
+// A problem with reviews behind it stays: r takes back what a click can
+// rebuild, never a card's history.
+check("a adds every listed problem and r takes them back out",
+  added > 0 && removed < added, `${added} then ${removed}`);
+exercises("queue.UserAddedAllShown", "queue.UserRemovedAllShown");
+await page.keyboard.press("Escape");
+check("Escape leaves the queue for study", await appears(".study-screen"));
+exercises("queue.UserClickedBack");
+
+await page.click('.nav-link:text-is("Settings")');
+await page.waitForSelector(".settings-row", { timeout: 10000 });
+await cheatsheet("settings");
+exercises("settings.UserToggledHelp");
+await page.keyboard.press("Escape");
+await page.waitForSelector(".study-screen", { timeout: 10000 });
+
+await page.click("text=Browse problems");
+await page.waitForSelector(".menu-container", { timeout: 10000 });
+await page.evaluate(() => document.activeElement?.blur());
+await page.keyboard.press("Escape");
+check("Escape leaves the browser for study", await appears(".study-screen"));
+exercises("browse.UserClickedBack");
+await page.click("text=Browse problems");
+await page.waitForSelector("#startExam", { timeout: 10000 });
+await page.click("#startExam");
+check("the browser's exam button starts an exam", await appears(".quiz-choices", 15000));
+exercises("browse.UserClickedStartExam", "UserClickedStartExam");
+await exitDrill();
+await page.waitForSelector(".menu-container, .study-screen", { timeout: 10000 });
+
+await goHome();
+await page.click(".study-tour");
+await page.waitForSelector(".tour-contents", { timeout: 10000 });
+await page.click(".tour-continue");
+await page.waitForSelector(".tour-lesson", { timeout: 10000 });
+await cheatsheet("tour");
+exercises("tour.UserToggledHelp");
+await page.keyboard.press("i");
+check("i puts the cursor in the lesson's editor",
+  await page.waitForFunction(() => !!document.activeElement?.closest("gleam-editor"), null,
+    { timeout: 3000 }).then(() => true, () => false));
+exercises("tour.UserFocusedEditor");
+await page.evaluate(() => document.activeElement?.blur());
+const tourEditor = () => page.$eval(".tour-editor gleam-editor, .tour-lesson gleam-editor",
+  (el) => Math.round(el.getBoundingClientRect().height));
+const tourBefore = await tourEditor();
+const handle = await (await page.$(".tour-lesson .editor-resize-handle")).boundingBox();
+await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+await page.mouse.down();
+await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2 + 120, { steps: 8 });
+await page.mouse.up();
+await page.waitForTimeout(300);
+check("the lesson's editor resizes by its handle", (await tourEditor()) >= tourBefore + 40,
+  `${tourBefore} -> ${await tourEditor()}`);
+exercises("tour.EditorResized");
+await page.keyboard.press("Escape");
+await page.waitForSelector(".study-screen", { timeout: 10000 });
+
+
 // Nothing is allowed to have thrown along the way, and no user-initiated
 // message may go unexercised -- that is what stops "every flow" from quietly
 // meaning "every flow I remembered".
 check("no uncaught JavaScript errors anywhere in the tour",
   errors.length === 0, errors.slice(0, 3).join(" | "));
 
-const declared = [
-  "UserChangedAuthEmail", "UserChangedAuthPassword", "UserToggledAuthMode",
-  "UserSubmittedAuth", "UserClickedMergeGuest", "UserClickedSignOut",
-  "UserDismissedNotice", "UserDismissedUpgradePrompt", "UserClickedSignIn",
-  "UserClickedStudy", "UserClickedBrowse", "UserClickedBackToStudy",
-  "UserGraded", "UserClickedStats", "UserClickedCategory",
-  "UserClickedSubcategory", "UserClickedBreadcrumb", "UserToggledProblem",
-  "UserClickedSelectAll", "UserClickedClearSelection", "UserChangedIterations",
-  "UserClickedStartDrill", "UserClickedExitDrill", "ExitConfirmed",
-  "UserToggledSolution", "UserRevealedHint", "UserClickedNext", "UserSearched",
-  "UserChangedKeymap",
-  "UserClickedRun", "UserClickedStopRun", "UserClickedRetryRuntime",
-  "UserToggledPane", "UserToggledPrompt", "UserToggledResults", "UserToggledSuspend", "UserClickedRecall", "UserRevealedRecall",
-  "UserToggledBlitz", "UserStartedBlitz", "UserClickedScratchRun",
-  "UserClickedUndo", "UserToggledDiff", "UserDismissedDiff",
-  "UserClickedExport", "UserClickedImport", "ImportConfirmed",
-  "UserClickedWarmCache", "UserToggledNudge", "UserToggledTimer",
-  "UserRevealedWholeThing",
-  "MenuSuspendedAtCursor", "UserClickedQueue", "UserSearchedQueue",
-  "UserFilteredQueue", "UserPickedQueueLanguage",
-  "UserToggledQueued", "UserAddedAllShown", "UserRemovedAllShown",
-  "UserChangedGroup", "UserPickedActiveQueue", "UserSelectedQueue",
-  "UserStartedNewQueue", "UserStartedRenameQueue", "UserChangedQueueName",
-  "UserSubmittedQueueName", "UserCancelledQueueName", "UserDeletedQueue",
-  "UserAddedSelectionToQueue", "UserClickedCompare", "CompareMoved",
-  "ComparePickedVariant", "UserClosedCompare",
-  "UserClickedTour", "UserOpenedLesson", "UserClickedTourNext",
-  "UserClickedTourPrev", "UserClickedTourContents", "UserResetLesson",
-  "TourEditorChanged", "TourCursorMoved", "TourActivated",
-  "QueueCursorMoved", "QueueCursorJumped", "QueueToggledAtCursor",
-  "UserPickedChoice", "UserSubmittedAnswer",
-  "UserToggledPiece", "UserSubmittedBoard", "BoardMoved", "BoardShelfMoved",
-  "BoardJumped", "BoardToggledAtCursor",
-  "UserClickedStartExam", "UserClickedExitReport",
-  "UserAddedStarterSet",
-  "UserClickedSettings", "UserChangedSetting", "UserClickedDeviceTimezone",
-  "KeyPressed", "HelpToggled", "MenuCursorMoved", "MenuPaneFocused",
-  "MenuCursorJumped", "MenuActivated", "MenuToggledAtCursor", "QuizMoved",
-  "EditorFocusRequested", "SearchFocusRequested", "StatsCursorMoved",
-  "StatsActivated", "UserOpenedDetail", "UserClosedDetail",
-  "UserDismissedMergeOffer", "UserClickedRetrySync",
+// The census: every message the app can receive, read from the source rather
+// than listed by hand, so a message added or renamed is owed an act the
+// moment it exists. The app's own are bare (`UserClickedStudy`); a page's are
+// qualified by its directory (`tour.CursorMoved`), because several pages
+// share a name -- UserClickedBack, UserToggledHelp, CursorMoved -- and each
+// one is its own thing to press.
+const SRC = fileURLToPath(new URL("../../src/gleamdrill/", import.meta.url));
+const variants = (path, prefix = "") => {
+  const text = readFileSync(path, "utf8");
+  const start = text.indexOf("pub type Msg {");
+  if (start < 0) throw new Error(`no Msg type in ${path}`);
+  const body = text.slice(start, text.indexOf("\n}", start));
+  // A variant is a capitalised line two spaces in; doc comments and section
+  // rules start with a slash, so they never match.
+  return body.split("\n").map((line) => line.match(/^  ([A-Z]\w*)/)?.[1])
+    .filter(Boolean).map((name) => prefix + name);
+};
+const pages = readdirSync(join(SRC, "page"), { withFileTypes: true })
+  .filter((d) => d.isDirectory() && existsSync(join(SRC, "page", d.name, "msg.gleam")))
+  .map((d) => d.name).sort();
+// `AuthMsg(auth_msg.Msg)` and its siblings only carry a page's message to
+// it; the page's own variants are what get counted.
+const wrappers = pages.map((p) => p[0].toUpperCase() + p.slice(1) + "Msg");
+const census = [
+  ...variants(join(SRC, "msg.gleam")).filter((m) => !wrappers.includes(m)),
+  ...pages.flatMap((p) => variants(join(SRC, "page", p, "msg.gleam"), `${p}.`)),
 ];
+
+// Messages nobody presses. The acts reach them all the same, but "every
+// user-initiated message" is a claim about the rest.
+const notUserInitiated = [
+  // The address bar moving: Back, Forward, a nav link, the app's own push.
+  "UrlChanged",
+  // The server answering.
+  "StateLoaded", "StateImported", "SignOutCompleted", "StatsLoaded",
+  "InsightsLoaded", "CardSuspended", "QueuesSaved", "QueueChanged",
+  "auth.Completed", "queue.QueueChanged", "stats.HistoryLoaded",
+  "settings.SettingsSaved", "settings.ArchiveReady", "settings.ArchiveRestored",
+  "sitting.ReviewRecorded", "sitting.UndoRecorded", "sitting.DraftSynced",
+  "sitting.NoteSynced",
+  // A runtime coming up, or a run settling.
+  "RunnerReady", "RunnerFailed", "RunFinished", "RemoteRunFinished",
+  "RunTimedOut", "RuntimeLoadTimedOut", "sitting.RunLanded",
+  "sitting.RuntimeReady", "tour.RuntimeReady",
+  // Clocks.
+  "sitting.ClockTicked", "sitting.BlitzExpired", "sitting.DraftSaveTicked",
+  "sitting.NoteSaveTicked",
+  // An effect reporting back: the exam's random draw, the file the picker
+  // read, the offline cache filling.
+  "ExamSampled", "settings.ImportPicked", "settings.CacheWarmed",
+  "settings.CacheMeasured",
+];
+const declared = census.filter((m) => !notUserInitiated.includes(m));
 check("no native dialog was opened", dialogs.length === 0,
   JSON.stringify(dialogs.slice(0, 2)));
+// Both lists name real messages, or a rename would quietly drop a name from
+// the count rather than fail it. `(boot)` is the tour's own marker.
+const stale = [...notUserInitiated, ...[...covered].filter((m) => !m.startsWith("("))]
+  .filter((m) => !census.includes(m));
+check("every exercised or excused message still exists", stale.length === 0,
+  stale.join(", "));
 const missed = declared.filter((m) => !covered.has(m));
 check("every user-initiated message was exercised", missed.length === 0,
   missed.join(", "));

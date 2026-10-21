@@ -16,12 +16,12 @@ import gleamdrill/msg.{
   RuntimeLoadTimedOut, SettingsMsg, SignOutCompleted, SittingMsg, StateImported,
   StateLoaded, StatsLoaded, StatsMsg, StudyMsg, TourMsg, TracksMsg, UrlChanged,
   UserAddedSelectionToQueue, UserAddedStarterSet, UserChangedIterations,
-  UserClickedBackToStudy, UserClickedBrowse, UserClickedMergeGuest,
-  UserClickedQueue, UserClickedRecall, UserClickedRetrySync, UserClickedSettings,
-  UserClickedSignIn, UserClickedSignOut, UserClickedStartDrill,
-  UserClickedStartExam, UserClickedStats, UserClickedStudy, UserClickedTour,
-  UserClickedTracks, UserDismissedMergeOffer, UserDismissedNotice,
-  UserDismissedUpgradePrompt, UserStartedBlitz, UserToggledSuspend,
+  UserClickedBrowse, UserClickedMergeGuest, UserClickedQueue, UserClickedRecall,
+  UserClickedRetrySync, UserClickedSignIn, UserClickedSignOut,
+  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
+  UserClickedStudy, UserClickedTour, UserClickedTracks, UserDismissedMergeOffer,
+  UserDismissedNotice, UserDismissedUpgradePrompt, UserStartedBlitz,
+  UserToggledSuspend,
 }
 import gleamdrill/shared/cards
 import gleamdrill/shared/queues
@@ -50,7 +50,6 @@ pub fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     | UserClickedQueue
     | UserClickedStats
     | UserClickedSignIn(_)
-    | UserClickedSettings
     | UserClickedStudy
     | UserClickedRecall
     | UserStartedBlitz(_, _)
@@ -70,7 +69,6 @@ pub fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     SignOutCompleted(_) -> session.sign_out_completed(m)
     UserDismissedNotice -> session.dismiss_notice(m)
     UserDismissedUpgradePrompt -> session.dismiss_upgrade_prompt(m)
-    UserClickedBackToStudy -> cards.back_to_study(m)
     UserClickedTracks -> tracks.open_tracks(m)
 
     // --- loads several screens read ---
