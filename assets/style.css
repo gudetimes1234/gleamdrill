@@ -1779,6 +1779,8 @@ button.results-summary:focus-visible {
 }
 
 .panel-tab {
+    display: inline-flex;
+    align-items: center;
     font-family: var(--font-ui);
     font-size: 13px;
     padding: 5px 12px;
@@ -2651,9 +2653,12 @@ gleam-compare .cm-mergeSpacer {
     /* Three panels, swiped between: the problem (prompt and rail), the code
        (editor, output, results) and the solution. The run bar, with the
        grades, stays on every one. */
-    .panel-tabs,
-    .panel-problem-tab {
+    .panel-tabs {
         display: flex;
+    }
+
+    .panel-problem-tab {
+        display: inline-flex;
     }
 
     .drill-body.panel-code .plan-rail,

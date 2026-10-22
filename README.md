@@ -16,17 +16,29 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/drill.png" alt="A Python drill: prompt and hint ladder on the left, the editor in the middle, your code diffed against the reference solution on the right, four cases green below" width="900">
+  <img src="docs/screenshots/drill.png" alt="A Python drill: the step rail on the left, the problem above the editor, a passing run with all three cases green, and the four grade buttons with their intervals" width="900">
 </p>
 
 ## What it is
 
-The NeetCode 150 as an Anki deck, in five languages. Solve each problem in a
+The NeetCode 150 as an Anki deck, in six languages. Solve each problem in a
 real editor against a real test harness, grade yourself Again/Hard/Good/Easy,
 and FSRS-6 schedules the next review. Gleam, Python and TypeScript run in the
-browser; Elixir, Go and Haskell run sandboxed on the server. Works as a guest, offline,
-on a phone; an account syncs progress. Built end to end in Gleam (Lustre +
-Wisp, scheduler shared between them).
+browser; Elixir, Go and Haskell run sandboxed on the server. Works as a guest,
+offline, on a phone; an account syncs progress. Built end to end in Gleam
+(Lustre + Wisp, scheduler shared between them).
+
+- **The answer is never beside your code.** The solution takes the editor's
+  place (`s` on a desktop); a step rail gives hints one rung at a time.
+- **A phone gets three panels**, swiped between: the problem, your code, the
+  solution.
+- **Keyboard first.** Every screen's keys are in the status bar and behind `?`.
+- **Every screen has a URL** (`/t/neetcode-150/stats`), so Back and reload work.
+- **Skip** a problem without grading it; it stays due.
+
+<p align="center">
+  <img src="docs/screenshots/phone.png" alt="A drill on a phone as three panels: the problem and step rail, the editor with the run bar and grades, and a revealed solution" width="720">
+</p>
 
 ## Quick start
 
@@ -64,17 +76,32 @@ Gleam 1.18.1, Erlang/OTP 27, bun 1.3.14, Postgres 13+; `python3`, `elixir`,
 make dev           # frontend :1234 + backend :1637
 make build         # regenerate content, bundle workers, build dist/
 make bundle        # dist/ only, no content regeneration — what the web image runs
-make verify        # every solution + scheduler + app tests
-make e2e           # real browser against built app + backend
-gleam run -m birdie  # review screen/payload snapshot changes from make app-test
+make serve-dist    # dist/ on :4173, URLs fall back to the app like production
+make verify        # every solution + scheduler + app and server unit tests
+make app-test      # app unit, snapshot and property tests
+make server-test   # server unit and property tests (no Postgres)
+make e2e           # five browser suites against :4173 + backend :1637
+make tour          # every screen and action in a real browser, ~12 min
+make sql           # regenerate the typed SQL modules (Squirrel)
 make check-format  # gleam format --check, all four projects
+gleam run -m birdie  # review snapshot changes from make app-test
 ```
 
-Layout: `src/` Lustre app, `server/` Wisp backend, `fsrs/` and `wire/`
-shared between both targets, `drills/` content. `dist/` is build output, not
-committed — run `make build` once before `make e2e`, `make run` or
-`make serve-dist`, which all serve it.
-Why it is shaped this way, and how it deploys: [docs/design.md](docs/design.md).
+Tests come in layers: unit tests, [birdie](https://hex.pm/packages/birdie)
+snapshots of every screen and payload, [qcheck](https://hex.pm/packages/qcheck)
+properties (undo is exact, merges are idempotent), five end-to-end suites, and
+the tour, which also fails if any user action goes unexercised.
+
+Layout: `src/` Lustre app (one folder per page, Elm style), `server/` Wisp
+backend, `fsrs/` and `wire/` shared between both targets, `drills/` content.
+`dist/` is build output, not committed — run `make build` once before
+`make e2e`, `make run` or `make serve-dist`, which all serve it. Why it is
+shaped this way, and how to add a page:
+[docs/design.md](docs/design.md#layout).
+
+**Deploy:** a push to `main` deploys `web` and `api` on Railway to
+[gleamdrill.com](https://gleamdrill.com). By hand:
+`railway redeploy --service <web|api> --commit <sha>`.
 
 ### Code audit
 
@@ -98,7 +125,7 @@ checked by hand.
 ## Contributing
 
 Add a solution + harness under `drills/<language>/`, a note in `drills/notes/`,
-a hint ladder in `drills/approaches/`, run `make verify`, open a PR.
+its approach steps (the rail) in `drills/approaches/`, run `make verify`, open a PR.
 
 ## Support
 
