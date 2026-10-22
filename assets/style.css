@@ -1768,17 +1768,14 @@ button.results-summary:focus-visible {
 
 /* --- the drill's panels: the code or the solution, never both --- */
 
-/* Tabs over the editor's space. The problem tab is a phone's: a desktop
-   keeps the prompt and the rail beside the code all the time. With no
-   reference solution there is nothing to switch to, so no strip. */
+/* The panel tabs are a phone's. A desktop keeps the prompt and the rail
+   beside the code all the time, and its run bar already has a button per
+   solution (and `s`), with the solution's own close to come back -- a strip
+   here would only take height from an editor that has none to spare. */
 .panel-tabs {
-    display: flex;
+    display: none;
     gap: 4px;
     margin: 0 0 8px;
-}
-
-.panel-tabs:not(:has(.panel-solution-tab)) {
-    display: none;
 }
 
 .panel-tab {
@@ -2655,7 +2652,6 @@ gleam-compare .cm-mergeSpacer {
        (editor, output, results) and the solution. The run bar, with the
        grades, stays on every one. */
     .panel-tabs,
-    .panel-tabs:not(:has(.panel-solution-tab)),
     .panel-problem-tab {
         display: flex;
     }

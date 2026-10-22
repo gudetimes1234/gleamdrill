@@ -52,7 +52,9 @@ const typeSolution = async (code) => {
   // A passing run turns to the solution, which takes the editor's place;
   // typing again is going back to the code first.
   if (await page.isVisible(".drill-body.panel-solution")) {
-    await page.click(".panel-code-tab");
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.keyboard.press("Escape");
+    await page.waitForSelector(".drill-body.panel-code", { timeout: 5000 });
   }
   await page.waitForSelector("gleam-editor", { timeout: 20000 });
   await page.$eval("gleam-editor", (el, value) => {

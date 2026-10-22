@@ -232,6 +232,13 @@ const ALL_FOUR = '["Again","Hard","Good","Easy"]';
 /// typed indentation, which turns any multi-line body into an
 /// IndentationError.
 const setCode = async (code) => {
+  // A passing run turns to the solution, which takes the editor's place;
+  // typing again is going back to the code first.
+  if (await page.isVisible(".drill-body.panel-solution")) {
+    await page.evaluate(() => document.activeElement?.blur());
+    await page.keyboard.press("Escape");
+    await page.waitForSelector(".drill-body.panel-code", { timeout: 5000 });
+  }
   await page.waitForSelector("gleam-editor", { timeout: 20000 });
   await page.$eval("gleam-editor", (el, value) => {
     el.doc = value;
@@ -914,19 +921,21 @@ check("stdout lands in its own pane",
   (await page.textContent(".output-pane").catch(() => "")).includes("checking"));
 await capture("passed", "Passing run: green cases, all four grades, stdout in the Output pane");
 
-// A pass opens the solution panel by itself, as your code diffed against
+// A pass turns to the solution panel by itself, as your code diffed against
 // the reference it most resembles. It is not a reveal: the answer was
 // already given. `d` flips it to the plain reference and back; the panel
 // has its own close button at every width.
 await page.waitForSelector(".answer-content", { timeout: 10000 });
-check("a pass opens the solution beside the editor by itself",
+check("a pass turns to the solution by itself",
   (await page.$(".answer-content.auto")) !== null,
   await page.$eval(".answer-content", (e) => e.className));
+check("in the editor's place: the two are never on screen together",
+  !(await page.isVisible(".editor-frame")));
 await page.waitForSelector("gleam-diff", { timeout: 5000 });
 check("a pass shows your code diffed against the reference",
   (await page.$$("gleam-diff .cm-deletedChunk, gleam-diff .cm-changedLine")).length > 0);
-// The whole point of the rail: the solution appearing beside the editor --
-// here without even being asked for -- does not take the plan away.
+// The whole point of the rail: the solution coming up -- here without even
+// being asked for -- does not take the plan away.
 check("and the plan is still on the left, untouched",
   (await page.$(".plan-rail")) !== null
     && (await page.$$(".rail-step")).length >= 3);
@@ -944,9 +953,14 @@ await page.waitForTimeout(300);
 await page.click(".answer-content.auto .answer-close");
 exercises("sitting.UserDismissedDiff");
 await page.waitForTimeout(300);
-check("and its close button puts it away", (await page.$(".answer-content")) === null);
+check("and its close button brings the code back",
+  (await page.$(".answer-content")) === null && await page.isVisible(".editor-frame"));
+
+check("a desktop has no panel tabs: the run bar's buttons and s do it",
+  !(await page.isVisible(".panel-tabs")));
 
 await page.keyboard.press("s");
+exercises("sitting.UserToggledSolutionPanel");
 await page.waitForTimeout(500);
 check("revealing on a first encounter keeps the choice",
   JSON.stringify(await gradeLabels()) === ALL_FOUR,
@@ -963,7 +977,7 @@ check("naming the problem, language and variant",
 // until one is picked by hand.
 check("every reference is a click away in the run bar",
   (await page.$$(".run-bar .solution-button")).length >= 2
-    && (await page.$(".slot-pane .solution-button")) === null);
+    && (await page.$(".solution-panel .solution-button")) === null);
 await page.click(".run-bar .solution-button:nth-child(2)");
 await page.waitForTimeout(400);
 check("and the one chosen by hand is the one lit",
@@ -979,8 +993,8 @@ check("and the bar no longer carries the approach",
 await capture("revealed", "Solution revealed on a first encounter: note, code, grades intact");
 await page.keyboard.press("s");
 await page.waitForTimeout(400);
-check("s again puts the solution away",
-  (await page.$(".slot-pane.answer-content")) === null);
+check("s again goes back to the code",
+  (await page.$(".answer-content")) === null && await page.isVisible(".editor-frame"));
 // The rail is not in the slot, so putting the solution away leaves the plan
 // exactly where it was.
 check("and the plan is still there", (await page.$(".plan-rail")) !== null);
@@ -1142,9 +1156,8 @@ check("revealing the whole plan keeps every grade",
   JSON.stringify(await gradeLabels()) === ALL_FOUR,
   JSON.stringify(await gradeLabels()));
 await capture("hint-still-free", "The whole plan revealed on a scheduled review: every grade stays");
-// The pass opened the solution beside the editor, and Escape puts away what
-// is in the slot before it means exit. The rail is not in the slot, so it is
-// not what Escape closes.
+// The pass turned to the solution, and Escape brings the code back before
+// it means exit. The rail is not a panel, so it is not what Escape closes.
 if ((await page.$(".answer-content")) !== null) {
   await page.keyboard.press("Escape");
   await page.waitForTimeout(300);
@@ -1180,17 +1193,12 @@ check("the run after a Stop gets a correct verdict, not a stale timeout",
   (await page.textContent(".results-summary")).includes("passed"),
   await page.textContent(".results-summary"));
 
-// The pass opened the solution beside the editor; the prompt sidebar goes
-// away and comes back, the editor the same node throughout.
-await page.waitForSelector(".slot-pane.answer-content", { timeout: 5000 });
-const editorBox = await page.locator(".editor-frame").boundingBox();
-const answerBox = await page.locator(".slot-pane").boundingBox();
-check("the solution sits beside the editor, not under it",
-  editorBox && answerBox
-    && answerBox.x >= editorBox.x + editorBox.width - 1
-    && answerBox.y < editorBox.y + editorBox.height,
-  JSON.stringify({ editorBox, answerBox }));
-await capture("side-solution", "Solution pane to the right of the editor");
+// The pass turned to the solution; the prompt sidebar goes away and comes
+// back, the editor the same node throughout, hidden under the solution.
+await page.waitForSelector(".answer-content", { timeout: 5000 });
+check("the solution takes the editor's place, never a place beside it",
+  !(await page.isVisible(".editor-frame")) && await page.isVisible(".answer-content"));
+await capture("solution-tab", "The Solution tab: the reference in the editor's place, the prompt and rail beside");
 await page.evaluate(() => { window.__editor = document.querySelector("gleam-editor"); });
 check("the prompt shows the examples from the last run",
   (await page.$$(".prompt-side .read-examples .case")).length > 0);
@@ -1207,15 +1215,16 @@ check("the header button says so",
 await capture("prompt-hidden", "The prompt hidden: editor and solution take the whole width");
 await page.keyboard.press("p");
 await page.waitForSelector(".prompt-side", { timeout: 5000 });
-check("p again brings it back, the same editor, pane still there",
+check("p again brings it back, the same editor, solution still up",
   await page.evaluate(() => window.__editor === document.querySelector("gleam-editor"))
-    && (await page.$(".slot-pane.answer-content")) !== null
+    && (await page.$(".answer-content")) !== null
     && await page.$eval(".prompt-toggle", (el) => el.classList.contains("active")));
 check("the choice is remembered on this device",
   JSON.parse(await page.evaluate(() => localStorage.getItem("gleamDrill.prefs.v1"))).promptOpen === true);
 await page.keyboard.press("s");
 await page.waitForTimeout(300);
-check("s puts the solution away", (await page.$(".slot-pane")) === null);
+check("s goes back to the code",
+  (await page.$(".answer-content")) === null && await page.isVisible(".editor-frame"));
 await exitDrill();
 await page.waitForTimeout(800);
 
@@ -2724,10 +2733,9 @@ check("the menu does not scroll sideways",
 
 await goHome();
 await page.click(".study-start");
-await page.waitForSelector(".prompt-side", { timeout: 30000 });
-check("the prompt fits a phone",
+await page.waitForSelector(".panel-tabs", { timeout: 30000 });
+check("a drill fits a phone",
   (await page.evaluate(() => document.documentElement.scrollWidth)) <= 390 + 1);
-await capture("prompt-phone", "The prompt above the editor on a phone, capped so the editor is on the first screen");
 await startCoding();
 await capture("drill", "Drill on a phone: editor on the first screen, run bar pinned");
 check("the language pill is on screen at phone width",
@@ -2764,47 +2772,65 @@ check("the drill does not scroll sideways",
   (await page.evaluate(() => document.documentElement.scrollWidth)) <= 390 + 1,
   `scrollWidth ${await page.evaluate(() => document.documentElement.scrollWidth)}`);
 
-// At phone width the solution is an overlay on the editor, not a panel under
-// it: the desktop assertion above ("beside, not under") has a narrow-screen
-// counterpart, and the overlay carries its own close button.
-await page.keyboard.press("s");
-await page.waitForSelector(".answer-content", { timeout: 10000 });
-{
-  const editorBox = await page.locator(".editor-frame").boundingBox();
-  const answerBox = await page.locator(".answer-content").boundingBox();
-  check("on a phone the revealed solution covers the editor",
-    editorBox && answerBox
-      && Math.abs(answerBox.x - editorBox.x) < 2
-      && Math.abs(answerBox.y - editorBox.y) < 2
-      && Math.abs(answerBox.width - editorBox.width) < 2,
-    `editor ${JSON.stringify(editorBox)} answer ${JSON.stringify(answerBox)}`);
-}
-check("the overlay does not scroll sideways",
+// At phone width a drill is three panels -- the problem, the code, the
+// solution -- swiped between, with tabs for the same thing. A swipe is a
+// touch gesture, so it is sent as one.
+const swipe = async (dx) => {
+  await page.evaluate((dx) => {
+    const el = document.querySelector(".panel-tabs");
+    const box = el.getBoundingClientRect();
+    const x = box.left + box.width / 2;
+    const y = box.top + box.height / 2;
+    const at = (clientX) => new Touch({ identifier: 1, target: el, clientX, clientY: y });
+    el.dispatchEvent(new TouchEvent("touchstart",
+      { touches: [at(x)], changedTouches: [at(x)], bubbles: true, composed: true }));
+    el.dispatchEvent(new TouchEvent("touchend",
+      { touches: [], changedTouches: [at(x + dx)], bubbles: true, composed: true }));
+  }, dx);
+  await page.waitForTimeout(300);
+};
+check("a phone gets all three tabs",
+  await page.isVisible(".panel-problem-tab") && await page.isVisible(".panel-solution-tab"));
+check("the code panel is the editor alone: no rail, no prompt over it",
+  await page.isVisible(".editor-frame")
+    && !(await page.isVisible(".plan-rail")) && !(await page.isVisible(".prompt-side")));
+check("and the editor is on the first screen",
+  await page.$eval("gleam-editor", (el) => el.getBoundingClientRect().top < 400));
+await swipe(160);
+exercises("Swiped", "sitting.PanelSwiped");
+check("a swipe right turns to the problem: the statement, then the rail",
+  await page.isVisible(".prompt-side") && await page.isVisible(".plan-rail")
+    && !(await page.isVisible(".editor-frame")));
+check("with nothing to run or grade from there",
+  !(await page.isVisible(".run-bar")));
+await capture("rail-phone", "The problem panel: the statement and the step rail, swiped to");
+await swipe(-160);
+// The tabs do what the swipes do, for a thumb that would rather tap.
+await page.click(".panel-solution-tab");
+exercises("sitting.UserPickedPanel");
+await page.waitForTimeout(300);
+check("the Solution tab turns to the solution panel",
+  await page.isVisible(".solution-panel") && !(await page.isVisible(".editor-frame")));
+await page.click(".panel-code-tab");
+await page.waitForTimeout(300);
+check("and Your code turns back", await page.isVisible(".editor-frame"));
+await swipe(-160);
+check("a swipe left turns to the solution, as a choice -- nothing revealed",
+  await page.isVisible(".solution-choice") && !(await page.isVisible(".editor-frame")));
+await page.click(".solution-choice-button");
+await page.waitForTimeout(300);
+check("choosing one shows it, alone",
+  await page.isVisible(".answer-content") && !(await page.isVisible(".editor-frame")));
+check("the solution does not scroll sideways",
   (await page.evaluate(() => document.documentElement.scrollWidth)) <= 390 + 1);
+check("and the grades are still under the thumb", await page.isVisible(".run-bar .grade-bar, .run-bar .grade-hint"));
 check("a phone has no editor resize handle",
   (await page.$eval(".editor-resize-handle", (el) => getComputedStyle(el).display)) === "none");
-await capture("solution", "Solution overlaying the editor at phone width",
-  "Solution overlays the editor on a phone");
-// At phone width the prompt sheet and the slot pane both overlay the editor,
-// and the sheet sits on top -- its close button intercepts a click aimed at
-// the pane's. Put the prompt away first, then close the solution by its own
-// button (a bare ".answer-close" would take the sheet's again).
-if (await page.isVisible(".prompt-side .prompt-close")) {
-  await page.click(".prompt-side .prompt-close");
-  await page.waitForTimeout(300);
-}
-await page.click(".slot-pane .answer-close");
-await page.waitForSelector(".answer-content", { state: "detached", timeout: 10000 });
-check("the overlay's own close button puts it away",
-  (await page.$(".answer-content")) === null);
-// The rail is not an overlay: on a phone it is a strip above the editor, and
-// it is still there, because it is never something you close.
-check("the rail sits above the editor on a phone rather than over it",
-  (await page.$(".plan-rail")) !== null
-    && (await page.evaluate(() => document.documentElement.scrollWidth)) <= 391);
-check("and the editor is still on the first screen",
-  await page.$eval("gleam-editor", (el) => el.getBoundingClientRect().top < 700));
-await capture("rail-phone", "The step rail as a strip above the editor at phone width");
+await capture("solution", "The solution panel on a phone: the reference alone, grades below",
+  "On a phone the solution is its own panel");
+await swipe(160);
+check("a swipe right goes back to the code",
+  await page.isVisible(".editor-frame") && !(await page.isVisible(".answer-content")));
 await page.setViewportSize({ width: 1280, height: 900 });
 
 
