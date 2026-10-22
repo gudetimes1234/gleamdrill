@@ -128,6 +128,20 @@ await page.click(".grade-good");
 await page.waitForTimeout(1200);
 check("grading advances to the next problem, prompt beside the editor", await page.isVisible(".prompt-side"));
 
+// Skip moves on and records nothing: the counts after the reload below are
+// still one review and one new card spent.
+const reviewsLogged = () => page.evaluate(() =>
+  JSON.parse(localStorage.getItem("gleamDrill.guest.reviews.v1") ?? "[]").length);
+const loggedBeforeSkip = await reviewsLogged();
+await page.waitForSelector(".skip-button", { timeout: 10000 });
+await page.click(".skip-button");
+await page.waitForFunction(() => document.body.textContent.includes("Problem 3/"), null,
+  { timeout: 10000 }).catch(() => {});
+check("Skip moves on to the next problem",
+  (await page.textContent(".progress-text")).includes("Problem 3/"));
+check("without grading the skipped one", (await reviewsLogged()) === loggedBeforeSkip,
+  `${loggedBeforeSkip} -> ${await reviewsLogged()}`);
+
 console.log("== progress survives a reload");
 await page.goto(APP, { waitUntil: "networkidle" });
 await answerPickerIfShown();

@@ -493,6 +493,7 @@ fn recall_main(
               ),
             ],
             undo_button(page),
+            skip_button(page),
           ]),
         ),
       ]),
@@ -515,6 +516,7 @@ fn recall_main(
         [attribute.class("run-bar recall-bar")],
         list.flatten([
           undo_button(page),
+          skip_button(page),
           [
             html.span([attribute.class("grade-hint recall-hint")], [
               html.text("How well did you have it?"),
@@ -704,6 +706,7 @@ fn run_bar(shared: Shared, page: Model, current: Problem) -> Element(Msg) {
       run_control,
       [pane_buttons(page, current)],
       undo_button(page),
+      skip_button(page),
       [grade_controls(shared, page, current)],
     ]),
   )
@@ -771,6 +774,27 @@ fn undo_button(page: Model) -> List(Element(Msg)) {
       ),
     ]
     None -> []
+  }
+}
+
+/// Moving on without a grade, for a problem you are not up to now: `n` does
+/// the same. Nothing is recorded, so the card stays due and opens again in
+/// the next sitting. Not while a grade is being saved -- that problem is
+/// already on its way out.
+fn skip_button(page: Model) -> List(Element(Msg)) {
+  case page.grading {
+    SubmittingGrade -> []
+    _ -> [
+      html.button(
+        [
+          attribute.class("btn-secondary skip-button"),
+          attribute.type_("button"),
+          attribute.attribute("title", "Skip without grading; it stays due (n)"),
+          event.on_click(UserClickedNext),
+        ],
+        [html.text("Skip")],
+      ),
+    ]
   }
 }
 

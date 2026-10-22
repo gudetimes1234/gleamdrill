@@ -226,7 +226,12 @@ fn code_bindings(shared: Shared, page: Model) -> List(Binding(Msg)) {
     results_binding(shared, page),
     diff_binding(shared),
     [
-      Binding(["n"], "next", "Next problem", UserClickedNext),
+      Binding(
+        ["n"],
+        "skip",
+        "Skip without grading; it stays due",
+        UserClickedNext,
+      ),
       // Escape puts away whatever is in the slot first; only an empty slot
       // makes it the way out.
       case page.slot {

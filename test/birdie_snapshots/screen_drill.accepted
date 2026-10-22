@@ -107,6 +107,9 @@ test_name: drill_screen_test
             Note
           </button>
         </div>
+        <button class="btn-secondary skip-button" title="Skip without grading; it stays due (n)" type="button">
+          Skip
+        </button>
         <div class="grade-bar">
           <button class="grade-button grade-again">
             <span class="grade-label">
