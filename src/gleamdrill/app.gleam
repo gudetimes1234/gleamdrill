@@ -220,6 +220,9 @@ fn step(state: State, message: Msg) -> #(State, Effect(Msg)) {
 
     msg.KeyPressed(key), _ -> key_pressed(state, key)
     msg.UrlChanged(address), _ -> url_changed(state, address)
+    msg.Swiped(by), Sitting(_) ->
+      step(state, msg.SittingMsg(sitting_msg.PanelSwiped(by)))
+    msg.Swiped(_), _ -> #(state, effect.none())
 
     // Navigation into pages.
     msg.UserClickedSignIn(mode), _ -> #(

@@ -230,6 +230,34 @@ export function onKey(callback) {
   });
 }
 
+// A sideways swipe, for the drill's panels on a touch screen. Only a
+// deliberate one: far enough, mostly sideways, quick, and not one that began
+// where a sideways drag already means something -- a long line of code, a
+// solution's <pre>, anything that scrolls sideways. A swipe left (finger
+// moving left) brings the panel on the right in, as a phone's pages do.
+export function onSwipe(callback) {
+  let start = null;
+  document.addEventListener("touchstart", (event) => {
+    if (event.touches.length !== 1) { start = null; return; }
+    const touch = event.touches[0];
+    start = { x: touch.clientX, y: touch.clientY, at: Date.now(), path: event.composedPath() };
+  }, { passive: true });
+  document.addEventListener("touchend", (event) => {
+    if (!start) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    const quick = Date.now() - start.at < 700;
+    const scrollsSideways = start.path.some((el) =>
+      el instanceof Element
+        && el.scrollWidth > el.clientWidth + 1
+        && ["auto", "scroll"].includes(getComputedStyle(el).overflowX));
+    start = null;
+    if (quick && !scrollsSideways && Math.abs(dx) >= 70 && Math.abs(dx) >= 2 * Math.abs(dy))
+      callback(dx < 0 ? 1 : -1);
+  }, { passive: true });
+}
+
 export function focusElement(selector) {
   document.querySelector(selector)?.focus();
 }

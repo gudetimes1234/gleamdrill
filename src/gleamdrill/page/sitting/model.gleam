@@ -43,11 +43,39 @@ pub type RunKind {
 ///
 /// The hint ladder and the walkthrough used to be in here too, and taking
 /// them out is the point of the rail: the plan is no longer something the
-/// solution can evict.
+/// solution can evict. The solution left too: it is never on screen beside
+/// the code being typed, so it is a `Panel` of its own.
 pub type Pane {
   NoPane
-  SolutionPane
   NotePane
+}
+
+/// Which face of a code drill is up. The solution and the editor are never
+/// on screen together: on a desktop they are two tabs over the same space,
+/// on a phone two of three panels swiped between. The problem panel (the
+/// prompt and the step rail) only exists on a phone; a desktop shows those
+/// beside the code at all times.
+pub type Panel {
+  ProblemPanel
+  CodePanel
+  SolutionPanel
+}
+
+/// One panel along from `panel` in swipe order (problem, code, solution),
+/// `by` -1 for left or +1 for right, stopping at either end rather than
+/// wrapping: a swipe past the last panel does nothing, the way a phone's own
+/// pages behave.
+pub fn step_panel(panel: Panel, by: Int) -> Panel {
+  let index = case panel {
+    ProblemPanel -> 0
+    CodePanel -> 1
+    SolutionPanel -> 2
+  }
+  case int.clamp(index + by, 0, 2) {
+    0 -> ProblemPanel
+    1 -> CodePanel
+    _ -> SolutionPanel
+  }
 }
 
 /// `clean` is a solve with nothing given away: no rung past the nudge, no
@@ -172,18 +200,18 @@ pub fn percent(correct: Int, total: Int) -> Int {
   }
 }
 
-/// What the slot shows once a test run is in: a pass opens the reference
-/// beside your code, as a diff; a fail takes away a diff that was only there
-/// because of the last pass, and leaves anything chosen by hand alone.
-pub fn pane_after_run(
-  slot: Pane,
+/// What is up once a test run is in: a pass turns to the reference, as a
+/// diff against your code; a fail takes away a diff that was only there
+/// because of the last pass, and leaves a solution chosen by hand alone.
+pub fn panel_after_run(
+  panel: Panel,
   revealed_solution: Option(Int),
   passed: Bool,
-) -> Pane {
-  case passed, slot, revealed_solution {
-    True, _, _ -> SolutionPane
-    False, SolutionPane, None -> NoPane
-    False, _, _ -> slot
+) -> Panel {
+  case passed, panel, revealed_solution {
+    True, _, _ -> SolutionPanel
+    False, SolutionPanel, None -> CodePanel
+    False, _, _ -> panel
   }
 }
 
@@ -228,6 +256,8 @@ pub type Model {
     draft: String,
     /// What the slot beside the editor shows, if anything.
     slot: Pane,
+    /// Which face is up: the code, the solution, or (on a phone) the problem.
+    panel: Panel,
     /// The solution chosen by hand on this problem: the review log's reveal.
     revealed_solution: Option(Int),
     /// Whether the rail's nudge is unfolded. Never a reveal.
@@ -274,6 +304,7 @@ pub fn new(problems: List(ProblemRef)) -> Model {
     clock_paused_ms: 0,
     draft: "",
     slot: NoPane,
+    panel: CodePanel,
     revealed_solution: None,
     nudge_shown: False,
     whole_thing_shown: False,
@@ -325,6 +356,7 @@ pub fn open_problem_view(
   Model(
     ..page,
     slot: NoPane,
+    panel: CodePanel,
     revealed_solution: None,
     nudge_shown: shared_model.opens_with_nudge(shared, problem),
     whole_thing_shown: False,

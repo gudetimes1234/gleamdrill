@@ -14,14 +14,14 @@ import gleamdrill/msg.{
   InsightsLoaded, KeyPressed, QueueChanged, QueueMsg, QueuesSaved,
   RemoteRunFinished, RunFinished, RunTimedOut, RunnerFailed, RunnerReady,
   RuntimeLoadTimedOut, SettingsMsg, SignOutCompleted, SittingMsg, StateImported,
-  StateLoaded, StatsLoaded, StatsMsg, StudyMsg, TourMsg, TracksMsg, UrlChanged,
-  UserAddedSelectionToQueue, UserAddedStarterSet, UserChangedIterations,
-  UserClickedBrowse, UserClickedMergeGuest, UserClickedQueue, UserClickedRecall,
-  UserClickedRetrySync, UserClickedSignIn, UserClickedSignOut,
-  UserClickedStartDrill, UserClickedStartExam, UserClickedStats,
-  UserClickedStudy, UserClickedTour, UserClickedTracks, UserDismissedMergeOffer,
-  UserDismissedNotice, UserDismissedUpgradePrompt, UserStartedBlitz,
-  UserToggledSuspend,
+  StateLoaded, StatsLoaded, StatsMsg, StudyMsg, Swiped, TourMsg, TracksMsg,
+  UrlChanged, UserAddedSelectionToQueue, UserAddedStarterSet,
+  UserChangedIterations, UserClickedBrowse, UserClickedMergeGuest,
+  UserClickedQueue, UserClickedRecall, UserClickedRetrySync, UserClickedSignIn,
+  UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
+  UserClickedStats, UserClickedStudy, UserClickedTour, UserClickedTracks,
+  UserDismissedMergeOffer, UserDismissedNotice, UserDismissedUpgradePrompt,
+  UserStartedBlitz, UserToggledSuspend,
 }
 import gleamdrill/shared/cards
 import gleamdrill/shared/queues
@@ -45,6 +45,7 @@ pub fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     | SittingMsg(_)
     | KeyPressed(_)
     | UrlChanged(_)
+    | Swiped(_)
     | UserClickedTour
     | UserClickedBrowse
     | UserClickedQueue

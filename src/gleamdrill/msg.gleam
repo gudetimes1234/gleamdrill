@@ -44,8 +44,11 @@ pub type Msg {
   /// The address bar moved: Back, Forward, or the echo of the app's own
   /// push. Handled by the app, which owns the URL.
   UrlChanged(Uri)
-  // --- keyboard ---
+  // --- keyboard and touch ---
   KeyPressed(Key)
+  /// A sideways swipe on a touch screen: -1 left, 1 right. Handled by the
+  /// app, which hands it to a sitting's panels.
+  Swiped(Int)
   HelpToggled
   // --- session ---
   StateLoaded(Result(wire.BootState, ApiError))

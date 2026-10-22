@@ -47,8 +47,19 @@ test_name: drill_screen_test
   </div>
 
 
-  <div class="drill-body">
+  <div class="drill-body panel-code">
     <div data-lustre-key="main" class="drill-main">
+      <div class="panel-tabs" role="tablist">
+        <button aria-selected="false" class="panel-tab panel-problem-tab" role="tab" type="button">
+          Problem
+        </button>
+        <button aria-selected="true" class="panel-tab panel-code-tab" role="tab" type="button">
+          Your code
+        </button>
+        <button aria-selected="false" class="panel-tab panel-solution-tab" role="tab" type="button">
+          Solution
+        </button>
+      </div>
       <div class="work-row">
         <div class="editor-column">
           <div class="editor-frame" data-language="python">

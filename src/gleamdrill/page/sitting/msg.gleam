@@ -1,5 +1,5 @@
 import fsrs
-import gleamdrill/page/sitting/model.{type Pane, type UndoPoint}
+import gleamdrill/page/sitting/model.{type Pane, type Panel, type UndoPoint}
 import gleamdrill/store/remote.{type ApiError}
 import wire
 
@@ -65,6 +65,14 @@ pub type Msg {
   UserToggledPrompt
   /// A pane's key: open it in the slot, or close it if it is the one shown.
   UserToggledPane(Pane)
+  /// `s`: turn to the solution (choosing the first one if none has been),
+  /// or back to the code if it is up. A reveal.
+  UserToggledSolutionPanel
+  /// A panel's tab. Never a reveal: a solution panel nobody has chosen a
+  /// solution on shows the choice, not an answer.
+  UserPickedPanel(Panel)
+  /// A swipe on a touch screen: one panel left (-1) or right (+1).
+  PanelSwiped(Int)
   UserToggledResults
   /// Flip the solution panel between the diff and the plain reference.
   UserToggledDiff

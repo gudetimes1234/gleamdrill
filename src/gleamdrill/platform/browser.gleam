@@ -39,6 +39,11 @@ pub fn time_zone() -> String
 @external(javascript, "./ffi.mjs", "onKey")
 pub fn on_keys(callback: fn(String, Bool, Bool, String) -> Nil) -> Nil
 
+/// Document-level sideways-swipe listener, calling back with -1 (to the left)
+/// or 1 (to the right); see ffi.mjs for what counts. Registered once, at init.
+@external(javascript, "./ffi.mjs", "onSwipe")
+pub fn on_swipe(callback: fn(Int) -> Nil) -> Nil
+
 /// Installs the service worker that keeps a guest sitting working offline.
 @external(javascript, "./ffi.mjs", "registerServiceWorker")
 pub fn register_service_worker() -> Nil

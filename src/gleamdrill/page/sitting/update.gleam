@@ -21,8 +21,8 @@ import gleamdrill/domain/queue
 import gleamdrill/domain/walk
 import gleamdrill/model as shared_model
 import gleamdrill/page/sitting/model.{
-  type Model, AwaitingGrade, Model, NoPane, NotGrading, NotePane, SolutionPane,
-  SubmittingGrade,
+  type Model, AwaitingGrade, CodePanel, Model, NoPane, NotGrading, NotePane,
+  SolutionPanel, SubmittingGrade,
 }
 import gleamdrill/page/sitting/msg.{type Msg}
 import gleamdrill/platform/browser
@@ -337,10 +337,13 @@ pub fn update(shared: Shared, page: Model, msg: Msg) -> Step {
       )
     msg.UserRevealedWholeThing -> none(Model(..page, whole_thing_shown: True))
     msg.UserToggledPrompt -> #(page, effect.none(), [shared.PromptToggled])
-    msg.UserToggledPane(pane) -> toggle_pane(shared, page, pane)
+    msg.UserToggledPane(pane) -> toggle_pane(page, pane)
+    msg.UserToggledSolutionPanel -> none(toggle_solution_panel(shared, page))
+    msg.UserPickedPanel(panel) -> none(Model(..page, panel:))
+    msg.PanelSwiped(by) -> none(swipe(page, by))
     msg.UserToggledResults -> #(page, effect.none(), [shared.ResultsToggled])
     msg.UserToggledDiff -> #(page, effect.none(), [shared.DiffToggled])
-    msg.UserDismissedDiff -> none(Model(..page, slot: NoPane))
+    msg.UserDismissedDiff -> none(Model(..page, panel: CodePanel))
 
     msg.QuizMoved(delta) -> quiz_moved(page, delta)
     msg.UserPickedChoice(index) ->
@@ -653,9 +656,10 @@ fn undo_recorded(
         whole_thing_shown: point.whole_thing_shown,
         walk: point.walk,
         walk_code_seen: point.walk_code_seen,
-        slot: case point.revealed_solution {
-          Some(_) -> SolutionPane
-          None -> NoPane
+        slot: NoPane,
+        panel: case point.revealed_solution {
+          Some(_) -> SolutionPanel
+          None -> CodePanel
         },
         grading: AwaitingGrade,
         opened_at_ms: browser.now_ms() - point.duration_ms,
@@ -735,6 +739,7 @@ fn advance_inner(shared: Shared, page: Model) -> Step {
           problem_index: index,
           revealed_solution: None,
           slot: NoPane,
+          panel: CodePanel,
           grading: NotGrading,
           opened_at_ms: browser.now_ms(),
           clock_paused_at: None,
@@ -942,7 +947,11 @@ fn run_landed(shared: Shared, page: Model) -> Step {
       #(
         Model(
           ..answered(page),
-          slot: model.pane_after_run(page.slot, page.revealed_solution, passed),
+          panel: model.panel_after_run(
+            page.panel,
+            page.revealed_solution,
+            passed,
+          ),
         ),
         // Blur the editor so 1-4 grade immediately: the whole rep is type,
         // Ctrl+Enter, digit.
@@ -957,26 +966,43 @@ fn run_landed(shared: Shared, page: Model) -> Step {
 // --- the rail and the panes ---------------------------------------------------
 
 fn toggle_solution(page: Model, index: Int) -> Model {
-  case page.slot, page.revealed_solution {
-    SolutionPane, Some(current) if current == index ->
-      Model(..page, slot: NoPane)
-    _, _ -> Model(..page, slot: SolutionPane, revealed_solution: Some(index))
+  case page.panel, page.revealed_solution {
+    SolutionPanel, Some(current) if current == index ->
+      Model(..page, panel: CodePanel)
+    _, _ -> Model(..page, panel: SolutionPanel, revealed_solution: Some(index))
   }
 }
 
-fn toggle_pane(shared: Shared, page: Model, pane: model.Pane) -> Step {
+/// A drill with no reference solution has no solution panel, so a swipe
+/// toward it stays on the code.
+fn swipe(page: Model, by: Int) -> Model {
+  let next = model.step_panel(page.panel, by)
+  let has_solutions = case model.current_problem(page) {
+    Ok(current) -> current.solutions != []
+    Error(Nil) -> False
+  }
+  case next, has_solutions {
+    SolutionPanel, False -> page
+    _, _ -> Model(..page, panel: next)
+  }
+}
+
+/// With no passing run there is no diff to show instead of the reference,
+/// so turning to the solution is choosing the first one.
+fn toggle_solution_panel(shared: Shared, page: Model) -> Model {
+  case page.panel, page.revealed_solution, model.test_passed(shared, page) {
+    SolutionPanel, _, _ -> Model(..page, panel: CodePanel)
+    _, None, False -> toggle_solution(page, 0)
+    _, _, _ -> Model(..page, panel: SolutionPanel)
+  }
+}
+
+fn toggle_pane(page: Model, pane: model.Pane) -> Step {
   case pane, page.slot == pane {
-    // Opening the note is focusing it; closing is just closing.
+    // Opening the note is focusing it; closing is just closing. The note is
+    // written against the code, so it brings the code back up.
     NotePane, True -> none(Model(..page, slot: NoPane))
-    NotePane, False -> focus_note(page)
-    // With no passing run there is no diff to show instead of the
-    // reference, so opening the pane is choosing the first solution.
-    SolutionPane, False ->
-      case page.revealed_solution, model.test_passed(shared, page) {
-        None, False -> none(toggle_solution(page, 0))
-        _, _ -> none(model.toggle_pane(page, SolutionPane))
-      }
-    SolutionPane, True -> none(Model(..page, slot: NoPane))
+    NotePane, False -> focus_note(Model(..page, panel: CodePanel))
     NoPane, _ -> none(page)
   }
 }

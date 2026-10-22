@@ -205,6 +205,7 @@ body {
 .search-results,
 .output-pane,
 .slot-pane,
+.solution-panel,
 gleam-editor .cm-scroller {
     scrollbar-width: thin;
     scrollbar-color: var(--bg-hover) transparent;
@@ -1765,6 +1766,84 @@ button.results-summary:focus-visible {
     align-items: center;
 }
 
+/* --- the drill's panels: the code or the solution, never both --- */
+
+/* Tabs over the editor's space. The problem tab is a phone's: a desktop
+   keeps the prompt and the rail beside the code all the time. With no
+   reference solution there is nothing to switch to, so no strip. */
+.panel-tabs {
+    display: flex;
+    gap: 4px;
+    margin: 0 0 8px;
+}
+
+.panel-tabs:not(:has(.panel-solution-tab)) {
+    display: none;
+}
+
+.panel-tab {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    padding: 5px 12px;
+    color: var(--text-secondary);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+
+.panel-tab:hover {
+    color: var(--text-primary);
+}
+
+.panel-tab[aria-selected="true"] {
+    color: var(--text-primary);
+    background: var(--bg-raised);
+    border-color: var(--accent);
+}
+
+.panel-problem-tab {
+    display: none;
+}
+
+/* The solution in the editor's place. The editor is hidden, not removed:
+   CodeMirror keeps its undo history, cursor and draft underneath. */
+.drill-body.panel-solution .editor-frame {
+    display: none;
+}
+
+.solution-panel {
+    flex: 1 1 auto;
+    min-height: 240px;
+    overflow-y: auto;
+}
+
+.solution-panel .answer-close {
+    display: inline-flex;
+    align-items: center;
+}
+
+.solution-choice {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 24px 20px;
+    background: var(--bg-secondary);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+}
+
+.solution-choice-lead {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.solution-choice-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
 /* The compare screen's per-solution picker. */
 .solution-picker {
     display: flex;
@@ -2572,40 +2651,55 @@ gleam-compare .cm-mergeSpacer {
         max-height: 38svh;
     }
 
-    /* The revealed solution is a temporary overlay on top of the
-       editor rather than a panel under it, so the run bar stays put and the
-       same button (or `s`) flips between reading and typing. The editor keeps
-       its draft underneath: it is still the first child of .work-row and is
-       never unmounted. A long solution may extend over the Output pane; that
-       is what the close button is for.
+    /* Three panels, swiped between: the problem (prompt and rail), the code
+       (editor, output, results) and the solution. The run bar, with the
+       grades, stays on every one. */
+    .panel-tabs,
+    .panel-tabs:not(:has(.panel-solution-tab)),
+    .panel-problem-tab {
+        display: flex;
+    }
 
-       It covers the editor and nothing above it: the prompt sheet shares
-       the editor's column, and a pane laid over the whole row hid the
-       problem and swallowed the sheet's close button. So the row is a grid
-       here, the column dissolves into it, and the pane takes the editor's
-       area -- an absolutely positioned grid child is placed in its own
-       area, not the whole row. */
+    .drill-body.panel-code .plan-rail,
+    .drill-body.panel-code .prompt-side,
+    .drill-body.panel-solution .plan-rail,
+    .drill-body.panel-solution .prompt-side,
+    .drill-body.panel-solution .output-below,
+    .drill-body.panel-solution .results,
+    .drill-body.panel-problem .editor-frame,
+    .drill-body.panel-problem .output-below,
+    .drill-body.panel-problem .results,
+    .drill-body.panel-problem .slot-pane {
+        display: none;
+    }
+
+    /* The problem panel is for reading: the statement first, then the
+       rail, uncapped since there is no editor to leave room for, and no run
+       bar -- there is nothing to run or grade from here. */
+    .drill-body.panel-problem .plan-rail {
+        order: 1;
+        max-height: none;
+    }
+
+    .drill-body.panel-problem .run-bar {
+        display: none;
+    }
+
+    /* The tabs are the way between the problem and the code here, so the
+       desktop's prompt toggle and the sheet's close have nothing to do. */
+    .prompt-toggle,
+    .prompt-side .prompt-close {
+        display: none;
+    }
+
+    /* The note is a temporary overlay on the editor, so the run bar stays
+       put and the same button (or `m`) flips between writing and typing. */
     .work-row {
         position: relative;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-areas: "prompt" "editor";
-    }
-
-    .work-row > .editor-column {
-        display: contents;
-    }
-
-    .work-row .prompt-side {
-        grid-area: prompt;
-    }
-
-    .work-row .editor-frame {
-        grid-area: editor;
+        flex-direction: column;
     }
 
     .slot-pane {
-        grid-area: editor;
         position: absolute;
         top: 0;
         left: 0;

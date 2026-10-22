@@ -11,16 +11,17 @@ import gleamdrill/model.{
   RuntimeNotLoaded, RuntimeReady,
 } as shared_model
 import gleamdrill/page/sitting/model.{
-  type Model, AwaitingGrade, NoPane, NotGrading, NotePane, SolutionPane,
-  SubmittingGrade,
+  type Model, type Panel, AwaitingGrade, CodePanel, NoPane, NotGrading, NotePane,
+  ProblemPanel, SolutionPanel, SubmittingGrade,
 }
 import gleamdrill/page/sitting/msg.{
   type Msg, EditorChanged, EditorResized, ExitConfirmed, NoteChanged,
   UserChangedKeymap, UserClickedExitDrill, UserClickedNext,
   UserClickedRetryRuntime, UserClickedRun, UserClickedScratchRun,
   UserClickedStopRun, UserClickedUndo, UserDismissedDiff, UserGraded,
-  UserRevealedRecall, UserToggledDiff, UserToggledPane, UserToggledPrompt,
-  UserToggledSolution, UserToggledTimer,
+  UserPickedPanel, UserRevealedRecall, UserToggledDiff, UserToggledPane,
+  UserToggledPrompt, UserToggledSolution, UserToggledSolutionPanel,
+  UserToggledTimer,
 }
 import gleamdrill/page/sitting/view/blitz
 import gleamdrill/page/sitting/view/board as board_view
@@ -216,8 +217,10 @@ fn view_drill(
       // The prompt sidebar comes and goes; the editor column stays child 0
       // of the same parent either way, so CodeMirror keeps its undo history
       // and cursor. The stylesheet puts the sidebar on the left (order: -1).
+      // Which panel is up is a class here, and the stylesheet does the rest:
+      // one tree at every width, so a resize never remounts the editor.
       problem.CodeDrill, False ->
-        keyed.div([attribute.class("drill-body")], [
+        keyed.div([attribute.class("drill-body " <> panel_class(page.panel))], [
           #(
             "main",
             html.div(
@@ -245,6 +248,8 @@ fn code_main(
   body_key: String,
 ) -> List(Element(Msg)) {
   [
+    // Always rendered, so .work-row keeps its place among its siblings.
+    panel_tabs(page, current),
     // The editor's keyed frame stays the permanent first child of
     // .work-row: appending a pane after it cannot remount CodeMirror,
     // which would drop undo history and cursor.
@@ -279,12 +284,22 @@ fn code_main(
             ),
           ],
         ),
-        ..case shared.prompt_open {
-          True -> [prompt_side(shared, page, ref, current)]
-          False -> []
-        }
+        // On a phone the prompt is the problem panel, so it is there for
+        // that panel whether or not the desktop sidebar was put away.
+        ..list.flatten([
+          case shared.prompt_open || page.panel == ProblemPanel {
+            True -> [prompt_side(shared, page, ref, current)]
+            False -> []
+          },
+          // The solution takes the editor's place rather than a place
+          // beside it: a later child, so the frame stays child 0.
+          case page.panel {
+            SolutionPanel -> solution_panel(shared, page, current)
+            _ -> []
+          },
+        ])
       ]),
-      ..slot_pane(shared, page, ref, current)
+      ..slot_pane(shared, page, ref)
     ]),
     ..list.flatten([
       // Its own pane, right under the code it narrates: watching
@@ -419,11 +434,9 @@ fn slot_pane(
   shared: Shared,
   page: Model,
   ref: ProblemRef,
-  current: Problem,
 ) -> List(Element(Msg)) {
   case page.slot {
     NoPane -> []
-    SolutionPane -> solution_pane(shared, page, current)
     NotePane -> [note_pane(shared, page, ref)]
   }
 }
@@ -723,7 +736,7 @@ fn pane_buttons(page: Model, current: Problem) -> Element(Msg) {
     list.index_map(current.solutions, fn(solution: Solution, index) {
       pane_button(
         solution.label,
-        page.slot == SolutionPane && page.revealed_solution == Some(index),
+        page.panel == SolutionPanel && page.revealed_solution == Some(index),
         UserToggledSolution(index),
         True,
       )
@@ -1039,9 +1052,9 @@ fn run_button(label: String, disabled: Bool) -> Element(Msg) {
   )
 }
 
-/// The revealed solution, rendered beside the editor so code and answer can be
-/// compared line by line rather than by scrolling.
-fn solution_pane(
+/// The solution panel: the revealed solution in the editor's place, or, with
+/// none chosen yet, the choice -- turning to this panel is not a reveal.
+fn solution_panel(
   shared: Shared,
   page: Model,
   current: Problem,
@@ -1067,9 +1080,8 @@ fn solution_pane(
       html.div(
         [
           attribute.classes([
-            #("slot-pane", True),
+            #("solution-panel", True),
             #("answer-content", True),
-            #("answer-side", True),
             #("diffing", diffing),
             #("auto", !by_choice),
           ]),
@@ -1122,7 +1134,7 @@ fn solution_pane(
                       attribute.type_("button"),
                       attribute.attribute("aria-label", "Hide solution"),
                       event.on_click(case by_choice {
-                        True -> UserToggledPane(SolutionPane)
+                        True -> UserToggledSolutionPanel
                         False -> UserDismissedDiff
                       }),
                     ],
@@ -1173,7 +1185,72 @@ fn solution_pane(
         ]),
       ),
     ]
-    Error(Nil) -> []
+    Error(Nil) -> [solution_choice(current)]
+  }
+}
+
+/// The solution panel before any solution is chosen: what each one is
+/// called, and that choosing one counts.
+fn solution_choice(current: Problem) -> Element(Msg) {
+  html.div([attribute.class("solution-panel solution-choice")], [
+    html.p([attribute.class("solution-choice-lead")], [
+      html.text(case current.solutions {
+        [] -> "This drill has no reference solution."
+        _ -> "Reveal a solution? It counts as a reveal on this card."
+      }),
+    ]),
+    html.div(
+      [attribute.class("solution-choice-buttons")],
+      list.index_map(current.solutions, fn(solution: Solution, index) {
+        html.button(
+          [
+            attribute.class("btn-secondary solution-choice-button"),
+            attribute.type_("button"),
+            event.on_click(UserToggledSolution(index)),
+          ],
+          [html.text(solution.label)],
+        )
+      }),
+    ),
+  ])
+}
+
+/// The panel tabs. On a desktop the problem and the rail are always beside
+/// the code, so the stylesheet shows its tab only on a phone; a drill with
+/// no reference solution has no solution tab.
+fn panel_tabs(page: Model, current: Problem) -> Element(Msg) {
+  let tab = fn(label, panel) {
+    html.button(
+      [
+        attribute.class("panel-tab " <> panel_class(panel) <> "-tab"),
+        attribute.type_("button"),
+        attribute.role("tab"),
+        attribute.attribute("aria-selected", case page.panel == panel {
+          True -> "true"
+          False -> "false"
+        }),
+        event.on_click(UserPickedPanel(panel)),
+      ],
+      [html.text(label)],
+    )
+  }
+  html.div(
+    [attribute.class("panel-tabs"), attribute.role("tablist")],
+    list.flatten([
+      [tab("Problem", ProblemPanel), tab("Your code", CodePanel)],
+      case current.solutions {
+        [] -> []
+        _ -> [tab("Solution", SolutionPanel)]
+      },
+    ]),
+  )
+}
+
+fn panel_class(panel: Panel) -> String {
+  case panel {
+    ProblemPanel -> "panel-problem"
+    CodePanel -> "panel-code"
+    SolutionPanel -> "panel-solution"
   }
 }
 

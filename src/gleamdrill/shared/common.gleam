@@ -43,6 +43,12 @@ pub fn keyboard_effect() -> Effect(Msg) {
   })
 }
 
+/// Swipes become `Swiped`; only a sitting does anything with one.
+pub fn swipe_effect() -> Effect(Msg) {
+  use dispatch <- effect.from
+  browser.on_swipe(fn(by) { dispatch(msg.Swiped(by)) })
+}
+
 /// The token for the current session, or "" when signed out. Callers that need
 /// one are only reachable from behind the auth gate, so the empty case is a
 /// belt-and-braces default rather than a real path.

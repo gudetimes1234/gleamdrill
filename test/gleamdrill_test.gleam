@@ -1333,7 +1333,7 @@ pub fn every_context_documents_escape_and_help_test() -> Nil {
     #(drill_shared(), drill),
     #(
       drill_shared(),
-      sitting_model.Model(..drill, slot: sitting_model.SolutionPane),
+      sitting_model.Model(..drill, panel: sitting_model.SolutionPanel),
     ),
     #(
       drill_shared(),
@@ -1420,8 +1420,7 @@ pub fn p_toggles_the_prompt_and_the_panes_have_keys_test() -> Nil {
   assert press(m, "y") == Ok(sitting_msg.WalkWhyShown)
   assert press(m, "c") == Ok(sitting_msg.WalkCodeShown)
   assert press(m, "w") == Ok(sitting_msg.UserRevealedWholeThing)
-  assert press(m, "s")
-    == Ok(sitting_msg.UserToggledPane(sitting_model.SolutionPane))
+  assert press(m, "s") == Ok(sitting_msg.UserToggledSolutionPanel)
   assert press(m, "Escape") == Ok(sitting_msg.UserClickedExitDrill)
   assert press(m, "1") == Error(Nil)
   assert sitting_keys.label(drill_shared(), m) == "DRILL \u{b7} PYTHON"
@@ -1440,8 +1439,12 @@ pub fn escape_closes_the_open_pane_before_it_exits_test() -> Nil {
     == Ok(sitting_msg.UserToggledPane(sitting_model.NotePane))
   assert sitting_model.toggle_pane(noting, sitting_model.NotePane).slot
     == sitting_model.NoPane
-  assert sitting_model.toggle_pane(noting, sitting_model.SolutionPane).slot
-    == sitting_model.SolutionPane
+
+  // Any panel but the code: Escape brings the code back before anything.
+  let reading =
+    sitting_model.Model(..noting, panel: sitting_model.SolutionPanel)
+  assert press(reading, "Escape")
+    == Ok(sitting_msg.UserPickedPanel(sitting_model.CodePanel))
 
   // The rail is not a pane and has no close: with a step opened, Escape still
   // means exit. That is the whole point of moving the plan out of the slot.
@@ -1454,18 +1457,53 @@ pub fn escape_closes_the_open_pane_before_it_exits_test() -> Nil {
   assert press(railed, "Escape") == Ok(sitting_msg.UserClickedExitDrill)
 }
 
-/// A passing run puts the reference beside your code without that being a
-/// reveal; a failing run takes back only a diff the last pass had opened.
-pub fn a_pass_opens_the_solution_pane_without_a_reveal_test() -> Nil {
-  let after = sitting_model.pane_after_run
-  assert after(sitting_model.NoPane, None, True) == sitting_model.SolutionPane
-  assert after(sitting_model.NotePane, None, True) == sitting_model.SolutionPane
-  assert after(sitting_model.SolutionPane, None, False) == sitting_model.NoPane
-  assert after(sitting_model.SolutionPane, Some(0), False)
-    == sitting_model.SolutionPane
-  assert after(sitting_model.NotePane, None, False) == sitting_model.NotePane
-  let m = sitting_model.Model(..on_a_drill(), slot: sitting_model.SolutionPane)
+/// A passing run turns to the reference without that being a reveal; a
+/// failing run takes back only a diff the last pass had turned to.
+pub fn a_pass_turns_to_the_solution_without_a_reveal_test() -> Nil {
+  let after = sitting_model.panel_after_run
+  assert after(sitting_model.CodePanel, None, True)
+    == sitting_model.SolutionPanel
+  assert after(sitting_model.ProblemPanel, None, True)
+    == sitting_model.SolutionPanel
+  assert after(sitting_model.SolutionPanel, None, False)
+    == sitting_model.CodePanel
+  assert after(sitting_model.SolutionPanel, Some(0), False)
+    == sitting_model.SolutionPanel
+  assert after(sitting_model.ProblemPanel, None, False)
+    == sitting_model.ProblemPanel
+  let m =
+    sitting_model.Model(..on_a_drill(), panel: sitting_model.SolutionPanel)
   assert !sitting_model.answer_revealed(m, [])
+}
+
+/// Panels walk problem, code, solution and stop at either end.
+pub fn a_swipe_walks_the_panels_and_stops_at_the_ends_test() -> Nil {
+  let step = sitting_model.step_panel
+  assert step(sitting_model.CodePanel, 1) == sitting_model.SolutionPanel
+  assert step(sitting_model.CodePanel, -1) == sitting_model.ProblemPanel
+  assert step(sitting_model.SolutionPanel, 1) == sitting_model.SolutionPanel
+  assert step(sitting_model.ProblemPanel, -1) == sitting_model.ProblemPanel
+}
+
+/// Turning to the solution panel, by swipe or tab, reveals nothing: only
+/// choosing a solution does, and `s` is that choice.
+pub fn turning_to_the_solution_panel_is_not_a_reveal_test() -> Nil {
+  let coding = on_a_drill()
+  let send = fn(m, message) {
+    sitting_update.update(drill_shared(), m, message).0
+  }
+  let swiped = send(coding, sitting_msg.PanelSwiped(1))
+  assert swiped.panel == sitting_model.SolutionPanel
+  assert swiped.revealed_solution == None
+  let tabbed =
+    send(coding, sitting_msg.UserPickedPanel(sitting_model.SolutionPanel))
+  assert tabbed.revealed_solution == None
+
+  let shown = send(coding, sitting_msg.UserToggledSolutionPanel)
+  assert shown.panel == sitting_model.SolutionPanel
+  assert shown.revealed_solution == Some(0)
+  assert send(shown, sitting_msg.UserToggledSolutionPanel).panel
+    == sitting_model.CodePanel
 }
 
 /// Every ladder starts with a nudge, so opening the hint pane always has a

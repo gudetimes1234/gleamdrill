@@ -11,17 +11,18 @@ import gleamdrill/content/problem
 import gleamdrill/domain/walk
 import gleamdrill/model as shared_model
 import gleamdrill/page/sitting/model.{
-  type Model, AwaitingGrade, NoPane, NotePane, SolutionPane,
+  type Model, AwaitingGrade, CodePanel, NoPane, NotePane, SolutionPanel,
 }
 import gleamdrill/page/sitting/msg.{
   type Msg, BoardJumped, BoardMoved, BoardShelfMoved, BoardToggledAtCursor,
   EditorFocusRequested, ExitConfirmed, NoteFocusRequested, QuizMoved,
   UserClickedExitDrill, UserClickedExitReport, UserClickedNext, UserClickedRun,
   UserClickedScratchRun, UserClickedUndo, UserGraded, UserPickedChoice,
-  UserRevealedRecall, UserRevealedWholeThing, UserSubmittedAnswer,
-  UserSubmittedBoard, UserToggledDiff, UserToggledHelp, UserToggledNudge,
-  UserToggledPane, UserToggledPrompt, UserToggledResults, WalkAdvanced,
-  WalkBacked, WalkCodeShown, WalkHintShown, WalkWhyShown,
+  UserPickedPanel, UserRevealedRecall, UserRevealedWholeThing,
+  UserSubmittedAnswer, UserSubmittedBoard, UserToggledDiff, UserToggledHelp,
+  UserToggledNudge, UserToggledPane, UserToggledPrompt, UserToggledResults,
+  UserToggledSolutionPanel, WalkAdvanced, WalkBacked, WalkCodeShown,
+  WalkHintShown, WalkWhyShown,
 }
 import gleamdrill/shared.{type Shared}
 import gleamdrill/ui/binding.{type Binding, Binding}
@@ -232,13 +233,20 @@ fn code_bindings(shared: Shared, page: Model) -> List(Binding(Msg)) {
         "Skip without grading; it stays due",
         UserClickedNext,
       ),
-      // Escape puts away whatever is in the slot first; only an empty slot
-      // makes it the way out.
-      case page.slot {
-        NoPane ->
+      // Escape brings the code back up first, then puts away whatever is in
+      // the slot; only the code with an empty slot makes it the way out.
+      case page.panel, page.slot {
+        CodePanel, NoPane ->
           Binding(["Escape"], "exit", "Exit the sitting", UserClickedExitDrill)
-        pane ->
+        CodePanel, pane ->
           Binding(["Escape"], "close", "Close the pane", UserToggledPane(pane))
+        _, _ ->
+          Binding(
+            ["Escape"],
+            "code",
+            "Back to your code",
+            UserPickedPanel(CodePanel),
+          )
       },
       help,
     ],
@@ -339,20 +347,15 @@ fn focused_step(
 fn solution_binding(page: Model) -> List(Binding(Msg)) {
   case model.current_problem(page) {
     Ok(current) if current.solutions != [] -> [
-      case page.slot {
-        SolutionPane ->
-          Binding(
-            ["s"],
-            "close",
-            "Close the solution",
-            UserToggledPane(SolutionPane),
-          )
+      case page.panel {
+        SolutionPanel ->
+          Binding(["s"], "code", "Back to your code", UserToggledSolutionPanel)
         _ ->
           Binding(
             ["s"],
             "solution",
             "Show the reference solution",
-            UserToggledPane(SolutionPane),
+            UserToggledSolutionPanel,
           )
       },
     ]

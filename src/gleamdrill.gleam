@@ -77,6 +77,7 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
         m,
         effect.batch([
           common.keyboard_effect(),
+          common.swipe_effect(),
           store.load_state(m, msg.StateLoaded),
         ]),
       )
@@ -90,6 +91,7 @@ fn init(_flags) -> #(Model, Effect(Msg)) {
         m,
         effect.batch([
           common.keyboard_effect(),
+          common.swipe_effect(),
           session_boot.adopt_legacy(),
           store.load_state(m, msg.StateLoaded),
         ]),

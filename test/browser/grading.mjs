@@ -49,6 +49,11 @@ const runTests = async () => {
 /// typed indentation, which turns any multi-line body into an
 /// IndentationError.
 const typeSolution = async (code) => {
+  // A passing run turns to the solution, which takes the editor's place;
+  // typing again is going back to the code first.
+  if (await page.isVisible(".drill-body.panel-solution")) {
+    await page.click(".panel-code-tab");
+  }
   await page.waitForSelector("gleam-editor", { timeout: 20000 });
   await page.$eval("gleam-editor", (el, value) => {
     el.doc = value;
