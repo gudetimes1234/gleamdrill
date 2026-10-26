@@ -61,6 +61,9 @@ pub fn scratch_harness(language: String) -> String {
       "package main\n\nfunc main() {\n\trun(func() []testCase {\n\t\tscratch()\n\t\treturn []testCase{}\n\t})\n}\n"
     "haskell" ->
       "module Main where\n\nimport Drill\nimport Solution (scratch)\n\nmain :: IO ()\nmain = runCases (scratch >> pure [])\n"
+    // A Ruby file runs as it loads, so the attempt's own top-level code is
+    // the scratch run.
+    "ruby" -> "# no cases\n"
     _ -> ""
   }
 }
@@ -85,9 +88,12 @@ pub fn scratch_hint(language: String) -> String {
 
 /// Languages with no browser runtime at all: the run is an HTTP request to
 /// the server instead (store.post_run), and "the runtime" is ready the moment
-/// it is asked for. Elixir, Go and Haskell; see problem.Check.
+/// it is asked for. Elixir, Go, Haskell and Ruby; see problem.Check.
 pub fn is_remote(language: String) -> Bool {
-  language == "elixir" || language == "go" || language == "haskell"
+  language == "elixir"
+  || language == "go"
+  || language == "haskell"
+  || language == "ruby"
 }
 
 /// How long the app waits on a server-side run before calling it lost. The

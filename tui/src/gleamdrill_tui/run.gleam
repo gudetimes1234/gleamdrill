@@ -2,8 +2,9 @@
 ////
 //// The web compiles Python, TypeScript and Gleam inside the page; a
 //// terminal has the real toolchains instead, so those run here, on this
-//// machine. Go, Elixir and Haskell go to the server's `/api/run`, as they do
-//// from the web. Every local runner prints a `wire.RunResult` as its last
+//// machine. Ruby runs here too when `ruby` is installed, with the same
+//// runner the server uses. Go, Elixir and Haskell (and Ruby without a
+//// local `ruby`) go to the server's `/api/run`, as they do from the web. Every local runner prints a `wire.RunResult` as its last
 //// line, the shape the server answers with, so one decoder reads them all
 //// and pass/fail is the web's own rule: a case passes when the expected and
 //// actual strings are equal.
@@ -16,6 +17,7 @@ import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
 import gleamdrill/content/problem.{type Language}
+import gleamdrill/content/problems/generated/embedded_ruby
 import gleamdrill/model.{
   type RunOutcome, type RunState, CaseResult, Cases, Errored, Ran, RunError,
   TimedOut,
@@ -59,6 +61,14 @@ pub fn unavailable(
         True -> Ok(Nil)
         False -> Error("TypeScript needs Node 22 or newer")
       }
+    problem.Ruby, token ->
+      case sys.which("ruby"), token {
+        True, _ | False, Some(_) -> Ok(Nil)
+        False, None ->
+          Error(
+            "install ruby to run Ruby (Termux: pkg install ruby), or sign in",
+          )
+      }
     problem.Elixir, None | problem.Go, None | problem.Haskell, None ->
       Error(
         "sign in to run "
@@ -89,6 +99,11 @@ pub fn run(
     Ok(Nil), problem.Python, _ -> python(solution, harness)
     Ok(Nil), problem.TypeScript, _ -> typescript(solution, harness)
     Ok(Nil), problem.Gleam, _ -> gleam(solution, harness)
+    Ok(Nil), problem.Ruby, token ->
+      case sys.which("ruby"), token {
+        False, Some(token) -> remote(token, language, solution, harness)
+        _, _ -> ruby(solution, harness)
+      }
     Ok(Nil), _, Some(token) -> remote(token, language, solution, harness)
     Ok(Nil), _, None ->
       promise.resolve(failed("internal", "sign in to run this"))
@@ -163,6 +178,24 @@ fn in_temp_dir(work: fn(String) -> Promise(RunState)) -> Promise(RunState) {
 fn write(dir: String, name: String, text: String) -> Nil {
   let _ = sys.write_file(dir <> "/" <> name, text)
   Nil
+}
+
+// --- Ruby ---------------------------------------------------------------------------
+
+/// drills/ruby/run.rb, the server's own runner: it loads solution.rb, then
+/// the harness, and reports as the server would.
+fn ruby(solution: String, harness: String) -> Promise(RunState) {
+  use dir <- in_temp_dir
+  write(dir, "solution.rb", solution)
+  write(dir, "harness.rb", harness)
+  write(dir, "run.rb", embedded_ruby.runner)
+  use exit <- promise.map(sys.run_captured(
+    "ruby",
+    ["--disable-gems", "run.rb", "."],
+    dir,
+    local_timeout_ms,
+  ))
+  from_exit(exit, generic_error)
 }
 
 // --- Python -------------------------------------------------------------------------

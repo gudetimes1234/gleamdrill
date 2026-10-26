@@ -69,6 +69,7 @@ content:
 	  src/gleamdrill/content/problems/generated/embedded_elixir.gleam \
 	  src/gleamdrill/content/problems/generated/embedded_go.gleam \
 	  src/gleamdrill/content/problems/generated/embedded_haskell.gleam \
+	  src/gleamdrill/content/problems/generated/embedded_ruby.gleam \
 	  src/gleamdrill/content/problems/generated/embedded_tour.gleam \
 	  src/gleamdrill/content/problems/generated/approaches.gleam
 
@@ -83,6 +84,7 @@ verify: content fsrs-test wire-test app-test server-test tour-check
 	cd drills/elixir && elixir verify_all.exs
 	cd drills/go && gofmt -l solutions harnesses prelude.go && ./verify_all.sh
 	cd drills/haskell && ./verify_all.sh
+	cd drills/ruby && ./verify_all.sh
 
 # The language tour's 63 lessons are not graded, so the only thing that can
 # go wrong with one is that it no longer compiles against the stdlib the
@@ -152,9 +154,9 @@ tui-test:
 	cd tui && gleam test
 
 # Every drill's reference solution through the terminal's local runners
-# (python3, Node, gleam), then every starter stub, which must fail. Minutes.
+# (python3, Node, gleam, ruby), then every starter stub, which must fail. Minutes.
 tui-runners:
-	cd tui && for lang in python typescript gleam; do \
+	cd tui && for lang in python typescript gleam ruby; do \
 		gleam run -m runners_check -- $$lang && \
 		gleam run -m runners_check -- $$lang 1000 starters || exit 1; \
 	done

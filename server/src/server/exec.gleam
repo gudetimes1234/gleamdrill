@@ -1,8 +1,8 @@
-//// Server-side execution of one Elixir, Go or Haskell attempt.
+//// Server-side execution of one Elixir, Go, Haskell or Ruby attempt.
 ////
-//// No browser can compile Elixir, Go or Haskell source, so those drills run
+//// No browser runs Elixir, Go, Haskell or Ruby source, so those drills run
 //// here: the attempt and its harness are written to a scratch directory and
-//// server/priv/run-elixir, run-go or run-haskell is run on them in a fresh,
+//// server/priv/run-elixir, run-go, run-haskell or run-ruby is run on them in a fresh,
 //// resource-limited process -- under `timeout -s KILL`, and in the
 //// container as a user with no access to this process's environment (see
 //// config.run_as_user and server/Dockerfile). The runner prints a JSON
@@ -36,6 +36,8 @@ pub type Language {
   /// A Haskell attempt compiles too (ghc -O0, under a second against the
   /// installed package db), on the same widened clock as Go.
   Haskell
+  /// A Ruby attempt is interpreted, like Elixir: priv/ruby/run.rb loads it.
+  Ruby
 }
 
 /// Wall clock for one attempt, after which it is killed. The browser
@@ -47,6 +49,7 @@ pub fn timeout_seconds(language: Language) -> Int {
     Elixir -> 8
     Go -> 14
     Haskell -> 14
+    Ruby -> 8
   }
 }
 
@@ -57,6 +60,7 @@ pub fn language(name: String) -> Result(Language, Nil) {
     "elixir" -> Ok(Elixir)
     "go" -> Ok(Go)
     "haskell" -> Ok(Haskell)
+    "ruby" -> Ok(Ruby)
     _ -> Error(Nil)
   }
 }
@@ -107,6 +111,14 @@ pub fn run_haskell(
   harness: String,
 ) -> RunResult {
   run(config, Haskell, solution, harness)
+}
+
+pub fn run_ruby(
+  config: Config,
+  solution: String,
+  harness: String,
+) -> RunResult {
+  run(config, Ruby, solution, harness)
 }
 
 /// An Elixir attempt is two scripts. A Go attempt is a package: the two
@@ -166,6 +178,19 @@ fn stage(
       use _ <- result.try(write_readable(dir <> "/Drill.hs", prelude))
       Ok(dir)
     }
+    // The runner travels with the attempt, as the terminal app and
+    // drills/ruby/verify_all.sh stage it.
+    Ruby -> {
+      use priv <- result.try(priv_directory())
+      use runner <- result.try(
+        simplifile.read(priv <> "/ruby/run.rb")
+        |> result.map_error(simplifile.describe_error),
+      )
+      use _ <- result.try(write_readable(dir <> "/solution.rb", solution))
+      use _ <- result.try(write_readable(dir <> "/harness.rb", harness))
+      use _ <- result.try(write_readable(dir <> "/run.rb", runner))
+      Ok(dir)
+    }
   }
 }
 
@@ -203,6 +228,7 @@ fn command(
     Elixir -> priv <> "/run-elixir"
     Go -> priv <> "/run-go"
     Haskell -> priv <> "/run-haskell"
+    Ruby -> priv <> "/run-ruby"
   }
   let run = case config.run_as_user {
     Some(user) -> [

@@ -17,6 +17,7 @@ node_modules/
 drills/ts/.verify/
 drills/go/.verify/
 drills/haskell/.verify/
+drills/ruby/.verify/
 
 # Local backend secrets. See server/.env.example.
 server/.env

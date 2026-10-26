@@ -156,6 +156,11 @@ jobs:
           printf 'import qualified Data.Map.Strict as M\nimport qualified Data.Set as S\nmain :: IO ()\nmain = print (M.size (M.empty :: M.Map Int Int) + S.size (S.empty :: S.Set Int))\n' > /tmp/warm.hs
           ghc -v0 -O0 -o /tmp/warm /tmp/warm.hs && /tmp/warm
 
+      # Ruby drills run on the server too (server/priv/run-ruby). Nothing to
+      # warm: an attempt is interpreted and starts in a few milliseconds.
+      - name: Install Ruby
+        run: sudo apt-get install -y --no-install-recommends ruby
+
       # The app half of the tree is not built here, but `server` path-depends
       # on ../fsrs and ../wire, which is why the whole repo is checked out.
       - name: Build

@@ -72,6 +72,7 @@ fn slug_of(tag: String) -> String {
     "ex" -> "elixir"
     "go" -> "go"
     "hs" -> "haskell"
+    "rb" -> "ruby"
     _ -> "concept"
   }
 }

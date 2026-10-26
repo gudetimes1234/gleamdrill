@@ -9,9 +9,9 @@ the same drill is due on both and a grade means the same thing on both.
 ## Run it
 
 You need Node 22 or newer and Gleam. Python drills need `python3`, Gleam drills
-need `gleam`, and TypeScript drills need nothing more, since Node strips the
-types itself. Go, Elixir and Haskell run on the server, so they need you signed
-in.
+need `gleam`, Ruby drills need `ruby` (or sign in, and they run on the
+server), and TypeScript drills need nothing more, since Node strips the types
+itself. Go, Elixir and Haskell run on the server, so they need you signed in.
 
 ```sh
 cd tui && gleam run      # or `make tui` from the repo root
@@ -20,7 +20,7 @@ cd tui && gleam run      # or `make tui` from the repo root
 On Termux:
 
 ```sh
-pkg install nodejs gleam python git    # and vim, if you want it over the built-in editor
+pkg install nodejs gleam python ruby git    # and vim, if you want it over the built-in editor
 git clone https://github.com/gudetimes1234/gleamdrill && cd gleamdrill/tui
 gleam run
 ```

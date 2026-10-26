@@ -1406,6 +1406,7 @@ fn extension(language: problem.Language) -> String {
     problem.Go -> ".go"
     problem.Elixir -> ".ex"
     problem.Haskell -> ".hs"
+    problem.Ruby -> ".rb"
     problem.Concept | problem.Board -> ".txt"
   }
 }

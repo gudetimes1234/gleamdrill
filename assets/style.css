@@ -21,6 +21,7 @@
     --lang-elixir: #cba6f7;
     --lang-go: #94e2d5;
     --lang-haskell: #b4befe;
+    --lang-ruby: #f38ba8;
 
     --radius: 6px;
     --radius-sm: 4px;
@@ -602,6 +603,8 @@ gleam-editor .cm-scroller {
 .editor-frame[data-language='go'] { --language-color: var(--lang-go); }
 .language-haskell,
 .editor-frame[data-language='haskell'] { --language-color: var(--lang-haskell); }
+.language-ruby,
+.editor-frame[data-language='ruby'] { --language-color: var(--lang-ruby); }
 
 .keymap-picker {
     display: flex;

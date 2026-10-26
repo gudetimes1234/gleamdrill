@@ -1,0 +1,35 @@
+#!/bin/sh
+# Runs ruby/run.rb on one attempt directory with the process limits a hostile
+# solution has to live inside. The API invokes this through `timeout -s KILL`
+# (and, in the container, as the runner user), so the wall clock and the uid
+# are decided outside; this script owns memory, process count, file size and
+# CPU. See server/src/server/exec.gleam.
+#
+#   run-ruby <dir>
+#
+# The directory holds solution.rb, harness.rb and run.rb (staged from
+# priv/ruby/run.rb, which `make content` copies from drills/ruby/run.rb).
+# Nothing compiles: a syntax error is reported inside the JSON, as Elixir's
+# are.
+
+set -eu
+dir="$1"
+
+# Address space, CPU seconds and file size. Ruby reserves little up front,
+# so the address-space cap is the real memory limit.
+ulimit -v 786432
+ulimit -t 10
+ulimit -f 262144
+
+# Per uid, so only for the dedicated runner user (see run-elixir for why).
+if [ "$(id -u)" = 31337 ]; then
+  ulimit -u 256
+fi
+
+# A home the runner user can neither read secrets from nor litter, and no
+# options or load path from the environment. --disable-gems: the runner
+# needs only json and stringio, which load without RubyGems, and skipping
+# it saves most of the start-up.
+export HOME=/tmp
+unset RUBYOPT RUBYLIB GEM_HOME GEM_PATH
+exec ruby --disable-gems "$dir/run.rb" "$dir"

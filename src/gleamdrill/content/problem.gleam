@@ -28,6 +28,7 @@ pub type Language {
   Elixir
   Go
   Haskell
+  Ruby
   /// Not a programming language: a prose concept drill with nothing to compile.
   /// Used by the system design quiz, whose problems carry a Quiz instead of a
   /// Check.
@@ -40,8 +41,8 @@ pub type Language {
 }
 
 /// Everything needed to compile and grade an attempt in the browser. Gleam,
-/// Python and TypeScript drills run it in a browser worker; Elixir and Go
-/// drills have one too, but no browser compiles their source, so the app
+/// Python and TypeScript drills run it in a browser worker; Elixir, Go,
+/// Haskell and Ruby drills have one too, but no browser compiles their source, so the app
 /// posts the attempt to the server (runner.is_remote) and a guest gets the
 /// reveal-only experience. All are verified natively as well
 /// (drills/*/verify_all.*).
@@ -228,6 +229,7 @@ pub fn language_label(language: Language) -> String {
     Elixir -> "Elixir"
     Go -> "Go"
     Haskell -> "Haskell"
+    Ruby -> "Ruby"
     Concept -> "Concept"
     Board -> "System Design Board"
   }
@@ -242,6 +244,7 @@ pub fn language_slug(language: Language) -> String {
     Elixir -> "elixir"
     Go -> "go"
     Haskell -> "haskell"
+    Ruby -> "ruby"
     Concept -> "concept"
     Board -> "board"
   }

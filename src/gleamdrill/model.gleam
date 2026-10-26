@@ -61,7 +61,8 @@ pub fn is_guest(mode: Mode) -> Bool {
 /// the reveal-only experience for them, exactly as every user did before.
 pub fn run_available(model: Model, language: problem.Language) -> Bool {
   case language {
-    problem.Elixir | problem.Go | problem.Haskell -> !is_guest(model.mode)
+    problem.Elixir | problem.Go | problem.Haskell | problem.Ruby ->
+      !is_guest(model.mode)
     _ -> True
   }
 }

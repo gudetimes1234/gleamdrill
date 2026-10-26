@@ -92,6 +92,7 @@ pub fn tag(track: Track) -> String {
     Ok(problem.Elixir) -> "ex"
     Ok(problem.Go) -> "go"
     Ok(problem.Haskell) -> "hs"
+    Ok(problem.Ruby) -> "rb"
     Ok(problem.Board) -> "bd"
     Ok(problem.Concept) | Error(Nil) ->
       case exists(track) {

@@ -508,7 +508,7 @@ check("the first pane is this track's topics",
   topicRows[0] === "Arrays & Hashing" && topicRows.length === 18,
   JSON.stringify(topicRows.slice(0, 3)) + ` (${topicRows.length})`);
 check("with no language among them",
-  !topicRows.some((t) => ["Python", "Gleam", "Go", "Elixir", "TypeScript", "Haskell"].includes(t)));
+  !topicRows.some((t) => ["Python", "Gleam", "Go", "Elixir", "TypeScript", "Haskell", "Ruby"].includes(t)));
 check("tips categories are hidden",
   !topicRows.some((l) => l.includes("Tips")));
 check("the selection has a pane of its own",
@@ -1686,7 +1686,7 @@ let blitzPassed = 0;
 for (let i = 0; i < blitzTotal; i++) {
   if (await page.isVisible(".summary-container")) break;
   if (i > 0) await startCoding();
-  const title = (await page.textContent(".drill-title")).replace(/(Python|Gleam|TypeScript|Elixir|Go|Haskell).*$/, "").trim();
+  const title = (await page.textContent(".drill-title")).replace(/(Python|Gleam|TypeScript|Elixir|Go|Haskell|Ruby).*$/, "").trim();
   await waitForRunnable(240000);
   await setCode(blitzSolutions[title] ?? "def nope():\n    pass\n");
   await page.click(".run-button");

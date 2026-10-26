@@ -594,6 +594,105 @@ containsDuplicate nums = containsDuplicate nums
   string.contains(error.message, "Timed out") |> should.be_true
 }
 
+// --- exec: Ruby -------------------------------------------------------------
+//
+// The same shapes for Ruby, which needs `ruby` on the PATH. The harness is
+// the one drills/ruby/harnesses/nc01_contains_duplicate.rb carries; the
+// runner it is loaded by is staged from server/priv/ruby by exec itself.
+
+const ruby_harness = "need :contains_duplicate
+
+tc \"contains_duplicate([1, 2, 3, 1])\", true, contains_duplicate([1, 2, 3, 1])
+tc \"contains_duplicate([1, 2, 3, 4])\", false, contains_duplicate([1, 2, 3, 4])
+"
+
+pub fn a_passing_ruby_attempt_reports_its_cases_test() {
+  let result =
+    exec.run_ruby(
+      exec_config(),
+      "def contains_duplicate(nums)
+  nums.uniq.length != nums.length
+end
+",
+      ruby_harness,
+    )
+  result.error |> should.equal(None)
+  result.stdout |> should.equal("")
+  result.cases
+  |> should.equal([
+    wire.CaseResult("contains_duplicate([1, 2, 3, 1])", "true", "true", True),
+    wire.CaseResult("contains_duplicate([1, 2, 3, 4])", "false", "false", True),
+  ])
+}
+
+pub fn a_failing_ruby_attempt_keeps_its_output_test() {
+  let result =
+    exec.run_ruby(
+      exec_config(),
+      "def contains_duplicate(nums)
+  puts \"checking\"
+  nums.length > 3
+end
+",
+      ruby_harness,
+    )
+  result.error |> should.equal(None)
+  result.stdout |> should.equal("checking\nchecking\n")
+  result.cases
+  |> list.map(fn(c) { c.passed })
+  |> should.equal([True, False])
+}
+
+pub fn a_ruby_syntax_error_is_a_compile_error_with_a_line_test() {
+  let result =
+    exec.run_ruby(
+      exec_config(),
+      "def contains_duplicate(nums)
+  nums.each do |num|
+end
+",
+      ruby_harness,
+    )
+  result.cases |> should.equal([])
+  let assert Some(error) = result.error
+  error.phase |> should.equal("compile")
+  error.line |> should.equal(Some(3))
+  string.contains(error.message, "SyntaxError") |> should.be_true
+}
+
+pub fn a_ruby_raise_is_a_run_error_with_a_line_test() {
+  let result =
+    exec.run_ruby(
+      exec_config(),
+      "def contains_duplicate(nums)
+  raise NotImplementedError, \"todo\"
+end
+",
+      ruby_harness,
+    )
+  result.cases |> should.equal([])
+  let assert Some(error) = result.error
+  error.phase |> should.equal("run")
+  error.line |> should.equal(Some(2))
+  string.contains(error.message, "todo") |> should.be_true
+}
+
+pub fn a_ruby_infinite_loop_is_killed_and_reported_test() {
+  let result =
+    exec.run_ruby(
+      exec_config(),
+      "def contains_duplicate(nums)
+  loop {}
+end
+",
+      ruby_harness,
+    )
+  result.cases |> should.equal([])
+  let assert Some(error) = result.error
+  error.phase |> should.equal("run")
+  string.contains(error.message, "Timed out") |> should.be_true
+}
+
 pub fn an_infinite_loop_is_killed_and_reported_test() {
   let result =
     exec.run_elixir(

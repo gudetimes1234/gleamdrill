@@ -49,8 +49,9 @@ FROM ghcr.io/gleam-lang/gleam:v1.18.1-elixir-alpine
 # a single attempt had forked.
 # ghc is the heavy one (~1.5 GB installed): Haskell drills compile here with
 # the image's global package db, which doubles as the warm cache -- unlike
-# Go there is no per-user build cache to prime.
-RUN apk add --no-cache libstdc++ openssl ncurses go ghc \
+# Go there is no per-user build cache to prime. ruby runs Ruby drills
+# (server/priv/run-ruby); its json and stringio are part of the package.
+RUN apk add --no-cache libstdc++ openssl ncurses go ghc ruby \
  && adduser -D -H -s /sbin/nologin -u 31337 runner
 
 # Go drills run here too (server/priv/run-go). Compiling an attempt means

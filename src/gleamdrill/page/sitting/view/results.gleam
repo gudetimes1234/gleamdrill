@@ -66,8 +66,8 @@ pub fn results_only(
       html.div([attribute.class("results")], [
         html.div([attribute.class("results-summary running")], [
           html.text(case problem.language_slug(current.language) {
-            // Brython interprets; nothing compiles.
-            "python" -> "Running\u{2026}"
+            // Brython and Ruby interpret; nothing compiles.
+            "python" | "ruby" -> "Running\u{2026}"
             _ -> "Compiling and running\u{2026}"
           }),
         ]),
