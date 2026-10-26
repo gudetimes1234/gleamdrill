@@ -20,5 +20,6 @@ pub fn main() -> Promise(Nil) {
     draw: view.draw,
     quit: app.quit,
     animating: app.animating,
+    refresh: app.refresh_ms,
   ))
 }

@@ -27,6 +27,7 @@ import gleamdrill_tui/app.{
 import gleamdrill_tui/editor.{type Editor}
 import gleamdrill_tui/keys
 import gleamdrill_tui/store
+import gleamdrill_tui/sys
 import wire.{type ProblemRef}
 
 // --- the palette ----------------------------------------------------------------
@@ -351,6 +352,17 @@ fn title(m: Model, window: String) -> String {
   track.label(m.shared.active_track) <> " · " <> window
 }
 
+/// " Next due in 4m." for the soonest reviewed card, when there is one.
+fn next_due(m: Model) -> String {
+  case list.find(app.queued(m), fn(card) { card.reps > 0 }) {
+    Ok(card) ->
+      " Next due in "
+      <> format.interval(fsrs.interval_seconds(card.card, m.shared.now))
+      <> "."
+    Error(Nil) -> ""
+  }
+}
+
 fn study(buf: Buffer, area: Rect, m: Model) -> Buffer {
   let #(buf, inner) = panel(buf, area, title(m, "study"), True)
   case m.loading {
@@ -359,6 +371,17 @@ fn study(buf: Buffer, area: Rect, m: Model) -> Buffer {
       let refs = app.today(m)
       let today = m.shared.today
       let due = list.count(refs, fn(ref) { web.is_due(m.shared, ref) })
+      let held = app.held_back(m)
+      let more = case held {
+        0 -> []
+        _ -> [
+          "m studies "
+          <> int.to_string(int.min(held, app.study_more))
+          <> " more ("
+          <> int.to_string(held)
+          <> " queued past today's limit)",
+        ]
+      }
       let header = [
         Line(
           int.to_string(due)
@@ -372,8 +395,9 @@ fn study(buf: Buffer, area: Rect, m: Model) -> Buffer {
           bold(ink, base),
         ),
         case refs {
-          [] -> plain("")
-          _ -> dim("↵ starts the sitting · j/k move")
+          [] -> dim(string.join(more, ""))
+          _ ->
+            dim(string.join(["↵ starts the sitting · j/k move", ..more], " · "))
         },
         plain(""),
       ]
@@ -391,12 +415,12 @@ fn study(buf: Buffer, area: Rect, m: Model) -> Buffer {
             buf,
             list_area,
             [
-              plain("Nothing to study right now."),
+              plain("Nothing to study right now." <> next_due(m)),
               plain(""),
               dim("s        queue a starter set of easy drills"),
               dim(
                 pad(prefix_name(m) <> " 1", 9)
-                <> "browse every drill; a adds one",
+                <> "browse every drill; a adds one, A all shown",
               ),
               dim(pad(prefix_name(m) <> " s", 9) <> "pick another track"),
             ],
@@ -632,13 +656,18 @@ fn settings(buf: Buffer, area: Rect, m: Model) -> Buffer {
         plain(""),
         Line("scheduler", bold(mauve, base)),
         plain(
-          int.to_string(m.shared.settings.new_per_day)
-          <> " new and "
-          <> int.to_string(m.shared.settings.reviews_per_day)
-          <> " reviews a day in "
+          app.limits_text(m.shared.settings)
+          <> " in "
           <> track.label(m.shared.active_track),
         ),
-        dim("change these on the web; the terminal schedules with them"),
+        case m.shared.mode {
+          web.Guest ->
+            dim(
+              "n/N 5 more or fewer new · u no limit · r/R 50 more or fewer reviews",
+            )
+          web.Account(_) ->
+            dim("change these on the web; the terminal schedules with them")
+        },
       ],
     ]),
     0,
@@ -659,6 +688,7 @@ fn drill(buf: Buffer, area: Rect, m: Model) -> #(Buffer, Option(Position)) {
       None,
     )
     Some(s) if s.done -> #(summary(buf, area, m, s), None)
+    Some(s) if s.waiting -> #(waiting(buf, area, m, s), None)
     Some(s) -> {
       let up = app.panes(s)
       let narrow = area.size.width < narrow_width
@@ -1074,6 +1104,49 @@ fn summary(buf: Buffer, area: Rect, m: Model, s: Sitting) -> Buffer {
   lines(buf, inner, content, 0)
 }
 
+/// The list is done and a card is coming back: count down to it.
+fn waiting(buf: Buffer, area: Rect, m: Model, s: Sitting) -> Buffer {
+  let #(buf, inner) = panel(buf, area, title(m, "waiting"), True)
+  let next = case app.next_back(s, sys.now_ms()) {
+    Some(#(ref, ms)) -> [
+      Line("Next: " <> ref.title, bold(green, base)),
+      plain("back in " <> countdown(ms)),
+    ]
+    None -> []
+  }
+  let later =
+    s.returning
+    |> list.sort(fn(a, b) { int.compare(a.1, b.1) })
+    |> list.drop(1)
+    |> list.map(fn(r) { dim("then " <> r.0.title) })
+  let content =
+    list.flatten([
+      next,
+      later,
+      [
+        plain(""),
+        dim(
+          plural(list.length(s.graded), "grade")
+          <> " so far · the card opens by itself · n ends the sitting",
+        ),
+      ],
+    ])
+  lines(buf, inner, content, 0)
+}
+
+/// `4m 05s`, or `12s` under a minute.
+fn countdown(ms: Int) -> String {
+  let seconds = { ms + 999 } / 1000
+  case seconds < 60 {
+    True -> int.to_string(seconds) <> "s"
+    False ->
+      int.to_string(seconds / 60)
+      <> "m "
+      <> string.pad_start(int.to_string(seconds % 60), 2, "0")
+      <> "s"
+  }
+}
+
 fn grade_name(rating: fsrs.Rating) -> String {
   case rating {
     fsrs.Again -> "again"
@@ -1280,17 +1353,27 @@ fn page_keys(m: Model) -> List(#(String, String)) {
       #("↵", "start today's sitting"),
       #("j/k", "move"),
       #("s", "queue a starter set"),
+      #(
+        "m",
+        "study " <> int.to_string(app.study_more) <> " more past today's limit",
+      ),
       #("q", "quit"),
     ]
     1 -> [
       #("/", "filter"),
       #("a", "add to the queue"),
+      #("A", "add every drill shown (all the filter matches)"),
       #("↵", "practise this one"),
       #("esc", "clear the filter"),
     ]
     2 -> [#("x", "remove a new card"), #("↵", "practise this one")]
     3 -> [#("g", "reload")]
-    5 -> [#("l / o", "sign in / sign out")]
+    5 -> [
+      #("l / o", "sign in / sign out"),
+      #("n / N", "5 more / fewer new a day"),
+      #("u", "no limit on new"),
+      #("r / R", "50 more / fewer reviews a day"),
+    ]
     6 -> drill_keys(m)
     _ -> []
   }
@@ -1302,6 +1385,10 @@ fn drill_keys(m: Model) -> List(#(String, String)) {
   case m.sitting {
     None -> []
     Some(s) if s.done -> [#("↵", "back to study")]
+    Some(s) if s.waiting -> [
+      #("n", "stop waiting and end the sitting"),
+      #("esc", "study window; the countdown carries on"),
+    ]
     Some(app.Sitting(editing: Some(_), pane: CodePane, revealed: False, ..)) -> [
       #("esc", "close; the draft is kept"),
       #("ctrl+r", "save and run"),
@@ -1469,6 +1556,7 @@ fn hints(m: Model, room: Int) -> String {
   let help = "? help"
   case m.window, m.sitting {
     6, Some(s) if s.done -> "↵ back to study"
+    6, Some(s) if s.waiting -> "n end the sitting  esc study  " <> help
     6, Some(s) if s.grading -> "saving the grade…"
     6, Some(app.Sitting(editing: Some(_), pane: CodePane, revealed: False, ..))
     -> "esc done  ctrl+r run  ctrl+s solution"
@@ -1488,13 +1576,13 @@ fn hints(m: Model, room: Int) -> String {
         False -> grades
       }
     }
-    0, _ -> "↵ start  s starter set  " <> help
-    1, _ -> "/ filter  a add  ↵ practise  " <> help
+    0, _ -> "↵ start  m more  s starter set  " <> help
+    1, _ -> "/ filter  a add  A add all  ↵ practise  " <> help
     2, _ -> "x remove  ↵ practise  " <> help
     3, _ -> "g reload  " <> help
     5, _ ->
       case m.shared.mode {
-        web.Guest -> "l sign in  " <> help
+        web.Guest -> "n/N new  u no limit  r/R reviews  l sign in  " <> help
         web.Account(_) -> "o sign out  " <> help
       }
     _, _ -> help

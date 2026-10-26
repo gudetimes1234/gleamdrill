@@ -30,8 +30,9 @@ pub type Game(model, msg) {
     /// Pasted text, whole, where the terminal brackets a paste.
     pasted: fn(model, String) -> #(model, List(Effect(msg))),
     received: fn(model, msg) -> #(model, List(Effect(msg))),
-    /// Every frame, with the milliseconds since the last one.
-    update: fn(model, Int) -> model,
+    /// Every frame, with the milliseconds since the last one, and whether
+    /// what it changed needs a frame drawn (a card coming back on time).
+    update: fn(model, Int) -> #(model, Bool),
     /// The frame, and where the cursor goes, if anywhere.
     draw: fn(model, Rect) -> #(Buffer, Option(Position)),
     quit: fn(model) -> Bool,
@@ -39,6 +40,9 @@ pub type Game(model, msg) {
     /// with nothing pressed. Otherwise a frame is drawn only for a key, a
     /// result or a resize.
     animating: fn(model) -> Bool,
+    /// How often to draw anyway, with nothing pressed and nothing moving, so
+    /// a screen that shows the time (a countdown, what's due) keeps up.
+    refresh: fn(model) -> Option(Int),
   )
 }
 
@@ -86,7 +90,8 @@ pub fn run(game: Game(model, msg)) -> Promise(Nil) {
     Ok(term) -> {
       let #(model, effects) = game.load()
       perform(effects)
-      use _ <- promise.map(step(game, backend, term, model, sys.now_ms(), True))
+      let start = sys.now_ms()
+      use _ <- promise.map(step(game, backend, term, model, start, start, True))
       Nil
     }
   }
@@ -102,6 +107,7 @@ fn step(
   term: Terminal(state),
   model: model,
   last: Int,
+  drawn: Int,
   dirty: Bool,
 ) -> Promise(Nil) {
   // Results first, so a frame shows the newest state.
@@ -124,7 +130,7 @@ fn step(
     Error(Nil) -> #(term, False)
   }
   let now = sys.now_ms()
-  let model = game.update(model, now - last)
+  let #(model, changed) = game.update(model, now - last)
   let animating = game.animating(model)
   case game.quit(model) {
     True -> {
@@ -133,7 +139,17 @@ fn step(
     }
     False -> {
       // Nothing new and nothing moving: no frame. An idle app costs a poll.
-      let term = case dirty || resumed || animating || messages != [] {
+      let due = case game.refresh(model) {
+        Some(every) -> now - drawn >= every
+        None -> False
+      }
+      let draw =
+        dirty || resumed || animating || due || changed || messages != []
+      let drawn = case draw {
+        True -> now
+        False -> drawn
+      }
+      let term = case draw {
         False -> term
         True ->
           case
@@ -157,7 +173,7 @@ fn step(
       use polled <- promise.await(keys(game, term, model, wait, False))
       case polled {
         Ok(#(model, term, dirty)) ->
-          step(game, backend, term, model, now, dirty)
+          step(game, backend, term, model, now, drawn, dirty)
         Error(term) -> {
           terminal.restore(term)
           promise.resolve(Nil)

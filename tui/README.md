@@ -51,6 +51,18 @@ In a drill:
 | `n` | Skips the drill |
 | `esc` | Goes back to study; the sitting waits on window 6 |
 
+On the study window, `↵` starts today's sitting and `m` adds 10 more new
+drills past the daily limit. In browse, `a` queues one drill and `A` every
+drill shown, so `/hash` then `A` queues a whole search. In settings, a guest
+sets the daily limits: `n`/`N` 5 more or fewer new, `u` no limit, `r`/`R`
+50 more or fewer reviews.
+
+The queue is live: a card graded in a sitting that is due back within the
+hour (again 1m, good 10m) comes back into the sitting at its time. When the
+rest are done the sitting counts down to it, then opens it; `n` ends the
+sitting instead. The study window redraws each minute, so what's due turns up
+by itself.
+
 In the built-in editor, keys type. The arrows, `home`, `end`, page up and
 down move; `tab` and `shift+tab` indent; `ctrl+k` cuts to the end of the
 line; `ctrl+r` saves and runs; `ctrl+s` saves and shows the solutions, and `s`

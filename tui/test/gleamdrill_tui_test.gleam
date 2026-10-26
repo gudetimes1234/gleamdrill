@@ -402,3 +402,86 @@ pub fn a_file_that_is_not_an_export_is_refused_test() -> Nil {
   assert store.decode_guest("{\"hello\": 1}") == Error(Nil)
   assert store.decode_guest("not json") == Error(Nil)
 }
+
+// --- the daily limit and the live queue ---------------------------------------------
+
+pub fn m_studies_past_the_daily_limit_test() -> Nil {
+  let m = press(drilling(), ["s"])
+  assert list.length(app.today(m)) == 5
+  assert app.held_back(m) > 0
+  let m = press(m, ["m"])
+  let assert Some(s) = m.sitting
+  assert list.length(s.refs) == 5 + app.study_more
+}
+
+pub fn the_settings_keys_change_the_new_limit_test() -> Nil {
+  let m = press(drilling(), ["s", "ctrl+b", "5", "n"])
+  assert m.shared.settings.new_per_day == 10
+  assert list.length(app.today(m)) == 10
+  let m = press(m, ["u"])
+  assert m.shared.settings.new_per_day == app.no_limit
+  assert app.held_back(m) == 0
+  // Kept with the track, as the guest file keeps it.
+  assert list.key_find(m.guest.tracks, "NeetCode 150") == Ok(m.shared.settings)
+  assert press(m, ["N"]).shared.settings.new_per_day == 100
+}
+
+pub fn capital_a_queues_everything_shown_test() -> Nil {
+  let m = press(drilling(), ["ctrl+b", "1", "/", "t", "w", "o", "enter", "A"])
+  let shown = app.browse_refs(m)
+  assert shown != []
+  assert list.all(shown, web.is_queued(m.shared, _))
+  assert dict.size(m.shared.cards) == list.length(shown)
+}
+
+/// A study sitting of one queued drill.
+fn studying_one() -> app.Model {
+  press(drilling(), ["ctrl+b", "1", "a", "ctrl+b", "0", "enter"])
+}
+
+pub fn a_card_graded_again_comes_back_in_the_sitting_test() -> Nil {
+  let m = studying_one()
+  let assert Some(first) = m.sitting
+  assert list.length(first.refs) == 1
+  let m = press(m, ["1"])
+  let assert Some(s) = m.sitting
+  // Due back in a minute or so: the sitting waits for it rather than ending.
+  assert s.waiting
+  assert !s.done
+  let assert Some(#(ref, ms)) = app.next_back(s, sys.now_ms())
+  assert ref == first.ref
+  assert ms > 0
+  // Not yet.
+  let assert Some(s) = app.tick(m, sys.now_ms()).sitting
+  assert s.waiting
+  // Its time: the card is back.
+  let m = app.tick(m, sys.now_ms() + ms + 1000)
+  let assert Some(s) = m.sitting
+  assert !s.waiting
+  assert s.ref == first.ref
+  assert s.index == 1
+  // `n` while waiting ends the sitting.
+  let assert Some(s) = press(press(studying_one(), ["1"]), ["n"]).sitting
+  assert s.done
+}
+
+pub fn a_card_graded_easy_does_not_come_back_test() -> Nil {
+  let assert Some(s) = press(studying_one(), ["4"]).sitting
+  assert s.done
+  assert s.returning == []
+}
+
+pub fn a_card_back_in_the_sitting_starts_from_the_starter_test() -> Nil {
+  let m = press(studying_one(), ["E", "x", "esc"])
+  let assert Some(s) = m.sitting
+  let ref = s.ref
+  let starter = string.drop_start(s.draft, 1)
+  assert s.draft == "x" <> starter
+  let m = press(m, ["1"])
+  assert list.key_find(m.shared.drafts, ref) == Error(Nil)
+  let assert Some(waiting) = m.sitting
+  let assert Some(#(_, ms)) = app.next_back(waiting, sys.now_ms())
+  let assert Some(s) = app.tick(m, sys.now_ms() + ms + 1000).sitting
+  assert s.ref == ref
+  assert s.draft == starter
+}

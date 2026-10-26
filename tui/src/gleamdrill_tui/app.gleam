@@ -124,6 +124,13 @@ pub type Sitting {
     done: Bool,
     /// The built-in editor, open in the code pane.
     editing: Option(Editor),
+    /// Cards graded in this sitting that are due back before it would end
+    /// (a learning step: 1m, 10m), with when, in `sys.now_ms` time. Each
+    /// comes back into the sitting at its time.
+    returning: List(#(ProblemRef, Int)),
+    /// The list is done but a card is still to come back: the drill window
+    /// counts down to it instead of ending.
+    waiting: Bool,
   )
 }
 
@@ -353,6 +360,26 @@ pub fn today(m: Model) -> List(ProblemRef) {
   queue.build(web.Model(..m.shared, now: now()))
 }
 
+/// How many more new drills `m` adds to a sitting.
+pub const study_more = 10
+
+/// Today's drills with `extra` more new ones than the daily limit allows.
+pub fn today_plus(m: Model, extra: Int) -> List(ProblemRef) {
+  let today = m.shared.today
+  queue.build(
+    web.Model(
+      ..m.shared,
+      now: now(),
+      today: wire.Today(..today, new_remaining: today.new_remaining + extra),
+    ),
+  )
+}
+
+/// Queued new drills the daily limit keeps out of today's list.
+pub fn held_back(m: Model) -> Int {
+  list.length(today_plus(m, 1_000_000)) - list.length(today(m))
+}
+
 pub fn browse_refs(m: Model) -> List(ProblemRef) {
   case m.browse.filter {
     "" -> problems.refs_in(m.shared.active_track)
@@ -383,8 +410,18 @@ pub fn window_names(m: Model) -> List(String) {
 
 // --- the loop's callbacks ---------------------------------------------------------
 
-pub fn update(m: Model, dt: Int) -> Model {
-  Model(..m, clock: m.clock + dt)
+/// The clock moved on: a frame is wanted when a waiting sitting's card came
+/// back, as no key was pressed to bring it.
+pub fn update(m: Model, dt: Int) -> #(Model, Bool) {
+  let ticked = tick(Model(..m, clock: m.clock + dt), sys.now_ms())
+  #(ticked, is_waiting(ticked) != is_waiting(m))
+}
+
+fn is_waiting(m: Model) -> Bool {
+  case m.sitting {
+    Some(s) -> s.waiting
+    None -> False
+  }
 }
 
 pub fn received(m: Model, message: Msg) -> Step {
@@ -420,6 +457,7 @@ pub fn received(m: Model, message: Msg) -> Step {
           now: outcome.now,
           today: outcome.today,
           cards: common.fold_card(m.shared, m.shared.cards, outcome.card),
+          drafts: guest.drop_draft(m.shared.drafts, outcome.card.problem),
         )
       #(advance(Model(..m, shared:), Some(#(rating, outcome.card))), [])
     }
@@ -929,6 +967,11 @@ fn study_key(m: Model, raw: String) -> Step {
         _ -> #(start_sitting(m, refs, True), [])
       }
     _, "s" -> enqueue(m, common.starter_refs(m.shared, m.shared.active_track))
+    _, "m" ->
+      case held_back(m) {
+        0 -> #(say(m, "nothing past today's limit: add drills in browse"), [])
+        _ -> #(start_sitting(m, today_plus(m, study_more), True), [])
+      }
     _, "q" -> quitting(m)
     _, _ -> #(m, [])
   }
@@ -983,6 +1026,12 @@ fn browse_key(m: Model, raw: String) -> Step {
             True -> #(say(m, ref.title <> " is already queued"), [])
             False -> enqueue(m, [ref])
           }
+        // Everything listed, so with a `/` filter, everything it matches.
+        _, "A", _ ->
+          enqueue(
+            m,
+            list.filter(refs, fn(ref) { !web.is_queued(m.shared, ref) }),
+          )
         _, _, _ -> #(m, [])
       }
     }
@@ -1013,8 +1062,65 @@ fn settings_key(m: Model, raw: String) -> Step {
         runtime.from_promise(fn() { store.logout(token) }, fn(_) { LoggedOut }),
       ])
     }
+    "n", _ -> set_limits(m, step_new(_, 5))
+    "N", _ -> set_limits(m, step_new(_, -5))
+    // Not `0`: a digit on its own names a window.
+    "u", _ -> set_limits(m, fn(s) { wire.Settings(..s, new_per_day: no_limit) })
+    "r", _ ->
+      set_limits(m, fn(s) { reviews_per_day(s, s.reviews_per_day + 50) })
+    "R", _ ->
+      set_limits(m, fn(s) { reviews_per_day(s, s.reviews_per_day - 50) })
     _, _ -> #(m, [])
   }
+}
+
+/// A daily limit this high is no limit at all.
+pub const no_limit = 1000
+
+/// New per day, `by` more or fewer. From no limit, down is 100; at 100, up
+/// is no limit again.
+fn step_new(s: wire.Settings, by: Int) -> wire.Settings {
+  let n = case s.new_per_day >= no_limit, by < 0 {
+    True, True -> 100
+    True, False -> no_limit
+    False, _ ->
+      case s.new_per_day + by > 100 {
+        True -> no_limit
+        False -> int.max(0, s.new_per_day + by)
+      }
+  }
+  wire.Settings(..s, new_per_day: n)
+}
+
+fn reviews_per_day(s: wire.Settings, n: Int) -> wire.Settings {
+  wire.Settings(..s, reviews_per_day: int.clamp(n, 0, 5000))
+}
+
+/// The track's daily limits, for a guest: kept in the guest file with the
+/// track, as the web keeps them. An account's are the server's, set on the web.
+fn set_limits(m: Model, change: fn(wire.Settings) -> wire.Settings) -> Step {
+  case m.shared.mode {
+    web.Account(_) -> #(say(m, "signed in: the limits are set on the web"), [])
+    web.Guest -> {
+      let settings = change(m.shared.settings)
+      let tracks = list.key_set(m.guest.tracks, m.shared.active_track, settings)
+      let m =
+        Model(..m, guest: store.Guest(..m.guest, tracks:))
+        |> save_guest
+        |> open_guest(m.shared.active_track)
+      #(say(m, limits_text(settings)), [])
+    }
+  }
+}
+
+pub fn limits_text(s: wire.Settings) -> String {
+  case s.new_per_day >= no_limit {
+    True -> "no limit on new"
+    False -> int.to_string(s.new_per_day) <> " new"
+  }
+  <> " and "
+  <> int.to_string(s.reviews_per_day)
+  <> " reviews a day"
 }
 
 fn load_stats(m: Model) -> Step {
@@ -1123,6 +1229,8 @@ fn start_sitting(m: Model, refs: List(ProblemRef), studying: Bool) -> Model {
               graded: [],
               grading: False,
               done: False,
+              returning: [],
+              waiting: False,
             )),
             last_window: Some(m.window),
             window: 6,
@@ -1146,19 +1254,47 @@ fn open_problem(m: Model, ref: ProblemRef) -> Result(#(Problem, String), Nil) {
 /// Next drill, or the summary after the last. `graded` is the grade just
 /// recorded and the card it left, if one was.
 fn advance(m: Model, graded: Option(#(fsrs.Rating, wire.CardState))) -> Model {
+  advance_at(m, graded, sys.now_ms())
+}
+
+/// A card due back within this long of its grade returns to the sitting.
+const comes_back_within_seconds = 3600
+
+/// The next card at `now_ms`. A graded card due back soon joins `returning`;
+/// a returning card whose time has come goes in ahead of the rest of the
+/// list. With the list done and a card still to come back, the sitting waits.
+fn advance_at(
+  m: Model,
+  graded: Option(#(fsrs.Rating, wire.CardState)),
+  now_ms: Int,
+) -> Model {
   case m.sitting {
     None -> m
     Some(s) -> {
-      let done = case graded {
-        Some(#(rating, card)) -> [
-          #(s.ref, rating, fsrs.interval_seconds(card.card, m.shared.now)),
-          ..s.graded
-        ]
-        None -> s.graded
+      let #(done, returning) = case graded {
+        Some(#(rating, card)) -> {
+          let seconds = fsrs.interval_seconds(card.card, m.shared.now)
+          let returning = list.filter(s.returning, fn(r) { r.0 != s.ref })
+          #(
+            [#(s.ref, rating, seconds), ..s.graded],
+            case s.studying && seconds < comes_back_within_seconds {
+              True -> [#(s.ref, now_ms + seconds * 1000), ..returning]
+              False -> returning
+            },
+          )
+        }
+        None -> #(s.graded, s.returning)
       }
+      let #(ready, later) = list.partition(returning, fn(r) { r.1 <= now_ms })
+      let ready =
+        ready
+        |> list.sort(fn(a, b) { int.compare(a.1, b.1) })
+        |> list.map(fn(r) { r.0 })
       let next = s.index + 1
-      case list.drop(s.refs, next) {
-        [ref, ..] ->
+      let refs =
+        list.flatten([list.take(s.refs, next), ready, list.drop(s.refs, next)])
+      case list.drop(refs, next), later {
+        [ref, ..], _ ->
           case open_problem(m, ref) {
             Ok(#(p, draft)) ->
               Model(
@@ -1166,6 +1302,7 @@ fn advance(m: Model, graded: Option(#(fsrs.Rating, wire.CardState))) -> Model {
                 sitting: Some(
                   Sitting(
                     ..s,
+                    refs:,
                     index: next,
                     ref:,
                     problem: p,
@@ -1181,20 +1318,82 @@ fn advance(m: Model, graded: Option(#(fsrs.Rating, wire.CardState))) -> Model {
                     editing: None,
                     graded: done,
                     grading: False,
+                    returning: later,
+                    waiting: False,
                   ),
                 ),
               )
             Error(Nil) -> m
           }
-        [] ->
+        [], [] ->
           Model(
             ..m,
             sitting: Some(
-              Sitting(..s, graded: done, grading: False, done: True),
+              Sitting(
+                ..s,
+                graded: done,
+                grading: False,
+                done: True,
+                returning: [],
+                waiting: False,
+              ),
+            ),
+          )
+        [], _ ->
+          Model(
+            ..m,
+            sitting: Some(
+              Sitting(
+                ..s,
+                graded: done,
+                grading: False,
+                returning: later,
+                waiting: True,
+              ),
             ),
           )
       }
     }
+  }
+}
+
+/// The waiting sitting's next card and how many milliseconds until it.
+pub fn next_back(s: Sitting, now_ms: Int) -> Option(#(ProblemRef, Int)) {
+  s.returning
+  |> list.sort(fn(a, b) { int.compare(a.1, b.1) })
+  |> list.first
+  |> option.from_result
+  |> option.map(fn(r) { #(r.0, int.max(0, r.1 - now_ms)) })
+}
+
+/// The clock moved on: a waiting sitting takes its card back once it's due.
+pub fn tick(m: Model, now_ms: Int) -> Model {
+  case m.sitting {
+    Some(s) if s.waiting ->
+      case next_back(s, now_ms) {
+        Some(#(_, 0)) -> {
+          let m = advance_at(m, None, now_ms)
+          // The card opened is on the drill window, wherever the user was.
+          case m.window == 6 {
+            True -> m
+            False ->
+              say(m, "a card is back: " <> keys.tmux_name(m.prefix_key) <> " 6")
+          }
+        }
+        _ -> m
+      }
+    _ -> m
+  }
+}
+
+/// How often to draw with nothing pressed, so the screen keeps up with the
+/// clock: a waiting sitting's countdown each second, the study and queue
+/// windows' due counts each minute.
+pub fn refresh_ms(m: Model) -> Option(Int) {
+  case m.sitting, m.window {
+    Some(Sitting(waiting: True, ..)), _ -> Some(1000)
+    _, 0 | _, 2 -> Some(60_000)
+    _, _ -> None
   }
 }
 
@@ -1214,6 +1413,19 @@ fn drill_key_of(m: Model, raw: String) -> Step {
           Model(..m, sitting: None, window: 0, last_window: None),
           [],
         )
+        _ -> #(m, [])
+      }
+    // Counting down to a card coming back: `n` stops waiting and ends the
+    // sitting; the card stays due in the study window.
+    Some(s) if s.waiting ->
+      case raw {
+        "n" -> #(
+          with_sitting(m, fn(s) {
+            Sitting(..s, waiting: False, returning: [], done: True)
+          }),
+          [],
+        )
+        "esc" -> go_to_window(m, 0)
         _ -> #(m, [])
       }
     Some(Sitting(editing: Some(e), pane: CodePane, revealed: False, ..) as s) ->
@@ -1605,6 +1817,9 @@ fn grade(m: Model, s: Sitting, rating: fsrs.Rating) -> Step {
               ..m.shared,
               now: moment,
               cards: common.fold_card(m.shared, m.shared.cards, card),
+              // The review took the draft with it, as on the web: a card
+              // that comes back starts from the starter again.
+              drafts: guest.drop_draft(m.shared.drafts, s.ref),
               today: guest.today(
                 local,
                 m.shared.active_track,
