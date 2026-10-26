@@ -202,11 +202,34 @@ test_name: tracks_screen_test
   </div>
 </div>
 <div class="statusbar">
+  <button class="statusbar-session" title="Choose a track (C-b s)">
+    [neetcode-150]
+  </button>
+  <div class="statusbar-windows">
+    <button class="status-window " title="C-b 0">
+      0:study-
+    </button>
+    <button class="status-window " title="C-b 1">
+      1:browse
+    </button>
+    <button class="status-window " title="C-b 2">
+      2:queue
+    </button>
+    <button class="status-window " title="C-b 3">
+      3:stats
+    </button>
+    <button class="status-window " title="C-b 4">
+      4:tour
+    </button>
+    <button class="status-window " title="C-b 5">
+      5:settings
+    </button>
+  </div>
   <span class="statusbar-context">
     TRACKS
   </span>
-  <span class="leader-chip " title="Press , then a key to use a shortcut even while a button has focus">
-    ,
+  <span class="leader-chip " title="C-b then a key runs a tmux command; , then a key uses a shortcut even while a button has focus">
+    C-b
   </span>
   <div class="statusbar-hints">
     <button class="keyhint" title="Back to study">

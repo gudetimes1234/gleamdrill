@@ -3,6 +3,7 @@
 //// summary's and report's.
 
 import fsrs
+import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
@@ -15,10 +16,10 @@ import gleamdrill/page/sitting/model.{
 }
 import gleamdrill/page/sitting/msg.{
   type Msg, BoardJumped, BoardMoved, BoardShelfMoved, BoardToggledAtCursor,
-  EditorFocusRequested, ExitConfirmed, NoteFocusRequested, QuizMoved,
-  UserClickedExitDrill, UserClickedExitReport, UserClickedNext, UserClickedRun,
-  UserClickedScratchRun, UserClickedUndo, UserGraded, UserPickedChoice,
-  UserPickedPanel, UserRevealedRecall, UserRevealedWholeThing,
+  EditorFocusRequested, ExitConfirmed, NoteFocusRequested, PanesNumberPicked,
+  QuizMoved, UserClickedExitDrill, UserClickedExitReport, UserClickedNext,
+  UserClickedRun, UserClickedScratchRun, UserClickedUndo, UserGraded,
+  UserPickedChoice, UserPickedPanel, UserRevealedRecall, UserRevealedWholeThing,
   UserSubmittedAnswer, UserSubmittedBoard, UserToggledDiff, UserToggledHelp,
   UserToggledNudge, UserToggledPane, UserToggledPrompt, UserToggledResults,
   UserToggledSolutionPanel, WalkAdvanced, WalkBacked, WalkCodeShown,
@@ -67,6 +68,19 @@ pub fn bindings(shared: Shared, page: Model) -> List(Binding(Msg)) {
 pub fn dispatch(shared: Shared, page: Model, key: String) -> Result(Msg, Nil) {
   let drilling =
     page.exit_prompt == None && shared.route == shared_model.DrillRoute
+  case page.numbered, key, drilling, current_kind(page) {
+    // C-b q is up: the next key is a pane's number, or puts them away.
+    True, _, _, _ -> Ok(PanesNumberPicked(option.from_result(int.parse(key))))
+    False, _, _, _ -> drilling_key(shared, page, key, drilling)
+  }
+}
+
+fn drilling_key(
+  shared: Shared,
+  page: Model,
+  key: String,
+  drilling: Bool,
+) -> Result(Msg, Nil) {
   case key, drilling, current_kind(page) {
     "k", True, Ok(problem.QuizDrill) -> Ok(QuizMoved(-1))
     "j", True, Ok(problem.QuizDrill) -> Ok(QuizMoved(1))

@@ -61,6 +61,17 @@ pub type Panel {
   SolutionPanel
 }
 
+/// A region of the code drill screen, as tmux's panes: what C-b o, the
+/// arrows, z and x act on. `panes.regions` lists the ones up, in order.
+pub type Region {
+  EditorRegion
+  PromptRegion
+  SolutionRegion
+  NoteRegion
+  OutputRegion
+  RailRegion
+}
+
 /// One panel along from `panel` in swipe order (problem, code, solution),
 /// `by` -1 for left or +1 for right, stopping at either end rather than
 /// wrapping: a swipe past the last panel does nothing, the way a phone's own
@@ -258,6 +269,13 @@ pub type Model {
     slot: Pane,
     /// Which face is up: the code, the solution, or (on a phone) the problem.
     panel: Panel,
+    /// tmux's active pane, and the one before it (`C-b ;`).
+    active: Region,
+    last_active: Region,
+    /// `C-b z`: the active pane fills the screen.
+    zoomed: Bool,
+    /// `C-b q`: the panes wear their numbers until the next key.
+    numbered: Bool,
     /// The solution chosen by hand on this problem: the review log's reveal.
     revealed_solution: Option(Int),
     /// Whether the rail's nudge is unfolded. Never a reveal.
@@ -305,6 +323,10 @@ pub fn new(problems: List(ProblemRef)) -> Model {
     draft: "",
     slot: NoPane,
     panel: CodePanel,
+    active: EditorRegion,
+    last_active: EditorRegion,
+    zoomed: False,
+    numbered: False,
     revealed_solution: None,
     nudge_shown: False,
     whole_thing_shown: False,
@@ -357,6 +379,10 @@ pub fn open_problem_view(
     ..page,
     slot: NoPane,
     panel: CodePanel,
+    active: EditorRegion,
+    last_active: EditorRegion,
+    zoomed: False,
+    numbered: False,
     revealed_solution: None,
     nudge_shown: shared_model.opens_with_nudge(shared, problem),
     whole_thing_shown: False,

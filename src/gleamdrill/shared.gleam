@@ -21,6 +21,8 @@ pub type Shared =
 pub type Change {
   /// Go to another screen.
   Navigate(model.Route)
+  /// tmux's display-message: a line on the status bar until the next key.
+  Say(String)
   /// A session was created. `registered` is a brand-new account, whose guest
   /// progress moves into it automatically.
   SignedIn(session: wire.Session, registered: Bool)

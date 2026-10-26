@@ -146,7 +146,23 @@ lights while it is armed. A tmux-style status bar shows the live bindings for
 wherever you are; every hint is also clickable. One binding table drives the
 dispatcher, the status bar and the help overlay, so the keys can never drift
 from their own documentation. Inside the editor nothing is intercepted except
-Ctrl+Enter — its vim and emacs keymaps keep the keyboard.
+Ctrl+Enter and tmux's prefix — its vim and emacs keymaps keep the keyboard.
+
+**And like tmux.** `Ctrl+b` is tmux's prefix, armed from anywhere, the editor
+included: a capture-phase listener takes it and the key after it before
+CodeMirror can, and `C-b C-b` sends one on to the editor (emacs keeps its
+cursor-left). The bare keys above stay; the prefix adds tmux's default table
+on top, mapped onto the app's nouns. Windows are the screens, in a fixed order
+(`0:study 1:browse 2:queue 3:stats 4:tour 5:settings`, plus `6:drill` while a
+sitting runs, since a sitting has no address and cannot be backgrounded):
+`C-b 0-9 n p l w &`. Panes are the drill's regions (rail, prompt, editor or
+solution, note, output): `C-b o ; arrows q z x`. Sessions are the tracks, in
+`track.ordered`'s order: `C-b s ( ) L d`. `C-b :` opens a command prompt that
+parses tmux's own spellings and aliases (`selectw -t 2`, `killp`, `switchc -n`,
+`send-keys j Enter`), with Tab completion and history. The status line reads
+like tmux's: `[session]`, the window list with `*` and `-`, then the hints, or a
+`display-message` until the next key. The `,` leader stays what it was, a
+rescue for the page's own keys, and never takes tmux's.
 
 ## It works on a phone
 
@@ -339,12 +355,15 @@ src/gleamdrill/
   page/<name>/            one folder per page: auth browse queue settings sitting stats study tour tracks
     model.gleam  msg.gleam  update.gleam  view.gleam  keys.gleam
   ui/                     what every page draws with: shell, layout, document, nav, statusbar, help,
-                          binding (a key row), keyboard (the leader and focus rules), format, id
+                          binding (a key row), keyboard (the prefixes and focus rules), format, id
+    tmux/                 tmux's layer: command (the language), prefix (the key table),
+                          windows (screens and tracks as windows and sessions), chooser
   store.gleam   store/    persistence: api, local, session, legacy, remote (Data and ApiError)
   runner.gleam  runner/   code execution: the Gleam, Python and TypeScript workers
   domain/                 pure logic: queue, walk, guest, compare, board, insights, track
   content/                problem, problems, tour; problems/ hand-written, problems/generated/ from make content
   platform/               browser and editor: the JavaScript boundary
+tui/                      the terminal app: this package's pure modules on etui and Node (tui/README.md)
 ```
 
 **A page** is four functions over its own model. `update(shared, model, msg)`

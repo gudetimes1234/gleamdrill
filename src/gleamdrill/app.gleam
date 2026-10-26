@@ -11,6 +11,7 @@ import gleam/dict
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
+import gleam/string
 import gleam/uri.{type Uri}
 import gleamdrill/domain/guest
 import gleamdrill/model.{
@@ -26,6 +27,7 @@ import gleamdrill/page/auth/view as auth_view
 import gleamdrill/page/browse/compare_view
 import gleamdrill/page/browse/keys as browse_keys
 import gleamdrill/page/browse/model as browse_model
+import gleamdrill/page/browse/msg as browse_msg
 import gleamdrill/page/browse/update as browse_update
 import gleamdrill/page/browse/view as browse_view
 import gleamdrill/page/queue/keys as queue_keys
@@ -78,6 +80,9 @@ import gleamdrill/ui/keyboard
 import gleamdrill/ui/keys
 import gleamdrill/ui/layout
 import gleamdrill/ui/shell
+import gleamdrill/ui/tmux/chooser
+import gleamdrill/ui/tmux/command
+import gleamdrill/ui/tmux/windows
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import modem
@@ -117,6 +122,7 @@ pub fn init(boot: #(Shared, Effect(Msg))) -> #(State, Effect(Msg)) {
 /// URL moves once per message from outside, never midway.
 pub fn update(state: State, message: Msg) -> #(State, Effect(Msg)) {
   let #(after, fx) = step(state, message)
+  let after = remember(state, after)
   let #(after, moved) = follow(state, after, message)
   #(after, effect.batch([fx, moved]))
 }
@@ -159,11 +165,8 @@ fn url_changed(state: State, address: Uri) -> #(State, Effect(Msg)) {
       {
         True -> #(state, effect.none())
         False -> {
-          let #(shared, dropped) = case state.page {
-            Sitting(page) ->
-              apply(shared, [sitting_update.abandon_run(shared, page)])
-            _ -> #(shared, effect.none())
-          }
+          let #(state, dropped) = leave_sitting(state)
+          let shared = state.shared
           let #(shared, entered) = case track == shared.active_track {
             True -> #(shared, effect.none())
             False -> shared_tracks.enter_track(shared, track, starter: False)
@@ -219,6 +222,41 @@ fn step(state: State, message: Msg) -> #(State, Effect(Msg)) {
     -> #(state, effect.none())
 
     msg.KeyPressed(key), _ -> key_pressed(state, key)
+    msg.CommandRun(command), _ -> run_command(state, command)
+    msg.ChooserMoved(by), _ ->
+      case state.shared.chooser {
+        Some(open) ->
+          set_shared(state, fn(shared) {
+            model.Model(..shared, chooser: Some(chooser.move(shared, open, by)))
+          })
+        None -> #(state, effect.none())
+      }
+    msg.ChooserPicked(number), _ ->
+      case state.shared.chooser {
+        Some(open) -> {
+          let picked = chooser.picked(state.shared, open, number)
+          let #(state, _) =
+            set_shared(state, fn(shared) {
+              model.Model(..shared, chooser: None)
+            })
+          case picked {
+            Ok(command) -> run_command(state, command)
+            Error(Nil) -> #(state, effect.none())
+          }
+        }
+        None -> #(state, effect.none())
+      }
+    msg.ChooserClosed, _ ->
+      set_shared(state, fn(shared) { model.Model(..shared, chooser: None) })
+    msg.PromptEdited(text), _ ->
+      set_shared(state, fn(shared) {
+        model.Model(
+          ..shared,
+          command_prompt: Some(model.CommandPrompt(text:, back: -1)),
+        )
+      })
+    msg.PromptKey(key), _ -> prompt_key(state, key)
+    msg.PromptClosed, _ -> close_prompt(state)
     msg.UrlChanged(address), _ -> url_changed(state, address)
     msg.Swiped(by), Sitting(_) ->
       step(state, msg.SittingMsg(sitting_msg.PanelSwiped(by)))
@@ -483,23 +521,319 @@ fn settle(
 /// A key on a page screen: the same leader and focus rules as everywhere,
 /// resolved against an open overlay first, then the page's rows.
 fn key_pressed(state: State, key: msg.Key) -> #(State, Effect(Msg)) {
-  let lookup = fn(shared, key: msg.Key) {
-    case keys.overlay(shared) {
-      Ok(overlay) -> binding.find(overlay, key.key)
-      Error(Nil) -> page_dispatch(State(..state, shared:), key.key)
+  let lookup = fn(shared: model.Model, key: msg.Key) {
+    case shared.chooser, keys.overlay(shared) {
+      Some(_), _ -> chooser.dispatch(key.key)
+      None, Ok(overlay) -> binding.find(overlay, key.key)
+      None, Error(Nil) -> page_dispatch(State(..state, shared:), key.key)
     }
   }
   let #(shared, outcome) = keyboard.step(state.shared, key, lookup)
   let state = State(..state, shared:)
   case outcome {
     keyboard.Ignore -> #(state, effect.none())
-    keyboard.Blur -> #(state, common.run_effect(browser.blur_active))
+    keyboard.Blur -> #(state, blur())
     keyboard.Send(resolved) -> step(state, resolved)
   }
 }
 
 fn navigate(state: State, route: Route) -> #(State, Effect(Msg)) {
   sync_page(State(..state, shared: model.Model(..state.shared, route:)))
+}
+
+fn set_shared(
+  state: State,
+  change: fn(model.Model) -> model.Model,
+) -> #(State, Effect(Msg)) {
+  #(State(..state, shared: change(state.shared)), effect.none())
+}
+
+/// Leaving a sitting by any way but its own exit drops its run, as the exit
+/// button does: Back, Forward, or a tmux window or session switch.
+fn leave_sitting(state: State) -> #(State, Effect(Msg)) {
+  case state.page {
+    Sitting(page) -> {
+      let #(shared, dropped) =
+        apply(state.shared, [sitting_update.abandon_run(state.shared, page)])
+      #(State(..state, shared:), dropped)
+    }
+    _ -> #(state, effect.none())
+  }
+}
+
+/// The window and the track that were up before this message, kept for
+/// `last-window` and `switch-client -l` whenever this message changed them.
+fn remember(before: State, after: State) -> State {
+  let was = before.shared
+  let now = after.shared
+  let last_route = case
+    windows.window_route(was.route),
+    windows.window_route(now.route)
+  {
+    Ok(left), Ok(here) if left != here -> Some(left)
+    Ok(left), Error(Nil) -> Some(left)
+    _, _ -> now.last_route
+  }
+  let last_track = case was.active_track {
+    "" -> now.last_track
+    left if left != now.active_track -> Some(left)
+    _ -> now.last_track
+  }
+  State(..after, shared: model.Model(..now, last_route:, last_track:))
+}
+
+// --- tmux ---------------------------------------------------------------------
+
+/// One tmux command, against whichever screen is up.
+fn run_command(
+  state: State,
+  command: command.Command,
+) -> #(State, Effect(Msg)) {
+  let shared = state.shared
+  case command {
+    command.SelectWindow(target) ->
+      case windows.resolve(shared, target) {
+        Ok(window) -> go_to_window(state, window.route)
+        Error(reason) -> say(state, reason)
+      }
+    command.ChooseWindow -> open_chooser(state, False)
+    command.ChooseSession -> open_chooser(state, True)
+    // A screen is not a window that can be closed; the drill is, through
+    // its own exit prompt, the way tmux's kill-window asks first.
+    command.KillWindow ->
+      case state.page, shared.route {
+        Sitting(_), DrillRoute ->
+          step(state, msg.SittingMsg(sitting_msg.UserClickedExitDrill))
+        Sitting(_), _ -> go_to_window(state, StudyRoute)
+        _, _ ->
+          say(state, case windows.current(shared) {
+            Ok(window) -> "can't kill window: " <> window.name
+            Error(Nil) -> "no current window"
+          })
+      }
+    command.SelectPane(target) ->
+      case state.page, target {
+        Sitting(_), _ ->
+          step(state, msg.SittingMsg(sitting_msg.PaneSelected(target)))
+        // The browser's three columns are panes side by side.
+        Browse(_), command.PaneNext
+        | Browse(_), command.Toward(command.Right)
+        -> step(state, msg.BrowseMsg(browse_msg.PaneFocused(1)))
+        Browse(_), command.PanePrevious
+        | Browse(_), command.Toward(command.Left)
+        -> step(state, msg.BrowseMsg(browse_msg.PaneFocused(-1)))
+        _, _ -> #(state, effect.none())
+      }
+    command.DisplayPanes -> to_sitting(state, sitting_msg.PanesNumbered)
+    command.ZoomPane -> to_sitting(state, sitting_msg.PaneZoomed)
+    command.KillPane -> to_sitting(state, sitting_msg.PaneKilled)
+    command.SwitchClient(target) ->
+      case windows.resolve_session(shared, target) {
+        Ok(name) -> switch_track(state, name)
+        Error(reason) -> say(state, reason)
+      }
+    command.DetachClient -> {
+      let #(state, dropped) = leave_sitting(state)
+      let #(state, opened) = navigate(state, TracksRoute)
+      #(state, effect.batch([dropped, opened]))
+    }
+    command.CommandPrompt -> #(
+      State(
+        ..state,
+        shared: model.Model(
+          ..shared,
+          command_prompt: Some(model.CommandPrompt(text: "", back: -1)),
+        ),
+      ),
+      common.focus_after_render(".command-prompt"),
+    )
+    command.ListKeys ->
+      case shared.help_open {
+        True -> #(state, effect.none())
+        False -> {
+          let #(shared, fx) = keyboard.toggle_help(shared)
+          #(State(..state, shared:), effect.batch([fx, blur()]))
+        }
+      }
+    // The browser listener already handed C-b to whatever has focus.
+    command.SendPrefix -> #(state, effect.none())
+    command.SendKeys(names) ->
+      list.fold(names, #(state, effect.none()), fn(acc, name) {
+        let #(state, fx) = acc
+        let #(state, more) =
+          key_pressed(state, msg.Key(key_named(name), False, False, "none"))
+        #(state, effect.batch([fx, more]))
+      })
+    command.DisplayMessage(text) -> say(state, text)
+  }
+}
+
+fn to_sitting(state: State, message: sitting_msg.Msg) -> #(State, Effect(Msg)) {
+  case state.page {
+    Sitting(_) -> step(state, msg.SittingMsg(message))
+    _ -> #(state, effect.none())
+  }
+}
+
+/// A window's screen, entered as Back or Forward would enter it. A screen
+/// inside a track, with no track chosen yet, is the track switcher.
+fn go_to_window(state: State, route: Route) -> #(State, Effect(Msg)) {
+  let shared = state.shared
+  case windows.window_route(shared.route) == Ok(route) {
+    True -> #(state, effect.none())
+    False -> {
+      let in_track = route != TourRoute && route != SettingsRoute
+      let route = case in_track && shared.active_track == "" {
+        True -> TracksRoute
+        False -> route
+      }
+      let #(state, dropped) = leave_sitting(state)
+      let #(state, opened) = navigate(state, route)
+      #(state, effect.batch([dropped, opened]))
+    }
+  }
+}
+
+/// Another track, on the same window when the window lives in a track (its
+/// stats for its stats), on its study screen otherwise.
+fn switch_track(state: State, name: String) -> #(State, Effect(Msg)) {
+  case name == state.shared.active_track {
+    True -> #(state, effect.none())
+    False -> {
+      let window = windows.window_route(state.shared.route)
+      let #(state, dropped) = leave_sitting(state)
+      let #(shared, entered) =
+        shared_tracks.enter_track(state.shared, name, starter: False)
+      let route = case window {
+        Ok(MenuRoute) | Ok(QueueRoute) | Ok(StatsRoute) ->
+          result.unwrap(window, StudyRoute)
+        _ -> StudyRoute
+      }
+      let #(state, opened) = navigate(State(..state, shared:), route)
+      #(state, effect.batch([dropped, entered, opened]))
+    }
+  }
+}
+
+/// The tree over windows or sessions, its cursor on the one up now. Focus
+/// leaves the editor, or j and k would type there.
+fn open_chooser(state: State, sessions: Bool) -> #(State, Effect(Msg)) {
+  let shared = state.shared
+  let cursor = case sessions {
+    False ->
+      windows.current(shared)
+      |> result.map(fn(w) { w.index })
+      |> result.unwrap(0)
+    True ->
+      windows.sessions(shared)
+      |> list.index_map(fn(name, i) { #(name, i) })
+      |> list.key_find(shared.active_track)
+      |> result.unwrap(0)
+  }
+  #(
+    State(
+      ..state,
+      shared: model.Model(
+        ..shared,
+        chooser: Some(model.Chooser(sessions:, cursor:)),
+      ),
+    ),
+    blur(),
+  )
+}
+
+fn say(state: State, text: String) -> #(State, Effect(Msg)) {
+  set_shared(state, fn(shared) {
+    model.Model(..shared, status_message: Some(text))
+  })
+}
+
+/// Enter runs the line, Tab completes the command's name, Up and Down walk
+/// back through the lines run before.
+fn prompt_key(state: State, key: String) -> #(State, Effect(Msg)) {
+  let shared = state.shared
+  case shared.command_prompt, key {
+    None, _ -> #(state, effect.none())
+    Some(prompt), "Enter" -> {
+      let line = string.trim(prompt.text)
+      let #(state, closed) = close_prompt(state)
+      let history = case line, state.shared.command_history {
+        "", history -> history
+        _, [latest, ..] as history if latest == line -> history
+        _, history -> [line, ..history]
+      }
+      let state =
+        State(
+          ..state,
+          shared: model.Model(..state.shared, command_history: history),
+        )
+      case line, command.parse(line) {
+        "", _ -> #(state, closed)
+        _, Ok(parsed) -> {
+          let #(state, ran) = run_command(state, parsed)
+          #(state, effect.batch([closed, ran]))
+        }
+        _, Error(reason) -> {
+          let #(state, _) = say(state, reason)
+          #(state, closed)
+        }
+      }
+    }
+    Some(prompt), "Tab" ->
+      case string.split(prompt.text, " ") {
+        [typed] ->
+          case command.complete(typed) {
+            Ok(full) -> edit_prompt(state, full <> " ", -1)
+            Error(Nil) -> #(state, effect.none())
+          }
+        _ -> #(state, effect.none())
+      }
+    Some(prompt), "ArrowUp" -> recall(state, prompt.back + 1)
+    Some(prompt), "ArrowDown" -> recall(state, prompt.back - 1)
+    Some(_), _ -> #(state, effect.none())
+  }
+}
+
+fn recall(state: State, back: Int) -> #(State, Effect(Msg)) {
+  case back < 0, list.drop(state.shared.command_history, back) {
+    True, _ -> edit_prompt(state, "", -1)
+    False, [line, ..] -> edit_prompt(state, line, back)
+    False, [] -> #(state, effect.none())
+  }
+}
+
+fn edit_prompt(state: State, text: String, back: Int) -> #(State, Effect(Msg)) {
+  set_shared(state, fn(shared) {
+    model.Model(
+      ..shared,
+      command_prompt: Some(model.CommandPrompt(text:, back:)),
+    )
+  })
+}
+
+fn close_prompt(state: State) -> #(State, Effect(Msg)) {
+  #(
+    State(..state, shared: model.Model(..state.shared, command_prompt: None)),
+    blur(),
+  )
+}
+
+fn blur() -> Effect(Msg) {
+  common.run_effect(browser.blur_active)
+}
+
+/// A key by its tmux name, as `send-keys` takes it.
+fn key_named(name: String) -> String {
+  case name {
+    "Space" -> " "
+    "Enter" | "C-m" -> "Enter"
+    "Escape" | "C-[" -> "Escape"
+    "Left" -> "ArrowLeft"
+    "Right" -> "ArrowRight"
+    "Up" -> "ArrowUp"
+    "Down" -> "ArrowDown"
+    other -> other
+  }
 }
 
 /// Applies a page's changes to the shared state, in order.
@@ -516,6 +850,10 @@ fn apply(shared: Shared, changes: List(Change)) -> #(Shared, Effect(Msg)) {
 fn apply_change(shared: Shared, change: Change) -> #(Shared, Effect(Msg)) {
   case change {
     shared.Navigate(route) -> #(model.Model(..shared, route:), effect.none())
+    shared.Say(text) -> #(
+      model.Model(..shared, status_message: Some(text)),
+      effect.none(),
+    )
     shared.SignedIn(session, registered) ->
       shared_session.signed_in(shared, session, registered)
     shared.Notice(text) -> #(

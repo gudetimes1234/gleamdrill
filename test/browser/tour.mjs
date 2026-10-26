@@ -689,6 +689,88 @@ await page.keyboard.press("Enter");
 await page.waitForTimeout(600);
 check("Enter leaves it", !(await page.isVisible(".exit-prompt")));
 
+// ---------------------------------------------------------------- act 3t
+act = "03t-tmux";
+console.log(act);
+exercises("CommandRun", "ChooserMoved", "ChooserPicked", "ChooserClosed",
+  "PromptEdited", "PromptKey", "PromptClosed", "sitting.PaneSelected",
+  "sitting.PanesNumbered", "sitting.PanesNumberPicked", "sitting.PaneZoomed",
+  "sitting.PaneKilled");
+
+// tmux's prefix: C-b, then a key. Windows are the screens, panes the drill's
+// regions, sessions the tracks.
+const tmux = async (...keys) => {
+  await page.keyboard.press("Control+b");
+  for (const key of keys) await page.keyboard.press(key);
+  await page.waitForTimeout(200);
+};
+const tmuxWindow = async () => (await page.textContent(".status-window-current"))?.trim();
+const drillBody = async () => (await page.getAttribute(".drill-body", "class")) ?? "";
+await page.evaluate(() => document.activeElement?.blur());
+await tmux("2");
+check("C-b 2 is the queue window", await appears(".queue-screen")
+  && (await tmuxWindow()) === "2:queue*", await tmuxWindow());
+await tmux("l");
+check("C-b l is the last window", await appears(".study-screen"));
+await tmux("w");
+check("C-b w opens the window tree", await appears(".chooser-card"));
+await capture("tmux-windows", "C-b w: the screens as tmux windows");
+await page.keyboard.press("j");
+await page.keyboard.press("Enter");
+await page.waitForTimeout(200);
+check("a row picked opens its window", (await tmuxWindow()) === "1:browse*",
+  await tmuxWindow());
+await tmux("s");
+check("C-b s lists the tracks as sessions",
+  (await page.locator(".chooser-row", { hasText: "(attached)" }).count()) === 1);
+await capture("tmux-sessions", "C-b s: the tracks as tmux sessions");
+await page.keyboard.press("Escape");
+await page.waitForTimeout(200);
+check("Escape closes the tree", !(await page.isVisible(".chooser-card")));
+await tmux(":");
+await page.keyboard.type("selectw -t 0");
+await page.keyboard.press("Enter");
+await page.waitForTimeout(200);
+check("the command prompt runs a tmux command", (await tmuxWindow()) === "0:study*",
+  await tmuxWindow());
+await tmux(":");
+await page.keyboard.press("ArrowUp");
+check("Up recalls the last line",
+  (await page.inputValue(".command-prompt")) === "selectw -t 0");
+await page.keyboard.press("Escape");
+await page.waitForTimeout(200);
+check("Escape closes the prompt", !(await page.isVisible(".command-prompt")));
+
+await page.keyboard.press("Enter");
+await page.waitForSelector(".run-bar", { timeout: 20000 });
+await page.click(".cm-content");
+const typed = await page.evaluate(() => document.querySelector("gleam-editor").doc);
+await tmux("z");
+check("C-b z zooms the editor from inside it", (await drillBody()).includes("zoomed"));
+check("and neither key reached the editor",
+  (await page.evaluate(() => document.querySelector("gleam-editor").doc)) === typed);
+await capture("tmux-zoom", "C-b z: the active pane fills the screen");
+await tmux("z");
+await tmux("q");
+check("C-b q numbers the panes", (await drillBody()).includes("panes-numbered"));
+await capture("tmux-panes", "C-b q: the drill's panes, numbered as tmux does");
+await page.keyboard.press("0");
+await page.waitForTimeout(200);
+check("a number picks its pane", (await drillBody()).includes("active-rail"),
+  await drillBody());
+await tmux("ArrowRight");
+await tmux("ArrowUp");
+check("the arrows walk the panes", (await drillBody()).includes("active-prompt"),
+  await drillBody());
+await tmux("x");
+check("C-b x closes the prompt pane", !(await page.isVisible(".prompt-side")));
+await page.keyboard.press("p");
+await page.waitForTimeout(200);
+await tmux("&");
+check("C-b & asks before leaving the drill", await appears(".exit-prompt"));
+await page.keyboard.press("Enter");
+await page.waitForTimeout(600);
+
 // ---------------------------------------------------------------- act 4
 act = "04-python-drill";
 console.log(act);

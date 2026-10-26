@@ -25,12 +25,14 @@ import gleamdrill/page/sitting/model.{
   SolutionPanel, SubmittingGrade,
 }
 import gleamdrill/page/sitting/msg.{type Msg}
+import gleamdrill/page/sitting/panes
 import gleamdrill/platform/browser
 import gleamdrill/runner
 import gleamdrill/shared.{type Change, type Shared}
 import gleamdrill/store
 import gleamdrill/store/remote
 import gleamdrill/ui/id
+import gleamdrill/ui/tmux/command
 import lustre/effect.{type Effect}
 import wire
 
@@ -344,6 +346,30 @@ pub fn update(shared: Shared, page: Model, msg: Msg) -> Step {
     msg.UserToggledResults -> #(page, effect.none(), [shared.ResultsToggled])
     msg.UserToggledDiff -> #(page, effect.none(), [shared.DiffToggled])
     msg.UserDismissedDiff -> none(Model(..page, panel: CodePanel))
+    msg.PaneSelected(target) -> pane_selected(shared, page, target)
+    msg.PanesNumbered ->
+      case panes.regions(shared, page) {
+        [] -> none(page)
+        // Blurred so the number typed next picks a pane rather than
+        // landing in the editor.
+        _ -> #(Model(..page, numbered: True), blur(), [])
+      }
+    msg.PanesNumberPicked(Some(n)) ->
+      pane_selected(shared, page, command.PaneIndex(n))
+    msg.PanesNumberPicked(None) -> none(Model(..page, numbered: False))
+    msg.PaneZoomed ->
+      case panes.regions(shared, page) {
+        [] -> none(page)
+        _ ->
+          none(
+            Model(
+              ..page,
+              zoomed: !page.zoomed,
+              active: panes.active(shared, page),
+            ),
+          )
+      }
+    msg.PaneKilled -> kill_pane(shared, page)
 
     msg.QuizMoved(delta) -> quiz_moved(page, delta)
     msg.UserPickedChoice(index) ->
@@ -1004,6 +1030,56 @@ fn toggle_pane(page: Model, pane: model.Pane) -> Step {
     NotePane, True -> none(Model(..page, slot: NoPane))
     NotePane, False -> focus_note(Model(..page, panel: CodePanel))
     NoPane, _ -> none(page)
+  }
+}
+
+/// tmux's select-pane: the pane made active and given the keyboard, the
+/// editor and the note by focus, the rest by taking focus away from both
+/// so the bare keys reach the app. Moving off a zoomed pane unzooms.
+fn pane_selected(
+  shared: Shared,
+  page: Model,
+  target: command.PaneTarget,
+) -> Step {
+  case panes.regions(shared, page) {
+    [] -> none(page)
+    _ -> {
+      let before = panes.active(shared, page)
+      let page = panes.select(shared, page, target)
+      let page = case page.active == before {
+        True -> page
+        False -> Model(..page, zoomed: False)
+      }
+      #(page, focus_region(page.active), [])
+    }
+  }
+}
+
+fn focus_region(region: model.Region) -> Effect(Msg) {
+  case region {
+    model.EditorRegion -> focus_now("gleam-editor")
+    model.NoteRegion -> focus_now(".note-input")
+    _ -> blur()
+  }
+}
+
+/// tmux's kill-pane: the active pane put away, the way its own close
+/// button would. The editor, the output and the rail are the screen
+/// itself, so they stay, and say so.
+fn kill_pane(shared: Shared, page: Model) -> Step {
+  let closed = fn(page: Model) {
+    Model(..page, active: model.EditorRegion, zoomed: False)
+  }
+  case panes.regions(shared, page), panes.active(shared, page) {
+    [], _ -> none(page)
+    _, model.PromptRegion -> #(closed(page), effect.none(), [
+      shared.PromptToggled,
+    ])
+    _, model.SolutionRegion -> none(closed(Model(..page, panel: CodePanel)))
+    _, model.NoteRegion -> none(closed(Model(..page, slot: NoPane)))
+    _, region -> #(page, effect.none(), [
+      shared.Say("can't kill the " <> panes.name(region) <> " pane"),
+    ])
   }
 }
 

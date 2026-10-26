@@ -123,6 +123,25 @@ pub type RunState {
   Ran(outcome: RunOutcome, stdout: String)
 }
 
+/// Which one-shot prefix is armed, if any: tmux's Ctrl+b, or the `,`
+/// leader that only rescues page keys from a focused button.
+pub type Prefix {
+  NoPrefix
+  Leader
+  Tmux
+}
+
+/// tmux's choose-tree, over windows (screens) or sessions (tracks).
+pub type Chooser {
+  Chooser(sessions: Bool, cursor: Int)
+}
+
+/// The command line: what is typed, and how far back into the history Up
+/// has walked (-1 is the line being typed).
+pub type CommandPrompt {
+  CommandPrompt(text: String, back: Int)
+}
+
 pub type Model {
   Model(
     // --- session and server state ---
@@ -210,10 +229,24 @@ pub type Model {
     /// The editor height the user dragged to, in px, on this device. `None`
     /// is the stylesheet's default.
     editor_height: Option(Int),
-    /// One-shot prefix: Ctrl+b (or the `,` leader) was pressed, so the next
-    /// key resolves against the prefix table -- and, when the table does not
-    /// hold it, through the app's key table even if a button holds focus.
-    prefix_armed: Bool,
+    /// One-shot prefix: Ctrl+b or the `,` leader was pressed, so the next
+    /// key resolves against the prefix table (Ctrl+b only) and, when the
+    /// table does not hold it, through the app's key table even if a button
+    /// holds focus.
+    prefix: Prefix,
+    /// The screen and the track before the current ones, for tmux's
+    /// `last-window` and `switch-client -l`.
+    last_route: Option(Route),
+    last_track: Option(String),
+    /// The `C-b w` / `C-b s` tree, while it is up. It owns the keyboard.
+    chooser: Option(Chooser),
+    /// The `C-b :` command line, while it is open.
+    command_prompt: Option(CommandPrompt),
+    /// Lines run at the prompt, newest first, for Up and Down.
+    command_history: List(String),
+    /// tmux's display-message: a line the status bar shows in place of its
+    /// hints until the next key.
+    status_message: Option(String),
     /// Named lists to study from. A card is the memory of one problem,
     /// whichever queues list it; every listed problem has a card.
     queues: List(wire.Queue),
@@ -263,7 +296,13 @@ pub fn default() -> Model {
     results_collapsed: False,
     editor_height: None,
     diff_mode: True,
-    prefix_armed: False,
+    prefix: NoPrefix,
+    last_route: None,
+    last_track: None,
+    chooser: None,
+    command_prompt: None,
+    command_history: [],
+    status_message: None,
     queues: [],
     remembered_queues: [],
     active_queue: None,

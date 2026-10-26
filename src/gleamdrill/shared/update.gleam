@@ -10,12 +10,13 @@
 import gleam/int
 import gleamdrill/model.{type Model, Model}
 import gleamdrill/msg.{
-  type Msg, AuthMsg, BrowseMsg, CardSuspended, ExamSampled, HelpToggled,
-  InsightsLoaded, KeyPressed, QueueChanged, QueueMsg, QueuesSaved,
-  RemoteRunFinished, RunFinished, RunTimedOut, RunnerFailed, RunnerReady,
-  RuntimeLoadTimedOut, SettingsMsg, SignOutCompleted, SittingMsg, StateImported,
-  StateLoaded, StatsLoaded, StatsMsg, StudyMsg, Swiped, TourMsg, TracksMsg,
-  UrlChanged, UserAddedSelectionToQueue, UserAddedStarterSet,
+  type Msg, AuthMsg, BrowseMsg, CardSuspended, ChooserClosed, ChooserMoved,
+  ChooserPicked, CommandRun, ExamSampled, HelpToggled, InsightsLoaded,
+  KeyPressed, PromptClosed, PromptEdited, PromptKey, QueueChanged, QueueMsg,
+  QueuesSaved, RemoteRunFinished, RunFinished, RunTimedOut, RunnerFailed,
+  RunnerReady, RuntimeLoadTimedOut, SettingsMsg, SignOutCompleted, SittingMsg,
+  StateImported, StateLoaded, StatsLoaded, StatsMsg, StudyMsg, Swiped, TourMsg,
+  TracksMsg, UrlChanged, UserAddedSelectionToQueue, UserAddedStarterSet,
   UserChangedIterations, UserClickedBrowse, UserClickedMergeGuest,
   UserClickedQueue, UserClickedRecall, UserClickedRetrySync, UserClickedSignIn,
   UserClickedSignOut, UserClickedStartDrill, UserClickedStartExam,
@@ -56,7 +57,14 @@ pub fn update(m: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     | UserStartedBlitz(_, _)
     | UserClickedStartDrill
     | UserClickedStartExam
-    | ExamSampled(_) -> #(m, effect.none())
+    | ExamSampled(_)
+    | CommandRun(_)
+    | ChooserMoved(_)
+    | ChooserPicked(_)
+    | ChooserClosed
+    | PromptEdited(_)
+    | PromptKey(_)
+    | PromptClosed -> #(m, effect.none())
 
     HelpToggled -> keyboard.toggle_help(m)
 

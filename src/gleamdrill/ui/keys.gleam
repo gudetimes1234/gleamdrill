@@ -3,18 +3,21 @@
 //// table (`page/<name>/keys`); the status bar and the help overlay list
 //// whichever is live.
 
+import gleam/option.{None, Some}
 import gleamdrill/model.{type Model}
 import gleamdrill/msg.{type Msg, HelpToggled}
 import gleamdrill/ui/binding.{type Binding, Binding}
+import gleamdrill/ui/tmux/chooser
 
 /// The rows of an overlay that owns the keyboard right now, if any. While
-/// the cheatsheet is up it does.
+/// tmux's choose-tree or the cheatsheet is up it does.
 pub fn overlay(m: Model) -> Result(List(Binding(Msg)), Nil) {
-  case m.help_open {
-    True ->
+  case m.chooser, m.help_open {
+    Some(_), _ -> Ok(chooser.bindings())
+    None, True ->
       Ok([
         Binding(["Escape", "?"], "close", "Close this cheatsheet", HelpToggled),
       ])
-    False -> Error(Nil)
+    None, False -> Error(Nil)
   }
 }

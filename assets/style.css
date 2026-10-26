@@ -4789,7 +4789,9 @@ gleam-compare .cm-mergeSpacer {
 
 .statusbar-context {
     display: flex;
+    flex-shrink: 0;
     align-items: center;
+    white-space: nowrap;
     padding: 0 12px;
     background: var(--accent);
     color: var(--bg-primary);
@@ -4799,6 +4801,9 @@ gleam-compare .cm-mergeSpacer {
 
 /* The , leader chip: quiet until armed, accent while the one-shot waits. */
 .leader-chip {
+    align-self: center;
+    flex-shrink: 0;
+    white-space: nowrap;
     font-family: inherit;
     font-size: 12px;
     color: var(--text-secondary);
@@ -4841,6 +4846,189 @@ gleam-compare .cm-mergeSpacer {
 
 .keyhint-keys {
     color: var(--warning);
+}
+
+/* --- tmux: the session, the window list, messages and the prompt --- */
+
+.statusbar-session,
+.status-window {
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    background: none;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.statusbar-session {
+    flex-shrink: 0;
+    max-width: 24ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--accent);
+}
+
+.statusbar-windows {
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+}
+
+.status-window:hover,
+.statusbar-session:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.status-window-current {
+    color: var(--bg-primary);
+    background: var(--accent);
+}
+
+.status-window-current:hover {
+    color: var(--bg-primary);
+    background: var(--accent);
+}
+
+.statusbar-message {
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    font-family: var(--font-mono);
+    color: var(--warning);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.statusbar-prompt {
+    align-items: center;
+    padding: 0 8px;
+    font-family: var(--font-mono);
+}
+
+.statusbar-prompt-colon {
+    color: var(--warning);
+}
+
+.command-prompt {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    padding: 0 4px;
+    background: none;
+    border: none;
+    outline: none;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-primary);
+}
+
+/* --- tmux: choose-tree --- */
+
+.chooser-card {
+    width: min(480px, 100%);
+}
+
+.chooser-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+}
+
+.chooser-row {
+    padding: 3px 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.chooser-row.cursor {
+    color: var(--bg-primary);
+    background: var(--accent);
+}
+
+.chooser-number {
+    color: var(--warning);
+}
+
+.chooser-row.cursor .chooser-number {
+    color: inherit;
+}
+
+/* --- tmux: the drill's panes --- */
+
+/* The active pane, when it is not the editor (whose focus ring says so). */
+.drill-body.active-rail .plan-rail,
+.drill-body.active-prompt .prompt-side,
+.drill-body.active-solution .solution-panel,
+.drill-body.active-note .slot-pane,
+.drill-body.active-output .output-below {
+    outline: 1px solid var(--accent);
+    outline-offset: -1px;
+}
+
+/* C-b z: everything but the active pane steps aside. The run bar and the
+   results are controls, not panes, and stay. */
+.drill-body.zoomed .panel-tabs,
+.drill-body.zoomed:not(.active-rail) .plan-rail,
+.drill-body.zoomed:not(.active-prompt) .prompt-side,
+.drill-body.zoomed:not(.active-editor) .editor-frame,
+.drill-body.zoomed:not(.active-solution) .solution-panel,
+.drill-body.zoomed:not(.active-note) .slot-pane,
+.drill-body.zoomed:not(.active-output) .output-below {
+    display: none;
+}
+
+.drill-body.zoomed .prompt-side {
+    max-height: none;
+}
+
+.drill-body.zoomed.active-rail .plan-rail {
+    flex: 1 1 auto;
+    border-right: none;
+}
+
+/* C-b q: each pane's number over it, the active one in the accent. */
+.drill-body.panes-numbered :is(.plan-rail, .prompt-side, .editor-frame,
+    .solution-panel, .slot-pane, .output-below) {
+    position: relative;
+}
+
+.drill-body.panes-numbered :is(.plan-rail, .prompt-side, .editor-frame,
+    .solution-panel, .slot-pane, .output-below)::after {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-mono);
+    font-size: 56px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: color-mix(in srgb, var(--bg-primary) 55%, transparent);
+    pointer-events: none;
+}
+
+.drill-body.panes-numbered .plan-rail::after { content: var(--pane-rail); }
+.drill-body.panes-numbered .prompt-side::after { content: var(--pane-prompt); }
+.drill-body.panes-numbered .editor-frame::after { content: var(--pane-editor); }
+.drill-body.panes-numbered .solution-panel::after { content: var(--pane-solution); }
+.drill-body.panes-numbered .slot-pane::after { content: var(--pane-note); }
+.drill-body.panes-numbered .output-below::after { content: var(--pane-output); }
+
+.drill-body.panes-numbered.active-rail .plan-rail::after,
+.drill-body.panes-numbered.active-prompt .prompt-side::after,
+.drill-body.panes-numbered.active-editor .editor-frame::after,
+.drill-body.panes-numbered.active-solution .solution-panel::after,
+.drill-body.panes-numbered.active-note .slot-pane::after,
+.drill-body.panes-numbered.active-output .output-below::after {
+    color: var(--accent);
 }
 
 /* The status bar is a keyboard artifact; on touch there is no keyboard and
@@ -4938,6 +5126,19 @@ body {
 
 .help-desc {
     color: var(--text-secondary);
+}
+
+.help-section {
+    margin: 16px 0 8px;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+}
+
+.help-command {
+    font-size: 11px;
+    color: var(--text-secondary);
+    opacity: 0.75;
 }
 
 .help-footnote {

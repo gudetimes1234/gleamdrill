@@ -23,6 +23,7 @@ import gleamdrill/page/sitting/msg.{
   UserToggledPrompt, UserToggledSolution, UserToggledSolutionPanel,
   UserToggledTimer,
 }
+import gleamdrill/page/sitting/panes
 import gleamdrill/page/sitting/view/blitz
 import gleamdrill/page/sitting/view/board as board_view
 import gleamdrill/page/sitting/view/quiz
@@ -220,7 +221,7 @@ fn view_drill(
       // Which panel is up is a class here, and the stylesheet does the rest:
       // one tree at every width, so a resize never remounts the editor.
       problem.CodeDrill, False ->
-        keyed.div([attribute.class("drill-body " <> panel_class(page.panel))], [
+        keyed.div(pane_classes(shared, page), [
           #(
             "main",
             html.div(
@@ -1244,6 +1245,32 @@ fn panel_tabs(page: Model, current: Problem) -> Element(Msg) {
       },
     ]),
   )
+}
+
+/// The panel that is up, and tmux's pane state on top: which pane is
+/// active, whether it is zoomed, whether the panes wear their numbers. The
+/// stylesheet draws all of it, so the editor's frame is never remounted.
+fn pane_classes(shared: Shared, page: Model) -> List(attribute.Attribute(Msg)) {
+  [
+    attribute.classes([
+      #("drill-body", True),
+      #(panel_class(page.panel), True),
+      #("active-" <> panes.name(panes.active(shared, page)), True),
+      #("zoomed", page.zoomed),
+      #("panes-numbered", page.numbered),
+    ]),
+    // C-b q's numbers, which the stylesheet prints over each pane.
+    ..case page.numbered {
+      True ->
+        list.index_map(panes.regions(shared, page), fn(region, index) {
+          attribute.style(
+            "--pane-" <> panes.name(region),
+            "'" <> int.to_string(index) <> "'",
+          )
+        })
+      False -> []
+    }
+  ]
 }
 
 fn panel_class(panel: Panel) -> String {

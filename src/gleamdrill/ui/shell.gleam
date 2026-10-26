@@ -10,6 +10,7 @@ import gleamdrill/ui/boot
 import gleamdrill/ui/help
 import gleamdrill/ui/keys
 import gleamdrill/ui/statusbar
+import gleamdrill/ui/tmux/chooser
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
@@ -56,6 +57,7 @@ pub fn view(m: Model, screen: Screen) -> Element(Msg) {
             statusbar.view(m, active, screen.label),
             help.button(m),
             help.view(m, screen.keys, screen.label),
+            chooser.view(m),
             ..syncing
           ])
       }

@@ -20,6 +20,7 @@ import gleamdrill/page/study/msg as study_msg
 import gleamdrill/page/tour/msg as tour_msg
 import gleamdrill/page/tracks/msg as tracks_msg
 import gleamdrill/store/remote.{type ApiError}
+import gleamdrill/ui/tmux/command
 import wire
 
 /// `editing` is where the key landed: `"editor"` (inside the code editor,
@@ -50,6 +51,18 @@ pub type Msg {
   /// app, which hands it to a sitting's panels.
   Swiped(Int)
   HelpToggled
+  // --- tmux: the prefix table, the choosers and the command prompt ---
+  /// A tmux command, from a prefix key, the prompt, or a chooser's pick.
+  CommandRun(command.Command)
+  /// The choose-tree cursor moved by this many rows.
+  ChooserMoved(Int)
+  /// The choose-tree row under the cursor, or the one numbered, chosen.
+  ChooserPicked(Option(Int))
+  ChooserClosed
+  PromptEdited(String)
+  /// Enter, Tab, Up or Down in the command line.
+  PromptKey(String)
+  PromptClosed
   // --- session ---
   StateLoaded(Result(wire.BootState, ApiError))
   StateImported(Result(Nil, ApiError))

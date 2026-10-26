@@ -1,6 +1,8 @@
 import fsrs
+import gleam/option.{type Option}
 import gleamdrill/page/sitting/model.{type Pane, type Panel, type UndoPoint}
 import gleamdrill/store/remote.{type ApiError}
+import gleamdrill/ui/tmux/command
 import wire
 
 pub type Msg {
@@ -78,6 +80,15 @@ pub type Msg {
   UserToggledDiff
   /// Close the panel a passing run opened.
   UserDismissedDiff
+  // --- tmux panes ---
+  PaneSelected(command.PaneTarget)
+  /// `C-b q`: number the panes.
+  PanesNumbered
+  /// The key after `C-b q`: a pane's number picks it, anything else just
+  /// takes the numbers away.
+  PanesNumberPicked(Option(Int))
+  PaneZoomed
+  PaneKilled
   // --- quizzes and boards ---
   /// Move the quiz choice cursor by a delta.
   QuizMoved(Int)

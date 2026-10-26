@@ -206,18 +206,64 @@ const APP_KEYS = new Set([
   "v", "[", "]", "{", "}",
 ]);
 
+function editingOf(event) {
+  const path = event.composedPath();
+  const target = path[0];
+  const tag = target?.tagName;
+  if (path.some((el) => el?.tagName === "GLEAM-EDITOR")) return "editor";
+  if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable)
+    return "input";
+  if (tag === "BUTTON" || tag === "A" || tag === "SUMMARY") return "control";
+  return "none";
+}
+
+// tmux's prefix. Ctrl+b, and the key after it, are taken in the capture
+// phase, before CodeMirror's keymaps (emacs binds Ctrl-b) or the browser
+// (Firefox's bookmarks sidebar) can act on either, so the prefix works from
+// anywhere, the editor included. The key after it reaches the app as if
+// nothing had focus. Ctrl+b twice is tmux's send-prefix: the second goes on
+// to the editor as an ordinary Ctrl+b.
+const MODIFIERS = new Set(["Shift", "Control", "Alt", "Meta"]);
+const sentPrefix = new WeakSet();
+let prefixArmed = false;
+
+function isPrefix(event) {
+  return event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey
+    && event.key === "b";
+}
+
+function sendPrefix(event) {
+  const content = event.composedPath()
+    .find((el) => el?.tagName === "GLEAM-EDITOR")
+    ?.querySelector(".cm-content");
+  if (!content) return;
+  const again = new KeyboardEvent("keydown", {
+    key: "b", code: "KeyB", ctrlKey: true, bubbles: true, cancelable: true,
+  });
+  sentPrefix.add(again);
+  content.dispatchEvent(again);
+}
+
 export function onKey(callback) {
   document.addEventListener("keydown", (event) => {
-    const path = event.composedPath();
-    const target = path[0];
-    const tag = target?.tagName;
-    let editing = "none";
-    if (path.some((el) => el?.tagName === "GLEAM-EDITOR")) editing = "editor";
-    else if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable)
-      editing = "input";
-    else if (tag === "BUTTON" || tag === "A" || tag === "SUMMARY")
-      editing = "control";
+    if (sentPrefix.has(event) || MODIFIERS.has(event.key)) return;
+    if (!prefixArmed && !isPrefix(event)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const editing = editingOf(event);
+    if (!prefixArmed) {
+      prefixArmed = true;
+      callback("b", true, false, editing);
+      return;
+    }
+    prefixArmed = false;
+    if (isPrefix(event) && editing === "editor") sendPrefix(event);
+    callback(event.key, event.ctrlKey || event.metaKey, event.shiftKey, "none");
+  }, true);
 
+  document.addEventListener("keydown", (event) => {
+    if (sentPrefix.has(event)) return;
+    const editing = editingOf(event);
     const ctrl = event.ctrlKey || event.metaKey;
     if (editing === "editor") {
       if (ctrl && event.key === "Enter") event.preventDefault();
